@@ -11,7 +11,11 @@
         "src/Daoris.Web/**",
         "!src/Daoris.Web/src/settings/**",
         "!src/Daoris.Web/src/locales/*/settings.json",
-        "!src/Daoris.Web/src/locales/*/settings.*.json"
+        "!src/Daoris.Web/src/locales/*/settings.*.json",
+        "!src/Daoris.Web/src/help/**",
+        "!src/Daoris.Web/src/bridge/help*.ts",
+        "!src/Daoris.Web/src/locales/*/help.json",
+        "!src/Daoris.Web/src/notifications/HelpPressLine*"
       ],
       "builds": {
         "units": ["src/Daoris.Web/package.json"],
@@ -41,7 +45,21 @@
         "src/Daoris.Desktop/Daoris.Desktop.PieceStart/**",
         "src/Daoris.Desktop/Daoris.Desktop.OwnerStandIn/**",
         "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**",
-        "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/**"
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/**",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Help/**",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/**",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Help*.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/KnowledgeHelp.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Context/{HelpConversations,HelpFoci}.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Course/Chat/HelpPlaced.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Events/Domain/AskDaorisRoom.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Supervise/AskDaorisReading*.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/HelpGrants.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/AskDaoris*.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/SecondCheck.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/HelpModeNames.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/{HelpProposalsStep,SecondCheckStep}.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/{HelpFocusMark,HelpKept}.cs"
       ],
       "builds": {
         "units": [
@@ -74,7 +92,12 @@
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**",
         "src/Daoris.Desktop/Daoris.Desktop.App/**",
         "src/Daoris.Desktop/Daoris.Desktop.Launcher/**",
-        "src/Daoris.Desktop/Directory.Packages.props"
+        "src/Daoris.Desktop/Directory.Packages.props",
+        "!src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/Help*.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/SupervisorKinds/AskDaorisKind.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/{AttentionSecondCheckRows,HelpStarting,SecondCheckHookUp}.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/Help*.cs",
+        "!src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/Views/SecondCheckOnSaid.cs"
       ],
       "builds": {
         "units": [
@@ -94,6 +117,37 @@
           "src/Daoris.Service/Daoris.Service.Http/wwwroot/"
         ]
       }
+    },
+    {
+      "id": "assistant",
+      "title": "Assistant",
+      "summary": "Ask Daoris: the room and its facts, the conversation's setup, focus and access, the second check, their window routes and their page, carved out of the driver's, the modules' and the web shell's lanes until its package stands.",
+      "_why": "The boundary of the assistant as a package (ASSISTPKG1a, docs/2026-11-17-assistant-package-plan.md §1.1 and §2): the files are where they were, and the layers census counts the references across this lane's boundary both ways per type, a ratchet that only falls as the package's steps move them behind its ports. No room of its own: its builds are the driver's, the modules' and the page's, so a change here reaches what the lane it was carved from reaches (the lane table's tree rules).",
+      "paths": [
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Help/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Room/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Help*.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/KnowledgeHelp.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Context/{HelpConversations,HelpFoci}.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Course/Chat/HelpPlaced.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Events/Domain/AskDaorisRoom.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Supervise/AskDaorisReading*.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/HelpGrants.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/AskDaoris*.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/SecondCheck.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/HelpModeNames.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/{HelpProposalsStep,SecondCheckStep}.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/{HelpFocusMark,HelpKept}.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/Help*.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/SupervisorKinds/AskDaorisKind.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/{AttentionSecondCheckRows,HelpStarting,SecondCheckHookUp}.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/Help*.cs",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/Views/SecondCheckOnSaid.cs",
+        "src/Daoris.Web/src/help/**",
+        "src/Daoris.Web/src/bridge/help*.ts",
+        "src/Daoris.Web/src/locales/*/help.json",
+        "src/Daoris.Web/src/notifications/HelpPressLine*"
+      ]
     },
     {
       "id": "service",
@@ -125,7 +179,7 @@
         "src/Layers.props",
         "src/BannedSymbols.Effects.txt",
         "src/BannedSymbols.Store.txt",
-        "daoris.adapters.lock"
+        "daoris.packages.lock"
       ],
       "builds": {
         "units": [

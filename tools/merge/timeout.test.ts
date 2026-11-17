@@ -12,7 +12,7 @@ test('a gate\'s budget is its declared timeoutMinutes, else the lane\'s: five mi
   assert.equal(budgetMs({ name: 'a', timeoutMinutes: -1 }, 'merge'), 5 * 60_000, 'a budget that does not read is the lane\'s');
 });
 
-test('the declared gates: each timeoutMinutes carries its reason, and the full set runs no adapter suite beside adapters-lock', () => {
+test('the declared gates: each timeoutMinutes carries its reason, and the full set runs no package suite, only packages-lock', () => {
   const { gates } = JSON.parse(readFileSync(new URL('../../daoris.gates.json', import.meta.url), 'utf8')) as {
     gates: { name: string; timeoutMinutes?: number; timeoutWhy?: string }[];
   };
@@ -20,7 +20,7 @@ test('the declared gates: each timeoutMinutes carries its reason, and the full s
     assert.ok(Number.isInteger(gate.timeoutMinutes) && gate.timeoutMinutes! > 0, `${gate.name} declares a whole number of minutes`);
     assert.ok((gate.timeoutWhy ?? '').length > 20, `${gate.name} says why its budget is what it is`);
   }
-  assert.deepEqual(gates.map((each) => each.name).filter((name) => name.startsWith('adapters-')), ['adapters-lock']);
+  assert.deepEqual(gates.map((each) => each.name).filter((name) => /^(adapters|packages)-/.test(name)), ['packages-lock']);
   const over = gates.find((each) => each.name === 'tool-e2e')!;
   const budget = budgetMs(over, 'ci')!;
   assert.ok(budget > 10 * 60_000, 'a gate killed at the old budget has its measured one');

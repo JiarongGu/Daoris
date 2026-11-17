@@ -11,10 +11,10 @@ const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url))
  * The service's gate is `dotnet test src/Daoris.Service`, which runs the SOLUTION in that folder (HTTP1), so a suite added beside
  * the others and left out of the `.slnx` builds, passes by hand, and is run by no gate. Every test project is reached by a declared
  * gate (named directly, or a member of the solution a gated folder holds), or is an adapter's suite, which its own development runs
- * (`adapters.ts release`, named by its manifest's `tests`). Found shallowly (`src/<tree>/<project>/<project>.csproj`) and by the test
+ * (`packages.ts release`, named by its `daoris.package.json`'s `tests`). Found shallowly (`src/<tree>/<project>/<project>.csproj`) and by the test
  * SDK reference, which is what makes `dotnet test` run a project: the devkit's suite never says `IsTestProject`.
  */
-test('every .NET test project is run by a declared gate or its adapter release', () => {
+test('every .NET test project is run by a declared gate or its package release', () => {
   const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as { gates: { name: string; run: string }[] };
   const targets = gates.gates
     .map((gate) => /^dotnet test (\S+)/.exec(gate.run)?.[1]?.replace(/\/+$/, ''))
@@ -26,8 +26,8 @@ test('every .NET test project is run by a declared gate or its adapter release',
     .map((project) => `src/${tree}/${project}/${project}.csproj`)
     .filter((file) => existsSync(join(repoRoot, file))
       && /<PackageReference\s+Include="Microsoft\.NET\.Test\.Sdk"/.test(readText(join(repoRoot, file)))));
-  const released = directories('src/Daoris.Adapters')
-    .map((name) => join(repoRoot, 'src/Daoris.Adapters', name, 'adapter.json'))
+  const released = directories('src').flatMap((tree) => [`src/${tree}`, ...directories(`src/${tree}`).map((name) => `src/${tree}/${name}`)])
+    .map((folder) => join(repoRoot, folder, 'daoris.package.json'))
     .filter((file) => existsSync(file))
     .map((file) => (JSON.parse(readText(file)) as { tests: string }).tests);
 
