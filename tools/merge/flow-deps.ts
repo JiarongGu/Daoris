@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isStamped, NPM_CI, stampDependencies } from '../merge-branch/dependencies.mjs';
+import { loadSeam } from '../time-why.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { FlowDeps, GateResult, PlanGate } from './flow.ts';
 import { git } from './git.ts';
@@ -34,6 +35,7 @@ export type Seams = {
   readFindings: (home: string) => { findings: Finding[] };
   expired: (finding: Finding) => boolean;
   privateOf: (where: string) => string;
+  home?: string | null;
 };
 
 const listings = new Map<string, TreeEntry[]>();
@@ -80,6 +82,7 @@ export function flowDepsOf(seams: Seams, root: string, home: string, kind: strin
     replayAll,
     privateOf: seams.privateOf,
     timeoutMs: (gate) => budgetMs(gate, kind),
+    load: loadSeam(seams.home ?? null, root),
     lastSlowest: (name) => readRecords(join(home, MERGE_RECORD)).reverse().flatMap((record) => record.gates.filter((each) => each.name === name && each.slowest.length)).at(0)?.slowest ?? [],
     runGate: seams.runGate,
     reaching: (gate, paths) => seams.pathsReaching(gate, paths, lanes),

@@ -109,6 +109,20 @@ verdict kept where the merge of the same tree keeps it. A red writes `local/scra
 or first error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in
 the worktree's `local/scratch/main-tree`. The branch-worker hands back on its pass or its brief.
 
+Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
+a test the hang timeout killed and a gate killed at its budget are each one line of the merge's breach report, `breaches.json`
+beside its gate logs (`local/scratch/merge-<branch>/`, a queue run's `scope-<sha7>/`), carried as `breaches` and `separations` in
+the merge record and the queue's scope-run record and printed in the summary. Each names the time, the limit, the cause (`process`,
+`disk`, `network`, `clock`, `scan`, `load`, or `unclassed` where nothing reads), what the cause was read from and the row that owns
+the fix (UNITPURE1 for a unit test that is not pure, LAYERS1 f or COMPONENT1 for a real-process one, CENSUSDIFF1 for a scan,
+E2EFAST1, REACHCOST1 and CLIREACH1 for their gates). No test host records yet what each test started, opened or waited on, so a
+test's cause is its category (the Process trait, a Process or git half's record, an end-to-end spec) and its class's source, read
+by the layers census's counters; a gate's is its longest step clock. Three or more classes of one domain over by one cause name
+it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
+places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
+other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
+time; the budget itself never stretches with the load.
+
 | Change | Additional verification |
 |---|---|
 | Driver, modules, service, page or tool classes | `node tools/reached-checks.mjs --base main` in the worktree runs the classes the branch's changes reach (`--plan` says which, `--classes <name>[,<name>]` runs named ones) and records each pass under the key the merge computes, so the merge replays what you proved on the same inputs; a class that fails is run again alone once and a pass alone is said as a flake; a heavy group (Process tier, a rehearsal, a whole suite) also waits its turn in the machine's admission, the one the merge's gates share. A raw `dotnet test` of a Process class takes no place and is what the merge refuses to replay |
@@ -200,7 +214,7 @@ Main is the development branch, and the cycle's aim is main green and the instal
    each test project once, not where its stamp under `_fixtures/reached-build/` still holds its inputs and output, and runs each
    project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. Each step
    (census, plan, restore and build per project, discovery and run per suite) is said as it goes and kept in the merge record's
-   `steps`, so a gate killed over its budget names the step it was in. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   `steps`, so a gate killed over its budget names the step it was in and its breach is classed by its longest step. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
    `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
@@ -250,7 +264,8 @@ service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the specs
 slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
-that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1). Add
+that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
+killed at its budget under load, once the machine is free (TIMEWHY1, *Choose the checks*). Add
 `--one-at-a-time` on a loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
 while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a
