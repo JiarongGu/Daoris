@@ -13,7 +13,7 @@ public static class WorkflowRolesSinceStore
 
     /// <summary>The floor's kept build, or null where no version closing it has been saved by a numbered build.</summary>
     public static string? Read(string home, WorkflowRolesSince.Floor? floor = null) =>
-        File.Exists(PathOf(home, floor)) ? File.ReadAllText(PathOf(home, floor)).Trim() : null;
+        File.Exists(PathOf(home, floor)) ? AtomicFile.ReadText(PathOf(home, floor)).Trim() : null;
 
     /// <summary>Keeps <paramref name="running"/> as each floor a save of <paramref name="file"/> closes (<see cref="WorkflowRolesSince.Closes"/>).</summary>
     public static void Keep(string home, JsonNode? file, string? running)
@@ -22,7 +22,8 @@ public static class WorkflowRolesSinceStore
         {
             if (WorkflowRolesSince.Closes(Read(home, floor), file, running, floor) is not { } build) continue;
             Directory.CreateDirectory(WorkflowStore.FolderOf(home));
-            File.WriteAllText(PathOf(home, floor), build);
+            // Whole or not at all: a floor torn by a stop is read as no floor, and the going back it closes is allowed.
+            AtomicFile.WriteText(PathOf(home, floor), build);
         }
     }
 

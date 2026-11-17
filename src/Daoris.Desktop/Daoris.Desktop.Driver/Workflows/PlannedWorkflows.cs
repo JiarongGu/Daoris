@@ -42,9 +42,8 @@ internal sealed class PlannedWorkflows : IWorkflowStore
     /// </summary>
     public string? CopyOf(WorkflowDefault shipped, bool opinion, bool look, string? plugin = null, string? pattern = null)
     {
-        // The newest version's digest is the variant's own: a copy the person edited is no copy of it.
-        var wanted = NodeGraphs.Digest(NodeGraphs.Read(WorkflowDefaults.Variant(shipped, opinion, look, plugin, pattern).ToJsonString()).Graph!);
-        return List().FirstOrDefault(each => each.Read is { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] }
-            && from.Default == shipped.Id && digest == wanted)?.Id;
+        // The newest version's graph is the variant's own: a copy the person edited is no copy of it.
+        return List().FirstOrDefault(each => each.Read is { Problem: null, Versions: [.., var newest] }
+            && WorkflowDefaults.IsCopy(newest, shipped.Id, shipped, opinion, look, plugin, pattern))?.Id;
     }
 }

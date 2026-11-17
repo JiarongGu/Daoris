@@ -7,14 +7,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The one Roslyn analysis of the driver's own tree, shared by every structure case, over the compilation the declarations' censuses
 /// read too (<see cref="DesktopCompilations.Of"/>): two classes that each compiled paid the gate's cost twice. The <c>Layer/</c>
-/// folders need Lyntai's local build, so the analysis walks none of them and names none of their types.
+/// folders need Lyntai's local build, so the analysis reads none of them and names none of their types.
 /// </summary>
 internal static class DriverTree
 {
     private static readonly string Folder = SourceFiles.DriverProject + "/";
 
-    /// <summary>The compilation the analysis reads, and the trees of it the analysis walks: made, not yet bound.</summary>
-    public static readonly Lazy<(CSharpCompilation Compilation, IReadOnlyList<SyntaxTree> Walked)> Compiled = new(() =>
+    /// <summary>The compilation the analysis reads, and the trees of it the analysis reads: made, not yet bound.</summary>
+    public static readonly Lazy<(CSharpCompilation Compilation, IReadOnlyList<SyntaxTree> Trees)> Compiled = new(() =>
     {
         var compilation = DesktopCompilations.Of(SourceFiles.DriverProject);
         return (compilation, [.. DesktopCompilations.Trees(compilation)
@@ -22,7 +22,13 @@ internal static class DriverTree
                 && !("/" + tree.FilePath[Folder.Length..]).Contains("/Layer/", StringComparison.Ordinal))]);
     });
 
-    public static readonly Lazy<DriverTreeRead> Shared = new(() =>
+    private static readonly Lazy<DriverTreeRead> Whole = new(() => Read(null));
+
+    private static readonly Lazy<DriverTreeRead> Scoped = new(() => Read(CensusScope.Paths));
+
+    internal static DriverTreeRead Of(Type census) => (CensusScope.ScopeOf(census) is null ? Whole : Scoped).Value;
+
+    private static DriverTreeRead Read(IReadOnlySet<string>? scope)
     {
         var map = StructureMap.Read(File.ReadAllText(Path.Combine(
             WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json")));
@@ -30,16 +36,16 @@ internal static class DriverTree
             .Select(path => Path.GetRelativePath(SourceFiles.Project(SourceFiles.DriverTestsProject), path).Replace(Path.DirectorySeparatorChar, '/'))
             .ToList();
         var clock = Stopwatch.StartNew();
-        var (compilation, walked) = Compiled.Value;
-        IReadOnlyList<(string Path, string Text)> sources = [.. walked.Select(tree => (tree.FilePath[Folder.Length..], tree.GetText().ToString()))];
-        var analysis = StructureAnalysis.Over(compilation, walked, Folder);
+        var (compilation, trees) = Compiled.Value;
+        IReadOnlyList<(string Path, string Text)> sources = [.. trees.Select(tree => (tree.FilePath[Folder.Length..], tree.GetText().ToString()))];
+        var analysis = StructureAnalysis.Over(compilation, trees, CensusReach.Trees(compilation, trees, scope), Folder);
         return new DriverTreeRead(map, sources, tests, analysis, clock.Elapsed);
-    });
+    }
 }
 
 internal sealed record DriverTreeRead(StructureMap Map, IReadOnlyList<(string Path, string Text)> Sources, IReadOnlyList<string> Tests, StructureAnalysis Analysis, TimeSpan Took);
 
 public sealed class DriverTreeWarm
 {
-    public DriverTreeWarm() => _ = DriverTree.Shared.Value;
+    public DriverTreeWarm() => _ = DriverTree.Of(typeof(StructureTests));
 }

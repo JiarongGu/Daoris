@@ -12,6 +12,8 @@ export type CastLevel = { level: string; role?: string | null; holder?: string |
 /** A place's cast as `PLACE_CAST` answers it. */
 export type PlaceCastView = {
   place: string; risk: string; riskSource: string; marks: string[]; roles: CastRole[]; roster: string[]; line: CastLevel[];
+  /** Why the casts file does not read, where it does not: the roles shown are the last good read and no choice is kept until it reads. */
+  unreadable?: string | null;
 };
 
 /** The cast as `SET_PLACE_CAST` takes it: no holder takes the cast away, back to the role's default. */
@@ -55,6 +57,7 @@ export function PlaceCastSetting({ name, twin, view, busy = false, onCast }: {
         {[t(`settings.risk.says.${view.risk}`, { defaultValue: view.risk }), view.marks.includes('release.production') ? t('settings.risk.marked') : '']
           .filter(Boolean).join(t('projects.setup.sentenceJoin'))}
       </p>
+      {view.unreadable && <p role="alert" className="m-0 text-small text-ink"><Inline text={t('settings.cast.unreadable', { problem: view.unreadable })} /></p>}
       <label className="grid gap-0.5 text-small text-ink-soft">
         {t('settings.cast.why.label')}
         <input className="rounded border border-line px-1.5 py-0.5 text-small" value={why} disabled={busy} onChange={(event) => setWhy(event.target.value)} />
@@ -69,7 +72,7 @@ export function PlaceCastSetting({ name, twin, view, busy = false, onCast }: {
               <select
                 aria-label={t('settings.cast.choice', { role: role.role })}
                 className="rounded border border-line px-1 text-small"
-                disabled={busy}
+                disabled={busy || !!view.unreadable}
                 value={role.why === 'cast' ? role.holder : ''}
                 onChange={(event) => {
                   const holder = event.target.value === '' ? null : event.target.value;

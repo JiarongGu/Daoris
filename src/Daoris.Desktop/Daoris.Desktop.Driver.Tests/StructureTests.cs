@@ -378,8 +378,8 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         Assert.All(map.Families, family => Assert.Contains(map.Subdomains, subdomain => subdomain.Name == family.After));
     }
 
-    /// <summary>The one analysis of the driver's own tree the cases over it share: the compile is the gate's cost, measured here.</summary>
-    private static readonly Lazy<DriverTreeRead> Tree = DriverTree.Shared;
+    /// <summary>The one analysis of the driver's own tree the cases over it share: the binding is the gate's cost, measured here.</summary>
+    private static readonly Lazy<DriverTreeRead> Tree = new(() => DriverTree.Of(typeof(StructureTests)));
 
     [Fact]
     public void Agents_reads_no_Help_type_for_its_required_posture_marker()
@@ -685,7 +685,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         {
             var file = sources.SingleOrDefault(source => source.Path == $"Loop/{executor}.cs");
             Assert.True(file.Path is not null, $"{executor} is not in Loop/");
-            Assert.True(analysis.Edges.Any(edge => edge.File == file.Path && edge.Type == "LoopContext"), $"{executor} is not built from LoopContext");
+            Assert.True(!analysis.Judges(file.Path) || analysis.Edges.Any(edge => edge.File == file.Path && edge.Type == "LoopContext"), $"{executor} is not built from LoopContext");
         }
 
         var named = analysis.Edges.Where(edge => edge.Type == "LoopContext").Select(edge => edge.File).Distinct()
@@ -718,10 +718,11 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
     [Fact]
     public void The_driver_s_sources_compile_but_for_the_generated_partial_methods_so_each_name_binds_as_the_compiler_binds_it()
     {
-        var errors = Tree.Value.Analysis.Errors();
+        var analysis = Tree.Value.Analysis;
+        var errors = analysis.Errors();
 
         // The one compile error left: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile has none of.
-        Assert.True(errors.Keys.SequenceEqual(["CS8795"]), string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
+        Assert.True(analysis.Whole ? errors.Keys.SequenceEqual(["CS8795"]) : errors.Keys.All(id => id == "CS8795"), string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
     }
 
     [Fact]
@@ -731,9 +732,8 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         var edges = analysis.Edges.Select(edge => (edge.File, edge.Type)).ToHashSet();
 
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
-        Assert.Contains(("WorkOrders/Sessions/SessionsWorld.cs", "HolderKey"), edges);
-        Assert.Contains(("Agents/AccountCooling.cs", "AccountFileNodes"), edges);
-        Assert.Contains(("Install/Tools.cs", "Json"), edges);
+        foreach (var edge in new[] { ("WorkOrders/Sessions/SessionsWorld.cs", "HolderKey"), ("Agents/AccountCooling.cs", "AccountFileNodes"), ("Install/Tools.cs", "Json") })
+            Assert.True(!analysis.Judges(edge.Item1) || edges.Contains(edge), edge.Item1);
 
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.
         string[] members = ["DriverConfig", "Notices", "HelpProposals", "OpinionGates", "AgentOffers", "GitIdentities", "ConfiguredAccess", "PluginState", "UsageHistory", "RuleProposals", "SessionBranches"];
@@ -748,9 +748,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
-        // The compile is the gate's cost in the fast half, about half a minute on an idle machine (the row's archive entry). What
-        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measures the machine as much as the
-        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds), so it only catches a hang.
+        // Binding is the cost, whole or scoped, and the reuse proof's counts hold it; a wall clock measures the machine, too, so it only catches a hang.
         output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
         Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }
@@ -789,6 +787,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         Assert.Equal(repeated.DeclaredTypes.Order(), reused.DeclaredTypes.Order());
         Assert.Equal(StructureCheck.Check(map, sources, tests, repeated), StructureCheck.Check(map, sources, tests, reused));
         output.WriteLine($"Symbol queries: {reused.SymbolQueries} reused, {repeated.SymbolQueries} repeated. Type descriptions: {reused.TypeDescriptionsRead} reused, {repeated.TypeDescriptionsRead} repeated; original compile/walk {took.TotalSeconds:F2}s.");
+        if (!reused.Whole) return;
         Assert.True(reused.SymbolQueries < repeated.SymbolQueries);
         Assert.True(reused.TypeDescriptionsRead * 2 < repeated.TypeDescriptionsRead,
             $"reuse materialized {reused.TypeDescriptionsRead} descriptions versus {repeated.TypeDescriptionsRead} repeated descriptions");

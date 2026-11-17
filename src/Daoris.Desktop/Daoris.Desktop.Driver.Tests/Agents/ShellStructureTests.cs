@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Census)]
 public sealed class ShellStructureTests : IClassFixture<DriverTreeWarm>
 {
-    private static readonly Lazy<DriverTreeRead> Tree = DriverTree.Shared;
+    private static readonly Lazy<DriverTreeRead> Tree = new(() => DriverTree.Of(typeof(ShellStructureTests)));
 
     [Fact]
     public void The_shell_names_no_type_of_Workplace_Work_orders_or_Context()

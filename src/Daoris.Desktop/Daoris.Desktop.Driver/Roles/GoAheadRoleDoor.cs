@@ -25,22 +25,60 @@ public static class GoAheadRoleDoor
     {
         refusal = null;
         var named = ask.Trim().TrimStart('#');
+        var numbers = new List<int>();
+        string? otherCase = null, question = null;
         foreach (var listed in waiting)
         {
-            if (SessionsSuperviseCommand.SubjectOf(listed) is not { Kind: SupervisorKinds.GoAhead, GoAheadParts: { } parts } subject) continue;
-            if (!string.Equals(parts.Ask.TrimStart('#'), named, StringComparison.Ordinal) || parts.Number != number) continue;
+            if (SessionsSuperviseCommand.SubjectOf(listed) is not { GoAheadParts: { } parts } subject)
+            {
+                if (SessionsSuperviseCommand.SubjectOf(listed) is { Kind: SupervisorKinds.Question } asked && asked.Id.TrimStart('#').Split('/')[0] == named) question = named;
+                continue;
+            }
+
+            if (subject.Kind != SupervisorKinds.GoAhead) continue;
+            var listedAsk = parts.Ask.TrimStart('#');
+            if (!string.Equals(listedAsk, named, StringComparison.Ordinal))
+            {
+                if (string.Equals(listedAsk, named, StringComparison.OrdinalIgnoreCase)) otherCase = listedAsk;
+                continue;
+            }
+
+            if (parts.Number != number)
+            {
+                numbers.Add(parts.Number);
+                continue;
+            }
+
             var generation = listed.TryGetProperty("generation", out var held) && held.ValueKind == JsonValueKind.String ? held.GetString() : null;
-            if (generation is not { Length: > 0 }) continue;
+            if (generation is not { Length: > 0 })
+            {
+                refusal = $"go-ahead {number} on ask `#{named}` waits for this holder but is listed with no generation to pin an answer to, so none can be kept: "
+                    + "ask again in a moment. Nothing was kept.";
+                return null;
+            }
+
             var said = string.IsNullOrWhiteSpace(words) ? "answered at the terminal, with no words" : words.Trim();
             return new Answer(subject.Session, new SupervisorDraft(
                 SupervisorKinds.GoAhead, subject.Id, generation, SupervisorKinds.Answer, approved ? SupervisorDoorActs.Approved : SupervisorDoorActs.Refused,
                 [new SupervisorReason(said, Source)]));
         }
 
-        refusal = $"go-ahead {number} on ask `#{named}` waits for no role this terminal holds: it is answered, asked of no live session, "
-            + "a sign-in, at a high-risk or marked place, or no role it holds is granted `goahead.answer`; it stays the owner's. Nothing was kept.";
+        refusal = numbers.Count > 0
+            ? $"ask `#{named}` has go-ahead {string.Join(", ", numbers.Order())} waiting for this holder, not {number}. Nothing was kept."
+            : otherCase is not null
+            ? $"no ask `#{named}` waits for this holder; an ask is named as written, and `#{otherCase}` does. Nothing was kept."
+            : question is not null
+            ? $"`#{named}` waits for this holder as a question, not a go-ahead: it is answered through `sessions supervise`. Nothing was kept."
+            : $"go-ahead {number} on ask `#{named}` is not among what waits for the roles this terminal holds: it is answered already, it is a sign-in, "
+            + "its place is high-risk or marked, no role this terminal holds is granted `goahead.answer`, or no such go-ahead exists; it stays the owner's. Nothing was kept.";
         return null;
     }
+
+    /// <summary>Why no answer came to what waits for the holder: no Daoris answers here, or it is running and has not answered within <paramref name="within"/>.</summary>
+    public static string NoAnswer(bool pending, TimeSpan within) =>
+        pending
+            ? $"Daoris is running here but has not yet read what waits for this holder (within {within.TotalSeconds:0} seconds): ask again in a moment."
+            : $"Daoris is not running here, and a role answers only through it ({SessionsSuperviseCommand.NoInstance}).";
 
     /// <summary>
     /// The verb in a role's terminal: the go-ahead found among what waits for the holder and answered as the role's decision, or refused with
@@ -49,10 +87,16 @@ public static class GoAheadRoleDoor
     public static async Task<int> RunAsync(
         ISupervisorWorld world, string ask, int number, bool approved, string? words, TextWriter output, CancellationToken ct = default)
     {
-        if (world.Instance is not { } instance || await SessionsSuperviseCommand.WaitingAsync(instance, ct).ConfigureAwait(false) is not { } waiting)
+        if (world.Instance is not { } instance)
         {
-            await output.WriteLineAsync($"ask go-ahead: Daoris is not running here, and a role answers only through it ({SessionsSuperviseCommand.NoInstance}).")
-                .ConfigureAwait(false);
+            await output.WriteLineAsync($"ask go-ahead: {NoAnswer(pending: false, TimeSpan.Zero)}").ConfigureAwait(false);
+            return 2;
+        }
+
+        var (waiting, pending) = await SessionsSuperviseCommand.WaitingReadAsync(instance, ct).ConfigureAwait(false);
+        if (waiting is null)
+        {
+            await output.WriteLineAsync($"ask go-ahead: {NoAnswer(pending, instance.Within)}").ConfigureAwait(false);
             return 2;
         }
 

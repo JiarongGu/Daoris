@@ -23,7 +23,7 @@ public static class ClosureGraphs
     public static void Keep(string home, string digest, string json)
     {
         if (!IsDigest(digest) || File.Exists(PathOf(home, digest))) return;
-        if (NodeGraphs.Read(json).Graph is not { } graph || NodeGraphs.Digest(graph) != digest || !QuestClosing.Holds(graph)) return;
+        if (NodeGraphs.ReadSaved(json) is not { Graph: { } graph, Digest: { } saved } || saved != digest || !QuestClosing.Holds(graph)) return;
         Directory.CreateDirectory(FolderOf(home));
         AtomicFile.WriteText(PathOf(home, digest), json.ReplaceLineEndings("\n"));
     }
@@ -34,7 +34,7 @@ public static class ClosureGraphs
         if (!IsDigest(digest) || !File.Exists(PathOf(home, digest))) return null;
         try
         {
-            return NodeGraphs.Read(AtomicFile.ReadText(PathOf(home, digest))).Graph is { } graph && NodeGraphs.Digest(graph) == digest ? graph : null;
+            return NodeGraphs.ReadSaved(AtomicFile.ReadText(PathOf(home, digest))) is { Graph: { } graph, Digest: { } saved } && saved == digest ? graph : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

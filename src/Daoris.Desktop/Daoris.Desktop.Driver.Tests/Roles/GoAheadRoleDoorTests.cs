@@ -35,18 +35,34 @@ public sealed class GoAheadRoleDoorTests
 
     /// <summary>A caller whose role the door does not list it for (answered since, a sign-in, a high-risk or marked place, no grant) is refused with why, keeping nothing.</summary>
     [Theory]
-    [InlineData("goahead", "goahead", "a7/3", "a7", 2)]
-    [InlineData("goahead", "goahead", "a8/2", "a7", 2)]
-    [InlineData("question", "question", "a7/2", "a7", 2)]
-    public void A_go_ahead_no_role_the_holder_holds_may_answer_is_refused_with_why(string kind, string field, string id, string ask, int number)
+    [InlineData("goahead", "goahead", "a7/3", "a7", 2, "has go-ahead 3 waiting for this holder, not 2")]
+    [InlineData("goahead", "goahead", "a7/2", "A7", 2, "an ask is named as written, and `#a7` does")]
+    [InlineData("question", "question", "a7/2", "a7", 2, "waits for this holder as a question, not a go-ahead")]
+    [InlineData("goahead", "goahead", "a8/2", "a7", 2, "is not among what waits for the roles this terminal holds: it is answered already")]
+    public void A_go_ahead_no_role_the_holder_holds_may_answer_is_refused_with_its_own_why(string kind, string field, string id, string ask, int number, string why)
     {
         var answer = GoAheadRoleDoor.Of(Waiting(Listed(kind, field, id)), ask, number, approved: true, "go", out var refusal);
 
         Assert.Null(answer);
-        Assert.Contains("waits for no role this terminal holds", refusal);
-        Assert.Contains("goahead.answer", refusal);
+        Assert.Contains(why, refusal);
         Assert.Contains("Nothing was kept", refusal);
-        Assert.Null(GoAheadRoleDoor.Of([], ask, number, approved: true, "go", out _));
+        Assert.Null(GoAheadRoleDoor.Of([], ask, number, approved: true, "go", out var none));
+        Assert.Contains("goahead.answer", none);
+    }
+
+    /// <summary>A go-ahead listed with no generation says so, never that it waits for no role; a pending read is not an absent Daoris.</summary>
+    [Fact]
+    public void A_listed_go_ahead_with_no_generation_and_a_read_still_pending_say_their_own_reasons()
+    {
+        var bare = JsonDocument.Parse("""{"kind":"goahead","subject":{"session":"s1","goahead":"a7/2"},"repository":"reports","acts":["answer"]}""").RootElement.Clone();
+
+        Assert.Null(GoAheadRoleDoor.Of(Waiting(bare), "a7", 2, approved: true, "go", out var refusal));
+        Assert.Contains("no generation", refusal);
+        Assert.DoesNotContain("waits for no role", refusal);
+        Assert.Contains("not running here", GoAheadRoleDoor.NoAnswer(pending: false, TimeSpan.FromSeconds(5)));
+        var pending = GoAheadRoleDoor.NoAnswer(pending: true, TimeSpan.FromSeconds(5));
+        Assert.Contains("running here but has not yet read", pending);
+        Assert.DoesNotContain("not running here", pending);
     }
 
     /// <summary>The answer says by whom: the roles the holder holds and its holder.</summary>

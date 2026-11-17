@@ -14,14 +14,14 @@ export const stepHoldAsk = (run: string, node: string, act: string, holder: stri
 export type StepHoldAnswer = { done: boolean; refused: string | null; message: string | null };
 
 /**
- * A standing step's **Take**, **Hand to…** and **Give back**, as the step offers them (`holds`): *Hand to…* opens the roster to pick from. Each
+ * A standing step's **Take**, **Pass to…** and **Give back**, as the step offers them (`holds`): *Pass to…* opens the roster to pick from. Each
  * press is a new epoch of the step's tenure, restarting nothing; a refusal says the driver's sentence. Props only, so the run view and *What
  * needs you* draw the same presses.
  */
 export function StepHoldPresses({ holds, heldBy, roster, busy = false, onHold, said }: {
   holds: string[];
   heldBy?: string | null;
-  /** The holders *Hand to…* offers; none drawn until it is opened. */
+  /** The holders *Pass to…* offers; none drawn until it is opened. */
   roster: string[];
   busy?: boolean;
   onHold: (act: string, holder?: string) => void;

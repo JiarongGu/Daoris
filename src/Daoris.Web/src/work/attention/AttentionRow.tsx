@@ -520,7 +520,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
         {item.step?.held && acts.doneOutside && (
           <FailedStepHeld step={{ step: { id: item.step.node }, held: item.step.held, epoch: item.step.epoch } as unknown as RunStep} onHeld={acts.doneOutside} />
         )}
-        {/* The role's holder passed on or taken back: *Hand to…* and *Give back*, each a new epoch of the step's tenure. */}
+        {/* The role's holder passed on or taken back: *Pass to…* and *Give back*, each a new epoch of the step's tenure. */}
         {item.step?.holds && item.step.holds.length > 0 && (
           <StepHold run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} epoch={item.step.epoch} />
         )}
