@@ -38,6 +38,8 @@ public abstract class BuiltInNode : INodeKind
 
     public virtual IReadOnlyList<string> RoleTakes => [];
 
+    public virtual string Role => StepRoles.Operations;
+
     public virtual string? Evidence => null;
 
     public abstract string? Title { get; }

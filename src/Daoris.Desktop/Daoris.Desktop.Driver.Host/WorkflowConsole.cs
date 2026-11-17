@@ -9,9 +9,31 @@ namespace Daoris.Driver.Host;
 /// </summary>
 internal static class WorkflowConsole
 {
+    /// <summary><c>workflow values</c>: the driver's file alone, through <see cref="WorkflowValuesKey.Apply"/>, the window's route's judge.</summary>
+    private static int Values(string[] args)
+    {
+        if (WorkflowValuesCommand.Read(args, out var problem) is not { } ask)
+        {
+            Console.Error.WriteLine($"values: {problem}");
+            Console.Error.WriteLine(WorkflowValuesCommand.Usage);
+            return 2;
+        }
+
+        try
+        {
+            return WorkflowValuesCommand.Run(ask, DriverConfig.ResolvePath(), Console.Out);
+        }
+        catch (DriverConfigUnreadableException unreadable)
+        {
+            Console.Error.WriteLine($"values: {unreadable.Message}");
+            return 2;
+        }
+    }
+
     public static async Task<int> RunAsync(string[] args)
     {
         if (args is ["keep", ..]) return await KeepAsync(args).ConfigureAwait(false);
+        if (WorkflowValuesCommand.Asks(args)) return Values(args);
         if (WorkflowNodeCommand.Asks(args)) return await NodeAsync(args).ConfigureAwait(false);
         if (WorkflowFixCommand.Asks(args)) return await FixAsync(args).ConfigureAwait(false);
 

@@ -154,12 +154,14 @@ public sealed class InstallUpdateTests : IDisposable
     }
 
     [Theory]
-    [InlineData(0, 0, true)]
-    [InlineData(1, 0, false)]
-    [InlineData(0, 1, false)]
-    [InlineData(2, 3, false)]
-    public void The_work_allows_the_update_only_when_no_driven_session_runs_and_no_turn_is_in_flight(int driven, int turns, bool idle) =>
-        Assert.Equal(idle, InstallUpdate.Idle(driven, turns));
+    [InlineData(0, 0, 0, true)]
+    [InlineData(1, 0, 0, false)]
+    [InlineData(0, 1, 0, false)]
+    [InlineData(0, 0, 1, false)]
+    [InlineData(2, 3, 1, false)]
+    public void The_work_allows_the_update_only_when_no_driven_session_runs_no_turn_and_no_plugin_step_is_in_flight(
+        int driven, int turns, int steps, bool idle) =>
+        Assert.Equal(idle, InstallUpdate.Idle(driven, turns, steps));
 
     private static QuestView Quest(string id, string to) => new(id, "game", to, "A quest", "", "Open");
 }

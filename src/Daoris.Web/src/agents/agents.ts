@@ -24,12 +24,16 @@ export type AgentUsage = { agent: string; profile: string | null; sessions: numb
  * A key read signed out is one its provider refused (`refused`): only a refusal reads a key out,
  * since a read hands the key and the tool says yes for any.
  */
-export type AccountStateName = 'in' | 'out' | 'cooling' | 'unknown' | 'keyed' | 'refused';
+export type AccountStateName = 'in' | 'out' | 'cooling' | 'unknown' | 'keyed' | 'refused' | 'unanswered';
 
 export type AccountState = {
   state: AccountStateName;
   /** When its state is read; null where it never is. */
   read: string | null;
+  /** Since when it says so, where the driver says (a sign-out's moment); null otherwise. */
+  since?: string | null;
+  /** A sign-out after a signed-in reading: the agent did it, not the person. */
+  notByPerson?: boolean;
   /** Its cool-off, where it cools. */
   cooling: AccountCooling | null;
   /** The starts run on it, as on every account of Daoris's: a signed-out one then holds work, and wears open's hue. */
@@ -39,17 +43,20 @@ export type AccountState = {
 /**
  * One account's state from what the roster and the accounts' files last said: signed out first, or for a key refused, since
  * a sign-in or a new key is the person's and a reset frees neither (the refusal is kept whatever the account is);
- * then a cool-off; then a key, which no sign-in names; then the agent's word.
+ * then a cool-off; then a check asked that did not answer, which the walk ranks last (the driver's `signIn`, the reading the
+ * walk reads); then a key, which no sign-in names; then the agent's word.
  */
 export function accountState(
-  account: Pick<Account, 'login' | 'read' | 'key'>, facts: Pick<AccountFacts, 'cooling'> | null, holdsWork: boolean,
+  account: Pick<Account, 'login' | 'read' | 'key' | 'signIn'>, facts: Pick<AccountFacts, 'cooling'> | null, holdsWork: boolean,
 ): AccountState {
   const cooling = facts?.cooling ?? null;
   const read = account.read ?? null;
+  const signIn = account.signIn ?? null;
   const state: AccountStateName = account.login === 'out'
     ? (account.key ? 'refused' : 'out')
-    : cooling ? 'cooling' : account.key ? 'keyed' : account.login === 'in' ? 'in' : 'unknown';
-  return { state, read, cooling, holdsWork };
+    : cooling ? 'cooling' : signIn?.state === 'unanswered' ? 'unanswered'
+    : account.key ? 'keyed' : account.login === 'in' ? 'in' : 'unknown';
+  return { state, read, cooling, holdsWork, since: signIn?.since ?? null, notByPerson: signIn?.notByPerson ?? false };
 }
 
 /** Whether a state waits on the person as a sign-out does: signed out, or a key its provider refused. */
@@ -89,6 +96,7 @@ export function stateWord(state: AccountState): { label: string; tone: 'open' | 
     case 'cooling': return { label: i18n.t('harness.cooling.pill'), tone: 'neutral' };
     case 'in': return { label: i18n.t('harness.login.in'), tone: 'neutral' };
     case 'keyed': return { label: i18n.t('harness.login.keyed'), tone: 'neutral' };
+    case 'unanswered': return { label: i18n.t('harness.login.unanswered'), tone: 'neutral' };
     default: return { label: i18n.t('harness.login.unknown'), tone: 'neutral' };
   }
 }
@@ -101,6 +109,8 @@ export function readLine(state: AccountState, now: Date = new Date()): string | 
   if (state.state === 'cooling') return coolingLine(state.cooling!, now);
   if (!state.read) return i18n.t('agents.read.never');
   const when = clockOf(state.read, now);
+  if (state.state === 'unanswered') return i18n.t('agents.read.unanswered', { when });
+  if (state.state === 'out' && state.since) return i18n.t('agents.read.outSince', { since: clockOf(state.since, now), when });
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : i18n.t('agents.read.at', { when });
 }
 
@@ -113,6 +123,8 @@ export function readLine(state: AccountState, now: Date = new Date()): string | 
 export function stateWhen(state: AccountState, now: Date = new Date()): string {
   if (state.state === 'cooling') return i18n.t('agents.state.until', { when: moment(state.cooling!.until) });
   if (!state.read) return i18n.t('agents.read.never');
+  // A sign-out says since when, however often it is read again since.
+  if (state.state === 'out' && state.since) return i18n.t('agents.state.since', { when: clockOf(state.since, now) });
   const when = clockOf(state.read, now);
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : when;
 }
@@ -412,6 +424,10 @@ export function accountAct(
       if (agent.signsIn) return { act: 'signIn', loud: state.holdsWork };
       return agent.takesKey ? { act: 'setKey', loud: state.holdsWork } : null;
     case 'refused': return agent.takesKey && agent.present ? { act: 'newKey', loud: state.holdsWork } : null;
+    // A check that hangs is what a sign-in the agent cannot renew looks like: *Sign in* beside it, quiet, since starts go elsewhere first.
+    case 'unanswered':
+      if (!agent.present) return null;
+      return agent.signsIn ? { act: 'signIn', loud: false } : { act: 'read', loud: false };
     case 'unknown': return agent.present ? { act: 'read', loud: state.holdsWork } : null;
     case 'cooling': return { act: 'tryNow', loud: false };
     default: return null;

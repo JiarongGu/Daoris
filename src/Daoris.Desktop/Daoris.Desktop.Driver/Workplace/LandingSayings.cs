@@ -37,7 +37,7 @@ internal static class LandingSayings
     /// <summary>What a landing says that waited for another of its tree past <see cref="LandingHolds.Wait"/>.</summary>
     internal static string StillLanding =>
         $"another landing of this session's work was still under way after {(int)LandingHolds.Wait.TotalMinutes} minutes, so nothing was "
-        + "landed: accept it again once that one ends.";
+        + "landed: it is tried again once that one ends.";
 
     /// <summary>Words said before the sentence that the tree stays, which a tidy takes out; at the end where it is not there.</summary>
     internal static string BeforeTreeStays(string message, string words) => message.EndsWith(TreeStays, StringComparison.Ordinal)

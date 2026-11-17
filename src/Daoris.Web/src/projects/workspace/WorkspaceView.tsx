@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTidiedBranches } from '../../bridge/log';
+import { useTidiedBranches } from '../../bridge/logs/log';
 import { sentence } from '../../locales/format';
 import { useRetireMachine, useSessions, useSyncStanding } from '../../data/queries';
 import { sessionTitle } from '../../work/identity';
@@ -9,6 +9,7 @@ import { commitToast } from '../../settings/repository/Commits';
 import { helperToast } from '../../settings/repository/Helpers';
 import { handOverToast } from '../../settings/repository/HandOver';
 import { growthToast } from '../../settings/repository/Growth';
+import { workspaceRisk } from '../../settings/place/PlaceRisk';
 import { opinionToast } from '../../settings/repository/Opinions';
 import { reviewToast } from '../../settings/repository/Reviews';
 import { namer } from '../../settings/accounts/namer';
@@ -16,7 +17,7 @@ import { sayDiscard, sayWithdraw, sweepKey, SweepList } from '../../settings/Swe
 import { SyncSection } from '../../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, useRemotes, useRuleAction, useRules,
-  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetGrowth, useSetHandOver, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion,
+  useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetGrowth, useSetPlaceRisk, useSetHandOver, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
   useSetReview, useStarts, useSyncNow,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
@@ -442,6 +443,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
   const setHelpers = useSetHelpers();
   const setHandOver = useSetHandOver();
   const setGrowth = useSetGrowth();
+  const setPlaceRisk = useSetPlaceRisk();
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
@@ -607,6 +609,16 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             set: ofWorkspace(state.workspaceGrowth)?.value,
             onChange: (value) => setGrowth.mutate({ workspace, value }, {
               onSuccess: () => notify(growthToast(t, workspace, value)),
+              onError,
+            }),
+          }
+        : null,
+      // The workspace's risk and the owner's marks, the owner's alone; none where the answer lacks the record.
+      risk: state && Array.isArray(state.placeRisk)
+        ? {
+            row: workspaceRisk(state.placeRisk, workspace),
+            onChange: (change) => setPlaceRisk.mutate({ workspace, ...change }, {
+              onSuccess: () => notify(t('settings.risk.saved', { name: workspace })),
               onError,
             }),
           }

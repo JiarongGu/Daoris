@@ -39,5 +39,6 @@
   "work.head.heldByPid": "进程 {{pid}} 在这段对话中代你发言，直到它放开。",
   "work.head.heldByUnknown": "一个终端在这段对话中代你发言，直到它放开。",
   "work.head.letGo": "从终端收回",
-  "work.head.notHeld": "现在没有终端持有这段对话。"
+  "work.head.notHeld": "现在没有终端持有这段对话。",
+  "work.head.runWait": "{{node}}：等待 `{{role}}`：{{holder}}"
 }

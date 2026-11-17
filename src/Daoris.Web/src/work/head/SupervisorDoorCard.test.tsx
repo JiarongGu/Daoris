@@ -25,7 +25,7 @@ describe('the appointed role’s door card', () => {
     ['zh', door(), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）保留这个会话暂存的记忆改动；将于 .+ 生效。$/, '否决'],
     ['zh', door({ choice: 'drop' }), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）丢弃这个会话暂存的记忆改动；将于 .+ 生效。$/, '否决'],
     ['zh', door({ subject: 'op-3', do: 'decide', choice: 'approve' }), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）批准这项记忆的结束；将于 .+ 生效。$/, '否决'],
-    ['zh', door({ subject: 'op-3', do: 'decide', choice: 'decline' }), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）拒绝这项记忆的结束；将于 .+ 生效。$/, '否决'],
+    ['zh', door({ subject: 'op-3', do: 'decide', choice: 'decline' }), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）谢绝这项记忆的结束；将于 .+ 生效。$/, '否决'],
     ['zh', door({ kind: 'departure', subject: 'q7', do: 'accept', choice: null }), '任命的角色替你作的回答', /^daoris-landing（codex-acp · gpt-5 · high）采纳委托 #q7 完成时的偏离；将于 .+ 生效。$/, '否决'],
   ])('says what the role answered, by its role and agent, and when, with Overrule while it is held (%s)', async (language, held, title, says, overrule) => {
     await i18n.changeLanguage(language);

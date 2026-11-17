@@ -219,6 +219,11 @@ public sealed class TreeLock : IDisposable
             using (new FileStream(PathOf(home, checkout), FileMode.OpenOrCreate, FileAccess.Read, FileShare.Read)) { } // read-shares: the lock's own sharing is the answer
             return null;
         }
+        catch (DirectoryNotFoundException)
+        {
+            // A home with no lock folder holds no lock.
+            return null;
+        }
         catch (IOException)
         {
             return Writing;

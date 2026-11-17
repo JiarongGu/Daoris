@@ -52,8 +52,7 @@ public sealed class HelperRestartLookTests : IDisposable
 
         var events = new List<string>();
         await driver.HelpersAsync(new Snapshot([], [], []), 0, events, CancellationToken.None);
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (Files.ReadState("a1")?.State == HelperStates.Started && DateTime.UtcNow < until) await Task.Delay(20);
+        await Poll.Until(() => Files.ReadState("a1")?.State != HelperStates.Started);
 
         var state = Files.ReadState("a1")!;
         Assert.Equal(cut ? (HelperStates.Approved, null) : (HelperStates.Refused, HelperWhy.NoAnswer), (state.State, state.Code));

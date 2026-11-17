@@ -92,6 +92,12 @@ internal static class NodeGraphPlaces
             Map(node.Outputs);
             Map(node.Options);
             // Written only where declared, so a graph that names none keeps its digest and its places.
+            if (node.Role is { } role)
+            {
+                Line("role");
+                Line(role);
+            }
+
             if (node.Outcomes.Count > 0)
             {
                 Line("outcomes");

@@ -9,18 +9,19 @@ import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
 import {
-  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
+  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, stepWaitsOnYou, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
   type WorkflowRun, type WorkflowRunAnswer,
 } from './run';
 import { outcomeSaid } from './graphFlow';
 import { bindingProblemSaid } from './place/effective';
-import { whySaid } from './routeSaid';
+import { whySaid } from './place/routeSaid';
 import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, placeSaid, requestSaid, runSaid, stateSaid, stepWord } from './runSaid';
 import { stepTitle } from './said';
 import { CheckHeld } from './wait/CheckHeld';
 import { FailedStepHeld } from './wait/FailedStepHeld';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
+import { roleSaid } from './stepRoles';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -113,16 +114,17 @@ function Routes({ routes }: { routes: Route[] }) {
  * came to stand there.
  */
 function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; children?: ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n: language } = useTranslation();
   const notTaken = notTakenIn(run, step);
   const when = step.at && step.state !== 'not-reached' ? ago(step.at) : null;
-  if (!pill && !here && !when && !children) return null;
+  if (!pill && !here && !when && !children && !step.role) return null;
   return (
     <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
+      {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state, step.holder)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
       {here && (
         <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
       )}
+      {step.role && <span className="text-meta text-ink-soft">{t('workflow.run.role', { role: roleSaid(t, language, step.role) })}</span>}
       {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
       {children}
     </p>
@@ -173,12 +175,13 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
  * are `StepBrief`s. On the flowchart the node wears the state's pill itself, so its mark is drawn without it, and without
  * the routes, which its edges draw.
  */
-function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, onHeld }: {
+function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, onNodeWord, onHeld }: {
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
   doors?: RunDoors;
   control?: ReactNode;
+  releaseDoors?: ReleaseDoors;
   pill?: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
@@ -197,7 +200,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   // The second opinion's gate holding the work on the person: its owner's control draws *Go on anyway…* under the step
   // where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
   // and the terminal's, and the door opens the review, where the gate's presses stand.
-  const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
+  const twin = !control && kind === 'opinion' && stepWaitsOnYou(step) && step.session
     ? t('workflow.run.opinionTwin', { session: step.session })
     : null;
 
@@ -227,6 +230,8 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
+      {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}
+      {releaseDoors?.(run, step)}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
@@ -292,7 +297,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   // A graph run's node: where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
   // landed branch's page for what follows the landing; the session whose branch it observes.
   if (step.node) {
-    if (step.node === 'go-ahead' && step.state === 'waiting-on-you' && run.ask && doors?.ask) {
+    if (step.node === 'go-ahead' && stepWaitsOnYou(step) && run.ask && doors?.ask) {
       return { label: t('workflow.run.door.ask'), open: () => doors.ask?.(run.ask!) };
     }
     if (step.on === 'quest' && step.quest && doors?.quest) {
@@ -316,7 +321,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   }
   // The gate holds the work on the person: its presses stand beside the review's Accept (`LANDING` answers it there).
   const reviewed = reviewRunOf(run);
-  if (kind === 'opinion' && step.state === 'waiting-on-you' && reviewed && doors?.review) {
+  if (kind === 'opinion' && stepWaitsOnYou(step) && reviewed && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   if ((kind === 'work' || kind === 'opinion') && step.session && doors?.session) {
@@ -325,7 +330,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   if (kind === 'look' && step.quest && doors?.quest) {
     return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
   }
-  if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && reviewed && doors?.review) {
+  if (kind === 'landing' && (stepWaitsOnYou(step) || step.state === 'cannot-start') && reviewed && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(reviewed) };
   }
   // Landed on a branch: its page draws how it landed. A landing into the line keeps no branch, so it has none.
@@ -336,12 +341,15 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   return null;
 }
 
+type ReleaseDoors = (run: WorkflowRun, step: RunStep) => ReactNode;
+
 /** One run: what it follows, where it stands in a few words, then its chart with each step's place. */
-function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
+function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHeld }: {
   run: WorkflowRun;
   here?: string | null;
   doors?: RunDoors;
   controls?: Partial<Record<string, ReactNode>>;
+  releaseDoors?: ReleaseDoors;
   /** Several runs are drawn, so each says its repository first. */
   named: boolean;
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
@@ -365,6 +373,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
           here={here === id}
           doors={doors}
           control={id === at ? controls?.[id] : undefined}
+          releaseDoors={releaseDoors}
           pill={pill}
           onNodeWord={onNodeWord}
           onHeld={onHeld}
@@ -379,7 +388,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       // when a long run folds), its lines without the pill the node draws, and Enter opens its record. A route not taken says so.
       state: notTakenIn(run, step)
         ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
-        : { word: stepWord(t, step), tone: runTone(step.state) },
+        : { word: stepWord(t, step), tone: runTone(step.state, step.holder) },
       settled: step.state === 'done',
       node: mark(false),
       ...(step.state === 'not-reached' ? {} : { open: pick }),
@@ -444,15 +453,15 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
  * handed in (`controls`, by the step's id) and drawn under it, so no press has a second implementation; every other step's
  * door opens where its record is.
  *
- * **Hues** (design §7, platform-ux §3): waiting on the person in open's hue, theirs alone; a wait on an agent or on Daoris
- * neutral; done's green for a step done; red only for a failure. The person's part stays the rail's shape and its word,
+ * **Hues** (design §7, platform-ux §3): a wait on a role the person holds in open's hue, theirs alone; a wait on a role an agent or
+ * Daoris holds neutral; done's green for a step done; red only for a failure. The person's part stays the rail's shape and its word,
  * never a hue.
  *
  * **An ask's work in several repositories is several runs** (design §3.8), each at its own step, drawn one after another.
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onHeld, onRetry }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, releaseDoors, onNodeWord, onHeld, onRetry }: {
   /** What the shell answered; absent while it is read, or where it is refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -463,6 +472,8 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
   doors?: RunDoors;
   /** Each owner's control where the step the run stands at waits on a press, by the step's id. */
   controls?: Partial<Record<string, ReactNode>>;
+  /** A release step's target form and approval card, drawn by the container that holds their requests. */
+  releaseDoors?: ReleaseDoors;
   /**
    * The person's skip or stop of a graph run's node, answered by the driver; absent where nothing presses it, and only a
    * word kept is drawn.
@@ -504,6 +515,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
           here={here}
           doors={doors}
           controls={controls}
+          releaseDoors={releaseDoors}
           named={answer.runs.length > 1}
           onNodeWord={onNodeWord}
           onHeld={onHeld}

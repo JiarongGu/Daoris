@@ -40,6 +40,8 @@ public static class PluginCycles
     /// <summary>How long an outcome, or an event sent again, is waited for.</summary>
     private static readonly TimeSpan Hearing = TimeSpan.FromSeconds(10);
 
+    public static bool Completes(WorkStepFrame heard, string invocation) => heard.Invocation == invocation && WorkFrameKinds.Completes(heard.Outcome.State);
+
     /// <summary>The fixture a new performer gets (<see cref="PluginKit.CycleFixture"/>): the defaults written out, its step named.</summary>
     public static string Fixture(string step) =>
         $$"""
@@ -437,11 +439,11 @@ public static class PluginCycles
 
         private static WorkReconcileCall Reconcile(WorkPerformCall call) => new(call.Unit, call.Step, call.Invocation, call.IdempotencyKey, call.SubjectRevision);
 
-        private static Func<WorkStepFrame, bool> Completion(string invocation) => heard => heard.Invocation == invocation;
+        private static Func<WorkStepFrame, bool> Completion(string invocation) => heard => Completes(heard, invocation);
 
-        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once.</summary>
+        /// <summary>Whether every event heard is the first one again: the same id and the same words, which Daoris takes once; a progress is no completion.</summary>
         private static bool Same(IEnumerable<WorkStepFrame> heard, WorkStepFrame? first) =>
-            first is not null && heard.All(each => WorkWire.Step(each).ToJsonString() == WorkWire.Step(first).ToJsonString());
+            first is not null && heard.Where(each => WorkFrameKinds.Completes(each.Outcome.State)).All(each => WorkWire.Step(each).ToJsonString() == WorkWire.Step(first).ToJsonString());
 
         /// <summary>Whether a reached outcome carries the receipt its step declares, and names only resources its manifest declares.</summary>
         private bool Receipted(NodeDeclaration step, WorkStepFrame heard) =>

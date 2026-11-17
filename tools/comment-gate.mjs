@@ -202,7 +202,7 @@ export function judge(path, before, after, { names = true } = {}) {
   if (before !== null) {
     const was = share(before, options);
     const now = share(after, options);
-    if (now.comment * was.total > was.comment * now.total) {
+    if (now.comment > was.comment && now.comment * was.total > was.comment * now.total) {
       const pct = (s) => `${((100 * s.comment) / Math.max(1, s.total)).toFixed(1)}%`;
       problems.push(`${path}: comments rose from ${pct(was)} (${was.comment}/${was.total}) to ${pct(now)} (${now.comment}/${now.total}) of its lines: take comments out of this file, or add less`);
     }

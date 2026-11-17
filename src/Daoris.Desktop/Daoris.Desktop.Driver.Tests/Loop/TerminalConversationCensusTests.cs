@@ -24,12 +24,18 @@ public sealed class TerminalConversationCensusTests
         (@"\bSessionOutput\b", "a session's output buffer"),
     ];
 
-    private static string Bare(string file) => Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
+    private static string Bare(string file) => Regex.Replace(SourceTexts.Of(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
 
-    private static IEnumerable<(string Project, string File, string Source)> Sources() =>
-        Projects
+    private static readonly Lazy<(string Project, string File, string Source)[]> Scanned = new(() =>
+    [
+        .. Projects
             .Where(project => Directory.Exists(SourceFiles.Project(project)))
-            .SelectMany(project => SourceFiles.All(project, "*.cs").Select(file => (project, Path.GetFileName(file), Bare(file))));
+            .SelectMany(project => SourceFiles.All(project, "*.cs").Select(file => (project, file)))
+            .AsParallel().AsOrdered()
+            .Select(each => (each.project, Path.GetFileName(each.file), Bare(each.file))),
+    ]);
+
+    private static IEnumerable<(string Project, string File, string Source)> Sources() => Scanned.Value;
 
     [Fact]
     public void The_terminals_three_doors_name_no_runner_of_conversations()

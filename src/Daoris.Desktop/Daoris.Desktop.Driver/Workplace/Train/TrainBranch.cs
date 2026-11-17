@@ -1,7 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>The ask and the part a landing is for.</summary>
-public sealed record TrainRef(string Ask, string Part);
+public sealed record TrainRef(string Ask, string Part)
+{
+    public bool OneScope { get; init; }
+}
 
 /// <summary>The ask's branch: the line its parts' landings integrate into, one candidate at a time as on every line.</summary>
 public static class TrainBranch

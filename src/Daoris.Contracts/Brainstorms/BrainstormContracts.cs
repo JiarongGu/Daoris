@@ -14,7 +14,7 @@ namespace Daoris.Contracts.Brainstorms;
 /// <param name="Sources">The repository's paths the packet takes in; a meeting takes none.</param>
 public sealed record AskBrainstorm(
     string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null, string? Kind = null, string? Id = null,
-    IReadOnlyList<string?>? Sources = null) : IRoute<BrainstormActionResponse>
+    IReadOnlyList<string?>? Sources = null, string? Pass = null) : IRoute<BrainstormActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/brainstorms";

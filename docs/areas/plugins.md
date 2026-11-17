@@ -87,7 +87,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     values over the shared workflow (workflows rule 3a), naming the deployable it releases and its `deploysOn` (rule 3b there):
     undeclared or unresolved (a pipeline or definition gone included), it fails `no-target` or `target-changed` naming the deployable
     and listing what it found, writes nothing and is held for the person; it starts the declared stage, or makes the release from the
-    exact merged build (never twice), only where its action says so, as its README says. Its `discover-releases`, a tool that never
+    exact merged build (never twice), only where its action says so, as its README says. While it watches, its first look and each
+    change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
+    `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
+    before; the approval stays the person's, in Azure DevOps (D303). A `no-release` names the
+    definition's newest releases and the build each carries. Its `discover-releases`, a tool that never
     writes, lists the same candidates (each definition's stages with what starts them, triggers, links and a proposed `deploysOn`) for
     the person or a planner to declare from, choosing none. (D288, D290) Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
@@ -111,6 +115,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `failed`, and another shape is refused, nothing kept. A system guarded by `none` is applied one operation at a time between
     reads, a moved version `stale` and a read-back still differing `changed` while applying, Daoris's own outcome.
     `examples/plugins/stand-in-system` is the proof's adapter, offered nowhere.
+17d. Each attempt carries its own `idempotencyKey` and its act's `effectKey` (`EffectKeys`): a digest of its run, node, slot (the step)
+    and target (its unit at its revision), no holder or attempt in it, written on the record before the first send, so a retry and a
+    second holder on the same target name one act and a new revision a new one; an attempt written without one reads its own key as
+    its effect. The kit's `work.mjs` makes one act per effect: an attempt on one already made is answered with what it made, one under
+    way is waited for, and one failed, lost or begun by a gone process is asked of `check()` first, its `done` standing for the attempt.
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files matching the
     record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`, unjudged. Newer: the person's, said
     nothing. A pre-release tag is older than the same numbers without one, its dotted parts compared number by number. (D119)

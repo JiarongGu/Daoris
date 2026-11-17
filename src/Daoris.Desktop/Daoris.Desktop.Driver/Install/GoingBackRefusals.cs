@@ -7,14 +7,14 @@ internal interface IGoingBackRefusal
     (string Code, string Sentence)? Refused(string home, string? staged, string? running);
 }
 
-/// <summary>The refusal of a going back the update's doors ask: the deliveries it waits on are Workplace's, which installs it.</summary>
+/// <summary>The refusal of a going back the update's doors ask: it reads the deliveries and the workflows' floor, so Workflows installs it.</summary>
 internal static class GoingBackRefusals
 {
     private static IGoingBackRefusal? _current;
 
     internal static IGoingBackRefusal Current
     {
-        get => _current ?? throw new InvalidOperationException("no refusal of a going back is installed: Workplace installs it when the driver loads");
+        get => _current ?? throw new InvalidOperationException("no refusal of a going back is installed: Workflows installs it when the driver loads");
         set => _current = value;
     }
 }

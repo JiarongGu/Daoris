@@ -242,6 +242,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.root-dirty': { values: [] },
   'landing.line-holds': { values: [] },
   'landing.queued': { values: [] },
+  'landing.busy': { values: ['minutes'] },
+  'landing.climbed': { values: ['line'] },
   // The person's Accept carried a session on: its tree's uncommitted work, or the replay's conflict beneath it, and
   // the yes that stays on it; carried on twice and still not clean it waits for review; and the landing that yes makes once it is clean.
   'landing.carried-dirty': { values: ['paths'] },

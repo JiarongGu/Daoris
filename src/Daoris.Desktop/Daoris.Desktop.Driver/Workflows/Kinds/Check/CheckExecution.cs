@@ -5,11 +5,13 @@ namespace Daoris.Driver;
 /// where, under which accepted declaration), and the executor's answer the performer's reconcile answer.
 /// </summary>
 /// <param name="sendOf">What the attempt verifies, read from its run's binding; null where the run names nothing to verify.</param>
-public sealed class CheckExecution(HeavyExecutor executor, Func<string, NodeAttempt, NodeDeclaration, VerifySend?> sendOf) : ICheckPort
+public sealed class CheckExecution(
+    HeavyExecutor executor, Func<string, NodeAttempt, NodeDeclaration, VerifySend?> sendOf, Func<VerifySend, CancellationToken, Task<VerifySend>>? scoped = null) : ICheckPort
 {
     public async Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
     {
         var send = sendOf(unit, attempt, node) ?? throw new DriverException($"{unit} names no repository and commit to verify");
+        if (scoped is not null) send = await scoped(send, ct).ConfigureAwait(false);
         await executor.SendAsync(send).ConfigureAwait(false);
     }
 

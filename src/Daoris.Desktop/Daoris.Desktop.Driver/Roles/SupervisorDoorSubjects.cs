@@ -44,10 +44,19 @@ public static class SupervisorDoorSubjects
             return await service.FindQuestAsync(subject.Id, ct).ConfigureAwait(false) is { } quest && Departed(quest) ? QuestPin(quest) : null;
         }
 
+        if (subject.Kind == SupervisorKinds.GoAhead) return (await GoAheadAsync(service, subject, ct).ConfigureAwait(false)) is { Answer: null } open ? Pin(open).Said : null;
+
         var ops = await OpsAsync(service, subject.Session, ct).ConfigureAwait(false);
         if (subject.Id != SupervisorDoorActs.Staged) return Awaiting(ops).Contains(subject.Id, StringComparer.Ordinal) ? subject.Id : null;
         return Staged(ops) is { Count: > 0 } staged ? string.Join(",", staged.Select(op => Json.Text(op, "id")).OfType<string>().Order(StringComparer.Ordinal)) : null;
     }
+
+    public static async Task<GoAheadView?> GoAheadAsync(ServiceClient service, SupervisorSubject subject, CancellationToken ct) =>
+        subject.GoAheadParts is { } parts && await service.FindAskAsync(parts.Ask, ct).ConfigureAwait(false) is { } ask
+            ? ask.GoAheads?.FirstOrDefault(each => each.Number == parts.Number)
+            : null;
+
+    public static GoAheadPin Pin(GoAheadView goAhead) => new(goAhead.Number, goAhead.Kind, goAhead.On, goAhead.Act);
 
     /// <summary>A departed quest's pin: its status, hold, last move and answers, digested, so a done redone or answered again is another.</summary>
     public static string QuestPin(QuestView quest)
@@ -99,6 +108,8 @@ public static class SupervisorDoorSubjects
         try
         {
             var said = Said(due.Role, due.Agent);
+            // An answer the go-ahead now holds settles a cut-off post: the role's went out, or a later word answered it, and neither goes again.
+            if (due.Subject.Kind == SupervisorKinds.GoAhead) return await GoAheadAsync(service, due.Subject, ct).ConfigureAwait(false) is { } goAhead ? goAhead.Answer is not null : null;
             if (due.Subject.Kind == SupervisorKinds.Departure)
             {
                 if (await service.QuestMovesJsonAsync(due.Subject.Id, ct).ConfigureAwait(false) is not { } json) return null;

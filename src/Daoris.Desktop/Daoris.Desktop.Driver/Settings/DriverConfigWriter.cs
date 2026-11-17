@@ -69,6 +69,7 @@ internal static class DriverConfigWriter
             HandOverKey.WriteMap(writer, "workspaceHandOver", config.WorkspaceHandOver);
             GrowthKey.WriteMap(writer, "growth", config.Growth);
             GrowthKey.WriteMap(writer, "workspaceGrowth", config.WorkspaceGrowth);
+            config.PlaceRisk.Write(writer);
             // Written only when set, as the CLI writes them: absent is the proposed defaults.
             BrainstormKey.WriteMachine(writer, config.Brainstorms);
             BrainstormKey.WriteMap(writer, "workspaceBrainstorms", config.WorkspaceBrainstorms);
@@ -78,6 +79,7 @@ internal static class DriverConfigWriter
             WorkflowKey.WriteMap(writer, "workflows", config.Workflows, workspace: false);
             WorkflowKey.WriteMap(writer, "workspaceWorkflows", config.WorkspaceWorkflows, workspace: true);
             WorkflowValuesKey.WriteMap(writer, config.WorkflowValues);
+            WorkflowValuesKey.WriteWhy(writer, config.WorkflowValuesWhy);
             // Written only when set: absent is no home default (a place follows Current) and no line policy.
             if (config.DefaultWorkflow is { } homeDefault) writer.WriteString("defaultWorkflow", homeDefault);
             LinePolicyKey.WritePolicies(writer, "linePolicies", config.LinePolicies);

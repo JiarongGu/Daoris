@@ -21,6 +21,8 @@ public static class LandTries
         // A hold, a review and a second opinion wait on the person or another agent, not on the tree, so each is read again at
         // every look.
         { Code: LandingCode.Held or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.Queued } => true,
+        // A cause that passes is tried again whatever the tree does; the performer asks first whether it still holds (LandRetries).
+        { Code: LandingCode.Busy } => true,
         { Code: LandingCode.Undone or LandingCode.Gone or LandingCode.Superseded } => true,
         // A `land` is started once a node and tip, so a try that closed at its tip says nothing of a later one.
         { Tip: { } at } when !string.Equals(at, tip, StringComparison.Ordinal) => true,
@@ -63,7 +65,7 @@ public static class LandTryNotes
     public static bool Says(string code) => code is LandingCode.Landed or LandingCode.Advanced or LandingCode.Nothing
         or LandingCode.Held or LandingCode.Uncommitted or LandingCode.Exists or LandingCode.Completed or LandingCode.Refused or LandingCode.Moved
         or LandingCode.Unreviewed or LandingCode.Opinion or LandingCode.CarriedOn or LandingCode.CarryBound or LandingCode.RootDirty
-        or LandingCode.LineHolds or LandingCode.Queued;
+        or LandingCode.LineHolds or LandingCode.Queued or LandingCode.Busy;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there is a landing to say it.
@@ -127,6 +129,11 @@ public static class LandTryNotes
                 + "as follows. It lands at the first look after the checkout is clean; no review is waiting on you."),
             LandingCode.LineHolds => Noted.Of(ChatNoteCodes.LandingLineHolds,
                 "nothing to land: the line already holds everything on its branch, as follows. No review is waiting on you."),
+            // A cause that passes: the yes stands and nothing is asked of the person.
+            LandingCode.Busy => Noted.Of(ChatNoteCodes.LandingBusy,
+                $"accepted, but another of Daoris's writes held the repository, so nothing was written yet, as follows. It is tried again by itself "
+                + $"once that ends, and climbs the reporting line if it has not landed within {(int)LandRetries.Deadline.TotalMinutes} minutes; "
+                + "nothing waits on you.", ("minutes", (int)LandRetries.Deadline.TotalMinutes)),
             LandingCode.Queued => Noted.Of(ChatNoteCodes.LandingQueued,
                 "waiting in its line's integration, as follows. It is tried again at the next look; no review is waiting on you."),
             LandingCode.Refused when rebaseTold => Noted.Of(ChatNoteCodes.LandingRebase,
@@ -137,6 +144,15 @@ public static class LandTryNotes
 
         // The landing's own sentence beneath, as written: it carries git's and the plugin's words beside Daoris's.
         var said = landed is { Message.Length: > 0 } ? lead.Then(" ", Noted.Said(landed.Message, NoteBy.Program)) : lead;
+        return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
+    }
+
+    /// <summary>A landing's wait on a cause that passes, past its deadline: the reporting line it climbed to (<see cref="LineWait.Said"/>), said once.</summary>
+    public static SessionEvent Climbed(string line)
+    {
+        var said = Noted.Of(ChatNoteCodes.LandingClimbed,
+            $"accepted, but another of Daoris's writes has held the repository past the landing's deadline, so the wait climbs the reporting line: {line}. "
+            + "It still lands by itself once the repository is free.", ("line", line));
         return new SessionEvent { Kind = SessionEventKind.Note, Text = said.Note, Parts = said.Parts };
     }
 }

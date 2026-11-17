@@ -6,6 +6,7 @@ import { type EditorRole, type GraphProblem, type StepStaffing, type WorkflowLis
 import { type Begin } from './EditCanvas';
 import { outcomeSaid } from '../graphFlow';
 import { kindIn, rowSaid, stepTitle } from './editWords';
+import { setRole } from './StepRoleField';
 import { canInsertOn, type Carried, connect, draftOf, entriesOf, type GraphDraft, graphOf, type InsertAt, moveInChain, removeWire, retarget, setOption, type WayRowKey, type DraftWire, type GraphJson, type DraftNode } from './graphDraft';
 import { type Confirming, Inspector, type InspectorActs } from './Inspector';
 import { presetName } from './presetWords';
@@ -127,6 +128,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
       reach: reached.flatMap((row) => row.cannots.length > 0
         ? [t('workflow.edit.review.cannot', { repository: row.repository, why: row.said ?? row.cannots.join('; ') })]
         : row.noGates ? [t('workflow.edit.review.noGates', { repository: row.repository })] : []),
+      closesBelow: judgement?.closesBelow ?? null,
     };
   };
   const save = async () => {
@@ -184,6 +186,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
   const acts = (id: string): InspectorActs => ({
     onChange: change,
     onOption: (option, value, said) => change(setOption(latest.current, id, option, value), said),
+    onRole: (role, said) => change(setRole(latest.current, id, role), said),
     onTarget: (row, wire, to) => {
       if (to === null) {
         change(removeWire(draft, wire.id), t('workflow.edit.said.wayRemoved', { row: rowSaid(t, row, kindIn(draft, id)), from: titleOf(id), to: titleOf(wire.to) }));

@@ -36,6 +36,8 @@ public static class EmptyRunEnds
     /// <summary>The session records did not read at the look, so no run at its end is known to have a session waiting on it.</summary>
     public const string SessionsUnread = "sessions-unread";
 
+    public const string FailedHeld = "failed-held";
+
     // The last reason said for each run, by home and run.
     private static readonly ConcurrentDictionary<string, string> Last = new(StringComparer.OrdinalIgnoreCase);
 
@@ -61,6 +63,7 @@ public static class EmptyRunEnds
             NotAsked => "a session waits on it, and its chain came back here with a newer quest that no start has asked a pass for yet.",
             VersionUnread => "a session waits on it at its end, and the graph version it is bound to does not read, so its end does not reach that session.",
             SessionsUnread => "this machine's session records did not read, so no session waiting on a run at its end is known; they are read again at the next look.",
+            FailedHeld => "it ended failed at a step its holder may still settle, so the sessions awaiting its later steps wait on until the work goes on or is ended.",
             _ => reason,
         };
 }

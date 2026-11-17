@@ -355,6 +355,11 @@ public static class RotationWords
             WalkStep.LeastRecent => own is { Chosen: null, LastStarted: null }
                 ? Reason("Daoris has not started on it yet", OpeningWhy.NotStarted)
                 : Reason("Daoris started on it least recently", OpeningWhy.LeastRecent),
+            WalkStep.Unanswered => Reason(
+                $"`{over}`'s sign-in check did not answer, so it goes last until one does", OpeningWhy.Unanswered, ("over", over)),
+            // Last, and run on since nothing else is ready: its line says so rather than the list's order.
+            _ when SignInStates.RanksLast(own.SignIn) => Reason(
+                "its sign-in check did not answer, and no other account is ready", OpeningWhy.UnansweredSelf),
             _ => Listed(workspace, scope.Default is { } named && string.Equals(named, ran, StringComparison.OrdinalIgnoreCase)),
         };
     }

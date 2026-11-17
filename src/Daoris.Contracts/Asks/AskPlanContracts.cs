@@ -23,7 +23,12 @@ public sealed record AskPlanDecisionResponse(string? Scope, int Revision, string
 public sealed record AskPlanRevisionResponse(
     string? Scope, int Revision, int Depth, string Why, IReadOnlyList<AskPlanPartResponse> Parts,
     IReadOnlyList<AskPlanEdgeResponse> Edges, IReadOnlyList<AskPlanFlagResponse> Flags, IReadOnlyList<AskPlanDeployableResponse> Deployables,
-    IReadOnlyList<AskPlanReleaseResponse> Releases, IReadOnlyList<AskPlanQuestionResponse> Questions, IReadOnlyList<AskPlanAnswerResponse> Answers);
+    IReadOnlyList<AskPlanReleaseResponse> Releases, IReadOnlyList<AskPlanQuestionResponse> Questions, IReadOnlyList<AskPlanAnswerResponse> Answers)
+{
+    /// <summary>How its parts are integrated: <c>one-scope</c> (merged with no gate each, verified once at the end) or <c>per-part</c>; absent, each part gated.</summary>
+    [PageType("'one-scope' | 'per-part'")]
+    public string? Integration { get; init; }
+}
 
 /// <summary>What a repository releases as its declaration reads: <c>Provides</c> and <c>Consumes</c> each as <c>resource (mode)</c>.</summary>
 public sealed record AskPlanDeployableResponse(string Repository, string Id, IReadOnlyList<string> Provides, IReadOnlyList<string> Consumes);

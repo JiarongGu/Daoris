@@ -82,6 +82,19 @@ describe('an ask’s plan', () => {
     expect(screen.getByText(words)).toBeTruthy();
   });
 
+  it.each([
+    ['en', 'Built as one: the parts merge'],
+    ['zh', '整体构建：各部分合并进需求的分支'],
+  ])('says a plan built as one merges its parts unchecked and checks them once at the end, in %s', async (language, line) => {
+    await i18n.changeLanguage(language);
+    const raw = { ...RAW, plans: [{ ...RAW.plans[0], integration: 'one-scope' }, RAW.plans[1]] };
+    const { unmount } = render(<AskPlanSection plan={askPlanOf(raw)!} onOpenQuest={vi.fn()} />);
+    expect(screen.getByText(line, { exact: false })).toBeTruthy();
+    unmount();
+    render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
+    expect(screen.queryByText(line, { exact: false })).toBeNull();
+  });
+
   it('offers no answer and no waiver without a door', () => {
     render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);
 
@@ -117,7 +130,7 @@ describe('an ask’s plan', () => {
 
   it.each([
     ['en', 'Lead s1: the whole plan', 'Lead s2: api', 'Revision 2, revised by s1: the page needs the field first'],
-    ['zh', '负责人 s1：整个计划', '负责人 s2：api', '第 2 版，由 s1 修订: the page needs the field first'],
+    ['zh', '主导 s1：整个计划', '主导 s2：api', '第 2 版，由 s1 修订: the page needs the field first'],
   ])('says who is on the team and what was decided, in %s', async (language, lead, split, decided) => {
     await i18n.changeLanguage(language);
     render(<AskPlanSection plan={askPlanOf(RAW)!} onOpenQuest={vi.fn()} />);

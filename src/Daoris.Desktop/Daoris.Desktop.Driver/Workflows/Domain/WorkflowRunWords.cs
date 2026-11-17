@@ -64,8 +64,7 @@ public static class WorkflowRunWords
     {
         WorkflowRunStates.NotReached => "not reached",
         WorkflowRunStates.Working => "working",
-        WorkflowRunStates.WaitingOnYou => "waiting on you",
-        WorkflowRunStates.WaitingOnAgent => "waiting on an agent",
+        WorkflowRunStates.Waiting => "waiting",
         WorkflowRunStates.NotKnown => "not known",
         WorkflowRunStates.CannotStart => "cannot start",
         WorkflowRunStates.Done => "done",
@@ -77,13 +76,21 @@ public static class WorkflowRunWords
 
     private static readonly HashSet<string> States =
     [
-        WorkflowRunStates.NotReached, WorkflowRunStates.Working, WorkflowRunStates.WaitingOnYou, WorkflowRunStates.WaitingOnAgent,
+        WorkflowRunStates.NotReached, WorkflowRunStates.Working, WorkflowRunStates.Waiting,
         WorkflowRunStates.NotKnown, WorkflowRunStates.CannotStart, WorkflowRunStates.Done, WorkflowRunStates.Skipped,
         WorkflowRunStates.Failed, WorkflowRunStates.Stopped,
     ];
 
-    /// <summary>What a step's state says, or null where the state's word says it all (not reached).</summary>
     public static string? Said(WorkflowRunStep step)
+    {
+        var said = Detail(step);
+        var own = step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going };
+        return step is { State: WorkflowRunStates.Waiting, Role: { } role, Holder: { } holder } && !own
+            ? said is null ? StepWaiting.Line(role, holder) : $"{StepWaiting.Line(role, holder)} {said}"
+            : said;
+    }
+
+    private static string? Detail(WorkflowRunStep step)
     {
         var kind = step.Step.Kind;
         if (step.State == WorkflowRunStates.NotReached) return null;
@@ -155,7 +162,7 @@ public static class WorkflowRunWords
                 ? "1 commit since was not read by another agent, and one pass and one recheck are spent."
                 : $"{count} commits since were not read by another agent, and one pass and one recheck are spent.",
             // Required, it waits on the person; not, it is passed over and holds nothing.
-            (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) => step.State == WorkflowRunStates.WaitingOnYou
+            (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) => step.State == WorkflowRunStates.Waiting
                 ? $"No second opinion could be had: {Unavailable(step.Code)}. The rule requires one, so the work waits for you."
                 : $"No second opinion could be had: {Unavailable(step.Code)}. The rule does not require one, so nothing waits for it.",
             (WorkflowKinds.Opinion, OpinionGateStates.Settled) => step.Agent is { } settled
@@ -236,6 +243,7 @@ public static class WorkflowRunWords
     private static string NodeSaid(WorkflowRunStep step, string node)
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
+        if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
         var on = On(step);
         return step.Detail switch
         {
@@ -248,7 +256,7 @@ public static class WorkflowRunWords
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
-                    : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
+                    : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to say is not needed this run.",
                 // Each holds the work until it lets go, and passing it over lets it go on.
                 NodeKinds.QuestHolds or NodeKinds.ContentHolds when step.Words is { Length: > 0 } why => $"Holds the work: {why.TrimEnd('.')}.",
                 NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, is held for your yes or its evidence's verdict, or is unchecked: an ask's quest with no requirement.",
@@ -426,7 +434,7 @@ public static class WorkflowRunWords
         if (step.Integration is { } integration) yield return IntegrationSaid(integration);
 
         // The second opinion's gate holding the work on the person: its presses are this terminal's own.
-        if (kind == WorkflowKinds.Opinion && step.State == WorkflowRunStates.WaitingOnYou && step.Session is { } held)
+        if (kind == WorkflowKinds.Opinion && step is { State: WorkflowRunStates.Waiting } && step.Detail != OpinionGateStates.WithSession && step.Session is { } held)
         {
             yield return $"`daoris session opinion show {held}` lists what is unsettled; `daoris session opinion anyway {held} \"…\"` "
                 + "goes on without it.";

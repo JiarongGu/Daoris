@@ -48,6 +48,8 @@ internal sealed class ResolveNode : BuiltInNode, IObserves, IStarts, IReadsSteps
 
     public override string? Title => "The resolution";
 
+    public override string Role => StepRoles.Design;
+
     public override NodeLook Look => NodeLook.Line;
 
     public override IReadOnlyList<string> Places => PlaceKind.GitAlone;

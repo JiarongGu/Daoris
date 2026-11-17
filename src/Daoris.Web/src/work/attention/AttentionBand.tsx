@@ -287,6 +287,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         // *Ask for a fix…* publishes an ask rather than recording a word: the driver's sentence names it.
         (answer) => notify(answer.done && resolution !== 'ask-fix' ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
     },
+    doneOutside: (ask) => resolveHeld.mutateAsync(ask),
     // The folder a node record that does not read is kept in, opened for the person to mend it; a refusal (no record
     // kept now) in the driver's words. Its row goes once the record reads, as the slice is judged again.
     openRecords: (item) => run(item, () => openRecords.mutateAsync(), () => {}),
@@ -383,10 +384,10 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     // The run's own request is asked again or gone on without by the same door's other two words.
     // A person's task is pressed by the same door, on its run and node.
     passOver: (item, words, answered, act) => {
-      const node = item.task?.node ?? item.declined?.node;
+      const node = item.step?.node ?? item.declined?.node;
       if (!node) { answered.done(); return; }
       run(item, async () => {
-        const answer = await runNodeWord.mutateAsync({ run: item.task?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
+        const answer = await runNodeWord.mutateAsync({ run: item.step?.run ?? item.id, node, act: act ?? 'skip', words: words || null });
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },

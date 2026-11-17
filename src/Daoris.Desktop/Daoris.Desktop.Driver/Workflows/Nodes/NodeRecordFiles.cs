@@ -403,6 +403,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         writer.WriteNumber("stepVersion", attempt.Call.StepVersion);
         writer.WriteString("invocation", attempt.Call.Invocation);
         writer.WriteString("idempotencyKey", attempt.Call.IdempotencyKey);
+        if (attempt.Call.EffectKey is { } effect) writer.WriteString("effectKey", effect);
         writer.WriteString("subjectRevision", attempt.Call.SubjectRevision);
         writer.WriteStartArray("inputs");
         foreach (var input in attempt.Call.Inputs) writer.WriteStringValue(input);
@@ -419,6 +420,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.Resolution is { } resolution) writer.WriteString("resolution", resolution);
         if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
         if (attempt.Decision is { } decision) writer.WriteString("decision", decision);
+        if (attempt.Link is { } link) writer.WriteString("link", link);
+        if (attempt.Note is { } note) writer.WriteString("note", note);
+        if (attempt.LinkChecked is { } linkChecked) writer.WriteString("linkChecked", Moments.Write(linkChecked));
+        // Who the outside system credits with the settled act: a property an older build passes over, as `link` is.
+        if (attempt.By is { } by) writer.WriteString("by", by);
+        if (attempt.Progress is { } progress) StepProgress.Write(writer, progress);
 
         // A close's token and the quests it names, written only on a close's attempt.
         if (attempt.Close is { } close)
@@ -726,7 +733,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         var resolution = Text(element, "resolution");
         if (resolution is not null && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return null;
 
-        return new NodeAttempt(node, number, plugin, new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline), state)
+        var sent = new WorkPerformCall(unit, step, stepVersion, invocation, key, revision, inputs, deadline) { EffectKey = Text(call, "effectKey") };
+        return new NodeAttempt(node, number, plugin, sent, state)
         {
             RecordedAt = recordedAt,
             Generation = Number(element, "generation"),
@@ -738,6 +746,11 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Resolution = resolution,
             ResolvedAt = Moments.Read(element, "resolvedAt"),
             Decision = Text(element, "decision"),
+            Link = Text(element, "link"),
+            Note = Text(element, "note"),
+            LinkChecked = Moments.Read(element, "linkChecked"),
+            By = Text(element, "by"),
+            Progress = StepProgress.Read(element),
             Close = close,
         };
     }

@@ -5,6 +5,16 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-17 - A git place read its exited git as running under load
+
+- **Symptom:** `GitPlaceExitTests` failed once in the driver's fast half on a loaded machine ("round 11: the place read its exited
+  process as running") and passed alone; in the product the same read holds a repository's place after its git ended.
+- **Root cause:** `GitPlace` reads its process's exit on the caller's thread while the exit wait disposes the same `Process` on the
+  pool (7dcd17b0ca; bd283885ba caught the throw this race makes, not the race). `Process` is not safe across threads: a read beside
+  the dispose can take the closed handle's raw value, which another handle opened meanwhile may hold, and read that one's state.
+- **Fix:** the read and the dispose take turns under one lock, and a disposed process reads as exited.
+- **Verification:** `GitPlaceExitTests` and the scheduler's classes pass, alone and in the driver's fast half.
+
 ## 2026-11-16 - The look's opinions stage queued git each look, and a recheck a cap ended was never asked again (LOOKOPINIONS1)
 
 - **Symptom:** on the install (build 7c1395e38c) `~opinions` for quest 82406c797e18 grew from ~1.3 s to 6–27 s a look

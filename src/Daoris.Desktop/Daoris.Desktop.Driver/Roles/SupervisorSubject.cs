@@ -22,6 +22,8 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
         [SupervisorKinds.Landing] = "landing",
         [SupervisorKinds.Memory] = "memory",
         [SupervisorKinds.Departure] = "quest",
+        [SupervisorKinds.GoAhead] = "goahead",
+        [SupervisorKinds.Vacancy] = "step",
         [SupervisorKinds.Allow] = "request",
         [SupervisorKinds.Files] = "text",
         [SupervisorKinds.AskDaoris] = "range",
@@ -32,7 +34,20 @@ public sealed record SupervisorSubject(string Kind, string Session, string Id)
 
     public static SupervisorSubject Question(string session, string question) => new(SupervisorKinds.Question, session, question);
 
+    /// <summary>A go-ahead <c>{ session, goahead }</c>: the newest session that asked it, and its ask and number, <c>&lt;ask&gt;/&lt;number&gt;</c>.</summary>
+    public static SupervisorSubject GoAhead(string session, string ask, int number) => new(SupervisorKinds.GoAhead, session, $"{ask}/{number}");
+
+    public (string Ask, int Number)? GoAheadParts =>
+        Kind == SupervisorKinds.GoAhead && Id.LastIndexOf('/') is > 0 and var at && int.TryParse(Id[(at + 1)..], out var number) && number > 0
+            ? (Id[..at], number)
+            : null;
+
     public static SupervisorSubject Point(string session, string point, string kind = SupervisorKinds.Course) => new(kind, session, point);
+
+    public static SupervisorSubject Vacancy(string session, string chain, string repository) => new(SupervisorKinds.Vacancy, session, $"{chain}/{repository}");
+
+    public (string Chain, string Repository)? VacancyParts =>
+        Kind == SupervisorKinds.Vacancy && Id.IndexOf('/') is > 0 and var at && at < Id.Length - 1 ? (Id[..at], Id[(at + 1)..]) : null;
 
     public static SupervisorSubject Landing(string session, string run, string node, int attempt) =>
         new(SupervisorKinds.Landing, session, $"{run}/{node}/{attempt}");

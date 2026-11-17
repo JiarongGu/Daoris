@@ -50,6 +50,12 @@ export type PushedAttention = {
   choices?: string[];
   ask?: string;
   question?: { key: string; kind: string; text: string; yes: string; blocks: string; default: string };
+  /** A design pass's closed question: what it is, what yes and no change and where to look, as its comparison wrote them. */
+  design?: { key: string; question: string; yes: string; no: string; where: string };
+  /** The design pass the question is of. */
+  brainstorm?: string;
+  /** The answers a closed question takes. */
+  options?: string[];
   number?: number;
   /** A go-ahead's act, which its title says. */
   goAhead?: Pick<GoAhead, 'kind' | 'on' | 'act'>;
@@ -119,8 +125,8 @@ export type PushedAttention = {
   quiet?: QuietWait;
   /** A run held at a declined request: its `work.requests` node, the quest declined and where it went. */
   declined?: DeclinedRequest;
-  /** A run waiting on a person's task: its `human` node and the presses it waits for. */
-  task?: HumanTaskWait;
+  /** A run step waiting on a role the person holds: its wait, the presses that settle it and where its act is taken. */
+  step?: StepWaitRow;
   /** What memory waits on the person for a session: ends and replacements to approve, a stopped session's staged rows. */
   memory?: MemoryWait;
   /** An integration's wait on the owner: which, its line, and the candidate, commit or landing it is of. */
@@ -164,10 +170,16 @@ export type IntegrationWait = {
 export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null; request?: boolean };
 
 /**
- * A run waiting on a person's task: the run and its `human` node the press is said on, the presses it waits for (`done`, or
- * `approve` and `reject`), and the run's newest work quest here (null where it has none), which its door reads.
+ * A run step waiting on a role the person holds: the run and node a press is said on, what it waits for (`why`), the role and its
+ * holder, the step's own words that settle it (`presses`: `done`, `approve` and `reject`, `skip`, a decision's outcomes), the act in its
+ * plugin's words and the page it is taken on, where in the window it is answered (`opens`: `run`), and the run's newest work quest here.
+ * A plugin's wait with no page carries `done-outside` among its presses and the attempt it is said on (`held`).
  */
-export type HumanTaskWait = { run: string; node: string; acts: string[]; work?: string | null };
+export type StepWaitRow = {
+  run: string; node: string; why: string; role: string; holder?: string | null; holderName?: string | null; presses: string[];
+  words?: string | null; url?: string | null; opens?: string | null; work?: string | null;
+  held?: { unit: string; attempt: number; words: string[]; resolution?: string | null } | null;
+};
 
 /**
  * A press a terminal sent that waits for the window's Confirm: its route, the terminal as the system names it, and when a

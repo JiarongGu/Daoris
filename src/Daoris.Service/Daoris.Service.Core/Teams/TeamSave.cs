@@ -16,6 +16,9 @@ public sealed record TeamSave(string Ask, IReadOnlyList<TeamPart> Parts, IReadOn
     /// <summary>The session writing, or null for a person's hand.</summary>
     public string? By { get; init; }
 
+    /// <summary>How the parts are integrated (<see cref="TeamIntegration"/>); null keeps the standing plan's.</summary>
+    public string? Integration { get; init; }
+
     /// <summary>The line's commit the plan reads.</summary>
     public string? Base { get; init; }
 

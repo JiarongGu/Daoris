@@ -95,6 +95,63 @@ test('a stage waiting on an approval is said and waited on, never approved here,
   assert.deepEqual(writes(api), []);
 });
 
+test('a stage waiting on an approval tells Daoris, once, that the step waits on its approver: the act, who is asked, since when, the release\'s link', async (t) => {
+  const asked = { status: 'pending', approver: { displayName: 'Release Approvers' }, createdOn: '2026-11-16T09:50:00Z' };
+  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'queued', { preDeployApprovals: [asked] })] });
+  api.onRead = moving(api, 'Production', 4, { status: 'succeeded', preDeployApprovals: [{ ...asked, status: 'approved' }] });
+
+  const { step, progress } = await released(t, api, DECLARED);
+
+  assert.equal(progress.length, 1);
+  const [waits] = progress.map((frame) => frame.params);
+  assert.equal(waits.actor, 'approver');
+  assert.equal(waits.invocation, 'i-1');
+  assert.notEqual(waits.id, 'i-1');
+  assert.equal(waits.evidence.environment, 'Production');
+  assert.equal(waits.evidence.url, RELEASE_WEB);
+  assert.match(waits.evidence.message, /^Release-12 of app-release \(#3\), build 20261110\.41 from `main`: Approve Production in Azure DevOps: asked of Release Approvers since 2026-11-16 09:50 UTC\./);
+  assert.equal(step.params.state, 'reached');
+  assert.deepEqual(writes(api), []);
+});
+
+test('a stage the step observes that nothing started waits on its deployer, and its start in Azure DevOps ends the wait', async (t) => {
+  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'notStarted')] });
+  api.onRead = (method, path, n) => {
+    if (method !== 'GET' || path !== '/acme/Proj/_apis/release/releases/90') return;
+    if (n >= 3) api.releases[0].environments[1].status = n >= 5 ? 'succeeded' : 'inProgress';
+  };
+
+  const { step, progress } = await released(t, api, DECLARED);
+
+  assert.deepEqual(progress.map((frame) => frame.params.actor ?? null), ['deployer', null]);
+  assert.match(progress[0].params.evidence.message, /Deploy Production in Azure DevOps: nothing started it, and the step observes it\./);
+  assert.match(progress[1].params.evidence.message, /Production deploying\./);
+  assert.equal(step.params.state, 'reached');
+  assert.deepEqual(writes(api), []);
+});
+
+test('a watch tells its first look though nothing waits, so a wait kept from an earlier process gives way to where the stage stands', async (t) => {
+  const api = await merged({ environments: [stage(11, 'Dev', 'succeeded'), stage(12, 'Production', 'inProgress')] });
+  api.onRead = moving(api, 'Production', 3, { status: 'succeeded' });
+
+  const { step, progress } = await released(t, api, DECLARED);
+
+  assert.deepEqual(progress.map((frame) => frame.params.actor ?? null), [null]);
+  assert.match(progress[0].params.evidence.message, /Production deploying\./);
+  assert.equal(step.params.state, 'reached');
+});
+
+test('no release made from the merged build names the releases of its definition it found and the builds they carry', async (t) => {
+  const api = await merged();
+  api.releases[0].artifacts[0].definitionReference.version = { id: '40', name: '20261110.40' };
+
+  const { step } = await released(t, api, DECLARED);
+
+  assert.equal(step.params.state, 'failed');
+  assert.equal(step.params.code, 'no-release');
+  assert.match(step.params.evidence.message, /It found Release-12 \(#90\) from build 20261110\.40, not this one\./);
+});
+
 test('start-stage starts the declared stage nothing started, once, and no other; observe starts nothing', async (t) => {
   const started = await merged({ environments: [stage(11, 'Dev', 'notStarted'), stage(12, 'Production', 'notStarted')] });
   started.onRead = (method, path) => {

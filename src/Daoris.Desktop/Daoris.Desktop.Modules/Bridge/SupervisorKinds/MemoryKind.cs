@@ -33,7 +33,6 @@ internal sealed class MemoryKind : ISupervisorKind
         foreach (var wait in waits)
         {
             if (Json.Text(wait, "session") is not { } session || records.LastOrDefault(each => each.Session == session) is not { Repository: { } repository }) continue;
-            if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: repository)) is not { } covered) continue;
             var subjects = new List<(SupervisorSubject Subject, string Act)>();
             if (Count(wait, "staged") > 0) subjects.Add((new SupervisorSubject(Kind, session, SupervisorDoorActs.Staged), SupervisorDoorActs.Keep));
             if (Count(wait, "ends") + Count(wait, "replacements") > 0)
@@ -42,8 +41,9 @@ internal sealed class MemoryKind : ISupervisorKind
                 subjects.AddRange(SupervisorDoorSubjects.Awaiting(ops).Select(op => (new SupervisorSubject(Kind, session, op), SupervisorDoorActs.Decide)));
             }
 
-            foreach (var (subject, act) in subjects.Where(each => covered.Acts.Contains(each.Act) && loop.Supervisor.RefersDoor(each.Subject)))
+            foreach (var (subject, act) in subjects.Where(each => loop.Supervisor.RefersDoor(each.Subject)))
             {
+                if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: repository)) is not { } covered || !covered.Acts.Contains(act)) continue;
                 // A subject whose facts no longer read stopped waiting between the two reads: it is not listed.
                 if (await SupervisorDoorSubjects.FactsAsync(service, subject, ct).ConfigureAwait(false) is not { } facts) continue;
                 waiting.Add(new
@@ -79,7 +79,7 @@ internal sealed class MemoryKind : ISupervisorKind
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await service.RecordAsync(subject.Session, ct).ConfigureAwait(false) is not { Repository: { } repository }) return SupervisorDecided.Refused(SupervisorWhy.NotReferred);
-        if (SupervisorDecisionDoor.Covers(loop, generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        if (SupervisorDecisionDoor.Covers(loop, generation, subject, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
         // What the subject names still waits, pinned as it stands now: a session's staged rows by their ids, or the end by its operation.
         var pin = await SupervisorDoorSubjects.PinAsync(service, subject, ct).ConfigureAwait(false);
         var named = act == SupervisorDoorActs.Hold || act == (subject.Id == SupervisorDoorActs.Staged ? SupervisorDoorActs.Keep : SupervisorDoorActs.Decide);

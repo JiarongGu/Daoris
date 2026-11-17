@@ -140,8 +140,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     every other end of a tree, removes the tree, its branch and its record. The `files` run stage, after `open` and before `hand`
     (and the same step at a conversation's open and a go-on), is the one way a tree gets its dependencies: in an unworked tree it
     keeps, places from the store (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in order,
-    under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). It
-    seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); it runs the owed
+    under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). Its keys
+    run each `toolchain` read once per stage for each environment, every dependency that names it sharing the output
+    (`ToolchainReads`), since run per `package.json` folder the npm signature's three reads were most of a large web repository's
+    `files.read`. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
+    store will not take (unstored, a group's, a companion) is recorded by size and write time, unhashed, a moved write time read as
+    a change (FILESSLOW1); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
     the machine-local files the `reach: copy` rules name and the checkout's declared `localInputs` and sensitive-patterns file (`TreeLocalInputs`, read-only, copied after the dependencies and still copied where a dependency step fails on the disk, so a tree's checks read what the merge's read). An unworked session's tree is handed without what the checkout's gates file declares to prepare a tree (each gate's `regenerate`, then the `treeBaseline`, here `node tools/quick.mjs --record-base`): its session is told those commands, to run before it changes a file, since run before the hand they held every open of this repository about four minutes with its agent idle (OPENSLOW1, D298). A verification tree runs each `regenerate` (`TreePreparation`, as a gate's command is: `GateEnvironment`, the machine's admission, a 30-minute bound), never the baseline, a command that could not run said once as `started.prep-failed`. A `reach: read` or `write` path naming one place that git ignores is
     linked to its place in the checkout, recorded before it is made; else `started.share-declined` says why. A share counts only
@@ -241,7 +245,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
     (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
-    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it ended any other way. A run not ended
+    `completed` with its quests' Done where the run came to its graph's end, `stopped` where it was stopped, its quests left for the
+    person's word. A run ended failed ends none (`RunSessionEnds.Ends`, said once as `failed-held`): its step's holder may still settle
+    it done outside Daoris or try it again, which governs the run again, so the sessions awaiting its later steps wait on. A run not ended
     whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
     its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
     `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person
@@ -374,7 +380,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 48. The look's tidy takes, with no press, a session branch the clean-up would clear: empty, landed by ancestry or content, or
     carried; with a tree, only this home's tree on a branch that moved and that no run owns (rule 51). Landed work goes only once it is on the line, and a branch
     its tree moved onto only once the line holds that branch's tip. The folder is moved aside into `.tidied`, never deleted; the
-    keeping pass purges it. (D88, D195)
+    keeping pass purges it. It never starts in a repository whose landing is due, being made or waiting to be tried again
+    (`LandRetries.Due`), and comes at a look after it lands. (D88, D195)
 49. A tree holding only ignored paths or the repository's declared output goes with its branch. Declared output is the accepted
     `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
     its folder where the line commits nothing there, else the file alone (`GeneratedIndex`); and every path the repository's own

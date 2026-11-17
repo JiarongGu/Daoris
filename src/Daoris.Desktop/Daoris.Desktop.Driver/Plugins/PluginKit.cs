@@ -220,7 +220,8 @@ public static class PluginKit
             HookPoints.Perform,
             "act",
             "Once a performed step is due, its attempt: written on Daoris's record before it is sent, and sent again under the same "
-            + "`idempotencyKey` after a restart or a lost answer, which must never do the work twice. It is answered on receipt, "
+            + "`idempotencyKey` after a restart or a lost answer, which must never do the work twice; every attempt on the same target "
+            + "carries the same `effectKey`, and makes one act. It is answered on receipt, "
             + "before the work; the outcome comes later at `work/step`, naming the `invocation`. Asked beside it: `work/reconcile` "
             + "(what became of an attempt) and `work/cleanup` (one thing it made, removed), which the kit's `work.mjs` answers.",
             "`{ \"invocation\": \"…\" }`, the invocation it was sent, and nothing more.",

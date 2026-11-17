@@ -126,6 +126,7 @@ export function OpinionGate({
       </div>
 
       {sentence.map((line) => <p key={line} className="m-0 text-small text-ink-soft"><Inline text={line} /></p>)}
+      {opinionConsulted(t, detail).map((line) => <p key={line} className="m-0 text-meta text-ink-faint">{line}</p>)}
       {state === 'unread' && gate.says && (
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('opinion.driverSaid', { said: gate.says })} /></p>
       )}
@@ -270,6 +271,16 @@ export function opinionSays(t: ReturnType<typeof useTranslation>['t'], gate: Gat
     case 'unread': return [t(`opinion.says.${state}`)];
     default: return [];
   }
+}
+
+export function opinionConsulted(t: ReturnType<typeof useTranslation>['t'], detail: OpinionDetail | null): string[] {
+  const label = detail?.first?.label;
+  if (!label) return [];
+  const known = ['another-maker', 'same-agent', 'maker-not-declared'].includes(label) ? label : 'maker-not-declared';
+  return [
+    t(`opinion.consulted.${known}`, { maker: detail?.first?.maker ?? '' }),
+    ...(detail?.recheck ? [t('opinion.consulted.sawAnother')] : []),
+  ];
 }
 
 /** Why none could be had, by its code: a cool-off says until when, in the reader's own time. */

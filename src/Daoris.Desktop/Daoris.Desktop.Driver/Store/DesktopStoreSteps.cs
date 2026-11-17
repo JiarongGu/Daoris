@@ -815,5 +815,7 @@ internal static class DesktopStoreSteps
             ALTER TABLE session_event_heads ADD COLUMN cache_read  INTEGER;
             ALTER TABLE session_event_heads ADD COLUMN cache_write INTEGER;
             """)),
+
+        HeldDecisionsStoreStep.Migration,
     ];
 }

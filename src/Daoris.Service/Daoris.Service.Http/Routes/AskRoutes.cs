@@ -191,6 +191,7 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
     // session's go-aheads waiting is that park's answer, and the sentence says which parks go on and which still wait.
     private async Task<Answer<AskActionResponse>> AnswerGoAheadAsync(AnswerGoAhead request, HttpContext http, CancellationToken ct)
     {
+        if (host.Gate.Refused(http, RoleAnswerDoors.GoAhead, form: request.Role is not null) is { } refused) return refused;
         if (!int.TryParse(request.Number, NumberStyles.None, CultureInfo.InvariantCulture, out var n) || n < 1)
         {
             return Refusal.NotFound($"`{request.Number}` is no go-ahead's number — they are numbered from 1 on their ask.");
@@ -201,8 +202,10 @@ public sealed class AskRoutes(HostWiring host) : IRouteModule
             return Refusal.BadRequest("answer is `approved` or `refused` — the person's yes or no to the act.");
         }
 
+        if (request.Role?.Malformed is { } malformed) return Refusal.BadRequest(malformed);
         var now = DateTimeOffset.UtcNow;
-        var outcome = await Service.Asks.AnswerGoAheadAsync(request.Id, n, request.Answer == "approved", request.Words, now, ct);
+        var by = request.Role is { } role ? MemoryDesk.ApproverOf(role.Role, role.Agent) : null;
+        var outcome = await Service.Asks.AnswerGoAheadAsync(request.Id, n, request.Answer == "approved", request.Words, now, ct, by);
         var parks = request.GoesOn == false ? GoAheadParks.None : await Service.Ledger.GoOnWithGoAheadsAsync(outcome, now, ct);
         return outcome.Refusal switch
         {

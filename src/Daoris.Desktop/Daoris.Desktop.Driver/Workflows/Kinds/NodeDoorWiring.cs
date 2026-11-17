@@ -19,6 +19,18 @@ internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
     /// <summary>The heavy executor a <c>check</c> is handed to.</summary>
     public HeavyExecutor? Executor { get; init; }
 
+    /// <summary>The asks' plans a delivery's <c>check</c> reads to run a one-scope ask's end (<see cref="ScopeLanding.EndAsync"/>); null reads none.</summary>
+    public Func<ITrainPlans?>? Plans { get; init; }
+
+    /// <summary>The reviewers the landing role offers in a repository, in its order, for a scope's two reviews.</summary>
+    public Func<string, IReadOnlyList<ScopeReviewer>>? Reviewers { get; init; }
+
+    /// <summary>Where a scope's two reviews are asked, by its delivery run.</summary>
+    public Action<string, IReadOnlyList<ScopeReview>>? ScopeReviews { get; init; }
+
+    /// <summary>Whether a scope's two reviews are wired, both who offers them and where they are asked: only then does a one-scope part land with no gates.</summary>
+    public bool ScopeReviewed => Reviewers is not null && ScopeReviews is not null;
+
     /// <summary>The door a unit's <c>integrate</c> asks; the home's own where none is handed.</summary>
     public IIntegrationDoor? Integration { get; init; }
 

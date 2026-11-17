@@ -402,7 +402,7 @@ public sealed class LinesRoutes(DriverContext context)
         // *Ask for a fix…* on a failed verification publishes its ask; it moves no node and writes nothing on the record.
         if (word == HeldResolutions.AskFix) return await HeldFixPress.AnswerAsync(service, new NodeRecordFiles(_loop.Home), press, cancellationToken);
 
-        var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word);
+        var done = HeldAttempts.Word(new NodeRecordFiles(_loop.Home), unit, node, attempt, word, link: press.Link, note: press.Note);
         var worded = done.What == PerformedWhat.Worded;
         if (worded) _loop.Nudge();
         return new

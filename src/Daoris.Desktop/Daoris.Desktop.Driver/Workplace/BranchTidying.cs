@@ -495,6 +495,7 @@ public sealed class BranchTidying(string home)
     private static string Held(TidyPass pass) => pass.Held switch
     {
         TidyKept.Starting => $"{pass.Repository}: {TreeLock.Starting(pass.Repository, pass.Detail)}.",
+        TidyKept.Landing => $"{pass.Repository}: a landing is due there, so its session trees are tidied at a look after it lands.",
         TidyKept.Sessions when pass.Repository.Length == 0 =>
             $"the session branches were not looked at, since the service did not answer for its registry: {Clause(pass.Detail ?? "")}.",
         TidyKept.Sessions => $"{pass.Repository}: its session branches stay this look, since the service did not say which "

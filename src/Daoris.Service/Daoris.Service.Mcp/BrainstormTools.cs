@@ -69,7 +69,9 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
         [Description("Your groups, each with its members by id and its rank.")]
         BrainstormGroupInput[]? groups,
         [Description("The proposals you left out of every group, each by id with why.")]
-        BrainstormLeftOutInput[]? leftOut = null)
+        BrainstormLeftOutInput[]? leftOut = null,
+        [Description("Only for a design pass: its routes compared.")]
+        DesignComparisonInput? comparison = null)
     {
         var text = Composed(writer =>
         {
@@ -113,6 +115,7 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
             }
 
             writer.WriteEndArray();
+            if (comparison is not null) Compared(writer, comparison);
         });
         return (brainstorms ?? BrainstormBox.FromEnvironment()).Synthesize(text).Message;
     }
@@ -133,6 +136,42 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
         }
 
         return Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n");
+    }
+
+    /// <summary>A design pass's comparison, written as given beside the groups; a part left out is written null for the driver to name.</summary>
+    private static void Compared(Utf8JsonWriter writer, DesignComparisonInput comparison)
+    {
+        writer.WriteStartObject("comparison");
+        Words(writer, "route", comparison.Route);
+        Words(writer, "why", comparison.Why);
+        List(writer, "flips", comparison.Flips);
+        if (comparison.Trial is { } trial)
+        {
+            writer.WriteStartObject("trial");
+            Words(writer, "area", trial.Area);
+            Words(writer, "baseline", trial.Baseline);
+            List(writer, "keep", trial.Keep);
+            List(writer, "retire", trial.Retire);
+            writer.WriteEndObject();
+        }
+        else
+        {
+            writer.WriteNull("trial");
+        }
+
+        writer.WriteStartArray("questions");
+        foreach (var question in comparison.Questions ?? [])
+        {
+            writer.WriteStartObject();
+            Words(writer, "question", question?.Question);
+            Words(writer, "yes", question?.Yes);
+            Words(writer, "no", question?.No);
+            Words(writer, "where", question?.Where);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+        writer.WriteEndObject();
     }
 
     private static void Words(Utf8JsonWriter writer, string name, string? value)
@@ -209,3 +248,21 @@ public sealed record BrainstormLeftOutInput(
     string? Id,
     [property: Description("Why it is left out, in at most 600 characters.")]
     string? Why);
+
+/// <summary>A design pass's comparison, written as given; the driver judges it (<c>DesignPasses.Compare</c>).</summary>
+public sealed record DesignComparisonInput(
+    [property: Description("The route you recommend, in at most 400 characters.")]
+    string? Route,
+    [property: Description("Its reasons, in at most 1,200 characters.")]
+    string? Why,
+    [property: Description("One to six checkable observations that would make another route better.")]
+    string?[]? Flips,
+    [property: Description("The area tried first, its baseline, and keep and retire criteria written now.")]
+    DesignTrialInput? Trial,
+    [property: Description("At most eight questions only the owner can answer.")]
+    DesignQuestionInput?[]? Questions);
+
+public sealed record DesignTrialInput(string? Area, string? Baseline, string?[]? Keep, string?[]? Retire);
+
+/// <summary>One closed question: what it is, what yes changes, what no changes, where to look.</summary>
+public sealed record DesignQuestionInput(string? Question, string? Yes, string? No, string? Where);

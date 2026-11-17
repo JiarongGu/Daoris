@@ -5,7 +5,7 @@
 // Two things it answers, both over JSON-RPC 2.0, one frame per line, on stdin and stdout (stdout is the wire; stderr is its console):
 //  - `work/perform` for its two steps, once per idempotency key (the kit's work.mjs keeps that): `pull-request` opens the pull request
 //  from the pushed branch, or finds the active one, and sets auto-complete where its options ask (auto-complete.mjs); `release` watches
-//  what the merged commit's release takes to its end (release.mjs). The branch and checkout come from the units `work/watch` tells it.
+//  what the merged commit's release takes to its end (release.mjs), each wait on the way a `progress` of its own id that settles nothing. The branch and checkout come from the units `work/watch` tells it.
 //  - `work/state`: a landed branch's pull request, found by its address or its source branch, and its state in Daoris's words.
 //  DAORIS_PLUGIN_DATA the data folder (the kit's journal)
 //  DAORIS_PLUGIN_PRIVATE this plugin's own storage, where login keeps the token: never logged, sent only to the API as Basic's password
@@ -14,9 +14,12 @@ import { createInterface } from 'node:readline';
 import { autoComplete } from './auto-complete.mjs';
 import { Refusal, TRANSIENT, addressOf, call, choose, fit, fromBranch, heads, idOf, located, withoutHeads, azureOf, originOf } from './azure.mjs';
 import { release } from './release.mjs';
+import { STEPS, linkCheck, releaseStep } from './release-steps.mjs';
 import { wayWords, within } from './browser.mjs';
 import { work } from './work.mjs';
 import { run } from './commands.mjs';
+import { records } from './storage.mjs';
+import { join } from 'node:path';
 
 const send = (frame) => process.stdout.write(`${JSON.stringify(frame)}\n`);
 const say = (text) => console.error(text);
@@ -44,6 +47,22 @@ const stepOf = (attempt) => String(attempt.step).split('/').pop();
 /** The unit an attempt is made for: the one awaiting its step at its tip, else any at that tip. */
 const unitOf = (attempt) => units.find((each) => each.tip === attempt.subjectRevision && (each.awaiting ?? []).some((step) => step.split('/').pop() === stepOf(attempt)))
   ?? units.find((each) => each.tip === attempt.subjectRevision);
+
+// Each unit's checkout by tip, the newest hundred: a link on a step no unit awaits (a failed one is told to no plugin) is read there.
+const where = records(join(process.env.DAORIS_PLUGIN_DATA ?? '.', 'units.json'));
+const remember = (told) => {
+  for (const unit of told) {
+    if (typeof unit?.tip !== 'string' || typeof unit.root !== 'string') continue;
+    const kept = { repository: unit.repository, workspace: unit.workspace, root: unit.root, branch: unit.branch, tip: unit.tip, line: unit.line ?? null,
+      pullRequest: unit.pullRequest ?? null, awaiting: [] };
+    const was = where.get('units', unit.tip);
+    if (was && JSON.stringify({ ...was, at: undefined }) === JSON.stringify(kept)) continue;
+    where.put('units', unit.tip, { ...kept, at: Date.now() });
+  }
+  const all = Object.entries(where.all('units'));
+  for (const [tip] of all.sort(([, a], [, b]) => b.at - a.at).slice(100)) where.remove('units', tip);
+};
+const toldAt = (attempt) => where.get('units', attempt.subjectRevision) ?? undefined;
 
 /** The `pull-request` step: the active pull request from the pushed branch, opened here where there is none. */
 async function pullRequest(attempt) {
@@ -133,18 +152,34 @@ async function stateOf(frame) {
   };
 }
 
+const progressOf = (attempt) => {
+  let told = 0;
+  return ({ actor, environment, url, message }) => {
+    told += 1;
+    send({ jsonrpc: '2.0', method: 'work/step', params: { step: attempt.step, invocation: attempt.invocation, state: 'progress', ...(actor ? { actor } : {}),
+      evidence: { ...(url ? { url } : {}), ...(environment ? { environment } : {}), message: signed(message) }, at: new Date().toISOString(), id: `${attempt.invocation}-p${told}` } });
+  };
+};
+
 const kit = work({
   data: process.env.DAORIS_PLUGIN_DATA,
   send,
   say,
   act: async (attempt) => {
     if (stepOf(attempt) === 'pull-request') return within(async () => told(await pullRequest(attempt)));
-    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say)));
+    if (stepOf(attempt) === 'release') return within(async () => told(await release(attempt, unitOf(attempt), say, progressOf(attempt))));
+    if (STEPS.includes(stepOf(attempt))) return within(async () => told(await releaseStep(stepOf(attempt), attempt, unitOf(attempt), say, progressOf(attempt))));
     return failed('unknown-step', `no step ${attempt.step}`);
   },
-  // An earlier process's attempt: the active pull request says if it made one; a release's watch reads before it starts, so starts again.
+  // An earlier process's attempt: the active pull request says if it made one; a release's steps read their fact before they make it, so
+  // start again, and a release the first made under its effect is found, never made twice.
+  // A holder's Done outside Daoris link on a release step is read once, never acted on, and answered with the link it read.
   check: (attempt) => within(async () => {
-    if (stepOf(attempt) === 'release') return { state: 'not-started' };
+    if (attempt.link && STEPS.includes(stepOf(attempt))) {
+      const read = await linkCheck(stepOf(attempt), attempt, unitOf(attempt) ?? toldAt(attempt), say);
+      return { ...read, outcome: told(read.outcome) };
+    }
+    if (stepOf(attempt) === 'release' || STEPS.includes(stepOf(attempt))) return { state: 'not-started' };
     const unit = units.find((each) => each.tip === attempt.subjectRevision);
     if (!unit) return null;
     try {
@@ -163,6 +198,7 @@ const kit = work({
 const points = {
   'work/watch': async (frame) => {
     units = Array.isArray(frame.units) ? frame.units : [];
+    remember(units);
     return kit.points['work/watch'](frame);
   },
   'work/step': null,
@@ -173,10 +209,13 @@ const points = {
 const answers = { ...points, ...kit.calls, 'command/run': run };
 
 const answer = async (frame) => {
+  const notified = frame.id === undefined;
   try {
-    send({ jsonrpc: '2.0', id: frame.id, result: await answers[frame.method.slice(5)](frame.params ?? {}) });
+    const result = await answers[frame.method.slice(5)](frame.params ?? {});
+    if (!notified) send({ jsonrpc: '2.0', id: frame.id, result });
   } catch (error) {
-    send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
+    if (notified) say(`${frame.method}: ${String(error?.message ?? error)}`);
+    else send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: String(error?.message ?? error) } });
   }
 };
 

@@ -22,7 +22,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), a folder moved across volumes (`FolderMove`: a failed copy leaves the target as it was), the one-time placing into D172's places (`HomePlacing`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
-| `Drv/Workplace/` | Going back refused while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port |
+| `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
 | `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
@@ -160,17 +160,26 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 **Updating**
 
 37. The person's word on a staged build is `data/update.json`: when idle (the default, also when absent or unreadable), now,
-    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it.
-    (from D139, D50)
+    or not now. *Not now* holds for that build only. The banner and `daoris update --when-idle|--now|--cancel` both write it,
+    and `--stage --not-now` writes *not now* for the build it stages once nothing is staged and before the build is, one act, so
+    no idle install races a cancel. (from D139, D50, D301)
 38. While it drains, the loop starts nothing new but still looks: endings are reported, plugins told, sync runs. A press that
     starts a process or changes a repository through git waits for the restart; one that starts no process goes on: a stop, a
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
     every press waits. (from D139)
-39. Idle is no driven session running and no conversation's turn in flight. A conversation between turns, a parked session
-    and the terminal are idle. (from D139)
+39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
+    performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
+    its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never
+    cut off and left not known. The loop hands that count in its work beside the sessions and the turns; the updater reads no run
+    record. A conversation between turns, a parked session, the terminal, a held or settled attempt, a step whose progress names
+    the role it waits on (an approver, a deployer, whoever holds it), a watch whose plugin declares it acts on nothing
+    (`perform.acts: false`), Daoris's own steps, an ended run's, and an attempt the runtime does not ask after (a run it does not
+    govern, a node no graph declares, a plugin down) are idle, and an attempt not known is idle 15 minutes after the loop first
+    counts it so (`PluginStepsInFlight.UnknownBound`); the banner names the steps it waits on. (from D139, D301)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
-    version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
+    version while a delivery is unresolved, and below the first build that saved a workflow whose step names a role other than its
+    kind's own (`workflows`, `WorkflowRolesSince`); a role equal to a step kind's own is never written, so it closes nothing. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
     the sentence, names the deliveries, writes the word and exits 1. A refusal closes nothing, is said again at every look, and holds
     for its build until the person's next word, from the banner, Settings or the terminal, which checks again. (from D139, D215)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the
@@ -240,8 +249,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   rule 17. Add it to `HomePlacing.Moves` only if Daoris alone names it by a derived path.
 - **Start-time home work:** `Mod/Update/InstallHome.cs`, `HomePlacing.cs`.
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
-  them. **When to update:** `Mod/Update/InstallUpdater.cs`. **The request:** `Drv/Install/InstallUpdate.cs`.
-- **A refusal to go back:** `Drv/Workplace/InstallRollback.cs`.
+  them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
+  steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
+  `Drv/Install/InstallUpdate.cs`.
+- **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`.
 - **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
   reader deleted in the same chunk.
 - **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must
@@ -249,9 +260,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
 **Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit, `HomeMigrationTests`,
-`ServiceHostLocatorTests`, `PinnedUpdatesTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
+`ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
-`home-census.test.ts`, `tool-test/desktop-publish.test.ts`, `test/deployment-rehearsal.test.ts`.
+`home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.
 
 **Gates that bite.** `driver`, `modules`, `driver-process`, `modules-process` and `censuses` for the C#; `service` for its twin;
 `cli` (`npm run verify`: the home census, the size ratchet); `tool-tests` for the publish; and

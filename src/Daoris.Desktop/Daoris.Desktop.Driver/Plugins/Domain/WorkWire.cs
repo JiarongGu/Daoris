@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What a plugin reports of a step: reached, failed, or not known.</summary>
+/// <summary>What a plugin reports of a step: reached, failed, or not known; and, while a performed attempt runs, its progress.</summary>
 public static class WorkStates
 {
     public const string Reached = "reached";
@@ -14,6 +14,8 @@ public static class WorkStates
     public const string Failed = "failed";
 
     public const string Unknown = "unknown";
+
+    public const string Progress = "progress";
 
     public static readonly IReadOnlyList<string> All = [Reached, Failed, Unknown];
 }
@@ -61,7 +63,10 @@ public sealed record WatchedUnit(
 public sealed record WorkWatchFrame(int Generation, bool Resync, IReadOnlyList<WatchedUnit> Units);
 
 /// <summary>An event's evidence, the plugin's word: each part optional, the message 300 characters at most.</summary>
-public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message);
+public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message)
+{
+    public string? By { get; init; }
+}
 
 /// <summary>An output a reached step names: a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
 public sealed record WorkOutput(string Ref, string? Revision);
@@ -87,6 +92,8 @@ public sealed record WorkOutcome(
 
     /// <summary>A failure's fix: one of its plugin's declared commands, which the person runs to put it right. Judged against the declaration where the run is read.</summary>
     public string? Needs { get; init; }
+
+    public string? Actor { get; init; }
 }
 
 /// <summary>
@@ -97,11 +104,14 @@ public sealed record WorkStepFrame(
     string Step, WorkOutcome Outcome, DateTimeOffset At, string Id,
     string? Repository = null, string? Branch = null, string? Commit = null, string? Invocation = null);
 
-/// <summary>A <see cref="HookPoints.Perform"/> request's params: one attempt, with the key the plugin deduplicates it by.</summary>
 public sealed record WorkPerformCall(
     string Unit, string Step, int StepVersion, string Invocation, string IdempotencyKey, string SubjectRevision,
     IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt)
 {
+    public string? EffectKey { get; init; }
+
+    public string Effect => EffectKey ?? IdempotencyKey;
+
     /// <summary>
     /// The performed node's options as its graph writes them (<see cref="NodeDeclaration.Options"/>): each name with its JSON value's
     /// text. The host fills them at each send from the declaration it performs, so they are never kept on the attempt's record.
@@ -112,13 +122,20 @@ public sealed record WorkPerformCall(
 }
 
 /// <summary>A <c>work/reconcile</c> request's params: what became of one attempt.</summary>
-public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision);
+public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision)
+{
+    public string? Link { get; init; }
+
+    public IReadOnlyDictionary<string, string> Options { get; init; } = ImmutableSortedDictionary<string, string>.Empty;
+}
 
 /// <summary><c>work/reconcile</c>'s answer: its state, and the outcome where it is done or failed.</summary>
 public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = null)
 {
     /// <summary>What the attempt created so far, whatever its state: taken as its receipts.</summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
+
+    public string? Link { get; init; }
 }
 
 /// <summary>What <c>work/cleanup</c> answers of one receipt: three are terminal, and <see cref="Failed"/> is tried again on a back-off.</summary>
@@ -145,6 +162,12 @@ public static class CleanupDispositions
 /// and the key it deduplicates by, the same at every delivery.
 /// </summary>
 public sealed record WorkCleanupCall(string Receipt, string Resource, string IdempotencyKey);
+
+/// <summary>
+/// A <c>work/stand-down</c> notification's params: the attempt by its invocation and key, and why it stood down (<c>skip</c>, <c>stop</c>,
+/// <c>done-outside</c>).
+/// </summary>
+public sealed record WorkStandDownCall(string Unit, string Step, string Invocation, string IdempotencyKey, string Why);
 
 /// <summary><c>work/cleanup</c>'s answer: a disposition of <see cref="CleanupDispositions"/>, its proof and the plugin's words.</summary>
 public sealed record WorkCleanupAnswer(string Disposition, string? Proof = null, string? Message = null);
@@ -174,6 +197,9 @@ public static class WorkWire
 
     /// <summary>The cleanup adapter's request: one receipt's removal asked of the plugin that created it.</summary>
     public const string CleanupMethod = "hook/" + PluginSteps.CleanupPoint;
+
+    /// <summary>The notification an attempt's stand-down is told by (<see cref="PluginSteps.StandDownPoint"/>).</summary>
+    public const string StandDownMethod = "hook/" + PluginSteps.StandDownPoint;
 
     /// <summary>How many resources one outcome or reconciliation names at most, as many as its outputs.</summary>
     public const int ResourcesAtMost = 8;
@@ -228,8 +254,8 @@ public static class WorkWire
     };
 
     /// <summary>
-    /// <see cref="HookPoints.Perform"/>'s params, as its example writes them. The step's <c>options</c> follow where it has any: an object
-    /// of each option's JSON value, or its text as written where that is not JSON.
+    /// <see cref="HookPoints.Perform"/>'s params, as its example writes them, with its <c>effectKey</c> where it has one. The step's
+    /// <c>options</c> follow where it has any: an object of each option's JSON value, or its text as written where that is not JSON.
     /// </summary>
     public static JsonObject Perform(WorkPerformCall call)
     {
@@ -244,6 +270,7 @@ public static class WorkWire
             ["inputs"] = Strings(call.Inputs),
             ["deadlineAt"] = Time(call.DeadlineAt),
         };
+        if (call.EffectKey is { } effect) written["effectKey"] = effect;
         if (call.Options.Count > 0)
         {
             var options = new JsonObject();
@@ -254,15 +281,27 @@ public static class WorkWire
         return written;
     }
 
-    /// <summary><c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>.</summary>
-    public static JsonObject Reconcile(WorkReconcileCall call) => new()
+    /// <summary>
+    /// <c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>, and a holder's link with the step's
+    /// options where the question is a link's check (<see cref="WorkReconcileCall.Link"/>).
+    /// </summary>
+    public static JsonObject Reconcile(WorkReconcileCall call)
     {
-        ["unit"] = call.Unit,
-        ["step"] = call.Step,
-        ["invocation"] = call.Invocation,
-        ["idempotencyKey"] = call.IdempotencyKey,
-        ["subjectRevision"] = call.SubjectRevision,
-    };
+        var written = new JsonObject
+        {
+            ["unit"] = call.Unit,
+            ["step"] = call.Step,
+            ["invocation"] = call.Invocation,
+            ["idempotencyKey"] = call.IdempotencyKey,
+            ["subjectRevision"] = call.SubjectRevision,
+        };
+        if (call.Link is not { } link) return written;
+        written["link"] = link;
+        var options = new JsonObject();
+        foreach (var (name, text) in call.Options.OrderBy(pair => pair.Key, StringComparer.Ordinal)) options[name] = OptionValue(text);
+        written["options"] = options;
+        return written;
+    }
 
     /// <summary><c>work/cleanup</c>'s params: <c>{ receipt, resource, idempotencyKey }</c>.</summary>
     public static JsonObject Cleanup(WorkCleanupCall call) => new()
@@ -270,6 +309,16 @@ public static class WorkWire
         ["receipt"] = call.Receipt,
         ["resource"] = call.Resource,
         ["idempotencyKey"] = call.IdempotencyKey,
+    };
+
+    /// <summary><c>work/stand-down</c>'s params: <c>{ unit, step, invocation, idempotencyKey, why }</c>.</summary>
+    public static JsonObject StandDown(WorkStandDownCall call) => new()
+    {
+        ["unit"] = call.Unit,
+        ["step"] = call.Step,
+        ["invocation"] = call.Invocation,
+        ["idempotencyKey"] = call.IdempotencyKey,
+        ["why"] = call.Why,
     };
 
     // ——— a plugin's messages: what a stand-in and the kit's scaffold write
@@ -327,7 +376,8 @@ public static class WorkWire
         field = "step";
         if (Text(@params, "step") is not { } step || !IsStep(step)) return null;
 
-        var outcome = ReadOutcome(@params, out field);
+        var bound = @params.TryGetProperty("invocation", out var named) && named.ValueKind == JsonValueKind.String;
+        var outcome = ReadOutcome(@params, out field, progress: bound);
         if (outcome is null) return null;
 
         field = "at";
@@ -339,13 +389,13 @@ public static class WorkWire
         if (!Optional(@params, "invocation", NameChars, out var invocation)) return null;
 
         // An observed step binds to a commit; a completion binds to the attempt it names.
-        var bound = invocation is null;
+        var observed = invocation is null;
         field = "repository";
-        if (!Optional(@params, "repository", NameChars, out var repository) || (bound && repository is null)) return null;
+        if (!Optional(@params, "repository", NameChars, out var repository) || (observed && repository is null)) return null;
         field = "branch";
-        if (!Optional(@params, "branch", BranchChars, out var branch) || (bound && branch is null)) return null;
+        if (!Optional(@params, "branch", BranchChars, out var branch) || (observed && branch is null)) return null;
         field = "commit";
-        if (!Optional(@params, "commit", 64, out var commit) || (commit is not null && !FullCommit.IsMatch(commit)) || (bound && commit is null))
+        if (!Optional(@params, "commit", 64, out var commit) || (commit is not null && !FullCommit.IsMatch(commit)) || (observed && commit is null))
         {
             return null;
         }
@@ -379,7 +429,8 @@ public static class WorkWire
             ReconcileStates.Failed => outcome?.State == WorkStates.Failed,
             _ => outcome is null,
         };
-        return fits ? new WorkReconcileAnswer(state, outcome) { Resources = resources } : null;
+        if (!Optional(answer, "link", UrlChars, out var link)) return null;
+        return fits ? new WorkReconcileAnswer(state, outcome) { Resources = resources, Link = link } : null;
     }
 
     /// <summary>
@@ -431,7 +482,7 @@ public static class WorkWire
         && Text(@params, "subjectRevision") is { } revision && StringList(@params, "inputs") is { } inputs
         && Text(@params, "deadlineAt") is { } deadline && ReadTime(deadline) is { } deadlineAt
         && ReadOptions(@params) is { } options
-            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt) { Options = options }
+            ? new WorkPerformCall(unit, step, version, invocation, key, revision, inputs, deadlineAt) { Options = options, EffectKey = Text(@params, "effectKey") }
             : null;
 
     /// <summary>A perform call's <c>options</c> read back as each value's JSON text: absent or null is none; null where it is not an object.</summary>
@@ -476,6 +527,7 @@ public static class WorkWire
     private static JsonObject Outcome(JsonObject into, WorkOutcome outcome)
     {
         into["state"] = outcome.State;
+        if (outcome.Actor is not null) into["actor"] = outcome.Actor;
         if (outcome.Code is not null) into["code"] = outcome.Code;
         if (outcome.Needs is not null) into["needs"] = outcome.Needs;
         if (outcome.Evidence is { } evidence)
@@ -485,6 +537,7 @@ public static class WorkWire
             if (evidence.Url is not null) written["url"] = evidence.Url;
             if (evidence.Environment is not null) written["environment"] = evidence.Environment;
             if (evidence.Message is not null) written["message"] = evidence.Message;
+            if (evidence.By is not null) written["by"] = evidence.By;
             into["evidence"] = written;
         }
 
@@ -539,10 +592,13 @@ public static class WorkWire
     /// An outcome's fields read from <paramref name="from"/> by shape, or null with the broken field: a state of the three, a failure's code,
     /// evidence of its four optional parts, and outputs on a reached outcome alone, at most 8, each a reference to a declared kind of thing.
     /// </summary>
-    private static WorkOutcome? ReadOutcome(JsonElement from, out string? field)
+    private static WorkOutcome? ReadOutcome(JsonElement from, out string? field, bool progress = false)
     {
         field = "state";
-        if (Text(from, "state") is not { } state || !WorkStates.All.Contains(state)) return null;
+        if (Text(from, "state") is not { } state || !(WorkStates.All.Contains(state) || (progress && state == WorkStates.Progress))) return null;
+
+        field = "actor";
+        if (!Optional(from, "actor", 40, out var actor) || (actor is not null && (state != WorkStates.Progress || !CodeShape.IsMatch(actor)))) return null;
 
         field = "code";
         if (!Optional(from, "code", 40, out var code) || (code is not null && !CodeShape.IsMatch(code))) return null;
@@ -558,12 +614,13 @@ public static class WorkWire
                 || !Optional(said, "ref", RefChars, out var reference) || !Optional(said, "url", UrlChars, out var url)
                 || (url is not null && !IsWebPage(url))
                 || !Optional(said, "environment", NameChars, out var environment)
-                || !Words(said, "message", MessageChars, out var message))
+                || !Words(said, "message", MessageChars, out var message)
+                || !Optional(said, "by", NameChars, out var by))
             {
                 return null;
             }
 
-            evidence = new WorkEvidence(reference, url, environment, message);
+            evidence = new WorkEvidence(reference, url, environment, message) { By = by };
         }
 
         field = "outputs";
@@ -596,7 +653,7 @@ public static class WorkWire
         field = "resources";
         if (ReadResources(from) is not { } resources) return null;
         field = null;
-        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision, Needs = needs };
+        return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision, Needs = needs, Actor = actor };
     }
 
     /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind).</summary>

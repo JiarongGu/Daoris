@@ -96,7 +96,6 @@ function LandEditor({ editor, graph, workflow, lines, onReads }: {
   return (
     <LandOptions
       palette={editor.palette}
-      roles={editor.roles}
       graph={graph}
       workflow={workflow}
       lines={lines}
@@ -115,7 +114,6 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   editor?: WorkflowTabProps['editor'] & WorkflowPlanBridge;
   /** The repository or the workspace whose place it is. */
   name: string;
-  /** A repository's place, or a workspace's. */
   page?: 'repository' | 'workspace';
   /** The route chosen and the step whose cell shows, which the application keeps above the mounts; absent, the section keeps its own. */
   view?: PlaceView;

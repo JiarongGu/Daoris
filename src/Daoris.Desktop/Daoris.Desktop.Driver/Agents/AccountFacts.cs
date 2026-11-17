@@ -10,5 +10,7 @@ namespace Daoris.Driver;
 /// <para><see cref="Projected"/> is its use projected to now, set only for the start's line, which says it as
 /// projected: the walk ranks on <see cref="Said"/> alone, as near and over are a reading's.</para>
 /// </remarks>
+/// <param name="SignIn">Its sign-in state (<see cref="SignInStates"/>): one whose check did not answer goes last.</param>
 public sealed record AccountFacts(
-    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null, AccountProjection? Projected = null);
+    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, AccountSaid? Said = null, AccountProjection? Projected = null,
+    SignInState? SignIn = null);

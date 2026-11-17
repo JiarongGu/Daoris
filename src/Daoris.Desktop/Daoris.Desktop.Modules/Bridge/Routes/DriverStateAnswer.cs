@@ -151,6 +151,7 @@ internal static class DriverStateAnswer
                 .Select(p => new { Repository = p.Key, p.Value }).ToArray(),
             WorkspaceGrowth = config.WorkspaceGrowth.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, p.Value }).ToArray(),
+            PlaceRisk = config.PlaceRisk.Rows(),
             Commits = config.Commits.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Rule = LinesRoutes.CommitWire(p.Value) }).ToArray(),
             WorkspaceCommits = config.WorkspaceCommits.OrderBy(p => p.Key, StringComparer.Ordinal)

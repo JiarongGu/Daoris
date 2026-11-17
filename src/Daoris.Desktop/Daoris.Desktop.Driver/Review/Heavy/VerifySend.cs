@@ -29,4 +29,7 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
 
     /// <summary>Whether a run's check (<see cref="RunChecks"/>) judges the work merged onto its line's tip (<see cref="LineMerge"/>); false judges the commit as it stands.</summary>
     public bool AsMerged { get; init; }
+
+    /// <summary>Whether the check runs the full set, every gate the accepted declaration names, as a one-scope ask's end does (<see cref="ScopeLanding"/>).</summary>
+    public bool Full { get; init; }
 }

@@ -7,6 +7,7 @@ import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
 import { CopyBoundSetting } from './machine/CopyBoundSetting';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
+import { UxTrailSetting, type UxTrailShown } from './machine/UxTrailSetting';
 import { type MinutesDeclared, MinutesSetting } from './machine/MinutesSetting';
 import { type TerminalTier, TerminalTierSetting } from './machine/TerminalTierSetting';
 import type { TerminalTierChange } from '../person/terminalActs';
@@ -45,7 +46,7 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onManifest, onCap, onTerminal, onAccess, onGitAccess }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
   facts: DriverFacts;
   /** The settings held in minutes as the driver's list declares them, which the domain reads from the list. */
   minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; manifest?: MinutesDeclared };
@@ -64,6 +65,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
   /** A change to this machine's git access, a loosening confirmed in its row first. */
   onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
+  uxTrail?: UxTrailShown;
 }) {
   const { t } = useTranslation();
   // The cap held as text while typed: a number input mid-edit passes through the empty string, which the config refuses.
@@ -91,6 +93,9 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             <p className="m-0 text-small text-ink-soft">{t(facts.notify ? 'settings.notify.state.on' : 'settings.notify.state.off')}</p>
             <p className="m-0 mt-1 text-small text-ink-faint">{t('settings.notify.press')}</p>
           </SettingRow>
+
+          {/* The person's own UX trail, off by default and kept on this desktop only. */}
+          {uxTrail && <UxTrailSetting {...uxTrail} />}
 
           {/* How long an account cools when its agent names no reset: offered where the shell says it,
               since the answer has no such field and has no route to write it. */}

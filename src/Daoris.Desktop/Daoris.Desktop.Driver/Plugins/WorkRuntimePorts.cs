@@ -25,6 +25,10 @@ public interface IWorkPerformPort
     Task<(WorkCleanupAnswer Answer, int Generation)> CleanupAsync(string plugin, WorkCleanupCall call, CancellationToken ct) =>
         Task.FromException<(WorkCleanupAnswer, int)>(new DriverException($"plugin `{plugin}` is asked to clean only on the work wire, and this port has none."));
 
+    void StandDown(string plugin, WorkStandDownCall call)
+    {
+    }
+
     /// <summary>
     /// A frame from <paramref name="plugin"/> not believed: counted as a <c>plugin.step</c> line of its code, with no
     /// words, at most once a minute per plugin and code.

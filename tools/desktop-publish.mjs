@@ -13,8 +13,9 @@
  *                                                           …beside a running install, in update/staged/,
  *                                                           which the desktop installs when idle: it drains
  *                                                           (starts nothing new, holds the presses that would start
- *                                                           work) until every driven session ends;
- *                                                           `daoris update --cancel` stages it *not now*
+ *                                                           work) until every driven session, turn and plugin
+ *                                                           step ends; `daoris update --cancel` holds it *not now*
+ *   … --stage --not-now                                     …held *not now* from the start, in one act
  *   … --force-ungated                                       …a commit whose tiers have not both passed
  *                                                           (see below): the person's call
  *   node tools/desktop-publish.mjs --to <install> --service --stage --from-gated <commit>
@@ -92,7 +93,7 @@ export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HO
 export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand, BIN_STAGES, layBinPrograms } from './desktop-publish/publish-commands.mjs';
 export { layCli } from './desktop-publish/cli.mjs';
 export { bundleCli } from './desktop-publish/cli-bundle.mjs';
-export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
+export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, UPDATE_REQUEST, NOT_NOW, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, holdNotNow, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
 export { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
 export { askTiers } from './desktop-publish/tier-evidence.mjs';
@@ -177,6 +178,10 @@ async function main() {
   // `--stage`: the same build, written beside the install into `update/staged/` instead of over it, for
   // the desktop to install when its work allows. Everything below writes under `root`, which is the install or the staging.
   const stage = flag('--stage');
+  if (flag('--not-now') && !stage) {
+    console.error('desktop-publish: --not-now holds a staged build: give it with --stage. A publish in place installs at once.');
+    process.exit(2);
+  }
   const refused = stage
     ? stageRefusal(to, { service: flag('--service') })
     : refusal(to, { beside: flag('--beside'), service: flag('--service') });
@@ -385,7 +390,7 @@ async function main() {
       at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     };
     writeManifest(root, identity);
-    promoteStage(root, to);
+    promoteStage(root, to, { notNow: flag('--not-now') ? identity.id : null });
     // A stage built here is recorded here; the gate tree's child is recorded by its parent, and a rehearsal's
     // stage under `_fixtures` is no stage of the owner's install.
     const home = mainCheckout(repoRoot);
@@ -395,8 +400,8 @@ async function main() {
       if (commit) recordStage(home, { commit, to, at: identity.at, forced: flag('--force-ungated') });
     }
     console.log(`\ndesktop-publish: staged build ${identity.id} (${identity.version}${identity.commit ? `, ${identity.commit}` : ''}) `
-      + `beside ${to}, in ${STAGED.join('/')}/`);
-    for (const line of stagedAdvice()) console.log(line);
+      + `beside ${to}, in ${STAGED.join('/')}/${flag('--not-now') ? ', held not now' : ''}`);
+    for (const line of stagedAdvice({ notNow: flag('--not-now') })) console.log(line);
     return;
   }
 

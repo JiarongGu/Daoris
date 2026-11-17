@@ -12,7 +12,10 @@ public sealed class NodeDoors
     private readonly ImmutableDictionary<string, INodeDoor> _doors;
     private readonly Action<string, string>? _say;
 
-    private NodeDoors(ImmutableDictionary<string, INodeDoor> doors, Action<string, string>? say = null) => (_doors, _say) = (doors, say);
+    private NodeDoors(ImmutableDictionary<string, INodeDoor> doors, Action<string, string>? say = null, bool reviewed = false) =>
+        (_doors, _say, ScopeReviewed) = (doors, say, reviewed);
+
+    public bool ScopeReviewed { get; }
 
     /// <summary>No door: nothing is started on one.</summary>
     public static NodeDoors None { get; } = new(ImmutableDictionary.Create<string, INodeDoor>(StringComparer.Ordinal));
@@ -28,13 +31,13 @@ public sealed class NodeDoors
 
         if (((IStarts)new PluginStep()).Door(wiring) is { } agents) doors = doors.SetItem(StepAgents.Door, agents);
 
-        return new NodeDoors(doors, wiring.Log);
+        return new NodeDoors(doors, wiring.Log, wiring.ScopeReviewed);
     }
 
     /// <summary>These doors with <paramref name="kind"/>'s replaced by <paramref name="door"/>, or taken away where it is null.</summary>
-    public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door), _say);
+    public NodeDoors With(string kind, INodeDoor? door) => new(door is null ? _doors.Remove(kind) : _doors.SetItem(kind, door), _say, ScopeReviewed);
 
-    public NodeDoors Saying(Action<string, string> say) => new(_doors, say);
+    public NodeDoors Saying(Action<string, string> say) => new(_doors, say, ScopeReviewed);
 
     /// <summary>Tells the machine log <paramref name="said"/> under <paramref name="code"/>, where a keeping starts nothing and says why; nothing where no log is wired.</summary>
     public void Say(string code, string said) => _say?.Invoke(code, said);

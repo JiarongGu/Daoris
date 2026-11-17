@@ -6,16 +6,16 @@ import type { Attention } from '../attention/AttentionRow';
 import { placedFact } from './SessionRow';
 import { opensRun } from './runWaitFact';
 
-// A session the driver placed by its run's waits: its row and *What needs you*'s say what the run waits for, in
-// each shipped language, and the band's row opens its run. Which session stands for which run, and in which group, is
+// A session the driver placed by its run's waits: its row says the step its run waits at, one way whoever holds it, "waiting on
+// <role>: you", in each shipped language, and the band's row opens its run. Which session stands for which run, and in which group, is
 // .NET's (`RunWaitGroupsTests`).
 
 const placed = (over: Partial<SessionGrouping>): SessionGrouping => ({
   session: 's1', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: true, teammate: false, ...over,
 });
 
-const accept = placed({ waits: [{ run: 'q1', node: 'review', why: 'accept', since: '2026-11-10T09:30:00Z' }] });
-const approval = placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'approve', why: 'approval' }] });
+const accept = placed({ waits: [{ run: 'q1', node: 'review', why: 'accept', role: 'acceptor', since: '2026-11-10T09:30:00Z' }] });
+const approval = placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'approve', why: 'approval', role: 'approver' }] });
 
 const said = (grouping: SessionGrouping) => {
   const fact = placedFact(grouping, grouping.shown);
@@ -25,21 +25,28 @@ const said = (grouping: SessionGrouping) => {
 describe('a row its run waits placed', () => {
   afterEach(() => i18n.changeLanguage('en'));
 
-  it('says the Accept its run waits for, ahead of its tree’s work, in English and Chinese', async () => {
+  it('says the step its run waits at, on its role, held by you, ahead of its tree’s work, in English and Chinese', async () => {
     await i18n.changeLanguage('en');
-    expect(said({ ...accept, work: { commits: 2, uncommitted: 0 } })).toBe('its run waits for your Accept');
-    expect(said(approval)).toBe('its run waits for your approval at approve');
-    expect(said(placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'check', why: 'held' }] }))).toBe('its run’s check is held for your word');
+    expect(said({ ...accept, work: { commits: 2, uncommitted: 0 } })).toBe('its run’s review: waiting on `acceptor`: you');
+    expect(said(approval)).toBe('its run’s approve: waiting on `approver`: you');
     await i18n.changeLanguage('zh');
-    expect(said(accept)).toBe('它的进展在等你采纳');
-    expect(said(approval)).toBe('它的进展停在 approve，等你批准');
+    expect(said(accept)).toBe('它的进展停在 review：等待 `acceptor`：你');
+    expect(said(approval)).toBe('它的进展停在 approve：等待 `approver`：你');
   });
 
-  it('says the step that put it in Waiting on you where more than one waits, and a word a newer host adds plainly', async () => {
+  it('says the role a plugin step waits on, which the person holds, as any other wait on them', async () => {
+    const actor = placed({ reason: 'actor', waits: [{ run: 'q1', node: 'release', why: 'actor', role: 'approver' }] });
     await i18n.changeLanguage('en');
-    const both = placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'review', why: 'accept' }, { run: 'q1', node: 'go', why: 'go-ahead' }] });
-    expect(said(both)).toBe('its run waits for your go-ahead at go');
-    expect(said(placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'next', why: 'newer' }] }))).toBe('its run waits for you at next');
+    expect(said(actor)).toBe('its run’s release: waiting on `approver`: you');
+    await i18n.changeLanguage('zh');
+    expect(said(actor)).toBe('它的进展停在 release：等待 `approver`：你');
+  });
+
+  it('says the step that put it in Waiting on you where more than one waits, and a word a newer host adds alike', async () => {
+    await i18n.changeLanguage('en');
+    const both = placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'review', why: 'accept', role: 'acceptor' }, { run: 'q1', node: 'go', why: 'go-ahead', role: 'approver' }] });
+    expect(said(both)).toBe('its run’s go: waiting on `approver`: you');
+    expect(said(placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'next', why: 'newer', role: 'lead' }] }))).toBe('its run’s next: waiting on `lead`: you');
   });
 
   it('is offered in What needs you as a review row that opens its run, and the list opens it on its run', () => {

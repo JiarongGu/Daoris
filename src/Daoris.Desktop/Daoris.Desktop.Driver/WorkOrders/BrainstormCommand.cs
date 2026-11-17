@@ -15,6 +15,7 @@ public static class BrainstormCommand
 {
     public const string Usage =
         "usage: daoris brainstorm \"<question>\" [--repository <name>] [--agents <a,b>] [--source <path>]... [--id <id>]\n"
+        + "       daoris brainstorm \"<purpose brief>\" --design [--repository <name>] [--agents <a,b>] [--id <id>]\n"
         + "       daoris brainstorm show|send|stop|clear <id>\n"
         + "       daoris brainstorm list\n"
         + "       daoris brainstorm \"<question>\" --kind meeting --agents <a,b> [--repository <name>] [--id <id>]\n"
@@ -89,6 +90,8 @@ public static class BrainstormCommand
 
     private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
     {
+        var design = rest.Contains("--design", StringComparer.Ordinal);
+        rest = [.. rest.Where(word => word != "--design")];
         string? repository = null;
         string? named = null;
         IReadOnlyList<string> agents = [];
@@ -123,7 +126,7 @@ public static class BrainstormCommand
         }
 
         return BrainstormDoor.Press(
-            doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false), output);
+            doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false, design), output);
     }
 
     private static int Show(BrainstormFiles files, string id, TextWriter output)

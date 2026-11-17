@@ -115,6 +115,7 @@ public static class NeedsAPerson
         }
 
         rows.AddRange(PlanQuestionRows.Of(facts.Asks));
+        rows.AddRange(DesignQuestionRows.Of(facts.Brainstorms));
 
         // A done its departure holds for the person's yes, until they accept it. A set-up step its review holds waits for
         // their review instead, which no yes lifts, so it is the set-up's row and never this one.
@@ -235,7 +236,7 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
-        rows.AddRange(HumanTaskRows.Of(facts.Tasks));
+        rows.AddRange(HumanTaskRows.Of(facts.Steps, facts.Groups));
 
         // A candidate the policy held for the owner's decide, a superseded commit awaiting
         // its answer, and a landing whose integration waits for the owner's card, one row each in its repository's workspace, its door the

@@ -287,8 +287,8 @@ internal sealed class NodeRunKeeping(
                 }
             }
 
-            // The pass that applies the person's stop of a running check tells the executor.
-            performer.StopChecks(unit, [.. applied.Where(each => each.Refused is null && each.Word.Act == NodeWordActs.Stop).Select(each => each.Word.Node)]);
+            // The pass that applies the person's skip or stop tells what runs the step's attempt: a check's executor, a step's agents, a plugin.
+            performer.StandDown(unit, [.. applied.Where(each => each.Refused is null && each.Word.Act is NodeWordActs.Stop or NodeWordActs.Skip).Select(each => each.Word.Node)]);
         }
 
         return (done, said);

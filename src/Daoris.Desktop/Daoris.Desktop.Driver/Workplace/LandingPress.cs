@@ -23,9 +23,9 @@ internal sealed class LandingPress(
         var performing = DeliveryRuns.Hold(context.Home, delivery.Claim.Key);
         if (performing is null)
         {
-            return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; accept again once that ends.")
+            return new(false, $"Nothing was landed: its delivery {delivery.Claim.Key[..12]} is being landed or settled here now; it is tried again once that ends.")
             {
-                Refusal = LandingCode.Refused,
+                Refusal = LandingCode.Busy,
             };
         }
 

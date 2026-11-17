@@ -61,11 +61,11 @@ public static class NoticesRead
     /// </summary>
     public static IReadOnlyDictionary<string, string> KindGroups { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["parked"] = "holding", ["parked-quest"] = "holding", ["steward-stopped"] = "holding", ["policy-hold"] = "holding", ["unclosed"] = "holding", ["request-declined"] = "holding", ["task"] = "holding",["go-ahead"] = "holding", ["permission"] = "holding",
+        ["parked"] = "holding", ["parked-quest"] = "holding", ["steward-stopped"] = "holding", ["policy-hold"] = "holding", ["unclosed"] = "holding", ["request-declined"] = "holding", ["step"] = "holding", ["go-ahead"] = "holding", ["permission"] = "holding",
         ["answer"] = "holding", ["confirmation"] = "holding", ["trust"] = "holding", ["account-wait"] = "holding",
         ["signed-out"] = "holding", ["quiet"] = "holding", ["helper-ended"] = "holding", ["proposal"] = "word", ["intake"] = "word", ["departure"] = "word", ["set-up"] = "word",
         ["opinion"] = "word", ["rule"] = "word", ["second-check"] = "word", ["left"] = "word", ["helper"] = "word", ["hand-over"] = "word", ["work"] = "word", ["memory"] = "word",
-        ["integration"] = "word", ["space"] = "word", ["unanswerable"] = "word", ["plan-question"] = "word", ["git-held"] = "word", ["git-ask"] = "holding", ["review"] = "ready",
+        ["integration"] = "word", ["space"] = "word", ["unanswerable"] = "word", ["plan-question"] = "word", ["design-question"] = "word", ["git-held"] = "word", ["git-ask"] = "holding", ["review"] = "ready",
     };
 
     /// <summary>

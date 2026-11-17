@@ -36,7 +36,8 @@ public sealed record PoolFacts(
     IReadOnlyList<int>? LoginPorts,
     string? SettingsFile,
     bool WeekFixed,
-    IKeyCheck? KeyCheck = null)
+    IKeyCheck? KeyCheck = null,
+    IStoredSignIn? StoredSignIn = null)
 {
     public static PoolFacts None { get; } = new(null, null, null, null, null, null, false);
 

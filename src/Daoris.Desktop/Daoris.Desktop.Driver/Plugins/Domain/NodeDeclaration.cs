@@ -61,15 +61,17 @@ public sealed record NodePerform(bool Idempotent, bool Reconcile, IReadOnlyList<
 
     public IReadOnlyList<string> Transient { get => transient; init => transient = Copied(value); }
 
+    public bool Acts { get; init; } = true;
+
     private static ImmutableArray<string> Copied(IReadOnlyList<string> codes) =>
         ImmutableArray.CreateRange(codes ?? throw new ArgumentNullException(nameof(codes)));
 
     public bool Equals(NodePerform? other) =>
-        other is not null && Idempotent == other.Idempotent && Reconcile == other.Reconcile
+        other is not null && Idempotent == other.Idempotent && Reconcile == other.Reconcile && Acts == other.Acts
         && Transient.SequenceEqual(other.Transient, StringComparer.Ordinal);
 
     public override int GetHashCode() =>
-        Transient.Aggregate(HashCode.Combine(Idempotent, Reconcile), (hash, code) => HashCode.Combine(hash, StringComparer.Ordinal.GetHashCode(code)));
+        Transient.Aggregate(HashCode.Combine(Idempotent, Reconcile, Acts), (hash, code) => HashCode.Combine(hash, StringComparer.Ordinal.GetHashCode(code)));
 }
 
 /// <summary>
@@ -141,6 +143,8 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
     /// <summary>What an agent performing the step is to bring about, or null: a step that declares one is performed by an agent (<see cref="StepAgents"/>).</summary>
     public AuthoredText? Goal { get; init; }
 
+    public string? Role { get; init; }
+
     private readonly IReadOnlyDictionary<string, string> options = NoPorts;
 
     /// <summary>
@@ -199,6 +203,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         && string.Equals(Evidence, other.Evidence, StringComparison.Ordinal) && Equals(Retry, other.Retry)
         && TimeoutSeconds == other.TimeoutSeconds && Rejectable == other.Rejectable && Skippable == other.Skippable
         && Equals(Perform, other.Perform) && Same(Options, other.Options) && Synthetic == other.Synthetic
+        && string.Equals(Role, other.Role, StringComparison.Ordinal)
         && Outcomes.SequenceEqual(other.Outcomes, StringComparer.Ordinal)
         && OutputsOn.Count == other.OutputsOn.Count && OutputsOn.Zip(other.OutputsOn).All(pair =>
             string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal) && pair.First.Value.SequenceEqual(pair.Second.Value, StringComparer.Ordinal));
@@ -223,6 +228,7 @@ public sealed record NodeDeclaration(string Id, string Kind, int Version, string
         hash.Add(Skippable);
         hash.Add(Perform);
         hash.Add(Synthetic);
+        hash.Add(Role, StringComparer.Ordinal);
         foreach (var outcome in Outcomes) hash.Add(outcome, StringComparer.Ordinal);
         foreach (var (output, on) in OutputsOn)
         {

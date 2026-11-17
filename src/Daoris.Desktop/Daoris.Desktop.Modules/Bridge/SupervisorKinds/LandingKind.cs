@@ -27,9 +27,9 @@ internal sealed class LandingKind : ISupervisorKind
         foreach (var step in steps)
         {
             if (step.GoAheadOpen || LandingSessions.Of(records, step, serves) is not { } session) continue;
-            if (SupervisorDecisionDoor.Covered(admission, Kind, new RolePlace(Repository: step.Repository)) is not { } covered) continue;
-            if (step.Offered(covered.Acts) is not { Count: > 0 } acts) continue;
             var subject = SupervisorSubject.Landing(session.Session, step.Run, step.Node, step.Attempt);
+            if (SupervisorDecisionDoor.Covered(admission, subject, new RolePlace(Repository: step.Repository)) is not { } covered) continue;
+            if (step.Offered(covered.Acts) is not { Count: > 0 } acts) continue;
             if (!loop.Supervisor.Refers(subject)) continue;
             waiting.Add(new
             {
@@ -63,7 +63,7 @@ internal sealed class LandingKind : ISupervisorKind
             return SupervisorDecided.Refused(SupervisorWhy.NotReferred);
         }
 
-        if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, Kind, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
+        if (SupervisorDecisionDoor.Covers(loop, keeping.Generation, keeping.Subject, repository) is { } uncovered) return SupervisorDecided.Refused(uncovered);
         var landing = new SupervisorLanding(
             keeping.Subject.Session, parts.Run, parts.Node, parts.Attempt, keeping.Generation, keeping.Do, keeping.Reasons, keeping.Holder, keeping.Bound)
         {

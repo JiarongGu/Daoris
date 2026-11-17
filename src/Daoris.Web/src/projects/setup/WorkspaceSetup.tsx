@@ -8,6 +8,7 @@ import {
   HAND_OVER_DEFAULT, type HandOverEdit, HandOverField, type HandOverRule, handOverRowSays, handOverSummary,
 } from '../../settings/repository/HandOver';
 import { GROWTH_DEFAULT, GrowthSetting, type GrowthValue, growthSummary } from '../../settings/repository/Growth';
+import { type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
@@ -47,6 +48,8 @@ export type WorkspaceDefaults = {
   handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
   /** Whether an agent's press that opens a repository or a room here runs as the access mode says, is asked or is refused: `daoris settings growth`. */
   growth?: { set?: GrowthValue; onChange: (value: GrowthValue) => void } | null;
+  /** The workspace's risk and the owner's marks: `daoris settings risk`. */
+  risk?: { row?: PlaceRiskRow; onChange: (change: Omit<PlaceRiskChange, 'workspace' | 'repository'>) => void } | null;
 };
 
 /** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none. Details draws it. */
@@ -134,7 +137,7 @@ export function WorkspaceSetup({
   const mine = rows === 'all' || rows === 'sessions';
   const ofLine = rows !== 'sessions';
   const { line, review, opinion, commits } = ofLine ? defaults : ({} as WorkspaceDefaults);
-  const { language, read, helpers, handOver, growth } = mine ? defaults : ({} as WorkspaceDefaults);
+  const { language, read, helpers, handOver, growth, risk } = mine ? defaults : ({} as WorkspaceDefaults);
   const access = mine ? accessAnswered : null;
   const gitShown = mine ? git : null;
 
@@ -310,6 +313,15 @@ export function WorkspaceSetup({
               workspace={workspace}
               busy={busy}
               onChange={growth.onChange}
+            />
+          )}
+          {risk && (
+            <PlaceRiskSetting
+              name={workspace}
+              twin={t('settings.risk.twin.workspace', { workspace: shellWord(workspace, '<workspace>') })}
+              row={risk.row}
+              busy={busy}
+              onChange={risk.onChange}
             />
           )}
           {read && (

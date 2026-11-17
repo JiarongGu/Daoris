@@ -2,7 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBridge } from '@shenora/react';
 import { Button, Icon, Inline, Prose } from '../design/ui';
-import { errorMessage, reportPageStopped } from '../bridge/log';
+import { errorMessage, reportPageStopped } from '../bridge/logs/log';
 import { liftSplash } from './splash';
 
 // The page's last stand. With no boundary, a render that throws anywhere unmounts the whole tree and leaves the window

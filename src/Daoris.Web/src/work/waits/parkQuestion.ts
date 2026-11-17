@@ -33,8 +33,8 @@ export type ParkQuestion = {
 /** The supervisor's defer, as the card says it: why the question is yours, and its sourced reasons (the owner's to read). */
 export type SupervisorLeft = { bound: string; reasons: { says: string; source: string }[] };
 
-/** The marks `question_ask` takes (`QuestionBox.OwnerMarks`), each with its own words on the card. */
-export const OWNER_MARKS = ['sign-in', 'access', 'spending', 'delete', 'repository-asks', 'preference'] as const;
+/** The owner-class kinds `question_ask` takes (`QuestionBox.OwnerMarks`), each with its words on the card; an older mark has none. */
+export const OWNER_MARKS = ['direction', 'money', 'sign-in', 'release', 'history', 'data', 'publish'] as const;
 
 /** The bounds a supervisor leaves a question to the owner by, the marks among them: `SupervisorBounds.All`. */
 export const SUPERVISOR_BOUNDS = ['go-ahead', ...OWNER_MARKS, 'unrecorded', 'contradicts', 'instructed'] as const;

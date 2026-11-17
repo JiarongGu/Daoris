@@ -1,0 +1,153 @@
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { getBridge, useShenora } from '@shenora/react';
+import { keys } from '../../data/queries';
+import { TIDIED_EVENTS } from '../../projects/workspace/WorkspaceTidied';
+import type { LogFilters, LogReading, LogSince } from '../../settings/Logs';
+
+// The machine log: what the page reports into it, and Settings → Logs reading it back.
+
+/** The longest string the page reports: the machine log keeps a clue, never a paragraph. */
+export const LOG_TEXT = 120;
+
+const clipped = (text: string) => (text.length <= LOG_TEXT ? text : `${text.slice(0, LOG_TEXT)}…`);
+
+/**
+ * What the person did on the screen, into the machine log: a view opened, a command run, a
+ * view moved, a message counted, a proposal settled, a failure the page caught.
+ *
+ * @remarks
+ * **Fire and forget, and never a throw**: the log is evidence, never a reason for the page to fail, so a
+ * report the bridge refuses — or a bridge that breaks — is dropped here. **Nothing in a browser**, which
+ * has no bridge: the log is the machine's, and a browser over a remote is not on it.
+ *
+ * **Counts and names, never words.** The shell's `DAORIS.LOG` module keeps only the catalogue's events and
+ * fields and drops the rest, but a caller hands it a message's LENGTH, never its text. Called from
+ * organisms and the application only: a molecule imports no hook, and this is the bridge.
+ */
+export function logEvent(event: string, data: Record<string, string | number | boolean>): void {
+  try {
+    const bridge = getBridge();
+    if (!bridge.isAvailable) return;
+    void Promise.resolve(bridge.invoke('DAORIS.LOG', 'EVENT', { payload: { event, data } })).catch(() => {});
+  } catch {
+    // Dropped: the report is never the page's problem.
+  }
+}
+
+/** How many lines Settings → Logs asks for: a screen of the newest, never the month. */
+export const LOG_LINES = 200;
+
+/**
+ * The machine log read back: the newest lines with the terminal's filters, applied by the
+ * shell — the reading `daoris logs` prints. Desktop only: no HTTP route serves the log, and a
+ * browser has no bridge to ask.
+ */
+export const useMachineLog = (filters: LogFilters) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.machineLog(filters.since, filters.source, filters.event, filters.level),
+    queryFn: () => getBridge().invoke<LogReading>('DAORIS.LOG', 'LINES', {
+      payload: {
+        since: filters.since,
+        // An empty filter is no filter, and is left out rather than sent as nothing.
+        ...(filters.source ? { source: filters.source } : {}),
+        ...(filters.event ? { event: filters.event } : {}),
+        ...(filters.level ? { level: filters.level } : {}),
+        limit: LOG_LINES,
+      },
+    }),
+    enabled: isAvailable,
+    // A filter changed keeps the last lines on the screen until the new ones land, rather than a blank.
+    placeholderData: (previous) => previous,
+  });
+};
+
+/** How many cleaned-up lines a workspace's Branches tab reads, and how far back: a week's, at most fifty. */
+export const TIDIED_LINES = 50;
+export const TIDIED_SINCE: LogSince = '7d';
+
+/**
+ * What the look cleaned up in a workspace on its own, and could not: the log's `branch.tidied` and
+ * `branch.kept` lines of the last week for this workspace, newest first. Desktop only, for `useMachineLog`'s reason: a
+ * browser asks nothing and has no waiting state to show.
+ */
+export const useTidiedBranches = (workspace: string) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.tidiedBranches(workspace),
+    queryFn: () => getBridge().invoke<LogReading>('DAORIS.LOG', 'LINES', {
+      payload: { events: [...TIDIED_EVENTS], workspace, since: TIDIED_SINCE, limit: TIDIED_LINES },
+    }),
+    enabled: isAvailable,
+  });
+};
+
+/** Open the log's folder in the file manager: the shell names the folder, never the page. */
+export const useOpenLogFolder = () => useMutation({
+  mutationFn: () => getBridge().invoke<{ opened: boolean; folder: string | null }>('DAORIS.LOG', 'OPEN_FOLDER', {}),
+});
+
+/** An error's message as the page reports it and its error screen says it: an `Error`'s own, anything else as its text. */
+export const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error ?? ''));
+
+/** How many of a render failure's component frames the log keeps: the five the runtime's own exceptions keep (`error`'s `stack`). */
+export const STACK_FRAMES = 5;
+
+/** A frame's component: `at Name (…)` or `at new Name (…)` as V8 writes a component stack, `Name@…` as Firefox does. */
+const FRAME = /^\s*(?:at\s+(?:new\s+)?([^\s(]+)|([^\s@]+)@)/;
+
+/**
+ * The top of a component stack as the log keeps it: its first {@link STACK_FRAMES} frames by their names alone,
+ * innermost first, joined ` < `, cut short. Never a frame's location, which is where the page is loaded from: a development build's
+ * module path with its query, a production build's column in a bundle the names find anyway. A production build's names are
+ * minified, as written. Null where the stack names no frame.
+ */
+export function stackTop(componentStack: string | null | undefined): string | null {
+  const names = (componentStack ?? '').split('\n')
+    .map((frame) => FRAME.exec(frame))
+    .map((found) => found?.[1] ?? found?.[2] ?? null)
+    .filter((name): name is string => !!name)
+    .slice(0, STACK_FRAMES);
+  return names.length > 0 ? clipped(names.join(' < ')) : null;
+}
+
+/** The view this page shows, for a render failure's line; null until a view says. */
+let shownView: string | null = null;
+
+/** Say which view this page shows now: a view's id, a name, never an address or what is on it. The main window's frame says it. */
+export function pageShows(view: string): void {
+  shownView = view;
+}
+
+/**
+ * A render the page's error screen caught, into the machine log as `page.error` with `where` `render`: the message
+ * cut short; the view the page shows, or `view`, the window's own where no view has said (a secondary window's, known before
+ * anything is drawn); and the top of the component stack ({@link stackTop}), which React hands a boundary alone. Caught by the
+ * screen, so React never hands it to the window, and `installPageErrors` never hears it.
+ */
+export function reportPageStopped(error: unknown, componentStack?: string | null, view?: string | null): void {
+  const at = shownView ?? view ?? null;
+  const stack = stackTop(componentStack);
+  logEvent('page.error', {
+    where: 'render', message: clipped(errorMessage(error)), ...(at ? { view: at } : {}), ...(stack ? { stack } : {}),
+  });
+}
+
+let pageErrorsHeard = false;
+
+/**
+ * The page's own failures into the machine log: an error nothing caught, and a promise nobody
+ * handled — the message only, cut short, never a stack or what is on the screen. Installed once, at the
+ * page's start, however often it is asked.
+ */
+export function installPageErrors(): void {
+  if (pageErrorsHeard || typeof window === 'undefined') return;
+  pageErrorsHeard = true;
+  window.addEventListener('error', (event: ErrorEvent) => {
+    logEvent('page.error', { where: 'window', message: clipped(event.message || String(event.error ?? 'an error')) });
+  });
+  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    const reason: unknown = event.reason;
+    logEvent('page.error', { where: 'promise', message: clipped(reason instanceof Error ? reason.message : String(reason)) });
+  });
+}

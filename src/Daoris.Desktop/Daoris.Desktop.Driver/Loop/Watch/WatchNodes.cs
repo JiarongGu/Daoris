@@ -129,6 +129,7 @@ internal sealed class WatchNodes
             Landing = () => new LandPerformer(home, new ServiceReviewLandingWorld(home, service), new SessionTrees(home, landingPlugins),
                 watch.Events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), service.LandingSaid) { Told = hooks.Tell },
             Executor = _executor,
+            Plans = () => new ServiceTrainPlans(service),
             Integration = watch.IntegrationDoor,
             Requests = service,
             Turning = ct => TidyHolders.InUseAsync(home, service, null, ct),

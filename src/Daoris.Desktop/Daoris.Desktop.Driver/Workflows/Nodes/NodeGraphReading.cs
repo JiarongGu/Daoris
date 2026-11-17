@@ -95,6 +95,7 @@ internal static class NodeGraphReading
             TimeoutSeconds = Number(node, "timeoutSeconds", where),
             Rejectable = Flag(node, "rejectable", where) ?? false,
             Skippable = Flag(node, "skippable", where) ?? true,
+            Role = Text(node, "role", where),
             Outcomes = [.. List(node, "outcomes", where).Select(outcome => outcome.ValueKind == JsonValueKind.String ? outcome.GetString()! : throw new Unread($"{where}'s `outcomes`", "outcome's name"))],
             OutputsOn = CarriedOn(node, where),
         };

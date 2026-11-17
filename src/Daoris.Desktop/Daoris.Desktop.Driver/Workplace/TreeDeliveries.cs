@@ -91,6 +91,9 @@ internal sealed class TreeDelivering
     private readonly string? _wrote;
     private string? _open;
 
+    /// <summary>Whether a write of this delivery found the checkout held by another of Daoris's writes, a cause that passes (<see cref="LandingCode.Busy"/>).</summary>
+    internal bool Held { get; private set; }
+
     private TreeDelivering(TreeDelivery delivery, DeliveryRecord record, IReadOnlyList<DeliveryPhase> phases, string home, string repository, bool squash)
     {
         (_delivery, Record, _home, _repository, Squash) = (delivery, record, home, repository, squash);
@@ -276,7 +279,11 @@ internal sealed class TreeDelivering
         }
 
         using var held = TreeLock.TryWriting(_home, root, _repository, TreeLock.Landing);
-        if (held is null) return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; accept again once it is done");
+        if (held is null)
+        {
+            Held = true;
+            return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; it is tried again once that is done");
+        }
 
         var (transaction, intended) = old is null ? (new RefTransaction().Create(reference, value), $"`{reference}` made at {value}")
             : old == value ? (new RefTransaction().Verify(reference, value), $"`{reference}` standing at {value}")

@@ -33,7 +33,7 @@ internal static class LandReading
 
             return branch?.Held is { } joined
                 ? NodeObserving.Reached(reading, source, joined.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(joined.By, joined.On)}")
-                : NodeObserving.Seen(reading, null, "nothing was handed on at the bound commit yet");
+                : NodeObserving.Seen(reading, null, "nothing was handed on at the bound commit yet") with { Holds = Waiting(reading) };
         }
 
         if (NodeObserving.LandingOf(unit) is { } landing)
@@ -46,4 +46,7 @@ internal static class LandReading
             ? NodeObserving.Reached(reading, source, merged.Tip, SessionBranches.FileName, branch.Branch, $"merged: {WorkInventory.ProofSaid(merged.By, merged.On)}")
             : NodeObserving.Seen(reading, null, "nothing was handed on yet");
     }
+
+    private static string? Waiting(NodeReading reading) =>
+        reading.Node.Kind == NodeKinds.Land && reading.Binding.SubjectRevision is { } tip ? LandRetries.Waiting(reading.Unit.Id, tip)?.Holds : null;
 }

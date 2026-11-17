@@ -19,6 +19,7 @@ public sealed class NodeLifecycleTableTests
             "unknown>active:daoris", "unknown>reached:authority", "unknown>failed:authority",
             // The person settles what nothing else establishes.
             "unknown>reached:person", "unknown>failed:person",
+            "active>reached:person", "failed>reached:person",
             "unknown>ready:daoris", "failed>ready:daoris", "failed>ready:person", "rejected>ready:person", "stopped>ready:person",
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
             // A declined request is gone on without, a request node alone.
@@ -29,7 +30,7 @@ public sealed class NodeLifecycleTableTests
             // An opinion's gate passes it over where nothing is asked of it.
             "active>skipped:authority",
             "blocked>skipped:daoris", "ready>skipped:daoris", "invalidated>skipped:daoris",
-            "skipped>blocked:person", "skipped>invalidated:daoris",
+            "skipped>blocked:person", "skipped>invalidated:daoris", "reached>reached:authority", "skipped>skipped:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
             "active>invalidated:daoris", "reached>invalidated:daoris", "failed>invalidated:daoris", "rejected>invalidated:daoris",
             "unknown>invalidated:daoris",

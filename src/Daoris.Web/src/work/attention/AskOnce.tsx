@@ -34,7 +34,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   if (task) {
     return (
       <TaskPress
-        className="mt-2" act={task} node={item.task?.node ?? ''} words={words} onWords={onWords} busy={busy} onConfirm={onConfirm} onClose={onCancel}
+        className="mt-2" act={task} node={item.step?.node ?? ''} words={words} onWords={onWords} busy={busy} onConfirm={onConfirm} onClose={onCancel}
       />
     );
   }

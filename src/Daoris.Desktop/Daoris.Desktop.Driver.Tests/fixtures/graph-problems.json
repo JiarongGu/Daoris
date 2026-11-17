@@ -873,8 +873,11 @@
         "outputs": { "preview": "acme.deploy/preview@1" }, "outputsOn": { "preview": ["shipped"] } }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outputsOn` does not hold for a `acme.deploy/deploy`." }] },
     { "name": "a built-in declaring outcomes (DECIDE1b)", "base": "graphBase",
-      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
+      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed"] }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "qa", "words": "node `qa`: its `outcomes` does not hold for a `human`." }] },
+    { "name": "a person's decision no when wire leaves on any of its outcomes (DECIDESTEP1)", "base": "graphBase",
+      "replace": { "nodes": [{ "id": "qa", "kind": "human", "version": 1, "reach": "pressed", "evidence": "qa-proof@1", "outcomes": ["passed", "returned"] }] },
+      "problems": [{ "code": "decision-unwired", "wire": null, "node": "qa", "words": "node `qa`: a decision routes its answer, and no `when` wire leaves it on any of its outcomes." }] },
     { "name": "a decision naming one outcome (DECIDE1b)", "base": "graphBase",
       "replace": { "nodes": [{ "id": "deploy", "kind": "acme.deploy/deploy", "version": 1, "reach": "performed", "evidence": "acme.deploy/receipt@1", "inputs": { "approval": "qa-proof@1" }, "outcomes": ["shipped"] }] },
       "problems": [{ "code": "declaration", "wire": null, "node": "deploy", "words": "node `deploy`: its `outcomes` does not hold for a `acme.deploy/deploy`." }] }

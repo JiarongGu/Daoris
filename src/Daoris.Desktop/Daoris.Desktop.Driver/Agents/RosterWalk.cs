@@ -214,7 +214,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             // Counted already, and busy from then on: a status question another caller is asking the account now is
             // waited out, and no question begun after asks it while the session's own process may refresh its token. Where its
             // lock stays held past its patience, the count is taken back and the account passed for this walk.
-            if (counts && !await WaitedOutAsync(owner, pass.States[pass.At].Account!, pass.Number, ct).ConfigureAwait(false))
+            if (counts && !await WaitedOutAsync(owner, pass.States[pass.At].Account!, pass.Number, asker, config, ct).ConfigureAwait(false))
             {
                 walk.Unknown.Add(pass.States[pass.At].Account!);
                 continue;
@@ -439,9 +439,12 @@ internal sealed class RosterWalk(HarnessRoster roster)
     /// <summary>
     /// A counted start waits out a question in flight on the account it chose, counted already, so no question begun
     /// since asks it. False, the count taken back, where the account's lock stays held past <see cref="LockPatience"/>:
-    /// a start beside a question in flight could spend its single-use refresh token twice, which signs it out.
+    /// a start beside a question in flight could spend its single-use refresh token twice, which signs it out. Holding the lock,
+    /// it renews the account's sign-in once where its stored token is about to expire (<see cref="SignInRefresh"/>), so starts on
+    /// the account together find it fresh and none of their sessions refreshes it.
     /// </summary>
-    private async Task<bool> WaitedOutAsync(string owner, string account, long number, CancellationToken ct)
+    private async Task<bool> WaitedOutAsync(
+        string owner, string account, long number, AccountAgent asker, DriverConfig config, CancellationToken ct)
     {
         IAsyncDisposable? held;
         try
@@ -460,7 +463,20 @@ internal sealed class RosterWalk(HarnessRoster roster)
             return false;
         }
 
-        await held.DisposeAsync().ConfigureAwait(false);
+        try
+        {
+            await SignInRefresh.OnceAsync(roster, asker, owner, account, config, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            roster.Unchose(number);
+            throw;
+        }
+        finally
+        {
+            await held.DisposeAsync().ConfigureAwait(false);
+        }
+
         return true;
     }
 

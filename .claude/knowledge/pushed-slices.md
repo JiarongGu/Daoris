@@ -22,14 +22,14 @@ judged from the machine's facts, a partition per repository (PUSH1b1); `linesSli
 | Mounting | The spec in `ShellSignals`' `PUSHED` | `pushedState.test.tsx`-style counts |
 | The query | `queryFn: () => readPushed(client, name, pull)`, and while `usePushedLive(name)`, no focus refetch and never stale | a tick and a focus counted at the bridge: zero reads of the slice |
 | Invalidations | Every broad invalidation of a family holding the entry passes `predicate: notPushed(client)`; the hub's scopes already do | `ShellSignals.test.tsx`, `stateHub.test.tsx` |
-| Answers | A press answering the slice's data writes it only where the slice is pulled (`writeAnswered` is the driver's), or where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost | the press's own test; `useSweepLook` (PUSH1c4b) |
+| Answers | A press answering the slice's data writes it only where the pushes compose nothing yet (`pushedOf(client).data(name) === undefined`), so a press made before the first judgement is not lost; once they compose it, its push brings the change | the press's own test; `useSweepLook` (PUSH1c4b) |
 | The records | The README's `STATE_SLICE` row names the slice and its partitions; D182 gets the row's note | `DriverModuleRoutesTests`' README check |
 
 **Four traps.** A window's views whose effects run before `ShellSignals` pull beside the snapshot, so a root mounts it first
 (`SecondaryWindowRoot`). A delta is never coalesced: only a whole replacement carries the pump's coalesce key, which
 `StateSlice` sets itself. And a judge reading what the chat runner holds per conversation reads it at `SESSION_ENDED`, which
-`ChatRunner.Conclude` tells before `WatchAsync`'s disposer clears the conversation's maps: forget what the slice reads in `Conclude`
-first, as `ForgetAccess` does for `helpSwapping` (ACCESSSWAP1), or the end's judgement still sees it running. And a field a
+`ChatConclusion.ConcludeAsync` tells before `WatchAsync`'s disposer clears the conversation's maps: forget what the slice reads in
+`ConcludeAsync` first, as `HelpAccessSwap.Forget` does for `helpSwapping` (ACCESSSWAP1), or the end's judgement still sees it running. And a field a
 judge writes into a nested shape reaches the window only once that shape's allow-list names it: a test reading the judge's rows
 (`NeedsAPerson.Rows`) sees the field the pick then drops, so test a field added through the pick (`AttentionStateSlice.Picked`;
 a trust hold's `own`, POOL1c).
@@ -42,7 +42,7 @@ note has the measure that chose it.
 | Part | The shape | Where it is |
 |---|---|---|
 | One entry | The spec feeds the widest variant's key (every repository, closed included, every workspace); each hook reads it once live and derives its variant with a stable `select` that twins the service's filter and order. Not live, each variant is its own pull under its own key, its `queryFn` first waiting for a snapshot on its way (`readPushed` with a null pull) so a window opening reads none beside it | `useSessionsRead`, `sessionsIn` in `data/queries.ts`; `pushedList` for any list (the quests' and the asks', PUSH1d3) |
-| Records by id, whatever the scope | A reader that follows records it holds the ids of (what an Ask Daoris conversation published) reads the widest entry with an identity `select`, never a view's scoped hook, and keeps `undefined` (reading) apart from a record the answered list does not hold (gone); a mark of what it reads, read only while live, wakes a query the push itself does not feed | `useEveryQuest`, `useEveryAsk`, `useEverySession`, `useStandingsMark` in `data/queries.ts`; `help/published/published.ts` (ASKQUESTS1) |
+| Records by id, whatever the scope | A reader that follows records it holds the ids of (what an Ask Daoris conversation published) reads the widest entry with an identity `select`, never a view's scoped hook, and keeps `undefined` (reading) apart from a record the answered list does not hold (gone) | `useEveryQuest`, `useEveryAsk`, `useEverySession` in `data/queries.ts`; `help/ask/useHelpFollow.tsx`, `help/published/PublishedList.tsx` (ASKQUESTS1) |
 | Keyed deltas | A partition whose data is an object of records by key (`StateSlice.Keyed`) pushes the keys that moved and names the keys gone; the page's `merge` is `mergeKeyed` | `StateSlice.Moved`, `slices.ts` |
 | Judged and empty | `compose` is told whether the owner judged (`judged`): a list judged empty composes `[]`, so a last partition gone empties the list instead of leaving it as it was | `Pushed.install`, `Pushed.apply` |
 | A write that bypasses the host | A `Hears` on `DriverLoop.MoveHeard`, which the watch tells each move it heard (`HeardMove`): the ledger's family wakes the slice, so a connector's write is pushed with no desktop dispatch | `SessionsStateSlice.HearLedger` |

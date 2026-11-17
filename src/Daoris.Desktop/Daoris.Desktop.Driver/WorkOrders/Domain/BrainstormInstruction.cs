@@ -45,6 +45,31 @@ public static class BrainstormInstruction
         + "hard-to-reverse or risky. Every proposal id appears exactly once: in one group, or in `leftOut` as `{ id, why }`.\n\n"
         + "You change nothing: your ranking is a claim a person reads, and nobody can ask you anything after.\n";
 
+    /// <summary>
+    /// A design pass's designer: the packet's question is the purpose brief, and it is all the designer is given. Its design is
+    /// answered through the same <c>brainstorm_give</c>, each proposal one part of the design.
+    /// </summary>
+    public static string Designer(string digest) =>
+        Lead(digest)
+        + "Your job: write a design for the product the packet's question describes. The question is its purpose brief, and it is "
+        + "everything you are given: no code, documents, decisions or earlier designs, and none is yours to look for. Design from the "
+        + "purpose alone; do not guess how the product is built today.\n\n"
+        + "Answer once, through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`: each "
+        + "proposal is one part of your design, its `idea` the part (at most 200 characters) and its `rationale` how it serves the "
+        + "purpose (at most 1,200), with `effort`, `risk`, `reversible`, `undo`, `confidence` and `assumptions` as the tool describes; "
+        + "`sources` stays empty. At most eight parts, the most foundational first. Put what the brief leaves open in `needs`.\n\n"
+        + "You change nothing: your design is a claim a person reads beside another maker's, and nobody can ask you anything after.\n";
+
+    public static string Comparer(string digest) =>
+        Synthesizer(digest).Replace("You change nothing", "Then compare. You change nothing", StringComparison.Ordinal)
+        + "\nBeside `groups` and `leftOut`, give `comparison`: `{ route, why, flips: [...], trial: { area, baseline, keep: [...], "
+        + "retire: [...] }, questions: [...] }`. `route` (at most 400 characters) is the way you recommend: evolve what exists, rebuild "
+        + "a part, or adopt from prior art. `why` (at most 1,200) gives its reasons. `flips` (one to six, each at most 400) are the "
+        + "observations, each checkable, that would make another route better. `trial` names the one area tried first, the baseline "
+        + "recorded before it starts, and the criteria to keep it and to retire it (one to six each), written now, before any trial. "
+        + "`questions` (at most eight) are what only the owner can answer, each `{ question, yes, no, where }`: what it is, what yes "
+        + "changes, what no changes, and where to look.\n";
+
     /// <summary>The one repair: the validator's codes in fixed words, and the same job again.</summary>
     public static string Repair(string instruction, IReadOnlyList<string> codes) =>
         instruction + "\nYour last answer was refused by Daoris's validator, with these codes: " + string.Join(", ", codes)

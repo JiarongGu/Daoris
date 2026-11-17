@@ -13,12 +13,14 @@ public sealed record RunFinish(string Run, IReadOnlyList<RunEndQuest> Quests, IR
 /// <summary>
 /// A run's end ends the sessions that wait on its steps, and writes its quests' Done: a session is the work's passage through its workflow,
 /// so only the workflow's end ends it, and the agent's done is its submission. A run that came to its graph's end closes its submitted
-/// quests (<see cref="RunEndQuests"/>) and ends its sessions completed; one that ended any other way (failed at a step, stopped) leaves its
-/// work abandoned, its quests taken, and ends them stopped. The service moves only a session still awaiting a step, so one working again is
+/// quests (<see cref="RunEndQuests"/>) and ends its sessions completed; one stopped leaves its work abandoned, its quests taken for the
+/// person's word, and ends them stopped; one failed at a step ends nothing, since its holder may still settle the step (<see cref="Ends"/>). The service moves only a session still awaiting a step, so one working again is
 /// never moved.
 /// </summary>
 public static class RunSessionEnds
 {
+    public static bool Ends(RunEnd ended) => ended.Outcome != RunOutcomes.Failed;
+
     /// <summary>The state a run's end moves its waiting sessions to.</summary>
     public static string StateOf(RunEnd ended) => ended.Outcome == RunOutcomes.Completed ? "completed" : "stopped";
 
@@ -42,6 +44,13 @@ public static class RunSessionEnds
         if (ports.Finish is null)
         {
             Quiet(ports, run, EmptyRunEnds.NoDoor);
+            return;
+        }
+
+        // A failure is no end of the work: its step's holder may still settle it, which governs the run again, so nothing is written.
+        if (!Ends(ended))
+        {
+            Quiet(ports, run, EmptyRunEnds.FailedHeld);
             return;
         }
 

@@ -19,14 +19,12 @@ internal sealed class AgentSupervisorDesk(DriverLoop loop) : ISupervisorDesk
     public async Task<SupervisorBlockKept> KeepAsync(SupervisorWaiting waiting, SupervisorBlock block, SupervisorHolder holder, CancellationToken ct)
     {
         var decided = block.Leave is { } bound
-            ? await SupervisorDecisionDoor.AgentAsync(loop, block.Subject, waiting.Generation, null, holder, row =>
-                row.LeaveAsync(loop, new SupervisorLeaveForm(block.Subject, waiting.Generation, "", bound, block.Reasons), holder, ct)).ConfigureAwait(false)
+            ? await SupervisorDecisionDoor.AgentLeaveAsync(loop, new SupervisorLeaveForm(block.Subject, waiting.Generation, "", bound, block.Reasons), holder, ct).ConfigureAwait(false)
             : await SupervisorDecisionDoor.AgentAsync(loop, block.Subject, waiting.Generation, block.Do, holder, row =>
                 row.DecideAsync(loop, new SupervisorDecideForm(block.Subject, waiting.Generation, "", block.Do!, block.Choice, block.Reasons), holder, ct)).ConfigureAwait(false);
         return new SupervisorBlockKept(decided.Kept, decided.Why);
     }
 
-    /// <summary>A listed subject as the look reads it, from the row each kind lists; null where it does not read.</summary>
     internal static SupervisorWaiting? Row(object listed)
     {
         var row = JsonSerializer.SerializeToElement(listed);

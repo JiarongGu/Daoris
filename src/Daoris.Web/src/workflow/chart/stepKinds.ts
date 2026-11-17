@@ -56,6 +56,7 @@ export type ChartStep = {
   group?: { count: number; open: boolean; members: string[] };
   /** What the driver's judgement refused at this step, in the reader's words: an outline on the step, its chip the canvas's, and the words in its description. */
   refused?: string[];
+  role?: string;
 };
 
 /** A node of the chart: the canvas's `FlowNode`, and what the workflow's components read of it. A node of the canvas's own (a fold) carries none. */

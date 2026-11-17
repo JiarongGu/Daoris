@@ -151,6 +151,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), Clock, Environment.ProcessId));
         Desk = new StewardDesk(Clock, DaorisHome.Entry(home, HomeEntry.StewardDesk));
         Wider = new RuleWiderPlaceStore(home).Read;
+        var config = DaorisHome.Entry(home, HomeEntry.DriverConfig);
+        Risk = () => File.Exists(config) ? DriverConfig.Load(config).PlaceRisk : PlaceRiskBook.Unwritten;
         Slots = () =>
         {
             try
@@ -185,6 +187,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// </summary>
     public Func<RuleWiderPlaces> Wider { get; set; }
 
+    /// <summary>Every place's risk and the owner's marks (<see cref="PlaceRiskBook"/>), read at each admission; the home's <c>driver.json</c>'s, a test's its own.</summary>
+    public Func<PlaceRiskBook> Risk { get; set; }
+
     /// <summary>The catalogue's appointed roles that read, the supervisors and the steward, as they stand now.</summary>
     public IReadOnlyList<RoleRecord> Appointed() => AppointedOf(SlotsNow());
 
@@ -195,6 +200,20 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public bool StewardStaffed => AppointedRoles.StewardOf(Appointed()) is { Hold.Holder: not null };
 
     internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(SlotsNow(), kind, place, Wider());
+
+    /// <summary>What the risk record holds at <paramref name="place"/>, its workspace placed; a record that does not read holds it high.</summary>
+    public PlaceRiskNow RiskAt(RolePlace place)
+    {
+        try
+        {
+            var placed = place is { Repository: { } repository, Workspace: null } ? Placed(repository) : place;
+            return Risk().At(placed);
+        }
+        catch (Exception error) when (error is DriverException or IOException or System.Text.Json.JsonException)
+        {
+            return new PlaceRiskNow(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
+        }
+    }
 
     internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
 

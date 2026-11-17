@@ -30,7 +30,7 @@ public sealed record SupervisorDoorDue(string Id, SupervisorSubject Subject, str
     public string? Turn { get; init; }
 
     /// <summary>Whether the answer is a yes: a keep, an approve, an accept.</summary>
-    public bool Yes => Choice is null or Keep or Approve;
+    public bool Yes => Choice is null or Keep or Approve or Approved;
 }
 
 /// <summary>
@@ -47,6 +47,9 @@ public sealed record DoorRelease(
 public static class SupervisorDoorActs
 {
     public const string Keep = "keep", Decide = "decide", Drop = "drop", Approve = "approve", Decline = "decline", Accept = "accept", Hold = "hold";
+
+    /// <summary>A go-ahead's yes and no, as the service's door takes them.</summary>
+    public const string Approved = "approved", Refused = "refused";
 
     /// <summary>The memory subject's id naming a session's staged changes, beside an end's operation id.</summary>
     public const string Staged = "staged";
@@ -116,7 +119,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
             refused ??= book.ClosedWhy(subject);
             var left = answer.Do == Hold;
-            var admitted = admission.Admit(subject.Kind, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
+            var admitted = admission.Admit(subject, new RolePlace(Repository: answer.Repository), left ? null : answer.Do);
             refused ??= admitted.Why ?? (admitted.Generation != answer.Generation ? SupervisorWhy.RoleChanged : null);
             refused ??= left || Offered(subject.Kind, answer.Do, answer.Choice) ? null : SupervisorWhy.NotOffered;
             refused ??= SupervisorKeeping.Refused(answer.Reasons, true, null);
@@ -136,8 +139,11 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 KeptAt = now, GoesOnAt = goesOnAt, State = left ? SupervisorState.Left : SupervisorState.Held,
             };
             Directory.CreateDirectory(book.Files.FolderOf(subject.Session));
-            AtomicFile.WriteText(book.Files.FileOf(subject.Session, id), FileText(decision, answer, now));
+            var text = FileText(decision, answer, now);
+            AtomicFile.WriteText(book.Files.FileOf(subject.Session, id), text);
             Append(decision, decision.State, now, why: null);
+            book.Window(decision.State, decision.State, () => new HeldDecisionRow(
+                id, subject.Session, subject.Kind, answer.Repository, answer.Generation, goesOnAt, text), id);
             book.Doors[id] = decision;
             if (left) book.Closed[subject] = SupervisorState.Left;
             log?.Info(left ? "supervisor.left" : "supervisor.door", ("session", subject.Session), ("kind", subject.Kind), ("do", answer.Do));
@@ -164,9 +170,9 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
                 }
 
                 if (due.State != SupervisorState.Held) return null;
-                var admitted = admission.Admit(due.Subject.Kind, new RolePlace(Repository: due.Repository), due.Do);
+                var admitted = admission.Admit(due.Subject, new RolePlace(Repository: due.Repository), due.Do);
                 var why = admitted.Why is null && admitted.Generation == due.Generation
-                    ? await release.Why(due.Due(), ct).ConfigureAwait(false)
+                    ? OwnersAgain(due) ?? await release.Why(due.Due(), ct).ConfigureAwait(false)
                     : SupervisorWhy.RoleChanged;
                 if (why is null)
                 {
@@ -225,7 +231,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             var kind = Json.Text(root, "kind");
-            if (kind is not (SupervisorKinds.Memory or SupervisorKinds.Departure)
+            if (kind is not (SupervisorKinds.Memory or SupervisorKinds.Departure or SupervisorKinds.GoAhead)
                 || !root.TryGetProperty("subject", out var wire) || SupervisorSubject.Read(kind, wire) is not { } subject)
             {
                 return null;
@@ -247,13 +253,24 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
         }
     }
 
-    // A memory act offers its yes and no; a departure's accept offers none.
-    private static bool Offered(string kind, string act, string? choice) =>
-        kind == SupervisorKinds.Memory ? choice is not null && Choices(act).Contains(choice, StringComparer.Ordinal) : act == Accept && choice is null;
+    // A memory act offers its yes and no; a go-ahead's answer its approved and refused; a departure's accept offers none.
+    private static bool Offered(string kind, string act, string? choice) => kind switch
+    {
+        SupervisorKinds.Memory => choice is not null && Choices(act).Contains(choice, StringComparer.Ordinal),
+        SupervisorKinds.GoAhead => act == SupervisorKinds.Answer && choice is Approved or Refused,
+        _ => act == Accept && choice is null,
+    };
 
     /// <summary>The agent an answer is the holder's: an agent's harness, model and effort, or the holder's kind (a started terminal).</summary>
     public static string AgentOf(SupervisorHolder holder) =>
         holder.Agent is { } agent ? string.Join(" · ", new[] { agent.Agent, agent.Model, agent.Effort }.Where(each => each is { Length: > 0 })) : holder.Kind;
+
+    // A go-ahead's place may be marked or raised inside the window, so its risk and the owner's marks are judged again at the release, by
+    // the kind its pin names; one whose pin does not read is no longer what the role judged.
+    private string? OwnersAgain(SupervisorDoorDecision due) =>
+        due.Subject.Kind != SupervisorKinds.GoAhead ? null
+        : GoAheadPin.KindOf(due.Pin) is { } kind ? GoAheadAuthority.OwnersOwn(admission.RiskAt(new RolePlace(Repository: due.Repository)), kind)
+        : SupervisorWhy.SubjectChanged;
 
     private SupervisorState Settle(SupervisorDoorDecision due, SupervisorState to, DateTimeOffset now, string? why)
     {
@@ -265,6 +282,7 @@ internal sealed class SupervisorDoorAnswers(SupervisorBook book, IDecisionAdmiss
 
     private void Append(SupervisorDoorDecision decision, SupervisorState to, DateTimeOffset at, string? why)
     {
+        if (decision.State == SupervisorState.Held && to != SupervisorState.Held) book.Held.Drop(decision.Id);
         decision.State = to;
         SupervisorDecisionFiles.TryAppend(book.Files.StatesOf(decision.Subject.Session, decision.Id), SupervisorDecisionFiles.StateLine(to, at, why, null));
     }

@@ -88,4 +88,67 @@ public static class WorkflowValuesKey
     public static IReadOnlyDictionary<string, string>? Of(IReadOnlyDictionary<string, Values> map, string repository, string workflow, string node) =>
         map.TryGetValue(repository.Trim(), out var values) && values.ByWorkflow.TryGetValue(workflow, out var nodes)
             && nodes.TryGetValue(node, out var options) ? options : null;
+
+    /// <summary>The key the reasons are kept under, beside the values: by <c>repository/workflow/node</c>, the reason the values were last set.</summary>
+    public const string WhyKey = "workflowValuesWhy";
+
+    /// <summary>Where a node's reason is kept: its repository, workflow and node, as one key.</summary>
+    public static string WhyOf(string repository, string workflow, string node) => $"{repository.Trim()}/{workflow}/{node}";
+
+    /// <summary>
+    /// The one door's judge: a node's values set, each named option's JSON value laid over what it kept, or the node's
+    /// values taken away with <paramref name="values"/> null, and the reason recorded beside them. The window's route and the
+    /// <c>daoris workflow values</c> verb both call it before anything is written, so they refuse alike.
+    /// </summary>
+    /// <exception cref="DriverException">The refusal, nothing changed: no repository, workflow or node, a value that is no JSON, or no reason.</exception>
+    public static DriverConfig Apply(DriverConfig config, string? repository, string? workflow, string? node, IReadOnlyDictionary<string, string>? values, string? why)
+    {
+        var named = repository?.Trim() ?? "";
+        if (named.Length == 0) throw new DriverException("a workflow's values are set for a repository: name one.");
+        if (workflow is null || !WorkflowKey.IsId(workflow)) throw new DriverException($"`{workflow}` is not a workflow's id.");
+        if (string.IsNullOrWhiteSpace(node)) throw new DriverException("a workflow's values are set on one of its nodes: name its id.");
+        if (string.IsNullOrWhiteSpace(why)) throw new DriverException("say why the values are set (`--why`): the reason is recorded with them.");
+        foreach (var (name, json) in values ?? new Dictionary<string, string>())
+        {
+            if (name.Length == 0) throw new DriverException("an option's name is empty.");
+            try
+            {
+                using var _ = JsonDocument.Parse(json);
+            }
+            catch (JsonException)
+            {
+                throw new DriverException($"`{name}`'s value `{json}` is no JSON: a number, `true`, or a word in quotes.");
+            }
+        }
+
+        var map = new Dictionary<string, Values>(config.WorkflowValues, StringComparer.OrdinalIgnoreCase);
+        var workflows = map.TryGetValue(named, out var kept) ? new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>>(kept.ByWorkflow, StringComparer.Ordinal) : new(StringComparer.Ordinal);
+        var nodes = workflows.TryGetValue(workflow, out var held) ? new Dictionary<string, IReadOnlyDictionary<string, string>>(held, StringComparer.Ordinal) : new(StringComparer.Ordinal);
+        if (values is null) nodes.Remove(node);
+        else nodes[node] = (nodes.TryGetValue(node, out var before) ? before : ImmutableSortedDictionary<string, string>.Empty)
+            .ToImmutableSortedDictionary(StringComparer.Ordinal).SetItems(values);
+        if (nodes.Count > 0) workflows[workflow] = nodes;
+        else workflows.Remove(workflow);
+        if (workflows.Count > 0) map[named] = new Values(workflows);
+        else map.Remove(named);
+
+        var reasons = new Dictionary<string, string>(config.WorkflowValuesWhy, StringComparer.OrdinalIgnoreCase) { [WhyOf(named, workflow, node)] = why.Trim() };
+        return config with { WorkflowValues = map, WorkflowValuesWhy = reasons };
+    }
+
+    /// <summary>The reasons as <c>driver.json</c> keeps them: each a string; anything else passed over.</summary>
+    internal static IReadOnlyDictionary<string, string> WhyMap(JsonElement root) =>
+        root.TryGetProperty(WhyKey, out var element) && element.ValueKind == JsonValueKind.Object
+            ? element.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String)
+                .GroupBy(each => each.Name, StringComparer.OrdinalIgnoreCase).ToDictionary(each => each.Key, each => each.First().Value.GetString()!, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The reasons written, only when any is kept, in ordinal order.</summary>
+    internal static void WriteWhy(Utf8JsonWriter writer, IReadOnlyDictionary<string, string> reasons)
+    {
+        if (reasons.Count == 0) return;
+        writer.WriteStartObject(WhyKey);
+        foreach (var (key, why) in reasons.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, why);
+        writer.WriteEndObject();
+    }
 }

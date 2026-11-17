@@ -81,18 +81,9 @@ public sealed class PartnerLookTests : IDisposable
 
     private async Task Until(Func<bool> done)
     {
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (!done())
-        {
-            if (DateTime.UtcNow > until)
-            {
-                var folder = DaorisHome.Entry(_home, HomeEntry.Partners);
-                var held = string.Join(" | ", Directory.GetFiles(folder).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}"));
-                throw new TimeoutException($"the piece did not settle. {held}");
-            }
-
-            await Task.Delay(20);
-        }
+        await Poll.Until(done, () => "the piece did not settle. " + string.Join(
+            " | ",
+            Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Partners)).Select(file => $"{Path.GetFileName(file)}: {File.ReadAllText(file).ReplaceLineEndings(" ")}")));
     }
 
     private async Task<(int Begun, List<string> Events)> Look(Daoris.Driver.Driver driver, int taken = 0)

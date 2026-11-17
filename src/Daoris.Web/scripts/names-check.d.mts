@@ -45,7 +45,7 @@ export type Glossary = {
 export type Finding = {
   key: string;
   kind: string;
-  rule: 'glossary' | 'budget' | 'form' | 'door' | 'distinct' | 'person' | 'kind' | 'reword';
+  rule: 'glossary' | 'budget' | 'form' | 'door' | 'distinct' | 'person' | 'kind' | 'shared' | 'reword';
   language: Language;
   message: string;
   value: string;

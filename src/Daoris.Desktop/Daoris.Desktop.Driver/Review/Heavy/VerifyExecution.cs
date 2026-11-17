@@ -55,10 +55,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from) is { } command) return (await ReachedAsync(reached, command, ct).ConfigureAwait(false), false);
 
         var runner = VerifyRunner.Of(text);
-        if (send.Gates is null && runner is not null) return await RunnerAsync(runner, declared, ct).ConfigureAwait(false);
+        if (send.Gates is null && runner is not null && !send.Full) return await RunnerAsync(runner, declared, ct).ConfigureAwait(false);
 
         List<DeclaredGate> chosen;
-        if (send.Gates is { } names)
+        if (send.Full)
+        {
+            chosen = [.. declared];
+        }
+        else if (send.Gates is { } names)
         {
             if (names.FirstOrDefault(name => declared.All(gate => gate.Name != name)) is { } undeclared)
             {

@@ -504,6 +504,19 @@ public sealed class HookSet(
         return (answer, _placed.Outer(key, generation));
     }
 
+    public void StandDown(string plugin, WorkStandDownCall call)
+    {
+        try
+        {
+            var (channel, _, _) = Performer(plugin, call.Unit);
+            _ = channel.StandDownAsync(call, CancellationToken.None).ContinueWith(told => _ = told.Exception, TaskScheduler.Default);
+        }
+        catch (DriverException)
+        {
+            // Not up, or not this loop's to ask: nothing is told.
+        }
+    }
+
     /// <summary>
     /// The plugins whose process the lease's loop keeps up though no unit awaits their steps: each owes a receipt's
     /// cleanup, which only its process answers. Whole each time; a plugin not named is owed nothing.

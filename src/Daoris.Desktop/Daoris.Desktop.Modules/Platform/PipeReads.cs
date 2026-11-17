@@ -215,6 +215,9 @@ internal static class PipeReads
             ? "true" : "false",
         p => Raw(Field(p, "chosen")));
 
+    public static PipeGround PlaceRisk() => Setting("STATE", ["repository", "workspace"], _ => null,
+        (a, p) => Fp(Raw(Named(At(a, "placeRisk"), "place", Daoris.Driver.PlaceRiskBook.KeyOf(Text(p, "workspace"), Text(p, "repository"))))));
+
     public static PipeGround RoleRow() => Setting("ROLES", ["change", "id"], _ => null, (a, p) => Fp(Raw(Named(At(a, "roles"), "id", Text(p, "id")))));
 
     /// <summary>The rows of every role the batch names, in the order it names them.</summary>

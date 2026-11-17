@@ -63,6 +63,6 @@ A take-bind's contract was fixed twice before it held against the builds already
 - **Say what is left.** An older build still acts on its own rows as it always did: CLOSE1w's note keeps
   that its take of a quest this build named takes it unbound and closes by its done. Write the remainder
   into the decision's note, so nobody reads the boundary as wider than it is.
-- **Hold it with the older build's own statements.** `QuestTakeBindTests` runs an older build's upsert and
-  take statements over an owned bind and over an unarmed store. A test that runs only this build's code
+- **Hold it with the older build's own statements.** `QuestSyncTests` writes and pushes as an older build
+  (`WriteAsAnOlderBuildAsync`, `PushAsAnOlderBuildAsync`) over this build's store. A test that runs only this build's code
   never sees the boundary.

@@ -12,7 +12,7 @@ internal sealed class ClaimedNode : BuiltInNode, IObserves
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Quest;
 
-    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Text(NodeOptionFields.Role)];
+    public override string Role => StepRoles.Design;
 
     /// <summary>
     /// The hold on the work's requests is the kind <see cref="NodeKinds.WorkRequests"/>. Written as an option here, a build that

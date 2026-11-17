@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 
 // The page's own error screen: a render that throws anywhere below the root draws this screen rather than a blank
 // window, reports itself once into the machine log, and offers a reload of the page alone. The bridge is mocked and switched on
-// and off, as `bridge/log.test.ts` does, since a shell logs and a browser does not.
+// and off, as `bridge/logs/log.test.ts` does, since a shell logs and a browser does not.
 
 const { bridge, closeSplash } = vi.hoisted(() => ({
   bridge: { isAvailable: true, invoke: vi.fn((..._: unknown[]) => Promise.resolve(null)) },

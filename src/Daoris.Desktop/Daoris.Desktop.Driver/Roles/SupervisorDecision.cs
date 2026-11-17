@@ -9,6 +9,10 @@ public interface IDecisionAdmission
 {
     /// <summary>The hold of the supervisor answering <paramref name="kind"/> at <paramref name="place"/>; a null act is a leave, needing no grant.</summary>
     DecisionAdmitted Admit(string kind, RolePlace place, string? act);
+
+    DecisionAdmitted Admit(SupervisorSubject subject, RolePlace place, string? act) => Admit(subject.Kind, place, act);
+
+    PlaceRiskNow RiskAt(RolePlace place) => new(PlaceRisks.High, PlaceRiskBook.DefaultSource, []);
 }
 
 /// <summary>What <see cref="IDecisionAdmission"/> answers: the effective generation, or why no holder is admitted.</summary>
@@ -20,6 +24,8 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public TimeSpan? Window { get; init; }
 
     public string? Role { get; init; }
+
+    public string? Missing { get; init; }
 }
 
 /// <summary>The admission where no judge is wired: no terminal holds the supervisor, so every act is refused.</summary>
@@ -94,6 +100,10 @@ public static class SupervisorWhy
 
     public const string NotGranted = "not-granted";
 
+    public const string HighRisk = "high-risk";
+
+    public const string Marked = "marked";
+
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>
     public const string RoleChanged = "role-changed";
     public const string NotParked = "not-parked";
@@ -110,8 +120,8 @@ public static class SupervisorWhy
     public const string OwnerAnswered = "owner-answered";
     public const string Form = "form";
 
-    /// <summary>The question carries the agent's <c>owner</c> mark: refused at the keeping and again at the release.</summary>
-    public const string OwnerQuestion = "owner-question";
+    /// <summary>The question carries an owner-class mark, never answered below the owner actor: refused at the keeping and the release.</summary>
+    public const string OwnerClass = LinePasses.OwnerClass;
 
     /// <summary>The line's answers-alone count is at the answers-alone bound: refused at the keeping and again at the release.</summary>
     public const string SupervisorBound = "supervisor-bound";
@@ -124,6 +134,9 @@ public static class SupervisorWhy
 
     /// <summary>The person stopped the line or paused its quest (<see cref="OwnerHolds"/>); a wait on a point that is no limited end's.</summary>
     public const string OwnerHeld = "owner-held";
+
+    /// <summary>The subject climbed past every supervisor of its line (<see cref="LineClimb"/>): the owner role's, or ended as gave up.</summary>
+    public const string PassedUp = "passed-up";
     public const string NoWait = "no-wait";
     public const string NotHeld = "not-held";
     public const string NotOffered = "not-offered";
@@ -140,14 +153,12 @@ public static class SupervisorWhy
 }
 
 /// <summary>
-/// The bounds a holder leaves a question to the owner by, as <c>SUPERVISOR_DEFER</c> names
-/// them: the six an asking agent may also mark its question with (<see cref="QuestionFiles"/>'s <c>owner</c>), and the four only the
-/// holder's judgement reaches.
+/// The bounds a holder leaves a decision by (<c>SUPERVISOR_DEFER</c>): a go-ahead, the owner-class kinds an agent may also mark its
+/// question with (<see cref="QuestionFiles"/>'s <c>owner</c>), and the three only the holder's judgement reaches.
 /// </summary>
 public static class SupervisorBounds
 {
-    public static readonly IReadOnlyList<string> All =
-        ["go-ahead", "sign-in", "access", "spending", "delete", "repository-asks", "preference", "unrecorded", "contradicts", "instructed"];
+    public static readonly IReadOnlyList<string> All = ["go-ahead", .. OwnerClass.Kinds, "unrecorded", "contradicts", "instructed"];
 
     public static bool Known(string? bound) => bound is not null && All.Contains(bound, StringComparer.Ordinal);
 }

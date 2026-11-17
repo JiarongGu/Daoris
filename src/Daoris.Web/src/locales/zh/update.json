@@ -4,6 +4,8 @@
   "update.draining": "正在运行的工作结束后将安装 Daoris {{version}}，在此之前不会开始新的工作。",
   "update.running": "还有 {{count}} 个会话在运行。",
   "update.running_other": "还有 {{count}} 个会话在运行。",
+  "update.steps": "还有 {{count}} 个插件步骤在进行中。",
+  "update.steps_other": "还有 {{count}} 个插件步骤在进行中。",
   "update.applying": "正在安装 Daoris {{version}}，Daoris 稍后会重新启动。",
   "update.refused": "暂存的 Daoris {{version}} 未安装：{{why}}",
   "update.installed": "Daoris 已更新到 {{version}}。",

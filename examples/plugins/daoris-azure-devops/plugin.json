@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.1.0",
-  "changes": "A new read, discover-releases, lists what a repository's pipelines release through (each definition's stages with what starts them, its triggers and links, and each stage's proposed deploysOn) as candidates, choosing none. The release step's target names the deployable it releases (deployable) and the earliest act that deploys into it (deploysOn, push where undeclared); its holds and outcomes name that deployable, and a declared pipeline that no longer exists holds target-changed.",
+  "version": "4.6.0",
+  "changes": "A release its holder names settles create where its commit is the landed one or descends from it, and is refused naming the commit it carries otherwise. Each release step's evidence carries the identity Azure DevOps credits (`by`) beside its words. The window's approval card runs approve-release, still no agent's tool.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -55,6 +55,16 @@
         "args": [
           { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
           { "name": "pipeline", "type": "text", "title": { "en": "Build pipeline's id", "zh": "构建流水线编号" } }
+        ] },
+      { "name": "approve-release", "title": { "en": "Approve or reject a release stage", "zh": "批准或拒绝发布阶段" },
+        "about": { "en": "The approver's own press: approves or rejects the pending approval of a release's stage through the approver's own sign-in. No agent is handed it.", "zh": "审批人自己的操作：通过审批人自己的登录批准或拒绝某个发布阶段的待审批项。不会交给任何代理。" },
+        "writes": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "release", "type": "text", "title": { "en": "Release's id", "zh": "发布编号" }, "required": true },
+          { "name": "stage", "type": "text", "title": { "en": "Stage's id or name", "zh": "阶段编号或名称" }, "required": true },
+          { "name": "decision", "type": "choice", "title": { "en": "Decision", "zh": "决定" }, "choices": ["approve", "reject"], "required": true },
+          { "name": "comment", "type": "text", "title": { "en": "Comment", "zh": "备注" } }
         ] }
     ],
     "storage": { "for": "The personal access token login keeps, and when Azure DevOps last refused it." }
@@ -81,6 +91,41 @@
       "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
       "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] },
       "timeoutSeconds": 3600
+    },
+    {
+      "id": "release-target", "title": { "en": "Release target", "zh": "发布目标" },
+      "about": { "en": "Reads the declared target again against the route of the branch the work merged into: reached naming the definition and stage, else failed no-target or target-changed with the route as the choice.", "zh": "按工作合并进入的分支的路由重新核对所声明的目标：一致则以定义和阶段为证据完成，否则以 no-target 或 target-changed 失败，并给出路由作为可选项。" },
+      "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 600
+    },
+    {
+      "id": "release-create", "title": { "en": "Create the release", "zh": "创建发布" },
+      "about": { "en": "Settles on a release of the target carrying the landed commit, from any build, whoever made it; waits on the release manager meanwhile, then makes it once, keyed by its effect, where the action allows.", "zh": "只要目标定义中已有携带已合并提交（来自其任一构建）的发布，无论由谁创建，即以此完成；构建运行及持续部署的等待期间，等待发布负责人；之后在操作允许时按其效果键只创建一次发布。" },
+      "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 7200
+    },
+    {
+      "id": "release-start", "title": { "en": "Start the stage", "zh": "启动阶段" },
+      "about": { "en": "Settles on the declared stage started, by its trigger, a person or here; starts it only where the action says, else waits on the deployer.", "zh": "所声明的阶段一经启动（由触发器、某人或此处启动）即完成；仅当操作要求时才在此启动，否则等待部署人。" },
+      "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 3600
+    },
+    {
+      "id": "release-approve", "title": { "en": "Approve the stage", "zh": "审批阶段" },
+      "about": { "en": "Settles on the stage's approval as Azure DevOps records it, credited to its approver, or at once where the stage asks none; it never approves: the approver approves on the card or in Azure DevOps.", "zh": "以 Azure DevOps 记录的阶段审批完成，并记在审批人名下；阶段无需审批则立即完成。它从不自行审批：由审批人在卡片上或在 Azure DevOps 中审批。" },
+      "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 86400
+    },
+    {
+      "id": "release-watch", "title": { "en": "Watch the stage", "zh": "跟踪阶段" },
+      "about": { "en": "Watches the declared stage to its end: reached where it ends as its success asks, failed where it fails or is cancelled.", "zh": "跟踪所声明的阶段直到结束：按成功要求结束则完成，失败或取消则失败。" },
+      "reach": "performed", "evidence": { "schema": "azure-devops-pull-request/release@1" },
+      "perform": { "point": "work/perform", "idempotent": true, "acts": false, "reconcile": "work/reconcile", "transient": ["unavailable", "rate-limited"] },
+      "retry": { "maxAttempts": 3, "delaysSeconds": [30, 120] }, "timeoutSeconds": 7200
     }
   ],
   "tools": [

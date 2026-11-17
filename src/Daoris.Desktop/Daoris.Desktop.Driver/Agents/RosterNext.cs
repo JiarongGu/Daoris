@@ -244,8 +244,10 @@ internal sealed class RosterNext(HarnessRoster roster)
             }
         }
 
+        var reads = AccountReads.Of(roster.Home, owner).Accounts;
         foreach (var account in list)
         {
+            facts[account] = facts[account] with { SignIn = SignInStates.Of(reads.GetValueOrDefault(account)) };
             try
             {
                 // A weekly reset a limit told is not read here: it says when, not how much would lapse, which

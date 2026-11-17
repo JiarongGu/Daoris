@@ -2,6 +2,7 @@ import type { i18n as I18n, TFunction } from 'i18next';
 import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/FlowCanvas';
 import type { IconName } from '../design/ui';
 import { type ChartNode, type ChartPort, type ChartStep, isPullRequestStep, variantOf } from './chart/stepKinds';
+import { namedRole } from './stepRoles';
 
 // One drawing of a workflow graph for the place, the editor and a run: a graph's steps and
 // ways on read onto `Flow`'s nodes and edges. Always in sections, so top to bottom or as the rail and never left to right; its
@@ -31,6 +32,7 @@ export type DrawnNode = FlowNode & {
   outcomes?: readonly string[];
   /** The outcome a run's decision returned: its route is reached, and an outcome it did not return is not taken. */
   outcome?: string | null;
+  role?: string | null;
 };
 
 /** A way on to draw: a graph's wire, by its kind, with the words of its cause where the caller has its own. */
@@ -90,8 +92,9 @@ export function drawnFromJson(t: TFunction, i18n: I18n, json: unknown): DrawnGra
   const nodes = (Array.isArray(graph.nodes) ? graph.nodes : []).map(record).map((node): DrawnNode => {
     const kind = text(node.kind) ?? '';
     const glyph = glyphOfKind(kind, record(node.options));
+    const role = namedRole(node);
     return {
-      id: text(node.id) ?? '', kind, title: plain(kindTitle(t, i18n, kind)), outcomes: names(node.outcomes), ...(glyph ? { glyph } : {}),
+      id: text(node.id) ?? '', kind, title: plain(kindTitle(t, i18n, kind)), outcomes: names(node.outcomes), ...(glyph ? { glyph } : {}), ...(role ? { role } : {}),
     };
   });
   const wires = (Array.isArray(graph.wires) ? graph.wires : []).map(record).map((wire): DrawnWire => {
@@ -191,7 +194,7 @@ function groupLit(members: DrawnNode[]): Pick<FlowNode, 'state' | 'reached' | 'c
   };
 }
 
-const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, ...node }: DrawnNode): FlowNode => node;
+const without = ({ kind: _kind, outcomes: _outcomes, outcome: _outcome, role: _role, ...node }: DrawnNode): FlowNode => node;
 
 /**
  * A node's ports: each outcome it declares, then any a way on or back names that it does not (a kind's own need not be declared). An
@@ -249,7 +252,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
     const first = group && group.members[0] === node;
     const own = ports.get(node.id) ?? [];
     const step: ChartStep = {
-      kind: node.kind, variant: variantOf(node.kind, own.map((port) => port.outcome)), ports: own,
+      kind: node.kind, variant: variantOf(node.kind, own.map((port) => port.outcome)), ports: own, ...(node.role ? { role: node.role } : {}),
       ...(first ? { group: { count: group.members.length, open: true, members: group.members.map((member) => member.title) } } : {}),
     };
     nodes.push({
@@ -298,7 +301,7 @@ export function graphFlow(t: TFunction, graph: DrawnGraph, options: DrawOptions)
         : node.outcome === outcome ? { reached: true }
           : { reached: false, state: { word: t('workflow.run.notTaken.state'), tone: 'neutral' } };
       nowhere.push({
-        id, title: t('workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
+        id, title: t(outcome === 'not-needed' ? 'workflow.graph.notNeeded' : 'workflow.graph.noFurther'), glyph: 'stepNoFurther', faint: true, ...lit,
         step: { kind: 'none', variant: 'other', ports: [], terminal: 'none' },
       });
       edges.push({

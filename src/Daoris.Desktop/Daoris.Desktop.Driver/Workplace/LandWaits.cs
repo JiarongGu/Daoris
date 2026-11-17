@@ -47,6 +47,10 @@ public static class LandWaits
     /// <summary>A second opinion or a review it waits on, said already.</summary>
     public const string Waiting = "waiting";
 
+    public const string Busy = "busy";
+
+    public const string Climbed = "climbed";
+
     public static LandingLine Line(LandStart start, string reason) => new(Event,
         [("run", start.Run), ("node", start.Node), ("repository", start.Repository), ("workspace", start.Workspace), ("reason", reason)]);
 

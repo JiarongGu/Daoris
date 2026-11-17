@@ -127,7 +127,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             return new ProfileReport(
                 account, HarnessSettings.ProfileHome(roster.Home, owner, account), read?.Login ?? LoginState.Unknown,
                 who?.Account, held is null ? null : HarnessKeys.Handle(held), read?.At,
-                names.GetValueOrDefault(account), who?.Org, who?.Plan);
+                names.GetValueOrDefault(account), who?.Org, who?.Plan) { SignIn = SignInStates.Of(read) };
         }).ToList();
 
         // The folders beside the accounts that are no account, each with whether Daoris kept a sign-in of it,

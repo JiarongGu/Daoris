@@ -10,8 +10,17 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     /// while it is still held and has no word, under the record's lock with the lease asked inside it, so only the lease's holder records it.
     /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
     /// </summary>
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null)
+    /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>); null for a word that names none.</param>
+    public WorkPerformed Word(
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null)
     {
+        // A word from a holder whose epoch has ended is refused, the step's holder now named: the step stays with its holder of now.
+        if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(unit, node, attempt, given) is { } holding)
+        {
+            return new(unit, node, PerformedWhat.Refused, StepTenureFiles.EndedEpoch) { Detail = StepTenureFiles.Said(holding) };
+        }
+
+        if (resolution == HeldResolutions.DoneOutside) return Outside(unit, node, attempt, outcome, link, note);
         if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
         var now = clock();
         return records.Edited(unit, node, record =>
@@ -53,6 +62,28 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     }
 
     /// <summary>
+    /// The holder's <i>Done outside Daoris</i> on an attempt under way, held or failed (<see cref="StandDowns.Outside"/>), with its link,
+    /// required, and a note: kept as <c>happened</c> with the link, which an older build reads as the word it knows and passes the link over.
+    /// </summary>
+    private WorkPerformed Outside(string unit, string node, int attempt, string? outcome, string? link, string? note)
+    {
+        if (string.IsNullOrWhiteSpace(link)) return new(unit, node, PerformedWhat.Refused, NoLink);
+        var now = clock();
+        return records.Edited(unit, node, record =>
+        {
+            var on = record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt);
+            if (on is null || !StandDowns.Outside(record, on)) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, NotAttempt));
+            if (on.Resolution is not null) return (null, new WorkPerformed(unit, node, PerformedWhat.Refused, Worded));
+            var worded = on with
+            {
+                Resolution = HeldResolutions.Happened, ResolvedAt = now, Link = link.Trim(), Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+                Decision = outcome,
+            };
+            return (With(record, on, worded), new WorkPerformed(unit, node, PerformedWhat.Worded, HeldResolutions.DoneOutside));
+        });
+    }
+
+    /// <summary>
     /// Every word the person gave on a held attempt, applied under the node's declaration: the attempt settled by the
     /// person, never as its plugin's word, and its node moved through the one table. A node no declaration names waits with its word.
     /// </summary>
@@ -70,14 +101,25 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
         var done = new List<WorkPerformed>();
         foreach (var read in records.All().Records)
         {
-            if (!read.Attempts.Any(HasWord)) continue;
+            if (!read.Attempts.Any(attempt => HasWord(read, attempt))) continue;
             var (refused, resolved) = records.Edit<List<WorkPerformed>>(read.Unit, current =>
             {
                 var said = new List<WorkPerformed>();
                 var record = current;
-                foreach (var attempt in current.Attempts.Where(HasWord))
+                foreach (var attempt in current.Attempts.Where(attempt => HasWord(current, attempt)))
                 {
                     if (declared(record.Unit, attempt.Node) is not { } node) continue;
+
+                    // A link no check has answered waits for it, never applied on the word alone; at its deadline its wait climbs the line.
+                    if (LinkHolds.Waits(record, attempt, node))
+                    {
+                        if (!LinkHolds.Due(attempt, node, clock())) continue;
+                        var climbed = LinkHolds.Held(attempt, clock());
+                        record = With(record, attempt, climbed);
+                        said.Add(new(record.Unit, node.Id, PerformedWhat.NotTaken, LinkHolds.Climbed) { Detail = climbed.Progress?.Words });
+                        continue;
+                    }
+
                     var (next, result) = Settle(record, attempt, node);
                     record = next;
                     said.Add(result);
@@ -92,10 +134,56 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
         return done;
 
         // A close's word is its closer's (QuestCloser.Resolve), never applied here as a plugin's. The person's
-        // new attempt is on a settled one, its failure.
-        static bool HasWord(NodeAttempt attempt) =>
-            attempt is { State: AttemptStates.Held, Resolution: not null } or { State: AttemptStates.Settled, Resolution: HeldResolutions.Again }
-            && attempt.Plugin != QuestClosing.Sender;
+        // new attempt is on a settled one, its failure; a done outside on one in flight, or on a failure still kept.
+        static bool HasWord(NodeRecord record, NodeAttempt attempt) =>
+            attempt.Plugin != QuestClosing.Sender
+            && (attempt is { State: AttemptStates.Held, Resolution: not null } or { State: AttemptStates.Settled, Resolution: HeldResolutions.Again }
+                || (attempt is { Resolution: HeldResolutions.Happened, Link: not null } && (StandDowns.InFlight(attempt) || KeptFailure(record, attempt))));
+    }
+
+    /// <summary>
+    /// The holder's <i>Done outside Daoris</i> applied: its step reached on the holder's word through the one table, the link its evidence
+    /// and the note its words, the attempt in flight stood down (a failed one keeps its failure). A step its attempt is no longer on takes
+    /// the word back, and so does one the table refuses, saying why.
+    /// </summary>
+    private (NodeRecord Next, WorkPerformed Result) Outside(NodeRecord record, NodeAttempt attempt, NodeDeclaration node)
+    {
+        var unit = record.Unit;
+        var status = StatusOf(record, node.Id);
+        // The refusal stays on the attempt, a held one's code or an in-flight one's words, so its holder reads why.
+        NodeRecord TakenBack(string code) => With(record, attempt, attempt with
+        {
+            Resolution = null, ResolvedAt = null, Link = null, Note = null, Decision = null, LinkChecked = null,
+            Code = attempt.State == AttemptStates.Held ? code : attempt.Code,
+            Progress = StandDowns.InFlight(attempt) && attempt.State != AttemptStates.Held
+                ? new StepProgress(null, $"Done outside Daoris was not taken ({code}).", null, null, clock())
+                : attempt.Progress,
+        });
+
+        if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown or NodeStates.Failed))
+        {
+            return (TakenBack(Moved), new(unit, node.Id, PerformedWhat.NotTaken, Moved));
+        }
+
+        var move = new NodeMove(NodeStates.Reached, NodeCause.Person)
+        {
+            Source = NodeSource.Person, Attempt = attempt.Attempt, Link = attempt.Link, Words = attempt.Note,
+            Acceptance = status.Binding is { } binding
+                ? binding with
+                {
+                    Evidence = new NodePort(NodeSource.Person, attempt.Link!, binding.SubjectRevision, null),
+                    Outcome = node.Outcomes.Count > 0 ? attempt.Decision : null,
+                }
+                : null,
+        };
+        var moved = NodeLifecycle.Apply(node, status, move);
+        if (!moved.Moved) return (TakenBack(moved.Refused!), new(unit, node.Id, PerformedWhat.Refused, moved.Refused));
+
+        record = Kept(record, moved, "holder-" + HeldResolutions.DoneOutside, clock());
+        var settled = StandDowns.InFlight(attempt)
+            ? attempt with { State = AttemptStates.Settled, Outcome = AttemptOutcomes.StoodDown, Code = HeldResolutions.DoneOutside, AskAt = null }
+            : attempt;
+        return (With(record, attempt, settled), new(unit, node.Id, PerformedWhat.Resolved, HeldResolutions.DoneOutside));
     }
 
     /// <summary>
@@ -122,6 +210,7 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
         var now = clock();
         var unit = record.Unit;
         var word = attempt.Resolution!;
+        if (word == HeldResolutions.Happened && attempt.Link is not null) return Outside(record, attempt, node);
 
         // The person's new attempt on a failure kept for them (failed becomes ready by the person), which the next evaluation
         // starts with a new key. The word is cleared as it is applied: the failure stays its plugin's.

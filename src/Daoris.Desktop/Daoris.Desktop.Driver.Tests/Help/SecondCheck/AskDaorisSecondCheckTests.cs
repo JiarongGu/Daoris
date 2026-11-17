@@ -18,12 +18,7 @@ public sealed class AskDaorisSecondCheckTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    private static async Task Until(Func<bool> done)
-    {
-        var watch = Stopwatch.StartNew();
-        while (!done() && watch.Elapsed < TimeSpan.FromSeconds(10)) await Task.Delay(10);
-        Assert.True(done());
-    }
+    private static Task Until(Func<bool> done) => Poll.Until(done);
 
     [Fact]
     public async Task A_selection_held_slow_or_failing_never_holds_the_turn_s_reader_and_the_next_still_runs()

@@ -84,12 +84,7 @@ public sealed class HelperProcessTests : IDisposable
     private static async Task SettleAsync(Daoris.Driver.Driver driver, HelperFiles files, Func<HelperState?, bool> done)
     {
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
-        var until = DateTime.UtcNow.AddSeconds(30);
-        while (!done(files.ReadState(AskId)))
-        {
-            Assert.True(DateTime.UtcNow < until, "the helper's ask did not settle");
-            await Task.Delay(50);
-        }
+        await Poll.Until(() => done(files.ReadState(AskId)), () => "the helper's ask did not settle");
     }
 
     /// <summary>

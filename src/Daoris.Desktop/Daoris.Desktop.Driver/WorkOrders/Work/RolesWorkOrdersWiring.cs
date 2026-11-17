@@ -18,4 +18,6 @@ internal sealed class RolesWorkOrdersOperations : IRolesWorkOrders
             : "unread";
         return new SupervisorAskWords(goAheads, AskWordsText.Beneath(words, questId));
     }
+
+    public string? AskOfEntry(string? entry) => AskWords.AskOfEntry(entry);
 }

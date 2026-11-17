@@ -580,7 +580,7 @@ describe("Updates: the install's update", () => {
     const row = within(await screen.findByRole('region', { name: '更新' }));
 
     expect(await row.findByText('暂存的构建')).toBeTruthy();
-    expect(row.getByText(/还在等 1 个驱动的会话和 2 个对话的当前一轮结束。/)).toBeTruthy();
+    expect(row.getByText(/还在等 1 个驱动的会话和2 个对话的当前一轮结束。/)).toBeTruthy();
     expect(row.getByRole('button', { name: '立即更新' })).toBeTruthy();
     expect(row.getByRole('button', { name: '暂不更新' })).toBeTruthy();
   });

@@ -25,6 +25,8 @@ public sealed class LookNode : BuiltInNode, IObserves, IAsksReads
 
     public override string? Title => "Your look";
 
+    public override string Role => StepRoles.Tester;
+
     public override NodeLook Look => NodeLook.You;
 
     /// <summary>

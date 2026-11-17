@@ -1,5 +1,6 @@
 /** The budget judgements the names report leaves for the window, each a name whose length is what it says. */
 export const BUDGET_LEFT = [
+  'agents.state.since:zh',
   'help.setup:en', 'help.setup:zh',
   'scope.every:en', 'scope.every:zh',
   'signin.titleNew:en', 'signin.titleNew:zh',

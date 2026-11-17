@@ -303,7 +303,7 @@ export function AgentPage({
   // *Add an account…*'s first step: the accounts a person signing one back in means,
   // each signed out or unknown, in the set's order. With none, it starts the sign-in at once.
   const back: BackAccount[] = tool.accounts
-    .filter((account) => !account.key && ['out', 'unknown'].includes(states.get(account.name)!.state))
+    .filter((account) => !account.key && ['out', 'unknown', 'unanswered'].includes(states.get(account.name)!.state))
     .sort((a, b) => place(a.name) - place(b.name))
     .map((account) => ({ id: account.name, name: accountLabel(account, tool), state: states.get(account.name)! }));
   const startAdding = () => {

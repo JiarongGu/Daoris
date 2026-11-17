@@ -132,8 +132,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   },
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/workflow-run-said.json'],
-    gates: ['driver', 'web-unit'],
-    why: "the driver's WorkflowRunSaidTwinTests and the page's runSaid vitest read a run's English table (WORKFLOW1c5)",
+    gates: ['driver', 'web-unit', 'censuses'],
+    why: "the driver's WorkflowRunSaidTwinTests, its WorkFrameCensusTests (each wait a progress makes said) and the page's runSaid vitest read a run's English table (WORKFLOW1c5)",
   },
   {
     paths: ['src/Daoris.Desktop/Directory.Build.props','src/Daoris.Desktop/Directory.Packages.props'],

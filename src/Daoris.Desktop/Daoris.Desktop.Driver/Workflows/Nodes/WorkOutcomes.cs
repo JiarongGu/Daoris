@@ -24,12 +24,14 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
 
         var now = clock();
         var status = StatusOf(record, node.Id);
-        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation };
+        var settled = attempt with { State = AttemptStates.Settled, Outcome = outcome.State, Code = outcome.Code, Generation = generation, By = outcome.Evidence?.By };
         if (status.Attempt != attempt.Attempt || status.State is not (NodeStates.Active or NodeStates.Unknown))
         {
             var stale = With(record, attempt, settled);
             return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
         }
+
+        if (AccessWaits.Is(attempt, outcome)) return Hold(record, AccessWaits.Held(attempt, outcome.State, generation, now), AccessWaits.Climbed);
 
         // A check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
         var source = OnPort(attempt) ? NodeSource.Gates : NodeSource.Plugin;

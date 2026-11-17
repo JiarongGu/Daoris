@@ -18,6 +18,16 @@ export const BUILD_MANIFEST = 'build.json';
 export const SWAP_JOURNAL = 'swap.json';
 export const MANIFEST_SCHEMA = 1;
 
+/** The person's word on a staged build (`HomeEntry.Update`), and the word holding it *not now* (`UpdateMode.NotNow`). */
+export const UPDATE_REQUEST = Object.freeze([HOME, 'update.json']);
+export const NOT_NOW = 'not-now';
+
+/** The build held *not now* as `InstallUpdate.Write` writes it: mode, build and the moment in UTC to the second, LF. */
+export function holdNotNow(install, build, at = new Date()) {
+  const word = { mode: NOT_NOW, build, at: at.toISOString().replace(/\.\d+Z$/, 'Z') };
+  writeAtomic(join(install, ...UPDATE_REQUEST), `${JSON.stringify(word, null, 2)}\n`);
+}
+
 /** What every staged build must carry, by its manifest paths: `StagedBuild.Required`, in its order. */
 export const STAGED_REQUIRED = Object.freeze([LAUNCHER, MARKER, `${SHELL_HOME[0]}/${SHELL_EXE}`, `${SHELL_HOME[0]}/Daoris.Desktop.App.dll`]);
 
@@ -104,10 +114,12 @@ export function stageRefusal(to, { service = false } = {}) {
  * executables: Windows refuses its rename while something still holds a file in it, the scanner most often,
  * so the rename is tried for half a minute, and then the build is copied into place with its manifest written last.
  * Whatever reads `update/staged/` reads the manifest first, so a half copy is nothing staged, never a broken build.
+ * `notNow`, a build's id, holds it from the start: its word is written once nothing is staged and before the build is.
  */
-export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {} } = {}) {
+export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {}, notNow = null } = {}) {
   const staged = join(install, ...STAGED);
   rmSync(staged, { recursive: true, force: true });
+  if (notNow) holdNotNow(install, notNow);
   try {
     renameHeld(staging, staged, { tries, waitMs, ...(rename ? { rename } : {}) });
     return staged;

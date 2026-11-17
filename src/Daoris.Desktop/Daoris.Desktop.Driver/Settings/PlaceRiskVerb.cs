@@ -1,0 +1,112 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using static Daoris.Driver.ChoiceArgs;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// <c>daoris settings risk [&lt;workspace&gt;|machine] [--repository &lt;name&gt;] [low|medium|high] [--mark &lt;marks&gt;] [--unmark &lt;marks&gt;]</c>:
+/// the terminal twin of a place's risk and the owner's marks (<see cref="PlaceRiskBook"/>), and its read form. The owner's record: a press that
+/// proves a session's key goes on the owner's card in every mode, a process in an agents' job is refused by the pipe, and with no Daoris
+/// running only the owner's own terminal writes the file.
+/// </summary>
+public sealed class PlaceRiskVerb : ChoiceVerb
+{
+    private const string Usage = "usage: daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>] — "
+        + "e.g. `daoris settings risk aurora low --mark release.production`; marks are comma-separated; with nothing to set it says what stands.";
+
+    /// <summary>The refusal of a file write from where an agent is: the record is the owner's, and an agent's press goes on the owner's card.</summary>
+    internal const string Alone =
+        "a place's risk and marks are the owner's: with Daoris running, an agent's press goes on the owner's card; with none running, only the owner's own terminal writes them. Nothing was written.";
+
+    private static readonly string[] Valued = ["--repository", "--mark", "--unmark"];
+
+    public override string Word => "risk";
+
+    /// <summary>Whether the words set anything: a risk, a mark or an unmark.</summary>
+    public static bool Changes(IReadOnlyList<string> args) =>
+        args.Any(arg => arg is "--mark" or "--unmark") || Operands(args, Valued).Skip(1).Any(PlaceRisks.Is);
+
+    public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
+    {
+        var edit = Read(args);
+        var now = before.PlaceRisk.At(edit.Workspace, edit.Repository);
+        world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk} ({now.Source}){Marks(now.Marks)}.");
+        if (!before.PlaceRisk.Written) world.Instance.Out.WriteLine("  No record is written yet: Daoris writes it at its next start.");
+        return 0;
+    }
+
+    public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
+    {
+        var path = world.ConfigPath;
+        var edit = Read(args);
+        var agent = world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 } || world.InAgentJob() == true;
+        var payload = new JsonObject();
+        if (edit.Workspace is not null) payload["workspace"] = edit.Workspace;
+        if (edit.Repository is not null) payload["repository"] = edit.Repository;
+        if (edit.Risk is not null) payload["risk"] = edit.Risk;
+        if (edit.Mark.Count > 0) payload["mark"] = new JsonArray([.. edit.Mark.Select(mark => (JsonNode)mark)]);
+        if (edit.Unmark.Count > 0) payload["unmark"] = new JsonArray([.. edit.Unmark.Select(mark => (JsonNode)mark)]);
+        PlaceRiskBook after;
+        try
+        {
+            after = Judged(() => before with { PlaceRisk = before.PlaceRisk.Apply(edit) }).PlaceRisk;
+        }
+        catch (ChoiceWords refused)
+        {
+            throw new ChoiceWords($"{refused.Message} — {Usage}", refused.Exit);
+        }
+
+        return new("risk", ChoiceRoutes.PlaceRisk, payload, _ =>
+        {
+            if (agent) throw new ChoiceWords(Alone, 1);
+            StandingChoices.Write(path, config => config with { PlaceRisk = config.PlaceRisk.Apply(edit) });
+            return Task.FromResult<object?>(null);
+        }, _ => null, _ =>
+        {
+            var now = after.At(edit.Workspace, edit.Repository);
+            world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk}{Marks(now.Marks)}.");
+            world.Instance.Out.WriteLine($"  Written to {path}.");
+            return 0;
+        });
+    }
+
+    public override void Listed(DriverConfig choices, DriverChoicesWorld world)
+    {
+        foreach (var (place, risk) in choices.PlaceRisk.Places.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            world.Instance.Out.WriteLine($"  risk       {place}  {risk.Risk}{Marks(risk.Marks)}");
+        }
+    }
+
+    private static PlaceRiskEdit Read(IReadOnlyList<string> args)
+    {
+        try
+        {
+            Flags(args, Valued, [], "settings risk", Usage);
+            var operands = Operands(args, Valued).Skip(1).ToList();
+            var risk = operands.FirstOrDefault(PlaceRisks.Is);
+            var place = operands.Where(each => !PlaceRisks.Is(each)).ToList();
+            if (place.Count > 1) throw new ChoiceWords("`settings risk` takes one place and one risk.");
+            var workspace = place.Count == 1 && place[0] != PlaceRiskBook.MachineKey ? place[0] : null;
+            var repository = FlagValue(args, "--repository");
+            if (repository is not null && workspace is null) throw new ChoiceWords("`settings risk --repository` needs the repository's workspace.");
+            return new PlaceRiskEdit { Workspace = workspace, Repository = repository, Risk = risk, Mark = List(FlagValue(args, "--mark")), Unmark = List(FlagValue(args, "--unmark")) };
+        }
+        catch (ChoiceWords refused) when (!refused.Message.EndsWith(Usage, StringComparison.Ordinal))
+        {
+            throw new ChoiceWords($"{refused.Message} — {Usage}", refused.Exit);
+        }
+    }
+
+    private static IReadOnlyList<string> List(string? value) =>
+        value is null ? [] : [.. value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+
+    private static string Named(PlaceRiskEdit edit) =>
+        edit.Repository is { } repository ? $"`{repository}`" : edit.Workspace is { } workspace ? $"the workspace `{workspace}`" : "this machine";
+
+    private static string Marks(IReadOnlyList<string> marks) => marks.Count == 0 ? "" : $", marked {string.Join(", ", marks.Select(mark => $"`{mark}`"))}";
+
+    /// <summary>The payload as the route reads it, for a test's look at what the verb presses.</summary>
+    internal static PlaceRiskEdit EditOf(JsonObject payload) => PlaceRiskBook.EditOf(JsonSerializer.SerializeToElement(payload));
+}

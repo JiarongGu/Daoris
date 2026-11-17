@@ -32,7 +32,7 @@ public sealed class DeclarationLiteralsCensusTests : IClassFixture<DesktopCompil
         ["Daoris.Desktop.Driver/Platform/DeclarationNames.cs DeclarationNames.Lanes"] = "the one holder of the names",
     };
 
-    private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Each.SelectMany(DeclarationLiterals.Hits)));
+    private static readonly Lazy<SortedSet<string>> Found = new(() => Keys(DesktopCompilations.Each.AsParallel().SelectMany(DeclarationLiterals.Hits)));
 
     private static SortedSet<string> Keys(IEnumerable<LiteralHit> hits) => new(hits.Select(hit => $"{hit.File} {hit.Member}"), StringComparer.Ordinal);
 

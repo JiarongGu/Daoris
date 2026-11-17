@@ -97,9 +97,10 @@ public sealed class BrainstormDesk(string? home)
     /// </summary>
     public BrainstormOutcome Ask(
         string? question, string? repository, IReadOnlyList<string?>? agents, DateTimeOffset at, string? own = null,
-        IReadOnlyList<string?>? sources = null)
+        IReadOnlyList<string?>? sources = null, string? pass = null)
     {
         var words = question?.Trim() ?? "";
+        if (DesignRefusal(pass, sources) is { } refused) return refused;
         if (words.Length == 0)
         {
             return new(BrainstormRefusal.BadShape, "A brainstorm needs its question: what you want proposals for. Nothing was asked.");
@@ -136,7 +137,7 @@ public sealed class BrainstormDesk(string? home)
         var id = own ?? NewId();
         if (own is not null && Parse(PathOf(id, "request.json")) is { } on)
         {
-            return Same(on, words, of, named, paths)
+            return Same(on, words, of, named, paths) && Text(on, "pass") == Blank(pass)
                 ? new(BrainstormRefusal.None, $"Brainstorm `{id}` is already asked: the same brainstorm, never a second spend.", Find(id))
                 : new(BrainstormRefusal.State, $"Brainstorm `{id}` was asked with other words; an id names one brainstorm. Nothing was asked.", Find(id));
         }
@@ -158,6 +159,8 @@ public sealed class BrainstormDesk(string? home)
                 foreach (var path in paths) writer.WriteStringValue(path);
                 writer.WriteEndArray();
             }
+
+            if (Blank(pass) is { } design) writer.WriteString("pass", design);
         });
 
         return new(BrainstormRefusal.None,
@@ -165,6 +168,20 @@ public sealed class BrainstormDesk(string? home)
             + (of is null ? "the question alone" : $"its knowledge of `{of}`")
             + "; with no Daoris running, it waits. Read the packet before you send it: nothing goes to any agent until you do.",
             Find(id));
+    }
+
+    /// <summary>The driver's <c>DesignPasses.Design</c>, duplicated deliberately (twins.md): the pass whose packet is the purpose brief alone.</summary>
+    public const string DesignPass = "design";
+
+    private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static BrainstormOutcome? DesignRefusal(string? pass, IReadOnlyList<string?>? sources)
+    {
+        if (Blank(pass) is not { } named) return null;
+        if (named != DesignPass) return new(BrainstormRefusal.BadShape, $"A brainstorm's pass is `{DesignPass}` or none; `{named}` is not. Nothing was asked.");
+        return (sources ?? []).Any(source => !string.IsNullOrWhiteSpace(source))
+            ? new(BrainstormRefusal.BadShape, "A design pass's packet holds its purpose brief alone, never the repository's history: name no sources. Nothing was asked.")
+            : null;
     }
 
     /// <summary>The named sources as paths from the repository's root, slashes forward and each once; or the refusal where they do not hold.</summary>

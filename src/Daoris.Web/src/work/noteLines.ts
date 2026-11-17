@@ -208,6 +208,8 @@ export const OPENING_REASONS: Readonly<Record<string, { key: string; values: rea
   refused: { key: 'note.opening.why.refused', values: ['agent', 'over'] },
   'signed-out': { key: 'note.opening.why.signed-out', values: ['agent', 'over'] },
   locked: { key: 'note.opening.why.locked', values: ['agent', 'over'] },
+  unanswered: { key: 'note.opening.why.unanswered', values: ['over'] },
+  'unanswered-self': { key: 'note.opening.why.unanswered-self', values: [] },
   'kept-self': { key: 'note.opening.why.kept-self', values: [] },
   'kept-last': { key: 'note.opening.why.kept-last', values: ['over'] },
   kept: { key: 'note.opening.why.kept', values: ['over'] },
@@ -256,6 +258,8 @@ export const NOTE_VALUES: Readonly<
   // The routing standing a chat is told, each of the judge's four worded by `work.note.routing.*`.
   standing: 'routing',
   node: 'text', tip: 'id',
+  // The reporting line a landing's wait climbed to, as the driver says it.
+  line: 'text',
   // Who a word is by, each a code worded by `work.note.author.*` and joined the reader's way.
   authors: 'authors',
   // A commit rule's mode, its own word set as code by the sentence, and where it is set.

@@ -58,7 +58,7 @@ public sealed class RoleCatalogTests : IDisposable
         Assert.Equal(
             [("build", "Build", "开发"), ("design", "Design", "设计"), ("exact", "Exact build", "精确开发"), ("intake", "Intake", "受理"), ("opinion", "Second opinion", "第二意见"), ("helper", "Helper", "助手"),
                 ("partner", "Partner", "搭档"), ("brainstorm", "Brainstorm", "头脑风暴"), ("ask-daoris", "Ask Daoris", "问道衍"), ("chat", "Chat", "聊天"),
-                ("lead", "Lead", "负责人"), ("scout", "Scout", "侦察"), ("supervisor", "Supervisor", "主管"), ("second-check", "Second check", "复核"), ("steward", "Steward", "管家")],
+                ("lead", "Lead", "主导"), ("scout", "Scout", "侦察"), ("supervisor", "Supervisor", "主管"), ("second-check", "Second check", "复核"), ("steward", "Steward", "管家")],
             RoleCatalog.Seed.Select(role => (role.Id, role.Name.In("en"), role.Name.In("zh"))));
         Assert.All(RoleCatalog.Seed.Where(role => role.Hold is null), role => Assert.Equal(ActorWords.Name(role.Id), role.Name.In("en")));
     }

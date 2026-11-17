@@ -23,7 +23,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 | The root | The run (`TransportRun`, `DoorInput`, `ProtocolWords`, `HarnessCapture`, `NativeFrame`; `SessionProcesses`, never sent to the service); the protocol door (`Acp.cs`, a root wiring `Acp*` units); the roster (`HarnessRoster` and its `Roster*`, `Account*`, `Usage*` and `Binary*` units, `AgentErrors`, `HarnessSettings`, `AgentOffers`); what a session is handed (`ConnectorPlans`, `SessionServers`, `ServerKeeper`, `PermissionRules`, `RuleProposals`, `SpawnSkills`, `TargetPrompt`, `Spawning`); the terminal's `daoris agent …` verbs (`AgentsCommand`), each refusing a flag it does not take (`AgentVerbFlags`) |
 | `Turn/` | The protocol turn's registered stages (`docs/index/registered.md`), its wiring interfaces and the open prompts' gate (`OpenPrompts`) |
 | `Layer/` | Lyntai's agent layer, compiled only under `DaorisLyntaiLayer` (rule 47) |
-| Beside Agents | `Events/Readings/` (a run's `WireReading`s), `Knowledge/` (the provider sheet, `IAgentFacts`), `Loop/Session/` (a spawn's assembly), `Plugins/` |
+| Beside Agents | `Events/Readings/` (a run's `WireReading`s), `Knowledge/` (the provider sheet, `IAgentFacts`; an account's sign-in state, `SignInState`, which the profile report carries), `WorkOrders/SignInLooks.cs` (the look's passes for stored sign-ins and sign-outs), `Loop/Session/` (a spawn's assembly), `Plugins/` |
 
 ## Its rules
 
@@ -159,7 +159,12 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
     (D197, D175)
-29. The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
+29. An account's sign-in state is read once, by one unit (`SignInStates`) from its last reading: signed in, signed out since a
+    time (a sign-out after a signed-in reading is one nobody at Daoris made: it raises one notice in *Done and failed*), its check
+    not answered (asked, and timed out or said nothing readable), or never read. The walk ranks by it and the account page shows
+    it, with *Sign in* beside a sign-out and an unanswered check. The walk, under every use, takes an account whose check did not
+    answer last until a check answers, and the start's opening line says so (`unanswered`, `unanswered-self`). (AUTHPROBE1)
+    The walk, under `goal` (the default): a near account last, then a week about to lapse first (within a week's last day no
     curve holds, the person's included, so all its remaining room is spendable, and the most per hour to its reset goes first
     ahead of any other account's room), then most room in the tightest window the provider reported
     (rooms within five points tie; no number ranks as no room; not under `switch: off`), then fewest of Daoris's sessions running,
@@ -176,7 +181,17 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home; a start on another
     agent is on another account. A resume judges that account as the walk does: a whole window with its reset ahead cools it
     until then, unless the person picked it. (D131, D137, D206)
-33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150)
+33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150) An
+    agent that declares its stored sign-in (`IStoredSignIn`, Claude Code's `.credentials.json`) is read for its shape alone,
+    whether each token is there and when the access token expires, never a value. A start that has counted its account renews
+    the sign-in once, under the account's lock, where the stored token expires within ten minutes and no session of Daoris's runs
+    on it (`SignInRefresh`), so starts and resumes on one account together find it fresh and none of their sessions spends the
+    single-use refresh token beside another. Its limit: where a session of Daoris's already runs on the account nothing is renewed,
+    since that session's process holds the token and renewing beside it would spend its refresh token; a start beside it reads the
+    store as it stands and may still refresh at the same moment as the running session, which no lock of Daoris's reaches. A sign-in
+    is read without decoding a token: presence is judged on the file's bytes, which are cleared after. Each look reads the stores,
+    and one its agent cleared reads signed out at once (`StoredSignIns`); a sign-out read after an unanswered reading that followed a
+    sign-in still reads as one nobody at Daoris made (`AccountReads` carries the word before through the unanswered run). (CREDRACE1)
 
 **Usage, limits and errors**
 

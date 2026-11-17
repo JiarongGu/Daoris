@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Inline } from '../../design/ui';
+import { ExternalLink } from '../../design/links';
 import type { RunStep, RunWait } from '../run';
 
 // What a run's step waits on, said under it: its kind's declared wait (`NODE_KINDS`' `waits`) in the reader's words, with the facts the
@@ -14,7 +15,12 @@ const clock = (iso: string | null | undefined, language: string): string | null 
 
 /** A wait in words: `workflow.wait.<kind>.<code>` with its values, its since and until; one with no words is said as recorded. */
 export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en'): string {
-  const values = { ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '' };
+  const values: Record<string, string> = { ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '' };
+  // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
+  if (wait.code === 'actor' || wait.code === 'progress') {
+    const holder = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
+    return t(`workflow.wait.${wait.code === 'actor' ? 'role' : wait.code}`, { ...values, role: values.actor ?? '', holder, words: values.words ?? '' }).trim();
+  }
   return t(`workflow.wait.${kind}.${wait.code}`, { ...values, defaultValue: t('workflow.wait.recorded', { code: wait.code }) });
 }
 
@@ -27,6 +33,7 @@ export function StepWait({ step }: { step: RunStep }) {
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
       <Inline text={waitSaid(t, step.step.kind, step.wait, i18n.language)} />
       {since && <span className="text-meta text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
+      {step.wait.values?.url && <> · <ExternalLink href={step.wait.values.url}>{t('workflow.wait.open')}</ExternalLink></>}
     </p>
   );
 }

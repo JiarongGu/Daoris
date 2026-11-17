@@ -124,5 +124,9 @@
   "opinion.said.sentBack": "你的话已作为会话 {{session}} 的下一轮送出。",
   "opinion.session.title": "第二意见",
   "opinion.session.kind": "第二意见",
-  "opinion.session.reads": "阅读「{{title}}」"
+  "opinion.session.reads": "阅读「{{title}}」",
+  "opinion.consulted.another-maker": "以审阅这项工作的方式征询：独立于它的厂商。",
+  "opinion.consulted.same-agent": "以审阅这项工作的方式征询：不独立，与这项工作出自同一家厂商。",
+  "opinion.consulted.maker-not-declared": "以审阅这项工作的方式征询：不算独立，它的厂商未声明。",
+  "opinion.consulted.sawAnother": "再读读过第一轮的发现，所以它看过另一份回答。"
 }

@@ -25,7 +25,10 @@ public enum GoAheadState
 public sealed record GoAheadRequest(string Session, string? Quest, DateTimeOffset At, string Why);
 
 /// <summary>The person's answer to a go-ahead: yes or no, their words where they gave any, and when.</summary>
-public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At);
+public sealed record GoAheadAnswer(bool Approved, string? Words, DateTimeOffset At)
+{
+    public string? By { get; init; }
+}
 
 /// <summary>
 /// A go-ahead held on an ask: the person's yes for one act outside a repository, asked once and named
@@ -120,6 +123,21 @@ public static class GoAheadAct
         ["local"] = "local", ["localhost"] = "local",
     };
 
+    /// <summary>
+    /// An environment's usual Chinese names, production first. Chinese runs its words together (<c>生产环境</c>), so a word holding one of
+    /// them reads as it; the first held in this order wins, so a word that names production and another reads as production.
+    /// </summary>
+    private static readonly (string Name, string Environment)[] ChineseEnvironments =
+    [
+        ("生产", "production"), ("线上", "production"), ("正式", "production"),
+        ("预发", "staging"), ("测试", "test"), ("开发", "development"), ("本地", "local"),
+    ];
+
+    // The one name of the environment a word says, by the table or, for a word in Chinese, a Chinese name it holds; null for none.
+    private static string? EnvironmentOf(string word) =>
+        Environments.TryGetValue(word, out var environment) ? environment
+        : ChineseEnvironments.FirstOrDefault(each => word.Contains(each.Name, StringComparison.Ordinal)).Environment;
+
     /// <summary>The small words that name nothing an act touches.</summary>
     private static readonly HashSet<string> Small = new(StringComparer.Ordinal)
     {
@@ -143,7 +161,7 @@ public static class GoAheadAct
         var words = Split(said);
         foreach (var word in words)
         {
-            if (Environments.TryGetValue(word, out var environment)) return environment;
+            if (EnvironmentOf(word) is { } environment) return environment;
         }
 
         return string.Join(" ", words.Where(word => !Small.Contains(word)));
@@ -151,12 +169,11 @@ public static class GoAheadAct
 
     /// <summary>
     /// Whether any word of <paramref name="said"/> reads as production, by this table's names for it (<c>production</c>,
-    /// <c>prod</c>, <c>prd</c>, <c>live</c>): the whole of it, or a word between its dashes or spaces. Where a set-up step
-    /// asks a go-ahead, and what an environment may be named, are judged by it, so
+    /// <c>prod</c>, <c>prd</c>, <c>live</c>, and <c>生产</c>, <c>线上</c>, <c>正式</c> within a word): the whole of it, or a word between
+    /// its dashes or spaces. Where a set-up step asks a go-ahead, and what an environment may be named, are judged by it, so
     /// production reads one way wherever a review meets it.
     /// </summary>
-    public static bool ReadsAsProduction(string? said) =>
-        Split(said).Any(word => Environments.TryGetValue(word, out var environment) && environment == "production");
+    public static bool ReadsAsProduction(string? said) => Split(said).Any(word => EnvironmentOf(word) == "production");
 
     /// <summary>
     /// What an act touches, by its words: lower-case, split at anything that is not a letter or a digit, without the small
@@ -378,7 +395,7 @@ public static class GoAheads
             && answered.TryGetProperty("approved", out var approved) && approved.ValueKind is JsonValueKind.True or JsonValueKind.False
             && Moments.Read(answered, "at") is { } when)
         {
-            answer = new GoAheadAnswer(approved.GetBoolean(), JsonFields.Text(answered, "words"), when);
+            answer = new GoAheadAnswer(approved.GetBoolean(), JsonFields.Text(answered, "words"), when) { By = JsonFields.Text(answered, "by") };
         }
 
         return new GoAhead((int)number, kind, on, act)
@@ -416,6 +433,7 @@ public static class GoAheads
             writer.WriteStartObject("answer");
             writer.WriteBoolean("approved", answer.Approved);
             if (answer.Words is { } words) writer.WriteString("words", words);
+            if (answer.By is { } by) writer.WriteString("by", by);
             writer.WriteString("at", Moments.Write(answer.At));
             writer.WriteEndObject();
         }

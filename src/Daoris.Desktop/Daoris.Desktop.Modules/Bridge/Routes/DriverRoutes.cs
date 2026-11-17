@@ -61,6 +61,20 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    [DriverRoute("SET_WORKFLOW_VALUES", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_WORKFLOW_VALUES", Repository = "repository")]
+    [GroundRepository("SET_WORKFLOW_VALUES", "repository")]
+    [Says("SET_WORKFLOW_VALUES", "repository:repository")]
+    [Publishes("SET_WORKFLOW_VALUES", StateScopes.Driver)]
+    private object? SetWorkflowValues(SetWorkflowValues press)
+    {
+        // The refusals come first, before anything is written.
+        var values = press.Options();
+        WorkflowValuesKey.Apply(DriverConfig.Load(_loop.ConfigPath), press.Repository, press.Workflow, press.Node, values, press.Why);
+        _context.Change(config => WorkflowValuesKey.Apply(config, press.Repository, press.Workflow, press.Node, values, press.Why));
+        return State(_loop);
+    }
+
     [DriverRoute("SET_STANDING", PipeClass.Person, Drain = PipeDrain.Passes)]
     [Owner("SET_STANDING", Repository = "repository")]
     [GroundRepository("SET_STANDING", "repository")]

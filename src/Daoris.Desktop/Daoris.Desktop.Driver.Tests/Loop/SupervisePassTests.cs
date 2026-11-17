@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An agent supervisor's attempt, with a stub turn and a stand-in door: answering, leaving, failing and timing out, answering late after
-/// a revoke, a limited end moving to the next choice, no choice ready leaving the subject to the person, and the person's word ending a
-/// running turn, its result dropped.
+/// An agent supervisor's attempt, with a stub turn and a stand-in door: answering, leaving, failing, timing out, answering late after a
+/// revoke, a limited end moving to the next choice, no choice leaving the subject to the person, the person's word ending a turn.
 /// </summary>
 public sealed class SupervisePassTests : IDisposable
 {
@@ -42,7 +41,7 @@ public sealed class SupervisePassTests : IDisposable
 
     private static string GoOn => $"{SupervisorBlock.Opening}\n{{ \"kind\": \"course\", \"subject\": {{ \"session\": \"s1\", \"point\": \"p-1\" }}, \"do\": \"go-on\", \"reasons\": [ {{ \"says\": \"The tests pass.\", \"source\": \"count:failures\" }} ] }}\n{SupervisorBlock.Closing}";
 
-    private static string Leave => GoOn.Replace("\"do\": \"go-on\"", "\"leave\": \"preference\"", StringComparison.Ordinal);
+    private static string Leave => GoOn.Replace("\"do\": \"go-on\"", "\"leave\": \"unrecorded\"", StringComparison.Ordinal);
 
     private (Daoris.Driver.Driver Driver, List<SuperviseRunAsk> Asked, List<IReadOnlyList<ActorEffective>> Walked) Driver(
         Func<SuperviseRunAsk, CancellationToken, Task<SuperviseRunEnd>> run, Func<ReviewerChoice>? choose = null)
@@ -76,17 +75,11 @@ public sealed class SupervisePassTests : IDisposable
     private static Task<SuperviseRunEnd> Ended(string state, string? words = null) =>
         Task.FromResult(new SuperviseRunEnd(state, words, "t-1", OpinionPosture.RulesAndCopy, 1200, "opus"));
 
-    private static async Task Until(Func<bool> done)
-    {
-        var until = DateTime.UtcNow.AddSeconds(15);
-        while (!done())
-        {
-            Assert.True(DateTime.UtcNow < until, "the attempt did not end");
-            await Task.Delay(20);
-        }
-    }
+    private static Task Until(Func<bool> done) => Poll.Until(done, () => "the attempt did not end");
 
     private static SupervisorAttempt? Last(Daoris.Driver.Driver driver) => driver.Context.Supervisor.Attempts.Of(Point.Subject).LastOrDefault();
+
+    private static bool Settled(Daoris.Driver.Driver driver) => Last(driver)?.Outcome is not null && !driver.Context.Supervisor.Runs.Running(Point.Subject);
 
     [Fact]
     public async Task An_answer_is_kept_through_the_kind_s_keeping_with_the_tier_that_ran_and_what_held_it()
@@ -148,7 +141,7 @@ public sealed class SupervisePassTests : IDisposable
         await Until(() => Last(driver)?.Outcome is not null);
 
         Assert.Equal(SupervisorAttemptOutcomes.Left, Last(driver)!.Outcome);
-        Assert.Equal("preference", Assert.Single(desk.Kept).Block.Leave);
+        Assert.Equal("unrecorded", Assert.Single(desk.Kept).Block.Leave);
         Assert.True(driver.Context.Supervisor.Attempts.Ended(Point.Subject));
     }
 
@@ -199,7 +192,7 @@ public sealed class SupervisePassTests : IDisposable
         var (driver, asked, _) = Driver((_, _) => Ended("completed", GoOn));
 
         await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(SupervisorWhy.RoleChanged), default);
-        await Until(() => Last(driver)?.Outcome is not null);
+        await Until(() => Settled(driver));
 
         Assert.Equal(SupervisorAttemptOutcomes.RoleChanged, Last(driver)!.Outcome);
         Assert.False(driver.Context.Supervisor.Attempts.Ended(Point.Subject));
@@ -223,7 +216,7 @@ public sealed class SupervisePassTests : IDisposable
         var desk = new Desk();
 
         await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default);
-        await Until(() => Last(driver)?.Outcome is not null);
+        await Until(() => Settled(driver));
         Assert.Equal(SupervisorAttemptOutcomes.Limited, Last(driver)!.Outcome);
 
         await new SupervisePass(driver.Context, driver).StartAsync(Point, desk, default);
@@ -263,7 +256,7 @@ public sealed class SupervisePassTests : IDisposable
         for (var turn = 1; turn <= 2; turn++)
         {
             await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default);
-            await Until(() => driver.Context.Supervisor.Attempts.Of(Point.Subject).Count == turn && Last(driver)!.Outcome is not null);
+            await Until(() => driver.Context.Supervisor.Attempts.Of(Point.Subject).Count == turn && Settled(driver));
         }
 
         Assert.Contains("every choice of its order was tried", await new SupervisePass(driver.Context, driver).StartAsync(Point, new Desk(), default));

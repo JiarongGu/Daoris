@@ -118,7 +118,8 @@ public static class WireEvaluation
             {
                 if (lapsing.ContainsKey(node.Id)) continue;
                 var lapse = Lapse(node, now[node.Id], run, current, subjects[node.Id]) ?? WireTargets.Lapse(node, now[node.Id], run, now, wires)
-                    ?? (WireSkips.Lapses(node, now[node.Id], wires, standing) && Delivers(node) ? (WireWhy.Upstream, null) : null);
+                    ?? ((WireSkips.Lapses(node, now[node.Id], wires, standing) && Delivers(node)) || WireDecisions.Lapses(node, now[node.Id], declared, now, wires, standing)
+                        ? (WireWhy.Upstream, null) : null);
                 if (lapse is null) continue;
                 lapsing[node.Id] = lapse.Value;
                 found = true;
@@ -204,6 +205,12 @@ public static class WireEvaluation
             var judged = Eligible(node, status, wires, receipts, run, subjects[node.Id], untaken);
             eligibility.Add(judged);
             if (moved.Contains(node.Id)) continue;
+            if (WireDecisions.Move(node, status, declared, wires, now, receipts, untaken, run.ScopeOf(node.Id)) is { } decided)
+            {
+                Make(node, decided.Move, WireWhy.Path, decided.Decision);
+                continue;
+            }
+
             if (status.State is NodeStates.Blocked or NodeStates.Ready or NodeStates.Invalidated && WireSkips.Producer(node, wires, receipts) is { } producer)
             {
                 Make(node, WireSkips.With(producer, run.ScopeOf(node.Id)), WireWhy.Path, producer);

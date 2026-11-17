@@ -132,17 +132,17 @@ public sealed class HumanNodeTests : NodeRunFixture
         BoundTo(ApprovalGraph);
         Read();
         var runtime = Runtime();
-        Assert.Empty(runtime.HumanTasks());
+        Assert.Empty(runtime.HeldSteps());
         await RunPassAsync(runtime);
 
-        var task = Assert.Single(runtime.HumanTasks());
-        Assert.Equal((RunId, "sign", RunHome.Repository, RunId), (task.Run, task.Node, task.Repository, task.Work));
-        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], task.Acts);
+        var task = Assert.Single(runtime.HeldSteps());
+        Assert.Equal((RunId, "sign", RunHome.Repository, RunId, PersonWaits.Approval, "approver"), (task.Run, task.Node, task.Repository, task.Work, task.Why, task.Role));
+        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], task.Presses.Where(press => press != NodeWordActs.Skip));
 
         // A refusal is a rejection, so it takes the person's words as a review's changes do.
         Assert.False(Press("sign", NodeWordActs.Reject).Done);
         Assert.True(Press("sign", NodeWordActs.Reject, "the notes miss it").Done);
-        Assert.Empty(runtime.HumanTasks());
+        Assert.Empty(runtime.HeldSteps());
     }
 
     [Fact]
@@ -153,12 +153,12 @@ public sealed class HumanNodeTests : NodeRunFixture
         var runtime = Runtime();
         var began = _now;
         await RunPassAsync(runtime);
-        Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);
+        Assert.Equal(began, Assert.Single(runtime.HeldSteps()).Since);
 
         // Later passes keep the moment it began to wait.
         _now = _now.AddHours(3);
         await RunPassAsync(runtime, whole: false);
-        Assert.Equal(began, Assert.Single(runtime.HumanTasks()).Since);
+        Assert.Equal(began, Assert.Single(runtime.HeldSteps()).Since);
     }
 
     [Fact]
@@ -175,12 +175,13 @@ public sealed class HumanNodeTests : NodeRunFixture
     }
 
     [Fact]
-    public void A_person_s_task_declares_a_tasks_outcome_or_an_approvals_and_no_other_and_the_refusal_is_no_outcome()
+    public void A_person_s_task_declares_a_tasks_outcome_an_approvals_or_a_decisions_own_and_the_refusal_is_no_outcome()
     {
         Assert.Null(NodeDeclarations.Problem(Declared()));
         Assert.Null(NodeDeclarations.Problem(Declared("done")));
         Assert.Null(NodeDeclarations.Problem(Declared("approved")));
-        foreach (var other in new[] { new[] { "merged", "closed" }, ["rejected", "approved"], ["approved", "rejected"], ["rejected"], ["done", "approved"] })
+        Assert.Null(NodeDeclarations.Problem(Declared("merged", "closed")));
+        foreach (var other in new[] { new[] { "merged" }, ["rejected", "approved"], ["approved", "rejected"], ["rejected"], ["done", "approved"] })
         {
             Assert.Equal("outcomes", NodeDeclarations.Problem(Declared(other)));
         }

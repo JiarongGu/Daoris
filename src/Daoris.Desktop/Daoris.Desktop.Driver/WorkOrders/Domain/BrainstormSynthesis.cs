@@ -26,7 +26,10 @@ public sealed record BrainstormGroup(int Rank, string Title, string Idea, string
 public sealed record BrainstormDropped(string Id, string Why);
 
 /// <summary>A synthesis validated: its groups by rank, and what it left out.</summary>
-public sealed record BrainstormSynthesized(IReadOnlyList<BrainstormGroup> Groups, IReadOnlyList<BrainstormDropped> LeftOut);
+public sealed record BrainstormSynthesized(IReadOnlyList<BrainstormGroup> Groups, IReadOnlyList<BrainstormDropped> LeftOut)
+{
+    public DesignComparison? Comparison { get; init; }
+}
 
 /// <summary>What the validator made of a synthesis: the synthesis, or the codes it failed on.</summary>
 public sealed record BrainstormSynthesisChecked(BrainstormSynthesized? Synthesis, IReadOnlyList<string> Codes)

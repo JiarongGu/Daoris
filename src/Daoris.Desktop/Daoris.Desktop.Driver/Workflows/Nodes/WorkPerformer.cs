@@ -62,6 +62,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <summary>A word the person's door does not know: nothing is recorded.</summary>
     public const string NotResolution = "not-resolution";
 
+    /// <summary>A <i>Done outside Daoris</i> with no link: the link is its proof, so nothing is recorded.</summary>
+    public const string NoLink = "no-link";
+
     /// <summary>The held attempt already has the person's word, which the runtime applies at its next pass.</summary>
     public const string Worded = "worded";
 
@@ -170,8 +173,12 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
             if (!moved.Moved) return (null, (null, moved.Refused));
             // The call names the unit its node observes, which on a run's record is its subject's,
             // never `run:`; on a unit's own record it is that unit.
+            // Its own key per attempt, and the key of its effect, the same for every attempt on this target, written here before the send.
             var call = new WorkPerformCall(binding.Observes, node.Kind, node.Version, Random("i-", 12), Random("k-", 16), binding.SubjectRevision ?? "",
-                [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node));
+                [.. binding.Inputs.OrderBy(input => input.Key, StringComparer.Ordinal).Select(input => input.Value.Ref)], now + Timeout(node))
+            {
+                EffectKey = EffectKeys.Of(unit, node.Id, node.Kind, EffectKeys.Target(binding.Observes, binding.SubjectRevision)),
+            };
             var attempt = new NodeAttempt(node.Id, moved.Status.Attempt, onPort ? node.Kind : node.Kind[..node.Kind.IndexOf('/')], call, AttemptStates.Recorded) { RecordedAt = now };
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
             return (Kept(record, moved, "start", now) with { Attempts = [.. record.Attempts, attempt], Fired = fired }, (attempt, null));
@@ -266,10 +273,25 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
         return done;
     }
 
-    public WorkPerformed Word(string unit, string node, int attempt, string resolution, string? outcome = null) =>
-        Person.Word(unit, node, attempt, resolution, outcome);
+    public WorkPerformed Word(
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null) =>
+        Person.Word(unit, node, attempt, resolution, outcome, link, note, epoch);
 
-    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared) => Person.Resolve(declared);
+    /// <summary>Every holder's link on a plugin's step handed to its plugin's check, before <see cref="Resolve"/> applies the words (<see cref="WorkLinkChecks"/>).</summary>
+    public Task<IReadOnlyList<WorkPerformed>> CheckLinksAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct) =>
+        new WorkLinkChecks(records, port, clock).CheckAsync(declared, sends, ct);
+
+    /// <summary>Every word on a held, failed or in-flight attempt applied; each attempt a done outside stood down has its plugin told.</summary>
+    public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
+    {
+        var done = Person.Resolve(declared);
+        foreach (var unit in done.Where(each => each is { What: PerformedWhat.Resolved, Code: HeldResolutions.DoneOutside }).GroupBy(each => each.Unit))
+        {
+            StandDown(unit.Key, [.. unit.Select(each => each.Node)]);
+        }
+
+        return done;
+    }
 
     internal static bool KeptFailure(NodeRecord record, NodeAttempt attempt) => WorkPersonWord.KeptFailure(record, attempt);
 
@@ -484,7 +506,7 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     };
 
     /// <summary>A failure of the call itself, not the loop ending: the attempt's outcome is unknown, never a second blind dispatch.</summary>
-    private static bool Unanswered(Exception error) =>
+    internal static bool Unanswered(Exception error) =>
         error is not OperationCanceledException && error is DriverException or IOException or TimeoutException or InvalidOperationException;
 
     /// <summary>
@@ -546,16 +568,20 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     private const int PortGeneration = 1;
 
     /// <summary>
-    /// The person's stop of a check that is running: the pass that applied it tells the executor,
-    /// which ends its job as at its bound. Each named node that is stopped and still waits on an attempt sent here is told.
+    /// What the pass that closed the named nodes tells whoever runs their attempts: a check's executor or a step's agents end the job of one
+    /// still running on a stopped node, or of one stood down, as at its bound; a plugin's process is told each attempt stood down
+    /// (<see cref="StandDowns"/>), once, so it stops what it watches. A plugin's later outcome is a replay whether it heeds this or not.
     /// </summary>
-    public void StopChecks(string unit, IReadOnlyCollection<string> nodes)
+    public void StandDown(string unit, IReadOnlyCollection<string> nodes)
     {
-        if (records.Read(unit) is not { } record) return;
-        foreach (var attempt in record.Attempts.Where(each => (OnPort(each) || AgentsFor(each, null) is not null) && nodes.Contains(each.Node)
-                     && each.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown))
+        if (nodes.Count == 0 || records.Read(unit) is not { } record) return;
+        foreach (var attempt in record.Attempts.Where(each => nodes.Contains(each.Node)))
         {
-            if (StatusOf(record, attempt.Node).State == NodeStates.Stopped) (PortOf(attempt.Plugin) ?? AgentsFor(attempt, null))?.Stop(attempt.Call.Invocation);
+            var stoodDown = attempt is { State: AttemptStates.Settled, Outcome: AttemptOutcomes.StoodDown } && StatusOf(record, attempt.Node).Attempt == attempt.Attempt;
+            var running = attempt.State is AttemptStates.Sent or AttemptStates.Recorded or AttemptStates.Unknown && StatusOf(record, attempt.Node).State == NodeStates.Stopped;
+            if (!stoodDown && !running) continue;
+            if ((PortOf(attempt.Plugin) ?? AgentsFor(attempt, null)) is { } runner) runner.Stop(attempt.Call.Invocation);
+            else if (stoodDown) port.StandDown(attempt.Plugin, new WorkStandDownCall(attempt.Call.Unit, attempt.Call.Step, attempt.Call.Invocation, attempt.Call.IdempotencyKey, attempt.Code ?? ""));
         }
     }
 

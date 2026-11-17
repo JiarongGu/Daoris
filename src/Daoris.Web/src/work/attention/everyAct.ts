@@ -7,5 +7,6 @@ export function everyActOf(act: () => () => void): Required<Omit<AttentionActs, 
     signIn: act(), signInNew: act(), read: act(), reviewed: act(), notYet: act(), showAgain: act(), opinionAgain: act(), opinionAnyway: act(),
     helper: act(), held: act(), permission: act(), answerAlone: act(), openRecords: act(), handOver: act(), gitTryAgain: act(), gitSetUp: act(),
     gitChoose: act(), gitKeyPage: act(), gitReadOnly: act(), gitAnswer: act(), secondCheckSeen: act(), quiet: act(), passOver: act(), memoryEnd: act(),
+    doneOutside: ((spy: (...args: unknown[]) => void) => (ask) => { spy(ask); return Promise.resolve({ done: true, message: '' }); })(act()),
   };
 }

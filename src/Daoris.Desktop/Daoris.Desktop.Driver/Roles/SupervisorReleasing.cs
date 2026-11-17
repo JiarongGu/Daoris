@@ -26,13 +26,13 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
             {
                 if (!book.Live.TryGetValue(id, out var decision) || decision.State != SupervisorState.Held) return (SupervisorState?)null;
                 if (decision.Receipt is null && now < decision.GoesOnAt) return null;
-                if (admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: decision.Repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation } || generation != decision.Generation)
+                if (admission.Admit(SupervisorSubject.Question(decision.Session, decision.Question.Id), new RolePlace(Repository: decision.Repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation } || generation != decision.Generation)
                 {
                     return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 }
 
                 // The line's counts read again here, under the decision's lock, before anything is said; the question's
-                // mark is read again by the service's own step, which refuses `owner-question` from the file it reads.
+                // mark is read again by the service's own step, which refuses `owner-class` from the file it reads.
                 if (bound is not null && await bound(session, ct).ConfigureAwait(false) is { } held)
                 {
                     return book.Move(decision, SupervisorState.Stale, now, held);

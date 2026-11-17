@@ -121,8 +121,8 @@ public static class PersonDoors
     /// <summary>The refusal at a door that is the person's alone (§5.2).</summary>
     public static string PersonSentence(string act) =>
         $"Only the person can give {act}, and this call carried no key of theirs. Nothing was kept. In Daoris's window, "
-        + "press it there; from a terminal, run it again and confirm it in the window. An agent asks the person instead: "
-        + "a go-ahead, or its closing note.";
+        + "press it there; from a terminal, run it again and confirm it in the window. An agent asks instead: "
+        + "`question_ask` (marked owner-class where it is the owner's alone), a go-ahead, or its closing note.";
 
     /// <summary>The refusal at the driver's own door (§5.2).</summary>
     public static string DriverSentence(string act) =>
@@ -318,7 +318,7 @@ public static class PersonDoors
         // Only the person reopens a sealed submission, and only they choose whether its held step goes on.
         new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:reopened") },
         new("POST", "/api/quests/{id}/continue", DoorClass.Person, "the word to go on with a step its source's reopen held") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:rebound") },
-        new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
+        RoleAnswerDoors.GoAhead,
         new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session") { Marks = OwnerMark.None("the ask's own words (added), which never mark") },
         new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         // The person's words, taken back or reworded before a session took them, are theirs to move as saying them is.

@@ -257,6 +257,9 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, string> WorkspaceGrowth { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Every place's risk and the owner's marks (<see cref="PlaceRiskBook"/>), the owner's alone to set; unwritten until the home's migration writes it.</summary>
+    public PlaceRiskBook PlaceRisk { get; init; } = PlaceRiskBook.Unwritten;
+
     /// <summary>
     /// The person's brainstorm policy on this machine: who may start one, the agents it runs and its minutes. Resolved by
     /// <see cref="BrainstormRules.Resolve"/>, edited by <see cref="BrainstormRules.Apply"/>; null is the default.
@@ -292,6 +295,9 @@ public sealed record DriverConfig(
     /// <summary>Each repository's option values over the workflows it follows (<see cref="WorkflowValuesKey"/>).</summary>
     public IReadOnlyDictionary<string, WorkflowValuesKey.Values> WorkflowValues { get; init; } =
         new Dictionary<string, WorkflowValuesKey.Values>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Why each node's values were last set, by <c>repository/workflow/node</c> (<see cref="WorkflowValuesKey.Apply"/>).</summary>
+    public IReadOnlyDictionary<string, string> WorkflowValuesWhy { get; init; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The saved workflow a place follows where nothing above it names one: the home's default, level <see cref="WorkflowLevels.Home"/>

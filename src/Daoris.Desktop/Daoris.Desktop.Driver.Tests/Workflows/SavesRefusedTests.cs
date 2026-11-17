@@ -98,7 +98,8 @@ public sealed class SavesRefusedTests : IDisposable
     [Fact]
     public void The_step_presets_are_deleted_and_the_palette_offers_by_kind()
     {
-        Assert.DoesNotContain(WorkflowPresets.GraphTable, preset => preset.Id.StartsWith("pull-request-", StringComparison.Ordinal) && preset.Id != "pull-request");
+        Assert.DoesNotContain(WorkflowPresets.GraphTable, preset => preset.Id.StartsWith("pull-request-", StringComparison.Ordinal)
+            && preset.Id is not ("pull-request" or "pull-request-release"));
 
         var palette = WorkflowPalette.Build([]);
         string Offered(string kind) => palette.Kinds.Single(each => each.Kind == kind).Offered;

@@ -87,7 +87,7 @@ public sealed class NodeRuntime(
         () => SessionsRead))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
-        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans))!;
+        records, clock, () => Doors.Door<IIntegrationDoor>(), () => Lines, () => _config, () => Integrated, () => Plans, () => Doors.ScopeReviewed))!;
 
     private NodeRequesting? _requesting;
 
@@ -150,8 +150,15 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
-    /// <summary>The runs waiting on a person's task, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
-    public IReadOnlyList<HumanTask> HumanTasks() => _governed is { } governed ? Daoris.Driver.HumanTasks.Of(governed.Values, records.Read) : [];
+    /// <summary>The steps waiting on a role the person holds, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
+    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read) : [];
+
+    /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
+    public int PluginStepsInFlight() => _lastRead is { } governed
+        ? Daoris.Driver.PluginStepsInFlight.Count(governed.Values, records.Read, plugin => port.GenerationOf(plugin) is not null, _unknown, clock())
+        : 0;
+
+    private readonly UnknownAttempts _unknown = new();
 
     public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read);
 
@@ -218,6 +225,8 @@ public sealed class NodeRuntime(
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
+
+    private Dictionary<string, GovernedUnit>? _lastRead;
 
     /// <summary>
     /// The choices <see cref="_governed"/> is judged under, as read: a wake under other choices reads the units afresh before any attempt is
@@ -298,7 +307,7 @@ public sealed class NodeRuntime(
     {
         Telling.Withdraw();
         Owing.Forget();
-        (_governed, _choices) = (null, null);
+        (_governed, _lastRead, _choices) = (null, null, null);
         _byTold = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
         LastQuests = null;
         QuestReads.Delete(records.Home);
@@ -338,6 +347,7 @@ public sealed class NodeRuntime(
                     .ConfigureAwait(false);
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings, Keeping.Skipped)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
+                _lastRead = _governed;
                 _restarted = false;
                 foreach (var run in asks) _returned.TryRemove(run, out _);
                 _byTold = NodeEvaluations.ByTold(_governed.Values);
@@ -395,7 +405,9 @@ public sealed class NodeRuntime(
             // again once the evaluation has rebound the node. A unit told for a run maps to it.
             var lagging = new List<WorkLagging>();
             done.AddRange(await _observer.HearAsync([.. heard.Where(each => each.Step.Invocation is null)], _byTold, tips.ReadAsync, ct, lagging).ConfigureAwait(false));
-            // The person's word on a held attempt, applied under the declaration governing now, before any new attempt.
+            // A holder's Done outside Daoris link handed to its plugin's check first, which settles or refuses it; then the person's word on a
+            // held attempt, applied under the declaration governing now, before any new attempt.
+            done.AddRange(await _performer.CheckLinksAsync(Declared, sends, ct).ConfigureAwait(false));
             done.AddRange(_performer.Resolve(Declared));
             // The person's word on a held close, a close's recovery, before the closer sends any close again below; judged on the quests this
             // pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.

@@ -108,7 +108,7 @@ describe("the page's root", () => {
     render(<PageRoot client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);
     await screen.findByRole('navigation', { name: 'Views' });
 
-    (await import('../bridge/log')).reportPageStopped(new Error('a later failure'));
+    (await import('../bridge/logs/log')).reportPageStopped(new Error('a later failure'));
 
     expect(pageErrors()).toEqual([expect.objectContaining({ where: 'render', view: 'overview' })]);
   });

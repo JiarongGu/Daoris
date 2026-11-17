@@ -169,7 +169,7 @@ public sealed class SupervisorWordTests : GoAheadFixture
     /// <summary>
     /// The question's <c>owner</c> mark is checked again at the release, from the
     /// file the service reads inside the say's step, so a question marked the owner's after a decision is admitted is never answered
-    /// by the supervisor: refused <c>owner-question</c>, keeping nothing, its wire word the route's.
+    /// by the supervisor: refused <c>owner-class</c>, keeping nothing, its wire word the route's.
     /// </summary>
     [Fact]
     public async Task The_release_is_refused_where_the_question_on_file_is_marked_the_owners()
@@ -177,12 +177,12 @@ public sealed class SupervisorWordTests : GoAheadFixture
         var parked = await ParkedOnAQuestion();
         File(parked.Id, Question, owner: "sign-in");
 
-        Assert.Equal(SessionSayRefusal.OwnerQuestion, (await Release(parked.Id)).Refusal);
+        Assert.Equal(SessionSayRefusal.OwnerClass, (await Release(parked.Id)).Refusal);
         Assert.Empty((await Record(parked.Id)).Said);
 
-        // A mark this build does not know is still the agent's word that the question is the owner's: the safe side.
-        File(parked.Id, Question, owner: "something-later");
-        Assert.Equal(SessionSayRefusal.OwnerQuestion, (await Release(parked.Id)).Refusal);
+        // A mark this build does not know, an older build's among them, still marks it the owner's: the safe side.
+        File(parked.Id, Question, owner: "access");
+        Assert.Equal(SessionSayRefusal.OwnerClass, (await Release(parked.Id)).Refusal);
 
         File(parked.Id, Question);
         Assert.Equal(SessionSayRefusal.None, (await Release(parked.Id)).Refusal);

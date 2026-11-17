@@ -150,6 +150,30 @@ test('a wrong build is refused: the declared pipeline\'s build of another commit
   assert.deepEqual([...writes(elsewhere), ...writes(failed), ...writes(another)], []);
 });
 
+test('a build of a branch another definition\'s trigger takes is refused target-changed on the main line\'s definition, the route its choice', async (t) => {
+  const two = [{ id: 42, name: 'Portal', on: ['main'], environments: [environment(402, 'Prod')] },
+    { id: 43, name: 'Portal-feature', on: ['dev'], environments: [environment(403, 'Test')] }];
+  const api = await line({ definitions: two });
+
+  const { step } = await released(t, api, { pipeline: 7, releaseDefinition: 42, stage: 402, action: 'create-and-start' });
+
+  assert.deepEqual([step.params.state, step.params.code], ['failed', 'target-changed']);
+  assert.match(step.params.evidence.message, /no longer resolves: a build from `dev` releases through #43 Portal-feature by its trigger, not #42 Portal\. The route for `dev`: #43 Portal-feature\./);
+  assert.deepEqual(writes(api), []);
+});
+
+test('a target held for names the route of the branch the work merged into, and two routes are the release manager\'s line\'s to choose', async (t) => {
+  const one = await line({ definitions: THREE });
+  const two = await line({ definitions: [...THREE, { id: 44, name: 'Portal-dev', on: ['d*'], environments: [environment(404, 'Dev')] }] });
+
+  const single = (await released(t, one, { pipeline: 7 })).step;
+  const several = (await released(t, two, { pipeline: 7 })).step;
+
+  assert.match(single.params.evidence.message, /The route for `dev`: #174 Disabled - Portal\./);
+  assert.match(several.params.evidence.message, /Several definitions' triggers take `dev` \(#174 Disabled - Portal, #44 Portal-dev\): the release manager's line chooses\./);
+  assert.deepEqual([...writes(one), ...writes(two)], []);
+});
+
 test('an interrupted creation is reconciled: the retry finds the release the lost answer made, and makes no second', async (t) => {
   const one = [{ id: 42, name: 'Portal', environments: [environment(402, 'Prod')] }];
   const api = await line({ definitions: one });

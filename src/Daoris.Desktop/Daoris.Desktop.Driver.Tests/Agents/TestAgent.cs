@@ -36,13 +36,14 @@ internal sealed record TestAgent(
     IReadOnlyList<string>? DeviceLoginArguments = null,
     IReadOnlyList<int>? LoginPorts = null,
     ErrorWords? ErrorWords = null,
-    IKeyCheck? KeyCheck = null)
+    IKeyCheck? KeyCheck = null,
+    IStoredSignIn? StoredSignIn = null)
 {
     /// <summary>The program it runs.</summary>
     public ToolSpec Program => new(Binary, VersionArguments, Install, UpdateArguments, Package, Channel, PinnedEnvironment, ProbeByPresence);
 
     /// <summary>Its accounts' facts.</summary>
-    public PoolFacts Pool => new(KeyVariable, LoginCheck, LoginArguments, DeviceLoginArguments, LoginPorts, SettingsFile, WeekFixed, KeyCheck);
+    public PoolFacts Pool => new(KeyVariable, LoginCheck, LoginArguments, DeviceLoginArguments, LoginPorts, SettingsFile, WeekFixed, KeyCheck, StoredSignIn);
 
     /// <summary>The home its spawn hands an account's home in.</summary>
     public DoorHome Home => new(ProfileVariable, RunsInOwnHome, TrustFile);
@@ -57,7 +58,8 @@ internal sealed record TestAgent(
         agent.Program.ProbeByPresence, agent.Program.PinnedEnvironment, agent.Product, agent.Maker, agent.Accounts.KeyVariable,
         agent.Tables.Refused, agent.Program.Channel, agent.Accounts.SettingsFile, agent.Tables.Limits, agent.Accounts.WeekFixed,
         agent.Tables.Windows, agent.Tables.SignIn, agent.Usage, agent.Mark, agent.Home.OwnHome, agent.TurnReport,
-        agent.Accounts.DeviceLoginArguments, agent.Accounts.LoginPorts, agent.Tables.ErrorWords, agent.Accounts.KeyCheck);
+        agent.Accounts.DeviceLoginArguments, agent.Accounts.LoginPorts, agent.Tables.ErrorWords, agent.Accounts.KeyCheck,
+        agent.Accounts.StoredSignIn);
 
     /// <summary>The agent where a probe or an account verb reads only its facts, not its name.</summary>
     public static implicit operator AccountAgent(TestAgent agent) => agent.Agent("a-test-agent");

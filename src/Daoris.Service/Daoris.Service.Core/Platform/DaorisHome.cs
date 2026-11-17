@@ -383,6 +383,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Migration = new("migration", HomeCategory.Data, "data/migration.json", "data/migration.json");
     public static readonly HomeEntry Salvage = new("salvage", HomeCategory.Data, "data/salvage", "data/salvage");
     public static readonly HomeEntry TerminalActs = new("terminal-acts", HomeCategory.Data, "data/terminal-acts.json", "data/terminal-acts.json");
+    public static readonly HomeEntry UxTrail = new("ux-trail", HomeCategory.Data, "data/ux-trail", "data/ux-trail");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -417,6 +418,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry TreeFiles = new("tree-files", HomeCategory.Work, "work/files/trees/*", "work/files/trees/*");
     public static readonly HomeEntry Places = new("places", HomeCategory.Work, "work/places/*/*", "work/places/*/*");
     public static readonly HomeEntry Plans = new("plans", HomeCategory.Work, "work/plans/*", "work/plans/*");
+    public static readonly HomeEntry Evidence = new("evidence", HomeCategory.Work, "work/evidence/*", "work/evidence/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
@@ -453,11 +455,11 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Landings, SessionBranches, LinesMoved, OverlapsTold, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Memory, Sessions, Helpers, Partners, Checks, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting, ActFiles, PlaceReceipts, StewardDesk,
-        LastBuild, Migration, Salvage, TerminalActs,
+        LastBuild, Migration, Salvage, TerminalActs, UxTrail,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitTokens, PluginPrivate, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         DepsSecret,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
-        Deps, TreeFiles, Places, Plans,
+        Deps, TreeFiles, Places, Plans, Evidence,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,

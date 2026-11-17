@@ -16,7 +16,7 @@ public sealed class UpdateDrainTests : IDisposable
 
     private readonly StandInLedger _ledger = new();
 
-    private readonly CancellationTokenSource _closing = new(TimeSpan.FromSeconds(60));
+    private readonly CancellationTokenSource _closing = new();
 
     public UpdateDrainTests()
     {

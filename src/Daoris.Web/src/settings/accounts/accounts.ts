@@ -90,7 +90,7 @@ export type AccountFacts = {
  */
 export type NextReason =
   | 'own' | 'named' | 'onlyReady' | 'kept' | 'near' | 'fewest' | 'lapsing' | 'pace' | 'leastRecent' | 'notStarted' | 'list'
-  | 'waits' | 'noAccount';
+  | 'unanswered' | 'waits' | 'noAccount';
 
 /** What keeps the next start off an account, or `ready` where nothing does and it is merely ranked after. */
 export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'kept' | 'missing' | 'outside';

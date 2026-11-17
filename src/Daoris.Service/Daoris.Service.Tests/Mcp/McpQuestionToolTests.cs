@@ -157,16 +157,16 @@ public sealed class McpQuestionToolTests : McpToolsFixture
     }
 
     /// <summary>
-    /// 🔴 A question the agent marks the owner's keeps its mark, one of the six codes,
-    /// in the file the service and the driver both read; an unmarked one keeps none; and a mark that is none of the six is refused by
-    /// name, writing nothing.
+    /// 🔴 A question the agent marks owner-class keeps its mark, one of doctrine rule 1's seven kinds,
+    /// in the file the service and the driver both read; an unmarked one keeps none; and a mark that is none of the seven (an older
+    /// build's `access` among them) is refused by name, writing nothing.
     /// </summary>
     [Fact]
     public async Task A_question_marked_the_owners_keeps_its_mark_and_an_unknown_mark_is_refused()
     {
         var (connector, driven, _) = await ConnectorAsync();
 
-        Assert.Contains("is not one of", await connector(driven).AskAsync("Which account?", TwoReadings, owner: "money"));
+        Assert.Contains("is not one of", await connector(driven).AskAsync("Which account?", TwoReadings, owner: "access"));
         Assert.False(File.Exists(Sessions(driven + QuestionBox.Suffix)));
 
         await connector(driven).AskAsync("Which account?", TwoReadings, owner: " sign-in ");
@@ -181,7 +181,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         using var unmarked = JsonDocument.Parse(File.ReadAllText(Sessions(driven + QuestionBox.Suffix)));
         Assert.Equal(JsonValueKind.Null, unmarked.RootElement.GetProperty("owner").ValueKind);
         Assert.Null(QuestionBox.Read(Home, driven)!.Owner);
-        Assert.Equal(["sign-in", "access", "spending", "delete", "repository-asks", "preference"], QuestionBox.OwnerMarks);
+        Assert.Equal(["direction", "money", "sign-in", "release", "history", "data", "publish"], QuestionBox.OwnerMarks);
     }
 
     /// <summary>With no home the question is refused and nothing is written, as a hand-over's ask is.</summary>

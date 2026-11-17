@@ -521,7 +521,7 @@ public sealed class SupervisorDecisionTests : IDisposable
 
     /// <summary>
     /// A question carrying the agent's <c>owner</c> mark, a mark this build does not know included, is
-    /// refused <c>owner-question</c> at the keeping; a line at the bound is refused <c>supervisor-bound</c>, so a decision is never
+    /// refused <c>owner-class</c> at the keeping; a line at the bound is refused <c>supervisor-bound</c>, so a decision is never
     /// kept only to be held behind it. Nothing kept, nothing on file.
     /// </summary>
     [Fact]
@@ -529,8 +529,8 @@ public sealed class SupervisorDecisionTests : IDisposable
     {
         var decisions = Decisions();
 
-        Assert.Equal(SupervisorWhy.OwnerQuestion, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "sign-in" }), Kept)).Why);
-        Assert.Equal(SupervisorWhy.OwnerQuestion, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "a-later-mark" }), Kept)).Why);
+        Assert.Equal(SupervisorWhy.OwnerClass, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "sign-in" }), Kept)).Why);
+        Assert.Equal(SupervisorWhy.OwnerClass, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "a-later-mark" }), Kept)).Why);
         Assert.Equal(SupervisorWhy.SupervisorBound, (await decisions.KeepAsync(Answer(), Park(atBound: true), Kept)).Why);
 
         Assert.Empty(decisions.LiveOf(Session));
@@ -540,7 +540,7 @@ public sealed class SupervisorDecisionTests : IDisposable
 
     /// <summary>
     /// Both are checked again at the release, under the decision's lock, so a question marked the owner's after its
-    /// decision is kept (the service's step reads the file and refuses <c>owner-question</c>), or a line that reached the bound since,
+    /// decision is kept (the service's step reads the file and refuses <c>owner-class</c>), or a line that reached the bound since,
     /// is never answered by the supervisor: the decision goes <c>stale</c> with the check that failed, no word is kept, the bound's
     /// before the say is called at all, and the question is the owner's from then on. The look hands its bound to the release.
     /// </summary>
@@ -548,10 +548,10 @@ public sealed class SupervisorDecisionTests : IDisposable
     public async Task The_owners_mark_and_the_bound_are_refused_again_at_the_release()
     {
         var marked = Decisions();
-        var ledger = new Ledger { Refuse = SupervisorWhy.OwnerQuestion };
+        var ledger = new Ledger { Refuse = SupervisorWhy.OwnerClass };
         await marked.KeepAsync(Answer(), Park(), Kept);
         Assert.Equal([SupervisorState.Stale], await marked.ReleaseAsync(Session, ledger.Say, Kept.AddMinutes(5)));
-        Assert.Equal((SupervisorState.Stale, SupervisorWhy.OwnerQuestion), (marked.LiveOf(Session).Single().State, marked.LiveOf(Session).Single().Why));
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.OwnerClass), (marked.LiveOf(Session).Single().State, marked.LiveOf(Session).Single().Why));
         Assert.Empty(ledger.Kept);
         Assert.Equal(SupervisorWhy.Overruled, (await marked.KeepAsync(Answer(), Park(), Kept.AddMinutes(6))).Why);
 
@@ -612,7 +612,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(0, ledger.Says);
         Assert.Equal(left.Decision, (await decisions.LeaveAsync(Defer(), Park(), Kept.AddMinutes(1))).Decision);
         Assert.Equal(SupervisorWhy.Answered, (await decisions.KeepAsync(Answer(), Park(), Kept.AddMinutes(1))).Why);
-        Assert.Equal(SupervisorWhy.Answered, (await decisions.LeaveAsync(Defer("preference"), Park(), Kept.AddMinutes(1))).Why);
+        Assert.Equal(SupervisorWhy.Answered, (await decisions.LeaveAsync(Defer("direction"), Park(), Kept.AddMinutes(1))).Why);
         Assert.False(await decisions.TryMoveAsync(Session, left.Decision!, SupervisorState.Released, Kept));
 
         var refused = Decisions();
@@ -634,9 +634,9 @@ public sealed class SupervisorDecisionTests : IDisposable
 
         Assert.Empty(refused.LiveOf(Session));
 
-        // Each of §4.1's ten bounds is one a defer may name.
+        // The bounds a defer may name.
         Assert.Equal(
-            ["go-ahead", "sign-in", "access", "spending", "delete", "repository-asks", "preference", "unrecorded", "contradicts", "instructed"],
+            ["go-ahead", "direction", "money", "sign-in", "release", "history", "data", "publish", "unrecorded", "contradicts", "instructed"],
             SupervisorBounds.All);
         foreach (var each in SupervisorBounds.All) Assert.True((await Decisions().LeaveAsync(Defer(each, question: "q-1"), Park(), Kept)).Kept);
     }

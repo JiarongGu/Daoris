@@ -54,6 +54,9 @@ internal interface ILookWiring
     /// <summary>The decision door's half an agent supervisor's look reaches; none where no agent supervisor decides.</summary>
     ISupervisorDesk? Supervising => null;
 
+    /// <summary>The clock a pass reads the time by: the driver's, the machine's and a held one in a test.</summary>
+    TimeProvider Clock { get; }
+
     /// <summary>An agent supervisor's attempt at <paramref name="waiting"/> started, said, or null where none starts.</summary>
     Task<string?> Supervise(SupervisorWaiting waiting, ISupervisorDesk desk, CancellationToken ct) => Task.FromResult<string?>(null);
 

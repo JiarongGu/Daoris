@@ -78,6 +78,10 @@ internal sealed class GitPlace
         }
 
         lock (_gate) _pids.Add(pid);
+        // Process is not safe across threads: a read beside the wait's dispose can take the closed handle's raw value, which another
+        // handle may hold by then, and read a git that ended as running. The read and the dispose take turns, and a disposed one is exited.
+        var turns = new object();
+        var disposed = false;
         var exited = Task.Run(async () =>
         {
             try
@@ -86,11 +90,20 @@ internal sealed class GitPlace
             }
             finally
             {
-                own.Dispose();
+                lock (turns)
+                {
+                    disposed = true;
+                    own.Dispose();
+                }
             }
         });
         // The wait completes on the pool after the exit, so a run returning at its git's exit reads the handle itself.
-        Bind(() => exited.IsCompleted || HasExited(own), () => exited);
+        Bind(() => exited.IsCompleted || Read(), () => exited);
+
+        bool Read()
+        {
+            lock (turns) return disposed || HasExited(own);
+        }
     }
 
     private static bool HasExited(Process process)
@@ -101,11 +114,11 @@ internal sealed class GitPlace
         }
         catch (InvalidOperationException)
         {
-            return true; // disposed by its wait, which ends only at the exit
+            return true; // gone before its handle could be read
         }
         catch (System.Runtime.InteropServices.ExternalException)
         {
-            // Win32Exception, and the COMException E_HANDLE a handle the wait disposed meanwhile throws.
+            // Win32Exception, and the COMException E_HANDLE a handle closed under the read throws.
             return true;
         }
     }

@@ -12,6 +12,7 @@ import { HumanWaits } from './HumanWaits';
 import { HUMAN, setApproval } from './humanDraft';
 import { Refusals } from './Refusals';
 import { StepOptions } from './StepOptions';
+import { StepRoleField } from './StepRoleField';
 import type { RolePlace } from './StepRole';
 import { type WaysActs, WaysOnTable } from './WaysOnTable';
 
@@ -28,6 +29,7 @@ export type InspectorActs = WaysActs & {
   onChange: (draft: GraphDraft, said: string) => void;
   /** A step's option set on the newest draft, not the one this render held: a role saved after a press lands on what the draft is by then. */
   onOption: (option: string, value: string | boolean | string[] | undefined, said: string) => void;
+  onRole: (role: string | undefined, said: string) => void;
   onAfter: () => void;
   onMove: (dir: 'earlier' | 'later') => void;
   onDuplicate: () => void;
@@ -125,8 +127,13 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
         )} />
       )}
 
+      {choice && (
+        <StepRoleField id={`${id}-role`} node={node} palette={palette} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing}
+          onSet={(role) => acts.onRole(role, t('workflow.role.said', { step: title }))} />
+      )}
+
       {options.length > 0 && choice && (
-        <StepOptions node={node} fields={options} roleTakes={choice.roleTakes} roles={roles} place={place} staffing={staffing} lines={lines} notes={notes}
+        <StepOptions node={node} fields={options} lines={lines} notes={notes}
           onSet={(option, value) => setNodeOption(t, i18n, palette, draft, node, title, acts, option, value)} />
       )}
 

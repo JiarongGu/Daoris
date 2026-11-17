@@ -44,7 +44,11 @@ public enum LoginState
 /// <param name="Plan">The plan the tool says the sign-in is on, as <paramref name="Org"/>.</param>
 public sealed record ProfileReport(
     string Name, string Home, LoginState Login, string? Account = null, string? Key = null, DateTimeOffset? Read = null,
-    string? DisplayName = null, string? Org = null, string? Plan = null);
+    string? DisplayName = null, string? Org = null, string? Plan = null)
+{
+    /// <summary>Its sign-in state as the walk reads it (<see cref="SignInStates"/>), for the page to show the same; null where a probe's own report says none.</summary>
+    public SignInState? SignIn { get; init; }
+}
 
 /// <summary>
 /// One harness as this machine has it: present or absent, its version, its profiles.

@@ -202,15 +202,21 @@ public static class WorkflowGraphRuns
             var (state, detail) = StateOf(node, status.State, held ? WorkRequests.DeclinedCode : status.Code);
             var cannot = facts.Record?.Ended is null ? GraphCannotStart.Of(node, status.State, run.Process) : null;
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
+            var progress = StepWaiting.Of(facts.Record, node, status);
+            if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
             var needs = facts.Needs.GetValueOrDefault(node.Id);
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
+            // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
+            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status) : null;
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
+                Role = waits?.Role ?? StepRoles.Of(node),
+                Holder = waits?.Holder,
                 Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
@@ -221,7 +227,7 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -342,10 +348,10 @@ public static class WorkflowGraphRuns
         NodeStates.Blocked => (WorkflowRunStates.NotReached, WorkflowGraphDetails.Blocked),
         NodeStates.Ready => (WorkflowRunStates.Working, WorkflowGraphDetails.Ready),
         NodeStates.Active when node.Kind is NodeKinds.GoAhead or NodeKinds.Human or NodeKinds.Look or NodeKinds.Review =>
-            (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
+            (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         // A decline holds `work.requests` active, never failed, and it waits on the person, whose pass lets the flow go on.
         NodeStates.Active when node.Kind == NodeKinds.WorkRequests && code == WorkRequests.DeclinedCode =>
-            (WorkflowRunStates.WaitingOnYou, WorkflowGraphDetails.Active),
+            (WorkflowRunStates.Waiting, WorkflowGraphDetails.Active),
         NodeStates.Active => (WorkflowRunStates.Working, WorkflowGraphDetails.Active),
         NodeStates.Reached => (WorkflowRunStates.Done, WorkflowGraphDetails.Reached),
         NodeStates.Skipped => (WorkflowRunStates.Skipped, WorkflowGraphDetails.Skipped),

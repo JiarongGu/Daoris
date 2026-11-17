@@ -1,0 +1,59 @@
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// Claude Code's stored sign-in: <c>.credentials.json</c> in the account's home, its <c>claudeAiOauth</c> object's
+/// <c>accessToken</c>, <c>refreshToken</c> and <c>expiresAt</c> (milliseconds since the epoch). Read for its shape alone: whether
+/// each token is there, never its value, which is neither kept nor logged nor shown.
+/// </summary>
+/// <remarks>
+/// Both tokens empty and <c>expiresAt</c> 0 is what the agent writes when a refresh of a rotating token is refused, though
+/// the refresh token stays valid for weeks.
+/// </remarks>
+internal sealed class ClaudeStoredSignIn : IStoredSignIn
+{
+    /// <summary>The store's name in an account's home.</summary>
+    public const string FileName = ".credentials.json";
+
+    public StoredSignInShape? Read(string profileHome)
+    {
+        var path = Path.Combine(profileHome, FileName);
+        byte[]? bytes = null;
+        try
+        {
+            if (!File.Exists(path)) return null;
+            var written = new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
+            bytes = File.ReadAllBytes(path);
+            // Parsed over the bytes read, never copied out of them, and those bytes cleared once the shape is read.
+            using var document = JsonDocument.Parse(bytes.AsMemory());
+            if (document.RootElement.ValueKind != JsonValueKind.Object
+                || !document.RootElement.TryGetProperty("claudeAiOauth", out var oauth) || oauth.ValueKind != JsonValueKind.Object)
+            {
+                return new StoredSignInShape(false, false, null, written);
+            }
+
+            DateTimeOffset? expires = oauth.TryGetProperty("expiresAt", out var at) && at.ValueKind == JsonValueKind.Number
+                && at.TryGetInt64(out var ms) && ms > 0
+                ? DateTimeOffset.FromUnixTimeMilliseconds(ms)
+                : null;
+            return new StoredSignInShape(There(oauth, "accessToken"), There(oauth, "refreshToken"), expires, written);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentOutOfRangeException)
+        {
+            // A store that does not read says nothing: neither signed in nor cleared.
+            return null;
+        }
+        finally
+        {
+            if (bytes is not null) System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
+        }
+    }
+
+    /// <summary>
+    /// Presence alone: a string that is not empty, judged against the JSON's own bytes. No string of the value is made: it is never decoded,
+    /// so it can be neither kept nor logged.
+    /// </summary>
+    internal static bool There(JsonElement oauth, string name) =>
+        oauth.TryGetProperty(name, out var token) && token.ValueKind == JsonValueKind.String && !token.ValueEquals(""u8);
+}

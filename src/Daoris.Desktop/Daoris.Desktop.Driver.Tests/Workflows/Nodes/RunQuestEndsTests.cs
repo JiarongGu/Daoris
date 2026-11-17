@@ -63,16 +63,50 @@ public sealed class RunQuestEndsTests
     }
 
     [Fact]
-    public async Task A_run_that_ended_any_other_way_closes_nothing_and_stops_its_sessions()
+    public async Task A_run_that_was_stopped_closes_nothing_and_stops_its_sessions()
     {
         var ends = new Ends([Waiting("s1", "q1")]);
 
-        await RunSessionEnds.FinishAsync(ends.Ports(), "q1", new RunEnd("q1", At) { Outcome = RunOutcomes.Failed, Node = "check" },
+        await RunSessionEnds.FinishAsync(ends.Ports(), "q1", new RunEnd("q1", At) { Outcome = RunOutcomes.Stopped, Node = "check", By = NodeSource.Person },
             [Quest("q1", "Taken", 3)], passed: false, ends.Said, CancellationToken.None);
 
         var finish = Assert.Single(ends.Sent);
         Assert.Empty(finish.Quests);
         Assert.Equal("stopped", finish.State);
+        Assert.Equal(["s1"], finish.Sessions);
+    }
+
+    [Fact]
+    public async Task A_run_that_ended_failed_ends_no_session_a_later_step_awaits_since_its_holder_may_still_settle_the_step()
+    {
+        var ends = new Ends([Waiting("s1", "q1")]);
+        var failed = new RunEnd("q1", At) { Outcome = RunOutcomes.Failed, Node = "release" };
+
+        await RunSessionEnds.FinishAsync(ends.Ports(), "q1", failed, [Quest("q1", "Taken", 3)], passed: false, ends.Said, CancellationToken.None);
+        await RunReEnds.AgainAsync(ends.Ports(), "q1", failed, [Quest("q1", "Taken", 3)], passed: false, ends.Said, CancellationToken.None);
+
+        Assert.Empty(ends.Sent);
+        Assert.Contains(ends.Logged, line => line.Said.Contains(EmptyRunEnds.FailedHeld, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_run_whose_last_step_was_done_outside_Daoris_closes_its_quest_as_a_reached_end_does()
+    {
+        var graph = NodeGraphs.Read("""
+            { "schemaVersion": 2, "entries": ["release"], "end": "release",
+              "nodes": [{ "id": "release", "kind": "acme.deploy/release", "version": 1, "reach": "performed" }],
+              "wires": [] }
+            """).Graph!;
+        var outside = new NodeStatus("run:q1", "release", NodeStates.Reached) { Attempt = 1, By = NodeSource.Person, Words = "made by hand" };
+        var record = new NodeRecord("run:q1") { Statuses = new Dictionary<string, NodeStatus> { ["release"] = outside } };
+        var ends = new Ends([Waiting("s1", "q1")]);
+
+        var ended = RunOutcomes.Of(graph, record, "q1", At);
+        await RunSessionEnds.FinishAsync(ends.Ports(), "q1", ended, [Quest("q1", "Taken", 3)], passed: false, ends.Said, CancellationToken.None);
+
+        var finish = Assert.Single(ends.Sent);
+        Assert.Equal([new RunEndQuest("q1", "m1", 3)], finish.Quests);
+        Assert.Equal("completed", finish.State);
         Assert.Equal(["s1"], finish.Sessions);
     }
 

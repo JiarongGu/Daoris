@@ -24,6 +24,9 @@ public sealed record AttentionFacts
     /// <summary>Every ask, as the asks slice holds them, each with its go-aheads.</summary>
     public IReadOnlyList<JsonObject> Asks { get; init; } = [];
 
+    /// <summary>The brainstorms, each with its pass, its comparison's questions and the keys answered (<see cref="DesignQuestionRows"/>).</summary>
+    public IReadOnlyList<JsonObject> Brainstorms { get; init; } = [];
+
     /// <summary>The folders the last look held for the agent's trust, as the tick hands them.</summary>
     public IReadOnlyList<JsonObject> Untrusted { get; init; } = [];
 
@@ -63,8 +66,8 @@ public sealed record AttentionFacts
     /// <summary>The runs held at a declined request, as the runtime last read them: each run, its node, the declined quest and where it went.</summary>
     public IReadOnlyList<JsonObject> Requests { get; init; } = [];
 
-    /// <summary>The runs waiting on a person's task, as the runtime last governed them: each run, its node and the presses it waits for.</summary>
-    public IReadOnlyList<JsonObject> Tasks { get; init; } = [];
+    /// <summary>The steps waiting on a role the person holds, as the runtime last governed them: each run, its node, its wait, presses and page.</summary>
+    public IReadOnlyList<JsonObject> Steps { get; init; } = [];
 
     /// <summary>
     /// The integration's waits on the owner, as <see cref="AttentionStateSlice.IntegrationWaits"/> reads them: a candidate held for

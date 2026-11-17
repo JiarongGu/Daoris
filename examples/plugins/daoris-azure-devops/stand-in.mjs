@@ -31,7 +31,7 @@ const PROJECT = '/acme/Proj/_apis';
 export async function standIn() {
   const api = {
     pulls: [], calls: [], address: '', status: null, me: { id: 'identity-1', providerDisplayName: 'Daoris' }, patch: null,
-    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, lose: null, files: {}, changes: [],
+    builds: [], timelines: {}, pipelines: [], definitions: [], releases: [], deployed: [], onRead: null, lose: null, files: {}, changes: [], parents: {},
     session: 'out', lapses: 0, signInPage: false, renews: true, navigated: null,
   };
   api.navigated = (url) => { if (api.renews && url.includes('/_apis/connectionData')) api.session = 'in'; };
@@ -75,6 +75,12 @@ export async function standIn() {
     if (request.method === 'GET' && /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/[0-9a-f]+\/changes$/.test(path)) {
       return [200, { changeCounts: { edit: api.changes.length }, changes: api.changes.map((each) => ({ item: { path: each } })) }];
     }
+    const bases = /^\/acme\/Proj\/_apis\/git\/repositories\/app\/commits\/([0-9a-f]+)\/mergebases$/.exec(path);
+    if (bases && request.method === 'GET') {
+      const seen = new Set();
+      for (let next = [bases[1]]; next.length > 0; next = next.flatMap((each) => api.parents[each] ?? [])) next.forEach((each) => seen.add(each));
+      return [200, { value: seen.has(query('otherCommitId')) ? [{ commitId: query('otherCommitId') }] : [] }];
+    }
     if (request.method === 'GET' && path === `${PROJECT}/build/builds`) {
       const wanted = query('definitions')?.split(',').map(Number);
       return [200, { value: api.builds.filter((build) => build.sourceBranch === query('branchName') && build.repository.id === query('repositoryId')
@@ -98,8 +104,8 @@ export async function standIn() {
     }
     if (request.method === 'GET' && path === `${PROJECT}/release/releases`) {
       return [200, { value: api.releases.filter((each) => (query('definitionId') === null || each.releaseDefinition.id === Number(query('definitionId')))
-        && each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
-          && artifact.definitionReference.version.id === query('artifactVersionId'))) }];
+        && (query('artifactTypeId') === null || each.artifacts.some((artifact) => artifact.type === query('artifactTypeId') && artifact.sourceId === query('sourceId')
+          && artifact.definitionReference.version.id === query('artifactVersionId')))) }];
     }
     if (request.method === 'POST' && path === `${PROJECT}/release/releases`) {
       const sent = JSON.parse(text);
@@ -204,12 +210,13 @@ export function start(t, env, journal = null) {
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: mine, method, params })}\n`);
     return next((frame) => frame.id === mine);
   };
+  const tell = (method, params) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
   const stop = async () => {
     child.kill();
     await closed;
     return said;
   };
-  return { ask, next, stop, said: () => said };
+  return { ask, tell, next, stop, said: () => said, heard: () => [...heard] };
 }
 
 export const unitAt = (root, awaiting = [STEP], more = {}) => ({ repository: 'app', workspace: 'work', root, branch: 'daoris/work', tip, line: null,
@@ -224,6 +231,6 @@ export async function performed(t, env, unit, { step = STEP, key = 'k-1', option
     unit: 'app:daoris/work', step, stepVersion: 1, invocation, idempotencyKey, subjectRevision: tip, inputs: [],
     deadlineAt: deadlineAt ?? new Date(Date.now() + 60000).toISOString(), ...(options ? { options } : {}) });
   await perform('i-1', key);
-  const done = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1');
-  return { plugin, perform, step: done };
+  const done = await plugin.next((frame) => frame.method === 'work/step' && frame.params.invocation === 'i-1' && frame.params.state !== 'progress');
+  return { plugin, perform, step: done, progress: plugin.heard().filter((frame) => frame.method === 'work/step' && frame.params.state === 'progress') };
 }

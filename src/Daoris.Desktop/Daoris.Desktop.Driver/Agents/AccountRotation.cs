@@ -123,7 +123,9 @@ public static class AccountRotation
         if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut or WalkStep.Locked)) return step;
 
         var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp) : new WalkChoice(WalkStep.List);
-        return rest.Step == WalkStep.List ? step : step with { Rest = rest.Step, RestOver = rest.Over };
+        return rest.Step == WalkStep.List && !SignInStates.RanksLast(facts.GetValueOrDefault(ran)?.SignIn)
+            ? step
+            : step with { Rest = rest.Step, RestOver = rest.Over };
 
         // The next ready account after the one it ran on, other than the one it moved off.
         string? Next(string after, string? but) =>
@@ -131,7 +133,7 @@ public static class AccountRotation
 
         // The step that puts it ahead of another, naming that account where the step is about what its agent said.
         WalkChoice Ahead(string a, string b) => Rank(a, b, facts, now, scope.Use) is { Order: < 0 } ranked
-            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Room or WalkStep.Headroom or WalkStep.Pace ? b : null }
+            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Room or WalkStep.Headroom or WalkStep.Pace or WalkStep.Unanswered ? b : null }
             : new WalkChoice(WalkStep.List);
     }
 
@@ -207,6 +209,7 @@ public static class AccountRotation
             { Order: >= 0 } => NextReason.List,
             // Between two near accounts the one with less room goes last: the page says the same of it as of any near account.
             { Step: WalkStep.Near or WalkStep.Room } => NextReason.Near,
+            { Step: WalkStep.Unanswered } => NextReason.Unanswered,
             { Step: WalkStep.Headroom } => NextReason.Pace,
             { Step: WalkStep.Fewest } => NextReason.Fewest,
             { Step: WalkStep.Lapsing } => NextReason.Lapsing,
@@ -272,6 +275,11 @@ public static class AccountRotation
         string a, string b, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now, RotationUse use)
     {
         var (x, y) = (facts.GetValueOrDefault(a) ?? new AccountFacts(), facts.GetValueOrDefault(b) ?? new AccountFacts());
+
+        // First, under every use: an account whose sign-in check is asked and did not answer goes last until a check answers, as
+        // a check that hangs is what a sign-in its agent cannot renew looks like. Never read is no such account.
+        var (silentX, silentY) = (SignInStates.RanksLast(x.SignIn), SignInStates.RanksLast(y.SignIn));
+        if (silentX != silentY) return (WalkStep.Unanswered, silentX ? 1 : -1);
 
         // Step 2, over its curve last, with a limit reached and credits: read under every switch, `off` reading the smart curve, since a start still passes an account over it.
         var (nearX, nearY) = (AccountReadings.Near(x.Said, use, now), AccountReadings.Near(y.Said, use, now));

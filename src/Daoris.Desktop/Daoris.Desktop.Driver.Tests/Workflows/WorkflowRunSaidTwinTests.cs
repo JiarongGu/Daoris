@@ -54,9 +54,26 @@ public sealed class WorkflowRunSaidTwinTests
             Code = Text(row, "code"),
             Node = Text(row, "node"),
             On = Text(row, "on"),
+            Role = Text(row, "role"),
+            Holder = Text(row, "holder") is { } holder ? new StepHolder(holder, Text(row, "holderName")) : null,
         };
 
         Assert.Equal(Text(row, "said"), WorkflowRunWords.Said(step));
+    }
+
+    [Fact]
+    public void A_wait_held_by_an_agent_and_one_held_by_the_person_are_said_alike_but_for_the_holder()
+    {
+        static string Said(StepHolder holder) => WorkflowRunWords.Said(new WorkflowRunStep(
+            new WorkflowStep("landing", "landing", WorkflowParticipation.Agent, WorkflowExecutor.Agent, null,
+                new WorkflowSource(null, LandingSource.Default), [], WorkflowRuntime.Built, null),
+            WorkflowRunStates.Waiting, WorkflowRunDetails.Accept) { Role = StepRoles.Acceptor, Holder = holder })!;
+
+        var person = Said(new StepHolder(StepHolders.Person));
+        var agent = Said(new StepHolder(StepHolders.Agent, "codex-acp"));
+
+        Assert.NotEqual(person, agent);
+        Assert.Equal(person.Replace(": you.", ": HOLDER."), agent.Replace(": `codex-acp`.", ": HOLDER."));
     }
 
     /// <summary>What a graph run says above its nodes, line for line, as the table's <c>graph</c> rows have it.</summary>

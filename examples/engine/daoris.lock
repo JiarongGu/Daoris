@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "canonDigest": "ab35f743a4808103eba868cb52ba14369981ef21a670f60c1942215f41e595d2",
+  "canonDigest": "0f444a3ea97de1707f49ba9c3eb347818a9bd95838c28215d399f533b81c7da5",
   "source": "daoris@0.0.1",
   "entries": [
     {
@@ -34,6 +34,13 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/evidence-routine.md",
+      "target": "knowledge/evidence-routine.md",
+      "canonVersion": "0.0.1",
+      "sha256": "39001f96b22fefbbcc4fddd16c594b08208e5c852c4b276c89eeb5b7fb6893ad"
+    },
+    {
+      "pack": "core",
       "source": "core/knowledge/file-tools.md",
       "target": "knowledge/file-tools.md",
       "canonVersion": "0.0.1",
@@ -44,7 +51,7 @@
       "source": "core/knowledge/fresh-design-pass.md",
       "target": "knowledge/fresh-design-pass.md",
       "canonVersion": "0.0.1",
-      "sha256": "95779abc526cdd1922d239db2d3f850f2072362b36665f1fe1ba63cb0be925f2"
+      "sha256": "21a5f1e4abe1a594790dfe693f0ac221f552b7a3d5965d8c66ce8778f3a003c7"
     },
     {
       "pack": "core",
@@ -94,6 +101,13 @@
       "target": "knowledge/rooms-and-classes.md",
       "canonVersion": "0.0.1",
       "sha256": "a218cbe9b4aa1d8302507d2038774b83532cb9ec16b41a4be125cc877ab0f691"
+    },
+    {
+      "pack": "core",
+      "source": "core/knowledge/scope-mode.md",
+      "target": "knowledge/scope-mode.md",
+      "canonVersion": "0.0.1",
+      "sha256": "e95a58907911827c154dc55fdefd4eb5e57f10c1748782c34c75f0b05d947366"
     },
     {
       "pack": "core",

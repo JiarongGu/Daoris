@@ -145,6 +145,17 @@ test('a change that only removes comments passes, and so does one that only adds
   assert.deepEqual(verdict(dir), []);
 });
 
+test('a file is red for its share only where its comments grew in count and its share rose', () => {
+  const code = (n) => Array.from({ length: n }, (_, i) => `export const v${i} = ${i};`).join('\n');
+  const was = `// one\n// two\n${code(8)}\n`;
+  const shrunk = `// one\n// two\n${code(4)}\n`;
+  assert.deepEqual(judge('tools/t.mjs', was, shrunk, { names: false }), [], 'a cleanup that removes code keeps its comments and passes');
+  const grown = `// one\n// two\n// three\n${code(14)}\n`;
+  assert.deepEqual(judge('tools/t.mjs', was, grown, { names: false }), [], 'comments added with more code added, the share not risen');
+  const risen = `// one\n// two\n// three\n// four\n${code(8)}\n`;
+  assert.ok(judge('tools/t.mjs', was, risen, { names: false }).some((p) => /comments rose from/.test(p)), 'comments added to the same code');
+});
+
 test('a file that already names a row keeps it, and a string that looks like a comment is none', () => {
   const old = '// D99 holds this.\nexport const a = 1;\nexport const b = 2;\nexport const c = 3;\n';
   const { dir } = repo({ 'tools/old.mjs': old });

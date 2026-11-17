@@ -457,8 +457,8 @@ describe("The taskbar's count", () => {
    * A tool call a session holds for the person's answer stands its turn still until they answer, or
    * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
    */
-  /** A run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
-  it('counts a run held at a declined request, lists it with Pass over…, and counts none for a run without one', async () => {
+  /** A run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Not needed this run…*. */
+  it('counts a run held at a declined request, lists it with Not needed this run…, and counts none for a run without one', async () => {
     start([DECLINED], {}, {});
 
     await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());
@@ -467,7 +467,7 @@ describe("The taskbar's count", () => {
     await openNotifications();
     const row = await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
     expect(within(row).getByText('request declined')).toBeInTheDocument();
-    expect(within(row).getByRole('button', { name: 'Pass over…' })).toBeInTheDocument();
+    expect(within(row).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
   });
 
   /** An integration's three waits on the owner are three waits, in the bell, the taskbar and the band, each with its door. */

@@ -173,6 +173,7 @@ export interface Account {
   settings?: AccountSettings | null;
   /** When its state is last read; null where it never is, and left out where it has none. */
   read?: string | null;
+  signIn?: { state: 'in' | 'out' | 'unanswered' | 'unread'; since: string | null; notByPerson: boolean } | null;
 }
 
 /** How a sheet's row is known: absent is a statement, and its fallback applies. */

@@ -1,6 +1,7 @@
 import { Children, Fragment, type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../design/ui';
+import { clockOf } from '../locales/format';
 import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, type WindowCell } from './agents';
 
 /**
@@ -91,13 +92,16 @@ function Fact({ label }: { label: string }) {
 /**
  * Why a state reads as it does, where that is more than its word: a cool-off's end, how long and whose time it is,
  * the agent's reset or Daoris's default; a key the tool says yes to whatever it is; a key its provider refused and what
- * repairs it. Null where the word says it all.
+ * repairs it; a sign-in check that did not answer, which starts take last; a sign-out its agent made, since when. Null where
+ * the word says it all.
  */
-function stateWhy(t: (key: string) => string, state: AccountState, now?: Date): string | null {
+function stateWhy(t: (key: string, values?: Record<string, string>) => string, state: AccountState, now?: Date): string | null {
   switch (state.state) {
     case 'cooling': return readLine(state, now);
     case 'keyed': return t('harness.login.keyedTip');
     case 'refused': return t('harness.login.refusedTip');
+    case 'unanswered': return t('harness.login.unansweredTip');
+    case 'out': return state.notByPerson && state.since ? t('harness.login.outNotByYou', { when: clockOf(state.since, now) }) : null;
     default: return null;
   }
 }

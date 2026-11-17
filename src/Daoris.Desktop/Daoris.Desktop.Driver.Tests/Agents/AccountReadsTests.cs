@@ -68,6 +68,24 @@ public sealed class AccountReadsTests : IDisposable
         Assert.Equal(new AccountRead(LoginState.In, Ten.AddMinutes(5)), AccountReads.Of(_home, "claude-code").Accounts["account-1"]);
     }
 
+    /// <summary>A timed-out renewal reads unanswered between a sign-in and the sign-out: the sign-out still follows the sign-in.</summary>
+    [Fact]
+    public void A_sign_out_after_an_unanswered_reading_still_follows_the_sign_in_before_it()
+    {
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.In, Ten);
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Unknown, Ten.AddMinutes(1));
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Unknown, Ten.AddMinutes(2));
+        AccountReads.Keep(_home, "claude-code", "account-1", LoginState.Out, Ten.AddMinutes(3));
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Out, Ten);
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Unknown, Ten.AddMinutes(1));
+        AccountReads.Keep(_home, "claude-code", "account-2", LoginState.Out, Ten.AddMinutes(2));
+
+        var accounts = AccountReads.Of(_home, "claude-code").Accounts;
+        Assert.Equal(new AccountRead(LoginState.Out, Ten.AddMinutes(3), Ten.AddMinutes(3), LoginState.In), accounts["account-1"]);
+        Assert.True(SignInStates.Of(accounts["account-1"]).NotByPerson);
+        Assert.False(SignInStates.Of(accounts["account-2"]).NotByPerson);
+    }
+
     /// <summary>A removed account is forgotten, so one made later under its name starts never read.</summary>
     [Fact]
     public void A_removed_account_is_forgotten_and_the_rest_stand()
@@ -184,7 +202,7 @@ public sealed class AccountReadsTests : IDisposable
     [Theory]
     [InlineData("a name in Chinese is written as it is", null, "claude-code", "工作", "in", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"工作":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
     [InlineData("HTML's marks and a plus in a name are written as they are", null, "claude-code", "R&D+<team>'s", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"R&D+<team>'s":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
-    [InlineData("an accented name found in another case is written under the name given", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"CAFÉ":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
+    [InlineData("an accented name found in another case is written under the name given", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"CAFÉ":{"login":"out","read":"2026-10-04T10:00:00Z","since":"2026-10-04T10:00:00Z","before":"in"}}}}""")]
     [InlineData("words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", """{"later":"é 中文 &","codex":{"accounts":{"work":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
     public void A_name_beyond_plain_ascii_is_kept_as_the_cli_writes_it(
         string why, string? file, string agent, string? account, string login, string at, string after)

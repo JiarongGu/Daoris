@@ -61,11 +61,18 @@ public static class RunNodeWords
     /// <summary>The word is a choice of a file changed on both sides, which only a <c>return</c> waiting on one takes.</summary>
     public const string NotReturn = "not-return";
 
+    /// <summary>A <c>decide</c> naming no outcome its decision declares.</summary>
+    public const string NotOutcome = "not-outcome";
+
     /// <summary>The acts kept as a mark of the node's attempt, moving no state: a request's send and a return's choices.</summary>
     private static bool Marked(string act) => act == NodeWordActs.Send || NodeWordActs.Choices.Contains(act, StringComparer.Ordinal);
 
-    /// <summary>The presses a node takes only while it waits for them: a person's task's.</summary>
-    private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject];
+    /// <summary>The presses a node takes only while it waits for them: a person's task's, and a decision's answer, which its outcome names.</summary>
+    private static readonly string[] Waited = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Decide];
+
+    /// <summary>Why a <paramref name="word"/> cannot apply at <paramref name="status"/> beyond its press being offered: a decide's outcome and holder.</summary>
+    private static string? Answer(NodeDeclaration node, NodeStatus status, NodeWord word) =>
+        word.Act == NodeWordActs.Decide ? HumanDecisions.Refused(node, status, word.Outcome, word.Holder) : null;
 
     /// <summary>The record's mark of the person's send of <paramref name="node"/>'s attempt, which the next pass reads as the start's say-so.</summary>
     public static string SendKey(string node, int attempt) => $"send:{node}:{attempt}";
@@ -104,12 +111,17 @@ public static class RunNodeWords
     /// The nodes whose integration the record says promoted (<see cref="IntegrateNodes.PromotedAsync"/>): a stop of one is refused
     /// (<see cref="Promoted"/>). Null where the caller reads none, and nothing is refused on a guess.
     /// </param>
+    /// <param name="outcome">A <c>decide</c>'s answer, one of its decision's outcomes.</param>
+    /// <param name="holder">Who holds the actor a decide's proposal is from, as its channel names it; null for the owner's own word.</param>
+    /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>): an ended one is refused; null names none.</param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
-        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null)
+        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
+        outcome = act == NodeWordActs.Decide && !string.IsNullOrWhiteSpace(outcome) ? outcome.Trim() : null;
+        holder = act == NodeWordActs.Decide && !string.IsNullOrWhiteSpace(holder) ? holder.Trim() : null;
         NodeWorded Refuse(string code) => new(run, node, act, code);
 
         if (!NodeWordActs.All.Contains(act, StringComparer.Ordinal)) return Refuse(NotAct);
@@ -131,11 +143,16 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
+            if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(bound.Unit, node, status.Attempt, given) is { } holding)
+            {
+                return (null, Refuse(StepTenureFiles.EndedEpoch) with { Detail = StepTenureFiles.Said(holding), State = status.State });
+            }
+
             var word = new NodeWord(node, act, words, now)
             {
                 By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
-                Revision = by is null ? null : revision?.Trim(),
+                Revision = by is null ? null : revision?.Trim(), Outcome = outcome, Holder = holder,
             };
             if (act == NodeWordActs.Accept && by is null)
             {
@@ -163,6 +180,7 @@ public static class RunNodeWords
             else
             {
                 if (Waited.Contains(act) && !Offers(declared, status, act)) return (null, Refuse(NotWaiting) with { State = status.State });
+                if (Answer(declared, status, word) is { } unanswered) return (null, Refuse(unanswered) with { State = status.State });
                 var judged = NodeLifecycle.Apply(declared, status, Move(declared, word, new NodeScope(digest, bound.Run), status));
                 if (!judged.Moved) return (null, Refuse(judged.Refused!) with { State = status.State });
             }
@@ -180,7 +198,7 @@ public static class RunNodeWords
     /// </summary>
     public static async Task<NodeWorded> WordAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
-        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null)
+        CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null)
     {
         IReadOnlySet<string>? promoted = null;
         if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
@@ -188,7 +206,7 @@ public static class RunNodeWords
             promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
         }
 
-        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part);
+        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome);
     }
 
     /// <summary>
@@ -261,6 +279,12 @@ public static class RunNodeWords
                 continue;
             }
 
+            if (Answer(node, standing, word) is { } unanswered)
+            {
+                applied.Add((word, unanswered));
+                continue;
+            }
+
             var moved = NodeLifecycle.Apply(node, standing, Move(node, word, scope, standing));
             if (!moved.Moved)
             {
@@ -269,6 +293,8 @@ public static class RunNodeWords
             }
 
             next = WorkPerformer.Kept(next, moved, word.Source + "-" + word.Act, now);
+            // Not needed this run, or the work ended: the plugin's attempt in flight stands down, so the run waits on it no more.
+            if (word.Act is NodeWordActs.Skip or NodeWordActs.Stop) next = StandDowns.Settle(next, node.Id, standing.Attempt, word.Act);
             if (word is { Act: NodeWordActs.Changes, Part: { } part }) next = next with { Fired = [.. next.Fired, ChangesParts.Key(node.Id, standing.Attempt, part)] };
             if (word.Act == NodeWordActs.Changes) next = next with { Repairs = [.. next.Repairs.Where(each => each.Node != node.Id)] };
             applied.Add((word, null));
@@ -299,8 +325,10 @@ public static class RunNodeWords
     /// </param>
     public static IReadOnlyList<string> Acts(NodeDeclaration node, NodeStatus status, bool promoted = false)
     {
-        // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on.
-        var acts = NodeKit.Of(node.Kind) is IPressed pressed ? new List<string>(pressed.Acts(node, status)) : [];
+        // A kind's own acts lead: a review's changes, a request's send, or its asking again and going on; a decision's decide once per outcome.
+        var acts = NodeKit.Of(node.Kind) is IPressed pressed
+            ? pressed.Acts(node, status).SelectMany(act => act == NodeWordActs.Decide ? HumanDecisions.Offered(node) : [act]).ToList()
+            : [];
         if (status.State is NodeStates.Ready or NodeStates.Active && NodeAuthorities.Of(node)?.PersonSkips == true) acts.Add(NodeWordActs.Skip);
         if (status.State is NodeStates.Ready or NodeStates.Active or NodeStates.Unknown or NodeStates.Invalidated or NodeStates.Failed && !promoted) acts.Add(NodeWordActs.Stop);
         return acts;
@@ -315,6 +343,7 @@ public static class RunNodeWords
         + "       --at names the review record you read, and a review standing on another is refused; without it, the record standing when the\n"
         + "       word is kept is accepted, which proves nothing was read\n"
         + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
+        + "       daoris workflow decide <run> <node> <outcome> [\"…\"]  (a decision's answer, with its reason; again until the run ends)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
 
@@ -338,8 +367,11 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve or reject.",
-        (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, and only an approval approved or rejected.",
+        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve, reject or decide.",
+        (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, only an approval approved or rejected, and only a decision decided.",
+        (NotOutcome, _) => $"workflow: a decision is answered with one of its outcomes, and `{done.Node}` on run {done.Run} declares no such outcome.",
+        (NotWaiting, NodeWordActs.Decide) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now and takes no proposal: a decision takes one while it waits or a proposal stands, and the owner's answer until the run ends.",
         (NotWaiting, _) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now and waits for no {done.Act} of yours: a waiting task takes done, a waiting approval approve or reject.",
         (NotRequest, _) => $"workflow: `{done.Node}` is no request, and only a request is sent, and only a declined one asked again or gone on without.",
@@ -355,7 +387,9 @@ public static class RunNodeWords
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
         (NodeRefusal.NotSkippable, _) =>
-            $"workflow: `{done.Node}` is a step its kind never lets be passed over, since a skip would read as its proof: stop it instead.",
+            $"workflow: `{done.Node}` on run {done.Run} is not passed over, since a skip would read as its proof: if it was done outside Daoris, say so "
+            + "with its link (Done outside Daoris on its step, or `daoris work held <unit> <node> <attempt> done-outside <link> [\"…\"]`), and the run "
+            + "goes on; ending this work (`daoris workflow stop`) ends the run and leaves its quest to close by your word.",
         (NodeRefusal.NotInTable, NodeWordActs.Skip) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to pass over.",
         (NodeRefusal.NotInTable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to stop.",

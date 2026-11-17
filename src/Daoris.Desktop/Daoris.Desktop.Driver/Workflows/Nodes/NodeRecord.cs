@@ -79,6 +79,34 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
 
     /// <summary>The outcome the person named with <i>it happened</i> on a held decision; null on every other word and attempt.</summary>
     public string? Decision { get; init; }
+
+    public StepProgress? Progress { get; init; }
+
+    public string? Link { get; init; }
+
+    public string? Note { get; init; }
+
+    public DateTimeOffset? LinkChecked { get; init; }
+
+    /// <summary>
+    /// Who the outside system credits with the act its outcome settled on (<c>outside: &lt;name&gt;</c>, or Daoris), from the evidence's
+    /// <see cref="WorkEvidence.By"/>: an older build ignores the field, and drops it where it writes the record again. Null where none is named.
+    /// </summary>
+    public string? By { get; init; }
+}
+
+/// <summary>
+/// What settled an attempt beside the plugin's own outcomes (<c>reached</c>, <c>failed</c>, <c>not-started</c>, <c>unknown</c>): kept in
+/// <see cref="NodeAttempt.Outcome"/> of a <c>settled</c> attempt, never as a state of its own, since an older build rejects a record holding a
+/// state it does not know and reads an outcome as text.
+/// </summary>
+public static class AttemptOutcomes
+{
+    /// <summary>
+    /// Stood down while in flight: its step is skipped, stopped or done outside Daoris, its code saying which (<see cref="NodeWordActs.Skip"/>,
+    /// <see cref="NodeWordActs.Stop"/>, <see cref="HeldResolutions.DoneOutside"/>). Its plugin is told, and a later outcome of it is a replay.
+    /// </summary>
+    public const string StoodDown = "stood-down";
 }
 
 /// <summary>
@@ -114,6 +142,13 @@ public static class HeldResolutions
     /// failure stays its plugin's: the word is cleared as it is applied, so it is never read as the person's outcome.
     /// </summary>
     public const string Again = "again";
+
+    /// <summary>
+    /// <i>Done outside Daoris</i>: its holder did the step outside, and says so with a link (required) and a note (optional), on an attempt
+    /// under way, held or failed. The door's word alone: kept on the attempt as <see cref="Happened"/> with its <see cref="NodeAttempt.Link"/>,
+    /// since an older build rejects an attempt holding a word it does not know, so it is never in <see cref="All"/>.
+    /// </summary>
+    public const string DoneOutside = "done-outside";
 
     /// <summary>The words on a plugin's attempt.</summary>
     public static readonly IReadOnlyList<string> Plugin = [Happened, DidNot, Stop];
@@ -250,12 +285,15 @@ public static class NodeWordActs
     /// <summary>The person's <i>Reject</i> of a waiting approval: reached with the outcome <c>rejected</c>, which its <c>when</c> wire routes; a note is theirs to give.</summary>
     public const string Reject = "reject";
 
+    /// <summary>A decision's answer with the outcome the word names, proposed by a holder or the owner's (<see cref="HumanDecisions"/>).</summary>
+    public const string Decide = "decide";
+
     /// <summary>The person's choice for a file a folder's return found changed on both sides, its path the words: a mark, as a send is.</summary>
     public const string KeepYours = ReturnChoices.KeepYours, TakeSession = ReturnChoices.TakeSession, KeepBoth = ReturnChoices.KeepBoth;
 
     public static readonly IReadOnlyList<string> Choices = ReturnChoices.All;
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, KeepYours, TakeSession, KeepBoth];
+    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, Decide, KeepYours, TakeSession, KeepBoth];
 }
 
 /// <summary>
@@ -290,6 +328,12 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
 
     /// <summary>The part of the chain a review's changes go to, by its quest (<see cref="ChangesParts"/>); null for the newest part.</summary>
     public string? Part { get; init; }
+
+    /// <summary>The outcome a <see cref="NodeWordActs.Decide"/> answers with, one its decision declares; null on every other act.</summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>Who holds the actor a decision's proposal is from, as its channel names it; null for the owner's own word.</summary>
+    public string? Holder { get; init; }
 
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;

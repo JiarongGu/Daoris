@@ -201,7 +201,7 @@ public sealed class CheckPerformTests : IDisposable
         var stopped = NodeLifecycle.Apply(Check, Status(), new NodeMove(NodeStates.Stopped, NodeCause.Person));
         Files.Write(record with { Statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal) { [Check.Id] = stopped.Status } });
 
-        performer.StopChecks(Unit, [Check.Id]);
+        performer.StandDown(Unit, [Check.Id]);
         Assert.Equal([invocation], _checks.Stopped);
 
         // The result that follows is a stale attempt's: it settles the attempt and moves nothing.

@@ -7,6 +7,7 @@ import { HoldsPress } from './HoldsGroup';
 import { NodeFeet, NodeFrame, type SelectHow } from './NodeFrame';
 import { PortRow, splitFeet } from './PortRow';
 import { type ChartStep, VARIANT_GLYPH } from './stepKinds';
+import { roleSaid } from '../stepRoles';
 
 // One node for each palette kind: the surface is every node's, and the kind is carried by its
 // glyph, its who and, for a decision, the row of ports on its lower edge, never by a rotated box, which could not wrap 中文. Its state
@@ -14,7 +15,7 @@ import { type ChartStep, VARIANT_GLYPH } from './stepKinds';
 // editor a press selects it and a port's press starts that outcome's way.
 
 export function StepNode({ context, step, edit }: { context: NodeContext; step: ChartStep; edit?: ChartEdit }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { node, feet, onFollow } = context;
   const faint = node.reached === false || node.faint === true;
   // A kind the step's own glyph names (a landing's method) keeps it; the generic tool gives way to the variant's.
@@ -40,6 +41,11 @@ export function StepNode({ context, step, edit }: { context: NodeContext; step: 
             </span>
             {node.state && <span id={ids.state}><Pill tone={node.state.tone}>{node.state.word}</Pill></span>}
           </div>
+          {step.role && (
+            <p data-step-role={step.role} className="m-0 mt-0.5 min-w-0 text-meta text-ink-soft [overflow-wrap:anywhere]">
+              {t('workflow.role.line', { role: roleSaid(t, i18n, step.role) })}
+            </p>
+          )}
           {node.who
             ? <div className="mt-1 min-w-0 text-small text-ink-soft">{node.who}</div>
             : node.actor && <p className="m-0 mt-1 text-small text-ink-soft [overflow-wrap:anywhere]">{node.actor}</p>}

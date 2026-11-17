@@ -274,10 +274,33 @@ public static class WorkflowOperations
     {
         var problems = new List<WireProblem>();
         RoleCatalog? catalogue = null;
+        bool Catalogued(string id)
+        {
+            try
+            {
+                catalogue ??= RoleCatalog.ReadHome(home);
+                return catalogue.Slots.Any(slot => slot.Id == id);
+            }
+            catch (DriverException)
+            {
+                return false;
+            }
+        }
+
         foreach (var node in graph.Nodes)
         {
-            if (NodeKit.Of(node.Kind)?.RoleTakes is not [var work, ..]) continue;
-            if (!node.Options.TryGetValue(NodeOptionFields.Role, out var written) || NodeOptions.Value(written) is null or "") continue;
+            if (NodeKit.Of(node.Kind)?.RoleTakes is not [var work, ..])
+            {
+                // A step no agent session takes names one of the census's roles, or a role the catalogue holds.
+                if (node.Role is { } other && !StepRoles.All.Contains(other, StringComparer.Ordinal) && StepRoles.Problem(node) is null && !Catalogued(other))
+                {
+                    problems.Add(new(StepRoles.Unknown, null, node.Id, $"the step `{node.Id}` names the role `{other}`, which is neither one of Daoris's (`{string.Join("`, `", StepRoles.All)}`) nor a role of the catalogue."));
+                }
+
+                continue;
+            }
+
+            if (StepRoles.Written(node) is not { } written || NodeOptions.Value(written) is null or "") continue;
             if (NodeOptions.Value(written) is not string role)
             {
                 problems.Add(new(RoleRefused, null, node.Id, $"the step `{node.Id}` names its role by something other than a role's id."));
@@ -350,12 +373,14 @@ public static class WorkflowOperations
                     made = "the page";
                 }
 
+                var closesNew = WorkflowRolesSinceStore.Closes(home, planned.Plan.Result, UpdateRefusal.Running);
                 if (!plan && !WorkflowStore.WriteIfAbsent(WorkflowPorts.Store(home), id, planned.Plan.Result!))
                 {
                     return Refuse("stale", $"`{id}` was saved by another save while this one was made, so this one would have replaced it. Nothing was written.");
                 }
 
-                return new(id, true, null, $"`{id}` v1, a new workflow, from {made}.", planned.Plan.Version, !plan, false, [], []);
+                if (!plan) WorkflowRolesSinceStore.Keep(home, planned.Plan.Result, UpdateRefusal.Running);
+                return new(id, true, null, $"`{id}` v1, a new workflow, from {made}.", planned.Plan.Version, !plan, false, [], []) { ClosesBelow = closesNew };
             }
 
             if (from is not null) return Refuse("refused", $"`{id}` is a workflow here already: a save with `from` makes a new one. Add a version with `steps` or `graph`.");
@@ -386,8 +411,14 @@ public static class WorkflowOperations
                     + "now: authorize those places, then save. Nothing was written.", scopes, reach.Rows, appended: true);
             }
 
+            // A version naming a step's role other than its kind's closes going back below this build: the plan says so for the confirm card.
+            var closes = WorkflowRolesSinceStore.Closes(home, planAgainst.Plan.Result, UpdateRefusal.Running);
             if (!plan && !WorkflowStore.WriteIfNewest(WorkflowPorts.Store(home), id, newest.Version, planAgainst.Plan.Result!)) return Refuse("stale", $"`{id}` {Changed}");
-            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows);
+            if (!plan) WorkflowRolesSinceStore.Keep(home, planAgainst.Plan.Result, UpdateRefusal.Running);
+            return new(id, true, null, $"`{id}` v{version.Version} → v{planAgainst.Plan.Version}.", planAgainst.Plan.Version, !plan, true, scopes, reach.Rows)
+            {
+                ClosesBelow = closes,
+            };
         }
         catch (ChoiceWords refused)
         {

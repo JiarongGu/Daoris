@@ -238,6 +238,9 @@ public static class NodeSource
     /// <summary>The path into a sink: the failure or the refusal whose receipt leads there, as a join's members reach it.</summary>
     public const string Path = "path";
 
+    /// <summary>A decision's answer: the step its outcome's route closed is passed on the record, naming who proposed and who confirmed it (<see cref="WireDecisions"/>).</summary>
+    public const string Decision = "decision";
+
     /// <summary>
     /// The exits of the declared gates as Daoris's executor runs them: what reaches and
     /// fails a <c>check</c>.
@@ -323,8 +326,10 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
     public bool OnPluginWord => ReachBy == NodeSource.Plugin && NodeKit.IsPlugin(Kind);
 
     /// <summary>
-    /// Whether the person may settle an attempt whose outcome nothing else establishes: a plugin's performed node alone, whose attempt the performer holds when reconciliation cannot say. Its
-    /// <c>unknown → reached</c> and <c>unknown → failed</c> by the person are the person's word, never the plugin's (<see cref="NodeSource.Person"/>).
+    /// Whether the step's holder may settle it on their word: a plugin's performed node alone, whose attempt the performer holds when
+    /// reconciliation cannot say, or which its holder did outside Daoris. Its <c>unknown → reached</c> and <c>unknown → failed</c>, and with the
+    /// link of a step done outside its <c>active → reached</c> and <c>failed → reached</c>, are the holder's word, never the plugin's
+    /// (<see cref="NodeSource.Person"/>, the holder's channel today).
     /// </summary>
     public bool PersonSettles => Reach == NodeReach.Performed && NodeKit.IsPlugin(Kind);
 
@@ -338,6 +343,8 @@ public sealed record NodeAuthority(string Kind, string Reach, string ReachBy, st
 
     /// <summary>The source an observed reach of a pressed kind carries: a <c>review</c> seen landed is git's, never the person's.</summary>
     public string? ObservedBy { get; init; }
+
+    public bool Reanswers { get; init; }
 }
 
 /// <summary>The authority by kind: each kind's unit's (<see cref="INodeKind.Authority"/>), a plugin's own node's from its declaration.</summary>

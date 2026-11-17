@@ -184,15 +184,7 @@ public sealed class PauseTickTests : IDisposable
 
     private static List<JsonNode> Runs(string log) => [.. File.ReadAllLines(log).Select(line => JsonNode.Parse(line)!)];
 
-    private static async Task UntilAsync(Func<bool> condition)
-    {
-        var patience = DateTime.UtcNow + Poll.Patience;
-        while (!condition())
-        {
-            Assert.True(DateTime.UtcNow < patience, "the condition never held");
-            await Task.Delay(50);
-        }
-    }
+    private static Task UntilAsync(Func<bool> condition) => Poll.Until(condition);
 
     private void Git(params string[] arguments)
     {

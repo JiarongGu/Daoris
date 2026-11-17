@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { draftOf, graphOf, setOption } from '../edit/graphDraft';
-import { APPEND, judgedFor, PALETTE, ROLES } from '../edit/editFixtures';
+import { APPEND, judgedFor, PALETTE } from '../edit/editFixtures';
 import { MERGE_GRAPH } from '../graphFixtures';
 import { LandOptions } from './LandOptions';
 
@@ -24,7 +24,7 @@ const draw = (more: Partial<Parameters<typeof LandOptions>[0]> = {}) => {
   const onSave = vi.fn(async (_ask: unknown) => ({ ...APPEND, written: true, version: 3 }));
   const view = render(
     <LandOptions
-      palette={PALETTE} roles={ROLES} graph={BRANCH_GRAPH} workflow={{ id: 'docs-release', version: 2 }}
+      palette={PALETTE} graph={BRANCH_GRAPH} workflow={{ id: 'docs-release', version: 2 }}
       judged={null} judgedOf={null} onJudge={onJudge} saving={false} onSave={onSave} {...more}
     />,
   );

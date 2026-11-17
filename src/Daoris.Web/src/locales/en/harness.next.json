@@ -30,6 +30,7 @@
   "harness.next.why.pace": "it is further behind its week's pace than {{over}}",
   "harness.next.why.room": "it has more room under its curve than {{over}}",
   "harness.next.why.leastRecent": "Daoris started on it less recently than {{over}}",
+  "harness.next.why.unanswered": "{{over}}'s sign-in check did not answer, so it goes last",
   "harness.next.why.notStarted": "Daoris has not started on it yet",
   "harness.next.why.listDefault": "it is the default here",
   "harness.next.why.listFirst": "it comes first in the order",

@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class NodeIntegrating(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<IIntegrationDoor?> integration, Func<IIntegrationLines?> lines,
-    Func<DriverConfig?> config, Func<Action<string, string>?> integrated, Func<ITrainPlans?> plans)
+    Func<DriverConfig?> config, Func<Action<string, string>?> integrated, Func<ITrainPlans?> plans, Func<bool> reviewed)
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IntegrationCardWait> _cards = new(StringComparer.Ordinal);
 
@@ -53,9 +53,8 @@ internal sealed class NodeIntegrating(
         {
             Unit = unit, Tip = landed.Tip, Request = NodeOptions.Text(node, "request"), Conflicts = NodeOptions.Text(node, "conflicts"),
         };
-        // A part's worker lands on its ask's branch through the same queue, its request tagged so the train reads it.
         if ((governed.Scope?.Quest?.Records.Quest ?? governed.Unit.Records.Quest) is { } quest
-            && await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans(), ct).ConfigureAwait(false) is { } train)
+            && await TrainPartOf.ReadAsync(quest.Id, quest.Request, plans(), reviewed(), ct).ConfigureAwait(false) is { } train)
         {
             ask = ask with { Train = train };
         }

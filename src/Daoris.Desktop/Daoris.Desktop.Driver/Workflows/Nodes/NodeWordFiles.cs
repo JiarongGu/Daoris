@@ -30,6 +30,8 @@ internal static class NodeWordFiles
         if (word.Revision is { } revision) writer.WriteString("revision", revision);
         if (word.Review is { } review) writer.WriteString("review", review);
         if (word.Part is { } part) writer.WriteString("part", part);
+        if (word.Outcome is { } outcome) writer.WriteString("outcome", outcome);
+        if (word.Holder is { } holder) writer.WriteString("holder", holder);
         writer.WriteEndObject();
     }
 
@@ -63,6 +65,7 @@ internal static class NodeWordFiles
         {
             By = by, Attempt = attempt, Supersedes = Text(each, "supersedes"), Kept = kept, Tip = Text(each, "tip"),
             Revision = Text(each, "revision"), Review = Text(each, "review"), Part = Text(each, "part"),
+            Outcome = Text(each, "outcome"), Holder = Text(each, "holder"),
         };
     }
 

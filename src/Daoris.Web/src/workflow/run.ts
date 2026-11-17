@@ -7,13 +7,19 @@ import type { WorkflowStep } from './current';
 
 /** Where a step stands (design §5.2), as the driver spells it (`WorkflowRunStates`). */
 export type RunState =
-  | 'not-reached' | 'working' | 'waiting-on-you' | 'waiting-on-agent' | 'not-known' | 'cannot-start'
+  | 'not-reached' | 'working' | 'waiting' | 'not-known' | 'cannot-start'
   | 'done' | 'skipped' | 'failed' | 'stopped';
 
 /** The states this page words; one a newer driver names is said as recorded, never dropped. */
 export const KNOWN_STATES: readonly RunState[] = [
-  'not-reached', 'working', 'waiting-on-you', 'waiting-on-agent', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
+  'not-reached', 'working', 'waiting', 'not-known', 'cannot-start', 'done', 'skipped', 'failed', 'stopped',
 ];
+
+/** Whoever fills a role now (`StepHolder`): the person, or an agent by its name. */
+export interface RunHolder {
+  kind: string;
+  name?: string | null;
+}
 
 /** One step of a run: the chosen graph's cell beside where it stands, and the facts its words and its door are made of. */
 export interface RunStep {
@@ -29,6 +35,8 @@ export interface RunStep {
   /** Who acts, as the record names it: a session's adapter, or a reviewer as the person reads it. */
   agent?: string | null;
   at?: string | null;
+  /** The role that takes the step: on a graph run the one it names, else its kind's (`workflow.role.*`); where it waits, the role it waits on. None elsewhere. */
+  role?: string | null;
   environment?: string | null;
   commit?: string | null;
   branch?: string | null;
@@ -75,6 +83,8 @@ export interface RunStep {
    */
   integration?: { state: string; line: string; step?: string | null } | null;
   wait?: RunWait | null;
+  /** Where the step waits, the holder of the role it waits on, whoever it is: *waiting on `<role>`: `<holder>`*. None where it does not wait. */
+  holder?: RunHolder | null;
 }
 
 /** A graph run's node's wait (`WorkflowRunWait`): one of its kind's `waits`, worded as `workflow.wait.<kind>.<code>` with its facts. */
@@ -118,12 +128,17 @@ export interface CheckHeld {
   resolution?: string | null;
 }
 
-/** The person's word on a held check (`WORK_HELD`): *Run again* is `again`, *Not now* is `stop`. */
+/**
+ * The person's word on a held check or a plugin's step (`WORK_HELD`): *Run again* is `again`, *Not now* is `stop`, and *Done outside
+ * Daoris* is `done-outside` with its `link`, required, and a `note`.
+ */
 export interface CheckHeldAsk {
   unit: string;
   node: string;
   attempt: number;
-  resolution: 'again' | 'stop';
+  resolution: 'again' | 'stop' | 'done-outside';
+  link?: string;
+  note?: string;
 }
 
 /** What `WORK_HELD` answers: kept, or refused by its code with the driver's sentence. */
@@ -137,7 +152,7 @@ export interface CheckHeldAnswer {
  * What the person may say of a graph run's node: pass it over for the run, or stop it; a declined request's ask again and go
  * on; a review's changes, with their words.
  */
-export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'keep-yours' | 'take-session' | 'keep-both';
+export type NodeAct = 'accept' | 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject' | 'decide' | 'keep-yours' | 'take-session' | 'keep-both';
 
 /** A word kept on a run's node, as the driver answers it: the act, the person's words where given, and when. */
 export interface NodeWordKept {
@@ -150,13 +165,14 @@ export interface NodeWordKept {
 /**
  * What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. An Accept names the record drawn
  * (`attempt`, `revision`), the second opinion's token it answers (`answers`) and that it passes the unchecked dones it named (`unchecked`);
- * a send-back names its `part`; `whole` makes a stop the review's Stop.
+ * a send-back names its `part`; `whole` makes a stop the review's Stop; a `decide` names its decision's `outcome`.
  */
 export interface NodeWordAsk {
   run: string;
   node: string;
   act: NodeAct;
   words: string | null;
+  outcome?: string | null;
   attempt?: number | null;
   revision?: string | null;
   answers?: string | null;
@@ -313,15 +329,19 @@ export type RunLineDoor = { runs: readonly WorkflowRun[]; onOpen?: (run: Workflo
 export const knownState = (state: string): state is RunState => (KNOWN_STATES as readonly string[]).includes(state);
 
 /**
- * A state's pill (design §7's hues): waiting on the person in open's hue, the person's alone (platform-ux §3); done's green for
- * a step done; red only for a failure, an outcome; every other wait, on an agent or on Daoris, neutral.
+ * A state's pill (design §7's hues): a wait the person holds in open's hue, the person's alone (platform-ux §3); done's green for
+ * a step done; red only for a failure, an outcome; every other wait, held by an agent or by Daoris, neutral. *You* is how the window names the
+ * person's holding: nothing else here branches on who holds a role.
  */
-export function runTone(state: string): 'open' | 'done' | 'declined' | 'neutral' {
-  if (state === 'waiting-on-you') return 'open';
+export function runTone(state: string, holder?: RunHolder | null): 'open' | 'done' | 'declined' | 'neutral' {
+  if (state === 'waiting' && holdsIt(holder)) return 'open';
   if (state === 'done') return 'done';
   if (state === 'failed') return 'declined';
   return 'neutral';
 }
+
+/** Whether the holder of a role is the person looking: the window's *you*, the one place it names the person's holding. */
+export const holdsIt = (holder: RunHolder | null | undefined): boolean => holder?.kind === 'person';
 
 /** The step a run stands at, or null where it finished. */
 export const standsAt = (run: WorkflowRun): RunStep | null => run.steps.find((step) => step.step.id === run.at) ?? null;
@@ -343,8 +363,13 @@ export function openedBy(run: WorkflowRun): string | null {
 /** Whether the outcomes a graph run reached leave no route to this step (the driver's `notTaken`). */
 export const notTakenBy = (run: WorkflowRun, step: RunStep): boolean => run.graph?.notTaken?.includes(step.step.id) ?? false;
 
-/** Whether a run waits on the person now: the step it stands at waits for their press. */
-export const waitsOnYou = (run: WorkflowRun): boolean => standsAt(run)?.state === 'waiting-on-you';
+/** Whether a step waits on a role the person holds: it waits, and they fill its role. */
+export const stepWaitsOnYou = (step: RunStep): boolean => step.state === 'waiting' && holdsIt(step.holder);
+
+export const waitsOnYou = (run: WorkflowRun): boolean => {
+  const at = standsAt(run);
+  return at !== null && stepWaitsOnYou(at);
+};
 
 /**
  * The session a door into a run attends (design §7: *What needs you*'s row for a waiting step opens that step): a session the
