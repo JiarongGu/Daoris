@@ -260,7 +260,7 @@ internal static class StructureCheck
             named[source.Path] = crossings.Keys.ToHashSet(StringComparer.Ordinal);
         }
 
-        foreach (var (file, crossings) in map.Pure)
+        foreach (var (file, crossings) in map.Pure.Where(entry => analysis.Judges(entry.Key)))
         {
             foreach (var crossing in crossings.Where(crossing => !(named.GetValueOrDefault(file)?.Contains(crossing) ?? false)))
             {
@@ -308,7 +308,7 @@ internal static class StructureCheck
                     {
                         breaches.Add(new("structure.json", 0, "map", $"{file} names {type} in two edge families, {family.Name} among them"));
                     }
-                    else if (!upward.ContainsKey((file, type)))
+                    else if (analysis.Judges(file) &&!upward.ContainsKey((file, type)))
                     {
                         breaches.Add(new("structure.json", 0, "map", $"{family.Name} lists {file} naming {type}, which is no edge against the order now: a cut takes its entry off the list"));
                     }
@@ -337,7 +337,7 @@ internal static class StructureCheck
         }
 
         var found = analysis.Rules.Select(rule => (rule.File, rule.Member)).ToHashSet();
-        foreach (var rule in map.LoopRules.Where(rule => !found.Contains((rule.File, rule.Member))))
+        foreach (var rule in map.LoopRules.Where(rule => analysis.Judges(rule.File) &&!found.Contains((rule.File, rule.Member))))
         {
             breaches.Add(new("structure.json", 0, "map", $"{rule.Member} of {rule.File} is listed as a rule Loop holds, and it is not one there: a move takes its entry off the list"));
         }

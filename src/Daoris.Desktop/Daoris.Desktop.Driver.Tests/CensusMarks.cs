@@ -9,8 +9,11 @@ internal static class CensusMarks
     /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files.</summary>
     internal static readonly string[] Diff =
     [
-        "GitEndingsCensusTests", "GitKeepersCensusTests", "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests",
+        "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitEndingsCensusTests", "GitKeepersCensusTests",
+        "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "ShellStructureTests", "StructureTests",
     ];
+
+    internal static readonly Dictionary<string, string> SemanticWhole = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The censuses that judge the whole tree whatever the scope: a rule over several files (a list held both ways by file, a graph of
@@ -20,9 +23,9 @@ internal static class CensusMarks
     internal static readonly string[] Whole =
     [
         "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
-        "CheckoutWritersCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
-        "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationBoundaryTests", "DeclarationFileCensusTests",
-        "DeclarationGitCensusTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "DeclarationParsesCensusTests",
+        "CensusReachTests", "CheckoutWritersCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
+        "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
+        "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
         "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
         "DriverWorkflowsTextTests", "EveryChildIsHandedTheToolsTests", "GitBranchesReadTests", "GitCeilingCensusTests", "GitCommandsCensusTests",
         "GitLaunchTests", "GitRemotesTests", "GitSeedTests", "HeldFactsTests", "HelpRoomSettingsPlacesTests", "HelpRoomTests",
@@ -32,9 +35,9 @@ internal static class CensusMarks
         "PickerCensusTests", "PluginCatalogTests", "PoolReadersCensusTests", "ProcessEnvironmentCensusTests", "ProcessHomeCensusTests",
         "ProcessStartsCensusTests", "ProviderCensusTests", "PullRequestOccasionTests", "RoleCatalogCensusTests", "RoleCensusTests",
         "RoleStaffingTests", "RoleVerbUsageTests", "RoomSaysNoActorTests", "RoomsDeclaredCensusTests", "RulePathsCensusTests", "SayKeysCensusTests",
-        "ServiceProviderCensusTests", "SessionMarkerTests", "SettledReadersCensusTests", "SharedCompileTests", "ShellStructureTests",
+        "ServiceProviderCensusTests", "SessionMarkerTests", "SettledReadersCensusTests", "SharedCompileTests",
         "ShortWaitsCensusTests", "SlotSettledCensusTests", "SourceFilesTests", "SourceTextsTests", "StepAuthorityCensusTests", "StewardNotesTests",
-        "StoredOldNamesCensusTests", "StructureTests", "SystemWiringTests", "TerminalConversationCensusTests", "TerminalStartsCensusTests",
+        "StoredOldNamesCensusTests", "SystemWiringTests", "TerminalConversationCensusTests", "TerminalStartsCensusTests",
         "TestHomesCensusTests", "ToolsAtTheStartCensusTests", "WiringLeftOverTests", "WorkFrameCensusTests",
     ];
 }
