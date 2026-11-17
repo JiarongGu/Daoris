@@ -21,6 +21,15 @@ repository.
 - **Verification:** `BenchCopiesTests` failed before the fix (each copy's line was the template's) and passes; the bench class
   alone passed twice with `process.runsettings`, its peak private memory 277 and 273 MB in the testhost and 96 and 95 MB in the
   service host.
+## 2026-11-17 - The start's git count expected a git ahead of the tree's making
+
+- **Symptom:** `StartGitCountTests` failed alone on main, every time, at `made > 0`; it held the full set red.
+- **Root cause:** 7dcd25bea5 moved the default-branch read to the repository port (`GitDefaultBranch`), so the tree opening knows its
+  line and a start's first git is `worktree add`; the test counted git starts before it and required at least one. The code is right
+  (fewer git calls, none repeated); the premise was old.
+- **Fix:** the test allows the `worktree add` at index 0 (`made >= 0`); the other assertions (line guessed at most once, no repeat
+  without a write between, the ceiling of 20) stand.
+- **Verification:** the class passes alone three times with `process.runsettings`, and its GitCountTests and StartTests siblings.
 
 ## 2026-11-17 - Three Loop ticks still expected an agent's done to end its session
 
