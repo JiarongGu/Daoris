@@ -443,6 +443,14 @@ vitests, which build nothing, and `test:web:e2e` (`web`), the bundle, the host a
 release whose UI cannot do its job over the example family. Note `test:web:e2e` rebuilds the host, so stop a locally
 running instance first, or the build fails on the locked DLL.
 
+The unit run takes a quarter of the machine's processors (`maxWorkers`, `DAORIS_WEB_WORKERS` says otherwise), and every story's
+render is shared out among the shards `design/stories.<n>.test.tsx` (`everyStoryOf`, `test/composeStories.ts`), so no one file holds the
+run's tail (WEBREACH1). A merge runs the files its paths reach (`tools/test-map.mjs`, `docs/development.md`): a page
+reaches a bridge domain by the names it takes from `bridge/shell.ts`, so a change to one domain reaches its own tests, the
+shell's and the suites that read every source; a catalogue reaches the sources naming one of its keys or a dotted prefix
+of one, and the parity suites. A reader that takes the catalogues whole but reads them by keys its own strings name says
+`// test-map: reads the catalogues by key — <why>` (`locales/i18n.ts`, `notifications/noticeWords.ts`).
+
 A vitest settles what it starts inside `act`: a native `focus()` goes through the work-frame kit's `focus`
 (`test/workFrameKit.tsx`), since a focused trigger opens its tooltip outside `act` otherwise, and a fixture's update
 waits for what it renders. An agent's run of vitest prints no console output of a passing test, so a run looking for
