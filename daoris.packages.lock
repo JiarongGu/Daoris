@@ -1,6 +1,6 @@
 {
-  "schema": 1,
-  "adapters": {
+  "schema": 2,
+  "packages": {
     "Daoris.Adapters.Clock": {
       "fingerprint": "f8ad1fb65bffe80dd2472b9c448fb23d2cea5dbf60f24abf09dce13b0174a34a",
       "tree": "d884a557b217e901e853242255ea39329952aa4d",

@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "why":"The development of one adapter package under src/Daoris.Adapters/, the workflow this repository maps to the kind `adapter` whose paths are the adapters and their lock. An adapter's suite runs only here: the work releases the package it changed (node tools/merge/adapters.ts release <name>, which runs that package's suite on the committed tree and, green, writes its row in daoris.adapters.lock) and commits the row. The first check proves the row holds the package's committed fingerprint, so a change with no green run of its suite goes back to the work naming the release; the second runs this repository's gates the change reaches, which hold no adapter suite, so the packages built over the adapter are checked against it. Then a second opinion from another agent, the merge and the tree's end, as in daoris-dev.",
+  "why":"The development of one adapter package under src/Daoris.Adapters/, the workflow this repository maps to the kind `adapter` whose paths are the adapters and the packages' lock. An adapter's suite runs only here: the work releases the package it changed (node tools/merge/packages.ts release <name>, which runs that package's suite on the committed tree and, green, writes its row in daoris.packages.lock) and commits the row. The first check proves the row holds the package's committed fingerprint, so a change with no green run of its suite goes back to the work naming the release; the second runs this repository's gates the change reaches, which hold no adapter suite, so the packages built over the adapter are checked against it. Then a second opinion from another agent, the merge and the tree's end, as in daoris-dev.",
   "graph": {
     "schemaVersion": 2,
     "entries": ["apart"],
@@ -11,7 +11,7 @@
       { "id": "requests", "kind": "work.requests", "version": 1, "reach": "observed" },
       { "id": "holds", "kind": "quest.holds", "version": 1, "reach": "observed" },
       { "id": "content", "kind": "content.holds", "version": 1, "reach": "observed" },
-      { "id": "suite", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": ["adapters-lock"] } },
+      { "id": "suite", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": ["packages-lock"] } },
       { "id": "check", "kind": "check", "version": 1, "reach": "performed", "options": { "gates": "reached" } },
       { "id": "opinion", "kind": "opinion", "version": 1, "reach": "observed" },
       { "id": "landing", "kind": "land", "version": 1, "reach": "performed", "options": { "method": "merge" } },
