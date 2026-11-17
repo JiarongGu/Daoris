@@ -280,17 +280,16 @@ test('inside a run, only the records the run wrote are judged; the tree\'s older
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   try {
-    assert.equal(runStart(dir, {}), null, 'with no marker every record is judged');
+    assert.equal(runStart(dir), null, 'with no marker every record is judged');
     writeFileSync(join(dir, 'stale.trx'), trx([['S.stale', '00:00:57']]));
     const old = new Date(Date.now() - 3_600_000);
     utimesSync(join(dir, 'stale.trx'), old, old);
     writeFileSync(join(dir, 'run-start.json'), JSON.stringify({ startedAt: Date.now() - 60_000 }));
     writeFileSync(join(dir, 'fresh.trx'), trx([['F.fine', '00:00:01']]));
-    const since = runStart(dir, {});
+    const since = runStart(dir);
     assert.ok(since !== null);
     assert.deepEqual(scanRecords(dir, '.', { since }).over, {}, 'the stale record is not read');
     assert.deepEqual(Object.keys(scanRecords(dir, '.').over), ['S.stale'], 'without the run start it is');
-    assert.equal(runStart(dir, { DAORIS_RATCHET_SINCE: '42' }), 42, 'the tool\'s own start wins over the marker');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

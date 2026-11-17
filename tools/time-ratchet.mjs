@@ -227,10 +227,8 @@ export function measureAlone(root, units) {
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }
 
-/** When this ratchet's run began (`DAORIS_RATCHET_SINCE`, else `run-start.json`'s `startedAt`), or null: older records are never a red. */
-export function runStart(dir, env = process.env) {
-  const named = Number(env.DAORIS_RATCHET_SINCE);
-  if (env.DAORIS_RATCHET_SINCE && Number.isFinite(named)) return named;
+/** When this ratchet's run began (`run-start.json`'s `startedAt`, which the run writes), or null: older records are never a red. */
+export function runStart(dir) {
   try {
     const marked = Number(JSON.parse(readFileSync(join(dir, 'run-start.json'), 'utf8')).startedAt);
     return Number.isFinite(marked) ? marked : null;
