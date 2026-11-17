@@ -203,6 +203,94 @@ test('a gate past its budget has what it started killed, and fails as over-budge
   }
 });
 
+function loadHarness(runs: Array<'killed' | 'passes'>, peaks: number[], frees: boolean[]) {
+  const handed: Array<Record<string, unknown>> = [];
+  const polled: boolean[] = [];
+  let clock = 0;
+  const h = harness({
+    timeoutMs: () => 20,
+    load: {
+      sample: () => { const peak = peaks.shift() ?? 1; return { peak: () => peak, stop: () => {} }; },
+      free: () => { const free = frees.shift() ?? true; polled.push(free); return free; },
+      sleep: async (ms) => { clock += ms; },
+      now: () => clock,
+    },
+    runGate: async (_w, each, _l, options) => {
+      handed.push(options);
+      if (runs.shift() === 'passes') return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 5, log: 'l' };
+      const trees = options.trees as { hold(pid: number): void; ended: string | null };
+      trees.hold(77);
+      while (!trees.ended) await new Promise((done) => setTimeout(done, 5));
+      return { gate: each, code: null, verdict: 'ENDED', note: 'ended', ms: 20, log: 'l' };
+    },
+  });
+  const again = (first: GateResult) => runOne(h.deps, {
+    where: h.dir, gate: { ...gate, reuse: '' }, logs: join(h.dir, 'logs'), beside: { again: first }, tree: 'T2', trees: null, step: undefined, noBuild: false,
+  });
+  return { h, handed, polled, again };
+}
+
+test('a gate killed at its budget under load fails nothing yet: it runs again alone once the machine is free, and passes as that run does', async () => {
+  const { h, handed, polled, again } = loadHarness(['killed', 'passes'], [3, 1], [false, false, true]);
+  try {
+    const first = await call(h, { gate: { ...gate, reuse: '' } });
+    assert.deepEqual([first.verdict, first.again, first.cause, first.overBudget], ['FAIL', true, 'load', true]);
+    assert.match(first.note, /under load \(3 heavy runs at its peak\): run again alone once every other gate has ended and the machine is free/);
+    assert.deepEqual(first.breaches?.map((each) => [each.cause, each.fails]), [['load', false]]);
+    const second = await again(first);
+    assert.deepEqual(polled, [false, false, true], 'the machine is read until it is free');
+    assert.equal(handed[1]!.again, undefined, 'the run again is a whole run, not a memory death\'s');
+    assert.equal(second.verdict, 'PASS');
+    assert.match(second.note, /killed at its budget under load, then passed run again alone/);
+    assert.deepEqual(second.breaches?.map((each) => [each.name, each.cause, each.fails]), [['censuses', 'load', false]]);
+    assert.match(second.breaches![0]!.evidence, /run again alone: passed/);
+  } finally {
+    h.done();
+  }
+});
+
+test('a gate killed again alone at its budget fails, classed by what it did; one killed alone the first time fails at once', async () => {
+  const twice = loadHarness(['killed', 'killed'], [3, 1], [true]);
+  const once = loadHarness(['killed'], [1], []);
+  try {
+    const second = await twice.again(await call(twice.h, { gate: { ...gate, reuse: '' } }));
+    assert.deepEqual([second.verdict, second.again, second.cause], ['FAIL', false, undefined]);
+    assert.match(second.note, /killed again run alone/);
+    assert.deepEqual(second.breaches?.map((each) => [each.cause, each.fails]), [['load', false], ['scan', true]]);
+    const first = await call(once.h, { gate: { ...gate, reuse: '' } });
+    assert.deepEqual([first.verdict, first.again], ['FAIL', false]);
+    assert.deepEqual(first.breaches?.map((each) => [each.cause, each.fails, each.fix]), [['scan', true, 'CENSUSDIFF1']]);
+  } finally {
+    twice.h.done();
+    once.h.done();
+  }
+});
+
+test('a gate killed again while the machine never freed fails as load, and says to run it when the machine is free', async () => {
+  const { h, again } = loadHarness(['killed', 'killed'], [3, 4], Array<boolean>(100).fill(false));
+  try {
+    const second = await again(await call(h, { gate: { ...gate, reuse: '' } }));
+    assert.deepEqual([second.verdict, second.again, second.cause], ['FAIL', false, 'load']);
+    assert.match(second.note, /the machine was not free within 10 min/);
+    assert.deepEqual(second.breaches?.map((each) => [each.cause, each.fails]), [['load', false], ['load', true]]);
+  } finally {
+    h.done();
+  }
+});
+
+test('settling a merge carries every gate\'s breaches into the record, breaches.json and the summary', () => {
+  const { dir, remove } = fixtureFolder('flow-breaches');
+  try {
+    const breach = { kind: 'gate' as const, name: 'reached', ms: 300_000, limit: 300_000, cause: 'load' as const, evidence: '3 heavy runs', fix: 'none', fails: false };
+    const settled = settleMerge({ branch: 'b', at: 'now', wallMs: 1, mains: [], previous: [], dir, results: [{ gate: { name: 'reached', run: 'x' }, verdict: 'PASS', note: '', ms: 1, breaches: [breach] }] });
+    assert.deepEqual(settled.record.breaches, [breach]);
+    assert.match(settled.lines.join('\n'), /time breaches: 1, 0 failing the run; each with its cause in .*breaches\.json\n {2}breach: reached killed after 5 min, its budget 5 min: load \(3 heavy runs\)/);
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, 'breaches.json'), 'utf8')).breaches, [breach]);
+  } finally {
+    remove();
+  }
+});
+
 test('settling a merge sets down main\'s reds, fails the merge on the branch\'s, and builds the record and the budget lines', () => {
   const make = (name: string, verdict: string, failures: Array<{ unit: string; key: string; test: string | null }>, ms?: number): GateResult => ({
     gate: { name, run: 'x' }, verdict, note: '', ms: ms ?? 1000, failures, log: 'l',

@@ -16,12 +16,13 @@ test("the builder's quick checks hold every check the merge's cli gate runs", ()
   const scripts = (JSON.parse(readText(join(repoRoot, 'package.json'))) as { scripts: Record<string, string> }).scripts;
   const cli = gates.gates.find((gate) => gate.name === 'cli');
   assert.ok(cli, 'the cli gate is no longer declared — that is not a pass');
-  assert.equal(cli.run, 'npm run verify:checks', 'the quick steps read the script the cli gate runs');
+  assert.equal(cli.run, 'npm run verify:checks', 'the quick steps read the list the cli gate runs');
+  assert.equal(scripts['verify:checks'], 'node tools/verify-checks.mjs', 'the gate runs the declared list, never a chain of its own');
   assert.equal(scripts.quick, 'node tools/quick.mjs', 'quick is the one runner that runs every step, never a chain that stops at a red');
 
-  const wanted = checkSteps(repoRoot);
+  const wanted = checkSteps();
   assert.ok(wanted.length > 10, `the cli gate's checks emptied: ${cli.run}`);
-  const quick = quickSteps(repoRoot);
+  const quick = quickSteps();
   const missing = wanted.filter((step) => !quick.includes(step) && !TIME_JUDGED.includes(step));
   assert.deepEqual(missing, [], `npm run quick leaves out what the merge's cli gate runs: ${missing.join(' | ')}`);
   assert.deepEqual(quick.filter((step) => TIME_JUDGED.includes(step)), [], 'quick judges no test time');

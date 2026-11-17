@@ -239,8 +239,8 @@ due; a fast one that still times out is reviewed for separation too. So:
    with its ports), not each class.
 2. **A census that enforces it (UNITPURE1).** A test outside the Process category starts no process, opens no git and waits on no
    wall clock; the census goes red naming the test and what it did, so a slow unit test cannot be added silently.
-3. **Over budget means a separation candidate, and the cuts are ordered by it.** The candidate list is TIMEWHY1's report; until it
-   runs, §1.5's table is the order: Workplace's git (about 520 case-min across the git half, its moved rehearsals and the Process
+3. **Over budget means a separation candidate, and the cuts are ordered by it.** The candidate list is TIMEWHY1's report (each
+   merge's `breaches.json`); until its candidates accumulate, §1.5's table is the order: Workplace's git (about 520 case-min across the git half, its moved rehearsals and the Process
    half), Loop's ticks (52 Process and 12 unit case-min), Course's Move matrix (29 and 12), then the unit halves' tail by cause.
 
 ### 2.2 The cuts, ranked by minutes saved per builder-day
@@ -293,7 +293,10 @@ and c (built) and UNITPURE1.
 What changes: §2.1's report, written at every merge and queue run, and read by the time ratchet so a breach whose only cause is load is
 named and never fails the merge (TIMELOAD1), while every other breach names its cause, its fix path and its separation candidate. Saves
 the failed attempts the time ratchet causes (17 of 53) and their fix rounds. Proof: planted breaches, one per cause and one under load.
-Depends on nothing; its runtime ledger is shared with UNITPURE1.
+Depends on nothing; its runtime ledger is shared with UNITPURE1. Built as the text classifier (`tools/time-why.mjs`): a test's cause is
+read from its category and its class's source through the layers census's counters, a gate's from its step clocks and the load
+sampler, "unclassed" where nothing reads; a gate killed under load runs again alone once the machine is free. The runtime ledger
+comes with UNITPURE1, and `--classes` does not print causes yet.
 
 **4. CENSUSDIFF1, censuses judge the diff at a merge (c).**
 What changes: the semantic censuses bind one compilation and judge only the syntax trees the diff changed and the files that name a
@@ -307,7 +310,10 @@ the merges, and the census classes' 8% of every driver unit run. Depends on CENS
 `verify:checks` is 2.2 min median, 6.6 p90, 8 to 10 min in today's queue runs and red 16 times: each of its steps (the CLI's and the
 tools' typechecks, the doctrine check, contracts, the document checks) declares what it reads, and a merge runs a step only where a
 path reaches it, the whole set staying in `npm run quick` and the CI. Proof: every step's reach declared and checked by `test-map`, a
-planted break in each step's input red at a merge. Depends on nothing.
+planted break in each step's input red at a merge. Depends on nothing. Built: the steps and their reads are
+`tools/verify-checks/steps.mjs`, run side by side by `tools/verify-checks.mjs` on the paths a merge hands (`MERGE_BRANCH_CHANGED`),
+held by test-map's check 8; on 2026-11-17 the steps alone ran 4.9 min in series, the gate 56 s on a docs-only change and 93 s on a
+tools change (12 and 16 of 25 steps), the devkit's universal step left to the `universal` gate.
 
 **6. LAYERS1 e and f, the git port with an in-memory fake (a).**
 What changes: e makes `GitRuns` the `IGit` port with `ScriptedGit`; f moves the families' git asks to `IGitRepository` on
