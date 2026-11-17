@@ -91,12 +91,37 @@ names them, and a workflow's `check` step verifies them at your tip while you ar
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
 source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
-handed back. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
+handed back.
+
+The `cli` gate, `npm run verify:checks`, is `tools/verify-checks.mjs`: the steps of `tools/verify-checks/steps.mjs`, the index's
+writer first and alone, the rest side by side (quick runs the same list through the same runner). Each step declares what it
+reads, and `node tools/test-map.mjs --check` holds each declaration to what the step's code reads (its imports, the paths its
+strings name, a tsconfig's files and theirs); a step whose tool lists the tree by a filter names that listing in its `reads`. A
+merge in place, a preflight and the queue's scoped run hand every gate their changed paths (`MERGE_BRANCH_CHANGED`,
+`tools/merge/gate-hands.ts`), and the gate then runs only the steps a changed path reaches, the devkit's universal step standing
+aside since the `universal` gate runs it in every merge with the private patterns; a docs-only merge runs twelve of its
+twenty-five steps. Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
+step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
+that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
 committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: the gates its merge
 would run (the queue's own choice, on the paths from the merge base), every one to its end, main and the queue untouched, each
 verdict kept where the merge of the same tree keeps it. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test
 or first error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in
 the worktree's `local/scratch/main-tree`. The branch-worker hands back on its pass or its brief.
+
+Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
+a test the hang timeout killed and a gate killed at its budget are each one line of the merge's breach report, `breaches.json`
+beside its gate logs (`local/scratch/merge-<branch>/`, a queue run's `scope-<sha7>/`), carried as `breaches` and `separations` in
+the merge record and the queue's scope-run record and printed in the summary. Each names the time, the limit, the cause (`process`,
+`disk`, `network`, `clock`, `scan`, `load`, or `unclassed` where nothing reads), what the cause was read from and the row that owns
+the fix (UNITPURE1 for a unit test that is not pure, LAYERS1 f or COMPONENT1 for a real-process one, CENSUSDIFF1 for a scan,
+E2EFAST1, REACHCOST1 and CLIREACH1 for their gates). No test host records yet what each test started, opened or waited on, so a
+test's cause is its category (the Process trait, a Process or git half's record, an end-to-end spec) and its class's source, read
+by the layers census's counters; a gate's is its longest step clock. Three or more classes of one domain over by one cause name
+it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
+places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
+other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
+time; the budget itself never stretches with the load.
 
 | Change | Additional verification |
 |---|---|
@@ -189,7 +214,7 @@ Main is the development branch, and the cycle's aim is main green and the instal
    each test project once, not where its stamp under `_fixtures/reached-build/` still holds its inputs and output, and runs each
    project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. Each step
    (census, plan, restore and build per project, discovery and run per suite) is said as it goes and kept in the merge record's
-   `steps`, so a gate killed over its budget names the step it was in. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   `steps`, so a gate killed over its budget names the step it was in and its breach is classed by its longest step. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
    `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
@@ -239,7 +264,8 @@ service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the specs
 slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
-that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1). Add
+that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
+killed at its budget under load, once the machine is free (TIMEWHY1, *Choose the checks*). Add
 `--one-at-a-time` on a loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
 while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a

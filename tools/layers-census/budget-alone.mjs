@@ -1,4 +1,5 @@
 import { unitsOf } from '../time-reach.mjs';
+import { testBreach } from '../time-why.mjs';
 import { BUDGET_MS, checkBudget, latestRuns, readRecords } from './budget.mjs';
 
 /**
@@ -11,6 +12,19 @@ export function overBudgetOf(records, list) {
   const over = {};
   for (const [key, { ms }] of latestRuns(records)) if (ms > BUDGET_MS && list.slowTests?.[key] === undefined) over[key] = ms;
   return over;
+}
+
+/**
+ * Each unit test the newest `records` hold over the budget as a breach with its cause (`tools/time-why.mjs`): failing unless
+ * `list.slowTests` holds it at no less. `source` reads a test's class's source by its key.
+ */
+export function budgetBreaches(records, list, source) {
+  return [...latestRuns(records)].filter(([, { ms }]) => ms > BUDGET_MS).map(([key, { ms, gate }]) => {
+    const listed = list.slowTests?.[key];
+    return testBreach({
+      kind: 'census', key, ms, limit: BUDGET_MS, fails: !(listed >= ms), record: gate, source: source(key), ...(listed === undefined ? {} : { note: `listed at ${listed} ms` }),
+    });
+  });
 }
 
 /**

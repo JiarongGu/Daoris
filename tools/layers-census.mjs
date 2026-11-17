@@ -9,7 +9,7 @@
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
  * 2. The ambient ports' reads per subdomain, a ratchet that only tightens; beside it the process and git sites' allowances, which only fall.
  * 3. The unit budget: a unit test over a second fails, read from each non-Process .NET gate's trx under `_fixtures/test-timing/`
- *    (`--records <dir>` reads another folder; no records, nothing read). Beside it the wall clock's per-file allowance, which only falls.
+ *    (`--records <dir>` reads another folder; none, nothing read), each test over it said with its cause; beside it the clock's per-file allowance, which only falls.
  *
  * The compiler's check, the banned effects, is the build's: `src/BannedEffects.txt` through `src/Layers.props`.
  */
@@ -20,8 +20,9 @@ import { isMain, repositoryFiles, writeAtomic } from './fsx.mjs';
 import { checkAmbient, scanAmbient } from './layers-census/ambient.mjs';
 import { checkClock, scanClock } from './layers-census/clock.mjs';
 import { BUDGET_MS, checkBudget, parseTrx, readRecords, slowTestsOf } from './layers-census/budget.mjs';
-import { checkBudgetAlone } from './layers-census/budget-alone.mjs';
+import { budgetBreaches, checkBudgetAlone } from './layers-census/budget-alone.mjs';
 import { measureAlone } from './time-ratchet.mjs';
+import { sayBreach, sourceReader } from './time-why.mjs';
 import { loadWorld } from './time-reach.mjs';
 import { checkGit, scanGit } from './layers-census/git.mjs';
 import { checkMemory } from './layers-census/memory.mjs';
@@ -71,6 +72,8 @@ export async function census({ root, argv = [], tree = null }) {
       : { problems: checkBudget(records, list) };
     const problems = [...countProblems(tree, list), ...budget.problems];
     for (const problem of problems) console.error(`layers-census: ${problem}`);
+    const judged = budget.measured?.length ? readRecords(recordsAt) : records;
+    for (const breach of budgetBreaches(judged, list, sourceReader(root, tree))) console.log(sayBreach(breach));
     if (records.length === 0) console.log(`layers-census: no duration records under ${recordsAt.slice(root.length + 1).replace(/\\/g, '/')}, so the unit budget read nothing`);
     if (problems.length === 0) console.log('layers-census: the reference graph, the ambient ratchet, the process starts\' and git\'s allowances and the unit budget hold');
     return problems.length === 0 ? 0 : 1;
