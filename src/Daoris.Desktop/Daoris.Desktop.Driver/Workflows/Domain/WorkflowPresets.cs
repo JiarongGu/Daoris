@@ -141,7 +141,7 @@ public static class WorkflowPresets
         if (Has(WorkflowKinds.Opinion)) said.Add("Another agent reads the work first.");
         if (Has(WorkflowKinds.Look)) said.Add("You look at it running before it lands.");
         var landing = steps.First(step => step.Kind == WorkflowKinds.Landing);
-        var you = (string?)landing.Field("accept") == "you";
+        var you = HolderWords.First(landing) == CastHolders.Person;
         if ((string?)landing.Field("form") == LandingForm.Merge)
         {
             said.Add("You accept each piece of work, and it merges into the line.");

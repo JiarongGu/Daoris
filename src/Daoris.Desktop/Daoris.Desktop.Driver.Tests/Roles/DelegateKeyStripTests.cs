@@ -50,7 +50,22 @@ public sealed class DelegateKeyStripTests
         Assert.False(bare.Identity.ContainsKey(DelegateKey.Variable));
     }
 
-    /// <summary>Every start the driver composes names the registry its key is drawn in: a start handed none would hold no key.</summary>
+    /// <summary>A start keeps the roster's name of the agent it runs beside its key (<c>codex-acp</c> runs as <c>codex</c>); one naming none keeps none.</summary>
+    [Fact]
+    public void A_start_keeps_the_name_of_the_agent_it_runs_beside_its_key()
+    {
+        var delegates = new SessionDelegates();
+        SpawnRequests.Of(Quest("s-codex"), null, delegates, agent: "codex");
+        SpawnRequests.Chat("engine", Root, "http://localhost", "s-chat", delegates, agent: "claude-code");
+        SpawnRequests.Of(Quest("s-none"), null, delegates);
+        Assert.Equal(("codex", "claude-code", (string?)null), (delegates.AgentOf("s-codex"), delegates.AgentOf("s-chat"), delegates.AgentOf("s-none")));
+
+        var registry = ProviderRegistry.Built();
+        Assert.Equal(("codex", "claude-code"), (ProviderRegistry.AgentNameOf(registry.Door("codex-acp")), ProviderRegistry.AgentNameOf(registry.Door("claude-code-acp"))));
+        Assert.All(registry.Names, door => Assert.Contains(ProviderRegistry.AgentNameOf(registry.Door(door)), registry.Agents));
+    }
+
+    /// <summary>Every start the driver composes names the registry its key is drawn in and the agent it runs: a start handed none would hold no key.</summary>
     [Fact]
     public void Every_start_the_driver_composes_names_where_its_key_is_drawn()
     {
@@ -64,6 +79,7 @@ public sealed class DelegateKeyStripTests
                 {
                     var statement = code[at..code.IndexOf(';', at)];
                     Assert.True(statement.Contains("elegates", StringComparison.Ordinal), $"{Path.GetFileName(file)}: `{statement}` names no registry");
+                    Assert.True(statement.Contains("agent: ", StringComparison.Ordinal), $"{Path.GetFileName(file)}: `{statement}` names no agent");
                     calls++;
                 }
             }

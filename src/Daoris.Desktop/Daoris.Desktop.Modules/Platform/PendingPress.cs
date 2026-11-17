@@ -29,6 +29,8 @@ public sealed class PendingPress
 
     public string Session { get; }
 
+    internal string? Agent { get; init; }
+
     /// <summary>The route pressed, <c>module.type</c>.</summary>
     public string Route { get; }
 

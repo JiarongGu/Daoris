@@ -206,6 +206,22 @@ public sealed class SettleDoorTests : IDisposable
         Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Approve, null, () => _now, epoch: 1).Done);
     }
 
+    /// <summary>A session's own press speaks as its start's agent; a name no holder takes, or an appointed role's act, the unnamed agent.</summary>
+    [Theory]
+    [InlineData("agent:codex", null)]
+    [InlineData("agent:claude-code", SettleDoor.NotHolder)]
+    public void A_sessions_press_speaks_as_its_named_agent_and_settles_only_a_step_cast_to_it(string cast, string? refused)
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, cast, null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+
+        var session = SettleBy.OfChannel(TerminalTierBy.Session, false, 1, "codex");
+        Assert.Equal("agent:codex", session!.Who);
+        Assert.Equal(refused, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released", () => _now, epoch: 1, settle: session).Refused);
+        Assert.Equal(CastHolders.Agent, SettleBy.OfChannel(TerminalTierBy.Session, false, 1, "Not A Name")!.Who);
+        Assert.Equal(CastHolders.Agent, SettleBy.OfChannel(TerminalTierBy.Card, true, null, "codex")!.Who);
+    }
+
     [Fact]
     public void An_owner_stop_from_a_stale_row_is_admitted()
     {

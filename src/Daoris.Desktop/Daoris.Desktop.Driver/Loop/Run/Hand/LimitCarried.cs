@@ -57,7 +57,9 @@ internal static class LimitCarried
     public static ProcessStartInfo? Prepared(LoopContext context, AgentDoor door, SessionTarget target, CarryPlan.Carried carried) =>
         door.Can.ResumesByRestart
             ? context.Adapters.Resume(
-                door, SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(door.Id.Value), context.Processes.Delegates) with { Resume = carried.Conversation })
+                door,
+                SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(door.Id.Value), context.Processes.Delegates, agent: ProviderRegistry.AgentNameOf(door))
+                    with { Resume = carried.Conversation })
             : null;
 
     /// <summary>Takes the copy of a carry the door would not resume out of the account's home it lies in.</summary>

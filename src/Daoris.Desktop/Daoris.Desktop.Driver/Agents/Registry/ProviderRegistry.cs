@@ -178,10 +178,14 @@ public sealed class ProviderRegistry
     }
 
     /// <summary>
-    /// The door's account key: its harness's <c>accountOf</c> verbatim, else its provider's id, never followed further,
-    /// and the name itself for a door with no program.
+    /// The door's account key: its harness's <c>accountOf</c> verbatim, else its provider's id, never followed further, and the name itself for
+    /// a door with no program; <see cref="AgentNameOf"/> reads it off the door as the agent a session on it runs as (<c>codex-acp</c> as <c>codex</c>).
     /// </summary>
-    public AccountKey OwnerOf(DoorId door) => Entry(door).Door.AccountOf ?? new AccountKey(door.Value);
+    public AccountKey OwnerOf(DoorId door) => KeyOf(Entry(door).Door);
+
+    public static string AgentNameOf(AgentDoor door) => KeyOf(door).Value;
+
+    private static AccountKey KeyOf(AgentDoor door) => door.AccountOf ?? new AccountKey(door.Id.Value);
 
     /// <summary>
     /// The owner of the account of an agent a person or a record names, door or not: a door's key, a provider's, else the name itself.
