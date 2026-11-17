@@ -1,11 +1,8 @@
-/**
- * The steps of `npm run quick`: the index and the contracts written, each check of the merge's `cli` gate (`tools/verify-checks/steps.mjs`,
- * the one list the gate runs) but its time judgements, then the layers' census's source counts. Quick judges no test time: the merge's
- * gates and the full set judge it, on classes measured again alone, so load never reddens quick.
- */
+/** The steps of `npm run quick`: the index and the contracts written (`WRITERS`, first and alone), each check of the merge's `cli` gate
+ * (`tools/verify-checks/steps.mjs`, the one list) but its time judgements, then the layers' census's source counts. Quick judges no test
+ * time: the merge's gates and the full set judge it, on classes measured again alone, so load never reddens quick. */
 import { CHECK_STEPS } from '../verify-checks/steps.mjs';
 
-/** The steps that write what the others read: run first, alone. */
 export const WRITERS = ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale'];
 const AFTER = ['node tools/layers-census.mjs --counts'];
 

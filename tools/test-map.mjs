@@ -26,12 +26,10 @@
  * 2. **Placement**: every tracked file is in a module, a lane, or the laneless list.
  * 3. **Hand rows**: each fixture row of `REACH` (a twin's table) names exactly the gates whose units the census finds reading it.
  * 4. **Subjects**: a git-half class at its project's root declares its subject.
- * 5. **Whole-suite files**: every file that acts on a suite's units unnamed is on `tools/test-map.json`'s list, and every
- *    listed file exists.
+ * 5. **Whole-suite files**: every file that acts on a suite's units unnamed is on `tools/test-map.json`'s list, which names no gone file.
  * 6. **Expected edges** are the tool-tests' fixtures, one per edge kind.
  * 7. **Skips**: a statically skipped test's reason begins with a row open in `TASKS.md`.
- * 8. **Check steps**: each step of the `cli` gate declares every path its command's code reads (`tools/verify-checks/reads.mjs`), since
- *    a merge runs a step only where a changed path is one it declares.
+ * 8. **Check steps**: each step of the `cli` gate declares every path its command's code reads (`tools/verify-checks/reads.mjs`).
  *
  *   node tools/test-map.mjs census [<suite>…]            every unit with its subject and the size of its reach
  *   node tools/test-map.mjs reach <from> <to> [<suite>…]  the units the paths changed between two commits reach

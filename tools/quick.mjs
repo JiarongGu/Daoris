@@ -1,13 +1,10 @@
 #!/usr/bin/env node
 /**
- * The quick checks a builder runs before it hands back: every step of `tools/quick/steps.mjs` runs whatever an earlier one did, the
- * writers first and the rest side by side as the `cli` gate runs them (`tools/verify-checks/run.mjs`), each red is said with its output,
- * and the end says which reds are new and which the base already stood in. No step judges test time.
- *
+ * The quick checks a builder runs before it hands back: the steps of `tools/quick/steps.mjs` as the `cli` gate runs them, writers first
+ * and the rest side by side, each red said with its output, and which reds are new and which the base (main at the merge base of HEAD
+ * with main, `tools/quick/base.mjs`, never the tree as it stands) already stood in. No step judges test time.
  *   node tools/quick.mjs                run every step; exit 0 all green, 1 a red, 2 a tool error
  *   node tools/quick.mjs --record-base  run every step at the base instead and record it (`local/quick-base.json`)
- *
- * The base is main at the merge base of HEAD with main (`tools/quick/base.mjs`), never the tree as it stands.
  */
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

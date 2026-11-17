@@ -59,8 +59,8 @@
  * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
  * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
  * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet. A gate
- * reading the changed paths names `{base}` (`withBase`): HEAD in place, the base in a committed tree; or reads them from
- * `MERGE_BRANCH_CHANGED`, which a run scoped by reach hands every step (`merge/gate-hands.ts`).
+ * reading the changed paths names `{base}` (`withBase`): HEAD in place, the base in a committed tree; or reads
+ * `MERGE_BRANCH_CHANGED`, which a run by reach hands every step (`merge/gate-hands.ts`).
  *
  * ## A fixed gate re-runs alone
  *
