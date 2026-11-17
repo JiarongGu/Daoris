@@ -13,7 +13,7 @@ internal static class CensusMarks
     /// </summary>
     internal static readonly string[] Diff =
     [
-        "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",
+        "CheckoutWritersCensusTests", "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",
         "GitKeepersCensusTests", "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "HeldFactsTests", "LandedByIdsCensusTests",
         "LineAccountCallersCensusTests", "LoopbackListensTests", "NoConsoleWindowTests", "OrderReadersCensusTests", "PermissionWritersCensusTests",
         "ProcessHomeCensusTests", "ShellStructureTests", "StepAuthorityCensusTests", "StewardNotesTests", "StructureTests",
@@ -29,7 +29,7 @@ internal static class CensusMarks
     internal static readonly string[] Whole =
     [
         "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
-        "CensusReachTests", "CheckoutWritersCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
+        "CensusReachTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
         "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
