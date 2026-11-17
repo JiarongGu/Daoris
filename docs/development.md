@@ -184,7 +184,12 @@ Main is the development branch, and the cycle's aim is main green and the instal
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
    over named for the CI. The gate reads the paths from the base the run hands it in its `{base}`: HEAD for a merge in place, the
    candidate's base in the queue's committed scope tree, the merge base in a preflight's committed branch, so a committed tree's
-   reached units run as an open merge's do. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   reached units run as an open merge's do. Its time goes to tests: it reads the census once per content tree (kept under
+   `_fixtures/reached-census/`, so the test-map gate's reading or an earlier run's on the same tree serves it), restores and builds
+   each test project once, not where its stamp under `_fixtures/reached-build/` still holds its inputs and output, and runs each
+   project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. Each step
+   (census, plan, restore and build per project, discovery and run per suite) is said as it goes and kept in the merge record's
+   `steps`, so a gate killed over its budget names the step it was in. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
    `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row

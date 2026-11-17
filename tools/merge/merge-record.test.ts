@@ -75,3 +75,11 @@ test('the summary gives the median wall time and the flakes of the records that 
   assert.equal(sum.flakes, 3);
   assert.deepEqual(summarize([older]).wall, { measured: 0, medianMs: null, totalMs: 0 });
 });
+
+test("the summary gives the median of the reached gates' time outside their tests, of those that kept their steps", () => {
+  const steps = (build: number) => [{ step: 'census', ms: 1000 }, { step: `build A`, ms: build }, { step: 'discovery driver', ms: 2000 }, { step: 'run driver', ms: 60_000 }];
+  const runs = [10_000, 100_000, 40_000].map((build, at) => buildRecord({ ...base, branch: `b${at}`, gates: [gate('reached', { steps: steps(build) }), gate('censuses', { steps: steps(1) })] }));
+  const before = buildRecord({ ...base, branch: 'before', gates: [gate('reached')] });
+  assert.deepEqual(summarize([...runs, before]).reachedOutside, { measured: 3, medianMs: 43_000 }, 'every step but a run, of the reached gate alone');
+  assert.deepEqual(summarize([before]).reachedOutside, { measured: 0, medianMs: null });
+});

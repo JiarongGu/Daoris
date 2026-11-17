@@ -10,7 +10,7 @@ import type { StoredVerdict } from './verdict-store.ts';
 import { PassedClasses, classKey, unitId, type KeyContext, type Unit } from './class-reuse.ts';
 import { fixtureFolder } from './fixture-home.ts';
 import { classPass, planClasses, recordPasses, replayLine } from './full-replay.ts';
-import { reuseContext } from './reached-reuse.ts';
+import { reuseContext, type ReuseMemo } from './reached-reuse.ts';
 
 const a: Unit = { suite: 'driver-process-git', unit: 'G.Tests.OneTests' };
 const b: Unit = { suite: 'driver-process-git', unit: 'G.Tests.TwoTests' };
@@ -141,4 +141,29 @@ test('the run settings a gate names are part of its declaration', () => {
   }).declaration('driver-process');
   assert.notEqual(declared('<Filter>A</Filter>'), declared('<Filter>B</Filter>'));
   assert.equal(declared('<Filter>A</Filter>'), declared('<Filter>A</Filter>'));
+});
+
+test("a .NET suite's candidate files and their placements are kept for the next reading of the same tree, which places no file again and keys alike", () => {
+  const census = { classes: [{ full: 'T.GitTests', reach: ['src/Git'] }], sources: ['src/Git'] };
+  const map = { dotnet: [{ suite: 'driver', project: 'src/T', census }], units: [{ suite: 'driver', kind: 'dotnet', unit: 'T.GitTests', name: 'GitTests', file: 'src/T/GitTests.cs', project: 'src/T' }] };
+  const files = ['src/T/GitTests.cs', 'src/Git/Run.cs', 'docs/a.md'];
+  let asked = 0;
+  const pathReach = (path: string) => { asked += 1; return path.startsWith('docs/') ? { none: true } : { whole: true }; };
+  const read = (path: string) => `text of ${path}`;
+  const make = (memo: { value: ReuseMemo; changed: () => void }) => reuseContext({
+    map, files, read, toolchain: 't', gates: [], memo,
+    readers: { tsSuites: [], tsReaches: () => false, unitReaches: () => true, pathReach },
+  });
+  let changed = 0;
+  const kept: ReuseMemo = {};
+  const first = make({ value: kept, changed: () => { changed += 1; } });
+  const unit = map.units[0]!;
+  const key = classKey(unit, first);
+  assert.equal(asked, 3);
+  assert.equal(changed, 1);
+  assert.deepEqual(kept.candidates?.['driver|src/T'], { files: ['src/T/GitTests.cs', 'src/Git/Run.cs'], placed: [{ whole: true }, { whole: true }] });
+  const again = make({ value: JSON.parse(JSON.stringify(kept)) as ReuseMemo, changed: () => { changed += 1; } });
+  assert.equal(classKey(unit, again), key);
+  assert.equal(asked, 3, 'nothing placed again');
+  assert.equal(changed, 1, 'nothing new to keep');
 });

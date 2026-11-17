@@ -37,7 +37,8 @@ builder's minutes.
 the test runners' own reported durations (dotnet's `Duration`, Vitest's, `node --test`'s `duration_ms`) sum to 130 minutes (**32%**).
 The other **68%** (median 6.5 min a merge, 7.0 where a .NET group ran) is restore and build of up to three test projects, test discovery
 over a 21,000-case assembly once per `dotnet test` (two to six a merge), the plan's census read (about a minute, MERGEFLOW1b), runner
-start-up and re-runs alone. The split between those is not recorded; REACHCOST1 records it first.
+start-up and re-runs alone. The merges before REACHCOST1 did not record the split; since it, each `reached` gate keeps its step clocks
+(census, plan, restore and build per project, discovery and run per suite) in the merge record's `steps`.
 
 **Why merges fail:** of 53 failed attempts, the failing gate was `reached` 29 times, the time ratchet 17, `cli` 16, `censuses` 8,
 `web-rules` 3, `test-map` 2, the rest once each (a run can fail on several). The time ratchet's 17 are the timing breaches the owner's
@@ -265,7 +266,7 @@ and machine minutes in brackets. Estimates; each row's proof measures its own.
 What changes: the gate records a clock per step (plan, restore, each project's build, discovery, each run, the re-runs alone) into the
 merge record; each tree's test projects are built once and every group and later gate runs `--no-build --no-restore` (rule 22 says so
 for gates; `reached`'s groups each call `dotnet test` and so each build and discover); a project's reached classes run in one
-`dotnet test` with the list in a generated run-settings filter, not in 120-class command chunks; the plan's census read is cached by
+`dotnet test` whose command-line filter names them all (split only past 24,000 characters), not in 120-class command chunks; the plan's census read is cached by
 tree hash; the light gates run beside `reached`'s build, not before it. Tests that move or go: none. Selection: unchanged. What proves
 nothing was lost: the same `reached-classes` counts (ran, replayed) for the same plan, before and after, on five replayed merges. Saves
 about 3.5 of the 6.5 non-test minutes on each of about 16 reached-style runs a builder-day (six hand-backs, ten merge attempts). Depends

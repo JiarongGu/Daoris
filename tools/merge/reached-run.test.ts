@@ -7,6 +7,7 @@ import { classify, mainStandsRed, outcomeLine, parseOutcome } from './reached-cl
 import { runPlan, type Exec } from './reached-run.ts';
 import type { ReachedPlan, ReachedUnit } from './reached.ts';
 import { vitestFailures } from './file-passes.ts';
+import { StepClock } from './reached-steps.ts';
 
 const unit = (name: string): ReachedUnit => ({ suite: 'tool-tests', kind: 'node', unit: `src/Daoris.Cli/tool-test/${name}.test.ts`, name, file: `src/Daoris.Cli/tool-test/${name}.test.ts` });
 const planOf = (...names: string[]): ReachedPlan => ({ groups: [{ runner: 'node', suite: 'tool-tests', units: names.map(unit) }], left: {}, reached: names.length, replayed: {} });
@@ -34,6 +35,34 @@ test('a clean run records each class it ran and says how many ran and were repla
   assert.deepEqual(outcome, { ran: 2, replayed: 7, flaked: [], mainRed: [], red: [], deferred: ['driver-process|C'] });
   assert.equal(store.has(unitId(unit('a')), 'key-a'), true);
   assert.deepEqual(parseOutcome(lines.join('\n')), outcome);
+}));
+
+test('each test project is built once before its classes, which run on that build; a project whose build failed has its classes red unrun; the outcome says what stands built and each step', () => withStore(async (store, root) => {
+  const dotnetUnit = (project: string, name: string): ReachedUnit => ({ suite: 'driver', kind: 'dotnet', unit: `D.${name}`, name, file: `${project}/${name}.cs`, project });
+  const plan: ReachedPlan = {
+    groups: [
+      { runner: 'dotnet', suite: 'driver', project: 'src/D.Tests', settings: null, units: [dotnetUnit('src/D.Tests', 'ATests'), dotnetUnit('src/D.Tests', 'BTests')] },
+      { runner: 'dotnet', suite: 'modules', project: 'src/M.Tests', settings: null, units: [dotnetUnit('src/M.Tests', 'MTests')] },
+    ],
+    left: {}, reached: 3, replayed: {},
+  };
+  const built: string[][] = [];
+  const run = exits([0]);
+  const lines: string[] = [];
+  const clock = new StepClock((line) => lines.push(line));
+  const outcome = await runPlan({
+    root, plan, keys: new Map(), store, exec: run.exec, say: (line) => lines.push(line), mainRedOf: () => false, clock,
+    build: async (projects) => { built.push(projects); return { ready: ['src/D.Tests'], failed: new Map([['src/M.Tests', 'its build failed (exit 1)']]) }; },
+  });
+  assert.deepEqual(built, [['src/D.Tests', 'src/M.Tests']], 'every project built once, before any class runs');
+  assert.equal(run.calls.length, 1, 'the project whose build failed runs nothing');
+  assert.deepEqual(run.calls[0]!.slice(0, 2), ['test', 'src/D.Tests']);
+  assert.ok(run.calls[0]!.includes('--no-build') && run.calls[0]!.includes('--no-restore'));
+  assert.deepEqual(outcome.red, ['driver|D.MTests']);
+  assert.deepEqual(outcome.built, ['src/D.Tests']);
+  assert.deepEqual(outcome.steps?.map((step) => step.step), ['run driver']);
+  assert.ok(lines.some((line) => /modules: 1 class\(es\) not run: src\/M\.Tests its build failed/.test(line)));
+  assert.deepEqual(parseOutcome(lines.join('\n'))?.built, ['src/D.Tests']);
 }));
 
 test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore(async (store, root) => {
