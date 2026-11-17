@@ -580,6 +580,8 @@ export function trxSkipped(trx) {
   return [...skipped].sort();
 }
 
+const withCensus = (tree) => ({ ...tree, map: census(tree.files, tree.read) });
+
 async function main(argv) {
   const [verb, ...rest] = argv;
   const root = process.cwd();
@@ -623,8 +625,7 @@ async function main(argv) {
   // `--check` is the gate's spelling, as the merge tool reads a check's (`gateKind`).
   if (verb === 'check' || verb === '--check') {
     const commit = option('--commit');
-    const { files, read } = treeOf(root, commit);
-    const map = census(files, read);
+    const { files, read, map } = commit ? withCensus(treeOf(root, commit)) : (await import('./merge-branch/full-set.mjs')).workingCensus(root);
     const { readLanes, laneMatcher, unionRecords, REACH, BASELINE } = await import('./merge-branch.mjs');
     const lanesRead = commit ? null : readLanes(root);
     const listedFile = join(root, 'tools/test-map.json');

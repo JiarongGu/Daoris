@@ -24,6 +24,10 @@
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
  * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
+ * Its time goes to tests: the census is read once per content tree (`merge/census-cache.ts`), each test project built once and its
+ * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), and each step says a `reached-step: {…}` line
+ * as it starts and ends, so the merge records them and names the step a kill cut (`merge/reached-steps.ts`).
+ *
  * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
  * one the merge queue's gates take, and says what it waits for; a light group runs at once. The place is let go as the group ends,
  * and by this process's death where it is killed. The merge's own `reached` gate runs inside the queue's place, with no Daoris home,
@@ -45,6 +49,8 @@ import { deferredLines, splitTier, tierNamed } from './merge/heavy-tier.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
 import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
+import { buildInputs, buildOnce, inputsDigest, treeIds } from './merge/reached-build.ts';
+import { StepClock } from './merge/reached-steps.ts';
 import { inPlace } from './merge/reached-admit.ts';
 import { createAdmission } from './machine-admission.mjs';
 import { loadSampler, stampLoad } from './time-load.mjs';
@@ -85,10 +91,11 @@ export function changedPaths(root, base = 'HEAD') {
 
 export const storeFile = (root) => storeIn(verdictsHome(root));
 
-/** The plan for `paths` over the tree at `root`, what it replays from standing passes, what it leaves to the night, and each unit's key. */
-export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 'all' } = {}) {
+/** The plan for `paths` over the tree at `root` (its key context `world`), what it replays and leaves to the night, and each unit's key. */
+export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 'all', world = null } = {}) {
   if (paths.length === 0 && classes.length === 0) return { plan: reachedPlan([], paths, { processSuites: new Set() }), night: {}, keys: new Map(), replayed: 0, deferred: [] };
-  const { map, gates, gatesText, context } = keyContextOf(root);
+  const read = world ?? keyContextOf(root);
+  const { map, gates, gatesText, context } = read;
   const processSuites = processSuitesOf(gates);
   // A unit is reached where a changed path is one of its key's inputs: the census's reach, less the paths no test can read.
   // Classes a builder names are run whatever they reach, and the dependency classes among them too.
@@ -99,12 +106,24 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
     ? { units: reached, night: {} }
     : unitsOfMerge(reached, paths, { tiers: tiersOf(gatesText), reaches: context.reaches, processSuites, everything: tier === 'heavy' });
   const { kept: units, deferred: heavy } = splitTier(considered, tier, processSuites);
-  const { run, replayed, keys } = splitByReuse(units, (unit) => classKey(unit, context), store);
-  const deferred = splitByReuse(heavy, (unit) => classKey(unit, context), store).run;
+  const keyOf = read.classKeyOf ?? ((unit) => classKey(unit, context));
+  const { run, replayed, keys } = splitByReuse(units, keyOf, store);
+  const deferred = splitByReuse(heavy, keyOf, store).run;
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
   const counted = run.map((unit) => ({ ...unit, hops: unitHops(unit, paths, map) }));
   return { plan: reachedPlan(counted, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
+}
+
+/** The digest of what the build of `project` reads on the tree `world` reads, or null where git cannot list it. */
+function inputsOf(root, world, project) {
+  if (!world?.tree) return null;
+  try {
+    const inputs = buildInputs(project, world.files, world.read);
+    return inputsDigest(inputs, (paths) => treeIds(root, world.tree, paths), `${world.toolchain.dotnet}\0${world.privates}`);
+  } catch {
+    return null;
+  }
 }
 
 const readJson = (file) => {
@@ -134,24 +153,33 @@ async function main(argv) {
   const tier = tierNamed(valueOf(argv, '--tier')) ?? 'all';
   const everything = argv.includes('--unbounded') || classes.length > 0 || tier === 'heavy';
   const bounds = everything ? { dotnet: Infinity, vitest: Infinity, node: Infinity } : {};
-  const { plan, night, keys, replayed, deferred } = planFor(root, paths, store, { bounds, classes, tier });
-  for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) console.log(line);
+  const say = (line) => console.log(line);
+  const clock = new StepClock(say);
+  const world = paths.length || classes.length ? await clock.time('census', () => keyContextOf(root)) : null;
+  if (world) say(`reached: the census of this tree was ${world.hit ? 'read from its cache' : 'read, and kept for this tree'}`);
+  const { plan, night, keys, replayed, deferred } = await clock.time('plan', () => {
+    const planned = planFor(root, paths, store, { bounds, classes, tier, world });
+    world?.keep();
+    return planned;
+  });
+  for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) say(line);
   if (argv.includes('--plan')) {
-    for (const each of reachedCommands(plan)) console.log(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
+    for (const each of reachedCommands(plan)) say(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);
     return 0;
   }
   const checkout = verdictsHome(root);
   const findings = readJson(join(checkout, CI_FINDINGS)).findings ?? [];
   const verdicts = readJson(join(checkout, CLASS_VERDICTS_FILE)).gates ?? {};
   const admission = builderAdmission();
-  const processSuites = processSuitesOf(keyContextOf(root).gates);
+  const processSuites = world ? processSuitesOf(world.gates) : new Set();
   const startedAt = Date.now();
   const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say: (line) => console.log(line),
+    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock,
     exec: execAsync,
     inPlace: (group, fn) => inPlace(group, { admission, processSuites }, fn),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
+    build: (projects) => buildOnce(projects, { root, exec: execAsync, say, time: (step, fn) => clock.time(step, fn), inputsOf: (project) => inputsOf(root, world, project) }),
   });
   load.stop();
   stampLoad(join(root, '_fixtures', 'test-timing'), load.peak(), startedAt);
