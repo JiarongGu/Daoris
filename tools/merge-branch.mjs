@@ -115,7 +115,7 @@
  * worktree git lists), whichever worktree it is in, under a lock beside the file, so a merge's verdict and the full
  * set's never write over each other. Verdicts are keyed by tree, so `--passed` in the main checkout judges its own tree
  * and `--passed` in the gate tree, which the stage asks, the gate tree's. A judgement asks git every tree it compares at once
- * and keeps each pair's paths (`merge/tree-drift.ts`); a write drops what is past its use (`merge/verdict-keep.ts`).
+ * and keeps each pair's paths (`merge/tree-drift.ts`); what is past its use is neither read nor written again (`merge/verdict-keep.ts`).
  * - **Few starts.** A run's start asks git once for each kind of fact (`tools/merge/home.ts`): one `rev-parse` for the
  * top, git and common folders, one worktree listing passed along, one `check-ignore --stdin` for every path a verb needs ignored.
  * - **One at a time.** The run holds `GATE_TREE_LOCK` (its pid, commit and start) in the main checkout; a second is refused,
@@ -808,26 +808,23 @@ function refreshKnowledgeServer(root) {
 // ---------------------------------------------------------------------------------------------------
 // The verdicts record: which gate passed which tree
 
-/** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
+/** `local/gate-verdicts.json` without what is past its use (`inUse`), or an empty record where there is none or it does not read. */
 export function readVerdicts(root) {
   const file = join(root, VERDICTS_FILE);
   if (!existsSync(file)) return { schema: 1, verdicts: [] };
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    return { schema: 1, verdicts: Array.isArray(parsed?.verdicts) ? parsed.verdicts.filter((entry) => typeof entry?.gate === 'string') : [] };
+    return { schema: 1, verdicts: Array.isArray(parsed?.verdicts) ? inUse(parsed.verdicts.filter((entry) => typeof entry?.gate === 'string')) : [] };
   } catch {
     return { schema: 1, verdicts: [] };
   }
 }
 
-/**
- * Verdicts appended, newest last, the oldest of a gate dropped past `keep` and those past their use (`merge/verdict-keep.ts`):
- * written beside, then renamed.
- */
+/** Verdicts appended to those in use, newest last, the oldest of a gate dropped past `keep` (`keptVerdicts`): written beside, then renamed. */
 export function addVerdicts(root, entries, { keep = VERDICTS_KEPT_PER_GATE } = {}) {
   const file = join(root, VERDICTS_FILE);
   holdingLock(file, () => {
-    const verdicts = keptVerdicts(inUse([...readVerdicts(root).verdicts, ...entries]), keep);
+    const verdicts = keptVerdicts([...readVerdicts(root).verdicts, ...entries], keep);
     const record = {
       schema: 1,
       _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',

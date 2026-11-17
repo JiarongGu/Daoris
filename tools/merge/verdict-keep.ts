@@ -1,8 +1,8 @@
 /**
- * Which verdicts the gate store (`local/gate-verdicts.json`) keeps as each is written: of each gate, a count of the newest, the
- * scoped run's apart from every other kind's; and of those, none past its use (VERDICTSCAN1). Every reader of the store judges
- * each verdict it keeps, and a verdict on a tree a month behind main differs from main by nearly every path, so it stands for no
- * gate and costs its judgement a diff of thousands of paths.
+ * Which verdicts of the gate store (`local/gate-verdicts.json`) are kept: none past its use, which the store's reader leaves out
+ * and so its next write drops (VERDICTSCAN1); and of each gate a count of the newest, the scoped run's apart from every other
+ * kind's. A judgement compares each verdict it reads with the checkout's tree, and a verdict on a tree a month behind main
+ * differs from main by nearly every path: it stands for no gate and costs the judgement a diff of thousands of paths.
  */
 
 type Kept = { gate: string; verdict: string; at?: string; kind?: string | null };
@@ -14,9 +14,9 @@ type Kept = { gate: string; verdict: string; at?: string; kind?: string | null }
 export const VERDICTS_KEPT_PER_GATE = 40;
 
 /**
- * How long a verdict is kept once it is no longer its gate's newest, nor its newest pass: a week. The nightly run gives every
- * gate a verdict each night, so a gate's verdicts past a week are behind a newer one of its own; and main moves by thousands of
- * paths in a week, so an older tree stands for no gate a change can reach.
+ * How long a verdict is of use once it is no longer its gate's newest, nor its newest pass: a week. Main moves by thousands of
+ * paths in a week (on 2026-11-18 every tree of the store older than ten days differed from main's by over 10,000), so an older
+ * tree stands for no gate a change can reach.
  */
 export const VERDICTS_KEPT_DAYS = 7;
 

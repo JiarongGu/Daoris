@@ -241,14 +241,15 @@ Main is the development branch, and the cycle's aim is main green and the instal
 `tools/merge-branch.mjs` is this repository's integration tool. It reads declared gates and lane
 ownership, regenerates indexes, and records verdicts in the main checkout's `local/gate-verdicts.json`,
 keyed by tree, whichever worktree runs it. The store keeps 40 verdicts of each gate for the scoped run and 40 for the rest,
-and drops one a week old unless it is its gate's newest or its newest pass (`tools/merge/verdict-keep.ts`): a tree a week
-behind main differs from it by thousands of paths and stands for no gate. A judgement of the store (a preflight's or the queue's
-plan, the CI's, `--passed`) compares the checkout's tree with every verdict's tree: it asks git each pair it lacks at once, 64 pairs
-a `git diff-tree --stdin`, keeps each answer by its pair of tree ids under the main checkout's `local/scratch/tree-drift/` (a tree
-never changes; the newest eight judged trees' files stay, `tools/merge/tree-drift.ts`), and places each changed path by the lane
-table once whichever gate asks (`reachingOf`), so the plan reads the store in seconds, not a git start and a placing of thousands
-of paths per verdict (VERDICTSCAN1). Inspect a branch's plan before integration; use its
-resume/retry commands when a merge is already open:
+and a verdict a week old is past its use unless it is its gate's newest or its newest pass (`tools/merge/verdict-keep.ts`):
+no reader reads it and the next write drops it, since a tree a week behind main differs from it by thousands of paths and
+stands for no gate. So `node tools/test-recall.mjs` finds a week of gate failures there; the CI's records hold more. A
+judgement of the store (a preflight's or the queue's plan, the CI's, `--passed`) compares the checkout's tree with every
+verdict's tree: it asks git each pair it lacks at once, 64 pairs a `git diff-tree --stdin`, keeps each answer by its pair of
+tree ids under the main checkout's `local/scratch/tree-drift/` (a tree never changes; the newest eight judged trees' files
+stay, `tools/merge/tree-drift.ts`), and places each changed path by the lane table once whichever gate asks (`reachingOf`).
+The plan reads the store in seconds, not a git start and a placing of thousands of paths per verdict (VERDICTSCAN1). Inspect
+a branch's plan before integration; use its resume/retry commands when a merge is already open:
 
 ```sh
 node tools/merge-branch.mjs <branch> --preview
