@@ -74,9 +74,10 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   const stillFailed: FailedUnit[] = [];
   const passedAlone = new Set<string>();
   const projects = [...new Set(plan.groups.flatMap((group) => (group.runner === 'dotnet' && group.project !== undefined ? [group.project] : [])))];
-  const builds = options.build && projects.length ? await options.build(projects) : { ready: [], failed: new Map<string, string>() };
-  const ready = new Set(builds.ready);
   const { halt } = options;
+  // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
+  const builds = options.build && projects.length && !halt?.asked() ? await options.build(projects) : { ready: [], failed: new Map<string, string>() };
+  const ready = new Set(builds.ready);
   // The classes a newer heavy tier's halt leaves to it: those of the groups not started, and of a group whose command it ended.
   const handed: string[] = [];
   const hand = (units: readonly { suite: string; unit: string }[]): void => { handed.push(...units.map(unitId)); };

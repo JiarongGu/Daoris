@@ -22,6 +22,11 @@
  *
  * Nothing here is a decision about what a gate checks: a gate admitted later runs the same, and a wait is never a timeout or a
  * failure. With no Daoris home (no `DAORIS_HOME`) nothing is shared and nothing waits.
+ *
+ * The heavy tier after a landing (`tools/heavy-run.mjs`) takes its places through its reached run, one tier at a time
+ * (`merge/heavy-stack.ts`: a newer landing's supersedes the one before it), so landings in a row hold one place, not one each.
+ * It takes them with a `bound`, so a tier that waits past `WAIT_BOUND_MS` says so on a `heavy tier:` line, and a newer tier's
+ * halt ends its wait (`halted`).
  */
 import { randomBytes } from 'node:crypto';
 import {
@@ -179,12 +184,13 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
  * `takeWhole` takes every place at once, for a confirm run: see its own contract below.
  *
  * `daorisHome` null admits everything at once. A wait is said as it starts, each `sayMs` and as its holders change, with `patience`
- * (how long it waits). The seams (`alive`, `now`, `sleep`, `say`, `readText`, `writeText`) are a test's.
+ * (how long it waits). A `bound` (`{ ms, say(waitedMs, sentence) }`, a heavy tier's) is told once a wait passes `ms`, and again
+ * at each `ms` more, with what it waits for; it ends no wait. The seams (`alive`, `now`, `sleep`, `say`, `readText`, `writeText`) are a test's.
  */
 export function createAdmission({
   daorisHome = process.env.DAORIS_HOME ?? null, kind = 'queue', capacity = null, alive = processAlive, now = Date.now,
   sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), say = console.log, pollMs = POLL_MS, sayMs = SAY_MS, beatMs = BEAT_MS, env = process.env,
-  readText = (path) => readFileSync(path, 'utf8'), writeText = writeAtomic, patience = 'it never times out',
+  readText = (path) => readFileSync(path, 'utf8'), writeText = writeAtomic, patience = 'it never times out', bound = null,
 } = {}) {
   let file = null;
   try {
@@ -242,6 +248,7 @@ export function createAdmission({
     };
     let saidAt = null;
     let saidOf = '';
+    let bounded = 0;
     const waitedFrom = now();
     for (;;) {
       let verdict;
@@ -268,6 +275,11 @@ export function createAdmission({
         return null;
       }
       const judged = judge(verdict, id, size());
+      const waited = now() - waitedFrom;
+      if (bound && waited >= bound.ms * (bounded + 1)) {
+        bounded = Math.floor(waited / bound.ms);
+        bound.say(waited, waitingSentence(judged, { capacity: size(), now: now() }));
+      }
       const key = `${judged.holds.map((each) => each.id).join(',')}/${judged.ahead}`;
       if (saidAt === null || now() - saidAt >= sayMs || key !== saidOf) {
         say(`  waiting for the machine's heavy-run admission before ${entry.what}${saidAt === null ? '' : ` (${spanOf(now() - waitedFrom)} so far)`}: ${waitingSentence(judged, { capacity: size(), now: now() })}; ${patience}, and looks again every ${Math.round(pollMs / 1000)}s`);
