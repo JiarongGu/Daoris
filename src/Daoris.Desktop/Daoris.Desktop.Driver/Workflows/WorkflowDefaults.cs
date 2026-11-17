@@ -72,6 +72,15 @@ public static class WorkflowDefaults
     }
 
     /// <summary>
+    /// Whether <paramref name="newest"/>, a saved workflow's newest version, is a copy of <paramref name="shipped"/> (named <paramref name="defaultId"/>
+    /// in its stamp) with the gates a variant asks for. A copy is known by its graph read as this build reads it (a former kind as the kind now:
+    /// <see cref="HumanFormerKind"/>), never by its own digest, which stays as saved so a bound run keeps its identity.
+    /// </summary>
+    public static bool IsCopy(NamedVersion newest, string defaultId, WorkflowDefault shipped, bool opinion, bool look, string? plugin = null, string? pattern = null) =>
+        newest is { From: { } from, Graph: { } graph } && from.Default == defaultId
+        && NodeGraphs.Digest(graph) == NodeGraphs.Digest(NodeGraphs.Read(Variant(shipped, opinion, look, plugin, pattern).ToJsonString()).Graph!);
+
+    /// <summary>
     /// The shipped default a copy is behind: the one its newest version's <c>from</c> names, where this build
     /// ships a digest other than the one stamped, with the graph the copy's next version would be, which keeps the gates the copy has. Null for a
     /// copy that is up to date, one stamped by none, or one copied from a default this build does not ship.

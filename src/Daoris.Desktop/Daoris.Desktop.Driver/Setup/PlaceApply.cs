@@ -272,11 +272,10 @@ public static class PlaceApplies
     /// Whether the home holds the copy a <c>WORKFLOW_SAVE</c> operation names: its newest version copies the same default with the same
     /// gates. The operation is idempotent, so a newest version with the planned digest already there reads as done.
     /// </summary>
-    private static bool CopySaved(string home, PlaceOperation save) =>
+    internal static bool CopySaved(string home, PlaceOperation save) =>
         WorkflowDefaults.Of(save.Default) is { } shipped
-        && WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., { From: { } from, Digest: { } digest }] } }
-        && from.Default == save.Default
-        && digest == NodeGraphs.Digest(NodeGraphs.Read(WorkflowDefaults.Variant(shipped, save.Opinion, save.Look, save.Plugin, save.Pattern).ToJsonString()).Graph!);
+        && WorkflowPorts.Store(home).Load(save.Workflow!) is { Read: { Problem: null, Versions: [.., var newest] } }
+        && WorkflowDefaults.IsCopy(newest, save.Default!, shipped, save.Opinion, save.Look, save.Plugin, save.Pattern);
 
     /// <summary>
     /// The first operation of an apply, one copy of a shipped default saved (<c>WORKFLOW_SAVE</c>) through the window's own save. <c>uncertain</c>
