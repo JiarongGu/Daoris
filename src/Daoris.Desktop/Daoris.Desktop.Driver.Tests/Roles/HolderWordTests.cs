@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -7,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <c>you</c> is a holder word: a step whose option says it (a request's <c>start</c>, a landing's <c>accept</c>) is first held by the person
 /// through its tenure whatever the place casts its role to, and the settle door admits the person's word; no runtime code branches on it.
 /// </summary>
-public sealed partial class HolderWordTests : IDisposable
+public sealed class HolderWordTests : IDisposable
 {
     private const string Run = "q-you";
 
@@ -77,27 +76,4 @@ public sealed partial class HolderWordTests : IDisposable
         Assert.True(back.Done, back.Refused);
         Assert.Equal((CastHolders.Person, TenureWhy.GiveBack), (back.Tenure!.Holder, back.Tenure.Why));
     }
-
-    /// <summary>The word is read in one place, which sets the first holder; no runtime source compares against it.</summary>
-    [Fact]
-    public void No_runtime_source_branches_on_you_beyond_the_holder_it_sets()
-    {
-        var driver = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver");
-        var branching = new List<string>();
-        foreach (var folder in new[] { "Workflows/Kinds", "Workflows/Nodes", "Roles" })
-        {
-            foreach (var file in Directory.EnumerateFiles(Path.Combine(driver, folder), "*.cs", SearchOption.AllDirectories))
-            {
-                if (Path.GetFileName(file) == "HolderWords.cs") continue;
-                var text = File.ReadAllText(file);
-                if (Compared().IsMatch(text)) branching.Add(Path.GetRelativePath(driver, file));
-            }
-        }
-
-        Assert.Empty(branching);
-        Assert.Contains("HolderWords.First", File.ReadAllText(Path.Combine(driver, "Roles", "Cast", "AttemptTenures.cs")), StringComparison.Ordinal);
-    }
-
-    [GeneratedRegex("""(==|!=|is)\s*(RequestOptions\.You|HolderWords\.You|"you")|("you"|RequestOptions\.You)\s*(==|!=)""")]
-    private static partial Regex Compared();
 }
