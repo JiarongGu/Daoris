@@ -175,7 +175,9 @@ finishes first and the whole set runs once.
     commit message saying so), starts the run and prunes (`merge/land-merge.ts`). It runs every class the landing's range reaches,
     each dependency class included (`reached-checks --tier heavy` leaves none to the night), through that tier
     in `local/heavy-tree` (a worktree of its own, under the machine's admission), and a run that left reached classes unrun is an
-    `ERROR`, never green. It records each pass for the next merge to replay,
+    `ERROR`, never green. One run holds the tree at a time (`merge/heavy-stack.ts`): a newer landing's run supersedes one still
+    going, which stops starting classes and hands its range and unrun classes over (`HANDED`, settled `superseded`), and the newer
+    runs the union once from the oldest base (`docs/development.md`, *One heavy tier at a time*). It records each pass for the next merge to replay,
     appends its verdict to `local/heavy-runs.jsonl` and says one line beginning `heavy tier:` (the log `local/scratch/heavy-<sha>.log`,
     which the steward's monitor reads). A red is filed in `local/ci-findings.json` naming the merge commit and the class, so the next
     merge reads it as main's red and `--plan` says it; a start or a run that fails is an `ERROR` line and a record, its classes owed
