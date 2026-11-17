@@ -25,7 +25,7 @@ public enum AssistantRecordKind
     /// <summary>A second check's report and its findings.</summary>
     Report,
 
-    /// <summary>What a start was handed.</summary>
+    /// <summary>What a start is handed.</summary>
     Receipt,
 
     /// <summary>A conversation's kept focus.</summary>

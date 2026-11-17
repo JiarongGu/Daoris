@@ -19,13 +19,13 @@ public interface ICheckouts
 /// <summary>A checkout: its name and where it is.</summary>
 public sealed record CheckoutPlace(string Name, string Place);
 
-/// <summary>One read's answer: the checkout and path asked, its state, and the text where it was answered.</summary>
+/// <summary>One read's answer: the checkout and path asked, its state, and the text where the checkout answered it.</summary>
 public sealed record CheckoutReading(string Checkout, string Path, CheckoutReadState State)
 {
     public string? Text { get; init; }
 }
 
-/// <summary>How a read was answered.</summary>
+/// <summary>How the checkout answers a read.</summary>
 public enum CheckoutReadState
 {
     Answered,

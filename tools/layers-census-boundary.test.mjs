@@ -45,7 +45,7 @@ test('a lane\'s references across its boundary are counted both ways per type, a
   assert.throws(() => scanBoundary(tree(sources()), 'nowhere'), /no lane 'nowhere'/);
 });
 
-test('ASSISTPKG1d: the lane\'s own package, which its build holds to its ports, is neither side of the count', () => {
+test('the lane\'s own package, which its build holds to its ports, is neither side of the count', () => {
   const lanes = JSON.parse(sources()['daoris.lanes.json']);
   lanes.lanes[0].paths.push('src/Daoris.Assistant/**');
   const packaged = sources({

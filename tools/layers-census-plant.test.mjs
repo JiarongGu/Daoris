@@ -48,7 +48,6 @@ test('LAYERS1: a process start, a kill, a sleep, the wall clock and a socket are
 const assistant = join(root, 'src', 'Daoris.Assistant');
 const slash = (path) => path.replace(/\\/g, '/');
 
-/** A scratch project built as each of the assistant's projects is, over `Assistant.props`, with what `body` plants in it. */
 function plantAssistant(folder, body, files) {
   const at = join(root, '_fixtures', 'assistant-plant', folder);
   rmSync(at, { recursive: true, force: true });
@@ -65,21 +64,21 @@ function plantAssistant(folder, body, files) {
   return { status: built.status, output: `${built.stdout}\n${built.stderr}` };
 }
 
-test('ASSISTPKG1d: each of the assistant\'s projects builds over Assistant.props, its boundary and banned effects', () => {
+test('each of the assistant\'s projects builds over Assistant.props, its boundary and banned effects', () => {
   const projects = readdirSync(assistant, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.name.startsWith('Daoris.Assistant.Desktop'))
     .map((entry) => join(assistant, entry.name, `${entry.name}.csproj`));
   assert.deepEqual(projects.map((path) => slash(path).split('/').at(-1)).sort(), ['Daoris.Assistant.Testing.csproj', 'Daoris.Assistant.Tests.csproj', 'Daoris.Assistant.csproj']);
   for (const path of projects) assert.match(readFileSync(path, 'utf8'), /<Import Project="\.\.\\Assistant\.props" \/>/, path);
 });
 
-test('ASSISTPKG1d: a reference to the driver fails the assistant\'s build before it is restored, naming it', () => {
+test('a reference to the driver fails the assistant\'s build before it is restored, naming it', () => {
   const driver = slash(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Daoris.Desktop.Driver.csproj'));
   const built = plantAssistant('reference', `<ItemGroup><ProjectReference Include="${driver}" /></ItemGroup>`, { 'Clean.cs': 'class Clean { }' });
   assert.notEqual(built.status, 0, built.output);
   assert.match(built.output, /error ASSISTANT001: Plant references Daoris\.Desktop\.Driver: the assistant's package references Daoris\.Ports/, built.output);
 });
 
-test('ASSISTPKG1d: the wall clock is a build error in the assistant\'s package, and a clock handed is not', () => {
+test('the wall clock is a build error in the assistant\'s package, and a clock handed is not', () => {
   const built = plantAssistant('clock', '', {
     'Clean.cs': 'class Clean { object Go(TimeProvider clock) => clock.GetUtcNow(); }',
     'WallClock.cs': 'class WallClock { object Go() => DateTime.UtcNow; }',

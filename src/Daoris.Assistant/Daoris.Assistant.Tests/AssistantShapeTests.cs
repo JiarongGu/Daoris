@@ -5,7 +5,7 @@ namespace Daoris.Assistant.Tests;
 /// <summary>
 /// The package's shape: the core on the standard library and the ports alone, the fakes on the core, the nine ports the plan names,
 /// and port records that carry names and states only, so a record never holds a type of the code behind the port and a second
-/// package can promote a port's shape whole (D310).
+/// package can promote a port's shape whole.
 /// </summary>
 public sealed class AssistantShapeTests
 {

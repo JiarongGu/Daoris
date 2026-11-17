@@ -1,7 +1,7 @@
 namespace Daoris.Assistant.Ports;
 
 /// <summary>
-/// The presses a conversation made in the window: each route, what it named, its outcome, the card it was asked on and its receipt.
+/// The presses a conversation made in the window: each route, what it named, its outcome, the card that asked the person and its receipt.
 /// The window keeps them; the assistant reads them by conversation.
 /// </summary>
 public interface IPressRecords
@@ -16,7 +16,7 @@ public sealed record PressMade(string Id, string Conversation, string Route, str
     /// <summary>The place it named, by field (a workspace, a repository); empty where it named none.</summary>
     public IReadOnlyDictionary<string, string> Place { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The card it was asked on in restricted mode, by name; null where it ran with no card.</summary>
+    /// <summary>The card that asked the person in restricted mode, by name; null where it ran with no card.</summary>
     public string? Card { get; init; }
 
     /// <summary>What it says it made, once its answer is known.</summary>

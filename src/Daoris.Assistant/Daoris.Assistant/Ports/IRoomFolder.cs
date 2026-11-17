@@ -2,7 +2,7 @@ namespace Daoris.Assistant.Ports;
 
 /// <summary>
 /// The room folders a conversation starts in: a room's files written whole under the room's own gate, so a reader never sees two
-/// writes mixed, and whether a room was written.
+/// writes mixed, and whether a room is written.
 /// </summary>
 public interface IRoomFolder
 {
@@ -12,7 +12,7 @@ public interface IRoomFolder
     /// </summary>
     Task WriteAsync(RoomFiles room, CancellationToken cancel);
 
-    /// <summary>Whether <paramref name="room"/> was written.</summary>
+    /// <summary>Whether <paramref name="room"/> is written.</summary>
     Task<bool> WrittenAsync(string room, CancellationToken cancel);
 }
 

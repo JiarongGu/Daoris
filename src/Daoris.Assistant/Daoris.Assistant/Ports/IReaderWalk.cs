@@ -16,7 +16,7 @@ public interface IReaderWalk
 /// <summary>What one reading is handed: the role whose holder reads, the conversation, the range of its events, and the packet itself.</summary>
 public sealed record ReaderAsk(string Role, string Conversation, long From, long To, string Packet);
 
-/// <summary>The walk's answer: its state and its sentence, and the reading where it was kept.</summary>
+/// <summary>The walk's answer: its state and its sentence, and the reading where the walk kept it.</summary>
 public sealed record ReaderAnswer(ReaderState State, string Sentence)
 {
     public string? Reading { get; init; }
