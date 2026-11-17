@@ -74,9 +74,11 @@ public static class BenchmarkHome
         if (error is not null) throw new InvalidOperationException(error);
         await using var service = await ServiceFactory.CreateAsync(options, ct: ct);
         // A fixture is written once and read after: nothing is lost if the machine stops while it is written, so no write waits on the disk.
+        // The journal mode stays the file's own (the log): the store holds the file on two connections, and SQLite leaves the log only
+        // for the one connection left on the file, answering busy at once, with no wait, to any other.
         await using (var unsynced = service.Store!.Connection.CreateCommand())
         {
-            unsynced.CommandText = "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;";
+            unsynced.CommandText = "PRAGMA synchronous = OFF;";
             await unsynced.ExecuteNonQueryAsync(ct);
         }
 
