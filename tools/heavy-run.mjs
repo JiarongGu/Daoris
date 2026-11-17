@@ -75,11 +75,11 @@ const spanOf = (ms) => `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) /
  * answers. The seams (`alive`, `now`, `sleep`, `prepare`, `check`, `settle`, `append`, and the timings) are a test's.
  */
 export async function runTier(input, {
-  home, say = console.log, alive = processAlive, pid = process.pid, now = Date.now, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }),
+  checkout, say = console.log, alive = processAlive, pid = process.pid, now = Date.now, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }),
   pollMs = STACK_POLL_MS, beatMs = STACK_BEAT_MS, staleMs = STACK_STALE_MS, boundMs = WAIT_BOUND_MS, deadlineMs = WAIT_DEADLINE_MS,
-  prepare, check, settle, append = (record) => appendHeavy(home, record),
+  prepare, check, settle, append = (record) => appendHeavy(checkout, record),
 }) {
-  const file = join(home, HEAVY_STACK);
+  const file = join(checkout, HEAVY_STACK);
   const stamp = () => new Date(now()).toISOString();
   const me = { id: input.id, pid, commit: input.commit, base: input.base, branches: input.branches, since: stamp(), beat: stamp() };
   const live = (tier) => alive(tier.pid) && now() - Date.parse(tier.beat) < staleMs;
@@ -104,7 +104,7 @@ export async function runTier(input, {
   let took = arrival.took;
   if (arrival.role === 'wait') {
     const holder = arrival.halt;
-    const halt = haltFileOf(home, holder.id);
+    const halt = haltFileOf(checkout, holder.id);
     try {
       mkdirSync(dirname(halt), { recursive: true });
       writeAtomic(halt, `${JSON.stringify({ by: me.id, commit: me.commit })}\n`);
@@ -162,7 +162,7 @@ export async function runTier(input, {
     }
   }, beatMs);
   timer.unref?.();
-  const halt = haltFileOf(home, me.id);
+  const halt = haltFileOf(checkout, me.id);
   const askedOf = (stack) => (stack.holder?.id === me.id ? stack.holder.supersededBy : undefined);
   try {
     let outcome = null;
@@ -210,7 +210,7 @@ async function main(argv) {
   const home = resolve(process.cwd());
   const input = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };
   const settled = await runTier(input, {
-    home,
+    checkout: home,
     prepare: async (at) => {
       const tree = prepareTree(home, at);
       mkdirSync(join(tree, 'local'), { recursive: true });

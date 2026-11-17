@@ -65,14 +65,14 @@ const UNITS = Object.keys(READS).map((id) => {
   return { suite, kind: 'dotnet', unit, name: unit, file: `${unit}.cs` };
 });
 
-function machine(home) {
+function machine(dir) {
   const git = { started: 0, finished: 0, ended: 0, running: 0, most: 0 };
   const said = [];
   let inGit = () => undefined;
   const gitStarted = new Promise((done) => { inGit = done; });
   const check = async ({ commit, base, halt: file }) => {
     const paths = new Set(between(base, commit));
-    const store = new PassedClasses(join(home, 'store.json'));
+    const store = new PassedClasses(join(dir, 'store.json'));
     const reached = UNITS.filter((each) => paths.has(READS[unitId(each)]));
     const { run, replayed, keys } = splitByReuse(reached, (each) => `${unitId(each)}@${version(READS[unitId(each)], commit)}`, store);
     const groups = ['driver-process', 'driver-git', 'driver-rehearsals']
@@ -110,7 +110,7 @@ function machine(home) {
       });
     };
     const outcome = await runPlan({
-      root: home, plan: { groups, left: {}, reached: reached.length, replayed: {} }, keys, store, replayed: replayed.length, say: (line) => said.push(line),
+      root: dir, plan: { groups, left: {}, reached: reached.length, replayed: {} }, keys, store, replayed: replayed.length, say: (line) => said.push(line),
       mainRedOf: () => false, halt, ...wired(halt, exec, place),
     });
     stop();
@@ -122,22 +122,22 @@ function machine(home) {
 
 const landing = (id, commit, base) => ({ id, commit, base, branches: [`feature-${id}`], at: '2026-11-18T10:00:00.000Z' });
 
-function tierSeams(home, m, pid, over = {}) {
+function tierSeams(dir, m, pid, over = {}) {
   return {
-    home, pid, say: (line) => m.said.push(line), alive: () => true, pollMs: 2, beatMs: 60_000, sleep: (ms) => delay(ms),
-    prepare: async () => home, check: m.check, settle: (run, outcome, code) => settleInto(home, run, outcome, code), ...over,
+    checkout: dir, pid, say: (line) => m.said.push(line), alive: () => true, pollMs: 2, beatMs: 60_000, sleep: (ms) => delay(ms),
+    prepare: async () => dir, check: m.check, settle: (run, outcome, code) => settleInto(dir, run, outcome, code), ...over,
   };
 }
 
 test('two landings close together run one git half: the newer tier ends the older one\'s and runs the union on its commit', async () => {
-  const home = join('_fixtures', 'heavy-run-stack-test');
-  rmSync(home, { recursive: true, force: true });
-  mkdirSync(join(home, 'local'), { recursive: true });
+  const dir = join('_fixtures', 'heavy-run-stack-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'local'), { recursive: true });
   try {
-    const m = machine(home);
-    const older = runTier(landing('heavy-a', 'c1', 'c0'), tierSeams(home, m, 1));
+    const m = machine(dir);
+    const older = runTier(landing('heavy-a', 'c1', 'c0'), tierSeams(dir, m, 1));
     await m.gitStarted;
-    const newer = runTier(landing('heavy-b', 'c2', 'c1'), tierSeams(home, m, 2));
+    const newer = runTier(landing('heavy-b', 'c2', 'c1'), tierSeams(dir, m, 2));
     const [a, b] = await Promise.all([older, newer]);
     assert.deepEqual(m.git, { started: 2, finished: 1, ended: 1, running: 0, most: 1 }, 'one git half ran to its end, and never two at once');
     assert.equal(a.run.state, 'superseded');
@@ -148,31 +148,31 @@ test('two landings close together run one git half: the newer tier ends the olde
     assert.equal(b.run.from, 'c0', 'the newer tier runs from the older base');
     assert.deepEqual(b.run.took, [{ id: 'heavy-a', commit: 'c1', branches: ['feature-heavy-a'] }]);
     assert.deepEqual([b.run.classes.ran, b.run.classes.replayed], [3, 1], 'the union ran once: its own git classes and the handed rehearsal; the Process pass replayed');
-    assert.deepEqual(readStack(join(home, HEAVY_STACK)), { holder: null, waiting: null, handed: null });
+    assert.deepEqual(readStack(join(dir, HEAVY_STACK)), { holder: null, waiting: null, handed: null });
     const log = m.said.join('\n');
     assert.match(log, /heavy tier: heavy-b on c2 supersedes heavy-a on c1/);
     assert.match(log, /heavy tier: heavy-a hands 3 unrun classes to heavy-b on c2/);
     assert.match(log, /heavy tier: heavy-b carries heavy-a \(c1, 3 unrun\): it runs from c0 on c2/);
-    assert.deepEqual(readHeavy(home).map((run) => run.state), ['superseded', 'green']);
-    assert.equal(askTiers(home, { home, commit: 'c1' }).code, 1, 'a superseded commit is not staged as passed');
-    assert.equal(askTiers(home, { home, commit: 'c2' }).code, 0);
+    assert.deepEqual(readHeavy(dir).map((run) => run.state), ['superseded', 'green']);
+    assert.equal(askTiers(dir, { home: dir,commit: 'c1' }).code, 1, 'a superseded commit is not staged as passed');
+    assert.equal(askTiers(dir, { home: dir,commit: 'c2' }).code, 0);
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('a tier superseded before it ran a class hands its whole range, and a wait past its bound is said', async () => {
-  const home = join('_fixtures', 'heavy-run-stack-early-test');
-  rmSync(home, { recursive: true, force: true });
-  mkdirSync(join(home, 'local'), { recursive: true });
+  const dir = join('_fixtures', 'heavy-run-stack-early-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'local'), { recursive: true });
   try {
-    const m = machine(home);
+    const m = machine(dir);
     let ready = () => undefined;
     const held = new Promise((done) => { ready = done; });
     let clock = Date.parse('2026-11-18T10:00:00.000Z');
     const look = 30_000;
-    const older = runTier(landing('heavy-a', 'c1', 'c0'), tierSeams(home, m, 1, { prepare: async () => { await held; return home; } }));
-    const newer = runTier(landing('heavy-b', 'c2', 'c1'), tierSeams(home, m, 2, {
+    const older = runTier(landing('heavy-a', 'c1', 'c0'), tierSeams(dir, m, 1, { prepare: async () => { await held; return dir; } }));
+    const newer = runTier(landing('heavy-b', 'c2', 'c1'), tierSeams(dir, m, 2, {
       now: () => clock, staleMs: Infinity, boundMs: 2 * look,
       sleep: async () => { clock += look; if (clock >= Date.parse('2026-11-18T10:02:00.000Z')) ready(); await delay(1); },
     }));
@@ -184,20 +184,20 @@ test('a tier superseded before it ran a class hands its whole range, and a wait 
     assert.deepEqual(m.git, { started: 1, finished: 1, ended: 0, running: 0, most: 1 });
     assert.match(m.said.join('\n'), /heavy tier: heavy-b has waited 1m 0s for heavy-a \(pid 1, on c1/);
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 
 test('a superseded run\'s commit is not staged as passed, nor any state the stage does not know', () => {
-  const home = join('_fixtures', 'heavy-run-evidence-test');
-  rmSync(home, { recursive: true, force: true });
-  mkdirSync(join(home, 'local'), { recursive: true });
+  const dir = join('_fixtures', 'heavy-run-evidence-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(join(dir, 'local'), { recursive: true });
   try {
-    appendHeavy(home, { ...running, state: 'superseded', handedTo: { id: 'heavy-b', commit: 'fedcba9876543210' }, ended: '2026-11-14T10:05:00.000Z' });
-    assert.match(askTiers(home, { home, commit }).out, /handed its unrun classes to heavy-b on fedcba9/);
-    appendHeavy(home, { ...running, id: 'heavy-0123456-2', state: 'unknown', at: '2026-11-14T11:00:00.000Z' });
-    assert.equal(askTiers(home, { home, commit }).code, 1);
+    appendHeavy(dir, { ...running, state: 'superseded', handedTo: { id: 'heavy-b', commit: 'fedcba9876543210' }, ended: '2026-11-14T10:05:00.000Z' });
+    assert.match(askTiers(dir, { home: dir,commit }).out, /handed its unrun classes to heavy-b on fedcba9/);
+    appendHeavy(dir, { ...running, id: 'heavy-0123456-2', state: 'unknown', at: '2026-11-14T11:00:00.000Z' });
+    assert.equal(askTiers(dir, { home: dir,commit }).code, 1);
   } finally {
-    rmSync(home, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
   }
 });

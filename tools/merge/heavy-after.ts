@@ -109,7 +109,7 @@ export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: n
   }
   if (handedTo && outcome) {
     const handed = outcome.handed ?? [];
-    const settled = settleHeavy(plain, { ...outcome, unrun: 0 }, code, now);
+    const settled = settleHeavy(plain, { ...outcome, unrun: 0, handed: [] }, code, now);
     const classes = { ran: outcome.ran, replayed: outcome.replayed, flaked: outcome.flaked, red: outcome.red, mainRed: outcome.mainRed };
     if (settled.run.state === 'red') {
       return { ...settled, run: { ...settled.run, handedTo, handed }, lines: settled.lines.map((line) => `${line}; ${handed.length} class(es) handed to ${to}`) };
@@ -123,8 +123,9 @@ export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: n
     const note = `the run ended with no class counts (exit ${code ?? 'none'})`;
     return { run: { ...run, state: 'error', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} ERROR ${where}: ${note}; the heavy classes are owed to the CI beside`] };
   }
-  if (outcome.red.length === 0 && outcome.unrun) {
-    const note = `the run left ${outcome.unrun} reached classes unrun (${outcome.ran} ran, ${outcome.replayed} replayed)`;
+  const left = (outcome.unrun ?? 0) + (outcome.handed?.length ?? 0);
+  if (outcome.red.length === 0 && left) {
+    const note = `the run left ${left} reached classes unrun (${outcome.ran} ran, ${outcome.replayed} replayed)`;
     return { run: { ...run, state: 'error', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} ERROR ${where}: ${note}; they are owed to the CI beside`] };
   }
   const classes = { ran: outcome.ran, replayed: outcome.replayed, flaked: outcome.flaked, red: outcome.red, mainRed: outcome.mainRed };

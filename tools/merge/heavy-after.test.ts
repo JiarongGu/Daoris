@@ -40,6 +40,7 @@ describe('the heavy run settled', () => {
     expect(settled.run.note).toContain('40');
     expect(settled.lines[0]).toMatch(/ERROR .*40 reached classes/);
     expect(settleHeavy(running, outcome({ ran: 0, replayed: 0, unrun: 0 }), 0, '2026-11-14T10:20:00.000Z').run.state).toBe('green');
+    expect(settleHeavy(running, outcome({ handed: ['driver-git|G1'] }), 0, '2026-11-14T10:20:00.000Z').run.state).toBe('error');
   });
 
   it('is green with no finding where every class passed, noting what flaked', () => {
