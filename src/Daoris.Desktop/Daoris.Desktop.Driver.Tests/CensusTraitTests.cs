@@ -13,7 +13,6 @@ public sealed class CensusTraitTests
     private static readonly Regex Reads = new(
         @"SourceFiles\.All\(|SourceFiles\.Project\(|(Enumerate|Get)Files\([^;]*""\*\.(cs|ts|tsx|mjs)""", RegexOptions.CultureInvariant);
 
-    /// <summary>The classes named or reading like a census that judge behaviour, not the sources: the fast half's.</summary>
     internal static readonly string[] Behaviour = ["ReviewGraphCensusTests", "ProviderConformanceTests"];
 
     private static readonly Regex Declaration = new(
