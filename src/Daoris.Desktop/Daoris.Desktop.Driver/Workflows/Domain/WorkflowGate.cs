@@ -257,7 +257,8 @@ public static class Involvement
             lowered.Add("it no longer requires the second opinion");
         }
 
-        if ((string?)Of(otherwise, WorkflowKinds.Landing)?.Field("accept") == "you" && (string?)Of(chosen, WorkflowKinds.Landing)?.Field("accept") == "automatic")
+        // The person's part is the holder a step's words cast (HolderWords), as the runtime casts its attempt's first epoch.
+        if (HolderWords.First(Of(otherwise, WorkflowKinds.Landing)) == CastHolders.Person && (string?)Of(chosen, WorkflowKinds.Landing)?.Field("accept") == "automatic")
         {
             lowered.Add("it lands with no press of yours");
         }
@@ -279,7 +280,7 @@ public static class Involvement
 
         var started = All(chosen).Where(step => step.Kind == WorkflowKinds.Stage && (string?)step.Field("start") == "automatic")
             .Select(step => (string?)step.Field("stage")).ToHashSet(StringComparer.Ordinal);
-        foreach (var stage in All(otherwise).Where(step => step.Kind == WorkflowKinds.Stage && (string?)step.Field("start") == "you"
+        foreach (var stage in All(otherwise).Where(step => step.Kind == WorkflowKinds.Stage && HolderWords.First(step) == CastHolders.Person
                      && started.Contains((string?)step.Field("stage"))))
         {
             lowered.Add($"it starts `{stage.Field("stage")}` with no press of yours");
@@ -354,7 +355,7 @@ public static class Involvement
             if (kind == WorkflowKinds.PullRequest) return new NamedStep(node.Id, kind, [new WorkflowSetting("plugin", PullRequestKind.PluginOf(node.Kind))]);
             // A `land`'s press is the graph's `review`, so a review taken away lowers as an `accept` moved to automatic did.
             IEnumerable<WorkflowSetting> pressed = node.Kind == NodeKinds.Land
-                ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? "you" : "automatic")]
+                ? [new WorkflowSetting(LandNodes.AcceptOption, LandNodes.Reviewed(graph) ? HolderWords.You : "automatic")]
                 : [];
             return kind is null ? null
                 : new NamedStep(node.Id, kind, [.. node.Options.Select(option => new WorkflowSetting(option.Key, NodeOptions.Value(option.Value))), .. pressed]);

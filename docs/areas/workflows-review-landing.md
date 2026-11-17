@@ -680,8 +680,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). Who settles a step is its
   holder's, by one door (D312, rule 18), and what it waits for is its kind's (rules 51 and 55). `you` is a holder word
   (`HolderWords`): a step whose `start` or `accept` says it is first held by the person through its tenure (`AttemptTenures`), whatever
-  the place casts its role to, and no runtime code branches on it. Left: the named steps' reading and gate (`NamedStepReading`,
-  `WorkflowGate`, `WorkflowDiff`) still compare a stage's `start` and a landing's `accept` as the person's.
+  the place casts its role to, and no runtime code branches on it. The named steps' reading, gate and diff (`NamedStepReading`,
+  `Involvement` in `WorkflowGate`, `WorkflowDiff`) read a stage's `start` and a landing's `accept` the same way, as the holder a version's
+  step casts (`HolderWords.First(NamedStep)`), and a census holds them to it beside the runtime.
 - **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
   its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
   production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes

@@ -161,7 +161,7 @@ public static class WorkflowWords
         {
             WorkflowKinds.Work or WorkflowKinds.Opinion => "Agent alone",
             WorkflowKinds.Look => "Agent + you · your press: Reviewed",
-            WorkflowKinds.Landing => (string?)step.Field("accept") == "you" ? "You · your press: Accept" : "Automatic · Daoris",
+            WorkflowKinds.Landing => HolderWords.First(step) == CastHolders.Person ? "You · your press: Accept" : "Automatic · Daoris",
             WorkflowKinds.PullRequest => "You · your press: Merge",
             WorkflowKinds.GoAhead => "You · your answer",
             _ => "Automatic",

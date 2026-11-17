@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -58,6 +59,59 @@ public sealed class HolderWordTests : IDisposable
         Assert.Equal((holder, StepRoles.ReleaseManager), (begun.Holder, begun.Role));
         var current = new StepTenureFiles(_home, () => true).Current(RunUnits.IdOf(Run), "ask", 1);
         if (start == "you") Assert.Null(SettleDoor.Admit(current, SettleBy.Person(current!.Epoch)));
+    }
+
+    /// <summary>
+    /// A named step reads <c>you</c> as the runtime does: the holder its words cast (<see cref="HolderWords.First(NamedStep)"/>) is the one its
+    /// attempt's tenure begins with, the person through its tenure where it says <c>you</c> and the place's cast where it does not.
+    /// </summary>
+    [Theory]
+    [InlineData("you")]
+    [InlineData("automatic")]
+    public void A_named_steps_you_is_held_by_the_person_through_its_tenure(string start)
+    {
+        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        var graph = Start(start);
+
+        var named = Assert.Single(Involvement.StepsOf(graph), step => step.Kind == NodeKinds.Request);
+        var begun = Assert.Single(AttemptTenures.Keep(Records, RunUnits.IdOf(Run), graph.Nodes, "work", null, Risk(), _now));
+
+        Assert.Equal(begun.Holder, HolderWords.First(named) ?? "agent:alpha");
+        Assert.Equal(start == "you" ? CastHolders.Person : "agent:alpha", begun.Holder);
+    }
+
+    /// <summary>The named steps' reading, gate and diff each say the person's part where a step's words cast the person, and none where they do not.</summary>
+    [Fact]
+    public void The_named_readers_read_you_as_the_holder_it_casts()
+    {
+        static NamedStep Stage(string start) =>
+            new("deploy", WorkflowKinds.Stage, [new("plugin", "example.cloud"), new("stage", "staging"), new("start", start)]);
+        static NamedStep Landing(string accept) => new("landing", WorkflowKinds.Landing, [new("form", LandingForm.Merge), new("accept", accept)]);
+        IReadOnlyList<NamedStep> Version(string word) => [new("work", WorkflowKinds.Work, []), Landing(word), Stage(word)];
+
+        Assert.Equal(CastHolders.Person, HolderWords.First(Stage("you")));
+        Assert.Null(HolderWords.First(Landing("automatic")));
+
+        Assert.Equal(
+            ["it lands with no press of yours", "it starts `staging` with no press of yours"],
+            Involvement.Lowers(Version("automatic"), Version("you")));
+        Assert.Empty(Involvement.Lowers(Version("you"), Version("automatic")));
+
+        var diff = WorkflowDiff.Of(Version("you"), Version("automatic")).Part;
+        Assert.Contains("− landing: you no longer accept each piece of work before it lands.", diff);
+        Assert.Contains("− deploy: you no longer start `staging`.", diff);
+        Assert.Empty(WorkflowDiff.Of(Version("automatic"), Version("automatic")).Part);
+
+        using var you = JsonDocument.Parse("""
+            [{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"branch","accept":"you"},
+             {"id":"ahead","kind":"go-ahead","act":"deploy to staging","on":"staging"},
+             {"id":"deploy","kind":"stage","plugin":"example.cloud","stage":"staging","start":"you"}]
+            """);
+        Assert.Equal(
+            "v1, step `ahead`: a go-ahead straight before a stage you start is not needed: starting it is your go-ahead.",
+            NamedStepReading.ReadShape(you.RootElement, 1).Problem);
+        using var automatic = JsonDocument.Parse(you.RootElement.GetRawText().Replace("\"start\":\"you\"", "\"start\":\"automatic\"", StringComparison.Ordinal));
+        Assert.Null(NamedStepReading.ReadShape(automatic.RootElement, 1).Problem);
     }
 
     /// <summary>One rule casts every first epoch, the pass's and a hold act's alike, and <i>Give back</i> returns the step to the holder it names.</summary>
