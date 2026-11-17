@@ -6,7 +6,9 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { TS_SUITES, census, treeOf, tsReaches, unitReaches } from '../test-map.mjs';
+import { TS_SUITES, census, treeOf, tsReaches, tsReader, unitReaches } from '../test-map.mjs';
+import { stagedTree } from '../fsx.mjs';
+import { CENSUS_CACHE, cachedCensus, treeSide } from '../merge/census-cache.ts';
 import { privateDigest } from '../private-gate-files.mjs';
 import { halfOf, pathReach, reachSettings, withSettings } from '../process-reach.mjs';
 import { PassedClasses } from '../merge/class-reuse.ts';
@@ -20,16 +22,38 @@ export const READERS = { tsSuites: TS_SUITES, tsReaches, unitReaches, pathReach 
 /** The file the class passes are kept in: the main checkout's `local/reached-classes.json`, or the file `DAORIS_REACHED_STORE` names. */
 export const storeFile = (checkout) => process.env.DAORIS_REACHED_STORE || join(checkout, 'local', 'reached-classes.json');
 
+/**
+ * The census of the working tree at `root`, read from the cache of its content tree where a reading of the same tree kept it
+ * (`merge/census-cache.ts`); `hit` says which.
+ */
+export function workingCensus(root, { files, read } = treeOf(root)) {
+  let tree = null;
+  try {
+    tree = stagedTree(root);
+  } catch {
+    // A tree git cannot write is read whole, and not kept.
+  }
+  const { map, hit } = cachedCensus({
+    dir: join(root, CENSUS_CACHE), tree, compute: () => census(files, read), keep: ['units', 'dotnet', 'problems'],
+    revive: (saved) => ({ units: saved.units ?? [], dotnet: saved.dotnet ?? [], problems: saved.problems ?? [], ts: tsReader(files, read) }),
+  });
+  return { files, read, map, hit, tree };
+}
+
 /** The census of the tree at `root` with the key context over it, under the gates the tree declares. */
 export function keyContextOf(root) {
-  const { files, read } = treeOf(root);
-  const map = census(files, read);
+  const { files, read, map, hit, tree } = workingCensus(root);
   const gatesText = read('daoris.gates.json');
   const gates = JSON.parse(gatesText).gates ?? [];
   const toolchain = toolchainOf();
-  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS });
+  // What the keys derive of this tree is kept beside its census, and saved by `keep` once the plan has asked them.
+  const side = treeSide(join(root, CENSUS_CACHE), tree);
+  let changed = false;
+  const memo = { value: side.value, changed: () => { changed = true; } };
+  const keep = () => { if (changed) side.save(memo.value); changed = false; };
+  const context = reuseContext({ map, files, read, toolchain: `${toolchain.node}+${toolchain.dotnet}`, gates, readers: READERS, memo });
   const privates = privateDigest(root);
-  return { map, gates, gatesText, context: { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` } };
+  return { map, gates, gatesText, hit, tree, files, read, privates, toolchain, keep, context: { ...context, declaration: (suite) => `${context.declaration(suite)}\0${privates}` } };
 }
 
 /**

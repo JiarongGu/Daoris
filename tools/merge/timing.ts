@@ -4,6 +4,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { stepsLine, type Step } from './reached-steps.ts';
 
 const { development } = JSON.parse(readFileSync(new URL('../dev-metrics/budgets.json', import.meta.url), 'utf8')) as {
   development: { gateMs: number; mergeWallMs: number };
@@ -12,7 +13,7 @@ export const GATE_BUDGET_MS = development.gateMs;
 export const MERGE_BUDGET_MS = development.mergeWallMs;
 
 export type Slow = { name: string; ms: number; tests: number };
-export type Timed = { name: string; ms: number; slowest?: Slow[] };
+export type Timed = { name: string; ms: number; slowest?: Slow[]; steps?: readonly Step[] };
 
 export function overBudget(gates: Timed[], mergeMs: number): { gates: string[]; merge: boolean } {
   return { gates: gates.filter((each) => each.ms > GATE_BUDGET_MS).map((each) => each.name), merge: mergeMs > MERGE_BUDGET_MS };
@@ -26,7 +27,8 @@ export function budgetLines(gates: Timed[], mergeMs: number): string[] {
   if (over.merge) lines.push(`  time: the merge took ${Math.round(mergeMs / 60_000)} min, over its ${MERGE_BUDGET_MS / 60_000} min budget; the merge stands, and its slow gates are rows`);
   for (const gate of gates.filter((each) => over.gates.includes(each.name))) {
     const slow = (gate.slowest ?? []).slice(0, 3).map((each) => `${each.name} ${minutes(each.ms)} min`).join(', ');
-    lines.push(`  time: ${gate.name} took ${Math.round(gate.ms / 60_000)} min, over its ${GATE_BUDGET_MS / 60_000} min budget${slow ? `; slowest: ${slow}` : ''}`);
+    const steps = gate.steps?.length ? `; its steps: ${stepsLine(gate.steps)}` : '';
+    lines.push(`  time: ${gate.name} took ${Math.round(gate.ms / 60_000)} min, over its ${GATE_BUDGET_MS / 60_000} min budget${steps}${slow ? `; slowest: ${slow}` : ''}`);
   }
   return lines;
 }

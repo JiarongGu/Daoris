@@ -65,9 +65,29 @@ const VITEST = 'node_modules/vitest/vitest.mjs';
 /** A unit this many reads or fewer from a changed file is the change's own test: the bound never leaves it out. */
 export const NEAR_HOPS = 2;
 
-/** A command names at most this many units, so a bound lifted never meets the command line's length limit. */
+/** A file-naming command names at most this many files, so a bound lifted never meets the command line's length limit. */
 const COMMAND_UNITS = 120;
 const chunked = (units: ReachedUnit[]): ReachedUnit[][] => Array.from({ length: Math.ceil(units.length / COMMAND_UNITS) }, (_, at) => units.slice(at * COMMAND_UNITS, (at + 1) * COMMAND_UNITS));
+
+/**
+ * A `dotnet test` filter holds at most this many characters: one command runs every reached class of a project, each run of the
+ * runner costing its start and discovery again, and a bound lifted still meets Windows' command line limit (32,767).
+ */
+export const FILTER_CHARS = 24_000;
+const FILTER_TERM = 'FullyQualifiedName~|'.length;
+function byFilter(units: ReachedUnit[]): ReachedUnit[][] {
+  const out: ReachedUnit[][] = [];
+  let size = Infinity;
+  for (const unit of units) {
+    if (size + unit.unit.length + FILTER_TERM > FILTER_CHARS) {
+      out.push([]);
+      size = 0;
+    }
+    out.at(-1)!.push(unit);
+    size += unit.unit.length + FILTER_TERM;
+  }
+  return out;
+}
 
 const stemOf = (path: string): string => posix.basename(path).replace(/\.[^.]+$/, '').replace(/\.(test|spec)$/, '').replace(/(Tests?)$/, '');
 
@@ -153,7 +173,7 @@ export function reachedPlan(
     if (runner === 'dotnet') {
       for (const project of [...new Set(kept.map((unit) => unit.project))]) {
         const among = kept.filter((unit) => unit.project === project);
-        for (const units of chunked(among)) groups.push({ runner, suite, ...(project === undefined ? {} : { project }), settings: among[0]?.settings ?? null, units });
+        for (const units of byFilter(among)) groups.push({ runner, suite, ...(project === undefined ? {} : { project }), settings: among[0]?.settings ?? null, units });
       }
     } else {
       for (const units of chunked(kept)) groups.push({ runner, suite, units });

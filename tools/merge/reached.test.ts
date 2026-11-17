@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readDeclared } from './plan.ts';
-import { processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './reached.ts';
+import { FILTER_CHARS, processSuitesOf, reachedCommands, reachedLines, reachedPlan, unitsOfMerge } from './reached.ts';
 import type { ReachedUnit } from './reached.ts';
 import { withReport } from './reached-reports.ts';
 import { tiersOf } from './tiers.ts';
@@ -107,6 +107,21 @@ test('a .NET suite runs as one filtered command per test project, its fast half 
     label: 'tool-tests', cwd: 'src/Daoris.Cli', command: 'node',
     args: ['--test', '--test-timeout=1800000', '--test-force-exit', 'tool-test/merge-queue.test.ts'],
   });
+});
+
+test('every reached class of a test project runs in one dotnet test, its filter naming them all, however many a lifted bound keeps', () => {
+  const many = Array.from({ length: 250 }, (_, at) => dotnet('driver', `Area${at}.Some${at}LongerNamedTests`, 'x'));
+  const planned = plan(many, [], { bounds: { dotnet: Infinity } });
+  assert.equal(planned.groups.length, 1, 'one command for the project, where each command costs the runner its start and discovery again');
+  const [command] = reachedCommands(planned);
+  const filter = command!.args[command!.args.indexOf('--filter') + 1]!;
+  assert.equal(filter.match(/FullyQualifiedName~/g)?.length, 250);
+  assert.ok(filter.length <= FILTER_CHARS + '(Category!=Process)&()'.length, 'the filter stays within the command line');
+  // Past the filter's length a project's classes split, never one dropped.
+  const huge = Array.from({ length: 600 }, (_, at) => dotnet('driver', `Area${at}.${'Very'.repeat(10)}LongNamed${at}Tests`, 'x'));
+  const split = plan(huge, [], { bounds: { dotnet: Infinity } });
+  assert.ok(split.groups.length > 1);
+  assert.equal(split.groups.reduce((sum, group) => sum + group.units.length, 0), 600);
 });
 
 test("a Process half's class is a unit of a merge only where a changed path is the code of the dependency it needs; every other is left to the night", () => {

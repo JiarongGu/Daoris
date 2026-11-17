@@ -31,6 +31,32 @@ export function failedTestLines(group: Pick<ReachedGroup, 'runner'>, report: str
   return vitestFailures(readFileSync(report, 'utf8')).map(({ file, test }) => `${posix.basename(file.replaceAll('\\', '/'))}: failed test '${test}'`);
 }
 
+const instant = (text: string | undefined): number => (text ? Date.parse(text.replace(/(\.\d{3})\d+/, '$1')) : NaN);
+const spanMs = (text: string | undefined): number => {
+  const [h, m, s] = (text ?? '').split(':').map(Number);
+  return ((h ?? NaN) * 3600 + (m ?? NaN) * 60 + (s ?? NaN)) * 1000;
+};
+
+/**
+ * When a trx's first test started, in epoch milliseconds, or null: what came before it of the command (the project's evaluation,
+ * the runner's start, the discovery of every case of the assembly) is the suite's discovery, what came after its run. xUnit's
+ * results carry their report's moment as their start, so a result's start is its end less its duration where that is earlier;
+ * a report with no result falls back to the run's own start (`<Times start>`).
+ */
+export function runStartOf(trx: string): number | null {
+  let first = Infinity;
+  for (const [tag] of trx.matchAll(/<UnitTestResult\b[^>]*>/g)) {
+    const starts = [
+      instant(/\bstartTime="([^"]+)"/.exec(tag)?.[1]),
+      instant(/\bendTime="([^"]+)"/.exec(tag)?.[1]) - spanMs(/\bduration="([^"]+)"/.exec(tag)?.[1]),
+    ].filter(Number.isFinite);
+    if (starts.length) first = Math.min(first, ...starts);
+  }
+  if (Number.isFinite(first)) return first;
+  const at = instant(/<Times\b[^>]*\bstart="([^"]+)"/.exec(trx)?.[1]);
+  return Number.isFinite(at) ? at : null;
+}
+
 /** The units of `group` its command's report says passed, or all of them where there is no report and the command exited clean. */
 export function passesOf<T extends { file: string; unit: string }>(
   group: Pick<ReachedGroup, 'runner'> & { units: T[] },

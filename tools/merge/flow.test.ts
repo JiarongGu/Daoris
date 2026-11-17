@@ -293,6 +293,54 @@ test('a reached run that ends with a class flaked reads FLAKE, and its class cou
   }
 });
 
+test('the test projects a reached run built are built for the later gates on its tree, whatever its classes came to, and its steps reach the record', async () => {
+  const reached = { name: 'reached', run: 'node tools/reached-checks.mjs --tier fast --base {base}', reuse: '' };
+  const outcome = { ran: 1, replayed: 0, flaked: [], mainRed: [], red: ['driver|A.OneTests'], deferred: [], built: ['src/A'], steps: [{ step: 'census', ms: 900 }, { step: 'build A', ms: 40_000 }, { step: 'run driver', ms: 5000 }] };
+  const h = harness({
+    runGate: async (_where, each, logs, options) => {
+      h.asked.push({ run: each.run, noBuild: options.noBuild });
+      const log = join(logs, `${each.name}.log`);
+      writeFileSync(log, each.name === 'reached' ? `reached-classes: ${JSON.stringify(outcome)}\n` : '');
+      return { gate: each, code: each.name === 'reached' ? 1 : 0, verdict: each.name === 'reached' ? 'FAIL' : 'PASS', note: '', ms: 1, log };
+    },
+  });
+  try {
+    const first = await call(h, { gate: reached });
+    await call(h, { gate: { ...gate, reuse: '' } });
+    assert.match(h.asked[1]!.run, /^dotnet test src\/A --filter Category=Census.* --no-build/, 'the censuses run on the build the reached run made');
+    await call(h, { gate: { ...gate, reuse: '' }, tree: 'T3' });
+    assert.doesNotMatch(h.asked[2]!.run, /--no-build/, 'another tree builds its own');
+    const { record, lines } = settleMerge({ branch: 'b', at: '2026-11-17T00:00:00Z', wallMs: 1, results: [{ ...first, ms: 400_000 }], mains: [], previous: [] });
+    assert.deepEqual(record.gates[0]!.steps, outcome.steps);
+    assert.ok(lines.some((line) => /time: reached took 7 min, .*its steps: census 1 s, build A 40 s, run driver 5 s/.test(line)), lines.join('\n'));
+  } finally {
+    h.done();
+  }
+});
+
+test('a reached gate killed over its budget names the step it was in, timed to the kill', async () => {
+  const h = harness({
+    timeoutMs: () => 20,
+    runGate: async (_w, each, logs, options) => {
+      const trees = options.trees as { hold(pid: number): void; ended: string | null };
+      const log = join(logs, `${each.name}.log`);
+      writeFileSync(log, 'reached-step: {"step":"census","at":0}\nreached-step: {"step":"census","at":0,"ms":3}\nreached-step: {"step":"build Daoris.Desktop.Driver.Tests","at":3}\n');
+      trees.hold(77);
+      while (!trees.ended) await new Promise((done) => setTimeout(done, 5));
+      return { gate: each, code: null, verdict: 'ENDED', note: 'ended', ms: 20, log };
+    },
+  });
+  try {
+    const result = await call(h, { gate: { name: 'reached', run: 'node tools/reached-checks.mjs', reuse: '' } });
+    assert.equal(result.overBudget, true);
+    assert.match(result.note, /its steps: census 0 s, build Daoris\.Desktop\.Driver\.Tests 0 s \(running when it ended\)/);
+    assert.equal(result.steps!.at(-1)!.open, true);
+    assert.ok(result.steps!.at(-1)!.ms >= 15, 'the cut step is timed to the kill');
+  } finally {
+    h.done();
+  }
+});
+
 test('a gate narrowed to the classes no pass covers runs the narrowed command, keyed as the declared gate; none left passes unrun', async () => {
   const h = harness({ replayAll: true });
   try {
