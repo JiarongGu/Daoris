@@ -2,12 +2,14 @@
  * One gate of a merge, run the fast and the non-blocking way: replayed where its verdict stands on the same inputs, run after
  * the npm installs a moved lockfile owes, built once per tree, timed with its slowest classes, ended abnormally without ending the run, and its leftovers stopped. And the merge's
  * settling: which failures are main's, what the record and the summary say. `tools/merge-branch.mjs` hands this its own seams.
- * Each gate's time breaches (the lines its log says, and its own kill at its budget, sampled for load) ride on its result, and the
- * settling writes them to `breaches.json` beside the gates' logs (`reportBreaches`).
+ * Each gate's time breaches (the lines its log says, the tests its log says the hang timeout killed, and its own kill at its budget,
+ * sampled for load) ride on its result, and the settling writes them to `breaches.json` beside the gates' logs.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { breachLines, gateBreach, parseBreaches, separations, writeBreaches, type Breach, type LoadSeam, type Separation } from '../time-why.mjs';
+import {
+  breachLines, gateBreach, hangBreaches, parseBreaches, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
+} from '../time-why.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { ClassReplay } from './full-replay.ts';
 import type { LockInstalls } from './lock-install.ts';
@@ -145,7 +147,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const outcome = said ? parseOutcome(said) : null;
   const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
   if (steps.length) result.steps = steps;
-  const breaches = parseBreaches(said);
+  const breaches = [...parseBreaches(said), ...hangBreaches(said, sourceReader(where), peak)];
   if (expired !== null && budget !== null && !trees?.ended) {
     const kill = gateBreach({ gate: gate.name, ms: Date.now() - started, budget, steps, peak, fails: true });
     const loaded = kill.cause === 'load';

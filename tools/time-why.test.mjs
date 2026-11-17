@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breachLines, domainOf, gateBreach, parseBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { breachLines, domainOf, gateBreach, hangBreaches, parseBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -81,6 +81,25 @@ test('three classes of one domain over by one cause make it a separation candida
   assert.deepEqual(separations([of('A', 'Y', 'load'), of('B', 'Y', 'load'), of('C', 'Y', 'load')]), [], 'load is never a candidate');
   assert.equal(domainOf('tools/merge/flow.test.ts'), 'tools/merge');
   assert.equal(domainOf(`${PROJECT}/Top.cs`), 'Daoris.Desktop.Driver.Tests');
+});
+
+test('a test the blame collector killed at its hang timeout is a breach of that timeout, classed by its source', () => {
+  const log = [
+    'The active test run was aborted. Reason: Test host process crashed',
+    "Data collector 'Blame' message: The specified inactivity time of 60 seconds has elapsed. Collecting hang dumps from testhost and its child processes.",
+    'The active Test Run was aborted because the host process exited unexpectedly.',
+    'The test running when the crash occurred: ',
+    'Daoris.Desktop.Driver.Tests.WaitsTests.Runs',
+    '',
+    'This test may, or may not be the source of the crash.',
+  ].join('\r\n');
+  const [hang, ...more] = hangBreaches(log, reader, 3);
+  assert.deepEqual(more, []);
+  assert.deepEqual([hang.kind, hang.name, hang.ms, hang.cause, hang.fails], ['hang', 'Daoris.Desktop.Driver.Tests.WaitsTests.Runs', 60_000, 'clock', true]);
+  assert.match(hang.evidence, /killed by the hang timeout; 3 heavy runs under way/);
+  assert.match(breachLines([hang])[1], /WaitsTests\.Runs hung 60 s, its hang timeout 60 s: clock/);
+  assert.equal(hangBreaches('5 minutes have passed', reader).length, 0, 'no hang said, none read');
+  assert.equal(hangBreaches("The specified inactivity time of 5 minutes has elapsed.\nThe tests running when the crash occurred:\nA.B.c\nA.B.d(x: 1, y: 2)\n\n", () => null)[1].ms, 300_000);
 });
 
 test('a breach said as a machine line reads back, and the summary names its cause, failing ones first', () => {

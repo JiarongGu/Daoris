@@ -6,7 +6,7 @@ export type Cause = 'process' | 'disk' | 'network' | 'clock' | 'scan' | 'load' |
 
 /** One time breach: what breached, its time and limit, its cause and what it was read from, the row that owns the fix, and whether it fails the run. */
 export type Breach = {
-  kind: 'test' | 'census' | 'gate'; name: string; ms: number; limit: number; cause: Cause; evidence: string; fix: string; fails: boolean;
+  kind: 'test' | 'census' | 'hang' | 'gate'; name: string; ms: number; limit: number; cause: Cause; evidence: string; fix: string; fails: boolean;
   unit?: string; domain?: string;
 };
 export type Separation = { domain: string; cause: Cause; classes: string[]; fix: string };
@@ -17,15 +17,16 @@ export type LoadSeam = { sample: () => { peak: () => number; stop: () => void };
 export declare function causeOf(given: { text?: string | undefined; file?: string | undefined; record?: string }): { cause: Cause; evidence: string; real?: true };
 export declare function domainOf(file: string): string;
 export declare function sourceReader(root: string, seams?: { files?: string[] | null; read?: (path: string) => string }): (key: string) => Source | null;
+export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null): Breach[];
 export declare function testBreach(given: {
-  kind?: 'test' | 'census'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string;
+  kind?: 'test' | 'census' | 'hang'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string;
 }): Breach;
 export declare function gateBreach(given: { gate: string; ms: number; budget: number; steps?: readonly StepTime[]; peak?: number | null; fails: boolean }): Breach;
 export declare function separations(breaches: readonly Breach[], least?: number): Separation[];
 export declare const sayBreach: (breach: Breach) => string;
 export declare function parseBreaches(text: string | null | undefined): Breach[];
 export declare const isBreachLine: (line: string) => boolean;
-export declare const breachLine: (breach: Breach) => string;
+export declare function breachLine(breach: Breach): string;
 export declare function breachLines(breaches: readonly Breach[], found?: Separation[], options?: { file?: string | null; max?: number }): string[];
 export declare function writeBreaches(dir: string, breaches: readonly Breach[], found?: Separation[]): string | null;
 export declare function loadSeam(home: string | null, root: string): LoadSeam;

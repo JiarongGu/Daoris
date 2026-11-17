@@ -2,7 +2,8 @@
  * Why a time breach happened, read from what the test or the gate did, and the row that owns its fix.
  *
  * A breach is a test over its time ratchet's limit (`tools/time-ratchet.mjs`), a unit test over the layers census's second
- * (`tools/layers-census.mjs`) or a gate killed at its budget (`tools/merge/timeout.ts`). Each is one record: what breached, its time
+ * (`tools/layers-census.mjs`), a test the blame collector killed at its hang timeout (`hangBreaches`, read from a gate's log) or a
+ * gate killed at its budget (`tools/merge/timeout.ts`). Each is one record: what breached, its time
  * and its limit, its cause, what the cause was read from (`evidence`), the fix path (the row that owns the fix) and whether it fails
  * the run. A tool says each as a machine line (`time-breach: {…}`); the merge reads them from a gate's log and the ratchet's output,
  * writes them to `breaches.json` beside the run's gate logs, carries them in the merge record and the queue's scope-run record, and
@@ -142,6 +143,22 @@ export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', 
   };
 }
 
+const HANG = /The specified inactivity time of (\d+) (seconds?|minutes?) has elapsed/;
+const HUNG = /The tests? running when the crash occurred:[^\S\n]*\r?\n((?:[^\S\n]*\S+[^\S\n]*\r?\n?)+)/g;
+
+/**
+ * The blame collector's hang kills a .NET gate's `log` says (`VSTestBlameHangTimeout`): each test it names as running when it killed
+ * the host, as a breach of the hang timeout with its cause. `peak`, the load sampler's, is said beside it where others ran.
+ */
+export function hangBreaches(log, source, peak = null) {
+  const at = HANG.exec(String(log ?? ''));
+  if (!at) return [];
+  const ms = Number(at[1]) * (at[2].startsWith('minute') ? 60_000 : 1000);
+  const load = typeof peak === 'number' && peak > ALONE_HOLDS ? `; ${peak} heavy runs under way at the gate's peak` : '';
+  const keys = [...String(log).matchAll(HUNG)].flatMap((found) => found[1].split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+  return [...new Set(keys)].map((key) => testBreach({ kind: 'hang', key, ms, limit: ms, fails: true, source: source(key), note: `killed by the hang timeout${load}` }));
+}
+
 /** The cause a gate's step reads as, by its name. */
 function stepCause(step) {
   if (/^(?:census|plan)\b/.test(step)) return 'scan';
@@ -214,8 +231,13 @@ export const isBreachLine = (line) => line.trimStart().startsWith(MARK);
 
 const span = (ms) => (ms < 120_000 ? `${Math.round(ms / 1000)} s` : `${Number((ms / 60_000).toFixed(1))} min`);
 
+const SAID = { gate: ['killed after', 'budget'], hang: ['hung', 'hang timeout'], census: ['took', 'unit budget'], test: ['took', 'limit'] };
+
 /** One breach as a person reads it. */
-export const breachLine = (breach) => `${breach.name} ${breach.kind === 'gate' ? 'killed after' : 'took'} ${span(breach.ms)}, its ${breach.kind === 'gate' ? 'budget' : 'limit'} ${span(breach.limit)}: ${breach.cause} (${breach.evidence}); fix: ${breach.fix}${breach.fails ? '; it fails the run' : ''}`;
+export function breachLine(breach) {
+  const [did, bound] = SAID[breach.kind] ?? SAID.test;
+  return `${breach.name} ${did} ${span(breach.ms)}, its ${bound} ${span(breach.limit)}: ${breach.cause} (${breach.evidence}); fix: ${breach.fix}${breach.fails ? '; it fails the run' : ''}`;
+}
 
 /** The summary's lines: a head naming the file, each failing or load breach first, at most `max`, then the separation candidates. */
 export function breachLines(breaches, found = separations(breaches), { file = null, max = 10 } = {}) {
