@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests.Workflows;
 
 /// <summary>
-/// A wait is answered by its own role (D312, amended): the step's tenure holds the step's own role, and any other role a wait is on (a
+/// A wait is answered by its own role: the step's tenure holds the step's own role, and any other role a wait is on (a
 /// vacancy's line, a plugin's actor) is held by the place's cast of that role, never by the step's holder. Seen failing first: a vacancy on
 /// an agent's opinion step, and a sign-in wait on a release an agent holds, both read the agent and left <i>What needs you</i>.
 /// </summary>
@@ -87,7 +87,7 @@ public sealed class StepWaitHoldersTests
     }
 
     /// <summary>
-    /// A go-ahead is answered by the grants, never the tenure (D306), so its row offers no hold acts; a step the pass has not cast yet offers none
+    /// A go-ahead is answered by the grants, never the tenure, so its row offers no hold acts; a step the pass has not cast yet offers none
     /// either, since its Take would find the person holding it already. Seen failing first.
     /// </summary>
     [Fact]

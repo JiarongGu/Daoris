@@ -88,7 +88,7 @@ public sealed class SupervisedPlanRunTests : NodeRunFixture
         Decisions.ReleaseLandingsAsync(LandingReleaseLine.Of(_home, Files, _ => false), _now.AddMinutes(11));
 
     /// <summary>
-    /// A supervisor's word stands in only for a step the person holds (D312): a review handed to an agent is listed to no supervisor, and a
+    /// A supervisor's word stands in only for a step the person holds: a review handed to an agent is listed to no supervisor, and a
     /// decision kept before a hand-over carries the epoch it read into its release, refused there though the person holds the step again.
     /// Seen failing first.
     /// </summary>

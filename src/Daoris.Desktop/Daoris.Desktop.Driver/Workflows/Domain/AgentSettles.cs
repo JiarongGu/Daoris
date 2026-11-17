@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an agent's channel settles today (D312, amended). No channel speaks a press for an agent yet, so an agent holds a step only where the
+/// What an agent's channel settles today. No channel speaks a press for an agent yet, so an agent holds a step only where the
 /// step settles without one: by an observation (a check's result, a landing, a go-ahead read on its record, a plugin's act read from its
 /// outcome) or by the work an agent's session does (the work, the second opinion). A step its own role's press settles (a review's Accept, a
 /// task's Done, approval or decision) has no agent settler: a place's cast refuses an agent for the role such a kind takes where it names

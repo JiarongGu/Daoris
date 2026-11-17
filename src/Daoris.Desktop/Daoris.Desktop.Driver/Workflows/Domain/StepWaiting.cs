@@ -52,7 +52,7 @@ public static class StepWaiting
     }
 
     /// <summary>
-    /// Who holds the role <paramref name="role"/> a step's wait is on, by that role (D312, amended): the step's own role its attempt's tenure,
+    /// Who holds the role <paramref name="role"/> a step's wait is on, by that role: the step's own role its attempt's tenure,
     /// or before the pass casts it the holder its words or the place's cast name; any other role (a vacancy's line, a plugin's actor, an attempt
     /// held for operations on a step of another role) the place's cast of that role now, never the step's holder. No cast in hand reads the person.
     /// </summary>
@@ -210,7 +210,7 @@ public static class HeldSteps
     /// <summary>
     /// The row of one step, or null where a word is pending on it, another row carries it, or it waits on an agent whose channel settles it.
     /// A wait an agent holds that only a press settles (<see cref="AgentSettles.Wait"/>) has no settler, so it stays the person's row, said
-    /// with its holder, to take (D312, amended).
+    /// with its holder, to take.
     /// </summary>
     public static HeldStep? Step(
         string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null)
@@ -235,7 +235,7 @@ public static class HeldSteps
 
     /// <summary>
     /// The hold acts a row offers: they pass the step's own tenure on, so only on a wait on the step's own role, once the pass has cast it (a
-    /// Take before would find its cast holder holding it already), and never on a go-ahead, whose answer is the grants' (D306), not the tenure's.
+    /// Take before would find its cast holder holding it already), and never on a go-ahead, whose answer is the grants', not the tenure's.
     /// </summary>
     public static IReadOnlyList<string>? HoldsOn(NodeDeclaration node, RoleWait? wait, StepTenure? tenure) =>
         tenure is not null && wait?.Why != PersonWaits.GoAhead && (wait is null || wait.Role == StepRoles.Of(node)) ? StepHoldActs.Of(tenure) : null;
