@@ -146,10 +146,16 @@ public static class RunNodeWords
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
             var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
-            if (SettleDoor.Admit(holding, settle ?? SettleBy.Of(act, by, holder, epoch)) is { } refusal)
+            var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
+            // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press (D312).
+            var takes = StepHolding.TakesOnPress(holding, speaker);
+            if (!takes && SettleDoor.Admit(holding, speaker) is { } refusal)
             {
                 return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
             }
+
+            (NodeRecord?, NodeWorded) Kept(NodeRecord edited, NodeWorded worded) =>
+                takes && StepHolding.TakeOnPress(records, run, bound.Unit, holding!, act, now) is null ? (null, Refuse(StepHolding.Unwritable)) : (edited, worded);
 
             var word = new NodeWord(node, act, words, now)
             {
@@ -164,7 +170,7 @@ public static class RunNodeWords
                 if (status.State is NodeStates.Blocked or NodeStates.Ready)
                 {
                     var early = word with { Kept = true, Revision = revision?.Trim() };
-                    return (record with { Pending = [.. record.Pending.Where(each => each.Node != node), early] }, new NodeWorded(run, node, act, null) { Early = true });
+                    return Kept(record with { Pending = [.. record.Pending.Where(each => each.Node != node), early] }, new NodeWorded(run, node, act, null) { Early = true });
                 }
 
                 if (status.State == NodeStates.Active)
@@ -189,7 +195,7 @@ public static class RunNodeWords
             }
 
             var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
-            return (record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
+            return Kept(record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
         });
         return refused is null ? result! : Refuse(refused);
     }

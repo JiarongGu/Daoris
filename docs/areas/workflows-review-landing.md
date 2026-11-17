@@ -218,7 +218,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     channel's) and the epoch it read (every settling door takes `--epoch`, and the run view's and *What needs you*'s presses pass the epoch
     their row read, `HeldStep.Epoch`), never the step's kind: a word naming an ended epoch is refused `ended-epoch`, one from a holder that
     does not hold the step now `not-holder`, each naming who holds it and since when; a word naming no epoch is judged against the holder
-    now; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds the step; a supervisor's
+    now; the person's press on a step another holder holds, in the epoch it read, takes the step as the press is kept (a new epoch,
+    journaled *Take* with the reason `pressed <word>`, `StepHolding.TakeOnPress`) and settles it in one act, while an agent's word never
+    takes; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds the step; a supervisor's
     held word stands in for a step the person holds alone; and an attempt no tenure holds yet refuses nothing. A marked approver is held by
     the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any

@@ -55,17 +55,37 @@ public sealed class SettleDoorTests : IDisposable
     }
 
     [Fact]
-    public void The_holders_word_settles_and_another_holders_is_refused_naming_who_holds_it()
+    public void The_holders_word_settles_and_another_agents_is_refused_naming_who_holds_it()
     {
         Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", "the release path", _now);
         Assert.Equal("agent:alpha", Start(StepRoles.ReleaseManager, "done", Risk()).Holder);
 
-        var person = RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now);
-        Assert.Equal(SettleDoor.NotHolder, person.Refused);
-        Assert.Contains("agent:alpha", person.Detail, StringComparison.Ordinal);
-        Assert.Equal(SettleDoor.NotHolder, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, settle: new SettleBy("agent:beta", 1)).Refused);
+        var other = RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, settle: new SettleBy("agent:beta", 1));
+        Assert.Equal(SettleDoor.NotHolder, other.Refused);
+        Assert.Contains("agent:alpha", other.Detail, StringComparison.Ordinal);
 
         Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released", () => _now, settle: new SettleBy("agent:alpha", 1)).Done);
+    }
+
+    [Fact]
+    public void The_persons_press_on_a_step_an_agent_holds_takes_it_and_settles_in_one_act()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        var tenures = new StepTenureFiles(_home, () => true);
+
+        // An agent's word never takes, and a press read in an ended epoch is refused and takes nothing.
+        Assert.Equal(SettleDoor.NotHolder, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, settle: new SettleBy("agent:beta", 1)).Refused);
+        Assert.Equal(StepTenureFiles.EndedEpoch, RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, null, () => _now, epoch: 2).Refused);
+        Assert.Equal("agent:alpha", tenures.Current(RunUnits.IdOf(Run), "step", 1)!.Holder);
+
+        var pressed = RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released by hand", () => _now.AddMinutes(1), epoch: 1);
+        Assert.True(pressed.Done, pressed.Refused);
+        var now = tenures.Current(RunUnits.IdOf(Run), "step", 1)!;
+        Assert.Equal((CastHolders.Person, 2, TenureWhy.TakeBack), (now.Holder, now.Epoch, now.Why));
+        var take = Assert.Single(Casts.Journal(), entry => entry.Act == CastActs.Take);
+        Assert.Equal(("pressed done", Run, "step", 2), (take.Why, take.Run, take.Node, take.Epoch));
+        Assert.Contains(Records.Read(RunUnits.IdOf(Run))!.Pending, word => word is { Node: "step", Act: NodeWordActs.Done });
     }
 
     [Fact]

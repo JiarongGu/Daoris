@@ -87,6 +87,26 @@ public static class StepHolding
         return new StepHeld(run, node, act, null) { Tenure = next };
     }
 
+    /// <summary>
+    /// Whether the word <paramref name="by"/> gives is the person's press on a step another holder holds in the epoch it read, which takes the
+    /// step and settles it in one act (<see cref="TakeOnPress"/>): the person's alone, never an agent's or the line's, and never in an ended
+    /// epoch or on a step the owner's mark keeps theirs, which the person holds already.
+    /// </summary>
+    public static bool TakesOnPress(StepTenure? current, SettleBy by) =>
+        by.Who == CastHolders.Person && SettleDoor.Admit(current, by) is { Code: SettleDoor.NotHolder };
+
+    /// <summary>
+    /// The person's take of the step <paramref name="current"/> holds, made with their press of <paramref name="act"/> once the press is kept:
+    /// a new epoch held by the person, journaled as a <i>Take</i> whose reason is the press (<c>pressed &lt;act&gt;</c>). Null where nothing is written.
+    /// </summary>
+    public static StepTenure? TakeOnPress(NodeRecordFiles records, string? run, string unit, StepTenure current, string act, DateTimeOffset now)
+    {
+        if (new StepTenureFiles(records.Home, records.HoldsLease).HandOver(unit, current.Node, current.Attempt, CastHolders.Person, TenureWhy.TakeBack, now) is not { } next) return null;
+        new PlaceCastFiles(records.Home, records.HoldsLease).Keep(
+            new CastEntry(now, CastActs.Take, next.Role, CastHolders.Person, $"pressed {act}") { Run = run, Node = current.Node, Attempt = next.Attempt, Epoch = next.Epoch });
+        return next;
+    }
+
     /// <summary>The terminal's sentence for what an act came to.</summary>
     public static string Said(StepHeld held) => held switch
     {

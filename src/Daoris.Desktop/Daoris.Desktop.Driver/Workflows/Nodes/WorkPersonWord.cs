@@ -17,13 +17,21 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
         SettleBy? settle = null)
     {
         var by = settle ?? (resolution == HeldResolutions.Stop ? new SettleBy(SettleBy.Owner, epoch) : SettleBy.Person(epoch));
-        if (SettleDoor.Admit(new StepTenureFiles(records.Home, records.HoldsLease).Current(unit, node, attempt), by) is { } refused)
+        var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(unit, node, attempt);
+        // The person's word on a step another holder holds takes it first, journaled with the word, and settles it: one press (D312).
+        var takes = StepHolding.TakesOnPress(holding, by);
+        if (!takes && SettleDoor.Admit(holding, by) is { } refused)
         {
             return new(unit, node, PerformedWhat.Refused, refused.Code) { Detail = refused.Detail };
         }
 
+        if (resolution != HeldResolutions.DoneOutside && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
+        if (takes && StepHolding.TakeOnPress(records, RunUnits.Is(unit) ? unit[RunUnits.Prefix.Length..] : null, unit, holding!, resolution, clock()) is null)
+        {
+            return new(unit, node, PerformedWhat.Refused, StepHolding.Unwritable);
+        }
+
         if (resolution == HeldResolutions.DoneOutside) return Outside(unit, node, attempt, outcome, link, note);
-        if (!HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return new(unit, node, PerformedWhat.Refused, NotResolution);
         var now = clock();
         return records.Edited(unit, node, record =>
         {
