@@ -34,11 +34,6 @@
     "why": "binds the provider seams of every shipping desktop project through the shared compilation; the case waits on the binding the gate's other cases share",
     "row": "TESTSLOW1"
   },
-  "Daoris.Desktop.Driver.Tests.ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node": {
-    "ms": 52000,
-    "why": "207 combinations each run a real git graph through the review node; 7 s for the class alone, the rest is the census gate's load on the same cores",
-    "row": "TESTSLOW1"
-  },
   "Daoris.Desktop.Driver.Tests.SessionMessagesTickTests": {
     "ms": 120000,
     "why": "each case is one to three real driver ticks, and a tick is thirty to seventy git starts (worktree list and open, rev-parse, status) with a node stand-in agent and a loopback stand-in service, about five seconds alone; a case reads what a real tick does to a kept record, so a scripted tick would prove nothing. The repeated git reads of a tick are the product's to cut",

@@ -339,13 +339,12 @@ test('every declared gate is actually run by the release workflow', () => {
     scripts: { 'verify:checks': string };
   }).scripts['verify:checks'];
   const runsVerify = /run:\s*npm run verify:checks\s*$/m.test(workflow);
-  // A gate of one category (the censuses) is run where the workflow runs its project's whole fast half: every category but
-  // Process. Each of its commands is judged so, never the gate's text as a whole.
-  // A run's timing reporter and `{base}` are its own, never the release's.
+  // A one-category gate, or a fast half leaving one out, runs where the workflow runs the project's fast half; each
+  // command is judged so. A run's timing reporter and `{base}` are its own, never the release's.
   const bare = (command: string) => command.replace(/ --results-directory \S+ --logger "trx;LogFileName=[^"]+"/g, '').replace(/ --base \{base\}/g, '');
   const runs = (raw: string) => {
     const command = bare(raw);
-    const category = /^dotnet test (\S+) --filter Category=(\w+)$/.exec(command);
+    const category = /^dotnet test (\S+) --filter (?:Category=(\w+)|"Category!=Process(?:&Category!=\w+)+")$/.exec(command);
     return workflow.includes(command) || (runsVerify && verify.includes(command))
       || (category !== null && category[2] !== 'Process' && workflow.includes(`dotnet test ${category[1]} --filter Category!=Process`));
   };
@@ -368,7 +367,7 @@ test('a suite gated without its Process tests has gates that run them: bounded, 
     gates: { name: string; run: string }[];
   };
   const fast = gates.gates
-    .map((gate) => /^dotnet test (\S+) --filter Category!=Process(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
+    .map((gate) => /^dotnet test (\S+) --filter "?Category!=Process(?:&Category!=\w+)*"?(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?$/.exec(gate.run)?.[1])
     .filter((target): target is string => target !== undefined);
   const halves = gates.gates
     .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))
