@@ -62,7 +62,7 @@ test("this repository's census: every class carrying the Process trait is read i
     for (const file of files.filter((path) => path.startsWith(`${project}/`) && path.endsWith('.cs'))) {
       const { code } = reach.readCs(read(file));
       for (const match of code.matchAll(/\[Trait\(Category\.Name,\s*Category\.Process\)\]([^{;]*?)\bclass\s+(\w+)/g)) {
-        if (!/\bstatic\b/.test(match[1])) marked.push(`${project} ${match[2]}`);
+        if (!/\bstatic\b/.test(match[1] ?? '')) marked.push(`${project} ${match[2]}`);
       }
     }
   }
