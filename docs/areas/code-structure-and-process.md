@@ -182,7 +182,8 @@ finishes first and the whole set runs once.
     to the CI beside. It never holds a merge; the watch of main the same landings start does (`merge/main-watch.ts`): the cheap
     suites on the new tip, whose red holds the queue's next merge until fixed or named known. A merge's run keeps going past every
     failure but a blocking light gate's, and its reds go in one brief, each marked main's or the branch's (`merge/red-brief.ts`);
-    a builder runs the same gates first with `--preflight` (`merge/preflight.ts`). `reached` reuses a pass
+    a builder runs the same fast gates first with `--preflight` (`merge/preflight.ts`, its plan `merge/fast-plan.ts`: never a
+    Process or git half, a rehearsal or a browser spec), within a bound it says the outcome at. `reached` reuses a pass
     per class: a class's key is the digest of every tree file that reaches it (its own files, the source files that declare what
     its files name, the areas its program or a `[Reaches]` names, the build
     files above its project), its suite's declaration and the toolchain, with wiring (a project reference, a `Using`, a `global

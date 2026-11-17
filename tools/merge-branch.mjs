@@ -55,7 +55,7 @@
  *
  * ## Every red once, early
  *
- * A builder's `--preflight` runs its merge's own gates in its worktree (`merge/preflight.ts`). A red of a merge, a candidate, a
+ * A builder's `--preflight` runs its merge's fast plan in its worktree, within a bound (`merge/preflight.ts`). A red of a merge, a candidate, a
  * preflight or the watch writes `local/scratch/merge-<branch>/brief.md`, each failure marked main's or the branch's by a run on
  * main (`merge/red-brief.ts`). After a landing `--main-watch` runs the cheap suites on main; its red holds the queue's next
  * merge until fixed or `--queue --known` (`merge/main-watch.ts`). Each run writes its start for the time ratchet. A gate
@@ -354,7 +354,7 @@ import { DEPENDENCY_FOLDERS, NPM_CI, staleDependencies, stampDependencies } from
 export { DEPENDENCY_FOLDERS, staleDependencies, stampDependencies };
 import { removeWorktree } from './worktree-remove.mjs';
 import { indexLockNote,mentionsIndexLock, readIndexLock } from './index-lock.mjs';
-import { admissionLines, createAdmission, lookAt } from './machine-admission.mjs';
+import { admissionLines, createAdmission, holdersSentence, lookAt } from './machine-admission.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStrandedUnder, processList } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
@@ -391,7 +391,8 @@ import { fullReplayOf, replaySummary, sweptBy } from './merge-branch/full-set.mj
 import { reachLines, reachStatus } from './merge-branch/reach-report.mjs';
 import { againWhy, reportBreaches, runOne, settleMerge, verdictExtras, withBase } from './merge/flow.ts';
 import { briefGates, briefText, failsFast, markOfJudgement, markOfProbe, writeBrief } from './merge/red-brief.ts';
-import { MAIN_TREE, preflightFacts } from './merge/preflight.ts';
+import { MAIN_TREE, PREFLIGHT_BOUND_MINUTES, planLines, preflightFacts, preflightRun } from './merge/preflight.ts';
+import { fastPlan, scopedKind } from './merge/fast-plan.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
@@ -2491,10 +2492,10 @@ function clearLogs(dir) {
  * machine they run on) unless `MERGE_BRANCH_ADMISSION=on`. It has no home to share without `DAORIS_HOME`, and then nothing waits.
  * The tool hands it the home it read at its start (`home`), the one its gates do not inherit.
  */
-export function machineAdmission(env = process.env, { home = env.DAORIS_HOME } = {}) {
+export function machineAdmission(env = process.env, { home = env.DAORIS_HOME, patience } = {}) {
   const setting = env.MERGE_BRANCH_ADMISSION;
   if (setting === 'off' || (setting !== 'on' && env.MERGE_BRANCH_MEMORY === 'off')) return null;
-  return createAdmission({ daorisHome: home || null, kind: 'queue', env, say: console.log });
+  return createAdmission({ daorisHome: home || null, kind: 'queue', env, say: console.log, patience });
 }
 
 const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true }).out.trim() || null;
@@ -2512,7 +2513,7 @@ const flowSeams = () => ({
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(), base, changed,
+  kind = null, gateVerdict = () => true, step = gateStep, waitFor = null, replay = false, since = Date.now(), base, changed, admission = startAdmission(),
 } = {}) {
   writeRunStart(root, since);
   const commit = headCommit(root);
@@ -2532,7 +2533,7 @@ function runRecorded(root, gates, dir, {
     // The machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
     // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
     memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
-    admission: startAdmission(),
+    admission,
     run: async (where, gate, logs, beside) => {
       onStart(gate);
       const tree = contentTree(where);
@@ -5372,17 +5373,6 @@ function mergeMember(tree, member, onto, { base, formed = [] } = { base: onto })
   return { commit: git(tree, ['rev-parse', 'HEAD']).out.trim() };
 }
 
-/** Which of the scoped run's kinds a gate is (§4.2), for `scopedSet`. */
-function scopedKind(gate) {
-  if (BLOCKING.includes(gate.name)) return 'cheap';
-  if (isGitHalf(gate)) return 'git';
-  if (isProcessGate(gate)) return 'process';
-  if (isProcessLane(gate) || isStageRehearsal(gate) || /^npm run rehearse/.test(gate.run.trim())) return 'rehearsal';
-  if (['web', 'web-measured'].includes(gate.name)) return 'browser';
-  if (dotnetComponent(gate.run)) return 'fast';
-  return 'node';
-}
-
 /** The newest trx the CI left for a gate, its classes' times, which the git half's budget lays on its lanes. */
 function classTimes(home, gate) {
   const scratch = join(home, SCRATCH);
@@ -5493,27 +5483,35 @@ function mainMarker(root, dir) {
   };
 }
 
-/** `--preflight [--base <ref>]`: the merge's own gates for this worktree's branch, run here, every one to its end. */
+/** `--preflight [--base <ref>] [--bound <minutes>]`: the merge's fast plan for this worktree's branch, run here within its bound. */
 async function preflightVerb(root, options) {
+  const started = Date.now();
   const facts = preflightFacts(root, options.base ?? MAIN, git);
   for (const line of facts.lines) console.log(line);
   const home = verdictsHome(root);
   const plan = readPlan(root);
   const choice = scopedChoice(home, root, { plan, base: facts.from, tip: facts.tip });
+  const set = fastPlan(choice.set, (name) => scopedKind(plan.find((gate) => gate.name === name)));
   const dir = join(root, SCRATCH, `merge-${slug(facts.branch)}`);
   clearLogs(dir);
-  const { gates } = scopedGates(home, root, plan, choice, dir);
-  console.log(`the merge's gates: ${choice.set.run.map((entry) => entry.name).join(', ')}${choice.set.kept.length ? `; kept, their pass standing on this tree: ${choice.set.kept.map((entry) => entry.name).join(', ')}` : ''}`);
-  for (const entry of choice.set.deferred) console.log(`  deferred, as its merge defers it: ${entry.name}, ${entry.why}`);
-  const results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from, changed: choice.changed });
-  const failed = results.filter((result) => result.verdict === 'FAIL');
-  if (!failed.length) {
-    console.log(`merge-branch: the preflight of ${facts.branch} passed: ${count(results.length, 'gate')} of its merge's ran green here.`);
-    return 0;
+  const { gates } = scopedGates(home, root, plan, { ...choice, set }, dir);
+  const bound = options.bound ?? PREFLIGHT_BOUND_MINUTES;
+  const run = preflightRun({ branch: facts.branch, gates: gates.map((gate) => gate.name), set, boundMinutes: bound, started, holders: () => holdersSentence(START_HOME) });
+  for (const line of planLines(set, bound)) console.log(line);
+  const unhook = stopOnInterrupt(run.trees);
+  run.start();
+  let results;
+  try {
+    const hooks = run.hooks(machineAdmission(process.env, { home: START_HOME, patience: `the preflight gives up at its bound of ${bound} min` }));
+    results = await runRecorded(root, gates, dir, { keepGoing: true, oneAtATime: options.oneAtATime, branch: facts.branch, kind: 'preflight', byMemory: true, base: facts.from, changed: choice.changed, ...hooks });
+  } finally {
+    run.stop();
+    unhook();
   }
-  await briefRed(root, failed, { dirs: [dir], title: `Red brief: the preflight of ${facts.branch}`, ran: `${count(failed.length, 'gate')} of ${results.length} failed on ${facts.branch} at ${facts.tip.slice(0, 7)}, judged against ${facts.base} at ${facts.baseTip.slice(0, 7)}.`, mark: mainMarker(root, dir) });
-  console.log(`merge-branch: the preflight of ${facts.branch} failed ${count(failed.length, 'gate')}: ${failed.map(gateNamed).join(', ')}. Fix the branch's reds and run it again; main's own reds are main's.`);
-  return 1;
+  const { lines, code, failed } = run.summary(results);
+  if (failed.length) await briefRed(root, failed, { dirs: [dir], title: `Red brief: the preflight of ${facts.branch}`, ran: `${count(failed.length, 'gate')} of ${results.length} failed on ${facts.branch} at ${facts.tip.slice(0, 7)}, judged against ${facts.base} at ${facts.baseTip.slice(0, 7)}.`, mark: mainMarker(root, dir) });
+  for (const line of lines) console.log(line);
+  return code;
 }
 
 /** The open known red a failure's signature matches, with its expiry and where it is last seen (§5.2), or null. */

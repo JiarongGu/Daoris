@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  BEAT_MS, INSIDE, STALE_MS, admissionFile, admissionLines, capacityOf, createAdmission, judge, live, lookAt, pruned, readState, readStrict, waitingSentence,
+  BEAT_MS, INSIDE, SAY_MS, STALE_MS, admissionFile, admissionLines, capacityOf, createAdmission, holdersSentence, judge, live, lookAt, pruned, readState, readStrict, waitingSentence,
   wholeDoubts,
 } from './machine-admission.mjs';
 import { writeAtomic } from './fsx.mjs';
@@ -104,6 +104,45 @@ describe('two holders', () => {
     assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.what), ['a dotnet test run']);
     next.release();
     assert.deepEqual(readState(admissionFile(home)), { holds: [], waits: [] });
+  });
+
+  test('a wait says what it waits for and who holds the places as it starts, then once a minute, with how long it will wait', async () => {
+    const home = newHome();
+    const first = admission(home);
+    const held = await first.take({ what: 'driver gate' });
+    // A clock held in the test, from now so the holder's beat stays live: each look is ten seconds, the holder lets go at the seventh.
+    let clock = Date.now();
+    let looks = 0;
+    const second = admission(home, {
+      now: () => clock, pollMs: 10_000, sayMs: 30_000, patience: 'the preflight gives up at its bound of 25 min',
+      sleep: async () => {
+        clock += 10_000;
+        looks += 1;
+        if (looks === 7) held.release();
+        await new Promise((done) => { setImmediate(done); });
+      },
+    });
+    const hold = await second.take({ what: 'reached gate' });
+    assert.ok(hold);
+    const waiting = second.said.filter((line) => /waiting for the machine's heavy-run admission before reached gate/.test(line));
+    assert.equal(waiting.length, 3, `one as it starts, then one at each period of its seventy seconds:\n${second.said.join('\n')}`);
+    assert.match(waiting[0], /reached gate: the machine runs 1 of 1 heavy runs: the merge queue's driver gate/);
+    assert.doesNotMatch(waiting[0], /so far/);
+    assert.match(waiting[1], /reached gate \(30s so far\): the machine runs 1 of 1/);
+    assert.match(waiting[2], /\(1m 0s so far\)/);
+    for (const line of waiting) assert.match(line, /the preflight gives up at its bound of 25 min, and looks again every 10s$/);
+    assert.match(second.said.at(-1), /has its place after waiting 70s/);
+    assert.equal(SAY_MS, 60_000, 'a wait is said once a minute');
+    hold.release();
+  });
+
+  test("who holds the places is said from the home's record, and nothing without a home", async () => {
+    const home = newHome();
+    const made = admission(home);
+    const hold = await made.take({ what: 'driver gate' });
+    assert.match(holdersSentence(home, { alive: () => true, capacity: 3 }), /^the machine runs 1 of 3 heavy runs: the merge queue's driver gate \(\d+s\)$/);
+    assert.equal(holdersSentence(null), null);
+    hold.release();
   });
 
   test('the capacity is the number of holders that run at once', async () => {

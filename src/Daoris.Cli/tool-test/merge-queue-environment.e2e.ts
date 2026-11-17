@@ -150,30 +150,46 @@ describe("A gate sees none of the shell's home, role or git locating variables, 
     }
   });
 
-  test('a merge in place, a gate run again and a full run of the checkout start their gates the same way', async () => {
+  // `universal` runs at every merge, run again or full run of a tree it has not passed; a run again answers 1 while `check` has no verdict.
+  const watching = (repo: { root: string }, name: string) => {
+    const record = join(repo.root, 'local', `${name}.json`);
+    const seenAfter = (what: string, { status, out }: { status: number | null; out: string }) => {
+      assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)), `${what}: ${status} ${out}`);
+      assert.ok(existsSync(record), `${what}: the check gate ran: ${out}`);
+      assertClean(JSON.parse(readFileSync(record, 'utf8')) as SeenEnvironment, what);
+      rmSync(record);
+    };
+    return { gate: envGate(record, '', 'universal'), seenAfter };
+  };
+
+  test('a merge in place and a gate run again start their gates the same way', async () => {
     const repo = queueScratch('gate-shell-direct');
     try {
-      const record = join(repo.root, 'local', 'gate-shell-direct.json');
-      // `universal` runs at every merge and every full run of a tree not passed; `check` is skipped by the lane table for a file like this.
-      repo.branch('b1', { 'qgate.mjs': envGate(record, '', 'universal') });
-      // A gate run again on the checkout answers 1 while the full set lacks a verdict (`check` has none here): the gate ran all the same.
-      const seenAfter = (what: string, { status, out }: { status: number | null; out: string }) => {
-        assert.ok(status === 0 || (status === 1 && /^merge-branch: .*has NOT passed this checkout/m.test(out)),
-          `${what}: ${status} ${out}`);
-        assert.ok(existsSync(record), `${what}: the check gate ran: ${out}`);
-        assertClean(JSON.parse(readFileSync(record, 'utf8')) as SeenEnvironment, what);
-        rmSync(record);
-      };
+      const { gate, seenAfter } = watching(repo, 'gate-shell-direct');
+      repo.branch('b1', { 'qgate.mjs': gate });
       const direct = shell(repo, true);
       seenAfter('merge in place', await repo.run(['b1'], direct));
       seenAfter('--rerun with the merge open', await repo.run(['--rerun', 'universal'], direct));
       repo.git('commit', '--quiet', '-m', `Merge b1${TRAILER}`);
       seenAfter('--rerun with none open', await repo.run(['--rerun', 'universal'], direct));
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // A full run replays a pass of the same inputs, so the full runs have a verdict store of their own, each on a commit of its own.
+  test('a full run of the checkout, and one beside it, start their gates the same way', async () => {
+    const repo = queueScratch('gate-shell-full');
+    try {
+      const { gate, seenAfter } = watching(repo, 'gate-shell-full');
+      repo.branch('b1', { 'qgate.mjs': gate });
+      repo.git('merge', '--quiet', '--no-ff', '-m', `Merge b1${TRAILER}`, 'b1');
+      assert.equal(existsSync(join(repo.root, 'local', 'gate-verdicts.json')), false, 'no run has recorded a verdict here');
+      const direct = shell(repo, true);
       for (const args of [['--full'], ['--full', '--beside']]) {
         writeFileSync(join(repo.root, '.gitignore'), `local/\n${args}\n`);
         repo.git('commit', '--quiet', '-am', `${args}${TRAILER}`);
-        const ran = await repo.run(args, direct);
-        seenAfter(`${args}`, ran);
+        seenAfter(`${args}`, await repo.run(args, direct));
       }
     } finally {
       await repo.cleanup();

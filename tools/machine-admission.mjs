@@ -160,13 +160,15 @@ export function judge({ holds, waits }, id, capacity) {
   return { admitted: holds.length + ahead < capacity, ahead, holds };
 }
 
+/** A length of time as the waiting lines say it: seconds, then minutes and seconds, then hours and minutes. */
+const spanOf = (ms) => {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m` : seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
+};
+
 /** What a run waits for, as a sentence: the holds it waits on, each who and what and since when, and the runs before it. */
 export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }) {
-  const span = (since) => {
-    const seconds = Math.max(0, Math.round((now - timeOf(since)) / 1000));
-    return seconds >= 3600 ? `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m` : seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
-  };
-  const who = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what} (${span(entry.since)})`;
+  const who = (entry) => `${entry.kind === 'queue' ? 'the merge queue' : entry.session ? `session ${entry.session}` : 'a driven run'}'s ${entry.what} (${spanOf(now - timeOf(entry.since))})`;
   return `the machine runs ${holds.length} of ${capacity} heavy runs: ${holds.map(who).join('; ') || 'none'}${ahead ? `; ${ahead} ${ahead === 1 ? 'run asked' : 'runs asked'} before this one` : ''}`;
 }
 
@@ -176,13 +178,13 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
  *
  * `takeWhole` takes every place at once, for a confirm run: see its own contract below.
  *
- * `daorisHome` null admits everything at once. The seams (`alive`, `now`, `sleep`, `say`, and `readText` and `writeText`, which the
- * whole admission alone reads and writes through) are a test's.
+ * `daorisHome` null admits everything at once. A wait is said as it starts, each `sayMs` and as its holders change, with `patience`
+ * (how long it waits). The seams (`alive`, `now`, `sleep`, `say`, `readText`, `writeText`) are a test's.
  */
 export function createAdmission({
   daorisHome = process.env.DAORIS_HOME ?? null, kind = 'queue', capacity = null, alive = processAlive, now = Date.now,
   sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), say = console.log, pollMs = POLL_MS, sayMs = SAY_MS, beatMs = BEAT_MS, env = process.env,
-  readText = (path) => readFileSync(path, 'utf8'), writeText = writeAtomic,
+  readText = (path) => readFileSync(path, 'utf8'), writeText = writeAtomic, patience = 'it never times out',
 } = {}) {
   let file = null;
   try {
@@ -268,7 +270,7 @@ export function createAdmission({
       const judged = judge(verdict, id, size());
       const key = `${judged.holds.map((each) => each.id).join(',')}/${judged.ahead}`;
       if (saidAt === null || now() - saidAt >= sayMs || key !== saidOf) {
-        say(`  waiting for the machine's heavy-run admission before ${entry.what}: ${waitingSentence(judged, { capacity: size(), now: now() })}; it never times out, and looks again every ${Math.round(pollMs / 1000)}s`);
+        say(`  waiting for the machine's heavy-run admission before ${entry.what}${saidAt === null ? '' : ` (${spanOf(now() - waitedFrom)} so far)`}: ${waitingSentence(judged, { capacity: size(), now: now() })}; ${patience}, and looks again every ${Math.round(pollMs / 1000)}s`);
         saidAt = now();
         saidOf = key;
       }
@@ -475,4 +477,16 @@ export function lookAt(daorisHome, seam = {}) {
   const file = admissionFile(daorisHome);
   const state = pruned(readState(file), { alive: seam.alive, now: seam.now ?? Date.now() });
   return { ...state, capacity: seam.capacity ?? capacityOf(undefined, seam.env ?? process.env), present: existsSync(file) };
+}
+
+/** Who holds the machine's places now, as the waiting sentence says it, and how many ask; null with no home or no record that reads. */
+export function holdersSentence(daorisHome, seam = {}) {
+  if (!daorisHome) return null;
+  try {
+    const look = lookAt(daorisHome, seam);
+    const asking = look.waits.length ? `; ${look.waits.length} asking` : '';
+    return `${waitingSentence({ holds: look.holds, ahead: 0 }, { capacity: look.capacity, now: seam.now ?? Date.now() })}${asking}`;
+  } catch {
+    return null;
+  }
 }
