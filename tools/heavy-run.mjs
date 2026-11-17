@@ -92,15 +92,25 @@ export async function runTier(input, {
       tell(`${tier.id} on ${short(tier.commit)} ended without handing over: ${me.id} carries its range`);
     }
   };
-  const arrival = changeStack(file, (stack) => arrive(stack, me, live));
+  let arrival;
+  try {
+    arrival = changeStack(file, (stack) => arrive(stack, me, live));
+  } catch (error) {
+    tell(`the heavy stack could not be read or written (${error.message}): ${me.id} runs without it`);
+    arrival = { role: 'hold', took: null, halt: null, superseded: null, dead: [] };
+  }
   bury(arrival.dead);
   if (arrival.superseded) tell(`${arrival.superseded.id} on ${short(arrival.superseded.commit)} was waiting for the heavy tree: ${me.id} carries its range`);
   let took = arrival.took;
   if (arrival.role === 'wait') {
     const holder = arrival.halt;
     const halt = haltFileOf(home, holder.id);
-    mkdirSync(dirname(halt), { recursive: true });
-    writeAtomic(halt, `${JSON.stringify({ by: me.id, commit: me.commit })}\n`);
+    try {
+      mkdirSync(dirname(halt), { recursive: true });
+      writeAtomic(halt, `${JSON.stringify({ by: me.id, commit: me.commit })}\n`);
+    } catch (error) {
+      tell(`${holder.id}'s halt could not be written (${error.message}): it runs its classes to their end before it hands over`);
+    }
     tell(`${me.id} on ${short(me.commit)} supersedes ${holder.id} on ${short(holder.commit)}: it starts no class more, and hands what it leaves unrun here`);
     const waitedFrom = now();
     let said = 0;
@@ -125,7 +135,11 @@ export async function runTier(input, {
       const waited = now() - waitedFrom;
       const on = seen.stack.holder;
       if (waited >= deadlineMs) {
-        changeStack(file, (stack) => ({ stack: giveUp(stack, me) }));
+        try {
+          changeStack(file, (stack) => ({ stack: giveUp(stack, me) }));
+        } catch {
+          // Left: this tier stops beating, so the next one to look carries its range.
+        }
         const note = `it waited ${spanOf(waited)} for ${on?.id ?? 'the holder'} to hand the heavy tree over and gave up; its range is carried by the next tier`;
         const gaveUp = { ...run, state: 'error', ended: stamp(), note };
         append(gaveUp);
@@ -159,11 +173,16 @@ export async function runTier(input, {
     } catch (error) {
       tell(error.message);
     }
-    const ended = changeStack(file, (stack) => {
-      const asked = askedOf(stack);
-      if (!asked || (outcome && !outcome.handed?.length)) return { stack: release(stack, me), to: null, asked: null };
-      return { ...handOver(stack, me, { unrun: outcome ? outcome.handed : null, from, took }), asked };
-    });
+    let ended = { to: null, asked: null };
+    try {
+      ended = changeStack(file, (stack) => {
+        const asked = askedOf(stack);
+        if (!asked || (outcome && !outcome.handed?.length)) return { stack: release(stack, me), to: null, asked: null };
+        return { ...handOver(stack, me, { unrun: outcome ? outcome.handed : null, from, took }), asked };
+      });
+    } catch (error) {
+      tell(`the heavy stack could not be written as ${me.id} ended (${error.message}): the next tier takes the tree once this process is gone`);
+    }
     const ask = ended.asked ? readHalt(halt) : null;
     const to = ended.to ?? (ended.asked ? { id: ask?.by ?? ended.asked, commit: ask?.commit ?? '' } : null);
     if (!to) return settle(carrying, outcome, code);
