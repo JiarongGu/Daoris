@@ -173,12 +173,11 @@ export type DeclinedRequest = { node: string; quest: string; to: string; work?: 
  * A run step waiting on a role the person holds: the run and node a press is said on, what it waits for (`why`), the role and its
  * holder, the step's own words that settle it (`presses`: `done`, `approve` and `reject`, `skip`, a decision's outcomes), the act in its
  * plugin's words and the page it is taken on, where in the window it is answered (`opens`: `run`), and the run's newest work quest here.
- * A plugin's wait with no page carries `done-outside` among its presses and the attempt it is said on (`held`).
+ * The tenure's `epoch` every press passes and the `holds` it offers (`hand`, `give-back`). A plugin's wait with no page carries `done-outside` among its presses and the attempt it is said on (`held`).
  */
 export type StepWaitRow = {
   run: string; node: string; why: string; role: string; holder?: string | null; holderName?: string | null; presses: string[];
   words?: string | null; url?: string | null; opens?: string | null; work?: string | null;
-  /** The epoch of the step's tenure the row reads, which every press passes, and the acts on its holder it offers (`take`, `hand`, `give-back`). */
   epoch?: number | null; holds?: string[] | null;
   held?: { unit: string; attempt: number; words: string[]; resolution?: string | null } | null;
 };
