@@ -86,6 +86,22 @@ public sealed class StepWaitHoldersTests
         Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent)));
     }
 
+    /// <summary>
+    /// A go-ahead is answered by the grants, never the tenure (D306), so its row offers no hold acts; a step the pass has not cast yet offers none
+    /// either, since its Take would find the person holding it already. Seen failing first.
+    /// </summary>
+    [Fact]
+    public void A_go_ahead_row_and_a_step_not_cast_yet_offer_no_hold_acts()
+    {
+        var go = new NodeDeclaration("go", NodeKinds.GoAhead, 1, NodeReach.Pressed);
+        var asked = HeldSteps.Step(Run, "engine", "aurora", Run, go, Standing("go", Active("go")), HeldBy("go", StepRoles.Approver, CastHolders.Person));
+        var sign = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] };
+        var uncast = HeldSteps.Step(Run, "engine", "aurora", Run, sign, Standing("sign", Active("sign")));
+
+        Assert.Equal((PersonWaits.GoAhead, (IReadOnlyList<string>?)null), (asked?.Why, asked?.Holds));
+        Assert.Equal((PersonWaits.Task, (IReadOnlyList<string>?)null), (uncast?.Why, uncast?.Holds));
+    }
+
     /// <summary>Settings and Hand refuse an agent for a step only a press settles, with the reason; a step settled by an observation or a plugin's act takes one.</summary>
     [Fact]
     public void A_cast_or_hand_over_of_an_agent_to_a_step_only_a_press_settles_is_refused()

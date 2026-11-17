@@ -572,7 +572,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
-    that settle it (never its stop; a skip reads *Not needed this run*), its tenure's epoch and the holder acts it offers (*Hand to…*, *Give back*), a plugin's words and page, *Done outside Daoris* on the attempt
+    that settle it (never its stop; a skip reads *Not needed this run*), its tenure's epoch and the holder acts it offers (*Hand to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"

@@ -226,12 +226,17 @@ public static class HeldSteps
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
         if (outside is not null) presses.Add(HeldResolutions.DoneOutside);
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
-        // The hold acts pass the step's own tenure on: offered on a wait on the step's own role, never on another role's.
-        var own = wait.Role == StepRoles.Of(node);
         return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, presses, work, wait.Since)
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
-            Held = outside, Epoch = tenure?.Epoch, Holds = own ? StepHoldActs.Of(tenure) : null,
+            Held = outside, Epoch = tenure?.Epoch, Holds = HoldsOn(node, wait, tenure),
         };
     }
+
+    /// <summary>
+    /// The hold acts a row offers: they pass the step's own tenure on, so only on a wait on the step's own role, once the pass has cast it (a
+    /// Take before would find its cast holder holding it already), and never on a go-ahead, whose answer is the grants' (D306), not the tenure's.
+    /// </summary>
+    public static IReadOnlyList<string>? HoldsOn(NodeDeclaration node, RoleWait? wait, StepTenure? tenure) =>
+        tenure is not null && wait?.Why != PersonWaits.GoAhead && (wait is null || wait.Role == StepRoles.Of(node)) ? StepHoldActs.Of(tenure) : null;
 }

@@ -227,7 +227,7 @@ public static class WorkflowGraphRuns
                 Holder = waits?.Holder,
                 HeldBy = tenure?.Holder,
                 Epoch = tenure?.Epoch,
-                Holds = standing ? StepHoldActs.Of(tenure) : null,
+                Holds = standing && waits?.Why != PersonWaits.GoAhead ? StepHoldActs.Of(tenure) : null,
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
