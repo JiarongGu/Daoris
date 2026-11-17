@@ -52,7 +52,7 @@ public sealed class CensusScopeTests
     {
         Assert.Null(CensusScope.Load(null));
         Assert.Null(CensusScope.Load(" "));
-        var folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "census-scope", Guid.NewGuid().ToString("N")[..8]);
+        var folder = ScratchFolders.New("census-scope-");
         Directory.CreateDirectory(folder);
         try
         {
@@ -63,7 +63,7 @@ public sealed class CensusScopeTests
         }
         finally
         {
-            Directory.Delete(folder, recursive: true);
+            ScratchFolders.Remove(folder);
         }
     }
 

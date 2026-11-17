@@ -394,7 +394,8 @@ import { saidDrained } from './merge/said-drained.ts';
 import { sweepAndSay } from './merge/merge-temps.ts';
 import { gatesToRerun, ratchetIn, withFinalRatchet } from './merge/ratchet-step.ts';
 import { flakeNote, memoryLine } from './merge/summary.ts';
-import { censusCovers, contractsGates, coverNote, pageScripts, settleCovered, startContractsStep } from './merge-branch/ci-steps.mjs';
+import { contractsGates, pageScripts, startContractsStep } from './merge-branch/ci-steps.mjs';
+import { mergeGateEnvironment } from './merge/census-scope.ts';
 import {
   git, unmergedPaths, parseWorktrees, isIgnored, MAIN, lines, gitDirs, requireMain, mergeInProgress, treeState, notClean, requireBranch,
   preconditions, locate,
@@ -5049,17 +5050,12 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     if (composed.length) writeStatus();
     let results = [];
     let stageFailed = null;
-    const covers = censusCovers(gates);
     const served = contractsGates(gates, rootScripts(tree), pageScripts(tree));
-    for (const [name, by] of covers) {
-      Object.assign(gateOf(name) ?? {}, { note: coverNote(by) });
-      console.log(`  ${name}: ${coverNote(by)} (OPTIMIZE1d)`);
-    }
     if (gates.length) {
       console.log('a guest on the machine: below normal priority, the Process lane at normal (CIPRIO1, FAMILYFAIL1c); a Process half\'s failures are re-run alone once its lane is quiet (FLAKE1)');
       if (served.length) console.log(`  contracts: built once before ${served.join(', ')}, which then start and reuse it (OPTIMIZE1d)`);
       const ready = served.length ? startContractsStep(tree, dir, guarded(gateStep, trees)) : null;
-      results = await runRecorded(tree, gates.filter((gate) => !covers.has(gate.name)), dir, {
+      results = await runRecorded(tree, gates, dir, {
         waitFor: ready && { gates: served, ready },
         // A plain run keeps going past a failure; a stage's first failure ends it (`onResult`): nothing more starts.
         keepGoing: true,
@@ -5087,10 +5083,6 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     } else {
       console.log(`  nothing to run: every gate's verdict stands on this tree${composed.length ? `, or its classes' do (${composed.map((gate) => gate.name).join(', ')})` : ''}`);
     }
-    settleCovered(covers, results, {
-      record: (name, by) => addVerdicts(home, [{ gate: name, verdict: 'PASS', tree: treeId, at: nowIso(), commit, branch: null, kind, covered: by }]),
-      mark: (name, entry) => Object.assign(gateOf(name) ?? {}, entry),
-    });
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
     const judgedAfter = ciPlan({ ...standing, owe, plan: names, verdicts: readVerdicts(home).verdicts, ageWhole: kind === 'stage' });
@@ -5418,8 +5410,8 @@ let acceptedPass = [];
 
 /** The step the tool's gates and probes run by, each with `gateEnvironment` and the accepted `env.pass` names. */
 const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
-/** A merge's gate step: verify's time ratchet stands aside, the merge runs it last. */
-const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: { ...gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), MERGE_GATES_RUN: '1' } });
+/** A merge's gate step: verify's time ratchet stands aside (the merge runs it last), and the censuses judge the merge's paths. */
+const mergeStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: mergeGateEnvironment(gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }), cwd) });
 
 /**
  * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found

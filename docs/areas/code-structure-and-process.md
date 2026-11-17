@@ -127,9 +127,9 @@ finishes first and the whole set runs once.
     into a candidate in `local/scope-tree` and promotes it to main by fast-forward once it is green. A merge runs the blocking checks
     (the universal gates, the code map, the census of test units) and the path checks its paths reach (the page's `tsc`, design and
     structure tests); every other gate is left to the CI (`--ci`), `--gated` and `--full` (alternatives) run more, and `--ci
-    --stage` stages the install from a green run. A CI run leaves a gate that only runs census classes of projects whose fast half
-    it runs to those halves, recording its pass once they pass, and builds the page's contracts once as a step before the web gates
-    that need them. A lane's globs are read by one translator (`lanes-file.mjs`: `*` in a folder, `**` across folders, `{a,b}`
+    --stage` stages the install from a green run. The desktop's fast halves leave the census classes to the `censuses` gate, which
+    judges the merge's changed paths at a merge and the whole tree in the CI (CENSUSDIFF1, `docs/development.md`); a CI run builds
+    the page's contracts once as a step before the web gates that need them. A lane's globs are read by one translator (`lanes-file.mjs`: `*` in a folder, `**` across folders, `{a,b}`
     alternatives that nest) and a change's paths in one place (`paths.mjs`); a file a narrow lane row places names the gates of
     every wider row too. The queue's and admission records read as empty only where missing or unparseable, so a failed read stops
     the writer. Every lock (the verdict store's, the gate tree's, the CI watch's) is put in place complete (`locks.mjs` over

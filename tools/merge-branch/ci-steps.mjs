@@ -1,64 +1,9 @@
 /**
- * What a CI run saves itself: a gate whose work a gate beside it already does, and the one build the web gates would each wait on.
+ * What a CI run saves itself: the one build the web gates would each wait on. (The desktop's fast halves run no census class since
+ * CENSUSDIFF1, so the censuses gate is run like any gate, never covered by them.)
  */
 import { closeSync, openSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-const TIMING = String.raw`(?: --results-directory \S+ --logger "trx;LogFileName=[^"]+")?`;
-const CENSUS = new RegExp(String.raw`^dotnet test (\S+) --filter Category=Census${TIMING}$`);
-const FAST_HALF = new RegExp(String.raw`^dotnet test (\S+) --filter Category!=Process${TIMING}$`);
-
-const projectOf = (path) => path.replace(/^["']|["']$/g, '').split(/[\\/]+/).filter((part) => part && part !== '.').join('/');
-
-/**
- * The gates of `gates` that run only the census classes of test projects whose fast half is among them, each with the halves that
- * run them: the fast half's filter (`Category!=Process`) takes every class that is no Process class, the census among them. A
- * census gate with any project whose fast half is not in `gates` (kept by its verdict, or not declared) is not covered, and is run;
- * nor is a command that does anything else. Read from what each runs, so a renamed gate is still found.
- */
-export function censusCovers(gates) {
-  const halfOf = (gate) => {
-    const found = FAST_HALF.exec(gate.run.trim());
-    return found ? projectOf(found[1]) : null;
-  };
-  const covers = new Map();
-  for (const gate of gates) {
-    const parts = gate.run.split('&&').map((part) => CENSUS.exec(part.trim()));
-    if (parts.some((part) => !part)) continue;
-    const halves = parts.map((part) => gates.find((other) => halfOf(other) === projectOf(part[1])));
-    if (halves.every(Boolean)) covers.set(gate.name, [...new Set(halves.map((half) => half.name))]);
-  }
-  return covers;
-}
-
-/** Which covered gates their halves passed, and which are unmet, each with the halves that did not pass. */
-export function coverOutcome(covers, results) {
-  const passed = [];
-  const unmet = [];
-  for (const [name, by] of covers) {
-    const failing = by.filter((half) => results.find((result) => result.gate.name === half)?.verdict !== 'PASS');
-    if (failing.length) unmet.push({ name, by: failing });
-    else passed.push(name);
-  }
-  return { passed, unmet };
-}
-
-/** Why a covered gate is not run, as the plan and the status say it. */
-export const coverNote = (by) => `not run: ${by.join(' and ')} run its classes in this run`;
-
-/**
- * The covered gates settled once the run's gates have ended: one whose halves all passed is recorded as a pass (`record`) and
- * marked done, one with a half that did not pass is marked not run and stays owed. `mark` writes a gate's status entry.
- */
-export function settleCovered(covers, results, { record, mark }) {
-  const { passed, unmet } = coverOutcome(covers, results);
-  for (const name of passed) {
-    record(name, covers.get(name));
-    mark(name, { state: 'done', verdict: 'PASS', ms: 0, note: `passed by ${covers.get(name).join(' and ')}, which ran its classes` });
-  }
-  for (const { name, by } of unmet) mark(name, { note: `not run, and no pass: ${by.join(' and ')} did not pass` });
-  return { passed, unmet };
-}
 
 /** The page package's scripts, none where it has none or does not read. */
 export function pageScripts(root) {
