@@ -63,12 +63,12 @@ public sealed class AskAndWaitTickTests : IDisposable
         Assert.Contains("#q2", sitting.Reason);
         Assert.Equal(1, service.SessionCount);
 
-        // 3. `backend` answers. The quest resumes in the tree it asked from, handed what came back.
+        // 3. `backend` answers. The quest resumes in the tree it asked from, handed what came back, and its done waits on the run's next step.
         service.Close("q2", "Done", "POST /notes takes { text }.");
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         var resumed = service.Session("s2");
-        Assert.Equal("completed", resumed["state"]!.GetValue<string>());
+        Assert.Equal("awaiting-step", resumed["state"]!.GetValue<string>());
         Assert.Equal("build", resumed["actor"]!.GetValue<string>());
         Assert.Equal("1", resumed["choice"]!.GetValue<string>());
         Assert.Null(resumed["ran"]);

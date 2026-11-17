@@ -5,8 +5,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Through a REAL tick: a driven session's own tree is locked in its name while it runs, so git refuses it an
-/// unforced remove, the move the merge tool's prune makes, and is let go when it ends. A
+/// Through a REAL tick: a driven session's own tree is locked in its name while it runs and while it waits on its run's next
+/// step, so git refuses it an unforced remove, the move the merge tool's prune makes, and is let go once its run's end ends it. A
 /// real process (node), real git and the stand-in service <see cref="AskAndWaitTickTests.StandIn"/>; no model and no account.
 /// </summary>
 /// <remarks>The lock's git half, a prune included, is <c>SessionLocksTests</c>'.</remarks>
@@ -66,13 +66,39 @@ public sealed class SessionTreeLockTickTests : IDisposable
         Assert.NotEqual(0, removed.ExitCode);
         Assert.Contains("locked", removed.Stderr);
 
-        // 2. It closes its quest and ends: its tree stands, as nothing deletes itself, and is no longer locked.
+        // 2. Its agent's done ends its turn, not its session: it waits on its run's next step, its tree still locked in its name.
         await File.WriteAllTextAsync(release, "");
         await run.WaitAsync(Poll.Patience);
 
+        Assert.Equal("awaiting-step", service.Session("s1")["state"]!.GetValue<string>());
+        Assert.Equal("daoris session s1", await SessionLocksTests.LockOfAsync(_repository, tree));
+        var waiting = await RunAsync(_repository, "worktree", "remove", tree);
+        Assert.NotEqual(0, waiting.ExitCode);
+        Assert.Contains("locked", waiting.Stderr);
+
+        // 3. Its run's end ends it, and the tidy lets go of a lock no live session holds: its tree stands, no longer locked.
+        await EndRunAsync(service.Url);
+        using var client = new ServiceClient(service.Url, null);
+        var let = await new SessionTrees(_home).LetGoUnheldLocksAsync(
+            _repository, "engine", "default", ct => BranchTidying.InUseAsync(_home, client, null, ct));
+
         Assert.Equal("completed", service.Session("s1")["state"]!.GetValue<string>());
+        Assert.Single(let);
         Assert.True(Directory.Exists(tree));
         Assert.Null(await SessionLocksTests.LockOfAsync(_repository, tree));
+    }
+
+    /// <summary>The run's end on <c>s1</c> at the stand-in, which moves it to <c>completed</c> with the run's note as the service's run-end door does.</summary>
+    private static async Task EndRunAsync(string url)
+    {
+        using var http = new HttpClient();
+        var end = new System.Text.Json.Nodes.JsonObject
+        {
+            ["state"] = "completed", ["note"] = "Its workflow's run `q1` came to its end, and the session with it.",
+        };
+        using var response = await http.PostAsync(
+            $"{url}/api/sessions/s1/state", new StringContent(end.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
     }
 
     /// <summary>The stand-in harness: it takes the quest, works until the test releases it, then closes the quest done.</summary>
