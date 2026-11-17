@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 // One file per area, merged into one catalogue per language before i18next sees it.
+// test-map: reads the catalogues by key — every word of the runtime is asked by its key, which the asking source names
 import { catalogues, languages } from './index';
 
 // UI chrome is translated; DATA is not. Quest content, registry declarations, knowledge bodies

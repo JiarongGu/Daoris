@@ -46,6 +46,7 @@ import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
+import { webReach } from './test-map/web-reach.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';
 import { CHECK_STEPS } from './verify-checks/steps.mjs';
 export { literalsOf, tsFacts } from './test-map/ts-facts.mjs';
@@ -118,6 +119,8 @@ export const TS_SUITES = Object.freeze([
   {
     suite: 'web-unit', runner: 'vitest', glob: 'src/Daoris.Web/src/**/*.test.{ts,tsx}',
     whole: ['src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/src/test/setup.tsx', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/package.json'],
+    // The setup file runs before every file, so what it loads is in every unit's reach.
+    setup: 'src/Daoris.Web/src/test/setup.tsx',
   },
   { suite: 'web', runner: 'playwright', glob: 'src/Daoris.Web/e2e/**/*.spec.ts', whole: ['src/Daoris.Web/playwright.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/tsconfig.json'] },
   { suite: 'web-measured', runner: 'playwright', glob: 'src/Daoris.Web/measured/**/*.spec.ts', whole: ['src/Daoris.Web/playwright.measured.config.ts', 'src/Daoris.Web/package.json'] },
@@ -171,6 +174,7 @@ export function tsReader(files, read) {
     if (!byName.has(name)) byName.set(name, []);
     byName.get(name).push(file);
   }
+  const page = webReach(files, read, (from, spec) => resolveImport(from, spec, tracked));
   const facts = new Map();
   const factsOf = (file) => {
     if (!facts.has(file)) facts.set(file, tsFacts(read(file)));
@@ -182,14 +186,22 @@ export function tsReader(files, read) {
     if (own.has(file)) return own.get(file);
     const fact = factsOf(file);
     const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [] };
-    for (const spec of fact.imports) {
-      const resolved = resolveImport(file, spec, tracked);
-      if (resolved) reach.imports.push(resolved);
+    // An import the runtime erases, or one taking types alone, uses nothing; a re-export is its importers' to follow by the names
+    // they take, and an import of a module that re-exports, or of the catalogues' index, reaches what its names take (`web-reach.mjs`).
+    for (const edge of fact.edges) {
+      const resolved = edge.typeOnly || edge.reexport || edge.names?.length === 0 ? null : resolveImport(file, edge.spec, tracked);
+      if (!resolved) continue;
+      const through = page.through(file, resolved, edge.names);
+      reach.imports.push(...through.imports);
+      through.files.forEach((each) => reach.files.add(each));
+      reach.globs.push(...through.globs);
     }
     if (fact.computed) reach.wide.push(`${file} imports a module it computes`);
     // A file that names paths as data (the merge tool's lane table) declares it: its strings are a table, not reads.
     const data = /^\s*\/\/\s*test-map:\s*strings name paths as data\b/m.test(read(file));
+    if (!data) page.catalogues(file, fact.strings).forEach((each) => reach.files.add(each));
     for (const value of data ? [] : fact.strings) {
+      if (page.dotIsNoFolder(file, value)) continue;
       const clean = value.replace(/^\.\//, '').replace(/\/+$/, '');
       const candidates = value.startsWith('.') ? [posix.normalize(posix.join(posix.dirname(file), value)).replace(/\/+$/, '')] : [clean];
       for (const candidate of candidates) {
@@ -202,7 +214,7 @@ export function tsReader(files, read) {
     }
     for (const pattern of fact.globs) {
       const absolute = pattern.startsWith('/') ? pattern.slice(1) : posix.normalize(posix.join(posix.dirname(file), pattern));
-      reach.globs.push(absolute);
+      if (!page.keyedGlob(file, absolute)) reach.globs.push(absolute);
     }
     for (const { target, why } of fact.reaches) {
       if (target === '*') reach.wide.push(`${file} declares it reaches its whole suite: ${why}`);
@@ -215,9 +227,10 @@ export function tsReader(files, read) {
   };
   /** A unit's reach: the closure of its imports, each file's own reach joined. */
   const reachOf = (unit) => {
-    const closure = new Set([unit]);
-    const queue = [unit];
-    const reach = { files: new Set([unit]), folders: new Set(), globs: [], wide: [] };
+    // The unit is loaded whole: what it re-exports too.
+    const queue = page.through(unit, unit, null).imports;
+    const closure = new Set(queue);
+    const reach = { files: new Set(queue), folders: new Set(), globs: [], wide: [] };
     while (queue.length) {
       const file = queue.pop();
       if (!CODE.test(file)) continue;
@@ -343,8 +356,10 @@ export function census(files, read, { suites = null } = {}) {
     // A bounded suite's units are reached only within its gate's declared paths; a gate that declares none bounds nothing.
     const declared = suite.bounded ? gates.find((gate) => gate.name === suite.suite)?.paths : null;
     const within = Array.isArray(declared) ? declared : null;
+    const setup = suite.setup && files.includes(suite.setup) ? ts.reachOf(suite.setup) : null;
     for (const file of files.filter((each) => pattern.test(each))) {
-      const reach = ts.reachOf(file);
+      const own = ts.reachOf(file);
+      const reach = setup ? { files: [...new Set([...own.files, ...setup.files])].sort(), folders: [...new Set([...own.folders, ...setup.folders])].sort(), globs: [...new Set([...own.globs, ...setup.globs])], wide: [...own.wide, ...setup.wide] } : own;
       units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
     }
   }

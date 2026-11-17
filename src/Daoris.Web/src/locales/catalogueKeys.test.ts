@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+// reaches: src/Daoris.Web/src/locales/*/*.json — reads every catalogue's written keys from the folder it sits in
 const here = import.meta.dirname;
 
 /** Every top-level key of one catalogue file as it is written, a repeat included (parsing the JSON would keep only the last). */

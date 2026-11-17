@@ -135,6 +135,46 @@ test("a unit says how many reads lie between it and a changed file, so a bound c
   assert.equal(tool.unitHops(cls, ['T/ATests.cs'], dotnet), 0);
 });
 
+test("a page change reaches its domain's tests, through the bridge's barrel by the names each takes, and a catalogue its keys' readers", () => {
+  const web = 'src/Daoris.Web/src';
+  const { files, read } = treeOf({
+    [`${web}/bridge/shell.ts`]: "// The barrel.\nexport * from './agents';\nexport * from './work';\n",
+    [`${web}/bridge/call.ts`]: 'export const call = (what: string) => what;\n',
+    [`${web}/bridge/agents.ts`]: "import { call } from './call';\nexport const useAgents = () => call('agents');\n",
+    [`${web}/bridge/work.ts`]: "import { call } from './call';\nexport function useWork() { return call('work'); }\nexport type WorkRow = { id: string };\n",
+    [`${web}/bridge/bridge.test.ts`]: "import * as shell from './shell';\n",
+    [`${web}/agents/AgentsView.tsx`]: "import { useAgents } from '../bridge/shell';\nimport type { WorkRow } from '../bridge/shell';\nexport const AgentsView = (key: string) => t('agents.list.open') + key.split('.');\n",
+    [`${web}/agents/Other.tsx`]: 'export const Other = 1;\n',
+    [`${web}/agents/AgentsView.test.tsx`]: "import { AgentsView } from './AgentsView';\n",
+    [`${web}/work/WorkView.tsx`]: "import { type WorkRow, useWork } from '../bridge/shell';\nexport const WorkView = (x: string) => t(`work.rail.${x}`);\n",
+    [`${web}/work/WorkView.test.tsx`]: "import { WorkView } from './WorkView';\n",
+    [`${web}/test/setup.tsx`]: "import '../locales/i18n';\n",
+    [`${web}/locales/i18n.ts`]: "// test-map: reads the catalogues by key — its readers name their keys\nimport { all, languages } from './index';\n",
+    [`${web}/locales/parity.test.ts`]: "import { all } from '.';\n",
+    [`${web}/locales/en/agents.json`]: '{}',
+    [`${web}/locales/zh/agents.json`]: '{}',
+    [`${web}/locales/en/work.json`]: '{}',
+    [`${web}/locales/en/work.rail.json`]: '{}',
+  });
+  const map = tool.census(files, read);
+  const reaches = (unit: string, path: string) => tool.tsReaches(unitOf(map, `${web}/${unit}`).reach, `${web}/${path}`);
+  assert.ok(reaches('agents/AgentsView.test.tsx', 'bridge/agents.ts'), 'a bridge domain whose names its page takes from the barrel');
+  assert.ok(reaches('agents/AgentsView.test.tsx', 'bridge/call.ts'), "and what that domain imports");
+  assert.ok(reaches('agents/AgentsView.test.tsx', 'bridge/shell.ts'), 'and the barrel itself');
+  assert.ok(!reaches('agents/AgentsView.test.tsx', 'bridge/work.ts'), "not another domain of the barrel, its type taken alone");
+  assert.ok(reaches('work/WorkView.test.tsx', 'bridge/work.ts') && !reaches('work/WorkView.test.tsx', 'bridge/agents.ts'), 'and the other way round');
+  assert.ok(reaches('bridge/bridge.test.ts', 'bridge/agents.ts') && reaches('bridge/bridge.test.ts', 'bridge/work.ts'), 'a test taking the barrel whole reaches every domain');
+  assert.ok(!reaches('agents/AgentsView.test.tsx', 'agents/Other.tsx'), "a key's dot names no folder");
+  assert.ok(reaches('agents/AgentsView.test.tsx', 'locales/en/agents.json') && reaches('agents/AgentsView.test.tsx', 'locales/zh/agents.json'), 'a catalogue whose key its page names, in every language');
+  assert.ok(!reaches('agents/AgentsView.test.tsx', 'locales/en/work.json'), 'not a catalogue it names no key of, though the i18n runtime loads every one');
+  assert.ok(reaches('work/WorkView.test.tsx', 'locales/en/work.rail.json'), "a template's prefix names its area");
+  assert.ok(!reaches('work/WorkView.test.tsx', 'locales/en/work.json'), 'and not the shorter area its keys do not live in');
+  assert.ok(reaches('agents/AgentsView.test.tsx', 'locales/i18n.ts'), 'what the setup file loads is in every unit');
+  assert.ok(reaches('locales/parity.test.ts', 'locales/en/work.json') && reaches('locales/parity.test.ts', 'locales/en/agents.json'), 'a parity suite reads every catalogue');
+  assert.equal(tool.unitHops(unitOf(map, `${web}/agents/AgentsView.test.tsx`), [`${web}/locales/en/agents.json`], map), 2, "a catalogue is two reads from its key's page's test");
+  assert.equal(tool.unitHops(unitOf(map, `${web}/locales/parity.test.ts`), [`${web}/locales/en/agents.json`], map), 1, 'and one from a suite reading them all');
+});
+
 test("a unit's subject is the module its own file sits in", () => {
   assert.equal(tool.tsSubject('src/Daoris.Cli/test/doctrine/scan.test.ts'), 'src/Daoris.Cli/src/doctrine');
   assert.equal(tool.tsSubject('src/Daoris.Cli/test/words.test.ts'), 'src/Daoris.Cli');
