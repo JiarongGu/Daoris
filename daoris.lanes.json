@@ -179,7 +179,7 @@
         "src/Layers.props",
         "src/BannedSymbols.Effects.txt",
         "src/BannedSymbols.Store.txt",
-        "daoris.adapters.lock"
+        "daoris.packages.lock"
       ],
       "builds": {
         "units": [

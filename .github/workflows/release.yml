@@ -299,10 +299,10 @@ jobs:
       - name: Layers gate
         run: node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-boundary.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests --nologo
 
-      # The adapters' lock: each package's fingerprint against its row, and the dependency suite of a package whose fingerprint
+      # The packages' lock: each package's fingerprint against its row, and the dependency suite of a package whose fingerprint
       # moved, run here at the release as the CI beside a merge, which a merge that changed no package never runs.
-      - name: Adapters lock gate
-        run: node tools/merge/adapters.ts check
+      - name: Packages lock gate
+        run: node tools/merge/packages.ts check
 
       - name: Clock adapter gate
         run: dotnet test src/Daoris.Adapters/Daoris.Adapters.Clock.Tests --nologo

@@ -76,11 +76,11 @@
         "src/", "tools/fsx.mjs", "tools/partials.mjs", "tools/merge/lanes-file.ts", "tools/layers-census.mjs", "tools/layers-census.json",
         "tools/layers-census/"
       ] },
-    { "name": "adapters-lock", "run": "node tools/merge/adapters.ts check",
+    { "name": "packages-lock", "run": "node tools/merge/packages.ts check",
       "paths": [
-        "daoris.adapters.lock", "daoris.gates.json", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
+        "daoris.packages.lock", "daoris.gates.json", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json", "src/Daoris.Adapters/", "src/Daoris.Ports/", "src/Daoris.Testing/",
-        "tools/merge/adapters.ts"
+        "tools/merge/packages.ts"
       ] },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
     { "name": "test-map", "run": "node tools/test-map.mjs --check" },
