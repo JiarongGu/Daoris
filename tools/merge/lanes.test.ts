@@ -34,6 +34,7 @@ test("a branch's files are placed in lanes, the steward's lane, the shared recor
     'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs',
     'src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs',
     'TASKS.md',
     'docs/task-archive.md',
@@ -46,8 +47,9 @@ test("a branch's files are placed in lanes, the steward's lane, the shared recor
   assert.deepEqual(placed.lanes, [
     { id: 'web-shell', title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json', 'src/Daoris.Web/src/queries.ts'] },
     { id: 'web-settings', title: 'Web settings', files: ['src/Daoris.Web/src/settings/PluginsDomain.tsx', 'src/Daoris.Web/src/locales/zh/settings.ai.json'] },
-    { id: 'driver', title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
+    { id: 'driver', title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs'] },
     { id: 'modules', title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
+    { id: 'assistant', title: 'Assistant', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
     { id: 'tools', title: 'Tools', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
   ]);
   // The steward's lane holds the parent's list and the map itself. The archive merges
@@ -132,7 +134,7 @@ test("this repository's lanes each carry an id, a title and a one-line summary, 
     assert.ok(lane.title.trim(), `${lane.id}: no title`);
     assert.ok(lane.summary.trim() && !lane.summary.includes('\n'), `${lane.id}: its summary is one line, for the people and agents that address the lane`);
   }
-  assert.deepEqual(lanes.map((lane) => lane.id), ['web-shell', 'web-settings', 'driver', 'modules', 'service', 'layers', 'cli', 'tools', 'records']);
+  assert.deepEqual(lanes.map((lane) => lane.id), ['web-shell', 'web-settings', 'driver', 'modules', 'assistant', 'service', 'layers', 'cli', 'tools', 'records']);
   const stewards = lanes.filter((lane) => lane.steward);
   assert.deepEqual(stewards.map((lane) => [lane.id, lane.paths]), [['records', ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json']]]);
   // The steward's lane narrows its gates to the baseline, which every merge runs anyway: it never skips a suite a change could break.
