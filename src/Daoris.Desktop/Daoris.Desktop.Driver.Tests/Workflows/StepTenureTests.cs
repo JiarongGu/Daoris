@@ -92,7 +92,9 @@ public sealed class StepTenureTests : IDisposable
         Assert.Contains("agent:beta", refused.Detail, StringComparison.Ordinal);
         Assert.Null(Assert.Single(Files.Read(Unit)!.Attempts).Resolution);
 
-        Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, epoch: 2).What);
+        // In the holder's epoch, the word is taken from the holder alone: the person's channel is refused naming who holds it.
+        Assert.Equal(SettleDoor.NotHolder, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, epoch: 2).Code);
+        Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, epoch: 2, settle: new SettleBy("agent:beta", 2)).What);
     }
 
     [Fact]
@@ -111,7 +113,7 @@ public sealed class StepTenureTests : IDisposable
     }
 
     [Fact]
-    public async Task Tenures_sit_where_no_older_build_reads_and_a_word_naming_no_epoch_is_taken_as_before()
+    public async Task Tenures_sit_where_no_older_build_reads_and_a_word_naming_no_epoch_is_judged_against_the_holder_now()
     {
         var performer = Performer();
         await StartAsync(performer);
@@ -125,6 +127,7 @@ public sealed class StepTenureTests : IDisposable
         Assert.Empty(Files.All().Unreadable);
         Assert.DoesNotContain("tenure", File.ReadAllText(NodeRecordFiles.PathOf(_home, Unit)), StringComparison.OrdinalIgnoreCase);
 
-        Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link).What);
+        Assert.Equal(SettleDoor.NotHolder, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link).Code);
+        Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, "release", 1, HeldResolutions.DoneOutside, link: Link, settle: new SettleBy("agent:beta")).What);
     }
 }

@@ -30,7 +30,11 @@ public static class AttemptTenures
         return tenures.Begin(unit, [.. unheld.Select(each =>
         {
             var role = StepRoles.Of(each.Node);
-            return (each.Node.Id, each.Status.Attempt, role, book.At(role, workspace, repository, place).Holder, each.Status.Since ?? now);
+            var cast = book.At(role, workspace, repository, place);
+            return (each.Node.Id, each.Status.Attempt, role, cast.Holder, each.Status.Since ?? now, WhyOf(cast));
         })]);
     }
+
+    /// <summary>Why an attempt's first holder holds it: the owner's mark where the place keeps the role the owner's (<see cref="SettleDoor.Marked"/>), else the cast.</summary>
+    public static string WhyOf(CastNow cast) => cast.Why == CastWhy.Marked ? TenureWhy.Marked : TenureWhy.Cast;
 }

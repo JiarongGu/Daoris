@@ -17,9 +17,9 @@ public static class StepHoldActs
 {
     /// <summary>
     /// <i>Take</i> where the person does not hold it, <i>Hand to…</i> always, <i>Give back</i> where its tenure is no cast's; with no tenure
-    /// kept yet, take and hand.
+    /// kept yet, take and hand; none on a step the owner's mark keeps theirs.
     /// </summary>
-    public static IReadOnlyList<string> Of(StepTenure? tenure) =>
+    public static IReadOnlyList<string> Of(StepTenure? tenure) => tenure?.Why == TenureWhy.Marked ? [] :
         [.. CastActs.OnStep.Where(act => act switch
         {
             CastActs.Take => tenure?.Holder != CastHolders.Person,
@@ -75,9 +75,11 @@ public static class StepHolding
         };
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         var current = tenures.Current(bound.Unit, node, status.Attempt)
-            ?? tenures.Hold(bound.Unit, node, status.Attempt, role, cast.Holder, TenureWhy.Cast, status.Since ?? now);
+            ?? tenures.Hold(bound.Unit, node, status.Attempt, role, cast.Holder, AttemptTenures.WhyOf(cast), status.Since ?? now);
         if (current is null) return Refuse(Unwritable);
         if (current.Holder == target) return Refuse(Already) with { Detail = StepTenureFiles.Said(current), Tenure = current };
+        // At a destination the owner marked, the owner role is the step's only holder: no hand-over moves it.
+        if (SettleDoor.HandRefused(cast, target) || current.Why == TenureWhy.Marked) return Refuse(SettleDoor.Marked) with { Detail = StepTenureFiles.Said(current), Tenure = current };
 
         var code = act switch { CastActs.Take => TenureWhy.TakeBack, CastActs.Hand => TenureWhy.HandOver, _ => TenureWhy.GiveBack };
         if (tenures.HandOver(bound.Unit, node, status.Attempt, target, code, now) is not { } next) return Refuse(Unwritable);
@@ -92,6 +94,7 @@ public static class StepHolding
         { Refused: Already } => $"workflow: {held.Node} of #{held.Run} is {held.Detail} already; nothing changed.",
         { Refused: NotStanding } => $"workflow: {held.Node} of #{held.Run} has no attempt standing ({held.Detail}); only a step under way or held is handed on.",
         { Refused: PlaceCastFiles.NotHolder } => $"workflow: `{held.Detail}` is no holder: name `person`, `agent` or `agent:<name>`.",
+        { Refused: SettleDoor.Marked } => $"workflow: {held.Node} of #{held.Run} is {held.Detail}, at a destination your mark keeps yours: nothing hands it on.",
         { Refused: NotAct } => $"workflow: `{held.Act}` is not take, hand or give-back.",
         _ => $"workflow: {held.Node} of #{held.Run} was not handed on ({held.Refused}).",
     };

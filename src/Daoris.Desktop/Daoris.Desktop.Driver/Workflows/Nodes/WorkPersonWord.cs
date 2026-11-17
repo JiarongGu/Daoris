@@ -11,13 +11,15 @@ internal sealed class WorkPersonWord(NodeRecordFiles records, Func<DateTimeOffse
     /// Applied by <see cref="Resolve"/> under the node's declaration, which only the runtime holds.
     /// </summary>
     /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>); null for a word that names none.</param>
+    /// <param name="settle">Who the word is from where its channel names it (an agent holding the step); null for the person's doors.</param>
     public WorkPerformed Word(
-        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null)
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null,
+        SettleBy? settle = null)
     {
-        // A word from a holder whose epoch has ended is refused, the step's holder now named: the step stays with its holder of now.
-        if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(unit, node, attempt, given) is { } holding)
+        var by = settle ?? (resolution == HeldResolutions.Stop ? new SettleBy(SettleBy.Owner, epoch) : SettleBy.Person(epoch));
+        if (SettleDoor.Admit(new StepTenureFiles(records.Home, records.HoldsLease).Current(unit, node, attempt), by) is { } refused)
         {
-            return new(unit, node, PerformedWhat.Refused, StepTenureFiles.EndedEpoch) { Detail = StepTenureFiles.Said(holding) };
+            return new(unit, node, PerformedWhat.Refused, refused.Code) { Detail = refused.Detail };
         }
 
         if (resolution == HeldResolutions.DoneOutside) return Outside(unit, node, attempt, outcome, link, note);

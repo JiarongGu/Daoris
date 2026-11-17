@@ -209,8 +209,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     rendering whoever holds it (D303). A step names its actor, never who fills it: the holder is `StepHolders`', the person for every actor
     until a role takes one, and an approver at a destination marked as the person's stays theirs. Each holder's tenure of an attempt,
     `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`), which no older
-    build reads: a hand-over is a new epoch and restarts nothing, and a word naming an ended epoch (an attempt's word or a run's) is refused
-    `ended-epoch`, naming who holds the step now and since when; a word naming no epoch, as every door's does today, is taken as before. A run ends when its graph's end settles or
+    build reads: a hand-over is a new epoch and restarts nothing. One door settles a step (`SettleDoor.Admit`, D312), asked by a run's
+    word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its channel's) and its epoch, never the step's kind: a
+    word naming an ended epoch is refused `ended-epoch`, one from a holder that does not hold the step now `not-holder`, each naming who
+    holds it and since when; an observation settles whoever made it; a stop and a decision's answer are the owner role's whoever holds
+    the step; a supervisor's held word stands in for a step the person holds alone; and an attempt no tenure holds yet refuses nothing.
+    A marked approver is held by the owner role from its start (`marked`): no Take, Hand or Give back, no other word. A run ends when its graph's end settles or
     no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands
@@ -632,10 +636,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   review says first (`closesBelow`), and a preset's second opinion names none. The save refuses a holder
   named there (`role-holder`) and a role no catalogue has (`role-unknown`); the editor sets it (`StepRoleField`, applied to the newest draft by
   its `onRole` act), the chart and the run view draw it, and an older version's agent-step `role` option is read as the role by the one
-  reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). A step's authority is still its kind's
-  (`human` the person's, plugin steps the plugin's), a step done outside Daoris is recordable only by stop, which ends the run, and a
-  wait shows its holder only where a kind reads one; the rows DONEBYHOLDER1 to ACTORTRIAL1 move each, tried first on the work
-  workspace's release path.
+  reader (`StepRoles.Named`, the page's `namedRole`) until no kept version names one (`roles-since.txt`). Who settles a step is its
+  holder's, by one door (D312, rule 18); what settles it is still its kind's, and the `human` kind and the wait read by kind
+  (`StepWaiting.Read`) are left to HOLDDOOR1's rest, its saved versions read by their kept digest (D312 *Left*).
 - **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
   its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
   production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes

@@ -19,6 +19,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 | Where | Its job |
 |---|---|
 | `Roles/`, `Defaults/roles.json` | The reporting line (`ReportingLine`, `OwnerClass`), the catalogue and its seed (`RoleCatalog`), the one door and its verbs (`RoleDoor`, `RoleVerbs`), staffing (`RoleStaffing`, `ActorChoices`, `StartPlan`), policy (`StaffPolicy`, `StaffJudge`, `StaffLedger`), the rule supervisor (`SupervisorRules`, `SupervisorRuleBook`), the appointed shape (`RoleHold`, `AgentHold`), the decisions' memory, files and reads (`Supervisor*`), the steward's verb, the place-risk record read by a role's scope and place (`PlaceRiskScopes`), the line a landing's wait climbs (`LandingWaitLineOperations`, installed into Workplace's port) |
+| `Roles/Cast/` | Each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`, `PlaceCastView`), a step's tenures begun at its attempt (`AttemptTenures`) and passed by Take, Hand to and Give back (`StepHolding`), and the one door that settles a step by its holder (`SettleDoor`, `SettleBy`, D312) |
 | `Settings/` | The place-risk record as `driver.json` keeps it (`PlaceRiskBook`, `PlaceMarks`) and its verb (`PlaceRiskVerb`), and the supervisors' kinds (`SupervisorKinds`), which a place's line mark names |
 | `Loop/Supervise/`, `Loop/Look/` | An agent supervisor's look, attempt and read-only turn; the releases between turns; the second check's reading queue; the evidence routine's day (its rule `EvidenceDays` in `Roles/Domain/`, METHODS1): the day's failures handed to it (runs ended by stop, waits with no holder, main reds, review HIGH findings, refused acts), each classed by its kind and its record's code, one row proposed per class for the steward to accept, a declined class not proposed again, due once a day after 21:00 UTC or on the steward's word; its routine (`EvidenceRoutine`) reads the day through `IEvidenceRecords`, keeps each day's rows and their states and the declined classes under the home's `work/evidence/`, and an accepted row reaches the backlog through the records door (`IEvidenceBacklog`) alone, never a file write of its own |
 | `Modules/Bridge/` | The decision door (`SupervisorDecisionDoor`, one row per kind under `SupervisorKinds/`), the steward's act rows |
@@ -294,6 +295,10 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     the home's migration (`place-risk`) wrote today's person-held levels (the machine's seed and every supervisor held by rules or nobody)
     as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
     rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
+    A run step is settled only through one door (`SettleDoor`): by the holder its attempt's tenure names now, in its epoch, by an
+    observation, or by the owner role's stop and decision answer; a supervisor's held word only where the person holds the step. A
+    marked destination's approver is the owner role's from its attempt's start: its tenure reads `marked`, offers no Take, Hand or
+    Give back, and refuses every other holder's word and every hand-over (`marked`). (D312)
     A second opinion nobody is free to give (every declared reviewer cooling, signed out or refused) is a `vacancy`, journalled by
     the look beside the gate (`OpinionCasts`, `<chain>.casts.jsonl`, each act naming its level) and listed to the hold that answers
     it now: the repository's or the workspace's supervisor at the repository, the machine's supervisor once that level left it or

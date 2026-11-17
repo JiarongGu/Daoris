@@ -30,6 +30,9 @@ public static class TenureWhy
 
     /// <summary>Given back to the holder the place casts now.</summary>
     public const string GiveBack = "give-back";
+
+    /// <summary>The place's cast at a destination the owner marked: the owner role holds it, and no hand-over moves it (<see cref="SettleDoor.Marked"/>).</summary>
+    public const string Marked = "marked";
 }
 
 /// <summary>
@@ -74,18 +77,19 @@ public sealed class StepTenureFiles(string home, Func<bool>? holdsLease = null)
         : new StepTenureFiles(home).Holding(RunUnits.IdOf(run), record.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
 
     /// <summary>
-    /// The first epoch of each attempt <paramref name="started"/> names that holds none yet, cast to its holder (<see cref="TenureWhy.Cast"/>), in
-    /// one hold of the lock; read without it first, so a pass whose attempts all hold one writes and locks nothing. The tenures written.
+    /// The first epoch of each attempt <paramref name="started"/> names that holds none yet, cast to its holder (<see cref="TenureWhy.Cast"/>, or
+    /// <see cref="TenureWhy.Marked"/> where the owner's mark keeps it the owner role's), in one hold of the lock; read without it first, so a pass
+    /// whose attempts all hold one writes and locks nothing. The tenures written.
     /// </summary>
-    public IReadOnlyList<StepTenure> Begin(string unit, IReadOnlyList<(string Node, int Attempt, string Role, string Holder, DateTimeOffset Since)> started)
+    public IReadOnlyList<StepTenure> Begin(string unit, IReadOnlyList<(string Node, int Attempt, string Role, string Holder, DateTimeOffset Since, string Why)> started)
     {
-        bool Unheld(IReadOnlyList<StepTenure> kept, (string Node, int Attempt, string Role, string Holder, DateTimeOffset Since) each) =>
+        bool Unheld(IReadOnlyList<StepTenure> kept, (string Node, int Attempt, string Role, string Holder, DateTimeOffset Since, string Why) each) =>
             !kept.Any(tenure => tenure.Node == each.Node && tenure.Attempt == each.Attempt);
         if (started.Count == 0 || Load(unit) is not { } seen || !started.Any(each => Unheld(seen, each))) return [];
         var begun = new List<StepTenure>();
         Edit(unit, kept =>
         {
-            begun.AddRange(started.Where(each => Unheld(kept, each)).Select(each => new StepTenure(each.Node, each.Attempt, each.Role, each.Holder, 1, each.Since, TenureWhy.Cast)));
+            begun.AddRange(started.Where(each => Unheld(kept, each)).Select(each => new StepTenure(each.Node, each.Attempt, each.Role, each.Holder, 1, each.Since, each.Why)));
             return begun.Count == 0 ? (null, null!) : ([.. kept, .. begun], begun[0]);
         });
         return begun;

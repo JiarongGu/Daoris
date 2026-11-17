@@ -114,9 +114,11 @@ public static class RunNodeWords
     /// <param name="outcome">A <c>decide</c>'s answer, one of its decision's outcomes.</param>
     /// <param name="holder">Who holds the actor a decide's proposal is from, as its channel names it; null for the owner's own word.</param>
     /// <param name="epoch">The holder's epoch the word is given in (<see cref="StepTenureFiles"/>): an ended one is refused; null names none.</param>
+    /// <param name="settle">Who the word is from, where its caller names it (an observation, an agent's channel); null reads it from the act (<see cref="SettleBy.Of"/>).</param>
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
-        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null)
+        NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null,
+        SettleBy? settle = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -143,9 +145,11 @@ public static class RunNodeWords
             if (act == NodeWordActs.Stop && promoted?.Contains(node) == true) return (null, Refuse(Promoted));
             var status = WorkPerformer.StatusOf(record, node);
             if (by is not null && attempt != status.Attempt) return (null, Refuse(Stale) with { State = status.State });
-            if (epoch is { } given && new StepTenureFiles(records.Home, records.HoldsLease).Ended(bound.Unit, node, status.Attempt, given) is { } holding)
+            // The one settle door: the word is its holder's now, in its epoch, the owner role's or an observation.
+            var holding = new StepTenureFiles(records.Home, records.HoldsLease).Current(bound.Unit, node, status.Attempt);
+            if (SettleDoor.Admit(holding, settle ?? SettleBy.Of(act, by, holder, epoch)) is { } refusal)
             {
-                return (null, Refuse(StepTenureFiles.EndedEpoch) with { Detail = StepTenureFiles.Said(holding), State = status.State });
+                return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
             }
 
             var word = new NodeWord(node, act, words, now)
@@ -384,6 +388,9 @@ public static class RunNodeWords
         (NodeRefusal.NotInTable, NodeWordActs.Accept) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so it waits on no Accept of yours.",
         (Ended, _) => $"workflow: run {done.Run} ended at quest #{done.Detail}, so nothing of its graph moves again until its chain comes back here.",
         (Worded, _) => $"workflow: `{done.Node}` on run {done.Run} already has your word, which Daoris's next look applies.",
+        (SettleDoor.NotHolder, _) or (StepTenureFiles.EndedEpoch, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}, so only its holder settles it: take it first (`daoris workflow take {done.Run} {done.Node}`) to act on it.",
+        (SettleDoor.Marked, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}: only the owner role settles it.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
         (NodeRefusal.NotSkippable, _) =>
