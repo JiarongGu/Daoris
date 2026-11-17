@@ -7,8 +7,7 @@ import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../run';
 /**
  * **A check held unknown for the person**: under its node, *Run again* (a new attempt at
  * the same tip) and *Not now* (nothing more is asked of it), the words the driver offers on the held attempt (`held.words`). No person's word
- * settles a check's verdict, so these are the only two. Each passes the epoch of the step's tenure its row read, so a word read in an
- * epoch that has ended is refused. A word given and not applied yet is drawn by the node's own words instead.
+ * settles a check's verdict, so these are the only two. A word given and not applied yet is drawn by the node's own words instead.
  *
  * A molecule: the step and the press arrive as props; the driver's refusal is said where it is pressed.
  */

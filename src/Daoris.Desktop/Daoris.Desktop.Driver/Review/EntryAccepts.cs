@@ -136,7 +136,6 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
                 continue;
             }
 
-            // A word the door refused (the review passed on since the row read it, another holder's) is that part's refusal, the rest go on.
             if (!word.Kept && word.Said is { } refused)
             {
                 accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, new TreeLanding(false, refused) { Refusal = LandingCode.Refused }));

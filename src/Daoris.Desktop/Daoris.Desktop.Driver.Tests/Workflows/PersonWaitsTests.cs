@@ -34,7 +34,6 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Empty(PersonWaitReader.Read(_home));
     }
 
-    /// <summary>The reader reads the step's tenure, as What needs you does: a task handed to an agent waits on the agent, not the person. Seen failing first.</summary>
     [Fact]
     public async Task A_task_another_holder_holds_waits_on_that_holder_not_the_person()
     {

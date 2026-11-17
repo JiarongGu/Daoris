@@ -233,10 +233,7 @@ public static class RunNodeWords
     /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not, but an Accept kept for a
     /// review not begun yet (<see cref="EarlyAccepts"/>). Pure: the runtime writes it.
     /// </summary>
-    /// <param name="tenures">
-    /// The run's tenures read in the hold of their lock the pass applies the words in: a word kept in an epoch that has ended since is refused
-    /// (<see cref="NodeWordEpoch.Refused"/>). Null reads none.
-    /// </param>
+    /// <param name="tenures">The run's tenures, read in the lock the pass applies the words in; null reads none.</param>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
         NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null,

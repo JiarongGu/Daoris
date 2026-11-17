@@ -27,7 +27,6 @@ public static class UncheckedAccepts
         if (review.Kind != NodeKinds.Review) return Refuse(RunNodeWords.NotReview);
 
         var now = (clock ?? (() => DateTimeOffset.UtcNow))();
-        // Judged and kept in one hold of the tenures' lock, as every word is: no hand-over lands between the holder read and the write.
         var (refused, result) = new StepTenureFiles(records.Home, records.HoldsLease).Settling(bound.Unit, tenures => records.Edit(bound.Unit, record =>
         {
             if (record.Ended is { } ended) return (null, Refuse(RunNodeWords.Ended) with { Detail = ended.Quest });

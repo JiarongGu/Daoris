@@ -27,7 +27,6 @@ export type EntryAcceptPart = {
   clash?: { by: string; says: string } | null;
   /** The revision of the review record its run stands on, which the Accept names for it, so a moved run is refused alone. */
   revision?: string | null;
-  /** The epoch of its review's tenure, which the Accept names beside the revision, so a review passed on since is refused alone. */
   epoch?: number | null;
 };
 

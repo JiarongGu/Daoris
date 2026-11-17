@@ -27,10 +27,7 @@ public static class ThroughAccepts
         return ask.Length == 0 ? null : new RunStepThrough(ask, words[Opening.Length..closing]);
     }
 
-    /// <summary>
-    /// The step the through words act on now, with the act, or null where the run waits for the person or for the step's holder: the words
-    /// are the person's, so a step another holder holds now (<paramref name="holding"/>) is not theirs to settle, and never taken on them.
-    /// </summary>
+    /// <summary>The step the through words act on now, with the act, or null where the run waits for the person or another holder.</summary>
     public static (string Node, string Act)? Due(
         NodeGraph graph, NodeRecord record, IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, StepTenure>? holding = null) =>
         Next(graph, record, quests) is var (node, act)

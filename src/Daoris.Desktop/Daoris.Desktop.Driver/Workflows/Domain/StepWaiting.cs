@@ -29,8 +29,6 @@ public static class StepWaiting
     /// (<see cref="StepHolders"/>), or null where the step waits on no role (not reached, under way with an agent or a check, settled).
     /// </summary>
     /// <param name="record">The run's node record; null where only the declaration and status are in hand, which reads no plugin's progress and no failure kept.</param>
-    /// <param name="held">The step's attempt's tenure now: the holder of the step's own role.</param>
-    /// <param name="cast">The place's cast now, role to holder (<see cref="CastReading"/>): the holder of any other role a wait is on.</param>
     public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status, StepTenure? held = null, Func<string, string>? cast = null)
     {
         StepHolder HolderOf(string role) => CastHolders.StepOf(StepWaiting.HolderOf(node, status, role, held, cast));
@@ -51,11 +49,7 @@ public static class StepWaiting
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
 
-    /// <summary>
-    /// Who holds the role <paramref name="role"/> a step's wait is on, by that role: the step's own role its attempt's tenure,
-    /// or before the pass casts it the holder its words or the place's cast name; any other role (a vacancy's line, a plugin's actor, an attempt
-    /// held for operations on a step of another role) the place's cast of that role now, never the step's holder. No cast in hand reads the person.
-    /// </summary>
+    /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast; the person where none is in hand.</summary>
     public static string HolderOf(NodeDeclaration node, NodeStatus status, string role, StepTenure? held, Func<string, string>? cast)
     {
         var own = role == StepRoles.Of(node);
@@ -87,7 +81,6 @@ public static class StepWaiting
         && WorkPerformer.KeptFailure(record, attempt);
 
     /// <summary>The run step's wait for <paramref name="progress"/>: its code and the facts its words name, since its plugin said it.</summary>
-    /// <param name="holder">The actor's holder as the step's wait read it (<see cref="Read"/>); null reads the person.</param>
     public static WorkflowRunWait WaitOf(StepProgress progress, StepHolder? holder = null)
     {
         var values = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -187,7 +180,6 @@ public sealed record HeldStep(
 /// </summary>
 public static class HeldSteps
 {
-    /// <param name="casts">The places' cast, which a wait on a role other than its step's reads its holder from; null reads the person.</param>
     public static IReadOnlyList<HeldStep> Of(
         IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null)
     {
@@ -207,11 +199,7 @@ public static class HeldSteps
         return [.. steps.OrderBy(step => step.Run, StringComparer.Ordinal).ThenBy(step => step.Node, StringComparer.Ordinal)];
     }
 
-    /// <summary>
-    /// The row of one step, or null where a word is pending on it, another row carries it, or it waits on an agent whose channel settles it.
-    /// A wait an agent holds that only a press settles (<see cref="AgentSettles.Wait"/>) has no settler, so it stays the person's row, said
-    /// with its holder, to take.
-    /// </summary>
+    /// <summary>The row of one step, or null where a word is pending on it, another row carries it, or an agent's channel settles it.</summary>
     public static HeldStep? Step(
         string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null)
     {
@@ -233,10 +221,7 @@ public static class HeldSteps
         };
     }
 
-    /// <summary>
-    /// The hold acts a row offers: they pass the step's own tenure on, so only on a wait on the step's own role, once the pass has cast it (a
-    /// Take before would find its cast holder holding it already), and never on a go-ahead, whose answer is the grants', not the tenure's.
-    /// </summary>
+    /// <summary>The hold acts a row offers: they pass the step's own tenure on, so never on a go-ahead, which the grants answer.</summary>
     public static IReadOnlyList<string>? HoldsOn(NodeDeclaration node, RoleWait? wait, StepTenure? tenure) =>
         tenure is not null && wait?.Why != PersonWaits.GoAhead && (wait is null || wait.Role == StepRoles.Of(node)) ? StepHoldActs.Of(tenure) : null;
 }

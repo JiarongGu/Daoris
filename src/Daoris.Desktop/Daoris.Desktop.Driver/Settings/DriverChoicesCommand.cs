@@ -93,7 +93,6 @@ public static class DriverChoicesCommand
 
     private static readonly ConcurrentDictionary<string, Func<IReadOnlyList<string>, bool>> Readings = new(StringComparer.Ordinal);
 
-    /// <summary>Answers whether a verb's words change the home, for a verb whose grammar the subdomain above the settings owns.</summary>
     internal static void Answer(string verb, Func<IReadOnlyList<string>, bool> changes) => Readings[verb] = changes;
 
     /// <summary>

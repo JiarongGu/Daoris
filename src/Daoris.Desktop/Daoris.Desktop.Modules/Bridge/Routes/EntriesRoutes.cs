@@ -161,9 +161,7 @@ public sealed class EntriesRoutes(DriverContext context)
     /// whose tree it shares, and the later part that superseded it.
     /// </summary>
     /// <param name="held">What holds each part, its gate's sentence, by session; absent where nothing does.</param>
-    /// <param name="drawnOf">
-    /// The review a part's run stands on: the revision of its record and the epoch of its tenure, which the entry's Accept names for it (<c>revisions</c>).
-    /// </param>
+    /// <param name="drawnOf">The review (revision and epoch) a part's run stands on, which the entry's Accept names for it (<c>revisions</c>).</param>
     public static object Plan(
         string entry, string repository, EntryPlan plan, IReadOnlyDictionary<string, string>? held = null, Func<string?, ReviewDrawn?>? drawnOf = null) => new
     {
@@ -245,7 +243,6 @@ public sealed class EntriesRoutes(DriverContext context)
     /// own: a plugin says its lines on the console under its name, as a landing's do.
     /// </summary>
     /// <param name="plugins">Where a plugin's lines are also kept, for the answer's words; null keeps none.</param>
-    /// <param name="drawn">Each part's review the page drew, by session: the revision of its record and the epoch of its tenure.</param>
     private EntryAccepts Accepts(ServiceClient service, List<string>? plugins = null, IReadOnlyDictionary<string, EntryPartRevision>? drawn = null) => new(
         service, _loop.Home,
         new SessionTrees(_loop.Home, new LandingPlugins(_loop.Home, say: SayTo(plugins), log: _loop.Log, health: _loop.Health)),

@@ -67,10 +67,7 @@ public sealed class DriverModuleEntriesTests
         Assert.Equal("feature/x", parts[1].GetProperty("target").GetString());
     }
 
-    /// <summary>
-    /// Each part names the revision of the review record its run stands on and the epoch of the review's tenure, which the entry's Accept sends
-    /// back as <c>revisions</c>.
-    /// </summary>
+    /// <summary>Each part names the review its run stands on (revision and epoch), which the entry's Accept sends back as <c>revisions</c>.</summary>
     [Fact]
     public void Each_part_names_the_review_revision_its_run_stands_on_and_its_tenures_epoch()
     {

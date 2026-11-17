@@ -19,7 +19,6 @@ public sealed record SupervisorLanding(
     /// <summary>The revision of the review record the decision read (<see cref="SupervisorReviewBinding"/>); null on a step that keeps none.</summary>
     public string? Revision { get; init; }
 
-    /// <summary>The epoch of the step's tenure the decision read (<see cref="LandingStep.Epoch"/>): its release is refused once that epoch ends; null names none.</summary>
     public int? Epoch { get; init; }
 }
 

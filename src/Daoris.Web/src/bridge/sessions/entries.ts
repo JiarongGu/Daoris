@@ -66,13 +66,9 @@ export const useLandEntry = () =>
       }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,
   });
 
-/** One part's review as the plan draws it: the revision of its record and the epoch of its tenure, each where the plan reads one. */
 export type DrawnPart = { session: string; revision?: string; epoch?: number };
 
-/**
- * Each part's review revision and tenure epoch the plan drew, which the entry's Accept names so a run whose record moved, or whose review
- * another holder holds now, is refused alone.
- */
+/** Each part's review the plan drew, which the entry's Accept names so a run that moved is refused alone. */
 export const drawnRevisions = (
   plan: { parts: readonly { session: string; revision?: string | null; epoch?: number | null }[] } | null | undefined,
 ): DrawnPart[] =>

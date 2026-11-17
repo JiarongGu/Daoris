@@ -8,7 +8,6 @@ public sealed record LandingStep(string Run, string Node, int Attempt, string Re
     /// <summary>The run's nodes that hold it for the person alone, a go-ahead among them: no supervisor decides a step of a run one holds.</summary>
     public bool GoAheadOpen { get; init; }
 
-    /// <summary>The epoch of the step's tenure the listing read: a decision keeps it, and its release names it, so a hand-over between refuses it.</summary>
     public int? Epoch { get; init; }
 
     public IReadOnlyList<string> Offered(IReadOnlyList<string> covered) => [.. covered.Where(Acts.Contains)];
@@ -17,10 +16,7 @@ public sealed record LandingStep(string Run, string Node, int Attempt, string Re
 /// <summary>The steps of the home's runs a landing supervisor may decide, read from the runs' node records as the pass reads them.</summary>
 public static class LandingSteps
 {
-    /// <summary>
-    /// Every step of every run bound to a graph version that waits for the person's press a landing supervisor makes, and whose holder the
-    /// supervisor's word stands in for (<see cref="SettleDoor.Admit"/> of the line: a step the person holds, or not cast yet), with its epoch.
-    /// </summary>
+    /// <summary>Every step of every run bound to a graph version that waits for a landing supervisor's press and whose holder it stands in for, with its tenure's epoch.</summary>
     public static IReadOnlyList<LandingStep> Waiting(string home)
     {
         var records = new NodeRecordFiles(home, () => false);

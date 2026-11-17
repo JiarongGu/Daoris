@@ -12,7 +12,6 @@ public sealed record RunReview(string Run, string Node, ReviewRecord? Record)
 
     public int Standing { get; init; }
 
-    /// <summary>The epoch of the standing attempt's tenure (<see cref="StepTenureFiles"/>), which the card's presses pass; null where none is kept.</summary>
     public int? Epoch { get; init; }
 
     public DateTimeOffset? Since { get; init; }

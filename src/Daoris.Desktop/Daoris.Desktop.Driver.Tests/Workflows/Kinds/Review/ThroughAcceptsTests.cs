@@ -48,7 +48,6 @@ public sealed class ThroughAcceptsTests
         Assert.Equal(("review", NodeWordActs.Accept), ThroughAccepts.Due(Graph, review, [Quest()]));
     }
 
-    /// <summary>Through words are the person's, said through the settle door: a review an agent holds is not taken for the person on them. Seen failing first.</summary>
     [Fact]
     public void A_review_another_holder_holds_is_not_accepted_on_through_words()
     {

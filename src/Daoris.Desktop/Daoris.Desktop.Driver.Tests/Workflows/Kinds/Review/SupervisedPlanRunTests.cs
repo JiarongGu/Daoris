@@ -87,11 +87,7 @@ public sealed class SupervisedPlanRunTests : NodeRunFixture
     private Task<IReadOnlyList<SupervisorState>> ReleaseAsync() =>
         Decisions.ReleaseLandingsAsync(LandingReleaseLine.Of(_home, Files, _ => false), _now.AddMinutes(11));
 
-    /// <summary>
-    /// A supervisor's word stands in only for a step the person holds: a review handed to an agent is listed to no supervisor, and a
-    /// decision kept before a hand-over carries the epoch it read into its release, refused there though the person holds the step again.
-    /// Seen failing first.
-    /// </summary>
+    /// <summary>A supervisor's word stands in only for a step the person holds, in the epoch its decision read.</summary>
     [Fact]
     public async Task A_review_an_agent_holds_is_no_supervisors_and_a_decision_from_an_ended_epoch_goes_stale()
     {

@@ -269,7 +269,6 @@ internal sealed class NodeRunKeeping(
             var landed = landings();
             var present = await ReviewAccepts.PresentAsync(records.Home, each, pending,
                 run => tipOf is null ? Task.FromResult<string?>(null) : tipOf(each, run)).ConfigureAwait(false);
-            // Applied in one hold of the tenures' lock, as the door kept them: no hand-over lands between the epoch read and the word applied.
             var (refused, applied) = new StepTenureFiles(records.Home, records.HoldsLease).Settling(unit, tenures =>
                 records.Edit(unit, record => RunNodeWords.Apply(record, each.Declared, scope, now, promoted, landed, present, tenures)));
             if (refused is not null) continue;
