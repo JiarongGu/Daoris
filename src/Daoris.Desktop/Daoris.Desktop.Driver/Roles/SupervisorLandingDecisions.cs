@@ -18,6 +18,9 @@ public sealed record SupervisorLanding(
 
     /// <summary>The revision of the review record the decision read (<see cref="SupervisorReviewBinding"/>); null on a step that keeps none.</summary>
     public string? Revision { get; init; }
+
+    /// <summary>The epoch of the step's tenure the decision read (<see cref="LandingStep.Epoch"/>): its release is refused once that epoch ends; null names none.</summary>
+    public int? Epoch { get; init; }
 }
 
 /// <summary>A landing decision as memory keeps it: one per step and attempt, held for the window, released as the node's word, then applied or closed.</summary>
@@ -39,14 +42,18 @@ internal sealed class SupervisorLandingDecision
 
     public string? Revision { get; init; }
 
+    public int? Epoch { get; init; }
+
     public SupervisorSubject Subject => SupervisorSubject.Landing(Session, Run, Node, Attempt);
 }
 
-/// <summary>A held landing decision whose moment came, as the release hands it to the node's door, with the review record's revision it read.</summary>
+/// <summary>A held landing decision whose moment came, as the release hands it to the node's door, with the review record's revision and the tenure's epoch it read.</summary>
 public sealed record SupervisorLandingDue(
     string Id, string Session, string Run, string Node, int Attempt, string Repository, string Do, string Generation, string Words)
 {
     public string? Revision { get; init; }
+
+    public int? Epoch { get; init; }
 }
 
 /// <summary>
