@@ -19,10 +19,7 @@ export function groupIsHeavy(group: ReachedGroup, processSuites: ReadonlySet<str
   return group.units.length >= WHOLE_SUITE_CLASSES;
 }
 
-/**
- * `fn` run holding the group's place where the group is heavy, let go as `fn` ends however it ends; a light group runs at once. A
- * `halted` that answers true ends the wait for the place (a newer heavy tier's halt), and `fn` then hands the group on unrun.
- */
+/** `fn` run holding the group's place where the group is heavy (a `halted` true ends the wait), let go as `fn` ends; a light group runs at once. */
 export async function inPlace<T>(group: ReachedGroup, { admission, processSuites, halted }: { admission: Admission | null; processSuites: ReadonlySet<string>; halted?: () => boolean }, fn: () => Promise<T>): Promise<T> {
   if (!admission || !groupIsHeavy(group, processSuites)) return fn();
   const hold = await admission.take({ what: `reached checks, ${group.suite} (${group.units.length} ${group.units.length === 1 ? 'class' : 'classes'})`, ...(halted ? { halted } : {}) });

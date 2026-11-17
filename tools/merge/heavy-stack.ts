@@ -7,7 +7,7 @@
  *   holder's `reached-checks.mjs` reads through `--halt-file`): it starts no class more, ends the class group in flight where the
  *   newer commit changes what its classes read (finishes it otherwise, so its passes stand there), and hands over.
  * - What it hands is its range (the base it ran from) with the classes it left unrun, named for the records. The newer tier runs
- *   from the oldest base it was handed, on its own commit: the classes that range reaches are the union of the older tier's and
+ *   from the oldest base handed to it, on its own commit: the classes that range reaches are the union of the older tier's and
  *   its own, and each the older tier passed on inputs the newer commit keeps is replayed from the store (`class-reuse.ts`), so
  *   every class runs once, on the newest commit.
  * - A tier still waiting when a third lands is superseded at once: its range is carried by the third. A holder or waiter whose
@@ -66,7 +66,7 @@ function pruned(stack: Stack, live: (tier: Tier) => boolean): { stack: Stack; de
   };
 }
 
-/** The stack with `me` holding the tree, taking what was handed. */
+/** The stack with `me` holding the tree, taking what the tiers before it handed. */
 const take = (stack: Stack, me: Tier): { stack: Stack; took: Handed | null } => ({
   stack: { holder: { ...me }, waiting: stack.waiting?.id === me.id ? null : stack.waiting, handed: null }, took: stack.handed,
 });

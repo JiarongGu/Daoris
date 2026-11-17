@@ -3,9 +3,8 @@
  * (`heavy-tier.ts`); when the merge commits, `startHeavy` starts `tools/heavy-run.mjs` in the background on main's new tip, which runs
  * them through `tools/reached-checks.mjs --tier heavy` (the machine's admission, each pass recorded) and settles here. A red is filed
  * as a finding naming the merge commit and the classes, the same record the merge reads as main's red, and said on one line the
- * steward's monitor reads (`HEAVY_PREFIX`). The run never holds a merge: the next merge reads its red as main's. A newer landing's
- * run supersedes an older one still going (`heavy-stack.ts`): the older settles `superseded` (`HANDED` on its line), the newer
- * runs the union on its own commit and names, in its line and each finding it files, the runs it carried.
+ * steward's monitor reads (`HEAVY_PREFIX`). The run never holds a merge: the next merge reads its red as main's. A run a newer one
+ * superseded (`heavy-stack.ts`) settles `superseded` (`HANDED`); the newer names the runs it carried in its line and findings.
  */
 import { spawn } from 'node:child_process';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
@@ -22,12 +21,7 @@ export const HEAVY_PREFIX = 'heavy tier:';
 
 export type HeavyState = 'running' | 'green' | 'red' | 'error' | 'superseded';
 
-/**
- * One run's record: written as `running` when the merge lands and again, settled, when the run ends. A run a newer landing's
- * superseded (`heavy-stack.ts`) names it in `handedTo` and the classes it left unrun in `handed` (absent: it ran none), and settles
- * `superseded`, or `red` where it found a red first; the run that carried it names each tier it carried in `took`, and `from`, the
- * oldest base it ran from.
- */
+/** One run's record, `running` at the landing and settled at its end; `handedTo`, `handed`, `took` and `from` say a handover (`heavy-stack.ts`). */
 export type HeavyRun = {
   id: string; state: HeavyState; commit: string; base: string; branches: string[]; at: string; ended?: string;
   classes?: { ran: number; replayed: number; flaked: string[]; red: string[]; mainRed: string[] }; note?: string;
@@ -107,17 +101,18 @@ export function startAfterLanding(home: string, candidate: { tip: string; base: 
 export function settleHeavy(run: HeavyRun, outcome: ClassOutcome | null, code: number | null, now: string): { run: HeavyRun; sightings: HeavySighting[]; lines: string[] } {
   const carried = run.took?.length ? `, which carried ${run.took.map((each) => `${each.id} (${sha(each.commit)}, ${each.branches.join(', ')})`).join('; ')}` : '';
   const where = `${sha(run.commit)} (${run.branches.join(', ')})${carried}`;
-  const to = run.handedTo ? `${run.handedTo.id} on ${sha(run.handedTo.commit)}` : null;
-  if (to && !outcome) {
+  const { handedTo, ...plain } = run;
+  const to = handedTo ? `${handedTo.id} on ${sha(handedTo.commit)}` : '';
+  if (handedTo && !outcome) {
     const note = `superseded by ${to} before it ran a class: its range is carried there`;
     return { run: { ...run, state: 'superseded', ended: now, note }, sightings: [], lines: [`${HEAVY_PREFIX} HANDED ${where} to ${to} before it ran a class: its range is carried there`] };
   }
-  if (to && outcome) {
+  if (handedTo && outcome) {
     const handed = outcome.handed ?? [];
-    const settled = settleHeavy({ ...run, handedTo: undefined }, { ...outcome, unrun: 0 }, code, now);
+    const settled = settleHeavy(plain, { ...outcome, unrun: 0 }, code, now);
     const classes = { ran: outcome.ran, replayed: outcome.replayed, flaked: outcome.flaked, red: outcome.red, mainRed: outcome.mainRed };
     if (settled.run.state === 'red') {
-      return { ...settled, run: { ...settled.run, handedTo: run.handedTo, handed }, lines: settled.lines.map((line) => `${line}; ${handed.length} class(es) handed to ${to}`) };
+      return { ...settled, run: { ...settled.run, handedTo, handed }, lines: settled.lines.map((line) => `${line}; ${handed.length} class(es) handed to ${to}`) };
     }
     return {
       run: { ...run, state: 'superseded', ended: now, classes, handed }, sightings: [],

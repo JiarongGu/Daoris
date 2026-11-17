@@ -21,12 +21,8 @@
  * waiting is done outside it, by looking again every `POLL_MS`.
  *
  * Nothing here is a decision about what a gate checks: a gate admitted later runs the same, and a wait is never a timeout or a
- * failure. With no Daoris home (no `DAORIS_HOME`) nothing is shared and nothing waits.
- *
- * The heavy tier after a landing (`tools/heavy-run.mjs`) takes its places through its reached run, one tier at a time
- * (`merge/heavy-stack.ts`: a newer landing's supersedes the one before it), so landings in a row hold one place, not one each.
- * It takes them with a `bound`, so a tier that waits past `WAIT_BOUND_MS` says so on a `heavy tier:` line, and a newer tier's
- * halt ends its wait (`halted`).
+ * failure. With no Daoris home (no `DAORIS_HOME`) nothing is shared and nothing waits. A landing's heavy tier takes places one
+ * tier at a time (`merge/heavy-stack.ts`), saying a wait past its `bound` on a `heavy tier:` line; its newer tier's halt ends it.
  */
 import { randomBytes } from 'node:crypto';
 import {
@@ -183,9 +179,8 @@ export function waitingSentence({ holds, ahead }, { capacity, now = Date.now() }
  *
  * `takeWhole` takes every place at once, for a confirm run: see its own contract below.
  *
- * `daorisHome` null admits everything at once. A wait is said as it starts, each `sayMs` and as its holders change, with `patience`
- * (how long it waits). A `bound` (`{ ms, say(waitedMs, sentence) }`, a heavy tier's) is told once a wait passes `ms`, and again
- * at each `ms` more, with what it waits for; it ends no wait. The seams (`alive`, `now`, `sleep`, `say`, `readText`, `writeText`) are a test's.
+ * `daorisHome` null admits everything at once. A wait is said as it starts, each `sayMs`, as its holders change (with `patience`)
+ * and to `bound.say(waitedMs, sentence)` at each `bound.ms` it passes; the seams (`alive`, `now`, `sleep`, `say`, `readText`, `writeText`) are a test's.
  */
 export function createAdmission({
   daorisHome = process.env.DAORIS_HOME ?? null, kind = 'queue', capacity = null, alive = processAlive, now = Date.now,

@@ -17,7 +17,6 @@ export type ClassOutcome = { ran: number; replayed: number; flaked: string[]; ma
   built?: string[];
   /** Each step's clock (`reached-steps.ts`). */
   steps?: Step[];
-  /** The classes a newer heavy tier's halt left to it (`heavy-halt.ts`), neither passed nor failed here; absent for none. */
   handed?: string[];
 };
 

@@ -55,7 +55,6 @@ test('a green heavy run files no finding and a run with no counts is an error th
   }
 });
 
-/** Main's line: landing A (c1) changes what the Process, git and rehearsal classes read; landing B (c2) what the git classes read. */
 const LINE = ['c0', 'c1', 'c2'];
 const CHANGES = { c1: ['Proc.cs', 'Git.cs', 'Rehearse.cs'], c2: ['Git.cs'] };
 const READS = { 'driver-process|P1': 'Proc.cs', 'driver-git|G1': 'Git.cs', 'driver-git|G2': 'Git.cs', 'driver-rehearsals|R1': 'Rehearse.cs' };
@@ -66,10 +65,6 @@ const UNITS = Object.keys(READS).map((id) => {
   return { suite, kind: 'dotnet', unit, name: unit, file: `${unit}.cs` };
 });
 
-/**
- * The heavy tier's checks over that line, with the real plan run, store and halt: each class keyed by the version of what it reads,
- * so a pass stands on a commit that changed nothing it reads. Landing A's git half runs until something ends it; B's ends at once.
- */
 function machine(home) {
   const git = { started: 0, finished: 0, ended: 0, running: 0, most: 0 };
   const said = [];
@@ -106,13 +101,12 @@ function machine(home) {
       inGit();
       return new Promise((done) => {
         const finish = (code, how) => {
-          clearTimeout(timer);
           git.running -= 1;
           git[how] += 1;
           done(code);
         };
-        const timer = setTimeout(() => finish(0, 'finished'), commit === 'c1' ? 60_000 : 5);
         ends.set(pid, () => finish(1, 'ended'));
+        if (commit !== 'c1') setImmediate(() => finish(0, 'finished'));
       });
     };
     const outcome = await runPlan({
@@ -176,10 +170,11 @@ test('a tier superseded before it ran a class hands its whole range, and a wait 
     let ready = () => undefined;
     const held = new Promise((done) => { ready = done; });
     let clock = Date.parse('2026-11-18T10:00:00.000Z');
+    const look = 30_000;
     const older = runTier(landing('heavy-a', 'c1', 'c0'), tierSeams(home, m, 1, { prepare: async () => { await held; return home; } }));
     const newer = runTier(landing('heavy-b', 'c2', 'c1'), tierSeams(home, m, 2, {
-      now: () => clock, staleMs: Infinity, boundMs: 60_000,
-      sleep: async () => { clock += 30_000; if (clock >= Date.parse('2026-11-18T10:02:00.000Z')) ready(); await delay(1); },
+      now: () => clock, staleMs: Infinity, boundMs: 2 * look,
+      sleep: async () => { clock += look; if (clock >= Date.parse('2026-11-18T10:02:00.000Z')) ready(); await delay(1); },
     }));
     const [a, b] = await Promise.all([older, newer]);
     assert.equal(a.run.state, 'superseded');
