@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a scoped semantic census binds (<see cref="CensusReach"/>, D313): the scope's files and each file that names a type of theirs,
+/// What a scoped semantic census binds (<see cref="CensusReach"/>): the scope's files and each file that names a type of theirs,
 /// found from the reference map, which is kept by the hash of each tree's text; and the census of censuses' mark for a semantic census
 /// that stays whole.
 /// </summary>

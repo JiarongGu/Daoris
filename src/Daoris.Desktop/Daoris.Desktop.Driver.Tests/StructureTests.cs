@@ -378,7 +378,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         Assert.All(map.Families, family => Assert.Contains(map.Subdomains, subdomain => subdomain.Name == family.After));
     }
 
-    /// <summary>The one analysis of the driver's own tree the cases over it share: the binding is the gate's cost, measured here (D313).</summary>
+    /// <summary>The one analysis of the driver's own tree the cases over it share: the binding is the gate's cost, measured here.</summary>
     private static readonly Lazy<DriverTreeRead> Tree = new(() => DriverTree.Of(typeof(StructureTests)));
 
     [Fact]
@@ -748,7 +748,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
-        // Binding is the cost (D313), and the reuse proof's counts hold it; a wall clock measures the machine as well, so it only catches a hang.
+        // Binding is the cost, whole or scoped, and the reuse proof's counts hold it; a wall clock measures the machine, too, so it only catches a hang.
         output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
         Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }

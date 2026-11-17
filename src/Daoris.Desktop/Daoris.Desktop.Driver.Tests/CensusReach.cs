@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a semantic census binds under a scope (<see cref="CensusScope"/>, D313): of a project's sources, the scope's own and each that
+/// What a semantic census binds under a scope (<see cref="CensusScope"/>): of a project's sources, the scope's own and each that
 /// names a type a scope file declares, wherever that file compiles, found from a reference map read from the syntax alone. Binding, not
 /// compiling, is a semantic census's cost, and a compilation cannot be kept on disk, so a scoped census binds the trees a change can
 /// reach and no other, and a project none of whose sources is reached is not compiled. A source names a type when it spells the type's
@@ -43,7 +43,7 @@ internal static class CensusReach
 
     /// <summary>
     /// The files under the desktop tree a census under <paramref name="scope"/> judges across <paramref name="compilations"/>, so a list's
-    /// row for a file is judged only where the file was: every file with no scope, else each reached tree's and each the scope names (a
+    /// row for a file is judged only where the file is read: every file with no scope, else each reached tree's and each the scope names (a
     /// file the change deleted among them).
     /// </summary>
     internal static Func<string, bool> Judges(IEnumerable<Compilation> compilations, IReadOnlySet<string>? scope)
@@ -159,8 +159,8 @@ internal sealed record SpelledNames(IReadOnlySet<string> Declares, IReadOnlySet<
 
 /// <summary>
 /// The reference map: each source's <see cref="SpelledNames"/>, read from its syntax and kept under <c>_fixtures/census-reach/</c> by the
-/// hash of its text and the map's format, so a run parses again only the sources whose text changed. The file keeps every text it was
-/// given until it holds more than <see cref="MostKept"/>, when it keeps only the run's; it is written whole to a scratch name and
+/// hash of its text and the map's format, so a run parses again only the sources whose text changed. The file keeps every text a run hands it
+/// until it holds more than <see cref="MostKept"/>, when it keeps only the run's; it is written whole to a scratch name and
 /// moved over the old, so a run beside it reads one or the other.
 /// </summary>
 internal static class ReferenceMap
@@ -190,7 +190,7 @@ internal static class ReferenceMap
 
     private static readonly CSharpParseOptions Parse = new(LanguageVersion.Latest);
 
-    /// <summary>Each source's names, in order, from the map where its key is there, else parsed from its text, the map written again when any was parsed.</summary>
+    /// <summary>Each source's names, in order, from the map where its key is there, else parsed from its text; a parse writes the map again.</summary>
     internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts)
     {
         var kept = Kept.Value;
