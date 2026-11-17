@@ -14,8 +14,10 @@ import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 
 describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurrency: CASES_AT_ONCE }, () => {
 
-  test('--ci runs a Process half by reach:the classes a change reaches, the rest kept and named; a file every class reads, every class; one read unnamed, the whole half; a sweep past its bound before a stage', async () => {
-    const repo = scratch('ci-reach', [
+  // A Process half by reach is five cases, a mode each, each on a repository of its own.
+  /** A desktop of its own whose Process half has three classes, the CI's stand-in `dotnet test` on the path, and what a case reads of its runs. */
+  const reachScratch = (name: string) => {
+    const repo = scratch(name, [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
       { name: 'desk-process', run: 'dotnet test src/Desk/Desk.Tests --settings src/Desk/process.runsettings' },
     ], { 'ci-gate.mjs': CI_GATE, ...DESK_FILES });
@@ -44,7 +46,11 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     const verdictsFile = join(repo.root, 'local', 'gate-verdicts.json');
     const halfVerdicts = () => (JSON.parse(readFileSync(verdictsFile, 'utf8')) as { verdicts: Verdict[] }).verdicts.filter((each) => each.gate === 'desk-process');
     const first = git(repo.root, 'rev-parse', 'HEAD');
+    return { repo, env, gateTree, ranFile, dotnetRan, halfOf, commit, verdictsFile, halfVerdicts, first };
+  };
 
+  /** The first run, whole, then a change to one area run by reach, each asserted; the second's commit. */
+  const byReach = async ({ repo, env, dotnetRan, halfOf, commit, halfVerdicts, first }: ReturnType<typeof reachScratch>) => {
     // The first run: no class has a verdict, so the half runs whole, and each class's verdict is kept with its tree.
     let result = await repo.run(['--ci'], env);
     assert.equal(result.status, 0, result.out);
@@ -71,11 +77,26 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     assert.equal(halfVerdicts().at(-1)!.classes!.kept, 1);
     const narrowed = readFileSync(join(repo.root, 'local', 'scratch', `ci-${second.slice(0, 7)}`, 'desk-process.process.runsettings'), 'utf8');
     assert.match(narrowed, /<TestCaseFilter>\(Category=Process\)&amp;FullyQualifiedName!~Desk\.Tests\.BetaTests\.<\/TestCaseFilter>/, 'the half\'s filter ANDed with the kept class kept out');
-    result = await repo.run(['--passed'], env, gateTree);
-    assert.equal(result.status, 0, result.out);
+    return second;
+  };
 
+  test('--ci runs a Process half by reach: the classes a change reaches, the rest kept and named, and the stage takes the pass', async () => {
+    const reach = reachScratch('ci-reach');
+    await byReach(reach);
+    const result = await reach.repo.run(['--passed'], reach.env, reach.gateTree);
+    assert.equal(result.status, 0, result.out);
+    reach.repo.cleanup();
+  });
+
+  /** A time older than the day a kept class verdict, or a sweep, stands. */
+  const aged = (iso: string) => new Date(Date.parse(iso) - 2 * tool.SWEEP_BOUND_MS).toISOString();
+
+  test('--ci sweeps a half whole once a class it kept stands on a verdict older than a day, which the stage refuses before', async () => {
+    const reach = reachScratch('ci-sweep');
+    const { repo, env, gateTree, ranFile, dotnetRan, verdictsFile } = reach;
+    const second = await byReach(reach);
+    let result: { status: number | null; out: string };
     // The stage refuses a half that kept classes on verdicts older than the bound, and the next CI run sweeps it whole.
-    const aged = (iso: string) => new Date(Date.parse(iso) - 2 * tool.SWEEP_BOUND_MS).toISOString();
     const verdicts = JSON.parse(readFileSync(verdictsFile, 'utf8')) as { verdicts: Verdict[] };
     for (const entry of verdicts.verdicts) if (entry.classes) entry.classes.sweep = aged(entry.classes.sweep);
     writeFileSync(verdictsFile, JSON.stringify(verdicts));
@@ -93,20 +114,28 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     assert.match(result.out, /desk-process: the whole half runs \(3 classes\): its oldest kept class verdict \(Desk\.Tests\.BetaTests, [^)]+\) is older than 24 hours: a sweep runs the whole half/);
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 0, result.out);
+    repo.cleanup();
+  });
 
+  test('--ci --stage runs a half whole whatever its reach once its last sweep is older than a day, which the stage refuses before', async () => {
+    const { repo, env, gateTree, ranFile, dotnetRan } = reachScratch('ci-due');
+    // The first run, whole, is the half's sweep.
+    let result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    const swept = git(repo.root, 'rev-parse', 'HEAD');
     // The due record holds the half's last sweep, its whole run's; past its bound the stage refuses, and the stage's
     // own run runs the half whole though its pass stands, which satisfies it again.
     const sweepFile = join(repo.root, 'local', 'ci-sweep.json');
     const dueRecord = JSON.parse(readFileSync(sweepFile, 'utf8')) as { halves: Record<string, { last: string; commit: string; kind: string }> };
-    assert.deepEqual([dueRecord.halves['desk-process']!.commit, dueRecord.halves['desk-process']!.kind], [second, 'ci']);
+    assert.deepEqual([dueRecord.halves['desk-process']!.commit, dueRecord.halves['desk-process']!.kind], [swept, 'ci']);
     dueRecord.halves['desk-process']!.last = aged(dueRecord.halves['desk-process']!.last);
     writeFileSync(sweepFile, JSON.stringify(dueRecord));
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /not staged\s+desk-process's sweep is overdue \(local\/ci-sweep\.json\): last run whole/);
-    assert.match(result.out, new RegExp(`Run the stage's own CI run on it: node tools/merge-branch\\.mjs --ci --stage ${second.slice(0, 7)}`));
+    assert.match(result.out, new RegExp(`Run the stage's own CI run on it: node tools/merge-branch\\.mjs --ci --stage ${swept.slice(0, 7)}`));
     rmSync(ranFile, { force: true });
-    result = await repo.run(['--ci', '--stage', second.slice(0, 7)], env);
+    result = await repo.run(['--ci', '--stage', swept.slice(0, 7)], env);
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
     assert.match(result.out, /due a sweep \(local\/ci-sweep\.json\): desk-process, run whole whatever its reach/);
@@ -114,7 +143,13 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     assert.match(result.out, /swept \(local\/ci-sweep\.json\): desk-process, each class given a verdict/);
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 0, result.out);
+    repo.cleanup();
+  });
 
+  test('--ci runs a half whole for a change to a file every class reads, and to one read unnamed', async () => {
+    const { repo, env, dotnetRan, halfOf, commit } = reachScratch('ci-whole');
+    let result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
     // A helper every class reads reaches every class: the whole half. So does a file read unnamed (a global using).
     commit('src/Desk/Desk.Tests/Shared.cs', 'namespace Desk.Tests;\ninternal static class Shared { public const int Seed = 2; }\n');
     result = await repo.run(['--ci'], env);
@@ -126,7 +161,13 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
     assert.match(halfOf(fifth).classes!.whole ?? '', /src\/Desk\/Desk\.Tests\/GlobalUsings\.cs acts on every test unnamed/);
+    repo.cleanup();
+  });
 
+  test('--ci passes a half by its kept classes without running when a change reaches its gate and none of its classes, and runs by reach after', async () => {
+    const { repo, env, gateTree, dotnetRan, halfOf, commit, halfVerdicts } = reachScratch('ci-kept');
+    let result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
     // A fixture no class names reaches the gate and none of its classes; the last pass, whole, went stale by it
     // alone, so the half passes by its kept classes without running, and the stage takes that pass.
     const sixth = commit('src/Desk/Desk.Tests/unused.txt', 'nothing reads this\n');
@@ -135,7 +176,7 @@ describe('the tool, end to end in a scratch repository (e2e-ci-more)', { concurr
     assert.deepEqual(dotnetRan(), [], 'no class ran');
     assert.match(result.out, /desk-process: passes without running \(CISCOPE1b\): all 3 classes kept, each with a pass that stands on this tree, the oldest from [^;]+; its last verdict, a pass on [^,]+, went stale by reach alone \(src\/Desk\/Desk\.Tests\/unused\.txt\), which reaches none of its classes/);
     assert.match(result.out, /CI on \w+ \(CI1\): 1 of 2 gates to run[\s\S]*CI green on \w+: 1 gate run and passed, 1 passed by its kept classes \(desk-process\)/);
-    half = halfOf(sixth);
+    const half = halfOf(sixth);
     assert.deepEqual([half.state, half.verdict, half.ms, half.classes!.run, half.classes!.kept.length], ['done', 'PASS', 0, [], 3]);
     assert.match(half.note ?? '', /^passed without running \(CISCOPE1b\): /);
     assert.deepEqual(halfVerdicts().at(-1)!.classes, { ran: 0, kept: 3, sweep: halfVerdicts().at(-2)!.at });

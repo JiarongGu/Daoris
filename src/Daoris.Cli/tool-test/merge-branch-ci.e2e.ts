@@ -187,8 +187,9 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
   });
 
   // A CI run takes 45 to 75 minutes, the family and deployment rehearsals 14 to 23 and 14 to 22 of it.
-  test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
-    const repo = scratch('ci-stage', [
+  /** A repository whose CI owes its two rehearsals a stage (stand-ins that note their start and end), and what a case reads of its runs. */
+  const stageScratch = (name: string) => {
+    const repo = scratch(name, [
       { name: 'universal', run: 'node ci-gate.mjs universal' },
       { name: 'rehearse-family', run: 'npm run rehearse:family' },
       { name: 'deployment', run: 'npm run rehearse:deploy' },
@@ -215,7 +216,11 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
     const states = (status: CiStatus) => status.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict}`);
     const record = () => JSON.parse(readFileSync(join(repo.root, 'local', 'ci.json'), 'utf8')) as { lastGreen: { commit: string } | null; runs: { commit: string; state: string; at: string; stage?: boolean; owed?: string[] }[] };
     const tip = git(repo.root, 'rev-parse', 'HEAD');
-    const sha = tip.slice(0, 7);
+    return { repo, gateTree, read, clear, statusOf, states, record, tip, sha: tip.slice(0, 7) };
+  };
+
+  test('--ci owes the family and deployment rehearsals a stage, running neither; --ci --stage runs them on the commit to stage, one after the other, and the stage asks their pass', async () => {
+    const { repo, gateTree, read, clear, statusOf, states, record, tip, sha } = stageScratch('ci-stage');
     try {
       // A plain run: the rehearsals are owed, not run; it is green on the rest, and says what pays them.
       let result = await repo.run(['--ci']);
@@ -273,7 +278,17 @@ describe('the tool, end to end in a scratch repository (e2e-ci)', { concurrency:
       assert.equal(result.status, 0, result.out);
       assert.match(result.out, /nothing to run/);
       assert.deepEqual(statusOf(tip).owed, []);
+    } finally {
+      repo.cleanup();
+    }
+  });
 
+  test('--ci --night runs every gate whole, the rehearsals included, whatever stands, and a night that finished, green or red, satisfies it', async () => {
+    const { repo, read, clear, statusOf, tip, sha } = stageScratch('ci-night');
+    try {
+      // A plain run first: its gate's pass stands on this tree.
+      let result = await repo.run(['--ci']);
+      assert.equal(result.status, 0, result.out);
       // The night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.
       clear();
       result = await repo.run(['--ci', '--night']);
