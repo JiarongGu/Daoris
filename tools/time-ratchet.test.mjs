@@ -225,7 +225,7 @@ test('a class entry keeps its reason while the class runs, though no test of it 
   assert.equal(ranked[0].reason, entry(120_000).why);
 });
 
-test('TIMELOAD1: a timing taken under load is kept and never fails for time; one taken alone does', () => {
+test('a timing taken under load is kept and never fails for time; one taken alone does', () => {
   const dir = join('_fixtures', 'time-ratchet-load-test');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -240,16 +240,15 @@ test('TIMELOAD1: a timing taken under load is kept and never fails for time; one
     assert.deepEqual(Object.keys(loaded), ['U.slow'], 'the loaded timing is kept, marked, and judges nothing');
     assert.ok(!seen.has('U.slow'));
     assert.deepEqual(checkTimes({ ...over }, {}).length, 1);
-    // a record written again after its mark is unmarked and judged as alone
     const later = new Date(at + 5000);
     utimesSync(join(dir, 'driver.trx'), later, later);
-    assert.deepEqual(Object.keys(scanRecords(dir, '.').over).sort(), ['M.slow', 'U.slow']);
+    assert.deepEqual(Object.keys(scanRecords(dir, '.').over).sort(), ['M.slow', 'U.slow'], 'a record written again after its mark is judged as alone');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('TIMELOAD1: stampLoad marks the records of a run with its peak load, and a loaded-only test is measured again alone or said unmeasured', async () => {
+test('stampLoad marks the records of a run with its peak load, and a loaded-only test is measured again alone or said unmeasured', async () => {
   const dir = join('_fixtures', 'time-load-test');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -274,7 +273,7 @@ test('TIMELOAD1: stampLoad marks the records of a run with its peak load, and a 
   }
 });
 
-test('TIMELOAD1: inside a run, only the records the run wrote are judged; the tree\'s older slow ones are never a red', () => {
+test('inside a run, only the records the run wrote are judged; the tree\'s older slow ones are never a red', () => {
   const dir = join('_fixtures', 'time-ratchet-run-test');
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });

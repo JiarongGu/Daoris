@@ -11,9 +11,7 @@
  * longer than its record's limit (`LIMITS`, the owner's budget). A listed test may run up to the milliseconds on its entry, no
  * longer; a key is the test's key or its start, covering a suite's tests. An entry is `{ ms, why, row?, class? }`: `why` says what makes it
  * slow and why that cannot be cut (none fails), `row` the row that optimizes it, `class: true` a class slow in total. The list only shrinks.
- * Only a timing taken alone is judged: a record marked with more than one heavy run under way, or with test runs of another tree
- * beside it that took no admission place (`tools/time-load.mjs`), is kept as "under load" and fails nothing. Run inside a merge or preflight, with `DAORIS_RATCHET_SINCE` or a `run-start.json` marker, it judges
- * only the records that run wrote. A test timed only under load is measured again alone when the machine is free, else said unmeasured.
+ * Only a timing taken alone is judged (`tools/time-load.mjs` marks the rest), and inside a run only the records that run wrote.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -21,7 +19,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { judgeByReach, loadWorld, unitsOf } from './time-reach.mjs';
-import { ALONE_HOLDS, heldNow, isLoaded, readMarks } from './time-load.mjs';
+import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
 
 /** The owner's per-test budget, in milliseconds, by the kind of record. */
 export const LIMITS = { unit: 30_000, process: 120_000, web: 10_000, tool: 120_000, toolUnit: 10_000 };
@@ -114,11 +112,7 @@ export function readRecords(dir, root, { since = null } = {}) {
   });
 }
 
-/**
- * Every test over its limit in the records of `dir`, as key -> { ms, limit } (a key's newest record decides), and every key the records hold.
- * A record taken under load (`tools/time-load.mjs`) is kept and judges nothing: a test it times over its limit that no record taken alone
- * times is `loaded` (key -> { ms, limit }), to be measured again alone.
- */
+/** Each test over its limit in `dir`'s records taken alone (key -> { ms, limit }), every key, and `loaded`: over only under load. */
 export function scanRecords(dir, root, { since = null } = {}) {
   const latest = new Map();
   const seen = new Set();
@@ -230,11 +224,7 @@ export function measureAlone(root, units) {
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }
 
-/**
- * When the run this ratchet is part of began, so only the records that run wrote are judged and the tree's older ones (a candidate's,
- * measured under load) are never a red: `DAORIS_RATCHET_SINCE` (epoch ms) from the tool that runs the checks, else the run marker
- * `run-start.json` (`{ "startedAt": <epoch ms> }`) it writes in the records' folder; null with neither (every record is judged).
- */
+/** When this ratchet's run began (`DAORIS_RATCHET_SINCE`, else `run-start.json`'s `startedAt`), or null: older records are never a red. */
 export function runStart(dir, env = process.env) {
   const named = Number(env.DAORIS_RATCHET_SINCE);
   if (env.DAORIS_RATCHET_SINCE && Number.isFinite(named)) return named;
@@ -246,10 +236,7 @@ export function runStart(dir, env = process.env) {
   }
 }
 
-/**
- * A scan's tests timed only under load, measured again alone when the machine is free (`free()`), else left unmeasured: the scan
- * (the second one after a measurement) and the keys still timed only under load. They fail nothing for time.
- */
+/** A scan's tests timed only under load, measured again alone when `free()`, else left unmeasured; they fail nothing for time. */
 export async function settleLoaded({ scan, free, measure, world }) {
   let scanned = scan();
   if (Object.keys(scanned.loaded).length && free()) {
@@ -277,7 +264,7 @@ async function main() {
     const list = JSON.parse(readFileSync(listFile, 'utf8'));
     const changed = process.env.DAORIS_RATCHET_CHANGED ? JSON.parse(process.env.DAORIS_RATCHET_CHANGED) : null;
     const scan = () => scanRecords(dir, root, { since });
-    const { unmeasured } = await settleLoaded({ scan, free: () => heldNow() <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
+    const { unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
     for (const key of unmeasured) console.log(`time-ratchet: unmeasured, under load: ${key} was timed only while other heavy runs were under way, so it is not judged for time; it is measured again alone when the machine is free`);
     const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
     const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
