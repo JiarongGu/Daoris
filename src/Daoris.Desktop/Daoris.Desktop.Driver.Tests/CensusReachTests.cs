@@ -126,7 +126,8 @@ public sealed class CensusReachTests
         Assert.NotEqual(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..32], ReferenceMap.Key(text));
 
         var unique = $"class Keyed{Guid.NewGuid():N} {{ }}";
-        Assert.Same(ReferenceMap.Of([unique]).Single(), ReferenceMap.Of([unique]).Single());
+        var kept = new System.Collections.Concurrent.ConcurrentDictionary<string, SpelledNames>(StringComparer.Ordinal);
+        Assert.Same(ReferenceMap.Of([unique], kept, store: null).Single(), ReferenceMap.Of([unique], kept, store: null).Single());
     }
 
     [Fact]

@@ -191,9 +191,11 @@ internal static class ReferenceMap
     private static readonly CSharpParseOptions Parse = new(LanguageVersion.Latest);
 
     /// <summary>Each source's names, in order, from the map where its key is there, else parsed from its text; a parse writes the map again.</summary>
-    internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts)
+    internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts) => Of(texts, Kept.Value, Stored);
+
+    /// <summary>As <see cref="Of(IReadOnlyList{string})"/> over <paramref name="kept"/>, written to <paramref name="store"/> unless it is null.</summary>
+    internal static IReadOnlyList<SpelledNames> Of(IReadOnlyList<string> texts, ConcurrentDictionary<string, SpelledNames> kept, string? store)
     {
-        var kept = Kept.Value;
         var before = s_read;
         SpelledNames[] names = [.. texts.AsParallel().AsOrdered().Select(text =>
         {
@@ -205,7 +207,7 @@ internal static class ReferenceMap
                 return SpelledNames.Read(CSharpSyntaxTree.ParseText(text, Parse).GetRoot());
             });
         })];
-        if (s_read != before) Save(Stored, kept.Count > MostKept ? kept.Where(each => Used.ContainsKey(each.Key)) : kept);
+        if (store is not null && s_read != before) Save(store, kept.Count > MostKept ? kept.Where(each => Used.ContainsKey(each.Key)) : kept);
         return names;
     }
 
