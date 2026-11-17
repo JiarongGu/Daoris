@@ -12,9 +12,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// ended chat whose words were kept while no shell ran is taken up as the loop comes up, judged as words said now are; and
 /// a chat taken up by itself announces its end as the page's <c>SESSION_ENDED</c>, in the shape a start's end has. The
 /// runner's adapter here spawns nothing, so a chat that goes on ends <c>failed</c> at its spawn, which is an end all the
-/// same; the runs that resume a conversation are the driver's <c>ChatGoesOnProcessTests</c>'.
+/// same; the runs that resume a conversation are the driver's <c>ChatGoesOnProcessTests</c>'. That the end has one writer is read from
+/// the sources, <see cref="ModuleSourcesCensusTests"/>'.
 /// </summary>
-[Trait(Category.Name, Category.Census)]
 public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 {
     [Fact]
@@ -109,21 +109,6 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         Assert.All(Raised.Where(m => m.Type == StatePublisher.Type), told => Assert.Equal(
             """{"scopes":["sessions"],"sessions":["c1"]}""",
             JsonSerializer.Serialize(told.Payload, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })));
-    }
-
-    /// <summary>
-    /// A start's end and a chat taken up by itself reach the page in one shape, written in one place: the routes that start
-    /// a conversation hand their runs the loop's announcement rather than spelling the event again.
-    /// </summary>
-    [Fact]
-    public void A_conversations_end_has_one_writer()
-    {
-        var spelled = SourceFiles.All(SourceFiles.ModulesProject, "*.cs")
-            .Where(path => File.ReadAllText(path).Contains("\"SESSION_ENDED\"", StringComparison.Ordinal))
-            .Select(Path.GetFileName)
-            .ToList();
-
-        Assert.Equal(["DriverLoop.cs"], spelled);
     }
 
     /// <summary>

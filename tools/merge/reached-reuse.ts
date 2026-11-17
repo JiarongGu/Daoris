@@ -28,10 +28,16 @@ export type Readers = {
   pathReach: (path: string, census: DotnetSuite['census']) => { none?: boolean; whole?: boolean };
 };
 
-/** The key context of `map` over the tree whose files are `files`, read by `read`, under `toolchain` and the gates' declarations. */
-export function reuseContext({ map, files, read, toolchain, gates, readers }: {
+type Placement = { none?: boolean; whole?: boolean };
+
+/** What a reading of a tree derived, kept for the next (`census-cache.ts`'s `treeSide`): each .NET suite's placed candidates, each class's key. */
+export type ReuseMemo = { candidates?: Record<string, { files: string[]; placed: Placement[] }>; keys?: Record<string, string>; keysFor?: string };
+
+/** The key context of `map` over the tree whose files are `files`, read by `read`, under `toolchain`, the gates' declarations and `memo`. */
+export function reuseContext({ map, files, read, toolchain, gates, readers, memo }: {
   map: TestMap; files: readonly string[]; read: (path: string) => string; toolchain: string;
   gates: readonly { name: string; run: string; memoryGb?: number; clock?: boolean }[]; readers: Readers;
+  memo?: { value: ReuseMemo; changed: () => void };
 }): KeyContext {
   const setTrue = propertiesSetTrue(files.filter(isMsbuildFile).map(read));
   const digests = new Map<string, string>();
@@ -47,8 +53,8 @@ export function reuseContext({ map, files, read, toolchain, gates, readers }: {
   const classOf = new Map<string, { full: string; reach: string[] }>();
   for (const each of map.dotnet) for (const cls of each.census.classes) classOf.set(`${each.suite}|${each.project}|${cls.full}`, cls);
   const unitOf = new Map(map.units.map((each) => [`${each.suite}|${each.unit}`, each]));
-  const placements = new Map<DotnetSuite, Map<string, { none?: boolean; whole?: boolean }>>();
-  const placed = (suite: DotnetSuite, path: string): { none?: boolean; whole?: boolean } => {
+  const placements = new Map<DotnetSuite, Map<string, Placement>>();
+  const placed = (suite: DotnetSuite, path: string): Placement => {
     const memo = placements.get(suite) ?? new Map();
     placements.set(suite, memo);
     let found = memo.get(path);
@@ -117,6 +123,12 @@ export function reuseContext({ map, files, read, toolchain, gates, readers }: {
   const reaches = (unit: CensusUnit, path: string): boolean => (unit.kind === 'dotnet' ? dotnetReaches(unit, path) : tsUnitReaches(unit, path));
 
   const candidates = new Map<string, string[]>();
+  for (const [group, kept] of Object.entries(memo?.value.candidates ?? {})) {
+    const suite = suiteOf.get(group);
+    if (!suite || kept.files.length !== kept.placed.length) continue;
+    candidates.set(group, kept.files);
+    placements.set(suite, new Map(kept.files.map((path, at) => [path, kept.placed[at] as Placement])));
+  }
   // The run settings a command names are part of what it is: a change to the filter or the environment they hold is another run.
   const settingsOf = (run: string): string | null => {
     const path = /(?:--settings|-s)[ =:]+"?([^"\s]+)"?/.exec(run)?.[1]?.replaceAll('\\', '/');
@@ -137,6 +149,15 @@ export function reuseContext({ map, files, read, toolchain, gates, readers }: {
             || buildsProject(suite, path, null));
         }) : [...files];
         candidates.set(group, found);
+        if (memo && full.kind === 'dotnet') {
+          const suite = suiteFor(full);
+          const kept = found.map((path): Placement => {
+            const at = placed(suite, path);
+            return { ...(at.none ? { none: true } : {}), ...(at.whole ? { whole: true } : {}) };
+          });
+          memo.value.candidates = { ...memo.value.candidates, [group]: { files: found, placed: kept } };
+          memo.changed();
+        }
       }
       return found;
     },

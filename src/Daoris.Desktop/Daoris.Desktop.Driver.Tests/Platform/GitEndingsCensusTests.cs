@@ -33,21 +33,21 @@ public sealed class GitEndingsCensusTests
     [Fact]
     public void Every_early_end_is_listed_with_what_it_may_end()
     {
-        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(GitsCode)), Endings.Keys, What);
+        var problems = SourceCensus.Problems(Found(SourceCensus.Driver(typeof(GitEndingsCensusTests), GitsCode)), SourceCensus.Listed(typeof(GitEndingsCensusTests), Endings.Keys), What);
         Assert.True(problems.Count == 0, string.Join('\n', problems));
     }
 
     [Fact]
     public void Each_end_left_out_of_the_list_turns_the_census_red_naming_it()
     {
-        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(GitsCode)), Endings.Keys, What));
+        Assert.Empty(SourceCensus.Unproved(Found(SourceCensus.Driver(typeof(GitEndingsCensusTests), GitsCode)), SourceCensus.Listed(typeof(GitEndingsCensusTests), Endings.Keys), What));
     }
 
     [Fact]
     public void A_planted_end_turns_the_census_red_naming_it()
     {
-        var planted = SourceCensus.Driver(GitsCode).Append(("Planted.cs", "internal static class Planted\n{\n    public static void Stop(Process git) => OwnedProcesses.End(git);\n}\n"));
+        var planted = SourceCensus.Driver(typeof(GitEndingsCensusTests), GitsCode).Append(("Planted.cs", "internal static class Planted\n{\n    public static void Stop(Process git) => OwnedProcesses.End(git);\n}\n"));
 
-        Assert.Equal(["Planted.cs ends a process early and is not listed"], SourceCensus.Problems(Found(planted), Endings.Keys, What));
+        Assert.Equal(["Planted.cs ends a process early and is not listed"], SourceCensus.Problems(Found(planted), SourceCensus.Listed(typeof(GitEndingsCensusTests), Endings.Keys), What));
     }
 }

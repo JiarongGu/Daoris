@@ -217,8 +217,8 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   },
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
-    gates: ['service', 'driver', 'modules', 'censuses'],
-    why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
+    gates: ['service', 'censuses'],
+    why: "the service's, the driver's and the modules' ParticipantWorkReadersTests (the desktop's two are censuses) read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
   },
   {
     paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/helper-askers.json'],

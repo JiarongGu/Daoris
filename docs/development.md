@@ -184,7 +184,12 @@ Main is the development branch, and the cycle's aim is main green and the instal
    service's, page's and tools' suites (`tools/reached-checks.mjs`), nearest the change first and bounded per suite, the count left
    over named for the CI. The gate reads the paths from the base the run hands it in its `{base}`: HEAD for a merge in place, the
    candidate's base in the queue's committed scope tree, the merge base in a preflight's committed branch, so a committed tree's
-   reached units run as an open merge's do. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
+   reached units run as an open merge's do. Its time goes to tests: it reads the census once per content tree (kept under
+   `_fixtures/reached-census/`, so the test-map gate's reading or an earlier run's on the same tree serves it), restores and builds
+   each test project once, not where its stamp under `_fixtures/reached-build/` still holds its inputs and output, and runs each
+   project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. Each step
+   (census, plan, restore and build per project, discovery and run per suite) is said as it goes and kept in the merge record's
+   `steps`, so a gate killed over its budget names the step it was in. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
    `--keep-going` past those too, so one round finds every red and writes them in one brief.
 3. **Records.** `TASKS.md` merges by its rows' ids for every merge git makes (`tools/merge-backlog.mjs`, the merge tool's own row
@@ -249,7 +254,16 @@ its paths reach the page's sources or its test configuration, the web's design a
 run check:web-rules`: the design, structure, provider-census, presentational and page-measure tests alone, a minute or two), which a story or a
 module broke twice before the CI beside's `web-unit` reached it (MERGEWEBRULES1); and, where its paths reach the desktop's sources, the
 desktop's censuses (`censuses`: every test class that reads the sources by text carries `[Trait("Category","Census")]`, and the gate runs
-`dotnet test <project> --filter Category=Census` for the driver's tests and the modules', REVIEW2 T6). Every other
+`dotnet test <project> --filter Category=Census` for the driver's tests and the modules', REVIEW2 T6; the fast halves filter
+`Category!=Process&Category!=Census`, so each census runs once a run). At a merge the censuses judge the diff (CENSUSDIFF1): the
+merge writes its changed paths to a file under `_fixtures/census-scope/` and names it in `CENSUS_SCOPE` (`tools/merge/census-scope.ts`),
+a census marked diff-able in its project's `CensusMarks.cs` judges only those files, and one marked whole (a rule across files, or
+one not yet reading through `CensusScope`) judges the tree; each project's census of censuses holds every census marked once. With
+no scope (the CI after the landing, a developer's run) every census judges the whole tree. A census class holds what a source says, never
+behaviour: a class whose few source-reading facts sat beside bridge or graph cases has those facts in a census class of its own
+(`ModuleSourcesCensusTests`), and its behaviour is the fast half's. What holds the gate past a minute is the semantic censuses (the
+structure classes, the declarations' and the provider census over one compile of each shipping project): they judge the whole tree
+whatever the scope, so diff-able text censuses shorten nothing until their walks read the scope too. Every other
 gate its paths reach is listed and skipped, "in the CI beside": the CI (`--ci`, below) gates main's
 tip after a merge or batch; fix what it reports. `--gated` runs what the paths reach, for a risky merge; the full set
 is still required before any stage (GATESLIM1, D115).

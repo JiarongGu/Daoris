@@ -9,8 +9,6 @@ import { tool, repoRoot, repoPlan, rootScripts, type Gate } from '../support/mer
 // reaches: * — the tests hold the covered gate and the pre-step's gates to the repository's own declared gates
 
 interface Steps {
-  censusCovers: (gates: Gate[]) => Map<string, string[]>;
-  coverOutcome: (covers: Map<string, string[]>, results: { gate: { name: string }; verdict: string }[]) => { passed: string[]; unmet: { name: string; by: string[] }[] };
   contractsGates: (gates: Gate[], scripts: Record<string, string>, webScripts: Record<string, string>) => string[];
 }
 
@@ -19,36 +17,10 @@ const steps = await import(
   '../../../../tools/merge-branch/ci-steps.mjs') as Steps;
 
 const gate = (name: string, run: string): Gate => ({ name, run, kind: 'suite' });
-const DRIVER = 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process';
-const MODULES = 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process';
-const CENSUSES = 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category=Census && dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category=Census';
-
-test('a gate that runs only the census classes is covered where every project it names has its fast half in the run', () => {
-  const run = [gate('driver', DRIVER), gate('modules', MODULES), gate('censuses', CENSUSES)];
-  assert.deepEqual([...steps.censusCovers(run)], [['censuses', ['driver', 'modules']]]);
-});
-
-test('a census gate whose fast half is not run with it is run, and so is one that names more than the census', () => {
-  assert.equal(steps.censusCovers([gate('driver', DRIVER), gate('censuses', CENSUSES)]).size, 0, 'the modules half is skipped');
-  assert.equal(steps.censusCovers([gate('modules', MODULES), gate('censuses', CENSUSES)]).size, 0, 'the driver half is skipped');
-  const process = gate('driver-process', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings');
-  assert.equal(steps.censusCovers([process, gate('modules', MODULES), gate('censuses', CENSUSES)]).size, 0, 'a Process half runs no census class');
-  const more = gate('censuses', `${CENSUSES} && node tools/test-map.mjs --check`);
-  assert.equal(steps.censusCovers([gate('driver', DRIVER), gate('modules', MODULES), more]).size, 0, 'a command with another step is no census gate');
-  assert.equal(steps.censusCovers([gate('driver', DRIVER), gate('modules', MODULES), gate('other', 'dotnet test src/Daoris.Service')]).size, 0);
-});
-
-test("a covered gate passes with its halves' passes and stays unmet, naming the half, when one did not pass", () => {
-  const covers = new Map([['censuses', ['driver', 'modules']]]);
-  const result = (name: string, verdict: string) => ({ gate: { name }, verdict });
-  assert.deepEqual(steps.coverOutcome(covers, [result('driver', 'PASS'), result('modules', 'PASS')]), { passed: ['censuses'], unmet: [] });
-  assert.deepEqual(steps.coverOutcome(covers, [result('driver', 'PASS'), result('modules', 'FAIL')]), { passed: [], unmet: [{ name: 'censuses', by: ['modules'] }] });
-  assert.deepEqual(steps.coverOutcome(covers, [result('driver', 'PASS')]), { passed: [], unmet: [{ name: 'censuses', by: ['modules'] }] }, 'a half that never ran has not passed');
-});
-
-test("the repository's own plan: the census gate is covered by the driver's and the modules' fast halves", () => {
-  const covers = steps.censusCovers(repoPlan);
-  assert.deepEqual([...covers], [['censuses', ['driver', 'modules']]]);
+test("the repository's own plan: each desktop fast half leaves the census classes to the censuses gate, so each runs once a run", () => {
+  const run = (name: string) => repoPlan.find((each) => each.name === name)?.run ?? '';
+  for (const half of ['driver', 'modules']) assert.match(run(half), /--filter "Category!=Process&Category!=Census"/, half);
+  assert.match(run('censuses'), /--filter Category=Census\b/);
 });
 
 test("the web gates that run the page's pre-scripts are the ones the contracts step serves", () => {

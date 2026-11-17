@@ -12,6 +12,7 @@ import { attribute, gateOutcome, mainRedLines, unspecificLines, type Held, type 
 import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.ts';
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
 import { parseOutcome, type ClassOutcome } from './reached-classify.ts';
+import { parseSteps, type Step } from './reached-steps.ts';
 import { overBudgetNote } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
@@ -20,7 +21,8 @@ export type PlanGate = GateDeclaration & { [other: string]: unknown };
 export type GateResult = {
   gate: PlanGate; verdict: string; note: string; ms?: number; log?: string; code?: unknown;
   failures?: Array<{ unit: string; key: string; test?: string | null }>; replayed?: Replay; classReplay?: ClassReplay; abnormal?: boolean; slowest?: Slow[];
-  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; classes?: ClassOutcome; key?: VerdictKey; flakes?: string[]; [other: string]: unknown;
+  left?: Array<{ pid: number; created: string; stopped: boolean }>; mainRed?: boolean; classes?: ClassOutcome; key?: VerdictKey; flakes?: string[];
+  steps?: Step[]; [other: string]: unknown;
 };
 type StepTrees = { ended: string | null; hold(pid: number): void; release(pid: number): boolean; end(why: string): void };
 
@@ -127,8 +129,12 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   result.gate = gate;
   if (key) result.key = key;
   if (narrowed) result.classReplay = narrowed.replay;
+  const said = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
+  const outcome = said ? parseOutcome(said) : null;
+  const steps = outcome?.steps ?? parseSteps(said, Date.now() - started);
+  if (steps.length) result.steps = steps;
   if (expired !== null && budget !== null && !trees?.ended) {
-    Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note: overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name)) });
+    Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note: overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name), steps) });
     result.slowest = deps.lastSlowest(gate.name);
   }
   if (!result.overBudget && result.verdict === 'FAIL' && typeof result.code === 'number' && abnormalEnd(result.code)) {
@@ -140,7 +146,6 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   if (trxFiles.length && !result.slowest?.length) {
     result.slowest = trxFiles.flatMap((file) => deps.slowestOf(readFileSync(file, 'utf8'))).sort((a, b) => b.ms - a.ms).slice(0, 5);
   }
-  const outcome = result.log && existsSync(result.log) ? parseOutcome(readFileSync(result.log, 'utf8')) : null;
   if (outcome) {
     result.classes = outcome;
     if (result.verdict === 'PASS' && outcome.flaked.length) {
@@ -148,6 +153,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     }
   }
   if (result.verdict === 'PASS' && tree) deps.ledger.passed(gate.name, tree, gate.run);
+  if (outcome?.built?.length && tree) deps.ledger.passed(gate.name, tree, outcome.built.map((project) => `dotnet test ${project}`).join(' && '));
   if (result.verdict === 'FAIL' && !result.abnormal) result.failures = deps.failuresOf(where, result, trxFiles[0] ?? null);
 
   if (roots.length && ((result.ms ?? 0) >= SWEEP_AFTER_MS || result.verdict !== 'PASS')) {
@@ -171,6 +177,7 @@ const gateRecord = (result: GateResult): GateRecord => ({
   name: result.gate.name, verdict: result.verdict, ms: result.ms ?? 0, replayed: result.replayed !== undefined, mainRed: result.mainRed === true,
   abnormal: result.abnormal === true, slowest: result.slowest ?? [], over: false, left: result.left ?? [], flakes: result.flakes ?? [],
   ...(result.classes ? { classes: { ran: result.classes.ran, replayed: result.classes.replayed, flaked: result.classes.flaked.length, mainRed: result.classes.mainRed.length, red: result.classes.red.length, deferred: result.classes.deferred.length } } : {}),
+  ...(result.steps?.length ? { steps: result.steps } : {}),
 });
 
 /**
@@ -195,7 +202,7 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous }: {
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
     deferred: results.flatMap((result) => result.classes?.deferred ?? []),
   });
-  const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [] }));
+  const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [], steps: result.steps ?? [] }));
   const failed = results.filter((result) => result.verdict === 'FAIL' && !result.mainRed);
   return {
     failed, held, record,

@@ -1,6 +1,6 @@
 {
   "src/Daoris.Cli/test/desktop-tool.test.ts": 48000,
-  "src/Daoris.Cli/test/dogfood.test.ts": 40982,
+  "src/Daoris.Cli/test/dogfood.test.ts": 40975,
   "src/Daoris.Cli/test/usage-report.test.ts": 89064,
   "src/Daoris.Cli/tool-test/desktop-publish.test.ts": 69535,
   "src/Daoris.Cli/tool-test/merge-queue.test.ts": 74785,
@@ -60,7 +60,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/BranchTidyingTests.cs": 46798,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/HistoryClearingTests.cs": 53316,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/IntegrationStoreTests.cs": 58290,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs": 45986,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/ReviewGraphCensusTests.cs": 45943,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleAccountsTests.cs": 64539,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleConversationTests.cs": 66531,
   "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionsTests.cs": 74302,
@@ -108,7 +108,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54623,
   "tools/deployment-rehearsal.mjs": 107307,
   "tools/family-rehearsal.mjs": 368023,
-  "tools/merge-branch.mjs": 395240,
+  "tools/merge-branch.mjs": 394783,
   "tools/merge-queue.mjs": 65580,
   "tools/rehearsal-kit.mjs": 56329,
   "tools/rehearsal-kit.test.mjs": 45819
