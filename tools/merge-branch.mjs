@@ -987,7 +987,7 @@ export function agedWhole(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
  * counts only within `bound` (`agedWhole`), said as `swept` with `aged`; one on this tree counts at any age.
  */
 export function stageJudgement({ plan, verdicts, tree, drift, ask, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
-  // Every tree the plan's verdicts were given on, asked at once: a git start a tree costs minutes.
+  // Every tree the plan's verdicts were given on, asked at once: a git start a tree, of hundreds, cost minutes.
   ask?.(verdicts.filter((entry) => plan.includes(entry.gate)).map((entry) => entry.tree));
   const drifts = new Map();
   const driftOf = (from) => {
