@@ -23,7 +23,6 @@ public static class ClosureGraphs
     public static void Keep(string home, string digest, string json)
     {
         if (!IsDigest(digest) || File.Exists(PathOf(home, digest))) return;
-        // Read as a saved version is: a former kind reads as the kind now, at the digest of the graph as saved, which the binding holds.
         if (NodeGraphs.ReadSaved(json) is not { Graph: { } graph, Digest: { } saved } || saved != digest || !QuestClosing.Holds(graph)) return;
         Directory.CreateDirectory(FolderOf(home));
         AtomicFile.WriteText(PathOf(home, digest), json.ReplaceLineEndings("\n"));

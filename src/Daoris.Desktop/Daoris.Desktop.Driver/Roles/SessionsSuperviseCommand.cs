@@ -180,7 +180,6 @@ public static class SessionsSuperviseCommand
     internal static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct) =>
         (await WaitingReadAsync(instance, ct).ConfigureAwait(false)).Waiting;
 
-    /// <summary><see cref="WaitingAsync"/> with why it came to nothing: <c>Pending</c> where the instance answered but not within its wait, else none answered.</summary>
     internal static async Task<(IReadOnlyList<JsonElement>? Waiting, bool Pending)> WaitingReadAsync(InstanceWorld instance, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow.AddSeconds(-1);

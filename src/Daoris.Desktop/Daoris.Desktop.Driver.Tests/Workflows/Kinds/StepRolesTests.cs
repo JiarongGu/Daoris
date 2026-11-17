@@ -150,7 +150,6 @@ public sealed class StepRolesTests : IDisposable
         Assert.Null(WorkflowRolesSince.Closes("1.40.0", file, "1.41.0"));
     }
 
-    /// <summary>A floor is written whole beside its file and read sharing its writer's, so a torn floor never reads as a lower build.</summary>
     [Fact]
     public void A_floor_is_written_atomically_and_read_beside_its_writer()
     {
@@ -158,7 +157,6 @@ public sealed class StepRolesTests : IDisposable
         WorkflowRolesSinceStore.Keep(_home, file, "1.40.0");
 
         Assert.Equal(["roles-since.txt"], Directory.GetFiles(WorkflowStore.FolderOf(_home)).Select(Path.GetFileName));
-        // Held open as a reader beside a writer holds it (sharing deletion), the floor still reads.
         using var held = AtomicFile.OpenRead(WorkflowRolesSinceStore.PathOf(_home));
         Assert.Equal("1.40.0", WorkflowRolesSinceStore.Read(_home));
     }
