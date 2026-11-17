@@ -274,8 +274,9 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     }
 
     public WorkPerformed Word(
-        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null) =>
-        Person.Word(unit, node, attempt, resolution, outcome, link, note, epoch);
+        string unit, string node, int attempt, string resolution, string? outcome = null, string? link = null, string? note = null, int? epoch = null,
+        SettleBy? settle = null) =>
+        Person.Word(unit, node, attempt, resolution, outcome, link, note, epoch, settle);
 
     /// <summary>Every holder's link on a plugin's step handed to its plugin's check, before <see cref="Resolve"/> applies the words (<see cref="WorkLinkChecks"/>).</summary>
     public Task<IReadOnlyList<WorkPerformed>> CheckLinksAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct) =>

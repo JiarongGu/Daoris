@@ -1,0 +1,67 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render as draw, screen, fireEvent } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import i18n from '../../locales/i18n';
+import { StepHoldPresses } from '../../workflow/wait/StepHold';
+import { PlaceCastSetting, type PlaceCastView } from './PlaceCast';
+
+const render = (ui: ReactElement) => draw(<Tooltip.Provider>{ui}</Tooltip.Provider>);
+
+const view: PlaceCastView = {
+  place: 'workspace/work', risk: 'medium', riskSource: 'own', marks: ['release.production'],
+  roles: [
+    { role: 'acceptor', holder: 'agent:codex', why: 'cast', source: 'own', words: 'low-risk docs' },
+    { role: 'approver', holder: 'person', why: 'marked', source: 'default' },
+    { role: 'owner', holder: 'person', why: 'owner', source: 'default' },
+  ],
+  roster: ['person', 'agent', 'agent:codex'],
+  line: [{ level: 'workspace-supervisor', role: 'supervisor', holder: 'agent', why: '' }, { level: 'owner', holder: 'person', why: '' }],
+};
+
+afterEach(() => i18n.changeLanguage('en'));
+
+describe('a place’s cast in its Settings', () => {
+  it('says each role’s holder and why, the risk and marks, the roster and the line, and a choice casts with the reason', () => {
+    const onCast = vi.fn();
+    render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={onCast} />);
+    expect(screen.getByText(/Chosen\. Set for this place\. low-risk docs/)).toBeInTheDocument();
+    expect(screen.getByText(/Your mark keeps production releases yours\./)).toBeInTheDocument();
+    expect(screen.getByText(/Who can hold a role: you, the role’s agent/)).toBeInTheDocument();
+    expect(screen.getByText(/reports to the workspace’s supervisor/)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Who holds owner' })).toBeNull();
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'I sign these' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Who holds approver' }), { target: { value: 'person' } });
+    expect(onCast).toHaveBeenCalledWith({ role: 'approver', holder: 'person', why: 'I sign these' });
+  });
+
+  it('says it in Chinese with the glossary’s words', async () => {
+    await i18n.changeLanguage('zh');
+    render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={vi.fn()} />);
+    expect(screen.getByText('角色及其担任者')).toBeInTheDocument();
+    expect(screen.getByText(/可以担任角色的：你、该角色的智能体/)).toBeInTheDocument();
+  });
+});
+
+describe('a step’s holder presses', () => {
+  it('takes, hands to one of the roster and gives back', () => {
+    const onHold = vi.fn();
+    render(<StepHoldPresses holds={['take', 'hand', 'give-back']} heldBy="agent:codex" roster={['person', 'agent:codex', 'agent:beta']} onHold={onHold} />);
+    expect(screen.getByText('Held by `codex`')).toBeInTheDocument();
+    screen.getByRole('button', { name: 'Take' }).click();
+    expect(onHold).toHaveBeenLastCalledWith('take');
+    fireEvent.click(screen.getByRole('button', { name: 'Hand to…' }));
+    fireEvent.click(screen.getByRole('button', { name: '`beta`' }));
+    expect(onHold).toHaveBeenLastCalledWith('hand', 'agent:beta');
+    screen.getByRole('button', { name: 'Give back' }).click();
+    expect(onHold).toHaveBeenLastCalledWith('give-back');
+  });
+
+  it('says them in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    render(<StepHoldPresses holds={['take', 'hand']} roster={[]} onHold={vi.fn()} />);
+    expect(screen.getByRole('button', { name: '接下' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '交给…' })).toBeInTheDocument();
+  });
+});

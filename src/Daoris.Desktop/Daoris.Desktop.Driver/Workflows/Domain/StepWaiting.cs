@@ -29,11 +29,15 @@ public static class StepWaiting
     /// (<see cref="StepHolders"/>), or null where the step waits on no role (not reached, under way with an agent or a check, settled).
     /// </summary>
     /// <param name="record">The run's node record; null where only the declaration and status are in hand, which reads no plugin's progress and no failure kept.</param>
-    public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status)
+    /// <param name="held">Who holds the step's attempt now (<see cref="StepTenureFiles"/>), filling whatever it waits on; none, the role's own.</param>
+    public static RoleWait? Read(NodeRecord? record, NodeDeclaration node, NodeStatus status, StepTenure? held = null)
     {
+        StepHolder HolderOf(string role) => held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt
+            ? CastHolders.StepOf(tenure.Holder)
+            : StepHolders.Of(role);
         if (Of(record, node, status) is { Actor: { } actor } progress)
         {
-            return new RoleWait(PersonWaits.Actor, actor, StepHolders.Of(actor), progress.At) { Words = progress.Words, Url = progress.Url };
+            return new RoleWait(PersonWaits.Actor, actor, HolderOf(actor), progress.At) { Words = progress.Words, Url = progress.Url };
         }
 
         var why = status.State switch
@@ -53,7 +57,7 @@ public static class StepWaiting
         };
         if (why is null) return null;
         var role = RoleOf(why);
-        return new RoleWait(why, role, StepHolders.Of(role), status.Since);
+        return new RoleWait(why, role, HolderOf(role), status.Since);
     }
 
     /// <summary>
@@ -162,6 +166,12 @@ public sealed record HeldStep(
     /// <summary>Where in the window its act is taken where no press of its own settles it (<see cref="StepWaiting.OpensRun"/>).</summary>
     public string? Opens { get; init; }
 
+    /// <summary>The epoch of the tenure the row reads: a press in an ended epoch is refused.</summary>
+    public int? Epoch { get; init; }
+
+    /// <summary>The acts the step offers on its holder (<see cref="StepHoldActs.Of"/>): <i>Take</i>, <i>Hand to…</i>, <i>Give back</i>, by its tenure now.</summary>
+    public IReadOnlyList<string>? Holds { get; init; }
+
     /// <summary>
     /// The attempt out now of a plugin's role wait with no page, which its <i>Done outside Daoris</i> (<see cref="HeldResolutions.DoneOutside"/>)
     /// is said on; null on every other wait.
@@ -175,15 +185,17 @@ public sealed record HeldStep(
 /// </summary>
 public static class HeldSteps
 {
-    public static IReadOnlyList<HeldStep> Of(IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record)
+    public static IReadOnlyList<HeldStep> Of(IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null)
     {
         var steps = new List<HeldStep>();
         foreach (var each in governed)
         {
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
+            var holding = tenures?.Holding(each.Unit.Id, kept.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
             foreach (var node in each.Graph.Nodes)
             {
-                if (Step(each.Run, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, scope.Quests.LastOrDefault()?.Id, node, kept) is { } step) steps.Add(step);
+                var held = holding?.GetValueOrDefault(node.Id);
+                if (Step(each.Run, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held) is { } step) steps.Add(step);
             }
         }
 
@@ -191,10 +203,10 @@ public static class HeldSteps
     }
 
     /// <summary>The row of one step, or null where it waits on no role the person holds, a word of theirs is pending on it, or another row carries it.</summary>
-    public static HeldStep? Step(string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record)
+    public static HeldStep? Step(string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
-        if (StepWaiting.Read(record, node, status) is not { } wait || wait.Holder.Kind != StepHolders.Person
+        if (StepWaiting.Read(record, node, status, held) is not { } wait || wait.Holder.Kind != StepHolders.Person
             || wait.Why is PersonWaits.Accept or PersonWaits.Left or PersonWaits.Held
             || record.Pending.Any(word => word.Node == node.Id))
         {
@@ -203,13 +215,14 @@ public static class HeldSteps
 
         var presses = RunNodeWords.Acts(node, status).Where(act => act != NodeWordActs.Stop).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
-        var held = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
+        var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
-        if (held is not null) presses.Add(HeldResolutions.DoneOutside);
+        if (outside is not null) presses.Add(HeldResolutions.DoneOutside);
         return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, presses, work, wait.Since)
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
-            Held = held,
+            Held = outside, Epoch = held is { } tenure && tenure.Attempt == status.Attempt ? tenure.Epoch : null,
+            Holds = StepHoldActs.Of(held is { } kept && kept.Attempt == status.Attempt ? kept : null),
         };
     }
 }

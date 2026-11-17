@@ -247,10 +247,10 @@ export const useWithdrawLandingBranch = () =>
  */
 export const useResolveHeld = () =>
   useMutation({
-    mutationFn: ({ unit, node, attempt, resolution, link, note }: {
-      unit: string; node: string; attempt: number; resolution: HeldResolution | 'done-outside'; link?: string; note?: string;
+    mutationFn: ({ unit, node, attempt, resolution, link, note, epoch }: {
+      unit: string; node: string; attempt: number; resolution: HeldResolution | 'done-outside'; link?: string; note?: string; epoch?: number | null;
     }) =>
-      call('WORK_HELD', { unit, node, attempt, resolution, ...(link ? { link } : {}), ...(note ? { note } : {}) }) as Promise<{
+      call('WORK_HELD', { unit, node, attempt, resolution, ...(link ? { link } : {}), ...(note ? { note } : {}), ...(epoch != null ? { epoch } : {}) }) as Promise<{
         done: boolean; refused?: string | null; message: string;
       }>,
   });

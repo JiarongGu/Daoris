@@ -23,6 +23,7 @@ import { type GitIdentityShown } from '../../settings/git/Git';
 import { type GitRemoteActs, type GitRemoteShown } from '../../settings/git/GitRemotes';
 import { type GitAccessEdit, type ResolvedGitClass } from '../../settings/repository/GitAccess';
 import { type InheritedRisk, type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import { PlaceCastSection } from './PlaceCastSection';
 import { shellWord } from '../../lib/shellWord';
 import { setupSections } from './setupSections';
 import { setupRows } from './setupRows';
@@ -298,6 +299,7 @@ export function RepositorySetup({ repository, lands = null, driving, work, acces
           onChange={risk.onChange}
         />
       )}
+      {risk?.workspace && (!only || only.includes('access')) && <PlaceCastSection workspace={risk.workspace} repository={repository} />}
       {sections.filter((section) => (only ? only.includes(section.id) : !FOLD_SECTIONS.includes(section.id))).map((section) => (
         <SetupSection
           // Keyed by the repository, so another repository's page opens its own sections afresh.

@@ -35,6 +35,7 @@ internal static class WorkflowConsole
         if (args is ["keep", ..]) return await KeepAsync(args).ConfigureAwait(false);
         if (WorkflowValuesCommand.Asks(args)) return Values(args);
         if (WorkflowNodeCommand.Asks(args)) return await NodeAsync(args).ConfigureAwait(false);
+        if (WorkflowHoldCommand.Asks(args)) return await HoldAsync(args).ConfigureAwait(false);
         if (WorkflowFixCommand.Asks(args)) return await FixAsync(args).ConfigureAwait(false);
 
         // The usage before the service is asked for: a mistyped line needs no service to be told so.
@@ -81,6 +82,22 @@ internal static class WorkflowConsole
 
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
         return await WorkflowNodeCommand.RunAsync(asked, new NodeRecordFiles(home), Console.Out, InstanceHost.World(home, "workflow")).ConfigureAwait(false);
+    }
+
+    /// <summary><c>workflow take|hand|give-back &lt;run&gt; &lt;node&gt; …</c>, as <see cref="WorkflowHoldCommand"/> says; it asks no service.</summary>
+    private static async Task<int> HoldAsync(string[] args)
+    {
+        if (WorkflowHoldCommand.Read(args, out var problem) is not { } asked)
+        {
+            Console.Error.WriteLine($"workflow: {problem}");
+            Console.Error.WriteLine(WorkflowHoldCommand.Usage);
+            return 2;
+        }
+
+        var path = DriverConfig.ResolvePath();
+        var home = DriverConfig.HomeOf(path);
+        return await WorkflowHoldCommand.RunAsync(asked, new NodeRecordFiles(home), () => DriverConfig.Load(path).PlaceRisk, () => DateTimeOffset.UtcNow, Console.Out, InstanceHost.World(home, "workflow"))
+            .ConfigureAwait(false);
     }
 
     /// <summary>

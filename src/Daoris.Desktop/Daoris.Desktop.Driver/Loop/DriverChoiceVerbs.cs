@@ -23,6 +23,7 @@ public static class DriverChoiceVerbs
         new HandOverVerb(),
         new GrowthVerb(),
         new PlaceRiskVerb(),
+        new PlaceCastVerb(),
         new RoleVerb(),
         new WorkflowVerb(),
         new ReviewVerb(),

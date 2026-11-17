@@ -79,7 +79,14 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
         init => holder = value;
     }
 
-    public bool AgentAt => State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
+    /// <summary>A standing step's tenure: its holder, the epoch its presses carry, and its acts (<see cref="StepHoldActs"/>); null where none.</summary>
+    public string? HeldBy { get; init; }
+
+    public int? Epoch { get; init; }
+
+    public IReadOnlyList<string>? Holds { get; init; }
+
+    public bool AgentAt =>State == WorkflowRunStates.Working || (State == WorkflowRunStates.Waiting && Detail == OpinionGateStates.WithSession);
 
     /// <summary>
     /// What a graph run's node observes, one of <see cref="WorkflowGraphSubjects"/>: its

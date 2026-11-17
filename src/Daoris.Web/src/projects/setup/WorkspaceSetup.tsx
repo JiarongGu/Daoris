@@ -9,6 +9,7 @@ import {
 } from '../../settings/repository/HandOver';
 import { GROWTH_DEFAULT, GrowthSetting, type GrowthValue, growthSummary } from '../../settings/repository/Growth';
 import { type PlaceRiskChange, type PlaceRiskRow, PlaceRiskSetting } from '../../settings/place/PlaceRisk';
+import { PlaceCastSection } from './PlaceCastSection';
 import { LanguageChoice, type LanguageOption } from '../../settings/repository/Languages';
 import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
@@ -324,6 +325,7 @@ export function WorkspaceSetup({
               onChange={risk.onChange}
             />
           )}
+          {risk && <PlaceCastSection workspace={workspace} />}
           {read && (
             <Inheritable
               setHere={t('projects.workspace.setHere')}

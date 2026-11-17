@@ -145,6 +145,9 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     /// <summary>What each refused step's <c>needs</c> came to (<see cref="RunNeeds"/>), by node; none where unread.</summary>
     public IReadOnlyDictionary<string, RunNeed> Needs { get; init; } = new Dictionary<string, RunNeed>(StringComparer.Ordinal);
+
+    /// <summary>Who holds each node's attempt now (<see cref="StepTenureFiles.Holding"/>), by node; none where none is kept or unread.</summary>
+    public IReadOnlyDictionary<string, StepTenure> Holding { get; init; } = new Dictionary<string, StepTenure>(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -211,13 +214,18 @@ public static class WorkflowGraphRuns
             var asked = facts.Record?.Pending.LastOrDefault(word => word.Node == node.Id);
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
-            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status) : null;
+            var tenure = facts.Holding.GetValueOrDefault(node.Id) is { } kept && kept.Attempt == status.Attempt ? kept : null;
+            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure) : null;
+            var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
                 Role = waits?.Role ?? StepRoles.Of(node),
                 Holder = waits?.Holder,
-                Requests = node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
+                HeldBy = tenure?.Holder,
+                Epoch = tenure?.Epoch,
+                Holds = standing ? StepHoldActs.Of(tenure) : null,
+                Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,

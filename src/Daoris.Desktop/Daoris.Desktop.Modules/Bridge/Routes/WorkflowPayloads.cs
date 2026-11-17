@@ -40,4 +40,4 @@ public sealed record WorkflowSavePress(
 /// </summary>
 public sealed record WorkflowNodePress(
     string Run, string Node, string Act, string? Words, bool Said = false, long? Attempt = null, string? Revision = null, bool Unchecked = false,
-    string? Part = null, bool Whole = false, string? Answers = null, string? Outcome = null);
+    string? Part = null, bool Whole = false, string? Answers = null, string? Outcome = null, long? Epoch = null);
