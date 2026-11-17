@@ -155,7 +155,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     is said once, as `started.files-failed`, with that cause. The store evicts an entry unplaced for thirty days, then the least recently placed past 10 GB.
     (D51, D214, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare rooms (lanes carrying `builds`,
-    joined by a `room`), which `RoomCheck` checks. Every path git does not manage has an effective rule from four layers, a later
+    joined by a `room`; a lane carved across units lists their rooms, each file in its unit's room, and joins them), which
+    `RoomCheck` checks. Every path git does not manage has an effective rule from four layers, a later
     match winning: the found layer (`data/files-found.json`, git's view and the signatures in `Defaults/file-signatures.json`, read
     at the commit), the repository's tracked `daoris.files.json` at the line's tip, and the person's `data/files.json`, its
     `machine` rules then the repository's. Each layer is `"form": 2`: git's ignore patterns, each with a rule per act (`reach`,

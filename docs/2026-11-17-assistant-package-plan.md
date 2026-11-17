@@ -470,7 +470,8 @@ D310 is free on main and on the branch. It is reserved here, and the builder cla
 Placed under *Conversations and context* in TASKS.md, after ASKPUSH1.
 
 - [ ] **ASSISTPKG1a — the assistant's boundary declared and counted** (tools, driver, modules, web; the owner, 2026-11-17: "a
-  comprehensive assistant might need its own package and development cycle"): lane `assistant` with the paths of §1.1; the layers
+  comprehensive assistant might need its own package and development cycle"): lane `assistant` with the paths of §1.1, listing the
+  rooms of the units that compile them (driver, modules, web; D310's note); the layers
   census counts references across the boundary both ways per type, a ratchet that only falls. Proof: today's counts printed; a planted
   new reference red. Size S. After: none. → `docs/2026-11-17-assistant-package-plan.md`
 - [ ] **ASSISTPKG1b — the chat runtime's conversation kind** (driver; D280): `IConversationKind` (placement under mode, receipt,

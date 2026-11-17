@@ -24,6 +24,8 @@ internal static class RoomPaths
     /// <summary>Whether <paramref name="path"/> names one file: no wildcard, no folder.</summary>
     internal static bool IsFile(string path) => !path.EndsWith('/') && path.IndexOfAny(['*', '?', '{']) < 0;
 
+    internal static string Folder(string path) => path.LastIndexOf('/') is var slash and >= 0 ? path[..(slash + 1)] : "";
+
     /// <summary>
     /// Whether two gates-file paths can name one file: either holds a file in the other's literal part, the part before its first
     /// wildcard, which is how an untracked output folder is found under another's.
