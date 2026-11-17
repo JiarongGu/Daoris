@@ -19,13 +19,13 @@ Build the brief's feature across its lanes by the change path.
 
 ## The worktree
 
-- **Set it up first**: `node tools/worktree-setup.mjs` (`--build` for the driver's and modules' tests). Never link
+- **Set it up first**: `node tools/worktree-setup.mjs` (`--build` for the desktop's tests). Never link
   `local/` or `node_modules` into the main checkout: git follows a link and empties what it names.
 - **Commit first** (empty if need be), then per passing piece; an uncommitted worktree is pruned.
 - **Merge main at the start and before the hand-back** (`git merge --ff-only main` when fresh); resolve conflicts
   inside your lanes. Never push or rewrite history.
 - **Never edit the records** (`TASKS.md`, `docs/task-archive.md`, `daoris.lanes.json`), but place a path no lane
-  owns in the lanes file and say so. Take only the reserved decision number, if any.
+  owns in the lanes file and say so. Take only the reserved decision number.
 - A file over the size ratchet (`tools/size-ratchet.json`) does not grow.
 
 ## Cost
@@ -40,7 +40,8 @@ Build the brief's feature across its lanes by the change path.
   `dotnet test <project> --no-build --filter FullyQualifiedName~<Class>`; `node --test <file>`; `npx vitest run <files>`.
 - Before the hand-back: `npm run quick`; `i18n:check` and `names:check -- --strict` where a catalogue changed; a
   `Process` class you touched, filtered, with `src/Daoris.Desktop/process.runsettings`; last, merged with main,
-  `node tools/merge-branch.mjs --preflight`: fix each red its brief marks the branch's.
+  `node tools/merge-branch.mjs --preflight` (bounded; no `Process` half): read its summary, fix each red its brief marks
+  the branch's.
 - **Never run** a whole suite, `npm run verify`, a `Process` half, a rehearsal, the desktop window, a publish,
   another `tools/merge-branch.mjs` verb, or anything of the owner's install.
 - A watch exits on its outcome, never `tail -f | grep`. Leave nothing running (`dotnet build-server shutdown`);
@@ -49,4 +50,4 @@ Build the brief's feature across its lanes by the change path.
 ## The hand-back, under 250 words
 
 The branch; the commits (sha, subject); the files by lane; the shape; the decision, or none; what to look at on the
-window; the tests added and which failed first; the preflight, or its brief; what was left out and why; the outcome.
+window; the tests added and which failed first; the preflight's summary; what was left out and why; the outcome.

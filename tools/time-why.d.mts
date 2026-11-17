@@ -21,7 +21,8 @@ type Over = Record<string, { ms: number; limit: number }>;
 export declare function ratchetBreaches(given: {
   found: Over; others?: Over; loaded?: Over; listedAt?: (key: string) => number | undefined; records?: () => Map<string, string>; source?: (key: string) => Source | null;
 }): Breach[];
-export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null): Breach[];
+export declare function hangBreaches(log: string | null | undefined, source: (key: string) => Source | null, peak?: number | null, seam?: { alone?: boolean }): Breach[];
+export declare function hungUnderLoad(breaches: readonly Breach[]): boolean;
 export declare function testBreach(given: {
   kind?: 'test' | 'census' | 'hang'; key: string; ms: number; limit: number; fails: boolean; record?: string; source?: Source | null; loaded?: boolean; note?: string;
 }): Breach;

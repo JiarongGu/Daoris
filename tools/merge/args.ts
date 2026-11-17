@@ -20,7 +20,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs <branch> --preview',
   '       node tools/merge-branch.mjs <branch> --message <file under local/> [--keep-going] [--one-at-a-time] [--no-commit-check]',
-  '       node tools/merge-branch.mjs --preflight [--base <ref>] [--one-at-a-time]   (in a branch\'s worktree: its merge\'s gates, every one to its end)',
+  '       node tools/merge-branch.mjs --preflight [--base <ref>] [--bound <minutes>] [--one-at-a-time]   (in a branch\'s worktree: its merge\'s fast plan, within its bound)',
   '       node tools/merge-branch.mjs --queue [--recheck | --known]',
   '       node tools/merge-branch.mjs --drop-batch [<branch> [--batch <branch>…]]',
 ].join('\n');
@@ -42,7 +42,7 @@ export type Options = {
   autoPrune: boolean; full: boolean; gated: boolean; rerun: string[]; passed: boolean; light: boolean; stale: boolean; oneAtATime: boolean;
   beside: boolean; besideCommit: string | null; ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean; ciStage: boolean;
   ciNight: boolean; preview: boolean; messageFile: string | null; queue: boolean; recheck: boolean; queueRun: boolean; daorisVerify: boolean;
-  noTimeout?: boolean; commit?: boolean; preflight?: boolean; base?: string | null; known?: boolean; mainWatch?: string | null;
+  noTimeout?: boolean; commit?: boolean; preflight?: boolean; base?: string | null; bound?: number; known?: boolean; mainWatch?: string | null;
 };
 
 const usageError = (message: string): Refusal => new Refusal(message, 2, true);
@@ -62,6 +62,7 @@ export function parseArgs(argv: string[]): Options {
   let ciNext = false;
   let messageNext = false;
   let baseNext = false;
+  let boundNext = false;
   const flags: string[] = [];
   for (const arg of argv) {
     // The word after --base is the ref a preflight judges against.
@@ -69,6 +70,12 @@ export function parseArgs(argv: string[]): Options {
       baseNext = false;
       if (arg.startsWith('-')) throw usageError('--base names its ref: --preflight --base <ref>');
       options.base = arg;
+      continue;
+    }
+    if (boundNext) {
+      boundNext = false;
+      if (!/^[1-9]\d{0,2}$/.test(arg)) throw usageError('--bound names whole minutes, 1 to 999: --preflight --bound <minutes>');
+      options.bound = Number(arg);
       continue;
     }
     // The word after --message is its file.
@@ -105,8 +112,10 @@ export function parseArgs(argv: string[]): Options {
     else if (arg === '--base') {
       if (options.base) throw usageError('--base is given once');
       baseNext = true;
-    }
-    else if (arg === '--message') {
+    } else if (arg === '--bound') {
+      if (options.bound) throw usageError('--bound is given once');
+      boundNext = true;
+    } else if (arg === '--message') {
       if (options.messageFile !== null) throw usageError('--message is given once');
       messageNext = true;
     } else if (arg === '--queue') options.queue = true;
@@ -153,10 +162,12 @@ export function parseArgs(argv: string[]): Options {
   }
   if (messageNext) throw usageError('--message names its file: --message <file under local/>');
   if (baseNext) throw usageError('--base names its ref: --preflight --base <ref>');
+  if (boundNext) throw usageError('--bound names whole minutes, 1 to 999: --preflight --bound <minutes>');
   if (options.base && !options.preflight) throw usageError("--base is the preflight's: --preflight --base <ref>");
+  if (options.bound && !options.preflight) throw usageError("--bound is the preflight's: --preflight --bound <minutes>");
   if (options.preflight) {
     if (options.branches.length) throw usageError("--preflight takes no branch: it gates the branch this worktree has out");
-    if (flags.some((flag) => !['--preflight', '--base', '--one-at-a-time'].includes(flag))) throw usageError('--preflight takes only --base <ref> and --one-at-a-time: it runs every gate to its end');
+    if (flags.some((flag) => !['--preflight', '--base', '--bound', '--one-at-a-time'].includes(flag))) throw usageError('--preflight takes only --base <ref>, --bound <minutes> and --one-at-a-time: it runs its merge\'s fast plan within its bound');
     return options;
   }
   // The watch of main after a landing, started by the landing: the commit it gates and nothing else.

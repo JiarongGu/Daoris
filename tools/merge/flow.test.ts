@@ -1,10 +1,11 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { BuildLedger } from './build-once.ts';
 import { fixtureFolder } from './fixture-home.ts';
-import { runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
+import { againWhy, runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
 import { LockInstalls } from './lock-install.ts';
 import type { StoredVerdict } from './verdict-store.ts';
 
@@ -442,5 +443,64 @@ test('a gate narrowed to the classes no pass covers runs the narrowed command, k
     assert.match(none.note, /4 classes replayed/);
   } finally {
     h.done();
+  }
+});
+
+const HUNG_LOG = 'Data collector \'Blame\' message: The specified inactivity time of 60 seconds has elapsed.\nThe test running when the crash occurred:\nA.B.Waits\n\n';
+
+function hangHarness(peaks: number[]) {
+  const dir = { ref: '' };
+  const h = harness({
+    timeoutMs: () => 60_000,
+    load: { sample: () => { const peak = peaks.shift() ?? 1; return { peak: () => peak, stop: () => {} }; }, free: () => true, sleep: async () => {}, now: () => 0 },
+    runGate: async (_w, each) => {
+      const log = join(dir.ref, 'logs', 'hung.log');
+      writeFileSync(log, HUNG_LOG);
+      return { gate: each, code: 1, verdict: 'FAIL', note: 'a test host crashed', ms: 5, log };
+    },
+  });
+  dir.ref = h.dir;
+  spawnSync('git', ['init', '-q'], { cwd: h.dir, windowsHide: true }); // the hung test's source is read from the tree
+  return h;
+}
+
+test('a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails', async () => {
+  const loaded = hangHarness([3]);
+  const alone = hangHarness([1]);
+  try {
+    const first = await call(loaded, { gate: { ...gate, reuse: '' } });
+    assert.deepEqual([first.verdict, first.again, first.cause, first.overBudget], ['FAIL', true, 'load', undefined]);
+    assert.match(first.note, /hang bound under load \(3 heavy runs at its peak\): run again alone/);
+    assert.deepEqual(first.breaches?.map((each) => [each.kind, each.cause, each.fails]), [['hang', 'load', false]]);
+    const second = await runOne(loaded.deps, { where: loaded.dir, gate: { ...gate, reuse: '' }, logs: join(loaded.dir, 'logs'), beside: { again: first }, tree: 'T2', trees: null, step: undefined, noBuild: false });
+    assert.deepEqual([second.verdict, second.again], ['FAIL', undefined], 'a hang in the run again is the test\'s own');
+    assert.equal(againWhy(first), 'killed by its hang bound under load');
+    const once = await call(alone, { gate: { ...gate, reuse: '' } });
+    assert.deepEqual([once.verdict, once.again, once.breaches?.[0]?.fails], ['FAIL', undefined, true]);
+  } finally {
+    loaded.done();
+    alone.done();
+  }
+}, 60_000);
+
+test('a gate that writes its timing records stamps them with the peak load of its run, and one that does not leaves the marks alone', async () => {
+  const timed = { name: 'censuses', run: 'dotnet test src/A --results-directory _fixtures/test-timing --logger "trx;LogFileName=c.trx"', reuse: '' };
+  const writes = async (where: string, each: typeof gate): Promise<GateResult> => {
+    mkdirSync(join(where, '_fixtures', 'test-timing'), { recursive: true });
+    writeFileSync(join(where, '_fixtures', 'test-timing', 'c.trx'), '<TestRun/>'); // the gate's own logger writes it while it runs
+    return { gate: each, code: 0, verdict: 'PASS', note: '', ms: 1, log: 'l' };
+  };
+  const seam = { timeoutMs: () => null, runGate: async (where: string, each: { name: string; run: string; reuse?: string }) => writes(where, each as typeof gate), load: { sample: () => ({ peak: () => 4, stop: () => {} }), free: () => true, sleep: async () => {}, now: () => 0 } };
+  const h = harness(seam);
+  const plain = harness(seam);
+  try {
+    await call(h, { gate: timed });
+    const marks = JSON.parse(readFileSync(join(h.dir, '_fixtures', 'test-timing', 'load-marks.json'), 'utf8')) as Record<string, { holds: number }>;
+    assert.equal(marks['c.trx']?.holds, 4);
+    await call(plain, { gate: { ...gate, reuse: '' } });
+    assert.equal(existsSync(join(plain.dir, '_fixtures', 'test-timing', 'load-marks.json')), false);
+  } finally {
+    h.done();
+    plain.done();
   }
 });

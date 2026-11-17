@@ -31,9 +31,14 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.equal(tool.parseArgs(['a', '--message', 'local/a.msg', '--keep-going']).keepGoing, true, 'the queue keeps going past a blocking gate where asked');
   assert.deepEqual([tool.parseArgs(['--preflight']).preflight, tool.parseArgs(['--preflight', '--base', 'origin/main']).base], [true, 'origin/main']);
   assert.throws(() => tool.parseArgs(['--preflight', 'a']), /--preflight takes no branch/);
-  assert.throws(() => tool.parseArgs(['--preflight', '--keep-going']), /--preflight takes only --base <ref> and --one-at-a-time/);
+  assert.throws(() => tool.parseArgs(['--preflight', '--keep-going']), /--preflight takes only --base <ref>, --bound <minutes> and --one-at-a-time/);
   assert.throws(() => tool.parseArgs(['--preflight', '--base']), /--base names its ref/);
   assert.throws(() => tool.parseArgs(['a', '--base', 'main']), /--base is the preflight's/);
+  assert.deepEqual([tool.parseArgs(['--preflight']).bound, tool.parseArgs(['--preflight', '--bound', '40']).bound], [undefined, 40], 'none given is the default bound');
+  for (const bad of [['--preflight', '--bound'], ['--preflight', '--bound', '0'], ['--preflight', '--bound', '2.5'], ['--preflight', '--bound', '--base']]) {
+    assert.throws(() => tool.parseArgs(bad), /--bound names whole minutes/, bad.join(' '));
+  }
+  assert.throws(() => tool.parseArgs(['a', '--bound', '5']), /--bound is the preflight's/);
   assert.throws(() => tool.parseArgs(['a', '--preview', '--gated']), /--preview names one branch and nothing else/);
   assert.throws(() => tool.parseArgs(['--recheck']), /--queue --recheck/);
   assert.throws(() => tool.parseArgs(['--queue', 'a']), /--queue takes only --recheck/);
