@@ -51,7 +51,7 @@ public static class UncheckedAccepts
 
                 var move = new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = Words, Scope = new NodeScope(digest, bound.Run) };
                 if (NodeLifecycle.Apply(hold, status, move) is { Moved: false } judged) return (null, Refuse(judged.Refused!) with { State = status.State });
-                passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision });
+                passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision, Epoch = NodeWordEpoch.Of(holding, SettleBy.Person()) });
             }
 
             var accept = new NodeWord(node, NodeWordActs.Accept, null, now) { Kept = true, Review = node, Revision = revision };

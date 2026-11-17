@@ -335,8 +335,33 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>Who holds the actor a decision's proposal is from, as its channel names it; null for the owner's own word.</summary>
     public string? Holder { get; init; }
 
+    /// <summary>
+    /// The tenure the settle door admitted the word in, which the pass reads again before it applies it: a step passed on since is refused
+    /// <c>ended-epoch</c>. Null where the door judged no holder (no tenure kept, an observation, the owner role's stop or answer).
+    /// </summary>
+    public NodeWordEpoch? Epoch { get; init; }
+
     /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
     public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
+}
+
+/// <summary>A step's attempt and the epoch of its tenure a kept word was admitted in (<see cref="NodeWord.Epoch"/>).</summary>
+public sealed record NodeWordEpoch(int Attempt, int Number)
+{
+    /// <summary>The tenure a word judged by <paramref name="by"/> is kept in: none where the door judged no holder.</summary>
+    public static NodeWordEpoch? Of(StepTenure? held, SettleBy by) =>
+        held is null || by.Who is SettleBy.Observed or SettleBy.Owner ? null : new(held.Attempt, held.Epoch);
+
+    /// <summary>
+    /// Why the pass does not apply a word kept in <paramref name="kept"/> on a step standing at <paramref name="attempt"/>, read in the hold
+    /// of the tenures' lock the pass takes: the epoch ended (the step passed on, or a new attempt begun), or the tenures do not read. Null
+    /// where the word names no epoch or the epoch still holds the step.
+    /// </summary>
+    public static string? Refused(NodeWordEpoch? kept, string node, int attempt, StepTenureFiles.TenureHold? tenures) =>
+        kept is null || tenures is null ? null
+        : tenures.Unread ? StepTenureFiles.Unread
+        : kept.Attempt != attempt || tenures.Current(node, attempt) is { } now && now.Epoch != kept.Number ? StepTenureFiles.EndedEpoch
+        : null;
 }
 
 /// <summary>

@@ -85,7 +85,51 @@ public sealed class SettleDoorTests : IDisposable
         Assert.Equal((CastHolders.Person, 2, TenureWhy.TakeBack), (now.Holder, now.Epoch, now.Why));
         var take = Assert.Single(Casts.Journal(), entry => entry.Act == CastActs.Take);
         Assert.Equal(("pressed done", Run, "step", 2), (take.Why, take.Run, take.Node, take.Epoch));
-        Assert.Contains(Records.Read(RunUnits.IdOf(Run))!.Pending, word => word is { Node: "step", Act: NodeWordActs.Done });
+        Assert.Contains(Records.Read(RunUnits.IdOf(Run))!.Pending, word => word is { Node: "step", Act: NodeWordActs.Done, Epoch: { Attempt: 1, Number: 2 } });
+    }
+
+    [Fact]
+    public void A_kept_word_names_its_epoch_and_the_pass_drops_it_where_the_step_was_passed_on_before_it()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released", () => _now, settle: new SettleBy("agent:alpha", 1)).Done);
+        Assert.Equal(new NodeWordEpoch(1, 1), Assert.Single(Records.Read(RunUnits.IdOf(Run))!.Pending).Epoch);
+
+        // Passed on after the word was kept and before the pass: the word's epoch ended, so the pass refuses it and the step stands.
+        Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1), epoch: 1).Done);
+        var (next, applied) = Pass();
+        Assert.Equal(StepTenureFiles.EndedEpoch, Assert.Single(applied).Refused);
+        Assert.Equal(NodeStates.Active, WorkPerformer.StatusOf(next!, "step").State);
+    }
+
+    [Fact]
+    public void A_kept_word_in_the_epoch_still_holding_is_applied_by_the_pass()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Done, "released", () => _now, settle: new SettleBy("agent:alpha", 1)).Done);
+        Assert.Null(Assert.Single(Pass().Applied).Refused);
+    }
+
+    [Fact]
+    public void The_owner_roles_stop_names_no_epoch_and_is_applied_after_a_hand_over()
+    {
+        Casts.Cast("machine", StepRoles.ReleaseManager, "agent:alpha", null, _now);
+        Start(StepRoles.ReleaseManager, "done", Risk());
+        Assert.True(RunNodeWords.Word(Records, Run, "step", NodeWordActs.Stop, "not needed", () => _now, epoch: 1).Done);
+        Assert.Null(Assert.Single(Records.Read(RunUnits.IdOf(Run))!.Pending).Epoch);
+        Assert.True(StepHolding.Act(Records, Casts, Risk(), Run, "step", CastActs.Hand, "agent:beta", null, _now.AddMinutes(1), epoch: 1).Done);
+        Assert.Null(Assert.Single(Pass().Applied).Refused);
+    }
+
+    /// <summary>The pass's apply of the run's kept words, judged in one hold of the tenures' lock as the runtime makes it.</summary>
+    private (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Pass()
+    {
+        var bound = new GraphRuns(Records).Find(Run)!;
+        var declared = bound.Version.Graph!.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        return new StepTenureFiles(_home, () => true).Settling(bound.Unit, hold =>
+            RunNodeWords.Apply(Records.Read(bound.Unit)!, declared, new NodeScope(bound.Version.GraphDigest!, Run), _now, tenures: hold));
     }
 
     [Fact]

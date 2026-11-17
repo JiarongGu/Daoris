@@ -32,6 +32,14 @@ internal static class NodeWordFiles
         if (word.Part is { } part) writer.WriteString("part", part);
         if (word.Outcome is { } outcome) writer.WriteString("outcome", outcome);
         if (word.Holder is { } holder) writer.WriteString("holder", holder);
+        if (word.Epoch is { } held)
+        {
+            writer.WriteStartObject("epoch");
+            writer.WriteNumber("attempt", held.Attempt);
+            writer.WriteNumber("number", held.Number);
+            writer.WriteEndObject();
+        }
+
         writer.WriteEndObject();
     }
 
@@ -60,14 +68,25 @@ internal static class NodeWordFiles
             attempt = value;
         }
 
+        // A word whose epoch does not read is not whole: applied without it, it would skip the pass's check of its holder.
+        NodeWordEpoch? held = null;
+        if (each.TryGetProperty("epoch", out var tenure))
+        {
+            if (tenure.ValueKind != JsonValueKind.Object || Whole(tenure, "attempt") is not { } heldAttempt || Whole(tenure, "number") is not { } epoch) return null;
+            held = new NodeWordEpoch(heldAttempt, epoch);
+        }
+
         var kept = each.TryGetProperty("kept", out var flag) && flag.ValueKind == JsonValueKind.True;
         return new NodeWord(node, act, Text(each, "words"), at)
         {
             By = by, Attempt = attempt, Supersedes = Text(each, "supersedes"), Kept = kept, Tip = Text(each, "tip"),
             Revision = Text(each, "revision"), Review = Text(each, "review"), Part = Text(each, "part"),
-            Outcome = Text(each, "outcome"), Holder = Text(each, "holder"),
+            Outcome = Text(each, "outcome"), Holder = Text(each, "holder"), Epoch = held,
         };
     }
+
+    private static int? Whole(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number) ? number : null;
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

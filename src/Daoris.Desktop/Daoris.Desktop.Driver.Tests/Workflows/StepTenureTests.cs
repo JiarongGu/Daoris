@@ -97,6 +97,22 @@ public sealed class StepTenureTests : IDisposable
     }
 
     [Fact]
+    public async Task The_terminals_held_word_names_the_epoch_its_row_read_and_one_ended_is_refused()
+    {
+        await StartAsync(Performer());
+        Tenures.Hold(Unit, "release", 1, "release-manager", "agent:alpha", TenureWhy.Cast, _now);
+        Tenures.HandOver(Unit, "release", 1, 1, "agent:beta", TenureWhy.HandOver, _now.AddMinutes(5));
+        var (output, error) = (new StringWriter(), new StringWriter());
+
+        Assert.Equal(1, HeldAttempts.Run(_home, [Unit, "release", "1", HeldResolutions.DoneOutside, Link, "--epoch", "1"], output, error, () => _now));
+        Assert.Contains("agent:beta", error.ToString(), StringComparison.Ordinal);
+        Assert.Null(Assert.Single(Files.Read(Unit)!.Attempts).Resolution);
+
+        Assert.Equal(2, HeldAttempts.Run(_home, [Unit, "release", "1", HeldResolutions.Happened, "--epoch", "first"], output, error, () => _now));
+        Assert.Contains("--epoch", HeldAttempts.Usage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_same_holder_again_keeps_its_epoch_and_each_attempt_has_its_own_tenures()
     {
         var first = Tenures.Hold(Unit, "release", 1, "release-manager", "person", TenureWhy.Cast, _now)!;

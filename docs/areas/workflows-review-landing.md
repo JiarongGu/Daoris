@@ -228,8 +228,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`SettleDoor.Admit`, D312), asked by a run's word and an attempt's alike and reading the tenure, the speaker (`SettleBy`, its
     channel's and never the payload's: the window, a card the person confirmed and the person's terminal speak `person`; a working session's
     own press, an appointed role's act and Ask Daoris's speak as agents, `SettleBy.OfChannel`) and the epoch it read (every settling door
-    takes `--epoch`, and the run view's and *What needs you*'s presses pass the epoch their row read, `HeldStep.Epoch`), never the step's
-    kind, judged and kept in one hold of the tenures' lock, so no hand-over lands between the read and the word's write: a word naming an
+    takes `--epoch`, `daoris work held` among them, the run view's and *What needs you*'s presses pass the epoch their row read,
+    `HeldStep.Epoch`, and an entry's Accept each part's, drawn on its plan beside the revision), never the step's kind, judged and kept in
+    one hold of the tenures' lock, so no hand-over lands between the read and the word's write; a kept word names the epoch it was admitted
+    in (`NodeWord.Epoch`, none for an observation or the owner role's), which the pass reads again in one hold of that lock before it
+    applies the word, refusing it `ended-epoch` where the step was passed on or tried anew since: a word naming an
     ended epoch is refused `ended-epoch`, one from a holder that does not hold the step now `not-holder`, each naming who holds it and since
     when; a word naming no epoch is judged against the holder now; the person's press on a step another holder holds, in the epoch it read,
     takes the step as the press is kept, once every check of its state admits it (a new epoch, journaled *Take* with the reason

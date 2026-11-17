@@ -65,7 +65,8 @@ public static class HeldAttempts
     /// <summary>The usage of <c>daoris work held</c>, as the terminal says it when its words are not understood.</summary>
     public const string Usage =
         "usage: daoris work held [--unit <id>]  |  daoris work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)\n"
-        + "       daoris work held <unit> <node> <attempt> done-outside <link> [\"…\"]  (a plugin's step under way, held or failed, done outside Daoris)";
+        + "       daoris work held <unit> <node> <attempt> done-outside <link> [\"…\"]  (a plugin's step under way, held or failed, done outside Daoris)\n"
+        + "       each word takes --epoch <n>, the epoch of the step's holder it was read in: refused once the step was passed on since";
 
     /// <summary>
     /// Every attempt held on the records that read, every close unknown with its node still on it (<see cref="QuestClosing.Unanswered"/>),
@@ -190,6 +191,20 @@ public static class HeldAttempts
             return 0;
         }
 
+        // The epoch of the step's tenure its row read, wherever it is named: a word read before the step was passed on is refused.
+        int? epoch = null;
+        if (args.ToList().IndexOf("--epoch") is var flag and >= 0)
+        {
+            if (flag + 1 >= args.Count || !int.TryParse(args[flag + 1], out var read) || read < 1)
+            {
+                error.WriteLine(Usage);
+                return 2;
+            }
+
+            epoch = read;
+            args = [.. args.Take(flag), .. args.Skip(flag + 2)];
+        }
+
         // Done outside Daoris takes its link, and a note where one is given; every other word stands alone.
         var outside = args is [_, _, _, HeldResolutions.DoneOutside, _] or [_, _, _, HeldResolutions.DoneOutside, _, _];
         if ((!outside && args.Count != 4) || args.Count < 4 || !int.TryParse(args[2], out var attempt) || attempt < 1)
@@ -199,7 +214,7 @@ public static class HeldAttempts
         }
 
         var (unit, node, word) = (args[0], args[1], args[3]);
-        var done = Word(records, unit, node, attempt, word, clock, link: outside ? args[4] : null, note: args.Count == 6 ? args[5] : null);
+        var done = Word(records, unit, node, attempt, word, clock, link: outside ? args[4] : null, note: args.Count == 6 ? args[5] : null, epoch: epoch);
         (done.What == PerformedWhat.Worded ? output : error).WriteLine(Said(done, attempt, word));
         return done.What == PerformedWhat.Worded ? 0 : 1;
     }

@@ -24,4 +24,9 @@ describe('the presses on the review record', () => {
       .toEqual([{ session: 's1', revision: 'a1' }]);
     expect(drawnRevisions(null)).toEqual([]);
   });
+
+  it('names the epoch of each part\'s review tenure the plan drew beside its revision, so a part passed on since is refused', () => {
+    expect(drawnRevisions({ parts: [{ session: 's1', revision: 'a1', epoch: 2 }, { session: 's2', revision: 'b2', epoch: null }, { session: 's3', epoch: 1 }] }))
+      .toEqual([{ session: 's1', revision: 'a1', epoch: 2 }, { session: 's2', revision: 'b2' }, { session: 's3', epoch: 1 }]);
+  });
 });

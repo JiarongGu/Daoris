@@ -158,8 +158,13 @@ public static class RunNodeWords
                 return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
             }
 
-            (NodeRecord?, NodeWorded) Kept(NodeRecord edited, NodeWorded worded) =>
-                takes && StepHolding.TakeOnPress(hold, records, run, holding!, act, now) is null ? (null, Refuse(StepHolding.Unwritable)) : (edited, worded);
+            // Kept in the epoch it settles in (the press's take's, where it takes), which the pass reads again before it applies the word.
+            (NodeRecord?, NodeWorded) Kept(NodeWord kept, Func<NodeWord, NodeRecord> edit, NodeWorded worded)
+            {
+                var held = holding;
+                if (takes && (held = StepHolding.TakeOnPress(hold, records, run, holding!, act, now)) is null) return (null, Refuse(StepHolding.Unwritable));
+                return (edit(kept with { Epoch = NodeWordEpoch.Of(held, speaker) }), worded);
+            }
 
             var word = new NodeWord(node, act, words, now)
             {
@@ -174,7 +179,7 @@ public static class RunNodeWords
                 if (status.State is NodeStates.Blocked or NodeStates.Ready)
                 {
                     var early = word with { Kept = true, Revision = revision?.Trim() };
-                    return Kept(record with { Pending = [.. record.Pending.Where(each => each.Node != node), early] }, new NodeWorded(run, node, act, null) { Early = true });
+                    return Kept(early, kept => record with { Pending = [.. record.Pending.Where(each => each.Node != node), kept] }, new NodeWorded(run, node, act, null) { Early = true });
                 }
 
                 if (status.State == NodeStates.Active)
@@ -199,7 +204,7 @@ public static class RunNodeWords
             }
 
             var replaced = (NodeWord each) => each.Node == node && !(NodeWordActs.Choices.Contains(act) && NodeWordActs.Choices.Contains(each.Act) && each.Words != words);
-            return Kept(record with { Pending = [.. record.Pending.Where(each => !replaced(each)), word] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
+            return Kept(word, kept => record with { Pending = [.. record.Pending.Where(each => !replaced(each)), kept] }, new NodeWorded(run, node, act, null) { Detail = word.Revision });
         }));
         return refused is null ? result! : Refuse(refused);
     }
@@ -228,10 +233,14 @@ public static class RunNodeWords
     /// the run, as its starts are scoped), each kept with what it cleared; every word is taken off, applied or not, but an Accept kept for a
     /// review not begun yet (<see cref="EarlyAccepts"/>). Pure: the runtime writes it.
     /// </summary>
+    /// <param name="tenures">
+    /// The run's tenures read in the hold of their lock the pass applies the words in: a word kept in an epoch that has ended since is refused
+    /// (<see cref="NodeWordEpoch.Refused"/>). Null reads none.
+    /// </param>
     /// <returns>The record after them, null where none waited; and each word with why it is not applied, or null where it is.</returns>
     public static (NodeRecord? Next, IReadOnlyList<(NodeWord Word, string? Refused)> Applied) Apply(
         NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared, NodeScope scope, DateTimeOffset now, IReadOnlySet<string>? promoted = null,
-        ILandingWords? landings = null, IReadOnlyDictionary<string, string>? present = null)
+        ILandingWords? landings = null, IReadOnlyDictionary<string, string>? present = null, StepTenureFiles.TenureHold? tenures = null)
     {
         if (record.Pending.Count == 0) return (null, []);
         var next = record;
@@ -253,6 +262,12 @@ public static class RunNodeWords
             }
 
             var standing = WorkPerformer.StatusOf(next, node.Id);
+            if (NodeWordEpoch.Refused(word.Epoch, node.Id, standing.Attempt, tenures) is { } ended)
+            {
+                applied.Add((word, ended));
+                continue;
+            }
+
             if (ReviewAccepts.MovedFrom(word, standing, present))
             {
                 applied.Add((word, ReviewMoved.Word));

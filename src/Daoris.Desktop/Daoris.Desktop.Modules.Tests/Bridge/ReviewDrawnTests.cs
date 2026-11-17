@@ -41,6 +41,21 @@ public sealed class ReviewDrawnTests : DriverModuleBridge
     }
 
     [Fact]
+    public void A_review_under_way_is_drawn_with_the_epoch_its_tenure_stands_in_which_an_entrys_Accept_names()
+    {
+        Bound(Reviewed);
+        var unit = RunUnits.IdOf("q1");
+        new NodeRecordFiles(Home, () => true).Write(new NodeRecord(unit) { Statuses = new Dictionary<string, NodeStatus> { ["look"] = new(unit, "look", NodeStates.Active) { Attempt = 1 } } });
+        Assert.Null(ReviewDrawn.Of(Home, "q1")!.Epoch);
+
+        var tenures = new StepTenureFiles(Home, () => true);
+        tenures.Hold(unit, "look", 1, StepRoles.Acceptor, CastHolders.Person, TenureWhy.Cast, At);
+        tenures.HandOver(unit, "look", 1, 1, "agent:beta", TenureWhy.HandOver, At);
+
+        Assert.Equal(2, ReviewDrawn.Of(Home, "q1")!.Epoch);
+    }
+
+    [Fact]
     public void A_run_with_no_review_or_no_graph_draws_none()
     {
         Assert.Null(ReviewDrawn.Of(Home, "q1"));

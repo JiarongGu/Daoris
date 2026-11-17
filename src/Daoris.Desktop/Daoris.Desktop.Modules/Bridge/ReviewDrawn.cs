@@ -9,6 +9,9 @@ namespace Daoris.Desktop;
 /// </summary>
 public sealed record ReviewDrawn(string Run, string Node, int? Attempt, string? Revision)
 {
+    /// <summary>The epoch of the review's tenure its attempt stands in, which the press names so a review passed on since refuses it; null where none is kept.</summary>
+    public int? Epoch { get; init; }
+
     /// <summary>The review <paramref name="run"/>'s graph waits on, its first not settled; null where the run holds no review or no graph.</summary>
     public static ReviewDrawn? Of(string home, string? run)
     {
@@ -20,13 +23,14 @@ public sealed record ReviewDrawn(string Run, string Node, int? Attempt, string? 
         foreach (var review in reviews)
         {
             if (statuses?.GetValueOrDefault(review.Id) is not { State: NodeStates.Active } status) continue;
-            return new ReviewDrawn(run, review.Id, status.Attempt, ReviewRecords.Read(home, run, review.Id, status.Attempt)?.Revision);
+            return new ReviewDrawn(run, review.Id, status.Attempt, ReviewRecords.Read(home, run, review.Id, status.Attempt)?.Revision)
+            {
+                Epoch = new StepTenureFiles(home, () => false).Current(bound.Unit, review.Id, status.Attempt)?.Epoch,
+            };
         }
 
         return reviews.FirstOrDefault(review => statuses?.GetValueOrDefault(review.Id) is not { State: NodeStates.Reached })
             is { } waiting ? new ReviewDrawn(run, waiting.Id, null, null) : null;
     }
 
-    /// <summary>The revision the run's review stands on, which an entry's Accept names for its part; null where none is drawn.</summary>
-    public static string? RevisionOf(string home, string? run) => Of(home, run)?.Revision;
 }

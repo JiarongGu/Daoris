@@ -44,6 +44,20 @@ public sealed class EntryRunAcceptsTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task An_entrys_Accept_names_the_epoch_its_row_read_and_one_ended_keeps_nothing()
+    {
+        var (process, revision) = await ActiveAsync();
+        var operations = new WorkplaceWorkflowsOperations();
+        var held = new StepTenureFiles(_home, () => true).Current(RunUnit, "review", RunStatus("review").Attempt)!;
+
+        var stale = operations.KeepReviewWord(_home, () => true, process, _now, revision: revision, epoch: held.Epoch + 1);
+        Assert.False(stale.Kept);
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+
+        Assert.True(operations.KeepReviewWord(_home, () => true, process, _now, revision: revision, epoch: held.Epoch).Kept);
+    }
+
+    [Fact]
     public void The_entrys_answer_says_which_parts_accepted_which_moved_and_which_failed()
     {
         var said = EntryRunAccepts.Said([

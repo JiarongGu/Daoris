@@ -59,16 +59,26 @@ export const useLandEntry = () =>
     // Keyed by its route, so every view reads it under way.
     mutationKey: ['LAND_ENTRY'],
     mutationFn: ({ entry, parts, leaveOut, revisions }: {
-      entry: string; parts: number; leaveOut: readonly string[]; revisions?: readonly { session: string; revision: string }[];
+      entry: string; parts: number; leaveOut: readonly string[]; revisions?: readonly DrawnPart[];
     }) =>
       call('LAND_ENTRY', {
         entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}), ...(revisions?.length ? { revisions: [...revisions] } : {}),
       }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,
   });
 
-/** Each part's review revision the plan drew, which the entry's Accept names so a run whose record moved is refused alone. */
-export const drawnRevisions = (plan: { parts: readonly { session: string; revision?: string | null }[] } | null | undefined) =>
-  (plan?.parts ?? []).flatMap((part) => (part.revision ? [{ session: part.session, revision: part.revision }] : []));
+/** One part's review as the plan drew it: the revision of its record and the epoch of its tenure, each where one was read. */
+export type DrawnPart = { session: string; revision?: string; epoch?: number };
+
+/**
+ * Each part's review revision and tenure epoch the plan drew, which the entry's Accept names so a run whose record moved, or whose review
+ * was passed on since, is refused alone.
+ */
+export const drawnRevisions = (
+  plan: { parts: readonly { session: string; revision?: string | null; epoch?: number | null }[] } | null | undefined,
+): DrawnPart[] =>
+  (plan?.parts ?? []).flatMap((part) => (part.revision || part.epoch != null
+    ? [{ session: part.session, ...(part.revision ? { revision: part.revision } : {}), ...(part.epoch != null ? { epoch: part.epoch } : {}) }]
+    : []));
 
 /** An ask's one Accept (`LAND_ASK`): each of its lines of work lands in its own repository, answered per repository. */
 export const useLandAsk = () =>

@@ -45,7 +45,7 @@ public static class EarlyAccepts
             var held = holding;
             if (takes && (held = StepHolding.TakeOnPress(hold, records, run, holding!, NodeWordActs.Accept, now)) is null) return (null, Refuse(StepHolding.Unwritable));
 
-            var word = new NodeWord(review.Id, NodeWordActs.Accept, null, now) { Kept = true, Tip = tip };
+            var word = new NodeWord(review.Id, NodeWordActs.Accept, null, now) { Kept = true, Tip = tip, Epoch = NodeWordEpoch.Of(held, speaker) };
             return (record with { Pending = [.. record.Pending.Where(each => each.Node != review.Id), word] }, new NodeWorded(run, review.Id, NodeWordActs.Accept, null));
         }));
         return refused is null ? result! : Refuse(refused);

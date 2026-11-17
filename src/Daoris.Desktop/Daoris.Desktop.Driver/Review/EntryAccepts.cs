@@ -92,6 +92,9 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
     /// <summary>The review record the page drew for each part, by session: a run standing on another is refused <c>moved</c> alone, the rest go on.</summary>
     public IReadOnlyDictionary<string, string>? Revisions { get; init; }
 
+    /// <summary>The epoch of each part's review tenure the page read, by session: a part passed on since is refused <c>ended-epoch</c> alone.</summary>
+    public IReadOnlyDictionary<string, int>? Epochs { get; init; }
+
     /// <summary>
     /// The parts whose run's <c>land</c> the runtime performs, accepted: each head's
     /// review word carries the operation bringing sessions together it delivers, the performer delivers the head's unit, and a member brought into
@@ -126,10 +129,17 @@ public sealed class EntryAccepts(ServiceClient service, string home, SessionTree
             var word = WorkplaceWorkflows.Current.KeepReviewWord(
                 home, null, part.Gate!.Process!, DateTimeOffset.UtcNow,
                 heads ? $"brought together with {string.Join(", ", operation!.Members.Select(each => each.Session))}, operation {operation.Id}" : null,
-                Revisions?.GetValueOrDefault(part.Session));
+                Revisions?.GetValueOrDefault(part.Session), Epochs?.TryGetValue(part.Session, out var epoch) == true ? epoch : null);
             if (word.Moved is { } standing)
             {
                 accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Moved, new TreeLanding(false, EntryRunAccepts.MovedSaid(part.Session, standing))));
+                continue;
+            }
+
+            // A word the door refused (the review passed on since the row read it, another holder's) is that part's refusal, the rest go on.
+            if (!word.Kept && word.Said is { } refused)
+            {
+                accepted.Add(new EntryPartLanding(part.Session, EntryPartOutcome.Refused, new TreeLanding(false, refused) { Refusal = LandingCode.Refused }));
                 continue;
             }
 
