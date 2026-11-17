@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import type { StepHoldBridge } from '../../workflow/wait/StepHold';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { attentionGroups, staleGoAheads } from './attention';
 import { repeatedKinds } from './repeatedKinds';
@@ -32,7 +33,7 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
  */
 export function AttentionList({
   items, doors = {}, run, acts, acting = null, held, below, onSessions, bare = false, onRefuseStale, refusingStale = false,
-  onSetAsideKind, settingAside = false,
+  onSetAsideKind, settingAside = false, stepHold,
 }: {
   items: readonly Attention[];
   /** Every row of one kind a group holds many of set aside in one press; offered where a group holds `ASIDE_AT_ONCE` or more. Absent, none is offered. */
@@ -63,6 +64,8 @@ export function AttentionList({
   below?: (item: Attention) => ReactNode;
   /** Sessions itself, where *Ready for you*'s rows past its fifth are; absent, the count is words. */
   onSessions?: () => void;
+  /** The bridge's calls for a step's holder presses, handed down by the band to each row. */
+  stepHold?: StepHoldBridge;
 }) {
   const { t } = useTranslation();
   return (
@@ -98,6 +101,7 @@ export function AttentionList({
                   acts={acts}
                   busy={acting === attentionKey(item) || (held?.(item) ?? false)}
                   below={below?.(item)}
+                  stepHold={stepHold}
                 />
               ))}
             </ul>

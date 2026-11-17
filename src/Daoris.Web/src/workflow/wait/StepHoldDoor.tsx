@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { usePlaceCast, useStepHold } from '../../bridge/repositories/cast';
-import { StepHoldPresses, stepHoldAsk } from './StepHold';
+import { StepHoldPresses, type StepHoldBridge, stepHoldAsk } from './StepHold';
 
 /**
  * A standing step's holder presses, wired: the roster read from its place's cast, each press `WORKFLOW_HOLD` with the epoch its row read. The
- * run's view and *What needs you* both draw it, each from what its step carries (`holds`, `heldBy`, `epoch`).
+ * run's view and *What needs you* both draw it, each from what its step carries (`holds`, `heldBy`, `epoch`). The bridge's calls are its
+ * `bridge` prop, handed down by the organism that holds the bridge.
  */
-export function StepHold({ run, workspace, repository, node, holds, heldBy, epoch }: {
+export function StepHold({ bridge, run, workspace, repository, node, holds, heldBy, epoch }: {
+  bridge: StepHoldBridge;
   run: string; workspace: string; repository: string; node: string; holds?: string[] | null; heldBy?: string | null; epoch?: number | null;
 }) {
-  const hold = useStepHold();
-  const cast = usePlaceCast(workspace, repository, { enabled: (holds ?? []).includes('hand') });
+  const hold = bridge.useHold();
+  const cast = bridge.useCast(workspace, repository, { enabled: (holds ?? []).includes('hand') });
   const [said, setSaid] = useState<string | null>(null);
   if (!holds || holds.length === 0) return null;
   return (

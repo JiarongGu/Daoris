@@ -21,6 +21,15 @@ export type PlaceCastView = {
 /** The cast as `SET_PLACE_CAST` takes it: no holder takes the cast away, back to the role's default. */
 export type PlaceCastChange = { workspace?: string | null; repository?: string | null; role: string; holder: string | null; why?: string | null };
 
+/**
+ * The bridge's calls a place's cast reads and writes through, handed down by the organism that holds the bridge (`placeCastBridge`), so the
+ * cast's section holds none: the read of the place's cast and the owner's choice, each as the bridge's hook answers it.
+ */
+export type PlaceCastBridge = {
+  useCast: (workspace: string, repository: string | null) => { data?: PlaceCastView };
+  useSet: () => { mutate: (change: PlaceCastChange) => void; isPending: boolean };
+};
+
 /** A holder in the reader's words: you, the role's agent, or an agent by its name. */
 export function holderSaid(t: TFunction, holder: string | null | undefined): string {
   if (!holder || holder === 'person') return t('settings.cast.holder.person');

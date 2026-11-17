@@ -10,6 +10,7 @@ import type { RuleProposal } from '../../settings/repository/AgentRules';
 import type { GraphEnd, HeldAttempt, HeldResolution, UnreadableRecord } from '../head/milestone';
 import type { CheckHeldAnswer, CheckHeldAsk, RunStep } from '../../workflow/run';
 import { FailedStepHeld } from '../../workflow/wait/FailedStepHeld';
+import type { StepHoldBridge } from '../../workflow/wait/StepHold';
 import { StepHold } from '../../workflow/wait/StepHoldDoor';
 import {
   ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type StepWaitRow, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
@@ -300,8 +301,10 @@ export type AttentionActs = {
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
-export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = false, opened = null, below = null }: {
+export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = false, opened = null, below = null, stepHold }: {
   item: Attention;
+  /** The bridge's calls for a step's holder presses, handed down by the band; absent, none is drawn. */
+  stepHold?: StepHoldBridge;
   onOpen?: (item: Attention) => void;
   /**
    * Its door into the run whose step waits on the person: the session attended, the side
@@ -521,8 +524,8 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
           <FailedStepHeld step={{ step: { id: item.step.node }, held: item.step.held, epoch: item.step.epoch } as unknown as RunStep} onHeld={acts.doneOutside} />
         )}
         {/* The role's holder passed on or taken back: *Pass to…* and *Give back*, each a new epoch of the step's tenure. */}
-        {item.step?.holds && item.step.holds.length > 0 && (
-          <StepHold run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} epoch={item.step.epoch} />
+        {stepHold && item.step?.holds && item.step.holds.length > 0 && (
+          <StepHold bridge={stepHold} run={item.step.run} workspace={item.workspace ?? ''} repository={item.where} node={item.step.node} holds={item.step.holds} epoch={item.step.epoch} />
         )}
       </div>
       {(offered.length > 0 || onOpen || onRun || setAside) && (

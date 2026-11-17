@@ -14,6 +14,15 @@ export const stepHoldAsk = (run: string, node: string, act: string, holder: stri
 export type StepHoldAnswer = { done: boolean; refused: string | null; message: string | null };
 
 /**
+ * The bridge's calls a step's holder presses go through, handed down by the organism that holds the bridge (`stepHoldBridge`), so the door
+ * holds none: the roster read from the step's place (only while *Pass to…* is offered) and the press itself.
+ */
+export type StepHoldBridge = {
+  useCast: (workspace: string, repository: string, options: { enabled: boolean }) => { data?: { roster: string[] } };
+  useHold: () => { mutateAsync: (ask: StepHoldAsk) => Promise<StepHoldAnswer>; isPending: boolean };
+};
+
+/**
  * A standing step's **Take**, **Pass to…** and **Give back**, as the step offers them (`holds`): *Pass to…* opens the roster to pick from. Each
  * press is a new epoch of the step's tenure, restarting nothing; a refusal says the driver's sentence. Props only, so the run view and *What
  * needs you* draw the same presses.

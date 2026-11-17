@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
-import type { PlaceCastChange, PlaceCastView } from '../../settings/place/PlaceCast';
-import type { StepHoldAnswer, StepHoldAsk } from '../../workflow/wait/StepHold';
+import type { PlaceCastBridge, PlaceCastChange, PlaceCastView } from '../../settings/place/PlaceCast';
+import type { StepHoldAnswer, StepHoldAsk, StepHoldBridge } from '../../workflow/wait/StepHold';
 import { call } from '../call';
 
 // A place's cast and a step's holder, over the records `daoris settings cast` and `daoris workflow take|hand|give-back` edit: each press the
@@ -36,3 +36,9 @@ export const useStepHold = () => useMutation({
     return { done: answer?.done === true, refused: answer?.refused ?? null, message: answer?.message ?? null };
   },
 });
+
+/** The calls a place's cast section is handed, so it holds no bridge of its own: held here, handed down by the organisms that hold the bridge. */
+export const placeCastBridge: PlaceCastBridge = { useCast: usePlaceCast, useSet: useSetPlaceCast };
+
+/** The calls a step's holder presses are handed, so the door holds no bridge of its own: held here, handed down by the organisms that hold the bridge. */
+export const stepHoldBridge: StepHoldBridge = { useCast: usePlaceCast, useHold: useStepHold };

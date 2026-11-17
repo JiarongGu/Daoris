@@ -21,6 +21,7 @@ import { CheckHeld } from './wait/CheckHeld';
 import { FailedStepHeld } from './wait/FailedStepHeld';
 import { StepThrough } from './StepThrough';
 import { StepWait } from './wait/StepWait';
+import type { StepHoldBridge } from './wait/StepHold';
 import { StepHold } from './wait/StepHoldDoor';
 import { roleSaid } from './stepRoles';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
@@ -176,7 +177,8 @@ const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stoppe
  * are `StepBrief`s. On the flowchart the node wears the state's pill itself, so its mark is drawn without it, and without
  * the routes, which its edges draw.
  */
-function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, onNodeWord, onHeld }: {
+function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, onNodeWord, onHeld, stepHold }: {
+  stepHold?: StepHoldBridge;
   run: WorkflowRun;
   step: RunStep;
   here: boolean;
@@ -229,7 +231,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
       {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
-      {step.holds && run.graph && <StepHold run={run.graph.run} workspace={run.workspace} repository={run.repository} node={step.step.id} holds={step.holds} heldBy={step.heldBy} epoch={step.epoch} />}
+      {stepHold && step.holds && run.graph && <StepHold bridge={stepHold} run={run.graph.run} workspace={run.workspace} repository={run.repository} node={step.step.id} holds={step.holds} heldBy={step.heldBy} epoch={step.epoch} />}
       {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' ? <CheckHeld step={step} onHeld={onHeld} /> : <FailedStepHeld step={step} onHeld={onHeld} />}
       {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}
@@ -346,7 +348,8 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
 type ReleaseDoors = (run: WorkflowRun, step: RunStep) => ReactNode;
 
 /** One run: what it follows, where it stands in a few words, then its chart with each step's place. */
-function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHeld }: {
+function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHeld, stepHold }: {
+  stepHold?: StepHoldBridge;
   run: WorkflowRun;
   here?: string | null;
   doors?: RunDoors;
@@ -379,6 +382,7 @@ function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHe
           pill={pill}
           onNodeWord={onNodeWord}
           onHeld={onHeld}
+          stepHold={stepHold}
         />
       )
       : <StepBrief run={run} step={step} here={here === id} pill={pill} onPick={pick} />;
@@ -463,7 +467,9 @@ function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHe
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, releaseDoors, onNodeWord, onHeld, onRetry }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, releaseDoors, onNodeWord, onHeld, onRetry, stepHold }: {
+  /** The bridge's calls for a standing step's holder presses, handed by the container that holds the bridge; absent, none is drawn. */
+  stepHold?: StepHoldBridge;
   /** What the shell answered; absent while it is read, or where it is refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -521,6 +527,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
           named={answer.runs.length > 1}
           onNodeWord={onNodeWord}
           onHeld={onHeld}
+          stepHold={stepHold}
         />
       ))}
     </div>
