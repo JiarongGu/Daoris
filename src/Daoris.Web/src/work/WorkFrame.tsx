@@ -354,14 +354,14 @@ export function WorkFrame({
     notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, onReviewRun,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { workAskAt } = work;
+  const { workAsk } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
-    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
+    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAsk, waitPanel, tail, awayFromTop, toTop,
   } = waitsState;
   const runWaitDoors = useRunWaitDoors(attended?.id ?? null);
   const docked = attended && here && waits
@@ -503,8 +503,8 @@ export function WorkFrame({
               {...waits}
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
-              workAsk={workAskAt('foot')}
-              ruleAsk={ruleAskAt('foot')}
+              workAsk={workAsk}
+              ruleAsk={ruleAsk}
               toEvent={toEvent}
               seek={seekAt('foot')}
               runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
