@@ -450,7 +450,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
     public static readonly HomeEntry HomeLease = new("home-lease", HomeCategory.Run, "run/home.lease", "home.lease");
-    public static readonly HomeEntry DriverLock = new("driver-lock", HomeCategory.Run, "run/driver.lock", "driver.lock");
     public static readonly HomeEntry Running = new("running", HomeCategory.Run, "run/running.json", "running.json");
     public static readonly HomeEntry Locks = new("locks", HomeCategory.Run, "run/locks", "locks");
     public static readonly HomeEntry Spawn = new("spawn", HomeCategory.Run, "run/spawn", "spawn");
@@ -461,7 +460,6 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "run/requests", "sessions/requests");
     public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "run/edge.json", "browser/edge.json");
     public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "run/pipe", "pipe");
-    public static readonly HomeEntry HomeMove = new("home-move", HomeCategory.Run, "run/home-move.json", "run/home-move.json");
     public static readonly HomeEntry GitHeld = new("git-held", HomeCategory.Run, "run/git/held.json", "run/git/held.json");
     public static readonly HomeEntry GitGrants = new("git-grants", HomeCategory.Run, "run/git/grants", "run/git/grants");
     public static readonly HomeEntry GitUsed = new("git-used", HomeCategory.Run, "run/git/used", "run/git/used");
@@ -488,7 +486,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Deps, TreeFiles, Places, Plans, Evidence,
         Toolchain, ToolVersions, Bin,
-        HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
+        HomeLease, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,
     ];
 

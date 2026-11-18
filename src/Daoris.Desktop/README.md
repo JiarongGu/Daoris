@@ -1037,11 +1037,10 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
 - **One live driver per home** (DRV8a, D104), and **one writer per home** (HOMELEASE1, D171). The loop takes
   `<home>/run/home.lease` (`HomeLease`: its kind, process id and start time, since when, and the home's id) before it
   ticks, as a terminal's `daoris drive` does, and holds it for its life. A terminal's verb acting alone holds
-  it for its act (`VerbLeases`), as do the first-start move of an older home (`InstallHome`) and the launcher's swap of
+  it for its act (`VerbLeases`), as does the launcher's swap of
   `app/`. Where a headless loop holds it, the window says so once on `DRIVER_ERROR`; where an act holds it, the window
   and the machine log (`home.waiting`) say so once it has held for thirty seconds; either way the loop starts the
-  moment the lease frees, and the host, the page and the conversations carry on meanwhile. An older build's
-  `driver.lock` is read as its lease while its holder lives.
+  moment the lease frees, and the host, the page and the conversations carry on meanwhile.
 - **A terminal finds it** (FINDDAORIS1, D171 point 1). Once the service answers, held or adopted, the loop leaves
   `<home>/run/running.json` (`RunningAddress`: the address, its process id and start time, and the home's id), and takes it away
   first thing at the close. A `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
@@ -1145,9 +1144,7 @@ session it spawns inherits it — and, once, for the account when it has none, s
 meets the same machine. A second or moved install runs on its own `data/` even when the account's
 variable names another folder, leaves that variable as it is, and says so on Settings' home row
 (D105). Beside `data/` the install's folder holds `profiles/`, `work/`, `cache/`, `run/` and `logs/`
-(D172). A start with the last update settled and nothing else of the folder running moves into
-them, once, what an older build kept in `data/`, and says so (HOMELAYOUT3, `HomePlacing`). Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
-the decision moves in on that first start, `bin/` excepted, and the shell says so once. **Starting it
+(D172). A start moves nothing into the home (D323). Nothing of Daoris's lives under the user profile. **Starting it
 starts the driver loop.** The publish refuses a folder it did not
 write; `--beside` installs next to whatever is there — the repositories it drives, typically — and
 still refuses to write over a name it did not write. `npm run desktop -- run --install <folder>`

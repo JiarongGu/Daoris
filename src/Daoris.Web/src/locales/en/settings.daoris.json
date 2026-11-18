@@ -208,7 +208,6 @@
   "settings.daoris.loop.desktop": "Another Daoris window",
   "settings.daoris.loop.headless": "A terminal's daoris drive",
   "settings.daoris.loop.verb": "A terminal command",
-  "settings.daoris.loop.migration": "A move of the home's files",
   "settings.daoris.loop.swap": "An update's swap",
   "settings.daoris.loop.unknown": "Something else",
   "settings.daoris.loop.nobody": "Nobody",

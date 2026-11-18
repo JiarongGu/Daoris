@@ -20,7 +20,7 @@ public sealed class StartStages
     /// <summary>The process up to <c>Main</c>: the runtime's own start, read from the process's start time.</summary>
     public const string Main = "main";
 
-    /// <summary>The home established, an install's older layout moved into the home's places.</summary>
+    /// <summary>The home established.</summary>
     public const string Home = "home";
 
     /// <summary>The driver loop started, as the application starts (<c>app.started</c>).</summary>

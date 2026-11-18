@@ -64,7 +64,7 @@ internal static class TestProcessStarts
             "Daoris.Desktop.Modules.Tests/Bridge/DriverModuleSessionQuietTests.cs", "Daoris.Desktop.Modules.Tests/Bridge/ReleaseStandIn.cs",
             "Daoris.Desktop.Modules.Tests/Browser/ProcessBrowserChildTests.cs",
             "Daoris.Desktop.Modules.Tests/Loop/AtWorkProcessTests.cs", "Daoris.Desktop.Modules.Tests/Platform/StandingCallerTests.cs",
-            "Daoris.Desktop.Modules.Tests/Update/AppWorkingFolderProcessTests.cs", "Daoris.Desktop.Modules.Tests/Update/HomePlacingProcessTests.cs",
+            "Daoris.Desktop.Modules.Tests/Update/AppWorkingFolderProcessTests.cs",
         ]),
         (TestStartKind.Program,
         [

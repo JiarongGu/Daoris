@@ -80,19 +80,16 @@ internal static class Program
         // The home before anything else: an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
-        // scratch home stays the dev loop's. An install's older home is moved into its current places here too,
-        // before anything resolves a path: the log and the window's memory among them.
+        // scratch home stays the dev loop's.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
         // Named once for what carries no home of its own (Daoris's own git, a probe's tools): never the variable a process inherited.
         Daoris.Driver.ProgramHome.Named = Daoris.Driver.DaorisHome.Resolve();
         stages.Mark(StartStages.Home);
 
         // The machine log, opened as soon as there is a home to put it in, so an exception
-        // nothing else catches is written before the process ends; with no home it writes nothing. Then
-        // what the move did, which ran before the log had its place.
+        // nothing else catches is written before the process ends; with no home it writes nothing.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
-        InstallHome.Log(home, log);
         stages.Log = log;
         var started = DateTimeOffset.UtcNow;
 

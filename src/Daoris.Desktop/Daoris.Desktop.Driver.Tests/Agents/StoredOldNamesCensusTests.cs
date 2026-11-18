@@ -41,7 +41,6 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Service/RunningAddress.cs",
             "Daoris.Desktop/Daoris.Desktop.Modules/Platform/StartStages.cs",
-            "Daoris.Desktop/Daoris.Desktop.Modules/Update/HomePlacing.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Relay/RelayRun.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Dsh/DshSpawn.cs",
             "Daoris.Service/Daoris.Service.Core/Registry/DaorisLock.cs",

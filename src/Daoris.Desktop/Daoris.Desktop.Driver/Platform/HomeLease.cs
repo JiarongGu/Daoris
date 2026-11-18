@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Who holds a home: an instance for its life, or a verb, a migration or a swap for its act.</summary>
+/// <summary>Who holds a home: an instance for its life, or a verb or a swap for its act.</summary>
 public enum LeaseKind
 {
     /// <summary>The desktop application's loop: an instance.</summary>
@@ -15,9 +15,6 @@ public enum LeaseKind
 
     /// <summary>A terminal's verb acting alone, for its mutation.</summary>
     Verb,
-
-    /// <summary>The desktop's first-start move of an older home's state into the install's.</summary>
-    Migration,
 
     /// <summary>The launcher's swap of <c>app/</c> for a staged build.</summary>
     Swap,
@@ -39,7 +36,6 @@ public sealed record LeaseHolder(LeaseKind Kind, int Pid, DateTimeOffset Since, 
         {
             LeaseKind.Desktop => "the desktop",
             LeaseKind.Headless => "a headless Daoris",
-            LeaseKind.Migration => "the desktop's first-start move of an older home",
             LeaseKind.Swap => "the launcher's update of the application",
             _ => What is { Length: > 0 } words ? $"a terminal's `{words}`" : "a terminal's verb",
         }
@@ -50,12 +46,11 @@ public sealed record LeaseHolder(LeaseKind Kind, int Pid, DateTimeOffset Since, 
 public sealed class HomeLeaseException(string message, Exception? inner = null) : IOException(message, inner);
 
 /// <summary>
-/// One writer per home: <c>&lt;home&gt;/home.lease</c>, the driver's lock
-/// (<c>driver.lock</c>) grown to cover every writer rather than a second file beside it.
+/// One writer per home: its <c>home-lease</c> entry, <c>run/home.lease</c>, which covers every writer.
 /// </summary>
 /// <remarks>
 /// <para><b>Who holds it.</b> An instance (the desktop's loop, a headless <c>drive</c>) for its life; a verb acting alone for its
-/// mutation only, never for a read; the desktop's first-start migration; and the launcher's swap of <c>app/</c>,
+/// mutation only, never for a read; and the launcher's swap of <c>app/</c>,
 /// so no verb the install carries runs alone from a folder being replaced. A verb that finds an instance's lease
 /// acts beside it (<see cref="Beside"/>), holding nothing, until a pipe makes it the running instance's client.</para>
 ///
@@ -70,10 +65,6 @@ public sealed class HomeLeaseException(string message, Exception? inner = null) 
 /// <para><b>Every path to the folder takes the same lease</b>: it is a file in the folder, so a junction, a mapped drive or
 /// another case of the path meets the one file.</para>
 ///
-/// <para><b>An older build's <c>driver.lock</c></b> is read as that build's lease while its holder lives, so a desktop or a loop
-/// of that build still holds the home against this one; a stale one is left where it is and ignored. So is a lease at
-/// an older place of the <c>home-lease</c> entry, outside <c>run/</c>.</para>
-///
 /// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> and <see cref="DaorisHome"/>, whose table names
 /// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. Every verb that holds the home holds it through here.</para>
 /// </remarks>
@@ -82,10 +73,7 @@ public sealed class HomeLease : IDisposable
     /// <summary>The lease's name under the home.</summary>
     public const string FileName = "home.lease";
 
-    /// <summary>The older build's lock: read as that build's lease while its holder lives.</summary>
-    public const string LegacyFileName = "driver.lock";
-
-    /// <summary>How long a verb, a migration or a swap waits on another act's lease, and an instance before it says so.</summary>
+    /// <summary>How long a verb or a swap waits on another act's lease, and an instance before it says so.</summary>
     public static readonly TimeSpan Wait = TimeSpan.FromSeconds(30);
 
     /// <summary>How often a wait looks again.</summary>
@@ -118,14 +106,6 @@ public sealed class HomeLease : IDisposable
     /// </summary>
     public static string PathIn(string home) => DaorisHome.Places(home, HomeEntry.HomeLease)[0];
 
-    /// <summary>
-    /// Every other place a lease of this home may be: the <c>home-lease</c> entry's old place, where a build from
-    /// before the switch takes it, and an older build's <c>driver-lock</c> at either of its places. A live holder at any of them
-    /// holds the home; a stale one is left where it is.
-    /// </summary>
-    private static IEnumerable<string> OlderIn(string home) =>
-        DaorisHome.Places(home, HomeEntry.HomeLease).Skip(1).Concat(DaorisHome.Places(home, HomeEntry.DriverLock));
-
     /// <summary>Take the home, or null with the live holder that already has it.</summary>
     /// <param name="what">A verb's own words, which a refusal names; never its arguments.</param>
     /// <exception cref="HomeLeaseException">The lease changed under every attempt, or could not be written.</exception>
@@ -136,15 +116,6 @@ public sealed class HomeLease : IDisposable
     internal static HomeLease? TryAcquire(string home, LeaseKind kind, out LeaseHolder? holder, string? what, Action<string>? judgedStale)
     {
         Directory.CreateDirectory(home);
-        foreach (var older in OlderIn(home))
-        {
-            if (Live(older) is { } elsewhere)
-            {
-                holder = elsewhere;
-                return null;
-            }
-        }
-
         var path = PathIn(home);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         Exception? last = null;
@@ -182,7 +153,7 @@ public sealed class HomeLease : IDisposable
 
     /// <summary>
     /// Take the home where it is free, or run beside the live instance holding it (<c>--share</c>): the rare deliberate case,
-    /// which never takes another's lease. Null with the holder where an act (a verb, a migration, a swap) holds it.
+    /// which never takes another's lease. Null with the holder where an act (a verb, a swap) holds it.
     /// </summary>
     public static HomeLease? Share(string home, LeaseKind kind, out LeaseHolder? holder)
     {
@@ -193,8 +164,7 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>The live holder of the home, or null when none holds it.</summary>
-    public static LeaseHolder? HeldBy(string home) =>
-        Live(PathIn(home)) ?? OlderIn(home).Select(Live).FirstOrDefault(holder => holder is not null);
+    public static LeaseHolder? HeldBy(string home) => Live(PathIn(home));
 
     /// <summary>
     /// The live holder the home's lease names, or null; <paramref name="doubt"/> where the lease could not be read this moment or names
@@ -234,8 +204,8 @@ public sealed class HomeLease : IDisposable
 
     /// <summary>
     /// The lease for a verb acting alone: taken where the home is free; beside an instance,
-    /// holding nothing, until a pipe makes it that instance's client; and where another verb, a
-    /// migration or a swap holds it, waited for up to <paramref name="within"/>, then null with the refusal naming which.
+    /// holding nothing, until a pipe makes it that instance's client; and where another verb or a
+    /// swap holds it, waited for up to <paramref name="within"/>, then null with the refusal naming which.
     /// </summary>
     public static HomeLease? ForVerb(
         string home, string what, out string? refusal,
@@ -350,7 +320,6 @@ public sealed class HomeLease : IDisposable
         LeaseKind.Desktop => "desktop",
         LeaseKind.Headless => "headless",
         LeaseKind.Verb => "verb",
-        LeaseKind.Migration => "migration",
         _ => "swap",
     };
 
@@ -449,7 +418,6 @@ public sealed class HomeLease : IDisposable
                     "desktop" => LeaseKind.Desktop,
                     "headless" => LeaseKind.Headless,
                     "verb" => LeaseKind.Verb,
-                    "migration" => LeaseKind.Migration,
                     "swap" => LeaseKind.Swap,
                     _ => null,
                 }

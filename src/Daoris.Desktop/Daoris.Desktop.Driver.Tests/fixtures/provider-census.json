@@ -82,9 +82,6 @@
     ["Daoris.Desktop.Driver/Settings/ConsoleProviderId.cs", "\"claude-code\"", "-", "permanent", "the one value of the settings' questions pause, kept below the providers so the settings name none (D184 point 4)"],
     ["Daoris.Desktop.Driver/Settings/HelperKey.cs", "id in a sentence", "-", "words", "an id as the example in a refusal"],
     ["Daoris.Desktop.Driver/Settings/OpinionKey.cs", "id in a sentence", "-", "words", "an id as the example in a refusal"],
-    ["Daoris.Desktop.Driver/Transitional/Migration/LineageFilesStep.cs", "\"acp\"", "-", "permanent", "a migration's old word: the lineage files' step reads a child line's old kind once to write the announced word, and the word goes with the step (D232)"],
-    ["Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs", "\"acp\"", "-", "permanent", "a migration's old word: the wired files' step reads a receipt's old door once to write its transport, and the word goes with the step (D232)"],
-    ["Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs", "\"protocol\"", "-", "permanent", "a migration's word: the wired files' step writes the receipt's transport as today's build reads it, and the word goes with the step (D232)"],
     ["Daoris.Desktop.Driver/WorkOrders/BrainstormsVerb.cs", "id in a sentence", "-", "words", "an id as the example in a usage line"],
     ["Daoris.Desktop.Driver/Workflows/Kinds/StepRoles.cs", "\"claude\"", "-", "words", "the words a step's role may never be, an agent's name among them: the save refuses a holder where a role goes, so the list names providers and picks none"],
     ["Daoris.Desktop.Driver/Workflows/Kinds/StepRoles.cs", "\"claude-code\"", "-", "words", "the words a step's role may never be, an agent's name among them: the save refuses a holder where a role goes, so the list names providers and picks none"],
@@ -96,8 +93,7 @@
     ["Daoris.Desktop.Modules/Platform/HolderTerminal.cs", "id in a sentence", "-", "permanent", "D209's holder: its refusals name the pinned Claude Code"],
     ["Daoris.Desktop.Modules/Platform/InstancePipe.cs", "\"protocol\"", "-", "permanent", "the terminal's named pipe: the wrong-protocol answer (design §9), no agent's door"],
     ["Daoris.Desktop.Modules/Platform/RoleTerminals.cs", "id in a sentence", "-", "permanent", "D209's holder: the confirmation names the pinned Claude Code"],
-    ["Daoris.Desktop.Modules/Platform/StartStages.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: a start stage's name (design §9)"],
-    ["Daoris.Desktop.Modules/Update/HomePlacing.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: a home entry the update places (design §9)"]
+    ["Daoris.Desktop.Modules/Platform/StartStages.cs", "\"pipe\"", "-", "permanent", "the terminal's named pipe: a start stage's name (design §9)"]
   ],
 
   "service": {
