@@ -539,7 +539,7 @@ test('the install note says Daoris’s own children find the doctrine tool first
  * The note (the install layout design §2 and §4) says what each top folder of the Daoris folder is
  * and who may lose it, a row each, in the design's order; and that `data/` is the one to back up and holds no key.
  */
-test('the install note says what each top folder is and which one to back up (HOMELAYOUT4)', () => {
+test('the install note says what each top folder is and which one to back up', () => {
   const note: string = installedNote();
   const rows = note.split('\n').filter((line) => line.startsWith('| `'));
   const named = rows.map((line) => /^\| `([^`]+)`/.exec(line)?.[1]);
