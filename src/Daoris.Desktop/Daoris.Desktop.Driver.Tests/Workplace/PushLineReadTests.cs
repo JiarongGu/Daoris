@@ -58,7 +58,7 @@ public sealed class PushLineReadTests : LandedFixture
 
         await new PushDoor(Home, _said.Add, holdsLease: () => true).PerformAsync(Start(root, tip), CancellationToken.None);
 
-        var held = Assert.IsType<HeldFact>(PullRequestReading.OnTheLine(new LandedBranches(Home).All().Single()));
+        var held = Assert.IsType<HeldFact>(new LandedBranches(Home).All().Single().OnTheLine);
         Assert.Equal("origin/main", held.On);
         Assert.Equal(NodeStates.Active, Status().State);
         Assert.Contains(_said, line => line.Contains("holds its work", StringComparison.Ordinal));

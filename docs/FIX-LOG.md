@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
+
+- **Symptom:** a run ended failed-held at `push`, revived by LEFTSTEP1 once origin held its branch at the landed tip, opened its pull
+  request through its plugin's `pull-request` step, and the pull request completed on the platform; its `monitor` stayed `working` for
+  an hour, and the plugin was asked no `work/state` in two hours. A run on the same repository that never ended had its monitor reach
+  within minutes of its merge.
+- **Root cause:** the moments that ask a plugin about an open pull request (origin's line moving, the window's focus) concerned only a
+  landing marked `Pushed` (`PullRequestMoments.Concerns`, from FABRIC-END6's b42f5f86b2, when the plugin that pushed a branch was the
+  one that opened its pull request), and only Daoris's own push act writes that mark. PUSHBUSY1 (46f2efddff) let a failed `push` read
+  reached on origin's ref, and LEFTSTEP1 (cc53305ee5) on the person's *Done outside Daoris*, neither writing a push of Daoris's, so
+  the address the step kept was never asked about and the monitor, which reads the kept answer, never settled. Siblings of the class:
+  a landing whose end the keeper held while the last answer still said open was not asked either, and the moment after Daoris pushes
+  lost its only callers when the hand-off left (68a3133baf), so nothing asked about a pull request right after it opened.
+- **Fix:** a moment concerns every standing landing Daoris pushed or whose step recorded a pull request, whoever pushed the branch,
+  while no answer settled it, and a held one while the monitor still reads its answer open; the address a `pull-request` step keeps
+  (`PullRequestRecords.Keep`) tells the home's moments, so the pull request is asked about at once.
+- **Verify:** `RevivedRunPullRequestTests` (a run ended failed-held at `push`, revived on origin's ref, its pull request opened and then
+  answered completed at the focus: red on no ask, now `monitor` reached `merged`; the opened moment red on no ask), `MonitorAskedTests`
+  (the census: every landing a monitor waits on for its plugin's answer, by each way its push reached and with its end held or not, is
+  one a moment asks; red on twelve shapes), `PullRequestMomentsTests`; the filtered `Monitor|FailedHeld|Watch|PullRequest` driver tests.
+
 ## 2026-11-18 - A re-landed branch's push read reached on the commit pushed before, so the new tip was never pushed (RESUMERESET1)
 
 - **Symptom:** with RESUMERESET1's landed run taken back by the chain's next quest, `ReLandingPullRequestTests` failed: the branch
