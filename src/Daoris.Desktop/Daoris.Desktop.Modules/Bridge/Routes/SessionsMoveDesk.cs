@@ -29,7 +29,7 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         // door as the route's channel speaks it, and the run's end ends the session (D316). The answer names the run and its steps, or
         // why none was stopped.
         var answer = await SessionMoves.StopAsync(
-            _loop.Processes, _loop.Service, id, cancellationToken, run: RunWaitStop.At(_loop.Home, CastRoutes.SpeakerOf(null))).ConfigureAwait(false);
+            _loop.Processes, _loop.Service, id, cancellationToken, run: RunWaitStops.Port(_loop.Home, CastRoutes.SpeakerOf(null))).ConfigureAwait(false);
         // the process that runs it takes the stop, as its own; none that does not is claimed to have stopped.
         if (answer.Elsewhere
             && await SessionMoves.StopThroughOwnerAsync(
@@ -40,7 +40,7 @@ internal sealed class SessionsMoveDesk(DriverContext context)
 
         _loop.Nudge();
         var run = answer.Run is { } ran
-            ? new { ran.Run, ran.Steps, ran.Refused, ran.Node, Why = RunWaitStops.Why(ran) }
+            ? new { ran.Run, ran.Steps, ran.Refused, ran.Node, ran.Why }
             : null;
         return new { answer.Stopped, answer.Orphan, answer.Elsewhere, Run = run };
     }

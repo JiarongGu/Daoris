@@ -65,7 +65,7 @@ public sealed class RunWaitStopsTests : NodeRunFixture
         Assert.Equal(["release", "handed"], stopped.Steps);
         Assert.Equal([("release", NodeWordActs.Stop), ("handed", NodeWordActs.Stop)], Files.Read(RunUnit)!.Pending.Select(word => (word.Node, word.Act)));
         Assert.All(Files.Read(RunUnit)!.Pending, word => Assert.Null(word.By));
-        Assert.Contains("your stop of it is kept at `release`, `handed`", RunWaitStops.Said("s-work", stopped), StringComparison.Ordinal);
+        Assert.Contains("your stop of it is kept at `release`, `handed`", stopped.Said("s-work"), StringComparison.Ordinal);
 
         await RunPassAsync(Started([Waiting()]));
 
@@ -94,7 +94,7 @@ public sealed class RunWaitStopsTests : NodeRunFixture
         var ended = await RunWaitStops.StopAsync(Stop, Waiting());
 
         Assert.Equal((RunNodeWords.NotRun, RunNodeWords.Ended), (unbound!.Refused, ended!.Refused));
-        Assert.Contains("waits on run q-gone, and nothing of it was stopped: no run `q-gone` here", RunWaitStops.Said("s-work", unbound), StringComparison.Ordinal);
+        Assert.Contains("waits on run q-gone, and nothing of it was stopped: no run `q-gone` here", unbound.Said("s-work"), StringComparison.Ordinal);
         Assert.Empty(Files.Read(RunUnit)!.Pending);
     }
 }

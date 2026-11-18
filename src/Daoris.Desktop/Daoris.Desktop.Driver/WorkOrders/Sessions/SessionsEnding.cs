@@ -83,11 +83,11 @@ internal static class SessionsEnding
             return 0;
         }
 
-        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, run: RunWaitStop.At(world.Home, world.Speaker)).ConfigureAwait(false);
+        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, run: world.StopsRun).ConfigureAwait(false);
         // A session awaiting its run's step stops with that run (D316): what is kept, or why nothing is.
         if (answer.Run is { } ran)
         {
-            output.WriteLine(RunWaitStops.Said(id, ran));
+            output.WriteLine(ran.Said(id));
             return ran.Done ? 0 : 1;
         }
 

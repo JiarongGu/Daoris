@@ -21,10 +21,11 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public InstanceWorld? Instance { get; init; }
 
     /// <summary>
-    /// Who a stop that reaches a run's steps speaks as at the settle door (<see cref="SettleBy.OfChannel"/>): the route's channel where a
-    /// window runs the verb, null for the person's own terminal, which a stop makes the owner role's.
+    /// How a stop reaches the run a session awaits (D316), null where it awaits none: Workflows' run stop as the person's own terminal speaks
+    /// it, which a stop makes the owner role's; a window running the verb speaks as its route's channel.
     /// </summary>
-    public SettleBy? Speaker { get; init; }
+    public Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>> StopsRun { get; init; } =
+        (record, ct) => WorkOrdersWorkflows.Current.StopRunAsync(Home, record, ct);
 
     /// <summary>How long a request is waited for unless a world says otherwise: ten seconds.</summary>
     public static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(10);

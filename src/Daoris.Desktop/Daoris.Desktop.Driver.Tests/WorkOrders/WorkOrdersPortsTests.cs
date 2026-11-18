@@ -189,6 +189,8 @@ public sealed class WorkOrdersPortsTests : IDisposable
         public Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>([]);
 
+        public Task<RunWaitStopped?> StopRunAsync(string home, SessionRecord record, CancellationToken ct) => Task.FromResult<RunWaitStopped?>(null);
+
         public (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
             string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds)
         {
