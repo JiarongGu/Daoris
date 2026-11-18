@@ -527,7 +527,8 @@ try
     // The attempts held for the person, and their word on one: What needs you's presses are the other door.
     if (args is ["work", "held", .. var heldArgs])
     {
-        return HeldAttempts.Run(DriverConfig.HomeOf(DriverConfig.ResolvePath()), heldArgs, Console.Out, Console.Error);
+        var heldHome = DriverConfig.HomeOf(DriverConfig.ResolvePath());
+    return await HeldAttempts.RunAsync(heldHome, heldArgs, Console.Out, Console.Error, Daoris.Driver.Host.InstanceHost.World(heldHome, "work"));
     }
 
     // The person's delete of the recovery refs nothing holds: the workspace's Branches press is the other door.

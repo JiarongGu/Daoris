@@ -88,10 +88,22 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
 
         run.Say($"daoris: `{found.Id}` v{@base.Version} → v{plan.Version} — {found.Read.Name}{(what is null ? "" : $", {what}")}: {WorkflowWords.GraphSaid(next)}");
         foreach (var line in lines ?? []) run.Say(line);
+        foreach (var line in Carried(found.Id, next.Version, @base.Graph, next.Graph)) run.Say(line);
         return run.Saved(found.Id, plan.Result!, [new JsonObject
         {
             ["id"] = found.Id, ["graph"] = graph?.DeepClone(), ["base"] = @base.Version, ["authorize"] = run.Authorize(found.Id),
         }]);
+    }
+
+    private IReadOnlyList<string> Carried(string workflow, int version, NodeGraph? previous, NodeGraph? next)
+    {
+        if (next is null) return [];
+        var reserved = ProviderRegistry.Built().Names;
+        static WorkflowApplyNotes.DeclaredKinds Read(PluginManifest manifest) => new(manifest.Id, manifest.Version, [.. manifest.Steps.Select(step => step.Kind)]);
+        var installed = PluginCatalog.Load(run.Home, reserved).Plugins.Select(entry => Read(entry.Manifest)).ToList();
+        var offered = PluginOffers.Load(PluginOffers.FolderFor(run.Home, AppContext.BaseDirectory), run.Home, reserved)
+            .Where(offer => offer.Problem is null).Select(offer => Read(offer.Manifest)).ToList();
+        return [.. WorkflowApplyNotes.Undeclared(next, installed, offered), .. WorkflowApplyNotes.Unread(run.Choices, workflow, version, previous, next)];
     }
 
     internal int Export()

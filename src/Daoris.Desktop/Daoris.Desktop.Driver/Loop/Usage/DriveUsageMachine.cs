@@ -117,6 +117,12 @@ internal static class DriveUsageMachine
           workflow fix <run> [<node>]
               ask for a fix of a verification run's failed gate, with its log: one ask per gate, and a repeat finds the
               ask already made. `work held` names the failed verifications. Daoris's window confirms it.
+          workflow values <repository> <workflow> <node> [<name>=<json>… | --clear] --why <reason>
+              the declared values a workflow's plugin step reads (a release's target), kept by node id: the
+              window's form, from a terminal. `workflow apply` prints a line for each node a new version leaves bare.
+          workflow take <run> <node> ["why"]  ·  workflow hand <run> <node> person|agent|agent:<name> ["why"]
+          workflow give-back <run> <node> ["why"]
+              take a step of a run for yourself, hand it to a person or an agent, or give it back to the role.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every command that reads a record need.
