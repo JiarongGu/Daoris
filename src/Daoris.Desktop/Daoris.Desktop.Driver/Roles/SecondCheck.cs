@@ -26,7 +26,7 @@ public static class SecondCheck
     /// policy; a store that does not take them now leaves the role with no choices, which the person gives it in the editor.
     /// </summary>
     /// <returns>Whether the choices were written.</returns>
-    public static bool SeedFresh(string home, Func<StoreSettled>? settled = null)
+    public static bool SeedFresh(string home, Func<StoreSettled>? settled = null, TimeProvider? clock = null)
     {
         var staffing = new RoleStaffing(home, settled);
         if (staffing.ImportFile().How is StaffingImported.Unread or StaffingImported.Held) return false;
@@ -35,7 +35,7 @@ public static class SecondCheck
         {
             if (write.Query(Own, row => row.GetString(0), ("$role", Role)).Count > 0) return;
             RoleStaffing.AddedRows(write, [(Role, Choices)]);
-            StaffPolicies.Save(write, Role, Policy(Choices), Choices, 0, Moments.Write(DateTimeOffset.UtcNow));
+            StaffPolicies.Save(write, Role, Policy(Choices), Choices, 0, Moments.Write((clock ?? TimeProvider.System).GetUtcNow()));
             write.Moved(StaffPolicies.Family);
             written = true;
         });

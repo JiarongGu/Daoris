@@ -21,9 +21,8 @@ public static class HomeSeed
             var store = WorkflowPorts.Store(home);
             var copy = CopyOf(store, shipped) ?? Save(home, store, shipped);
             DriverConfig.Empty.WithDefaultWorkflow(copy).Save(configPath);
-            // Its rules at today's numbers too, so its lines read them from the first start; a store that does not take them now decides
-            // by the same rules until the person writes their own. The second check's first choices are written as a settled start writes,
-            // since a fresh home holds nothing a confirmation could take back.
+            // Its rules at today's numbers, and the second check's first choices written as a settled start writes: a fresh home
+            // holds nothing a confirmation could take back.
             SupervisorRuleBook.SeedFresh(home);
             SecondCheck.SeedFresh(home, () => StoreSettled.Yes);
             return true;

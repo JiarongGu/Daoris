@@ -516,7 +516,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// <c>driver.json</c>'s staffing keys: <c>actors</c>, and the three first-agent keys of the single-agent shape, which no build writes
-    /// and the tests' configurations still carry (NOCOMPAT1 left them: their fixtures go with them).
+    /// and the tests' configurations still carry: they go with those fixtures.
     /// </summary>
     private static readonly string[] Keys = ["actors", "adapter", "intakeAdapter", "helperAdapter"];
 
