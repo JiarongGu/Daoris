@@ -11,4 +11,7 @@ public interface IObserves
 
     /// <summary>Whether the pass begins a node of it in <paramref name="governed"/> once its wires fire; where not, it waits ready for its press.</summary>
     bool Begins(GovernedUnit governed) => true;
+
+    /// <summary>Whether a node of it that failed as <paramref name="status"/> is still read: only a reach is taken from it, as an observed fact settles it whoever made it.</summary>
+    bool ObservesFailed(NodeStatus status) => false;
 }

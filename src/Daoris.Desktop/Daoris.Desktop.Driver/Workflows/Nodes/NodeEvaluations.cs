@@ -296,7 +296,9 @@ internal static class NodeEvaluations
         // A run's `push` observes its branch at the landing `land` reached on.
         var unit = governed.Scope is null ? governed.Unit : Landed(governed, record.Statuses)?.Unit;
         if (unit?.Kind != WorkUnitKind.Branch || NodeObserving.LandingOf(unit) is not { } landing) return null;
-        if (!Waits(governed, record, PassRead.Remote) || !NodeObserving.AsksRemote(landing)) return null;
+        var refused = governed.Graph.Nodes.Any(node => Asks(node, PassRead.Remote) && record.Statuses.GetValueOrDefault(node.Id) is { State: NodeStates.Failed } status
+            && NodeKit.Of(node.Kind) is IObserves observes && observes.ObservesFailed(status));
+        if (!refused && (!Waits(governed, record, PassRead.Remote) || !NodeObserving.AsksRemote(landing))) return null;
 
         var tip = await git.RemoteAsync(governed.Watched.Root, landing.Branch, ct).ConfigureAwait(false);
         return new NodeGitReads(each => string.Equals(each.Branch, landing.Branch, StringComparison.Ordinal) ? tip : null);

@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A run's push failed for a passing tidy and stayed failed after the person pushed (PUSHBUSY1)
+
+- **Symptom:** a run's `push` failed `push-refused` ("the session trees were being cleaned up: nothing was changed"), with no retry; the
+  person's own push then put the branch on origin and the node still read `failed`, holding the run before its pull request.
+- **Root cause:** `ActRuns.RunAsync` answered a busy checkout lock as the same refusal as a denied write, and `PushDoor.Settle` failed
+  the node on any refusal (the door never told a held lock from a refusal); and only an active or unknown node
+  was observed, so a failed one never read origin's ref.
+- **Fix:** `ActRun.Busy` marks the held-lock refusal and the door leaves the node active; `IObserves.ObservesFailed` lets a `push-refused`
+  node be read, a `Failed -> Reached` observed row takes a reach when the remote-tracking ref holds the landing's tip.
+- **Verification:** `PushDoorTests`, `PushNodeTests`.
+
+## 2026-11-18 - Two desktop classes failed in a reached run under load and passed alone (FLAKE1)
+
+- **Sighting:** the `reached` gate of PUSHBUSY1's merge, run with no budget beside three builders' preflights, failed
+  `Driver.Tests.LookAccountTests` and `Modules.Tests.PipeConfirmTests`, each passing alone; the same merge's in-run time ratchet
+  failed and passed alone, as ACCEPTWAIT1's had.
+- **Cause:** none found; load-shaped by the alone passes.
+
 ## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)
 
 - **Sighting:** the `reached` gate of the WEBREACH1 and SVCLOCK1 merge ran the whole web unit run (its paths reach the web's test

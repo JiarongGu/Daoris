@@ -169,7 +169,8 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
     made, found by the commit its journal names; where git names another commit it stores that one again and reports not done.
     It has no Undo: its record keeps the commit and `git stash store -m <message> <id>`. (D204)
 38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal; an act
-    inside a flow already holding that lock runs under it. A reconciler settles an open act; nothing is re-run. Every branch
+    inside a flow already holding that lock runs under it; an act refused only because another holds the checkout answers `Busy`
+    (`ActRun`), which a workflow's `push` waits out and tries again at a later pass. A reconciler settles an open act; nothing is re-run. Every branch
     delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE` and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, a removal, a run's `tidy`) through
     `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`, listed from the journal alone (`GIT_DELETES`).
