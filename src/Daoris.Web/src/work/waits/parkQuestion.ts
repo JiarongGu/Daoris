@@ -22,10 +22,7 @@ export type ParkQuestion = {
    * a later build knows, as written; null or absent for none. The supervisor answers no marked question.
    */
   owner?: string | null;
-  /**
-   * The page whose sign-in it waits on, a web page's address, as `question_ask`'s `site` names it; null or absent for none. The
-   * dock then carries *Open the sign-in…* and *Signed in*, and a sign-in Daoris's browser sees there settles it.
-   */
+  /** The page whose sign-in it waits on (`question_ask`'s `site`), a web page's address; null or absent for none. */
   site?: string | null;
   /**
    * The supervisor left this question to the owner (the decision's state `left`): the bound,
@@ -90,7 +87,6 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
   const left = readLeft(asked.left);
   return {
     id, question, choices, recommend, why: recommend === null ? null : why, by, owner: text(asked.owner),
-    // A web page's address alone, as the writer keeps it (`QuestionBox.SiteOf`); any other words are no site.
     site: typeof asked.site === 'string' && asked.site.length <= QUESTION_BOUNDS.site && webAddress(asked.site) ? asked.site : null,
     ...(left ? { left } : {}),
     at: typeof asked.at === 'string' ? asked.at : '',

@@ -184,11 +184,8 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Equal(["direction", "money", "sign-in", "release", "history", "data", "publish"], QuestionBox.OwnerMarks);
     }
 
-    /// <summary>
-    /// 🔴 A sign-in the work needs (SIGNINWAIT1): asked with the site, it keeps the site and the owner's `sign-in` mark, offers no
-    /// answers of the agent's (the person's presses are *Open the sign-in…* and *Signed in*), and tells the agent what comes back.
-    /// A site that is no web page's address, one with answers offered, or one under another mark is refused, writing nothing.
-    /// </summary>
+    /// <summary>🔴 A sign-in asked with its site keeps it and the `sign-in` mark with no answers of the agent's; a site that is no web
+    /// page's address, answers offered or another mark is refused, writing nothing.</summary>
     [Fact]
     public async Task A_sign_in_question_keeps_its_site_and_the_sign_in_mark_and_refuses_what_is_no_site()
     {

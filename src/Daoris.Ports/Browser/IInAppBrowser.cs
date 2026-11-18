@@ -28,10 +28,7 @@ public interface IInAppBrowser
     /// </summary>
     void Open(string address);
 
-    /// <summary>
-    /// The pages open in it now, each its target and its address, read without bringing it up: null where it is not running, or the
-    /// host cannot say. What a park waiting on the person's sign-in reads to see it done (<c>SignInSightings</c>).
-    /// </summary>
+    /// <summary>The pages open in it now, read without bringing it up: null where it is not running, or the host cannot say.</summary>
     Task<IReadOnlyList<BrowserPage>?> PagesAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<BrowserPage>?>(null);
 }
 

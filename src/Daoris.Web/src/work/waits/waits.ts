@@ -115,7 +115,6 @@ export type WaitFacts = {
   onResolve?: unknown;
   onAnswerSession?: unknown;
   onAnswerAsk?: unknown;
-  /** The park's question as its agent asked it, whose site makes it a wait on the person's sign-in there. */
   question?: { site?: string | null } | null;
   goAheads?: GoAhead[];
   /** The ask its go-aheads are on, by which *What needs you* keys each (`waitObligations`); absent, a go-ahead is keyed by its number. */
@@ -158,7 +157,6 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   const intake = isIntake(session);
   if (waiting && intake && facts.onAnswerAsk && session.ask) waits.push({ kind: 'intake', ask: session.ask });
   if (waiting && !intake && (facts.answerBelow || facts.onResolve || facts.onAnswerSession)) {
-    // A question that names a site waits on the person's sign-in there, and is named so.
     waits.push({ kind: 'question', below: Boolean(facts.answerBelow), ...(facts.question?.site ? { signIn: true as const } : {}) });
   }
   if (parked && !intake && facts.onGoAhead) {

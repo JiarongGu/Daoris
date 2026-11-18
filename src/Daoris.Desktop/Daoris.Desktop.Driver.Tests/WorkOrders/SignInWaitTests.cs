@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// A driven session that meets an expired sign-in asks the person through <c>question_ask</c> with the site: its park waits on their
 /// sign-in, and a sign-in Daoris's browser sees there (a page through a sign-in address, then on the site) settles it with Daoris's
-/// word under one key, so the next look takes the park up and its next turn goes on (SIGNINWAIT1).
+/// word under one key, so the next look takes the park up and its next turn goes on.
 /// </summary>
 public sealed class SignInWaitTests : IDisposable
 {

@@ -66,7 +66,6 @@ internal static class ParkQuestions
         var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
         // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
-        // The site whose sign-in it waits on, a web page's address alone: any other words are no site, and the question stays one.
         return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")));
     }
 }

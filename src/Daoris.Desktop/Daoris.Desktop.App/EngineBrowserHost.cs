@@ -128,10 +128,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
         }
     }
 
-    /// <summary>
-    /// The chosen browser's pages and their addresses, read only where it already runs: Daoris's own once this host brought it up,
-    /// the person's Edge at the port recorded beside its profile. A browser that is not running answers nothing and comes up for none.
-    /// </summary>
+    /// <summary>The chosen browser's pages, read only where it runs (Daoris's own once brought up, Edge at its recorded port): none
+    /// comes up for it.</summary>
     public async Task<IReadOnlyList<BrowserPage>?> PagesAsync(CancellationToken ct = default)
     {
         int? port = EdgeChosen
