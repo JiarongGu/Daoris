@@ -1,17 +1,17 @@
 namespace Daoris.Driver;
 
 /// <summary>How the stop reaches a run's steps: the home's node records, the integration record a stop reads first, and who speaks it.</summary>
+/// <param name="Clock">When the stop is said, the caller's clock.</param>
 /// <param name="Speaker">Who the stop is from at the settle door, by its channel (<see cref="SettleBy.OfChannel"/>); null is the person's, which a stop makes the owner role's.</param>
-public sealed record RunWaitStop(NodeRecordFiles Records, IIntegrationDoor Door, SettleBy? Speaker = null)
+public sealed record RunWaitStop(NodeRecordFiles Records, IIntegrationDoor Door, Func<DateTimeOffset> Clock, SettleBy? Speaker = null)
 {
-    public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
-
     /// <summary>The stop over <paramref name="home"/>'s records, read as the node door's own callers read them.</summary>
-    public static RunWaitStop At(string home, SettleBy? speaker = null) => new(new NodeRecordFiles(home), NodeRuntime.HomeDoor(home), speaker);
+    public static RunWaitStop At(string home, Func<DateTimeOffset> clock, SettleBy? speaker = null) =>
+        new(new NodeRecordFiles(home), NodeRuntime.HomeDoor(home), clock, speaker);
 }
 
 /// <summary>
-/// The person's stop of a session awaiting its run's step is their stop of that run (D316): every step of the run a stop still reaches (one
+/// The person's stop of a session awaiting its run's step is their stop of that run: every step of the run a stop still reaches (one
 /// live, or the one its failure holds), stopped through the run's node door as their own <c>daoris workflow stop &lt;run&gt; &lt;node&gt;</c> is
 /// (<see cref="RunNodeWords.WordAsync"/>), at the settle door as its speaker's. The next pass applies it, the run ends stopped and its end
 /// ends the session (<see cref="RunSessionEnds"/>); the record is never moved alone, which would leave the run waiting with no face. The
@@ -27,8 +27,8 @@ public static class RunWaitStops
         record is { State: SessionStates.AwaitingStep, Teammate: false } ? StepWaits.From(record.NoteParts)?.Run : null;
 
     /// <summary>The stop as a session's stop asks it (<see cref="SessionMoves.StopAsync"/>): over <paramref name="home"/>, as <paramref name="speaker"/> speaks.</summary>
-    public static Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>> Port(string home, SettleBy? speaker = null) =>
-        (record, ct) => StopAsync(RunWaitStop.At(home, speaker), record, ct);
+    public static Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>> Port(string home, Func<DateTimeOffset> clock, SettleBy? speaker = null) =>
+        (record, ct) => StopAsync(RunWaitStop.At(home, clock, speaker), record, ct);
 
     /// <summary>Keeps the stop of the run <paramref name="record"/> waits on; null where it waits on no run (<see cref="RunOf"/>).</summary>
     public static async Task<RunWaitStopped?> StopAsync(RunWaitStop how, SessionRecord record, CancellationToken ct = default)

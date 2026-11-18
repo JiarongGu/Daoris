@@ -190,7 +190,7 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
   });
 
-  /** SESSIONCLOSE1: a session awaiting its run's step stops with that run (D316), said with its steps, or why nothing was stopped. */
+  /** A session awaiting its run's step stops with that run, said with its steps, or with the reason nothing of it stopped. */
   it('says the stop of the run a session awaits, or why none of it was stopped, never that it was not running', async () => {
     const run = { run: 'q7', steps: ['release'], refused: null, node: null, why: null };
     invoke.mockResolvedValueOnce({ stopped: true, run })

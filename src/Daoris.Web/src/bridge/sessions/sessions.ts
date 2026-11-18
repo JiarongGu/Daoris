@@ -138,8 +138,8 @@ export const useResolveSession = () => useMutation({
 export type StopAnswer = { stopped: boolean; orphan?: boolean; elsewhere?: boolean; run?: RunStopAnswer | null };
 
 /**
- * A session awaiting its run's step: the person's stop of that run (D316), the steps whose stop is kept, or the driver's reason none
- * is, in its words.
+ * A session awaiting its run's step: the person's stop of that run, whose end ends the session; the steps whose stop is kept, or the
+ * driver's reason none is, in its words.
  */
 export type RunStopAnswer = { run: string; steps: string[]; refused: string | null; node: string | null; why: string | null };
 

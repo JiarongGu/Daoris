@@ -9,7 +9,7 @@ public static class SessionMoves
     /// <summary>
     /// A stop: this registry's process, ended as the person's; else, where nothing on this machine runs the record, that
     /// record ended as the person's stop (<see cref="Orphans"/>); else, where the person's stop is given (<paramref name="run"/>) and the
-    /// record awaits its run's step, the stop of that run, whose end ends it (D316); else it is another Daoris process's here, said so.
+    /// record awaits its run's step, the stop of that run, whose end ends it; else it is another Daoris process's here, said so.
     /// </summary>
     /// <param name="service">The loop's service, or null before it answers: an orphan cannot be ended then, nor a waiting record read.</param>
     /// <param name="note">

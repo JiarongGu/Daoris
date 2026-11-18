@@ -46,7 +46,7 @@ export type AttentionActId =
   | 'ask-again' | 'go-on'
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
-  // A waiting step's stop, the run's node word as its view's *End this work…* is: the owner role's end of the work (D312, D316).
+  // A waiting step's stop, the run's node word as its view's *End this work…* is: the owner role's end of the work.
   | 'stop-node'
   | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 

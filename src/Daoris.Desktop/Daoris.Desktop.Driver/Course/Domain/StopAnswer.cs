@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 public sealed record StopAnswer(bool Stopped, bool Orphan, bool Elsewhere)
 {
     /// <summary>
-    /// Where the session awaits its run's step: that run's stop, kept or refused (D316), whose end ends the session; null for any other.
+    /// Where the session awaits its run's step: that run's stop, kept or refused, whose end ends the session; null for any other.
     /// </summary>
     public RunWaitStopped? Run { get; init; }
 }

@@ -20,7 +20,7 @@ public sealed class RunWaitStopsTests : NodeRunFixture
     private readonly List<RunFinish> _finished = [];
 
     /// <summary>The person's stop over this home's records, as the window's route makes it.</summary>
-    private RunWaitStop Stop => new(Files, NodeRuntime.HomeDoor(_home)) { Clock = () => _now };
+    private RunWaitStop Stop => new(Files, NodeRuntime.HomeDoor(_home), () => _now);
 
     private static SessionRecord Waiting(string state = SessionStates.AwaitingStep, string? run = RunId) =>
         new("s-work", "Owner", state) { NoteParts = (run is null ? StepWait.Check : new StepWait(run, "work")).Note().Parts };

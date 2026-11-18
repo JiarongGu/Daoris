@@ -21,11 +21,10 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public InstanceWorld? Instance { get; init; }
 
     /// <summary>
-    /// How a stop reaches the run a session awaits (D316), null where it awaits none: Workflows' run stop as the person's own terminal speaks
-    /// it, which a stop makes the owner role's; a window running the verb speaks as its route's channel.
+    /// How a stop reaches the run a session awaits, answering null where it awaits none: a window running the verb speaks as its route's
+    /// channel. Null is Workflows' run stop as the person's own terminal speaks it, which a stop makes the owner role's, on <see cref="Clock"/>.
     /// </summary>
-    public Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>> StopsRun { get; init; } =
-        (record, ct) => WorkOrdersWorkflows.Current.StopRunAsync(Home, record, ct);
+    public Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>>? StopsRun { get; init; }
 
     /// <summary>How long a request is waited for unless a world says otherwise: ten seconds.</summary>
     public static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(10);

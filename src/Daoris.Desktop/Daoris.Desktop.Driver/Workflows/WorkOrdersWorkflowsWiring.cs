@@ -33,7 +33,8 @@ internal sealed class WorkOrdersWorkflowsOperations : IWorkOrdersWorkflows
     public Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct) =>
         AbandonRuns.EndAsync(new NodeRecordFiles(home), run => of(run.Run, run.Binding.Ask), words, clock, ct);
 
-    public Task<RunWaitStopped?> StopRunAsync(string home, SessionRecord record, CancellationToken ct) => RunWaitStops.Port(home)(record, ct);
+    public Task<RunWaitStopped?> StopRunAsync(string home, SessionRecord record, Func<DateTimeOffset> clock, CancellationToken ct) =>
+        RunWaitStops.Port(home, clock)(record, ct);
 
     public (string Otherwise, IReadOnlyList<(string Name, IReadOnlyList<string>? Lowers)> Kinds) KindsOf(
         string home, DriverConfig config, string repository, string workspace, IReadOnlyList<string> kinds)

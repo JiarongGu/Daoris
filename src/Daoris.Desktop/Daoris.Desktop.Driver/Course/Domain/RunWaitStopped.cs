@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What the person's stop of a session awaiting its run's step came to (D316): the steps whose stop is kept, or why none is.</summary>
+/// <summary>What the person's stop of a session awaiting its run's step came to: the steps whose stop is kept, or why none is.</summary>
 /// <param name="Run">The run the session waits on, as its record's wait names it.</param>
 /// <param name="Steps">The steps whose stop is kept, in the graph's order, for Daoris's next look to apply.</param>
 public sealed record RunWaitStopped(string Run, IReadOnlyList<string> Steps)
