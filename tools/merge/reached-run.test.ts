@@ -73,8 +73,10 @@ test('a light suite\'s groups run beside the build and the .NET runs, which need
       { runner: 'dotnet', suite: 'driver', project: 'src/D.Tests', settings: null, units: [dotnetUnit('ATests')] },
       { runner: 'node', suite: 'tool-e2e', units: [nodeUnit('tool-e2e', 'e')] },
       { runner: 'node', suite: 'tool-tests', units: [nodeUnit('tool-tests', 't')] },
+      { runner: 'node', suite: 'cli', units: [nodeUnit('cli', 'c')] },
+      { runner: 'node', suite: 'cli', cwd: '.', units: [nodeUnit('cli', 'd')] },
     ],
-    left: {}, reached: 3, replayed: {},
+    left: {}, reached: 5, replayed: {},
   };
   const order: string[] = [];
   let finishBuild = (): void => undefined;
@@ -93,8 +95,10 @@ test('a light suite\'s groups run beside the build and the .NET runs, which need
   });
   assert.ok(order.indexOf('start t') < order.indexOf('built'), `the light group ran while the build was under way: ${order.join(', ')}`);
   assert.ok(order.indexOf('start e') > order.indexOf('end driver'), `the end-to-end group waited for the .NET runs: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start c') < order.indexOf('end t'), `each light suite runs beside the others: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start d') > order.indexOf('end c'), `a suite's own groups run in turn: ${order.join(', ')}`);
   assert.deepEqual(outcome.red, ['driver|D.ATests']);
-  assert.equal(outcome.ran, 3);
+  assert.equal(outcome.ran, 5);
 }));
 
 test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore(async (store, root) => {

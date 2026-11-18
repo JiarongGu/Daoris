@@ -1,9 +1,10 @@
 /**
- * The run of a reached plan's commands, one per group, in two lanes side by side. In one, each test project the plan runs classes
- * of is built once (`reached-build.ts`), then each .NET group runs on that build (`--no-build --no-restore`), a project whose build
- * failed having its classes failed without running them, then each end-to-end or Process group. In the other, each light suite's
- * group (Vitest's, `node --test`'s), which needs nothing the build makes, runs from the start (`runsBeside`): a gate's time is the
- * longer lane, not the two added. Within a lane the groups run in turn, and the outcome reads them back in the plan's order. Each
+ * The run of a reached plan's commands, one per group, in lanes side by side. In one, each test project the plan runs classes of
+ * is built once (`reached-build.ts`), then each .NET group runs on that build (`--no-build --no-restore`), a project whose build
+ * failed having its classes failed without running them, then each end-to-end or Process group. Beside it each light suite (the
+ * page's, the CLI's, the tools' units: Vitest's, `node --test`'s), which needs nothing the build makes, runs in a lane of its own
+ * from the start (`runsBeside`): a gate's time is its longest lane, not the lanes added. Within a lane the groups run in turn (a
+ * suite's chunks never at once), and the outcome reads them back in the plan's order. Each
  * class its report shows passing is recorded under its key; a group that failed has its
  * failed classes run again alone once, so a pass alone is a flake, and a failure is main's red or new (`reached-classify.ts`). A
  * flake is never recorded as a pass. Each build, and each suite's discovery and run, is a step on the run's clock
@@ -137,6 +138,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   };
   const entries = [...plan.groups.entries()];
   const beside = (group: ReachedGroup): boolean => runsBeside(group, options.processSuites);
+  const besideSuites = [...new Set(entries.filter(([, group]) => beside(group)).map(([, group]) => group.suite))];
   await Promise.all([
     (async () => {
       // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
@@ -144,7 +146,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
       ready = new Set(builds.ready);
       await inTurn(entries.filter(([, group]) => !beside(group)));
     })(),
-    inTurn(entries.filter(([, group]) => beside(group))),
+    ...besideSuites.map((suite) => inTurn(entries.filter(([, group]) => beside(group) && group.suite === suite))),
   ]);
   // Read back in the plan's order, whichever lane each group ran in.
   const stillFailed = results.flatMap((result) => result.stillFailed);
