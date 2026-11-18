@@ -195,7 +195,10 @@ finishes first and the whole set runs once.
     referenced project runs exactly the classes that name its files and a change no class reads runs none. A class reaches a
     source file by the file that declares a type or extension its files name, not by the file's area (`merge/class-reach.ts`:
     667 classes a file on average became 83 for the driver), and keeps the area's grain for a file no declaration covers and for an
-    area reached through a program or a `[Reaches]`; the names are followed one level only, as before. A class reached by the merge's
+    area reached through a program or a `[Reaches]`; the names are followed one level only, as before. A `[Reaches]` naming a
+    path from the root (`src/Daoris.Service/Daoris.Service.Mcp`) is reached by a change to that path alone, its classes and not
+    the half: the driver's tests whose goldens list the knowledge connector's tools (`AgentsTextTests`, `BrainstormPostureTests`,
+    `SuperviseContainmentTests`) carry it, so a tool's addition reaches each (TOOLGOLDENS1). A class reached by the merge's
     paths has by definition inputs that moved from main, so a class pass replays only where the same inputs were proved before:
     by a builder's own checks (`node tools/reached-checks.mjs --base main`, or `--classes <names>`, which record each pass under the
     key the merge computes, and which take one place in the machine's heavy-run admission, said while they wait, for each heavy group:

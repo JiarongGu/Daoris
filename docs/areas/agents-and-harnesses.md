@@ -139,7 +139,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (review, helper, intake, brainstorm, partner, supervise) is handed none. (D81, D184, D253)
     `daoris brainstorm "…" --agents <adapter,adapter>` reads each name against the adapters the home answers (the build's and its
     plugins') and refuses an unknown one at the terminal, naming the adapters, before the desk writes a request; no role's word
-    stands for an adapter there. A meeting's `--agents` is not yet read so.
+    stands for an adapter there. A meeting's `--agents` is read so too, by the same function (`BrainstormDoor.RefusesAgents`).
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's file: with no account named,
     for every account of the set, never the person's own home; a named account must exist here. Trust gates a start only where
     the handed rules would not let the connector through. (D73, D197)
