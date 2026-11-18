@@ -36,7 +36,9 @@ test('the lock round-trips with entries sorted by target', () => {
   const fx = makeFixture('config-lock');
   writeLock(fx.root, {
     canonVersion: '0.1.0',
+    canonDigest: 'dd',
     source: 'github:OWNER/daoris#v0.1.0',
+    index: '.claude/INDEX.md',
     entries: [
       { pack: 'core', source: 'core/z.md', target: 'rules/z.md', canonVersion: '0.1.0', sha256: 'bb' },
       { pack: 'core', source: 'core/a.md', target: 'rules/a.md', canonVersion: '0.1.0', sha256: 'aa' },
@@ -52,7 +54,9 @@ test('the lock is ordered ordinally, so its order is the same on every machine',
   const entry = (target: string) => ({ pack: 'core', source: `core/${target}`, target, canonVersion: '0.1.0', sha256: 'aa' });
   writeLock(fx.root, {
     canonVersion: '0.1.0',
+    canonDigest: 'dd',
     source: 's',
+    index: '.claude/INDEX.md',
     entries: [entry('rules/a.md'), entry('rules/B.md')],
     switchedOff: [{ target: 'rules/a.md', by: 'p' }, { target: 'rules/B.md', by: 'p' }],
     mirrors: [{ path: 'm/a', of: 'x', sha256: 'aa' }, { path: 'm/B', of: 'x', sha256: 'aa' }],

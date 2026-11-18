@@ -85,7 +85,7 @@ test('a file daoris already owns is an update, not a collision', () => {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: canon.version,
+    canon,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
@@ -169,7 +169,7 @@ test('on an adopted repository the budget is the region, and a rule it holds is 
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   applySync({
-    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    root: repoFx.root, manifest, canon, force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
 

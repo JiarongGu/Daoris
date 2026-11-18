@@ -20,9 +20,6 @@ import {
 const CLAUDE = HARNESSES[DEFAULT_HARNESS]!;
 const DEFAULT_TARGET = CLAUDE.defaultTarget;
 const TIERS = tierNames(CLAUDE);
-// An older repository has a generated roster in its rules directory, which is skipped rather than
-// counted as doctrine somebody wrote.
-const INDEX_FILE = 'RULES_INDEX.md';
 
 /**
  * What a repository already has, before daoris touches it.
@@ -34,7 +31,6 @@ function survey(root: string, target: string): Survey {
   const found: Survey = { rules: [], knowledge: [], skills: [] };
   for (const tier of ['rules', 'knowledge'] as const) {
     for (const file of listMarkdown(join(root, target, tier))) {
-      if (file === INDEX_FILE) continue;
       found[tier].push({ target: `${tier}/${file}`, bytes: statSync(join(root, target, tier, file)).size });
     }
   }
@@ -184,7 +180,6 @@ function findTwinsAgainstCanon(
   for (const tier of TIERS) {
     const dir = join(root, target, tier);
     for (const file of listMarkdown(dir)) {
-      if (file === INDEX_FILE) continue;
       const local = `${tier}/${file}`;
       if (!entry(local)) continue;
       // A file at a canonical path is a collision, which is reported separately and more precisely.

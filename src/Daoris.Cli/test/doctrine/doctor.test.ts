@@ -67,7 +67,7 @@ function seeded() {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: canon.version,
+    canon,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
@@ -117,7 +117,7 @@ test("a repo's own skill is checked against canonical skills too", () => {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: canon.version,
+    canon,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
@@ -151,7 +151,7 @@ test("only a skill's entry file is a twin candidate, never the templates beside 
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   applySync({
-    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    root: repoFx.root, manifest, canon, force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
   // The repository's own skill restates the canonical TEMPLATE, and carries a template of its own that

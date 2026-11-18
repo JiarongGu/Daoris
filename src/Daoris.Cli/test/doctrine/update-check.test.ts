@@ -125,21 +125,6 @@ test('a stamp that does not move no longer hides an update: equal versions over 
   fx.done();
 });
 
-test('a lock from before the digest, at the same version, is a difference whose side cannot be told', () => {
-  const fx = adopter('update-tie-old-lock');
-  const lock = JSON.parse(fx.repo.read('daoris.lock'));
-  delete lock.canonDigest;
-  fx.repo.write('daoris.lock', `${JSON.stringify(lock, null, 2)}\n`);
-  moveCanon(fx.canon);
-
-  const { text } = status(fx.repo);
-  assert.match(text, /differs from this CLI's canon \(newer or older cannot be told\)/);
-  assert.match(text, /^ {18}the lock's canon {2}none recorded$/m);
-  assert.equal(JSON.parse(status(fx.repo, '--json').text).update.digest.locked, null);
-
-  fx.done();
-});
-
 test('the same version and the same canon: status says no update', () => {
   const fx = adopter('update-none');
   editHere(fx.repo);

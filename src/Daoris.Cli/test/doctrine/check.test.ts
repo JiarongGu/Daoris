@@ -26,7 +26,7 @@ function synced(packs = [], coreBudget: object = { words: 4500 }, documents?: ob
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   const plan = planSync({ root: repoFx.root, manifest, canon, lock: null });
-  applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
+  applySync({ root: repoFx.root, manifest, plan, canon, force: false });
   return { canonFx, repoFx };
 }
 
@@ -158,11 +158,3 @@ test('a core over its words declared failing fails the check', () => {
   repoFx.cleanup();
 });
 
-/** One number per thing: the byte ceiling the words replaced is refused with the line that replaces it, never ignored. */
-test('a manifest still carrying coreBudgetBytes is refused with its replacement', () => {
-  const { canonFx, repoFx } = synced();
-  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], coreBudgetBytes: 30000 }));
-  assert.throws(() => readManifest(repoFx.root), /coreBudgetBytes, which is retired.*"coreBudget": \{ "words": 4500 \}/);
-  canonFx.cleanup();
-  repoFx.cleanup();
-});

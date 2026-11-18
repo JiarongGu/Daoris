@@ -35,7 +35,7 @@ function run({ canonFx, repoFx }: Seeded, force = false) {
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   const plan = planSync({ root: repoFx.root, manifest, canon, lock: readLock(repoFx.root) });
-  return applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force });
+  return applySync({ root: repoFx.root, manifest, plan, canon, force });
 }
 
 /**
@@ -327,7 +327,7 @@ test('a lock entry cannot reach outside the target directory', () => {
       root: fx.repoFx.root,
       manifest: readManifest(fx.repoFx.root),
       plan,
-      canonVersion: '0.1.0',
+      canon: readCanon(fx.canonFx.root),
       force: false,
     }),
   );

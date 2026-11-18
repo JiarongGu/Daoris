@@ -9,9 +9,6 @@ import { spanBody } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES, tierNames } from '../layout/harness.ts';
 import { lockLayout } from '../layout/layout.ts';
 
-// The generated roster of an older layout. A repository on it still has one on
-// disk, and a generated file is never a twin of a canonical one.
-const INDEX_FILE = 'RULES_INDEX.md';
 const TIERS = tierNames(HARNESSES[DEFAULT_HARNESS]!);
 
 /** Words this common carry no signal about what a document is about. */
@@ -93,7 +90,7 @@ export function findTwins(
   const local: Candidate[] = [];
   for (const tier of TIERS) {
     for (const file of listMarkdown(join(root, base, tier))) {
-      if (file === INDEX_FILE || mirrors.has(`${base}/${tier}/${file}`)) continue;
+      if (mirrors.has(`${base}/${tier}/${file}`)) continue;
       // A skill is its entry file: a template beside it is supporting material, and comparing it
       // as a document reported a repository's own skill as a twin of a canonical skill's template.
       if (!isEntry(harness, tier, file)) continue;

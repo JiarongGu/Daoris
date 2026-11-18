@@ -170,8 +170,8 @@ export function commandStatus(
      * canons differ, which no content comparison can order.
      */
     direction: 'newer' | 'unknown';
-    /** This daoris's canon and the one the lock is written from (null for a lock from before the digest). */
-    digest: { carried: string; locked: string | null };
+    /** This daoris's canon and the one the lock is written from. */
+    digest: { carried: string; locked: string };
     changed: string[];
     added: string[];
     retired: string[];
@@ -234,7 +234,7 @@ export function commandStatus(
           available: canon.version,
           locked: lock.canonVersion,
           direction: newer ? 'newer' : 'unknown',
-          digest: { carried, locked: lock.canonDigest ?? null },
+          digest: { carried, locked: lock.canonDigest },
           changed: changes.changed,
           added: changes.added,
           retired: changes.retired,
@@ -373,7 +373,7 @@ export function commandStatus(
     // No side is named and sync is not offered: from the older of the two it would write the older text back.
     write(`  update        differs from this CLI's canon (newer or older cannot be told): both are canon ${update.available}`);
     write(`                  this CLI's canon  ${update.digest.carried.slice(0, 12)}`);
-    write(`                  the lock's canon  ${update.digest.locked?.slice(0, 12) ?? 'none recorded'}`);
+    write(`                  the lock's canon  ${update.digest.locked.slice(0, 12)}`);
     for (const target of update.changed) write(`                  differs           ${target}`);
     for (const target of update.added) write(`                  not in the lock   ${target}`);
     for (const target of update.retired) write(`                  not in this canon ${target}`);

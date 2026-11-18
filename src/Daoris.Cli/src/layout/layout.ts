@@ -109,8 +109,7 @@ export function checkRooms(raw: unknown, target: string, harness: Harness): stri
  *
  * 🔴 **The lock, not the manifest, says where the files are.** Between a manifest's flip and the sync
  * that moves them, the manifest names the new root and the files are still at the old. Absent fields
- * mean `claude-code` under `.claude`, the only layout written before — except a lock with neither field
- * beside a manifest still on `claude-code`, which an older build wrote at the manifest's own target.
+ * mean `claude-code` under `.claude`: `layoutFields` omits both only for that layout.
  *
  * @throws DaorisError when the lock's target leaves the repository: the lock is generated, the
  * file nobody reads closely, so a crafted root is refused rather than written into.
@@ -121,11 +120,7 @@ export function lockLayout(
   if (!lock) return { harness: manifest.harnessDescriptor, target: manifest.target };
 
   const harness = lock.harness === undefined ? OLDER : resolveHarness(lock.harness);
-  const target = lock.target !== undefined
-    ? lock.target
-    : lock.harness === undefined && manifest.harnessDescriptor.id === OLDER.id
-      ? manifest.target
-      : harness.defaultTarget;
+  const target = lock.target !== undefined ? lock.target : harness.defaultTarget;
 
   const normal = declared(target);
   if (escapes(normal)) {
@@ -267,7 +262,7 @@ export function planLeftBehind(
 
   // The always-loaded tier is no longer a folder, but a repository may still keep its own rules there.
   const keptRules = listMarkdown(join(root, from, 'rules'))
-    .filter((file) => file !== 'RULES_INDEX.md' && !owned(`rules/${file}`))
+    .filter((file) => !owned(`rules/${file}`))
     .map((file) => `${from}/rules/${file}`);
 
   return { leftBehind, bothRoots, keptRules };

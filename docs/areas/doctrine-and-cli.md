@@ -99,14 +99,13 @@ skill, and `co-working` as a pack.
 19. The lock records each file's hash, the canon version and digest, the layout, the switched-off rows and the mirrors.
     The lock, not the manifest, says where files are: a move reads and deletes at the lock's root and writes at the
     manifest's. A lock of another `version`, or with no `entries` list, is refused where it is read, and its lists are in
-    code-unit order, so it reads the same on every machine. A kept rule's entry names the region once its file migrates.
-    (from D2, D117)
+    code-unit order, so it reads the same on every machine. The digest and the index are always written, and an absent
+    `harness` and `target` mean `claude-code` under `.claude`. (from D2, D117)
 20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, and a switch the
     manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. What `check`,
     `status` and a sync plan list is in code-unit order (`compareOrdinal`), never the machine's collation. (from D8, D71)
-21. The always-loaded budget (`coreBudget.words`, default 4500, 780 here) measures the region's words; `coreBudgetBytes`
-    is refused with its replacement. The brief's ceiling (`documents.brief`: words and bytes, 1300 and 8600 here) measures
-    the whole root instruction file. A ceiling declared `"fails": true` fails `check` (`ceilings.ts`, `check.test.ts`);
+21. The always-loaded budget (`coreBudget.words`, default 4500, 780 here) measures the region's words. The brief's
+    ceiling (`documents.brief`: words and bytes, 1300 and 8600 here) measures the whole root instruction file. A ceiling declared `"fails": true` fails `check` (`ceilings.ts`, `check.test.ts`);
     another reports. Kept rows are reported on every run. (D295) (from D28, D54, D230)
 
 **Status, the update check and the digest**

@@ -97,8 +97,7 @@ test('rooms are a list of folders, normalised to forward slashes, and a duplicat
 });
 
 /**
- * 🔴 §5.1: the lock, not the manifest, says where the files are. Absent means the only layout written
- * before, so every lock on disk today reads as `claude-code` under `.claude`.
+ * 🔴 §5.1: the lock, not the manifest, says where the files are. Absent means `claude-code` under `.claude`.
  */
 test('the layout a lock was written under is its own fields, else claude-code under .claude', () => {
   const fx = layoutFixture('layout-desc-order');
@@ -160,7 +159,7 @@ test('a lock mirror outside the mirror root, or on a layout with none, is refuse
 test('a claude-code lock carries no layout fields; an agents lock carries harness, target and mirrors', () => {
   const old = layoutFixture('layout-desc-lock-old');
   old.sync();
-  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'source', 'entries', 'index']);
+  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'canonDigest', 'source', 'entries', 'index']);
   assert.equal(old.lock().index, '.claude/INDEX.md');
   old.cleanup();
 

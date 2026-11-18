@@ -1,7 +1,7 @@
 import type { CommandArgs } from '../platform/types.ts';
 import type { SyncPlan } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
-import { canonDigest, isSwitchedOff, readCanon, resolveCanonRoot } from './canon.ts';
+import { isSwitchedOff, readCanon, resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { refuseNewerLock } from './lockversion.ts';
 import { shortLink } from '../layout/links.ts';
@@ -133,7 +133,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const path of plan.mirrors.editedGone) write(`  discarded ${path} (a mirror of a skill that went, edited here)`);
   }
 
-  applySync({ root, manifest, plan, canonVersion: canon.version, canonDigest: canonDigest(canon), force });
+  applySync({ root, manifest, plan, canon, force });
   for (const rename of plan.renames) write(`  renamed   ${rename.from} -> ${rename.to}`);
   sayTheLayout(false);
   sayWhatIsOff();

@@ -26,15 +26,8 @@ export const DEFAULT_CORE_BUDGET_WORDS = 4500;
 const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudget'> & { target: string | null } =
   { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudget: { words: DEFAULT_CORE_BUDGET_WORDS, fails: false } };
 
-/**
- * `coreBudget` as `check` reads it, or a refusal. The byte ceiling it replaced is refused with the line that replaces
- * it, because a ceiling silently ignored is one nobody knows has stopped applying.
- */
+/** `coreBudget` as `check` reads it, or a refusal. */
 function checkCoreBudget(parsed: Record<string, unknown>): Manifest['coreBudget'] {
-  if ('coreBudgetBytes' in parsed) {
-    throw new DaorisError(`${MANIFEST_FILE} has coreBudgetBytes, which is retired: the always-loaded doctrine's ceiling `
-      + `is in words — replace it with "coreBudget": { "words": ${DEFAULT_CORE_BUDGET_WORDS} }`);
-  }
   const value = parsed.coreBudget;
   if (value === undefined) return DEFAULTS.coreBudget;
   const words = (value as Record<string, unknown> | null)?.words;
@@ -170,8 +163,7 @@ export function writeLock(root: string, lock: Lock): void {
   const sorted = {
     version: LOCK_VERSION,
     canonVersion: lock.canonVersion,
-    // Beside the version it qualifies; absent only in a lock written before it.
-    ...(lock.canonDigest !== undefined ? { canonDigest: lock.canonDigest } : {}),
+    canonDigest: lock.canonDigest,
     source: lock.source,
     entries: [...lock.entries].sort((a, b) => compareOrdinal(a.target, b.target)),
     // Only when something is off, so a lock that switches nothing is byte-for-byte unchanged.
@@ -181,8 +173,7 @@ export function writeLock(root: string, lock: Lock): void {
     // The same for the layout: absent means the older one, so a lock on it is unchanged.
     ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
     ...(lock.target !== undefined ? { target: lock.target } : {}),
-    // Where the index is written; absent in a lock from before it, which reads as none yet.
-    ...(lock.index !== undefined ? { index: lock.index } : {}),
+    index: lock.index,
     ...(lock.mirrors?.length
       ? { mirrors: [...lock.mirrors].sort((a, b) => compareOrdinal(a.path, b.path)) }
       : {}),

@@ -107,12 +107,12 @@ export function planSync(
       }
       const { meta } = parseFrontmatter(body, []);
 
-      // Kept: the region is rebuilt with this repository's text of the rule, its lock entry carried as a span where it still
-      // names a file (the migration below deletes it). With no text here nothing is written; for a core rule `keepStates` refuses.
+      // Kept: the region is rebuilt with this repository's text of the rule, its lock entry carried. With no text here
+      // nothing is written; for a core rule `keepStates` refuses.
       if (keep) {
         if (onDisk !== null) {
           const fresh = { pack: file.pack, source: file.source, target: file.target, canonVersion: canon.version, sha256: sha256(onDisk), in: region.file };
-          const was = entry?.in ? entry : { ...fresh, ...(entry ? { canonVersion: entry.canonVersion } : {}) };
+          const was = entry ?? fresh;
           writes.push({ ...file, content: onDisk, sha256: was.sha256, state: 'unchanged', in: region.file, ...(meta ? { meta } : {}), kept: was });
         }
         continue;
@@ -232,28 +232,7 @@ export function planSync(
   const wanted = new Set(selected.map((file) => file.target));
   const deletes = [...locked.keys()].filter((target) => !wanted.has(target));
 
-  // 🔴 THE MIGRATION. A lock entry that says a rule is a FILE, for a rule now wanted in the region,
-  // is not caught by the retirement rule above, and without this the adopter ends up holding it in both
-  // places: the region loads it and the stale file sits beside it looking authoritative.
-  //
-  // A moved file that DRIFTED is not deleted. `upstream` can still save that edit, which is the whole
-  // difference between this and an edited retirement, so it refuses as ordinary drift.
-  for (const write of writes) {
-    if (!write.in) continue;
-    const entry = locked.get(write.target);
-    if (!entry || entry.in) continue;
-
-    const abs = join(root, from, write.target);
-    if (!existsSync(abs)) continue;
-    if (sha256(readText(abs)) !== entry.sha256) {
-      if (!drifted.includes(write.target)) drifted.push(write.target);
-      continue;
-    }
-
-    deletes.push(write.target);
-  }
-
-  // ...but not one the repo has improved. Retirement is the most destructive
+  // A retirement does not take a file the repo has improved. Retirement is the most destructive
   // thing sync does, and a retained file that drifted refuses, so a retired one must too. It is
   // also the worst moment to lose an edit, because the canonical file it belonged to is gone,
   // so `upstream` is no longer a way to save it.
@@ -282,8 +261,8 @@ export function planSync(
   // 🔴 Never paired as a rename: a pack's replacement reads like the core row it switches off, by
   // design, and "renamed task-lifecycle -> ticket-lifecycle" would hide the decision behind a move.
   const renames = detectRenames({ writes, deletes: retiring, previous: previousAt });
-  // A span that leaves is gone once the region is rewritten; only a FILE-backed entry (an entry from
-  // before spans, or a migrating rule's old file) has anything on disk at its target for `applySync` to remove.
+  // A span that leaves is gone once the region is rewritten; only a FILE-backed entry (a knowledge document or a
+  // skill) has anything on disk at its target for `applySync` to remove.
   const leavesRegion = deletes.filter((target) => locked.get(target)?.in !== undefined);
 
   // The mirror, over the source tree as this sync leaves it: the canonical files with the
