@@ -137,7 +137,7 @@ public sealed class TaskNodeTests : NodeRunFixture
 
         var task = Assert.Single(runtime.HeldSteps());
         Assert.Equal((RunId, "sign", RunHome.Repository, RunId, PersonWaits.Approval, StepRoles.Owner), (task.Run, task.Node, task.Repository, task.Work, task.Why, task.Role));
-        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject], task.Presses.Where(press => press != NodeWordActs.Skip));
+        Assert.Equal([NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Stop], task.Presses.Where(press => press != NodeWordActs.Skip));
 
         // A refusal is a rejection, so it takes the person's words as a review's changes do.
         Assert.False(Press("sign", NodeWordActs.Reject).Done);

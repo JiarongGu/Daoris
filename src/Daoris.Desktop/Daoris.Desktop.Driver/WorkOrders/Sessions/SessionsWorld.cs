@@ -20,6 +20,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// </summary>
     public InstanceWorld? Instance { get; init; }
 
+    /// <summary>
+    /// Who a stop that reaches a run's steps speaks as at the settle door (<see cref="SettleBy.OfChannel"/>): the route's channel where a
+    /// window runs the verb, null for the person's own terminal, which a stop makes the owner role's.
+    /// </summary>
+    public SettleBy? Speaker { get; init; }
+
     /// <summary>How long a request is waited for unless a world says otherwise: ten seconds.</summary>
     public static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(10);
 

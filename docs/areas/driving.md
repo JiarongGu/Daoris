@@ -238,7 +238,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 ### States and the end
 
 36. A session record moves forward only: `Queued`, `Starting`, `Working`, `AwaitingPerson` or `AwaitingStep`, then `Completed`,
-    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped. A parked session still holds its tree, and so does the
+    `Declined`, `StoodDown`, `Failed` or `Stopped`. Every live state may be stopped by the person, at *Stop…* and `session stop <id>` (one
+    implementation, `SessionsEnding.StopAsync`; `SessionStopCensusTests` holds every state the page counts active): a process here
+    stopped, a start or a working record nothing here runs ended as an orphan, a parked one stopped unanswered, and one awaiting its
+    run's step stopped with that run (D316, `RunWaitStops`): every step of the run a stop reaches is stopped through the run's node door
+    as their own `workflow stop`, at the settle door as the channel's speaker, and the run's end ends the session; the answer names the
+    steps, or says why none was stopped. A parked session still holds its tree, and so does the
     newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83) `AwaitingStep` (`awaiting-step`)
     is a session whose agent's turn ended while its work goes through its workflow (D293): open, holding its tree, running no process, its
     note's `waits.step` part naming the run it waits on and, where known, the step, its attempt and the tip (`StepWait`; `waits.check`
@@ -328,7 +333,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     is named with that pause by *Try again* and by its own resume, which changes nothing and names the resume that carries it on
     (`PauseHolder`). Work is abandoned by a listed second press that discards only what
     nothing else holds and stops every live step of its runs as the person's, with their reason. A run with a step waiting on the
-    person lists its newest session in Needs you. A session is in one of five states, read once by `SessionStateReader` in this
+    person lists its newest session in Needs you, one awaiting the run's step included, its waits on its row; one awaiting a step of a
+    run that waits on no person works, awaiting a step. A session is in one of five states, read once by `SessionStateReader` in this
     order: needs you (a park's question, a run's wait, a policy's hold, an unclosed quest, the steward's stop, a sign-in, a done left
     unfinished), failed (nothing carries it on), working (live or going on; an open conversation whose turn ended, its record
     still `working`, shows `idle`), pending (queued, or its next start held) and done

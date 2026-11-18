@@ -89,6 +89,7 @@
   "work.milestone.held.act.happened": "It happened",
   "work.milestone.held.act.did-not": "It did not: try again",
   "work.milestone.held.act.stop": "Stop this step",
+  "work.milestone.held.act.stopAsk": "Stop this step…",
   "work.milestone.held.word.happened": "it happened",
   "work.milestone.held.word.did-not": "it did not",
   "work.milestone.held.word.stop": "stop",

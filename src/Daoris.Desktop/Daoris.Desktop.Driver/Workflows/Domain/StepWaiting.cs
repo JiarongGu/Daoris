@@ -142,7 +142,7 @@ public sealed record RoleWait(string Why, string Role, StepHolder Holder, DateTi
 /// <param name="Workspace">The run's workspace.</param>
 /// <param name="Why">The wait it stands at (<see cref="PersonWaits"/>).</param>
 /// <param name="Role">The role it waits on.</param>
-/// <param name="Presses">The step's own words that settle it (<see cref="RunNodeWords.Acts"/>), never its stop, which ends the work.</param>
+/// <param name="Presses">The step's own words that settle it (<see cref="RunNodeWords.Acts"/>), and its stop, which ends the work, where it offers one.</param>
 /// <param name="Work">The run's newest work quest here, or null.</param>
 /// <param name="Since">Since when it waits.</param>
 public sealed record HeldStep(
@@ -208,7 +208,9 @@ public static class HeldSteps
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
         if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
 
-        var presses = RunNodeWords.Acts(node, status).Where(act => act != NodeWordActs.Stop).ToList();
+        // Its stop too where the node offers one: the owner role's end of the work (D312), so a step whose only act is its stop, a
+        // plugin's held by the person, still has a press where it waits (SESSIONCLOSE1).
+        var presses = RunNodeWords.Acts(node, status).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;

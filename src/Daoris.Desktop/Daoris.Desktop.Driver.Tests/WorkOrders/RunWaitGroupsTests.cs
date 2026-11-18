@@ -96,6 +96,23 @@ public sealed class RunWaitGroupsTests
         Assert.Equal(SessionGroup.Working, Row(look, "s1").Group);
     }
 
+    /// <summary>
+    /// SESSIONCLOSE1: a session awaiting its run's step, the run's `release` held by the person's `operations`, sat under Working for days
+    /// and Needs you said nothing; one whose run waits on no person still works, awaiting a step.
+    /// </summary>
+    [Fact]
+    public void A_session_awaiting_its_run_s_step_needs_you_where_the_run_waits_on_you_and_works_where_it_waits_on_no_person()
+    {
+        var held = Look([Record("s1", "awaiting-step", "q1", 0)], [Quest("q1", "Taken")], [Waits("q1", "release", PersonWaits.Actor) with { Role = "operations" }]);
+        var none = Look([Record("s1", "awaiting-step", "q1", 0)], [Quest("q1", "Taken")], []);
+
+        var row = Row(held, "s1");
+
+        Assert.Equal((SessionGroup.NeedsYou, PersonWaits.Actor, ShownState.AwaitingStep), (row.Group, row.Reason, row.Shown));
+        Assert.Equal([("q1", "release", "operations")], row.Waits!.Select(wait => (wait.Run, wait.Node, wait.Role)));
+        Assert.Equal((SessionGroup.Working, ShownState.AwaitingStep, null), (Row(none, "s1").Group, Row(none, "s1").Shown, Row(none, "s1").Waits));
+    }
+
     [Fact]
     public void The_terminals_needs_you_group_lists_each_waiting_run_with_what_it_waits_for_and_the_run_it_opens()
     {

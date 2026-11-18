@@ -135,18 +135,33 @@ export const useResolveSession = () => useMutation({
  * What the driver answered a stop: whether it ended anything, and whether what it ended is an
  * orphan — a record that said it ran when nothing on this machine ran it.
  */
-export type StopAnswer = { stopped: boolean; orphan?: boolean; elsewhere?: boolean };
+export type StopAnswer = { stopped: boolean; orphan?: boolean; elsewhere?: boolean; run?: RunStopAnswer | null };
+
+/**
+ * A session awaiting its run's step: the person's stop of that run (D316), the steps whose stop is kept, or the driver's reason none
+ * is, in its words.
+ */
+export type RunStopAnswer = { run: string; steps: string[]; refused: string | null; node: string | null; why: string | null };
 
 /**
  * The notice for a stop, from the driver's answer — never the person's words for an ending that is
- * not theirs. Both doors to a stop (the frame's, the quest record's) say it the same way.
+ * not theirs. Both doors to a stop (the frame's, the quest record's) say it the same way; a stop that stopped nothing of the run its
+ * session awaits says why, as an error.
  */
-export const stopNotice = (answer: StopAnswer) =>
-  answer.orphan ? 'quests.session.orphanEnded'
+export const stopNotice = (answer: StopAnswer, id: string): { key: string; values: Record<string, string>; error: boolean } => {
+  const run = answer.run;
+  if (run) {
+    return answer.stopped
+      ? { key: 'quests.session.runStopped', values: { id, run: run.run, steps: run.steps.join(', ') }, error: false }
+      : { key: 'quests.session.runNotStopped', values: { id, run: run.run, why: run.why ?? run.refused ?? '' }, error: true };
+  }
+  const key = answer.orphan ? 'quests.session.orphanEnded'
     : answer.stopped ? 'quests.session.stopped'
       // Another Daoris process here runs it — a terminal's — so the record still says working.
       : answer.elsewhere ? 'quests.session.runElsewhere'
         : 'quests.session.notRunning';
+  return { key, values: { id }, error: false };
+};
 
 export const useStopSession = () => useMutation({
   mutationFn: (id: string) => call('STOP_SESSION', { id }) as Promise<StopAnswer>,

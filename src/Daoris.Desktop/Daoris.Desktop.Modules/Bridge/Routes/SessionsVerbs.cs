@@ -31,6 +31,8 @@ internal static class SessionsVerbs
             StopTurn = (id, _) => ConversationRoutes.KeepingStopAsync(loop, id),
             // A verb's line on a session's record is the loop's, so one writer numbers it.
             Notes = (id, note) => HandOverAskNotes.Say(loop.Events, loop.Output, id, note),
+            // A stop that reaches a run's steps speaks as the route's channel at the settle door, as a node's word does (D312, D316).
+            Speaker = CastRoutes.SpeakerOf(null),
         };
     }
 

@@ -128,6 +128,8 @@
   "quests.session.orphanEnded": "会话 {{id}} 在本机已没有任何进程在运行——记录现已如实注明。",
   "quests.session.notRunning": "会话 {{id}} 并未在这里运行——它如何结束，记录里写着。",
   "quests.session.runElsewhere": "会话 {{id}} 由本机另一个 Daoris 进程（某个终端）运行——请在那里停止它。",
+  "quests.session.runStopped": "会话 {{id}} 在等运行 {{run}}：你对它的停止已记在 {{steps}}，Daoris 下一次查看时会结束这次运行，会话随之结束。",
+  "quests.session.runNotStopped": "会话 {{id}} 在等运行 {{run}}，但它没有任何部分被停止：{{why}}",
   "quests.detail.pause": "暂缓…",
   "quests.detail.pauseMeanIt": "确认暂缓委托",
   "quests.detail.resume": "恢复",
