@@ -580,14 +580,14 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 
     /// <summary>
     /// A record's words as a reader reads them: each thing the person said, and each run of the agent's
-    /// chunks joined into one message — broken, as the page breaks it, by anything but a quiet event (<see cref="SessionEventText.Quiet"/>).
+    /// chunks joined into one message — broken, as the page breaks it, by anything but a quiet event (<see cref="SessionEvent.Quiet"/>).
     /// </summary>
     private static IEnumerable<(long Seq, string Kind, string Text)> Passages(string path)
     {
         (long Seq, System.Text.StringBuilder Text)? message = null;
         foreach (var e in Lines(path))
         {
-            if (SessionEventText.Quiet(e)) continue;
+            if (e.Quiet()) continue;
             if (e.Kind == SessionEventKind.Message)
             {
                 message ??= (e.Seq, new System.Text.StringBuilder());
@@ -644,6 +644,12 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 
         return Path.Combine(directory, $"{sessionId}.events.jsonl");
     }
+
+    /// <summary>The calls a subagent's own record holds, for the stream it ran on; null where that stream is no subagent's or none is kept.</summary>
+    public IReadOnlyList<SessionEvent>? ChildCalls(string sessionId, string stream) =>
+        ChildRecords.ChildOf(stream) is { } child && new ChildRecords(directory).Read(sessionId, child) is { } own
+            ? [.. own.Where(e => e.Kind == SessionEventKind.Tool)]
+            : null;
 
     /// <summary>The head standing for a long record's file (<see cref="SessionEventHeads"/>), or null where the file is read whole.</summary>
     private SessionEventHead? Headed(string sessionId) => SessionEventHeads.In(directory)?.Of(sessionId, PathOf(sessionId));

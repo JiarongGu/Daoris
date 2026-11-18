@@ -42,10 +42,7 @@ public sealed class AskDaorisSecondCheck(
         new TurnEvidence(events.After(session, 0).Events, Lines(ChildLineage.PathOf(home, session)), presses(session))
         {
             Held = held(session),
-            // A delegated child's calls, from its own record: its words there are no call.
-            Streams = stream => ChildRecords.ChildOf(stream) is { } child && new ChildRecords(home).Read(session, child) is { } own
-                ? [.. own.Where(e => e.Kind == SessionEventKind.Tool)]
-                : null,
+            Streams = stream => events.ChildCalls(session, stream),
         });
 
     private bool On()

@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// <para><b>Numbered and stamped here</b>, from one, as the session's record is: a page reads it after a number, and the second check
 /// orders its calls by the moment.</para>
 /// </remarks>
-public sealed class ChildRecords(string home)
+public sealed class ChildRecords(string directory, Func<DateTimeOffset>? clock = null)
 {
     private static readonly object Gate = new();
     private static readonly Dictionary<string, long> Latest = new(StringComparer.OrdinalIgnoreCase);
@@ -34,7 +34,7 @@ public sealed class ChildRecords(string home)
     public string? PathOf(string session, string child) =>
         SessionEventText.IsLocalId(session) && child.Length is > 0 and <= 120
             && child.All(each => char.IsAsciiLetterOrDigit(each) || each is '-' or '_' or '.') && child.Trim('.').Length > 0
-            ? DaorisHome.Entry(home, HomeEntry.Sessions, session, Folder, child + ".jsonl")
+            ? Path.Combine(directory, session, Folder, child + ".jsonl")
             : null;
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed class ChildRecords(string home)
             lock (Gate)
             {
                 var seq = (Latest.TryGetValue(path, out var last) ? last : Count(path)) + 1;
-                var stamped = SessionEventText.Bound(e) with { Seq = seq, At = e.At == default ? DateTimeOffset.UtcNow : e.At };
+                var stamped = SessionEventText.Bound(e) with { Seq = seq, At = e.At == default && clock is not null ? clock() : e.At };
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 File.AppendAllText(path, JsonSerializer.Serialize(stamped, SessionEventText.Json) + "\n");
                 Latest[path] = seq;

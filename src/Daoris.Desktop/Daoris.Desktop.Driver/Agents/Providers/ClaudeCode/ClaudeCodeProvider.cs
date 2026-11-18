@@ -85,8 +85,6 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 // Its servers inherit its environment (the driven path through the repository's own `.mcp.json`).
                 ServersInherit: Known<bool>.Declared(true, Evidence),
-                // Its stream says each subagent's and background command's start and end, each with its call (`task_started`'s
-                // `tool_use_id`); it has no request that stops one alone.
                 ReportsChildren: Known<bool>.Declared(true, NativeBesideEvidence),
                 ReportsTasks: Known<bool>.Declared(true, NativeBesideEvidence),
                 OneTaskStopped: Known<bool>.Declared(false, NativeBesideEvidence),
@@ -109,8 +107,6 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 WordsAtNextStep: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
                 Steering: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
-                // Each subagent announced and ended, its card in its `Agent` call's place; each task announced, its call in its first
-                // progress, stopped alone where it says `canStop`; no request stops a subagent alone.
                 ReportsChildren: Known<bool>.Declared(true, ProtocolBesideEvidence),
                 ReportsTasks: Known<bool>.Declared(true, ProtocolBesideEvidence),
                 OneTaskStopped: Known<bool>.Declared(true, ProtocolBesideEvidence),

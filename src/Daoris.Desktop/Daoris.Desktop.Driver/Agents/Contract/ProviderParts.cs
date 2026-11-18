@@ -98,10 +98,8 @@ public sealed record PosturesPart(string? Ordinary, string? Asking, string? Full
 /// door states nothing of reads as its transport's default or absent (<see cref="AbilityReading"/>); the transport's wiring
 /// (rules and servers on the wire, set at open, held on the wire, resumes by restart) is not an ability and is not stated here.
 /// </summary>
-/// <param name="OneTaskStopped">It stops one background task alone, where its harness marks the task stoppable.</param>
-/// <param name="ReportsChildren">Its wire says each subagent's start and end, so the session's record keeps them.</param>
-/// <param name="ReportsTasks">Its wire says each background task's start and end, so the session's record keeps them.</param>
-/// <param name="OneChildStopped">It stops one subagent alone.</param>
+/// <param name="ReportsChildren">Its wire says each subagent's start and end.</param>
+/// <param name="ReportsTasks">Its wire says each background task's start and end.</param>
 public sealed record AbilitiesPart(
     Known<bool> Interactive,
     Known<bool> Resumes,

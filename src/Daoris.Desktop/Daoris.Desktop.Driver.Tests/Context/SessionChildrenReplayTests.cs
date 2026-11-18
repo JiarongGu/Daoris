@@ -19,7 +19,7 @@ public sealed class SessionChildrenReplayTests : IDisposable
     {
         Directory.CreateDirectory(_home);
         _events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
-        _children = new ChildRecords(_home);
+        _children = new ChildRecords(DaorisHome.Entry(_home, HomeEntry.Sessions));
     }
 
     public void Dispose() => Directory.Delete(_home, recursive: true);

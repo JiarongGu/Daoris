@@ -24,11 +24,10 @@ public sealed class ChildRecordsCensusTests : IDisposable
     public void Dispose() => Directory.Delete(_home, recursive: true);
 
     /// <summary>The files beside its keeper that may open a subagent's own record: the record's part of a run's sink, the two roots that wire
-    /// it, the second check that reads a delegated child's calls, and the record that forgets it with its session.</summary>
+    /// it, and the session record that reads a child's calls and forgets it with its session.</summary>
     private static readonly string[] Readers =
     [
-        "Context/Events/RecordReadings.cs", "Loop/Chat/ChatWatch.cs", "Loop/Run/Hold/SessionHold.cs",
-        "Help/SecondCheck/AskDaorisSecondCheck.cs", "Context/Events/SessionEventLog.cs",
+        "Context/Events/RecordReadings.cs", "Loop/Chat/ChatWatch.cs", "Loop/Run/Hold/SessionHold.cs", "Context/Events/SessionEventLog.cs",
     ];
 
     [Fact]
@@ -55,7 +54,7 @@ public sealed class ChildRecordsCensusTests : IDisposable
         _events.Append("s1", new SessionEvent { Kind = SessionEventKind.Child, Id = "a1", Call = "toolu_ag", Depth = 1, Name = "Reader", By = "reported" });
         _events.Append("s1", new SessionEvent { Kind = SessionEventKind.Message, Text = "The session's own answer." });
         _events.Append("s1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
-        var children = new ChildRecords(_home);
+        var children = new ChildRecords(DaorisHome.Entry(_home, HomeEntry.Sessions));
         children.Keep("s1", "a1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = ChildWords });
         children.Keep("s1", "a1", new SessionEvent { Kind = SessionEventKind.Message, Text = ChildWords });
         children.Keep("s1", "a1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "toolu_child", Title = ChildWords });

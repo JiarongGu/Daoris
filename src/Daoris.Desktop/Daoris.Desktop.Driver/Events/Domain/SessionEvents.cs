@@ -476,6 +476,9 @@ public sealed record SessionEvent
     /// <c>reported</c> where its door said it, <c>inferred</c> for an end only its session's close implies.
     /// </summary>
     public string? By { get; init; }
+
+    /// <summary>True for an event no run of the agent's message chunks breaks at: a usage reading, or a child's or task's start or end.</summary>
+    public bool Quiet() => Kind is SessionEventKind.Usage or SessionEventKind.Child or SessionEventKind.Task;
 }
 
 /// <summary>
@@ -582,12 +585,6 @@ public static class SessionEventText
         var window = TextBounds.OneLine(text[start..end]);
         return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
     }
-
-    /// <summary>
-    /// An event no run of the agent's message chunks breaks at, as every reader of its words and the page join them: a usage reading,
-    /// or a child's or task's start or end beside the session, which can come while the agent is still writing.
-    /// </summary>
-    public static bool Quiet(SessionEvent e) => e.Kind is SessionEventKind.Usage or SessionEventKind.Child or SessionEventKind.Task;
 
     /// <summary>An event with each large field cut to its limit, saying its full length.</summary>
     internal static SessionEvent Bound(SessionEvent e) => e with

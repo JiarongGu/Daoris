@@ -24,7 +24,6 @@ public sealed class AcpStreamsTests
 
         Assert.Equal(
             [
-                // A root's child's call is its card, under its own id; a nested one's has none.
                 new WireReading.ChildSeen("a1", ChildSignal.Announced) { Call = "a1", Depth = 1, Name = new string('n', 130), Task = task },
                 new WireReading.ChildSeen("a2", ChildSignal.Announced) { Parent = "a1", Name = "Nested", Task = "look" },
                 new WireReading.ChildSeen("a3", ChildSignal.Announced),

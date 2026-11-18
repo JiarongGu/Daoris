@@ -109,7 +109,6 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
             var child = ChildOf(parent);
             var mapped = child.Words.Read(frame);
             foreach (var text in mapped.Lines) streams.Line(child.StreamId, text);
-            // Its own words and calls, mapped as the session's are, for its own record.
             foreach (var e in mapped.Events) streams.Said(child.StreamId, e);
             return true;
         }

@@ -26,9 +26,7 @@ namespace Daoris.Driver;
 /// <para><b>Each child and task is a reading</b>: its announcement one <see cref="WireReading.ChildSeen"/> or
 /// <see cref="WireReading.TaskStarted"/> and the end its wire says one <see cref="WireReading.ChildEnded"/> or
 /// <see cref="WireReading.TaskEnded"/>, in the wire's own words, which the part's lineage and the session's record keep; never the end a
-/// session's close gives it: that is its process's own <c>end</c> line. A subagent's starting call is the card this door writes in the
-/// <c>Agent</c> call's place, under the subagent's own id; a task's is the <c>toolCallId</c> its announcement names. A subagent's own
-/// events go to its stream (<see cref="ISessionStreams.Said"/>), which keeps them in its own record.</para>
+/// session's close gives it: that is its process's own <c>end</c> line.</para>
 /// </remarks>
 internal sealed class AcpStreams(
     ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null,
@@ -197,7 +195,6 @@ internal sealed class AcpStreams(
 
         children?.Read(new WireReading.ChildSeen(id, ChildSignal.Announced)
         {
-            // The card below stands in the Agent call's place, under the child's own id; a nested child has none.
             Call = onRoot ? id : null,
             Parent = parent,
             Depth = onRoot ? 1 : null,
@@ -356,7 +353,6 @@ internal sealed class AcpStreams(
             lock (_gate) state = task.State ?? SessionStream.SessionEnded;
             Started(task, null);
             if (state == SessionStream.SessionEnded) streams.Line(task.StreamId, EndedWithSession);
-            // The wire's own last word; an end only its session's close gives is its stream's alone.
             else children?.Read(new WireReading.TaskEnded(task.Id, state));
             Ended(SessionStreamKind.Task, task.StreamId, task.Name, state);
         }
