@@ -61,6 +61,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   const askAgain = act === 'ask-again';
   const goOn = act === 'go-on';
   const stopNode = act === 'stop-node';
+  const failedKey = act === 'step-again' ? 'tryAgain' : act === 'step-outside' ? 'doneOutside' : null;
   // What ending a quiet session does, and that the person's waiting words go to the next part.
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
   const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
@@ -77,6 +78,8 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     ? t('workflow.run.node.goOnSays', { node: item.declined?.node ?? '' })
     : stopNode
     ? t('workflow.run.node.stopSays', { node: item.step?.node ?? '' })
+    : failedKey
+    ? t(`workflow.run.node.${failedKey}Says`, { node: item.step?.node ?? '' })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
     : act === 'approve'
@@ -101,6 +104,8 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     ? t('workflow.run.node.goOnMeanIt')
     : stopNode
     ? t('workflow.run.node.stopMeanIt')
+    : failedKey
+    ? t(`workflow.run.node.${failedKey}MeanIt`)
     : notYet
     ? t('review.ask.notYetMeanIt')
     : act === 'approve'

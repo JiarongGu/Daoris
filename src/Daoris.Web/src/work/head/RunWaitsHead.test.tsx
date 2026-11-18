@@ -56,6 +56,19 @@ describe('RunWaitsHead', () => {
     expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'sign', act: 'approve', epoch: 3, words: null });
   });
 
+  it('offers the step a run ended failed at its Try again, Done outside Daoris and End this work, whatever its quest', async () => {
+    const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'push', act: 'again', done: true });
+    const row: StepWaitRow = { run: 'q7', node: 'push', why: 'left', role: 'lead', holder: 'person', presses: ['again', 'done-outside', 'stop'] };
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'push', why: 'left', role: 'lead' }]} steps={[row]} onWord={onWord} />);
+
+    const line = screen.getByRole('group', { name: 'push: waiting on lead: you' });
+    expect(within(line).getByRole('button', { name: 'Done outside Daoris…' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'End this work…' })).toBeInTheDocument();
+    await userEvent.click(within(line).getByRole('button', { name: 'Try again…' }));
+    await userEvent.click(within(line).getByRole('button', { name: 'Try again' }));
+    expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'push', act: 'again', words: null });
+  });
+
   it('says nothing where no step of its run waits on the person', () => {
     const { container } = render(<RunWaitsHead waits={[]} steps={[SIGN]} />);
     expect(container).toBeEmptyDOMElement();
@@ -74,7 +87,7 @@ describe('RunWaitsHead', () => {
   });
 });
 
-// Every `PersonWaits.All` kind (read by its census) has its card here; a `carried` one's press is on the card that carries it.
+// Every `PersonWaits.All` kind in every run state (its census's `<kind>@<state>` past a run going on) has its card; a `carried` one's press is on the card that carries it.
 const CENSUS: Record<string, { presses: string[]; held?: StepWaitRow['held'] } | 'carried'> = {
   'accept': 'carried',
   'approval': { presses: ['approve', 'reject', 'skip'] },
@@ -84,12 +97,14 @@ const CENSUS: Record<string, { presses: string[]; held?: StepWaitRow['held'] } |
   'choose': { presses: ['stop'] },
   'actor': { presses: ['done-outside'], held: { unit: 'run:q7', attempt: 1, words: ['done-outside'] } },
   'left': 'carried',
+  'left@failed-held': { presses: ['again', 'done-outside', 'stop'] },
   'vacant': { presses: ['skip', 'stop'] },
   'pass': { presses: ['skip', 'stop'] },
 };
 
 describe('RunWaitsHead, every wait', () => {
-  it.each(Object.entries(CENSUS))('draws `%s` with its press where a step row carries one', (why, carries) => {
+  it.each(Object.entries(CENSUS))('draws `%s` with its press where a step row carries one', (kind, carries) => {
+    const why = kind.split('@')[0];
     const steps: StepWaitRow[] = carries === 'carried' ? [] : [{ run: 'q7', node: 'step', why, role: 'someone', holder: 'person', ...carries }];
     render(<RunWaitsHead waits={[{ run: 'q7', node: 'step', why, role: 'someone' }]} steps={steps} onWord={vi.fn()} onHeld={vi.fn()} />);
 

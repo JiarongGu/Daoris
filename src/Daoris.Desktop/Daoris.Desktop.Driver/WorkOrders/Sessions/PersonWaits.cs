@@ -10,6 +10,9 @@ public sealed record PersonWait(string Run, string Node, string Why, string Repo
 {
     /// <summary>The role it waits on (<see cref="StepWaiting.Read"/>): a plugin's actor as its plugin names it, else its wait's role.</summary>
     public string Role { get; init; } = "";
+
+    /// <summary>Whether its run ended failed at it (<see cref="FailedHeldRuns"/>): its own <c>step</c> row carries it, whatever its quest's state.</summary>
+    public bool Ended { get; init; }
 }
 
 /// <summary>
@@ -40,7 +43,7 @@ public static class PersonWaits
     /// <summary>A plugin step waiting on a role the person holds (<see cref="StepWaiting"/>): its act is taken on its plugin's page.</summary>
     public const string Actor = "actor";
 
-    /// <summary>A step failed and kept for the person, or the step a run ended failed at, after its quest's done: what follows it never ran.</summary>
+    /// <summary>A step failed and kept for the person after its quest's done, or the step a run ended failed at whatever its quest's state: what follows it never ran.</summary>
     public const string Left = "left";
 
     /// <summary>An <c>opinion</c> its gate holds for want of a reviewer: the vacancy goes up to the line's lead (<see cref="OpinionVacancy"/>).</summary>

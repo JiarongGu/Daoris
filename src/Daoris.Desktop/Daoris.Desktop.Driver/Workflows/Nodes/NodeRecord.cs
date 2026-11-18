@@ -293,7 +293,17 @@ public static class NodeWordActs
 
     public static readonly IReadOnlyList<string> Choices = ReturnChoices.All;
 
-    public static readonly IReadOnlyList<string> All = [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, Decide, KeepYours, TakeSession, KeepBoth];
+    /// <summary><i>Try again</i> on a failed step with no attempt held for the person: the table's failed to ready by the person, a new attempt.</summary>
+    public const string Again = HeldResolutions.Again;
+
+    /// <summary>
+    /// <i>Done outside Daoris</i> on a failed step whose kind reads its proof (a push: origin's ref at the landed tip): the person's claim, kept
+    /// on its status, which moves nothing; the step's observation is its evidence and settles it (<see cref="RunNodeWords.Outside"/>).
+    /// </summary>
+    public const string DoneOutside = HeldResolutions.DoneOutside;
+
+    public static readonly IReadOnlyList<string> All =
+        [Skip, Stop, AskAgain, GoOn, Accept, Changes, Send, Done, Approve, Reject, Decide, KeepYours, TakeSession, KeepBoth, Again, DoneOutside];
 }
 
 /// <summary>
