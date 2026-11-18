@@ -29,7 +29,6 @@ public sealed class HelpTreeWalkTests
             return new TreeWork(1, 0);
         }
 
-        // No part answers: the first wait, of none, is past.
         var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, first: TimeSpan.Zero).WaitAsync(Poll.Patience);
 
         Assert.Equal(trees.Select(SessionGroups.Normal).Order(StringComparer.OrdinalIgnoreCase), read.Trees.Keys.Order(StringComparer.OrdinalIgnoreCase));

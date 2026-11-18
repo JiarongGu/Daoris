@@ -26,7 +26,7 @@ public sealed class SessionListWalksTests : IDisposable
     {
         var tree = Path.Combine(new SessionTrees(_home).TreesRoot, "default", "engine", name);
         Directory.CreateDirectory(tree);
-        File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
+        File.WriteAllText(Path.Combine(tree, "part.txt"), "part\n");
         return tree;
     }
 

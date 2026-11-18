@@ -61,7 +61,6 @@ public sealed class SessionListBudgetProcessTests(ITestOutputHelper output) : IA
             Assert.True(watch.Elapsed < Budget, $"the list took {watch.ElapsedMilliseconds} ms, past {Budget.TotalMilliseconds} ms");
         }
 
-        // The start's other costs on this home, said: the large tree's walk, as the facts' parts make it, and the service's host again.
         var walk = Stopwatch.StartNew();
         var work = await new SessionTrees(Home.Bench.Home).WorkAsync(Home.Bench.Large.Tree);
         output.WriteLine($"the large tree's walk ({Home.Bench.Built} built files): {walk.ElapsedMilliseconds} ms; {work}");

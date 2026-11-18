@@ -24,7 +24,7 @@ internal static class ListedTrees
 
     /// <summary>
     /// <paramref name="look"/>, its <paramref name="rows"/> placed from what is recorded, with the trees of the rows needing the person
-    /// walked through <paramref name="walk"/>, as <c>walks</c> in <paramref name="times"/>, and the rows read again where one was.
+    /// walked through <paramref name="walk"/>, as <c>walks</c> in <paramref name="times"/>, and the rows read again after a walk.
     /// </summary>
     /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>).</param>
     /// <param name="walk"><see cref="SessionTrees.WorkAsync"/>, git's walk of one tree; a test hands its own.</param>

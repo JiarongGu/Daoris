@@ -35,7 +35,6 @@ public sealed class SessionListRouteProcessTests(ITestOutputHelper output) : Dri
         Redirect("DAORIS_HOME", Bench.Home);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        // Said, not held: the shell's own start besides the window's, its loop's come-up and its first look's settling.
         var watch = Stopwatch.StartNew();
         await loop.ComeUpAsync(Bench.Client);
         output.WriteLine($"the loop's come-up: {watch.ElapsedMilliseconds} ms");

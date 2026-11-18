@@ -16,8 +16,7 @@ internal static class SessionsListing
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         times ??= new LookTimes();
-        // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account. Its rows are placed from what
-        // is recorded, no tree walked, as the window's are; then the trees of the rows needing the person alone (ListedTrees).
+        // A fresh plan sees no cool-off: the look reads the home's. Rows from the records, then only rows needing you walk (ListedTrees).
         var look = await SessionGroups.LookAsync(
                 world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, only: [], ct: ct, coolingOf: world.CoolingOf, times: times)
             .ConfigureAwait(false);
