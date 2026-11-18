@@ -4,7 +4,7 @@
   "apiVersion": 1,
   "name": "Azure DevOps",
   "version": "4.7.0",
-  "changes": "The release manager's acts are its own tools: create-release and start-stage make their fact once, read first, and release-status reads the stage to its approval and its end, each answering a receipt Daoris journals on the step the agent holds. The release steps stay for runs bound to them; approve-release stays no agent's tool.",
+  "changes": "The release manager's acts are its own tools: create-release and start-stage make their fact once, read first, and release-status reads the stage to its approval and its end, each answering a receipt Daoris journals on the step the agent holds. The release steps stay for runs bound to them; approve-release stays no agent's tool, and given a release id Azure DevOps does not answer it says the release was not found.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

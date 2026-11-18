@@ -231,14 +231,25 @@ export function measureAlone(root, units) {
   spawnSync(process.execPath, [join(root, 'tools', 'reached-checks.mjs'), '--measure', '--classes', units.join(',')], { cwd: root, stdio: 'inherit', windowsHide: true });
 }
 
-/** When this ratchet's run began (`run-start.json`'s `startedAt`, which the run writes), or null: older records are never a red. */
-export function runStart(dir) {
+export const GATE_START = 'VERIFY_CHECKS_STARTED_AT';
+
+/** `npm run verify:checks` hands its steps its start (`GATE_START`, epoch ms) unless an enclosing run handed one. */
+export function withGateStart(env, at) {
+  const held = Number(env[GATE_START]);
+  return Number.isFinite(held) && held > 0 ? env : { ...env, [GATE_START]: String(at) };
+}
+
+/** When this run began: the later of `run-start.json` (the merge) and the gate start in `env`, or null; older records are never a red. */
+export function runStart(dir, env = process.env) {
+  const starts = [];
   try {
-    const marked = Number(JSON.parse(readFileSync(join(dir, 'run-start.json'), 'utf8')).startedAt);
-    return Number.isFinite(marked) ? marked : null;
+    starts.push(Number(JSON.parse(readFileSync(join(dir, 'run-start.json'), 'utf8')).startedAt));
   } catch {
-    return null;
+    starts.length = 0;
   }
+  starts.push(Number(env[GATE_START] || NaN));
+  const known = starts.filter((at) => Number.isFinite(at));
+  return known.length ? Math.max(...known) : null;
 }
 
 /** A scan's tests timed only under load, measured again alone when `free()`, else left unmeasured; they fail nothing for time. */

@@ -26,10 +26,15 @@ async function approved(args) {
   if (!repo) throw new Refusal('no-origin', `\`${args.origin}\` names no Azure DevOps repository`);
   const decision = args.decision === 'reject' ? 'rejected' : args.decision === 'approve' ? 'approved' : null;
   if (!decision) throw new Refusal('bad-args', 'the decision is `approve` or `reject`');
-  const release = (await releases(repo, 'GET', `/releases/${Number(args.release)}`)).json;
+  const read = await releases(repo, 'GET', `/releases/${Number(args.release)}`);
+  if (read.status !== 200 || read.json?.id === undefined) {
+    const why = typeof read.json?.message === 'string' ? `: ${read.json.message.slice(0, 160)}` : '';
+    return { said: [`Release ${args.release} was not found in Azure DevOps (${read.status})${why}; the id is the page's releaseId, not its name: nothing is changed.`], exit: 1 };
+  }
+  const release = read.json;
   const environment = (release?.environments ?? []).find((each) => String(each.definitionEnvironmentId) === String(args.stage) || each.name === args.stage);
   const pending = (environment?.preDeployApprovals ?? []).find((each) => each.status === 'pending');
-  if (!pending) return { said: [`${release?.name ?? `Release ${args.release}`} has no approval of ${args.stage} pending: nothing is changed.`], exit: 1 };
+  if (!pending) return { said: [`${release.name ?? `Release ${args.release}`} has no approval of ${args.stage} pending: nothing is changed.`], exit: 1 };
   const set = await releases(repo, 'PATCH', `/approvals/${pending.id}`, { status: decision, comments: String(args.comment ?? '') });
   if (set.status !== 200) throw new Refusal('rejected', `Azure DevOps did not take the ${args.decision} (${set.status})`);
   return { said: [`${environment.name} of ${release.name} ${decision}.`], exit: 0 };
