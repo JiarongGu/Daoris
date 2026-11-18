@@ -3,7 +3,7 @@
   <!--
     The dependency tier of the desktop store's SQLite adapter: the contract cases the fake passes, run on the real engine over real
     files, and what only the file adds (the journal, the read-only open). It runs when the adapter's fingerprint differs from its row of
-    daoris.adapters.lock, and never in a unit half.
+    daoris.packages.lock, and never in a unit half.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

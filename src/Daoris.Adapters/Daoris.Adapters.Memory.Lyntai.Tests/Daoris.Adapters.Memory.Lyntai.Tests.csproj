@@ -2,7 +2,7 @@
 
   <!--
     The dependency tier of the memory engine's Lyntai adapter: the contract cases the stand-in passes, run on Lyntai's engines over a
-    real file. It runs when the adapter's fingerprint differs from its row of daoris.adapters.lock, and never in a unit half.
+    real file. It runs when the adapter's fingerprint differs from its row of daoris.packages.lock, and never in a unit half.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

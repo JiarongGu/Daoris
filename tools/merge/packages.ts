@@ -11,13 +11,12 @@
  *   node tools/merge/packages.ts check              the gate: every package's row holds its fingerprint (exit 0 kept, 1 stale)
  *   node tools/merge/packages.ts release <name>     run the package's suite and, green, write its row
  *   node tools/merge/packages.ts show               each package's fingerprint, for a reader
- *   node tools/merge/packages.ts carriers           the local branches and detached worktrees whose HEAD still holds the adapters' lock
  *
  * The fingerprint is taken at a commit and never of a dirty tree, so a row means what the commit holds.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,18 +24,6 @@ export const PACKAGE_ROOTS: readonly string[] = ['src/Daoris.Adapters', 'src/Dao
 export const MANIFEST = 'daoris.package.json';
 export const LOCK_FILE = 'daoris.packages.lock';
 export const PORTS_ROOT = 'src/Daoris.Ports';
-
-/**
- * The older readings, each kept for records the adapters' own lock and tool wrote, and each with its end:
- * - the adapters' tool hashed a package's folder with its manifest named `adapter.json`, and its rows came into this lock byte for byte,
- *   so a row is also kept where the folder, its manifest read under that name, still gives it. Each check names the rows kept so;
- *   when none is (each package released again), `CARRIED_MANIFEST`, `carriedTree` and `Sight.listing` are deleted. The comments of
- *   those packages' project files that name the old lock and manifest are rewritten at the same release, since an edit moves the row;
- * - a tree that holds `daoris.adapters.lock` is a branch made before the move, which the check refuses; `carriers` lists the refs
- *   that hold it, and when it lists none, `OLD_LOCK` and its reading are deleted.
- */
-export const OLD_LOCK = 'daoris.adapters.lock';
-const CARRIED_MANIFEST = 'adapter.json';
 
 /** Where each kind of outside pin is written; a package names another versions file in its manifest's `pins`. */
 const NUGET_PINS = 'src/Daoris.Desktop/Directory.Packages.props';
@@ -81,29 +68,17 @@ export type Lock = { schema: 2; packages: Record<string, LockRow> };
 
 export type Package = { name: string; folder: string };
 
-/** A folder's entry as git lists it. */
-export type Entry = { mode: string; tree: boolean; sha: string; name: string };
-
 /** What a fingerprint reads of a commit: the tree hashes of paths, the text of a file, and the packages it holds. */
 export interface Sight {
   tree(path: string): string | null;
   text(path: string): string | null;
   dirty(paths: string[]): string[];
   packages(): Package[];
-  listing(path: string): Entry[] | null;
 }
 
 const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
 
 const escaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/** The id git gives a tree of these entries: its object's SHA-1, the entries in git's order (a folder's name as if it ended in `/`). */
-export function treeHash(entries: readonly Entry[]): string {
-  const key = (entry: Entry): Buffer => Buffer.from(entry.tree ? `${entry.name}/` : entry.name);
-  const body = Buffer.concat([...entries].sort((a, b) => Buffer.compare(key(a), key(b)))
-    .map((entry) => Buffer.concat([Buffer.from(`${entry.mode.replace(/^0+/, '')} ${entry.name}\0`), Buffer.from(entry.sha, 'hex')])));
-  return createHash('sha1').update(Buffer.concat([Buffer.from(`tree ${body.length}\0`), body])).digest('hex');
-}
 
 /** <value> with each `$(Property)` replaced by what <props> sets it to, as the build reads the committed file; null where one is unset. */
 function expanded(value: string, props: string, depth = 0): string | null {
@@ -142,37 +117,21 @@ function folderOf(name: string, sight: Sight): string {
   return found.folder;
 }
 
-/** The tree of a package's folder as the adapters' tool hashed it, its manifest under that tool's name; null where it cannot be. */
-function carriedTree(folder: string, sight: Sight): string | null {
-  const entries = sight.listing(folder);
-  if (!entries?.some((entry) => entry.name === MANIFEST)) return null;
-  return treeHash(entries.map((entry) => (entry.name === MANIFEST ? { ...entry, name: CARRIED_MANIFEST } : entry)));
-}
-
 /** The fingerprint of a package at the sight's commit; throws where an input is not there, which the declaration is wrong for. */
 export function fingerprintOf(name: string, sight: Sight, seen: string[] = []): Computed {
-  return fingerprintBy(name, sight, seen, false)!;
-}
-
-/** `carried` takes it as the adapters' tool took it (its folder with the manifest under that tool's name), null where it cannot be. */
-function fingerprintBy(name: string, sight: Sight, seen: string[], carried: boolean): Computed | null {
   if (seen.includes(name)) throw new Error(`${name} is built over itself: ${[...seen, name].join(' -> ')}`);
   const folder = folderOf(name, sight);
   const manifest = manifestAt(folder, sight);
-  if (carried && (manifest.sources || manifest.evals)) return null;
-  const tree = carried ? carriedTree(folder, sight) : manifest.sources
+  const tree = manifest.sources
     ? sha(JSON.stringify(Object.fromEntries([...manifest.sources].sort().map((path) => [path, need(sight.tree(path), path)]))))
     : need(sight.tree(folder), folder);
-  if (tree === null) return null;
   const ports: Record<string, string> = {};
   for (const port of [...manifest.ports].sort()) ports[port] = need(sight.tree(`${PORTS_ROOT}/${port}`), `${PORTS_ROOT}/${port}`);
   const outside: Record<string, string> = {};
   for (const pin of [...manifest.outside].sort()) outside[pin] = need(pinOf(pin, sight, manifest.pins), `the pin of ${pin}`);
   const over: Record<string, string> = {};
   for (const other of [...(manifest.over ?? [])].sort()) {
-    const built = fingerprintBy(other, sight, [...seen, name], carried);
-    if (built === null) return null;
-    over[other] = built.fingerprint;
+    over[other] = fingerprintOf(other, sight, [...seen, name]).fingerprint;
   }
   const suite = need(sight.tree(manifest.tests), manifest.tests);
   const contract = Object.fromEntries([...manifest.contract].sort().map((path) => [path, need(sight.tree(path), path)]));
@@ -197,15 +156,14 @@ export function manifestAt(folder: string, sight: Pick<Sight, 'text'>): Manifest
   return manifest as Manifest;
 }
 
-export type Verdict = { name: string; state: 'kept' | 'stale' | 'missing'; fingerprint: string; row: string | null; carried?: true };
+export type Verdict = { name: string; state: 'kept' | 'stale' | 'missing'; fingerprint: string; row: string | null };
 
-/** Each package's fingerprint against its row: kept where equal (or equal as the adapters' tool took it), stale where different, missing where there is no row. */
+/** Each package's fingerprint against its row: kept where equal, stale where different, missing where there is no row. */
 export function judge(lock: Lock, sight: Sight): Verdict[] {
   return sight.packages().map((each) => each.name).sort().map((name): Verdict => {
     const { fingerprint } = fingerprintOf(name, sight);
     const row = lock.packages[name]?.fingerprint ?? null;
     if (row === fingerprint) return { name, fingerprint, row, state: 'kept' };
-    if (row !== null && row === fingerprintBy(name, sight, [], true)?.fingerprint) return { name, fingerprint, row, state: 'kept', carried: true };
     return { name, fingerprint, row, state: row === null ? 'missing' : 'stale' };
   });
 }
@@ -249,15 +207,6 @@ export function gitSight(root: string, ref = 'HEAD'): Sight {
         .filter((path) => path.length > root.length + 1 && !path.endsWith('.Tests'))
         .map((path) => ({ name: path.slice(root.length + 1), folder: path }));
     }),
-    listing: (path) => {
-      const listed = git('ls-tree', '-z', `${ref}:${path}`);
-      if (listed === null) return null;
-      return listed.split('\0').filter(Boolean).map((line) => {
-        const [meta, name] = line.split('\t') as [string, string];
-        const [mode, type, object] = meta.split(' ') as [string, string, string];
-        return { mode, tree: type === 'tree', sha: object, name };
-      });
-    },
   };
 }
 
@@ -275,47 +224,18 @@ export function writeLock(root: string, lock: Lock): void {
   renameSync(`${path}.tmp`, path);
 }
 
-/** The local branches, and the worktrees on no branch, whose HEAD still holds the adapters' lock. */
-export function carriers(root: string): string[] {
-  const git = gitIn(root);
-  const branches = (git('for-each-ref', '--format=%(refname:short)', 'refs/heads') ?? '').split('\n').filter(Boolean);
-  const detached = (git('worktree', 'list', '--porcelain') ?? '').split(/\n\n/).filter((block) => /^detached$/m.test(block))
-    .map((block) => ({ at: /^worktree (.+)$/m.exec(block)?.[1] ?? '', head: /^HEAD (\w+)$/m.exec(block)?.[1] ?? '' }));
-  return [
-    ...branches.filter((branch) => git('cat-file', '-e', `${branch}:${OLD_LOCK}`) !== null),
-    ...detached.filter(({ head }) => git('cat-file', '-e', `${head}:${OLD_LOCK}`) !== null).map(({ at, head }) => `${at} (${head.slice(0, 10)})`),
-  ];
-}
-
 const toolchain = (): string => {
   const dotnet = execFileSync('dotnet', ['--version'], { encoding: 'utf8', windowsHide: true }).trim();
   return sha(`${process.version}\0${dotnet}`);
 };
 
-/** A branch made before the move holds the adapters' lock: its rows that differ from this lock's are what it released there. */
-function refuseOldLock(root: string): number {
-  let released: string[] = [];
-  try {
-    const old = JSON.parse(readFileSync(join(root, OLD_LOCK), 'utf8')) as { adapters?: Record<string, LockRow> };
-    const kept = readLock(root).packages;
-    released = Object.entries(old.adapters ?? {}).filter(([name, row]) => kept[name]?.fingerprint !== row.fingerprint).map(([name]) => name);
-  } catch {
-    released = [];
-  }
-  console.error(`packages-lock: this tree holds ${OLD_LOCK}, which ${LOCK_FILE} replaced: it is a branch made before the move, so merge main into it`
-    + `${released.length ? `, and release again what it released there (${released.join(', ')}) with node tools/merge/packages.ts release <name>` : ''}`);
-  return 1;
-}
-
 /** The gate: a line per package, and failure where a row is stale or missing, naming the run the package needs. */
 export function check(root: string, sight: Sight = gitSight(root)): number {
-  if (existsSync(join(root, OLD_LOCK))) return refuseOldLock(root);
   const lock = readLock(root);
   let stale = 0;
   for (const verdict of judge(lock, sight)) {
     const at = verdict.fingerprint.slice(0, 12);
-    if (verdict.carried) console.log(`packages-lock: ${verdict.name} kept as the adapters' lock wrote it (${verdict.row?.slice(0, 12)}): its next release writes it at ${at}`);
-    else if (verdict.state === 'kept') console.log(`packages-lock: ${verdict.name} kept (${at}): its suite runs nothing`);
+    if (verdict.state === 'kept') console.log(`packages-lock: ${verdict.name} kept (${at}): its suite runs nothing`);
     else {
       stale += 1;
       console.error(`packages-lock: ${verdict.name} is ${verdict.state} (${at} against ${verdict.row?.slice(0, 12) ?? 'no row'}): run node tools/merge/packages.ts release ${verdict.name}`);
@@ -359,13 +279,7 @@ function main(args: string[]): number {
       for (const each of sight.packages().map((one) => one.name).sort()) console.log(`${each} ${fingerprintOf(each, sight).fingerprint}`);
       return 0;
     }
-    if (command === 'carriers') {
-      const held = carriers(root);
-      for (const ref of held) console.log(ref);
-      console.log(held.length ? `packages-lock: ${held.length} ref(s) still hold ${OLD_LOCK}` : `packages-lock: no local branch or worktree holds ${OLD_LOCK}`);
-      return 0;
-    }
-    console.error('usage: node tools/merge/packages.ts check | release <name> | show | carriers');
+    console.error('usage: node tools/merge/packages.ts check | release <name> | show');
     return 2;
   } catch (error) {
     console.error(`packages-lock: ${(error as Error).message}`);

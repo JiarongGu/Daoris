@@ -3,7 +3,7 @@
   <!--
     The dependency tier of the machine's adapter: the contract cases the scripted fake passes, run on the machine's admission and the
     user's seal, and what only the machine has (a person's reserved place, the background's bound). It runs when the adapter's
-    fingerprint differs from its row of daoris.adapters.lock, and never in a unit half.
+    fingerprint differs from its row of daoris.packages.lock, and never in a unit half.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

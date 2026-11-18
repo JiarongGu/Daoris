@@ -4,7 +4,7 @@
     The desktop store's SQLite adapter: the one project that names the engine's types. The application writes its SQL against the
     standard library's connection and transaction and reaches this through the ports a root hands it. It sits under no tree's
     Directory.Build.props, so its packages are versioned here, at the versions the desktop tree pins (Directory.Packages.props), and
-    adapter.json names the same two for the fingerprint.
+    daoris.package.json names the same two for the fingerprint.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

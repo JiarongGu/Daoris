@@ -3,7 +3,7 @@
   <!--
     The machine's adapter: the places process starts take, and the seal of a secret kept for the user this runs as. The application
     reaches it through the processes' ports a root hands it and never names it. It sits under no tree's Directory.Build.props, so its
-    one package is versioned here, at the version the desktop tree pins (Directory.Packages.props), and adapter.json names it for the
+    one package is versioned here, at the version the desktop tree pins (Directory.Packages.props), and daoris.package.json names it for the
     fingerprint.
   -->
   <PropertyGroup>
