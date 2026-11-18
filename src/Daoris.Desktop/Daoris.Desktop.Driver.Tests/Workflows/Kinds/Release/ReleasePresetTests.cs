@@ -35,30 +35,43 @@ public sealed class ReleasePresetTests : NodeRunFixture
         RunNodeWords.Word(Files, RunId, "config-needed", NodeWordActs.Decide, why, () => _now, outcome: outcome, holder: holder);
 
     [Fact]
-    public void The_preset_releases_in_observed_steps_then_decides_the_config_change_and_checks_the_release()
+    public void The_preset_releases_by_the_release_managers_acts_beside_the_approval_then_decides_the_config_change_and_checks_the_release()
     {
         var shipped = WorkflowDefaults.Of(Preset);
         Assert.NotNull(shipped);
         var graph = NodeGraphs.Read(shipped!.GraphJson, onSave: true).Graph!;
         Assert.Empty(NodeGraphs.Problems(graph));
-        Assert.Equal(
-            ["daoris-azure-devops/release-target", "daoris-azure-devops/release-create", "daoris-azure-devops/release-start",
-             "daoris-azure-devops/release-approve", "daoris-azure-devops/release-watch"],
-            graph.Nodes.Where(node => node.Kind.Contains("/release-", StringComparison.Ordinal)).Select(node => node.Kind));
+        // The graph keeps the role's step and the approval it must meet: no fixed step per act, and no target in its options.
+        Assert.Equal(["daoris-azure-devops/release-approve"], graph.Nodes.Where(node => node.Kind.Contains("/release-", StringComparison.Ordinal)).Select(node => node.Kind));
+        var release = graph.Nodes.Single(node => node.Id == "release");
+        Assert.Equal(("task", "release-path"), (release.Kind, StepReceipts.Knowledge(release)));
+        Assert.Equal(["release-created", "stage-started", "stage-ended"], StepReceipts.Mapped(release).Values);
+        Assert.Equal(["release", "started", "ended"], TaskEvidence.Required(release));
+        Assert.DoesNotContain(release.Options.Keys, name => name is "pipeline" or "releaseDefinition" or "stage" or "action");
         Assert.True(TaskDecisions.Is(graph.Nodes.Single(node => node.Id == "config-needed")));
-        Assert.Contains(graph.Wires, wire => wire.From?.Node == "release-watch" && wire.To?.Node == "config-needed");
+        Assert.Contains(graph.Wires, wire => wire.From?.Node == "release" && wire.To?.Node == "config-needed");
+        Assert.Contains(graph.Wires, wire => wire.From?.Node == "release-approve" && wire.To?.Node == "config-needed");
         Assert.Contains(graph.Wires, wire => wire.Kind == WireKinds.When && wire.From?.Node == "config-needed" && wire.Outcome == "needed" && wire.To?.Node == "config-change");
         Assert.Equal("check-release", graph.End);
-        // The preset declares the role of each step after the merge where it is not the kind's own, so a run says whom it waits on; the
-        // watch takes a plugin step's own, written as none, so a copy of the preset closes no going back by it.
         Assert.Equal(
-            [("release-target", StepRoles.ReleaseManager), ("release-create", StepRoles.ReleaseManager), ("release-start", StepRoles.ReleaseManager),
-             ("release-approve", StepRoles.Approver), ("release-watch", StepRoles.Operations), ("config-needed", StepRoles.ReleaseManager),
+            [("release", StepRoles.ReleaseManager), ("release-approve", StepRoles.Approver), ("config-needed", StepRoles.ReleaseManager),
              ("config-change", StepRoles.ConfigChanger), ("check-release", StepRoles.Operations)],
-            graph.Nodes.SkipWhile(node => node.Id != "release-target").Select(node => (node.Id, StepRoles.Of(node))));
-        Assert.Null(graph.Nodes.Single(node => node.Id == "release-watch").Role);
+            graph.Nodes.SkipWhile(node => node.Id != "release").Select(node => (node.Id, StepRoles.Of(node))));
         // The bundled release step stays the older preset's, so saved versions of it keep it.
         Assert.Contains(NodeGraphs.Read(WorkflowDefaults.Of("release")!.GraphJson).Graph!.Nodes, node => node.Kind == NodeKinds.Release);
+    }
+
+    [Fact]
+    public void A_run_bound_to_the_fixed_release_steps_keeps_them_its_plugin_still_declares_each()
+    {
+        var manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "daoris-azure-devops", "plugin.json")))!;
+        var steps = manifest["steps"]!.AsArray().Select(step => (string?)step!["id"]).ToList();
+
+        // The reader kept for runs bound before the actor form: each fixed step still performs, until no unended run names them.
+        Assert.Subset(steps.ToHashSet(), new HashSet<string?> { "release-target", "release-create", "release-start", "release-approve", "release-watch" });
+        var commands = manifest["interfaces"]!["commands"]!.AsArray().Where(command => (bool?)command!["tool"] == true).Select(command => (string?)command!["name"]).ToList();
+        Assert.Subset(commands.ToHashSet(), new HashSet<string?> { "create-release", "start-stage", "release-status" });
+        Assert.DoesNotContain("approve-release", commands);
     }
 
     [Fact]

@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.6.0",
-  "changes": "A release its holder names settles create where its commit is the landed one or descends from it, and is refused naming the commit it carries otherwise. Each release step's evidence carries the identity Azure DevOps credits (`by`) beside its words. The window's approval card runs approve-release, still no agent's tool.",
+  "version": "4.7.0",
+  "changes": "The release manager's acts are its own tools: create-release and start-stage make their fact once, read first, and release-status reads the stage to its approval and its end, each answering a receipt Daoris journals on the step the agent holds. The release steps stay for runs bound to them; approve-release stays no agent's tool.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -55,6 +55,36 @@
         "args": [
           { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
           { "name": "pipeline", "type": "text", "title": { "en": "Build pipeline's id", "zh": "构建流水线编号" } }
+        ] },
+      { "name": "create-release", "title": { "en": "Create the release", "zh": "创建发布" },
+        "about": { "en": "The release manager's act: makes a release of the named definition from the merged pull request's build, once, keyed by its effect, or takes the one that already carries its commit, whoever made it; its data is the receipt Daoris journals on the step it holds (fact release-created).", "zh": "发布负责人的动作：用已合并拉取请求的构建为指定的发布定义创建一次发布（按效果键，不会重复），已有携带该提交的发布则直接采用，无论由谁创建；数据为 Daoris 记入其所持步骤的回执（事实 release-created）。" },
+        "tool": true, "writes": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "pull-request", "type": "text", "title": { "en": "Merged pull request's id or address", "zh": "已合并拉取请求的编号或地址" }, "required": true },
+          { "name": "pipeline", "type": "text", "title": { "en": "Build pipeline's id", "zh": "构建流水线编号" }, "required": true },
+          { "name": "release-definition", "type": "text", "title": { "en": "Release definition's id", "zh": "发布定义编号" }, "required": true },
+          { "name": "stage", "type": "text", "title": { "en": "Stage's id", "zh": "阶段编号" }, "required": true }
+        ] },
+      { "name": "start-stage", "title": { "en": "Start the stage", "zh": "启动阶段" },
+        "about": { "en": "The release manager's act: starts the named stage of the release carrying the merged commit, once, or takes it started by its trigger or a person; a stage asking an approval then waits on its approver. Its data is the receipt (fact stage-started).", "zh": "发布负责人的动作：启动携带已合并提交的发布中的指定阶段，只启动一次；已由触发器或某人启动则直接采用；需要审批的阶段随后等待审批人。数据为回执（事实 stage-started）。" },
+        "tool": true, "writes": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "pull-request", "type": "text", "title": { "en": "Merged pull request's id or address", "zh": "已合并拉取请求的编号或地址" }, "required": true },
+          { "name": "pipeline", "type": "text", "title": { "en": "Build pipeline's id", "zh": "构建流水线编号" }, "required": true },
+          { "name": "release-definition", "type": "text", "title": { "en": "Release definition's id", "zh": "发布定义编号" }, "required": true },
+          { "name": "stage", "type": "text", "title": { "en": "Stage's id", "zh": "阶段编号" }, "required": true }
+        ] },
+      { "name": "release-status", "title": { "en": "How the stage stands", "zh": "阶段的状态" },
+        "about": { "en": "Reads the named stage of the release carrying the merged commit: ended (succeeded, or failed), or waiting, naming the approver a pending approval waits on. It writes nothing; its data is the receipt (fact stage-ended).", "zh": "读取携带已合并提交的发布中的指定阶段：已结束（成功或失败），或仍在等待，并指出待审批项所等待的审批人。它不写入任何内容；数据为回执（事实 stage-ended）。" },
+        "tool": true,
+        "args": [
+          { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
+          { "name": "pull-request", "type": "text", "title": { "en": "Merged pull request's id or address", "zh": "已合并拉取请求的编号或地址" }, "required": true },
+          { "name": "pipeline", "type": "text", "title": { "en": "Build pipeline's id", "zh": "构建流水线编号" }, "required": true },
+          { "name": "release-definition", "type": "text", "title": { "en": "Release definition's id", "zh": "发布定义编号" }, "required": true },
+          { "name": "stage", "type": "text", "title": { "en": "Stage's id", "zh": "阶段编号" }, "required": true }
         ] },
       { "name": "approve-release", "title": { "en": "Approve or reject a release stage", "zh": "批准或拒绝发布阶段" },
         "about": { "en": "The approver's own press: approves or rejects the pending approval of a release's stage through the approver's own sign-in. No agent is handed it.", "zh": "审批人自己的操作：通过审批人自己的登录批准或拒绝某个发布阶段的待审批项。不会交给任何代理。" },
