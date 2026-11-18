@@ -1161,12 +1161,8 @@ describe('a park\'s go-aheads', () => {
       expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
-    // The head lists them, saying where they are answered, with no press and no field of its own.
-    const head = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    expect(within(head).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(head).queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(within(head).queryByLabelText('your words, if any')).toBeNull();
-    expect(head).toHaveTextContent('Each is answered in the box below, with your words there.');
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
     // The park's own card and box stay: with no question recorded, it is answered in words.
     expect(screen.getByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
@@ -1289,33 +1285,25 @@ describe('a park\'s go-aheads', () => {
    * screen, and the head lists the go-aheads with no press.
    */
   it('answers a go-ahead in the box at the foot through the same door, no strip beside it, whether or not the head is on screen', async () => {
-    const watched = watchScreen();
-    try {
-      const notify = vi.fn();
-      show('g0ah3ad0', notify);
-      const ask = await screen.findByRole('region', { name: 'It asks you' });
-      // Outside the conversation's scroll, above the box's field.
-      expect(screen.getByRole('main').contains(ask)).toBe(false);
-      expect(ask.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-      const head = screen.getByRole('region', { name: 'Go-aheads it asked' });
-      await waitFor(() => expect(watched.observers().flatMap((one) => one.targets)).toContain(head));
-      for (const onScreen of [true, false]) {
-        watched.show(onScreen);
-        expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
-        expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
-        expect(ask.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
-      }
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    // Outside the conversation's scroll, above the box's field.
+    expect(screen.getByRole('main').contains(ask)).toBe(false);
+    expect(ask.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    // The head draws none and the dock none the box answers: the box holds every press.
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+    expect(ask.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
 
-      const second = within(ask).getAllByRole('listitem')[1]!;
-      await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
+    const second = within(ask).getAllByRole('listitem')[1]!;
+    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
-      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
-        payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
-      }));
-      expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
-    } finally {
-      watched.restore();
-    }
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true },
+    }));
+    expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
   });
 
   /**
@@ -1398,8 +1386,6 @@ describe('a park\'s go-aheads', () => {
       } : DRIVER_STATE));
       show('g0ah3ad0');
       const call = await screen.findByText('ask for a go-ahead');
-      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
-      watched.show(true);
       expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
 
       const block = call.closest<HTMLElement>('[data-block]')!;
@@ -1720,12 +1706,11 @@ describe('a session\'s rule proposal', () => {
 
   const said = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
 
-  it('stands in its head and at the foot, and not another session\'s', async () => {
+  it('stands in the dock, not the head, and not another session\'s', async () => {
     show('r3st1ng0');
     const strip = await screen.findByRole('region', { name: 'Waiting on you' });
     expect(within(strip).getByRole('listitem')).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
-    const head = screen.getByRole('region', { name: 'Rules it proposed' });
-    expect(within(head).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
     expect(screen.queryByText(/Bash\(git push:\*\)/)).toBeNull();
   });
 
@@ -1757,8 +1742,8 @@ describe('a session\'s rule proposal', () => {
   it('declines it in one press, telling the session nothing', async () => {
     const notify = vi.fn();
     show('r3st1ng0', notify);
-    const head = await screen.findByRole('region', { name: 'Rules it proposed' });
-    await userEvent.click(within(head).getByRole('button', { name: 'Decline' }));
+    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+    await userEvent.click(within(strip).getByRole('button', { name: 'Decline' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: false } }));
     expect(notify).toHaveBeenCalledWith('Declined: allow Bash(git branch -D:*) for repository engine. The rules are as they were.');

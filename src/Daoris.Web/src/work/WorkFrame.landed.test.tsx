@@ -216,7 +216,7 @@ describe('a session’s page header and its acts', () => {
     });
     show('s1a2b3c4');
 
-    const section = await screen.findByRole('region', { name: 'Tool calls held for your answer' });
+    const section = await screen.findByRole('region', { name: /waiting on you/i });
     expect(section).toHaveTextContent('npm test');
     const user = userEvent.setup();
     await user.click(within(section).getByRole('button', { name: 'Allow once' }));
@@ -249,8 +249,8 @@ describe('a session’s page header and its acts', () => {
     });
     show('c0ffee11');
 
-    const asks = await screen.findByRole('region', { name: /Co-work/ });
-    expect(within(asks).getByText('The agent asked · waits for your yes')).toBeInTheDocument();
+    const asks = await screen.findByRole('region', { name: /waiting on you/i });
+    expect(within(asks).getByText(/Is the cap right\?/)).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(within(asks).getByRole('button', { name: 'Let it ask' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 'c0ffee11', ask: 'a1' } });
@@ -438,14 +438,15 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * The header says its word, its title and its facts; its id is its ⋯'s and its
+   * The header says its state line (the reader's, here none read yet), its title and its facts; its id is its ⋯'s and its
    * record's *Details*, and the record under it says neither its word nor its title again.
    */
-  it('names the session in its header with its word and its facts, its id in Details alone', async () => {
+  it('names the session in its header with its state line and its facts, its id in Details alone', async () => {
     show('s1a2b3c4');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).closest('header')!;
-    expect(within(header).getByText('working')).toBeInTheDocument();
+    expect(within(header).getByText('Reading its state')).toBeInTheDocument();
+    expect(within(header).queryByText('working')).toBeNull();
     expect(within(header).getByText(/^engine · /)).toBeInTheDocument();
     expect(within(header).queryByText('s1a2b3c4')).toBeNull();
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
@@ -961,10 +962,11 @@ describe('acting on what a session landed', () => {
     });
 
     show('s1a2b3c4', vi.fn());
-    // The head's, in the main area: the strip at the foot draws the same line.
-    const head = within(screen.getByRole('main'));
+    // The dock above the box draws the line; the head in the main area draws none.
+    const head = within(await screen.findByRole('region', { name: /waiting on you/i }));
     const door = await head.findByRole('button', { name: 'Open outputs' });
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
+    expect(within(screen.getByRole('main')).queryByRole('button', { name: 'Open outputs' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1' }) });
 
@@ -1036,6 +1038,7 @@ describe('acting on what a session landed', () => {
     };
     const turn = (taking: boolean) => act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking }));
     const diffs = () => invoke.mock.calls.filter((call) => call[1] === 'SESSION_DIFF').length;
+    const dockDoor = () => waitFor(() => expect(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Open outputs' })).toBeInTheDocument());
 
     // A review read before the turn's last commit must not be reused at its end, within the 15 s a live review
     // is fresh for, or a turn that committed offers nothing; and a stale answer that offered must not stay pressable while it is read again.
@@ -1052,8 +1055,7 @@ describe('acting on what a session landed', () => {
       turn(true);
       review = () => BEYOND;
       turn(false);
-      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
+      await dockDoor();
 
       // The next turn's answer is not in yet: the one before it, which offered, offers nothing meanwhile.
       turn(true);
@@ -1073,15 +1075,14 @@ describe('acting on what a session landed', () => {
       expect(screen.queryByRole('button', { name: 'Open outputs' })).not.toBeInTheDocument();
     });
 
-    it('offers its *Review* door at its foot and its head once the turn has ended', async () => {
+    it('offers its *Review* door in the dock alone once the turn has ended', async () => {
       SESSIONS = [TALK];
       invoke.mockImplementation(answering(BEYOND));
 
       show('c0ffee11');
-      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
-      // The head's and the foot's, one door.
-      expect(screen.getAllByRole('button', { name: 'Open outputs' })).toHaveLength(2);
+      await dockDoor();
+      // One door, the dock's: the head draws none.
+      expect(screen.getAllByRole('button', { name: 'Open outputs' })).toHaveLength(1);
       expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     });
 
@@ -1108,8 +1109,7 @@ describe('acting on what a session landed', () => {
       expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
 
       act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
-      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-      expect(await within(strip).findByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
+      await dockDoor();
     });
 
     it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
@@ -1124,8 +1124,8 @@ describe('acting on what a session landed', () => {
     });
   });
 
-  // The strip stands aside while the head's waits are on screen, and is up while they are not.
-  it('stands the strip aside while the head’s Review door is on screen, and keeps it where the head is off screen', async () => {
+  // The dock holds the one Review door, whether or not the head is on screen.
+  it('keeps the dock up with the one Review door, whether the head is on screen or not', async () => {
     const watched = watchScreen();
     try {
       SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
@@ -1140,15 +1140,10 @@ describe('acting on what a session landed', () => {
       });
       show('s1a2b3c4', vi.fn());
       await screen.findAllByRole('button', { name: 'Open outputs' });
-      await waitFor(() => expect(watched.observers()).not.toHaveLength(0));
-      watched.show(false);
-      const strip = screen.getByRole('region', { name: 'Waiting on you' });
-      expect(within(strip).getByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
-
-      // The head on screen, the strip stands aside: the head's *Review* is the one on screen.
-      watched.show(true);
-      await waitFor(() => expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull());
-      expect(within(screen.getByRole('main')).getAllByRole('button', { name: 'Open outputs' }).length).toBeGreaterThan(0);
+      for (const onScreen of [false, true]) {
+        watched.show(onScreen);
+        expect(within(screen.getByRole('region', { name: 'Waiting on you' })).getAllByRole('button', { name: 'Open outputs' })).toHaveLength(1);
+      }
     } finally {
       watched.restore();
     }
@@ -1186,8 +1181,8 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    // The head's, in the main area: the strip at the foot draws the same gate.
-    const head = within(screen.getByRole('main'));
+    // The dock above the box draws the gate; the head draws none.
+    const head = within(await screen.findByRole('region', { name: 'Waiting on you' }));
     const gate = await head.findByRole('region', { name: 'Second opinion' });
     expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
     await within(gate).findByText('Drops the last row.');
@@ -1223,8 +1218,8 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    // The head's, in the main area: the strip at the foot draws the same line.
-    const head = within(screen.getByRole('main'));
+    // The dock above the box draws the line; the head draws none.
+    const head = within(await screen.findByRole('region', { name: 'Waiting on you' }));
     await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());

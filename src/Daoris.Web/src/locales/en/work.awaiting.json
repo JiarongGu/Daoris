@@ -25,7 +25,6 @@
   "work.awaiting.yourAnswer": "Your answer",
   "work.awaiting.goesOn": "The same session goes on with this answer at the driver's next look.",
   "work.awaiting.goAheads": "Go-aheads it asked",
-  "work.awaiting.goAheadsLead": "This session goes on once every go-ahead it asked is answered, here or on its ask, with your answers at the driver's next look. Every session on the ask is handed them.",
   "work.awaiting.goAheadApproved": "Approved go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
   "work.awaiting.goAheadRefused": "Refused go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
   "work.awaiting.goAheadOnly": "Answered go-ahead #{{number}}.",

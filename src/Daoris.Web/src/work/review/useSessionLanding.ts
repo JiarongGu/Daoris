@@ -121,14 +121,12 @@ export function useSessionLanding({
     onError: (error) => answered.refused(sentence(error)),
   }) : undefined;
 
-  // Where the work's ask (*Discard branch…*) is open: in the head or at the foot, never both.
-  const [workAsk, setWorkAsk] = useState<{ session: string; at: 'head' | 'foot' } | null>(null);
-  const workAskAt = (at: 'head' | 'foot'): WorkAsk | undefined => (attended ? {
-    open: workAsk?.session === attended.id && workAsk.at === at,
-    onOpen: (open) => setWorkAsk((was) => (open
-      ? { session: attended.id, at }
-      : was?.session === attended.id && was.at === at ? null : was)),
-  } : undefined);
+  // The session whose work's ask (*Discard branch…*) is open.
+  const [asking, setAsking] = useState<string | null>(null);
+  const workAsk: WorkAsk | undefined = attended ? {
+    open: asking === attended.id,
+    onOpen: (open) => setAsking((was) => (open ? attended.id : was === attended.id ? null : was)),
+  } : undefined;
   // How many of its line of work's parts offer work to land, which the together door's own Accept lands as one.
   const entryOffered = attendedEntry && here
     ? attendedEntry.parts.filter((part) => (groups ?? []).some((row) => row.session === part.session && row.lands)).length
@@ -137,6 +135,6 @@ export function useSessionLanding({
 
   return {
     lands, behind, ownBranch, landing, reviewRun, gateHolds, headReview, headOpinion, discards, discardHeld, landsNow,
-    discardsNow, workAskAt, entryOffered, landEntry,
+    discardsNow, workAsk, entryOffered, landEntry,
   };
 }

@@ -7,7 +7,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// Every state the page counts active (<c>SESSION_ACTIVE</c>) has a person's stop at <c>session stop &lt;id&gt;</c>, the one the window's Stop runs.
 /// </summary>
-[Trait(Category.Name, Category.Census)]
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Network)]
 public sealed class SessionStopCensusTests : NodeRunFixture
 {
     private const string Graph = """

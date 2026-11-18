@@ -281,14 +281,14 @@ describe('the box on every session that takes words', () => {
     expect(screen.queryByRole('button', { name: 'Remove the waiting message: and the red' })).toBeNull();
   });
 
-  /** A record going on with the person's words shows it, while its run opens with them. */
-  it('shows a record going on with the person’s words as going on', async () => {
+  /** A record going on with the person's words says its state by the reader. */
+  it('says a record going on with the person’s words by the reader', async () => {
     SESSIONS = [{ ...DRIVEN, said: said('also cap it') }];
     driver({});
     show('s1a2b3c4');
 
     const header = await screen.findByRole('heading', { level: 1 });
-    expect(within(header.closest('header')!).getByText('going on')).toBeInTheDocument();
+    expect(within(header.closest('header')!).getByText('Reading its state')).toBeInTheDocument();
   });
 
   /** The words shown at once, then where they went, the session a door to it. */

@@ -1,15 +1,9 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAttention } from '../../bridge/attention';
-import { stepHoldBridge } from '../../bridge/repositories/cast';
-import { useResolveHeld } from '../../bridge/repositories/lines';
-import { useRunNodeWord } from '../../bridge/repositories/workflow';
-import { useSessionGroups } from '../../bridge/sessions/sessionGroups';
 import { Inline } from '../../design/ui';
 import { NodeWord } from '../../workflow/NodeWord';
 import type { CheckHeldAnswer, CheckHeldAsk, NodeWordAnswer, NodeWordAsk, RunStep } from '../../workflow/run';
 import { FailedStepHeld } from '../../workflow/wait/FailedStepHeld';
-import { StepHold } from '../../workflow/wait/StepHoldDoor';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { stepHolder } from '../attention/taskRead';
 import type { SessionGrouping } from '../groups';
@@ -60,20 +54,4 @@ export function RunWaitsHead({ waits, steps, onWord, onHeld, hold }: {
       })}
     </div>
   );
-}
-
-/** The head's run waits of `session`: its placing in Sessions and *What needs you*'s rows, as the shell pushes them, with their doors. */
-export function SessionRunWaits({ session }: { session: string }) {
-  const groups = useSessionGroups();
-  const attention = useAttention();
-  const word = useRunNodeWord();
-  const held = useResolveHeld();
-  const waits = groups.data?.find((row) => row.session === session)?.waits ?? [];
-  const rows = attention.state === 'known' ? attention.rows.filter((row) => row.kind === 'step' && row.step) : [];
-  const steps = rows.flatMap((row) => (row.step ? [row.step] : []));
-  const hold = (step: StepWaitRow) => {
-    const row = rows.find((each) => each.step === step);
-    return <StepHold bridge={stepHoldBridge} run={step.run} workspace={row?.workspace ?? ''} repository={row?.where ?? ''} node={step.node} holds={step.holds} />;
-  };
-  return <RunWaitsHead waits={waits} steps={steps} onWord={word.mutateAsync} onHeld={held.mutateAsync} hold={hold} />;
 }

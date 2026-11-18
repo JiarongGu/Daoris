@@ -47,6 +47,23 @@ internal static class CensusWarm
     /// <summary>Whether the run stopped waiting for the warm-up at its <see cref="Patience"/>, so its cases began beside it.</summary>
     internal static bool Late { get; set; }
 
+    /// <summary>The timing folder's mark of a late warm-up: the time ratchet reads census records written after it as taken under load.</summary>
+    internal const string LateMark = "census-warm-late.json";
+
+    /// <summary>Writes the late mark, its write time the moment the warm-up passed its patience, or clears it where it kept to it.</summary>
+    internal static void MarkLate(string folder, bool late)
+    {
+        var path = Path.Combine(folder, LateMark);
+        if (!late)
+        {
+            File.Delete(path);
+            return;
+        }
+
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(path, "{}\n");
+    }
+
     /// <summary>Makes the shared reading once; a part that fails is kept by its own reader, so the case that reads it says why.</summary>
     internal static void Make() => _ = Made.Value;
 
@@ -94,13 +111,16 @@ public sealed class CensusWarmFramework(IMessageSink diagnostics) : XunitTestFra
         {
             await base.AfterTestAssemblyStartingAsync();
             if (!CensusWarm.Wanted(TestCases.Select(each => each.Traits))) return;
+            var timing = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "test-timing");
             try
             {
                 await Task.Run(CensusWarm.Make).WaitAsync(CensusWarm.Patience);
+                CensusWarm.MarkLate(timing, false);
             }
             catch (TimeoutException)
             {
                 CensusWarm.Late = true;
+                CensusWarm.MarkLate(timing, true);
                 DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"the censuses' shared reading took longer than {CensusWarm.Patience.TotalSeconds} s and goes on beside the cases"));
             }
             catch (Exception failed)

@@ -67,14 +67,15 @@ describe('a session’s head says where the work stands and what comes next', ()
     await i18n.changeLanguage('en');
   });
 
-  for (const [language, now, next] of [['en', 'needs you', 'next: Accept…'], ['zh', '等你处理', '下一步：采纳…']] as const) {
-    it(`reads ${now} and a door to the Accept… in ${language}`, async () => {
+  for (const [language, now, wait] of [['en', 'Waiting on you', /its work to accept/], ['zh', '等你处理', /待采纳的工作/]] as const) {
+    it(`reads ${now} and a press to the wait's line in the dock in ${language}`, async () => {
       await i18n.changeLanguage(language);
       SESSIONS = [ENDED];
       driver('review');
       show();
-      const door = await screen.findByRole('button', { name: next });
-      expect(door.closest('p')).toHaveTextContent(new RegExp(now));
+      const door = await screen.findByRole('button', { name: wait });
+      const line = door.closest('[data-state-line]')!;
+      expect(line).toHaveTextContent(now);
       await userEvent.click(door);
     });
   }
@@ -84,6 +85,7 @@ describe('a session’s head says where the work stands and what comes next', ()
     driver('working');
     show();
     expect(await within(screen.getByRole('main')).findByText(/engine · working/, { selector: 'span.truncate' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^next:/ })).toBeNull();
+    expect(await screen.findByText('Working')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull();
   });
 });

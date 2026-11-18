@@ -4,7 +4,6 @@
   "work.park.waitingHere": "它在问这个，已等 {{span}}：在下面回答。",
   "work.park.waitingAbove": "它在上面提了问，已等 {{span}}：在下面回答。",
   "work.park.goAheads": "它在等的放行",
-  "work.park.inTheBox": "每项都在下面的框里答复，框里的话随之发送。",
   "work.park.by": "它说需要你在此之前回答：{{by}}",
   "work.park.whileWaiting": "等待期间",
   "work.park.noDeadline": "这里没有期限：它会一直等到你回答。",

@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead, Session } from '../../data/api';
+import type { GoAhead, Quest, Session } from '../../data/api';
 import { cn } from '../../lib/cn';
 import type { WaitEvents } from './anchors';
 import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
-import { Button } from '../../design/ui';
-import type { AnswerPick, QuestClose, Resolution } from './AwaitingPerson';
+import { answeredPark, Button } from '../../design/ui';
+import type { StepWaitRow } from '../attention/attentionPushed';
+import { RunWaitsHead } from '../head/RunWaitsHead';
+import { sessionOrigin } from '../identity';
+import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
+import { type DockLine, dockName, dockOf, type DockWait, type StepWait } from './dock';
 import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
 import { HelperAsks, type HelperWaits } from './HelperAsks';
@@ -18,8 +22,8 @@ import { AnswerAlone, answerFor, type AnswerWaits } from './AnswerAlone';
 import type { SessionGitAccessHold } from '../head/GitAccessFact';
 import { GitAsk, gitAsksFor, type GitAskWaits } from './GitAsk';
 import { ProposedRules, type RuleAsk, type RuleWaits } from './ProposedRules';
-import { InConversation, leftFor, type Seek, SOUGHT, useSought, waitName } from './WaitAnchor';
-import { rulesAsked, type Wait, WORK_WAITS, waitsOf } from './waits';
+import { InConversation, leftFor, type Seek, SOUGHT, useSought } from './WaitAnchor';
+import { rulesAsked, WORK_WAITS } from './waits';
 import { waitObligations } from './waitObligations';
 import type { ParkQuestion } from './parkQuestion';
 
@@ -104,236 +108,240 @@ export type WaitProps = {
   toEvent?: WaitEvents;
 };
 
+/** The run's steps held for the person or left failed, as Sessions placed the session, with *What needs you*'s rows and their doors. */
+export type RunWaitDoors = {
+  waits: readonly StepWait[];
+  steps: readonly StepWaitRow[];
+  onWord?: Parameters<typeof RunWaitsHead>[0]['onWord'];
+  onHeld?: Parameters<typeof RunWaitsHead>[0]['onHeld'];
+  hold?: Parameters<typeof RunWaitsHead>[0]['hold'];
+};
+
 /**
- * **What waits on the person, at the foot**: above the session's box and outside the conversation's scroll,
- * where the person reads its last message, each open wait with the same press its head has, so none is a record's length
- * above the words that raised it.
+ * **The dock: every wait the person settles, in one place above the composer**: outside the conversation's scroll, where
+ * the person reads its last message, each open wait with its own press, oldest first under a count, never folded. It is the only
+ * place a wait is pressed on the session's page: the head names the oldest in its state line and draws none of them.
  *
  * @remarks
- * **The head's molecules, not copies**: a go-ahead still open is `GoAheadList`'s where no box below answers the
- * park (where one does, the box draws it), a rule the session proposed
- * `ProposedRules`', the work's line `Lands` with its door to the review, the rebase words and the gates, a discard the line
- * holds `Discards`, an agent's ask for a helper waiting on the person's word `HelperAsks` with its yes and no, a tool
- * call held for their answer under asking `PermissionAsks` with a press per choice its agent offered, a third answer
- * alone the bound holds for them `AnswerAlone` with *Go on with this answer* and *Not now*, each
- * handed what the head is handed. A park's
- * question is named and not answered here: the box below is its answer's one door, and its *Finish…* and
- * *Decline…* stay its card's. A hand-over offer is the pinned page head's, already on screen.
+ * **Today's presses, moved**: a park's card `AwaitingPerson` with its answer, *Finish…* and *Decline…* (where the box below
+ * answers the park, the card's answers are the box's), an intake's *Answer*, a go-ahead `GoAheadList`'s where no box below answers
+ * the park (where one does, the box draws it), a tool call held for the person's answer `PermissionAsks`, a git go-ahead `GitAsk`,
+ * a third answer alone `AnswerAlone`, a rule it proposed `ProposedRules`, a helper it asked for `HelperAsks`, its agent's ask to
+ * hand over `HandOverAgentAsk`, the work's line `Lands` with its door to the review, the rebase words and the gates, a discard the
+ * line holds `Discards`, and a step of its run held for the person or left failed `RunWaitsHead` with the presses its row in
+ * *What needs you* offers (*Try again*, *Done outside Daoris*, *End this work*). Each line keeps its way to where it arose (*In the
+ * conversation*) where the conversation found it.
  *
  * **One owner of each answer**: the frame holds the presses and their pending; a refusal is said where the press is made.
  *
- * **One place at a time**: while the head's waits are wholly on screen (`aside`, the
- * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the
- * person: it stays while an ask is open in it, while a press led to its line, and while the focus is in it.
+ * **A teammate's session** draws its waits as one line with no press: nothing this window sends reaches its machine.
  *
- * Several fold to one line naming them; *To the top*, where a host hands `onTop`, takes the person to the head's waits (the
- * session's frame draws it above the waiting panel instead). Nothing waits, nothing is drawn.
- * A molecule: no hook beyond its own fold, focus and sought line.
+ * Nothing waits, nothing is drawn. A molecule: no hook beyond its focus and sought line.
  */
-export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, aside = false, ...props }: WaitProps & {
+export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWaits = null, quest = null, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
-  /** Where the work's ask is open, the frame's, so it is open here or in the head. */
+  /** Where the work's ask is open, the frame's. */
   workAsk?: WorkAsk;
-  /** Where a rule's *Allow…* is open, the frame's, so it is open here or in the head. */
+  /** Where a rule's *Allow…* is open, the frame's. */
   ruleAsk?: RuleAsk;
-  /** Scroll the session's head, where every wait stands with its reading, into view. */
-  onTop?: () => void;
   /**
-   * The wait a raising block's *To the wait* leads to, counted so the same one pressed again is shown again: the
-   * strip unfolds, and its line takes the focus, outlined.
+   * The wait a raising block's *To the wait* or the head's state line leads to, counted so the same one pressed again is shown
+   * again: its line takes the focus, outlined.
    */
   seek?: Seek | null;
-  /** The head's waits are wholly on screen, so the strip stands aside unless the person is in it. */
-  aside?: boolean;
+  /** The run's steps that wait on the person, with their presses. Absent where nothing reads them (a browser, a story). */
+  runWaits?: RunWaitDoors | null;
+  /** The quest it serves, which a park's *Finish…* may close as the person's. */
+  quest?: Quest | null;
 }) {
   const { t } = useTranslation();
-  const [folded, setFolded] = useState(false);
-  const [inside, setInside] = useState(false);
   const section = useRef<HTMLElement>(null);
-  const { sought, letGo } = useSought(section, seek, () => setFolded(false));
-  // A line unmade with the focus in it (an ask put down, a go-ahead answered) says no blur: the focus is read again once drawn.
-  useEffect(() => {
-    if (inside && !section.current?.contains(section.current.ownerDocument.activeElement)) setInside(false);
-  });
+  const { sought, letGo } = useSought(section, seek);
   const { session, toEvent } = props;
-  // A park's question whose box is right below is not drawn here: the box is its door. Nor are its go-aheads: the
-  // box draws what the park asks, each answer a press the box's words go with, so a line here
-  // would be a second place to answer the same ask. Neither is counted: the strip's count is what it draws, never *2 waiting on you*
-  // over one. With nothing else to draw, no strip.
-  const boxBelow = (wait: Wait) => (wait.kind === 'question' && wait.below) || (wait.kind === 'goAhead' && Boolean(props.parkBox));
-  const all = waitsOf({ ...props, answerBelow });
-  const waits = all.filter((wait) => !boxBelow(wait));
-  if (waits.length === 0) return null;
-  // Never from under the person: an ask open here, or the focus, a line a press led to's among it, holds it up.
-  const held = inside || Boolean(workAsk?.open) || Boolean(ruleAsk?.open);
-  const several = waits.length > 1;
-  // The count is of obligations, keyed as the bell and *What needs you* key them, so a park on the go-ahead it asked is one.
-  const owed = waitObligations({ ...props, answerBelow }, waits, all).length;
-  const shut = several && folded;
-  const question = waits.find((wait) => wait.kind === 'question');
-  const intake = waits.find((wait): wait is Extract<Wait, { kind: 'intake' }> => wait.kind === 'intake');
-  const open = new Set(waits.filter((wait) => wait.kind === 'goAhead').map((wait) => (wait as { number: number }).number));
-  const asking = new Set(waits.filter((wait) => wait.kind === 'permission').map((wait) => (wait as { request: string }).request));
-  const alone = waits.some((wait) => wait.kind === 'answerAlone') && props.answers ? answerFor(props.answers.waits, session.id) : null;
-  const gitAsking = new Set(waits.filter((wait) => wait.kind === 'gitAsk').map((wait) => (wait as { id: string }).id));
-  const ruled = new Set(waits.filter((wait) => wait.kind === 'rule').map((wait) => (wait as { id: string }).id));
-  const helping = new Set(waits.filter((wait) => wait.kind === 'helper').map((wait) => (wait as { id: string }).id));
-  // Its agent's ask to hand it over is the strip's own: the head draws no line of it, so the strip never stands aside for it.
-  const handing = waits.some((wait) => wait.kind === 'handOver');
-  const work = waits.some((wait) => WORK_WAITS.has(wait.kind));
-  const discard = waits.some((wait) => wait.kind === 'discard');
+  if (sessionOrigin(session) !== null) return <TeammateWaits session={session} steps={runWaits?.waits ?? []} />;
+  // A park's go-aheads whose box is right below are not drawn here: the box draws what the park asks, each answer a press the
+  // box's words go with, so a line here would be a second place to answer the same ask. Nor are they counted.
+  const boxBelow = (wait: DockWait) => wait.kind === 'goAhead' && Boolean(props.parkBox);
+  const facts = { ...props, answerBelow };
+  const all = dockOf(facts, runWaits?.waits ?? []);
+  const lines = all.filter((line) => !boxBelow(line.wait));
+  // The work's line stands here whenever its tree offers work, held or not: its holds, its set-up and its door are pressed here too,
+  // though only an open gate is counted as a wait.
+  const workLine = props.lands || props.discards ? { key: 'work', wait: { kind: props.lands ? 'accept' : 'discard' }, since: '' } as DockLine : null;
+  const drawnLines = workLine && !lines.some((line) => (WORK_WAITS as ReadonlySet<string>).has(line.wait.kind) || line.wait.kind === 'discard') ? [...lines, workLine] : lines;
+  if (drawnLines.length === 0) return null;
+  const pageWaits = (of: readonly DockLine[]) => of.flatMap((line) => (line.wait.kind === 'step' ? [] : [line.wait]));
+  // The count is of obligations, keyed as the bell and *What needs you* key them, so a park on the go-ahead it asked is one; and
+  // each step its run holds for the person.
+  const owed = waitObligations(facts, pageWaits(lines), pageWaits(all)).length + lines.filter((line) => line.wait.kind === 'step').length;
   // Never pluralised by `count`: in Chinese one is `other` too, and one wait is said without its number.
   const title = owed > 1 ? t('work.wait.several', { n: owed }) : t('work.wait.title');
+  // A kind several lines share says its lead once, on its first line; the work's line is one whatever gates it holds.
+  const led = new Set<string>();
+  const first = (kind: string) => {
+    if (led.has(kind)) return false;
+    led.add(kind);
+    return true;
+  };
+  const marked = (prefix: string) => (sought?.startsWith(`${prefix}:`) ? sought.slice(prefix.length + 1) : undefined);
+
+  const lineOf = ({ wait }: DockLine): ReactNode => {
+    switch (wait.kind) {
+      case 'question':
+        return props.onResolve || props.onAnswerSession ? (
+          <div data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+            {/* Keyed: a half-written decline reason belongs to the session it is written for. */}
+            <AwaitingPerson
+              key={session.id}
+              parts={session.noteParts}
+              question={props.question}
+              quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
+              pending={props.resolving}
+              onResolve={props.onResolve}
+              onAnswer={session.kind !== 'chat' ? props.onAnswerSession : undefined}
+              onChoice={session.kind !== 'chat' ? props.onAnswerChoice : undefined}
+              pick={props.answerPick}
+              below={Boolean(props.parkBox)}
+              onConversation={toEvent?.question}
+            />
+          </div>
+        ) : (
+          <p data-wait="question" tabIndex={-1} className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}>
+            <span>{t('work.wait.questionBelow')}</span>
+            {toEvent?.question && <InConversation onPress={toEvent.question} />}
+          </p>
+        );
+      case 'intake':
+        return (
+          <p data-wait="question" tabIndex={-1} className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}>
+            <span>{t('work.wait.intake')}</span>
+            <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => props.onAnswerAsk?.(wait.ask)}>
+              {t('work.intake.answer', { ask: wait.ask })}
+            </Button>
+            {toEvent?.question && <InConversation onPress={toEvent.question} />}
+          </p>
+        );
+      case 'goAhead':
+        return (
+          <GoAheadList
+            goAheads={(props.goAheads ?? []).filter((goAhead) => goAhead.number === wait.number)}
+            busy={props.resolving}
+            onAnswer={props.onGoAhead}
+            lead={first('goAhead') ? t('work.awaiting.goAheads') : undefined}
+            inConversation={toEvent?.goAheads}
+            marked={marked('goAhead') !== undefined ? Number(marked('goAhead')) : undefined}
+          />
+        );
+      case 'permission':
+        return props.permissions && (
+          <PermissionAsks
+            waits={heldFor(props.permissions.waits, session.id).filter((held) => held.request === wait.request)}
+            onAnswer={props.permissions.onAnswer}
+            busy={props.permissions.busy}
+            lead={first('permission') ? t('work.wait.permission.lead') : undefined}
+            inConversation={toEvent?.permissions}
+            marked={marked('permission')}
+          />
+        );
+      case 'gitAsk':
+        return props.gitAsks && gitAsksFor(props.gitAsks.waits, session.id).filter((ask) => ask.id === wait.id).map((ask) => (
+          <GitAsk key={ask.id} ask={ask} onAnswer={props.gitAsks!.onAnswer} busy={props.gitAsks!.busy} marked={sought === `gitAsk:${ask.id}`} />
+        ));
+      case 'answerAlone': {
+        const alone = props.answers ? answerFor(props.answers.waits, session.id) : null;
+        return alone && props.answers && (
+          <AnswerAlone wait={alone} nameOf={props.answers.nameOf} onAnswer={props.answers.onAnswer} onChangeRule={props.answers.onChangeRule} busy={props.answers.busy} />
+        );
+      }
+      case 'rule':
+        return props.rules && (
+          <ProposedRules
+            proposals={rulesAsked(props.rules.proposals, session.id).filter((proposal) => proposal.id === wait.id)}
+            busy={props.rules.busy}
+            onAnswer={props.rules.onAnswer}
+            heard={props.rules.heard}
+            lead={first('rule') ? t('work.wait.rule.lead') : undefined}
+            inConversation={toEvent?.rules}
+            marked={marked('rule')}
+            ask={ruleAsk}
+          />
+        );
+      case 'helper':
+        return props.helpers && (
+          <>
+            {first('helper') && <p className="m-0 text-small text-ink-soft">{t('work.wait.helper.lead')}</p>}
+            <HelperAsks {...props.helpers} asks={props.helpers.asks.filter((row) => row.id === wait.id)} inConversation={toEvent?.helpers} marked={marked('helper')} />
+          </>
+        );
+      case 'handOver':
+        return props.handOver && (
+          <>
+            <p className="m-0 text-small text-ink-soft">{t('work.handOverAsk.lead')}</p>
+            <HandOverAgentAsk {...props.handOver} />
+          </>
+        );
+      case 'discard':
+        return props.discards && (
+          <Discards discards={props.discards} onReview={props.onReview} onDiscard={props.onDiscardTree} ask={workAsk} busy={props.workBusy} />
+        );
+      case 'step':
+        return runWaits && (
+          <RunWaitsHead waits={[wait]} steps={runWaits.steps} onWord={runWaits.onWord} onHeld={runWaits.onHeld} hold={runWaits.hold} />
+        );
+      default:
+        // The work's line: its Accept, rebase, opinion and review are one `Lands`, drawn at the oldest of them.
+        return WORK_WAITS.has(wait.kind) && first('work') && props.lands && (
+          <div data-wait="work" tabIndex={-1} className={cn('grid gap-2', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
+            <Lands
+              session={session} lands={props.lands} landing={props.landing} onReview={props.onReview} onReviewRun={props.onReviewRun}
+              onSayRebase={props.onSayRebase} review={props.review} behind={props.behind} opinion={props.opinion} toEvent={toEvent}
+            />
+          </div>
+        );
+    }
+  };
 
   return (
     <section
       ref={section}
       aria-label={title}
-      hidden={aside && !held && !handing}
       data-wait-part=""
+      data-dock=""
       className="shrink-0 border-t border-line bg-page"
-      onFocus={() => setInside(true)}
-      // The outline goes once the person moves on from the line it led to, and the strip with it where the head's are on screen.
+      // The outline goes once the person moves on from the line it led to.
       onBlur={(event) => {
-        if (!leftFor(event)) return;
-        letGo();
-        setInside(false);
+        if (leftFor(event)) letGo();
       }}
     >
-      {/* Bounded, so a long gate never pushes the conversation off the window: the strip scrolls in itself, within its share of the
+      {/* Bounded, so a long gate never pushes the conversation off the window: the dock scrolls in itself, within its share of the
           waiting panel's height, or 40% of the window where no panel holds it. */}
       <div className="grid max-h-[var(--wait-part,40vh)] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>
-          {shut && <span className="min-w-0 text-small text-ink-soft">{waits.map((wait) => waitName(t, wait)).join(' · ')}</span>}
-          <span className="ml-auto flex shrink-0 gap-1">
-            {several && (
-              <Button variant="ghost" className="px-2 py-0.5 text-small" aria-expanded={!shut} onClick={() => setFolded(!shut)}>
-                {shut ? t('work.wait.show') : t('work.wait.fold')}
-              </Button>
-            )}
-            {onTop && <Button variant="ghost" className="px-2 py-0.5 text-small" onClick={onTop}>{t('work.wait.top')}</Button>}
-          </span>
-        </div>
-        {!shut && (
-          <>
-            {question?.kind === 'question' && !question.below && (
-              <p
-                data-wait="question"
-                tabIndex={-1}
-                className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}
-              >
-                <span>{t(question.below ? 'work.wait.questionBelow' : 'work.wait.questionTop')}</span>
-                {toEvent?.question && <InConversation onPress={toEvent.question} />}
-              </p>
-            )}
-            {intake && (
-              <p
-                data-wait="question"
-                tabIndex={-1}
-                className={cn('m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft', sought === 'question' ? SOUGHT : 'outline-none')}
-              >
-                <span>{t('work.wait.intake')}</span>
-                <Button variant="primary" className="px-2 py-0.5 text-small" onClick={() => props.onAnswerAsk?.(intake.ask)}>
-                  {t('work.intake.answer', { ask: intake.ask })}
-                </Button>
-                {toEvent?.question && <InConversation onPress={toEvent.question} />}
-              </p>
-            )}
-            {open.size > 0 && (
-              <div className="grid gap-1">
-                <GoAheadList
-                  goAheads={(props.goAheads ?? []).filter((goAhead) => open.has(goAhead.number))}
-                  busy={props.resolving}
-                  onAnswer={props.onGoAhead}
-                  lead={t('work.awaiting.goAheads')}
-                  inConversation={toEvent?.goAheads}
-                  marked={sought?.startsWith('goAhead:') ? Number(sought.slice('goAhead:'.length)) : undefined}
-                />
-              </div>
-            )}
-            {asking.size > 0 && props.permissions && (
-              <div className="grid gap-1">
-                <PermissionAsks
-                  waits={heldFor(props.permissions.waits, session.id).filter((held) => asking.has(held.request))}
-                  onAnswer={props.permissions.onAnswer}
-                  busy={props.permissions.busy}
-                  lead={t('work.wait.permission.lead')}
-                  inConversation={toEvent?.permissions}
-                  marked={sought?.startsWith('permission:') ? sought.slice('permission:'.length) : undefined}
-                />
-              </div>
-            )}
-            {gitAsking.size > 0 && props.gitAsks && gitAsksFor(props.gitAsks.waits, session.id).filter((ask) => gitAsking.has(ask.id)).map((ask) => (
-              <GitAsk key={ask.id} ask={ask} onAnswer={props.gitAsks!.onAnswer} busy={props.gitAsks!.busy} marked={sought === `gitAsk:${ask.id}`} />
-            ))}
-            {alone && props.answers && (
-              <AnswerAlone
-                wait={alone}
-                nameOf={props.answers.nameOf}
-                onAnswer={props.answers.onAnswer}
-                onChangeRule={props.answers.onChangeRule}
-                busy={props.answers.busy}
-              />
-            )}
-            {ruled.size > 0 && props.rules && (
-              <div className="grid gap-1">
-                <ProposedRules
-                  proposals={rulesAsked(props.rules.proposals, session.id).filter((proposal) => ruled.has(proposal.id))}
-                  busy={props.rules.busy}
-                  onAnswer={props.rules.onAnswer}
-                  heard={props.rules.heard}
-                  lead={t('work.wait.rule.lead')}
-                  inConversation={toEvent?.rules}
-                  marked={sought?.startsWith('rule:') ? sought.slice('rule:'.length) : undefined}
-                  ask={ruleAsk}
-                />
-              </div>
-            )}
-            {helping.size > 0 && props.helpers && (
-              <div className="grid gap-1">
-                <p className="m-0 text-small text-ink-soft">{t('work.wait.helper.lead')}</p>
-                <HelperAsks
-                  {...props.helpers}
-                  asks={props.helpers.asks.filter((row) => helping.has(row.id))}
-                  inConversation={toEvent?.helpers}
-                  marked={sought?.startsWith('helper:') ? sought.slice('helper:'.length) : undefined}
-                />
-              </div>
-            )}
-            {handing && props.handOver && (
-              <div className="grid gap-1">
-                <p className="m-0 text-small text-ink-soft">{t('work.handOverAsk.lead')}</p>
-                <HandOverAgentAsk {...props.handOver} />
-              </div>
-            )}
-            {work && props.lands && (
-              <div
-                data-wait="work"
-                tabIndex={-1}
-                className={cn('grid gap-2', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}
-              >
-                <Lands
-                  session={session}
-                  lands={props.lands}
-                  landing={props.landing}
-                  onReview={props.onReview}
-                  onReviewRun={props.onReviewRun}
-                  onSayRebase={props.onSayRebase}
-                  review={props.review}
-                  behind={props.behind}
-                  opinion={props.opinion}
-                  toEvent={toEvent}
-                />
-              </div>
-            )}
-            {discard && props.discards && (
-              <Discards discards={props.discards} onReview={props.onReview} onDiscard={props.onDiscardTree} ask={workAsk} busy={props.workBusy} />
-            )}
-          </>
-        )}
+        {owed > 0 && <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>}
+        {drawnLines.map((line) => {
+          const drawn = lineOf(line);
+          return drawn ? <div key={line.key} data-dock-line={line.key} className="grid min-w-0 gap-1">{drawn}</div> : null;
+        })}
       </div>
+    </section>
+  );
+}
+
+/**
+ * **A teammate's waits**: its park and its run's steps named in one line, with no press, since nothing this window sends reaches
+ * its machine. Nothing where none waits.
+ */
+function TeammateWaits({ session, steps }: { session: Session; steps: readonly StepWait[] }) {
+  const { t } = useTranslation();
+  const waits: DockWait[] = [
+    ...(session.state === 'awaiting-person' && !answeredPark(session) ? [{ kind: 'question' as const, below: false }] : []),
+    ...steps.map((step) => ({ kind: 'step' as const, ...step })),
+  ];
+  if (waits.length === 0) return null;
+  const said = t('work.wait.teammate', { names: waits.map((wait) => dockName(t, wait)).join(' · ') });
+  return (
+    <section aria-label={said} data-wait-part="" data-dock="" className="shrink-0 border-t border-line bg-page px-4 py-2">
+      <p className="m-0 text-small text-ink-soft">{said}</p>
     </section>
   );
 }
