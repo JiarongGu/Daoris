@@ -1,7 +1,7 @@
 import type { SessionEvent } from '../conversation/conversationTypes';
 
-// A recorded session whose sub-agent spawned another, and a watch task, shaped as SESSIONVIEW1e's replays keep them: the session's
-// record holds each child's and task's start and end with the call that started it, a sub-agent's own events its own record.
+// A recorded session whose subagent spawned another, and a watch task, shaped as the door replays keep them: the session's
+// record holds each child's and task's start and end with the call that started it, a subagent's own events its own record.
 
 const at = (minute: number, second = 0) => `2026-11-19T10:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}Z`;
 

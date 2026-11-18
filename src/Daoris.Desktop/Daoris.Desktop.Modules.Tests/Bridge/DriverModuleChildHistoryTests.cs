@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A subagent's own record over the bridge (`SESSION_CHILD_HISTORY`, D320 point 4): the session's page opens a subagent's row in place
+/// A subagent's own record over the bridge (`SESSION_CHILD_HISTORY`): the session's page opens a subagent's row in place
 /// and reads its words and calls from the record kept beside the session's, never from the session's own.
 /// </summary>
 public sealed class DriverModuleChildHistoryTests : DriverModuleBridge

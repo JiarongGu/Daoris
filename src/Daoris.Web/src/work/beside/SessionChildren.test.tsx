@@ -8,7 +8,7 @@ import { ConversationView } from '../conversation/ConversationView';
 import { type BesideReader, lifetimesIn } from './besides';
 import { RECORDS, SESSION } from './beside.fixtures';
 
-// A recorded session whose subagent spawned another, and a watch task, drawn in the session's one timeline (D320 point 4).
+// A recorded session whose subagent spawned another, and a watch task, drawn in the session's one timeline.
 
 const reader: BesideReader = {
   Child: ({ child, children }) => <>{children({ events: RECORDS[child] ?? null, loaded: true })}</>,

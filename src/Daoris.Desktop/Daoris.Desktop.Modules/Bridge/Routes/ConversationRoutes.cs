@@ -30,7 +30,7 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening, page.FirstFailure };
     }
 
-    // A subagent's own record whole (D320 point 4), for its row opened in place; no events where none is kept.
+    // A subagent's own record whole, for its row opened in place; no events where none is kept.
     [DriverRoute("SESSION_CHILD_HISTORY", PipeClass.Open)]
     [ByEvent("SESSION_CHILD_HISTORY", Untold = "a subagent's own record beside its session's, which its run appends to")]
     private async Task<object?> SessionChildHistoryAsync(SessionChildHistoryRead press, CancellationToken cancellationToken) =>

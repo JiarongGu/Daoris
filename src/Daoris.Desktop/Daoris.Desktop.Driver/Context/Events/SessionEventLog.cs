@@ -651,7 +651,6 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
             ? [.. own.Where(e => e.Kind == SessionEventKind.Tool)]
             : null;
 
-    /// <summary>A subagent's own record whole, its words and calls in order, for the page's row that opens it; null where none is kept.</summary>
     public IReadOnlyList<SessionEvent>? Child(string sessionId, string child) => new ChildRecords(directory).Read(sessionId, child);
 
     /// <summary>The head standing for a long record's file (<see cref="SessionEventHeads"/>), or null where the file is read whole.</summary>

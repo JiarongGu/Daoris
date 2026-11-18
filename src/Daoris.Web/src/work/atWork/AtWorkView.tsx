@@ -50,8 +50,8 @@ export type AtWorkViewProps = {
   considered?: readonly Consideration[];
   onRetry?: () => void;
   /**
-   * Read by nothing since the session's timeline draws its subagents under their calls (SESSIONVIEW1f, D320 point 9): taken until
-   * `work/frame/regionSurface.tsx`, held by another row in flight, stops passing them, which ends them.
+   * Read by nothing, since the session's timeline draws its subagents under their calls: taken until `work/frame/regionSurface.tsx`
+   * stops passing them, which ends them.
    */
   streamOf?: (child: string) => string | undefined;
   onOpenStream?: (stream: string) => void;

@@ -31,7 +31,6 @@ describe('a sub-agent and a background task in the record', () => {
       { kind: 'child', id: 'a1', name: 'Read README first line', started: at(2), end: 'ok', by: 'reported', ended: at(6) });
     expect(items.find((item) => item.id === 'toolu_gates')?.beside).toEqual(
       { kind: 'task', id: 'b1', name: 'npm run gates', started: at(4), end: 'lost', by: 'inferred', ended: at(9), endKey: 'e10' });
-    // The row where it ended leads back to the call that started it, and a jump to its end lands on it.
     expect(items.find((item) => item.kind === 'beside')).toMatchObject({ key: 'e10', beside: { id: 'b1', startKey: 'e4', end: 'lost' } });
     expect(items.find((item) => item.kind === 'message')?.text).toBe('The gates are running.');
     expect(where[3]).toBe(where[2]);

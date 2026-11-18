@@ -10,7 +10,7 @@ import { childTurns } from './childTurns';
 /**
  * A subagent in the panel's focus: a breadcrumb from the session through the subagents that started it, each a press back, and its
  * own timeline in the session's place, its own subagents opening in place under their calls as the session's do. Never a tab, a
- * drawer or another page (D320 point 4).
+ * drawer or another page.
  */
 export function ChildFocus({ path, home, onBack }: {
   /** The way from the session to the subagent in focus, the session's own child first. */
