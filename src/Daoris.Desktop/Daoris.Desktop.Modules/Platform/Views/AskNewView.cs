@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Daoris.Contracts.Quests;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -22,7 +23,7 @@ public sealed class AskNewView : IPressView
     {
         var asked = new AskNew(Named(payload, "workspace") ?? "default", PressPayload.Text(payload, "sentence"), Named(payload, "to"),
             List(payload, "links"), List(payload, "files"), Named(payload, "review"), Named(payload, "reviewWords"), Named(payload, "kind"),
-            Named(payload, "workflow"), Named(payload, "workflowWords"), Named(payload, "short"));
+            Named(payload, "workflow"), Named(payload, "workflowWords"), Named(payload, "short"), Required(payload), Named(payload, "through"));
         if (asked.Sentence.Trim().Length == 0) return PressViewed.Refused("an ask needs its words.");
 
         var machine = await world.MachineAsync(cancellationToken).ConfigureAwait(false);
@@ -77,6 +78,13 @@ public sealed class AskNewView : IPressView
             also.Add(new PressSaid("ask-new-files", ("count", Count(files.Count)), ("files", string.Join(", ", files.Select(Path.GetFileName)))));
         }
 
+        // The person's requirements and through words, each on the card, so their yes is to them as the ask carries them.
+        foreach (var required in ask.Carried.Requirements)
+        {
+            also.Add(new PressSaid("ask-new-requirement", ("words", required.Quote ?? ""), ("check", required.Check ?? "")));
+        }
+
+        if (ask.Carried.Through is { } through) also.Add(new PressSaid("ask-new-through", ("words", through)));
         return also;
     }
 
@@ -98,11 +106,27 @@ public sealed class AskNewView : IPressView
         Flag("--workflow-words", ask.WorkflowWords, WordsPlaceholder);
         foreach (var link in ask.Links ?? []) Flag("--url", link, "<address>");
         foreach (var file in ask.Files ?? []) Flag("--file", file, "<path>");
+        foreach (var required in ask.Carried.Requirements)
+        {
+            flags.Add($"--require {ShellWord.Of(required.Quote ?? "", WordsPlaceholder)} {ShellWord.Of(required.Check ?? "", "\"<check>\"")}");
+        }
+
+        Flag("--through", ask.Carried.Through, WordsPlaceholder);
         flags.Add(ShellWord.Of(ask.Sentence.Trim(), WordsPlaceholder));
         return string.Join(' ', flags);
     }
 
     private static string? Named(JsonElement? payload, string name) => PressPayload.Text(payload, name) is { Length: > 0 } text ? text.Trim() : null;
+
+    /// <summary>The requirements the press carries, each <c>{ quote, check }</c> as the route binds them; null for none.</summary>
+    private static IReadOnlyList<QuestRequirementWire>? Required(JsonElement? payload) =>
+        payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("requirements", out var list) && list.ValueKind == JsonValueKind.Array
+            ? [.. list.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object)
+                .Select(each => new QuestRequirementWire(Field(each, "quote"), Field(each, "check")))]
+            : null;
+
+    private static string Field(JsonElement item, string name) =>
+        item.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()!.Trim() : "";
 
     private static IReadOnlyList<string>? List(JsonElement? payload, string name) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty(name, out var list) && list.ValueKind == JsonValueKind.Array

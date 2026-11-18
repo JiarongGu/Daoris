@@ -157,7 +157,7 @@ internal static class HelpDoorRowsActs
         ("put your words asking for an ask's work to be delivered with no press of yours on it, or take them back: each run of it is "
             + "accepted on them where nothing else waits on you, and a departure from a requirement still waits",
             "(no screen yet)",
-            "`daoris ask --to <repo> … --require \"<your words>\" \"<the check>\" --through \"<your words>\"`, "
+            "`daoris ask … --require \"<your words>\" \"<the check>\" --through \"<your words>\"`, "
             + "`daoris ask through <id> \"<your words>\"|--clear`"),
         // The person's changes on a run's outputs, its rejection with their words. Never proposed, as skip and stop never are.
         new("send back what a run made in place of your Accept, with your words: the work's session is told them as its next "

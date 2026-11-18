@@ -23,10 +23,15 @@ public sealed class AskThroughArgumentsTests
     }
 
     [Fact]
-    public void A_requirement_on_a_new_ask_with_no_receiver_is_a_problem()
+    public void A_new_ask_at_a_workspace_takes_requirements_its_intake_carries_and_an_act_takes_none()
     {
-        Assert.Null(AskArguments.Read(["--require", "merge it", "it is merged", "ship it"], out var problem));
-        Assert.Contains("--to", problem, StringComparison.Ordinal);
+        var read = AskArguments.Read(["--workspace", "work", "--require", "merge it", "it is merged", "ship it"], out var problem);
+        Assert.Null(problem);
+        Assert.Equal(new QuestRequirementWire("merge it", "it is merged"), Assert.Single(read!.Requirements));
+        Assert.Null(read.To);
+
+        Assert.Null(AskArguments.Read(["--close", "a1", "--reason", "done", "--require", "merge it", "it is merged"], out var mixed));
+        Assert.Contains("--require goes with a new ask", mixed, StringComparison.Ordinal);
     }
 
     [Fact]
