@@ -169,6 +169,30 @@ export type BuildSeams = {
   now?: () => string;
 };
 
+/** The projects of `units` built beside the plan: each whose build reads a changed path and stands unbuilt, most classes first. */
+export function aheadOf(units: readonly { project?: string | undefined }[], changed: readonly string[], seams: {
+  inputsOf: (project: string) => BuildInputs | null; decide: (project: string) => BuildDecision;
+}): string[] {
+  const counts = new Map<string, number>();
+  for (const { project } of units) if (project) counts.set(project, (counts.get(project) ?? 0) + 1);
+  const reads = (inputs: BuildInputs, path: string): boolean => inputs.files.includes(path) || inputs.folders.some((folder) => path.startsWith(`${folder}/`));
+  return [...counts.keys()].filter((project) => {
+    const inputs = seams.inputsOf(project);
+    return inputs !== null && changed.some((path) => reads(inputs, path)) && seams.decide(project).build;
+  }).sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || a.localeCompare(b));
+}
+
+/** Each of `projects` built in turn by one `dotnet build`, restore and all (so it runs through a synchronous plan), and stamped. */
+export async function buildAhead(projects: readonly string[], seams: BuildSeams): Promise<void> {
+  const { root, exec: run, time } = seams;
+  for (const project of projects) {
+    const inputs = seams.inputsOf(project);
+    const code = await time(`build ${projectName(project)} beside the plan`, () => run('dotnet', ['build', project], root));
+    const outputs = code === 0 ? outputsDigest(root, project) : null;
+    if (inputs !== null && outputs !== null) writeStamp(root, { project, inputs, outputs, at: (seams.now ?? (() => new Date().toISOString()))() });
+  }
+}
+
 /** Each of `projects` restored and built once, unless its stamp holds; the projects ready to run on, and those whose build failed. */
 export async function buildOnce(projects: readonly string[], seams: BuildSeams): Promise<{ ready: string[]; failed: Map<string, string> }> {
   // The seam is the caller's runner, which starts its children hidden.

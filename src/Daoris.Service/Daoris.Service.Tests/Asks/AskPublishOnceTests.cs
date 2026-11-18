@@ -124,11 +124,11 @@ public sealed class AskPublishOnceTests : IAsyncLifetime
         var carried = await _desk.PublishAsync(asked.Id, "media-api", Now.AddSeconds(20), draft: draft, session: intake.Id);
         Assert.Equal(intake.Id, carried.Quest!.PublishedBy);
         Assert.Single(carried.Quest.Requirements);
-        Assert.DoesNotContain("carries no requirement", carried.Message);
+        Assert.DoesNotContain("Published with no requirement", carried.Message);
 
         var other = (await _desk.AskAsync(new AskRequest("work", "the media config needs a second look"), Now)).Ask!;
         var bare = await _desk.PublishAsync(other.Id, "media-api", Now.AddSeconds(30));
         Assert.Empty(bare.Quest!.Requirements);
-        Assert.Contains("carries no requirement", bare.Message);
+        Assert.Contains("Published with no requirement", bare.Message);
     }
 }

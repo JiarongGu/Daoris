@@ -56,6 +56,8 @@
   "person.view.ask-new-workflow": "Its work follows the workflow {{workflow}}.",
   "person.view.ask-new-links": "It carries links ({{count}}): {{links}}.",
   "person.view.ask-new-files": "It carries files from this machine ({{count}}): {{files}}.",
+  "person.view.ask-new-requirement": "What you required, in your words: “{{words}}”. Check: {{check}}. Every quest it becomes carries it.",
+  "person.view.ask-new-through": "Delivered on your words: “{{words}}”.",
   "person.view.work-pause": "Pauses the work of {{scope}} {{id}} on this machine: what of it runs now stops as your own stop (sessions running: {{stops}}), and nothing of it starts until you resume it.",
   "person.view.work-pause-already": "The work of {{scope}} {{id}} is paused on this machine already, and nothing of it runs now, so this changes nothing.",
   "person.view.work-pause-nothing": "Nothing of {{scope}} {{id}} is open or taken on this machine, so there is nothing to pause and this changes nothing.",

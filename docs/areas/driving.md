@@ -308,8 +308,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 43. An ask is a sentence entered at a workspace, kept verbatim with every later word of the person's. It is `Open`, `Proposed`,
     `Published` or `Closed`, and `Done` derived from its quests, none of them held or left (`Quest.Left`: a done that departed from
     a requirement, accepted or not). Every session on it is handed its words, and a requirement must
-    quote them. A new ask published at once (`--to`) takes `--require "<quote>" "<check>"`, its quotes kept on it as the person's
-    `quoted` words before its quest is judged; it and `ask through <id>` take *through words*, the person's asking for the work to
+    quote them. A new ask takes `--require "<quote>" "<check>"`, with or without a receiver: kept on the ask, its quotes as the person's
+    `quoted` words before any quest is judged, and carried by every quest the ask becomes, the one published at once (`--to`) and each its
+    intake publishes, the intake's own beside them; a quest it becomes with none is answered *Published with no requirement: its run's
+    holds step will wait on the person's word*. It and `ask through <id>` take *through words*, the person's asking for the work to
     be delivered with no press of theirs, the latest standing and `--clear` taking them back; the ask's page says the standing words
     (*Delivered on your words*) with *Take back…*, the person's press. Ask Daoris's press puts on an ask only
     words that stand verbatim, whitespace and case aside, in the person's own messages of the conversation whose delegate key proved
@@ -317,7 +319,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     deletes an ask, and a quest or a session: the service keeps no key for these (D284). `ask list [--workspace <w>|--all]
     [--open] [--json]` and `quest list [--repository <r>] [--workspace <w>] [--open] [--json]` read them and change nothing; an
     ask whose whole text is one word that names a verb of `ask` (`list`, `show`, `close`, …) is refused, saying the verb
-    probably meant, and is never made. (D65, D133, D277, D282, D284)
+    probably meant, and is never made. (D65, D133, D277, D282, D284, D321)
 44. An intake is a session in the workspace's room under `<home>/work/rooms/intake`, recorded as a chat naming its ask. It reads
     the declarations and publishes quests, runs only where an Intake actor is set, one per ask, in slots the quests leave. Where
     the workspace has more than one repository it is the lead of the ask's team (`IntakeLead`): it starts as plan work on the Lead
