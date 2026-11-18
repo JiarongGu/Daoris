@@ -88,14 +88,9 @@ public sealed class StepWaitCensusTests
         };
     }
 
-    /// <summary>A run still governed, its steps read as they stand.</summary>
     private const string Going = "going";
 
-    /// <summary>
-    /// Every state of a run a wait can stand in, each with the waits it holds: a run going on holds every kind; a run ended failed at a step
-    /// its holder may still settle holds that step alone, left (<see cref="A_run_ended_failed_waits_on_its_left_step_alone"/>). Seen failing
-    /// first on the left step of a run ended failed while its quest was open: no row, since the census listed kinds and not the states that hid them.
-    /// </summary>
+    /// <summary>Every run state a wait stands in: a run going on holds every kind, one ended failed-held its left step alone. Seen failing first on that left step.</summary>
     private static readonly (string Why, string State)[] States = [.. PersonWaits.All.Select(why => (why, Going)), (PersonWaits.Left, EmptyRunEnds.FailedHeld)];
 
     public static TheoryData<string, string> Waits
@@ -110,7 +105,6 @@ public sealed class StepWaitCensusTests
 
     private static readonly NodeDeclaration Push = new("push", NodeKinds.Push, 1, NodeReach.Performed);
 
-    /// <summary>A run ended failed at its push, refused; a task of the person's still standing active, which an ended run waits on no more.</summary>
     private static NodeRecord EndedAtPush => new(Unit)
     {
         Ended = new RunEnd(Run, Now) { Outcome = RunOutcomes.Failed, Node = "push" },
@@ -121,11 +115,9 @@ public sealed class StepWaitCensusTests
         },
     };
 
-    /// <summary>The facts for the wait <paramref name="why"/> in a run at <paramref name="state"/>.</summary>
     private static AttentionFacts FactsAt(string why, string state) => state == Going ? FactsAt(why) : new()
     {
         Steps = [JsonSerializer.SerializeToNode(LeftSteps.Step(Run, "engine", "aurora", Push, EndedAtPush), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
-        // Sessions' placing of the run's session for it, which the step's own row carries: never a second row.
         Sessions = [Session("""{"id":"s1","quest":"q7","state":"awaiting-step","updated":"2026-11-16T09:51:00Z"}""")],
         Groups = [With("""{"session":"s1","group":"needs-you","reason":"left","shown":"awaiting-step","archived":false,"teammate":false}""",
             """{"reason":"left","waits":[{"run":"q7","node":"push","why":"left","repository":"engine","role":"lead","ended":true}]}""")],

@@ -87,8 +87,7 @@ describe('RunWaitsHead', () => {
   });
 });
 
-// Every `PersonWaits.All` kind in every run state it stands in (read by its census, `<kind>@<state>` past a run going on) has its card
-// here; a `carried` one's press is on the card that carries it.
+// Every `PersonWaits.All` kind in every run state (its census's `<kind>@<state>` past a run going on) has its card; a `carried` one's press is on the card that carries it.
 const CENSUS: Record<string, { presses: string[]; held?: StepWaitRow['held'] } | 'carried'> = {
   'accept': 'carried',
   'approval': { presses: ['approve', 'reject', 'skip'] },

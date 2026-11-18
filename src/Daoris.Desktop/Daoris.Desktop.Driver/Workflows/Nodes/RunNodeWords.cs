@@ -74,7 +74,7 @@ public static class RunNodeWords
     private static readonly string[] Settles = [NodeWordActs.Stop, NodeWordActs.Again, NodeWordActs.DoneOutside];
 
     /// <summary>
-    /// Whether the person may say a failed step was done outside Daoris: its kind reads its proof once claimed (a push, origin's ref at the
+    /// Whether the person may claim a failed step done outside Daoris: its kind reads its proof once claimed (a push, origin's ref at the
     /// landed tip), so the claim is kept on its status and the step's observation settles it; a plugin's is said on its attempt instead.
     /// </summary>
     public static bool Outside(NodeDeclaration node, NodeStatus status) =>

@@ -61,7 +61,6 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   const askAgain = act === 'ask-again';
   const goOn = act === 'go-on';
   const stopNode = act === 'stop-node';
-  // The step a run ended failed at: tried again, or said done outside, each saying what it does, with nothing to write.
   const failedKey = act === 'step-again' ? 'tryAgain' : act === 'step-outside' ? 'doneOutside' : null;
   // What ending a quiet session does, and that the person's waiting words go to the next part.
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';

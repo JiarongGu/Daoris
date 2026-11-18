@@ -120,7 +120,7 @@ public sealed class FailedHeldRunEndTests : NodeRunFixture
         Assert.Null(Files.Read(RunUnit)!.Ended);
     }
 
-    /// <summary>A push failed for a reason no look reads again is settled by the person's word that it was pushed, its proof origin's ref.</summary>
+    /// <summary>A push failed for a reason no look reads again is settled by the person's claim of a push outside, its proof origin's ref.</summary>
     [Fact]
     public async Task Done_outside_on_a_push_failed_otherwise_is_proven_by_origins_ref_and_the_run_goes_on()
     {

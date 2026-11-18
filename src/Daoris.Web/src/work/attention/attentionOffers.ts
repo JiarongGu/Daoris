@@ -47,7 +47,7 @@ export type AttentionActId =
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
   | 'stop-node'
-  // The step a run ended failed at: a new attempt, and the person's word it was done outside where its kind reads the proof.
+  // The step a run ended failed at: a new attempt, and the person's claim of work done outside, where its kind reads the proof.
   | 'step-again' | 'step-outside'
   | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 

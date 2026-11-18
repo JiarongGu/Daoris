@@ -209,7 +209,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
         return kept;
     }
 
-    /// <summary>When each failed end kept was read: its record's write then.</summary>
+    /// <summary>The write time of each failed end's record as it is read.</summary>
     private readonly Dictionary<string, DateTime> _failedAt = new(StringComparer.Ordinal);
 
     private static DateTime Stamp(string path) => File.GetLastWriteTimeUtc(path);

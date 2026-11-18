@@ -161,7 +161,6 @@ public static class NeedsAPerson
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
-            // The step a run ended failed at is its own `step` row, with its presses (LeftSteps): its session is not a row again.
             if (Text(placed, "reason") == SessionReason.Left && LeftByEndedRuns(placed)) continue;
             var row = Row(Text(placed, "reason") == SessionReason.Left ? "left" : "review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";

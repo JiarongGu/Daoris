@@ -16,7 +16,7 @@ const WORDED: ReadonlySet<string> = new Set([
 
 const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, 'decide', ...RETURN_ACTS, 'again', 'done-outside'];
 
-/** A failed step's own presses with nothing to say: a new attempt, and the person's word it was done outside where its kind reads the proof. */
+/** A failed step's own presses with nothing to say: a new attempt, and the person's claim of work done outside, where its kind reads the proof. */
 const FAILED_ACTS = [['again', 'tryAgain'], ['done-outside', 'doneOutside']] as const;
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
