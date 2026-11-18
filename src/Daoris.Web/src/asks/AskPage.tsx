@@ -29,6 +29,7 @@ import { NextDoor } from '../work/head/NextDoor';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { AskReview } from './AskReview';
 import { AskThrough } from './AskThrough';
+import { RequirementList } from '../quests/Requirements';
 import { AskWorkflowKind } from './AskWorkflowKind';
 import { AskWork } from './AskWork';
 import { workTree } from './workTree';
@@ -476,6 +477,13 @@ export function AskPage({
            choice is theirs alone, and a proposal applies only on their press. */
         <PageSection title={t('asks.record.review')}>
           <AskReview ask={ask} environments={environments} busy={busy} onChoose={onChooseReview} />
+        </PageSection>
+      )}
+
+      {(ask.requirements?.length ?? 0) > 0 && (
+        /* What the person required, in their words, which every quest it becomes carries: listed as a quest's page lists them. */
+        <PageSection title={t('quests.requirements.title')}>
+          <RequirementList requirements={ask.requirements!} />
         </PageSection>
       )}
 

@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The workflows' answer to the reading the instance's leases ask of two verbs' words, the words
-/// of a run's node that the person says at its door. <c>workflow keep</c>, and the person's skip and stop of a node, keep
+/// of a run's node that the person says at its door. <c>workflow keep</c>, a step's <c>take</c>, <c>hand</c> and <c>give-back</c>, a node's <c>values</c> set or cleared
+/// (said, they are a look), and the person's skip and stop of a node, keep
 /// a word on the run's record, which only the lease's holder writes; <c>work</c> holds the lease for <c>recovery</c>, which deletes refs,
 /// and for <c>held</c> with a resolution of a held attempt (<see cref="HeldResolutions"/>), while <c>work state</c> is a look.
 /// Installed when the driver's assembly loads, before any host reads a lease.
@@ -14,7 +15,9 @@ internal static class NodeLease
     [ModuleInitializer]
     internal static void Install()
     {
-        VerbLeases.Answer("workflow", new(words => words is ["keep", ..] or [NodeWordActs.Skip, ..] or [NodeWordActs.Stop, ..] or [NodeWordActs.Changes, ..] or [NodeWordActs.Accept, ..]));
+        VerbLeases.Answer("workflow", new(words => words is ["keep", ..] or [NodeWordActs.Skip, ..] or [NodeWordActs.Stop, ..] or [NodeWordActs.Changes, ..] or [NodeWordActs.Accept, ..]
+            or [CastActs.Take, ..] or [CastActs.Hand, ..] or [CastActs.GiveBack, ..]
+            || (words is ["values", ..] && (WorkflowValuesCommand.Read(words, out _) is not { } ask || ask.Changes))));
         VerbLeases.Answer("work", new(words =>
             words is ["recovery", ..] || (words is ["held", ..] && words.Skip(1).Any(word => HeldResolutions.All.Contains(word)))));
     }
