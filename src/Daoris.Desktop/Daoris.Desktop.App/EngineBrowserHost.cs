@@ -128,6 +128,18 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser, IBrowserCach
         }
     }
 
+    /// <summary>The chosen browser's pages, read only where it runs (Daoris's own once brought up, Edge at its recorded port): none
+    /// comes up for it.</summary>
+    public async Task<IReadOnlyList<BrowserPage>?> PagesAsync(CancellationToken ct = default)
+    {
+        int? port = EdgeChosen
+            ? EdgeBrowser.RecordedPort(File.Exists(EdgeBrowser.RecordPath(home)) ? await File.ReadAllTextAsync(EdgeBrowser.RecordPath(home), ct).ConfigureAwait(false) : null)
+            : _bringUp is { Running: true } ? _port : null;
+        if (port is not { } running) return null;
+        using var engine = new EngineCdp(running);
+        return await engine.PageAddressesAsync(ct).ConfigureAwait(false);
+    }
+
     /// <summary>The port the chosen browser listens on, once it is up: what the front relays a connection to.</summary>
     private async Task<int> BringUpForConnectionAsync(CancellationToken ct)
     {

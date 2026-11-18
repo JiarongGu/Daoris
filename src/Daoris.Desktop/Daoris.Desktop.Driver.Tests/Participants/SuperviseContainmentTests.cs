@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no shell allow kept, the person's interpreter's among them; its connector's reads alone; the tree guard whatever the person's defaults;
 /// and on Claude Code, the person's tier with the handed file and Daoris's connector alone, on either door.
 /// </summary>
+[Reaches("src/Daoris.Service/Daoris.Service.Mcp", Why = "it reads the connector's tool listing (the service's call-table.json), which the service declares (TOOLGOLDENS1)")]
 public sealed class SuperviseContainmentTests : IDisposable
 {
     private readonly string _root = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "supervise-containment", Guid.NewGuid().ToString("N")[..8]);

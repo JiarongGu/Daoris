@@ -88,6 +88,7 @@ public sealed class QuestionFilesTests : IDisposable
         Assert.Equal(expected["why"] is { } why ? Words(why) : null, read.Why);
         Assert.Equal(expected["by"]?.GetValue<string>(), read.By);
         Assert.Equal(expected["owner"]?.GetValue<string>(), read.Owner);
+        Assert.Equal(expected["site"]?.GetValue<string>(), read.Site);
     }
 
     /// <summary>

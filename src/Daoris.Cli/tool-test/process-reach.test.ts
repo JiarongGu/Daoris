@@ -321,6 +321,23 @@ test('a changed path reaches the classes whose reach holds it; what acts unnamed
   assert.match(at('package.json').whole ?? '', /no class's reach places/);
 });
 
+test("a class's hand-written [Reaches] of a path outside the projects it compiles against is reached by that path alone", () => {
+  const files: Record<string, string> = {
+    ...DESK,
+    'src/Desk/Desk.Tests/ListTests.cs': [
+      'namespace Desk.Tests;',
+      '[Trait(Category.Name, Category.Process)]',
+      '[Reaches("src/Other/Mcp/ToolClasses.cs", "src/Other/Mcp/Tools", Why = "its golden lists the connector\'s tools")]',
+      'public sealed class ListTests { [Fact] public void Lists() { } }',
+    ].join('\n'),
+  };
+  const census = reach.censusOf({ project: 'src/Desk/Desk.Tests', settings: 'src/Desk/process.runsettings' }, Object.keys(files), (file) => files[file] ?? '');
+  assert.deepEqual(census.problems ?? [], []);
+  assert.deepEqual(short(reach.classesReached(['src/Other/Mcp/ToolClasses.cs'], census).classes), ['ListTests']);
+  assert.deepEqual(short(reach.classesReached(['src/Other/Mcp/Tools/StepTools.cs'], census).classes), ['ListTests'], 'a folder it names reaches by its files');
+  assert.equal(reach.classesReached(['src/Other/Mcp/Other.cs'], census).whole.length, 1, 'a path no class names is as before: the half, where the lane table sends it');
+});
+
 test('one module changed reaches its classes and the planted class with no reach; a fixture every class shares, all of them; a project file, the whole half', () => {
   const census = deskCensus();
   let reached = reach.classesReached(['src/Desk/Desk.Core/Alpha/AlphaThing.cs'], census);

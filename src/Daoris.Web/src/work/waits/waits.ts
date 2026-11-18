@@ -25,7 +25,7 @@ import { REVIEW_TONE, reviewHolds, reviewState } from '../gates/review';
  * draws the same.
  */
 export type Wait =
-  | { kind: 'question'; below: boolean }
+  | { kind: 'question'; below: boolean; signIn?: true }
   | { kind: 'intake'; ask: string }
   | { kind: 'goAhead'; number: number }
   | { kind: 'permission'; request: string }
@@ -115,6 +115,7 @@ export type WaitFacts = {
   onResolve?: unknown;
   onAnswerSession?: unknown;
   onAnswerAsk?: unknown;
+  question?: { site?: string | null } | null;
   goAheads?: GoAhead[];
   /** The ask its go-aheads are on, by which *What needs you* keys each (`waitObligations`); absent, a go-ahead is keyed by its number. */
   goAheadsOn?: string | null;
@@ -156,7 +157,7 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   const intake = isIntake(session);
   if (waiting && intake && facts.onAnswerAsk && session.ask) waits.push({ kind: 'intake', ask: session.ask });
   if (waiting && !intake && (facts.answerBelow || facts.onResolve || facts.onAnswerSession)) {
-    waits.push({ kind: 'question', below: Boolean(facts.answerBelow) });
+    waits.push({ kind: 'question', below: Boolean(facts.answerBelow), ...(facts.question?.site ? { signIn: true as const } : {}) });
   }
   if (parked && !intake && facts.onGoAhead) {
     for (const goAhead of facts.goAheads ?? []) {
