@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// person or an agent alike: the kind says what settles it, never who. Its outcome is written in the file, so a flowchart
 /// routes on it with a <c>when</c> wire: <c>done</c> for a task, <c>approved</c> for an approval, whose refusal is the graph's <c>rejected</c>
 /// wire as a review's changes are; one declaring none is a task reached with no outcome. One declaring two or more of its own is a per-run
-/// decision, answered by <i>decide</i> (<see cref="TaskDecisions"/>).
+/// decision, answered by <i>decide</i> (<see cref="TaskDecisions"/>), and a saved <c>human</c> step reads as one (<see cref="HumanFormerKind"/>).
 /// </summary>
 [NodeKind(NodeKinds.Task, NodeGroup.You, NodeKinds.GoAhead)]
 internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole

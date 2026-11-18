@@ -113,6 +113,13 @@ export function separateNotes(text) {
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });
   if (argv[0] === '--merge-notes') return mergeNotes(argv.slice(1), { err, cwd, env });
+  // A clone's own pre-commit hook, written by an install before 2026-11-04, still calls this with nothing: it is the clone's file, so
+  // the commit goes on and the person is told how to take the hook out, once per commit until they do.
+  if (argv.length === 0) {
+    err('index-hook: this clone\'s pre-commit hook was written by an older install and does nothing now: remove it '
+      + '(git rev-parse --git-path hooks/pre-commit names the file), then run node tools/index-hook.mjs --install');
+    return 0;
+  }
   err('usage: node tools/index-hook.mjs --install | --merge-notes <base> <ours> <theirs>');
   return 2;
 }

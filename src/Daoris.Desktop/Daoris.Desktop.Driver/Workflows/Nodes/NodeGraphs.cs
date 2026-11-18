@@ -198,13 +198,14 @@ public static class NodeGraphs
         return (problems.Count == 0 ? graph : null, problems);
     }
 
-    /// <summary>A saved version's graph and the digest of the file's graph, which a bound run keeps.</summary>
+    /// <summary>A saved version's graph with its former kind read as the kind now and the digest of the file's graph, which a bound run keeps; a save reads the kinds as named, so it never writes a former one.</summary>
     public static (NodeGraph? Graph, IReadOnlyList<WireProblem> Problems, string? Digest) ReadSaved(string json, bool onSave = false)
     {
         if (Parts(json, out var unread) is not { } parts) return (null, [unread!], null);
-        var graph = new NodeGraph(parts.Nodes, parts.Wires, parts.Entries, parts.End ?? "") { SchemaVersion = parts.SchemaVersion, Cleanup = parts.Cleanup ?? GraphCleanup.Held };
+        var saved = new NodeGraph(parts.Nodes, parts.Wires, parts.Entries, parts.End ?? "") { SchemaVersion = parts.SchemaVersion, Cleanup = parts.Cleanup ?? GraphCleanup.Held };
+        var graph = onSave ? saved : HumanFormerKind.Read(saved);
         var problems = Problems(graph, onSave: onSave);
-        return (problems.Count == 0 ? graph : null, problems, Digest(graph));
+        return (problems.Count == 0 ? graph : null, problems, Digest(saved));
     }
 
     internal static GraphParts? Parts(string json, out WireProblem? unread) => NodeGraphReading.Parts(json, out unread);

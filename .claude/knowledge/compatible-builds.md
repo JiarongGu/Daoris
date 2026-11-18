@@ -36,6 +36,13 @@ it does not know, and nothing here is kept to make that work.
 - **A shape that is still written.** A field a current writer still produces, even where it is often
   absent, is the current shape. If you are unsure that a shape is still written, find its writer: where no
   writer remains, it is an old record and goes; where one does, it is current and stays.
+- **A reader of what a purge keeps.** A purge takes history, not configuration: saved workflows and their
+  versions, a hand-written file (`daoris.json`, `driver.json`), a repository's own lock and hooks. An older
+  shape there is still in front of this build, so its reader stays, naming the condition that ends it (no
+  saved instance spells it, counted where it can be), or the read refuses with a sentence saying what to do.
+  It never crashes and never ignores the shape in silence.
+- **A refusal of a store that was not purged.** A home older than this build's shape, never purged, is
+  refused at open, naming the home and what to do (purge it, or start fresh), not failed at its first query.
 - **Wire fields that an older peer may omit,** while the peer and this build run together over a wire (a
   page and its host in one install, a service and its client), are not records. The rule governs what a
   store keeps, not the two ends of a request that are one release.

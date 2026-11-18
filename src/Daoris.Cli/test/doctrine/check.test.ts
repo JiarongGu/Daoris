@@ -158,3 +158,12 @@ test('a core over its words declared failing fails the check', () => {
   repoFx.cleanup();
 });
 
+/** A hand-written manifest: the byte ceiling the words replaced is refused with the line that replaces it, never ignored. */
+test('a manifest still carrying coreBudgetBytes is refused with its replacement', () => {
+  const { canonFx, repoFx } = synced();
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], coreBudgetBytes: 30000 }));
+  assert.throws(() => readManifest(repoFx.root), /coreBudgetBytes, which is retired.*"coreBudget": \{ "words": 4500 \}/);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+

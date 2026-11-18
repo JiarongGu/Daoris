@@ -34,7 +34,7 @@ public static class PluginFormerKinds
 
     /// <summary>
     /// A saved graph's own text, as the editor and <c>workflow show</c> are handed it, a copy with each node's kind as
-    /// <paramref name="read"/> holds it, which <see cref="Read"/> made the kind now: the file untouched, seen with no save.
+    /// <paramref name="read"/> holds it, which <see cref="Read"/> and <see cref="HumanFormerKind"/> made the kind now: the file untouched, seen with no save.
     /// </summary>
     public static JsonNode Drawn(JsonNode raw, NodeGraph read)
     {
@@ -45,7 +45,7 @@ public static class PluginFormerKinds
         {
             if (node["id"] is JsonValue id && id.TryGetValue<string>(out var named) && kinds.TryGetValue(named, out var now)
                 && node["kind"] is JsonValue value && value.TryGetValue<string>(out var kind)
-                && NodeKit.IsPlugin(kind) && now != kind)
+                && (NodeKit.IsPlugin(kind) || kind == HumanFormerKind.Former) && now != kind)
             {
                 node["kind"] = now;
             }

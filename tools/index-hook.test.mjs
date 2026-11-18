@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { install, separateNotes } from './index-hook.mjs';
+import { install, main, separateNotes } from './index-hook.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const scratch = join(here, '..', '_fixtures', 'index-hook-test');
@@ -71,6 +71,13 @@ test('install writes the checkout hooks and leaves a hook that is not its own', 
   assert.match(readFileSync(join(hooks, 'post-checkout'), 'utf8'), /index-fresh\.mjs" --root "\$root"/);
   assert.equal(readFileSync(join(hooks, 'post-merge'), 'utf8'), '#!/bin/sh\necho mine\n');
   assert.ok(lines.some((line) => /post-merge is not its own/.test(line)), lines.join('\n'));
+});
+
+test("an older install's pre-commit hook, calling with nothing, lets the commit go on and says how to remove it", () => {
+  const said = [];
+  assert.equal(main([], { out() {}, err: (line) => said.push(line) }), 0);
+  assert.match(said.join('\n'), /pre-commit hook was written by an older install .* remove it \(git rev-parse --git-path hooks\/pre-commit/);
+  assert.equal(main(['--unknown'], { out() {}, err() {} }), 2);
 });
 
 test('install outside a work tree exits 0 and writes nothing', () => {

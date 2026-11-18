@@ -125,6 +125,19 @@ test('a stamp that does not move no longer hides an update: equal versions over 
   fx.done();
 });
 
+test('a lock from before the digest is refused with what to run, then sync writes the digest', () => {
+  const fx = adopter('update-tie-old-lock');
+  const lock = JSON.parse(fx.repo.read('daoris.lock'));
+  delete lock.canonDigest;
+  fx.repo.write('daoris.lock', `${JSON.stringify(lock, null, 2)}\n`);
+
+  assert.throws(() => status(fx.repo), /the lock predates its digest: run daoris sync/);
+  assert.equal(commandSync({ root: fx.repo.root, argv: [], write: () => {}, packageRoot: '' }), 0);
+  assert.equal(readLock(fx.repo.root)!.canonDigest, canonDigest(readCanon(fx.canon.root)));
+
+  fx.done();
+});
+
 test('the same version and the same canon: status says no update', () => {
   const fx = adopter('update-none');
   editHere(fx.repo);

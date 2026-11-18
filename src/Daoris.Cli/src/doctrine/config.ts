@@ -26,8 +26,15 @@ export const DEFAULT_CORE_BUDGET_WORDS = 4500;
 const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudget'> & { target: string | null } =
   { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudget: { words: DEFAULT_CORE_BUDGET_WORDS, fails: false } };
 
-/** `coreBudget` as `check` reads it, or a refusal. */
+/**
+ * `coreBudget` as `check` reads it, or a refusal. The manifest is written by hand, so the byte ceiling it replaced is refused with
+ * the line that replaces it: a ceiling silently ignored is one nobody knows has stopped applying.
+ */
 function checkCoreBudget(parsed: Record<string, unknown>): Manifest['coreBudget'] {
+  if ('coreBudgetBytes' in parsed) {
+    throw new DaorisError(`${MANIFEST_FILE} has coreBudgetBytes, which is retired: the always-loaded doctrine's ceiling `
+      + `is in words — replace it with "coreBudget": { "words": ${DEFAULT_CORE_BUDGET_WORDS} }`);
+  }
   const value = parsed.coreBudget;
   if (value === undefined) return DEFAULTS.coreBudget;
   const words = (value as Record<string, unknown> | null)?.words;
@@ -153,6 +160,18 @@ export function readLock(root: string): Lock | null {
     throw new DaorisError(`${LOCK_FILE} has no 'entries' list — it is damaged; 'daoris sync' writes it again`);
   }
   return lock as Lock;
+}
+
+/**
+ * The canon digest a lock was synced from, or a refusal: a lock is the repository's own file, so one written before the digest
+ * is still in front of this daoris, and comparing against nothing would crash. `sync` writes it again, so it never asks this.
+ */
+export function lockedDigest(lock: Lock): string {
+  const digest = (lock as Partial<Lock>).canonDigest;
+  if (typeof digest !== 'string' || digest.length === 0) {
+    throw new DaorisError(`${LOCK_FILE}: the lock predates its digest: run daoris sync`, 1);
+  }
+  return digest;
 }
 
 /**

@@ -118,6 +118,19 @@ test('the layout a lock was written under is its own fields, else claude-code un
   fx.cleanup();
 });
 
+test('a lock naming no layout beside a claude-code manifest with a target of its own is refused, naming the fix', () => {
+  const fx = layoutFixture('layout-desc-lock-untold');
+  fx.sync();
+  fx.repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], target: 'docs/agent' }));
+  const manifest = readManifest(fx.repoFx.root);
+
+  assert.throws(() => lockLayout(fx.repoFx.root, fx.lock(), manifest),
+    /names no layout, and daoris\.json names 'docs\/agent'.*Add "target": "<the folder that holds them>" to daoris\.lock/s);
+  writeLock(fx.repoFx.root, { ...fx.lock(), target: '.claude' });
+  assert.equal(lockLayout(fx.repoFx.root, fx.lock(), manifest).target, '.claude');
+  fx.cleanup();
+});
+
 test('a lock whose target escapes the repository is refused (D18)', () => {
   const fx = layoutFixture('layout-desc-lock-escape', 'agents');
   fx.sync();

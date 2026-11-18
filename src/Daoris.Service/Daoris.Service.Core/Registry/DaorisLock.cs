@@ -94,7 +94,7 @@ public sealed class DaorisLock
             }
 
             // Lock targets are relative to the root the lock is written under (the CLI's lockLayout).
-            if (Layout(document.RootElement) is not { } layout) return Empty;
+            if (Layout(document.RootElement, repositoryRoot) is not { } layout) return Empty;
             var (harness, target) = layout;
 
             var mirrors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -167,18 +167,28 @@ public sealed class DaorisLock
     /// for a lock this reads as none.
     /// </summary>
     /// <remarks>
-    /// The CLI refuses a lock whose target leaves the repository, or whose descriptor it does not know.
-    /// Read here as no lock at all, which is the safe direction <see cref="Read"/> already takes: every
+    /// The CLI refuses a lock whose target leaves the repository, whose descriptor it does not know, or which names no layout beside
+    /// a manifest on <c>claude-code</c> with a target of its own (written there before the layout fields, or at <c>.claude</c> today:
+    /// which cannot be told). Read here as no lock at all, which is the safe direction <see cref="Read"/> already takes: every
     /// document is then the repository's own, and none is read outside it.
     /// </remarks>
-    private static (string Harness, string Target)? Layout(JsonElement lockRoot)
+    private static (string Harness, string Target)? Layout(JsonElement lockRoot, string repositoryRoot)
     {
         // A field of the wrong shape throws InvalidOperationException here, which Read turns into Empty.
         var named = lockRoot.TryGetProperty("harness", out var h) ? h.GetString() : null;
         var harness = named ?? RepositoryLayout.Older;
         if (!RepositoryLayout.Descriptors.TryGetValue(harness, out var descriptor)) return null;
 
-        var target = lockRoot.TryGetProperty("target", out var t) ? t.GetString() ?? descriptor.DefaultTarget : descriptor.DefaultTarget;
+        var hasTarget = lockRoot.TryGetProperty("target", out var t);
+        if (named is null && !hasTarget
+            && RepositoryLayout.Manifest.Read(repositoryRoot) is { Target: { } own } manifest
+            && (manifest.Harness is null || manifest.Harness == RepositoryLayout.Older)
+            && own != descriptor.DefaultTarget)
+        {
+            return null;
+        }
+
+        var target = hasTarget ? t.GetString() ?? descriptor.DefaultTarget : descriptor.DefaultTarget;
 
         var normal = RepositoryLayout.Declared(target);
         return RepositoryLayout.Escapes(normal) ? null : (harness, normal);

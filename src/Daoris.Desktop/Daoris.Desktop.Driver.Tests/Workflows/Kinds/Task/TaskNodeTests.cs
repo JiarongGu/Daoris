@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A role's task: a <c>task</c> node a run reaches waits on its role's holder, who says <i>Done</i>, or
 /// <i>Approve</i> or <i>Reject</i> where it is an approval, with a note if they like, on the run's node door; the run goes on along the <c>when</c>
 /// wire of the outcome pressed. What waits is read for <i>What needs you</i> where the person holds it and the press clears it; a press on a
-/// node that is not waiting is refused. Each seen failing first.
+/// node that is not waiting is refused. A saved version's former <c>human</c> step reads as one at its kept digest. Each seen failing first.
 /// </summary>
 public sealed class TaskNodeTests : NodeRunFixture
 {

@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The saved workflows' floors (<see cref="Floors"/>): for what a saved version may name that an earlier build misreads, the first build that
 /// saved it, kept beside the saved workflows (<see cref="WorkflowRolesSinceStore"/>), and a going back below any is refused
-/// (<see cref="InstallRollback"/>, code <see cref="Code"/>). The rule alone, on a kept build as a value.
+/// (<see cref="InstallRollback"/>, code <see cref="Code"/>). Each is kept apart, since a roles' floor kept first lies below the builds that know
+/// no <c>task</c> (<see cref="HumanFormerKind"/>). The rule alone, on a kept build as a value.
 /// </summary>
 public static class WorkflowRolesSince
 {
