@@ -582,7 +582,16 @@ half's classes and reach; `node tools/process-reach.mjs reach <from> <to>` names
 
 `tools/test-map.mjs` is the census of every test unit (CISCOPE1c, D207): each .NET class of every `dotnet test` gate (its
 reach PROCREACH1's census, unchanged), each `node --test` file, vitest file and Playwright spec (its reach the closure of
-its imports and the tracked files, folders and globs its strings name), and each rehearsal, with the module it tests.
+its imports and the tracked files, folders and globs its strings name), and each rehearsal, with the module it tests. An
+import the runtime erases or that takes types alone is no edge, and a re-export is followed by its importers for the names
+each takes, so a page test reaches the bridge's barrel (`bridge/shell.ts`) and, of its domains, those it takes names from
+(WEBREACH1, `tools/test-map/web-reach.mjs`). The page's catalogues are data read by key: a page source reaches, in every
+language, the catalogue of each area whose key or dotted prefix it names, and the index hands them all only to a reader
+taking `en`, `zh`, `catalogues` or `areas` (the parity and catalogue suites) unless it says `// test-map: reads the
+catalogues by key` (the i18n runtime). What the web's setup file loads is in every web unit's reach, and a page source's bare
+`.` or `..` names no folder. A change to one domain's page reaches its own tests, the shell's (`app/`, which renders every
+page) and the suites that read every source, about 40 of the 745 files; a catalogue's reaches its readers by key and the
+parity suites, a median of about 100.
 `census` prints them, `reach <from> <to>` names the units a range reaches, and `check` (the `test-map` gate runs `--check`, about 20 s, a
 blocking check of every merge and a gate of every CI run) fails on a tracked file no module, lane or laneless group
 places, a fixture row of the lane table whose gates differ from the units the census finds reading it, a git-half class at

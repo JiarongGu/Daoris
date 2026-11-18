@@ -81,7 +81,7 @@ function tscReach(words, { files, read, reader, cwd }) {
   const seen = new Set(queue);
   while (queue.length) {
     const file = queue.pop();
-    for (const spec of reader.factsOf(file).imports) {
+    for (const { spec } of reader.factsOf(file).edges) {
       const resolved = resolveImport(file, spec, tracked);
       const typed = resolved?.replace(/\.mjs$/, '.d.mts');
       for (const each of [resolved, typed && tracked.has(typed) ? typed : null]) {

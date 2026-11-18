@@ -73,10 +73,10 @@ public static class BenchmarkHome
         var (options, error) = ServiceOptions.FromEnvironment(repositories, Path.Combine(scratch, "index", "knowledge.db"));
         if (error is not null) throw new InvalidOperationException(error);
         await using var service = await ServiceFactory.CreateAsync(options, ct: ct);
-        // A fixture is written once and read after: nothing is lost if the machine stops while it is written, so no write waits on the disk.
+        // Written once, read after: no write waits on the disk. The log mode stays: a second connection cannot leave it (busy, at once).
         await using (var unsynced = service.Store!.Connection.CreateCommand())
         {
-            unsynced.CommandText = "PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;";
+            unsynced.CommandText = "PRAGMA synchronous = OFF;";
             await unsynced.ExecuteNonQueryAsync(ct);
         }
 

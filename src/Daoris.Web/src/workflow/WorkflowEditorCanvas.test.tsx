@@ -77,7 +77,7 @@ const scale = () => Number(chart().querySelector('[data-canvas-world]')!.getAttr
 let user: ReturnType<typeof userEvent.setup>;
 
 beforeEach(() => {
-  user = userEvent.setup();
+  user = userEvent.setup({ delay: null });
   invoke.mockImplementation(async (_module, type, options) => answer(type as string, (options as { payload: Record<string, unknown> }).payload));
   // The chart's pane 900 px wide, past the canvas's 36rem floor; the editor's region narrow, so a step's inspector is a drawer.
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
