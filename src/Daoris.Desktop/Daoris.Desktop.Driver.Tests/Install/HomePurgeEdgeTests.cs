@@ -16,6 +16,8 @@ public sealed class HomePurgeEdgeTests : IDisposable
 
     private string Home => Path.Combine(_root, "plain home");
 
+    private string Folder => DaorisHome.FolderOf(Home).Folder;
+
     private string Knowledge => DaorisHome.Entry(Home, HomeEntry.Knowledge);
 
     private string Desktop => DaorisHome.Entry(Home, HomeEntry.DesktopDb);
@@ -45,7 +47,7 @@ public sealed class HomePurgeEdgeTests : IDisposable
         Assert.Equal(1, Rows(Desktop, "news_said"));
         Assert.Equal(2, Rows(Knowledge, "sessions"));
         Assert.True(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions)));
-        Assert.False(Directory.Exists(Path.Combine(Home, HomePurge.BackupFolder)));
+        Assert.False(Directory.Exists(Path.Combine(Folder, HomePurge.BackupFolder)));
     }
 
     /// <summary>🔴 A home that is no install's keeps its backup in its own <c>purged/</c>, which a later plan never lists as history.</summary>
@@ -57,7 +59,7 @@ public sealed class HomePurgeEdgeTests : IDisposable
         var (code, said) = Run("purge", "--history", "--yes");
 
         Assert.True(code == 0, said);
-        var purged = Path.Combine(Home, HomePurge.BackupFolder, "20261119T083005Z");
+        var purged = Path.Combine(Folder, HomePurge.BackupFolder, "20261119T083005Z");
         Assert.True(File.Exists(Path.Combine(purged, "data", "sessions", "s-1", "events.jsonl")));
         Assert.True(File.Exists(Path.Combine(purged, "data", "knowledge.db")));
         Assert.True(File.Exists(Path.Combine(purged, HomePurge.SummaryFile)));
@@ -72,13 +74,13 @@ public sealed class HomePurgeEdgeTests : IDisposable
     {
         Seed();
         Assert.Equal(0, Run("purge", "--history", "--yes").Code);
-        var folders = Directory.GetDirectories(Path.Combine(Home, HomePurge.BackupFolder));
+        var folders = Directory.GetDirectories(Path.Combine(Folder, HomePurge.BackupFolder));
 
         var code = HomePurgeCommand.Run(["purge", "--history", "--yes"], Home, () => Now.AddMinutes(1), null, null, out var said);
 
         Assert.Equal(0, code);
         Assert.Contains("nothing to purge", said);
-        Assert.Equal(folders, Directory.GetDirectories(Path.Combine(Home, HomePurge.BackupFolder)));
+        Assert.Equal(folders, Directory.GetDirectories(Path.Combine(Folder, HomePurge.BackupFolder)));
 
         var empty = Path.Combine(_root, "empty home");
         Directory.CreateDirectory(empty);
@@ -142,7 +144,7 @@ public sealed class HomePurgeEdgeTests : IDisposable
         Assert.True(code == 0, said);
         Assert.Equal(0, Rows(wired, "sessions"));
         Assert.Equal(2, Rows(Knowledge, "sessions"));
-        Assert.Equal(1, Rows(Path.Combine(Home, HomePurge.BackupFolder, "20261119T083005Z", "index.db"), "sessions"));
+        Assert.Equal(1, Rows(Path.Combine(Folder, HomePurge.BackupFolder, "20261119T083005Z", "index.db"), "sessions"));
     }
 
     /// <summary>
@@ -175,22 +177,22 @@ public sealed class HomePurgeEdgeTests : IDisposable
         {
             DaorisHome.Entry(Home, HomeEntry.PlaceReceipts, "digest.json"), DaorisHome.Entry(Home, HomeEntry.Landings),
             DaorisHome.Entry(Home, HomeEntry.SessionBranches),
-            Path.Combine(Home, "sessions", "requests", "r-1.json"), Path.Combine(Home, "sessions", "s-1.pid"),
+            Path.Combine(Folder, "sessions", "requests", "r-1.json"), Path.Combine(Folder, "sessions", "s-1.pid"),
         };
         foreach (var path in kept) Write(path, "{}");
         Write(DaorisHome.Entry(Home, HomeEntry.PipeSent, "p-1.json"), "{}");
         Write(DaorisHome.Entry(Home, HomeEntry.PipeWaiting, "p-2.json"), "{}");
-        Write(Path.Combine(Home, "sessions", "s-3", "events.jsonl"), "{}\n");
+        Write(Path.Combine(Folder, "sessions", "s-3", "events.jsonl"), "{}\n");
 
         Assert.Equal(0, Run("purge", "--history", "--yes").Code);
 
         foreach (var path in kept) Assert.True(File.Exists(path), path);
-        var purged = Path.Combine(Home, HomePurge.BackupFolder, "20261119T083005Z");
+        var purged = Path.Combine(Folder, HomePurge.BackupFolder, "20261119T083005Z");
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.PipeSent, "p-1.json")));
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.PipeWaiting, "p-2.json")));
         Assert.True(File.Exists(Path.Combine(purged, "profiles", "pipe-sent", "p-1.json")));
         Assert.True(File.Exists(Path.Combine(purged, "sessions", "s-3", "events.jsonl")));
-        Assert.False(Directory.Exists(Path.Combine(Home, "sessions", "s-3")));
+        Assert.False(Directory.Exists(Path.Combine(Folder, "sessions", "s-3")));
     }
 
     private (int Code, string Said) Run(params string[] args)
