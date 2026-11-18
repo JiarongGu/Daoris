@@ -14,3 +14,15 @@ export function fixtureFolder(name: string): { dir: string; remove: () => void }
   const dir = mkdtempSync(join(FIXTURE_HOME, `${name}-`));
   return { dir, remove: () => rmSync(dir, { recursive: true, force: true }) };
 }
+
+const untilExit: string[] = [];
+process.on('exit', () => {
+  for (const dir of untilExit) rmSync(dir, { recursive: true, force: true });
+});
+
+/** A new empty folder under `FIXTURE_HOME` that is removed when the test file's process ends. */
+export function scratchFolder(name = 'scratch'): string {
+  const { dir } = fixtureFolder(name);
+  untilExit.push(dir);
+  return dir;
+}

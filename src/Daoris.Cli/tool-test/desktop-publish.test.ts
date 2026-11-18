@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { FIXTURE_HOME as SCRATCH, scratchFolder as folder } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { driverFile } from '../test/_csharp.ts';
@@ -45,7 +45,6 @@ const RUNNING_FILE = 'running.json';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-const folder = (): string => mkdtempSync(join(tmpdir(), 'daoris-publish-'));
 
 const markInstalled = (at: string) => writeFileSync(join(at, MARKER), `${MARKER_HEADER}\n\nours\n`);
 
@@ -680,7 +679,7 @@ test('the launcher starts the application the publish lays out, by the name its 
  * recipe, so there is one way to build a host and one name for its folder.
  */
 test('--service lays the connector beside the HTTP host under app/, each built by service-publish’s one recipe', () => {
-  const root = join(tmpdir(), 'an-install');
+  const root = join(SCRATCH, 'an-install');
   const plan = servicePlan(root);
 
   assert.deepEqual(plan.map((step: { executable: string }) => step.executable),
@@ -703,11 +702,11 @@ test('--service lays the connector beside the HTTP host under app/, each built b
 test('a service host is published self-contained, single-file, its native libraries inside, into its own folder', () => {
   const [connector] = HOSTS;
   assert.equal(connector.binary, CONNECTOR_HOME.at(-1));
-  const command: string = publishCommand(connector, 'win-x64', join(tmpdir(), 'an-install', ...CONNECTOR_HOME));
+  const command: string = publishCommand(connector, 'win-x64', join(SCRATCH, 'an-install', ...CONNECTOR_HOME));
   assert.ok(command.startsWith(`dotnet publish "${connector.project}" -c Release -r win-x64 --self-contained `), command);
   assert.match(command, / -p:PublishSingleFile=true /);
   assert.match(command, / -p:IncludeNativeLibrariesForSelfExtract=true /);
-  assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...CONNECTOR_HOME)}"`), command);
+  assert.ok(command.endsWith(` -o "${join(SCRATCH, 'an-install', ...CONNECTOR_HOME)}"`), command);
 });
 
 /**
@@ -717,9 +716,9 @@ test('a service host is published self-contained, single-file, its native librar
  * each recipe is the install's own. The merge test's own-output rule reads the rehearsal's half.
  */
 test('told an output of its own, every publish builds and stages there; untold, each recipe is as it was', () => {
-  const repo = join(tmpdir(), 'a-checkout');
-  const own = join(tmpdir(), 'an-output');
-  const folder = join(tmpdir(), 'an-install', 'x');
+  const repo = join(SCRATCH, 'a-checkout');
+  const own = join(SCRATCH, 'an-output');
+  const folder = join(SCRATCH, 'an-install', 'x');
   const told: string[] = [
     launcherPublishCommand(folder, own), appPublishCommand(folder, own), driverPublishCommand(folder, 'win-x64', own),
     ...HOSTS.map((host: unknown) => publishCommand(host, 'win-x64', folder, own)),
@@ -1074,9 +1073,9 @@ test('ONEWAY1ai-iv the program is its own folder under app/', () => {
   assert.equal(DRIVER_PROGRAM_FILE, process.platform === 'win32' ? DRIVER_EXE : DRIVER_EXE.replace(/\.exe$/, ''));
   const csproj = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', DRIVER_PROJECT, 'Daoris.Desktop.Driver.Host.csproj'), 'utf8');
   assert.ok(csproj.includes(`<AssemblyName>${DRIVER_HOME.at(-1)}</AssemblyName>`), 'the Host’s binary is the folder’s name');
-  const command: string = driverPublishCommand(join(tmpdir(), 'an-install', ...DRIVER_HOME));
+  const command: string = driverPublishCommand(join(SCRATCH, 'an-install', ...DRIVER_HOME));
   assert.ok(command.startsWith(`dotnet publish "${DRIVER_PROJECT}" -c Release -r win-x64 --self-contained false`), command);
-  assert.ok(command.endsWith(` -o "${join(tmpdir(), 'an-install', ...DRIVER_HOME)}"`), command);
+  assert.ok(command.endsWith(` -o "${join(SCRATCH, 'an-install', ...DRIVER_HOME)}"`), command);
   assert.doesNotMatch(command, /PublishSingleFile/, 'a folder of its own, framework-dependent');
 });
 

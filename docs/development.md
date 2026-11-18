@@ -70,6 +70,12 @@ isolated worktree when it ends without a tracked change. A docs-only or read-onl
 is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
 `local/scratch/`, or commits it early; otherwise it is lost with the worktree.
 
+No test or tool leaves a folder in the system's temporary folder: a node test makes its scratch with `scratchFolder` (removed when
+its process ends) or `fixtureFolder` and names a path under `FIXTURE_HOME` (`tools/merge/fixture-home.ts`, in `_fixtures/tool-tests/`),
+a C# test roots at `TestHomes`. `src/Daoris.Cli/tool-test/temp-folder-census.test.ts` fails, naming file and line, for a
+`tmpdir()` in the node tests and tools or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
+list is `KEPT` there; the C# list is `TestHomesCensusTests`'s, read by it), and a declared file removes what it makes.
+
 A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs` (a plan; `--apply` removes, `--root <checkout>`
 names another tree, `--hours <n>` the window): an entry it or anything directly in it was written in the last 24 hours stays, as
 do the caches a run keeps (`pinned-mingit`, `rehearsal-builds`, `seeds`) and every link, which is never followed; the rest is
