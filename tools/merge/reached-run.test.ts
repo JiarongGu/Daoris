@@ -65,6 +65,44 @@ test('each test project is built once before its classes, which run on that buil
   assert.deepEqual(parseOutcome(lines.join('\n'))?.built, ['src/D.Tests']);
 }));
 
+test('a light suite\'s groups run beside the build and the .NET runs, which need nothing of them; a heavy suite\'s wait for the build; the outcome keeps the plan\'s order', () => withStore(async (store, root) => {
+  const dotnetUnit = (name: string): ReachedUnit => ({ suite: 'driver', kind: 'dotnet', unit: `D.${name}`, name, file: `src/D.Tests/${name}.cs`, project: 'src/D.Tests' });
+  const nodeUnit = (suite: string, name: string): ReachedUnit => ({ suite, kind: 'node', unit: `tools/${name}.test.ts`, name, file: `tools/${name}.test.ts` });
+  const plan: ReachedPlan = {
+    groups: [
+      { runner: 'dotnet', suite: 'driver', project: 'src/D.Tests', settings: null, units: [dotnetUnit('ATests')] },
+      { runner: 'node', suite: 'tool-e2e', units: [nodeUnit('tool-e2e', 'e')] },
+      { runner: 'node', suite: 'tool-tests', units: [nodeUnit('tool-tests', 't')] },
+      { runner: 'node', suite: 'cli', units: [nodeUnit('cli', 'c')] },
+      { runner: 'node', suite: 'cli', cwd: '.', units: [nodeUnit('cli', 'd')] },
+      { runner: 'node', suite: 'cli', cwd: '.', units: [nodeUnit('cli', 'f')] },
+    ],
+    left: {}, reached: 6, replayed: {},
+  };
+  const order: string[] = [];
+  let finishBuild = (): void => undefined;
+  const building = new Promise<void>((done) => { finishBuild = done; });
+  const exec: Exec = async (command, args) => {
+    const what = command === 'dotnet' ? 'driver' : args.find((arg) => arg.includes('.test.ts'))!.replace(/^.*\/(\w+)\.test\.ts$/, '$1');
+    order.push(`start ${what}`);
+    if (what === 't') finishBuild();
+    await Promise.resolve();
+    order.push(`end ${what}`);
+    return what === 'driver' ? 1 : 0;
+  };
+  const outcome = await runPlan({
+    root, plan, keys: new Map(), store, exec, say: () => undefined, mainRedOf: () => false,
+    build: async () => { order.push('build'); await building; order.push('built'); return { ready: ['src/D.Tests'], failed: new Map() }; },
+  });
+  assert.ok(order.indexOf('start t') < order.indexOf('built'), `the light group ran while the build was under way: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start e') > order.indexOf('end driver'), `the end-to-end group waited for the .NET runs: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start c') < order.indexOf('end t'), `each light suite runs beside the others: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start d') < order.indexOf('end c'), `a suite's command of another folder runs beside: ${order.join(', ')}`);
+  assert.ok(order.indexOf('start f') > order.indexOf('end d'), `the chunks of one command run in turn: ${order.join(', ')}`);
+  assert.deepEqual(outcome.red, ['driver|D.ATests']);
+  assert.equal(outcome.ran, 6);
+}));
+
 test('a class that fails and passes alone is a flake: said, counted, and not recorded as a pass', () => withStore(async (store, root) => {
   const run = exits([1, 0]);
   const lines: string[] = [];
