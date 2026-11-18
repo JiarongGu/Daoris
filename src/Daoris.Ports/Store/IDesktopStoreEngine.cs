@@ -72,14 +72,12 @@ public interface IDesktopStoreEngine : IDesktopUnitOfWork, IDisposable
 
 /// <summary>
 /// What a root hands for the desktop store: how a store file is opened as an engine, and how any file of the home is connected to for
-/// a one-off read or a legacy migration's copy. The application names no engine's type: it asks these.
+/// a one-off read. The application names no engine's type: it asks these.
 /// </summary>
 /// <param name="Open">The store at a location, made if there is none; its folder is made, and no schema step has run.</param>
 /// <param name="Connect">An opened connection to a file, with none of the store's own pragmas.</param>
-/// <param name="Backup">The database at the first path copied whole to the second, which is then free to be moved.</param>
-/// <param name="ReleaseConnections">Lets go every pooled connection, so a file a copy has finished with can be moved.</param>
+/// <param name="ReleaseConnections">Lets go every pooled connection, so a file a reader has finished with can be moved.</param>
 public sealed record DesktopStoreEngines(
     Func<string, DesktopStoreEngineOptions, IDesktopStoreEngine> Open,
     Func<string, DesktopOpen, DbConnection> Connect,
-    Action<string, string> Backup,
     Action ReleaseConnections);

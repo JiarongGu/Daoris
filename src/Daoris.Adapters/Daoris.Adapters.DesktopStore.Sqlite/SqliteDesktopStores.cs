@@ -11,19 +11,7 @@ public static class SqliteDesktopStores
     private const int ReadBusySeconds = 5;
 
     /// <summary>The engines: open a store, connect to any file of the home, release the pooled connections.</summary>
-    public static DesktopStoreEngines Engines { get; } = new(SqliteDesktopStoreEngine.Open, Connect, Backup, SqliteConnection.ClearAllPools);
-
-    private static void Backup(string source, string target)
-    {
-        using (var from = (SqliteConnection)Connect(source, DesktopOpen.ReadWrite))
-        using (var to = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = target, Pooling = false }.ToString()))
-        {
-            to.Open();
-            from.BackupDatabase(to);
-        }
-
-        SqliteConnection.ClearAllPools();
-    }
+    public static DesktopStoreEngines Engines { get; } = new(SqliteDesktopStoreEngine.Open, Connect, SqliteConnection.ClearAllPools);
 
     private static DbConnection Connect(string path, DesktopOpen mode)
     {
