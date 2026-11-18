@@ -3,7 +3,8 @@ namespace Daoris.Driver;
 /// <summary>The listing <c>sessions</c> prints: this machine's sessions by what they need.</summary>
 internal static class SessionsListing
 {
-    internal static async Task<int> ListAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    /// <param name="times">Where each stage's time is said besides the machine log's <c>session.list</c> line; a test hands its own.</param>
+    internal static async Task<int> ListAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct, LookTimes? times = null)
     {
         // The running Daoris's own look where it answers, its lines made by ListLines; this process's look otherwise.
         if (world.Instance is { } instance && await InstanceDoor.TryReadAsync(
@@ -13,11 +14,19 @@ internal static class SessionsListing
             return viaInstance;
         }
 
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        times ??= new LookTimes();
         // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account.
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+        var look = await SessionGroups.LookAsync(
+                world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf, times: times)
             .ConfigureAwait(false);
-        look = look with { RunWaits = WorkOrdersWorkflows.Current.PersonWaits(world.Home), Passages = WorkOrdersWorkflows.Current.Passages(world.Home) };
-        foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow)) output.WriteLine(line);
+        look = look with
+        {
+            RunWaits = times.Time("runWaits", () => WorkOrdersWorkflows.Current.PersonWaits(world.Home)),
+            Passages = times.Time("passages", () => WorkOrdersWorkflows.Current.Passages(world.Home)),
+        };
+        foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow, times)) output.WriteLine(line);
+        SessionListLog.Said(world.Log, watch.Elapsed, look.Records.Count, WorkplaceDoors.Terminal, times);
         return 0;
     }
 
@@ -25,25 +34,28 @@ internal static class SessionsListing
     /// The listing's lines from one look: what <c>sessions</c> prints, which the instance's <c>SESSION_GROUPS</c> answers as
     /// <c>said</c> from its own look, so the verb that asks it prints the same words. The <c>--json</c> form is one element, whole.
     /// </summary>
-    internal static IReadOnlyList<string> ListLines(SessionLook look, SessionsAsk ask, string home, DateTimeOffset now)
+    internal static IReadOnlyList<string> ListLines(
+        SessionLook look, SessionsAsk ask, string home, DateTimeOffset now, LookTimes? times = null, IReadOnlyList<SessionGrouping>? all = null)
     {
+        times ??= new LookTimes();
         var output = new List<string>();
         var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var rows = SessionGroups.Read(look)
+        var placed = all ?? times.Time("rows", () => SessionGroups.Read(look));
+        var rows = placed
             .Where(row => ask.Group is null || row.Group == ask.Group)
             .Where(row => ask.Repository is null
                 || (records.TryGetValue(row.Session, out var record) && string.Equals(record.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         // By entry, the rows kept for the page and for --json. An entry is in the group, and the repository, it is.
-        var entries = SessionGroups.ReadEntries(look)
+        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look, all: placed))
             .Where(entry => ask.Group is null || entry.Group == ask.Group)
             .Where(entry => ask.Repository is null || string.Equals(entry.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (ask.Json)
         {
-            output.Add(SessionsJson.Json(rows, entries));
+            output.Add(times.Time("lines", () => SessionsJson.Json(rows, entries)));
             return output;
         }
 
@@ -54,9 +66,9 @@ internal static class SessionsListing
         }
 
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase).ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        var openings = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))
-            .Openings(entries.Select(entry => entry.Leading).Where(SessionEventText.IsId));
-        var placed = SessionGroups.Read(look).GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var openings = times.Time("openings", () => new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions))
+            .Openings(entries.Select(entry => entry.Leading).Where(SessionEventText.IsId)));
+        var rowOf = placed.GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         foreach (var group in entries.GroupBy(entry => entry.Group))
         {
             var each = group.ToList();
@@ -64,7 +76,7 @@ internal static class SessionsListing
             foreach (var entry in each)
             {
                 var record = records[entry.Leading];
-                var row = placed[entry.Leading];
+                var row = rowOf[entry.Leading];
                 var line = string.Join(" · ", new[] { Title(record, quests, openings), Span(record, now) }.Concat(Facts(row, record))
                     .Concat(entry.Parts.Count > 1 ? [$"{entry.Parts.Count} parts"] : []));
                 output.Add($"  {entry.Leading}  {Word(row.Shown)}  {record.Repository} — {line}");

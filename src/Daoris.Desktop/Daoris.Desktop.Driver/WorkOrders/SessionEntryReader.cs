@@ -25,11 +25,11 @@ public static class SessionEntries
     /// on; otherwise the part opened.</para>
     /// </remarks>
     /// <param name="only">The sessions asked about: each entry holding one is answered whole, since its other parts decide its group.</param>
-    public static IReadOnlyList<SessionEntry> Read(SessionLook look, IReadOnlyCollection<string>? only = null)
+    public static IReadOnlyList<SessionEntry> Read(SessionLook look, IReadOnlyCollection<string>? only = null, IReadOnlyList<SessionGrouping>? all = null)
     {
         // Every record's place, in the order a list shows them: a part's group is its own row's, and an entry's order is its
         // leading part's row's, so the entries and the rows cannot disagree.
-        var rows = SessionGroups.Read(look);
+        var rows = all ?? SessionGroups.Read(look);
         var rowOf = rows.GroupBy(row => row.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var position = rows.Select((row, at) => (row.Session, at)).GroupBy(each => each.Session, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().at, StringComparer.Ordinal);
