@@ -35,6 +35,5 @@ internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole
 
     public NodeObservation Observe(NodeReading reading) => QuestHoldsReading.Observe(reading);
 
-    /// <summary>A done nothing checked waits on the person's pass with their words; a done held for their yes is its held row's.</summary>
     string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => UncheckedDones.Says(status.Holds) ? PersonWaits.Pass : null;
 }

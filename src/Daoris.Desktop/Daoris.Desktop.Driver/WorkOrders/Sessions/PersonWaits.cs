@@ -46,10 +46,7 @@ public static class PersonWaits
     /// <summary>An <c>opinion</c> its gate holds for want of a reviewer: the vacancy goes up to the line's lead (<see cref="OpinionVacancy"/>).</summary>
     public const string Vacant = "vacant";
 
-    /// <summary>
-    /// A <c>quest.holds</c> holding a done nothing checked, its ask having given its quest no requirement: it waits on the person's pass
-    /// with their words (<c>UncheckedDones</c>). A done held for their yes is not one: the held done's own row carries it.
-    /// </summary>
+    /// <summary>A <c>quest.holds</c> holding a done nothing checked (<c>UncheckedDones</c>) for the person's pass with their words.</summary>
     public const string Pass = "pass";
 
     /// <summary>Every wait a step can stand at: what the census of <i>What needs you</i> holds a row with a press for, each.</summary>

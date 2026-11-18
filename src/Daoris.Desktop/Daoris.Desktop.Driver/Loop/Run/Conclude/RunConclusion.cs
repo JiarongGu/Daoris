@@ -80,7 +80,6 @@ internal sealed class RunConclusion(
                     awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, so it failed, and never parks on the person.
                     providerRefused: ended.ProviderRefused,
-                    // Its run's next step, as its start bound it, or where the bind named none, as the run kept for its quest names it.
                     departed: QuestLeft.Departed(after).Count,
                     waits: state.BoundIfAny?.WaitsAfter(after) ?? await StartBinding.TurnWaitsAsync(context, null, quest, after, ct).ConfigureAwait(false))
                 // A done this run reached outranks the timeout, as it outranks a messy exit. The watcher's end (a headless --quiet-end)
