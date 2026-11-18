@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '../../locales/i18n';
 import { ApprovalCard } from './ApprovalCard';
 import { approvalOf, canApproveHere } from './releaseTarget';
+import { APPROVAL_PAGE, APPROVAL_WORDS } from '../runFixtures';
 
 // The approval card:where the plugin can approve, *Approve* / *Reject* on the card under the holder's own
 // sign-in, the card naming the target, the build and its source branch; otherwise *Open* in Daoris's browser. No agent is ever handed the
@@ -39,5 +40,9 @@ describe('the approval card', () => {
     expect(canApproveHere([{ name: 'approve-release', tool: false }])).toBe(true);
     expect(canApproveHere([{ name: 'approve-release', tool: true }])).toBe(false);
     expect(canApproveHere([{ name: 'discover-releases', tool: true }])).toBe(false);
+  });
+
+  it('reads them from a wait as an installed run kept it: the plugin’s words signed with its way, and the release’s summary page', () => {
+    expect(approvalOf(APPROVAL_WORDS, APPROVAL_PAGE)).toEqual({ release: '90', stage: 'Prod' });
   });
 });

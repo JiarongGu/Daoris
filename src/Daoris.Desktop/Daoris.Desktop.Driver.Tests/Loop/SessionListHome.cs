@@ -26,14 +26,22 @@ internal sealed class SessionListHome : IAsyncDisposable
     /// <summary>The bytes of every events file written.</summary>
     public long Bytes { get; private set; }
 
-    /// <summary>A home of <paramref name="records"/> ended records, <paramref name="trees"/> of them with a tree and a commit of its own.</summary>
-    public static async Task<SessionListHome> MakeAsync(int records, int trees)
+    /// <summary>A home of <paramref name="records"/> ended records, <paramref name="trees"/> with a tree, <paramref name="archived"/> archived, the first tree's build <paramref name="built"/> files.</summary>
+    public static async Task<SessionListHome> MakeAsync(int records, int trees, int archived = 0, int built = 0)
     {
-        var bench = await BenchHome.MakeAsync(records, trees, 0);
+        var bench = await BenchHome.MakeAsync(records, trees, built);
         var made = new SessionListHome(bench);
         try
         {
-            var ids = (await bench.Client.SessionRecordsAsync()).Select(record => record.Id).ToList();
+            var listed = await bench.Client.SessionRecordsAsync();
+            var ids = listed.Select(record => record.Id).ToList();
+            if (archived > 0)
+            {
+                var every = Math.Max(1, listed.Count / archived);
+                new ConversationFacts(bench.Home).Archive(
+                    listed.Where((_, at) => at % every == 0).Take(archived).Select(ConversationArchive.Of), new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero));
+            }
+
             var folder = DaorisHome.Entry(bench.Home, HomeEntry.Sessions);
             Directory.CreateDirectory(folder);
             var written = new long[ids.Count];

@@ -354,14 +354,14 @@ public static class HelpFacts
     /// <summary>How many of a part's trees are read at once (<see cref="HelpTreeFacts.AtOnce"/>).</summary>
     public const int TreesAtOnce = HelpTreeFacts.AtOnce;
 
-    /// <summary>The longest a door reading the trees waits for the parts' first judgement (<see cref="HelpTreeFacts.First"/>).</summary>
+    /// <summary>How long a door walks no tree the parts have not judged, at most, before their first judgement (<see cref="HelpTreeFacts.First"/>).</summary>
     public static readonly TimeSpan TreesFirst = HelpTreeFacts.First;
 
     /// <summary>A look read by a door, with its trees as the parts judged them (<see cref="HelpTreeFacts.WithTreesAsync"/>).</summary>
     public static Task<IKnowledgeSessionLook> WithTreesAsync(
         MachineFacts facts, IKnowledgeSessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> walk,
-        IReadOnlyCollection<string>? only = null, TimeSpan? first = null, CancellationToken ct = default, bool waits = true) =>
-        HelpTreeFacts.WithTreesAsync(facts, look, held, walk, only, first, ct, waits);
+        IReadOnlyCollection<string>? only = null, TimeSpan? first = null, CancellationToken ct = default) =>
+        HelpTreeFacts.WithTreesAsync(facts, look, held, walk, only, first, ct);
 
     /// <summary>Each of <paramref name="asked"/> as the parts judged it (<see cref="HelpTreeFacts.Judged"/>).</summary>
     public static HelpTreesJudged TreesJudged(MachineFactsSnapshot facts, IReadOnlyList<string> asked) => HelpTreeFacts.Judged(facts, asked);

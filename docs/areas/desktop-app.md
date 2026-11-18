@@ -223,7 +223,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 38. Every wait the person settles stands in one dock above the composer (`work/waits/WaitStrip.tsx`), its only place on the
     session's page: `waitsOf`'s kinds and each step of its run held for the person or left failed (`SESSION_GROUPS`' `waits`, with
     *What needs you*'s presses), oldest first under a count, never folded, each with its own press and its way to where it arose
-    (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. The head draws none of their cards. Its state
+    (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A release step waiting on its approver carries
+    the approval card its run's view draws (`ReleaseStepDoors`, from the session's run, read while a step waits on a plugin's actor,
+    since the row names no step kind): *Approve* and *Reject* where the plugin declares `approve-release` as no agent's tool, else
+    the stage's page. The head draws none of their cards. Its state
     line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
     the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
@@ -248,7 +251,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     rows' outline until the groups slice first judges, never a list placed by the records alone, which would hold every part,
     archived line and ended intake as a row the first judgement takes away; and that judgement, as `SESSION_GROUPS`' answer to a
     window or to `daoris session list`, waits for no tree the machine's facts have not judged, nor walks one, while their first
-    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`'s `waits`, SESSIONFLASH1,
+    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`, SESSIONFLASH1,
     SESSIONLISTSLOW1). (from D185)
 
 **Flowcharts and the canvas**
