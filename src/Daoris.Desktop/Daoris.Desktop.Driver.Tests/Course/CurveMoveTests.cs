@@ -192,15 +192,13 @@ public sealed class CurveMoveTests : IDisposable
         var moved = (await client.RecordAsync("c2"))!;
         Assert.Equal(("talk", "account-3", _root), (moved.Adapter, moved.Profile, moved.Tree));
         Assert.Equal(("c0nv0001", "curve", "daoris"), (moved.From, moved.FromWhy, moved.FromBy));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Empty(Asked());
 
         // The move is the store's record, decided by the curve for the account named, and ended by its phase since the stand-in's start did
-        // not hand the new part back; no box is kept.
+        // not hand the new part back.
         var kept = Assert.Single(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
         Assert.Equal(("curve", "daoris", "conversation", "brief", "account-3"), (kept.Why, kept.By, kept.Executor, kept.How, kept.Account));
         Assert.False(kept.Stands, $"the move stands at {kept.PhaseWord}");
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>The conversation's record asking <paramref name="model"/> of its entry, and the composer's change kept where one is given.</summary>
@@ -268,7 +266,6 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.Off), await JudgeAsync(runner));
         Assert.Equal(1, ledger.Count);
         Assert.Empty(Asked());
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>What the course answered each judged turn's end, by session, heard from the runner.</summary>
@@ -304,7 +301,6 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Equal(CourseHoldWhy.SwitchOff, Assert.IsType<LineCourse.Hold>(answer).Why);
         Assert.Equal(1, ledger.Count);
         Assert.Empty(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>
@@ -359,7 +355,6 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Equal(new SwitchChoice.Stay(SwitchStay.NoRoom), await JudgeAsync(runner));
         Assert.Equal(["talk/account-2", "talk/account-3"], Asked().Order());
         Assert.Equal(1, ledger.Count);
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Empty(Record("c0nv0001"));
     }
 
@@ -401,21 +396,22 @@ public sealed class CurveMoveTests : IDisposable
     }
 
     /// <summary>
-    /// A hand-over already asked, or being taken (its box is kept until the take is done), is the person's or the earlier move's:
-    /// nothing is judged, read or asked, and its box stands.
+    /// A hand-over already asked, or being taken (its move stands until the take is done), is the person's or the earlier move's:
+    /// nothing is judged, read or asked, and its move stands.
     /// </summary>
     [Fact]
     public async Task A_hand_over_waiting_or_being_taken_judges_nothing()
     {
         Said("account-1", 0.75);
         Said("account-2", 0.30);
-        var asked = new HandOverRequest("other", null, HandOverWhy.Press, HandOverBy.Person, _now);
-        new HandOverBox(_home).Write("c0nv0001", asked);
+        var store = new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell);
+        var waiting = store.Decide(new MoveDecision("c0nv0001", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Press, HandOverBy.Person) { Agent = "other" });
+        Assert.NotNull(waiting.Claim);
         var ledger = Ledger();
         using var runner = Runner(ledger, Roster());
 
         Assert.Null(await JudgeAsync(runner));
-        Assert.Equal(asked, new HandOverBox(_home).Read("c0nv0001"));
+        Assert.Equal("decided", Assert.Single(store.Of("c0nv0001")).PhaseWord);
         Assert.Equal(1, ledger.Count);
     }
 

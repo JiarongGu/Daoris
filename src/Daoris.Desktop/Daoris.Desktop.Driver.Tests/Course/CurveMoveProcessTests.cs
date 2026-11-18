@@ -121,7 +121,6 @@ public sealed class CurveMoveProcessTests : IDisposable
             () => (kept = new MoveStore(_home).Of(old).LastOrDefault())?.PhaseWord == "delivered",
             () => $"the move at {kept?.PhaseWord}; {Seen(ledger, events, old)}");
         Assert.Equal(("curve", "daoris", "c2", "account-2"), (kept!.Why, kept.By, kept.Destination, kept.Account));
-        Assert.Null(new HandOverBox(_home).Read(old));
 
         // Said where it happens, as a pair: the old one's last line, the new one's first.
         await Poll.Until(() => events.After(next.Session, 0).Events.Any(e => Coded(e)?.Code == "chat.moved-from"), () => Seen(ledger, events, next.Session));
@@ -151,7 +150,6 @@ public sealed class CurveMoveProcessTests : IDisposable
 
         Assert.Equal(2, ledger.Count);
         Assert.Equal("working", ledger.State(next.Session));
-        Assert.Null(new HandOverBox(_home).Read(next.Session));
         lock (judged) Assert.Single(judged, each => each.Choice is SwitchChoice.MoveTo);
     }
 

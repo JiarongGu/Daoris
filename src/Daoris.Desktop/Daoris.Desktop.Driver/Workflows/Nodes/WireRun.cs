@@ -28,27 +28,11 @@ public sealed record WireRun(string GraphDigest, string Run)
     /// </summary>
     public IReadOnlyDictionary<string, string> Places { get; init; } = ImmutableDictionary<string, string>.Empty;
 
-    /// <summary>
-    /// The run's earlier name, worked out from the graph now (<see cref="NodeRuns.Of(string, string)"/>): what a whole-graph scope
-    /// names, so a record naming the whole graph's digest is judged under it until the graph is edited. Null where the run has no other name.
-    /// </summary>
-    public string? Legacy { get; init; }
-
     /// <summary>What <paramref name="node"/> is bound and scoped to now: its place where it has one, else the whole graph's digest.</summary>
     public string GraphOf(string node) => Places.TryGetValue(node, out var place) ? place : GraphDigest;
 
     /// <summary>The scope a start or a skip of <paramref name="node"/> takes now: its place, or the graph, and the run.</summary>
     public NodeScope ScopeOf(string node) => new(GraphOf(node), Run);
-
-    /// <summary>
-    /// The scope a record of <paramref name="node"/> bound or skipped under <paramref name="graph"/> is judged against (like with like): a record naming
-    /// the whole graph's digest where the node now has a place is judged on the graph's digest and the run's earlier name; any other on
-    /// <see cref="ScopeOf"/>.
-    /// </summary>
-    public NodeScope Own(string node, string? graph) =>
-        Places.ContainsKey(node) && graph is not null && !graph.StartsWith(NodeGraphs.PlacePrefix, StringComparison.Ordinal)
-            ? new(GraphDigest, Legacy ?? Run)
-            : ScopeOf(node);
 
     /// <summary>
     /// Each unit's current revision, by <see cref="WorkUnit.Id"/>: a branch's full tip, null for a unit with none (a run's own). A complete

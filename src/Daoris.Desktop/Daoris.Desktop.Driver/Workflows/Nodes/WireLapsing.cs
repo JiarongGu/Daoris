@@ -8,12 +8,12 @@ namespace Daoris.Driver;
 internal static class WireLapsing
 {
     /// <summary>
-    /// The binding of <paramref name="status"/>'s attempt where it started in this graph and run, by its own rule
-    /// (<see cref="WireRun.Own"/>), and that scope; a null binding where it is another's or there is none.
+    /// The binding of <paramref name="status"/>'s attempt where it started in this graph and run
+    /// (<see cref="WireRun.ScopeOf"/>), and that scope; a null binding where it is another's or there is none.
     /// </summary>
     internal static (NodeAcceptance? Binding, NodeScope Scope) Ours(NodeDeclaration node, NodeStatus status, WireRun run)
     {
-        var scope = run.Own(node.Id, status.Binding?.GraphDigest);
+        var scope = run.ScopeOf(node.Id);
         return (status.Binding is { } binding && binding.GraphDigest == scope.GraphDigest && status.Scope == scope ? binding : null, scope);
     }
 
@@ -31,7 +31,7 @@ internal static class WireLapsing
         var recorded = status.State == NodeStates.Skipped && status.By is { } by && by != NodeSource.Person && NodeAuthorities.Of(node)?.SkipBy == by;
         if (status.State == NodeStates.Skipped)
         {
-            if (!NodeLifecycle.Skips(status, run.Own(node.Id, status.Scope?.GraphDigest))) return (WireWhy.SkipScope, null);
+            if (!NodeLifecycle.Skips(status, run.ScopeOf(node.Id))) return (WireWhy.SkipScope, null);
             if (!recorded) return null;
         }
 
@@ -47,7 +47,7 @@ internal static class WireLapsing
         // person, since a run begins at a graph edit and a Setup save can edit a derived graph, so edits back and forth would restart failed
         // work past its retry bound for ever. Only new work lapses it, a new subject or a new revision, as in its own graph and run; the
         // person's new attempt restarts it. It is no receipt here (Receipts reads this graph's and run's alone), so nothing fires on it.
-        // This graph and run are the node's place and the run, or for a whole-graph binding, the graph and the run's earlier name.
+        // This graph and run are the node's place and the run.
         var (ours, own) = Ours(node, status, run);
         if (status.State is NodeStates.Failed or NodeStates.Rejected && ours is null)
         {

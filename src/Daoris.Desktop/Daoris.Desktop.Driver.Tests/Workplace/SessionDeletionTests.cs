@@ -156,14 +156,10 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
-    /// <summary>
-    /// The files a limit's move and an agent's ask to hand over keep for a session, named by its id, and the limit's box once the
-    /// come-up has imported it into the move record and set it aside.
-    /// </summary>
+    /// <summary>The files an agent's ask to hand over keeps for a session, named by its id: the ask and its state.</summary>
     private string[] Boxes(string id) =>
     [
-        Path.Combine(Sessions, id + LimitBoxes.Suffix), Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix),
-        Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix), Path.Combine(Sessions, id + LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix),
+        Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix), Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix),
     ];
 
     private void KeepBoxes(string id)
@@ -221,7 +217,6 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Equal(["hand-over"], outcome.Stayed);
         Assert.True(File.Exists(Boxes("c1")[0]));
         Assert.False(File.Exists(Boxes("c1")[1]));
-        Assert.False(File.Exists(Boxes("c1")[2]));
         Assert.Contains("its hand-over, which the disk would not let go of and is left over; the next clear of a workspace takes it.", outcome.Message);
     }
 

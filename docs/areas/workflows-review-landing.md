@@ -367,8 +367,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     remote-tracking ref holds the landing's tip, failed by the act's refusal; a push of the tip a landing stood at before it re-landed at a
     new one is not yet, so the new tip is pushed (`PushReading`, `ReLandingPullRequestTests`). Daoris opens no pull request: a plugin's step does, its
     evidence's `url` written on the landing for `work/state` to ask about; a graph whose `<plugin>/pull-request` no switched-on
-    plugin performs is refused at its bind. `PushedGraphs`, an older build's plugin delivery (read, never sent) and the web's bare
-    `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one
+    plugin performs is refused at its bind. A `monitor` watches the one
     step wired into it and reaches with that step's state; open or unanswered it is pending and never fails. A pull request is
     `merged` once its plugin says completed into the work's line (a squash counts), or unanswered once the keeper proves the line
     holds it, and `closed` once abandoned. A landing with nothing to deliver passes over the steps after it not yet started, said;
@@ -402,7 +401,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     said in the step's words. It reaches either way and fails nothing; in a graph that sets nothing apart it finds no tree and says
     so. A save refuses one no way from a `land` reaches (`release-landing`). The shipped development workflows put one after the
     landing (after the line, or the tidy), the editor draws it in `Git` after the line, and a drawn graph matches its shipped copy
-    with or without it (`MigratedGraphs.Shape`). A tree whose part a run's `tidy` ended, and the trees of a run that holds no
+    with or without it. A tree whose part a run's `tidy` ended, and the trees of a run that holds no
     `release`, ended or abandoned, are ended by the look's sweep (driving rule 51). (D228)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
     goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
@@ -564,11 +563,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     note, or rejected by *Reject* with a reason, as a review's changes are; a person and an agent hold it alike, the kind saying what
     settles it and never who, and a step naming no role is the `owner` role's (D304 point 2). Its outcome (`done`, `approved`, or none)
     routes a `when` wire, a rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
-    A saved version's former `human` step reads as a `task` under its role at the digest the version was saved with (`HumanFormerKind`,
-    `NodeGraphs.ReadSaved`) until its census finds none; a save names the kinds now, so one naming `human` is refused, and a save writing
+    A step naming `human` is refused as an unknown kind, and a save writing
     a `task` step closes going back below its build (`tasks-since.txt`, kept apart from the roles' floor, `WorkflowRolesSince.Floors`); each floor is written whole or not at all
-    (`AtomicFile`). A saved copy of a shipped default, or a quest's kept closure, that an earlier build saved spelling `human` is known by its
-    graph read as a `task` (`WorkflowDefaults.IsCopy`, `ClosureGraphs`, through `NodeGraphs.ReadSaved`), its own digest staying as saved.
+    (`AtomicFile`).
     One declaring two or more outcomes of its own is a per-run decision (`TaskDecisions`, D304 point 5), answered by `decide` with
     one of them (`daoris workflow decide <run> <node> <outcome> "why"`; the run's view offers each outcome); another is refused
     `not-outcome`, and a save refuses a decision no `when` wire leaves on any outcome (`decision-unwired`). A word naming a holder

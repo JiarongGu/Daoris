@@ -10,11 +10,4 @@ public static class NodeRuns
 {
     public static string Of(string unit) =>
         "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n")))[..24];
-
-    /// <summary>
-    /// A run's name from the unit and the graph governing it, so each edit begins another: what a scope, a receipt and a firing recorded
-    /// under it name, judged on the graph now (<see cref="WireRun.Legacy"/>) so nothing lapses or fires again.
-    /// </summary>
-    public static string Of(string unit, string graphDigest) =>
-        "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n{graphDigest}\n")))[..24];
 }

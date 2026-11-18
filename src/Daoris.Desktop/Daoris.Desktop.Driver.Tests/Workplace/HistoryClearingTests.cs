@@ -51,21 +51,19 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + ReopenMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
-        File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
-        // A limit's move, and an agent's ask to hand over with its state.
+        // An agent's ask to hand over with its state.
         foreach (var suffix in Boxes) File.WriteAllText(Path.Combine(Sessions, id + suffix), "{}");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
     }
 
-    /// <summary>What follows a session's id in the three boxes (a limit's move, a hand-over ask and its state), and in the limit box once it is set aside.</summary>
-    private static readonly string[] Boxes =
-        [LimitBoxes.Suffix, HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix, LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix];
+    /// <summary>What follows a session's id in the hand-over ask's two files (the ask and its state).</summary>
+    private static readonly string[] Boxes = [HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix];
 
     private string[] KeptOf(string id) =>
     [
-        .. new[] { ".events.jsonl", ".log", ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
+        .. new[] { ".events.jsonl", ".log", ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix }
             .Concat(Boxes)
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
@@ -647,9 +645,9 @@ public sealed class HistoryClearingTests : IDisposable
         var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
         var outcome = await HistoryClearing.ClearAsync(world, HistoryScope.Workspace, "aurora", [], PluginEvents.Screen);
 
-        // The gone session's three boxes and its limit box set aside, each a file the inventory names.
-        Assert.Equal(4, plan.Reading!.LeftOver);
-        Assert.Equal(4, outcome.LeftOver);
+        // The gone session's hand-over ask and its state, each a file the inventory names.
+        Assert.Equal(2, plan.Reading!.LeftOver);
+        Assert.Equal(2, outcome.LeftOver);
         Assert.All(Files("gone1"), file => Assert.False(File.Exists(file), file));
         Assert.All(Files("young1"), file => Assert.True(File.Exists(file), file));
         Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));

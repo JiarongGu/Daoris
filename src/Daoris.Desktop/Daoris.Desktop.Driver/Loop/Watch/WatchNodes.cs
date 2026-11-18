@@ -85,19 +85,6 @@ internal sealed class WatchNodes
             }
         };
 
-        // A run's records ended done under the older meaning wait on its next step, asked once at its first look.
-        nodes.Reopen = async (reopen, ct) =>
-        {
-            try
-            {
-                return await service.ReopenRunAsync(reopen.Run, reopen.Sessions, reopen.Note, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (!ct.IsCancellationRequested && error is DriverException or HttpRequestException)
-            {
-                return null;
-            }
-        };
-
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
 

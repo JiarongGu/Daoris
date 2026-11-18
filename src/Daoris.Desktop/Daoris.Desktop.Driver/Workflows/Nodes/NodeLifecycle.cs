@@ -119,7 +119,7 @@ public sealed record NodeMove(string To, string By)
 /// <summary>Where a skip holds: the graph that bound the run, and the run.</summary>
 /// <param name="GraphDigest">
 /// The graph's digest, or on a live graph the node's place: a start's is its binding's, and a skip by its kind's record names its
-/// binding's, so each is checked like with like (<see cref="WireRun.Own"/>).
+/// binding's, so each is checked like with like (<see cref="WireRun.ScopeOf"/>).
 /// </param>
 /// <param name="Run">The run's id.</param>
 public sealed record NodeScope(string GraphDigest, string Run);

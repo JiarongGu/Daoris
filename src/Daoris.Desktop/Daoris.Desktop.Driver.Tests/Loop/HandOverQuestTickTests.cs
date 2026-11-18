@@ -63,11 +63,10 @@ public sealed class HandOverQuestTickTests : IDisposable
         var tree = first["tree"]!.GetValue<string>();
 
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
-        // The ask decides the hand-over's move in the store through the driver's own holder, and no box is written.
+        // The ask decides the hand-over's move in the store through the driver's own holder.
         var asked = await QuestHandOver.AskAsync(
             new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(ProviderRegistry.Built(), _home), "s1", "stub", null, HandOverWhy.Press, HandOverBy.Person);
         Assert.True(asked.Kept, asked.Message);
-        Assert.Empty(new HandOverBox(_home).Pending());
         Assert.Equal("decided", Move().PhaseWord);
         var taking = await driver.TickAsync().WaitAsync(Poll.Patience);
         Assert.Contains(taking.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with stub.");
@@ -75,7 +74,6 @@ public sealed class HandOverQuestTickTests : IDisposable
         await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
         Assert.Contains("Handed over to stub", service.Session("s1")["note"]!.GetValue<string>());
         Assert.Equal("stub", new HandedQuests(_home).Read("q1")!.Agent);
-        Assert.Null(new HandOverBox(_home).Read("s1"));
 
         // 3. The same look reads that stop as released and carries the quest on in the same tree, on `stub`, from the hand-over's own move,
         // the one row from ask to the end; this door's prompt goes on its arguments, so the record ends by its phase.

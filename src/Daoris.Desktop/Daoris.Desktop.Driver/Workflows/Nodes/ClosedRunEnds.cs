@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 /// Why a run whose quest closed (done or declined) ends while steps of it still stand: every such step observes the run's branch, nothing
 /// waits on the person's word, and none can move again, because the line holds each one's bound work (<see cref="LineHolding"/>, the
 /// landing's own judgement by content and by patch) or no branch of the run stands. Its steps stay as they stood; the end says why. The
-/// runtime's end (<see cref="NodeRunKeeping.EndAsync"/>) and the migration that ends the runs left before it (<see cref="ClosedRunsStep"/>)
-/// both judge here.
+/// runtime's end (<see cref="NodeRunKeeping.EndAsync"/>) judges here.
 /// </summary>
 public static class ClosedRunEnds
 {

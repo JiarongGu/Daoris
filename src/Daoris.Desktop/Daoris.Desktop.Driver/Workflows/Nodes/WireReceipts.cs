@@ -23,9 +23,7 @@ internal static class WireReceipts
             var status = statuses[node.Id];
             if (gone.Contains(node.Id)) continue;
 
-            // An id is worked out from its status's own scope, a place's from the place and a whole-graph one from the graph's digest
-            // and the run's earlier name, so a receipt kept under either keeps its id and nothing resting on it lapses.
-            var skipped = run.Own(node.Id, status.Scope?.GraphDigest);
+            var skipped = run.ScopeOf(node.Id);
             var (ours, bound) = Ours(node, status, run);
             WireReceipt? receipt = status.State switch
             {

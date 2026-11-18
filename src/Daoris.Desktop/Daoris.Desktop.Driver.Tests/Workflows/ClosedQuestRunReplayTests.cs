@@ -38,7 +38,6 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
 
         _units = [.. runs.Select(run => RunHome.QuestUnit(RunHome.Quest(run, "Done") with { Held = true, Hold = "failed" }) with { Executors = ["s-" + run] })];
         var finished = new List<RunFinish>();
-        var reopened = new List<RunReopen>();
         var runtime = Runtime();
         runtime.Finish = (end, _) =>
         {
@@ -47,15 +46,9 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
         };
         runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
             [.. runs.Select(run => new SessionRecord("s-" + run, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(run).Note().Parts })]);
-        runtime.Reopen = (reopen, _) =>
-        {
-            reopened.Add(reopen);
-            return Task.FromResult<RunReopenResponse?>(new RunReopenResponse("reopened", reopen.Sessions));
-        };
 
         for (var pass = 0; pass < 20 && runs.Any(run => Files.Read(RunUnits.IdOf(run))?.Ended is null); pass++) await RunPassAsync(runtime);
 
-        Assert.Empty(reopened);
         Assert.All(runs, run =>
         {
             var ended = Files.Read(RunUnits.IdOf(run))!.Ended;

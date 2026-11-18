@@ -61,7 +61,6 @@ public sealed class QuestHandOverMoveCrashProcessTests : IAsyncLifetime
         var killed = _h.Moves(point == VerbDead ? "run-verb" : HandOverQuestHarness.Killed, point == VerbDead ? StoreProcess.Verb : StoreProcess.Host);
         Assert.True((await _h.AskAsync(killed, account)).Kept);
         Assert.Equal("decided", _h.MovesOf("s1").Single().PhaseWord);
-        Assert.Empty(new HandOverBox(_h.Home).Pending());
 
         switch (point)
         {

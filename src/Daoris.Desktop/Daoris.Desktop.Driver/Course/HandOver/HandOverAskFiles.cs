@@ -9,10 +9,6 @@ namespace Daoris.Driver;
 /// <c>&lt;session&gt;.hand-over-state.json</c>, the driver's alone, written as the service's <c>HandOverAskBox</c> reads it. The file
 /// is the contract; the two share no code, and each side's tests hold the same shapes.
 /// </summary>
-/// <remarks>
-/// Neither is the hand-over's box (<see cref="HandOverBox"/>, <c>&lt;session&gt;.hand-over.json</c>), which whoever runs the session takes
-/// at once: an ask becomes a box only where the person's rule or their yes lets it go.
-/// </remarks>
 public sealed class HandOverAskFiles(string home)
 {
     public const string AskSuffix = SessionHomeFiles.HandOverAskSuffix;

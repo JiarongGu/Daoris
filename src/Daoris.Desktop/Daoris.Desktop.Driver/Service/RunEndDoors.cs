@@ -24,18 +24,4 @@ public static class RunEndDoors
         foreach (var session in ended.Ended) service.RecordMoved(new SessionMoved(session, state));
         return ended;
     }
-
-    /// <summary>
-    /// <paramref name="run"/>'s <paramref name="sessions"/> ended done under the older meaning, each that never waited on a step moved to
-    /// wait on its next one, with <paramref name="note"/>.
-    /// </summary>
-    public static async Task<RunReopenResponse> ReopenRunAsync(
-        this ServiceClient service, string run, IReadOnlyList<string> sessions, Noted note, CancellationToken ct)
-    {
-        var parts = note.Parts is { Count: > 0 } kept ? SessionMoveDoors.PartsElement(kept) : (System.Text.Json.JsonElement?)null;
-        var reopened = (await service.SendAsync(new ReopenRunSessions(run, [.. sessions], note.Note, parts), ct)
-            .ConfigureAwait(false)).Answered();
-        foreach (var session in reopened.Reopened) service.RecordMoved(new SessionMoved(session, SessionStates.AwaitingStep));
-        return reopened;
-    }
 }

@@ -6,12 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ended limit move keeps its move record and writes no <c>&lt;s&gt;.limit-move.json</c> box beside it. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
+/// The ended limit move keeps its move record. Decided at <c>old-ended</c>, an ended record having no part to end, under this run's claim;
 /// <c>opening</c> under the key its keyed open is sent with; <c>opened</c> with every word the open moved; <c>delivering</c> and the prompt's
 /// mark before the hand; each handed word's <c>sent</c> as the turn's write returns, then the take, then <c>delivered</c>. Against a host
 /// that moves nothing the move is one of no word whose prompt's outcome closes it, and a word kept after the decision still reaches
-/// the new part once. A box an older build wrote is imported once at the shell's come-up and set aside, and a box still in place keeps the
-/// go-on and the move off its record.
+/// the new part once.
 /// </summary>
 /// <remarks>
 /// As <see cref="LimitMoveStoreTests"/>: the ledger is the in-process one, the new part's turns are the real queue over a door that writes
@@ -199,7 +198,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         var seen = new List<string>();
         MoveRecord? atWire = null;
         IReadOnlyList<MoveRecordWord> wordsAtWire = [];
-        string? boxes = null;
         var world = Ended(2, wire: _ =>
         {
             atWire = MoveFrom("c1");
@@ -218,7 +216,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
             {
                 atOpen = MoveFrom("c1");
                 openedUnder = JsonNode.Parse(body!)!["opens"]?.GetValue<string>();
-                boxes = string.Join(",", new LimitBoxes(_home).Pending());
                 lock (seen) seen.Add("open");
             }
             else if (Posts(request, "/api/sessions/c2/taken"))
@@ -238,14 +235,12 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}, seen {string.Join(",", seen)}");
         Assert.Equal(["open", "wire", "take"], seen);
 
-        // Decided at old-ended, asked under its key before the open, which is sent that key; no box beside it.
+        // Decided at old-ended, asked under its key before the open, which is sent that key.
         Assert.NotNull(atOpen);
         Assert.Equal(("opening", "run-shell", "limit", "daoris", "conversation", "brief"), (atOpen!.PhaseWord, atOpen.ClaimRun, atOpen.Why, atOpen.By, atOpen.Executor, atOpen.How));
         Assert.True(atOpen.Moments.ContainsKey(MoveRecordPhase.OldEnded));
         Assert.StartsWith("chat-move/", atOpen.Opens, StringComparison.Ordinal);
         Assert.Equal(atOpen.Opens, openedUnder);
-        Assert.Equal("", boxes);
-        Assert.Empty(new LimitBoxes(_home).Pending());
 
         // Opened with the moved word by its id on the new part, and the prompt marked before its write.
         Assert.Equal(("delivering", "c2"), (atWire!.PhaseWord, atWire.Destination));
@@ -267,7 +262,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         var prompt = Assert.Single(world.Runner.Opened!.Prompts);
         Assert.Equal((1, 1), (Count(prompt, "Make the port configurable."), Count(prompt, "And add a test.")));
         Assert.True(prompt.IndexOf("Make the port configurable.", StringComparison.Ordinal) < prompt.IndexOf("And add a test.", StringComparison.Ordinal), prompt);
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     private static int Count(string text, string part)
@@ -302,7 +296,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         var move = MoveFrom("c1")!;
         Assert.Equal((why, why, (int?)bound, (int?)seen.Count), (move.Why, move.RecipeWhy, move.RecipeBound, move.RefusedBound));
         Assert.Equal(("daoris", "conversation", "brief"), (move.By, move.Executor, move.How));
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     private static string Said(LineCourse answer) => answer switch
@@ -379,7 +372,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Equal("c2", moved!.SessionId);
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Equal(HandOverWhy.Limit, MoveFrom("c1")!.Why);
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     /// <summary>
@@ -401,7 +393,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Equal(("c2", MoveEffects.Prompt, MoveWordDispositions.Sent), (move.Destination, move.Effect!.What, move.Effect.Outcome));
         Assert.Contains(world.Ledger.TakenBy, taken => taken.Session == "c1" && taken.Ids == "w1" && taken.By == "c2");
         Assert.Equal(1, Count(Assert.Single(world.Runner.Opened!.Prompts), "Make it fast."));
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     /// <summary>
@@ -503,7 +494,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Equal(["w1"], world.Ledger.Said("c1"));
         Assert.Equal(("run-thief", "old-ended"), (MoveFrom("c1")!.ClaimRun, MoveFrom("c1")!.PhaseWord));
         Assert.Contains(Events.After("c1", 0).Events, e => e.Parts?.Any(part => part.Code == ChatNoteCodes.ChatLimitNotMoved.Code) == true);
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     /// <summary>
@@ -531,7 +521,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         Assert.Empty(world.Ledger.TakenBy);
         Assert.Equal(["w1"], world.Ledger.Said("c2"));
         Assert.Empty(world.Ledger.Said("c1"));
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     /// <summary>
@@ -551,7 +540,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "closed", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Equal(MoveCloseWhy.Resolved, MoveFrom("c1")!.ClosedWhy);
         Assert.Equal(["w1"], world.Ledger.Said("c1"));
-        Assert.Empty(new LimitBoxes(_home).Pending());
     }
 
     // ——— A box an older build wrote (§3.3, §13.5): imported once at the shell's come-up, and its record `Never` until it is.
@@ -561,164 +549,6 @@ public sealed class EndedLimitMoveStoreTests : IDisposable
         var ledger = new ChatLedger();
         foreach (var id in ids) ledger.Chat(id, "stopped", "talk", "engine", profile: "account-1");
         return ledger;
-    }
-
-    private string BoxOf(string session) => new LimitBoxes(_home).PathOf(session);
-
-    /// <summary>
-    /// 🔴 A box an older build wrote is imported once at the conversations' come-up, once the start's confirmation is settled, and set aside as
-    /// <c>.imported</c>, and the move goes on from its phase there as a dead shell's does: a box with no new part falls back on its old part, to
-    /// be made again by the wake; one that names its new part and the words its open moved is read by what the new part holds, its words
-    /// waiting there never attempted, so the part's own go-on carries them; one that names it and moved none is opened with no word. A second
-    /// come-up finds nothing to import.
-    /// </summary>
-    [Theory]
-    [InlineData("old-ended", "fell-back")]
-    [InlineData("moved", "closed")]
-    [InlineData("unmoved", "closed")]
-    public async Task The_come_up_imports_a_box_an_older_build_wrote_once_and_goes_on_from_its_phase(string kind, string ended)
-    {
-        var ledger = Records("c1");
-
-        // A box with no new part has no record that continues its old one: one that did would be an older build's own, and supersede the move.
-        if (kind != "old-ended") ledger.Chat("c2", "stopped", "talk", "engine", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris)).Say("w1", "Make it fast.");
-        else ledger.Chat("c2", "stopped", "talk", "engine").Say("w1", "Make it fast.");
-        using var client = ledger.Client();
-        var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable." });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var box = kind switch
-        {
-            "old-ended" => new LimitMoveBox(HandOverWhy.Limit, 0, 2, ["w1"]),
-            "moved" => new LimitMoveBox(HandOverWhy.Limit, 0, 2, ["w1"], "c2", Moved: true),
-            _ => new LimitMoveBox(HandOverWhy.Limit, 0, 2, ["w1"], "c2"),
-        };
-        new LimitBoxes(_home).Write("c1", box);
-        var bytes = File.ReadAllBytes(BoxOf("c1"));
-        var moves = new ConversationMoves(_home, client, events, store: Store("run-shell"));
-
-        var look = await moves.ComeUpAsync(say: null, CancellationToken.None);
-        var again = await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        var imported = Assert.Single(look!.Imported);
-        var now = Store("run-probe").Read(imported.Id)!;
-        Assert.Equal((ended, "c1", "run-shell"), (now.PhaseWord, now.Left, now.ClaimRun));
-        if (ended == "fell-back") Assert.Equal(ConversationMoves.NotOpened, now.FellBackCode);
-        else Assert.Equal(("c2", MoveCloseWhy.Resolved), (now.Destination, now.ClosedWhy));
-        Assert.Equal(kind == "moved" ? ["w1"] : [], Store("run-probe").WordsOf(now.Id).Select(word => word.Word));
-
-        // Set aside whole, never deleted; no box left for today's readers, nothing imported twice, no word taken or said by the importing.
-        Assert.False(File.Exists(BoxOf("c1")));
-        Assert.Equal(bytes, File.ReadAllBytes(BoxOf("c1") + ".imported"));
-        Assert.Empty(again!.Imported);
-        Assert.Single(Store("run-probe").Of("c1"));
-        Assert.Equal(["w1"], ledger.Said("c2"));
-        Assert.Empty(ledger.TakenBy);
-    }
-
-    /// <summary>
-    /// 🔴 Until a box is imported its record is the course's <c>Never</c>: with the start's confirmation not settled the come-up imports nothing,
-    /// the box stays in place and names the record held, and the go-on, the come-up's go-ons and the wake move nothing on it.
-    /// </summary>
-    [Fact]
-    public async Task A_box_the_start_has_not_settled_for_stays_in_place_and_nothing_goes_on_or_moves_on_its_record()
-    {
-        var ledger = Records("c1");
-        ledger.Chat("c3", "stopped", "talk", "engine", profile: "account-1");
-        ledger.For("c1").Say("w1", "Make it fast.");
-        using var client = ledger.Client();
-        var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 0, 1, ["w1"]));
-        var unsettled = new MoveStore(_home, () => new StoreSettled(false, "the install has not confirmed"), _ => true, "run-shell", StoreProcess.Shell);
-        var moves = new ConversationMoves(_home, client, events, store: unsettled);
-
-        var look = await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Empty(look!.Imported);
-        Assert.Equal("c1", Assert.Single(look.Never));
-        Assert.True(File.Exists(BoxOf("c1")));
-        Assert.False(File.Exists(BoxOf("c1") + ".imported"));
-        Assert.Empty(Store("run-probe").Of("c1"));
-    }
-
-    /// <summary>
-    /// 🔴 The go-on and the shell's come-up leave a record whose box an older build wrote alone while it is in place (§3.3's <c>Never</c>), here
-    /// held behind another run's standing move for the record: its words wait, its state stays, nothing is read or settled on it.
-    /// </summary>
-    [Fact]
-    public async Task A_box_in_place_keeps_the_go_on_and_the_take_up_off_its_record()
-    {
-        var ledger = new ChatLedger().Register("engine", _root);
-        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
-        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
-        Store("run-other").Decide(Decision("c1", fromEnded: true));
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 0, 1, ["w1"]));
-        var adapters = TestDoors.Registry([Talk()]);
-        using var runner = new ChatRunner(
-            ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
-            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-
-        var went = await runner.GoOnAsync("c1");
-        var taken = await runner.TakeUpAsync();
-
-        Assert.Null(went.SessionId);
-        Assert.Contains("older Daoris", went.Message, StringComparison.Ordinal);
-        Assert.Empty(taken);
-        Assert.Equal("completed", ledger.State("c1"));
-        Assert.Equal(["w1"], ledger.Said("c1"));
-        Assert.Null(new GoOnMarks(_home).Read("c1"));
-        Assert.Equal(1, ledger.Count);
-    }
-
-    /// <summary>
-    /// 🔴 A box an older build wrote for a record that already has a standing move waits behind it, left in place: the importing leaves both
-    /// records as they are, and the box is imported once that move ends.
-    /// </summary>
-    [Fact]
-    public async Task A_box_behind_a_standing_move_is_left_in_place_and_imported_once_that_move_ends()
-    {
-        var ledger = Records("c1", "c2");
-        using var client = ledger.Client();
-        var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var other = Store("run-other");
-        var standing = other.Decide(Decision("c1", fromEnded: true));
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 0, 1, []));
-        var moves = new ConversationMoves(_home, client, events, store: Store("run-shell"));
-
-        var behind = await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Empty(behind!.Imported);
-        Assert.Equal("c1", Assert.Single(behind.Never));
-        Assert.True(File.Exists(BoxOf("c1")));
-        Assert.Equal([standing.Move.Id], Store("run-probe").Of("c1").Select(move => move.Id));
-
-        other.Close(standing.Claim!, MoveCloseWhy.Superseded);
-        var after = await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Single(after!.Imported);
-        Assert.False(File.Exists(BoxOf("c1")));
-        Assert.True(File.Exists(BoxOf("c1") + ".imported"));
-    }
-
-    /// <summary>
-    /// 🔴 A box an older build wrote for the record that is still in place is a move not yet imported: the course reads the record as
-    /// <c>Never</c> (§3.3), so no move is decided over it and nothing is opened.
-    /// </summary>
-    [Fact]
-    public async Task A_box_still_in_place_keeps_the_move_off_its_record()
-    {
-        var world = Ended(2, waiting: ("w1", "Make it fast."));
-        using var c = world.Client;
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, 5, ["w1"]));
-
-        var moved = await world.Limit.MoveEndedAsync("c1", lost: null, Config(), null);
-
-        Assert.Null(moved);
-        Assert.Empty(Store("run-probe").Of("c1"));
-        Assert.Empty(world.Ledger.Opened);
-        Assert.NotNull(new LimitBoxes(_home).Read("c1"));
     }
 
     /// <summary>🔴 The ended move reads the line's moves rule as the live one does: a line at its bound waits for the person and opens nothing.</summary>

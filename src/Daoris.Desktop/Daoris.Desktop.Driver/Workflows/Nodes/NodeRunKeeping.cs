@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the runtime keeps on a run bound to a graph version around its rounds: the person's skips and stops applied, what a review sent back
-/// told to the run's work, the accepts a carried-on session earns again, the landing started on its door, and the run's end and reopening.
+/// told to the run's work, the accepts a carried-on session earns again, the landing started on its door, and the run's end and its resumption.
 /// </summary>
 /// <param name="say">The say door a run's work is told what its steps sent back through: the session, the words and the key.</param>
 /// <param name="sessions">This machine's session records, among which a run's end finds the sessions waiting on it.</param>
@@ -10,26 +10,14 @@ internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests,
     Func<ILandingWords?> landings, Func<Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>?>? finish = null,
-    Func<Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>?>? reopen = null,
     Func<Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>?>? sessions = null)
 {
-    private readonly HashSet<string> _reopenAsked = new(StringComparer.Ordinal);
-
     private readonly HashSet<string> _handed = new(StringComparer.Ordinal);
 
     private RunEndPorts Ends => new(records.Home)
     {
         Finish = finish?.Invoke(), Sessions = sessions?.Invoke(), Log = doors().Say, Owed = new OwedRunEnds(records.Home),
     };
-
-    /// <summary>A run's older records ended done asked once to wait on its first step active or ready (<see cref="RunSessionReopens"/>).</summary>
-    public async Task ReopenSessionsAsync(GovernedUnit governed, RunScope scope, List<string> said, CancellationToken ct)
-    {
-        if (!holdsLease() || records.Read(governed.Unit.Id) is not { } record) return;
-        var next = governed.Graph.Nodes.FirstOrDefault(node => WorkPerformer.StatusOf(record, node.Id).State is NodeStates.Active or NodeStates.Ready)?.Id;
-        await RunSessionReopens.AskAsync(reopen?.Invoke(), _reopenAsked, scope.Run.Run, record.Ended, scope.Quests,
-            [.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []], next, said, ct).ConfigureAwait(false);
-    }
 
     /// <summary>The run ends the service could not take, asked again (<see cref="RunSessionEnds.AgainAsync"/>).</summary>
     public async Task OwedEndsAsync(List<string> said, CancellationToken ct)

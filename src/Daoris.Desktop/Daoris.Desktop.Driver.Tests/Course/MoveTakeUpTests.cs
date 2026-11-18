@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The take-up of dead runs' moves, one unit
-/// at each come-up and look: the imports of any box an older build wrote, once the start's confirmation is settled; then every
+/// at each come-up and look: every
 /// standing move of the unit's kind whose claim's run is dead, taken once under the generation it is read at, held where its effect is
 /// marked and never recorded and closed <c>gone</c> where a record it names no longer exists; a live run's move quiet past ten minutes said
 /// <c>move.quiet</c> once, never taken over; and then the caller's own sweep. A shell's come-up says once that another Daoris runs on its home.
@@ -43,8 +43,8 @@ public sealed class MoveTakeUpTests : IDisposable
     private MoveStore Store(string run, string kind = StoreProcess.Shell) =>
         new(_home, () => _settled, each => !_dead.Contains(each.Run), run, kind, _clock);
 
-    private MoveTakeUp TakeUp(MoveStore store, MoveTakeUpScope? scope = null, params IMoveBoxImport[] imports) =>
-        new(_home, store, scope ?? MoveTakeUpScope.Conversations, imports, (session, note) => _notes.Add((session, note)), _clock, _said);
+    private MoveTakeUp TakeUp(MoveStore store, MoveTakeUpScope? scope = null) =>
+        new(_home, store, scope ?? MoveTakeUpScope.Conversations, (session, note) => _notes.Add((session, note)), _clock, _said);
 
     private static MoveDecision Decision(string left, string executor = MoveExecutors.Conversation) =>
         new(left, executor, MoveHows.Brief, HandOverWhy.Limit, HandOverBy.Daoris) { FromEnded = true };
@@ -216,29 +216,15 @@ public sealed class MoveTakeUpTests : IDisposable
         }
     }
 
-    // ——— The order: the imports, then the take-up, then the caller's sweep (§3.3, §13.5).
-
-    private sealed class Recording(List<string> order, MoveBoxPass pass, params string[] pending) : IMoveBoxImport
-    {
-        public string Box => "recorded";
-
-        public MoveBoxPass Import()
-        {
-            order.Add("import");
-            return pass;
-        }
-
-        public IReadOnlyList<string> Pending() => pending;
-    }
+    // ——— The order: the take-up, then the caller's sweep (§3.3, §13.5).
 
     [Fact]
-    public async Task The_imports_run_first_then_the_take_up_then_the_caller_s_sweep_which_reads_what_the_look_found()
+    public async Task The_take_up_runs_then_the_caller_s_sweep_which_reads_what_the_look_found()
     {
         DeadMove("s2");
         var order = new List<string>();
         var shell = Store("run-shell");
-        var imported = shell.Decide(Decision("s1")).Move;
-        var unit = TakeUp(shell, null, new Recording(order, new MoveBoxPass([imported], [], [], 0, null)));
+        var unit = TakeUp(shell);
         unit.BeforeTake = move => order.Add($"take {move.Left}");
         MoveLook? swept = null;
 
@@ -249,44 +235,9 @@ public sealed class MoveTakeUpTests : IDisposable
             return Task.CompletedTask;
         });
 
-        Assert.Equal(["import", "take s2", "sweep"], order);
+        Assert.Equal(["take s2", "sweep"], order);
         Assert.Same(look, swept);
-        Assert.Equal([imported.Id], look.Imported.Select(move => move.Id));
         Assert.Equal(["s2"], look.Taken.Select(each => each.Move!.Left));
-        Assert.Equal("run-shell", shell.Read(imported.Id)!.ClaimRun);
-    }
-
-    [Fact]
-    public async Task While_the_imports_wait_on_the_confirmation_a_record_whose_box_waits_is_never_taken_up_and_the_sweep_reads_it_as_never()
-    {
-        new HandOverBox(_home).Write("s1", new HandOverRequest("codex", null, HandOverWhy.Press, HandOverBy.Person, _clock.GetUtcNow()));
-        DeadMove("s1-next");
-        var older = DeadMove("s1");
-        _settled = StoreSettled.Not("the install's swap journal is at `swapping`");
-        var shell = Store("run-shell");
-        var unit = TakeUp(shell, null, new HandOverBoxImport(_home, shell, _ => true));
-        MoveLook? swept = null;
-
-        var held = await unit.LookAsync(Standing, (found, _) =>
-        {
-            swept = found;
-            return Task.CompletedTask;
-        });
-
-        Assert.Contains("`swapping`", held.ImportsHeld);
-        Assert.Equal(["s1"], swept!.Never);
-        Assert.Equal(["s1-next"], held.Taken.Select(each => each.Move!.Left));
-        Assert.Equal("run-dead", shell.Read(older.Id)!.ClaimRun);
-
-        // Asked again at the next look: settled now, the box is behind the standing move, so the dead run's move is taken up and the box
-        // waits until that move ends.
-        _settled = StoreSettled.Yes;
-        var settled = await unit.LookAsync(Standing);
-
-        Assert.Null(settled.ImportsHeld);
-        Assert.Equal([older.Id], settled.Taken.Select(each => each.Move!.Id));
-        Assert.Equal(["s1"], settled.Never);
-        Assert.True(File.Exists(new HandOverBox(_home).PathOf("s1")));
     }
 
     // ——— A hung executor (§19.1 point 4).

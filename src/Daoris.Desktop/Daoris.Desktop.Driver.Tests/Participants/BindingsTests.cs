@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Each session's conversation id is the desktop store's <c>bindings</c> row alone,
-/// kept when the wire names it and read back by every resume, a deleted record taking its binding. The files an older build kept are the
-/// home migration's (<see cref="BindingFilesStep"/>), not read or written here.
+/// kept when the wire names it and read back by every resume, a deleted record taking its binding.
 /// </summary>
 /// <remarks>Every case has its own scratch home under <c>_fixtures/</c> and sets no variable of the process's environment, <c>DAORIS_HOME</c> least.</remarks>
 public sealed class BindingsTests : IDisposable

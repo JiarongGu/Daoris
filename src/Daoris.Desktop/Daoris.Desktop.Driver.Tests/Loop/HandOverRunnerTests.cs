@@ -52,7 +52,6 @@ public sealed class HandOverRunnerTests : IDisposable
         Assert.Equal((null, false, HandOver.Running), (handed.SessionId, handed.Kept, handed.Why));
         Assert.Equal(
             "c0nv0001 is working, running in another Daoris process on this machine: hand it over there, or stop it first.", handed.Message);
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>An agent the roster does not hold is refused by its code, and an agent that is the one it runs on, too.</summary>
@@ -65,7 +64,6 @@ public sealed class HandOverRunnerTests : IDisposable
 
         Assert.Equal(HandOver.UnknownAgent, (await HandAsync(runner, "c0nv0001", "nope")).Why);
         Assert.Equal(HandOver.SameAgent, (await HandAsync(runner, "c0nv0001", "talk")).Why);
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>
@@ -84,7 +82,6 @@ public sealed class HandOverRunnerTests : IDisposable
         await HandAsync(runner, "c0nv0001", "other");
 
         lock (ended) Assert.Equal([("c0nv0001", false)], ended);
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>

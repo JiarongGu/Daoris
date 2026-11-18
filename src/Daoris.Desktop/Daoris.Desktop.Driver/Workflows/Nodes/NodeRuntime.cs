@@ -83,7 +83,7 @@ public sealed class NodeRuntime(
     private NodeClosing Closing => LazyInitializer.EnsureInitialized(ref _closing, () => new NodeClosing(records, clock, _closer, () => _quests, () => _governed, () => _governed = null))!;
 
     private NodeRunKeeping Keeping => LazyInitializer.EnsureInitialized(ref _keeping, () => new NodeRunKeeping(
-        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish, () => Reopen,
+        records, clock, _holdsLease, _graphRuns, _performer, () => Doors, () => Say, () => PullRequests, () => Landings, () => Finish,
         () => SessionsRead))!;
 
     private NodeIntegrating Integrating => LazyInitializer.EnsureInitialized(ref _integrating, () => new NodeIntegrating(
@@ -128,8 +128,6 @@ public sealed class NodeRuntime(
 
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
-
-    public Func<RunReopen, CancellationToken, Task<Daoris.Contracts.Quests.RunReopenResponse?>>? Reopen { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;
@@ -517,7 +515,6 @@ public sealed class NodeRuntime(
             var observed = atEnd && FailedHeldRuns.Observed(governed.Graph, records.Read(unit));
             tip = scope.Branch is not null && (!atEnd || observed) ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
             if (observed && await FailedHeldRuns.AgainAsync(records, _graphRuns, governed, tip, git.Git, clock, ct).ConfigureAwait(false)) atEnd = false;
-            await Keeping.ReopenSessionsAsync(governed, scope, said, ct).ConfigureAwait(false);
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
             // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.
             AttemptTenures.Keep(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config?.PlaceRisk, clock());

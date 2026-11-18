@@ -5,8 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A reach kept across a live graph's edit. Each node is scoped, bound, receipted and fired on
-/// by its place (<see cref="NodeGraphs.Places"/>), so an edit elsewhere leaves it current; a record written before names the whole graph's digest
-/// and the run's old name, and is judged by that rule: nothing lapses or fires at the upgrade, and every one lapses at the first edit after.
+/// by its place (<see cref="NodeGraphs.Places"/>), so an edit elsewhere leaves it current.
 /// </summary>
 public sealed class GraphEditReachTests
 {
@@ -14,7 +13,7 @@ public sealed class GraphEditReachTests
 
     /// <summary>
     /// A skip, a failure, a rejection, a reach a trigger fired on, an attempt not reconciled and an opinion begun, each with what rests on it: the
-    /// records the proof keeps from before the build.
+    /// records the proof keeps.
     /// </summary>
     private static readonly NodeDeclaration[] Nodes =
     [
@@ -34,38 +33,34 @@ public sealed class GraphEditReachTests
     private static WireRun Now(NodeGraph graph, IEnumerable<string> fired) => new(NodeGraphs.Digest(graph), NodeRuns.Of(Unit))
     {
         Places = NodeGraphs.Places(graph),
-        Legacy = NodeRuns.Of(Unit, NodeGraphs.Digest(graph)),
         Revisions = Base.Revisions,
         Fired = fired.ToHashSet(StringComparer.Ordinal),
     };
 
-    /// <summary>
-    /// The records of the build before, serialized and read back: its run is named by the unit and the graph and knows no places,
-    /// which is a <see cref="WireRun"/> with neither.
-    /// </summary>
-    private static (NodeRecord Record, Graph Before) Written()
+    /// <summary>The records the runtime writes on <paramref name="graph"/>, serialized and read back.</summary>
+    private static (NodeRecord Record, Graph Written) Written()
     {
         var graph = GraphOf();
-        var before = new Graph(Nodes, Wires) { Run = new WireRun(NodeGraphs.Digest(graph), NodeRuns.Of(Unit, NodeGraphs.Digest(graph))) { Revisions = Base.Revisions } };
-        before.Skip("s");
-        var first = before.Evaluate();
-        foreach (var id in new[] { "f", "r", "t", "u", Opinion }) before.Start(first, id);
-        before.Fail("f");
-        before.Reject("r");
-        before.Reach("t");
-        before.Move("u", new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = before.Statuses["u"].Attempt });
+        var written = new Graph(Nodes, Wires) { Run = Now(graph, []) };
+        written.Move("s", new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = "not needed", Scope = written.Run.ScopeOf("s") });
+        var first = written.Evaluate();
+        foreach (var id in new[] { "f", "r", "t", "u", Opinion }) written.Start(first, id);
+        written.Fail("f");
+        written.Reject("r");
+        written.Reach("t");
+        written.Move("u", new NodeMove(NodeStates.Unknown, NodeCause.Daoris) { Attempt = written.Statuses["u"].Attempt });
 
-        var second = before.Evaluate();
+        var second = written.Evaluate();
         var fired = new List<string>();
         foreach (var id in new[] { "a1", "a2", "a3", "a4" })
         {
-            before.Start(second, id);
+            written.Start(second, id);
             fired.AddRange(second.Starts.Single(start => start.Node == id).Firings.Select(firing => firing.Key));
         }
 
         Assert.Single(fired);
-        var record = new NodeRecord(Unit) { Statuses = before.Statuses, Fired = fired };
-        return (NodeRecordFiles.Parse(NodeRecordFiles.ToJson(record))!, before);
+        var record = new NodeRecord(Unit) { Statuses = written.Statuses, Fired = fired };
+        return (NodeRecordFiles.Parse(NodeRecordFiles.ToJson(record))!, written);
     }
 
     [Fact]
@@ -93,31 +88,29 @@ public sealed class GraphEditReachTests
     }
 
     [Fact]
-    public void Records_written_before_keep_their_receipt_ids_and_lapse_nothing_and_fire_nothing_at_the_upgrade()
+    public void Records_keep_their_receipt_ids_and_lapse_nothing_and_fire_nothing_when_evaluated_again()
     {
-        var (record, before) = Written();
-        var upgrade = WireEvaluation.Evaluate(Nodes, Wires, record.Statuses, Now(GraphOf(), record.Fired));
+        var (record, written) = Written();
+        var again = WireEvaluation.Evaluate(Nodes, Wires, record.Statuses, Now(GraphOf(), record.Fired));
 
-        Assert.Null(upgrade.Refusal);
-        Assert.Empty(upgrade.Refused);
-        Assert.True(upgrade.Settled);
-        Assert.Empty(upgrade.Starts);
+        Assert.Null(again.Refusal);
+        Assert.Empty(again.Refused);
+        Assert.True(again.Settled);
+        Assert.Empty(again.Starts);
         foreach (var id in new[] { "a1", "a2", "a3", "a4" })
         {
             // Each receipt is the one its consumer's binding stores, so the consumer stays bound and the trigger fires nothing again.
-            var judged = upgrade.Of(id)!;
+            var judged = again.Of(id)!;
             Assert.True(judged.Eligible);
             Assert.Equal(record.Statuses[id].Binding!.PrerequisiteReceipts, judged.Receipts);
             Assert.Empty(judged.Firings);
         }
 
-        // The same records under the build before, evaluated again: the same receipts, so the upgrade changed no id.
-        var again = before.Evaluate();
-        Assert.All(new[] { "a1", "a2", "a3", "a4" }, id => Assert.Equal(again.Of(id)!.Receipts, upgrade.Of(id)!.Receipts));
+        Assert.All(new[] { "a1", "a2", "a3", "a4" }, id => Assert.Equal(written.Evaluate().Of(id)!.Receipts, again.Of(id)!.Receipts));
     }
 
     [Fact]
-    public void A_skip_and_a_start_on_a_status_bound_before_pass_the_lifecycles_scope_checks()
+    public void A_skip_and_a_start_on_a_status_bound_by_place_pass_the_lifecycles_scope_checks()
     {
         var (record, _) = Written();
         var run = Now(GraphOf(), record.Fired);
@@ -125,13 +118,12 @@ public sealed class GraphEditReachTests
         var status = record.Statuses[Opinion];
         var skip = new NodeMove(NodeStates.Skipped, NodeCause.Authority) { Source = NodeAuthorities.Of(opinion)!.SkipBy, Attempt = status.Attempt };
 
-        // The record's skip of an attempt bound before is scoped by that binding's own rule, the graph with the graph: kept or worked out alike.
+        // The record's skip of an attempt is scoped by its node's place, kept or worked out alike.
         Assert.Null(NodeLifecycle.Apply(opinion, status, skip with { Scope = status.Scope }).Refused);
-        Assert.Equal(status.Scope, run.Own(Opinion, status.Binding!.GraphDigest));
-        Assert.Null(NodeLifecycle.Apply(opinion, status with { Scope = null }, skip with { Scope = run.Own(Opinion, status.Binding.GraphDigest) }).Refused);
-        Assert.Equal(NodeRefusal.NotBound, NodeLifecycle.Apply(opinion, status, skip with { Scope = run.ScopeOf(Opinion) }).Refused);
+        Assert.Equal(status.Scope, run.ScopeOf(Opinion));
+        Assert.Null(NodeLifecycle.Apply(opinion, status with { Scope = null }, skip with { Scope = run.ScopeOf(Opinion) }).Refused);
 
-        // The person's new attempt on a failure kept from before starts on the node's place, its scope and its binding alike.
+        // The person's new attempt on a failure starts on the node's place, its scope and its binding alike.
         var f = Nodes.Single(node => node.Id == "f");
         var statuses = new Dictionary<string, NodeStatus>(record.Statuses, StringComparer.Ordinal)
         {
@@ -143,7 +135,7 @@ public sealed class GraphEditReachTests
     }
 
     [Fact]
-    public void Records_written_before_lapse_at_the_first_edit_after_the_upgrade()
+    public void An_edit_elsewhere_in_the_graph_lapses_none_of_the_records()
     {
         var (record, _) = Written();
         var grown = GraphOf(Node("x"));
@@ -151,17 +143,8 @@ public sealed class GraphEditReachTests
         var edited = WireEvaluation.Evaluate(grown.Nodes, grown.Wires, statuses, Now(grown, record.Fired));
 
         Assert.Empty(edited.Refused);
-        var lapsed = edited.Moves.Where(move => move.Move.To == NodeStates.Invalidated).ToDictionary(move => move.Node, move => (move.Why, move.Detail));
-        Assert.Equal((WireWhy.SkipScope, (string?)null), lapsed["s"]);
-        foreach (var id in new[] { "t", "u", Opinion, "a1", "a2", "a3", "a4" }) Assert.Equal((WireWhy.Lapsed, NodeLapse.Graph), lapsed[id]);
-
-        // A failure and a rejection stay for the person, but are not receipts: nothing rests on them.
+        Assert.DoesNotContain(edited.Moves, move => move.Move.To == NodeStates.Invalidated);
         Assert.Equal((NodeStates.Failed, NodeStates.Rejected), (edited.Statuses["f"].State, edited.Statuses["r"].State));
-        Assert.Equal(["w2"], edited.Of("a2")!.Waiting);
-        Assert.Equal(["w3"], edited.Of("a3")!.Waiting);
-
-        // The attempt not reconciled stays held after its lapse, so nothing starts it again before its outcome is known.
-        Assert.Equal(record.Statuses["u"].Attempt, edited.Statuses["u"].Unreconciled);
         Assert.DoesNotContain(edited.Starts, start => start.Node == "u");
     }
 }

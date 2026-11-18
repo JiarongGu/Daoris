@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The rules a graph's save holds about the landing that read every kind beside it, run once with the kinds'
-/// own (<see cref="NodeKit.Problems"/>) and only where the graph is being saved by a person: a stored graph that read before is never made
-/// unreadable by a rule added after it (<c>compatible-builds.md</c>).
+/// own (<see cref="NodeKit.Problems"/>) and only where the graph is being saved by a person.
 /// </summary>
 internal static class LandingRules
 {

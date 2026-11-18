@@ -18,9 +18,9 @@ of everything it handed, section by section.
 |---|---|---|
 | `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one pure decision of how a line goes on, paths A to N, for both loops; the limit paths (D, E, F), the carry-on and the transient bound are `LimitCourse` |
 | `CourseTrigger`, `CourseFacts` | `Course/Domain/CourseTriggers.cs`, `CourseFacts.cs` | What asks the course, and the facts an executor hands it |
-| `MoveStore`, `MovePhases` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, `MoveImporter` writes a box's move with its receipt, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
+| `MoveStore`, `MovePhases` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
-| `MoveDelivery`, `MoveResolve`, `MoveBoxImport` | `Course/` (`MoveBoxImports.cs`) | Delivers moved words; settles a held move; imports an older build's boxes once |
+| `MoveDelivery`, `MoveResolve` | `Course/` | Delivers moved words; settles a held move |
 | `ChatRunner` | `Loop/Chat/ChatRunner.cs` (root, 37 KB) | Wires a conversation's units and the registered executors; keeps the doors callers use, each one line to the unit or executor that does the work |
 | `ChatRun` | `Loop/Chat/ChatRun.cs` | The run of a conversation whose record is open, one method for every kind: its process spawned with its rules and servers, its door's turns held, its watch started, or its record concluded when the spawn fails |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
@@ -123,8 +123,7 @@ of everything it handed, section by section.
 9. Every executor asks `CourseDecision.Decide(facts, trigger)` and acts on the answer. What never goes on is judged first:
    a teammate's record, an intake, a stood-down record, a superseded record, a standing move's old part. (from D212, D137)
 10. Every move is one durable row in the desktop store, with phases `decided` to `delivered`, `fell-back` or `held`, then
-    `closed`. This build writes no box. An older build's `.hand-over.json` or `.limit-move.json` is imported once.
-    (from D212)
+    `closed`. No box file is written or read: the store's row is the move. (from D212)
 11. While a move stands, its destination takes no move of its own. A press holds the line's reservation, so a second
     hand-over waits. Nothing opens while the application winds up. (from D212)
 
@@ -384,7 +383,7 @@ of everything it handed, section by section.
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
   `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`, `ChatLimitCarryProcessTests`,
   `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `PartLeftTests`, `HandOverLeftProcessTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
-  `*CrashProcessTests`, `*DowngradeProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
+  `*CrashProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
   `StandingBlockTests`, `InstructionAccountTests`, `CourseCountsTests`, `LineCountsTests`, `LineKeysTests`,
   `AnswersAloneHoldTests` (all in `Daoris.Desktop.Driver.Tests`); `Loop/ChatGoesOnProcessTests`, `Loop/ChatTurnsTests`;
   `DriverModuleConversationTests` (modules); `LineEventsShapeTests`, `LineEventFilesTests` (service);

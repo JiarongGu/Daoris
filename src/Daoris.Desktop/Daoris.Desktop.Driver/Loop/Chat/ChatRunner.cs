@@ -112,7 +112,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
             _conclusion, _closing, usage ?? new SessionUsage(home), browser, plugins ?? PluginLog.None, () => RetryClock,
             (id, queue) => QueueChanged?.Invoke(id, queue), answered => Answered?.Invoke(answered));
 
-        // One holder for the moves of the home, the hand-over's among them: it imports the boxes an older build wrote, the come-up takes a dead
+        // One holder for the moves of the home, the hand-over's among them: the come-up takes a dead
         // shell's moves up through it, and the hand-over takes the move it leaves standing.
         Moves = Executors.Of<LimitMove>().Moves;
 
@@ -130,7 +130,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         new(() => Parts.Declared<ExecutorAttribute>(typeof(ChatRunner).Assembly));
 
     /// <summary>
-    /// The hand-overs this run holds that wait to be taken, at a look: a dead shell's or an older build's the come-up or an earlier look left
+    /// The hand-overs this run holds that wait to be taken, at a look: a dead shell's the come-up or an earlier look left
     /// standing, each judged again as it is taken; one whose conversation is talking waits for its turn's end.
     /// </summary>
     /// <param name="onEnded">Told when a new conversation ends, as a start's is.</param>
@@ -260,7 +260,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     }
 
     /// <summary>
-    /// A hand-over's or a curve move's take is over, its box gone (<see cref="ChatHandOver.TakeEnded"/>): the shell's judge hands the words it
+    /// A hand-over's or a curve move's take is over, its move ended (<see cref="ChatHandOver.TakeEnded"/>): the shell's judge hands the words it
     /// held meanwhile to the conversation that continues it.
     /// </summary>
     public event Action<string>? TakeEnded
@@ -320,7 +320,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         Executors.Of<WordsStart>().StartWithAsync(repository, adapter, config, text, files, requestId, ownTree, profile, onEnded, ct, order);
 
     /// <summary>
-    /// <i>Hand a conversation over</i>: judged and kept in its box, then taken at once, or as its turn ends where it is talking
+    /// <i>Hand a conversation over</i>: judged and kept as a move, then taken at once, or as its turn ends where it is talking
     /// (<see cref="ChatHandOver.HandOverAsync"/>).
     /// </summary>
     /// <param name="why">One of <see cref="HandOverWhy"/>.</param>

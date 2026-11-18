@@ -7,8 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The moves that open a part and hand it words, over the real client and the
 /// in-process ledger at its <c>opens</c> mark, with a start that opens the record through the keyed door and spawns nothing, so no part here
-/// holds the new conversation and its first hand fails. What the moved words come to then, and what a come-up does with a move's box once the
-/// open moved them, are read here; the delivered paths, which need an agent, are the Process classes'.
+/// holds the new conversation and its first hand fails. What the moved words come to then is read here; the delivered paths, which need an
+/// agent, are the Process classes'.
 /// </summary>
 public sealed class MovedWordsTests : IDisposable
 {
@@ -177,92 +177,5 @@ public sealed class MovedWordsTests : IDisposable
         Assert.Equal(["w1", "w2"], ledger.Said("c2"));
         Assert.All(ledger.Record("c2")["said"]!.AsArray(), word => Assert.Null(word!["attempt"]));
         Assert.Empty(ledger.TakenBy);
-    }
-
-    /// <summary>
-    /// An ended conversation its limit held, on c1, with the refused turn's words in its record, and the new part c2 its limit's move opened,
-    /// the open having moved <paramref name="moved"/> there; the move's box names them on c2.
-    /// </summary>
-    private void MovedBox(ChatLedger ledger, params (string Id, string Text)[] moved)
-    {
-        ledger.Chat("c1", "stopped", "talk", _root, profile: "account-1");
-        var events = Events;
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable." });
-        events.Append("c1", new SessionEvent
-        {
-            Kind = SessionEventKind.Note, Text = "its account is cooling", Parts = [new NotePart { Code = AccountNoteCodes.AccountCoolingWindow.Code }],
-        });
-        events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
-        var words = ledger.Chat("c2", "stopped", "talk", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
-        foreach (var (id, text) in moved) words.Say(id, text);
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, [.. moved.Select(word => word.Id)], "c2", Moved: true));
-    }
-
-    private static IEnumerable<System.Text.Json.Nodes.JsonNode?> Said(ChatLedger ledger, string session) => ledger.Record(session)["said"]!.AsArray();
-
-    /// <summary>
-    /// 🔴 The recovery of the move's box, read by the store's take-up of the box's import: a shell cut off after the new part showed each moved word under its
-    /// id and before it wrote the prompt. Its words wait there marked attempted, so the display is no evidence that they went, and nothing
-    /// says they did not reach the agent: at the come-up, and at the one after, nothing is delivered, which would take the words as taken, nor
-    /// said again as a joined copy under the move's key; each attempted word is taken back off the new part, never sent again, with one
-    /// <c>lost</c> line naming them there whatever its record shows, and the box is imported and set aside.
-    /// </summary>
-    [Fact]
-    public async Task A_moved_boxs_delivery_cut_off_after_its_words_were_shown_is_neither_delivered_nor_said_again()
-    {
-        var (_, _, _, ledger, client) = World(opens: 2);
-        using var c = client;
-        MovedBox(ledger, ("w1", "Make it fast."), ("w2", "And add a test."));
-        ledger.Edit("c2", record =>
-        {
-            foreach (var word in record["said"]!.AsArray()) word!["attempt"] = "2026-10-03T09:59:30Z";
-        });
-        foreach (var (id, text) in new[] { ("w1", "Make it fast."), ("w2", "And add a test.") })
-        {
-            Events.Append("c2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text });
-        }
-
-        var moves = Shell(client);
-        await moves.ComeUpAsync(say: null, CancellationToken.None);
-        await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Empty(ledger.TakenBy);
-        Assert.Equal([("c2", "w1"), ("c2", "w2")], ledger.TakenBack);
-        Assert.Empty(Said(ledger, "c2"));
-        Assert.DoesNotContain(Said(ledger, "c1"), word => word!["key"]?.GetValue<string>() == "limit-move/c1");
-        var lost = Assert.Single(Events.After("c2", 0).Events, e => e.Code == SessionEventCodes.Lost);
-        Assert.Equal(["w1", "w2"], lost.Words!);
-        Assert.Null(new LimitBoxes(_home).Read("c1"));
-        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + MoveBoxImport.SetAsideSuffix));
-    }
-
-    /// <summary>The shell's conversation moves over the home's store, under a run of its own, its start's confirmation settled.</summary>
-    private ConversationMoves Shell(ServiceClient client) =>
-        new(_home, client, Events, store: new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-shell", StoreProcess.Shell));
-
-    /// <summary>
-    /// 🔴 A shell cut off after the move's open and before its hand: the moved words wait on the new part never attempted, so nothing of the
-    /// move reached the agent. The come-up imports the box and ends its move by what the new part holds, saying nothing and taking nothing:
-    /// the words stay on the new part for its own go-on to hand once, and the next come-up does nothing again.
-    /// </summary>
-    [Fact]
-    public async Task A_moved_boxs_delivery_never_attempted_leaves_the_words_on_the_new_part_for_its_own_go_on()
-    {
-        var (_, _, _, ledger, client) = World(opens: 2);
-        using var c = client;
-        MovedBox(ledger, ("w1", "Make it fast."));
-        var moves = Shell(client);
-
-        await moves.ComeUpAsync(say: null, CancellationToken.None);
-        await moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Equal(["w1"], ledger.Said("c2"));
-        Assert.DoesNotContain(Said(ledger, "c2"), word => word!["key"]?.GetValue<string>() == "limit-move/c1");
-        Assert.Empty(ledger.TakenBy);
-        Assert.Empty(ledger.TakenBack);
-        Assert.Null(new LimitBoxes(_home).Read("c1"));
-        Assert.Equal("closed", new MoveStore(_home).Of("c1").Single().PhaseWord);
     }
 }

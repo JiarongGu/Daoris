@@ -25,12 +25,10 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
     /// </summary>
     /// <remarks>
     /// <b>One durable owner</b>: the move keeps one record in the store
-    /// (<see cref="Moves"/>), decided at <c>old-ended</c> before the new part opens, an ended record having no part to end, and no
-    /// <c>&lt;s&gt;.limit-move.json</c> box is written beside it: an older build recovers the move from the ledger alone, as the live move's.
+    /// (<see cref="Moves"/>), decided at <c>old-ended</c> before the new part opens, an ended record having no part to end.
     /// Its phases are written before what each fences, as <see cref="MoveAsync"/>'s are; the waiting words leave the old record, or the new
     /// part, only at delivery, when the new part's turn is on the wire. A shell that ends between leaves the move to the come-up's take-up
-    /// (<see cref="ConversationMoves.ComeUpAsync"/>), and a box an older build wrote is imported there once, which is the course's
-    /// <c>Never</c> for its record until then: a box in place keeps this move off it.
+    /// (<see cref="ConversationMoves.ComeUpAsync"/>).
     /// </remarks>
     /// <param name="holding">Whether the caller holds the session's going-on already (a go-on refused before its spawn).</param>
     /// <param name="switching">
@@ -44,8 +42,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
         string sessionId, ContinueReason? lost, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default,
         bool holding = false, bool restarted = false, bool switching = false)
     {
-        var boxes = new LimitBoxes(context.Home);
-        if (context.Closing || context.Holds(sessionId) || boxes.Read(sessionId) is not null) return null;
+        if (context.Closing || context.Holds(sessionId)) return null;
         var events = context.Events.After(sessionId, 0).Events;
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);

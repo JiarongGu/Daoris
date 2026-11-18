@@ -38,17 +38,13 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         Assert.Equal(".cannot.json", SessionHomeFiles.GoOnMarkSuffix);
         Assert.Equal(".reopened.json", SessionHomeFiles.ReopenMarkSuffix);
         Assert.Equal(".new-session.json", SessionHomeFiles.NewSessionChoiceSuffix);
-        Assert.Equal(".hand-over.json", SessionHomeFiles.HandOverBoxSuffix);
         Assert.Equal(".hand-over-ask.json", SessionHomeFiles.HandOverAskSuffix);
         Assert.Equal(".hand-over-state.json", SessionHomeFiles.HandOverStateSuffix);
-        Assert.Equal(".limit-move.json", SessionHomeFiles.LimitMoveSuffix);
         Assert.Equal(SessionHomeFiles.GoOnMarkSuffix, GoOnMarks.Suffix);
         Assert.Equal(SessionHomeFiles.ReopenMarkSuffix, ReopenMarks.Suffix);
         Assert.Equal(SessionHomeFiles.NewSessionChoiceSuffix, NewSessionChoices.Suffix);
-        Assert.Equal(SessionHomeFiles.HandOverBoxSuffix, HandOverBox.Suffix);
         Assert.Equal(SessionHomeFiles.HandOverAskSuffix, HandOverAskFiles.AskSuffix);
         Assert.Equal(SessionHomeFiles.HandOverStateSuffix, HandOverAskFiles.StateSuffix);
-        Assert.Equal(SessionHomeFiles.LimitMoveSuffix, LimitBoxes.Suffix);
     }
 
     [Fact]

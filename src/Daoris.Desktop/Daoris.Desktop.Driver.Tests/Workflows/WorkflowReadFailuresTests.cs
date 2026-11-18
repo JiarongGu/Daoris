@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>What the workflow readers and the migration say where a file or a catalogue they read is gone, unreadable or drops a step.</summary>
+/// <summary>What the workflow readers say where a file or a catalogue they read is gone or unreadable.</summary>
 public sealed class WorkflowReadFailuresTests : IDisposable
 {
     private static readonly DateTimeOffset At = new(2026, 11, 2, 9, 0, 0, TimeSpan.Zero);
@@ -45,21 +45,5 @@ public sealed class WorkflowReadFailuresTests : IDisposable
 
         Assert.Null(bound.Binding);
         Assert.Contains("role catalogue cannot be read", bound.Failed);
-    }
-
-    /// <summary>A pushed landing's pull-request step dropped for want of a named plugin is said by the migration, naming the workflow.</summary>
-    [Fact]
-    public void A_dropped_pull_request_step_is_said_by_the_migration()
-    {
-        StoredSteps.AddGraph(WorkflowPorts.Store(_home), "pr-handed", "Handed with a pull request", "2026-11-01T09:00:00Z", JsonNode.Parse("""
-            {"schemaVersion":2,"entries":["claimed"],"end":"pr",
-             "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"handed","kind":"handed","version":1,"reach":"observed"},
-                      {"id":"pr","kind":"pull-request","version":1,"reach":"observed"}],
-             "wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"},{"id":"h>p","kind":"after","from":"handed","to":"pr"}]}
-            """)!);
-
-        var migrated = WorkflowMigration.Convert(_home, DriverConfig.Empty, []);
-
-        Assert.Contains(migrated.Said, line => line.Contains("`pr` opened a pull request", StringComparison.Ordinal) && line.Contains("`pr-handed`", StringComparison.Ordinal));
     }
 }

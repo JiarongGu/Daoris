@@ -43,7 +43,6 @@ public sealed class HandOverAskFilesTests : IDisposable
         Assert.Equal(DateTimeOffset.Parse("2026-10-20T10:00:00Z"), ask.At);
         Assert.Equal(ask, files.Ask("s1"));
         Assert.Null(files.Ask("s2"));
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     /// <summary>The state is the driver's alone, written whole and atomically in the shape the service reads; read back only for its ask.</summary>

@@ -146,15 +146,6 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     {
         if (context.GoingOn.ContainsKey(session)) return (null, null);
 
-        // An older build's box for the record's ended limit move still in place is its `Never`: the wake
-        // neither goes on in its own conversation nor moves it, and the record stays held, asked again at the next look, which imports the box
-        // once the start's confirmation is settled or the standing move behind which it waited has ended.
-        if (new LimitBoxes(context.Home).Read(session) is not null)
-        {
-            _dirty = true;
-            return (null, null);
-        }
-
         if (ServiceClient.ReadRecord(json, session) is not { Kind: "chat", Teammate: false, Adapter: { Length: > 0 } adapter } record
             || WordsNever.ContinuedIn(json, session) is not null)
         {
@@ -235,7 +226,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
             // Its account refused again: a new cool-off, which the stamp hears, holds it once more.
             if (start.SessionId is null && await WaitsAgainAsync(session, ct).ConfigureAwait(false))
             {
-                // What held the wake off (a hand-over's box, a config) moves no stamp, so the next look asks again, as for an older build's box.
+                // What held the wake off (a hand-over, a config) moves no stamp, so the next look asks again.
                 _held[session] = 0;
                 _dirty = true;
             }

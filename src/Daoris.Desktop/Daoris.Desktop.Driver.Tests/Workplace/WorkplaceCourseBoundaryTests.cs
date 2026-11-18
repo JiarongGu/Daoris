@@ -23,11 +23,9 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         Assert.Equal(".cannot.json", GoOnMarks.Suffix);
         Assert.Equal(".reopened.json", ReopenMarks.Suffix);
         Assert.Equal(".new-session.json", NewSessionChoices.Suffix);
-        Assert.Equal(".hand-over.json", HandOverBox.Suffix);
         Assert.Equal(".hand-over-ask.json", HandOverAskFiles.AskSuffix);
         Assert.Equal(".hand-over-state.json", HandOverAskFiles.StateSuffix);
-        Assert.Equal(".limit-move.json", LimitBoxes.Suffix);
-        foreach (var suffix in new[] { ".cannot.json", ".reopened.json", ".new-session.json", ".hand-over.json", ".hand-over-ask.json", ".hand-over-state.json", ".limit-move.json" })
+        foreach (var suffix in new[] { ".cannot.json", ".reopened.json", ".new-session.json", ".hand-over-ask.json", ".hand-over-state.json" })
         {
             Assert.Contains(suffix, SessionHomeFiles.SessionSuffixes);
         }
@@ -37,7 +35,6 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
     [InlineData("none")]
     [InlineData("ask")]
     [InlineData("reopened")]
-    [InlineData("limit")]
     public void Literal_historical_files_keep_inventory_order_mark_names_actual_bytes_and_refusal_continuation(string refusal)
     {
         Directory.CreateDirectory(Sessions);
@@ -45,13 +42,13 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
         var transcript = Path.Combine(Sessions, "s1.log");
         (string Suffix, int Size)[] kept =
         [
-            (".cannot.json", 1), (".reopened.json", 2), (".new-session.json", 3), (".hand-over.json", 4),
-            (".hand-over-ask.json", 5), (".hand-over-state.json", 6), (".limit-move.json", 7),
+            (".cannot.json", 1), (".reopened.json", 2), (".new-session.json", 3),
+            (".hand-over-ask.json", 4), (".hand-over-state.json", 5),
         ];
         File.WriteAllText(conversation, "abc");
         File.WriteAllText(transcript, "tx");
         foreach (var (suffix, size) in kept) File.WriteAllText(Path.Combine(Sessions, "s1" + suffix), new string('x', size));
-        var refused = refusal switch { "ask" => ".hand-over-ask.json", "reopened" => ".reopened.json", "limit" => ".limit-move.json", _ => null };
+        var refused = refusal switch { "ask" => ".hand-over-ask.json", "reopened" => ".reopened.json", _ => null };
         var calls = new List<(string Path, bool Folder)>();
         var files = new SessionHomeFiles(_home, (path, folder) =>
         {
@@ -60,17 +57,17 @@ public sealed class WorkplaceCourseBoundaryTests : IDisposable
             SessionHomeFiles.FromDisk(path, folder);
         });
 
-        Assert.Equal((3L, 2L, 28L), (files.Size("s1").Conversations, files.Size("s1").Transcripts, files.Size("s1").Other));
+        Assert.Equal((3L, 2L, 15L),(files.Size("s1").Conversations, files.Size("s1").Transcripts, files.Size("s1").Other));
         var result = files.Remove(["s1"], null);
 
         Assert.Equal([conversation, transcript, .. kept.Select(each => Path.Combine(Sessions, "s1" + each.Suffix))], calls.Select(call => call.Path));
         Assert.All(calls, call => Assert.False(call.Folder));
         Assert.Equal(["conversation", "transcript", "mark", "choice", "hand-over"], result.Went["s1"]);
-        var stays = refusal switch { "ask" or "limit" => new[] { "hand-over" }, "reopened" => ["mark"], _ => [] };
+        var stays = refusal switch { "ask" => new[] { "hand-over" }, "reopened" => ["mark"], _ => [] };
         Assert.Equal(stays, result.Stayed["s1"]);
         Assert.Equal(refused is null ? [] : [Path.Combine(Sessions, "s1" + refused)], result.Failed);
         var refusedSize = refused is null ? 0 : kept.Single(each => each.Suffix == refused).Size;
-        Assert.Equal((3L, 2L, 28L - refusedSize), (result.Bytes["s1"].Conversations, result.Bytes["s1"].Transcripts, result.Bytes["s1"].Other));
+        Assert.Equal((3L, 2L, 15L - refusedSize), (result.Bytes["s1"].Conversations, result.Bytes["s1"].Transcripts, result.Bytes["s1"].Other));
         Assert.Equal(refused is not null, File.Exists(Path.Combine(Sessions, "s1" + refused)));
     }
 

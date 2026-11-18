@@ -112,19 +112,6 @@ public sealed class ReadShareConversationTests : IDisposable
     }
 
 
-    /// <summary><see cref="HandOverBox.Read"/> (HandOverFiles.ReadBox) reads a box while its move into place still holds it.</summary>
-    [Fact]
-    public void A_hand_over_box_is_read_while_its_move_into_place_still_holds_it()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var box = new HandOverBox(_home);
-        box.Write("s1", new HandOverRequest("codex-acp", "work", HandOverWhy.Press, HandOverBy.Agent, At));
-
-        var request = Held(box.PathOf("s1"), () => box.Read("s1"));
-
-        Assert.Equal(("codex-acp", "work", HandOverWhy.Press, HandOverBy.Agent), (request!.Agent, request.Account, request.Why, request.AskedBy));
-    }
-
     /// <summary><see cref="HandedQuests.Read"/> (HandOverFiles.ReadHanded) reads a handed quest while its move into place still holds it.</summary>
     [Fact]
     public void A_handed_quest_is_read_while_its_move_into_place_still_holds_it()

@@ -23,7 +23,6 @@ internal static class NodeEvaluations
         {
             Clock = clock,
             Places = governed.Places,
-            Legacy = NodeRuns.Of(unit, governed.GraphDigest),
             Revisions = new Dictionary<string, string?>(StringComparer.Ordinal) { [unit] = governed.Unit.Subject.Revision },
             NodeRevisions = tipped ? TipRevisions(governed, tip, before) : new Dictionary<string, string?>(StringComparer.Ordinal),
             Fired = record.Fired.ToHashSet(StringComparer.Ordinal),

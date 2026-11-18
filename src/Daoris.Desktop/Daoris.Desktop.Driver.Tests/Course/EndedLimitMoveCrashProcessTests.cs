@@ -149,7 +149,6 @@ public sealed class EndedLimitMoveCrashProcessTests : IAsyncLifetime
 
         // The open made is never asked again under the move's key, a lost answer included.
         if (left.Opens is { } key) Assert.Equal(cut == Cuts.Opening ? 0 : 1, _h.Ledger.Opened.Count(each => each.Key == key));
-        Assert.Empty(new LimitBoxes(_h.Home).Pending());
 
         // The killed shell, let go, finds its claim gone and changes nothing.
         var snapshot = Shape(move);

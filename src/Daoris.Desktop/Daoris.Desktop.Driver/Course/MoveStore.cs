@@ -129,23 +129,6 @@ public sealed class MoveStore(
         }
     }
 
-    // ——— A box's import.
-
-    /// <summary>Write the move an older build's box kept as this store's own row, with the import's receipt; held until the start is settled, refused where the record already has a standing move.</summary>
-    public MoveImported Import(StoreImport receipt, MoveFromBox box) => new MoveImporter(this).Import(receipt, box);
-
-
-    /// <summary>The latest import of a box at <paramref name="path"/> (home-relative) into the move record, or null: what a box read again is compared with.</summary>
-    public ImportRecord? LastImport(string path) =>
-        Reading(
-            reader => reader.Query(
-                "SELECT id, family, path, size, sha256, rows, class, at, build FROM imports WHERE family = $family AND path = $path ORDER BY id DESC LIMIT 1",
-                row => new ImportRecord(
-                    row.GetInt64(0), new StoreImport(row.GetString(1), row.GetString(2), row.GetInt64(3), row.GetString(4), row.GetInt32(5), row.GetString(6)),
-                    row.GetString(7), row.GetString(8)),
-                ("$family", Family), ("$path", path)).FirstOrDefault(),
-            null);
-
     /// <summary>Take up a move whose claim's run is dead by the lease's test, in one guarded update that raises the generation.</summary>
     public MoveTaken Take(long move, long generation) => new MoveTakes(this).Take(move, generation);
 
