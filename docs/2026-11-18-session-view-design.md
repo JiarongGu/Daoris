@@ -59,8 +59,8 @@ credentials, their releases, history, their data, publishing), so each is settle
    the dock says so, the window's log names a disagreement, and a census holds a reader reason for each dock kind.
 3. **Which children Daoris can see and stop.** The readings exist (`WireReading.ChildSeen` with its call, parent and depth;
    `ChildEnded`; `TaskStarted`; `TaskEnded` with its output file), the lineage keeps children (`ChildBindings`), and each child is a
-   console stream (`subagent/<id>`, `task/<id>`). The protocol door can stop a task (`SessionProcesses.StopTaskAsync`); the native
-   door can stop none (`ClaudeStreams`); no door stops a sub-agent alone; Codex's children are seen only when they call Daoris
+   console stream (`subagent/<id>`, `task/<id>`). The protocol door can stop a task its harness marks `canStop`
+   (`SessionProcesses.StopTaskAsync`); the native door can stop none (`ClaudeStreams`); no door stops a sub-agent alone; Codex's children are seen only when they call Daoris
    (`seenByCalls`). *Stop* stands exactly where a door can stop; elsewhere the row's tip says why. What a door does not report is
    said as a label, never a blank.
 4. **Where a sub-agent's own calls are kept.** In a record of its own beside the session's, never in the session's record: the
