@@ -57,18 +57,6 @@ const KIND_ICON: Record<string, IconName> = {
  * A tool call's status, as a liveness mark: running is live, a failure is the one alarm. A call the
  * driver refused is not a failure of the harness's, so it is quiet.
  */
-/** How a call's sub-agent or task stands: running until its end, an end only its session's close implies said as that. */
-const besideEnd = (beside: NonNullable<Block['beside']>): string => {
-  if (!beside.end) return 'work.tool.beside.end.running';
-  if (beside.by === 'inferred') return 'work.tool.beside.end.withSession';
-  switch (beside.end) {
-    case 'ok': return 'work.tool.beside.end.ok';
-    case 'failed': return 'work.tool.beside.end.failed';
-    case 'stopped': return 'work.tool.beside.end.stopped';
-    default: return 'work.tool.beside.end.lost';
-  }
-};
-
 const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
   pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed', refused: 'idle', cut: 'idle',
 };
@@ -147,15 +135,6 @@ export function ToolCard({ call, tree }: {
       )}
       {!open && carried > 1 && (
         <span className="shrink-0 text-meta tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
-      )}
-      {call.beside && (
-        // The sub-agent or background task this call started, its name as its agent gave it, and how it ended.
-        <span className="min-w-0 truncate text-meta text-ink-faint" data-beside={call.beside.kind}>
-          {t(call.beside.kind === 'child' ? 'work.tool.beside.child' : 'work.tool.beside.task')}
-          {call.beside.name ? ` · ${call.beside.name}` : ''}
-          {' · '}
-          {t(besideEnd(call.beside))}
-        </span>
       )}
       {took >= 1000 && <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{span(took)}</span>}
       <Dot

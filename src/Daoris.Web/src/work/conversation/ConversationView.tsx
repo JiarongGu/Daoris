@@ -17,6 +17,12 @@ import type { ReasonValues } from '../say';
 import { ToolCard } from './ToolCard';
 import { ExchangeCardView, TakenLine } from './ExchangeCard';
 import { type Exchanges, NO_EXCHANGES } from './exchanges';
+import type { SessionEvent } from './conversationTypes';
+import { type BesideHome, BesideHomes, BesideStart, TaskEnd } from '../beside/BesideRows';
+import { ChildFocus } from '../beside/ChildFocus';
+import { type BesideReader, pathTo } from '../beside/besides';
+
+const NO_LIFETIMES: readonly SessionEvent[] = [];
 import { WaitMark } from '../waits/WaitAnchor';
 import type { Wait } from '../waits/waits';
 
@@ -66,8 +72,14 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath, beside,
 }: {
+  /**
+   * What the session ran beside itself: the reader of each subagent's own record and task's last lines, and the record's starts and
+   * ends of each. A subagent is a row under the call that spawned it, opened in place, a deeper one the panel's focus with a
+   * breadcrumb back; a task is a row where it started and one where it ended. Absent, the rows say what the record holds and open nothing.
+   */
+  beside?: { reader?: BesideReader; lifetimes: readonly SessionEvent[] };
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
   /** What the host draws under a turn's answer, from its words until the next turn's (Ask Daoris's receipt). */
@@ -157,6 +169,15 @@ export function ConversationView({
   onLoadEarlier?: () => void;
 }) {
   const { t } = useTranslation();
+  // The subagent in the panel's focus, by the way to it from the session; one the record no longer names is no focus.
+  const [focus, setFocus] = useState<readonly string[]>([]);
+  const lifetimes = beside?.lifetimes ?? NO_LIFETIMES;
+  const focused = focus.length > 0 && lifetimes.some((event) => event.kind === 'child' && event.id === focus[focus.length - 1]);
+  const home: BesideHome = {
+    reader: beside?.reader, lifetimes, nested: false, onShow,
+    onFocus: (child) => setFocus(pathTo(lifetimes, child)),
+    draw: (shown) => shown.map((turn) => <TurnView key={turn.key} turn={turn} tree={tree} running={false} reveal={reveal} />),
+  };
 
   if (!loaded) return null;
 
@@ -182,18 +203,20 @@ export function ConversationView({
       <WaitMarks.Provider value={onToWait ? { marks, onToWait } : {}}>
         <AskedCards.Provider value={{ exchanges, onOpenHelper, onShow }}>
         <ChannelHomes.Provider value={channel}>
+        <BesideHomes.Provider value={home}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
+          {focused && <ChildFocus path={focus} home={home} onBack={(to) => setFocus(focus.slice(0, to))} />}
           {/* Pinned beneath the session's page header where one is pinned above it: the header says its
               height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
-          {toolbar && (
+          {!focused && toolbar && (
             <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
               {toolbar}
             </div>
           )}
           {/* Where the page began past the ask, the gap is inside its turn, after the ask. */}
-          {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
-          {began && <BeganLine words={began} />}
-          {turns.map((turn, index) => (
+          {!focused && earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
+          {!focused && began && <BeganLine words={began} />}
+          {!focused && turns.map((turn, index) => (
             <TurnView
               key={turn.key}
               turn={turn}
@@ -208,6 +231,7 @@ export function ConversationView({
             />
           ))}
         </section>
+        </BesideHomes.Provider>
         </ChannelHomes.Provider>
         </AskedCards.Provider>
       </WaitMarks.Provider>
@@ -268,7 +292,8 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divide
   const { marks } = useContext(WaitMarks);
   const { exchanges, onShow } = useContext(AskedCards);
   // The run in hand stays open while the turn goes on, and where the session ended inside it.
-  const parts = segments(turn.items, running || Boolean(turn.cut), (block) => block.key in exchanges.cards);
+  // A call that started a subagent or a task stands alone, so the row under it is never folded away.
+  const parts = segments(turn.items, running || Boolean(turn.cut), (block) => block.key in exchanges.cards || Boolean(block.beside));
   const calling = running ? runningCall([turn]) : null;
   // An answer its card holds is drawn there; the turn that took it holds a line that opens the card.
   const taken = turn.ask ? exchanges.cards[exchanges.takenAt[turn.ask.key] ?? ''] : undefined;
@@ -451,8 +476,15 @@ function BlockView({ block, tree, reveal }: { block: Block; tree?: string | null
       // A call that asked a helper is that request's card, its answer folded in.
       const card = exchanges.cards[block.key];
       if (card) return <ExchangeCardView card={card} revealed={reveal === block.key} onOpen={onOpenHelper} />;
-      return <ToolCard call={block} tree={tree} />;
+      return (
+        <>
+          <ToolCard call={block} tree={tree} />
+          {block.beside && <BesideStart beside={block.beside} />}
+        </>
+      );
     }
+    case 'beside':
+      return <TaskEnd block={block} />;
     case 'plan':
       return <PlanView entries={block.entries ?? []} />;
     case 'note':

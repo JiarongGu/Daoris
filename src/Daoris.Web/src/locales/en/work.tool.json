@@ -15,13 +15,5 @@
   "work.tool.status.session-ended": "ended with its session",
   "work.tool.input": "Input",
   "work.tool.output": "Output",
-  "work.tool.terminal": "terminal {{id}}",
-  "work.tool.beside.child": "subagent",
-  "work.tool.beside.task": "background task",
-  "work.tool.beside.end.running": "running",
-  "work.tool.beside.end.ok": "finished",
-  "work.tool.beside.end.failed": "failed",
-  "work.tool.beside.end.stopped": "stopped",
-  "work.tool.beside.end.lost": "ended, how not said",
-  "work.tool.beside.end.withSession": "ended with its session"
+  "work.tool.terminal": "terminal {{id}}"
 }

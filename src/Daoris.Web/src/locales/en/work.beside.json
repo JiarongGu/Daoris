@@ -1,0 +1,19 @@
+{
+  "work.beside.child": "subagent",
+  "work.beside.task": "background task",
+  "work.beside.end.running": "running",
+  "work.beside.end.ok": "finished",
+  "work.beside.end.failed": "failed",
+  "work.beside.end.stopped": "stopped",
+  "work.beside.end.lost": "ended, how not said",
+  "work.beside.end.withSession": "ended with its session",
+  "work.beside.calls_one": "{{count}} call",
+  "work.beside.calls_other": "{{count}} calls",
+  "work.beside.ran": "ran {{span}}",
+  "work.beside.reading": "Reading its own record…",
+  "work.beside.unkept": "Its own record is not kept on this machine.",
+  "work.beside.toEnd": "To where it ended",
+  "work.beside.toStart": "To where it started",
+  "work.beside.where": "Where in the session",
+  "work.beside.session": "Session"
+}

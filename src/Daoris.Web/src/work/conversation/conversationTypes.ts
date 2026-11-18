@@ -22,15 +22,29 @@ export type SessionEventKind =
 /** How a sub-agent or a background task ended — `ChildEnds` in the driver. */
 export type BesideEnd = 'ok' | 'failed' | 'stopped' | 'lost';
 
-/** A sub-agent or background task the session ran beside itself, as the card of the call that started it holds it. */
+/**
+ * A sub-agent or background task the session ran beside itself, as the card of the call that started it holds it, and as a task's
+ * row where it ended holds it.
+ */
 export type Beside = {
   kind: 'child' | 'task';
   id: string;
   name?: string | null;
+  /** For a subagent: what it is asked to do, as its door describes it. */
+  task?: string | null;
+  /** For a subagent: how far below the session's own agent it is, where said. */
+  depth?: number;
+  /** When its start and its end were kept, by the record's clock. */
+  started?: string;
+  ended?: string;
   /** How it ended, once it has; absent while it runs. */
   end?: BesideEnd | string | null;
   /** Who says the end: `reported` by its door, `inferred` from its session's close. */
   by?: string | null;
+  /** For a background task that ended: the key of its row where it ended, which its start's row leads to. */
+  endKey?: string;
+  /** On a task's row where it ended: the key of the call that started it, which the row leads back to. */
+  startKey?: string;
 };
 
 /** What a tool call carries: text, a diff, or a terminal — ACP's three shapes. */
@@ -129,6 +143,12 @@ export type SessionEvent = {
   call?: string | null;
   /** For `child` and `task`: its name, where its door gave one. */
   name?: string | null;
+  /** For `child`: the subagent that started it, where one did and its door said which. */
+  parent?: string | null;
+  /** For `child`: how far below the session's own agent it is, 1 for one it started, where said. */
+  depth?: number | null;
+  /** For `child`: what it is asked to do, as its door describes it. */
+  task?: string | null;
   /** For `child` and `task`: on its end, how it ended; absent on its start. */
   end?: string | null;
   /** For `child` and `task`: who says it, `reported` or `inferred`. */
@@ -247,8 +267,8 @@ export type EventPage = {
 export type Block = {
   /** Stable across renders: the sequence of the event that began it. */
   key: string;
-  /** `held`: the person's words to a working session, waiting to reach it. */
-  kind: 'message' | 'thought' | 'tool' | 'plan' | 'note' | 'raw' | 'held';
+  /** `held`: the person's words to a working session, waiting to reach it. `beside`: a background task's row where it ended. */
+  kind: 'message' | 'thought' | 'tool' | 'plan' | 'note' | 'raw' | 'held' | 'beside';
   at: string;
   text?: string | null;
   id?: string | null;

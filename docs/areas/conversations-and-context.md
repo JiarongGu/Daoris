@@ -110,7 +110,8 @@ of everything it handed, section by section.
    sink). Neither breaks the agent's words around it, and a failed one is no failed call (`SessionEventText.Quiet`). A subagent's
    own words and calls, mapped by its door as the session's are, are in its own record, `sessions/<id>/children/<child>.jsonl`
    (`ChildRecords`), which no enumeration of the sessions folder and no watch of the session's record reads, and which goes when
-   the session's record is forgotten; the second check reads a delegated child's calls from it. `ChildRecordsCensusTests` holds
+   the session's record is forgotten; the second check reads a delegated child's calls from it, and the session's page its whole
+   record (`SESSION_CHILD_HISTORY`). `ChildRecordsCensusTests` holds
    both. (from D76, D275, D320)
 
 **Two contexts**
@@ -469,5 +470,6 @@ of everything it handed, section by section.
   older build left is removed once at the start by the home migration's `turn-marks` step
   (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
-- **SESSIONVIEW1f** (D320): the record's `child` and `task` kinds and a subagent's own record (rule 5) read as rows of the
-  timeline; today the page names each on its spawning call's card alone (`ToolCard`'s `beside`).
+- **SESSIONVIEW1f** (D320), the rest: a child's wait raised to the dock tagged with it, the live band's indent of children and the
+  digest's count of them. The record's `child` and `task` kinds and a subagent's own record (rule 5) are rows of the timeline
+  (`work/beside/`, desktop-app's open rows).
