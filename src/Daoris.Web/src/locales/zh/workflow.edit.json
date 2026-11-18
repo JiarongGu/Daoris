@@ -244,6 +244,7 @@
   "workflow.edit.option.request.declined.stop": "停止运行",
   "workflow.edit.option.check.gates": "要运行的检查项",
   "workflow.edit.option.go-ahead.act": "放行的事项",
+  "workflow.edit.option.task.evidence": "完成时须给出的凭据",
   "workflow.edit.option.quest.holds.yes": "完成等你同意时暂停",
   "workflow.edit.option.quest.holds.evidence": "完成的证据存疑时暂停",
   "workflow.edit.option.content.holds.line": "主线已有这项工作时暂停",

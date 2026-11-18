@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 /// A per-run decision: a <c>task</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
 /// approval's <c>approved</c> or the <c>rejected</c> wire's name, answered by <c>decide</c> with one of them. A holder's proposal, with its
 /// reason, stands as the answer at once, held for the owner's word; the owner's same answer confirms it and another overrules it, and the
-/// owner may answer again until the run ends. Its record line names who proposed and who confirmed, and the step its answer's route closed is
+/// owner may answer again until the run ends. An agent holding the decision answers it through its working session's tool, and its answer
+/// settles it, no proposal held (<see cref="NodeWord.Decider"/>, D318). Its record line names who proposed and who confirmed, and the step its answer's route closed is
 /// passed with that line (<see cref="WireDecisions"/>). Pure.
 /// </summary>
 public static class TaskDecisions
@@ -39,7 +40,8 @@ public static class TaskDecisions
     {
         var outcome = word.Outcome ?? "";
         var proposal = $"proposed by {word.Holder ?? Owner}{Why(word.Words)}";
-        var (words, holds) = word.Holder is not null ? ($"{Label(outcome)}: {proposal}", proposal)
+        var (words, holds) = word.Decider is { } decider ? ($"{Label(outcome)}: decided by {decider}{Why(word.Words)}", (string?)null)
+            : word.Holder is not null ? ($"{Label(outcome)}: {proposal}", proposal)
             : status is { State: NodeStates.Reached, Holds: { } standing } && status.Acceptance?.Outcome == outcome
                 ? ($"{Label(outcome)}: {standing}, confirmed by {Owner}{Why(word.Words)}", null)
                 : ($"{Label(outcome)}: proposed and confirmed by {Owner}{Why(word.Words)}", (string?)null);

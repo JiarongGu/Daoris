@@ -171,6 +171,8 @@ public static class RunNodeWords
                 By = by, Attempt = attempt, Supersedes = SupervisedWords.Replaced(standing, by),
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
                 Revision = by is null ? null : revision?.Trim(), Outcome = outcome, Holder = holder,
+                // An agent's own answer to a decision it holds settles it (D318): no proposal held for a confirmation.
+                Decider = act == NodeWordActs.Decide && holder is null && SettleDoor.Holds(CastHolders.Agent, speaker.Who) ? speaker.Who : null,
             };
             if (act == NodeWordActs.Accept && by is null)
             {

@@ -247,7 +247,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     newest part of a quest still open or taken unless it declined, which is never carried on. (D46, D51, D83) `AwaitingStep` (`awaiting-step`)
     is a session whose agent's turn ended while its work goes through its workflow (D293): open, holding its tree, running no process, its
     note's `waits.step` part naming the run it waits on and, where known, the step, its attempt and the tip (`StepWait`; `waits.check`
-    for its own broker check). A word kept on it wakes
+    for its own broker check). A step of its run cast to the role's agent is such a word: the run's newest session awaiting it, else the
+    work's own session where it ended, is handed the step through the say door and settles it with `step_settle` (D318). A word kept on it wakes
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
     (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:

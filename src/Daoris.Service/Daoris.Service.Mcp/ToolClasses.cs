@@ -39,6 +39,7 @@ public static class ToolClasses
         ["channel_post"] = ToolClass.Acts,
         ["channel_read"] = ToolClass.Acts,
         ["go_ahead_ask"] = ToolClass.Acts,
+        ["step_settle"] = ToolClass.Acts,
         ["question_ask"] = ToolClass.Acts,
         ["opinion_give"] = ToolClass.Acts,
         ["opinion_answer"] = ToolClass.Acts,

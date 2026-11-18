@@ -1,12 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an agent's channel settles today. No channel speaks a press for an agent yet, so an agent holds a step only where the
-/// step settles without one: by an observation (a check's result, a landing, a go-ahead read on its record, a plugin's act read from its
-/// outcome) or by the work an agent's session does (the work, the second opinion). A step its own role's press settles (a review's Accept, a
-/// task's Done, approval or decision) has no agent settler: a place's cast refuses an agent for the role such a kind takes where it names
-/// none, a hand-over refuses an agent for such a step, and a step an agent holds anyway, or any wait on a role an agent holds that only a press
-/// settles, stays a row of <i>What needs you</i> with <i>Take</i> (<see cref="HeldSteps"/>).
+/// What an agent's channel settles today: a step settled by an observation (a check's result, a landing, a go-ahead read on its record, a
+/// plugin's act read from its outcome), by the work an agent's session does (the work, the second opinion), or by the working session's tool
+/// (<see cref="StepSettles"/>, D318): a <c>task</c>'s Done or a decision's answer, the step handed to the run's working session
+/// (<see cref="StepHandOffs"/>). A step its own role's press alone settles (a review's Accept, an approval) has no agent settler yet: a place's
+/// cast refuses an agent for the role such a kind takes where it names none, a hand-over refuses an agent for such a step, and a step an agent
+/// holds anyway, or any wait on a role an agent holds that only a press settles, stays a row of <i>What needs you</i> with <i>Take</i>
+/// (<see cref="HeldSteps"/>).
 /// </summary>
 public static class AgentSettles
 {
@@ -14,19 +15,31 @@ public static class AgentSettles
     public const string Refused = "agent-cannot-settle";
 
     /// <summary>
-    /// Whether an agent holding the role settles a step standing at the wait <paramref name="why"/>: only an observed one, a plugin's actor (its
-    /// plugin observes the act) and a go-ahead (observed on its record, who may answer it the grants').
+    /// Whether an agent holding the role settles a step standing at the wait <paramref name="why"/> with no row for the person: an observed one,
+    /// a plugin's actor (its plugin observes the act) and a go-ahead (observed on its record, who may answer it the grants').
     /// </summary>
     public static bool Wait(string why) => why is PersonWaits.Actor or PersonWaits.GoAhead;
 
-    /// <summary>Whether <paramref name="node"/> settles only by its own role's press where it stands: an Accept, a task's Done, an approval or a decision.</summary>
+    /// <summary>
+    /// Whether an agent holding <paramref name="node"/> settles it through its working session's tool where it stands (<see cref="StepSettles"/>):
+    /// a task under way waiting on its Done or a decision's answer, never an approval.
+    /// </summary>
+    public static bool Tool(NodeDeclaration node, NodeStatus status) =>
+        status.State == NodeStates.Active && node.Kind == NodeKinds.Task && NodeKit.Of(node.Kind) is IWaitsOnRole waits
+        && waits.Waits(node, status) == PersonWaits.Task;
+
+    /// <summary>Whether <paramref name="node"/> settles only by its own role's press where it stands: an Accept or an approval.</summary>
     public static bool Pressed(NodeDeclaration node) =>
         NodeKit.Of(node.Kind) is IWaitsOnRole waits
-        && waits.Waits(node, new NodeStatus("", node.Id, NodeStates.Active) { Attempt = 1 }) is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task;
+        && waits.Waits(node, new NodeStatus("", node.Id, NodeStates.Active) { Attempt = 1 }) is PersonWaits.Accept or PersonWaits.Approval;
 
-    /// <summary>The roles no agent is cast to at a place: those the kinds a press alone settles take where a step names none (an Accept's, a task's).</summary>
+    /// <summary>
+    /// The roles no agent is cast to at a place: those the kinds a press alone settles take where a step names none (an Accept's), and the
+    /// owner role, the top of every line, which the person holds (D304 point 3) though its tasks now have an agent's channel.
+    /// </summary>
     public static IReadOnlyList<string> Roles =>
-        [.. NodeKit.Built.Units.Where(unit => Pressed(new NodeDeclaration(unit.Row.Kind, unit.Row.Kind, 1, unit.Row.Reach))).Select(unit => unit.Role).Distinct(StringComparer.Ordinal)];
+        [.. NodeKit.Built.Units.Where(unit => Pressed(new NodeDeclaration(unit.Row.Kind, unit.Row.Kind, 1, unit.Row.Reach))).Select(unit => unit.Role)
+            .Append(StepRoles.Owner).Distinct(StringComparer.Ordinal)];
 
     /// <summary>Why <paramref name="role"/> is not cast to <paramref name="holder"/>, or null.</summary>
     public static string? Cast(string role, string? holder) => IsAgent(holder) && Roles.Contains(role, StringComparer.Ordinal) ? Said(role) : null;
@@ -64,5 +77,5 @@ public static class AgentSettles
     private static bool IsAgent(string? holder) => holder?.Trim() is { } named && (named == CastHolders.Agent || named.StartsWith(CastHolders.AgentPrefix, StringComparison.Ordinal));
 
     private static string Said(string role) =>
-        $"no agent's channel settles a `{role}` step yet: only its holder's press does (an Accept, a task's Done, an approval or a decision), so an agent holding it would leave it waiting";
+        $"no agent's channel settles a `{role}` step yet: only its holder's press does (an Accept or an approval), so an agent holding it would leave it waiting";
 }
