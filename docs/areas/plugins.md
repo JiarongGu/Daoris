@@ -125,6 +125,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 18. An offer's installed copy is judged against the shipped one. Same version, other files: `changed`. Older, files matching the
     record's digest: `older`. Older, digest not matching: `changed`. Older, no digest: `older`, unjudged. Newer: the person's, said
     nothing. A pre-release tag is older than the same numbers without one, its dotted parts compared number by number. (D119)
+18a. Daoris's own plugins update with the build that ships them: at a loop's start, before any hook runs (`PluginsAtStart`,
+    `PluginOfferUpdates`), an installed copy whose record names an offer and that is `older` than the shipped one is updated as
+    `daoris plugin update <id> --yes` does, its `.data/` kept; a plugin from a folder or a package, a `changed` copy and one with
+    no record are never touched, and a refusal is logged and tried again at the next start. `workflow apply` says each plugin step
+    kind of the new version that no installed plugin declares, with the plugin to update where this build ships a newer one that
+    declares it (`WorkflowApplyNotes`).
 19. A `changed` copy is never overwritten by an update. A copy with no record, or one that does not read, may take the shipped copy
     (`PLUGIN_UPDATE` with `shipped: true`), which records the offer and keeps `.data/` and the switch; a package's never (rule 16).
     (D119)

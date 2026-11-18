@@ -47,7 +47,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    wherever a run of the repository bound to that workflow is governed, so a step's attempts carry them; the graph, its digest and the
    binding stay the version's, and naming values names no workflow. One door writes them, the window's `SET_WORKFLOW_VALUES` and its
    twin `daoris workflow values <repository> <workflow> <node> <name>=<json>…|--clear --why <reason>`, both through
-   `WorkflowValuesKey.Apply`, which refuses a value that is no JSON or a change with no reason and records the reason beside the values
+   `WorkflowValuesKey.Apply` (the terminal twin is routed to `WorkflowConsole` from the tree, as `take`, `hand` and `give-back` are), which
+   refuses a value that is no JSON or a change with no reason and records the reason beside the values; values are read by node id, so
+   `workflow apply` says each declared entry its new version holds no node for and, for each new node of the same plugin that takes
+   none, prints the `workflow values …` line that carries it, never writing one itself (`WorkflowApplyNotes`)
    (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
    or `target-changed` failure listed, never by editing the file: on the run's step failed so, the window's form (`ReleaseStepDoors`)
    asks the plugin's `discover-releases`, the holder picks a definition (with its pipeline and trigger branches), a stage and an action
@@ -186,7 +189,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     changes, done, approve, reject, decide with its outcome and, for a proposal, its holder) and the next pass applies it; no run ends
     while a word waits, and a decision's answer may change until the run ends. A failed plugin step's run step
     holds its failed attempt for the person (`Held`, `PluginFailureHeld`) as a check's does, and its *Try again* is that attempt's
-    `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`), the one press What needs you makes too: the table's
+    `again` (`WORK_HELD`, `daoris work held <unit> <node> <attempt> again`, which goes through the running Daoris's `WORK_HELD` as `workflow skip` does and records alone only where no instance answers), the one press What needs you makes too: the table's
     failed to ready by the person, a new attempt its plugin is sent. *Done outside Daoris* (`done-outside`, the same door and verb with
     `<link> ["…"]`, the link required) settles a plugin's step under way, held or failed on its holder's word (`active`, `unknown` or
     `failed → reached` by the person, the link its evidence and the note its words), a step whose kind carries its proof as evidence
