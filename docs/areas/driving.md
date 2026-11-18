@@ -193,6 +193,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 
 28. The person's words reach a session in any state: at its next step where its door takes words during a turn, else at its
     turn's end, else by reopening its ended record. The only move out of an ended state is back to working with words waiting.
+    Words to a session whose run has landed are its turn, never new work for that run: what the turn commits, or its tree brought
+    to the line, moves none of the run's steps (workflows rule 17, D319).
     A declined quest (an abandon declines it) has ended its line: words kept on its last session, a limited one's included, go on
     in nothing, so the line is not pending and its sessions archive at the next look. (D137, D188)
 29. Answers alone that would take a line past its answers-alone rule's number in a row wait for the person; the hold's note and

@@ -3,7 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A branch already landed, pushed and carrying a pull request moves on after a second Accept: the <c>push</c> that follows the landing is started at the
+/// A branch already landed, pushed and carrying a pull request moves on after the chain's next quest's Accept: the commit after the landing
+/// takes the landed run back only once that quest comes (D319), the <c>push</c> that follows the landing is started at the
 /// moved tip, and the plugin's <c>pull-request</c> step is performed again at it, so the platform sees the new head. The push act and the plugin are stand-ins
 /// that record what they were asked; the landing, the review and the runtime are the real ones.
 /// </summary>
@@ -101,12 +102,17 @@ public sealed class ReLandingPullRequestTests : GraphRunFixture
         var opened = Assert.Single(plugin.Sent);
         Assert.Equal(first, opened.SubjectRevision);
 
-        // The line moves and the later part merges it; the person accepts that merge.
+        // The line moves, and the chain's next quest here merges it in the same tree: a commit after the landing is that quest's work, never
+        // the landed run's (D319), so the run is taken back to its claim and the person accepts that merge.
         await CommitAsync(root, "line.txt", "the line moved", "the line moved");
         await GitAsync(tree, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "merge", "--no-ff", "--no-edit", "main");
         var merged = await HeadAsync(tree);
         _later = TimeSpan.FromHours(2);
         await PassAsync(root, door, push, plugin);
+        Assert.Equal(NodeStates.Reached, files.Read(RunUnits.IdOf("q1"))!.Statuses["review"].State);
+        _world.Quests["q2"] = _world.Quests["q1"] with { Id = "q2", Parent = "q1" };
+        _world.Records.Add(new SessionRecord("s3", "engine", "completed") { Quest = "q2", Tree = tree, Created = made.AddSeconds(2) });
+        for (var pass = 0; pass < 3; pass++) await PassAsync(root, door, push, plugin);
         Assert.True(RunNodeWords.Word(files, "q1", "review", NodeWordActs.Accept, null).Done);
         for (var pass = 0; pass < 7; pass++) await PassAsync(root, door, push, plugin);
 
