@@ -117,7 +117,9 @@ public static class IntakePrompt
         text.Append("meets them. A word they use means what it means where the work lives: where that repository's\n");
         text.Append("documents give it a meaning, quote the word and say in the check what it requires there. Your\n");
         text.Append("reading of their words belongs in the body, never in a requirement; a quote they did not say is\n");
-        text.Append("refused, naming it. A `then` step carries the quest's requirements with it.\n\n");
+        text.Append("refused, naming it. A `then` step carries the quest's requirements with it. The requirements the\n");
+        text.Append("person said yes to when the ask was made travel on every quest it becomes by themselves; name only\n");
+        text.Append("what they asked beside them.\n\n");
 
         // A kind is proposed, never set — the person's press applies it — and one that
         // lowers their part needs their words, which the room's kinds section says per repository.

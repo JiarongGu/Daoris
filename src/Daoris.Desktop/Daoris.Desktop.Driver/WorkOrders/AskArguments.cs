@@ -75,7 +75,7 @@ public sealed record AskArguments
         "daoris ask … --short \"…\"",
         "daoris ask … --review rule|on|<environment>|off [--review-words \"…\"]",
         "daoris ask … --kind <kind> [--workflow <id>|current] [--workflow-words \"…\"]",
-        "daoris ask --to <repo> … [--require \"<the person's words>\" \"<the check>\"]… [--through \"<the person's words>\"]",
+        "daoris ask … [--require \"<the person's words>\" \"<the check>\"]… [--through \"<the person's words>\"]",
         "daoris ask publish <id> --to <repo> [--require \"<the person's words>\" \"<the check>\"]…",
         "daoris ask through <id> \"<the person's words>\"|--clear",
         "daoris ask list [--workspace <name>|--all] [--open] [--json]",
@@ -219,9 +219,9 @@ public sealed record AskArguments
         }
 
         if (read.Publish is not null && read.To is null) return "`ask publish <id>` needs `--to <repo>`: the repository the ask becomes a quest for.";
-        if (read.Requirements.Count > 0 && read.Publish is null && ((act ?? read.SetWorkflow) is not null || read.To is null))
+        if (read.Requirements.Count > 0 && read.Publish is null && (act ?? read.SetWorkflow) is not null)
         {
-            return "--require goes with `--to <repo>` on a new ask, or with `ask publish <id>`: a requirement travels on the quest an ask becomes.";
+            return "--require goes with a new ask's words, or with `ask publish <id>`: a requirement travels on each quest an ask becomes.";
         }
 
         return null;

@@ -36,8 +36,8 @@ internal sealed class AskQuests(QuestExchange exchange, QuestFiles? askFiles)
                 Links = [.. ask.Links.Concat(draft?.Links ?? []).Distinct(StringComparer.Ordinal)],
                 Uploads = [.. uploads, .. draft?.Uploads ?? []],
                 Then = draft?.Then ?? [],
-                // The person's words, each with its check: the exchange judges them against this ask's.
-                Requirements = draft?.Requirements ?? [],
+                // The person's words with checks, judged against this ask's: the ask's own always travel, an intake's added beside them.
+                Requirements = [.. ask.Requirements.Concat(draft?.Requirements ?? []).DistinctBy(each => (each.Quote, each.Check))],
                 // The intake's short title; where it gives none, the ask's own, so the quest and the ask
                 // it came from share one name. Neither, and the quest is named from the ask's words.
                 Short = string.IsNullOrWhiteSpace(draft?.Short) ? ask.Short : draft.Short,

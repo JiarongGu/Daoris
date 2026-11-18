@@ -10,7 +10,7 @@ internal static class HelpDoorThrough
 {
     private const string Carry =
         "Where the person asks for work to be delivered without their press, put their words on the ask when you make it:\n"
-        + "`daoris ask --to <repo> … --require \"<their words>\" \"<the check>\"` and `--through \"<their words>\"`, or\n"
+        + "`daoris ask … --require \"<their words>\" \"<the check>\"` and `--through \"<their words>\"`, or\n"
         + "`daoris ask through <id> \"<their words>\"` on one already made, each copied verbatim from their messages here; each run\n"
         + "of it then goes through its review to its pull request on them, and a departure from a requirement still waits for them.\n";
 

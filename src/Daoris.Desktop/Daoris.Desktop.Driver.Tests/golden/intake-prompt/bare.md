@@ -31,7 +31,9 @@ exactly from the ask or from what they said on it since, with the check that pro
 meets them. A word they use means what it means where the work lives: where that repository's
 documents give it a meaning, quote the word and say in the check what it requires there. Your
 reading of their words belongs in the body, never in a requirement; a quote they did not say is
-refused, naming it. A `then` step carries the quest's requirements with it.
+refused, naming it. A `then` step carries the quest's requirements with it. The requirements the
+person said yes to when the ask was made travel on every quest it becomes by themselves; name only
+what they asked beside them.
 
 Where the room lists kinds of work and the ask plainly is one, you may propose it on the quest as
 `workflowProposal`: `{ "kind": "docs", "reason": "…" }`, a `kind` its workspace declares, and its `reason` the

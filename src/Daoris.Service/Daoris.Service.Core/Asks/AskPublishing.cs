@@ -68,12 +68,6 @@ internal sealed class AskPublishing(
         if (unfitThrough is not null) return new(AskRefusal.BadThrough, unfitThrough, Ask: null);
         var (required, unfitRequirement) = QuestRequirementJudge.JudgeShape(request.Requirements);
         if (unfitRequirement is not null) return new(AskRefusal.BadRequirement, unfitRequirement, Ask: null);
-        if (required.Count > 0 && string.IsNullOrWhiteSpace(request.To))
-        {
-            return new(AskRefusal.BadRequirement,
-                "A requirement travels on the quest a new ask is published as at once: name its receiver with --to, or publish the ask "
-                + "later with `ask publish <id> --to <repo> --require …`. Nothing was asked.", Ask: null);
-        }
 
         // The same words in the same circle are the same ask — a retry, or a person repeating
         // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
@@ -107,9 +101,10 @@ internal sealed class AskPublishing(
             ReviewChoices = chosen is null ? [] : [chosen],
             WorkflowChoices = workflowChosen is null ? [] : [workflowChosen],
             ThroughWords = through is null ? [] : [through],
+            Requirements = required,
         };
 
-        if (required.Count > 0) return await RequiredAsync(ask with { State = AskState.Proposed }, request.To!.Trim(), required, now, ct).ConfigureAwait(false);
+        if (required.Count > 0) return await RequiredAsync(ask with { State = AskState.Proposed }, request.To?.Trim(), request.Then, now, ct).ConfigureAwait(false);
 
         if (request.To is { Length: > 0 } to)
         {
@@ -138,21 +133,29 @@ internal sealed class AskPublishing(
     }
 
     /// <summary>
-    /// A new ask published at once with the person's requirements: kept first with their quotes as words they said, so the exchange's
-    /// quote judge reads them on the ask as it reads every word, then published as <c>ask publish --require</c> publishes.
+    /// A new ask with the person's requirements, kept first with their quotes as words they said, so the exchange's quote judge reads them;
+    /// named a receiver, it is published as <c>ask publish</c> publishes, else each quest its intake publishes carries them.
     /// </summary>
-    private async Task<AskOutcome> RequiredAsync(Ask ask, string to, IReadOnlyList<QuestRequirement> required, DateTimeOffset now, CancellationToken ct)
+    private async Task<AskOutcome> RequiredAsync(Ask ask, string? to, IReadOnlyList<QuestStep> then, DateTimeOffset now, CancellationToken ct)
     {
         if (await LostAsync(ask, null, ask.Workspace, now, ct).ConfigureAwait(false) is { } earlier) return earlier;
-        foreach (var quote in required.Select(requirement => requirement.Quote).Distinct(StringComparer.Ordinal))
+        foreach (var quote in ask.Requirements.Select(requirement => requirement.Quote).Distinct(StringComparer.Ordinal))
         {
             await asks.RecordWordAsync(ask.Id, new AskWord(AskWordKind.Quoted, quote, now), now, ct).ConfigureAwait(false);
         }
 
-        var published = await PublishAsync(ask.Id, to, now, ct, new AskDraft(null, null) { Requirements = required }, session: null, byAgent: false).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(to))
+        {
+            var count = ask.Requirements.Count == 1 ? "1 requirement" : $"{ask.Requirements.Count} requirements";
+            return new(AskRefusal.None, $"Asked as `#{ask.Id}` in `{ask.Workspace}` — {Describe(ask)}\n\nIt carries {count} of the person's, "
+                + "which every quest it becomes carries.", ask);
+        }
+
+        var chain = then.Count > 0 ? new AskDraft(null, null) { Then = then } : null;
+        var published = await PublishAsync(ask.Id, to, now, ct, chain, session: null, byAgent: false).ConfigureAwait(false);
         return published.Refusal == AskRefusal.None
             ? published with { Message = $"Asked as `#{ask.Id}` in `{ask.Workspace}`.\n\n{published.Message}" }
-            : published with { Message = $"{published.Message}\n\nThe ask is kept as `#{ask.Id}`, with your quoted words on it, for `ask publish`." };
+            : published with { Message = $"{published.Message}\n\nThe ask is kept as `#{ask.Id}`, with your requirements on it, for `ask publish`." };
     }
 
     /// <summary>Keeps a new ask by insert only: null when kept, else the repeat's answer for the identical ask that holds the id, which a door may have moved since the check.</summary>
