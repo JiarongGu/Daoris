@@ -47,6 +47,8 @@ export type AttentionActId =
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
   | 'stop-node'
+  // The step a run ended failed at: a new attempt, and the person's word it was done outside where its kind reads the proof.
+  | 'step-again' | 'step-outside'
   | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 
 /** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
@@ -111,7 +113,7 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'ask-again', 'go-on',
   // A task's press sends the run on its route, with a note the person may give.
   'task-done', 'task-approve', 'task-reject',
-  'stop-node',
+  'stop-node', 'step-again', 'step-outside',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most. */
@@ -164,9 +166,12 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     // The presses that settle the run's step, as the driver names them: a task's or an approval's own, and its *Not needed this run*;
     // then its stop where the driver offers one, so a step no word of the row settles still has the person's end of it.
     // A press the row cannot make (a decision's outcome, a file's choice) is made where the row's door opens, the run's view.
+    // The step a run ended failed at offers its *Try again* and *Done outside Daoris…* too, each said on its held attempt where it holds one.
     case 'step': return plain(
       ...(item.step?.presses ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`),
       ...(item.step?.presses.includes('skip') ? ['pass-over' as const] : []),
+      ...(item.step?.presses.includes('again') && !item.step.held ? ['step-again' as const] : []),
+      ...(item.step?.presses.includes('done-outside') && !item.step.held ? ['step-outside' as const] : []),
       ...(item.step?.presses.includes('stop') ? ['stop-node' as const] : []),
     );
     // Nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so

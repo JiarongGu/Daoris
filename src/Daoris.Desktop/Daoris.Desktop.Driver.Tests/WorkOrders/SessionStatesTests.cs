@@ -92,6 +92,8 @@ public sealed class SessionStatesTests
             new(Look(Record("s1", "completed"), quest: DoneLeft, archived: true), SessionGroup.Done, SessionReason.PartLeft, SessionGroup.Archived),
         ["a run whose step failed after its quest's done is unfinished"] =
             new(Look(Record("s1", "completed"), quest: Done, waits: [Wait(PersonWaits.Left)]), SessionGroup.NeedsYou, PersonWaits.Left),
+        ["the step a run ended failed at needs you while its quest is open"] =
+            new(Look(Record("s1", "awaiting-step"), quest: Taken, waits: [Wait(PersonWaits.Left) with { Ended = true }]), SessionGroup.NeedsYou, PersonWaits.Left),
         ["a run's failed step you archived is set aside by you"] =
             new(Look(Record("s1", "completed"), quest: Done, waits: [Wait(PersonWaits.Left)], archived: true), SessionGroup.NeedsYou, PersonWaits.Left, SessionGroup.Archived),
         ["a run's other wait still needs you though archived"] =

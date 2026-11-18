@@ -88,13 +88,66 @@ public sealed class StepWaitCensusTests
         };
     }
 
-    public static TheoryData<string> Waits => [.. PersonWaits.All];
+    /// <summary>A run still governed, its steps read as they stand.</summary>
+    private const string Going = "going";
+
+    /// <summary>
+    /// Every state of a run a wait can stand in, each with the waits it holds: a run going on holds every kind; a run ended failed at a step
+    /// its holder may still settle holds that step alone, left (<see cref="A_run_ended_failed_waits_on_its_left_step_alone"/>). Seen failing
+    /// first on the left step of a run ended failed while its quest was open: no row, since the census listed kinds and not the states that hid them.
+    /// </summary>
+    private static readonly (string Why, string State)[] States = [.. PersonWaits.All.Select(why => (why, Going)), (PersonWaits.Left, EmptyRunEnds.FailedHeld)];
+
+    public static TheoryData<string, string> Waits
+    {
+        get
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var (why, state) in States) data.Add(why, state);
+            return data;
+        }
+    }
+
+    private static readonly NodeDeclaration Push = new("push", NodeKinds.Push, 1, NodeReach.Performed);
+
+    /// <summary>A run ended failed at its push, refused; a task of the person's still standing active, which an ended run waits on no more.</summary>
+    private static NodeRecord EndedAtPush => new(Unit)
+    {
+        Ended = new RunEnd(Run, Now) { Outcome = RunOutcomes.Failed, Node = "push" },
+        Statuses = new Dictionary<string, NodeStatus>
+        {
+            ["push"] = new(Unit, "push", NodeStates.Failed) { Attempt = 1, Tries = 1, Code = PushDoor.Refused, Since = Now },
+            ["sign"] = Active("sign"),
+        },
+    };
+
+    /// <summary>The facts for the wait <paramref name="why"/> in a run at <paramref name="state"/>.</summary>
+    private static AttentionFacts FactsAt(string why, string state) => state == Going ? FactsAt(why) : new()
+    {
+        Steps = [JsonSerializer.SerializeToNode(LeftSteps.Step(Run, "engine", "aurora", Push, EndedAtPush), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+        // Sessions' placing of the run's session for it, which the step's own row carries: never a second row.
+        Sessions = [Session("""{"id":"s1","quest":"q7","state":"awaiting-step","updated":"2026-11-16T09:51:00Z"}""")],
+        Groups = [With("""{"session":"s1","group":"needs-you","reason":"left","shown":"awaiting-step","archived":false,"teammate":false}""",
+            """{"reason":"left","waits":[{"run":"q7","node":"push","why":"left","repository":"engine","role":"lead","ended":true}]}""")],
+    };
+
+    [Fact]
+    public void A_run_ended_failed_waits_on_its_left_step_alone()
+    {
+        var graph = new NodeGraph([Push, new("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] }], [], ["push"], "push");
+        var binding = new WorkflowRunBinding(Run, "engine", "aurora", "docs", WorkflowLevels.Repository, Now) { Version = 1, Digest = "gph-0123456789abcdef0123456789abcdef" };
+        var run = new GraphRun(binding, new DecodedVersion(1, binding.Digest, graph, binding.Digest, null), EndedAtPush.Ended);
+
+        var wait = Assert.Single(PersonWaitReader.Of([run], _ => EndedAtPush));
+        Assert.Equal(("push", PersonWaits.Left, true), (wait.Node, wait.Why, wait.Ended));
+        Assert.Empty(PersonWaitReader.Of([run], _ => EndedAtPush with { Pending = [new NodeWord("push", NodeWordActs.Again, null, Now)] }));
+    }
 
     [Theory]
     [MemberData(nameof(Waits))]
-    public void Every_wait_a_step_can_stand_at_is_a_row_with_a_press_or_its_page(string why)
+    public void Every_wait_a_step_can_stand_at_is_a_row_with_a_press_or_its_page(string why, string state)
     {
-        var row = Assert.Single(Rows(FactsAt(why)));
+        var row = Assert.Single(Rows(FactsAt(why, state)));
         var kind = row["kind"]!.GetValue<string>();
         if (DoorIsThePress.Contains(kind)) return;
         if (kind == "work")
@@ -120,7 +173,7 @@ public sealed class StepWaitCensusTests
         Assert.NotNull(at);
         var census = File.ReadAllText(Path.Combine(at.FullName, "src", "Daoris.Web", "src", "work", "head", "RunWaitsHead.test.tsx"));
 
-        Assert.All(PersonWaits.All, why => Assert.Contains($"'{why}': ", census, StringComparison.Ordinal));
+        Assert.All(States, each => Assert.Contains($"'{each.Why}{(each.State == Going ? "" : "@" + each.State)}': ", census, StringComparison.Ordinal));
     }
 
     [Fact]

@@ -12,9 +12,13 @@ public static class PersonWaitReader
         var casts = home is null ? null : new PlaceCastFiles(home).Book();
         foreach (var run in runs.Where(run => run.Line is null).OrderBy(run => run.Run, StringComparer.Ordinal))
         {
-            if (run.Ended is { Outcome: RunOutcomes.Failed, Node: { Length: > 0 } failed } ended)
+            if (run.Ended is { Outcome: RunOutcomes.Failed } ended)
             {
-                waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At) { Role = StepWaiting.RoleOf(PersonWaits.Left) });
+                if (LeftSteps.Waiting(run, record(run.Unit)) is { } failed)
+                {
+                    waits.Add(new PersonWait(run.Run, failed, PersonWaits.Left, run.Binding.Repository, ended.At) { Role = StepWaiting.RoleOf(PersonWaits.Left), Ended = true });
+                }
+
                 continue;
             }
 

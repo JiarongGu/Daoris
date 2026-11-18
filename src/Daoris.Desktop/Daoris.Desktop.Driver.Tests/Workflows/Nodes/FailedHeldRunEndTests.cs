@@ -26,8 +26,8 @@ public sealed class FailedHeldRunEndTests : NodeRunFixture
             branches.Where(_origin.ContainsKey).ToDictionary(branch => branch, branch => _origin[branch], StringComparer.Ordinal)),
     }, CancellationToken.None);
 
-    /// <summary>The run landed at <see cref="NodeRunFixture.Tip1"/>, its push refused (a passing tree clean-up), and the run ended failed there.</summary>
-    private async Task<NodeRuntime> EndedFailedAtItsPushAsync()
+    /// <summary>The run landed at <see cref="NodeRunFixture.Tip1"/>, its push failed <paramref name="code"/> (a refusal: a passing tree clean-up), and the run ended failed there.</summary>
+    private async Task<NodeRuntime> EndedFailedAtItsPushAsync(string code = PushDoor.Refused)
     {
         BoundTo(LandedThenPushed);
         _branchTips["daoris/s1"] = Tip1;
@@ -40,7 +40,7 @@ public sealed class FailedHeldRunEndTests : NodeRunFixture
         // The push door's refusal, written on the record off the pass.
         Files.Edit(RunUnit, record => (record with
         {
-            Statuses = new Dictionary<string, NodeStatus>(record.Statuses) { ["push"] = record.Statuses["push"] with { State = NodeStates.Failed, Code = PushDoor.Refused } },
+            Statuses = new Dictionary<string, NodeStatus>(record.Statuses) { ["push"] = record.Statuses["push"] with { State = NodeStates.Failed, Code = code, Unreconciled = null } },
         }, true));
         await PassAsync(runtime);
         var ended = Files.Read(RunUnit)!.Ended;
@@ -85,5 +85,55 @@ public sealed class FailedHeldRunEndTests : NodeRunFixture
 
         Assert.Equal((NodeStates.Failed, PushDoor.Refused), (RunStatus("push").State, RunStatus("push").Code));
         Assert.Equal(ended, Files.Read(RunUnit)!.Ended);
+    }
+
+    /// <summary>
+    /// The left step is the person's: one wait, marked as its run's end (placed whatever its quest's state, <c>SessionStatesTests</c>), and one
+    /// `step` row on the line's lead with <i>Try again</i>, <i>Done outside Daoris…</i> (a push's proof is origin's ref) and <i>End this
+    /// work…</i>. Seen failing first: no row carried it.
+    /// </summary>
+    [Fact]
+    public async Task The_step_a_run_ended_failed_at_is_one_wait_and_one_row_with_its_presses()
+    {
+        await EndedFailedAtItsPushAsync();
+
+        var wait = Assert.Single(PersonWaitReader.Read(_home));
+        Assert.Equal((RunId, "push", PersonWaits.Left, true), (wait.Run, wait.Node, wait.Why, wait.Ended));
+        var row = Assert.Single(LeftSteps.Of(new GraphRuns(Files).Read(), Files.Read));
+        Assert.Equal((PersonWaits.Left, AppointedRoles.Supervisor, RunId), (row.Why, row.Role, row.Work));
+        Assert.Equal([NodeWordActs.Again, NodeWordActs.DoneOutside, NodeWordActs.Stop], row.Presses);
+    }
+
+    [Fact]
+    public async Task Try_again_on_it_governs_the_run_again_as_a_new_attempt()
+    {
+        var runtime = await EndedFailedAtItsPushAsync();
+
+        var worded = RunNodeWords.Word(Files, RunId, "push", NodeWordActs.Again, null, () => _now);
+        Assert.True(worded.Done, worded.Refused);
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+        Assert.Empty(LeftSteps.Of(new GraphRuns(Files).Read(), Files.Read));
+        await PassAsync(runtime);
+
+        var push = RunStatus("push");
+        Assert.Equal((NodeStates.Active, 2), (push.State, push.Attempt));
+        Assert.Null(Files.Read(RunUnit)!.Ended);
+    }
+
+    /// <summary>A push failed for a reason no look reads again is settled by the person's word that it was pushed, its proof origin's ref.</summary>
+    [Fact]
+    public async Task Done_outside_on_a_push_failed_otherwise_is_proven_by_origins_ref_and_the_run_goes_on()
+    {
+        var runtime = await EndedFailedAtItsPushAsync(PushLineRead.BranchGone);
+        _origin["feature/q7"] = Tip1;
+        await PassAsync(runtime);
+        Assert.Equal(NodeStates.Failed, RunStatus("push").State);
+
+        var worded = RunNodeWords.Word(Files, RunId, "push", NodeWordActs.DoneOutside, null, () => _now);
+        Assert.True(worded.Done, worded.Refused);
+        await PassAsync(runtime);
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Git), (RunStatus("push").State, RunStatus("push").By));
+        Assert.Equal(RunOutcomes.Completed, Files.Read(RunUnit)!.Ended?.Outcome);
     }
 }

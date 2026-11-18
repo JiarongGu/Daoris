@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A run ended failed at a refused push stayed ended after the person pushed, its step shown nowhere (LEFTSTEP1)
+
+- **Symptom:** a run ended failed-held at `push` (`push-refused`, a passing tree clean-up); the person's own push put the branch on
+  origin at the landed tip, yet the run stayed ended, and while its quest was open no row of *What needs you* or the session page
+  showed the step or offered a press.
+- **Root cause:** PUSHBUSY1 (46f2efddff) made a failed push observable, but only runs still governed are observed, and a run ended
+  failed is governed only while a session waits on it, then judged for its end alone (`NodeRunKeeping.AtEnd`); `RunWaitSessions` kept
+  `PersonWaits.Left` only where the quest was Done, and `HeldSteps.Step` took a Left as carried by a row that did not exist; a `push`
+  had no holder press. ACCEPTWAIT1's census listed wait kinds, not the run states that hid them.
+- **Fix:** `FailedHeldRuns` arms and governs a run ended failed at a step whose kind reads its failure, probes its observation at the
+  end, and lifts the end on a reach; `GraphRuns` reads a failed end again when its record is written. `LeftSteps` rows the step with
+  *Try again* (`workflow again`), *Done outside Daoris…* (`workflow done-outside`, a push's proof origin's ref) and *End this work…*,
+  whatever the quest's state; each word lifts the end at the door.
+- **Verification:** `FailedHeldRunEndTests`, `StepWaitCensusTests` (kind × run state), `SessionStatesTests`, `RunWaitsHead.test.tsx`,
+  `attention.test.ts`.
+
 ## 2026-11-18 - A run's push failed for a passing tidy and stayed failed after the person pushed (PUSHBUSY1)
 
 - **Symptom:** a run's `push` failed `push-refused` ("the session trees were being cleaned up: nothing was changed"), with no retry; the

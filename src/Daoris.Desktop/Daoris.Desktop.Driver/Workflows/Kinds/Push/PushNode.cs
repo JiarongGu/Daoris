@@ -52,7 +52,9 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 
     public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 
-    public bool ObservesFailed(NodeStatus status) => string.Equals(status.Code, PushDoor.Refused, StringComparison.Ordinal);
+    /// <summary>A refusal, or any failure the person says was pushed outside Daoris (<see cref="NodeWordActs.DoneOutside"/>): origin's ref is the proof.</summary>
+    public bool ObservesFailed(NodeStatus status) =>
+        string.Equals(status.Code, PushDoor.Refused, StringComparison.Ordinal) || string.Equals(status.Holds, NodeWordActs.DoneOutside, StringComparison.Ordinal);
 
     /// <summary>The push act of the act journal, under the loop's lease and drain rules.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => new PushDoor(wiring.Home, said => wiring.Say("push.run", said), wiring.MayStart, clock: wiring.Clock);

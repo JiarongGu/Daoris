@@ -64,6 +64,23 @@ public static class RunNodeWords
     /// <summary>A <c>decide</c> naming no outcome its decision declares.</summary>
     public const string NotOutcome = "not-outcome";
 
+    /// <summary>A <c>done-outside</c> of a step that is not failed, or whose kind reads no proof of it (<see cref="Outside"/>).</summary>
+    public const string NotOutside = "not-outside";
+
+    /// <summary>An <c>again</c> of a plugin step whose failed attempt is held for the person: its own <i>Try again</i> is that attempt's.</summary>
+    public const string HeldAgain = "held-again";
+
+    /// <summary>The person's words at the step a run ended failed at, each of which governs the run again (<see cref="FailedHeldRuns"/>).</summary>
+    private static readonly string[] Settles = [NodeWordActs.Stop, NodeWordActs.Again, NodeWordActs.DoneOutside];
+
+    /// <summary>
+    /// Whether the person may say a failed step was done outside Daoris: its kind reads its proof once claimed (a push, origin's ref at the
+    /// landed tip), so the claim is kept on its status and the step's observation settles it; a plugin's is said on its attempt instead.
+    /// </summary>
+    public static bool Outside(NodeDeclaration node, NodeStatus status) =>
+        status.State == NodeStates.Failed && !NodeKit.IsPlugin(node.Kind) && NodeKit.Of(node.Kind) is IObserves observes
+        && observes.ObservesFailed(status with { Holds = NodeWordActs.DoneOutside });
+
     /// <summary>The acts kept as a mark of the node's attempt, moving no state: a request's send and a return's choices.</summary>
     private static bool Marked(string act) => act == NodeWordActs.Send || NodeWordActs.Choices.Contains(act, StringComparer.Ordinal);
 
@@ -137,8 +154,8 @@ public static class RunNodeWords
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         var (refused, result) = tenures.Settling(bound.Unit, hold => records.Edit(bound.Unit, record =>
         {
-            // The one step a run ended failed at has the person's stop too, which governs the run again to end it stopped.
-            var failedAt = record.Ended is { Outcome: RunOutcomes.Failed } failedRun && failedRun.Node == node && act == NodeWordActs.Stop && by is null
+            // The one step a run ended failed at has the person's stop, try again and done outside too, each of which governs the run again.
+            var failedAt = record.Ended is { Outcome: RunOutcomes.Failed } failedRun && failedRun.Node == node && Settles.Contains(act) && by is null
                 && WorkPerformer.StatusOf(record, node).State == NodeStates.Failed;
             if (record.Ended is { } ended && !failedAt) return (null, Refuse(Ended) with { Detail = ended.Quest });
             if (failedAt) record = record with { Ended = null };
@@ -190,7 +207,12 @@ public static class RunNodeWords
                 }
             }
 
-            if (Marked(act))
+            if (act == NodeWordActs.Again && PluginFailureHeld.Of(record, declared, status) is { Words.Count: > 0 }) return (null, Refuse(HeldAgain) with { State = status.State });
+            if (act == NodeWordActs.DoneOutside)
+            {
+                if (!Outside(declared, status)) return (null, Refuse(NotOutside) with { State = status.State });
+            }
+            else if (Marked(act))
             {
                 if (!Offers(declared, status, act)) return (null, Refuse(act == NodeWordActs.Send ? NotSendable : NotWaiting) with { State = status.State });
                 if (act != NodeWordActs.Send && words is null) return (null, Refuse(NodeRefusal.NoWords));
@@ -284,6 +306,15 @@ public static class RunNodeWords
                 continue;
             }
 
+            // The claim moves nothing: kept on the failed status, which the step's kind then observes (Outside).
+            if (word.Act == NodeWordActs.DoneOutside)
+            {
+                var claimed = Outside(node, standing);
+                if (claimed) next = next with { Statuses = new Dictionary<string, NodeStatus>(next.Statuses, StringComparer.Ordinal) { [node.Id] = standing with { Holds = word.Act } } };
+                applied.Add((word, claimed ? null : NotOutside));
+                continue;
+            }
+
             if (Marked(word.Act))
             {
                 if (!Offers(node, standing, word.Act))
@@ -337,6 +368,7 @@ public static class RunNodeWords
     private static NodeMove Move(NodeDeclaration node, NodeWord word, NodeScope scope, NodeStatus status) =>
         TakenBy(word.Act) is { } owner && owner.Move(node, word, status, scope) is { } own ? own
         : word.Act == NodeWordActs.Skip ? new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope }
+        : word.Act == NodeWordActs.Again ? new NodeMove(NodeStates.Ready, NodeCause.Person)
         : new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words };
 
 
@@ -370,6 +402,8 @@ public static class RunNodeWords
         + "       word is kept is accepted, which proves nothing was read\n"
         + "       daoris workflow done <run> <node> [\"…\"]  ·  daoris workflow approve|reject <run> <node> [\"…\"]  (your task, with a note if you like)\n"
         + "       daoris workflow decide <run> <node> <outcome> [\"…\"]  (a decision's answer, with its reason; again until the run ends)\n"
+        + "       daoris workflow again <run> <node>  ·  daoris workflow done-outside <run> <node>  (a failed step: a new attempt, or your word it\n"
+        + "       was done outside Daoris where its kind reads the proof, a push's origin at the landed tip)\n"
         + "       pass a node of a run bound to a graph version over with your words, or stop it, your words if you have any; the run's\n"
         + "       id and its nodes are what `workflow run` prints. Kept on the run's record, and Daoris's next look applies it.";
 
@@ -393,7 +427,12 @@ public static class RunNodeWords
         (UnreadVersion, _) =>
             $"workflow: the graph version run {done.Run} is bound to does not read here ({done.Detail}), so the run is held whole and nothing on it is changed.",
         (NotNode, _) => $"workflow: run {done.Run}'s graph has no node `{done.Node}`; `workflow run` names its nodes.",
-        (NotAct, _) => $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve, reject or decide.",
+        (NotAct, _) =>
+            $"workflow: `{done.Act}` is not a word for a run's node: say skip, stop, send, ask-again, go-on, accept, changes, done, approve, reject, decide, again or done-outside.",
+        (NotOutside, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, or its kind reads no proof of work done outside Daoris, so there is nothing to claim: try it again or stop it.",
+        (HeldAgain, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} holds its failed attempt for you, so it is tried again on that attempt: Try again on its step, or `daoris work held`.",
         (NotTask, _) => $"workflow: `{done.Node}` is no task of yours, and only your task is done, only an approval approved or rejected, and only a decision decided.",
         (NotOutcome, _) => $"workflow: a decision is answered with one of its outcomes, and `{done.Node}` on run {done.Run} declares no such outcome.",
         (NotWaiting, NodeWordActs.Decide) =>
@@ -422,6 +461,7 @@ public static class RunNodeWords
             + "goes on; ending this work (`daoris workflow stop`) ends the run and leaves its quest to close by your word.",
         (NodeRefusal.NotInTable, NodeWordActs.Skip) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to pass over.",
+        (NodeRefusal.NotInTable, NodeWordActs.Again) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, not failed, so there is nothing to try again.",
         (NodeRefusal.NotInTable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to stop.",
         (var code, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} was not kept ({code}).",
     };
