@@ -406,6 +406,7 @@ public sealed class LinesRoutes(DriverContext context)
             new NodeRecordFiles(_loop.Home), unit, node, attempt, word, link: press.Link, note: press.Note, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch));
         var worded = done.What == PerformedWhat.Worded;
         if (worded) _loop.Nudge();
+        if (press.Said) return await HeldFixPress.WordSaidAsync(done, attempt, word);
         return new
         {
             Unit = unit, Node = node, Attempt = attempt, Resolution = word, Done = worded, Refused = worded ? null : done.Code,
