@@ -309,6 +309,33 @@ export const GRAPH_RUN_RELEASED = run([
   },
 });
 
+/** What a release's approval wait says and where it is taken, as an installed run kept them: the plugin's words, signed with its way, and the release's page. */
+export const APPROVAL_WORDS = 'Waiting on the approver: approve Prod of Release-90, Portal (#42), carrying cccccccc from `feature/portal`; '
+  + 'asked of [Portal]\\Portal Team. Approve or reject it here or in Azure DevOps. Way: the token.';
+export const APPROVAL_PAGE = 'https://dev.azure.com/acme/0f0f0f0f-0000-4000-8000-000000000000/_release?releaseId=90&_a=release-summary';
+
+const AZURE = { plugin: 'daoris-azure-devops' };
+
+/**
+ * A release run at its approval: Azure DevOps's plugin's `release-approve` step waits on the approver, the person holding the role,
+ * its wait the plugin's progress as `StepWaiting.WaitOf` answers it (the actor, its holder, the words and the release's page).
+ */
+export const GRAPH_RUN_APPROVAL = run([
+  at(nodeCell('release-start', 'daoris-azure-devops/release-start', 'automatic', 'plugin', null, AZURE), 'done', 'reached',
+    { node: 'daoris-azure-devops/release-start' }),
+  at(nodeCell('release-approve', 'daoris-azure-devops/release-approve', 'automatic', 'plugin', null, AZURE), 'waiting', 'active', {
+    node: 'daoris-azure-devops/release-approve', role: 'approver', acts: ['skip', 'stop'],
+    wait: { code: 'actor', values: { actor: 'approver', holder: 'person', words: APPROVAL_WORDS, url: APPROVAL_PAGE }, since: AT },
+  }),
+], {
+  repository: 'portal',
+  workflow: { version: 'gph-7a3e5c19d0b2', startHolds: [], limits: {}, id: 'pull-request-release', boundVersion: 1, route: { level: 'repository' } },
+  graph: {
+    run: 'q7', entries: ['release-start'], end: 'release-approve', wires: [{ from: 'release-start', to: 'release-approve', kind: 'after' }],
+    quest: 'q7', judged: true, unread: false, ended: null,
+  },
+});
+
 /** The same run once the person passed its go-ahead over: their word kept, which the driver's next look applies. */
 export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
   ...GRAPH_RUN_GO_AHEAD,

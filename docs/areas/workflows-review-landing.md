@@ -61,7 +61,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
-   approval's card names the release, its definition, the build and its source branch (APPROVEHERE1): where the plugin declares
+   approval's card, on the step in the run's view and in the session page's dock, names the release, its definition, the build and
+   its source branch (APPROVEHERE1, APPROVEPRESS1): where the plugin declares
    `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
    holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
    observed. No release step approves, whatever its action.
