@@ -19,7 +19,7 @@ import { DiffPane } from './review/DiffPane';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
-const ACC = { run: 'q1', node: 'review' };
+const ACC = { run: 'q1', node: 'review', attempt: 1 };
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
