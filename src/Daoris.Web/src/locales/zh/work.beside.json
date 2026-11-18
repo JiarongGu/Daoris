@@ -1,0 +1,19 @@
+{
+  "work.beside.child": "子智能体",
+  "work.beside.task": "后台任务",
+  "work.beside.end.running": "运行中",
+  "work.beside.end.ok": "已完成",
+  "work.beside.end.failed": "失败",
+  "work.beside.end.stopped": "已停止",
+  "work.beside.end.lost": "已结束，未说明结果",
+  "work.beside.end.withSession": "随会话结束",
+  "work.beside.calls_one": "{{count}} 次调用",
+  "work.beside.calls_other": "{{count}} 次调用",
+  "work.beside.ran": "运行了 {{span}}",
+  "work.beside.reading": "正在读取它自己的记录…",
+  "work.beside.unkept": "本机没有保存它自己的记录。",
+  "work.beside.toEnd": "到它结束处",
+  "work.beside.toStart": "到它开始处",
+  "work.beside.where": "在会话中的位置",
+  "work.beside.session": "会话"
+}

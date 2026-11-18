@@ -9,6 +9,7 @@ import { toUpload } from '../../compose/attachments';
 import type { DraftSent } from '../../help/openDraft';
 import { call } from '../call';
 import { notPushed } from '../state/slices';
+import { askHeld, isPending } from '../state/held';
 
 // A session's conversation: its record read back and followed live, its turns, its options,
 // and the verbs that start, speak in and finish one.
@@ -113,6 +114,29 @@ export function useSessionEvents(sessionId: string | null) {
   }, [events, history]);
 
   return { events, opening, firstFailure, earlier, loaded, loadEarlier };
+}
+
+/** A subagent's own record as `SESSION_CHILD_HISTORY` answers it: its events, none where none is kept, or nothing held yet. */
+const readChildHistory = (answer: unknown): { events: SessionEvent[] | null } | null => {
+  if (isPending(answer)) return null;
+  const events = (answer as { events?: unknown } | null)?.events;
+  return { events: Array.isArray(events) ? (events as SessionEvent[]) : null };
+};
+
+/**
+ * A subagent's own record whole, for its row in the session's timeline (`SESSION_CHILD_HISTORY`, told by event). While it runs its
+ * key sits under the sessions' family, so each change the loop tells reads it again; ended, it no longer grows and is read once.
+ */
+export function useChildHistory(session: string, child: string, running: boolean): { events: readonly SessionEvent[] | null; loaded: boolean } {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = running ? ['sessions', 'child-record', session, child] : ['child-record', session, child];
+  const read = useQuery({
+    queryKey,
+    queryFn: () => askHeld('SESSION_CHILD_HISTORY', client, queryKey, { id: session, child }, readChildHistory),
+    enabled: isAvailable && Boolean(session && child),
+  });
+  return { events: read.data?.events ?? null, loaded: Boolean(read.data) };
 }
 
 /** Where a conversation's turns stand, as the driver holds them. */

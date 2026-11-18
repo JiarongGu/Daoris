@@ -12,6 +12,7 @@
  */
 
 import { authorOf } from './sender';
+import { besideOf } from '../beside/besides';
 import { type Ask, type Block, levelOf, type Receipts, type SessionEvent, type Turn } from './conversationTypes';
 
 export { CONVERSATION_CODES, levelOf } from './conversationTypes';
@@ -371,17 +372,23 @@ export function toTurns(
         break;
       case 'child':
       case 'task': {
-        // No block of its own: its start names the card of the call that started it, its end says how it ended there. One whose
+        // Its start names the card of the call that started it, and its end says how it ended there; a background task's end is a
+        // row where it ended besides, the two leading to each other, and a later end under the same id rewords that row. One whose
         // call this page does not hold is not drawn; it never breaks the agent's words around it.
         const card = cardOf(event.call
           ? (b) => b.id === event.call
           : (b) => b.beside?.kind === event.kind && b.beside.id === event.id);
         if (card && event.id) {
-          const beside = card.beside?.id === event.id ? card.beside : { kind: event.kind as 'child' | 'task', id: event.id };
-          card.beside = {
-            ...beside, ...(event.name ? { name: event.name } : {}), ...(event.end ? { end: event.end, by: event.by ?? null } : {}),
-          };
+          card.beside = besideOf(card.beside?.id === event.id ? card.beside : undefined, event);
           where[event.seq] = card.key;
+          if (event.kind === 'task' && event.end) {
+            const endKey = card.beside.endKey ?? key;
+            card.beside = { ...card.beside, endKey };
+            const row = turns.flatMap((turn) => turn.items).find((item) => item.key === endKey);
+            if (row) row.beside = { ...card.beside, startKey: card.key };
+            else here(key).items.push({ key, kind: 'beside', at: event.at, beside: { ...card.beside, startKey: card.key } });
+            where[event.seq] = endKey;
+          }
         }
         break;
       }

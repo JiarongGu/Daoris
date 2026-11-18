@@ -30,6 +30,13 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening, page.FirstFailure };
     }
 
+    // A subagent's own record whole, for its row opened in place; no events where none is kept.
+    [DriverRoute("SESSION_CHILD_HISTORY", PipeClass.Open)]
+    [ByEvent("SESSION_CHILD_HISTORY", Untold = "a subagent's own record beside its session's, which its run appends to")]
+    private async Task<object?> SessionChildHistoryAsync(SessionChildHistoryRead press, CancellationToken cancellationToken) =>
+        await Task.Run(() => new { Session = press.Id, press.Child, Events = _loop.Events.Child(press.Id, press.Child)?.ToArray() }, cancellationToken)
+            .ConfigureAwait(false);
+
     // Name a conversation, or clear its name with none: its first question is its title again. One route for every conversation of
     // this machine's, Ask Daoris's and a session's, by any of its parts' ids: the name is its facts' (`ConversationFacts`), kept
     // by the conversation's id.

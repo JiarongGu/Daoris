@@ -22,17 +22,27 @@ const record: SessionEvent[] = [
 ];
 
 describe('a sub-agent and a background task in the record', () => {
-  it('names each on the card of the call that started it and says how it ended there, never as a row of its own', () => {
+  it('names each on the card of the call that started it and says how it ended there, a task\'s end a row where it ended', () => {
     const { turns, where } = toTurns(record);
     const items = turns.flatMap((turn) => turn.items);
 
-    expect(items.map((item) => item.kind)).toEqual(['tool', 'tool', 'message']);
+    expect(items.map((item) => item.kind)).toEqual(['tool', 'tool', 'message', 'beside']);
     expect(items.find((item) => item.id === 'toolu_ag')?.beside).toEqual(
-      { kind: 'child', id: 'a1', name: 'Read README first line', end: 'ok', by: 'reported' });
+      { kind: 'child', id: 'a1', name: 'Read README first line', started: at(2), end: 'ok', by: 'reported', ended: at(6) });
     expect(items.find((item) => item.id === 'toolu_gates')?.beside).toEqual(
-      { kind: 'task', id: 'b1', name: 'npm run gates', end: 'lost', by: 'inferred' });
+      { kind: 'task', id: 'b1', name: 'npm run gates', started: at(4), end: 'lost', by: 'inferred', ended: at(9), endKey: 'e10' });
+    expect(items.find((item) => item.kind === 'beside')).toMatchObject({ key: 'e10', beside: { id: 'b1', startKey: 'e4', end: 'lost' } });
     expect(items.find((item) => item.kind === 'message')?.text).toBe('The gates are running.');
     expect(where[3]).toBe(where[2]);
+    expect(where[10]).toBe('e10');
     expect(where[11]).toBeUndefined();
+  });
+
+  it('rewords the row where a task ended when a later end its door says follows the inferred one', () => {
+    const later: SessionEvent = { seq: 12, at: at(11), kind: 'task', id: 'b1', end: 'failed', by: 'reported' };
+    const items = toTurns([...record, later]).turns.flatMap((turn) => turn.items);
+
+    expect(items.filter((item) => item.kind === 'beside')).toHaveLength(1);
+    expect(items.find((item) => item.kind === 'beside')?.beside).toMatchObject({ end: 'failed', by: 'reported', startKey: 'e4' });
   });
 });

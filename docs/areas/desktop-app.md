@@ -429,7 +429,11 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each sub-agent and task as a tab of the
-  bottom panel; each row removes the place whose job it moves.
+  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each subagent and task as a tab of the
+  bottom panel; each row removes the place whose job it moves. SESSIONVIEW1f moved the subagents into the conversation: a subagent
+  is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
+  words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent
+  takes the conversation's place with a breadcrumb back (`work/beside/`); a background task is a row under its call and a row where
+  it ended, with its last lines from its console stream, each leading to the other. *At work* draws no subagents of its own.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

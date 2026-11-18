@@ -651,6 +651,8 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
             ? [.. own.Where(e => e.Kind == SessionEventKind.Tool)]
             : null;
 
+    public IReadOnlyList<SessionEvent>? Child(string sessionId, string child) => new ChildRecords(directory).Read(sessionId, child);
+
     /// <summary>The head standing for a long record's file (<see cref="SessionEventHeads"/>), or null where the file is read whole.</summary>
     private SessionEventHead? Headed(string sessionId) => SessionEventHeads.In(directory)?.Of(sessionId, PathOf(sessionId));
 
