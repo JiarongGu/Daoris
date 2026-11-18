@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { FIXTURE_HOME } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
@@ -21,8 +21,8 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
  */
 test('every publish stamps its commit, told an output of its own or not', () => {
   assert.equal(STAMPED, '-p:DaorisStamp=true');
-  const folder = join(tmpdir(), 'an-install', 'x');
-  for (const artifacts of [null, join(tmpdir(), 'an-output')]) {
+  const folder = join(FIXTURE_HOME, 'an-install', 'x');
+  for (const artifacts of [null, join(FIXTURE_HOME, 'an-output')]) {
     const recipes: string[] = [
       launcherPublishCommand(folder, artifacts), appPublishCommand(folder, artifacts), driverPublishCommand(folder, 'win-x64', artifacts),
       gitDoorPublishCommand(folder, artifacts), pieceStartPublishCommand(folder, artifacts),

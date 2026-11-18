@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { FIXTURE_HOME, scratchFolder } from '../../../tools/merge/fixture-home.ts';
 import { join } from 'node:path';
 import {
   RECORD_ROUTES, askOf, endingOf, main, median, outcomesOf, parseArguments, parseLine, readLogs, readProposals, readRecords,
@@ -131,7 +131,7 @@ test('each line of the twin table is kept or skipped, as the driver\'s reader de
 
 /** A week on a machine, across three sources and two days, with the mistakes a real log holds. */
 function week(): string {
-  const home = mkdtempSync(join(tmpdir(), 'daoris-usage-'));
+  const home = scratchFolder('daoris-usage');
   const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const file = (name: string, lines: string[]) => writeFileSync(join(logs, name), `${lines.join('\n')}\n`);
@@ -218,7 +218,7 @@ test('the logs are every source\'s lines in the period, merged by time, with wha
 });
 
 test('a folder with no log is no lines, not a failure', () => {
-  const read = readLogs(join(tmpdir(), 'daoris-usage-nowhere-at-all'), { since });
+  const read = readLogs(join(FIXTURE_HOME, 'daoris-usage-nowhere-at-all'), { since });
   assert.deepEqual([read.lines, read.skipped], [[], 0]);
 });
 
@@ -409,7 +409,7 @@ test('an empty period says so in every section rather than printing nothing', ()
  * driver's `permission.refused` lines, one per refused call; and the home's rule proposals, one file each.
  */
 function asksWeek(): string {
-  const home = mkdtempSync(join(tmpdir(), 'daoris-asks-'));
+  const home = scratchFolder('daoris-asks');
   const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const refused = (time: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', 'permission.refused', data);
@@ -545,7 +545,7 @@ const PROPOSAL_FILES: [why: string, text: string, state: string | null][] = [
 ];
 
 test('each proposal file is read or left out as the file\'s other readers decide', () => {
-  const folder = mkdtempSync(join(tmpdir(), 'daoris-proposals-'));
+  const folder = scratchFolder('daoris-proposals');
   try {
     for (const [why, text, state] of PROPOSAL_FILES) {
       writeFileSync(join(folder, 'one.json'), text);
@@ -607,7 +607,7 @@ test('the runner reads the home\'s proposals beside its log', async () => {
  * and the parks of the period: driven sessions, an intake, and one whose open its process never saw.
  */
 function setupWeeks(): string {
-  const home = mkdtempSync(join(tmpdir(), 'daoris-setups-'));
+  const home = scratchFolder('daoris-setups');
   const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
@@ -892,7 +892,7 @@ test('the text lists the newest driven sessions to a terminal\'s width and count
   assert.doesNotMatch(text, /09-30 08:02 {2}m02 /);
   assert.equal(driven.sessions.length, 16);
 
-  const home = mkdtempSync(join(tmpdir(), 'daoris-driven-'));
+  const home = scratchFolder('daoris-driven');
   try {
     const logs = homeEntry(home, 'logs');
     mkdirSync(logs);
@@ -1078,7 +1078,7 @@ const ASKS = [
 
 /** The machine log beside the records: the starts this period holds (not s4's, before it) and the parks. */
 function outcomeHome(): string {
-  const home = mkdtempSync(join(tmpdir(), 'daoris-outcomes-'));
+  const home = scratchFolder('daoris-outcomes');
   const logs = homeEntry(home, 'logs');
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);

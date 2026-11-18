@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { FIXTURE_HOME } from './merge/fixture-home.ts';
 import { join } from 'node:path';
 import { budgetBreaches, checkBudgetAlone, overBudgetOf } from './layers-census/budget-alone.mjs';
 import {
@@ -210,7 +210,7 @@ test('an over-budget test is a finding only if its class, measured again alone, 
   const measured = [];
   const again = '<TestRun><Results><UnitTestResult testName="Ns.Loaded.a" duration="00:00:00.0300000" />'
     + '<UnitTestResult testName="Ns.Slow.b" duration="00:00:04.0000000" /></Results></TestRun>';
-  const dir = join(tmpdir(), `census-alone-${process.pid}`);
+  const dir = join(FIXTURE_HOME, `census-alone-${process.pid}`);
   mkdirSync(dir, { recursive: true });
   try {
     const { problems } = await checkBudgetAlone({

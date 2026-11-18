@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { FIXTURE_HOME } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { driverFile } from '../test/_csharp.ts';
@@ -26,7 +26,7 @@ test('daoris’s command is one program that runs the desktop’s program from i
 });
 
 test('the command is published framework-dependent and laid out whole in app/bin/, and a publish that made none is refused', () => {
-  const folder = join(tmpdir(), 'an-install', 'command');
+  const folder = join(FIXTURE_HOME, 'an-install', 'command');
   const command: string = commandPublishCommand(folder);
   assert.ok(command.startsWith(`dotnet publish "${COMMAND_PROJECT}" -c Release -r win-x64 --self-contained false`), command);
   assert.ok(command.endsWith(` -o "${folder}" --nologo`), command);
