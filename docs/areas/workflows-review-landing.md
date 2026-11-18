@@ -128,7 +128,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 9. The opinion, the look and the `review` come before every landing, wired straight into it, and no landing starts before a look
    has passed; the opinion need not precede the look (`ProtectedOrder`). Each hold (`quest.holds`, `content.holds`,
    `work.requests`) is judged once, on every way to a landing. `quest.holds` never reaches on a done checked against nothing: an
-   ask's quest with no requirement waits *unchecked* until the person passes it with words, their through words on its ask pass it
+   ask's quest with no requirement waits *unchecked* (`pass`, a wait on the acceptor whose *What needs you* row and session page offer
+   the run's skip) until the person passes it with words, their through words on its ask pass it
    (rule 23), or a version turns its `yes` off; a set-up quest is Daoris's own ask, whose press reads the repository it set up, so it
    never waits so. It reads the run's branch first: where the line holds that branch's tip (any proof but
    *empty*), it reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, so the
@@ -585,7 +586,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`PersonWaits.All`: an active `review`, `task` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
     waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
     `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
-    done alone)), the role it waits on and that role's holder. Each kind says what its active step waits for (`IWaitsOnRole`), so the
+    done alone), a `quest.holds` holding an unchecked done (`pass`, on the acceptor; a done held for the yes is its held row's)), the
+    role it waits on and that role's holder. Each kind says what its active step waits for (`IWaitsOnRole`), so the
     reading names no kind and never asks who holds the role: a step's own word (an Accept, an approval, a task's Done or answer, a
     go-ahead) waits on the step's role (`StepRoles.Of`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
     the line's `lead`. A wait is answered by its own role (`StepWaiting.HolderOf`, D312): the step's own role by its attempt's tenure, any
@@ -594,7 +596,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     has no settler yet, so it stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with *Take*, an Accept among them.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
-    page where its act is taken, which `StepWaitCensusTests` holds for every wait: an Accept and a part left are the placed session's
+    page where its act is taken, which `StepWaitCensusTests` holds for every wait, and its card on the session page's head
+    (`RunWaitsHead`, its census beside it): an Accept and a part left are the placed session's
     rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
     that settle it (a skip reads *Not needed this run*) and its stop where the step offers one (*Stop this step…*, asked once, the run's node stop as the owner role's, D316), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
@@ -623,7 +626,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
     tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
     open the outputs by run (their presses read *Open outputs*, 打开产出), and the head's *To the Accept card* leads to the newest card
-    drawn in the conversation (`seekReviewCard`); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
+    drawn in the conversation (`seekReviewCard`), offered, as the head's *next: Accept…* is, only once the run's review has begun and
+    its card is drawn (`landingStands`, the landing's `accept` with its attempt); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
     refused. The integration's member merge and the merge tool (`fixtures/backlog-merges.json`) hold it alike.

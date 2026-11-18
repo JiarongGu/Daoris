@@ -9,6 +9,7 @@ import type { PermissionWait } from './PermissionAsks';
 import type { AnswerWait } from './AnswerAlone';
 import { conversationOffer, landingStands, rulesAsked, waitsOf } from './waits';
 import { said } from '../../test/said';
+import { nextPress } from '../head/headFacts';
 
 // Which waits on the person stand, one rule the foot's strip and the head's work read, so the two
 // cannot disagree. A wait is the person's to press; what waits on an agent, a workflow or nothing is not one.
@@ -62,6 +63,18 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN })).toEqual([]);
     expect(waitsOf({ session: session(), lands: LANDS, landing: PLAN, onReviewRun: press, behind: { line: 'main', commits: 0, ahead: 0 } }))
       .toEqual([]);
+  });
+
+  it('never names the run\'s Accept before its review has begun, since no Accept card is drawn until then', () => {
+    const before = { ...PLAN, accept: { run: 'q1', node: 'review' } };
+    const begun = { ...PLAN, accept: { run: 'q1', node: 'review', attempt: 1, revision: 'abc1234' } };
+
+    const waits = waitsOf({ session: session(), lands: LANDS, landing: before, onReviewRun: press });
+
+    expect(waits).toEqual([]);
+    expect(nextPress(waits)).toBeNull();
+    expect(landingStands({ lands: LANDS, landing: before }).acceptable).toBe(false);
+    expect(waitsOf({ session: session(), lands: LANDS, landing: begun, onReviewRun: press })).toEqual([{ kind: 'accept' }]);
   });
 
   it('names the rebase words in Accept\'s place where replaying conflicts', () => {
