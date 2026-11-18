@@ -40,5 +40,15 @@
   "work.head.heldByUnknown": "一个终端在这段对话中代你发言，直到它放开。",
   "work.head.letGo": "从终端收回",
   "work.head.notHeld": "现在没有终端持有这段对话。",
-  "work.head.runWait": "{{node}}：等待 `{{role}}`：{{holder}}"
+  "work.head.runWait": "{{node}}：等待 `{{role}}`：{{holder}}",
+  "work.head.state.needsYou": "等你处理",
+  "work.head.state.step": "等待某一步",
+  "work.head.state.working": "工作中",
+  "work.head.state.pending": "尚未开始",
+  "work.head.state.held": "被挂起",
+  "work.head.state.failed": "失败",
+  "work.head.state.done": "完成",
+  "work.head.state.reading": "正在读取状态",
+  "work.head.state.more": "{{name}}，另有 {{n}} 项",
+  "work.head.state.tip": "Daoris 读到的：会话列表把它放在哪一组、为什么、从何时起。等你处理的事在下方输入框上面处理。"
 }
