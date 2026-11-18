@@ -115,6 +115,7 @@ export type RunWaitDoors = {
   onWord?: Parameters<typeof RunWaitsHead>[0]['onWord'];
   onHeld?: Parameters<typeof RunWaitsHead>[0]['onHeld'];
   hold?: Parameters<typeof RunWaitsHead>[0]['hold'];
+  release?: Parameters<typeof RunWaitsHead>[0]['release'];
 };
 
 /**
@@ -129,8 +130,8 @@ export type RunWaitDoors = {
  * a third answer alone `AnswerAlone`, a rule it proposed `ProposedRules`, a helper it asked for `HelperAsks`, its agent's ask to
  * hand over `HandOverAgentAsk`, the work's line `Lands` with its door to the review, the rebase words and the gates, a discard the
  * line holds `Discards`, and a step of its run held for the person or left failed `RunWaitsHead` with the presses its row in
- * *What needs you* offers (*Try again*, *Done outside Daoris*, *End this work*). Each line keeps its way to where it arose (*In the
- * conversation*) where the conversation found it.
+ * *What needs you* offers (*Try again*, *Done outside Daoris*, *End this work*) and, on a release's approval, the card its run's view
+ * draws. Each line keeps its way to where it arose (*In the conversation*) where the conversation found it.
  *
  * **One owner of each answer**: the frame holds the presses and their pending; a refusal is said where the press is made.
  *
@@ -287,7 +288,9 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
         );
       case 'step':
         return runWaits && (
-          <RunWaitsHead waits={[wait]} steps={runWaits.steps} onWord={runWaits.onWord} onHeld={runWaits.onHeld} hold={runWaits.hold} />
+          <RunWaitsHead
+            waits={[wait]} steps={runWaits.steps} onWord={runWaits.onWord} onHeld={runWaits.onHeld} hold={runWaits.hold} release={runWaits.release}
+          />
         );
       default:
         // The work's line: its Accept, rebase, opinion and review are one `Lands`, drawn at the oldest of them.

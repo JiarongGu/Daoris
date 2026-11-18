@@ -69,6 +69,19 @@ describe('RunWaitsHead', () => {
     expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'push', act: 'again', words: null });
   });
 
+  it('draws a release step’s own doors the line is handed beside its held presses', () => {
+    const row: StepWaitRow = { run: 'q7', node: 'release-approve', why: 'actor', role: 'approver', holder: 'person', presses: ['skip', 'stop'] };
+    const release = vi.fn((wait: { node: string }) => <button type="button">{`approval of ${wait.node}`}</button>);
+    render(
+      <RunWaitsHead waits={[{ run: 'q7', node: 'release-approve', why: 'actor', role: 'approver' }]} steps={[row]} onWord={vi.fn()} release={release} />,
+    );
+
+    const line = screen.getByRole('group', { name: 'release-approve: waiting on approver: you' });
+    expect(within(line).getByRole('button', { name: 'approval of release-approve' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'End this work…' })).toBeInTheDocument();
+  });
+
   it('says nothing where no step of its run waits on the person', () => {
     const { container } = render(<RunWaitsHead waits={[]} steps={[SIGN]} />);
     expect(container).toBeEmptyDOMElement();
