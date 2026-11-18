@@ -96,6 +96,7 @@ internal static class PoolReaders
         new(Driver + "Review/OpinionLook.cs", FolderGone, "c", "an opinion's look at a tree"),
         new(Driver + "Review/OpinionPresses.cs", FolderGone, "c", "an opinion's press on a tree"),
         new(Driver + "Workflows/WorkflowKeepCommand.cs", FolderGone, "c", "a workflow's keep of a tree"),
+        new(Driver + "WorkOrders/Sessions/ListedTrees.cs", FolderGone, "c", "the terminal list's count of the trees it left unread"),
         new(Driver + "Workplace/HistoryClearing.cs", FolderGone, "c", "the history clearing's walk of a tree"),
         new(Driver + "Workplace/KnowledgeWorkplaceReads.cs", FolderGone, "c", "the knowledge server's reads of a tree"),
         new(Driver + "Workplace/OnlyHereProof.cs", FolderGone, "c", "the proof that work is only in a tree"),

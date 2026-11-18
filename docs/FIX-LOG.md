@@ -5,6 +5,25 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-19 - The terminal's list with no Daoris running took 50 s, walking every tree no row needed (SESSIONSTART2)
+
+- **Symptom:** after SESSIONLISTSLOW1 the window's list waited on no tree, but `daoris session list` with no Daoris running still
+  walked its trees (14.8 s for four on that fixture; 84 s on the install, judged).
+- **Measured first,** on `SessionListHome` grown to the install's shape (1,250 records, 189 MB of events, 300 archived, eight trees,
+  one with 30,000 ignored build files): `session list` 50,124 ms, its eight walks 49,394 ms; `--json` 42,994 ms, walks 42,782 ms.
+  Every other stage together under a second.
+- **Root cause:** the terminal's look walked every landable tree, one after another (`SessionGroups.LookAsync` with no `only`, left
+  so when SESSIONLISTSLOW1 moved the route's look off the walks), though a tree's judgement places no row in its group: it only adds
+  the offer to land or discard, and a run's commits to review.
+- **Fix:** the terminal alone places its rows from what is recorded, as the window does, then walks only the trees of the rows
+  needing the person (`ListedTrees`), its last line counting the trees left unread and the door that reads one
+  (`daoris tree land <session> --plan`). `HelpTreeFacts.WithTreesAsync` loses its unused waiting branch.
+- **After:** 1,463 ms, `--json` 469 ms, no tree walked. Left, each a number for its row: a cold walk of the large tree 8,455 ms
+  (3,688 ms warm), the service's host started again 2,093 to 6,914 ms under the machine's load (11.8 s on the install), the shell's
+  loop come-up 37 ms and settling 48 ms, `SESSION_GROUPS` 1,273 ms.
+- **Verify:** `SessionListWalksTests` (a done session's tree never walked, a run's Accept's walked), `SessionListBudgetProcessTests`
+  (the whole list within 2 s, no tree walked).
+
 ## 2026-11-18 - A re-landed branch's push read reached on the commit pushed before, so the new tip was never pushed (RESUMERESET1)
 
 - **Symptom:** with RESUMERESET1's landed run taken back by the chain's next quest, `ReLandingPullRequestTests` failed: the branch
