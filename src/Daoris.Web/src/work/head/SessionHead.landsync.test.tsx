@@ -15,7 +15,8 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
-import { SessionHead } from './SessionHead';
+// The work's line and its rebase words stand in the dock above the composer, the one place a wait is pressed (D320).
+import { WaitStrip as SessionHead } from '../waits/WaitStrip';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4', quest: 'q1', repository: 'reports', door: 'claude-code', state: 'completed', kind: 'driven',

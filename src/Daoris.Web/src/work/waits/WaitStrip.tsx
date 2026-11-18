@@ -166,7 +166,11 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   const facts = { ...props, answerBelow };
   const all = dockOf(facts, runWaits?.waits ?? []);
   const lines = all.filter((line) => !boxBelow(line.wait));
-  if (lines.length === 0) return null;
+  // The work's line stands here whenever its tree offers work, held or not: its holds, its set-up and its door are pressed here too,
+  // though only an open gate is counted as a wait.
+  const workLine = props.lands || props.discards ? { key: 'work', wait: { kind: props.lands ? 'accept' : 'discard' }, since: '' } as DockLine : null;
+  const drawnLines = workLine && !lines.some((line) => (WORK_WAITS as ReadonlySet<string>).has(line.wait.kind) || line.wait.kind === 'discard') ? [...lines, workLine] : lines;
+  if (drawnLines.length === 0) return null;
   const pageWaits = (of: readonly DockLine[]) => of.flatMap((line) => (line.wait.kind === 'step' ? [] : [line.wait]));
   // The count is of obligations, keyed as the bell and *What needs you* key them, so a park on the go-ahead it asked is one; and
   // each step its run holds for the person.
@@ -313,8 +317,8 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
       {/* Bounded, so a long gate never pushes the conversation off the window: the dock scrolls in itself, within its share of the
           waiting panel's height, or 40% of the window where no panel holds it. */}
       <div className="grid max-h-[var(--wait-part,40vh)] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
-        <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>
-        {lines.map((line) => {
+        {owed > 0 && <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>}
+        {drawnLines.map((line) => {
           const drawn = lineOf(line);
           return drawn ? <div key={line.key} data-dock-line={line.key} className="grid min-w-0 gap-1">{drawn}</div> : null;
         })}
