@@ -415,5 +415,11 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **MAPUX1g**: the Map seen in the installed window (`docs/2026-11-06-map-ux-design.md`).
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **OPTIMIZE1b**: a door that reads the process census while the window is open.
+- **SESSIONVIEW1b–j** (D320, proposed; nothing built): a session's whole surface becomes one panel
+  (`docs/2026-11-18-session-view-design.md`): a fixed head with a state line read from the driver's one reader and the workflow's
+  track, one timeline of every actor's rows, and at the foot a live band of what runs now and one dock where every wait is pressed.
+  Today a session's page still names its record's state in the head, draws its waits in the head and the foot (rule 38), stacks its
+  folds between the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each sub-agent and task as
+  a tab of the bottom panel; each row removes the place whose job it moves.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.
