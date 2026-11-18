@@ -139,13 +139,20 @@ filters, a YAML pipeline's `trigger:` read from its file at the merge commit; `t
 `paths` with `include` and `exclude`). Anything it cannot read (a trigger in another shape, a file it cannot fetch, a long list of changes)
 is not taken for that: it waits `findSeconds` and fails `no-release`.
 
+**A build the release definition does not release** is reached at once, with `observe` or `start-stage`, once the build is found: where the
+declared definition's CD trigger (its artifact's continuous-deployment trigger and branch filters, read as `create-and-start` reads them)
+leaves out the branch the build ran on, no release will be made, so it does not wait: *Nothing to release: release definition Portal (#42)
+releases no build of `feature/x` — its trigger takes `main`.* A trigger it cannot read, or a definition with none, is not taken for that: it
+waits `findSeconds` and fails `no-release`. `create-and-start` makes the release itself and is unchanged.
+
 It fails with:
 
 - `no-target`, `target-changed`: the target is not declared whole, or no longer resolves, with what was found;
 - `stage-failed`: the declared stage rejected, failed or canceled, or ended in a result `success` does not take, in its words;
 - `build-failed`: the declared pipeline's build of the merged commit did not succeed;
 - `no-release`: no build of the merged commit in the declared pipeline within `findSeconds` (and the merge not shown to build nothing),
-  or no release of the declared definition made from it within `findSeconds` where the action makes none;
+  or no release of the declared definition made from it within `findSeconds` where the action makes none (and its trigger not shown to
+  leave the build's branch out);
 - `ambiguous`: several releases of the declared definition made from the one build;
 - `rejected`: Azure DevOps refused to make the release, or to start the stage;
 - `timeout`: the attempt's deadline (the node's `timeoutSeconds`, else the step's 3600) came first, saying where the stage stood;

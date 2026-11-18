@@ -122,17 +122,31 @@ export async function builtNothing(repo, repositoryId, commit, target, pipeline)
 
 const numeric = (value) => (/^\d+$/.test(String(value ?? '').trim()) ? Number(value) : null);
 
+/** The CD triggers of `definition` that look at `build`'s pipeline: its artifactSource triggers naming no alias, or an alias of that pipeline. */
+function triggersOn(definition, build) {
+  const aliases = (definition.artifacts ?? []).filter((artifact) => artifact.type === 'Build' && numeric(artifact.definitionReference?.definition?.id) === build.definition?.id)
+    .map((artifact) => artifact.alias);
+  return (Array.isArray(definition.triggers) ? definition.triggers : []).filter((trigger) => trigger.triggerType === 'artifactSource' && (aliases.length === 0 || !trigger.artifactAlias || aliases.includes(trigger.artifactAlias)));
+}
+
+/** Whether `trigger` takes a build from `branch`: it sets no condition, or a condition names no branch, follows the build definition's, or matches. */
+const takesBranch = (trigger, branch) => !Array.isArray(trigger.triggerConditions) || trigger.triggerConditions.length === 0
+  || trigger.triggerConditions.some((each) => each.useBuildDefinitionBranch || !each.sourceBranch || branchHit(each.sourceBranch, branch));
+
 /** The release definitions, of those that take `build`'s pipeline, with a CD trigger on the branch the build ran on. */
-export function triggeredBy(definitions, build) {
+export const triggeredBy = (definitions, build) => definitions.filter((definition) => triggersOn(definition, build).some((trigger) => takesBranch(trigger, withoutHeads(build.sourceBranch))));
+
+/**
+ * The branch filters of `definition`'s CD trigger where that trigger, read whole, leaves out the branch `build` ran on, so the definition makes
+ * no release from it; else null: no trigger, one not read in a known shape, or one that takes the branch.
+ */
+export function leavesOut(definition, build) {
+  if (!Array.isArray(definition.triggers) || !build.sourceBranch) return null;
+  const own = triggersOn(definition, build);
   const branch = withoutHeads(build.sourceBranch);
-  return definitions.filter((definition) => {
-    const aliases = (definition.artifacts ?? []).filter((artifact) => artifact.type === 'Build' && numeric(artifact.definitionReference?.definition?.id) === build.definition?.id)
-      .map((artifact) => artifact.alias);
-    return (definition.triggers ?? []).some((trigger) => trigger.triggerType === 'artifactSource'
-      && (aliases.length === 0 || !trigger.artifactAlias || aliases.includes(trigger.artifactAlias))
-      && ((trigger.triggerConditions ?? []).length === 0
-        || trigger.triggerConditions.some((each) => each.useBuildDefinitionBranch || !each.sourceBranch || branchHit(each.sourceBranch, branch))));
-  });
+  if (own.length === 0 || own.some((trigger) => takesBranch(trigger, branch))) return null;
+  const named = own.flatMap((trigger) => trigger.triggerConditions.map((each) => `\`${withoutHeads(each.sourceBranch)}\``));
+  return [...new Set(named)].join(', ');
 }
 
 /** The stages a release's creation starts by itself, on its start event or chained after one; one not read counts, so a doubt is said. */

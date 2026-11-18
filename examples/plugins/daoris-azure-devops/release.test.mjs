@@ -192,6 +192,45 @@ test('a merge the declared pipeline does not build (its trigger leaves the chang
   assert.match(step.params.evidence.message, /Nothing to release: pipeline 7 does not build cccccccc on `main`, which changed \/docs\/readme\.md/);
 });
 
+/** A merge into a feature branch the pipeline built, release definition 3's trigger taking `on` (or its triggers set as `triggers`). */
+async function onFeature(on, triggers) {
+  const api = await merged();
+  api.pulls[0].targetRefName = 'refs/heads/feature/x';
+  api.builds[1].sourceBranch = 'refs/heads/feature/x';
+  api.definitions[0].triggers = triggers ?? [{ triggerType: 'artifactSource', artifactAlias: '_app-ci', triggerConditions: on.map((name) => ({ sourceBranch: name })) }];
+  api.releases.length = 0;
+  return api;
+}
+
+test('a build whose branch the release definition\'s trigger leaves out finishes saying Nothing to release, at once, naming the trigger', async (t) => {
+  const api = await onFeature(['refs/heads/main']);
+
+  for (const action of ['observe', 'start-stage']) {
+    const { step } = await released(t, api, { ...DECLARED, action, findSeconds: 30 });
+
+    assert.equal(step.params.state, 'reached');
+    assert.match(step.params.evidence.message, /Nothing to release: release definition app-release \(#3\) releases no build of `feature\/x` — its trigger takes `main`\./);
+  }
+  assert.deepEqual(writes(api), []);
+});
+
+test('a release definition trigger that cannot be read is not taken for leaving the branch out: the step waits and fails no-release', async (t) => {
+  const api = await onFeature([], [{ triggerType: 'artifactSource', artifactAlias: '_app-ci', triggerConditions: 'refs/heads/main' }]);
+
+  const { step } = await released(t, api, DECLARED);
+
+  assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
+});
+
+test('a release definition trigger that takes the build\'s branch still waits for its release', async (t) => {
+  const api = await onFeature(['refs/heads/feature/*']);
+
+  const { step } = await released(t, api, DECLARED);
+
+  assert.deepEqual([step.params.state, step.params.code], ['failed', 'no-release']);
+  assert.match(step.params.evidence.message, /No release of app-release \(#3\) was made from build/);
+});
+
 test('the declared stage of a pipeline run\'s own stages is watched where the target names no release definition, an approval said', async (t) => {
   const api = await merged({ classic: false });
   api.builds[1].status = 'inProgress';
