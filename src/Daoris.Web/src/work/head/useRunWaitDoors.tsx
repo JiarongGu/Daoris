@@ -9,20 +9,13 @@ import { StepHold } from '../../workflow/wait/StepHoldDoor';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import type { StepWait } from '../waits/dock';
 
-/**
- * A wait's release step doors, the run's view's own (`ReleaseStepDoors`), drawn on its step as the session's run read answers it:
- * *What needs you*'s row names no step kind, so the step's own facts (its kind and its wait's actor, words and page) come from the run.
- */
 export const releaseDoorsOf = (runs: readonly WorkflowRun[]) => (wait: StepWait) => {
   const run = runs.find((each) => each.graph?.run === wait.run);
   const step = run?.steps.find((each) => each.step.id === wait.node);
   return run && step ? <ReleaseStepDoors run={run} step={step} /> : null;
 };
 
-/**
- * The dock's run waits of `session`: its placing in Sessions and *What needs you*'s rows, as the shell pushes them, with their doors.
- * Its run is read only while a step waits on a plugin's actor, the wait a release's approval is.
- */
+/** The dock's run waits of `session` with their doors; a release step's are its run's view's (`releaseDoorsOf`), its run read while a step waits on a plugin's actor. */
 export function useRunWaitDoors(session: string | null) {
   const groups = useSessionGroups();
   const attention = useAttention();

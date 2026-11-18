@@ -26,9 +26,7 @@ import { WaitStrip } from '../waits/WaitStrip';
 import { SessionHead } from './SessionHead';
 import { releaseDoorsOf } from './useRunWaitDoors';
 
-// The dock above the composer presses every wait, so the session's head draws none of its cards. A release step waiting on its
-// approver stands there with the approval card its run's view draws, *Approve* and *Reject* where the plugin makes the approval as
-// no agent's tool, else the stage's page, beside the presses its row in *What needs you* offers.
+// The dock above the composer presses every wait, a release's approval with its run's view's card, so the head draws none of its cards.
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4', quest: 'q7', repository: 'engine', door: 'claude-code', state: 'awaiting-person', kind: 'driven',
@@ -71,7 +69,6 @@ describe('the dock, at a release step waiting on its approver', () => {
     drawDock();
 
     const line = screen.getByRole('group', { name: 'release-approve: waiting on approver: you' });
-    // The step's own presses stay beside the card.
     expect(within(line).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
     expect(within(line).getByRole('button', { name: 'End this work…' })).toBeInTheDocument();
     await userEvent.type(await within(line).findByRole('textbox', { name: 'Comment (optional)' }), 'Checked on staging.');
@@ -89,7 +86,6 @@ describe('the dock, at a release step waiting on its approver', () => {
     drawDock();
 
     const line = screen.getByRole('group', { name: 'release-approve: waiting on approver: you' });
-    // Asked of the plugin and the repository both, and still no press: the card opens the page.
     await waitFor(() => expect([sentTo(invoke, 'PLUGINS').length, sentTo(invoke, 'GIT_BRANCHES').length]).toEqual([1, 1]));
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
     expect(within(line).getByRole('button', { name: 'Open' })).toBeInTheDocument();

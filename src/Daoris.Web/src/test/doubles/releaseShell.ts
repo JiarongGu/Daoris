@@ -35,6 +35,6 @@ export function wireRelease(invoke: Mock, { tool = false, origin = ORIGIN as str
   });
 }
 
-/** The payloads `invoke` was handed for the route `type`, in order. */
+/** The payloads `invoke` received for the route `type`, in order. */
 export const sentTo = (invoke: Mock, type: string) =>
   invoke.mock.calls.filter((call) => call[1] === type).map((call) => (call[2] as { payload?: unknown } | undefined)?.payload);

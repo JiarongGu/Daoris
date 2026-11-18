@@ -316,10 +316,8 @@ export const APPROVAL_PAGE = 'https://dev.azure.com/acme/0f0f0f0f-0000-4000-8000
 
 const AZURE = { plugin: 'daoris-azure-devops' };
 
-/**
- * A release run at its approval: Azure DevOps's plugin's `release-approve` step waits on the approver, the person holding the role,
- * its wait the plugin's progress as `StepWaiting.WaitOf` answers it (the actor, its holder, the words and the release's page).
- */
+/** A release run at its approval: Azure DevOps's plugin's `release-approve` step waits on the approver, the person holding the role,
+ * its wait the plugin's progress as `StepWaiting.WaitOf` answers it (the actor, its holder, the words and the release's page). */
 export const GRAPH_RUN_APPROVAL = run([
   at(nodeCell('release-start', 'daoris-azure-devops/release-start', 'automatic', 'plugin', null, AZURE), 'done', 'reached',
     { node: 'daoris-azure-devops/release-start' }),
