@@ -22,7 +22,7 @@ public sealed class SessionListRouteProcessTests(ITestOutputHelper output) : Dri
 
     private BenchHome Bench => _home!.Bench;
 
-    public async Task InitializeAsync() => _home = await SessionListHome.MakeAsync(1250, 4);
+    public async Task InitializeAsync() => _home = await SessionListHome.MakeAsync(1250, 8, archived: 300, built: 30000);
 
     public async Task DisposeAsync()
     {
@@ -35,11 +35,16 @@ public sealed class SessionListRouteProcessTests(ITestOutputHelper output) : Dri
         Redirect("DAORIS_HOME", Bench.Home);
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
+        // Said, not held: the shell's own start besides the window's, its loop's come-up and its first look's settling.
+        var watch = Stopwatch.StartNew();
         await loop.ComeUpAsync(Bench.Client);
+        output.WriteLine($"the loop's come-up: {watch.ElapsedMilliseconds} ms");
+        watch.Restart();
         await loop.Settling;
+        output.WriteLine($"its settling: {watch.ElapsedMilliseconds} ms");
 
         var times = new LookTimes();
-        var watch = Stopwatch.StartNew();
+        watch.Restart();
         await GroupsStateSlice.LookAsync(loop, Bench.Client, CancellationToken.None, times: times);
         output.WriteLine($"the route's look: {watch.ElapsedMilliseconds} ms; "
             + string.Join(", ", times.Steps.Select(step => $"{step.Step} {step.Ms} ms")) + $"; trees {times.Trees}");

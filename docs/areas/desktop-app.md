@@ -248,7 +248,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     rows' outline until the groups slice first judges, never a list placed by the records alone, which would hold every part,
     archived line and ended intake as a row the first judgement takes away; and that judgement, as `SESSION_GROUPS`' answer to a
     window or to `daoris session list`, waits for no tree the machine's facts have not judged, nor walks one, while their first
-    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`'s `waits`, SESSIONFLASH1,
+    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`, SESSIONFLASH1,
     SESSIONLISTSLOW1). (from D185)
 
 **Flowcharts and the canvas**

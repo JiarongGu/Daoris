@@ -811,11 +811,10 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// A door asking before the parts' first judgement waits for it, and walks none: every window that asks then waits on
-    /// the one judgement, never a walk of its own.
+    /// A door asking before the parts' first judgement answers at once, walking none: each window reads the trees as it lands.
     /// </summary>
     [Fact]
-    public async Task A_door_before_the_parts_first_judgement_waits_for_it_and_walks_none()
+    public async Task A_door_before_the_parts_first_judgement_answers_at_once_and_walks_none()
     {
         var engineTree = Path.Combine("trees", "default", "engine", "s-1");
         var look = new SessionLook([Ended("e1", "engine", engineTree)], [], []);
@@ -833,20 +832,20 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         var walked = new List<string>();
 
-        var doors = Enumerable.Range(0, 2)
-            .Select(window => HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked), first: TimeSpan.FromMinutes(1))).ToList();
-        await Task.Delay(200);
+        Task<IKnowledgeSessionLook[]> Doors() => Task.WhenAll(Enumerable.Range(0, 2)
+            .Select(window => HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked)))).WaitAsync(Poll.Patience);
 
-        Assert.All(doors, door => Assert.False(door.IsCompleted));
+        Assert.All(await Doors(), read => Assert.Empty(read.Trees));
         answer.SetResult();
-        var reads = await Task.WhenAll(doors).WaitAsync(Poll.Patience);
+        await TreesReadAsync(facts);
+        var reads = await Doors();
         Assert.Empty(walked);
         Assert.All(reads, read => Assert.Equal(2, read.Trees[SessionGroups.Normal(engineTree)].Commits));
     }
 
     /// <summary>
     /// Where the parts' first judgement does not come within the wait, a door walks what is still not judged;
-    /// the wait is once, so the next door walks at once rather than wait again.
+    /// the wait is once, so the next door walks too rather than wait again.
     /// </summary>
     [Fact]
     public async Task A_door_whose_parts_never_answer_walks_after_its_wait_and_the_next_waits_no_more()
@@ -862,7 +861,7 @@ public sealed class HelpFactsTests : IDisposable
         facts.Start();
         var walked = new List<string>();
 
-        var first = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMilliseconds(200))
+        var first = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.Zero)
             .WaitAsync(Poll.Patience);
         var next = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk(walked, new TreeWork(2, 0)), first: TimeSpan.FromMinutes(10))
             .WaitAsync(Poll.Patience);
@@ -874,7 +873,7 @@ public sealed class HelpFactsTests : IDisposable
 
     /// <summary>
     /// Once the parts are judged, the door each window's tick asks starts no git, a second
-    /// window none either, where facts never started walk each tree with git.
+    /// window none either, where facts no part judged walk each tree with git past their wait.
     /// </summary>
     [Fact]
     public async Task A_door_once_the_parts_are_judged_starts_no_git_for_any_window()
@@ -900,6 +899,7 @@ public sealed class HelpFactsTests : IDisposable
         await TreesReadAsync(facts);
         var gits = 0;
         using var cold = new MachineFacts();
+        cold.Start();
 
         using (ProcessStarts.Within(_ =>
                {
@@ -910,7 +910,7 @@ public sealed class HelpFactsTests : IDisposable
             for (var window = 0; window < 2; window++) await HelpFacts.WithTreesAsync(facts, look, root.Holds, root.WorkAsync);
             Assert.Equal(0, Volatile.Read(ref gits));
 
-            await HelpFacts.WithTreesAsync(cold, look, root.Holds, root.WorkAsync);
+            await HelpFacts.WithTreesAsync(cold, look, root.Holds, root.WorkAsync, first: TimeSpan.Zero);
         }
 
         Assert.True(Volatile.Read(ref gits) > 0);

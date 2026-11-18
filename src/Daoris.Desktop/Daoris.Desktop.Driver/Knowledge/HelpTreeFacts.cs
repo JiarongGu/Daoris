@@ -13,12 +13,12 @@ internal static class HelpTreeFacts
     public const int AtOnce = 4;
 
     /// <summary>
-    /// The longest a door reading the trees waits for the parts' first judgement, once in the facts' life: a part's walk,
-    /// two at once, against the 24.9 s the whole walk took on a loaded machine.
+    /// How long a door reading the trees walks none the parts have not judged, at most, while their first judgement is to come, once
+    /// in the facts' life: a part's walk, two at once, against the 24.9 s the whole walk took on a loaded machine.
     /// </summary>
     public static readonly TimeSpan First = TimeSpan.FromSeconds(10);
 
-    /// <summary>The one wait for the parts' first judgement of each facts' life, which every door then awaits.</summary>
+    /// <summary>The one wait for the parts' first judgement of each facts' life, past which a door walks what no part judged.</summary>
     private static readonly ConditionalWeakTable<MachineFacts, Task> FirstTrees = new();
 
     /// <summary>
@@ -106,47 +106,36 @@ internal static class HelpTreeFacts
     /// walked every tree before, and the facts' look is judged again at once where it is behind the door's, so its part asks it next.
     /// </summary>
     /// <remarks>
-    /// <para><b>Waited for once.</b> Before the parts' first judgement every tree is one no part asked: the door waits for it, at most
-    /// <paramref name="first"/>, once in the facts' life, each door then asking awaiting the one wait, so the windows opening with the
-    /// shell do not each walk every tree beside the parts. Past it, what is still not judged is walked, <see cref="AtOnce"/> at once; a
-    /// repository registered later, whose part is judged as the answers name it, is walked until it is, with no wait.</para>
+    /// <para><b>Never waited for.</b> While the parts' first judgement is to come, the facts not begun or their first wait not passed,
+    /// the look is answered at once with the trees they judged, none walked, so a start's first list waits on no git; the groups
+    /// slice hears the parts land and judges again. The first wait runs once in the facts' life, at most <paramref name="first"/>. Past
+    /// it, what is still not judged is walked, <see cref="AtOnce"/> at once: a repository registered later, whose part is judged as the
+    /// answers name it, is walked until it is.</para>
     ///
     /// <para><b>As fresh as the parts.</b> A part is judged on its repository's <c>refs</c> wake, its rest holding a burst to one judgement
     /// each half minute (<see cref="HelpFacts.TreesRules"/>); at once as the look lands with its trees moved; on the configuration; and at its
-    /// deadline. Where the facts never started (a terminal, a test), every tree is walked, as before.</para>
-    /// <para><b>Or not waited for</b> (<paramref name="waits"/> false, the groups slice's, which hears the parts land): while the parts'
-    /// first judgement is to come, the facts not begun or their wait not passed, the look is answered at once with the trees they judged,
-    /// none walked, so a start's first list waits on no git. Past that wait it walks as a door does.</para>
+    /// deadline. Where the facts never started, no tree is walked.</para>
     /// </remarks>
     /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>), as the parts read it.</param>
     /// <param name="walk"><see cref="SessionTrees.WorkAsync"/>, git's walk of one tree; a test hands its own.</param>
     /// <param name="only">The sessions asked about: their trees alone.</param>
-    /// <param name="first">The wait for the parts' first judgement; <see cref="First"/> unless a test says another.</param>
-    /// <param name="waits">Whether the parts' first judgement is waited for and the trees no part judged walked before it.</param>
+    /// <param name="first">The parts' first judgement's wait; <see cref="First"/> unless a test says another.</param>
     public static async Task<IKnowledgeSessionLook> WithTreesAsync(
         MachineFacts facts, IKnowledgeSessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> walk,
-        IReadOnlyCollection<string>? only = null, TimeSpan? first = null, CancellationToken ct = default, bool waits = true)
+        IReadOnlyCollection<string>? only = null, TimeSpan? first = null, CancellationToken ct = default)
     {
         var asked = KnowledgeWorkOrders.Current.TreesToJudge(look, held, only);
         var read = Judged(facts.Current, asked);
         var trees = new Dictionary<string, TreeWork>(look.Trees, StringComparer.OrdinalIgnoreCase);
-        if (read.NotJudged.Count > 0 && (facts.Started || !waits))
+        foreach (var (tree, work) in read.Trees) trees[tree] = work;
+        if (read.NotJudged.Count == 0 || !facts.Started
+            || FirstTrees.GetValue(facts, started => FirstAsync(started, first ?? First)) is not { IsCompleted: true })
         {
-            var bound = first ?? First;
-            var once = facts.Started ? FirstTrees.GetValue(facts, started => FirstAsync(started, bound)) : null;
-            if (!waits && once is not { IsCompleted: true })
-            {
-                foreach (var (tree, work) in read.Trees) trees[tree] = work;
-                return look.WithTrees(trees);
-            }
-
-            await once!.WaitAsync(ct).ConfigureAwait(false);
-            read = Judged(facts.Current, asked);
-            // A session ended after the facts' look: their look judged again at once, which reads the door's kept a moment ago.
-            if (read.NotJudged.Count > 0 && Behind(facts.Current, held, read.NotJudged)) _ = facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None);
+            return look.WithTrees(trees);
         }
 
-        foreach (var (tree, work) in read.Trees) trees[tree] = work;
+        // A session ended after the facts' look: their look judged again at once, which reads the door's kept a moment ago.
+        if (Behind(facts.Current, held, read.NotJudged)) _ = facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None);
         // A few at once, as a part reads its own: one after another, each walk's git queued behind the first look's held a
         // start's Sessions list for the sum of them.
         var walked = new TreeWork?[read.NotJudged.Count];

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The trees a door reads that no part has judged are walked a few at once, never one after another: the route's groups wait on
-/// these walks before the machine's facts have begun, and each walk's git queues behind the first look's.
+/// The trees a door reads that no part has judged, past the parts' first judgement's wait, are walked a few at once, never one after
+/// another, since each walk's git queues behind the parts' own; before that wait has passed, none is walked.
 /// </summary>
 public sealed class HelpTreeWalkTests
 {
@@ -16,6 +16,7 @@ public sealed class HelpTreeWalkTests
         var trees = Enumerable.Range(1, 6).Select(each => Path.Combine("trees", "default", "engine", $"s-{each}")).ToList();
         var look = new SessionLook([.. trees.Select((tree, at) => Ended($"e{at}", "engine", tree))], [], []);
         using var facts = new MachineFacts();
+        facts.Start();
         var walking = 0;
         var most = 0;
 
@@ -28,7 +29,8 @@ public sealed class HelpTreeWalkTests
             return new TreeWork(1, 0);
         }
 
-        var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(Poll.Patience);
+        // No part answers: the first wait, of none, is past.
+        var read = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, first: TimeSpan.Zero).WaitAsync(Poll.Patience);
 
         Assert.Equal(trees.Select(SessionGroups.Normal).Order(StringComparer.OrdinalIgnoreCase), read.Trees.Keys.Order(StringComparer.OrdinalIgnoreCase));
         Assert.All(read.Trees.Values, work => Assert.Equal(1, work.Commits));
@@ -42,20 +44,23 @@ public sealed class HelpTreeWalkTests
         var gone = Path.Combine("trees", "default", "engine", "s-2");
         var look = new SessionLook([Ended("e1", "engine", kept), Ended("e2", "engine", gone)], [], []);
         using var facts = new MachineFacts();
+        facts.Start();
 
         var read = await HelpFacts.WithTreesAsync(
-            facts, look, _ => true, (tree, _) => Task.FromResult(tree == gone ? null : new TreeWork(2, 0))).WaitAsync(Poll.Patience);
+            facts, look, _ => true, (tree, _) => Task.FromResult(tree == gone ? null : new TreeWork(2, 0)), first: TimeSpan.Zero).WaitAsync(Poll.Patience);
 
         Assert.Equal([SessionGroups.Normal(kept)], read.Trees.Keys);
     }
 
-    /// <summary>A reader that does not wait walks nothing before the parts' first judgement or its wait has passed, then as a door.</summary>
+    /// <summary>A reader walks nothing before the facts begin, nor before the parts' first judgement or its wait has passed, then as a door.</summary>
     [Fact]
-    public async Task A_reader_that_does_not_wait_walks_nothing_before_the_parts_first_judgement()
+    public async Task A_reader_walks_nothing_before_the_parts_first_judgement()
     {
         var tree = Path.Combine("trees", "default", "engine", "s-1");
         var look = new SessionLook([Ended("e1", "engine", tree)], [], []);
-        using var facts = new MachineFacts();
+        using var unbegun = new MachineFacts();
+        using var waiting = new MachineFacts();
+        using var past = new MachineFacts();
         var walked = 0;
 
         Task<TreeWork?> Walk(string _, CancellationToken __)
@@ -64,20 +69,19 @@ public sealed class HelpTreeWalkTests
             return Task.FromResult<TreeWork?>(new TreeWork(1, 0));
         }
 
-        var unbegun = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, waits: false).WaitAsync(Poll.Patience);
-        facts.Start();
-        var waiting = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, first: TimeSpan.FromMilliseconds(300), waits: false)
-            .WaitAsync(Poll.Patience);
+        waiting.Start();
+        past.Start();
+        var before = await HelpFacts.WithTreesAsync(unbegun, look, _ => true, Walk, first: TimeSpan.Zero).WaitAsync(Poll.Patience);
+        var during = await HelpFacts.WithTreesAsync(waiting, look, _ => true, Walk, first: TimeSpan.FromMinutes(10)).WaitAsync(Poll.Patience);
 
-        Assert.Empty(unbegun.Trees);
-        Assert.Empty(waiting.Trees);
+        Assert.Empty(before.Trees);
+        Assert.Empty(during.Trees);
         Assert.Equal(0, Volatile.Read(ref walked));
 
-        await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk).WaitAsync(Poll.Patience);
-        var past = await HelpFacts.WithTreesAsync(facts, look, _ => true, Walk, waits: false).WaitAsync(Poll.Patience);
+        var after = await HelpFacts.WithTreesAsync(past, look, _ => true, Walk, first: TimeSpan.Zero).WaitAsync(Poll.Patience);
 
-        Assert.Equal(1, past.Trees[SessionGroups.Normal(tree)].Commits);
-        Assert.Equal(2, Volatile.Read(ref walked));
+        Assert.Equal(1, after.Trees[SessionGroups.Normal(tree)].Commits);
+        Assert.Equal(1, Volatile.Read(ref walked));
     }
 
     private static SessionRecord Ended(string id, string repository, string tree) =>

@@ -16,16 +16,21 @@ internal static class SessionsListing
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         times ??= new LookTimes();
-        // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account.
+        // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account. Its rows are placed from what
+        // is recorded, no tree walked, as the window's are; then the trees of the rows needing the person alone (ListedTrees).
         var look = await SessionGroups.LookAsync(
-                world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf, times: times)
+                world.Service, world.Config, world.Unadopted, lastLook: null, world.Home, only: [], ct: ct, coolingOf: world.CoolingOf, times: times)
             .ConfigureAwait(false);
         look = look with
         {
             RunWaits = times.Time("runWaits", () => WorkOrdersWorkflows.Current.PersonWaits(world.Home)),
             Passages = times.Time("passages", () => WorkOrdersWorkflows.Current.Passages(world.Home)),
         };
-        foreach (var line in ListLines(look, ask, world.Home, DateTimeOffset.UtcNow, times)) output.WriteLine(line);
+        var trees = new SessionTrees(world.Home);
+        var listed = await ListedTrees.JudgeAsync(
+            look, times.Time("rows", () => SessionGroups.Read(look)), trees.Holds, world.Walk ?? trees.WorkAsync, times, ct).ConfigureAwait(false);
+        foreach (var line in ListLines(listed.Look, ask, world.Home, DateTimeOffset.UtcNow, times, listed.Rows)) output.WriteLine(line);
+        if (listed.Unread > 0 && !ask.Json) output.WriteLine(ListedTrees.Unread(listed.Unread));
         SessionListLog.Said(world.Log, watch.Elapsed, look.Records.Count, WorkplaceDoors.Terminal, times);
         return 0;
     }
