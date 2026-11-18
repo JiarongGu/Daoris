@@ -13,6 +13,7 @@ namespace Daoris.Driver;
 internal static class CodexProvider
 {
     private const string Evidence = "Codex's declaration";
+    private const string BesideEvidence = "codex-acp 2.1.1's bundle, read (fixtures/providers/codex/corpus.jsonl)";
 
     private const string HomeVariable = "CODEX_HOME";
 
@@ -42,7 +43,13 @@ internal static class CodexProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(false, Evidence),
-                WordsAtNextStep: Known<bool>.Declared(true, "the protocol transport's reading, not measured on this door")),
+                WordsAtNextStep: Known<bool>.Declared(true, "the protocol transport's reading, not measured on this door"),
+                // Its wire announces no subagent: one is seen only when it calls Daoris. Each task is announced with its call and ended,
+                // stopped alone where it says `canStop` (the adapter's bundle, read).
+                ReportsChildren: Known<bool>.Declared(false, BesideEvidence),
+                ReportsTasks: Known<bool>.Declared(true, BesideEvidence),
+                OneTaskStopped: Known<bool>.Declared(true, BesideEvidence),
+                OneChildStopped: Known<bool>.Declared(false, BesideEvidence)),
             // Its typed failure categories, marked only for a client that asks for them.
             new DoorTablesPart(CodexErrors.Words, null, Limits: CodexLimits.Words),
             new AccountKey(CodexAccounts.Agent),

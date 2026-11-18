@@ -24,10 +24,10 @@ public sealed class AcpStreamsTests
 
         Assert.Equal(
             [
-                new WireReading.ChildSeen("a1", ChildSignal.Announced) { Depth = 1, Name = new string('n', 130), Task = task },
+                new WireReading.ChildSeen("a1", ChildSignal.Announced) { Call = "a1", Depth = 1, Name = new string('n', 130), Task = task },
                 new WireReading.ChildSeen("a2", ChildSignal.Announced) { Parent = "a1", Name = "Nested", Task = "look" },
                 new WireReading.ChildSeen("a3", ChildSignal.Announced),
-                new WireReading.ChildSeen("a4", ChildSignal.Announced) { Depth = 1, Name = "Rooted", Task = "  \nsecond" },
+                new WireReading.ChildSeen("a4", ChildSignal.Announced) { Call = "a4", Depth = 1, Name = "Rooted", Task = "  \nsecond" },
             ],
             told.Spawns);
     }
@@ -78,20 +78,38 @@ public sealed class AcpStreamsTests
     }
 
     [Fact]
-    public void A_subagent_s_tool_call_is_kept_by_its_stream_and_its_words_are_not()
+    public void A_subagent_s_calls_and_words_are_said_on_its_stream_for_its_own_record()
     {
-        var kept = new List<(string Stream, SessionEvent Call)>();
-        var streams = new AcpStreams(
-            new SessionStreams(new SessionOutput(), "d-1"), new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet,
-            children: new Told(), calls: (stream, e) => kept.Add((stream, e)));
+        var kept = new Kept();
+        var streams = new AcpStreams(kept, new AcpConsole(_ => { }, AcpConsole.Quiet), _ => { }, AcpConsole.Quiet, children: new Told());
         Take(streams, "s-1", Spawned("a1", "Fixer", "fix it"));
 
         Take(streams, "a1", JsonSerializer.Serialize(new { sessionUpdate = "tool_call", toolCallId = "c1", kind = "edit", title = "Edit a.cs", status = "pending" }));
         Take(streams, "a1", JsonSerializer.Serialize(new { sessionUpdate = "agent_message_chunk", content = new { type = "text", text = "done" } }));
 
-        var (stream, call) = Assert.Single(kept);
-        Assert.False(string.IsNullOrEmpty(stream));
-        Assert.Equal(("c1", "edit", "Edit a.cs"), (call.Id, call.ToolKind, call.Title));
+        Assert.All(kept.Said, said => Assert.Equal("subagent/a1", said.Stream));
+        Assert.Equal(
+            [("tool", "c1", "Edit a.cs"), ("message", null, null)],
+            kept.Said.Select(said => (said.Event.Kind, said.Event.Id, said.Event.Title)));
+    }
+
+    private sealed class Kept : ISessionStreams
+    {
+        public List<(string Stream, SessionEvent Event)> Said { get; } = [];
+
+        public void Open(SessionStream stream)
+        {
+        }
+
+        public void Line(string streamId, string text)
+        {
+        }
+
+        public void End(string streamId, string? state)
+        {
+        }
+
+        void ISessionStreams.Said(string streamId, SessionEvent e) => Said.Add((streamId, e));
     }
 
     private static AcpStreams Streams(IReadingSink children) => new(
@@ -125,7 +143,10 @@ public sealed class AcpStreamsTests
         {
             if (reading is WireReading.ChildSeen seen) Spawns.Add(seen);
             else if (reading is WireReading.ChildEnded { Signal: ChildSignal.Announced } ended) Ends.Add((ended.Child, ended.Word));
-            else throw new InvalidOperationException($"the streams said {reading.GetType().Name}, which is no child's");
+            else if (reading is not (WireReading.TaskStarted or WireReading.TaskEnded))
+            {
+                throw new InvalidOperationException($"the streams said {reading.GetType().Name}, which is no child's or task's");
+            }
         }
     }
 }

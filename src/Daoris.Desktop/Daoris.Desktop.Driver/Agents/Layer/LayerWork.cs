@@ -43,7 +43,7 @@ internal sealed class LayerWork
         }
 
         _tasks.Add(task);
-        return new WireReading.TaskStarted(task) { Kind = started.Kind, Name = started.Description };
+        return new WireReading.TaskStarted(task) { Call = started.CallId, Kind = started.Kind, Name = started.Description };
     }
 
     /// <summary>The reading a task's end is, in the agent's word; null for a start the turn never said and for an end said already.</summary>

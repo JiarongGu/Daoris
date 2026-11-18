@@ -80,9 +80,9 @@ public sealed class NativeTasksTests
     {
         Assert.Equal(
             [
-                new WireReading.TaskStarted("b0fetch") { Kind = "local_bash", Name = "git fetch" },
+                new WireReading.TaskStarted("b0fetch") { Call = "toolu_fetch", Kind = "local_bash", Name = "git fetch" },
                 new WireReading.TaskEnded("b0fetch", "completed") { Output = "X:/daoris/scratch/tasks/b0fetch.output" },
-                new WireReading.TaskStarted("b1gates") { Kind = "local_bash", Name = "npm run gates" },
+                new WireReading.TaskStarted("b1gates") { Call = "toolu_gates", Kind = "local_bash", Name = "npm run gates" },
                 new WireReading.TaskEnded("b1gates", "stopped") { Output = "X:/daoris/scratch/tasks/b1gates.output", AfterTurn = true },
             ],
             Read(BackgroundCut));

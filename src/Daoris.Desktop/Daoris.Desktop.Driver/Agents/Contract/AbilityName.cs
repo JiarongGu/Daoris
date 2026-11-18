@@ -16,10 +16,13 @@ public static class AbilityName
     public const string RequestsHeld = nameof(AbilitiesPart.RequestsHeld);
     public const string ServersOnWire = nameof(AbilitiesPart.ServersOnWire);
     public const string LeavesOwnServersOut = nameof(AbilitiesPart.LeavesOwnServersOut);
+    public const string ReportsChildren = nameof(AbilitiesPart.ReportsChildren);
+    public const string ReportsTasks = nameof(AbilitiesPart.ReportsTasks);
+    public const string OneChildStopped = nameof(AbilitiesPart.OneChildStopped);
 
     public static IReadOnlyList<string> All { get; } =
     [
         Interactive, Resumes, TakesSettings, ServersInherit, Structured, WordsAtNextStep, Steering, StopKeepsConversation,
-        OneTaskStopped, ResumeFailsClosed, RequestsHeld, ServersOnWire, LeavesOwnServersOut,
+        OneTaskStopped, ResumeFailsClosed, RequestsHeld, ServersOnWire, LeavesOwnServersOut, ReportsChildren, ReportsTasks, OneChildStopped,
     ];
 }

@@ -107,7 +107,9 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
         if (frame.Text("parent_tool_use_id") is { Length: > 0 } parent)
         {
             var child = ChildOf(parent);
-            foreach (var text in child.Words.Read(frame).Lines) streams.Line(child.StreamId, text);
+            var mapped = child.Words.Read(frame);
+            foreach (var text in mapped.Lines) streams.Line(child.StreamId, text);
+            foreach (var e in mapped.Events) streams.Said(child.StreamId, e);
             return true;
         }
 
@@ -123,6 +125,8 @@ internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say,
     }
 
     public void Said(string call, string text) => streams.Line(ChildOf(call).StreamId, text);
+
+    public void Kept(string call, SessionEvent e) => streams.Said(ChildOf(call).StreamId, e);
 
     /// <summary>The child its spawning call names; one nobody announced (a synchronous one, which has no task) is still not the session's.</summary>
     private Child ChildOf(string call)

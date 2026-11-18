@@ -42,7 +42,7 @@ public sealed class AskDaorisSecondCheck(
         new TurnEvidence(events.After(session, 0).Events, Lines(ChildLineage.PathOf(home, session)), presses(session))
         {
             Held = held(session),
-            Streams = stream => ChildCalls.Read(home, session, stream),
+            Streams = stream => events.ChildCalls(session, stream),
         });
 
     private bool On()
