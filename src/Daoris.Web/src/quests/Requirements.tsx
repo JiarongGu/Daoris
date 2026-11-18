@@ -61,6 +61,21 @@ export function RequirementItem({ number, requirement, answer, waiting = false }
   );
 }
 
+/** **Every requirement, numbered as the service orders them**: a quest's page answers each; an ask's page lists them with no answer. */
+export function RequirementList({ requirements, answerOf, waiting = false }: {
+  requirements: QuestRequirement[];
+  answerOf?: (number: number) => QuestAnswer | null;
+  waiting?: boolean;
+}) {
+  return (
+    <ol className="m-0 grid list-none gap-3 p-0">
+      {requirements.map((requirement, index) => (
+        <RequirementItem key={index} number={index + 1} requirement={requirement} answer={answerOf?.(index + 1)} waiting={waiting} />
+      ))}
+    </ol>
+  );
+}
+
 /**
  * **What the person required of a quest, and how its done answered**: every requirement, numbered
  * as the service orders them, which is how its done answers them.
@@ -112,17 +127,7 @@ export function QuestRequirements({ id, requirements, answers: given, status, he
             : t('quests.requirements.held')}
         </p>
       )}
-      <ol className="m-0 grid list-none gap-3 p-0">
-        {requirements.map((requirement, index) => (
-          <RequirementItem
-            key={index}
-            number={index + 1}
-            requirement={requirement}
-            answer={answerOf(index + 1)}
-            waiting={held}
-          />
-        ))}
-      </ol>
+      <RequirementList requirements={requirements} answerOf={answerOf} waiting={held} />
       {!closed && answers.length === 0 && (
         <p className="m-0 mt-2.5 text-small text-ink-faint">{t('quests.requirements.toAnswer')}</p>
       )}

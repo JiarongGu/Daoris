@@ -349,7 +349,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     with the ones they said yes to, as they edited them (`--require`), so each quest the ask becomes passes its holds step on them;
     where the person asks for work to be delivered without their press, it puts their through words on it too (`--through`, `ask
     through`). Each is verified verbatim against their messages in its conversation, and the ask's card shows each requirement and
-    the through words, so the person's yes there is to them. In restricted mode it proposes a run's step on the
+    the through words, so the person's yes there is to them; the service's answer for an ask carries its requirements (none for an
+    older record) and its page lists each beside the through words. In restricted mode it proposes a run's step on the
     person's card and never presses it; in full access it presses every step of a run (Accept, changes, pass over, stop, task,
     approval, fix) as the person, said once and listed in Notifications. The room says one rule, do it or send it on: a simple act
     on this machine is its own where its mode lets it press, work that changes a repository's content goes to that repository as a
