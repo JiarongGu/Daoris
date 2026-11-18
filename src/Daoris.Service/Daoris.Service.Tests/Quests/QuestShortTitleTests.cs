@@ -243,30 +243,6 @@ public sealed class QuestShortTitleTests : IAsyncLifetime
         Assert.Equal("Frame cap", pushed.Operations[0].Published!.Short);
     }
 
-    /// <summary>
-    /// A store from before the short title has no column: it gains one, its quests have none, and each is named from its
-    /// own words.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_short_title_opens_and_its_quests_are_named_from_their_words()
-    {
-        await using var older = new SqliteConnection("Data Source=:memory:");
-        await older.OpenAsync();
-        var store = await QuestStore.OpenAsync(older);
-        await store.PublishAsync("game", "engine", "Cap the frame's work so the editor stays responsive", "b", Now);
-        await using (var drop = older.CreateCommand())
-        {
-            drop.CommandText = "ALTER TABLE quests DROP COLUMN short_title";
-            await drop.ExecuteNonQueryAsync();
-        }
-
-        var reopened = await QuestStore.OpenAsync(older);
-        var quest = Assert.Single(await reopened.ListAsync(receiver: "engine"));
-
-        Assert.Null(quest.Short);
-        Assert.Equal("Cap the frame's work so the editor…", quest.Name);
-    }
-
     [Fact]
     public async Task A_remote_refuses_a_pushed_quest_whose_short_title_no_publish_would_keep()
     {

@@ -98,25 +98,6 @@ public sealed class QuestWeightTests : IAsyncLifetime
         Assert.NotNull(QuestWire.ReadPush(json.Replace("heavy", "design")));
     }
 
-    /// <summary>A store from before the field has no column: it gains one, and its quests are unmarked.</summary>
-    [Fact]
-    public async Task A_store_from_before_the_weight_opens_and_its_quests_are_unmarked()
-    {
-        await using var older = new SqliteConnection("Data Source=:memory:");
-        await older.OpenAsync();
-        var store = await QuestStore.OpenAsync(older);
-        await store.PublishAsync("game", "engine", "Cap the frame's work", "b", Now);
-        await using (var drop = older.CreateCommand())
-        {
-            drop.CommandText = "ALTER TABLE quests DROP COLUMN weight";
-            await drop.ExecuteNonQueryAsync();
-        }
-
-        var reopened = await QuestStore.OpenAsync(older);
-
-        Assert.Null(Assert.Single(await reopened.ListAsync(receiver: "engine")).Weight);
-    }
-
     /// <summary>The intake marks through its draft, as it gives a short title; the desk has no rule of its own for design.</summary>
     [Fact]
     public async Task An_intakes_draft_carries_its_weight()

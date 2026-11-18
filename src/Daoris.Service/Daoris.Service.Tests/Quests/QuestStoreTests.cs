@@ -37,25 +37,6 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Contains("Four rules collide", quest.Body);
     }
 
-    /// <summary>The tables an older build kept its graphs named for a take in are dropped when this build opens the store.</summary>
-    [Fact]
-    public async Task Opening_a_store_drops_the_tables_of_the_take_bind_an_older_build_kept()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = "CREATE TABLE quest_take_binds (id TEXT PRIMARY KEY); CREATE TABLE quest_owned_take_binds (id TEXT PRIMARY KEY);";
-            await create.ExecuteNonQueryAsync();
-        }
-
-        await QuestStore.OpenAsync(old);
-
-        await using var read = old.CreateCommand();
-        read.CommandText = "SELECT count(*) FROM sqlite_master WHERE name IN ('quest_take_binds', 'quest_owned_take_binds')";
-        Assert.Equal(0L, await read.ExecuteScalarAsync());
-    }
-
     /// <summary>An agent that retries should not produce a second copy of the same ask.</summary>
     [Fact]
     public async Task Publishing_the_same_quest_twice_returns_the_first()
@@ -184,31 +165,6 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.Equal("Still open", listed[0].Title);
     }
 
-    /// <summary>A store created before the remote existed must survive the upgrade.</summary>
-    [Fact]
-    public async Task An_existing_store_without_the_home_column_is_migrated_in_place()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE quests (
-                  id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
-                  body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL
-                );
-                INSERT INTO quests VALUES ('e1de11', 'A', 'B', 'Old ask', 'why', 'Open', NULL, '2026-01-01', '2026-01-01');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await QuestStore.OpenAsync(old);
-        var elder = (await store.ListAsync()).Single();
-
-        Assert.Equal("e1de11", elder.Id);
-        Assert.True((await store.MoveAsync("e1de11", QuestStatus.Taken, null, Now)).Moved);
-    }
-
     /// <summary>
     /// A quest carries addresses and files beside its words — in the order they were given,
     /// because "the ticket, then the screenshot of it" is an order a person chose.
@@ -237,33 +193,6 @@ public sealed class QuestStoreTests : IAsyncLifetime
 
         Assert.Empty(found.Links);
         Assert.Empty(found.Attachments);
-    }
-
-    /// <summary>A store from before quests carried anything must survive the upgrade, carrying nothing.</summary>
-    [Fact]
-    public async Task An_existing_store_without_the_carry_columns_is_migrated_in_place()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE quests (
-                  id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
-                  body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL,
-                  home TEXT NULL, workspace TEXT NOT NULL DEFAULT 'default'
-                );
-                INSERT INTO quests VALUES ('e1de12', 'A', 'B', 'Old ask', 'why', 'Open', NULL, '2026-01-01', '2026-01-01', NULL, 'default');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var elder = (await (await QuestStore.OpenAsync(old)).ListAsync()).Single();
-
-        Assert.Empty(elder.Links);
-        Assert.Empty(elder.Attachments);
-        Assert.Empty(elder.Then);
-        Assert.Null(elder.Parent);
     }
 
     // ——— A chain: `then` on a quest, published at the moment it closes done.

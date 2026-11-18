@@ -683,53 +683,6 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A store written by the build before this one — a log with no numbers, a quests table that still
-    /// marks mirror rows — opens as a machine with nothing fetched: the mirror row goes (the first fetch
-    /// brings it back), the log gains its column, and what it held is pending, ready to push.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_sync_opens_with_its_history_pending()
-    {
-        var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        _connections.Add(old);
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE quests (
-                  id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
-                  body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL,
-                  home TEXT NULL, workspace TEXT NOT NULL DEFAULT 'default', links TEXT NOT NULL DEFAULT '[]',
-                  attachments TEXT NOT NULL DEFAULT '[]', then_steps TEXT NOT NULL DEFAULT '[]', parent TEXT NULL
-                );
-                CREATE TABLE quest_log (
-                  position INTEGER PRIMARY KEY, quest TEXT NOT NULL, kind TEXT NOT NULL, machine TEXT NOT NULL,
-                  sequence INTEGER NOT NULL, at TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE (machine, sequence)
-                );
-                CREATE TABLE quest_machine (one INTEGER PRIMARY KEY CHECK (one = 1), id TEXT NOT NULL);
-                INSERT INTO quest_machine VALUES (1, 'feedbeeffeedbeef');
-                INSERT INTO quests VALUES ('aaaaaaaaaaaa', 'Asker', 'Federated', 'Mine', 'b', 'Open', NULL,
-                  '2026-09-23T10:00:00.0000000+00:00', '2026-09-23T10:00:00.0000000+00:00', NULL, 'default', '[]', '[]', '[]', NULL);
-                INSERT INTO quests VALUES ('bbbbbbbbbbbb', 'Asker', 'Federated', 'Theirs', 'b', 'Open', NULL,
-                  '2026-09-23T10:00:00.0000000+00:00', '2026-09-23T10:00:00.0000000+00:00', 'remote', 'default', '[]', '[]', '[]', NULL);
-                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload) VALUES ('aaaaaaaaaaaa', 'published',
-                  'feedbeeffeedbeef', 1, '2026-09-23T10:00:00.0000000+00:00',
-                  '{"from":"Asker","to":"Federated","title":"Mine","body":"b","workspace":"default","links":[],"attachments":[],"then":[]}');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await QuestStore.OpenAsync(old);
-
-        Assert.Null(await store.FindAsync("bbbbbbbbbbbb"));
-        Assert.Equal("feedbeeffeedbeef", store.Machine);
-        Assert.Equal(0, await store.CursorAsync(Workspaces.Default));
-        var pending = Assert.Single(await store.PendingAsync(Workspaces.Default, _ => true));
-        Assert.Equal(("aaaaaaaaaaaa", 1L, (long?)null), (pending.Quest, pending.Sequence, pending.Number));
-        Assert.True((await store.MoveAsync("aaaaaaaaaaaa", QuestStatus.Taken, null, Now)).Moved);
-    }
-
-    /// <summary>
     /// A remote that cannot be reached is a wall the pass NAMES, never an exception out of it — the take
     /// that ran it stands here, unconfirmed, and nothing about the store moved.
     /// </summary>
@@ -786,29 +739,6 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>Naming no conflict dismisses every one the quest carries — the terminal's form; naming one leaves the rest.</summary>
-    /// <summary>
-    /// A cache from before dismissals holds conflicts with no sequence, and a conflict with no sequence
-    /// cannot be named to dismiss. The store fills them in from the log as it opens.
-    /// </summary>
-    [Fact]
-    public async Task A_cached_conflict_from_before_dismissals_gains_its_sequence_on_open()
-    {
-        var quest = await RacedAsync();
-        var original = Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts);
-        var connection = _connections[1];
-        await using (var strip = connection.CreateCommand())
-        {
-            strip.CommandText = $"UPDATE quests SET conflicts = replace(conflicts, '\"sequence\":{original.Sequence},', '') WHERE id = $id";
-            strip.Parameters.AddWithValue("$id", quest.Id);
-            await strip.ExecuteNonQueryAsync();
-        }
-
-        Assert.Equal(0, Assert.Single((await _b.FindAsync(quest.Id))!.Conflicts).Sequence);
-        var reopened = await QuestStore.OpenAsync(connection);
-
-        Assert.Equal(original.Sequence, Assert.Single((await reopened.FindAsync(quest.Id))!.Conflicts).Sequence);
-    }
-
     [Fact]
     public async Task Dismissing_names_one_conflict_or_every_one_the_quest_carries()
     {
@@ -1441,9 +1371,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
     /// of the source reaches the remote first; C's chain then publishes the same step anew (its id comes from the parent and the step),
     /// after B's pass found its loss or before it. B's take of the step lost with the work it is made on, and B's session runs until
     /// its driver's next look: its done, decline or set-up on the open step lands nowhere. B's store refuses it inside its write, a
-    /// remote refuses one a build before this one pushes, saying the step is published anew (never the person's reopen), and B's
-    /// rebase loses one such a build left pending. B's claim on the step reads lost, to another machine's take; the step stays open on
-    /// C's work everywhere, and a fresh take of it is still B's to make.
+    /// remote refuses one that is pushed, saying the step is published anew (never the person's reopen). B's claim on the step reads
+    /// lost, to another machine's take; the step stays open on C's work everywhere, and a fresh take of it is still B's to make.
     /// </summary>
     [Theory]
     [InlineData(QuestOperationKind.Done, false)]
@@ -1531,18 +1460,9 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Contains("published anew", refused);
         Assert.DoesNotContain("reopen", refused);
 
-        // One such a build left pending, B's rebase loses: a move as a conflict of its own, a set-up forgotten.
-        await WriteAsAnOlderBuildAsync(_connections[1], _b, step.Id, kind, "After the take lost.", at,
-            kind == QuestOperationKind.SetUp ? new { setUp = new { commit = SetUpCommit, local = true } } : null);
-        var upgraded = await SyncAsync(_b);
+        await SyncAsync(_b);
         await SyncAsync(c);
         await SyncAsync(_a);
-
-        Assert.Empty(upgraded.Refused);
-        var attempted = QuestTransitions.Target(kind);
-        Assert.Equal(
-            attempted is null ? [] : new[] { (step.Id, attempted) },
-            upgraded.Conflicts.Select(conflict => (conflict.Quest, conflict.Attempted)));
         Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
         foreach (var store in new[] { _a, _b, c, _remote })
         {
@@ -1858,75 +1778,6 @@ public sealed class QuestSyncTests : IAsyncLifetime
             var landed = (await store.FindAsync(quest.Id))!;
             Assert.Equal((QuestStatus.Done, "Landed."), (landed.Status, landed.Note));
         }
-    }
-
-    // ——— What an older build left pending on a lost take, after the upgrade.
-
-    /// <summary>
-    /// 🔴 Upgraded, a machine still holds the done, decline or wait its older build made after its take's conflict is
-    /// written, which the remote refused at every pass. Its rebase now reads the claim as the remote does
-    /// (QuestLog.OnALostTake), on a quest no fetch touched: a done or a decline becomes a conflict of its own, kept for a
-    /// person with its note as a lost take keeps a move made on a take that lost; a wait names no status a conflict could carry,
-    /// and is forgotten. The pass pushes clean, the next has nothing to push, and every machine holds one quest: the
-    /// winner's take, the loser's take-conflict and, for a move, the move's conflict.
-    /// </summary>
-    [Theory]
-    [InlineData(QuestOperationKind.Done, "Finished after the take lost.")]
-    [InlineData(QuestOperationKind.Declined, "Not ours after all.")]
-    [InlineData(QuestOperationKind.Waited, null)]
-    public async Task A_move_or_a_wait_an_older_build_left_pending_on_its_lost_take_becomes_its_loss_and_the_circle_pushes_clean(
-        QuestOperationKind kind, string? said)
-    {
-        var quest = await Publish(_a);
-        await SyncAsync(_a);
-        await SyncAsync(_b);
-        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
-        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
-        await SyncAsync(_a);
-        await SyncAsync(_b);
-        var question = await Publish(_b, "B's question for its owner");
-
-        // A quiet pass fetches the take's conflict back, so no later fetch touches the raced quest.
-        await SyncAsync(_b);
-        await WriteAsAnOlderBuildAsync(_connections[1], _b, quest.Id, kind, said ?? question.Id, Now.AddHours(3));
-        Assert.Equal(quest.Id, Assert.Single((await PushAsAnOlderBuildAsync(_b)).Refused).Quest);
-
-        var upgraded = await SyncAsync(_b);
-        var after = await SyncAsync(_b);
-        await SyncAsync(_a);
-
-        Assert.Null(upgraded.Problem);
-        Assert.Empty(upgraded.Refused.Concat(after.Refused));
-        Assert.Empty(after.Conflicts);
-        Assert.Equal(0, after.Pushed);
-        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
-        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
-
-        var attempted = QuestTransitions.Target(kind);
-        if (attempted is null)
-        {
-            Assert.Empty(upgraded.Conflicts);
-        }
-        else
-        {
-            var reported = Assert.Single(upgraded.Conflicts);
-            Assert.Equal((quest.Id, attempted, said), (reported.Quest, reported.Attempted, reported.Note));
-        }
-
-        foreach (var store in new[] { _a, _b, _remote })
-        {
-            var held = (await store.FindAsync(quest.Id))!;
-            Assert.Equal((QuestStatus.Taken, "A's session.", (string?)null), (held.Status, held.Note, held.Awaits));
-            Assert.Equal(
-                attempted is { } move
-                    ? [(_b.Machine, QuestStatus.Taken, "B's session."), (_b.Machine, move, said)]
-                    : new[] { (_b.Machine, QuestStatus.Taken, (string?)"B's session.") },
-                held.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
-            Assert.DoesNotContain(await store.HistoryAsync(quest.Id), o => o.Kind == kind);
-            Assert.Empty(await store.WaitingOnAsync(question.Id));
-        }
-
-        Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
     // ——— A decline that applies only while open: an abandon judged its decline

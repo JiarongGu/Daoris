@@ -55,13 +55,6 @@ internal sealed class QuestIntegrator(QuestStore store)
                 if (!touched.Contains(operation.Quest, StringComparer.Ordinal)) touched.Add(operation.Quest);
             }
 
-            // A stray an older build left pending on a lost take sits on a quest no fetch touches once the
-            // take's conflict has come back, so it is rebased whether or not anything arrived for it.
-            foreach (var quest in await store.Sync.StrayQuestsAsync(circle, transaction, inside).ConfigureAwait(false))
-            {
-                if (!forgotten.Contains(quest) && !touched.Contains(quest, StringComparer.Ordinal)) touched.Add(quest);
-            }
-
             var conflicts = new List<QuestOperation>();
             foreach (var quest in touched)
             {

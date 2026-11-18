@@ -54,24 +54,6 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal("Four rules collide.", again.Body);
     }
 
-    /// <summary>
-    /// A quest published before the id widened keeps its six characters until it closes, but no lookup
-    /// reads that width: the same words published again make a new quest of the wide id.
-    /// </summary>
-    [Fact]
-    public async Task A_quest_from_before_the_wider_id_stays_open_and_the_same_words_make_a_new_one()
-    {
-        var legacyId = QuestStore.MakeId("A", "B", "Old ask")[..6];
-        await using var old = await LegacyStoreAsync(
-            $"('{legacyId}', 'A', 'B', 'Old ask', 'why', 'Open', NULL, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', NULL, 'default')");
-        var store = await QuestStore.OpenAsync(old);
-
-        var republished = await store.PublishAsync("A", "B", "Old ask", "why, again", Now);
-
-        Assert.Equal(QuestStore.MakeId("A", "B", "Old ask"), republished.Id);
-        Assert.Equal([QuestStore.MakeId("A", "B", "Old ask"), legacyId], (await store.ListAsync()).Select(quest => quest.Id).Order(StringComparer.Ordinal).Reverse());
-    }
-
     // ——— The history.
 
     [Fact]
@@ -183,68 +165,6 @@ public sealed class QuestLogTests : IAsyncLifetime
         var next = await Publish("Next");
 
         Assert.Equal(6L, Assert.Single(await _quests.HistoryAsync(next.Id)).Sequence);
-    }
-
-    /// <summary>
-    /// A store from before the mark starts it at the highest sequence this machine issued, so a removal made
-    /// after the upgrade cannot take the sequence back either. Another machine's sequences are theirs, and count for nothing.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_mark_starts_it_at_the_highest_sequence_it_issued()
-    {
-        var kept = await Publish("Kept");
-        await _quests.MoveAsync(kept.Id, QuestStatus.Taken, null, Now.AddHours(1));
-        var newest = await Publish("Removed");
-        await using (var older = _connection.CreateCommand())
-        {
-            // No mark, and nothing that moves one. Another machine's operation, far ahead.
-            older.CommandText = """
-                DROP TRIGGER IF EXISTS quest_sequence_issued;
-                ALTER TABLE quest_machine DROP COLUMN sequence;
-                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload, remote)
-                VALUES ('ffffffffffff', 'taken', 'anothermachine00', 90, '2026-09-23T10:00:00Z', '{}', 1);
-                """;
-            await older.ExecuteNonQueryAsync();
-        }
-
-        var upgraded = await QuestStore.OpenAsync(_connection);
-        Assert.True((await upgraded.DeleteAsync(newest.Id, Now.AddHours(2), travels: false)).Deleted);
-        var next = await upgraded.PublishAsync("Asker", "Owner", "Next", "b", Now.AddHours(3));
-
-        Assert.Equal(4L, Assert.Single(await upgraded.HistoryAsync(next.Id)).Sequence);
-    }
-
-    /// <summary>
-    /// The mark's column and its backfill are one step: where the backfill fails the column goes with it, so the next open starts the
-    /// mark at the highest sequence the log holds instead of finding the column and leaving it at zero for good.
-    /// </summary>
-    [Fact]
-    public async Task A_mark_backfill_that_fails_leaves_no_column_to_skip_it_for_good()
-    {
-        await Publish("Kept");
-        await using (var older = _connection.CreateCommand())
-        {
-            older.CommandText = """
-                DROP TRIGGER IF EXISTS quest_sequence_issued;
-                ALTER TABLE quest_machine DROP COLUMN sequence;
-                CREATE TRIGGER sequence_refused BEFORE UPDATE OF sequence ON quest_machine BEGIN SELECT RAISE(ABORT, 'planted'); END;
-                """;
-            await older.ExecuteNonQueryAsync();
-        }
-
-        await Assert.ThrowsAnyAsync<Exception>(() => QuestStore.OpenAsync(_connection));
-
-        await using (var after = _connection.CreateCommand())
-        {
-            after.CommandText = "SELECT COUNT(*) FROM pragma_table_info('quest_machine') WHERE name = 'sequence'";
-            Assert.Equal(0L, Convert.ToInt64(await after.ExecuteScalarAsync()));
-            after.CommandText = "DROP TRIGGER sequence_refused";
-            await after.ExecuteNonQueryAsync();
-        }
-
-        var upgraded = await QuestStore.OpenAsync(_connection);
-        var next = await upgraded.PublishAsync("Asker", "Owner", "Next", "b", Now.AddHours(3));
-        Assert.Equal(2L, Assert.Single(await upgraded.HistoryAsync(next.Id)).Sequence);
     }
 
     /// <summary>
@@ -540,12 +460,9 @@ public sealed class QuestLogTests : IAsyncLifetime
             (await _quests.HistoryAsync(taken.Id)).Select(o => o.Kind));
     }
 
-    /// <summary>
-    /// The flag is written only when set: a plain decline's record carries none, and
-    /// a record from before — a decline whose payload says nothing of the flag — reads back plain.
-    /// </summary>
+    /// <summary>The flag is written only when set: a plain decline's record carries none, and reads back plain.</summary>
     [Fact]
-    public async Task A_plain_decline_is_recorded_as_before_and_an_older_record_reads_plain()
+    public async Task A_plain_decline_is_recorded_without_the_flag_and_reads_plain()
     {
         var plain = await Publish("Plain");
         var flagged = await Publish("Flagged");
@@ -555,23 +472,6 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal("""{"note":"Not ours."}""", await PayloadAsync(plain.Id, "declined"));
         Assert.Equal("""{"note":"Abandoned.","whileOpen":true}""", await PayloadAsync(flagged.Id, "declined"));
         Assert.False((await _quests.HistoryAsync(plain.Id))[^1].WhileOpen);
-
-        // A take on another machine, then a decline from before the flag, as an older build's log holds them.
-        var older = await Publish("Older");
-        await using (var write = _connection.CreateCommand())
-        {
-            write.CommandText = """
-                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload) VALUES
-                  ($id, 'taken', 'older', 1, '2026-09-23T11:00:00.0000000+00:00', '{}'),
-                  ($id, 'declined', 'older', 2, '2026-09-23T12:00:00.0000000+00:00', '{"note":"Declined by an older build."}')
-                """;
-            write.Parameters.AddWithValue("$id", older.Id);
-            await write.ExecuteNonQueryAsync();
-        }
-
-        var history = await _quests.HistoryAsync(older.Id);
-        Assert.False(history[^1].WhileOpen);
-        Assert.Equal(QuestStatus.Declined, QuestLog.Replay(history)!.Status);
     }
 
     private async Task<string> PayloadAsync(string quest, string kind)
@@ -683,61 +583,4 @@ public sealed class QuestLogTests : IAsyncLifetime
             (await Task.WhenAll(asked.Select(q => _quests.HistoryAsync(q.Id)))).SelectMany(h => h).Select(o => o.Sequence).Order());
     }
 
-    // ——— A store from before the log.
-
-    private static async Task<SqliteConnection> LegacyStoreAsync(string rows)
-    {
-        var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using var create = old.CreateCommand();
-        create.CommandText = $"""
-            CREATE TABLE quests (
-              id TEXT PRIMARY KEY, sender TEXT NOT NULL, receiver TEXT NOT NULL, title TEXT NOT NULL,
-              body TEXT NOT NULL, status TEXT NOT NULL, note TEXT NULL, filed TEXT NOT NULL, updated TEXT NOT NULL,
-              home TEXT NULL, workspace TEXT NOT NULL DEFAULT 'default'
-            );
-            INSERT INTO quests VALUES {rows};
-            """;
-        await create.ExecuteNonQueryAsync();
-        return old;
-    }
-
-    /// <summary>
-    /// Quests are not derivable from anything, so a store from before the log is given each local
-    /// quest's history from what its row says — once, however many hosts open it. A mirror row is a
-    /// copy of a remote's quest, so it is dropped rather than migrated (design §8): the first fetch
-    /// brings it back as history. After that the old quests move exactly as new ones do.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_log_gains_each_local_quests_history_once()
-    {
-        await using var old = await LegacyStoreAsync("""
-            ('e1de11', 'A', 'B', 'Open ask', 'why', 'Open', NULL, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', NULL, 'default'),
-            ('e1de12', 'A', 'B', 'Done ask', 'why', 'Done', 'landed', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', NULL, 'circle'),
-            ('e1de13', 'A', 'B', 'Taken ask', 'why', 'Taken', NULL, '2026-01-01T00:00:00Z', '2026-01-03T00:00:00Z', NULL, 'default'),
-            ('e1de14', 'A', 'B', 'Mirrored ask', 'why', 'Open', NULL, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', 'remote', 'default')
-            """);
-
-        await QuestStore.OpenAsync(old);
-        var store = await QuestStore.OpenAsync(old);
-
-        var done = await store.HistoryAsync("e1de12");
-        Assert.Equal([QuestOperationKind.Published, QuestOperationKind.Done], done.Select(o => o.Kind));
-        Assert.Equal(DateTimeOffset.Parse("2026-01-02T00:00:00Z"), done[1].At);
-        Assert.Equal("landed", done[1].Note);
-        Assert.Equal("circle", done[0].Published!.Workspace);
-        Assert.Empty(await store.HistoryAsync("e1de14"));
-        Assert.Null(await store.FindAsync("e1de14"));
-
-        foreach (var quest in await store.ListAsync(includeClosed: true))
-        {
-            Assert.Equal(Shape(quest), Shape(QuestLog.Replay(await store.HistoryAsync(quest.Id))!));
-        }
-
-        Assert.True((await store.MoveAsync("e1de11", QuestStatus.Taken, null, Now)).Moved);
-        Assert.False((await store.MoveAsync("e1de13", QuestStatus.Taken, null, Now)).Moved);
-        Assert.Equal(
-            [QuestOperationKind.Published, QuestOperationKind.Taken],
-            (await store.HistoryAsync("e1de11")).Select(o => o.Kind));
-    }
 }

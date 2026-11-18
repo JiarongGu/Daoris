@@ -87,12 +87,6 @@ public sealed class QuestStore
     private readonly QuestForgetting _forgetting;
     private readonly QuestReads _reads;
 
-    internal Task GiveHistoriesAsync(CancellationToken ct) => _histories.GiveHistoriesAsync(ct);
-
-    /// <summary>One quest's history, from its row: the operations that replay to exactly what it says.</summary>
-    internal Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(Quest quest, SqliteTransaction transaction, CancellationToken ct) =>
-        _histories.GiveHistoryAsync(quest, transaction, ct);
-
     /// <summary>A quest's history in the order it replays: what a remote accepted, by number, then what this machine has not pushed.</summary>
     public Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id, CancellationToken ct = default) => _histories.HistoryAsync(id, ct);
 
@@ -255,8 +249,6 @@ public sealed class QuestStore
             store.NewerVersion = await QuestSchema.EnsureAsync(store._db, ct).ConfigureAwait(false);
             store.Machine = await store.EnsureMachineAsync(ct).ConfigureAwait(false);
             await store.LoadClosuresAsync(ct).ConfigureAwait(false);
-            await store.GiveHistoriesAsync(ct).ConfigureAwait(false);
-            await store._cache.RepairAsync(ct).ConfigureAwait(false);
             return store;
         }, ct);
 

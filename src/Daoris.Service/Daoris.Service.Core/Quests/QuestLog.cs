@@ -448,8 +448,7 @@ public static class QuestLog
         // on a conflict another machine settled first, so a failed bring-forward never reads as resolved, and the conflict
         // it resolves stays. A wait, once its quest is no longer taken: another
         // machine closed or deleted it first; or made on this machine's take that lost, which the take's
-        // conflict names (QuestStore.RebaseAsync), or which an older build made after that conflict is written
-        // and the remote never kept. A delete that lost to a take, or that another machine's delete
+        // conflict names (QuestStore.RebaseAsync). A delete that lost to a take, or that another machine's delete
         // already made. A yes to a done nothing holds any more: its done lost, or another machine's yes came
         // first. A verdict on evidence nothing waits on any more: another machine's verdict found it first, or the
         // person accepted the done as it stood. A set-up on a step another machine declined or deleted, the same set-up

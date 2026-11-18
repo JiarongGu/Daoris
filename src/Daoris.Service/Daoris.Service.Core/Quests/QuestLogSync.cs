@@ -56,7 +56,7 @@ internal sealed class QuestLogSync(QuestStore store)
     /// <see cref="QuestLog.Lost"/>: a move becomes a conflict, a publish of an ask already held is the same
     /// ask again, and a follow-up that only a lost close published goes with it. A wait made on this machine's
     /// take that lost goes with the take, and the take's conflict names it; one made after the take is
-    /// rewritten is refused by the store, and one an older build made then is lost here as the claim reads.
+    /// rewritten is refused by the store, so it is never pending here.
     /// Answers the conflicts made.
     /// </summary>
     internal async Task<IReadOnlyList<QuestOperation>> RebaseAsync(
@@ -93,14 +93,7 @@ internal sealed class QuestLogSync(QuestStore store)
                             && bringing.TryGetValue(new QuestOperationRef(operation.Machine, operation.Sequence), out var mark)
                             && QuestLog.Applies(quest, operation) && !QuestLog.Brings(QuestLog.Step(quest, operation), mark);
 
-            // A stray: a done, a decline or a wait an older build made after the take's conflict
-            // is written, which the remote refuses at every pass, so the circle never pushed clean. Judged by
-            // the rule the store's verbs and the remote judge by, and lost by its kind's rule as one made on a take this
-            // rebase finds lost is. A forgotten wait is named on no conflict: the take's is already written, a remote may
-            // have numbered it, and no machine rewrites a numbered operation. The remote never kept the wait, so no other
-            // machine's copy of the quest waits on the question.
-            var stray = !lostClaim && operation.Number is null && QuestLog.OnALostTake(quest, replayed, operation);
-            if (!lostClaim && !stray && !unbrought && (operation.Number is not null || QuestLog.Applies(quest, operation)))
+            if (!lostClaim && !unbrought && (operation.Number is not null || QuestLog.Applies(quest, operation)))
             {
                 quest = QuestLog.Applies(quest, operation) ? QuestLog.Step(quest, operation) : quest;
                 replayed.Add(operation);
@@ -188,37 +181,6 @@ internal sealed class QuestLogSync(QuestStore store)
         CancellationToken ct) =>
         await QuestOperations.Registered.For(operation.Kind)!.LostAsync(new QuestTx(store, transaction, ct), operation, standing, takeLost, losses)
             .ConfigureAwait(false);
-
-    /// <summary>
-    /// The circle's quests where this machine holds a done, a decline, a wait or a set-up not yet pushed beside a take of its
-    /// own that is a conflict: where a stray can be. <see cref="RebaseAsync"/> judges each operation by
-    /// <see cref="QuestLog.OnALostTake"/>, so a quest this finds and nothing strays on is replayed as it stands.
-    /// </summary>
-    internal async Task<IReadOnlyList<string>> StrayQuestsAsync(string circle, SqliteTransaction transaction, CancellationToken ct)
-    {
-        await using var command = _db.Command();
-        command.Transaction = transaction;
-        command.CommandText = """
-            SELECT DISTINCT stray.quest FROM quest_log AS stray
-            JOIN quest_log AS asked ON asked.position = (
-              SELECT MIN(first.position) FROM quest_log AS first
-              WHERE first.quest = stray.quest AND first.kind = 'published')
-            WHERE stray.remote IS NULL AND stray.machine = $machine AND stray.kind IN ('done', 'declined', 'waited', 'setup')
-              AND json_extract(asked.payload, '$.workspace') = $workspace COLLATE NOCASE
-              AND EXISTS (
-                SELECT 1 FROM quest_log AS lost
-                WHERE lost.quest = stray.quest AND lost.machine = $machine AND lost.kind = 'conflict'
-                  AND json_extract(lost.payload, '$.attempted') = 'Taken' COLLATE NOCASE)
-            ORDER BY stray.quest
-            """;
-        command.Parameters.AddWithValue("$machine", store.Machine);
-        command.Parameters.AddWithValue("$workspace", circle);
-
-        var quests = new List<string>();
-        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
-        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(reader.GetString(0));
-        return quests;
-    }
 
     /// <summary>Take a quest's row out of the cache — the replay says there is no quest.</summary>
     internal async Task DropCacheAsync(string id, SqliteTransaction transaction, CancellationToken ct)
