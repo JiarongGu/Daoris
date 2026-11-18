@@ -61,7 +61,6 @@ export function RequirementItem({ number, requirement, answer, waiting = false }
   );
 }
 
-/** **Every requirement, numbered as the service orders them**: a quest's page answers each; an ask's page lists them with no answer. */
 export function RequirementList({ requirements, answerOf, waiting = false }: {
   requirements: QuestRequirement[];
   answerOf?: (number: number) => QuestAnswer | null;

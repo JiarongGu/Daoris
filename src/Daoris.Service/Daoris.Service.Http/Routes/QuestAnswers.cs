@@ -89,7 +89,6 @@ public sealed class QuestAnswers(HostWiring host)
         q.Request);
 
     /// <summary>A conflict as the quest answers it, with what its log says of it: each fact absent where unset.</summary>
-    /// <summary>A requirement as a quest and an ask both answer it.</summary>
     public static QuestRequirementResponse ToRequirement(QuestRequirement r) =>
         new(r.Quote, r.Check, r.Evidence.Select(e => new QuestEvidenceResponse(e.Path, e.Gate)).ToList());
 
