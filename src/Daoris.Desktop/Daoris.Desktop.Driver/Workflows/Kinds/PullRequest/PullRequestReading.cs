@@ -18,11 +18,7 @@ public static class PullRequestReading
 
     /// <summary>Whether the landing's pull request merged, a squash merge included: the plugin answered it completed, or with no answer the line holds it.</summary>
     public static bool IsMerged(LandedBranch landing) =>
-        landing.PullRequestState is { State: PullRequestStates.Completed } ? !MergedElsewhere(landing) : landing.PullRequestState is null && OnTheLine(landing) is not null;
-
-    /// <summary>The keeper's proof that the line the work grew from holds the landed branch: a request completed on the platform no plugin answered for.</summary>
-    public static HeldFact? OnTheLine(LandedBranch landing) =>
-        landing.Held is { } held && (landing.Line is null || string.Equals(held.Line, landing.Line, StringComparison.Ordinal)) ? held : null;
+        landing.PullRequestState is { State: PullRequestStates.Completed } ? !MergedElsewhere(landing) : landing.PullRequestState is null && landing.OnTheLine is not null;
 
     /// <summary>Whether the request completed into a branch other than the line the work grew from, which proves nothing of the line (<see cref="PullRequestProof"/>'s <c>other-target</c>).</summary>
     private static bool MergedElsewhere(LandedBranch landing) =>
@@ -44,7 +40,7 @@ public static class PullRequestReading
     {
         if (landing is null) return new(null, "nothing was landed yet");
         var settled = new NodeWatched(null, "") { Revision = landing.Tip, Record = LandedBranches.FileName, Artifact = landing.Branch };
-        if (landing.PullRequestState is null && OnTheLine(landing) is { } held)
+        if (landing.PullRequestState is null && landing.OnTheLine is { } held)
         {
             return settled with { State = Merged, Said = $"`{landing.Branch}` is on `{held.On}` ({WorkInventory.ProofSaid(held.By, held.On)}), so its pull request was merged" };
         }

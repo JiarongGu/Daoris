@@ -49,7 +49,7 @@ internal static class NothingToDeliver
     internal static bool SkipsWhileActive(NodeDeclaration node) => node.Kind == NodeKinds.Push;
 
     internal static string? OnTheLineWords(LandedBranch landing) =>
-        PullRequestReading.OnTheLine(landing) is { } held
+        landing.OnTheLine is { } held
             ? $"nothing left to deliver: `{landing.Branch}` is on `{held.On}` already ({WorkInventory.ProofSaid(held.By, held.On)}), "
                 + "its pull request completed on the platform or the work merged by hand."
             : null;

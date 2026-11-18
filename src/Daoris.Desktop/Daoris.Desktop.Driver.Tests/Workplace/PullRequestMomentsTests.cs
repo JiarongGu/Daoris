@@ -69,7 +69,7 @@ public sealed class PullRequestMomentsTests : IDisposable
         ];
     }
 
-    /// <summary>Which landings a moment concerns: standing, pushed by a plugin, neither completed nor abandoned, and not yet ended.</summary>
+    /// <summary>Which landings a moment concerns: standing, pushed or naming a pull request, unsettled, and not ended unless still open.</summary>
     [Fact]
     public void A_moment_concerns_a_standing_pushed_landing_whose_pull_request_is_open_and_whose_end_is_not_held()
     {
@@ -77,15 +77,15 @@ public sealed class PullRequestMomentsTests : IDisposable
         Assert.True(PullRequestMoments.Concerns(open));
         Assert.True(PullRequestMoments.Concerns(Landing("engine", "feature/b", PullRequestStates.Open)));
         Assert.True(PullRequestMoments.Concerns(Landing("engine", "feature/c", PullRequestStates.Unknown)));
+        Assert.True(PullRequestMoments.Concerns(open with { Pushed = false }));
 
+        var held = new HeldFact(_now, _now, "line", new string('b', 40), "main", "main", new string('c', 40), "repo");
         Assert.False(PullRequestMoments.Concerns(Landing("engine", "feature/d", PullRequestStates.Completed)));
         Assert.False(PullRequestMoments.Concerns(Landing("engine", "feature/e", PullRequestStates.Abandoned)));
-        Assert.False(PullRequestMoments.Concerns(open with { Pushed = false }));
+        Assert.False(PullRequestMoments.Concerns(open with { Pushed = false, PullRequest = null }));
         Assert.False(PullRequestMoments.Concerns(open with { GoneAt = _now }));
-        Assert.False(PullRequestMoments.Concerns(open with
-        {
-            Held = new HeldFact(_now, _now, "line", new string('b', 40), "main", "main", new string('c', 40), "repo"),
-        }));
+        Assert.False(PullRequestMoments.Concerns(open with { Held = held }));
+        Assert.True(PullRequestMoments.Concerns(Landing("engine", "feature/b", PullRequestStates.Open) with { Held = held }));
     }
 
     /// <summary>
@@ -319,7 +319,7 @@ public sealed class PullRequestMomentsTests : IDisposable
     [Fact]
     public async Task A_wake_that_concerns_no_open_pull_request_asks_and_fetches_nothing()
     {
-        _world.Entries.AddRange([Landing("engine", "feature/d", PullRequestStates.Completed), Landing("engine", "feature/a") with { Pushed = false }]);
+        _world.Entries.AddRange([Landing("engine", "feature/d", PullRequestStates.Completed), Landing("engine", "feature/a") with { Pushed = false, PullRequest = null }]);
         _world.Registry.Add(Repository("engine"));
         await using var moments = await Opened();
 

@@ -140,6 +140,9 @@ public sealed record LandedBranch(
     /// <summary>That the line held the branch's work, and the evidence; null where not yet judged held. Written only by <see cref="EndKeeping"/>.</summary>
     public HeldFact? Held { get; init; }
 
+    /// <summary>The keeper's proof that the line the work grew from holds the branch: a request completed on the platform no plugin answered for.</summary>
+    public HeldFact? OnTheLine => Held is { } held && (Line is null || string.Equals(held.Line, Line, StringComparison.Ordinal)) ? held : null;
+
     /// <summary>
     /// The branch work units whose work it carries: the landing's own session's and each advance's, where its
     /// entry had one. A landing carrying several sessions' work is one result of several units, never a unit itself.
