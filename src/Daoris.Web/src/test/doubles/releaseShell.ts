@@ -22,13 +22,14 @@ export const azurePlugin = (tool: boolean) => ({
   switches: [],
 });
 
-/** Answers `invoke` as the shell would for a release step's doors; `origin` null where the repository has no origin. */
-export function wireRelease(invoke: Mock, { tool = false, origin = ORIGIN as string | null } = {}) {
+/** Answers `invoke` for a release step's doors; `origin` null for none; another `workspace` lists `aurora`'s same-named checkout first. */
+export function wireRelease(invoke: Mock, { tool = false, origin = ORIGIN as string | null, workspace = 'aurora' } = {}) {
   invoke.mockImplementation(async (_module: string, type: string) => {
     if (type === 'PLUGINS') return { folder: 'C:/somewhere/data/plugins', plugins: [azurePlugin(tool)], kit: { points: [] }, offers: [] };
     if (type === 'GIT_BRANCHES') {
       const remotes = origin ? [{ name: 'origin', address: origin, serves: 'own', passed: [] }] : [];
-      return { repositories: [{ repository: 'portal', workspace: 'aurora', remotes }] };
+      const other = workspace === 'aurora' ? [] : [{ repository: 'portal', workspace: 'aurora', remotes: [] }];
+      return { repositories: [...other, { repository: 'portal', workspace, remotes }] };
     }
     if (type === 'PLUGIN_COMMAND') return { run: 'r1', said: ['Prod of Release-90 approved.'], ask: null, open: null, code: null, then: null, data: null, exit: 0 };
     return {};

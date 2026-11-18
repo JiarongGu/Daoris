@@ -93,9 +93,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exact merged build (never twice), only where its action says so, as its README says. While it watches, its first look and each
     change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
     `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
-    before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view and in the session
-    page's dock, runs the plugin's `approve-release` under their own sign-in, declared as no agent's tool; a plugin that hands it to
-    agents gets the stage's page in its place (D304 point 6). A `no-release` names the
+    before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view, the session
+    page's dock and the step's *What needs you* row, runs the plugin's `approve-release` under their own sign-in, declared as no agent's
+    tool; a plugin that hands it to agents gets the stage's page in its place (D304 point 6). Given an id Azure DevOps does not answer,
+    `approve-release` says the release was not found with Azure DevOps' status, the id being the page's `releaseId` and not its name. A `no-release` names the
     definition's newest releases and the build each carries. Where the declared definition's CD trigger, read whole, leaves out the
     branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
     as for a merge the pipeline builds nothing from; a trigger not read waits and fails `no-release`. Its `discover-releases`, a tool that never
