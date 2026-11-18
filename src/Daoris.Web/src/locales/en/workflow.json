@@ -47,6 +47,7 @@
   "workflow.step.unknown": "A step this page has no words for: `{{kind}}`",
   "workflow.step.go-ahead": "Your go-ahead",
   "workflow.step.task": "A task",
+  "workflow.step.taskRole": "{{role}} · {{id}}",
   "workflow.step.push": "The push",
   "workflow.step.isolate": "Open a tree",
   "workflow.wait.isolate.at-once": "Waits while as many of this place's sessions as it allows work apart.",

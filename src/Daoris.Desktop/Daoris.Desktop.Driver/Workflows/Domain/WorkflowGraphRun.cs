@@ -396,6 +396,9 @@ public static class WorkflowGraphRuns
             Default("form", process?.Landing?.Form);
         }
 
+        // A task's kind says nothing of it, so its role is what it reads by (WorkflowRunWords.Title).
+        if (node.Kind == NodeKinds.Task) Default("role", StepRoles.Of(node));
+
         if (NodeKit.IsPlugin(node.Kind)) Default("plugin", node.Kind[..node.Kind.IndexOf('/')]);
 
         var (kind, participation, executor, press, _) = NodeKit.Of(node.Kind)?.Part(node) ?? NodePart.Automatic(node.Kind);

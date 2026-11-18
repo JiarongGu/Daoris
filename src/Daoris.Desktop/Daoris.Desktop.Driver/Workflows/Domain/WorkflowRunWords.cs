@@ -54,10 +54,14 @@ public static class WorkflowRunWords
 
     /// <summary>
     /// A step's title, as <c>daoris workflow show</c> names it: the title of the kind it is drawn from (<see cref="INodeKind.Title"/>), a plugin's by
-    /// its node and its plugin; a steps version's pull request by its own; any other by its id.
+    /// its node and its plugin; a steps version's pull request by its own; a task by its role and its id (<i>release manager · config-needed</i>),
+    /// its kind saying nothing of it; any other by its id.
     /// </summary>
     public static string Title(WorkflowStep step) =>
-        step.Kind == WorkflowKinds.PullRequest ? "The pull request" : NodeKit.Drawn(step.Kind)?.Title ?? step.Id;
+        step.Kind == WorkflowKinds.PullRequest ? "The pull request"
+        : step.Kind == NodeKinds.Task && step.Settings.FirstOrDefault(setting => setting.Name == "role")?.Value is string role
+            ? $"{role.Replace('-', ' ')} · {step.Id}"
+        : NodeKit.Drawn(step.Kind)?.Title ?? step.Id;
 
     /// <summary>A state's word; one these words do not hold, as the driver spells it.</summary>
     public static string State(string state) => state switch
