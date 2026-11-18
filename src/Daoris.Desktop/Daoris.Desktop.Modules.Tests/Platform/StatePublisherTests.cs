@@ -464,6 +464,7 @@ public sealed class StatePublisherTests : DriverModuleBridge
     [InlineData("END_CHAT", "sessions", "id")]
     [InlineData("SESSION_INPUT", "sessions,help", "id")]
     [InlineData("SESSION_HISTORY", "", null)]
+    [InlineData("SESSION_CHILD_HISTORY", "", null)]
     [InlineData("SESSION_QUEUE", "", null)]
     [InlineData("WORK_PAUSE", "sessions,quests,asks,driver", null)]
     [InlineData("WORK_RESUME", "sessions,quests,asks,driver", null)]

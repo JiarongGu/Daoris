@@ -3,6 +3,9 @@ namespace Daoris.Desktop;
 /// <summary>A session's conversation: the newest page, an earlier one (<c>Before</c>), or only what is newer (<c>After</c>).</summary>
 public sealed record SessionHistoryRead(string Id, long? After, long? Before, long? Limit);
 
+/// <summary>A subagent's own record, by its session and the child's id as the session's record names it.</summary>
+public sealed record SessionChildHistoryRead(string Id, string Child);
+
 /// <summary>A running turn stopped; <c>Keep</c> keeps what waits for the next turn, <c>Said</c> asks for the verb's own words.</summary>
 public sealed record CancelTurnPress(string Id, bool Said = false, bool Keep = false);
 
