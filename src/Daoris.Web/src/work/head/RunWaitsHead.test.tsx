@@ -61,7 +61,6 @@ describe('RunWaitsHead', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  // ACCEPTWAIT1: an unchecked done held at `holds` waited on the owner's pass, and no press on the page offered it.
   it('offers the pass of an unchecked done at holds with your words', async () => {
     const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'holds', act: 'skip', done: true });
     const row: StepWaitRow = { run: 'q7', node: 'holds', why: 'pass', role: 'acceptor', holder: 'person', presses: ['skip', 'stop'] };
@@ -75,11 +74,7 @@ describe('RunWaitsHead', () => {
   });
 });
 
-/**
- * The census of the page's half: every wait the driver's steps can stand at (`PersonWaits.All`, whose census reads this table) has its
- * card on the session's page, and where *What needs you* rows it as a step, that card carries the row's press. The waits another
- * card carries keep their press there: a review's Accept on its Accept card, a part left on its own session, an attempt held on its row.
- */
+// Every `PersonWaits.All` kind (read by its census) has its card here; a `carried` one's press is on the card that carries it.
 const CENSUS: Record<string, { presses: string[]; held?: StepWaitRow['held'] } | 'carried'> = {
   'accept': 'carried',
   'approval': { presses: ['approve', 'reject', 'skip'] },

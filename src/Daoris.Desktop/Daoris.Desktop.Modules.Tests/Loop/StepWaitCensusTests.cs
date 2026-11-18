@@ -112,7 +112,6 @@ public sealed class StepWaitCensusTests
         Assert.Equal(Normal(row), Normal(AttentionStateSlice.Picked(row)));
     }
 
-    /// <summary>The page's half: the session page's census (<c>RunWaitsHead.test.tsx</c>) draws every wait a step can stand at, each its card.</summary>
     [Fact]
     public void Every_wait_a_step_can_stand_at_has_its_card_in_the_session_pages_census()
     {

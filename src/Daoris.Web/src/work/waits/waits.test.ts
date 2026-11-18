@@ -65,7 +65,6 @@ describe('the waits on the person', () => {
       .toEqual([]);
   });
 
-  // ACCEPTWAIT1: the head's *next: Accept…* and *To the Accept card* led to a card the page does not draw while the run waited at `holds`.
   it('never names the run\'s Accept before its review has begun, since no Accept card is drawn until then', () => {
     const before = { ...PLAN, accept: { run: 'q1', node: 'review' } };
     const begun = { ...PLAN, accept: { run: 'q1', node: 'review', attempt: 1, revision: 'abc1234' } };
