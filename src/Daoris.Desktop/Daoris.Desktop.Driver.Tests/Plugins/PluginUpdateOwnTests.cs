@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SWITCHGAPS1a: Daoris's own plugins update with the build that ships them. At a start, an installed copy of an offer that is older than
+/// Daoris's own plugins update with the build that ships them. At a start, an installed copy of an offer that is older than
 /// the shipped one is updated as <c>daoris plugin update &lt;id&gt; --yes</c> does, its <c>.data/</c> kept; a plugin the person installed
 /// from a folder, a copy whose files they changed and a copy at the shipped version are never touched. Seen failing first.
 /// </summary>

@@ -406,17 +406,7 @@ public sealed class LinesRoutes(DriverContext context)
             new NodeRecordFiles(_loop.Home), unit, node, attempt, word, link: press.Link, note: press.Note, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch));
         var worded = done.What == PerformedWhat.Worded;
         if (worded) _loop.Nudge();
-
-        // The terminal asks for the verb's own lines (`daoris work held … `, through this instance).
-        if (press.Said)
-        {
-            return await TerminalSaid.RunAsync((output, error) =>
-            {
-                (worded ? output : error).WriteLine(HeldAttempts.Said(done, attempt, word));
-                return Task.FromResult(worded ? 0 : 1);
-            });
-        }
-
+        if (press.Said) return await HeldFixPress.WordSaidAsync(done, attempt, word);
         return new
         {
             Unit = unit, Node = node, Attempt = attempt, Resolution = word, Done = worded, Refused = worded ? null : done.Code,

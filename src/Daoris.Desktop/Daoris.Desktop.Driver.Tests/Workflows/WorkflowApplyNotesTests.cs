@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SWITCHGAPS1a-b: what <c>workflow apply</c> says of a new version beside what the install holds: a step kind no installed plugin declares
+/// What <c>workflow apply</c> says of a new version beside what the install holds: a step kind no installed plugin declares
 /// (with the plugin to update where this build ships a newer one), and each declared value its node ids no longer reach, with the
 /// printed <c>workflow values</c> line that carries it to each new node of the same plugin that takes none. It writes nothing.
 /// Seen failing first.
@@ -27,13 +27,13 @@ public sealed class WorkflowApplyNotesTests
             },
         };
 
-    private static readonly WorkflowApplyNotes.Plugin Installed = new("acme.cloud", "4.1.0", ["acme.cloud/pull-request"]);
+    private static readonly WorkflowApplyNotes.DeclaredKinds Installed = new("acme.cloud", "4.1.0", ["acme.cloud/pull-request"]);
 
     [Fact]
     public void A_kind_no_installed_plugin_declares_is_said_with_the_plugin_to_update_where_this_build_ships_a_newer_one()
     {
         var next = Graph(Node("open", "acme.cloud/pull-request"), Node("release-create", "acme.cloud/release-create"));
-        WorkflowApplyNotes.Plugin shipped = new("acme.cloud", "4.6.0", ["acme.cloud/pull-request", "acme.cloud/release-create"]);
+        WorkflowApplyNotes.DeclaredKinds shipped = new("acme.cloud", "4.6.0", ["acme.cloud/pull-request", "acme.cloud/release-create"]);
 
         var said = WorkflowApplyNotes.Undeclared(next, [Installed], [shipped]);
 

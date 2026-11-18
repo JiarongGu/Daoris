@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris work held &lt;run&gt; &lt;node&gt; &lt;n&gt; again|…</c> through the running Daoris (SWITCHGAPS1d): the person's word is the
+/// <c>daoris work held &lt;run&gt; &lt;node&gt; &lt;n&gt; again|…</c> through the running Daoris: the person's word is the
 /// window's <c>WORK_HELD</c> press, sent to the instance, which records it under the lease it holds; the terminal prints the lines the
 /// route answers and refuses nothing with "say it there". Seen failing first.
 /// </summary>

@@ -202,11 +202,7 @@ public static class HeldAttempts
         return done.What == PerformedWhat.Worded ? 0 : 1;
     }
 
-    /// <summary>
-    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for: a word is the window's
-    /// <c>WORK_HELD</c> press, sent and confirmed there, its lines the route's (<c>said</c>); the list, a word that is none and the verb with
-    /// no instance run as <see cref="Run"/>, which records only where this process holds the home.
-    /// </summary>
+    /// <summary>The verb through the running Daoris's <c>WORK_HELD</c> where <paramref name="instance"/> names one; else <see cref="Run"/>.</summary>
     public static Task<int> RunAsync(
         string home, IReadOnlyList<string> args, TextWriter output, TextWriter error, InstanceWorld? instance, Func<DateTimeOffset>? clock = null,
         CancellationToken ct = default)
@@ -218,10 +214,8 @@ public static class HeldAttempts
         return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkHeld, payload, Alone, output, ct);
     }
 
-    /// <summary>A person's word on an attempt, as the verb's words say it.</summary>
     private sealed record WordAsk(string Unit, string Node, int Attempt, string Word, string? Link, string? Note, int? Epoch);
 
-    /// <summary>The words of <c>work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt; &lt;word&gt;</c> read, or null where they are not one.</summary>
     private static WordAsk? ReadWord(IReadOnlyList<string> args)
     {
         // The epoch of the step's tenure its row read, wherever it is named: a word read in an epoch that has ended is refused.

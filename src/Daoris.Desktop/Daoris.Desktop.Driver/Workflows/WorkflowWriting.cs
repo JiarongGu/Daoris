@@ -95,15 +95,11 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
         }]);
     }
 
-    /// <summary>
-    /// What the new version needs that this install does not carry (<see cref="WorkflowApplyNotes"/>): a plugin step no installed plugin
-    /// declares, and a declared value its nodes leave unread. Said, never written; a driver file that does not read says none.
-    /// </summary>
     private IReadOnlyList<string> Carried(string workflow, int version, NodeGraph? previous, NodeGraph? next)
     {
         if (next is null) return [];
         var reserved = ProviderRegistry.Built().Names;
-        static WorkflowApplyNotes.Plugin Read(PluginManifest manifest) => new(manifest.Id, manifest.Version, [.. manifest.Steps.Select(step => step.Kind)]);
+        static WorkflowApplyNotes.DeclaredKinds Read(PluginManifest manifest) => new(manifest.Id, manifest.Version, [.. manifest.Steps.Select(step => step.Kind)]);
         var installed = PluginCatalog.Load(run.Home, reserved).Plugins.Select(entry => Read(entry.Manifest)).ToList();
         var offered = PluginOffers.Load(PluginOffers.FolderFor(run.Home, AppContext.BaseDirectory), run.Home, reserved)
             .Where(offer => offer.Problem is null).Select(offer => Read(offer.Manifest)).ToList();

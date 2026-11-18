@@ -7,13 +7,13 @@ namespace Daoris.Driver;
 public static class WorkflowApplyNotes
 {
     /// <summary>A plugin as the notes read it: its id, its version and each step kind it declares (<c>&lt;plugin&gt;/&lt;step&gt;</c>).</summary>
-    public sealed record Plugin(string Id, string Version, IReadOnlyCollection<string> Kinds);
+    public sealed record DeclaredKinds(string Id, string Version, IReadOnlyCollection<string> Kinds);
 
     /// <summary>
     /// A line for each plugin step kind in <paramref name="next"/> that no <paramref name="installed"/> plugin declares: its nodes, its kind,
     /// and the plugin to update where this build's <paramref name="offered"/> copy of it declares the kind and the installed one is older.
     /// </summary>
-    public static IReadOnlyList<string> Undeclared(NodeGraph next, IReadOnlyList<Plugin> installed, IReadOnlyList<Plugin> offered)
+    public static IReadOnlyList<string> Undeclared(NodeGraph next, IReadOnlyList<DeclaredKinds> installed, IReadOnlyList<DeclaredKinds> offered)
     {
         var declared = installed.SelectMany(plugin => plugin.Kinds).ToHashSet(StringComparer.Ordinal);
         var lines = new List<string>();
