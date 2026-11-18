@@ -25,8 +25,8 @@ public static class SessionGroups
         TreesToJudge((SessionLook)look, held, only);
 
     /// <summary>The entries over the rows <see cref="Read"/> answers: <see cref="SessionEntries.Read"/>.</summary>
-    public static IReadOnlyList<SessionEntry> ReadEntries(SessionLook look, IReadOnlyCollection<string>? only = null) =>
-        SessionEntries.Read(look, only);
+    public static IReadOnlyList<SessionEntry> ReadEntries(SessionLook look, IReadOnlyCollection<string>? only = null, IReadOnlyList<SessionGrouping>? all = null) =>
+        SessionEntries.Read(look, only, all);
 
     /// <summary>
     /// Whether a live record waits on the person's answer, a park that <i>needs you</i>: one nobody answered, since an

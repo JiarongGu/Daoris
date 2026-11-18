@@ -14313,3 +14313,30 @@ note of 2026-11-03 says what is left for ONEWAY1j.
 (ran in the checkout without the fresh tree); `ConversationView.test.tsx`'s driven tree-gone offer, en and zh (no press);
 `BranchTidyingTests.A_session_the_person_spoke_to_within_the_quiet_window_keeps_its_tree` (did not build without the window). The
 installed window is not yet seen.
+
+## 2026-11-18 — The sessions list took a minute: its answer waited on the trees' git walks (SESSIONLISTSLOW1)
+
+- **Symptom:** the owner's report on the install at `42016fd67b`: `daoris session list` 67.9 s and `--json` 64.5 s (an earlier
+  `--json` past 90 s), on 1,246 events files in `data/sessions` (184 MB, the largest 5 to 6 MB); the help room's walk of one tree
+  50.5 s (`help.room.look … walk 50531ms`).
+- **Measured first,** on a fixture home of the install's shape (`SessionListHome`: 1,250 ended records, each with its events file,
+  190 MB, 31 of 5 MB; four live trees), by stage. The terminal alone (`daoris session list`, no Daoris running): 15,855 ms, of which
+  trees (the git walks of its four trees, one after another) 15,006 ms; records 12, quests 115, verdicts 38, marks 152, waiting 28,
+  run waits 0, rows 110, entries 129, openings 246 ms. `--json`: 11,730 ms, trees 9,547 ms. A tree's walk is six to nine git starts,
+  1.2 to 5.2 s each under the machine's load. `SESSION_GROUPS` with `said` (what the terminal asks a running Daoris): its look 6,534 ms,
+  of which the trees' judgement 6,081 ms; the answer 3,489 ms. The events files are not the cost: the openings read 246 ms.
+- **Root cause:** the route's look waited for the facts' parts' first judgement (up to 10 s), then walked every tree no part had
+  judged itself (`HelpTreeFacts.WithTreesAsync` with `waits` true, f921a95178, PUSH1c1; read by `SESSION_GROUPS` since 1e532cc41d),
+  so at a start the list waited on the same walks the parts were making, behind a tree whose walk took 50 s. The terminal alone
+  walked its trees one after another (`SessionGroups.JudgeAsync` at one at once).
+- **Fix:** `GroupsStateSlice.LookAsync`, the one look of the route and the slice, never waits on a tree's walk: the trees are read as
+  the parts judged them, the offers following as they land, as the slice already read them (SESSIONFLASH1); the `waits` choice of the
+  look is gone. Each listing writes one `session.list` line, its stages in milliseconds (`SessionListLog`), the route's door `screen`
+  or `terminal`; the route groups every row once, its entries and its lines reading those rows (`all`), where it grouped them four times.
+- **After:** `SESSION_GROUPS` said 946 ms (1,805 ms before the rows were read once), its look 433 ms (the parts' read 6 ms); the
+  service's host started again over the fixture's store in 2,591 ms, the start's own stage. Left, each for a row of its own: the walk of one
+  large tree (50 s on the install), the facts' parts' own cost, apart from any list now; and the terminal with no Daoris running,
+  which still walks its live trees itself (14,771 ms for four on the fixture; four at once measured no faster, git's two places per
+  repository and the machine's load bounding it), and would read them only from a judgement kept across processes.
+- **Verify:** `SessionListRouteProcessTests` (red at 3,489 ms, green at 1,805 ms), `SessionListBudgetProcessTests` (the terminal
+  alone's stages besides its walks within 3 s; the walks said), the filtered `SessionList|SessionState|SessionLook` tests.

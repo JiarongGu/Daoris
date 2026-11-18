@@ -61,21 +61,27 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
 
     public async Task<object?> GroupsReadAsync(SessionGroupsRead press, CancellationToken cancellationToken)
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var times = new LookTimes();
         var ids = Ids(press.Ids);
-        var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
+        var (look, grouped) = await GroupsAsync(ids, cancellationToken, times: times).ConfigureAwait(false);
         // The entries beside the rows.
         var sessions = grouped.Select(SessionsGroupsWires.Grouped).ToArray();
-        var entries = SessionGroups.ReadEntries(look, ids).Select(SessionsGroupsWires.Entry).ToArray();
-        if (!press.Said) return new { Sessions = sessions, Entries = entries };
+        // Every row is grouped once: the entries and the terminal's lines read the rows of a look at every session.
+        var all = ids is null ? grouped : null;
+        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look, ids, all).Select(SessionsGroupsWires.Entry).ToArray());
+        if (!press.Said)
+        {
+            SessionListLog.Said(_loop.Log, watch.Elapsed, look.Records.Count, PluginEvents.Screen, times);
+            return new { Sessions = sessions, Entries = entries };
+        }
 
         // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it is given),
         // which the alone path prints from a look of its own through the same function; the page asks for none.
         var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
-        return new
-        {
-            Sessions = sessions, Entries = entries,
-            Said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow), [], 0).ToWire(),
-        };
+        var said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow, times, all), [], 0).ToWire();
+        SessionListLog.Said(_loop.Log, watch.Elapsed, look.Records.Count, PluginEvents.Terminal, times);
+        return new { Sessions = sessions, Entries = entries, Said = said };
     }
 
     public async Task<object?> ArchiveAsync(SessionArchiveMark press, CancellationToken cancellationToken)
@@ -118,14 +124,15 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
     /// trees are the facts'.
     /// </param>
     private async Task<(SessionLook Look, IReadOnlyList<SessionGrouping> Grouped)> GroupsAsync(
-        IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false)
+        IReadOnlyCollection<string>? only, CancellationToken cancellationToken, bool walked = false, LookTimes? times = null)
     {
         var service = _loop.Service ?? throw NotReady();
+        times ??= new LookTimes();
         // the one look, in the groups slice's builder (no tree judged here unless walked; the waits, the calls and
         // the kept look are laid there), so the route and the pushed slice cannot drift.
-        var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked).ConfigureAwait(false);
+        var look = await GroupsStateSlice.LookAsync(_loop, service, cancellationToken, only, walked, times).ConfigureAwait(false);
 
-        return (look, SessionGroups.Read(look, only));
+        return (look, times.Time("rows", () => SessionGroups.Read(look, only)));
     }
 
     public async Task<object?> DeleteAsync(SessionDelete press, CancellationToken cancellationToken)
