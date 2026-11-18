@@ -133,12 +133,8 @@ public static class GroupsStateSlice
     /// <param name="only">The sessions asked (null for every one); only a look at every session is kept for Ask Daoris's room.</param>
     /// <param name="walked">Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never
     /// hides work a tree gained since), instead of read as the facts judged them. The route and this slice take the one look here.</param>
-    /// <param name="times">Where each stage's time is said, as the machine log's <c>session.list</c> line says them.</param>
-    /// <remarks>
-    /// Never waits on a git walk: a tree the parts have not judged is not waited for, so the route's first rows, as the slice's, are
-    /// placed at once by the records, the quests and the marks, and the trees' offers follow as the parts land (<see cref="HearTrees"/>).
-    /// A wait for the parts' first judgement held <c>daoris session list</c> a minute on an installed machine, behind one tree's walk.
-    /// </remarks>
+    /// <param name="times">Each stage's time (<c>session.list</c>). No tree's walk is waited for: the route's rows, as the slice's, are
+    /// placed at once, the trees' offers following as the parts land; a wait held the list a minute on an installed machine.</param>
     public static async Task<SessionLook> LookAsync(
         DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false,
         LookTimes? times = null)

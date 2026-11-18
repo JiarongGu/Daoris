@@ -140,8 +140,9 @@ public static class SessionsCommand
     public static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null) => SessionsJson.Json(rows, entries);
 
     /// <summary>The listing's lines from one look (see <see cref="SessionsListing.ListLines"/>).</summary>
-    public static IReadOnlyList<string> ListLines(SessionLook look, SessionsAsk ask, string home, DateTimeOffset now, LookTimes? times = null) =>
-        SessionsListing.ListLines(look, ask, home, now, times);
+    public static IReadOnlyList<string> ListLines(
+        SessionLook look, SessionsAsk ask, string home, DateTimeOffset now, LookTimes? times = null, IReadOnlyList<SessionGrouping>? all = null) =>
+        SessionsListing.ListLines(look, ask, home, now, times, all);
 
     /// <summary>How a part began, in the terminal's words.</summary>
     internal static string Began(EntryPart part) => SessionsListing.Began(part);

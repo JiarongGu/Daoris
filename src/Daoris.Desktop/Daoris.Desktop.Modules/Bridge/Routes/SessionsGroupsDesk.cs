@@ -67,7 +67,9 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         var (look, grouped) = await GroupsAsync(ids, cancellationToken, times: times).ConfigureAwait(false);
         // The entries beside the rows.
         var sessions = grouped.Select(SessionsGroupsWires.Grouped).ToArray();
-        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look, ids).Select(SessionsGroupsWires.Entry).ToArray());
+        // Every row is grouped once: the entries and the terminal's lines read the rows of a look at every session.
+        var all = ids is null ? grouped : null;
+        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look, ids, all).Select(SessionsGroupsWires.Entry).ToArray());
         if (!press.Said)
         {
             SessionListLog.Said(_loop.Log, watch.Elapsed, look.Records.Count, PluginEvents.Screen, times);
@@ -77,7 +79,7 @@ internal sealed class SessionsGroupsDesk(DriverContext context)
         // `daoris session list` asks for its own lines from this look (the group, the repository and `--json` it is given),
         // which the alone path prints from a look of its own through the same function; the page asks for none.
         var ask = new SessionsAsk("list") { Group = press.Group, Repository = press.Repository, Json = press.Json };
-        var said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow, times), [], 0).ToWire();
+        var said = new TreesSaid(SessionsCommand.ListLines(look, ask, _loop.Home, DateTimeOffset.UtcNow, times, all), [], 0).ToWire();
         SessionListLog.Said(_loop.Log, watch.Elapsed, look.Records.Count, PluginEvents.Terminal, times);
         return new { Sessions = sessions, Entries = entries, Said = said };
     }

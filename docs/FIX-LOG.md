@@ -14332,8 +14332,9 @@ installed window is not yet seen.
 - **Fix:** `GroupsStateSlice.LookAsync`, the one look of the route and the slice, never waits on a tree's walk: the trees are read as
   the parts judged them, the offers following as they land, as the slice already read them (SESSIONFLASH1); the `waits` choice of the
   look is gone. Each listing writes one `session.list` line, its stages in milliseconds (`SessionListLog`), the route's door `screen`
-  or `terminal`, and `ListLines` groups the rows once where it grouped them twice.
-- **After:** `SESSION_GROUPS` said 1,805 ms, its look 472 ms (the parts' read 6 ms). Left, each for a row of its own: the walk of one
+  or `terminal`; the route groups every row once, its entries and its lines reading those rows (`all`), where it grouped them four times.
+- **After:** `SESSION_GROUPS` said 946 ms (1,805 ms before the rows were read once), its look 433 ms (the parts' read 6 ms); the
+  service's host started again over the fixture's store in 2,591 ms, the start's own stage. Left, each for a row of its own: the walk of one
   large tree (50 s on the install), the facts' parts' own cost, apart from any list now; and the terminal with no Daoris running,
   which still walks its live trees itself (14,771 ms for four on the fixture; four at once measured no faster, git's two places per
   repository and the machine's load bounding it), and would read them only from a judgement kept across processes.

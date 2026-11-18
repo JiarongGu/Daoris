@@ -34,13 +34,13 @@ internal static class SessionsListing
     /// The listing's lines from one look: what <c>sessions</c> prints, which the instance's <c>SESSION_GROUPS</c> answers as
     /// <c>said</c> from its own look, so the verb that asks it prints the same words. The <c>--json</c> form is one element, whole.
     /// </summary>
-    /// <param name="times">Where the grouping's, the entries' and the openings' times are said, where a caller wants them.</param>
-    internal static IReadOnlyList<string> ListLines(SessionLook look, SessionsAsk ask, string home, DateTimeOffset now, LookTimes? times = null)
+    internal static IReadOnlyList<string> ListLines(
+        SessionLook look, SessionsAsk ask, string home, DateTimeOffset now, LookTimes? times = null, IReadOnlyList<SessionGrouping>? all = null)
     {
         times ??= new LookTimes();
         var output = new List<string>();
         var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var placed = times.Time("rows", () => SessionGroups.Read(look));
+        var placed = all ?? times.Time("rows", () => SessionGroups.Read(look));
         var rows = placed
             .Where(row => ask.Group is null || row.Group == ask.Group)
             .Where(row => ask.Repository is null
@@ -48,7 +48,7 @@ internal static class SessionsListing
             .ToList();
 
         // By entry, the rows kept for the page and for --json. An entry is in the group, and the repository, it is.
-        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look))
+        var entries = times.Time("entries", () => SessionGroups.ReadEntries(look, all: placed))
             .Where(entry => ask.Group is null || entry.Group == ask.Group)
             .Where(entry => ask.Repository is null || string.Equals(entry.Repository, ask.Repository, StringComparison.OrdinalIgnoreCase))
             .ToList();

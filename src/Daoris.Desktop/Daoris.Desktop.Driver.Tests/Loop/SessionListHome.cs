@@ -55,7 +55,7 @@ internal sealed class SessionListHome : IAsyncDisposable
     /// </summary>
     private static long Write(string path, int session, int bytes)
     {
-        var at = DateTimeOffset.UtcNow.AddDays(-3);
+        var at = new DateTimeOffset(2026, 11, 15, 9, 0, 0, TimeSpan.Zero);
         var seq = 0L;
         var text = new StringBuilder();
         string Line(SessionEvent e) => JsonSerializer.Serialize(e with { Seq = ++seq, At = at.AddSeconds(seq) }, SessionEventText.Json);

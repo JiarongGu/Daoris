@@ -51,5 +51,8 @@ public sealed class SessionListRouteProcessTests(ITestOutputHelper output) : Dri
 
         Assert.True(answered.Success, answered.Error?.Message);
         Assert.True(watch.Elapsed < Budget, $"the list took {watch.ElapsedMilliseconds} ms, past {Budget.TotalMilliseconds} ms");
+
+        // Said, not held: what a start waits on the service's host for at this size, the start's own stage apart from the list.
+        output.WriteLine($"the service's host again: {await Bench.HostAgainAsync()} ms");
     }
 }
