@@ -449,7 +449,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     other: harnessRun.otherWay, onSwitch: harnessRun.switchWay,
   };
   const below = (item: Attention) => {
-    if (item.step && actorWait(item.step) && item.step.work) return <RunReleaseDoors scope={{ quest: item.step.work }} wait={item.step} />;
+    if (item.step && actorWait(item.step)) return <RunReleaseDoors scope={{ quest: item.step.work ?? item.step.run }} wait={item.step} />;
     if (signingNewRow && item.id === signingNewRow.id && item.kind === signingNewRow.kind) {
       return <SignIn id={`${signingNewRow.account!.door}:login-new`} harness={signingNewRow.account!.door!} action="login-new" tool={signingNewRow.account!.product} {...ends} />;
     }
