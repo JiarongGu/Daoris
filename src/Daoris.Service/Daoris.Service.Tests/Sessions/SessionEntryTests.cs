@@ -357,12 +357,11 @@ public sealed class SessionEntryTests : IAsyncLifetime
         Assert.Equal("ask:one/app", await KeyOf(facts, facts.Session("s2", quest: "viaAsk")));
     }
 
-    /// <summary>An older chat record marked a take without the quest: nothing says which, so the quest keys as it did.</summary>
+    /// <summary>A chat that took no quest says none: a later quest keys as its own.</summary>
     [Fact]
-    public async Task A_chat_record_from_before_the_field_leaves_the_quest_keyed_as_before()
+    public async Task A_chat_that_took_no_quest_leaves_a_later_quest_keyed_as_its_own()
     {
         var chat = (await _ledger.OpenChatAsync("app", "stub", Now)).Session!;
-        Assert.True(await _sessions.MarkTookAsync(chat.Id));
         Assert.Null((await _sessions.FindAsync(chat.Id))!.TookQuest);
         await _sessions.SetStateAsync(chat.Id, SessionState.Completed, null, null, null, Now);
         var quest = await _quests.PublishAsync("someone", "app", "Do it", "Why.", Now);

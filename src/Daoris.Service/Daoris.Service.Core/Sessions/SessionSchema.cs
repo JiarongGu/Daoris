@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>The sessions table, its triggers and the columns later builds added: made once at open, and upgraded in place.</summary>
+/// <summary>The sessions table and its triggers, made once at open with the one current shape.</summary>
 internal static class SessionSchema
 {
     /// <summary>The states that hold a repository: a parked session counts, since the person is the flow control.</summary>
@@ -51,134 +51,64 @@ internal static class SessionSchema
                   -- string. Written once at spawn like the three above. It is a repository fact, not
                   -- a machine one — but the remote feed copies a named allowlist and does not name
                   -- it, so it stays here unless someone decides otherwise.
-                  base_commit     TEXT NULL
+                  base_commit     TEXT NULL,
+                  -- Whose record a row is (a mirrored row's id carries its origin; null is this machine's own), and the order this
+                  -- store wrote them in, which the sync cursor rests on.
+                  origin          TEXT NULL,
+                  revision        INTEGER NOT NULL DEFAULT 0,
+                  -- The ask an intake answers.
+                  ask             TEXT NULL,
+                  -- Whether this session took its own quest, through its own connector.
+                  took            INTEGER NULL,
+                  -- The person's words, a JSON list.
+                  said            TEXT NULL,
+                  -- A stop that is not the person's: the sweep's, or a shutdown's.
+                  interrupted     INTEGER NULL,
+                  -- A failure an account's limit made. `limited`, since LIMIT is SQL's own word.
+                  limited         INTEGER NULL,
+                  -- The note's parts, a JSON list beside it, and the turns' own record.
+                  note_parts      TEXT NULL,
+                  turns           TEXT NULL,
+                  -- What a set-up step's session asked Daoris to serve and said it showed, until its driver posts each with the
+                  -- commit it read. This machine's own, like the person's words beside it: no wire names it.
+                  review          TEXT NULL,
+                  -- The second opinion a reviewer's record reads another session's work for, the session a helper's record
+                  -- answers and the piece a partner's record writes. This machine's own: no wire carries them.
+                  opinion         TEXT NULL,
+                  serves          TEXT NULL,
+                  piece           TEXT NULL,
+                  decides         TEXT NULL,
+                  performs        TEXT NULL,
+                  holds_place     TEXT NULL,
+                  -- The session a record continues, why and who asked. `from_session`, since FROM is SQL's own word.
+                  from_session    TEXT NULL,
+                  from_why        TEXT NULL,
+                  from_by         TEXT NULL,
+                  -- The record's conversation, given as the record opens and never moved.
+                  line            TEXT NULL,
+                  -- The entry's key, written at every open. It travels, so a mirror holds it too.
+                  entry           TEXT NULL,
+                  -- The quest a conversation took, which `took` alone never says. It travels, as the entry does.
+                  took_quest      TEXT NULL,
+                  -- The access mode an Ask Daoris record's run gets, the access setup a driven session started under and the
+                  -- downloaded versions the record's starts get (a JSON list). This machine's own: no wire carries them.
+                  help_mode       TEXT NULL,
+                  access          TEXT NULL,
+                  resolved        TEXT NULL,
+                  -- Mirrors never name these columns.
+                  actor           TEXT NULL,
+                  choice          TEXT NULL,
+                  asked           TEXT NULL,
+                  actor_override  TEXT NULL,
+                  ran             TEXT NULL,
+                  chosen          TEXT NULL,
+                  -- Whether a record went up to a remote: a push marks what it sent, and a record marked is refused a delete.
+                  pushed          INTEGER NULL
                 );
                 CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
-
-        await SessionColumnNames.RenameAsync(db, ct).ConfigureAwait(false);
-
-        // Records made before a column existed must survive its arrival: a session record is the reviewable trace of work,
-        // and a store that dropped them on an upgrade would lose exactly the history the person reviews.
-        foreach (var (column, definition) in new[]
-        {
-            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
-            ("kind", $"kind TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}'"),
-            ("door_version", "door_version TEXT NULL"),
-            ("profile", "profile TEXT NULL"),
-            ("tree", "tree TEXT NULL"),
-            ("base_commit", "base_commit TEXT NULL"),
-        })
-        {
-            await SchemaColumns.EnsureAsync(db, "sessions", column, definition, ct).ConfigureAwait(false);
-        }
-
-        await RelaxQuestAsync(db, ct).ConfigureAwait(false);
-
-        // After the rebuild above so it cannot drop them: whose record a row is, and the order this store wrote them in.
-        // Both are DERIVED for rows that already exist — a mirrored row's id carries its origin, and insertion is the order
-        // written — so a store from before the sync pushes and serves every record it holds.
-        if (!await SchemaColumns.HasAsync(db, "sessions", "origin", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.ApplyAsync(db, """
-                ALTER TABLE sessions ADD COLUMN origin TEXT NULL;
-                UPDATE sessions SET origin = substr(id, 1, instr(id, '/') - 1) WHERE instr(id, '/') > 0;
-                """, ct).ConfigureAwait(false);
-        }
-
-        if (!await SchemaColumns.HasAsync(db, "sessions", "revision", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.ApplyAsync(db, """
-                ALTER TABLE sessions ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
-                UPDATE sessions SET revision = rowid;
-                """, ct).ConfigureAwait(false);
-        }
-
-        // The ask an intake answers. After the rebuild, like the pair above, so it cannot drop it.
-        await SchemaColumns.EnsureAsync(db, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
-
-        // Whether this session took its own quest, through its own connector. A record from
-        // before it says nothing, and nothing reads as false.
-        await SchemaColumns.EnsureAsync(db, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
-
-        // The person's words, a JSON list. The single answer it replaced is the desktop's migration's.
-        await SchemaColumns.EnsureAsync(db, "sessions", "said", "said TEXT NULL", ct).ConfigureAwait(false);
-
-        // A stop that is not the person's — the sweep's, or a shutdown's. A record from before it
-        // says nothing, and nothing reads as the person's stop.
-        await SchemaColumns.EnsureAsync(db, "sessions", "interrupted", "interrupted INTEGER NULL", ct).ConfigureAwait(false);
-
-        // A failure an account's limit made. A record from before it says nothing, and
-        // nothing reads as a failure like any other. `limited`, since LIMIT is SQL's own word.
-        await SchemaColumns.EnsureAsync(db, "sessions", "limited", "limited INTEGER NULL", ct).ConfigureAwait(false);
-
-        // The note's parts, a JSON list beside it. A record from before says none, and its note stands
-        // as kept: nothing re-reads the English, and nothing rewrites it.
-        await SchemaColumns.EnsureAsync(db, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
-        await NotePartNames.RenameAsync(db, ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "turns", "turns TEXT NULL", ct).ConfigureAwait(false);
-
-        // What a set-up step's session asked Daoris to serve and said it showed, until its driver
-        // posts each with the commit it read. This machine's own, like the person's words beside it: no wire names it, and
-        // a record from before says nothing.
-        await SchemaColumns.EnsureAsync(db, "sessions", "review", "review TEXT NULL", ct).ConfigureAwait(false);
-
-        // The second opinion a reviewer's record reads another session's work for. This machine's
-        // own, like the opinion it names: no wire carries it, and a record from before says none.
-        await SchemaColumns.EnsureAsync(db, "sessions", "opinion", "opinion TEXT NULL", ct).ConfigureAwait(false);
-
-        // The session a helper's record answers. This machine's own, as `opinion` is.
-        await SchemaColumns.EnsureAsync(db, "sessions", "serves", "serves TEXT NULL", ct).ConfigureAwait(false);
-
-        // The piece a partner's record writes. This machine's own, as `serves` is, and a record from
-        // before says none.
-        await SchemaColumns.EnsureAsync(db, "sessions", "piece", "piece TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "decides", "decides TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "performs", "performs TEXT NULL", ct).ConfigureAwait(false);
-
-        await SchemaColumns.EnsureAsync(db, "sessions", "holds_place", "holds_place TEXT NULL", ct).ConfigureAwait(false);
-
-        // The session a record continues, why and who asked. This machine's own, as `opinion` is,
-        // and a record from before says none. `from_session`, since FROM is SQL's own word (as `limited`).
-        await SchemaColumns.EnsureAsync(db, "sessions", "from_session", "from_session TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "from_why", "from_why TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(db, "sessions", "from_by", "from_by TEXT NULL", ct).ConfigureAwait(false);
-
-        await SchemaColumns.EnsureAsync(db, "sessions", "line", "line TEXT NULL", ct).ConfigureAwait(false);
-        await SessionLines.BackfillAsync(db, ct).ConfigureAwait(false);
-
-        // The entry's key, written at every open. It travels, so a mirror holds it too. A record from before it
-        // says none, and the reader answers the rule's key for it without writing it here.
-        await SchemaColumns.EnsureAsync(db, "sessions", "entry", "entry TEXT NULL", ct).ConfigureAwait(false);
-
-        // The quest a conversation took, which `took` alone never says. It travels, as the
-        // entry does, since a teammate's reader keys the quest by it. A record from before says none.
-        await SchemaColumns.EnsureAsync(db, "sessions", "took_quest", "took_quest TEXT NULL", ct).ConfigureAwait(false);
-
-        // The take's bind is gone with the column that said why one did not bind.
-        if (await SchemaColumns.HasAsync(db, "sessions", "took_bind", ct).ConfigureAwait(false))
-        {
-            await using var dropBind = db.Command();
-            dropBind.CommandText = "ALTER TABLE sessions DROP COLUMN took_bind";
-            await dropBind.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-
-        // The access mode an Ask Daoris record's run gets. This machine's own, as `opinion` is: no wire carries
-        // it, and a help record from before says none, which reads as restricted, what it ran under.
-        await SchemaColumns.EnsureAsync(db, "sessions", "help_mode", "help_mode TEXT NULL", ct).ConfigureAwait(false);
-
-        // The access setup a driven session started under. This machine's own, as `opinion` is: no wire
-        // carries it, and a record from before says none, a start under today's behaviour.
-        await SchemaColumns.EnsureAsync(db, "sessions", "access", "access TEXT NULL", ct).ConfigureAwait(false);
-
-        // The downloaded versions the record's starts get, a JSON list. This machine's own, as `opinion`
-        // is: no wire carries it, and a record from before says none, which keeps the downloads' start-time rule.
-        await SchemaColumns.EnsureAsync(db, "sessions", "resolved", "resolved TEXT NULL", ct).ConfigureAwait(false);
-        // An existing record says none, preserving its reading. Mirrors never name these columns.
-        foreach (var column in new[] { "actor", "choice", "asked", "actor_override", "ran", "chosen" })
-            await SchemaColumns.EnsureAsync(db, "sessions", column, $"{column} TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = db.Command())
         {
@@ -196,8 +126,7 @@ internal static class SessionSchema
         await SessionIndexes.EnsureAsync(db, ct).ConfigureAwait(false);
 
         // The highest revision issued, one row beside the cursor it keeps honest. The table's own maximum goes back
-        // when its newest record is deleted, and the push cursor has already passed that number. A store from before
-        // starts the mark at the newest revision it holds, so nothing changes for one that never deleted a record. The
+        // when its newest record is deleted, and the push cursor has already passed that number. The
         // triggers move it in the statement that writes the revision, as one statement is what keeps a revision exact
         // under SQLite's write lock (see NextRevision): where no transaction is open, a second statement is a second
         // transaction, and another host could write between the two.
@@ -295,66 +224,5 @@ internal static class SessionSchema
             journal.CommandText = EventJournal.Schema;
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
-
-        // Whether a record went up to a remote. For rows that already exist it is read once from the cursor: a record of this
-        // machine's at or before what its workspace pushed is examined by a push, so it is marked, which errs toward refusing a
-        // delete (a record of a repository that had not joined is marked too). From here on a push marks what it sent.
-        if (!await SchemaColumns.HasAsync(db, "sessions", "pushed", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.ApplyAsync(db, """
-                ALTER TABLE sessions ADD COLUMN pushed INTEGER NULL;
-                UPDATE sessions SET pushed = 1
-                WHERE origin IS NULL AND revision <= COALESCE(
-                  (SELECT c.pushed FROM session_cursor c WHERE c.workspace = sessions.workspace COLLATE NOCASE), 0);
-                """, ct).ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// Let `quest` be null on a table created before chats existed.
-    /// </summary>
-    /// <remarks>
-    /// SQLite cannot drop a NOT NULL constraint, so the table is rebuilt and the rows are COPIED —
-    /// not recreated empty. The entry store rebuilds by discarding, and may: it holds derived data.
-    /// This one holds records of work that happened, which nothing can re-derive. Guarded by a probe
-    /// so it runs once, on the one upgrade that needs it, and never again.
-    /// </remarks>
-    private static async Task RelaxQuestAsync(ConnectionGate db, CancellationToken ct)
-    {
-        await using (var probe = db.Command())
-        {
-            probe.CommandText =
-                "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = 'quest' AND \"notnull\" = 1";
-            var constrained = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
-            if (constrained == 0) return;
-        }
-
-        await SchemaColumns.ApplyAsync(db, $"""
-            CREATE TABLE sessions_relaxed (
-              id         TEXT PRIMARY KEY,
-              quest      TEXT NULL,
-              repository TEXT NOT NULL,
-              door       TEXT NOT NULL,
-              state      TEXT NOT NULL,
-              note       TEXT NULL,
-              evidence   TEXT NULL,
-              transcript TEXT NULL,
-              created    TEXT NOT NULL,
-              updated    TEXT NOT NULL,
-              workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
-              kind       TEXT NOT NULL DEFAULT '{nameof(SessionKind.Driven)}',
-              door_version TEXT NULL,
-              profile         TEXT NULL,
-              tree            TEXT NULL,
-              base_commit     TEXT NULL
-            );
-            INSERT INTO sessions_relaxed
-              SELECT id, quest, repository, door, state, note, evidence, transcript, created,
-                     updated, workspace, kind, door_version, profile, tree, base_commit
-              FROM sessions;
-            DROP TABLE sessions;
-            ALTER TABLE sessions_relaxed RENAME TO sessions;
-            CREATE INDEX IF NOT EXISTS sessions_repository ON sessions (repository, state);
-            """, ct).ConfigureAwait(false);
     }
 }
