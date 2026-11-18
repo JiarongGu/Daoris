@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A run whose landing has reached keeps every step it reached when its own session goes on (RESUMERESET1): words after the landing are
-/// the session's turn, and what it commits then, or its tree brought to the line the work was merged into, is new work for the chain's next
-/// quest, never this run's. Before the landing the session's going on still takes the run back to what the line holds, as it always did.
+/// A run whose landing has reached keeps every step it reached when its own session goes on: words after the landing are the session's
+/// turn, and what it commits then, or its tree brought to the line the work merged into, is new work for the chain's next quest, never
+/// this run's. Before the landing the session's going on takes the run back to what the line holds.
 /// </summary>
 public sealed class LandedRunGoesOnTests : NodeRunFixture
 {
@@ -127,7 +127,7 @@ public sealed class LandedRunGoesOnTests : NodeRunFixture
         Assert.Equal(NodeStates.Active, RunStatus("release").State);
     }
 
-    /// <summary>Before the landing the session's going on is the work moving: what the line holds is judged again at its new tip, as always.</summary>
+    /// <summary>Before the landing the session's going on is the work moving: what the line holds is judged again at its new tip.</summary>
     [Fact]
     public async Task Before_the_landing_the_sessions_going_on_still_takes_the_run_back_to_what_the_line_holds()
     {
