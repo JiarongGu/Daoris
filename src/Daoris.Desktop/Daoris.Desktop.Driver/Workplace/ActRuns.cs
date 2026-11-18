@@ -46,6 +46,8 @@ public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refu
 {
     /// <summary>What the act's door adds in plain words beside the record's sentence (a commit's hook's rewrite, a hook's refusal); null where it has none.</summary>
     public string? Notes { get; init; }
+
+    public bool Busy { get; init; }
 }
 
 /// <summary>The boundaries a test's seam is called at, by the step's ordinal (none for <see cref="Prepared"/>).</summary>
@@ -149,7 +151,7 @@ public sealed class ActRuns(ActJournal journal)
         var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
         using var taken = outer is null ? await HoldWaitingAsync(journal.Home, plan, ct).ConfigureAwait(false) : null;
         var held = outer ?? taken;
-        if (held is null) return Refused($"{TreeLock.Held(plan.Repository, TreeLock.HolderOf(journal.Home, plan.Checkout))}: nothing was changed.");
+        if (held is null) return Refused($"{TreeLock.Held(plan.Repository, TreeLock.HolderOf(journal.Home, plan.Checkout))}: nothing was changed.") with { Busy = true };
 
         var reconciler = new ActReconciler(journal) { ExitBound = ExitBound, Ending = Ending };
         if (await reconciler.UnderLockAsync(plan.Checkout, ct).ConfigureAwait(false) is { } open) return Refused($"{open.Said}: nothing was changed.");

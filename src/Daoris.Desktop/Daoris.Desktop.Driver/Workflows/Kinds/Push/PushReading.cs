@@ -11,7 +11,15 @@ internal static class PushReading
         if (NodeObserving.OfBranch(reading) is { } refused) return refused;
         if (NothingToDeliver.Empty(reading.Unit) is { } nothing) return NodeObserving.Seen(reading, NodeStates.Skipped, nothing) with { Source = NodeSource.Landing };
         var landing = NodeObserving.LandingOf(reading.Unit);
-        if (landing is not { Pushed: true, PushedTip: { } pushed }) return NodeObserving.Seen(reading, null, "the branch was not pushed yet");
+        if (landing is not { Pushed: true, PushedTip: { } pushed })
+        {
+            // A push made outside Daoris's push leaves no record: origin holding the landed tip is the fact (read only for a failed push).
+            return reading.Git?.RemoteTip?.Invoke(landing) is { } held && string.Equals(held, landing.Tip, StringComparison.Ordinal)
+                ? NodeObserving.ReachedAt(reading, NodeSource.Git, reading.Binding.SubjectRevision, landing.Tip, LandedBranches.FileName, landing.Branch,
+                    $"{TextBounds.ShortCommit(landing.Tip, 8)} is on the remote-tracking ref, pushed outside Daoris's push")
+                : NodeObserving.Seen(reading, null, "the branch was not pushed yet");
+        }
+
         if (reading.Git?.RemoteTip is not { } remoteTip)
         {
             return NodeObserving.Seen(reading, NodeStates.Unknown, $"{TextBounds.ShortCommit(pushed, 8)} was pushed, and git's remote-tracking ref was not read");

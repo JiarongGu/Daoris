@@ -139,8 +139,8 @@ public static class WireEvaluation
         foreach (var node in declared.Where(node => !moved.Contains(node.Id)))
         {
             var status = now[node.Id];
-            if (status.State is not (NodeStates.Active or NodeStates.Unknown) || status.Binding is not { } binding
-                || NodeKit.Of(node.Kind) is not IObserves observes
+            if (status.Binding is not { } binding || NodeKit.Of(node.Kind) is not IObserves observes
+                || status.State is not (NodeStates.Active or NodeStates.Unknown) && !(status.State == NodeStates.Failed && observes.ObservesFailed(status))
                 || subjects[node.Id] is not { Withheld: null, Subject: { } subject } || !run.Units.TryGetValue(subject, out var unit))
             {
                 continue;
@@ -161,6 +161,7 @@ public static class WireEvaluation
             }
 
             if (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown) continue;
+            if (status.State == NodeStates.Failed && move.To != NodeStates.Reached) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. An attempt with no scope kept
             // takes its binding's own rule, a place with a place and a whole-graph binding with that graph, so the lifecycle compares like with like.
