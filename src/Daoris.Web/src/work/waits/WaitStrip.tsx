@@ -118,6 +118,9 @@ export type RunWaitDoors = {
   release?: Parameters<typeof RunWaitsHead>[0]['release'];
 };
 
+/** The dock's waits the session itself asked the person: a step its agent holds says it waits on these. */
+const ASKED: ReadonlySet<DockWait['kind']> = new Set(['question', 'intake', 'goAhead', 'permission', 'gitAsk', 'answerAlone', 'helper', 'handOver']);
+
 /**
  * **The dock: every wait the person settles, in one place above the composer**: outside the conversation's scroll, where
  * the person reads its last message, each open wait with its own press, oldest first under a count, never folded. It is the only
@@ -186,6 +189,14 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
     return true;
   };
   const marked = (prefix: string) => (sought?.startsWith(`${prefix}:`) ? sought.slice(prefix.length + 1) : undefined);
+
+  // The waits a step's agent may be blocked on: what the session itself asked the person, each led to by its line.
+  const blockedOn = (of: readonly DockLine[]) => of.flatMap((line) => (ASKED.has(line.wait.kind) ? [{ key: line.key, name: dockName(t, line.wait) }] : []));
+  const to = (key: string) => {
+    const line = [...(section.current?.querySelectorAll<HTMLElement>('[data-dock-line]') ?? [])].find((each) => each.dataset.dockLine === key);
+    line?.scrollIntoView?.({ block: 'nearest' });
+    line?.querySelector<HTMLElement>('[data-wait], input, textarea, button')?.focus();
+  };
 
   const lineOf = ({ wait }: DockLine): ReactNode => {
     switch (wait.kind) {
@@ -290,6 +301,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
         return runWaits && (
           <RunWaitsHead
             waits={[wait]} steps={runWaits.steps} onWord={runWaits.onWord} onHeld={runWaits.onHeld} hold={runWaits.hold} release={runWaits.release}
+            blocked={blockedOn(lines)} onTo={to}
           />
         );
       default:

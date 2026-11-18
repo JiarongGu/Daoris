@@ -9,7 +9,7 @@ import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
 import {
-  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, notTakenBy, stepWaitsOnYou, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
+  type CheckHeldAnswer, type CheckHeldAsk, finishedBy, heldByAgent, notTakenBy, stepWaitsOnYou, type NodeWordAnswer, type NodeWordAsk, openedBy, type RunRequest, type RunStep, runTone,
   type WorkflowRun, type WorkflowRunAnswer,
 } from './run';
 import { outcomeSaid } from './graphFlow';
@@ -396,6 +396,7 @@ function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHe
         ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
         : { word: stepWord(t, step), tone: runTone(step.state, step.holder) },
       settled: step.state === 'done',
+      agent: heldByAgent(step),
       node: mark(false),
       ...(step.state === 'not-reached' ? {} : { open: pick }),
     }];

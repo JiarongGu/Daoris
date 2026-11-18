@@ -350,6 +350,15 @@ export function runTone(state: string, holder?: RunHolder | null): 'open' | 'don
 /** Whether the holder of a role is the person looking: the window's *you*, the one place it names the person's holding. */
 export const holdsIt = (holder: RunHolder | null | undefined): boolean => holder?.kind === 'person';
 
+/** Whether an agent holds a waiting step: it reads as the agent's, whatever the step's declared part says. */
+export const heldByAgent = (step: Pick<RunStep, 'state' | 'holder'>): boolean => step.state === 'waiting' && step.holder?.kind === 'agent';
+
+/**
+ * Whether a step an agent holds is the person's to *Take* first (D318 point 5): its one press is *Take*, and none of the step's own
+ * presses (its Done, a skip, a stop) is offered until a take makes it theirs.
+ */
+export const takeFirst = (step: Pick<RunStep, 'state' | 'holder' | 'holds'>): boolean => heldByAgent(step) && (step.holds?.includes('take') ?? false);
+
 /** The step a run stands at, or null where it finished. */
 export const standsAt = (run: WorkflowRun): RunStep | null => run.steps.find((step) => step.step.id === run.at) ?? null;
 

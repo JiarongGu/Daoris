@@ -41,6 +41,7 @@
   "work.head.letGo": "从终端收回",
   "work.head.notHeld": "现在没有终端持有这段对话。",
   "work.head.runWait": "{{node}}：等待 `{{role}}`：{{holder}}",
+  "work.head.runWaitBlocked": "{{holder}} 正在等你：",
   "work.head.state.needsYou": "等你处理",
   "work.head.state.step": "等待某一步",
   "work.head.state.working": "工作中",
