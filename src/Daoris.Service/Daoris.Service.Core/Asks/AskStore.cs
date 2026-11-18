@@ -85,9 +85,6 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
 
         await SchemaColumns.EnsureAsync(_db, "asks", "through_words", "through_words TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
-
-        // The person's requirements given when the ask is made, in the quest's own shape; an ask from before, and an older build's
-        // insert, carry none.
         await SchemaColumns.EnsureAsync(_db, "asks", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
 
         // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and

@@ -81,7 +81,6 @@ public sealed class AskThroughTests : IAsyncLifetime
         Assert.Equal("the export button", Assert.Single(kept.Requirements).Quote);
         Assert.Contains("1 requirement", asked.Message, StringComparison.Ordinal);
 
-        // The intake's own requirement is added beside the person's, and theirs is never dropped.
         var own = new QuestRequirement("write the guide", "the guide is in the repository's docs");
         var published = await _desk.PublishAsync(kept.Id, "reports", Now, draft: new AskDraft("The export guide", "Write it.") { Requirements = [own] },
             byAgent: true);

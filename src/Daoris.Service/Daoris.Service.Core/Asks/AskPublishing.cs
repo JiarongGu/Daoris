@@ -133,9 +133,8 @@ internal sealed class AskPublishing(
     }
 
     /// <summary>
-    /// A new ask with the person's requirements: kept first, carrying them, with their quotes as words they said, so the exchange's quote
-    /// judge reads them on the ask as it reads every word. Named a receiver, it is published as <c>ask publish</c> publishes; else every
-    /// quest its intake publishes carries them.
+    /// A new ask with the person's requirements, kept first with their quotes as words they said, so the exchange's quote judge reads them;
+    /// named a receiver, it is published as <c>ask publish</c> publishes, else each quest its intake publishes carries them.
     /// </summary>
     private async Task<AskOutcome> RequiredAsync(Ask ask, string? to, IReadOnlyList<QuestStep> then, DateTimeOffset now, CancellationToken ct)
     {

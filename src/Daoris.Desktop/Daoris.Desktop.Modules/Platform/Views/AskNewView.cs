@@ -78,7 +78,6 @@ public sealed class AskNewView : IPressView
             also.Add(new PressSaid("ask-new-files", ("count", Count(files.Count)), ("files", string.Join(", ", files.Select(Path.GetFileName)))));
         }
 
-        // The person's requirements and through words, each on the card, so their yes is to them as the ask carries them.
         foreach (var required in ask.Carried.Requirements)
         {
             also.Add(new PressSaid("ask-new-requirement", ("words", required.Quote ?? ""), ("check", required.Check ?? "")));
@@ -118,7 +117,6 @@ public sealed class AskNewView : IPressView
 
     private static string? Named(JsonElement? payload, string name) => PressPayload.Text(payload, name) is { Length: > 0 } text ? text.Trim() : null;
 
-    /// <summary>The requirements the press carries, each <c>{ quote, check }</c> as the route binds them; null for none.</summary>
     private static IReadOnlyList<QuestRequirementWire>? Required(JsonElement? payload) =>
         payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("requirements", out var list) && list.ValueKind == JsonValueKind.Array
             ? [.. list.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object)

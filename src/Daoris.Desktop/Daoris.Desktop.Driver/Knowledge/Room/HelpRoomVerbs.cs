@@ -26,7 +26,6 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         text.Append("  with `--short \"…\"` for a short title (at most 40 characters, the few words that tell it apart in a list, the person's own\n");
         text.Append("  where they gave one) and `--review rule|on|<environment>|off` for the review the person said they want. Its card shows the\n");
         text.Append("  person the ask; one the verb would refuse is answered to you at once and never shown.\n");
-        // An ask with no requirement holds each run at its holds step for the person's word, so the requirements are proposed first.
         text.Append("  Before you make it, propose one to three requirements from the person's own words here, each their words, copied verbatim,\n");
         text.Append("  and the check an agent's done must show, and ask for their yes; they may edit or drop each. Make it with the ones they\n");
         text.Append("  said yes to, each `--require \"<their words>\" \"<the check>\"`: every quest the ask becomes carries them, and its run's\n");
