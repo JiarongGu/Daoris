@@ -896,15 +896,14 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
-   * A live chat between turns is idle in the rail, and working again the moment the driver says a turn is in flight. The page
-   * header's state line is the reader's, never the record's word.
+   * A live chat between turns is idle in the rail, and working again the moment the driver says a turn is in flight; the header's
+   * state line is the reader's, never that word.
    */
-  it('says a live chat is idle between turns in the rail, and its state line from the reader', async () => {
+  it('says a live chat is idle between turns in the rail, its header the reader\'s line', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
       if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
-      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 'c0ffee11', group: 'working', state: 'working', shown: 'working', archived: false, teammate: false }] };
       return DRIVER_STATE;
     });
 
@@ -912,7 +911,7 @@ describe('starting and holding a conversation', () => {
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
     const head = screen.getByRole('heading', { level: 1 }).closest('header')!;
-    await waitFor(() => expect(within(head).getByText('Working')).toBeInTheDocument());
+    expect(within(head).getByText('Reading its state')).toBeInTheDocument();
     expect(within(head).queryByText('idle')).toBeNull();
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));

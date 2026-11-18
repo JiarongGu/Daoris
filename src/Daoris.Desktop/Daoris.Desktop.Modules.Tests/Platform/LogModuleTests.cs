@@ -51,7 +51,6 @@ public sealed class LogModuleTests : Bridge
         },
         { "proposal.settled", new { applied = true }, "info", """{"applied":true}""" },
         {
-            // The state line and the dock disagree: the reader's group and reason, and the oldest docked kind.
             "wait.disagreed", new { session = "76cdd5db", group = "needs-you", reason = "permission", docked = "permission" }, "info",
             """{"session":"76cdd5db","group":"needs-you","reason":"permission","docked":"permission"}"""
         },

@@ -125,8 +125,6 @@ export const Answered: Story = {
   },
 };
 
-// A park's go-aheads and its question's answers are the dock's now (D320): their stories are `WaitStrip`'s.
-
 /**
  * A parked INTAKE: it serves an ask and runs in Daoris's own room, so the record says *ask*
  * and *room* rather than *repository* and *tree*, and its answer is a door to the ask.
@@ -213,8 +211,6 @@ export const FailedItsBranchLeft: Story = {
     onDiscardBranch: () => {},
   },
 };
-
-// The work to land, the review's gates and a discard are the dock's now (D320): their stories are `WaitStrip`'s.
 
 /**
  * The same with a long branch name, at the main area's 400 px floor, in the session's gutters. The name is whole,

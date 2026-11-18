@@ -4,8 +4,7 @@ import '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { SessionHead } from './SessionHead';
 
-// One place for what waits on the person (D320): the dock above the composer presses every wait, so the session's head draws
-// none of its cards: no park card with Finish and Decline, no held tool call, no go-ahead, no rule, no work to accept.
+// The dock above the composer presses every wait, so the session's head draws none of its cards.
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4', quest: 'q7', repository: 'engine', door: 'claude-code', state: 'awaiting-person', kind: 'driven',

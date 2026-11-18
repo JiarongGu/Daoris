@@ -6,8 +6,8 @@ import type { StepWaitRow } from '../attention/attentionPushed';
 import type { PermissionWait } from './PermissionAsks';
 import { WaitStrip } from './WaitStrip';
 
-// The dock above the composer (D320): every wait the person settles stands in it with its own press, the run's steps held for the
-// person among them, oldest first under a count, never folded; a teammate's session draws its waits as lines with no press.
+// Every wait the person settles stands in the dock with its own press, oldest first under a count, never folded; a teammate's
+// session draws its waits as lines with no press.
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4', quest: 'q7', repository: 'engine', door: 'claude-code', state: 'awaiting-person', kind: 'driven',

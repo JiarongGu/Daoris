@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { STEP_REVIEWED, STEP_SHOWN } from '../gates/reviewFixtures';
-// The work's line, its gates and their presses stand in the dock above the composer, the one place a wait is pressed (D320).
 import { WaitStrip as SessionHead } from '../waits/WaitStrip';
 
 // Where the review's gate holds a session's work, the head

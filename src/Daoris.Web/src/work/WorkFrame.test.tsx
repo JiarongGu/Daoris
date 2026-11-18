@@ -1161,7 +1161,6 @@ describe('a park\'s go-aheads', () => {
       expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
-    // The head lists none (the dock above the composer is the one place a wait is pressed, D320), and the dock draws none the box answers.
     expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
     // The park's own card and box stay: with no question recorded, it is answered in words.

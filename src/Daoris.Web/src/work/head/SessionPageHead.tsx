@@ -43,8 +43,8 @@ export function SessionPageHead({
   session, title, shown, state = null, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null,
 }: {
   /**
-   * Its state line (`stateLineOf`, D320): the driver's reader's group on its pill, then its age and cause, the oldest wait's name a
-   * press to its line in the dock. The page always hands it; `shown` stands only where nothing reads the reader (a story).
+   * Its state line (`stateLineOf`): the reader's group on its pill, then its age and cause, the oldest wait's name a press to its
+   * line in the dock. The page always hands it; `shown` stands only where nothing reads the reader (a story).
    */
   state?: { line: StateLine; said: { word: string; rest: string }; onWait?: () => void } | null;
   /** Its line's state where another part or a co-worker decides it (`lineWords`), with *Open* to that one. */

@@ -54,7 +54,6 @@ export function useAttendedHead({
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
   atWorkHeld, heavyPart, heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
 }: {
-  /** What the dock holds, oldest first (`dockOf`): the state line names the oldest and reads Waiting on you while any stands. */
   docked: readonly DockLine[];
   groupings?: readonly SessionGrouping[];
   attend?: (id: string) => void;
@@ -266,8 +265,6 @@ export function useAttendedHead({
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
     integration: integration.data ?? null,
   } : null;
-  // Its state line from the driver's reader and the dock, never the record's word (D320); the oldest wait's name a press to its
-  // line in the dock, where it is pressed. A disagreement between the two is the window's log's.
   const stateLine = attended ? stateLineOf({ session: attended, grouping, docked }) : null;
   const oldestWait = stateLine?.wait?.wait;
   const oldest = oldestWait && oldestWait.kind !== 'step' ? anchorOf(oldestWait) : null;

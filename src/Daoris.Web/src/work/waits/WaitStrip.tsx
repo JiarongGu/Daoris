@@ -118,7 +118,7 @@ export type RunWaitDoors = {
 };
 
 /**
- * **The dock: every wait the person settles, in one place above the composer** (D320): outside the conversation's scroll, where
+ * **The dock: every wait the person settles, in one place above the composer**: outside the conversation's scroll, where
  * the person reads its last message, each open wait with its own press, oldest first under a count, never folded. It is the only
  * place a wait is pressed on the session's page: the head names the oldest in its state line and draws none of them.
  *

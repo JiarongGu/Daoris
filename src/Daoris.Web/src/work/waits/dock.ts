@@ -17,7 +17,7 @@ export type DockLine = { key: string; wait: DockWait; since: string };
 /**
  * **The census**: for each kind the dock holds, the reason the driver's reader gives a session that holds it, and whether the
  * reader reads that kind yet (places it under Needs you by itself). A kind it does not read yet is the page's alone: the state line
- * reads *Waiting on you* by the dock, and the window's log names the disagreement until the driver reads it too (D320).
+ * reads *Waiting on you* by the dock, and the window's log names the disagreement until the driver reads it too.
  * A new kind cannot be docked without a line here: the type holds every kind.
  */
 export const DOCK_CENSUS: Readonly<Record<DockWait['kind'], { reason: string; read: boolean }>> = {

@@ -62,10 +62,7 @@ export function RunWaitsHead({ waits, steps, onWord, onHeld, hold }: {
   );
 }
 
-/**
- * The dock's run waits of `session`: its placing in Sessions and *What needs you*'s rows, as the shell pushes them, with their
- * doors (`WaitStrip`'s `runWaits`). None where nothing is attended.
- */
+/** The dock's run waits of `session`: its placing in Sessions and *What needs you*'s rows, as the shell pushes them, with their doors. */
 export function useRunWaitDoors(session: string | null) {
   const groups = useSessionGroups();
   const attention = useAttention();

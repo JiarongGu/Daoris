@@ -114,10 +114,7 @@ export function SessionHead({
    * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
    */
   pieces?: PieceSection | null;
-  /**
-   * Its state line, the same the page's header says (`stateLineOf`, D320): the driver's reader's group on its pill, then its age
-   * and cause. A window with no header (a detached session) says it beside its title; never the record's word. Absent, none is said.
-   */
+  /** Its state line (`stateLineOf`), said beside its title in a window with no header (a detached session). Absent, none is said. */
   state?: { line: StateLine; said: { word: string; rest: string } } | null;
   /**
    * The helpers it asked for, the frame's: its asks as the driver's look leaves them, the agents' names, the
@@ -233,8 +230,7 @@ export function SessionHead({
       {answered !== null && <AnsweredPark answer={answered} />}
       {/* What the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
       {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}
-      {/* What waits on the person is pressed in the dock above the composer, its one place (D320): the head draws no card of it.
-          Its intake's park reads its ask's words here, where its *Answer* is the dock's. */}
+      {/* Its intake's park reads its ask's words here; its *Answer* is the dock's. */}
       {waiting && intake && onAnswerAsk && <AwaitingIntake ask={session.ask!} parts={session.noteParts} />}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none, and none with no word why is worse still:

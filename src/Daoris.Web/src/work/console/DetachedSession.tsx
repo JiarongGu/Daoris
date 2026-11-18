@@ -52,8 +52,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   const scroller = useRef<HTMLDivElement>(null);
-  // Its state line is the main window's: the driver's reader's group for this session, never the record's word (D320). Nothing here
-  // docks a wait, so a wait the reader places under Needs you is said by its reason.
+  // Nothing here docks a wait, so a wait the reader places under Needs you is said by its reason.
   const groups = useSessionGroups([id]);
   // What the session runs beside itself, and the one picked; one it no longer lists falls
   // back to the session's own console, as the main window's panel does.

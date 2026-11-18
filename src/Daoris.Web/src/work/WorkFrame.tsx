@@ -363,8 +363,6 @@ export function WorkFrame({
   const {
     partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
   } = waitsState;
-  // The run's steps held for the person or left failed, with their presses: the dock's, beside the page's own waits; and what the
-  // dock holds, which the head's state line names (D320).
   const runWaitDoors = useRunWaitDoors(attended?.id ?? null);
   const docked = attended && here && waits
     ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
@@ -494,14 +492,11 @@ export function WorkFrame({
             </>
           ) : undefined}
         >
-          {/* What waits on the person, where they read: above the box and outside the conversation's scroll,
-              each wait with the head's own press. None on a teammate's record, which has no press here. Keyed by the
-              session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id:
+          {/* The dock: every wait the person settles, above the box and outside the conversation's scroll, each with its own
+              press; a teammate's record draws them as lines with none. Keyed by the session. 🔴 The strip, the settler and the composer each name their kind beside the id:
               keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
-          {/* The dock: every wait the person settles, each with its own press, oldest first, never folded (D320); a teammate's
-              waits as a line with no press. */}
           {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}

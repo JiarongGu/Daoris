@@ -75,8 +75,6 @@ public sealed class LogModule(
             ["message.sent"] = ("info",
                 [("session", Kind.Name), ("kind", Kind.Name), ("length", Kind.Count), ("files", Kind.Count), ("reach", Kind.Name)]),
             ["proposal.settled"] = ("info", [("applied", Kind.Flag)]),
-            // The session's state line and its dock disagree (D320): the reader's group and reason, and the oldest docked kind
-            // (absent where none is docked), until the driver reads every kind the dock holds.
             ["wait.disagreed"] = ("info", [("session", Kind.Name), ("group", Kind.Name), ("reason", Kind.Name), ("docked", Kind.Name)]),
             // `view` and `stack`: a render the page's error screen caught, with the view it showed and its
             // component stack's first frames by name; never a frame's location, which the page leaves out before it reports.

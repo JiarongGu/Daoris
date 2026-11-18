@@ -11,10 +11,7 @@ import type { SessionProcess } from './process';
 import { SessionHead } from './SessionHead';
 import { WaitStrip } from '../waits/WaitStrip';
 
-// A describe below presses what waits through the dock (D320) under the head's name; this keeps the head itself within reach.
 const Head = SessionHead;
-
-// The state line the page says beside the title where no header says it (D320): the reader's, said by `stateLineSaid`.
 const STATE = (word: string, rest = '') => ({
   line: { kind: 'working' as const, since: null, wait: null, cause: null, more: 0, disagrees: null }, said: { word, rest },
 });
@@ -103,7 +100,6 @@ describe('the attended session\'s head', () => {
   /** A half-written decline reason carried into the next parked session, ready to decline it. */
   it('starts each parked session\'s decline empty — a reason written for one never carries to another', () => {
     const parked: Partial<Session> = { state: 'awaiting-person', note: 'needs a person' };
-    // The park's card stands in the dock above the composer, the one place a wait is pressed (D320).
     const { rerender } = render(<WaitStrip session={session(parked)} onResolve={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Decline…' }));
     fireEvent.change(screen.getByLabelText(/the reason/), { target: { value: 'the chunk API is being replaced' } });
@@ -425,17 +421,13 @@ describe('the attended session\'s head', () => {
     });
   });
 
-  /** A head with no header says the state line it is given, never the record's word, and none where it is given none. */
   it('says the state line it is given beside the title, never the record\'s word', () => {
     const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} state={STATE('Waiting on you', '38m · Accept')} />);
     expect(screen.getByText('Waiting on you')).toBeInTheDocument();
     expect(screen.getByText('38m · Accept')).toBeInTheDocument();
-    expect(screen.queryByText('working')).toBeNull();
 
     rerender(<SessionHead session={session({ kind: 'chat' })} />);
-    expect(screen.queryByText('Waiting on you')).toBeNull();
-    expect(screen.queryByText('working')).toBeNull();
-    expect(screen.queryByText('idle')).toBeNull();
+    for (const word of ['Waiting on you', 'working', 'idle']) expect(screen.queryByText(word)).toBeNull();
   });
 
   it('keeps the state beside the title rather than at the far edge', () => {
@@ -612,7 +604,6 @@ describe('the attended session\'s head', () => {
    * branch and its tree, and a door to its run's review, where the one Accept is.
    */
   describe('the landing a session left', () => {
-    // The work's line stands in the dock above the composer, the one place a wait is pressed (D320).
     const SessionHead = WaitStrip;
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
     const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
@@ -657,7 +648,6 @@ describe('the attended session\'s head', () => {
     });
 
     it('offers nothing where no commits wait or nothing can press', () => {
-      // The head says a branch with nothing beyond the line, and offers no door.
       const head = render(
         <Head
           session={session({ state: 'failed' })}
@@ -668,7 +658,7 @@ describe('the attended session\'s head', () => {
       expect(screen.getByText('nothing beyond main')).toBeInTheDocument();
       head.unmount();
 
-      // Nothing here can press it (a browser, a story): the work is said in the dock, with no press.
+      // Nothing here can press it (a browser, a story): the work is said, with no press.
       render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
@@ -752,7 +742,6 @@ describe('the attended session\'s head', () => {
 
   /** A session whose commits the line holds by content is offered no door to land: the head says the driver's sentence and offers the review's Discard unforced, asking once. */
   describe('a session whose work the line holds by content', () => {
-    // The work's line and its discard stand in the dock (D320).
     const SessionHead = WaitStrip;
     const KEPT = 'refs/daoris/discarded/daoris/s-4e6837ed';
     const DISCARDS = {
@@ -1069,14 +1058,12 @@ const ASKED: GoAhead[] = [
  * nothing to act through they are shown with no door; a park that asked none, or a session not parked, shows nothing new.
  */
 describe('a park\'s go-aheads', () => {
-  // The dock above the composer draws them (D320).
   const SessionHead = WaitStrip;
   const parked: Partial<Session> = { state: 'awaiting-person', note: 'I need the two go-aheads to finish.' };
 
   it('lists what the park asked beneath its card, each with Approve and Refuse, saying it goes on once all are answered', () => {
     const { container } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
 
-    // One line a go-ahead, the first leading with what they are.
     const section = container.querySelector<HTMLElement>('[data-dock]')!;
     expect(section).toHaveTextContent('Go-aheads it asked');
     const items = within(section).getAllByRole('listitem');
@@ -1088,9 +1075,7 @@ describe('a park\'s go-aheads', () => {
       expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
-    // Beneath the card that asks, which stays: its finish and decline are still the person's.
-    const lines = [...section.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'));
-    expect(lines).toEqual(['question', 'goAhead:1', 'goAhead:2']);
+    expect([...section.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'))).toEqual(['question', 'goAhead:1', 'goAhead:2']);
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
   });
 
@@ -1116,17 +1101,13 @@ describe('a park\'s go-aheads', () => {
       <SessionHead session={session({ ...parked, said: said('carry on.') })} goAheads={answered} onGoAhead={vi.fn()} />,
     );
 
-    // The answered park is no wait; the go-ahead still open is, and the one approved is none.
-    const lines = [...container.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'));
-    expect(lines).toEqual(['goAhead:2']);
-    const [second] = within(container.querySelector<HTMLElement>('[data-dock]')!).getAllByRole('listitem');
-    expect(within(second!).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+    expect([...container.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'))).toEqual(['goAhead:2']);
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
   });
 
   it('shows them with no door where nothing can answer them', () => {
     const { container } = render(<SessionHead session={session(parked)} goAheads={ASKED} />);
 
-    // Nothing stands where nothing can press it: the dock draws no line.
     expect(container.querySelector('[data-dock]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
@@ -1143,9 +1124,7 @@ describe('a park\'s go-aheads', () => {
     };
     const { container } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
 
-    // The box below carries every press of what the park asks, so the dock draws no go-ahead at all.
-    const section = container.querySelector<HTMLElement>('[data-dock]')!;
-    expect(section.querySelector('[data-go-ahead]')).toBeNull();
+    expect(container.querySelector('[data-go-ahead]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(screen.getByText('Which target should the tile show?')).toBeInTheDocument();
     expect(screen.getByText('If you choose this: Write 1,350.')).toBeInTheDocument();
@@ -1212,8 +1191,7 @@ describe('the way from the dock\'s waits to the conversation', () => {
   });
 
   /**
-   * Each wait stands in a line of its own, marked for the frame to watch; and a raising block's *To the wait* leads here: the
-   * line takes the focus, outlined.
+   * Each wait stands in a line of its own, and a raising block's *To the wait* leads here: the line takes the focus, outlined.
    */
   it('marks the lines its waits stand in, and shows the one a raising block leads to', () => {
     const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onReviewRun: vi.fn() };
@@ -1295,7 +1273,6 @@ describe('the tool calls a session holds for the person', () => {
     expect(container.querySelector('[data-dock]')).toBeNull();
     unmount();
     const bare = render(<SessionHead session={session()} permissions={{ waits: [HELD] }} />);
-    // Nothing stands where nothing can press it.
     expect(bare.container.querySelector('[data-dock]')).toBeNull();
   });
 });
