@@ -87,7 +87,7 @@ public sealed class AgentReleaseActsTests : NodeRunFixture
         {
             ["fact"] = fact, ["state"] = state, ["message"] = message, ["url"] = url, ["waitsOn"] = waitsOn, ["by"] = state == "reached" ? "Daoris" : null,
         });
-        StepActFiles.Append(_home, Work, id, "daoris-azure-devops_" + tool, receipt, _now);
+        PluginActRounds.Append(_home, Work, id, "daoris-azure-devops_" + tool, receipt, _now);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public sealed class AgentReleaseActsTests : NodeRunFixture
 
         Acted("a1", "create-release", "release-created", "reached", "Release-91 created by Daoris.");
         Acted("a2", "discover-releases", "candidates", "reached", "three definitions found.");
-        Assert.Equal(["release-created", "candidates"], StepActFiles.Rounds(_home, Work).Select(row => row.Fact));
+        Assert.Equal(["release-created", "candidates"], PluginActRounds.Rounds(_home, Work).Select(row => row.Fact));
         Read();
         var pass = await runtime.PassAsync(RunLook() with { Steps = () => [Step, Build, Deployed, Approve] }, CancellationToken.None);
         await PassAsync(runtime);

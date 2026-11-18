@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// The acts a run's agent takes as its plugin's tools, journaled on the step it holds and settling it by their receipts. Each round of the run's
 /// working session (<see cref="StepHandOffs.SessionOf"/>) that answered a receipt since the step waited (<see cref="StepActFiles"/>) is
 /// journaled once on the agent-held step waiting on its holder whose receipts take its fact (<see cref="StepReceipts"/>), with the attempt and
-/// epoch it was taken in; a round no such step takes is journaled nowhere. Once each fact the step maps has its newest receipt reached, the
+/// epoch it is taken in; a round no such step takes is journaled nowhere. Once each fact the step maps has its newest receipt reached, the
 /// step is settled done at the settle door as its holder, the receipts its evidence, and the next pass applies it.
 /// </summary>
 public static class StepActs
@@ -31,7 +31,7 @@ public static class StepActs
         var journal = StepActFiles.Journal(records.Home, governed.Unit.Id).ToList();
         var known = journal.Select(row => row.Id).ToHashSet(StringComparer.Ordinal);
         var added = 0;
-        foreach (var round in StepActFiles.Rounds(records.Home, session).Where(round => !known.Contains(round.Id)))
+        foreach (var round in PluginActRounds.Rounds(records.Home, session).Where(round => !known.Contains(round.Id)))
         {
             var taking = steps.FirstOrDefault(each => StepReceipts.Takes(each.Node, round.Fact) && (each.Step.Since is not { } since || round.At >= since));
             if (taking.Node is null) continue;
