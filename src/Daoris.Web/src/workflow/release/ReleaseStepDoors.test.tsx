@@ -15,10 +15,11 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
+import userEvent from '@testing-library/user-event';
 import '../../locales/i18n';
-import { sentTo, wireRelease } from '../../test/doubles/releaseShell';
+import { ORIGIN, sentTo, wireRelease } from '../../test/doubles/releaseShell';
 import { show } from '../../test/shellHarness';
-import { answerOf, GRAPH_RUN_APPROVAL } from '../runFixtures';
+import { answerOf, GRAPH_RUN_APPROVAL, GRAPH_RUN_PROD_APPROVAL } from '../runFixtures';
 import { WorkflowRunView } from '../WorkflowRunView';
 import { ReleaseStepDoors } from './ReleaseStepDoors';
 
@@ -48,5 +49,16 @@ describe('the run’s view at a release’s approval', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
     expect(within(card()).getByRole('button', { name: 'Open' })).toBeInTheDocument();
     expect(within(card()).queryByRole('button', { name: 'Approve' })).toBeNull();
+  });
+
+  it('approves a production stage of the work workspace’s run by the page’s id, through its own checkout’s origin', async () => {
+    wireRelease(invoke, { workspace: 'work' });
+    show(<WorkflowRunView answer={answerOf(GRAPH_RUN_PROD_APPROVAL)} releaseDoors={(run, step) => <ReleaseStepDoors run={run} step={step} />} />);
+
+    await userEvent.click(await within(card()).findByRole('button', { name: 'Approve' }));
+    await waitFor(() => expect(sentTo(invoke, 'PLUGIN_COMMAND')).toEqual([{
+      id: 'daoris-azure-devops', command: 'approve-release', args: { origin: ORIGIN, release: '13515', stage: 'Prod', decision: 'approve', comment: '' },
+      answers: {}, place: 'portal', language: 'en',
+    }]));
   });
 });

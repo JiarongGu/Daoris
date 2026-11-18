@@ -17,10 +17,13 @@ import {
 
 const TARGET_FAILURES = ['no-target', 'target-changed'];
 
-/** The repository's origin address, the plugin's way to find it. */
-function useOrigin(repository: string, enabled: boolean): string | null {
+/** The repository's origin, the plugin's way to find it: its checkout in `workspace` (a name may stand in several), else any with one. */
+function useOrigin(repository: string, enabled: boolean, workspace?: string): string | null {
   const remotes = useGitRemotes({ repository, enabled });
-  return remotes.data?.[0]?.remotes.find((remote) => remote.name === 'origin')?.address ?? null;
+  const checkouts = remotes.data ?? [];
+  const origin = (each: (typeof checkouts)[number]) => each.remotes.find((remote) => remote.name === 'origin')?.address ?? null;
+  const own = checkouts.find((each) => each.workspace === workspace);
+  return (own && origin(own)) ?? checkouts.map(origin).find((address) => address !== null) ?? null;
 }
 
 /**
@@ -67,7 +70,7 @@ function Approval({ run, step }: { run: WorkflowRun; step: RunStep }) {
   const entry = catalogue.data?.plugins.find((each) => each.id === plugin) as (Record<string, unknown> | undefined);
   const commands = interfacesOf(entry?.interfaces).commands;
   const asked = approvalOf(step.wait?.values?.words, step.wait?.values?.url);
-  const origin = useOrigin(run.repository, Boolean(asked));
+  const origin = useOrigin(run.repository, Boolean(asked), run.workspace);
   const command = usePluginCommand();
   const url = step.wait?.values?.url ?? null;
 

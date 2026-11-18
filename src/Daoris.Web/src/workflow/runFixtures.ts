@@ -334,6 +334,20 @@ export const GRAPH_RUN_APPROVAL = run([
   },
 });
 
+/** A production stage's approval as the work workspace's run waited on it: the release's name is not its id, which only the page names. */
+export const PROD_APPROVAL_WORDS = 'Waiting on the approver: approve Prod of Release-2019, Portal-release (#42), carrying 9f8e7d6c from `release/portal`; '
+  + 'asked of [Portal]\\Release Approvers. Approve or reject it here or in Azure DevOps.';
+export const PROD_APPROVAL_PAGE = 'https://dev.azure.com/acme/0f0f0f0f-0000-4000-8000-000000000000/_release?releaseId=13515&_a=release-summary';
+
+/** That run in the work workspace, its record's shape: the stage's environment beside the actor, the holder, the words and the page. */
+export const GRAPH_RUN_PROD_APPROVAL: WorkflowRun = {
+  ...GRAPH_RUN_APPROVAL,
+  workspace: 'work',
+  steps: GRAPH_RUN_APPROVAL.steps.map((step) => step.step.id === 'release-approve'
+    ? { ...step, wait: { code: 'actor', values: { actor: 'approver', environment: 'Prod', holder: 'person', url: PROD_APPROVAL_PAGE, words: PROD_APPROVAL_WORDS }, since: AT } }
+    : step),
+};
+
 /** The same run once the person passed its go-ahead over: their word kept, which the driver's next look applies. */
 export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
   ...GRAPH_RUN_GO_AHEAD,
