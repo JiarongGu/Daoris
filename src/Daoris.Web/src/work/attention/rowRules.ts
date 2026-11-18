@@ -65,6 +65,7 @@ export const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'task-done': 'passOver',
   'task-approve': 'passOver',
   'task-reject': 'passOver',
+  'stop-node': 'passOver',
   'approve-end': 'memoryEnd',
   'decline-end': 'memoryEnd',
 };

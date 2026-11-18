@@ -8,22 +8,34 @@ public static class SessionMoves
 {
     /// <summary>
     /// A stop: this registry's process, ended as the person's; else, where nothing on this machine runs the record, that
-    /// record ended as the person's stop (<see cref="Orphans"/>); else it is another Daoris process's here, said so.
+    /// record ended as the person's stop (<see cref="Orphans"/>); else, where the person's stop is given (<paramref name="run"/>) and the
+    /// record awaits its run's step, the stop of that run, whose end ends it; else it is another Daoris process's here, said so.
     /// </summary>
-    /// <param name="service">The loop's service, or null before it answers: an orphan cannot be ended then.</param>
+    /// <param name="service">The loop's service, or null before it answers: an orphan cannot be ended then, nor a waiting record read.</param>
     /// <param name="note">
     /// What the record of a process stopped here says in place of the plain stop: a pause's names the pause. An
     /// orphan's record says nothing ran it, which is the fact.
     /// </param>
+    /// <param name="run">
+    /// How the person's stop reaches the run a record awaits, null where it awaits none (Workflows' run stop, as the door's channel speaks);
+    /// null for a stop that is not the person's end of the work (a pause, a hand-over).
+    /// </param>
     public static async Task<StopAnswer> StopAsync(
-        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, Noted? note = null)
+        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, Noted? note = null,
+        Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>>? run = null)
     {
         var stopped = processes.Stop(id, note: note);
         var orphan = !stopped
             && service is not null
             && (await Orphans.EndAsync(service, processes, only: id, ct: ct).ConfigureAwait(false)).Count > 0;
         var elsewhere = !stopped && !orphan && processes.AliveOnThisMachine(id);
-        return new StopAnswer(stopped || orphan, orphan, elsewhere);
+        var answer = new StopAnswer(stopped || orphan, orphan, elsewhere);
+        if (answer.Stopped || elsewhere || run is null || service is null) return answer;
+
+        var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false)).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        return record is { State: SessionStates.AwaitingStep } && await run(record, ct).ConfigureAwait(false) is { } ran
+            ? answer with { Stopped = ran.Done, Run = ran }
+            : answer;
     }
 
     /// <summary>How long a window's stop waits for the process that runs the session to take it: short, since the owner looks within a second.</summary>

@@ -1316,9 +1316,9 @@ describe('what a row offers', () => {
     expect(attentionActs(offered('trust'))).toEqual([]);
   });
 
-  it('asks once before what widens what Daoris may do, and before a choice', () => {
+  it('asks once before widening what Daoris may do, choices, end', () => {
     expect([...ASKS_ONCE].sort())
-      .toEqual('accept-rule approve ask-again choose go-on not-yet opinion-anyway pass-over quiet-carry-on quiet-stop refuse task-approve task-done task-reject trust'.split(' '));
+      .toEqual('accept-rule approve ask-again choose go-on not-yet opinion-anyway pass-over quiet-carry-on quiet-stop refuse stop-node task-approve task-done task-reject trust'.split(' '));
   });
 
   /**

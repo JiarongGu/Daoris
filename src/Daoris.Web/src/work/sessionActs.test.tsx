@@ -190,6 +190,21 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
   });
 
+  /** A session awaiting its run's step stops with that run, said with its steps, or with the reason nothing of it stopped. */
+  it('says the stop of the run a session awaits, or why none of it was stopped, never that it was not running', async () => {
+    const run = { run: 'q7', steps: ['release'], refused: null, node: null, why: null };
+    invoke.mockResolvedValueOnce({ stopped: true, run })
+      .mockResolvedValueOnce({ stopped: false, run: { ...run, steps: [], refused: 'ended', why: 'run q7 ended at quest #q7.' } });
+    const { result, notify } = acts();
+
+    act(() => result.current.stopNow(session({ state: 'awaiting-step' })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      "session s1a2b3c4 waits on run q7: your stop of it is kept at release, and Daoris's next look ends the run and the session with it."));
+    act(() => result.current.stopNow(session({ state: 'awaiting-step' })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'session s1a2b3c4 waits on run q7, and nothing of it was stopped: run q7 ended at quest #q7.', 'error'));
+  });
+
   /** Delete… is the frame's to ask (it asks once under the header), and its second press is the owner's. */
   it('hands Delete… to the frame, and its second press deletes by the id, saying so, and forgets the draft', async () => {
     const doors = { delete: vi.fn() };

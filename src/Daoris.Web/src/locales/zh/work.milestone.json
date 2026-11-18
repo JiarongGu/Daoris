@@ -89,6 +89,7 @@
   "work.milestone.held.act.happened": "已发生",
   "work.milestone.held.act.did-not": "没有发生：重试",
   "work.milestone.held.act.stop": "停止这个步骤",
+  "work.milestone.held.act.stopAsk": "停止这个步骤…",
   "work.milestone.held.word.happened": "已发生",
   "work.milestone.held.word.did-not": "没有发生",
   "work.milestone.held.word.stop": "停止",

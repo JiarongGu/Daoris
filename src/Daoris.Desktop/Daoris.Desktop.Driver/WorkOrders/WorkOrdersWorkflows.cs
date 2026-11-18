@@ -24,6 +24,8 @@ internal interface IWorkOrdersWorkflows
 
     Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
 
+    Task<RunWaitStopped?> StopRunAsync(string home, SessionRecord record, Func<DateTimeOffset> clock, CancellationToken ct);
+
     /// <summary>
     /// The workflow a repository's work follows where it names no kind, and, for each of <paramref name="kinds"/> in order, the one that kind
     /// maps to with what it lowers of the person's part against the first (null where either does not read).

@@ -25,7 +25,10 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         // ending is not the person's — its record says nothing ran it.
         // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this
         // host can neither stop it nor call it ended: the record still says working.
-        var answer = await SessionMoves.StopAsync(_loop.Processes, _loop.Service, id, cancellationToken).ConfigureAwait(false);
+        // A session awaiting its run's step has no process: its stop is the run's, as the route's channel speaks it.
+        var answer = await SessionMoves.StopAsync(
+            _loop.Processes, _loop.Service, id, cancellationToken,
+            run: RunWaitStops.Port(_loop.Home, () => DateTimeOffset.UtcNow, CastRoutes.SpeakerOf(null))).ConfigureAwait(false);
         // the process that runs it takes the stop, as its own; none that does not is claimed to have stopped.
         if (answer.Elsewhere
             && await SessionMoves.StopThroughOwnerAsync(
@@ -35,7 +38,10 @@ internal sealed class SessionsMoveDesk(DriverContext context)
         }
 
         _loop.Nudge();
-        return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
+        var run = answer.Run is { } ran
+            ? new { ran.Run, ran.Steps, ran.Refused, ran.Node, ran.Why }
+            : null;
+        return new { answer.Stopped, answer.Orphan, answer.Elsewhere, Run = run };
     }
 
     public async Task<object?> ResolveAsync(ResolveSession press, CancellationToken cancellationToken)

@@ -58,6 +58,23 @@ public sealed class StepWaitHoldersTests
         Assert.Equal((StepRoles.CredentialsKeeper, StepHolders.Person), (row.Role, row.Holder));
     }
 
+    [Fact]
+    public void A_plugin_step_held_by_the_person_offers_its_stop_on_its_row()
+    {
+        var record = Standing("release", Active("release"), new NodeAttempt("release", 1, "acme.deploy",
+            new WorkPerformCall(Unit, "acme.deploy/release", 1, "i-1", "k-1", "tip", [], Now.AddHours(1)), AttemptStates.Sent)
+        {
+            RecordedAt = Now, Generation = 1, Deliveries = 1,
+            Progress = new StepProgress(StepRoles.Operations, "Make the release in Azure DevOps.", null, null, Now),
+        });
+
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Release, record, HeldBy("release", StepRoles.Operations, CastHolders.Person));
+
+        Assert.NotNull(row);
+        Assert.Equal((PersonWaits.Actor, StepRoles.Operations), (row.Why, row.Role));
+        Assert.Equal([NodeWordActs.Skip, NodeWordActs.Stop, HeldResolutions.DoneOutside], row.Presses);
+    }
+
     private static readonly NodeDeclaration Review = new("review", NodeKinds.Review, 1, NodeReach.Pressed);
 
     /// <summary>A review handed to an agent waits with no settler, since no agent's channel speaks an Accept: it stays the person's row, to take.</summary>

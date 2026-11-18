@@ -37,7 +37,7 @@ internal static class CensusMarks
         "PickerCensusTests", "PluginCatalogTests", "PoolReadersCensusTests", "ProcessEnvironmentCensusTests",
         "ProcessStartsCensusTests", "ProviderCensusTests", "PullRequestOccasionTests", "RoleCatalogCensusTests", "RoleCensusTests",
         "RoleStaffingTests", "RoleVerbUsageTests", "RoomSaysNoActorTests", "RoomsDeclaredCensusTests", "RulePathsCensusTests", "SayKeysCensusTests",
-        "ServiceProviderCensusTests", "SessionMarkerTests", "SettleDoorCensusTests", "SettledReadersCensusTests", "SharedCompileTests",
+        "ServiceProviderCensusTests", "SessionMarkerTests", "SessionStopCensusTests", "SettleDoorCensusTests", "SettledReadersCensusTests", "SharedCompileTests",
         "ShortWaitsCensusTests", "SlotSettledCensusTests", "SourceFilesTests", "SourceTextsTests",
         "StoredOldNamesCensusTests", "SystemWiringTests", "TerminalConversationCensusTests", "TerminalStartsCensusTests",
         "TestHomesCensusTests", "ToolsAtTheStartCensusTests", "WiringLeftOverTests", "WorkFrameCensusTests",

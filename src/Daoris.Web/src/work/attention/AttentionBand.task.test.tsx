@@ -69,6 +69,23 @@ describe("a person's task on What needs you", () => {
     expect(within(item).getByRole('button', { name: 'Not needed this run…' })).toBeTruthy();
   });
 
+  it('offers a step’s stop where the driver offers it, asked once, as the run’s node stop with the person’s reason', async () => {
+    start(['skip', 'stop'], null, { why: 'actor', role: 'operations', words: 'Make the release in Azure DevOps.' });
+    const item = await screen.findByRole('listitem', { name: '#q7' });
+    await userEvent.click(within(item).getByRole('button', { name: 'Stop this step…' }));
+    const asking = within(item).getByRole('group', { name: 'Stop this step…' });
+    expect(asking).toHaveTextContent('End this work at sign');
+    await userEvent.type(within(asking).getByRole('textbox'), 'released by hand');
+    await userEvent.click(within(asking).getByRole('button', { name: 'End this work' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', { payload: { run: 'q7', node: 'sign', act: 'stop', words: 'released by hand' } }));
+  });
+
+  it('offers no stop where the driver offers none', async () => {
+    start(['done']);
+    const item = await screen.findByRole('listitem', { name: '#q7' });
+    expect(within(item).queryByRole('button', { name: 'Stop this step…' })).toBeNull();
+  });
+
   it.each([['en', /waiting 3 ?h/i], ['zh', /已等待.*3/]])('says since when it has waited, in %s', async (language, said) => {
     await i18n.changeLanguage(language);
     start(['done'], new Date(Date.now() - 3 * 3_600_000).toISOString());

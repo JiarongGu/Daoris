@@ -46,6 +46,7 @@ export type AttentionActId =
   | 'ask-again' | 'go-on'
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
+  | 'stop-node'
   | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 
 /** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
@@ -110,6 +111,7 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'ask-again', 'go-on',
   // A task's press sends the run on its route, with a note the person may give.
   'task-done', 'task-approve', 'task-reject',
+  'stop-node',
 ]);
 
 /** How many acts an account's row offers beside its door: three controls a row at most. */
@@ -159,11 +161,13 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'policy-hold': return plain('retry');
     // The run's existing *Pass over…*, offered where the node it is said on is named.
     case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
-    // The presses that settle the run's step, as the driver names them: a task's or an approval's own, and its *Not needed this run*.
+    // The presses that settle the run's step, as the driver names them: a task's or an approval's own, and its *Not needed this run*;
+    // then its stop where the driver offers one, so a step no word of the row settles still has the person's end of it.
     // A press the row cannot make (a decision's outcome, a file's choice) is made where the row's door opens, the run's view.
     case 'step': return plain(
       ...(item.step?.presses ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`),
       ...(item.step?.presses.includes('skip') ? ['pass-over' as const] : []),
+      ...(item.step?.presses.includes('stop') ? ['stop-node' as const] : []),
     );
     // Nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.

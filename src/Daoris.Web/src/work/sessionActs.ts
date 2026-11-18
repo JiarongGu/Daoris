@@ -244,7 +244,9 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     }
     stop.mutate(session.id, {
       onSuccess: (answer) => {
-        notify(t(stopNotice(answer), { id: session.id }));
+        const said = stopNotice(answer, session.id);
+        if (said.error) notify(t(said.key, said.values), 'error');
+        else notify(t(said.key, said.values));
         answered?.done();
       },
       onError: refusedIn(answered),
@@ -339,7 +341,9 @@ export function useSessionActs({ notify, doors = {}, entries }: {
    */
   const stopPartnerNow = (partner: string, answered: Answered) => stop.mutate(partner, {
     onSuccess: (answer) => {
-      notify(t(stopNotice(answer), { id: partner }));
+      const said = stopNotice(answer, partner);
+      if (said.error) notify(t(said.key, said.values), 'error');
+      else notify(t(said.key, said.values));
       answered.done();
     },
     onError: refusedIn(answered),

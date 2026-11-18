@@ -128,6 +128,8 @@
   "quests.session.orphanEnded": "session {{id}} had nothing running it on this machine — its record now says so.",
   "quests.session.notRunning": "session {{id}} was not running here — its record says how it ended.",
   "quests.session.runElsewhere": "session {{id}} is run by another Daoris process on this machine, a terminal's — stop it there.",
+  "quests.session.runStopped": "session {{id}} waits on run {{run}}: your stop of it is kept at {{steps}}, and Daoris's next look ends the run and the session with it.",
+  "quests.session.runNotStopped": "session {{id}} waits on run {{run}}, and nothing of it was stopped: {{why}}",
   "quests.detail.pause": "Pause…",
   "quests.detail.pauseMeanIt": "Pause quest",
   "quests.detail.resume": "Resume",

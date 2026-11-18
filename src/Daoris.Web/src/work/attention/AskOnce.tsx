@@ -60,6 +60,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   // A declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
   const askAgain = act === 'ask-again';
   const goOn = act === 'go-on';
+  const stopNode = act === 'stop-node';
   // What ending a quiet session does, and that the person's waiting words go to the next part.
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
   const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
@@ -74,6 +75,8 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     ? t('workflow.run.node.askAgainSays', { node: item.declined?.node ?? '' })
     : goOn
     ? t('workflow.run.node.goOnSays', { node: item.declined?.node ?? '' })
+    : stopNode
+    ? t('workflow.run.node.stopSays', { node: item.step?.node ?? '' })
     : notYet
     ? t(item.session ? 'review.ask.notYet' : 'review.ask.notYetOwn', { quest: item.id })
     : act === 'approve'
@@ -96,6 +99,8 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     ? t('workflow.run.node.askAgainMeanIt')
     : goOn
     ? t('workflow.run.node.goOnMeanIt')
+    : stopNode
+    ? t('workflow.run.node.stopMeanIt')
     : notYet
     ? t('review.ask.notYetMeanIt')
     : act === 'approve'
@@ -107,12 +112,12 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
           : t('asks.record.publish');
   // The words a go-ahead's answer, a second opinion's gate or a *not yet* takes, in the one field each names.
   const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords')
-    : passOver ? t('workflow.run.node.skipWords') : goOn ? t('workflow.run.node.goOnWords') : null;
+    : passOver ? t('workflow.run.node.skipWords') : goOn ? t('workflow.run.node.goOnWords') : stopNode ? t('workflow.run.node.stopWords') : null;
   return (
-    // Only a refusal ends or removes something: every other ask here is outward and loses nothing.
+    // Only a refusal or a stop ends or removes something: every other ask here is outward and loses nothing.
     <InlineConfirm
       className="mt-2"
-      tone={act === 'refuse' || quietAsk ? 'danger' : 'primary'}
+      tone={act === 'refuse' || quietAsk || stopNode ? 'danger' : 'primary'}
       label={label}
       says={<Inline text={sentence} />}
       meanIt={move}

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -446,11 +447,12 @@ public sealed class OrphanedSessionTests : IDisposable
             return new StandInService(listener, url, root) { WriteDelay = writeDelay, Refuses = refuses };
         }
 
-        public void Seed(string id, string state, string? tree = null, string? baseCommit = null, DateTimeOffset? updated = null)
+        public void Seed(string id, string state, string? tree = null, string? baseCommit = null, DateTimeOffset? updated = null, IReadOnlyList<NotePart>? parts = null)
         {
             lock (_sessions)
             {
                 var session = new JsonObject { ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = "chat" };
+                if (parts is not null) session["noteParts"] = JsonSerializer.SerializeToNode(parts, new JsonSerializerOptions { Converters = { new NotePartJson() } });
                 if (updated is { } at) session["updated"] = at.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
                 if (tree is not null) session["tree"] = tree;
                 if (baseCommit is not null) session["baseCommit"] = baseCommit;
@@ -531,7 +533,7 @@ public sealed class OrphanedSessionTests : IDisposable
 
                     case ("GET", "/api/sessions"):
                         return (200, new JsonArray([.. _sessions
-                            .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
+                            .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person" or "awaiting-step")
                             .Select(s => s.DeepClone())]).ToJsonString());
 
                     case ("POST", "/api/sessions/help"):

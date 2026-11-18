@@ -83,7 +83,14 @@ internal static class SessionsEnding
             return 0;
         }
 
-        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct).ConfigureAwait(false);
+        var run = world.StopsRun ?? ((record, at) => WorkOrdersWorkflows.Current.StopRunAsync(world.Home, record, world.Clock.GetUtcNow, at));
+        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, run: run).ConfigureAwait(false);
+        if (answer.Run is { } ran)
+        {
+            output.WriteLine(ran.Said(id));
+            return ran.Done ? 0 : 1;
+        }
+
         if (answer.Orphan)
         {
             output.WriteLine($"sessions: stopped {id}: nothing on this machine ran it any more, so its record is ended as your stop.");
