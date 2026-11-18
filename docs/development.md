@@ -492,7 +492,7 @@ end, in `local/main-watch-tree` (`--main-watch`, recorded in `local/main-watch.j
 once, and the running one then watches main's newest tip). A red writes its brief in `local/scratch/main-watch-<sha7>/` and holds the queue's next merge, said
 by `--queue` and to each waiter, until a watch of a later tip is green, the CI holds each failure as a known red, or
 `--queue --known` files them as known reds. Every run writes its start to `_fixtures/test-timing/run-start.json` (no `DAORIS_`
-variable reaches a gate), so a time ratchet inside a gate judges only that run's records.
+variable reaches a gate), so a time ratchet inside a gate judges only that run's records; `npm run verify:checks` run on its own hands its steps its start as `VERIFY_CHECKS_STARTED_AT`, with the same effect.
 
 **A drop ends the run it dropped** (QUEUEDRAIN1). The runner holds every step of a candidate's run, its gates and its failure
 probes (prefix and class), in one set of step trees, the cancellation a superseded CI run uses, and every two seconds, and before each
