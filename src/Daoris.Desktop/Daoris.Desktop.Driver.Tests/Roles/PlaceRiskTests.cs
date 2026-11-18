@@ -75,21 +75,4 @@ public sealed class PlaceRiskTests : IDisposable
         var empty = Book(DriverConfigWriter.Written(DriverConfig.Empty with { PlaceRisk = new PlaceRiskBook(new Dictionary<string, PlaceRisk>()) }));
         Assert.True(empty.Written);
     }
-
-    [Fact]
-    public void The_migration_marks_the_machine_line_the_seed_holds_by_rules_and_keeps_a_written_record()
-    {
-        Assert.Contains(HomeMigration.Steps, step => step is PlaceRiskStep);
-        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, """{ "cap": 2 }""");
-        new PlaceRiskStep().Run(new HomeMigrationRun(_home, HomeMigration.Name));
-        var root = (JsonObject)JsonNode.Parse(File.ReadAllText(path))!;
-        Assert.Equal("line", root["placeRisk"]!["machine"]!["marks"]![0]!.GetValue<string>());
-
-        File.WriteAllText(path, """{ "placeRisk": { "workspace/work": { "risk": "low", "marks": ["release.production"] } } }""");
-        new PlaceRiskStep().Run(new HomeMigrationRun(_home, HomeMigration.Name));
-        var kept = (JsonObject)JsonNode.Parse(File.ReadAllText(path))!;
-        Assert.Null(kept["placeRisk"]!["machine"]);
-    }
 }

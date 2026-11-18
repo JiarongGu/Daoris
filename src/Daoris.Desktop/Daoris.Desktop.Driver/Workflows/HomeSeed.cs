@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a fresh home is given once: the copy of <c>merge-after-accept</c> saved, and
-/// <c>defaultWorkflow</c> naming it, so a place follows a saved graph from its first start, and the supervisor's seeded rules. A home that
-/// already has a <c>driver.json</c> is never seeded; it goes through the conversion, on the person's press.
+/// <c>defaultWorkflow</c> naming it, so a place follows a saved graph from its first start, the supervisor's seeded rules and
+/// <i>Second check</i>'s first choices. A home that already has a <c>driver.json</c> is never seeded.
 /// </summary>
 public static class HomeSeed
 {
@@ -21,9 +21,11 @@ public static class HomeSeed
             var store = WorkflowPorts.Store(home);
             var copy = CopyOf(store, shipped) ?? Save(home, store, shipped);
             DriverConfig.Empty.WithDefaultWorkflow(copy).Save(configPath);
-            // Its rules at today's numbers too, so its lines read them from the first start; a store that does not take them leaves the
-            // home for the conversion to seed.
+            // Its rules at today's numbers too, so its lines read them from the first start; a store that does not take them now decides
+            // by the same rules until the person writes their own. The second check's first choices are written as a settled start writes,
+            // since a fresh home holds nothing a confirmation could take back.
             SupervisorRuleBook.SeedFresh(home);
+            SecondCheck.SeedFresh(home, () => StoreSettled.Yes);
             return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or ChoiceWords)

@@ -12,6 +12,7 @@ public sealed class HomeDefaultTests : IDisposable
 
     public void Dispose()
     {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -32,6 +33,21 @@ public sealed class HomeDefaultTests : IDisposable
         Assert.Equal(("merge-after-accept", WorkflowLevels.Home), (selected.Workflow, selected.Level));
         Assert.False(HomeSeed.Once(path, _home));
         Assert.Equal(1, WorkflowPorts.Store(_home).Load("merge-after-accept")!.Read.Versions.Count);
+    }
+
+    /// <summary>A fresh home's seed gives <i>Second check</i> its first choices with their day's budget; no conversion of a home does.</summary>
+    [Fact]
+    public void A_fresh_home_s_seed_gives_the_second_check_its_first_choices_with_their_day_s_budget()
+    {
+        Assert.True(HomeSeed.Once(DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home));
+
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(SecondCheck.Choices, staffing.Read()!.Actors[SecondCheck.Role]);
+        var policy = staffing.Policy(SecondCheck.Role).Policy!;
+        Assert.Equal(StaffRules.Order, policy.Rule);
+        Assert.All(SecondCheck.Choices, choice => Assert.Equal(SecondCheck.StartsADay, policy.Of(StaffKey.Of(choice))!.Budget!.Starts));
+        Assert.False(SecondCheck.SeedFresh(_home, () => StoreSettled.Yes));
+        Assert.Equal(1, staffing.Policy(SecondCheck.Role).Revision);
     }
 
     [Fact]

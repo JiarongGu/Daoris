@@ -24,11 +24,10 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. The role door, which `SET_ROLE`,
-    /// and `daoris role` call, is the one door; the release's migration writes an older home's five orders once.
+    /// and `daoris role` call, is the one door.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("the migration's staffing step", ["Daoris.Desktop.Driver/Transitional/Migration/StaffingStep.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),

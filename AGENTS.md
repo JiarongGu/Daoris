@@ -110,7 +110,7 @@ Declared in `daoris.json`; look here before searching.
 | change `canon/` | `.claude/knowledge/canon-authoring.md` |
 | change sync, the lock or drift | `docs/areas/doctrine-and-cli.md`, its sync rules |
 | change a screen or text a person reads | `.claude/knowledge/translation-parity.md`, `src/Daoris.Web/README.md` |
-| change what a store keeps that an older build may open | `.claude/knowledge/compatible-builds.md` |
+| change what a store keeps, or are tempted to keep a reader of an older shape | `.claude/knowledge/compatible-builds.md` |
 | build a feature that uses a model | `.claude/knowledge/model-decoupling.md` |
 | add or change a check, or one you did not touch fails | `docs/development.md`, *Choose the checks* |
 | brief or dispatch another agent | `.claude/skills/dispatch-subagent/SKILL.md` |

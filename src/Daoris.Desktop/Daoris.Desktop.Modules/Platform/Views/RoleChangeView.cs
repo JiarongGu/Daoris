@@ -52,7 +52,6 @@ public sealed class RoleChangeView : IPressView
         var current = catalogue.Slots.FirstOrDefault(slot => slot.Id == change.Id)?.Role;
         if (change is RoleChange.SetRole { Role: { Hold: { } hold } appointed })
         {
-            if (hold.Kind == AppointedRoles.Supervisor && !SupervisorConversion.Converted(home)) return PressViewed.Refused(SupervisorConversion.NotConvertedSaid);
             if (policy is not null && AppointedStaffing.JudgePolicy(appointed, policy.Policy) is { } unordered) return PressViewed.Refused(unordered.Said);
         }
 

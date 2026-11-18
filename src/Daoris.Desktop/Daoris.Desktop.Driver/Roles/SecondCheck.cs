@@ -20,6 +20,30 @@ public static class SecondCheck
         new(StaffRules.Order, [.. choices.Select(choice => new StaffChoice(StaffKey.Of(choice), Budget: new StaffBudget(Starts: StartsADay)))],
             new Dictionary<string, StaffMove>(StringComparer.Ordinal));
 
+    /// <summary>
+    /// A fresh home's first start, beside its rules' seed (<see cref="HomeSeed"/>): <see cref="Choices"/> written as the role's staffing row
+    /// and its policy in one transaction, so turning the check on names who reads. Nothing is written where the role already has a row or a
+    /// policy; a store that does not take them now leaves the role with no choices, which the person gives it in the editor.
+    /// </summary>
+    /// <returns>Whether the choices were written.</returns>
+    public static bool SeedFresh(string home, Func<StoreSettled>? settled = null)
+    {
+        var staffing = new RoleStaffing(home, settled);
+        if (staffing.ImportFile().How is StaffingImported.Unread or StaffingImported.Held) return false;
+        var written = false;
+        staffing.Publish([], write =>
+        {
+            if (write.Query(Own, row => row.GetString(0), ("$role", Role)).Count > 0) return;
+            RoleStaffing.AddedRows(write, [(Role, Choices)]);
+            StaffPolicies.Save(write, Role, Policy(Choices), Choices, 0, Moments.Write(DateTimeOffset.UtcNow));
+            write.Moved(StaffPolicies.Family);
+            written = true;
+        });
+        return written;
+    }
+
+    private const string Own = "SELECT role FROM role_staffing WHERE role = $role UNION ALL SELECT role FROM role_policy WHERE role = $role";
+
     /// <summary>Whether a supervisor reads Ask Daoris's acts: held by the person's rules alone, the machine's reads nothing.</summary>
     public static bool On(IReadOnlyList<RoleSlot> slots) =>
         SupervisorResolution.Find(slots, SupervisorKinds.AskDaoris, new RolePlace()).Role?.Hold?.Holder is RoleHolders.Agent or RoleHolders.Terminal;

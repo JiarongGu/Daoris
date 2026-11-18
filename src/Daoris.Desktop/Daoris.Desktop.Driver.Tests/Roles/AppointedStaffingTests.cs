@@ -23,7 +23,6 @@ public sealed class AppointedStaffingTests : IDisposable
         File.WriteAllText(file, """{ "adapter": "claude", "actors": { "build": [ { "agent": "claude", "model": "sonnet" } ] } }""");
         Staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         Assert.Equal(StaffingImported.Done, Staffing.ImportFile().How);
-        Assert.Null(HomeMigration.Run(_home, [new SupervisorStep(() => null)]).Failed);
     }
 
     public void Dispose()

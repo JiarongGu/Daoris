@@ -78,14 +78,14 @@ public sealed class TerminalConversationCensusTests
     }
 
     [Fact]
-    public void Only_the_migration_step_names_a_turn_mark_by_its_ending()
+    public void No_source_names_a_turn_mark_by_its_ending()
     {
         var naming = Sources()
             .Where(source => Regex.IsMatch(source.Source, @"""\.turn"""))
             .Select(source => source.File)
             .ToArray();
 
-        Assert.Equal(["TurnMarksStep.cs"], naming);
+        Assert.Empty(naming);
     }
 
     [Fact]

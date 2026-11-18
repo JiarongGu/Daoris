@@ -116,12 +116,8 @@ public sealed class RoleChangeViewTests : DriverModuleBridge
             },
         };
 
-        var unconverted = await View(press);
-        HomeMigration.Run(Home, [new SupervisorStep(() => null)]);
         var viewed = await View(press);
 
-        Assert.Null(unconverted.View);
-        Assert.NotNull(unconverted.Refusal);
         var view = viewed.View!;
         Assert.Equal(("role-supervisor-set", "gatekeeper", "Gatekeeper"), (view.Kind, view.Facts["role"], view.Facts["name"]));
         Assert.Equal(("gatekeeper", "workspace", "w1"), (view.Supervisor!.Id, view.Supervisor.Scope.Kind, view.Supervisor.Scope.Id));
@@ -154,7 +150,7 @@ public sealed class RoleChangeViewTests : DriverModuleBridge
     [Fact]
     public async Task Turning_the_second_check_on_names_its_readers_providers_in_order_and_what_they_spend()
     {
-        HomeMigration.Run(Home, [new SupervisorStep(() => null), new SecondCheckStep()]);
+        SecondCheck.SeedFresh(Home, () => StoreSettled.Yes);
         object Role(string holder) => new
         {
             name = new { en = "Second check", zh = "复核" }, scope = new { kind = "machine" }, filled = "appointed", kind = "supervisor",

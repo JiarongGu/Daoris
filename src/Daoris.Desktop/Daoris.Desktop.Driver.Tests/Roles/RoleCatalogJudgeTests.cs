@@ -224,7 +224,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         Assert.Equal(
             [
                 "appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices",
-                "policy", "not-converted",
+                "policy",
             ],
             RoleCatalog.Codes);
     }

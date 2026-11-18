@@ -34,18 +34,12 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/WorkEventGrammar.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs",
         ],
-        ["a brainstorm's and a meeting's files"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/BrainstormFilesStep.cs"],
-        ["a binding file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/BindingFilesStep.cs"],
         ["driver.json's staffing keys"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/StaffingStep.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/RecordIds.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Store/DesktopStoreSteps.cs",
         ],
-        ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs"],
-        ["the usage file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/UsageFileStep.cs"],
-        ["the lineage files"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/LineageFilesStep.cs"],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

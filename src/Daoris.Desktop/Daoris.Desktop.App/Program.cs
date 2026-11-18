@@ -112,15 +112,6 @@ internal static class Program
             return;
         }
 
-        // This release's migration converts the home once, before the staffing, the loop and the routes read any of it.
-        string? afterSwap = null;
-        if (Daoris.Driver.DriverConfig.FindHome(Environment.GetEnvironmentVariable) is { } migrating)
-        {
-            var migrated = Daoris.Driver.HomeMigration.Run(migrating);
-            Daoris.Driver.HomeMigration.Log(migrated, log);
-            if (migrated.Held is not null && Daoris.Driver.HomeLease.HeldBy(migrating) is { Kind: Daoris.Driver.LeaseKind.Swap }) afterSwap = migrating;
-        }
-
         // The home's driver.json reads its staffing from the store, wired before the loop
         // and the routes load it.
         Daoris.Driver.RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
@@ -388,12 +379,6 @@ internal static class Program
             _ = started.ContinueWith(
                 look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
-            if (afterSwap is not null)
-            {
-                _ = Daoris.Driver.HomeMigration.RunAfterSwapAsync(afterSwap, TimeSpan.FromMinutes(2), TimeSpan.FromMilliseconds(500))
-                    .ContinueWith(done => Daoris.Driver.HomeMigration.Log(done.Result, log),
-                        CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
-            }
             updater.Start();
             // The system's resume is told to the loop's change watch, which reopens its roots and judges them;
             // SystemEvents raises on its own thread, and the handler lives as long as the process does.

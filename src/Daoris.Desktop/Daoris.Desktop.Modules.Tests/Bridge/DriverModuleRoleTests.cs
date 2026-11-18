@@ -181,7 +181,6 @@ public sealed class DriverModuleRoleTests : DriverModuleBridge
     {
         File.WriteAllText(DriverConfigPath, """{ "adapter": "claude-code" }""");
         RoleStaffing.Wire(Home, () => StoreSettled.Yes).ImportFile();
-        HomeMigration.Run(Home, [new SupervisorStep(() => null)]);
         var module = Module();
         await AnswerAsync(module, "SET_ROLE", new
         {

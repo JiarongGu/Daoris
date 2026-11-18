@@ -21,7 +21,6 @@ public sealed class RoleDoorTests : IDisposable
         Assert.Equal(StaffingImported.Done, Staffing.ImportFile().How);
         // The seeded Design role takes design machine-wide; these cases add a role taking it, so it is removed first.
         RoleCatalog.Write(Staffing.Location, RoleChange.Remove("design"), () => StoreSettled.Yes);
-        Assert.Null(HomeMigration.Run(_home, [new SupervisorStep(() => null)]).Failed);
     }
 
     public void Dispose()
@@ -117,18 +116,12 @@ public sealed class RoleDoorTests : IDisposable
     }
 
     [Fact]
-    public void A_supervisor_s_record_is_refused_not_converted_until_the_home_s_step_is_recorded_and_written_after()
+    public void A_supervisor_s_record_is_written_on_a_home_no_conversion_has_reached()
     {
-        File.Delete(DaorisHome.Entry(_home, HomeEntry.Migration));
-        var (home, staffing) = (_home, Staffing);
+        var staffing = Staffing;
         var gatekeeper = new RoleRecord("gatekeeper", AuthoredText.Of("Gatekeeper"), RoleRecord.Appointed, [], new RoleScope(RoleScope.Workspace, "w1"),
             new RoleHold(AppointedRoles.Supervisor, [], RoleHolders.Rules) { Decides = [SupervisorKinds.Allow] });
 
-        var refused = Assert.Throws<RoleRefusedException>(() => RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper)));
-        Assert.Equal((SupervisorConversion.NotConverted, SupervisorConversion.NotConvertedSaid), (refused.Code, refused.Message));
-        Assert.Contains(SupervisorConversion.NotConverted, RoleCatalog.Codes);
-
-        HomeMigration.Run(home, [new SupervisorStep(() => null)]);
         RoleDoor.Apply(staffing, RoleChange.Set(gatekeeper));
         Assert.Equal([SupervisorKinds.Allow], RoleCatalog.Read(staffing.Location).Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Decides);
     }
