@@ -184,6 +184,31 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Equal(["direction", "money", "sign-in", "release", "history", "data", "publish"], QuestionBox.OwnerMarks);
     }
 
+    /// <summary>
+    /// 🔴 A sign-in the work needs (SIGNINWAIT1): asked with the site, it keeps the site and the owner's `sign-in` mark, offers no
+    /// answers of the agent's (the person's presses are *Open the sign-in…* and *Signed in*), and tells the agent what comes back.
+    /// A site that is no web page's address, one with answers offered, or one under another mark is refused, writing nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_sign_in_question_keeps_its_site_and_the_sign_in_mark_and_refuses_what_is_no_site()
+    {
+        var (connector, driven, _) = await ConnectorAsync();
+        const string Expired = "The production identity (ops) expired at the portal's sign-in: sign in so I can restore its settings.";
+
+        Assert.Contains("web page's address", await connector(driven).AskAsync(Expired, site: "file:///c:/secrets"));
+        Assert.Contains("web page's address", await connector(driven).AskAsync(Expired, site: "https://ops:secret@portal.example.com/"));
+        Assert.Contains("offers no answers", await connector(driven).AskAsync(Expired, TwoReadings, site: "https://portal.example.com/"));
+        Assert.Contains("`sign-in`", await connector(driven).AskAsync(Expired, owner: "money", site: "https://portal.example.com/"));
+        Assert.False(File.Exists(Sessions(driven + QuestionBox.Suffix)));
+
+        var said = await connector(driven).AskAsync(Expired, site: " https://portal.example.com/settings ");
+
+        Assert.Contains("Signed in", said);
+        Assert.Contains("Daoris's browser", said);
+        var kept = QuestionBox.Read(Home, driven)!;
+        Assert.Equal(("https://portal.example.com/settings", "sign-in", 0), (kept.Site, kept.Owner, kept.Choices.Count));
+    }
+
     /// <summary>With no home the question is refused and nothing is written, as a hand-over's ask is.</summary>
     [Fact]
     public async Task question_ask_with_no_home_says_so()

@@ -38,7 +38,17 @@ public sealed class QuestionBox(string? home)
     /// <summary>The longest reason for the recommendation, in characters: drawn under the recommended answer.</summary>
     public const int MaxWhy = 300;
 
+    /// <summary>The longest sign-in site, in characters: a page's address.</summary>
+    public const int MaxSite = 500;
+
     public const string Suffix = ".question.json";
+
+    /// <summary>A sign-in's site as the box keeps it: an http or https page's address with a host and no name or password, else null.</summary>
+    public static string? SiteOf(string? address) =>
+        address is { Length: > 0 and <= MaxSite } && Uri.TryCreate(address, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp) && uri.Host.Length > 0 && uri.UserInfo.Length == 0
+            ? address
+            : null;
 
     /// <summary>
     /// The owner-class kinds an agent marks a question with, doctrine rule 1's closed list. A marked question reaches the owner actor and no
@@ -67,10 +77,37 @@ public sealed class QuestionBox(string? home)
     /// <param name="recommend">The answer it recommends, by its number from 1, or null.</param>
     /// <param name="why">Why it recommends that answer, or null: said only with a recommendation.</param>
     /// <param name="owner">One of <see cref="OwnerMarks"/> where the agent knows the question is the owner's alone, or null.</param>
+    /// <param name="site">
+    /// The page where the work needs the person's sign-in, or null: the question then waits on their sign-in there, marked
+    /// <c>sign-in</c>, with no answers of the agent's, and the driver's look settles it when Daoris's browser sees the sign-in.
+    /// </param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
-        DateTimeOffset at, string? why = null, string? owner = null)
+        DateTimeOffset at, string? why = null, string? owner = null, string? site = null)
     {
+        var signIn = site?.Trim() is { Length: > 0 } address ? address : null;
+        if (signIn is not null)
+        {
+            if (SiteOf(signIn) is null)
+            {
+                return (null, $"A sign-in's site is a web page's address (http or https, with a host, no name or password in it, at most {MaxSite} "
+                              + "characters): the page that asked for the sign-in. Nothing was asked.");
+            }
+
+            if (choices is { Count: > 0 } || recommend is not null)
+            {
+                return (null, "A sign-in question offers no answers: the person's presses are Open the sign-in and Signed in, or their own "
+                              + "words. Nothing was asked.");
+            }
+
+            if (owner?.Trim() is { Length: > 0 } other && other != "sign-in")
+            {
+                return (null, $"A sign-in question is marked `sign-in`, never `{other}`: leave the mark out. Nothing was asked.");
+            }
+
+            owner = "sign-in";
+        }
+
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to ask in. Nothing was asked.");
         if (Unfit(asker) is { } unfit) return (null, $"{unfit} Nothing was asked.");
@@ -152,8 +189,18 @@ public sealed class QuestionBox(string? home)
             if (reason is null) writer.WriteNull("why"); else writer.WriteString("why", reason);
             if (when is null) writer.WriteNull("by"); else writer.WriteString("by", when);
             if (mark is null) writer.WriteNull("owner"); else writer.WriteString("owner", mark);
+            if (signIn is not null) writer.WriteString("site", signIn);
             writer.WriteString("at", Moments.Write(at));
         });
+
+        if (signIn is not null)
+        {
+            return (id,
+                $"Asked `#{id}`. The person sees your sign-in at the end of this session's conversation, with Open the sign-in (which opens "
+                + $"{signIn} in Daoris's browser) and Signed in. Now say in your last message that the work waits on their sign-in, commit "
+                + "what you have, and end your turn with your quest still taken. Their sign-in is your next prompt: Daoris's word that its "
+                + "browser saw it, `Signed in` as they pressed it, or their own words. Then go on through Daoris's browser as before.");
+        }
 
         return (id,
             $"Asked `#{id}`. The person sees your question at the end of this session's conversation, each answer you offered a press "
@@ -221,6 +268,7 @@ public sealed class QuestionBox(string? home)
             {
                 Why = Text(root, "why"),
                 Owner = Text(root, "owner") is { Length: > 0 } owner ? owner : null,
+                Site = SiteOf(Text(root, "site")),
             };
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -261,6 +309,9 @@ public sealed record QuestionKept(
     /// build does not know included, keeps the supervisor from answering it, the safe side.
     /// </summary>
     public string? Owner { get; init; }
+
+    /// <summary>The page whose sign-in it waits on, a web page's address, or null for a question that waits on none.</summary>
+    public string? Site { get; init; }
 }
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
