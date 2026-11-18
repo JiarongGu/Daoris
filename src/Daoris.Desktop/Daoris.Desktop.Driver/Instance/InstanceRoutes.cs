@@ -410,6 +410,7 @@ public static class PersonPresses
         ("workflow hand <run> <node> <holder> [\"…\"]", WorkflowHold),
         ("workflow give-back <run> <node> [\"…\"]", WorkflowHold),
         ("workflow fix <run> [<node>]", WorkHeld),
+        ("work held <run> <node> <n> <word>", WorkHeld),
         ("quest done <id> [--note \"…\"]", QuestDone),
         ("quest delete <id>", QuestDelete),
         ("ask --delete <id>", AskDelete),

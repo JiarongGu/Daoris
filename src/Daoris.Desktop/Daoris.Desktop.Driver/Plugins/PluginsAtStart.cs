@@ -10,6 +10,7 @@ public static class PluginsAtStart
     public static HookSet Set(string home, Action<string, string>? say, SessionOutput? output, MachineLog? log, PluginHealth? health = null)
     {
         PluginRenames.Move(home, log);
+        PluginOfferUpdates.Take(home, PluginOffers.FolderFor(home, AppContext.BaseDirectory), ProviderRegistry.Built().Names, log);
         return new HookSet(home, output, say: say, log: log, health: health, hand: PlaceHands.For(home));
     }
 }

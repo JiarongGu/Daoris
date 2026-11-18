@@ -154,6 +154,26 @@ public sealed class CommandTreeTests
     }
 
     [Fact]
+    public void Every_verb_the_workflow_console_routes_is_reachable_from_the_tree()
+    {
+        var group = CommandWords.Group("workflow")!;
+        string[] consoleVerbs = ["run", "keep", "fix", "values", .. NodeWordActs.All, .. CastActs.OnStep];
+        foreach (var verb in consoleVerbs)
+        {
+            Assert.Contains(verb, group.Verbs);
+            var route = CommandTree.Route(["workflow", verb, "r-1", "n-1"]);
+            Assert.True(route.Kind == TreeRouteKind.Run && route.Words[0] == "workflow" && route.Words[1] == verb, $"`daoris workflow {verb}` routes as {route.Kind} {string.Join(' ', route.Words)}: {route.Said}");
+        }
+
+        foreach (var verb in group.Verbs)
+        {
+            string[] words = [verb, "r-1", "n-1"];
+            var claimed = WorkflowValuesCommand.Asks(words) || WorkflowNodeCommand.Asks(words) || WorkflowHoldCommand.Asks(words) || WorkflowFixCommand.Asks(words);
+            Assert.True(!claimed || consoleVerbs.Contains(verb), $"`workflow {verb}` is read by a console command the tree does not route");
+        }
+    }
+
+    [Fact]
     public void The_settings_usage_names_each_of_its_verbs_and_the_group_alone_runs()
     {
         var usage = DriverCommand.UsageOf("settings")!;
