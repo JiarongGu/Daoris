@@ -118,7 +118,7 @@ public static class GroupsStateSlice
 
     /// <summary>The slice the shell's loop owns, taking <paramref name="loop"/>'s look once its service answers.</summary>
     public static StateSlice Of(DriverLoop loop, IEventBus bus) =>
-        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct, waits: false).ConfigureAwait(false)) : null)
+        new(Name, bus, async ct => loop.Service is { } service ? Judge(await LookAsync(loop, service, ct).ConfigureAwait(false)) : null)
         {
             Keyed = true,
             WakesOn = WakesOn,
@@ -133,19 +133,24 @@ public static class GroupsStateSlice
     /// <param name="only">The sessions asked (null for every one); only a look at every session is kept for Ask Daoris's room.</param>
     /// <param name="walked">Whether the asked sessions' trees are walked with git now, as an archive's judgement walks them (it never
     /// hides work a tree gained since), instead of read as the facts judged them. The route and this slice take the one look here.</param>
-    /// <param name="waits">Whether a tree the parts have not judged is waited for and walked before their first judgement; the slice's
-    /// is not, so a start's first rows are placed at once by the records, the quests and the marks, the trees' offers after.</param>
+    /// <param name="times">Where each stage's time is said, as the machine log's <c>session.list</c> line says them.</param>
+    /// <remarks>
+    /// Never waits on a git walk: a tree the parts have not judged is not waited for, so the route's first rows, as the slice's, are
+    /// placed at once by the records, the quests and the marks, and the trees' offers follow as the parts land (<see cref="HearTrees"/>).
+    /// A wait for the parts' first judgement held <c>daoris session list</c> a minute on an installed machine, behind one tree's walk.
+    /// </remarks>
     public static async Task<SessionLook> LookAsync(
         DriverLoop loop, ServiceClient service, CancellationToken ct, IReadOnlyCollection<string>? only = null, bool walked = false,
-        bool waits = true)
+        LookTimes? times = null)
     {
         var config = DriverConfig.Load(loop.ConfigPath);
         var at = DateTimeOffset.UtcNow;
+        times ??= new LookTimes();
         // An open conversation's turns by the word of the runner that holds it, as the page's foot reads them.
         var chat = loop.Chat;
         var look = await SessionGroups.LookAsync(
                 service, config, DriverContext.UnadoptedOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
-                turnEnded: chat is null ? null : chat.TurnEnded)
+                times: times, turnEnded: chat is null ? null : chat.TurnEnded)
             .ConfigureAwait(false);
         look = look with
         {
@@ -155,7 +160,8 @@ public static class GroupsStateSlice
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);
-        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct, waits: waits).ConfigureAwait(false);
+        return (SessionLook)await times.TimeAsync(
+            "judged", () => HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct, waits: false)).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -63,6 +63,7 @@
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchHome.cs" Link="BenchHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchCopies.cs" Link="BenchCopies.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\BenchDoors.cs" Link="BenchDoors.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver.Tests\Loop\SessionListHome.cs" Link="SessionListHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\RealServiceHost.cs" Link="RealServiceHost.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Service\ServiceHostRecords.cs" Link="ServiceHostRecords.cs" />
     <Compile Include="..\Daoris.Desktop.Driver.Tests\Category.cs" Link="DriverCategory.cs" />
