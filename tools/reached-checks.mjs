@@ -25,7 +25,8 @@
  * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
  * Its time goes to tests: the census is read once per content tree (`merge/census-cache.ts`), each test project built once and its
- * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), and each step says a `reached-step: {…}` line
+ * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), the light suites' runs beside the build and the
+ * .NET runs rather than after them (`merge/reached-run.ts`), and each step says a `reached-step: {…}` line
  * as it starts and ends, so the merge records them and names the step a kill cut (`merge/reached-steps.ts`).
  *
  * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
@@ -203,7 +204,7 @@ async function main(argv) {
   const startedAt = Date.now();
   const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock,
+    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock, processSuites,
     exec: run.exec,
     inPlace: run.inPlace,
     ...(halt ? { halt } : {}),

@@ -1,7 +1,10 @@
 /**
- * The run of a reached plan's commands, one per group: first each test project the plan runs classes of is built once
- * (`reached-build.ts`), then each group runs on that build (`--no-build --no-restore`), and a project whose build failed has its
- * classes failed without running them. Each class its report shows passing is recorded under its key; a group that failed has its
+ * The run of a reached plan's commands, one per group, in two lanes side by side. In one, each test project the plan runs classes
+ * of is built once (`reached-build.ts`), then each .NET group runs on that build (`--no-build --no-restore`), a project whose build
+ * failed having its classes failed without running them, then each end-to-end or Process group. In the other, each light suite's
+ * group (Vitest's, `node --test`'s), which needs nothing the build makes, runs from the start (`runsBeside`): a gate's time is the
+ * longer lane, not the two added. Within a lane the groups run in turn, and the outcome reads them back in the plan's order. Each
+ * class its report shows passing is recorded under its key; a group that failed has its
  * failed classes run again alone once, so a pass alone is a flake, and a failure is main's red or new (`reached-classify.ts`). A
  * flake is never recorded as a pass. Each build, and each suite's discovery and run, is a step on the run's clock
  * (`reached-steps.ts`). The run's counts, the projects it left built and its steps end as one line the merge reads.
@@ -15,6 +18,7 @@ import { failedTestLines, passesOf, runStartOf, withReport } from './reached-rep
 import { reachedCommands, type ReachedGroup, type ReachedPlan } from './reached.ts';
 import { outsideTests, seconds, stepsLine, type Step } from './reached-steps.ts';
 import type { Halt } from './heavy-halt.ts';
+import { isHeavySuite } from './heavy-tier.ts';
 
 /** Runs `command` with `args` in `cwd`, giving its exit code; asynchronous where a hold's beat must keep sounding while it runs. */
 export type Exec = (command: string, args: string[], cwd: string) => number | null | Promise<number | null>;
@@ -38,6 +42,8 @@ export type RunOptions = {
   build?: BuildStep;
   clock?: Clock;
   epoch?: () => number;
+  /** The suites whose gate runs with the Process settings: their groups wait for the build, as an end-to-end suite's do. */
+  processSuites?: ReadonlySet<string>;
 };
 
 const untimed: Clock = { time: async (_name, fn) => fn(), steps: () => [] };
@@ -67,32 +73,38 @@ async function runGroup(group: ReachedGroup, name: string, ready: ReadonlySet<st
   return { passed, failed: status !== 0 && failed.length === 0 ? group.units : failed };
 }
 
+/** What one group's run added: the classes it ran, those that failed again alone, those that passed alone, those it handed on. */
+type GroupResult = { ran: number; stillFailed: FailedUnit[]; passedAlone: string[]; handed: string[] };
+
+/**
+ * Whether a group runs in the lane beside the build: a light suite's (Vitest's or `node --test`'s, not an end-to-end or Process
+ * suite's), whose run needs nothing the build makes. The rest run in turn once the build has ended, the .NET groups first.
+ */
+export const runsBeside = (group: ReachedGroup, processSuites: ReadonlySet<string> = new Set()): boolean => group.runner !== 'dotnet' && !isHeavySuite(group.suite, processSuites);
+
 export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   const { plan, keys, store, say, mainRedOf } = options;
   const now = options.now ?? (() => new Date().toISOString());
   const place = options.inPlace ?? (<T>(_group: ReachedGroup, fn: () => Promise<T>) => fn());
-  const stillFailed: FailedUnit[] = [];
-  const passedAlone = new Set<string>();
   const projects = [...new Set(plan.groups.flatMap((group) => (group.runner === 'dotnet' && group.project !== undefined ? [group.project] : [])))];
   const { halt } = options;
-  // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
-  const builds = options.build && projects.length && !halt?.asked() ? await options.build(projects) : { ready: [], failed: new Map<string, string>() };
-  const ready = new Set(builds.ready);
-  // The classes a newer heavy tier's halt leaves to it: those of the groups not started, and of a group whose command it ended.
-  const handed: string[] = [];
-  const hand = (units: readonly { suite: string; unit: string }[]): void => { handed.push(...units.map(unitId)); };
-  let ran = 0;
-  for (const [index, group] of plan.groups.entries()) {
+  let builds = { ready: [] as string[], failed: new Map<string, string>() };
+  let ready = new Set<string>();
+  const results: GroupResult[] = plan.groups.map(() => ({ ran: 0, stillFailed: [], passedAlone: [], handed: [] }));
+  const runOne = async (group: ReachedGroup, index: number): Promise<void> => {
+    const result = results[index]!;
+    // The classes a newer heavy tier's halt leaves to it: those of the groups not started, and of a group whose command it ended.
+    const hand = (units: readonly { suite: string; unit: string }[]): void => { result.handed.push(...units.map(unitId)); };
     if (halt?.asked()) {
       hand(group.units);
-      continue;
+      return;
     }
     const unbuilt = group.project === undefined ? undefined : builds.failed.get(group.project);
     if (group.runner === 'dotnet' && unbuilt !== undefined) {
-      ran += group.units.length;
+      result.ran += group.units.length;
       say(`reached: ${group.suite}: ${group.units.length} class(es) not run: ${group.project} ${unbuilt}`);
-      stillFailed.push(...group.units.map((unit) => ({ suite: unit.suite, unit: unit.unit })));
-      continue;
+      result.stillFailed.push(...group.units.map((unit) => ({ suite: unit.suite, unit: unit.unit })));
+      return;
     }
     await place(group, async () => {
       if (halt?.asked()) {
@@ -102,24 +114,43 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
       const first = await runGroup(group, `reached-${group.suite}-${index + 1}`, ready, options);
       for (const unit of first.passed) store.add(unitId(unit), keys.get(unitId(unit)) as string, now());
       if (halt?.ended(group)) {
-        ran += first.passed.length;
+        result.ran += first.passed.length;
         hand(group.units.filter((unit) => !first.passed.includes(unit)));
         return;
       }
-      ran += group.units.length;
+      result.ran += group.units.length;
       if (!first.failed.length) return;
       say(`reached: ${group.suite}: ${first.failed.length} failed, run again alone once: ${first.failed.map((unit) => unit.unit).join(', ')}`);
       const again = await runGroup({ ...group, units: first.failed }, `reached-${group.suite}-${index + 1}-again`, ready, options);
       const cut = halt?.ended(group) === true;
       for (const unit of first.failed) {
-        if (again.passed.includes(unit) && !again.failed.includes(unit)) passedAlone.add(unitId(unit));
+        if (again.passed.includes(unit) && !again.failed.includes(unit)) result.passedAlone.push(unitId(unit));
         else if (cut) {
-          ran -= 1;
+          result.ran -= 1;
           hand([unit]);
-        } else stillFailed.push({ suite: unit.suite, unit: unit.unit });
+        } else result.stillFailed.push({ suite: unit.suite, unit: unit.unit });
       }
     });
-  }
+  };
+  const inTurn = async (entries: [number, ReachedGroup][]): Promise<void> => {
+    for (const [index, group] of entries) await runOne(group, index);
+  };
+  const entries = [...plan.groups.entries()];
+  const beside = (group: ReachedGroup): boolean => runsBeside(group, options.processSuites);
+  await Promise.all([
+    (async () => {
+      // A run a newer heavy tier asked to stop before its build builds nothing: every group is handed on.
+      if (options.build && projects.length && !halt?.asked()) builds = await options.build(projects);
+      ready = new Set(builds.ready);
+      await inTurn(entries.filter(([, group]) => !beside(group)));
+    })(),
+    inTurn(entries.filter(([, group]) => beside(group))),
+  ]);
+  // Read back in the plan's order, whichever lane each group ran in.
+  const stillFailed = results.flatMap((result) => result.stillFailed);
+  const passedAlone = new Set(results.flatMap((result) => result.passedAlone));
+  const handed = results.flatMap((result) => result.handed);
+  const ran = results.reduce((sum, result) => sum + result.ran, 0);
   const split = classify({ failed: [...aloneUnits(plan, passedAlone), ...stillFailed], passedAlone, mainRedOf });
   const outcome: ClassOutcome = { ran, replayed: options.replayed ?? 0, ...split, deferred: [...(options.deferred ?? [])] };
   if (handed.length) {
