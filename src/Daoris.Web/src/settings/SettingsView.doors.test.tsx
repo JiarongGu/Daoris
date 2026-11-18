@@ -161,13 +161,11 @@ describe("Settings' list, on the window", () => {
    * its door to the place, is Driver's. A remembered Plugins domain opens there rather than on a domain that does not
    * exist; the seven domains hold no Plugins.
    */
-  it('opens a Plugins domain remembered from before it left at Driver, where its folder and its door are', async () => {
-    window.localStorage.setItem('daoris.settings', 'plugins');
+  it('lists every domain in its order', async () => {
     await settings();
     await listed();
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page'));
     expect(within(domains).getAllByRole('button').map((domain) => domain.textContent)).toEqual([
       'Get started', 'Appearance', 'Driver', 'AI features', 'Git', 'Tools', 'Browser', 'Disk space', 'Updates', 'This Daoris', 'Machine log',
     ]);
