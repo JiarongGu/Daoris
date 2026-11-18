@@ -102,17 +102,20 @@ export function readJunit(text, root) {
   return tests;
 }
 
-/** Each record file of `dir` (written at or after `since`, when given) with its tests as { key, ms }. */
+/** Each record file of `dir` (written at or after `since`, when given) with its tests as { key, ms }; a census record written after `CensusWarm.LateMark` waited on the warm-up, so is loaded. */
 export function readRecords(dir, root, { since = null } = {}) {
   if (!existsSync(dir)) return [];
   const marks = readMarks(dir);
+  const lateMark = join(dir, 'census-warm-late.json');
+  const warmLate = existsSync(lateMark) ? statSync(lateMark).mtimeMs : null;
+  const lateCensus = (file, at) => warmLate !== null && /^censuses-.*\.trx$/.test(file) && at >= warmLate;
   return readdirSync(dir).sort().map((file) => ({ file, at: statSync(join(dir, file)).mtimeMs })).filter(({ at }) => since === null || at >= since).map(({ file, at }) => {
     const text = () => readFileSync(join(dir, file), 'utf8');
     const reached = reachedSuite(file);
     const vitest = VITEST_REPORTS.includes(file) || (reached !== null && file.endsWith('.json'));
     const junit = JUNIT_REPORTS.includes(file) || ((reached === 'tool-tests' || reached === 'tool-e2e') && file.endsWith('.xml'));
     const tests = file.endsWith('.trx') ? readTrx(text()) : vitest ? readVitest(text(), root) : junit ? readJunit(text(), root) : [];
-    return { file, at, tests, loaded: isLoaded(marks, file, at) };
+    return { file, at, tests, loaded: isLoaded(marks, file, at) || lateCensus(file, at) };
   });
 }
 

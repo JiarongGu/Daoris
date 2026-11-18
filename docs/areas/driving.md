@@ -362,7 +362,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`daoris workflow accept <run> <node>` where the run waits for it, else `daoris workflow run --session <id>`), never `tree
     land`, which presses nothing (`LandingHint`). `daoris session list --group` takes the five and `archived`. The list's look is one
     gatherer (`SessionGroups.LookAsync`), read by `SESSION_GROUPS` and by the terminal's verb alone: where a Daoris runs, it waits on
-    no tree's git walk, its trees as the facts' parts judged them; a terminal alone walks its own trees. Each listing writes one
+    no tree's git walk, its trees as the facts' parts judged them; a terminal alone places its rows from the records as well and
+    walks only the trees of the rows needing you, its last line counting the trees it left unread (`ListedTrees`). Each listing writes one
     `session.list` line in the machine log, its stages in milliseconds (`SessionListLog`). (D132, D273, D280, D282)
 46. The records of one line share their `line`, and the lines of one ask or quest in one repository share an entry key,
     `<origin>/<repository>`, which an Accept lands together (`LandingEntries`); an entry's slice partition is its leading session. A line's

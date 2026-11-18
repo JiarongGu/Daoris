@@ -88,7 +88,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     (`<agent>$a`, `StrayAgentFolders`), and `agent account remove <agent> <account>` or `remove <folder>` takes each.
 18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb and the launcher's swap hold it for
     their act. A stale lease never blocks, and is removed by moving it aside and judging what moved, so a lease written
-    meanwhile is put back. No other file holds the home. (from D104, D171, D323)
+    meanwhile is put back. No other file holds the home. A workflow verb that writes a run's record holds it (`NodeLease`:
+    `keep`, `skip`, `stop`, `changes`, `accept`, `take`, `hand`, `give-back`, and `values` set or cleared); a look holds none.
+    (from D104, D171, D323)
 19. A home has one id, in `data/home.json`, read alike through every path to the folder. (from D171)
 20. A start moves nothing into the home: no `~/.daoris` is moved in, and no entry is moved from one place to another. A
     home whose layout changed is purged, not moved. (from D323)

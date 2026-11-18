@@ -41,8 +41,7 @@ public sealed class QuestAnswers(HostWiring host)
         q.PublishedBy,
         deletable,
         q.Lanes,
-        q.Requirements.Select(r => new QuestRequirementResponse(
-            r.Quote, r.Check, r.Evidence.Select(e => new QuestEvidenceResponse(e.Path, e.Gate)).ToList())).ToList(),
+        q.Requirements.Select(ToRequirement).ToList(),
         q.Answers.Select(a => new QuestAnswerResponse(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
         q.Held,
         q.Accepted,
@@ -90,6 +89,9 @@ public sealed class QuestAnswers(HostWiring host)
         q.Request);
 
     /// <summary>A conflict as the quest answers it, with what its log says of it: each fact absent where unset.</summary>
+    public static QuestRequirementResponse ToRequirement(QuestRequirement r) =>
+        new(r.Quote, r.Check, r.Evidence.Select(e => new QuestEvidenceResponse(e.Path, e.Gate)).ToList());
+
     public static QuestConflictResponse ToConflict(QuestConflict c, QuestConflictReading? read) => new(
         c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence,
         read is { LostToTheReopen: true } ? true : null,

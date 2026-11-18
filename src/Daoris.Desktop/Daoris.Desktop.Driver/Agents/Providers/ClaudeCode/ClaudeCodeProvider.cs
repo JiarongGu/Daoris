@@ -25,6 +25,8 @@ internal static class ClaudeCodeProvider
 
     private const string Evidence ="Claude Code's declaration";
     private const string SteerEvidence = "docs/2026-10-03-steer-evidence.md";
+    private const string NativeBesideEvidence = "docs/archive/2026-09-30-console3-native-streams-evidence.md";
+    private const string ProtocolBesideEvidence = "docs/archive/2026-09-28-console2-streams-evidence.md";
     private static readonly MeasuredAt SteerMeasuredAt = new("2.1.284", "0.84.0");
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
@@ -82,7 +84,11 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, Evidence),
                 Known<bool>.Declared(true, Evidence),
                 // Its servers inherit its environment (the driven path through the repository's own `.mcp.json`).
-                ServersInherit: Known<bool>.Declared(true, Evidence)),
+                ServersInherit: Known<bool>.Declared(true, Evidence),
+                ReportsChildren: Known<bool>.Declared(true, NativeBesideEvidence),
+                ReportsTasks: Known<bool>.Declared(true, NativeBesideEvidence),
+                OneTaskStopped: Known<bool>.Declared(false, NativeBesideEvidence),
+                OneChildStopped: Known<bool>.Declared(false, NativeBesideEvidence)),
             new DoorTablesPart(null, UsageHistory.PerTurn), null, skills);
         var protocol = new AgentDoor(
             new DoorId("claude-code-acp"), Transport.Protocol, new DoorIdentity(null, null, null),
@@ -100,7 +106,11 @@ internal static class ClaudeCodeProvider
                 Known<bool>.Declared(true, "the protocol transport's default", Eligibility.Applies),
                 Known<bool>.Declared(true, Evidence),
                 WordsAtNextStep: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
-                Steering: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt)),
+                Steering: Known<bool>.Measured(true, SteerEvidence, "posture default", SteerMeasuredAt),
+                ReportsChildren: Known<bool>.Declared(true, ProtocolBesideEvidence),
+                ReportsTasks: Known<bool>.Declared(true, ProtocolBesideEvidence),
+                OneTaskStopped: Known<bool>.Declared(true, ProtocolBesideEvidence),
+                OneChildStopped: Known<bool>.Declared(false, ProtocolBesideEvidence)),
             // Its own server's word that -32000 means authentication required, read before its provider's.
             new DoorTablesPart(ClaudeAcpErrors.Words, UsageHistory.PerTurn), new AccountKey("claude-code"), skills);
 

@@ -51,6 +51,10 @@ public sealed class LogModuleTests : Bridge
         },
         { "proposal.settled", new { applied = true }, "info", """{"applied":true}""" },
         {
+            "wait.disagreed", new { session = "76cdd5db", group = "needs-you", reason = "permission", docked = "permission" }, "info",
+            """{"session":"76cdd5db","group":"needs-you","reason":"permission","docked":"permission"}"""
+        },
+        {
             "page.error", new { where = "window", message = "Cannot read properties of undefined (reading 'id')" }, "error",
             """{"where":"window","message":"Cannot read properties of undefined (reading 'id')"}"""
         },

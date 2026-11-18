@@ -23,9 +23,11 @@ public static class BrainstormCommand
 
     /// <summary>
     /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. <paramref name="doors"/> null
-    /// finds the service as a terminal does; <paramref name="now"/> is unused: the desk stamps what it writes.
+    /// finds the service as a terminal does; <paramref name="now"/> is unused: the desk stamps what it writes. <paramref name="adapters"/>
+    /// names the adapters an ask's <c>--agents</c> is read against; null reads the home's.
     /// </summary>
-    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null)
+    public static int Run(
+        string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null, Func<string, IReadOnlyList<string>>? adapters = null)
     {
         _ = now;
         if (Kind(args) is not { } kinded)
@@ -34,7 +36,7 @@ public static class BrainstormCommand
             return 2;
         }
 
-        if (kinded.Meeting) return MeetingCommand.Run(kinded.Args, home, output, now, doors);
+        if (kinded.Meeting) return MeetingCommand.Run(kinded.Args, home, output, now, doors, adapters);
         args = kinded.Args;
         var files = new BrainstormFiles(home);
         switch (args)
@@ -54,7 +56,7 @@ public static class BrainstormCommand
             case ["clear", var id]:
                 return BrainstormDoor.Press(doors, new ClearBrainstorm(id), output);
             case [var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal) && question is not ("show" or "send" or "stop" or "clear" or "list"):
-                return Ask(question, rest, output, doors);
+                return Ask(question, rest, output, doors, home, adapters ?? BrainstormDoor.AdapterNames);
             default:
                 output.WriteLine(Usage);
                 return 2;
@@ -88,7 +90,8 @@ public static class BrainstormCommand
         }
     }
 
-    private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
+    private static int Ask(
+        string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors, string home, Func<string, IReadOnlyList<string>> adapters)
     {
         var design = rest.Contains("--design", StringComparer.Ordinal);
         rest = [.. rest.Where(word => word != "--design")];
@@ -124,6 +127,8 @@ public static class BrainstormCommand
                     return 2;
             }
         }
+
+        if (BrainstormDoor.RefusesAgents(agents, home, adapters, output)) return 1;
 
         return BrainstormDoor.Press(
             doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false, design), output);

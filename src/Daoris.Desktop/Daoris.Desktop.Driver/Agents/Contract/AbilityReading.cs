@@ -33,6 +33,9 @@ public static class AbilityReading
         AbilityName.RequestsHeld => part.RequestsHeld,
         AbilityName.ServersOnWire => part.ServersOnWire,
         AbilityName.LeavesOwnServersOut => part.LeavesOwnServersOut,
+        AbilityName.ReportsChildren => part.ReportsChildren,
+        AbilityName.ReportsTasks => part.ReportsTasks,
+        AbilityName.OneChildStopped => part.OneChildStopped,
         _ => throw new ArgumentException($"`{ability}` is not an ability a door states", nameof(ability)),
     };
 

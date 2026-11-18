@@ -23,13 +23,14 @@ namespace Daoris.Driver;
 /// <para><b>A session's end is theirs.</b> Nothing the session started outlives it (the job
 /// object), so whatever is still open when it ends is ended with it, and says so.</para>
 ///
-/// <para><b>Each child is a reading</b>: its announcement one <see cref="WireReading.ChildSeen"/> and the
-/// end its wire says one <see cref="WireReading.ChildEnded"/>, in the wire's own words, which the part's lineage keeps; never the end a
+/// <para><b>Each child and task is a reading</b>: its announcement one <see cref="WireReading.ChildSeen"/> or
+/// <see cref="WireReading.TaskStarted"/> and the end its wire says one <see cref="WireReading.ChildEnded"/> or
+/// <see cref="WireReading.TaskEnded"/>, in the wire's own words, which the part's lineage and the session's record keep; never the end a
 /// session's close gives it: that is its process's own <c>end</c> line.</para>
 /// </remarks>
 internal sealed class AcpStreams(
     ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null,
-    IReadingSink? children = null, Action<string, SessionEvent>? calls = null)
+    IReadingSink? children = null)
 {
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says
@@ -57,8 +58,9 @@ internal sealed class AcpStreams(
         public bool EndTold { get; set; }
     }
 
-    private sealed class Background(string streamId, string name)
+    private sealed class Background(string id, string streamId, string name)
     {
+        public string Id { get; } = id;
         public string StreamId { get; } = streamId;
         public string Name { get; } = name;
         public OutputTail? Tail { get; set; }
@@ -68,6 +70,9 @@ internal sealed class AcpStreams(
 
         public string? State { get; set; }
         public bool Finishing { get; set; }
+
+        /// <summary>Its start, until it is said: held for the call a later update names where its announcement names none.</summary>
+        public WireReading.TaskStarted? Unsaid { get; set; }
         public TaskCompletionSource Done { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
@@ -93,8 +98,13 @@ internal sealed class AcpStreams(
             case "async_task_spawned":
                 return TaskSpawned(update);
             case "async_task_progress":
-                // Known, and not the conversation: the file it names is the stream.
-                if (TaskOf(update) is { } progressed) Watch(progressed, Json.Text(update, "outputFilePath"));
+                // Known, and not the conversation: the file it names is the stream, and the call it names the one that started it.
+                if (TaskOf(update) is { } progressed)
+                {
+                    Started(progressed, Json.Text(update, "toolCallId"));
+                    Watch(progressed, Json.Text(update, "outputFilePath"));
+                }
+
                 return true;
             case "async_task_state_update":
                 return TaskState(update);
@@ -108,7 +118,7 @@ internal sealed class AcpStreams(
 
         var mapped = AcpRender.Map(update);
         child.Console.Update(update, mapped);
-        if (mapped is { Kind: SessionEventKind.Tool }) calls?.Invoke(child.StreamId, mapped);
+        if (mapped is not null) streams.Said(child.StreamId, mapped);
         return true;
     }
 
@@ -185,6 +195,7 @@ internal sealed class AcpStreams(
 
         children?.Read(new WireReading.ChildSeen(id, ChildSignal.Announced)
         {
+            Call = onRoot ? id : null,
             Parent = parent,
             Depth = onRoot ? 1 : null,
             Name = Json.Text(update, "name"),
@@ -246,8 +257,15 @@ internal sealed class AcpStreams(
         lock (_gate)
         {
             if (_tasks.ContainsKey(id)) return true;
-            task = _tasks[id] = new Background(streamId, name);
+            task = _tasks[id] = new Background(id, streamId, name)
+            {
+                Unsaid = new WireReading.TaskStarted(id) { Kind = Json.Text(update, "taskType"), Name = Json.Text(update, "name") },
+            };
         }
+
+        // Codex's announcement names its call; Claude Code's names it in its first progress (console2 streams evidence), so its start
+        // waits for that, or for its end, whichever is said first.
+        if (Json.Text(update, "toolCallId") is { Length: > 0 } call) Started(task, call);
 
         // Stoppable only when the harness says so: its word, never a guess from the task's kind.
         var canStop = update.TryGetProperty("canStop", out var stoppable) && stoppable.ValueKind == JsonValueKind.True;
@@ -255,6 +273,19 @@ internal sealed class AcpStreams(
         Say($"→ background: {AcpRender.OneLine(name)}");
         Watch(task, Json.Text(update, "outputFilePath"));
         return true;
+    }
+
+    /// <summary>A task's start said, once: with the call an update names, or with none where its end comes first.</summary>
+    private void Started(Background task, string? call)
+    {
+        WireReading.TaskStarted? unsaid;
+        lock (_gate)
+        {
+            unsaid = task.Unsaid;
+            task.Unsaid = null;
+        }
+
+        if (unsaid is not null) children?.Read(unsaid with { Call = call is { Length: > 0 } ? call : null });
     }
 
     private bool TaskState(JsonElement update)
@@ -320,7 +351,9 @@ internal sealed class AcpStreams(
 
             string state;
             lock (_gate) state = task.State ?? SessionStream.SessionEnded;
+            Started(task, null);
             if (state == SessionStream.SessionEnded) streams.Line(task.StreamId, EndedWithSession);
+            else children?.Read(new WireReading.TaskEnded(task.Id, state));
             Ended(SessionStreamKind.Task, task.StreamId, task.Name, state);
         }
         catch (Exception error) when (error is not OperationCanceledException)

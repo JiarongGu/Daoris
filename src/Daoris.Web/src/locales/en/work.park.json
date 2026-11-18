@@ -4,7 +4,6 @@
   "work.park.waitingHere": "It asks this, waiting {{span}}: answer below.",
   "work.park.waitingAbove": "It asked above, waiting {{span}}: answer below.",
   "work.park.goAheads": "Go-aheads it waits on",
-  "work.park.inTheBox": "Each is answered in the box below, with your words there.",
   "work.park.by": "It says it needs your answer by: {{by}}",
   "work.park.whileWaiting": "While it waits",
   "work.park.noDeadline": "No deadline here: it waits until you answer.",

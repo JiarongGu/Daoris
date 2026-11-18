@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
+
+- **Symptom:** a run ended failed-held at `push`, revived by LEFTSTEP1 once origin held its branch at the landed tip, opened its pull
+  request through its plugin's `pull-request` step, and the pull request completed on the platform; its `monitor` stayed `working` for
+  an hour, and the plugin was asked no `work/state` in two hours. A run on the same repository that never ended had its monitor reach
+  within minutes of its merge.
+- **Root cause:** the moments that ask a plugin about an open pull request (origin's line moving, the window's focus) concerned only a
+  landing marked `Pushed` (`PullRequestMoments.Concerns`, from FABRIC-END6's b42f5f86b2, when the plugin that pushed a branch was the
+  one that opened its pull request), and only Daoris's own push act writes that mark. PUSHBUSY1 (46f2efddff) let a failed `push` read
+  reached on origin's ref, and LEFTSTEP1 (cc53305ee5) on the person's *Done outside Daoris*, neither writing a push of Daoris's, so
+  the address the step kept was never asked about and the monitor, which reads the kept answer, never settled. Siblings of the class:
+  a landing whose end the keeper held while the last answer still said open was not asked either, and the moment after Daoris pushes
+  lost its only callers when the hand-off left (68a3133baf), so nothing asked about a pull request right after it opened.
+- **Fix:** a moment concerns every standing landing Daoris pushed or whose step recorded a pull request, whoever pushed the branch,
+  while no answer settled it, and a held one while the monitor still reads its answer open; the address a `pull-request` step keeps
+  (`PullRequestRecords.Keep`) tells the home's moments, so the pull request is asked about at once.
+- **Verify:** `RevivedRunPullRequestTests` (a run ended failed-held at `push`, revived on origin's ref, its pull request opened and then
+  answered completed at the focus: red on no ask, now `monitor` reached `merged`; the opened moment red on no ask), `MonitorAskedTests`
+  (the census: every landing a monitor waits on for its plugin's answer, by each way its push reached and with its end held or not, is
+  one a moment asks; red on twelve shapes), `PullRequestMomentsTests`; the filtered `Monitor|FailedHeld|Watch|PullRequest` driver tests.
+
+## 2026-11-19 - The terminal's list with no Daoris running took 50 s, walking every tree no row needed (SESSIONSTART2)
+
+- **Symptom:** after SESSIONLISTSLOW1 the window's list waited on no tree, but `daoris session list` with no Daoris running still
+  walked its trees (14.8 s for four on that fixture; 84 s on the install, judged).
+- **Measured first,** on `SessionListHome` grown to the install's shape (1,250 records, 189 MB of events, 300 archived, eight trees,
+  one with 30,000 ignored build files): `session list` 50,124 ms, its eight walks 49,394 ms; `--json` 42,994 ms, walks 42,782 ms.
+  Every other stage together under a second.
+- **Root cause:** the terminal's look walked every landable tree, one after another (`SessionGroups.LookAsync` with no `only`, left
+  so when SESSIONLISTSLOW1 moved the route's look off the walks), though a tree's judgement places no row in its group: it only adds
+  the offer to land or discard, and a run's commits to review.
+- **Fix:** the terminal alone places its rows from what is recorded, as the window does, then walks only the trees of the rows
+  needing the person (`ListedTrees`), its last line counting the trees left unread and the door that reads one
+  (`daoris tree land <session> --plan`). `HelpTreeFacts.WithTreesAsync` loses its unused waiting branch.
+- **After:** 1,463 ms, `--json` 469 ms, no tree walked. Left, each a number for its row: a cold walk of the large tree 8,455 ms
+  (3,688 ms warm), the service's host started again 2,093 to 6,914 ms under the machine's load (11.8 s on the install), the shell's
+  loop come-up 37 ms and settling 48 ms, `SESSION_GROUPS` 1,273 ms.
+- **Verify:** `SessionListWalksTests` (a done session's tree never walked, a run's Accept's walked), `SessionListBudgetProcessTests`
+  (the whole list within 2 s, no tree walked).
+
 ## 2026-11-18 - A re-landed branch's push read reached on the commit pushed before, so the new tip was never pushed (RESUMERESET1)
 
 - **Symptom:** with RESUMERESET1's landed run taken back by the chain's next quest, `ReLandingPullRequestTests` failed: the branch
@@ -14408,3 +14448,14 @@ installed window is not yet seen.
   re-observed, attempt 1 to 2; the before-landing case green before and after), the filtered
   `Invalidat|WireEvaluation|Content|RunWait|LandedRun` tests; `ReLandingPullRequestTests` now moves the landed branch on through the
   chain's next quest.
+
+## 2026-11-19 — `agent rules list` read a tool list one tool short on main (AgentsTextTests)
+
+- **Seen:** `AgentsTextTests`' four `rules` cases red on main 82eb7e4a8e, found by a builder's reached checks: the `connector` default
+  allows `mcp__daoris-knowledge__step_settle`, and the golden list ends at `team_plan`.
+- **Cause:** ACTORFLOW1a (3b0a022f56) added the knowledge tool `step_settle` and updated the brainstorm goldens that list every tool,
+  not `agents-text.json`'s; no merge since reached `AgentsTextTests`, so main stayed red unseen.
+- **Fix:** the four rows' `connector` line names `step_settle` after `team_plan`.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~AgentsTextTests"`: 262 passed.
+  Left: a knowledge tool's addition does not reach every golden that lists the tools (the brainstorm goldens, `agents-text.json`,
+  the service's `call-table.json`); TOOLGOLDENS1.

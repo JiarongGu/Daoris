@@ -18,7 +18,9 @@ daoris agent rules allow mcp__browser            # or --workspace <name> for one
 **Sign in once, in the window.** Open it from View → *Daoris's browser* (or the title strip's *Open Daoris's
 browser*), go to the ticket system, and sign in. The sign-in stays in the browser's profile, and
 every session after uses it. Settings → Browser chooses whether that window is Daoris's own or your Edge on a
-profile of Daoris's; `${browser}` is the chosen one's endpoint. Signing in is the person's to do, never a session's.
+profile of Daoris's; `${browser}` is the chosen one's endpoint. Signing in is the person's to do, never a session's: a session
+that meets a sign-in it cannot make asks for it (`question_ask` with the page as `site`) and waits, its dock offering *Open the
+sign-in…* and *Signed in*, and your sign-in there, seen in this browser, lets it go on.
 
 **One profile for every session; each session's tabs are its own.** `browser-server.mjs` starts Playwright MCP over the
 browser's one context, the person's, so every session (Ask Daoris included) has the person's cookies, local storage and

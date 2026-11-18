@@ -69,6 +69,26 @@ test('a reached command\'s record, written when a class is measured again alone,
   }
 });
 
+test('a census record written after a late warm-up is read as taken under load; one before it is judged', () => {
+  const dir = join('_fixtures', 'time-ratchet-warm-late');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    const record = join(dir, 'censuses-driver.trx');
+    const mark = join(dir, 'census-warm-late.json');
+    writeFileSync(record, trx([['A.B.first', '00:00:42.5000000']]));
+    writeFileSync(mark, '{}\n');
+    const written = statSync(record).mtimeMs / 1000;
+    utimesSync(mark, written - 1, written - 1);
+    assert.deepEqual(scanRecords(dir, process.cwd()).over, {});
+    assert.deepEqual(Object.keys(scanRecords(dir, process.cwd()).loaded), ['A.B.first']);
+    utimesSync(mark, written + 60, written + 60);
+    assert.deepEqual(Object.keys(scanRecords(dir, process.cwd()).over), ['A.B.first']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('a record file is held to the limit of its kind', () => {
   assert.equal(limitFor('driver.trx'), LIMITS.unit);
   assert.equal(limitFor('driver-process-git.trx'), LIMITS.process);

@@ -25,7 +25,7 @@ internal static class CensusMarks
     internal static readonly string[] Whole =
     [
         "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
-        "CensusReachTests", "CensusWarmTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
+        "CensusReachTests", "CensusWarmTests", "ChildRecordsCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",
         "DeclarationViewsCensusTests", "DelegateKeyStripTests", "DriverChoicesTextTests", "DriverFilesTextTests", "DriverRegistryTextTests",
@@ -37,7 +37,7 @@ internal static class CensusMarks
         "PickerCensusTests", "PluginCatalogTests", "PoolReadersCensusTests", "ProcessEnvironmentCensusTests",
         "ProcessStartsCensusTests", "ProviderCensusTests", "PullRequestOccasionTests", "RoleCatalogCensusTests", "RoleCensusTests",
         "RoleStaffingTests", "RoleVerbUsageTests", "RoomSaysNoActorTests", "RoomsDeclaredCensusTests", "RulePathsCensusTests", "SayKeysCensusTests",
-        "ServiceProviderCensusTests", "SessionMarkerTests", "SessionStopCensusTests", "SettleDoorCensusTests", "SettledReadersCensusTests", "SharedCompileTests",
+        "ServiceProviderCensusTests", "SessionMarkerTests", "SettleDoorCensusTests", "SettledReadersCensusTests", "SharedCompileTests",
         "ShortWaitsCensusTests", "SlotSettledCensusTests", "SourceFilesTests", "SourceTextsTests",
         "StoredOldNamesCensusTests", "SystemWiringTests", "TerminalConversationCensusTests", "TerminalStartsCensusTests",
         "TestHomesCensusTests", "ToolsAtTheStartCensusTests", "WiringLeftOverTests", "WorkFrameCensusTests",

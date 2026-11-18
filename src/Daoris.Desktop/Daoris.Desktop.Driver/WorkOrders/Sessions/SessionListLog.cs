@@ -7,10 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// Each stage as <c>&lt;stage&gt;Ms</c>, in the order it ran: the look's own (<c>recordsMs</c>, <c>questsMs</c>, <c>verdictsMs</c>,
-/// <c>marksMs</c>, <c>waitingMs</c>, <c>treesMs</c>, the git walks a terminal alone makes), the trees as the facts' parts judged them
-/// where a Daoris answers (<c>judgedMs</c>), the run waits and passages a terminal alone reads from the home (<c>runWaitsMs</c>,
-/// <c>passagesMs</c>), and the listing's (<c>rowsMs</c>, <c>entriesMs</c>, <c>openingsMs</c>, the events files' read, and
-/// <c>linesMs</c>). Over <see cref="SlowMs"/> the line is a warning with <c>slow</c> true.
+/// <c>marksMs</c>, <c>waitingMs</c>, <c>treesMs</c>), the trees as the facts' parts judged them where a Daoris answers (<c>judgedMs</c>),
+/// a terminal alone's run waits, passages and its git walks of the trees of rows needing you (<c>runWaitsMs</c>, <c>passagesMs</c>,
+/// <c>walksMs</c>, <c>walkedRowsMs</c>; <c>trees</c> counts the walks), and the listing's (<c>rowsMs</c>, <c>entriesMs</c>,
+/// <c>openingsMs</c>, the events files' read, <c>linesMs</c>). Over <see cref="SlowMs"/> the line is a warning with <c>slow</c> true.
 /// </remarks>
 public static class SessionListLog
 {

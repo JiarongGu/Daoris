@@ -343,7 +343,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         // quest's session keeps it as, each child its door says in the part's lineage, and what the stream says
         // of the account's windows.
         run.HandSink(ReadingSinks.Of(
-            new RecordReadings(sessionId, output, context.Events),
+            new RecordReadings(sessionId, output, context.Events, new ChildRecords(DaorisHome.Entry(home, HomeEntry.Sessions), context.Harnesses.Clock)),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
             new LineageReadings(home, sessionId),
             said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),

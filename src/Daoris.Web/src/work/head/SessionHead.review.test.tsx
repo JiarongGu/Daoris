@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { STEP_REVIEWED, STEP_SHOWN } from '../gates/reviewFixtures';
-import { SessionHead } from './SessionHead';
+import { WaitStrip as SessionHead } from '../waits/WaitStrip';
 
 // Where the review's gate holds a session's work, the head
 // says *Review in `<environment>`* in the gate's state where the door to the run's review would be, and offers no door.

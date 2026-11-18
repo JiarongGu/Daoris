@@ -104,10 +104,11 @@ describe('a session in a window of its own', () => {
     show();
 
     const heading = await screen.findByRole('heading', { name: 'start the dev server' });
-    // The record's head says it beside its title; the Timeline's states flow says the shown word again below.
+    // The reader has pushed none here, so the head's state line reads its state, not the record's word.
     const head = heading.closest('header[data-record-head]');
     expect(head).not.toBeNull();
-    expect(within(head as HTMLElement).getByText('idle')).toBeInTheDocument();
+    expect(within(head as HTMLElement).getByText('Reading its state')).toBeInTheDocument();
+    expect(within(head as HTMLElement).queryByText('idle')).toBeNull();
   });
 
   /**

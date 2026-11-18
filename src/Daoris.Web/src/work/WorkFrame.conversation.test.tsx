@@ -896,11 +896,10 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
-   * A live chat between turns is idle, in the rail and
-   * the head, and working again the moment the driver says a turn is in flight. It does not read *working*
-   * the whole time, as a turn does.
+   * A live chat between turns is idle in the rail, and working again the moment the driver says a turn is in flight; the header's
+   * state line is the reader's, never that word.
    */
-  it('says a live chat is idle between turns, in the rail and the head, as the driver says', async () => {
+  it('says a live chat is idle between turns in the rail, its header the reader\'s line', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
@@ -911,13 +910,12 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11');
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
-    // The word is the page header's, not the record head's.
     const head = screen.getByRole('heading', { level: 1 }).closest('header')!;
-    expect(within(head).getByText('idle')).toBeInTheDocument();
+    expect(within(head).getByText('Reading its state')).toBeInTheDocument();
+    expect(within(head).queryByText('idle')).toBeNull();
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
     await waitFor(() => expect(within(rail).getByText('working')).toBeInTheDocument());
-    expect(within(head).getByText('working')).toBeInTheDocument();
     // The composer follows the same answer: a turn in flight offers its stop.
     expect(screen.getByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
   });

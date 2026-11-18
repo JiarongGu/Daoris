@@ -117,16 +117,16 @@ describe('a conversation its limit holds', () => {
 });
 
 /**
- * A closed quest's finished session whose words are held for a cooling account reads the wait
- * as its state label on its rail row and its page's head, in both languages, never *completed*; with nothing held it still reads completed.
+ * A closed quest's finished session whose words are held for a cooling account reads the wait on its rail row and, by the
+ * reader, as *Held* on its page's state line, never *Done*; with nothing held the line reads *Done*.
  */
 describe('a closed quest’s session held for an account’s reset', () => {
   const until = '2026-10-28T12:30:00Z';
   const HELD = {
-    session: 's1a2b3c4', group: 'later', shown: 'limit-waits', archived: false, teammate: false,
+    session: 's1a2b3c4', group: 'pending', shown: 'limit-waits', archived: false, teammate: false,
     holds: { why: 'cooling', reason: 'every account is cooling.', until, account: 'account-2', accountName: 'Work' },
   };
-  const FREE = { session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false };
+  const FREE = { session: 's1a2b3c4', group: 'done', shown: 'completed', archived: false, teammate: false };
   // The session's page head, the banner that holds its title (the window's own bars are banners too).
   const pageHead = () => screen.getAllByRole('banner').find((bar) => within(bar).queryByRole('heading', { level: 1 }))!;
   const answering = (row: unknown) =>
@@ -143,22 +143,22 @@ describe('a closed quest’s session held for an account’s reset', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('wears the wait on its row and its head, in English and 中文', async () => {
+  it('wears the wait on its row and its state line, in English and 中文', async () => {
     answering(HELD);
     show('s1a2b3c4');
 
     await waitFor(() => expect(pageHead()).toBeDefined());
     const header = pageHead();
-    await waitFor(() => expect(within(header).getByText('waiting for a limit to reset')).toBeInTheDocument());
-    expect(within(header).queryByText('completed')).toBeNull();
-    // The rail's row beside it, which says the same word and still the time and the account on its line.
-    expect(screen.getAllByText('waiting for a limit to reset').length).toBeGreaterThan(1);
+    await waitFor(() => expect(within(header).getByText('Held')).toBeInTheDocument());
+    expect(within(header).queryByText('Done')).toBeNull();
+    // The rail's row beside it says the wait's word, and still the time and the account on its line.
+    expect(screen.getAllByText('waiting for a limit to reset')).toHaveLength(1);
     expect(screen.queryByText('completed')).toBeNull();
     expect(screen.getAllByText((said) => said.includes(`it resumes by itself at ${moment(until)}, on Work.`)).length).toBeGreaterThan(0);
 
     await i18n.changeLanguage('zh');
-    await waitFor(() => expect(within(pageHead()).getByText('正在等待额度重置')).toBeInTheDocument());
-    expect(screen.getAllByText('正在等待额度重置').length).toBeGreaterThan(1);
+    await waitFor(() => expect(within(pageHead()).getByText('被挂起')).toBeInTheDocument());
+    expect(screen.getAllByText('正在等待额度重置')).toHaveLength(1);
     expect(screen.queryByText('已完成')).toBeNull();
   });
 
@@ -169,7 +169,7 @@ describe('a closed quest’s session held for an account’s reset', () => {
     await waitFor(() => expect(pageHead()).toBeDefined());
     const header = pageHead();
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
-    expect(within(header).getByText('completed')).toBeInTheDocument();
+    expect(within(header).getByText('Done')).toBeInTheDocument();
     expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
   });
 });

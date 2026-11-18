@@ -14,4 +14,8 @@ public interface ISessionStreams
     void Open(SessionStream stream);
     void Line(string streamId, string text);
     void End(string streamId, string? state);
+
+    void Said(string streamId, SessionEvent e)
+    {
+    }
 }

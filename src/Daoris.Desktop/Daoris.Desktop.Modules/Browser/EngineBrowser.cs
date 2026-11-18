@@ -96,6 +96,20 @@ public static class EngineBrowser
             .Select(target => target.GetProperty("id").GetString()!)
             .ToList();
     }
+
+    /// <summary>The pages <see cref="Pages"/> names, each with the address it shows now: what Daoris's browser answers of its pages.</summary>
+    public static IReadOnlyList<Daoris.Ports.Browser.BrowserPage> PageAddresses(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+        return document.RootElement.EnumerateArray()
+            .Where(target => target.ValueKind == JsonValueKind.Object
+                             && target.TryGetProperty("type", out var type) && type.GetString() == "page"
+                             && target.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String
+                             && target.TryGetProperty("url", out var url) && url.ValueKind == JsonValueKind.String)
+            .Select(target => new Daoris.Ports.Browser.BrowserPage(target.GetProperty("id").GetString()!, target.GetProperty("url").GetString()!))
+            .ToList();
+    }
 }
 
 /// <summary>What `daoris-browser` is started with. <see cref="Parse"/> and <see cref="ToArguments"/> are one contract.</summary>
@@ -221,6 +235,19 @@ public sealed class EngineCdp(int port) : IDisposable
         try
         {
             return EngineBrowser.Pages(await _http.GetStringAsync("json/list", ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The page targets with their addresses, or null when the engine does not answer.</summary>
+    public async Task<IReadOnlyList<Daoris.Ports.Browser.BrowserPage>?> PageAddressesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            return EngineBrowser.PageAddresses(await _http.GetStringAsync("json/list", ct).ConfigureAwait(false));
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or JsonException)
         {
