@@ -89,6 +89,11 @@ internal static class DriveUsageRecords
               clear would take, and what it keeps and why.
           history clear --workspace <name> [--yes]
               list what clearing a workspace's finished history would take and keep; with --yes, clear it.
+          home purge --history --plan | --yes
+              a home's history (sessions, quests, asks, runs, notices and the records of work done) moved into
+              purged/<UTC stamp>/ beside the install, its configuration kept; --plan lists every path and table it
+              would take and changes nothing; --yes refuses while a desktop, a `drive` or the service holds the home.
+              Yours, from your own terminal: a session's only lists.
           integrate <repository> [--request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | --order <request> first|last]
               a repository's integration as the window's Integration view draws it: what waits to land, in what order, and what
               holds it. The acts (--request, --drop, --recheck, --decide, --order) are the owner's, Person routes in the window.
