@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A step cast to the role's agent handed to the run's working session (D318): when a run's step waits on a task its holder's tool settles
+/// A step cast to the role's agent handed to the run's working session: when a run's step waits on a task its holder's tool settles
 /// (<see cref="AgentSettles.Tool"/>) and an agent holds it, the run's newest session of this machine is told it as its next turn through the
 /// say door, once per attempt and epoch, so a record awaiting the run's step wakes with it and an ended one goes on with it. The words say what
 /// the step is, its outcomes, the evidence its settle gives and the tool that settles it (<see cref="StepSettles.Tool"/>).

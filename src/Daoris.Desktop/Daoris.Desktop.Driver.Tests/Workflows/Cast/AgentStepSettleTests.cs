@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A step cast to the role's agent is the run's working session's to take (D318): it is told the step as its next turn, resumed where it
+/// A step cast to the role's agent is the run's working session's to take: it is told the step as its next turn, resumed where it
 /// ended, and settles it through its one tool (<see cref="StepSettles"/>) at the settle door as its agent; a decision it holds is answered by
 /// its outcome, no confirmation asked; a settle the door or the step's evidence refuses changes nothing and says why. Each seen failing first.
 /// </summary>

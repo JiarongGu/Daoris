@@ -7,11 +7,11 @@ namespace Daoris.Driver;
 public sealed record StepSettleKept(string Id, string Session, StepSettleAsk Ask, int? Epoch);
 
 /// <summary>
-/// The working session's settles of the steps handed to it (D318), two files per session under the home's sessions folder:
+/// The working session's settles of the steps handed to it, two files per session under the home's sessions folder:
 /// <c>&lt;session&gt;.step-settle.json</c>, read as the service's <c>StepSettleBox</c> writes it, and <c>&lt;session&gt;.step-settle-state.json</c>,
 /// the driver's alone, naming the settle it answered by its id. Each settle is taken once, at the settle door as the agent the session's start
 /// ran (<see cref="SettleBy.OfChannel"/> for a session's channel, never the person), and what it came to is said to the session as its next
-/// turn where it was refused. The file is the contract; the two sides share no code, and each side's tests hold the same shapes.
+/// turn where it is refused. The file is the contract; the two sides share no code, and each side's tests hold the same shapes.
 /// </summary>
 public static class StepSettleAsks
 {

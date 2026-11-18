@@ -104,7 +104,6 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames();
 
         Assert.Equal(["opinion_answer", "opinion_give"], tools.Where(name => name.Contains("opinion")).Order());
-        // `step_settle` settles a run's step its agent holds (D318), never an opinion: the settle door refuses it on a step the agent does not hold.
         Assert.DoesNotContain(tools, name => name.Contains("anyway") || name.Contains("myself") || (name.Contains("settle") && name != "step_settle")
                                              || name.Contains("dispute") || name.Contains("reviewer"));
         foreach (var tool in new[] { "opinion_give", "opinion_answer" })

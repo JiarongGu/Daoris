@@ -15,8 +15,7 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
 {
     /// <summary>
     /// Characters of the listing as the wire carries it; raise it only with the reason beside it. The 43,276 of the other tools (the
-    /// design comparison <see cref="SynthesisBudget"/> holds among them), descriptions cut to what an agent needs, plus <see cref="PlanBudget"/>,
-    /// plus <c>step_settle</c> (D318): the working session's one channel for a step its agent holds, its six arguments each one line.
+    /// design comparison <see cref="SynthesisBudget"/> holds among them), descriptions cut to what an agent needs, plus <see cref="PlanBudget"/> and <c>step_settle</c>.
     /// </summary>
     internal const int ListingBudget = 51_400;
 

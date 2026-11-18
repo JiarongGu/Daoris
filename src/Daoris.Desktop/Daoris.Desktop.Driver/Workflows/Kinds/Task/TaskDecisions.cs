@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 /// A per-run decision: a <c>task</c> step declaring two or more outcomes of its own, none a task's <c>done</c>, an
 /// approval's <c>approved</c> or the <c>rejected</c> wire's name, answered by <c>decide</c> with one of them. A holder's proposal, with its
 /// reason, stands as the answer at once, held for the owner's word; the owner's same answer confirms it and another overrules it, and the
-/// owner may answer again until the run ends. An agent holding the decision answers it through its working session's tool, and its answer
-/// settles it, no proposal held (<see cref="NodeWord.Decider"/>, D318). Its record line names who proposed and who confirmed, and the step its answer's route closed is
+/// owner may answer again until the run ends; an agent holding it settles it at once (<see cref="NodeWord.Decider"/>). Its record line names who proposed and who confirmed, and the step its answer's route closed is
 /// passed with that line (<see cref="WireDecisions"/>). Pure.
 /// </summary>
 public static class TaskDecisions

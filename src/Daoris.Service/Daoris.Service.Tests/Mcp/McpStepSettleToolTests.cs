@@ -5,11 +5,13 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// The connector's `step_settle` (D318): the working session settles a run's step Daoris handed it, one file per session under the home's
+/// The connector's `step_settle`: the working session settles a run's step Daoris handed it, one file per session under the home's
 /// sessions folder in the shape the driver's <c>StepSettleAsks</c> reads (held there by <c>AgentStepSettleTests</c>), one at a time.
 /// </summary>
 public sealed class McpStepSettleToolTests : McpToolsFixture
 {
+    private static readonly DateTimeOffset Start = new(2026, 1, 5, 9, 0, 0, TimeSpan.Zero);
+
     private string RulesHome => Path.Combine(_root, "rules-home");
 
     private string Sessions(params string[] file) => DaorisHome.Entry(RulesHome, HomeEntry.Sessions, file);
@@ -27,7 +29,7 @@ public sealed class McpStepSettleToolTests : McpToolsFixture
     {
         string asker = null!;
         var tools = await ConnectorAsync(async store =>
-            asker = (await store.CreateAsync("q1", "Owner", "claude-code", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "work"))).Id);
+            asker = (await store.CreateAsync("q1", "Owner", "claude-code", Start, tree: Path.Combine(_root, "trees", "work"))).Id);
 
         var said = await tools.SettleAsync("#r1", "config-change", null, "changed the live config", new() { ["version"] = "v42", ["capture"] = "https://c" }, 2);
 
@@ -51,11 +53,11 @@ public sealed class McpStepSettleToolTests : McpToolsFixture
         Assert.Contains("no session", await (await ConnectorAsync(_ => Task.FromResult<string?>(null))).SettleAsync("r1", "n"));
         var helper = await ConnectorAsync(async store =>
         {
-            var working = await store.CreateAsync("q1", "Owner", "claude-code", DateTimeOffset.UtcNow);
-            return (await store.CreateAsync(null, "Owner", "codex-acp", DateTimeOffset.UtcNow, kind: SessionKind.Chat, serves: working.Id)).Id;
+            var working = await store.CreateAsync("q1", "Owner", "claude-code", Start);
+            return (await store.CreateAsync(null, "Owner", "codex-acp", Start, kind: SessionKind.Chat, serves: working.Id)).Id;
         });
         Assert.Contains("no run's working session", await helper.SettleAsync("r1", "n"));
-        var working = await ConnectorAsync(async store => (await store.CreateAsync("q2", "Owner", "claude-code", DateTimeOffset.UtcNow)).Id);
+        var working = await ConnectorAsync(async store => (await store.CreateAsync("q2", "Owner", "claude-code", Start)).Id);
         Assert.Contains("names the run and the step", await working.SettleAsync(" ", "n"));
         Assert.False(Directory.Exists(Sessions()) && Directory.GetFiles(Sessions(), "*" + StepSettleBox.AskSuffix).Length > 0);
     }

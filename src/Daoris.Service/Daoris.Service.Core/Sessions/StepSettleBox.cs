@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where a working session's agent settles a run's step it holds (D318): <c>&lt;session&gt;.step-settle.json</c> under the home's
+/// Where a working session's agent settles a run's step it holds: <c>&lt;session&gt;.step-settle.json</c> under the home's
 /// <c>sessions</c> folder, written by the connector's <c>step_settle</c> (replaced only once the driver answered the one before), and
 /// <c>&lt;session&gt;.step-settle-state.json</c> beside it, the driver's alone, naming the settle it answered by its id.
 /// </summary>

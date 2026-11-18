@@ -335,10 +335,7 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>Who holds the actor a decision's proposal is from, as its channel names it; null for the owner's own word.</summary>
     public string? Holder { get; init; }
 
-    /// <summary>
-    /// The agent holding a decision whose own answer it is, spoken through its channel (<c>agent:&lt;name&gt;</c>, D318): it settles the decision,
-    /// no proposal held for a confirmation; null on every other word. A build before it reads the word as the owner's answer.
-    /// </summary>
+    /// <summary>The agent (<c>agent:&lt;name&gt;</c>) whose own answer settles a decision it holds, no proposal held; null on every other word.</summary>
     public string? Decider { get; init; }
 
     /// <summary>

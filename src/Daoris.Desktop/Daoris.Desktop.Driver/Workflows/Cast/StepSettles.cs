@@ -2,11 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>A working session's settle of a step it holds, as its tool asked it: the run, the step, the outcome, its words and evidence.</summary>
 /// <param name="Outcome">A decision's answer, one of its outcomes; null for a task's Done.</param>
-/// <param name="Evidence">The evidence by name (<see cref="TaskEvidence"/>), as the tool was given it.</param>
+/// <param name="Evidence">The evidence by name (<see cref="TaskEvidence"/>), as the tool gets it.</param>
 public sealed record StepSettleAsk(string Run, string Node, string? Outcome, string? Words, IReadOnlyDictionary<string, string> Evidence);
 
 /// <summary>
-/// The working agent's channel for a step it holds (D318, amending D304): its session's one tool (<see cref="Tool"/>) settles a <c>task</c>
+/// The working agent's channel for a step it holds: its session's one tool (<see cref="Tool"/>) settles a <c>task</c>
 /// step waiting on its holder's word (<see cref="AgentSettles.Tool"/>), its Done or a decision's answer, through the run's node door at the
 /// settle door as the agent its channel names, never the person. A decision its agent answers is settled by that answer, no proposal held for a
 /// confirmation (<see cref="NodeWord.Decider"/>); at a destination the owner marked the step is the owner role's, and the door refuses the

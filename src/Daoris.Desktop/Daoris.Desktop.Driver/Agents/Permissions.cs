@@ -134,8 +134,6 @@ public static class PermissionRules
                 "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose", "system_plan", "team_plan",
                 "step_settle",
             }.Select(tool => ConnectorPrefix + tool)],
-            // `step_settle` writes one file under the home: the working session's settle of a step Daoris handed it, which the driver
-            // judges at the settle door as the session's agent, so it settles only a step that agent holds, never the person's.
             // Not `knowledge_refresh`: it rebuilds the index every session shares, so the harness asks. And
             // `permission_propose` only PROPOSES — a widening still waits for the person. `go_ahead_ask`
             // only ASKS — the act it names still waits for the person's yes. `review_serve` and

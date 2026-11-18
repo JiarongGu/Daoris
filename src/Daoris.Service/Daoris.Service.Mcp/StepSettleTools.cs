@@ -4,7 +4,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A working session's one tool to settle a run's step Daoris handed it (D318): a step cast to the role's agent is the run's working agent's,
+/// A working session's one tool to settle a run's step Daoris handed it: a step cast to the role's agent is the run's working agent's,
 /// done in its own session and settled here, with its outcome and evidence, at the settle door as its agent. The settle is a file the driver
 /// takes; the session ends its turn, and what it came to is its next turn.
 /// </summary>
