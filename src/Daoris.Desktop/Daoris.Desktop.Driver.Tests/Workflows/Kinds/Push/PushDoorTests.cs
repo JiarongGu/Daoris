@@ -70,4 +70,16 @@ public sealed class PushDoorTests : IDisposable
         Assert.Equal(NodeStates.Active, State());
         Assert.Contains(_said, line => line.Contains("not-done", StringComparison.Ordinal) && line.Contains("nothing stands", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void A_refusal_only_because_the_trees_were_busy_leaves_the_node_active_for_a_later_pass()
+    {
+        Active("t1");
+
+        new PushDoor(_scratch, _said.Add, holdsLease: () => true)
+            .Settle(Start("t1"), new ActRun(null, null, "`engine`'s session trees were being cleaned up: nothing was changed.", true) { Busy = true });
+
+        Assert.Equal(NodeStates.Active, State());
+        Assert.Contains(_said, line => line.Contains("later pass", StringComparison.Ordinal));
+    }
 }

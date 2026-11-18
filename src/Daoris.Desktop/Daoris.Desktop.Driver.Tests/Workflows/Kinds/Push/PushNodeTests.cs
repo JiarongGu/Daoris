@@ -43,6 +43,24 @@ public sealed class PushNodeTests
         Assert.Null(NodeObserving.Observe(Unit(Landed()), Push, Graph, 1).Outcome);
     }
 
+    private static NodeObservation FailedRead(string remote)
+    {
+        var unit = Unit(Landed());
+        var binding = new NodeAcceptance(unit.Id, unit.Subject.Revision, Graph, Push.Id, 1, 1);
+        return Assert.IsAssignableFrom<IObserves>(NodeKit.Of(NodeKinds.Push)).Observe(new NodeReading(unit, Push, binding) { Git = new NodeGitReads(RemoteTip: _ => remote) });
+    }
+
+    [Fact]
+    public void A_failed_push_whose_branch_the_remote_holds_at_its_tip_reads_reached_and_at_another_tip_stays_failed()
+    {
+        var observes = Assert.IsAssignableFrom<IObserves>(NodeKit.Of(NodeKinds.Push));
+        var failed = new NodeStatus("unit-a", Push.Id, NodeStates.Failed) { Code = PushDoor.Refused };
+        Assert.True(observes.ObservesFailed(failed));
+        Assert.False(observes.ObservesFailed(failed with { Code = "other" }));
+        Assert.Equal(NodeStates.Reached, FailedRead("t1").Move?.To);
+        Assert.Null(FailedRead("t0").Move);
+    }
+
     [Fact]
     public void Not_yet_is_no_outcome_and_only_the_push_acts_refusal_fails_it()
     {
