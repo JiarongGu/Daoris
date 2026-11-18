@@ -28,8 +28,22 @@ public sealed class BrainstormCommandTests : IDisposable
     private (int Code, string Out) Run(params string[] args)
     {
         var output = new StringWriter();
-        var code = BrainstormCommand.Run(args, _home, output, At, _service);
+        var code = BrainstormCommand.Run(args, _home, output, At, _service, _ => Adapters);
         return (code, output.ToString());
+    }
+
+    private static readonly string[] Adapters = ["acp-stub", "claude-code-acp", "codex-acp", "dsh", "stub"];
+
+    [Fact]
+    public void An_ask_naming_an_agent_no_adapter_answers_is_refused_naming_the_adapters_and_sends_nothing()
+    {
+        var (code, said) = Run("Which design?", "--agents", "claude,codex-acp,codex");
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("daoris: no adapter answers to `claude`, `codex`;", said);
+        Assert.Contains("the adapters are `acp-stub`, `claude-code-acp`, `codex-acp`, `dsh`, `stub`.", said);
+        Assert.Empty(_service.Sent);
+        Assert.Empty(Files.Requests());
     }
 
     private string Asked() => Files.WriteRequest("Why does the report drop its last day?", "reports", [], At);

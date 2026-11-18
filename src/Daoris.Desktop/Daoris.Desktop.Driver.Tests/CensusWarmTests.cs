@@ -31,6 +31,24 @@ public sealed class CensusWarmTests
     }
 
     [Fact]
+    public void A_late_warm_up_leaves_its_mark_for_the_time_ratchet_and_an_on_time_one_clears_it()
+    {
+        var folder = Path.Combine(TestHomes.Root, "census-warm-late-" + Guid.NewGuid().ToString("N")[..8]);
+        var mark = Path.Combine(folder, CensusWarm.LateMark);
+        try
+        {
+            CensusWarm.MarkLate(folder, true);
+            Assert.True(File.Exists(mark));
+            CensusWarm.MarkLate(folder, false);
+            Assert.False(File.Exists(mark));
+        }
+        finally
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void The_binding_begins_with_the_run_only_where_a_semantic_census_runs()
     {
         Assert.True(CensusWarm.Binds(["Daoris.Desktop.Driver.Tests.SayKeysCensusTests", "Daoris.Desktop.Driver.Tests.StructureTests"]));

@@ -97,7 +97,7 @@ const ORGANISMS = new Set<string>([
   // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
   './work/head/SessionPlaceHold.tsx',
-  './work/head/RunWaitsHead.tsx',
+  './work/head/useRunWaitDoors.tsx',
   './workflow/release/ReleaseStepDoors.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',

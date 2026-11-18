@@ -1,25 +1,20 @@
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GoAhead, Quest, Session } from '../data/api';
+import type { Quest, Session } from '../data/api';
 import { ChannelPanel } from '../asks/ChannelSection';
-import type { GoAheadAnswer } from '../asks/GoAheadList';
 import { answeredPark, Button, EmptyState, shownState } from '../design/ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { AccountNamer } from '../agents/tools';
-import type { AnswerPick, QuestClose, Resolution } from './waits/AwaitingPerson';
-import type { ParkQuestion } from './waits/parkQuestion';
+import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './head/HowItCameToBe';
 import { type AskOrigin, startingOf } from './head/startedFrom';
-import type { WaitEvents } from './waits/anchors';
 import type { MilestoneUnit } from './head/milestone';
 import { WorkMilestone } from './head/WorkMilestone';
 import type { Answered } from './InlineConfirm';
-import type { SayRebase } from './review/LandingSync';
 import type { SessionEntry } from './entries';
-import type { DiscardOffer, LandOffer } from './groups';
 import { PartsFold } from './head/PartsFold';
 import type { PartFacts } from './head/PartsStrip';
 import type { SessionProcess } from './head/process';
@@ -27,14 +22,8 @@ import type { DetailRow } from './head/DetailsFold';
 import { FinishedRecord } from './head/FinishedRecord';
 import type { SessionRecord } from './head/sessionRecord';
 import type { Relations } from './head/relations';
-import type { LineBehind } from './review/diff';
 import type { HelperWaits } from './waits/HelperAsks';
-import type { PermissionWaits } from './waits/PermissionAsks';
-import type { AnswerWaits } from './waits/AnswerAlone';
-import type { GitAskWaits } from './waits/GitAsk';
-import type { RuleAsk, RuleWaits } from './waits/ProposedRules';
-import type { Seek } from './waits/WaitAnchor';
-import { type HeadOpinion, type HeadReview, type LandingPlan, SessionHead, type WorkAsk } from './head/SessionHead';
+import { SessionHead } from './head/SessionHead';
 import type { HeadLink } from './head/headRows';
 import { SessionRelations } from './head/SessionRelations';
 import { RelatedSessions, type RelatedOwn, type RelatedRow } from './head/RelatedSessions';
@@ -71,12 +60,12 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
 
 export function AttendedSession({
-  session, quest, ask, opening, brief, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession, onAnswerChoice, answerPick,
+  session, quest, ask, opening, brief, taking, lastTurn, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
-  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf, lands, landing, onReviewRun, onSayRebase, discards, onDiscardTree, review, behind,
-  opinion, continues, helps, heavy, process, parts, channel, workAsk, workBusy, toEvent, rules, ruleAsk, seek, helpers, permissions,
-  answers, gitAsks, gitAccess, supervision, milestone, record, onOpenBranch, question, parkBox, pieces, waitingOn, terminalHold, supervisorCourse,
-  placeHold, runWaits,
+  headed = false, trace, ownSignIn = false, nameOf,
+  continues, helps, heavy, process, parts, channel, helpers,
+  gitAccess, supervision, milestone, record, onOpenBranch, pieces, waitingOn, terminalHold, supervisorCourse,
+  placeHold, state,
 }: {
   /** Passed straight through to the head: a parked line's hold on its checkout, with *Let others work here*. */
   placeHold?: Parameters<typeof SessionHead>[0]['placeHold'];
@@ -88,38 +77,16 @@ export function AttendedSession({
   supervision?: Parameters<typeof SessionHead>[0]['supervision'];
   /** Passed straight through to the head: a terminal holding this conversation, with *Let go of the terminal*. */
   terminalHold?: Parameters<typeof SessionHead>[0]['terminalHold'];
-  /** Passed straight through to the head: the steps of its run waiting on the person, each with its presses. */
-  runWaits?: Parameters<typeof SessionHead>[0]['runWaits'];
   /** Its pieces, the frame's: handed to its head's Pieces section. Absent, none is drawn. */
   pieces?: PieceSection | null;
   /** What its line waits on: *At work*'s answer, handed to its head's *Waiting on*. Absent, none is drawn. */
   waitingOn?: Parameters<typeof SessionHead>[0]['waitingOn'];
-  /** Passed straight through to the head: its park's question as its agent asked it, its waiting card's. */
-  question?: ParkQuestion | null;
-  /** Passed straight through to the head: the box below is the park's answer box, with the presses of what it asks. */
-  parkBox?: boolean;
-  /** Passed straight through to the head: the answers the answers-alone bound holds for the person, with their two presses. */
-  answers?: AnswerWaits | null;
-  /** Passed straight through to the head: the git go-aheads its git door holds, with their Allow and Refuse. */
-  gitAsks?: GitAskWaits | null;
+  /** Passed straight through to the head: its state line, the driver's reader's (`stateLineOf`), said beside its title where no header says it. */
+  state?: Parameters<typeof SessionHead>[0]['state'];
   /** Passed straight through to the head: the process its own tree runs under, *Details*' rows. */
   process?: SessionProcess | null;
   /** Passed straight through to the head: the helpers it asked for, with the person's yes. */
   helpers?: HelperWaits | null;
-  /** Passed straight through to the head: the tool calls it holds for the person's answer, with a press per choice. */
-  permissions?: PermissionWaits | null;
-  /** Passed straight through to the head: the wait a raising block's *To the wait* leads to there. */
-  seek?: Seek | null;
-  /** Passed straight through to the head: the rules it proposed that the person still answers. */
-  rules?: RuleWaits | null;
-  /** And where a rule's *Allow…* is open, the frame's, the head's or the foot's. */
-  ruleAsk?: RuleAsk;
-  /** Passed straight through to the head: where its work's ask is open, the frame's, the head's or the foot's. */
-  workAsk?: WorkAsk;
-  /** And a landing or a discard of its work on its way, pressed in either place. */
-  workBusy?: boolean;
-  /** Passed straight through to the head: the way from each wait to the event that raised it. */
-  toEvent?: WaitEvents;
   /**
    * Its entry's parts: under the head, a strip of every record of the line of work it belongs to, the
    * one shown marked, so the page's acts stay the part shown's and a press shows another. Absent where it is a record alone,
@@ -139,24 +106,6 @@ export function AttendedSession({
   helps?: HeadLink | null;
   /** Passed straight through to the head: *Details*' *Heavy gates*, where it holds or waits for its repository's slot. */
   heavy?: DetailRow | null;
-  /** Passed straight through to the head: what its own tree offers to land, as the driver's reader says it. */
-  lands?: LandOffer | null;
-  /** And the review's gate where it holds that work: the set-up step, its tab and the verdict's presses. */
-  review?: HeadReview | null;
-  /** And how the tree stands against its line, from the review's answer: none beyond it, no *Accept…*. */
-  behind?: LineBehind | null;
-  /** And the second opinion's gate before it: its findings beside their answers, and its presses. */
-  opinion?: HeadOpinion | null;
-  /** And what it offers where the line holds its commits by content: no landing, its discard. */
-  discards?: DiscardOffer | null;
-  /** And that discard's press, the review's Discard unforced, told back to its ask. Absent where nothing can press it. */
-  onDiscardTree?: (answered: Answered) => void;
-  /** And where accepting would put it, the review's own plan. */
-  landing?: LandingPlan | null;
-  /** And the door to the review of the run whose Accept the work waits on, where the plan draws one. */
-  onReviewRun?: () => void;
-  /** The press that says the rebase words where replaying conflicts. */
-  onSayRebase?: SayRebase;
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in, said in its head. */
   ownSignIn?: boolean;
   /**
@@ -181,10 +130,6 @@ export function AttendedSession({
    * branch the unit's landing made. Absent where nothing opens a page there.
    */
   onOpenBranch?: (repository: string, branch: string) => void;
-  /** The go-aheads it asked on its quest's ask, shown in the head while it is parked. */
-  goAheads?: GoAhead[];
-  /** Passed straight through to the head: one of them answered, the park with it once none is open. */
-  onGoAhead?: GoAheadAnswer;
   /**
    * A page header above carries its state, its id and its acts, so the record head says neither
    * again. A window with no header (a detached session) keeps them in the head.
@@ -231,17 +176,12 @@ export function AttendedSession({
   taking?: boolean;
   /** When its last turn ended here, for the head's *moved*. */
   lastTurn?: string | null;
-  resolving?: boolean;
-  /** Passed straight through to the head, where a parked session's moves live; its stop is the page header's. */
+  /** Passed straight through to the head, which says where a parked session is answered where nothing can; its stop is the page header's. */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /** Passed straight through too: where an intake's answer is, its ask. */
   onAnswerAsk?: (ask: string) => void;
   /** And the answer to a driven session that parked to ask the person. */
   onAnswerSession?: (answer: string) => Promise<string | null> | void;
-  /** And a press of its park's question's answer from its card, with the card's words. */
-  onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** And the answer selected in its question, the frame's, shared with the box. */
-  answerPick?: AnswerPick;
   /**
    * The chain its quest belongs to, the same strip a quest's page shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
@@ -283,12 +223,9 @@ export function AttendedSession({
         brief={brief}
         taking={taking}
         lastTurn={lastTurn}
-        resolving={resolving}
         onResolve={onResolve}
         onAnswerAsk={onAnswerAsk}
         onAnswerSession={onAnswerSession}
-        onAnswerChoice={onAnswerChoice}
-        answerPick={answerPick}
         branch={branch}
         ownBranch={ownBranch}
         onReview={onReview}
@@ -301,37 +238,15 @@ export function AttendedSession({
         heavy={heavy}
         process={process}
         onOpenSession={onSession}
-        goAheads={goAheads}
-        onGoAhead={onGoAhead}
-        question={question}
-        parkBox={parkBox}
         ownSignIn={ownSignIn}
         nameOf={nameOf}
-        lands={lands}
-        landing={landing}
-        onReviewRun={onReviewRun}
-        onSayRebase={onSayRebase}
-        review={review}
-        behind={behind}
-        opinion={opinion}
-        discards={discards}
-        onDiscardTree={onDiscardTree}
-        workAsk={workAsk}
-        workBusy={workBusy}
-        toEvent={toEvent}
-        rules={rules}
-        ruleAsk={ruleAsk}
-        seek={seek}
         helpers={helpers}
         pieces={pieces}
         waitingOn={waitingOn}
-        permissions={permissions}
-        answers={answers}
-        gitAsks={gitAsks}
         gitAccess={gitAccess}
+        state={state}
         supervision={supervision}
         terminalHold={terminalHold}
-        runWaits={runWaits}
         supervisorCourse={supervisorCourse}
         placeHold={placeHold}
       />

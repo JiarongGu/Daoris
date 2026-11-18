@@ -99,8 +99,7 @@ describe('COMMS1j one wait counted once on the foot, the bell and Notifications'
     render(
       <WaitStrip
         session={session()} onResolve={vi.fn()} goAheads={[goAhead(1, 'approved'), goAhead(2, 'asked')]} goAheadsOn="7c1e9a04b2d5"
-        onGoAhead={vi.fn()} onTop={vi.fn()}
-      />,
+        onGoAhead={vi.fn()}      />,
     );
     // .NET pushes the go-ahead's row alone: the park waits on it.
     const rows = [pushed('go-ahead', '7c1e9a04b2d5#2', { obligation: 'go-ahead:7c1e9a04b2d5/2' })];
@@ -111,7 +110,7 @@ describe('COMMS1j one wait counted once on the foot, the bell and Notifications'
 
   it('says two where the park and a rule it proposed wait, as the bell and What needs you count them, in Chinese too', async () => {
     const rows = [pushed('parked', 's1a2b3c4'), pushed('rule', 'r1')];
-    const strip = <WaitStrip session={session()} onResolve={vi.fn()} rules={{ proposals: [RULE], onAnswer: vi.fn() }} onTop={vi.fn()} />;
+    const strip = <WaitStrip session={session()} onResolve={vi.fn()} rules={{ proposals: [RULE], onAnswer: vi.fn() }} />;
     render(strip);
     expect(screen.getByRole('region', { name: '2 waiting on you' })).toBeInTheDocument();
     expect(counted(rows)).toEqual({ listed: 2, bell: 2, places: 2 });

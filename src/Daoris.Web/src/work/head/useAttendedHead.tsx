@@ -32,7 +32,10 @@ import { type ChatLimitHeld, chatLimitWaitSaid, limitedLine, limitWaitOf, limitW
 import { LimitWaitLine } from '../waits/LimitWaitLine';
 import type { useAttendedWaits } from '../waits/useAttendedWaits';
 import { type LineSupervision, supervisionChip } from './lineSupervision';
-import { leadingAgentOf, nextPress, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
+import { logEvent } from '../../bridge/logs/log';
+import type { DockLine } from '../waits/dock';
+import { leadingAgentOf, type SessionFactsOf, sessionFacts, sessionFactsTip } from './headFacts';
+import { stateLineOf, stateLineSaid } from './stateLine';
 import type { HeadLink } from './headRows';
 import type { AskOrigin } from './startedFrom';
 import { RenameAsk } from './RenameAsk';
@@ -49,8 +52,9 @@ type Waits = ReturnType<typeof useAttendedWaits>;
 export function useAttendedHead({
   t, language, attended, here, live, quest, grouping, registry, roster, sheets, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
-  atWorkHeld, heavyPart, heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
+  atWorkHeld, heavyPart, heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
 }: {
+  docked: readonly DockLine[];
   groupings?: readonly SessionGrouping[];
   attend?: (id: string) => void;
   /** The attended line's counts and its rules' acts: the head's chip where a rule holds the line or is one count from it. */
@@ -89,7 +93,6 @@ export function useAttendedHead({
   heavyPart: ReturnType<typeof heavyPartOf>;
   heavyTitleOf: (id: string) => string;
   integration: ReturnType<typeof useAttendedRecord>['integration'];
-  standing: Waits['standing'];
   goToWait: Waits['goToWait'];
   chosen: () => void;
   rootOf: (repository: string) => string | null | undefined;
@@ -262,18 +265,29 @@ export function useAttendedHead({
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
     integration: integration.data ?? null,
   } : null;
-  const nextWait = nextPress(standing);
-  const nextAnchor = standing[0] ? anchorOf(standing[0]) : null;
+  const stateLine = attended ? stateLineOf({ session: attended, grouping, docked }) : null;
+  const oldestWait = stateLine?.wait?.wait;
+  const oldest = oldestWait && oldestWait.kind !== 'step' ? anchorOf(oldestWait) : null;
+  const disagrees = stateLine?.disagrees ? `${attended?.id}|${stateLine.disagrees.group}|${stateLine.disagrees.reason}|${stateLine.disagrees.docked}` : null;
+  useEffect(() => {
+    if (!disagrees) return;
+    const [session = '', group = '', reason = '', docked = ''] = disagrees.split('|');
+    logEvent('wait.disagreed', { session, group, reason, docked });
+  }, [disagrees]);
   const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead
       session={attended}
       title={attendedTitle}
       shown={attendedShown}
+      state={stateLine ? {
+        line: stateLine,
+        said: stateLineSaid(t, stateLine),
+        onWait: oldest ? () => goToWait(oldest) : undefined,
+      } : null}
       line={attendedLine ? { said: lineWords(t, attendedLine), onOpen: attend && (() => attend(attendedLine.by)) } : null}
       facts={sessionFacts(t, headFactsOf)}
       // The line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}
-      next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
       chip={supervisionChip(t, supervision)}
       acts={headActs}
       primary={headPrimary}

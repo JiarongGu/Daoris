@@ -100,7 +100,7 @@ public sealed class ShortWaitsCensusTests
         ($"{Modules}/Browser/EngineBringUpTests.cs: TimeSpan Going", "an input: how long a browser whose last window closed is waited for, short so that one that will not go runs it out"),
         ($"{Modules}/Browser/EngineBringUpTests.cs: TimeSpan Limit", "an input: how long a started browser is given to show a window, short so that one that shows none runs it out"),
         ($"{Modules}/Loop/SessionReadsBenchProcessTests.cs: TimeSpan WaitingBudget", "an elapsed-time bound that states the claim: the words waiting on three thousand ended chats read from one parse of the list"),
-        ($"{Driver}/WorkOrders/SessionListBudgetProcessTests.cs: TimeSpan Budget", "an elapsed-time bound that states the claim: the list of a machine's sessions, its trees' walks aside, within the window's first screen"),
+        ($"{Driver}/WorkOrders/SessionListBudgetProcessTests.cs: TimeSpan Budget", "an elapsed-time bound that states the claim: the list of a machine's sessions, walking no tree no row of it needs, within two seconds"),
         ($"{Modules}/Loop/SessionListRouteProcessTests.cs: TimeSpan Budget", "an elapsed-time bound that states the claim: SESSION_GROUPS on a machine's sessions waits on no tree's walk"),
     ];
 

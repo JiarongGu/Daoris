@@ -36,7 +36,7 @@ internal static class PushLineRead
             return new(BranchGone, $"`{start.Branch}` no longer stands and its landing names no line to read, so nothing was pushed: skip this step once the work is known to be delivered.");
         }
 
-        if (PullRequestReading.OnTheLine(entry) is not null) return new(null, $"`{start.Branch}` is on `{line}` already.");
+        if (entry.OnTheLine is not null) return new(null, $"`{start.Branch}` is on `{line}` already.");
 
         var (failed, _) = await TreeRefs.FetchAsync(home, start.Root, line, ct, start.Repository, start.Workspace).ConfigureAwait(false);
         if (failed is not null)

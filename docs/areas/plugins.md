@@ -60,8 +60,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 10. `work/state` asks one plugin, the one recorded on the landing, by the id it has now, and only if installed, on, sound and
     listening. A frame waits 30 s, no frame starts after 60 s, and an entry is asked once a minute at most. Unanswered, a landing
     the keeper proved its line holds reads as its pull request merged (workflows rule 31). (D148)
-11. It is asked at the tidy, the clean-up's look, bringing up to date's look, *Ask again*, origin's line moving, after Daoris
-    pushes, and at window focus while a pull request is open; never at a press that removes, a read or a timer. (D148)
+11. It is asked at the tidy, the clean-up's look, bringing up to date's look, *Ask again*, origin's line moving, after a run's
+    `pull-request` step keeps the address it opened, and at window focus while a pull request is open; never at a press that removes,
+    a read or a timer. A moment asks every standing landing Daoris pushed or whose step recorded a pull request, whoever pushed its
+    branch (a run revived at its `push` included), while no answer settled it, its end held only while the last answer still says
+    open (`PullRequestMoments.Concerns`, `MonitorAskedTests`). (D148)
 12. A `completed` answer clears a branch only where git confirms: the target is the line, the merge commit is held here, and the
     recorded tip is the source commit or its ancestor. No answer removes nothing; a failure never overwrites a kept answer. (D148)
 13. Every install door writes `.daoris-source.json` into the staged copy before the swap: `{folder}`, `{offer, digest}` or
@@ -90,7 +93,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exact merged build (never twice), only where its action says so, as its README says. While it watches, its first look and each
     change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
     `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
-    before; the approval stays the person's, in Azure DevOps (D303). A `no-release` names the
+    before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view and in the session
+    page's dock, runs the plugin's `approve-release` under their own sign-in, declared as no agent's tool; a plugin that hands it to
+    agents gets the stage's page in its place (D304 point 6). A `no-release` names the
     definition's newest releases and the build each carries. Where the declared definition's CD trigger, read whole, leaves out the
     branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
     as for a merge the pipeline builds nothing from; a trigger not read waits and fails `no-release`. Its `discover-releases`, a tool that never

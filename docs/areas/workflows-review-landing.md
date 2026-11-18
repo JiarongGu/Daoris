@@ -61,7 +61,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
-   approval's card names the release, its definition, the build and its source branch (APPROVEHERE1): where the plugin declares
+   approval's card, on the step in the run's view and in the session page's dock, names the release, its definition, the build and
+   its source branch (APPROVEHERE1, APPROVEPRESS1): where the plugin declares
    `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
    holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
    observed. No release step approves, whatever its action.
@@ -371,7 +372,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one
     step wired into it and reaches with that step's state; open or unanswered it is pending and never fails. A pull request is
     `merged` once its plugin says completed into the work's line (a squash counts), or unanswered once the keeper proves the line
-    holds it, and `closed` once abandoned. A landing with nothing to deliver passes over the steps after it not yet started, said;
+    holds it, and `closed` once abandoned. Its plugin is asked at the moments of plugins rule 11 whatever reached the `push` before it,
+    so a run revived after it ended failed there has its monitor reach as any run's does. A landing with nothing to deliver passes over the steps after it not yet started, said;
     a branch the line already holds passes over its failed `push` and pull-request steps too (a pull request merged another way
     after its step failed), so the run goes on to its monitor and the held list clears. A `push` the line comes to hold is passed over
     the same way while active or unknown, its lost attempt cleared; one the line does not hold whose remote's ref lacks the commit it

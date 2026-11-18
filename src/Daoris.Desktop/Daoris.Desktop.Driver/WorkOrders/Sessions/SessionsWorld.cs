@@ -20,6 +20,9 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// </summary>
     public InstanceWorld? Instance { get; init; }
 
+    /// <summary>How the list alone walks a tree of a row needing you (<see cref="ListedTrees"/>): git's where null, else a test's.</summary>
+    public Func<string, CancellationToken, Task<TreeWork?>>? Walk { get; init; }
+
     /// <summary>How a stop reaches the run a session awaits (null where none); null here is the terminal's own stop.</summary>
     public Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>>? StopsRun { get; init; }
 

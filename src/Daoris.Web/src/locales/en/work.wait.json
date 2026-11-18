@@ -63,5 +63,8 @@
   "work.wait.permission.answered.refuse": "Refused: the agent is told, and goes on without it.",
   "work.wait.permission.refused.unheld": "It no longer waits: it was answered or released first. Nothing was answered.",
   "work.wait.permission.refused.unoffered": "The agent did not offer that answer. Nothing was answered.",
-  "work.wait.permission.refused.standing": "That answer would allow it for the rest of the session, which is a rule: propose the rule instead. Nothing was answered."
+  "work.wait.permission.refused.standing": "That answer would allow it for the rest of the session, which is a rule: propose the rule instead. Nothing was answered.",
+  "work.wait.name.step": "step {{node}}",
+  "work.wait.name.stepAccept": "Accept",
+  "work.wait.teammate": "Waits on its owner: {{names}}"
 }

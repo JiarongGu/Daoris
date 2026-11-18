@@ -6,9 +6,11 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>daoris session list</c> with no Daoris running, on a home shaped like an installed machine's (<see cref="SessionListHome"/>: 1,250
-/// ended records, each with its events file, some two hundred megabytes in all), answers within <see cref="Budget"/> besides the git
-/// walks of its own trees, its lines and its <c>--json</c> alike, each stage said in the output as the machine log's
-/// <c>session.list</c> line says it. The walks are said, not held: a terminal alone has no facts to read them from.
+/// ended records, each with its events file, some two hundred megabytes in all, three hundred archived, eight trees, one of them holding a
+/// large ignored build), answers within <see cref="Budget"/>, its lines and its <c>--json</c> alike: no row of it needs the person, so it
+/// walks no tree (<see cref="ListedTrees"/>; eight walks held it 50 s before). Each stage is said in the output as the machine log's
+/// <c>session.list</c> line says it; the large tree's walk and the service's host started again over the home's store are said beside
+/// it, the start's other costs.
 /// </summary>
 /// <remarks>
 /// Alone, after the rest (<see cref="Alone"/>): its claim is a bound of a few seconds on a real service's answer, which the load of the
@@ -19,8 +21,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Collection(Alone.Name)]
 public sealed class SessionListBudgetProcessTests(ITestOutputHelper output) : IAsyncLifetime
 {
-    /// <summary>What the person waits on the list for, at most: the window's first screen.</summary>
-    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(3);
+    /// <summary>What the person waits on the list for, at most, its walks included.</summary>
+    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(2);
 
     private SessionListHome? _home;
 
@@ -29,7 +31,7 @@ public sealed class SessionListBudgetProcessTests(ITestOutputHelper output) : IA
     public async Task InitializeAsync()
     {
         var watch = Stopwatch.StartNew();
-        _home = await SessionListHome.MakeAsync(1250, 4);
+        _home = await SessionListHome.MakeAsync(1250, 8, archived: 300, built: 30000);
         output.WriteLine($"the home: {Home.Bytes / (1024 * 1024)} MB of events, made in {watch.ElapsedMilliseconds} ms");
     }
 
@@ -55,11 +57,13 @@ public sealed class SessionListBudgetProcessTests(ITestOutputHelper output) : IA
                 + string.Join(", ", times.Steps.Select(step => $"{step.Step} {step.Ms} ms")) + $"; trees {times.Trees}");
             Assert.Equal(0, exit);
             Assert.Contains(json ? "\"entries\"" : "Done (", lines.ToString(), StringComparison.Ordinal);
-            // Its own trees' git walks aside, which a terminal with no Daoris running makes itself and the window's facts make apart
-            // from the list (SessionListRouteProcessTests): every record's events and the grouping are the budget's.
-            var walks = times.Steps.Where(step => step.Step == "trees").Sum(step => step.Ms);
-            Assert.True(watch.ElapsedMilliseconds - walks < Budget.TotalMilliseconds,
-                $"the list took {watch.ElapsedMilliseconds - walks} ms besides its trees' walks, past {Budget.TotalMilliseconds} ms");
+            Assert.Equal(0, times.Trees);
+            Assert.True(watch.Elapsed < Budget, $"the list took {watch.ElapsedMilliseconds} ms, past {Budget.TotalMilliseconds} ms");
         }
+
+        var walk = Stopwatch.StartNew();
+        var work = await new SessionTrees(Home.Bench.Home).WorkAsync(Home.Bench.Large.Tree);
+        output.WriteLine($"the large tree's walk ({Home.Bench.Built} built files): {walk.ElapsedMilliseconds} ms; {work}");
+        output.WriteLine($"the service's host started again: {await Home.Bench.HostAgainAsync()} ms");
     }
 }

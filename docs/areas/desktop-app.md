@@ -220,8 +220,17 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person's name for it and what its record spent on that record's last turn, one to a line. An ask's at-work view counts its quests by
     where they stand: landed (Done), waiting on you, in checks or opinion (`awaiting-step`), being worked, not started
     (`work/atWork/askStanding.ts`), a declined quest in none. (D293)
-38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
-    frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
+38. Every wait the person settles stands in one dock above the composer (`work/waits/WaitStrip.tsx`), its only place on the
+    session's page: `waitsOf`'s kinds and each step of its run held for the person or left failed (`SESSION_GROUPS`' `waits`, with
+    *What needs you*'s presses), oldest first under a count, never folded, each with its own press and its way to where it arose
+    (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A release step waiting on its approver carries
+    the approval card its run's view draws (`ReleaseStepDoors`, from the session's run, read while a step waits on a plugin's actor,
+    since the row names no step kind): *Approve* and *Reject* where the plugin declares `approve-release` as no agent's tool, else
+    the stage's page. The head draws none of their cards. Its state
+    line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
+    the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest
+    named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
+    each docked kind. A teammate's session draws its waits as one line with no press. (from D168, D185, D320)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it
     landed on once its tree is gone (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -242,7 +251,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     rows' outline until the groups slice first judges, never a list placed by the records alone, which would hold every part,
     archived line and ended intake as a row the first judgement takes away; and that judgement, as `SESSION_GROUPS`' answer to a
     window or to `daoris session list`, waits for no tree the machine's facts have not judged, nor walks one, while their first
-    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`'s `waits`, SESSIONFLASH1,
+    judgement is to come, the trees' offers following as their parts land (`HelpTreeFacts.WithTreesAsync`, SESSIONFLASH1,
     SESSIONLISTSLOW1). (from D185)
 
 **Flowcharts and the canvas**
@@ -415,11 +424,10 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **MAPUX1g**: the Map seen in the installed window (`docs/2026-11-06-map-ux-design.md`).
 - **MEETUX1a–d**: meetings and brainstorms in Sessions: started, followed, read, and in *What needs you*.
 - **OPTIMIZE1b**: a door that reads the process census while the window is open.
-- **SESSIONVIEW1b–j** (D320, proposed; nothing built): a session's whole surface becomes one panel
-  (`docs/2026-11-18-session-view-design.md`): a fixed head with a state line read from the driver's one reader and the workflow's
-  track, one timeline of every actor's rows, and at the foot a live band of what runs now and one dock where every wait is pressed.
-  Today a session's page still names its record's state in the head, draws its waits in the head and the foot (rule 38), stacks its
-  folds between the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each sub-agent and task as
-  a tab of the bottom panel; each row removes the place whose job it moves.
+- **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
+  panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
+  actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
+  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each sub-agent and task as a tab of the
+  bottom panel; each row removes the place whose job it moves.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

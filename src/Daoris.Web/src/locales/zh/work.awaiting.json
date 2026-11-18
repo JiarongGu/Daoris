@@ -25,7 +25,6 @@
   "work.awaiting.yourAnswer": "你的回答",
   "work.awaiting.goesOn": "同一个会话会在驱动的下一轮带着这个回答继续。",
   "work.awaiting.goAheads": "它请求的放行",
-  "work.awaiting.goAheadsLead": "它提出的每项放行都答复后（在这里或在它的需求上），这个会话会在驱动的下一轮带着你的答复继续。这个需求上的每个会话都会拿到这些答复。",
   "work.awaiting.goAheadApproved": "已放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
   "work.awaiting.goAheadRefused": "已拒绝放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
   "work.awaiting.goAheadOnly": "已答复放行 #{{number}}。",

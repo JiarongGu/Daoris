@@ -18,6 +18,8 @@ import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { WaitStrip } from './waits/WaitStrip';
+import { dockOf } from './waits/dock';
+import { useRunWaitDoors } from './head/useRunWaitDoors';
 import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
 import { coolingFor } from './say';
@@ -27,7 +29,7 @@ import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
-import { sessionTitle } from './identity';
+import { sessionOrigin, sessionTitle } from './identity';
 import { RightDock } from './frame/RightDock';
 import { SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
@@ -352,20 +354,24 @@ export function WorkFrame({
     notify, attended, here, grouping, talking, registry: registry.data, chatTurns, quests: quests.data, onOpenQuest, onReviewRun,
     attendedEntry, channelAsk, attend, openPreview, groups: groups.data,
   });
-  const { workAskAt } = work;
+  const { workAsk } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
     boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
-    partnerPieces, waits, answerBelow, standing, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
+    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAsk, waitPanel, tail, awayFromTop, toTop,
   } = waitsState;
+  const runWaitDoors = useRunWaitDoors(attended?.id ?? null);
+  const docked = attended && here && waits
+    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
+    : [];
   const headState = useAttendedHead({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
+    heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
@@ -486,24 +492,23 @@ export function WorkFrame({
             </>
           ) : undefined}
         >
-          {/* What waits on the person, where they read: above the box and outside the conversation's scroll,
-              each wait with the head's own press. None on a teammate's record, which has no press here. Keyed by the
-              session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id:
+          {/* The dock: every wait the person settles, above the box and outside the conversation's scroll, each with its own
+              press; a teammate's record draws them as lines with none. Keyed by the session. 🔴 The strip, the settler and the composer each name their kind beside the id:
               keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
-          {attended && here && waits && (
+          {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}
               {...waits}
               // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
               answerBelow={answerBelow}
-              workAsk={workAskAt('foot')}
-              ruleAsk={ruleAskAt('foot')}
+              workAsk={workAsk}
+              ruleAsk={ruleAsk}
               toEvent={toEvent}
               seek={seekAt('foot')}
-              // Not yet told is aside too, for the frame the observer takes to say: no strip flashed over a head on screen.
-              aside={waitsOnScreen !== false}
+              runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
+              quest={quest}
             />
           )}
 
