@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A re-landed branch's push read reached on the commit pushed before, so the new tip was never pushed (RESUMERESET1)
+
+- **Symptom:** with RESUMERESET1's landed run taken back by the chain's next quest, `ReLandingPullRequestTests` failed: the branch
+  re-landed at its new tip (the landing record advanced, still `Pushed` at the first tip), and the `push` bound at the new tip read
+  reached in the pass that began it, its evidence the first tip, so the push act never ran and origin kept the first tip.
+- **Root cause:** `PushReading` read the record's pushed commit against the remote-tracking ref and never against the landing's tip, so a
+  landing advanced since its push still read pushed; since 7b5f578865 that reach is taken at the node's own binding, whatever tip it
+  is bound at. The test's earlier path (a second Accept on the same quest) passed; through the follow-on quest the `push` stands
+  blocked until the new landing, and is begun and read in one pass (traced: `blocked#1` to `reached#2` at the new tip).
+- **Fix:** the push reads pushed only where the record's pushed commit is the landing's tip; otherwise origin holding that tip is the fact
+  (a push outside Daoris), else not yet, which `PushAttempts.Due` already pushes again.
+- **Verification:** `PushNodeTests` (the moved landing's case red on reached at the old tip), `ReLandingPullRequestTests` (red on one push
+  at the first tip).
+
 ## 2026-11-18 - A run's push failed for a passing tidy and stayed failed after the person pushed (PUSHBUSY1)
 
 - **Symptom:** a run's `push` failed `push-refused` ("the session trees were being cleaned up: nothing was changed"), with no retry; the

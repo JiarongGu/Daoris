@@ -359,7 +359,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`sensitive.patternsFile`, read in the repository's own checkout) is held before anything is made, naming the path and the
     pattern's number, never its text. (D87, D215)
 31. Daoris pushes, as a `push` step or a press, through the one push act, off the pass under the lease: reached when the
-    remote-tracking ref holds the commit, failed by the act's refusal. Daoris opens no pull request: a plugin's step does, its
+    remote-tracking ref holds the landing's tip, failed by the act's refusal; a push of the tip a landing stood at before it re-landed at a
+    new one is not yet, so the new tip is pushed (`PushReading`, `ReLandingPullRequestTests`). Daoris opens no pull request: a plugin's step does, its
     evidence's `url` written on the landing for `work/state` to ask about; a graph whose `<plugin>/pull-request` no switched-on
     plugin performs is refused at its bind. `PushedGraphs`, an older build's plugin delivery (read, never sent) and the web's bare
     `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one
