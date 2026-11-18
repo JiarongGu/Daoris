@@ -126,20 +126,20 @@ test('the bytes before the first edit are split by the class of what was read, a
   assert.equal(m.libraryReads, 3);
 });
 
-test('a window summary gives mean and median per class, and a schema-1 record without classes is left out of them', () => {
+test('a window summary gives mean and median per class, and a window with no edit says classes are not recorded', () => {
   const one = builderMeasures(classed, 'one').preEditByClass;
   const doubled = Object.fromEntries(Object.entries(one).map(([k, v]) => [k, 2 * v]));
   const builder = (preEditByClass, libraryReads) => ({ preEditBytes: 1, preEditTokens: 1, startupTokens: 1, wallMinutes: 1, tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, preEditByClass, libraryReads });
   const summary = summarizeLandings([
     { schema: 2, branch: 'a', builder: builder(one, 3) }, { schema: 2, branch: 'b', builder: builder(doubled, 5) },
-    { schema: 2, branch: 'c', builder: builder(doubled, 7) }, { schema: 1, branch: 'd', builder: builder(undefined, undefined) },
+    { schema: 2, branch: 'c', builder: builder(doubled, 7) },
   ], join(root, 'empty'));
   assert.equal(summary.preEditByClass.records, 3);
   assert.deepEqual(summary.preEditByClass.library, { mean: 95, median: 114 });
   assert.deepEqual(summary.preEditByClass.brief, { mean: 16.7, median: 20 });
   assert.deepEqual(summary.preEditByClass.libraryReads, { mean: 5, median: 5 });
-  assert.equal(summarizeLandings([{ schema: 1, branch: 'd', builder: builder(undefined, undefined) }], join(root, 'empty')).preEdit.meanBytes, 1);
-  assert.match(summarizeLandings([{ schema: 1, branch: 'd', builder: builder(undefined, undefined) }], join(root, 'empty')).preEditByClass, /^not recorded/);
+  const unedited = { schema: 2, branch: 'd', builder: { ...builder(null, 0), preEditBytes: null } };
+  assert.match(summarizeLandings([unedited], join(root, 'empty')).preEditByClass, /^not recorded/);
 });
 
 test('the startup plan lists every variant per model and starts no process', () => {
