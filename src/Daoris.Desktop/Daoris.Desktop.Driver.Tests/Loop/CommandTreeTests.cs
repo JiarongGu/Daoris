@@ -153,6 +153,31 @@ public sealed class CommandTreeTests
         Assert.Equal((TreeRouteKind.Usage, "no group `sessionz`."), (unknown.Kind, unknown.Said));
     }
 
+    /// <summary>
+    /// SWITCHGAPS1c: every word the workflow console's commands read (<c>WorkflowConsole.RunAsync</c>'s routes) is a verb the tree
+    /// owns and reaches the console, not the library's own command, which answers "no `values` in `daoris workflow`" for it.
+    /// </summary>
+    [Fact]
+    public void SWITCHGAPS1c_every_verb_the_workflow_console_routes_is_reachable_from_the_tree()
+    {
+        var group = CommandWords.Group("workflow")!;
+        string[] consoleVerbs = ["run", "keep", "fix", "values", .. NodeWordActs.All, .. CastActs.OnStep];
+        foreach (var verb in consoleVerbs)
+        {
+            Assert.Contains(verb, group.Verbs);
+            var route = CommandTree.Route(["workflow", verb, "r-1", "n-1"]);
+            Assert.True(route.Kind == TreeRouteKind.Run && route.Words[0] == "workflow" && route.Words[1] == verb, $"`daoris workflow {verb}` routes as {route.Kind} {string.Join(' ', route.Words)}: {route.Said}");
+        }
+
+        // The reverse: a word any console command claims (its Asks) is in the list, so a new command cannot be left behind.
+        foreach (var verb in group.Verbs)
+        {
+            string[] words = [verb, "r-1", "n-1"];
+            var claimed = WorkflowValuesCommand.Asks(words) || WorkflowNodeCommand.Asks(words) || WorkflowHoldCommand.Asks(words) || WorkflowFixCommand.Asks(words);
+            Assert.True(!claimed || consoleVerbs.Contains(verb), $"`workflow {verb}` is read by a console command the tree does not route");
+        }
+    }
+
     [Fact]
     public void The_settings_usage_names_each_of_its_verbs_and_the_group_alone_runs()
     {

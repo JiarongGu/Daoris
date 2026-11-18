@@ -95,7 +95,9 @@ public static class CommandTree
             "settings" when verb is null => ["driver", MachineSettingsSaid.Every],
             "settings" => ["driver", .. rest],
             "tree" => ["trees", .. rest],
-            "workflow" when verb is "run" or "keep" or "fix" || (verb is not null && NodeWordActs.All.Contains(verb, StringComparer.Ordinal)) => ["workflow", .. rest],
+            // The words WorkflowConsole routes (its commands' Asks): the console, not the library's own workflow command, reads them.
+            "workflow" when verb is "run" or "keep" or "fix" or "values"
+                || (verb is not null && (NodeWordActs.All.Contains(verb, StringComparer.Ordinal) || CastActs.OnStep.Contains(verb, StringComparer.Ordinal))) => ["workflow", .. rest],
             "workflow" => ["driver", "workflow", .. rest],
             _ => [group, .. rest],
         };
