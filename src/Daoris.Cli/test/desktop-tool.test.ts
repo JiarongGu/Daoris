@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync, utimesSync } from 'node:fs';
+import { scratchFolder } from '../../../tools/merge/fixture-home.ts';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -340,7 +340,7 @@ test('a scratch run lays out one Daoris folder, home and app root alike, as an i
  * nothing. Deriving it removes the thing that had to be remembered.
  */
 test('the built executable is derived from the project, newest build first', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-exe-'));
+  const root = scratchFolder('daoris-exe');
   writeFileSync(join(root, 'Thing.csproj'), '<Project><PropertyGroup>'
     + '<AssemblyName>thing</AssemblyName></PropertyGroup></Project>');
 
@@ -366,7 +366,7 @@ test('the built executable is derived from the project, newest build first', () 
  * it starts. Dated by itself, a stale build in the folder above would win.
  */
 test('a launched assembly is found by its launcher beside it, dated by the assembly', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-exe-'));
+  const root = scratchFolder('daoris-exe');
   writeFileSync(join(root, 'Thing.csproj'), '<Project><PropertyGroup>'
     + '<AssemblyName>thing.App</AssemblyName></PropertyGroup></Project>');
   const framework = join(root, 'bin', 'Debug', 'net10.0-windows');
@@ -384,7 +384,7 @@ test('a launched assembly is found by its launcher beside it, dated by the assem
 });
 
 test('a project with no assembly name has no derivable executable', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-exe-'));
+  const root = scratchFolder('daoris-exe');
   writeFileSync(join(root, 'Thing.csproj'), '<Project></Project>');
   assert.equal(assemblyExe(root), null);
 });
@@ -441,7 +441,7 @@ test('a prune also enforces the size cap, oldest first', () => {
  * of them at the wrong program while every command still appeared to work.
  */
 test('an install is addressed by its folder, and the launcher is the one at its root', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  const root = scratchFolder('daoris-install');
   writeFileSync(join(root, 'Daoris.exe'), '');
   // The launcher alone is not enough: it exits once it starts the application, which is what the
   // instruments address.
@@ -457,7 +457,7 @@ test('an install is addressed by its folder, and the launcher is the one at its 
  * reach it until its next publish replaces it: that is the install the owner has open meanwhile.
  */
 test('an install from before the rename is found by the launcher it has', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  const root = scratchFolder('daoris-install');
   writeFileSync(join(root, 'daoris-desktop.exe'), '');
   assert.equal(installedExe(root), join(root, 'daoris-desktop.exe'));
 
@@ -473,7 +473,7 @@ test('an install from before the rename is found by the launcher it has', () => 
  * folder you published to" is a thing a person gets wrong on their first try.
  */
 test('a folder holding no launcher is not an install', () => {
-  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  const root = scratchFolder('daoris-install');
   assert.equal(installedExe(root), null);
 
   mkdirSync(join(root, 'app'), { recursive: true });

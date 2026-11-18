@@ -3,7 +3,7 @@
 import { Refusal, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
 import { until, watchRelease, watchRun } from './stages.mjs';
 import { aliasOf, candidates, changedWords, declared, undeclared, unresolved } from './target.mjs';
-import { builtNothing, selfStarting, triggeredBy } from './triggers.mjs';
+import { builtNothing, leavesOut, selfStarting, triggeredBy } from './triggers.mjs';
 import { definitionsTaking, offRoute, routeWords, routed } from './routes.mjs';
 
 const EVIDENCE = 'azure-devops-pull-request/release@1';
@@ -101,6 +101,13 @@ export async function release(attempt, unit, say, progress = () => {}) {
     }
     const [build] = ran;
     const buildUrl = web(build, `_build/results?buildId=${build.id}`);
+
+    const leftOut = definition && asked.action !== 'create-and-start' ? leavesOut(definition, { ...build, sourceBranch: build.sourceBranch ?? target }) : null;
+    if (leftOut) {
+      const branch = withoutHeads(build.sourceBranch ?? target);
+      return { state: 'reached', evidence: { ref: `${EVIDENCE}:${attempt.invocation}`, url: buildUrl,
+        message: fit(`${lead}Nothing to release: release definition ${definition.name} (#${definition.id}) releases no build of \`${branch}\` — its trigger takes ${leftOut}.`) } };
+    }
 
     const outcome = (header, watched, url) => {
       if (watched.verdict === 'missing') return failed('target-changed', `${header}it holds no declared stage ${asked.stage}.`, url);

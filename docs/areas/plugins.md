@@ -91,7 +91,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
     `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
     before; the approval stays the person's, in Azure DevOps (D303). A `no-release` names the
-    definition's newest releases and the build each carries. Its `discover-releases`, a tool that never
+    definition's newest releases and the build each carries. Where the declared definition's CD trigger, read whole, leaves out the
+    branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
+    as for a merge the pipeline builds nothing from; a trigger not read waits and fails `no-release`. Its `discover-releases`, a tool that never
     writes, lists the same candidates (each definition's stages with what starts them, triggers, links and a proposed `deploysOn`) for
     the person or a planner to declare from, choosing none. (D288, D290) Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
