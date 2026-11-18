@@ -46,7 +46,6 @@ public sealed class VerbLeasesTests
     // The person's skip and stop of a run's node keep a word on its record.
     [InlineData("workflow skip q7 go nobody raises it")]
     [InlineData("workflow stop q7 go")]
-    // A step's tenure and a node's values keep a word on the run's record or the driver's file.
     [InlineData("workflow take q7 go why")]
     [InlineData("workflow hand q7 go person")]
     [InlineData("workflow give-back q7 go")]

@@ -24,7 +24,7 @@ public static class BrainstormCommand
     /// <summary>
     /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. <paramref name="doors"/> null
     /// finds the service as a terminal does; <paramref name="now"/> is unused: the desk stamps what it writes. <paramref name="adapters"/>
-    /// names the adapters the home answers (the build's and its plugins'), which an ask's <c>--agents</c> is read against; null reads them from the home.
+    /// names the adapters an ask's <c>--agents</c> is read against; null reads the home's.
     /// </summary>
     public static int Run(
         string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null, Func<string, IReadOnlyList<string>>? adapters = null)
@@ -90,7 +90,6 @@ public static class BrainstormCommand
         }
     }
 
-    /// <summary>The adapters the home answers: the build's and those its plugins declare, as the agents' own verbs read them.</summary>
     private static IReadOnlyList<string> AdapterNames(string home)
     {
         var built = ProviderRegistry.Built();
@@ -135,7 +134,6 @@ public static class BrainstormCommand
             }
         }
 
-        // An agent no adapter answers is refused here, before the desk writes a request the look would freeze and send, whose pass would end `no-agent`.
         if (agents.Count > 0 && adapters(home) is var known && agents.Where(agent => !known.Contains(agent, StringComparer.Ordinal)).ToList() is { Count: > 0 } unknown)
         {
             output.WriteLine($"daoris: no adapter answers to {string.Join(", ", unknown.Select(agent => $"`{agent}`"))}; the adapters are {string.Join(", ", known.Select(name => $"`{name}`"))}. Nothing was asked.");
