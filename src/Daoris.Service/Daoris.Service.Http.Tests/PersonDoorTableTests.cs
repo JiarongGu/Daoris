@@ -86,7 +86,6 @@ public sealed class PersonDoorTableTests
         ("POST", "/api/quests/{id}/close/outcome", Driver),
         ("POST", "/api/quests/{id}/run", Driver),
         ("POST", "/api/runs/{run}/end", Driver),
-        ("POST", "/api/runs/{run}/reopen", Driver),
         ("POST", "/api/sessions", Driver),
         ("POST", "/api/sessions/chat", Driver),
         ("POST", "/api/sessions/intake", Driver),
@@ -204,7 +203,7 @@ public sealed class PersonDoorTableTests
         // An outside agent's read, post and leave, the person's admission of it, and every door no workflow step waits on.
         Assert.Equal(25, Routes.Count(route => route.Class == Agent));
         // The listing of a channel's members, which holds the ids only the key may read.
-        Assert.Equal(37, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(36, Routes.Count(route => route.Class == Driver));
         Assert.Equal(25, Routes.Count(route => route.Class == Person));
         // A shared host's two channel doors, a feed and a page, and its retirement of a machine.
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

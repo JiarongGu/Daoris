@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The install's case replayed through whole passes: runs whose quests were Done under the older meaning, each held at the quest's holds
-/// on a done nothing reads, are ended together with their sessions as stopped by Daoris, and no session is reopened to wait on them.
+/// The install's case replayed through whole passes: runs whose quests are closed Done, each held at the quest's holds on a done nothing
+/// reads, are ended together with their sessions as stopped by Daoris.
 /// </summary>
 public sealed class ClosedQuestRunReplayTests : NodeRunFixture
 {
@@ -18,7 +18,7 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
         """;
 
     [Fact]
-    public async Task Runs_whose_quests_are_done_and_held_at_the_quests_holds_end_stopped_by_daoris_with_their_sessions_and_reopen_none()
+    public async Task Runs_whose_quests_are_done_and_held_at_the_quests_holds_end_stopped_by_daoris_with_their_sessions()
     {
         var digest = RunHome.SaveGraph(_home, ClaimedHoldsHanded);
         var runs = Enumerable.Range(0, 14).Select(each => $"r{each:D2}").ToList();
