@@ -14448,3 +14448,14 @@ installed window is not yet seen.
   re-observed, attempt 1 to 2; the before-landing case green before and after), the filtered
   `Invalidat|WireEvaluation|Content|RunWait|LandedRun` tests; `ReLandingPullRequestTests` now moves the landed branch on through the
   chain's next quest.
+
+## 2026-11-19 — `agent rules list` read a tool list one tool short on main (AgentsTextTests)
+
+- **Seen:** `AgentsTextTests`' four `rules` cases red on main 82eb7e4a8e, found by a builder's reached checks: the `connector` default
+  allows `mcp__daoris-knowledge__step_settle`, and the golden list ends at `team_plan`.
+- **Cause:** ACTORFLOW1a (3b0a022f56) added the knowledge tool `step_settle` and updated the brainstorm goldens that list every tool,
+  not `agents-text.json`'s; no merge since reached `AgentsTextTests`, so main stayed red unseen.
+- **Fix:** the four rows' `connector` line names `step_settle` after `team_plan`.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~AgentsTextTests"`: 262 passed.
+  Left: a knowledge tool's addition does not reach every golden that lists the tools (the brainstorm goldens, `agents-text.json`,
+  the service's `call-table.json`); TOOLGOLDENS1.
