@@ -61,8 +61,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    for its target names that route as the choice (one definition, or several for the release manager's line to choose between); an act
    on a declared definition whose own trigger leaves the build's branch out (a feature branch's build on the main line's definition) is
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
-   approval's card, on the step in the run's view and in the session page's dock, names the release, its definition, the build and
-   its source branch (APPROVEHERE1, APPROVEPRESS1): where the plugin declares
+   approval's card, on the step in the run's view, in the session page's dock and in its *What needs you* row, names the release, its
+   definition, the build and its source branch (APPROVEHERE1, APPROVEPRESS1, APPROVEPRESS2): where the plugin declares
    `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
    holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
    observed. No release step approves, whatever its action.
@@ -627,7 +627,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     session page's head (`RunWaitsHead`, its census beside it): an Accept and a part left after a done are the placed session's
     rows, the step a run ended failed at its own `step` row whatever its quest's state (`LeftSteps`: *Try again*, *Done outside
     Daoris…* where its kind reads the proof, *End this work…*), an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
-    that settle it (a skip reads *Not needed this run*) and its stop where the step offers one (*Stop this step…*, asked once, the run's node stop as the owner role's, D316), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, *Done outside Daoris* on the attempt
+    that settle it (a skip reads *Not needed this run*) and its stop where the step offers one (*Stop this step…*, asked once, the run's node stop as the owner role's, D316), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, under a release step waiting on its approver the run's view's approval card, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"

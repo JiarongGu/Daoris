@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.6.0",
-  "changes": "A release its holder names settles create where its commit is the landed one or descends from it, and is refused naming the commit it carries otherwise. Each release step's evidence carries the identity Azure DevOps credits (`by`) beside its words. The window's approval card runs approve-release, still no agent's tool.",
+  "version": "4.6.1",
+  "changes": "approve-release given a release id Azure DevOps does not answer says the release was not found, with Azure DevOps' status, and that the id is the page's releaseId, never that the stage has no approval pending.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],

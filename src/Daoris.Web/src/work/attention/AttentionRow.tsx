@@ -316,7 +316,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
   busy?: boolean;
   /** The act whose question stands open to start with: a story's, since a page opens it by a press. */
   opened?: AttentionActId | null;
-  /** What the band shows under the row while it follows one of its acts: an account's sign-in, step by step. */
+  /** What the band shows under the row: an account's sign-in, step by step, while it follows one; a release step's approval card. */
   below?: ReactNode;
 }) {
   const { t } = useTranslation();

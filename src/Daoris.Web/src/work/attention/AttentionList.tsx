@@ -60,7 +60,7 @@ export function AttentionList({
   acting?: string | null;
   /** Rows whose acts are held by something on its way elsewhere: an account's while one of its agent's sign-ins runs. */
   held?: (item: Attention) => boolean;
-  /** What a row shows beneath itself while the band follows one of its acts: an account's sign-in, step by step. */
+  /** What a row shows beneath itself: an account's sign-in, step by step, while the band follows one; a release step's approval card. */
   below?: (item: Attention) => ReactNode;
   /** Sessions itself, where *Ready for you*'s rows past its fifth are; absent, the count is words. */
   onSessions?: () => void;
