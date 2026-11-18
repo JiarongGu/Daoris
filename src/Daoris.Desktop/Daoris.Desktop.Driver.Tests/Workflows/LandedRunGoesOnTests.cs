@@ -97,8 +97,8 @@ public sealed class LandedRunGoesOnTests : NodeRunFixture
     }
 
     /// <summary>
-    /// The install's case: the release reached, the person's words reopen the session, its tree is brought to the line its pull request was
-    /// merged into and it hands its turn back. Nothing the run reached moves: no step asks again, nothing is sent again.
+    /// The release reached, the person's words reopen the session, its tree stands at the line its pull request merged into, and it hands
+    /// its turn back. Nothing the run reached moves: no step asks again, nothing is sent again.
     /// </summary>
     [Fact]
     public async Task A_landed_and_released_runs_session_given_words_and_taking_a_turn_keeps_every_step_it_reached()
