@@ -34,11 +34,11 @@ public sealed class DriverPartsTests : IDisposable
                 "reviews", "opinions", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
                 "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "door-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
                 "stored-sign-ins", "sign-outs",
-                "through-notices"],
+                "through-notices", "step-settles"],
             order.Select(part => part.Name));
         Assert.Equal(
             [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 22),
-                .. Enumerable.Repeat(LookPhase.Planned, 8), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 7)],
+                .. Enumerable.Repeat(LookPhase.Planned, 8), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 8)],
             order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
@@ -101,7 +101,8 @@ public sealed class DriverPartsTests : IDisposable
             pass => Assert.IsType<PluginCommandsLook>(pass),
             pass => Assert.IsType<StoredSignInsLook>(pass),
             pass => Assert.IsType<SignOutsLook>(pass),
-            pass => Assert.IsType<ThroughNoticesLook>(pass));
+            pass => Assert.IsType<ThroughNoticesLook>(pass),
+            pass => Assert.IsType<StepSettlesLook>(pass));
     }
 
     [Fact]

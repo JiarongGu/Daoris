@@ -15,6 +15,8 @@ internal sealed class NodeRunKeeping(
 {
     private readonly HashSet<string> _reopenAsked = new(StringComparer.Ordinal);
 
+    private readonly HashSet<string> _handed = new(StringComparer.Ordinal);
+
     private RunEndPorts Ends => new(records.Home)
     {
         Finish = finish?.Invoke(), Sessions = sessions?.Invoke(), Log = doors().Say, Owed = new OwedRunEnds(records.Home),
@@ -62,6 +64,14 @@ internal sealed class NodeRunKeeping(
         if (holdsLease() && ThroughAccepts.Keep(records, governed, scope, config, clock) is { } through) said.Add(through);
         StartDoors(governed, scope);
         KeepPullRequests(governed);
+    }
+
+    /// <summary>A run's steps its agent holds and settles by its tool, each handed to the run's working session once its tenure is kept (<see cref="StepHandOffs"/>).</summary>
+    public async Task HandStepsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
+    {
+        if (!holdsLease()) return;
+        await StepHandOffs.HandAsync(records, governed, scope, sessions?.Invoke(), new PlaceCastFiles(records.Home).Book(), config?.PlaceRisk, say(), said, ct, _handed)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

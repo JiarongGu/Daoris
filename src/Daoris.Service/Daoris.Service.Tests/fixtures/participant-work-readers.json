@@ -634,6 +634,10 @@
       "row": "1q",
       "note": "judges who may ask, answer or lead by the asker's marks, the desk's own guard (§2.3)"
     },
+    "Core/Sessions/StepSettleBox.cs": {
+      "reads": "tells",
+      "note": "judges that a step's settle is a run's working session's, by the asker's marks: not a helper, a reviewer or an intake"
+    },
     "Core/Sessions/SessionEntries.cs": {
       "reads": "tells",
       "note": "tells an intake or a record that serves for its line of work's key; no row of this design moves it"

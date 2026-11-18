@@ -207,13 +207,22 @@ public static class HeldSteps
         if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
         if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
+        var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
+
+        // A step its agent's working session settles by its tool is handed to that session: the person's one press is Take.
+        if (wait.Holder.Kind != StepHolders.Person && wait.Role == StepRoles.Of(node) && AgentSettles.Tool(node, status))
+        {
+            return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, [], work, wait.Since)
+            {
+                Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Epoch = tenure?.Epoch, Holds = tenure?.Why == TenureWhy.Marked ? [] : [CastActs.Take],
+            };
+        }
 
         var presses = RunNodeWords.Acts(node, status).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
             && attempt.Words.Contains(HeldResolutions.DoneOutside) ? attempt : null;
         if (outside is not null) presses.Add(HeldResolutions.DoneOutside);
-        var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
         return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, presses, work, wait.Since)
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),

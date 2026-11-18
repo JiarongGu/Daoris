@@ -48,7 +48,8 @@ public sealed partial class SettledReadersCensusTests
         ["SaidDoor.cs"] = "the door hands the answer to the dispatcher, which reads it first",
         ["KeepRetry.cs"] = "a keep asked again under its key hands the answer back to TurnKeeps, which reads it first",
         ["TogetherRoutes.cs"] = "Bring them together's word to a line's head (LINESTOGETHER1d): kept, or the press says the head could not be told",
-        ["OverlapsToldLook.cs"] = "Daoris's word to each of two running units changing one path, told once: kept, the told mark written, no answer read",
+        ["StepSettlesLook.cs"] = "a working session's refused step settle said to it once under the settle's id: kept, nothing read from the answer",
+        ["OverlapsToldLook.cs"] ="Daoris's word to each of two running units changing one path, told once: kept, the told mark written, no answer read",
         ["QuietWord.cs"] = "the watcher's word to a quiet session, through its inbox: kept with no word where settled, its id read only where there is one, and the episode told either way",
         ["CompactWord.cs"] = "Daoris's word after a compaction, through the inbox: kept with no word where settled, its id read only where there is one to take off at the run's end",
     };

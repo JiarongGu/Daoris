@@ -104,7 +104,7 @@ public sealed partial class McpToolDescriptionTests
         var tools = ToolNames();
 
         Assert.Equal(["opinion_answer", "opinion_give"], tools.Where(name => name.Contains("opinion")).Order());
-        Assert.DoesNotContain(tools, name => name.Contains("anyway") || name.Contains("myself") || name.Contains("settle")
+        Assert.DoesNotContain(tools, name => name.Contains("anyway") || name.Contains("myself") || (name.Contains("settle") && name != "step_settle")
                                              || name.Contains("dispute") || name.Contains("reviewer"));
         foreach (var tool in new[] { "opinion_give", "opinion_answer" })
         {
