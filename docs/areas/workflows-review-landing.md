@@ -272,7 +272,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     channel's word at the settle door (`ReviewStops`): the person's the owner role's, an agent's only on the steps the door admits it on, and
     refused with the door's word where it stops none. A failed step
     has the same stop, one door for the window, Ask Daoris and the terminal: it ends the step and, nothing else standing, its run as
-    `stopped` with the person's words, also where the run had ended failed at that step (the stop governs it again to end it). A
+    `stopped` with the person's words, also where the run had ended failed at that step (the stop governs it again to end it). Its
+    *Try again* (`daoris workflow again`, a new attempt; a plugin's held attempt's own where it holds one) and *Done outside Daoris…*
+    (`daoris workflow done-outside`, where its kind reads the proof) govern such a run again the same way. A
     step the record holds ready, active or invalidated in a run that ended reads not reached, never working
     (`EndedSteps`, read at the drawing and never stored). An Accept
     waits for its pass up to 20 seconds, never behind a tree's hold, that pass judging the pressed run first. A quest bound to a
@@ -380,7 +382,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     read), worded for the person, and a refusal fails the attempt its start is for, except one only because the repository's trees were busy
     (`ActRun.Busy`), which leaves the node active and is tried again at a later pass. A `push` failed `push-refused` whose landed branch
     the remote-tracking ref holds at the landing's tip reads reached at the next observation, the person's own push included (an observed
-    fact settles it, D304); at another tip it stays failed. A delivery step past a `land` that reached on a branch
+    fact settles it, D304); at another tip it stays failed. A `push` failed any other way is read so once its holder says it was done
+    outside Daoris (`done-outside`, kept on its status, `RunNodeWords.Outside`), and either is still observed after its run ended failed
+    there (`FailedHeldRuns`), a reach governing the run again. A delivery step past a `land` that reached on a branch
     no record names any more (`WireRun.LandingUnread`, every record of the work read) is passed over too, saying so. Where only the
     landing's entry is gone and the session branch's record stands (`UnrecordedLanding`), that record says: held on the line, the delivery
     steps are passed over with words; standing off it, the `push` is started once on the branch the `land`'s evidence names; neither, it
@@ -617,9 +621,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `<role>`: <holder>" with *Take*, an Accept and an approval among them.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
-    page where its act is taken, which `StepWaitCensusTests` holds for every wait, and its card on the session page's head
-    (`RunWaitsHead`, its census beside it): an Accept and a part left are the placed session's
-    rows, an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
+    page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
+    session page's head (`RunWaitsHead`, its census beside it): an Accept and a part left after a done are the placed session's
+    rows, the step a run ended failed at its own `step` row whatever its quest's state (`LeftSteps`: *Try again*, *Done outside
+    Daoris…* where its kind reads the proof, *End this work…*), an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
     that settle it (a skip reads *Not needed this run*) and its stop where the step offers one (*Stop this step…*, asked once, the run's node stop as the owner role's, D316), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,

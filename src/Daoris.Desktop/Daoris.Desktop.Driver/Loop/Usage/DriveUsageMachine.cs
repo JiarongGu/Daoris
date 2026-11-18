@@ -114,6 +114,9 @@ internal static class DriveUsageMachine
           workflow keep-yours|take-session|keep-both <run> <node> "<path>"
               choose for one file a folder's return found changed in both the folder and the session's copy: keep
               the folder's, take the session's, or write the session's beside it. Daoris's window confirms it.
+          workflow again|done-outside <run> <node>
+              a failed step: try it again as a new attempt, or say it was done outside Daoris where its kind
+              reads the proof (a push: origin holding the landed tip); either goes on with a run that ended there.
           workflow fix <run> [<node>]
               ask for a fix of a verification run's failed gate, with its log: one ask per gate, and a repeat finds the
               ask already made. `work held` names the failed verifications. Daoris's window confirms it.

@@ -16,16 +16,16 @@ import type { SessionGrouping } from '../groups';
 
 type SessionWait = NonNullable<SessionGrouping['waits']>[number];
 
-/** A step row as the run view's presses read it: its node, the presses, the held attempt and the tenure's epoch *What needs you* carries. */
+/** A step row as the run view's presses read it, *What needs you*'s; a press its held attempt offers is said on that attempt alone. */
 const stepOf = (wait: SessionWait, row: StepWaitRow | undefined): RunStep => ({
-  step: { id: wait.node, kind: '' } as RunStep['step'], state: 'waiting', detail: '', acts: row?.presses ?? [], held: row?.held ?? null,
-  epoch: row?.epoch ?? null,
+  step: { id: wait.node, kind: '' } as RunStep['step'], state: 'waiting', detail: '',
+  acts: (row?.presses ?? []).filter((act) => !row?.held?.words.includes(act)), held: row?.held ?? null, epoch: row?.epoch ?? null,
 });
 
 /**
  * **The steps of the session's run that wait on a role the person holds**, on its page's head: each reads
  * "<node>: waiting on `<role>`: <holder>", its holder as its row in *What needs you* says it, with the presses that settle it beside it, the
- * ones that row offers (the step's own words, its *Not needed this run*, a plugin wait's *Done outside Daoris*, never its stop), each
+ * ones that row offers (the step's own words, *Not needed this run*, *Done outside Daoris*, a left step's *Try again* and stop), each
  * passing the epoch the row read, and the row's *Take*, *Pass to…* and *Give back*. A notification about the step opens this session, so it
  * opens here. Nothing where no step waits on the person.
  *

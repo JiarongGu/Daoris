@@ -26,6 +26,9 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether a session of this machine waits on its steps (<see cref="RunWaiters"/>): one at its end is governed for its end alone.</summary>
     public bool Waited { get; init; }
 
+    /// <summary>Whether it ended failed at a step an observed fact may still settle (<see cref="FailedHeldRuns"/>): governed at its end for that step.</summary>
+    public bool Observed { get; init; }
+
     /// <summary>A conversation's run: the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
     public ChatCandidateFile? Candidate { get; init; }
 
@@ -191,15 +194,25 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
     /// <summary>
     /// Where the run's record says it ended, and whether it has one, read once a process, then kept as the runtime writes it. Until the runtime
-    /// writes the run's record, a record not there is read again at each look, a stat.
+    /// writes the run's record, a record not there is read again at each look, a stat. A failed end is read again whenever its record is
+    /// written since, a stat a look: the holder's word at its step lifts it at their door, and the run is governed again (<see cref="FailedHeldRuns"/>).
     /// </summary>
     private (RunEnd? Ended, bool Recorded) EndOf(string run)
     {
-        if (_ends.TryGetValue(run, out var kept)) return kept;
         var unit = RunUnits.IdOf(run);
-        if (!File.Exists(NodeRecordFiles.PathOf(records.Home, unit))) return (null, false);
-        return _ends[run] = (records.Read(unit)?.Ended, true);
+        var path = NodeRecordFiles.PathOf(records.Home, unit);
+        if (_ends.TryGetValue(run, out var kept) && (kept.Ended is not { Outcome: RunOutcomes.Failed } || _failedAt.GetValueOrDefault(run) == Stamp(path))) return kept;
+        if (!File.Exists(path)) return (null, false);
+        var stamp = Stamp(path);
+        kept = _ends[run] = (records.Read(unit)?.Ended, true);
+        if (kept.Ended is { Outcome: RunOutcomes.Failed }) _failedAt[run] = stamp;
+        return kept;
     }
+
+    /// <summary>The write time of each failed end's record as it is read.</summary>
+    private readonly Dictionary<string, DateTime> _failedAt = new(StringComparer.Ordinal);
+
+    private static DateTime Stamp(string path) => File.GetLastWriteTimeUtc(path);
 }
 
 /// <summary>

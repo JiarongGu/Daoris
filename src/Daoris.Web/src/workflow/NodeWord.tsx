@@ -11,10 +11,13 @@ import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 /** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
-  'not-task', 'not-waiting', 'not-return', 'not-outcome',
+  'not-task', 'not-waiting', 'not-return', 'not-outcome', 'not-outside', 'held-again',
 ]);
 
-const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, 'decide', ...RETURN_ACTS];
+const ACTS: readonly NodeAct[] = ['skip', 'stop', 'send', 'ask-again', 'go-on', 'changes', ...TASK_ACTS, 'decide', ...RETURN_ACTS, 'again', 'done-outside'];
+
+/** A failed step's own presses with nothing to say: a new attempt, and the person's claim of work done outside, where its kind reads the proof. */
+const FAILED_ACTS = [['again', 'tryAgain'], ['done-outside', 'doneOutside']] as const;
 
 /** What a refused word says, in the reader's language where the page words its code, else in the driver's sentence. */
 export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answer: NodeWordAnswer): string {
@@ -110,8 +113,25 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.goOn')}
             </Button>
           )}
+          {FAILED_ACTS.filter(([act]) => acts.includes(act)).map(([act, key]) => (
+            <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
+              {t(`workflow.run.node.${key}`)}
+            </Button>
+          ))}
         </div>
       )}
+      {FAILED_ACTS.filter(([act]) => asking === act).map(([act, key]) => (
+        <InlineConfirm
+          key={act}
+          tone="primary"
+          block
+          label={t(`workflow.run.node.${key}Title`, { node })}
+          says={t(`workflow.run.node.${key}Says`, { node })}
+          meanIt={t(`workflow.run.node.${key}MeanIt`)}
+          onConfirm={(answered) => send(act, answered)}
+          onClose={close}
+        />
+      ))}
       {asking !== null && isTaskAct(asking) && (
         <TaskPress block act={asking} node={node} words={words} onWords={setWords} onConfirm={(answered) => send(asking, answered)} onClose={close} />
       )}

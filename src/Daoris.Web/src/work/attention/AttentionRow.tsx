@@ -268,7 +268,7 @@ export type AttentionActs = {
    */
   quiet?: (item: Attention, act: 'carry-on' | 'hand-over' | 'stop' | 'leave', answered?: Answered) => void;
   /** A run's `work.requests` node passed over, with the person's words, as the run's view passes it. */
-  passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | 'stop' | TaskAct) => void;
+  passOver?: (item: Attention, words: string, answered: Answered, act?: 'ask-again' | 'go-on' | 'stop' | 'again' | 'done-outside' | TaskAct) => void;
   /** An end the sweep wrote, which names no session, approved or declined by its operation, as a session's Memory section decides one. */
   memoryEnd?: (item: Attention, approve: boolean) => void;
   /** The row set aside, kept in the history. */
@@ -417,6 +417,9 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
       case 'stop-step': return t('work.milestone.held.act.stop');
       // A waiting step's stop, the same words, asked once.
       case 'stop-node': return t('work.milestone.held.act.stopAsk');
+      // The step a run ended failed at, as its run's view says them.
+      case 'step-again': return t('workflow.run.node.tryAgain');
+      case 'step-outside': return t('workflow.run.node.doneOutside');
       // A held close's own, as `daoris work held` names them: record, resend, stop.
       case 'record-close': return t('work.milestone.held.act.record');
       case 'resend-close': return t('work.milestone.held.act.resend');
@@ -606,6 +609,8 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
               else if (asking === 'go-on') acts.passOver?.(item, words.trim(), answered, 'go-on');
               else if (taskActOf(asking)) acts.passOver?.(item, words.trim(), answered, taskActOf(asking)!);
               else if (asking === 'stop-node') acts.passOver?.(item, words.trim(), answered, 'stop');
+              else if (asking === 'step-again') acts.passOver?.(item, '', answered, 'again');
+              else if (asking === 'step-outside') acts.passOver?.(item, '', answered, 'done-outside');
               else if (asking === 'opinion-anyway') acts.opinionAnyway?.(item, words.trim() || undefined, answered);
               else if (asking === 'quiet-carry-on') acts.quiet?.(item, 'carry-on', answered);
               else if (asking === 'quiet-stop') acts.quiet?.(item, 'stop', answered);

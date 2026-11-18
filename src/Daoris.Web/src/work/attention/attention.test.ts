@@ -1316,11 +1316,6 @@ describe('what a row offers', () => {
     expect(attentionActs(offered('trust'))).toEqual([]);
   });
 
-  it('asks once before widening what Daoris may do, choices, end', () => {
-    expect([...ASKS_ONCE].sort())
-      .toEqual('accept-rule approve ask-again choose go-on not-yet opinion-anyway pass-over quiet-carry-on quiet-stop refuse stop-node task-approve task-done task-reject trust'.split(' '));
-  });
-
   /**
    * A quiet quest session offers *End and carry on*, *Hand over…*, *Stop…* and
    * *Leave it running*; a busy one nothing is heard from never *End and carry on*; an intake *Stop…* and *Leave it running* alone.

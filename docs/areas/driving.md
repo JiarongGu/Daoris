@@ -260,7 +260,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
     `completed` with its quests' Done where the run came to its graph's end, `stopped` where it was stopped, its quests left for the
     person's word. A run ended failed ends none (`RunSessionEnds.Ends`, said once as `failed-held`): its step's holder may still settle
-    it done outside Daoris or try it again, which governs the run again, so the sessions awaiting its later steps wait on. A run not ended
+    it done outside Daoris or try it again, which governs the run again, so the sessions awaiting its later steps wait on. Where the
+    step's kind reads a failed attempt (a push refused, or one its holder says was pushed outside), it is still observed at each look and
+    a reach governs the run again too (`FailedHeldRuns`, its record's end read again whenever a word lifts it). A run not ended
     whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
     its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
     `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person
@@ -348,7 +350,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (completed, stopped, declined, stood down). A done whose own record says work is left is never the plain done: the quest's newest
     session is needs you with reason `left` where its answers departed from a requirement the person has not yet accepted
     (`QuestLeft.Waits`), or where its run holds a step failed and kept for the person after the done, no word on it
-    (`PersonWaits.Left`); once the person accepted the departure it is done with reason `part-left` (`QuestLeft.Accepted`), their
+    (`PersonWaits.Left`); the step a run ended failed at places its session so whatever its quest's state (`PersonWait.Ended`), its own
+    `step` row in *What needs you* carrying it (`LeftSteps`); once the person accepted the departure it is done with reason `part-left` (`QuestLeft.Accepted`), their
     word on it. Each row carries `state` and the finer
     `reason`; *Archived* folds a done or failed session alone, and a left one is the person's to set aside. Each
     row also carries its line's state (`line`, `LineStandings`), read through the line's membership and its co-workers: the first

@@ -161,6 +161,7 @@ public static class NeedsAPerson
             var record = sessions.GetValueOrDefault(Text(placed, "session") ?? "");
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
+            if (Text(placed, "reason") == SessionReason.Left && LeftByEndedRuns(placed)) continue;
             var row = Row(Text(placed, "reason") == SessionReason.Left ? "left" : "review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
@@ -512,6 +513,11 @@ public static class NeedsAPerson
 
     /// <summary>Ask Daoris's conversation, by the repository it is recorded in: no session row of Sessions'.</summary>
     private static bool AskDaoris(JsonObject? session) => Text(session, "repository") == HelpRoom.Repository;
+
+    /// <summary>Whether a session placed for a part left is placed only by steps its runs ended failed at, each a `step` row of its own.</summary>
+    private static bool LeftByEndedRuns(JsonObject placed) =>
+        placed["waits"] is JsonArray waits && waits.OfType<JsonObject>().Where(wait => Text(wait, "why") == PersonWaits.Left).ToList() is { Count: > 0 } left
+        && left.All(wait => wait["ended"] is JsonValue ended && ended.TryGetValue<bool>(out var yes) && yes);
 
     /// <summary>A teammate's session, keyed by its machine's origin: a local id never carries a separator.</summary>
     private static bool Elsewhere(string id) => id.IndexOf('/') > 0;
