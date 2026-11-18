@@ -151,10 +151,7 @@ internal sealed class RealServiceHost : IDisposable
         throw new InvalidOperationException($"building the service's host ({project}) exited {process.ExitCode}; its last lines:\n{last}");
     }
 
-    /// <summary>
-    /// Start the host over <paramref name="scratch"/> and wait until it answers as itself. <paramref name="atHome"/> names the home it runs
-    /// over, with its store at that home's own <c>knowledge</c> entry, as an install's service has it; none, a home and a store of the scratch folder's.
-    /// </summary>
+    /// <summary>Start the host over <paramref name="scratch"/> and wait until it answers as itself; <paramref name="atHome"/> runs it over that home and its own store.</summary>
     public static async Task<RealServiceHost> StartAsync(string scratch, string? atHome = null)
     {
         var home = atHome ?? Path.Combine(scratch, "home");

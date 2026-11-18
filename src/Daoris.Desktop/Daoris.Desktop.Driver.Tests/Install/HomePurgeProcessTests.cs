@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// `daoris home purge --history` over a real service (D322): a fixture install's home holds an ask, its quest and a session in the service's own
+/// `daoris home purge --history` over a real service: a fixture install's home holds an ask, its quest and a session in the service's own
 /// store beside configuration, the purge runs with the host closed, and the host started again over the same home lists none of them
 /// while its registry, the home's settings and the desktop store's roles remain. The service is its own host in a process of its own
 /// (<see cref="RealServiceHost"/>), so every table the real store makes is judged by the same lists the purge empties by.

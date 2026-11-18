@@ -28,7 +28,7 @@ public sealed record PurgePlan(string Folder, string Backup, IReadOnlyList<Purge
 public sealed record PurgeDone(string Into, IReadOnlyList<PurgePath> Moved, IReadOnlyList<PurgeTable> Emptied, string? Failed);
 
 /// <summary>
-/// A home's history purged once (D322): every file and folder <see cref="HomeHistory"/> names as history moved, at the same relative path, into
+/// A home's history purged once: every file and folder <see cref="HomeHistory"/> names as history moved, at the same relative path, into
 /// <c>purged/&lt;UTC stamp&gt;/</c> beside the home (the install's folder, or the home's parent), and every history table of the two stores
 /// emptied after the whole store is copied there. Configuration is never touched. The caller holds the home: nothing else may run on it.
 /// </summary>

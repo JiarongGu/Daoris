@@ -564,7 +564,7 @@ try
         return PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve());
     }
 
-    // A home's history purged once, its configuration kept (D322): listed, or done while nothing of Daoris runs on the home.
+    // A home's history purged once, its configuration kept: listed, or done while nothing of Daoris runs on the home.
     if (args is ["home", .. var homeArgs])
     {
         var exit = HomePurgeCommand.Run(

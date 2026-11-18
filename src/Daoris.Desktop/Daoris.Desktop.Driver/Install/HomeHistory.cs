@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which of a home's files and store tables are its history, which <c>daoris home purge --history</c> moves out (D322), and which are
+/// Which of a home's files and store tables are its history, which <c>daoris home purge --history</c> moves out, and which are
 /// its configuration, which stays. Every entry of <see cref="HomeEntry.Table"/> and every table this build's desktop store makes is named
-/// on one side, so a new entry or table is classified where it is added (<c>HomeHistoryTests</c>' census); where it was unclear, it is kept.
+/// on one side, so a new entry or table is classified where it is added (<c>HomePurgeTests</c>' census); where unclear, it is kept.
 /// </summary>
 /// <remarks>
 /// History is what Daoris recorded of work done: sessions and their records, quests, asks, runs, landings, notices, proposals, opinions,

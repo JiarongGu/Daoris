@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris home purge --history</c>: a home's history moved out once, its configuration kept (D322). <c>--plan</c> lists every path and
+/// <c>daoris home purge --history</c>: a home's history moved out once, its configuration kept. <c>--plan</c> lists every path and
 /// table it would move or empty, with sizes and counts, and changes nothing; <c>--yes</c> does it, only while nothing of Daoris runs on the home.
 /// </summary>
 /// <remarks>

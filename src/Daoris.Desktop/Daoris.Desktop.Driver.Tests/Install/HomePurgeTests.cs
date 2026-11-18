@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// `daoris home purge --history` (D322): which of a home's entries and store tables are history, the plan that lists them and touches
+/// `daoris home purge --history`: which of a home's entries and store tables are history, the plan that lists them and touches
 /// nothing, the purge that moves them beside the install and empties the tables after copying the stores, and its refusal while Daoris runs.
 /// The service's own store is a stand-in here with the tables' names; <c>HomePurgeProcessTests</c> purges the real one and starts it again.
 /// </summary>
@@ -88,7 +88,7 @@ public sealed class HomePurgeTests : IDisposable
 
     // ——— The purge.
 
-    /// <summary>🔴 The purge moves each history path into the dated folder at its own place and empties the history tables after copying each store; configuration is as it was.</summary>
+    /// <summary>🔴 The purge moves each history path into the dated folder at its own place and empties the history tables after copying each store; configuration is unchanged.</summary>
     [Fact]
     public void The_purge_moves_history_beside_the_install_and_keeps_the_configuration()
     {
