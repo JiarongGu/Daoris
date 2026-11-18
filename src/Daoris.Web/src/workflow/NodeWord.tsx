@@ -60,7 +60,6 @@ export function NodeWord({ run, step, onWord }: {
     );
   }
 
-  // A step an agent holds offers *Take* alone (the holder's press, drawn beside it); its own presses are the holder's.
   if (takeFirst(step)) return null;
   const acts = (step.acts ?? []).filter((act): act is NodeAct => act !== 'changes' && ACTS.includes(act as NodeAct));
   const outcomes = decideOutcomes(step.acts ?? []);

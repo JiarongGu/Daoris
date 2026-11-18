@@ -57,10 +57,7 @@ export function executorSaid(t: TFunction, step: WorkflowStep): string {
     : t('workflow.executor.agent');
 }
 
-/**
- * Who takes part in a step and who acts, as a run reads it: a step the run's agent holds is the agent's alone, whatever its kind declares
- * of the person's part (a `task` declares it the person's); every other step says what it declares.
- */
+/** Who takes part and who acts: the agent alone where one holds the step, else what its kind declares. */
 export function whoSaid(t: TFunction, step: WorkflowStep, agentHolds = false): { participation: WorkflowStep['participation']; executor: string } {
   return agentHolds
     ? { participation: 'agent', executor: t('workflow.executor.agent') }

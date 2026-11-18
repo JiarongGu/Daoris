@@ -7,7 +7,7 @@ import { FlowChart } from './chart/FlowChart';
 import type { ChartNode } from './chart/stepKinds';
 import { aroundTheLanding, setupDoorOf, textOf, type CurrentWorkflow, type WorkflowParticipation, type WorkflowStep } from './current';
 import { stateSaid } from './runSaid';
-import { edgeSaid, executorSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle, whoSaid } from './said';
+import { edgeSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle, whoSaid } from './said';
 import { type FlowGraph, type FlowLit, glyphOf, outcomeOf, outcomeSaid, WORKFLOW_TRACK, workflowFlow } from './workflowFlow';
 
 /** Where a step's door leads: this page's own Setup at a section, the workspace's Setup, or a repository's own workflow. */
@@ -32,7 +32,6 @@ export type RunMarks = Record<string, {
   at?: boolean;
   state?: { word: string; tone: PillTone };
   settled?: boolean;
-  /** The run's agent holds this step now (`heldByAgent`): its part and who acts read as the agent's. */
   agent?: boolean;
   node?: ReactNode;
   open?: () => void;
@@ -247,7 +246,7 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
 }
 
 /** Who acts in a step's node: the person's part by its shape and its word, and the executor, names as code. */
-export function Who({ step, agent = false }: { step: WorkflowStep; /** The run's agent holds the step: it reads as the agent's. */ agent?: boolean }) {
+export function Who({ step, agent = false }: { step: WorkflowStep; agent?: boolean }) {
   const { t } = useTranslation();
   const who = whoSaid(t, step, agent);
   return (

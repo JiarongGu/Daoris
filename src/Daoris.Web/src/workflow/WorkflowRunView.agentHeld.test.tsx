@@ -7,8 +7,8 @@ import type { RunStep, WorkflowRun } from './run';
 import { answerOf, IN_REVIEW } from './runFixtures';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// A `task` step cast to the role's agent and handed to the run's working session (D318) reads as the agent's: "waiting on
-// `<role>`: `<agent>`" with *Take* its one press and none of the person's task presses; the step a person holds keeps its presses.
+// A `task` step cast to the role's agent reads as the agent's, with *Take* its one press and none of the person's task presses;
+// the step a person holds keeps its presses.
 
 const TASK: WorkflowStep = {
   id: 'config-change', kind: 'task', participation: 'you', executor: 'daoris', press: null,
