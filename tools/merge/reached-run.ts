@@ -1,11 +1,8 @@
 /**
- * The run of a reached plan's commands, one per group, in lanes side by side. In one, each test project the plan runs classes of
- * is built once (`reached-build.ts`), then each .NET group runs on that build (`--no-build --no-restore`), a project whose build
- * failed having its classes failed without running them, then each end-to-end or Process group. Beside it each light suite's
- * command (the page's, the CLI's, the tools' units: Vitest's, `node --test`'s, one per folder it runs from), which needs nothing
- * the build makes, runs in a lane of its own from the start (`runsBeside`): a gate's time is its longest lane, not the lanes added.
- * Within a lane the groups run in turn (a command's chunks never at once), and the outcome reads them back in the plan's order. Each
- * class its report shows passing is recorded under its key; a group that failed has its
+ * The run of a reached plan's commands in lanes side by side: one builds each project the plan runs classes of once (`reached-build.ts`),
+ * runs each .NET group on that build (`--no-build --no-restore`; a project whose build failed has its classes failed unrun), then each
+ * end-to-end or Process group; beside it each light command (`runsBeside`) has a lane of its own, its chunks in turn. The outcome reads
+ * the groups back in the plan's order. Each class its report shows passing is recorded under its key; a group that failed has its
  * failed classes run again alone once, so a pass alone is a flake, and a failure is main's red or new (`reached-classify.ts`). A
  * flake is never recorded as a pass. Each build, and each suite's discovery and run, is a step on the run's clock
  * (`reached-steps.ts`). The run's counts, the projects it left built and its steps end as one line the merge reads.
@@ -43,7 +40,6 @@ export type RunOptions = {
   build?: BuildStep;
   clock?: Clock;
   epoch?: () => number;
-  /** The suites whose gate runs with the Process settings: their groups wait for the build, as an end-to-end suite's do. */
   processSuites?: ReadonlySet<string>;
 };
 
@@ -74,13 +70,9 @@ async function runGroup(group: ReachedGroup, name: string, ready: ReadonlySet<st
   return { passed, failed: status !== 0 && failed.length === 0 ? group.units : failed };
 }
 
-/** What one group's run added: the classes it ran, those that failed again alone, those that passed alone, those it handed on. */
 type GroupResult = { ran: number; stillFailed: FailedUnit[]; passedAlone: string[]; handed: string[] };
 
-/**
- * Whether a group runs in the lane beside the build: a light suite's (Vitest's or `node --test`'s, not an end-to-end or Process
- * suite's), whose run needs nothing the build makes. The rest run in turn once the build has ended, the .NET groups first.
- */
+/** A light suite's group (Vitest's, `node --test`'s; no end-to-end or Process suite's) needs nothing the build makes. */
 export const runsBeside = (group: ReachedGroup, processSuites: ReadonlySet<string> = new Set()): boolean => group.runner !== 'dotnet' && !isHeavySuite(group.suite, processSuites);
 
 export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
@@ -89,7 +81,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   const place = options.inPlace ?? (<T>(_group: ReachedGroup, fn: () => Promise<T>) => fn());
   const projects = [...new Set(plan.groups.flatMap((group) => (group.runner === 'dotnet' && group.project !== undefined ? [group.project] : [])))];
   const { halt } = options;
-  let builds = { ready: [] as string[], failed: new Map<string, string>() };
+  let builds: { ready: string[]; failed: ReadonlyMap<string, string> } = { ready: [], failed: new Map() };
   let ready = new Set<string>();
   const results: GroupResult[] = plan.groups.map(() => ({ ran: 0, stillFailed: [], passedAlone: [], handed: [] }));
   const runOne = async (group: ReachedGroup, index: number): Promise<void> => {
@@ -138,7 +130,6 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
   };
   const entries = [...plan.groups.entries()];
   const beside = (group: ReachedGroup): boolean => runsBeside(group, options.processSuites);
-  // A lane per command: the chunks of one suite's command from one folder run in turn, never at once.
   const laneOf = (group: ReachedGroup): string => `${group.suite}|${group.runner}|${group.cwd ?? ''}`;
   const besideLanes = [...new Set(entries.filter(([, group]) => beside(group)).map(([, group]) => laneOf(group)))];
   await Promise.all([
@@ -150,7 +141,6 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
     })(),
     ...besideLanes.map((lane) => inTurn(entries.filter(([, group]) => beside(group) && laneOf(group) === lane))),
   ]);
-  // Read back in the plan's order, whichever lane each group ran in.
   const stillFailed = results.flatMap((result) => result.stillFailed);
   const passedAlone = new Set(results.flatMap((result) => result.passedAlone));
   const handed = results.flatMap((result) => result.handed);

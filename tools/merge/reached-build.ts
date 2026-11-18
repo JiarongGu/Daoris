@@ -169,11 +169,7 @@ export type BuildSeams = {
   now?: () => string;
 };
 
-/**
- * The test projects built beside the plan: of the projects of `units` (the census's), each whose build reads a changed path and
- * stands unbuilt for its inputs, the one with the most classes first. The plan names nearly all of them; one it does not name was
- * built beside it for its time alone, and the censuses gate after runs on that build.
- */
+/** The projects of `units` built beside the plan: each whose build reads a changed path and stands unbuilt, most classes first. */
 export function aheadOf(units: readonly { project?: string | undefined }[], changed: readonly string[], seams: {
   inputsOf: (project: string) => BuildInputs | null; decide: (project: string) => BuildDecision;
 }): string[] {
@@ -186,10 +182,7 @@ export function aheadOf(units: readonly { project?: string | undefined }[], chan
   }).sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || a.localeCompare(b));
 }
 
-/**
- * Each of `projects` built in turn by one `dotnet build` (its restore with it: a command started before a synchronous plan runs
- * through it) and stamped, so the run after the plan builds it no more; a failed one is stamped not, and built again then.
- */
+/** Each of `projects` built in turn by one `dotnet build`, restore and all (so it runs through a synchronous plan), and stamped. */
 export async function buildAhead(projects: readonly string[], seams: BuildSeams): Promise<void> {
   const { root, exec: run, time } = seams;
   for (const project of projects) {
