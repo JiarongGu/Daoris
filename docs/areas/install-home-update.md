@@ -8,7 +8,8 @@ through one table of entries, held by three twins (driver, service, CLI). The dr
 Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
 new build, or rolls back. A release that changes a stored shape carries one migration, which converts the home once at its
-first start; nothing reads an older shape after it.
+first start; nothing reads an older shape after it. The build's own plugins (`app/plugin-offers/`) that are installed older update
+at that start, before any hook runs (plugins area, rule 18a).
 
 Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/` for `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
 

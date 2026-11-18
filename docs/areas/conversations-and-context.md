@@ -460,3 +460,10 @@ of everything it handed, section by section.
   older build left is removed once at the start by the home migration's `turn-marks` step
   (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
+- **SESSIONVIEW1e** (D320, proposed; nothing built): the event envelope the one session panel needs
+  (`docs/2026-11-18-session-view-design.md` §8). Today a session's record keeps its own events only: a sub-agent's and a background
+  task's start and end are readings the lineage (`ChildBindings`) and the console's streams (`subagent/<id>`, `task/<id>`) keep, a
+  task's reading names no starting call, and a sub-agent's own calls reach only its stream as text. Proposed: the record keeps each
+  child's and task's lifetime as kinds `child` and `task` with its starting call, parent and who says it, and a sub-agent's events
+  go to a record of its own beside the session's, never into it, since the driver reads the session's record for what the session
+  said.

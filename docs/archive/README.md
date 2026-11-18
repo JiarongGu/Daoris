@@ -264,6 +264,7 @@ only state.
 | `2026-11-11-jj-workspaces-measurements.md` | Evidence: PLACEWORK1i, jj workspaces measured | Filed: no open row or area cites it |
 | `2026-11-11-placework1g-clone-measurements.md` | Evidence: PLACEWORK1g, block clones on a Dev Drive measured | Filed: no open row or area cites it |
 | `2026-11-11-start-load-measurements.md` | Evidence: STARTPERF1, a start to a full Sessions and Quests view measured | Filed: no open row or area cites it |
+| `2026-11-15-session-panel-design.md` | Design (proposed): OUTPUTPANEL1 and SESSIONROWS1, a session panel in the right dock and two-line rows | `docs/2026-11-18-session-view-design.md` and D320: the whole session is one panel, not a dock view beside it |
 
 Read `docs/archive/2026-08-04-daoris-design.md` for the contract, `docs/decisions/` for why, and
 `ROADMAP.md` for what is next.

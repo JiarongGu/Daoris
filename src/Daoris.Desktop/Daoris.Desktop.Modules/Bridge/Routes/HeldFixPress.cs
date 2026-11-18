@@ -8,6 +8,15 @@ namespace Daoris.Desktop;
 /// </summary>
 internal static class HeldFixPress
 {
+    /// <summary>A person's word on an attempt, answered as the terminal says it: the verb's own line, exit 0 on a recorded word, else 1 on its error.</summary>
+    public static Task<object> WordSaidAsync(WorkPerformed done, int attempt, string word) =>
+        TerminalSaid.RunAsync((output, error) =>
+        {
+            var worded = done.What == PerformedWhat.Worded;
+            (worded ? output : error).WriteLine(HeldAttempts.Said(done, attempt, word));
+            return Task.FromResult(worded ? 0 : 1);
+        });
+
     public static async Task<object> AnswerAsync(ServiceClient service, NodeRecordFiles records, WorkHeldPress press, CancellationToken ct)
     {
         if (press.Said) return await TerminalSaid.RunAsync(output => WorkflowFixCommand.AskAsync(service, records, press.Unit, press.Node, press.Attempt, output, ct)).ConfigureAwait(false);
