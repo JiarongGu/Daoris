@@ -203,6 +203,11 @@ public sealed class EngineBrowserTests : Bridge
         Assert.Equal(["A", "D"], EngineBrowser.Pages(list));
         Assert.Empty(EngineBrowser.Pages("{}"));
         Assert.Empty(EngineBrowser.Pages("[]"));
+        // And each page's address, which a park waiting on the person's sign-in reads.
+        Assert.Equal(
+            [new Daoris.Ports.Browser.BrowserPage("A", "chrome://newtab/"), new Daoris.Ports.Browser.BrowserPage("D", "https://site.example/")],
+            EngineBrowser.PageAddresses(list));
+        Assert.Empty(EngineBrowser.PageAddresses("{}"));
     }
 
     /// <summary>An engine that is not running answers nothing, and nothing is not a crash.</summary>

@@ -72,6 +72,18 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
         Assert.True(!teammate.TryGetProperty("question", out var absent) || absent.ValueKind == JsonValueKind.Null);
     }
 
+    /// <summary>A sign-in question reads with the site it waits on, which the dock opens.</summary>
+    [Fact]
+    public async Task A_sign_in_question_reads_with_its_site()
+    {
+        Asked("s1", """{"id":"c2","session":"s1","question":"Sign in as ops.","choices":[],"owner":"sign-in","site":"https://portal.example.com/settings","at":"2026-11-19T09:05:00Z"}""");
+        var module = await UpAsync(("s1", "awaiting-person"));
+
+        var question = (await AnswerAsync(module, "SESSION_QUESTION", new { id = "s1" })).GetProperty("question");
+
+        Assert.Equal("https://portal.example.com/settings", question.GetProperty("site").GetString());
+    }
+
     /// <summary>
     /// 🔴 Fable's read, Q7: a record that is not parked has no question, whatever a file says (a run that works, one that ended, one the
     /// service no longer holds, and before the loop is up).

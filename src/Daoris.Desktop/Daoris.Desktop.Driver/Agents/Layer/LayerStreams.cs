@@ -27,6 +27,7 @@ internal sealed class LayerStreams(IStreamsReader beside, Func<LayerReadings> tr
         foreach (var reading in words.Read(evt))
         {
             if (reading is WireReading.Shown shown) beside.Said(call, shown.Text);
+            else if (reading is WireReading.Said said) beside.Kept(call, said.Event);
         }
 
         return true;

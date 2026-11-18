@@ -38,6 +38,9 @@ public sealed record DoorAbilities(
     /// </summary>
     public bool ServersInherit { get; init; }
 
+    /// <summary>What it says of what its session runs beside itself, and what of it it can stop.</summary>
+    public BesideAbilities Beside { get; init; } = BesideAbilities.None;
+
     /// <summary>A door's abilities, each as <see cref="AbilityReading"/> reads it; the wiring flags are its transport's.</summary>
     public static DoorAbilities Of(AgentDoor door)
     {
@@ -56,6 +59,15 @@ public sealed record DoorAbilities(
             ResumesByRestart: !protocol)
         {
             ServersInherit = AbilityReading.Does(door, AbilityName.ServersInherit),
+            Beside = new(
+                AbilityReading.Does(door, AbilityName.ReportsChildren), AbilityReading.Does(door, AbilityName.ReportsTasks),
+                AbilityReading.Does(door, AbilityName.OneTaskStopped), AbilityReading.Does(door, AbilityName.OneChildStopped)),
         };
     }
+}
+
+/// <summary>What a door says of what its session runs beside itself, and what of it it can stop (<see cref="DoorAbilities.Beside"/>).</summary>
+public sealed record BesideAbilities(bool Children, bool Tasks, bool StopsTask, bool StopsChild)
+{
+    public static BesideAbilities None { get; } = new(false, false, false, false);
 }

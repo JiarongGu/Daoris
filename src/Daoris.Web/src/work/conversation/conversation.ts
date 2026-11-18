@@ -41,7 +41,7 @@ const failedAttempts = (events: readonly SessionEvent[], where: Record<number, s
       last = event.seq;
       continue;
     }
-    if (event.kind === 'usage' || event.kind === 'receipt') continue;
+    if (event.kind === 'usage' || event.kind === 'receipt' || event.kind === 'child' || event.kind === 'task') continue;
     if (block !== undefined && (transientLine(event) || (last > first && (event.kind === 'transient' || event.kind === 'note')))) {
       failed.add(block);
     }
@@ -111,6 +111,14 @@ export function toTurns(
     return turn;
   };
   const here = (key: string): Turn => current ?? open(key);
+  /** The newest call card that matches, in any turn so far: a task's end can land turns after the call that started it. */
+  const cardOf = (matches: (card: Block) => boolean): Block | undefined => {
+    for (let at = turns.length - 1; at >= 0; at -= 1) {
+      const items = turns[at]!.items;
+      for (let item = items.length - 1; item >= 0; item -= 1) if (items[item]!.kind === 'tool' && matches(items[item]!)) return items[item];
+    }
+    return undefined;
+  };
   // Where words said after the record ended wait: the turn already waiting at its foot, or a new one.
   const foot = (key: string): Turn => (current?.waiting ? current : Object.assign(open(key), { waiting: true }));
   const asked = (event: SessionEvent, key: string): Ask => ({
@@ -361,6 +369,22 @@ export function toTurns(
         // A try or a wait of a transient episode is quiet, never a line; the head reads it (`retryingAt`).
         parted = true;
         break;
+      case 'child':
+      case 'task': {
+        // No block of its own: its start names the card of the call that started it, its end says how it ended there. One whose
+        // call this page does not hold is not drawn; it never breaks the agent's words around it.
+        const card = cardOf(event.call
+          ? (b) => b.id === event.call
+          : (b) => b.beside?.kind === event.kind && b.beside.id === event.id);
+        if (card && event.id) {
+          const beside = card.beside?.id === event.id ? card.beside : { kind: event.kind as 'child' | 'task', id: event.id };
+          card.beside = {
+            ...beside, ...(event.name ? { name: event.name } : {}), ...(event.end ? { end: event.end, by: event.by ?? null } : {}),
+          };
+          where[event.seq] = card.key;
+        }
+        break;
+      }
       case 'receipt': {
         // No block of its own; it folds under the ask its word became, below.
         if (event.id && (event.receipt === 'sent' || event.receipt === 'ended')) {

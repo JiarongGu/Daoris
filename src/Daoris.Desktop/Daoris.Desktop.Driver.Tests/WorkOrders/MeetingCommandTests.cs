@@ -35,8 +35,22 @@ public sealed class MeetingCommandTests : IDisposable
     private (int Code, string Out) Run(params string[] args)
     {
         var output = new StringWriter();
-        var code = MeetingCommand.Run(args, _home, output, At, _service);
+        var code = MeetingCommand.Run(args, _home, output, At, _service, _ => Adapters);
         return (code, output.ToString());
+    }
+
+    private static readonly string[] Adapters = ["acp-stub", "claude-code-acp", "codex-acp", "dsh", "stub"];
+
+    [Fact]
+    public void An_ask_naming_an_agent_no_adapter_answers_is_refused_naming_the_adapters_and_sends_nothing()
+    {
+        var (code, said) = Run("ask", Question, "--agents", "claude,codex-acp,codex");
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("daoris: no adapter answers to `claude`, `codex`;", said);
+        Assert.Contains("the adapters are `acp-stub`, `claude-code-acp`, `codex-acp`, `dsh`, `stub`. Nothing was asked.", said);
+        Assert.Empty(_service.Sent);
+        Assert.Empty(Files.Requests());
     }
 
     /// <summary>A meeting the desk asked: its request on file, as the desk lays it.</summary>
@@ -93,7 +107,7 @@ public sealed class MeetingCommandTests : IDisposable
     {
         _service.Answer = (_, _, _) => new ServiceReply(400, """{ "error": "A meeting names 2 to 4 different agents, each once; 1 were named. Nothing was asked." }""");
 
-        var (code, said) = Run("ask", Question, "--agents", "claude");
+        var (code, said) = Run("ask", Question, "--agents", "stub");
 
         Assert.Equal(1, code);
         Assert.Contains("daoris: A meeting names 2 to 4 different agents", said, StringComparison.Ordinal);
@@ -105,7 +119,7 @@ public sealed class MeetingCommandTests : IDisposable
     {
         _service.Down = new DriverException("no DAORIS_SERVICE_URL");
 
-        foreach (var line in new[] { new[] { "ask", Question, "--agents", "a,b" }, ["send", "m1"], ["stop", "m1"], ["clear", "m1"] })
+        foreach (var line in new[] { new[] { "ask", Question, "--agents", "stub,dsh" }, ["send", "m1"], ["stop", "m1"], ["clear", "m1"] })
         {
             var (code, said) = Run(line);
             Assert.Equal(1, code);

@@ -16,8 +16,12 @@ vi.mock('@shenora/react', async () => {
   };
 });
 
-import '../../locales/i18n';
+import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
+import { LinkOpener } from '../../design/links';
+import { dockOf } from '../waits/dock';
+import type { ParkQuestion } from '../waits/parkQuestion';
+import { stateLineOf, stateLineSaid } from './stateLine';
 import { ORIGIN, sentTo, wireRelease } from '../../test/doubles/releaseShell';
 import { show } from '../../test/shellHarness';
 import { APPROVAL_PAGE, APPROVAL_WORDS, GRAPH_RUN_APPROVAL } from '../../workflow/runFixtures';
@@ -60,6 +64,40 @@ const drawDock = () => show(
     runWaits={{ waits: [WAIT], steps: [ROW], onWord: vi.fn(), release: releaseDoorsOf([GRAPH_RUN_APPROVAL]) }}
   />,
 );
+
+const SIGN_IN: ParkQuestion = {
+  id: 'q-sign', question: 'The production identity (ops) expired: sign in so I can restore the settings.', choices: [], recommend: null,
+  why: null, by: null, owner: 'sign-in', site: 'https://portal.example.com/settings', at: '2026-11-19T09:00:00Z',
+};
+
+describe('the dock, at a park waiting on the person’s sign-in', () => {
+  const parked = session({ note: 'It waits on your sign-in at the portal.' });
+
+  it('reads Waiting on you · Sign in, and carries Open the sign-in… with the site and Signed in, which answers the park', async () => {
+    const opened: string[] = [];
+    const onAnswerSession = vi.fn(() => Promise.resolve(null));
+    render(
+      <LinkOpener.Provider value={(address) => opened.push(address)}>
+        <WaitStrip session={parked} question={SIGN_IN} onAnswerSession={onAnswerSession} onResolve={vi.fn()} />
+      </LinkOpener.Provider>,
+    );
+
+    const docked = dockOf({ session: parked, question: SIGN_IN, onAnswerSession });
+    const said = stateLineSaid(i18n.t, stateLineOf({ session: parked, grouping: null, docked }));
+    expect(`${said.word} · ${said.rest.split(' · ').at(-1)}`).toBe('Waiting on you · Sign in');
+    expect(screen.getByText(SIGN_IN.question)).toBeInTheDocument();
+    const line = screen.getByRole('group', { name: 'Sign in at portal.example.com' });
+    await userEvent.click(within(line).getByRole('link', { name: 'Open the sign-in…' }));
+    expect(opened).toEqual(['https://portal.example.com/settings']);
+    await userEvent.click(within(line).getByRole('button', { name: 'Signed in' }));
+    expect(onAnswerSession).toHaveBeenCalledWith('Signed in');
+  });
+
+  it('names its question alone where the question names no site', () => {
+    const docked = dockOf({ session: parked, question: { ...SIGN_IN, site: null }, onAnswerSession: vi.fn() });
+    expect(stateLineSaid(i18n.t, stateLineOf({ session: parked, grouping: null, docked })).rest).toMatch(/its question$/);
+  });
+});
 
 describe('the dock, at a release step waiting on its approver', () => {
   beforeEach(() => { invoke.mockReset(); });

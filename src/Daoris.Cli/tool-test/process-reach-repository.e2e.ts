@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,4 +70,14 @@ test("this repository's census: every class carrying the Process trait is read i
   assert.ok(marked.length > 100, `${marked.length} marked classes`);
   const missing = marked.filter((name) => !known.has(name));
   assert.deepEqual(missing, [], 'a class the census misses would never be kept, but it would be counted nowhere');
+});
+
+test("a change to the knowledge connector's tools reaches the driver tests whose goldens list them", () => {
+  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'src/Daoris.Service/Daoris.Service.Mcp/ToolClasses.cs'], {
+    cwd: repoRoot, encoding: 'utf8', timeout: 600_000, windowsHide: true,
+  });
+  const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
+  for (const name of ['AgentsTextTests', 'BrainstormPostureTests', 'SuperviseContainmentTests']) {
+    assert.match(driver, new RegExp(`\\.${name}\\b`), `the driver's reached classes name ${name}: ${plan.stdout.slice(-600)}`);
+  }
 });

@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// its allows whole, with the room's read written <c>Read(&lt;room&gt;)</c>, its denies beyond the person's composition, and its sentence
 /// to the classifier. A change to the posture changes its golden file in the same commit, so review reads the rules as the agent meets them.
 /// </remarks>
+[Reaches("src/Daoris.Service/Daoris.Service.Mcp", Why = "its goldens list the knowledge connector's tools, which the service declares (TOOLGOLDENS1)")]
 public sealed class BrainstormPostureTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-posture-" + Guid.NewGuid().ToString("N")[..8]);

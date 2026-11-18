@@ -83,7 +83,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
             run.HandSink(ReadingSinks.Of(
                 account,
-                new RecordReadings(sessionId, Context.Output, Context.Events),
+                new RecordReadings(sessionId, Context.Output, Context.Events, new ChildRecords(DaorisHome.Entry(Context.Home, HomeEntry.Sessions), Context.Harnesses.Clock)),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
                 // Each child its door says, in the part's lineage.

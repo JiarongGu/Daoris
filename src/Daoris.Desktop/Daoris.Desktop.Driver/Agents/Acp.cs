@@ -69,10 +69,8 @@ public sealed class AcpSession(
 
     public Func<ConnectorPlan?, IReadOnlyList<ServerEntry>>? OwnServers { get; set; }
 
-    /// <summary>Where each child the streams beside it announce and end is said, as its reading; null says none.</summary>
+    /// <summary>Where each child and task the streams beside it announce and end is said, as its reading; null says none.</summary>
     public IReadingSink? Children { get; init; }
-
-    public Action<string, SessionEvent>? ChildCalls { get; init; }
 
     /// <summary>
     /// Where this session's permission requests are held for the person (<see cref="HeldPermissions"/>): only where its posture is
@@ -405,7 +403,7 @@ public sealed class AcpSession(
     private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
-        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children, calls: ChildCalls);
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet, children: Children);
         _pump = Reader.PumpAsync(incoming, _pumpStop.Token);
 
         var initialized = await RequestAsync(

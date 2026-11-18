@@ -1,4 +1,5 @@
 import type { GoAhead } from '../../data/api';
+import { webAddress } from '../../design/links';
 
 /**
  * A parked session's question to the person: what only they can decide, as its agent asked it
@@ -21,6 +22,8 @@ export type ParkQuestion = {
    * a later build knows, as written; null or absent for none. The supervisor answers no marked question.
    */
   owner?: string | null;
+  /** The page whose sign-in it waits on (`question_ask`'s `site`), a web page's address; null or absent for none. */
+  site?: string | null;
   /**
    * The supervisor left this question to the owner (the decision's state `left`): the bound,
    * one of `SUPERVISOR_BOUNDS` or a later one, and its reasons, each naming its source. Carried by `SESSION_QUESTION` beside the question
@@ -50,7 +53,7 @@ const text = (value: unknown): string | null => (typeof value === 'string' && va
  * The writer's bounds (`QuestionBox`), held on read too (Fable's read, Q6): the question, its answers, each label and what each does,
  * and by when; a question past any of them, or with two answers alike in any case, is none, as the connector never keeps one.
  */
-export const QUESTION_BOUNDS = { question: 1000, choices: 6, label: 80, does: 300, by: 200, why: 300 } as const;
+export const QUESTION_BOUNDS = { question: 1000, choices: 6, label: 80, does: 300, by: 200, why: 300, site: 500 } as const;
 
 /**
  * `SESSION_QUESTION`'s answer read defensively: an absent answer, a question with no id or words, one past a bound the writer keeps,
@@ -84,6 +87,7 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
   const left = readLeft(asked.left);
   return {
     id, question, choices, recommend, why: recommend === null ? null : why, by, owner: text(asked.owner),
+    site: typeof asked.site === 'string' && asked.site.length <= QUESTION_BOUNDS.site && webAddress(asked.site) ? asked.site : null,
     ...(left ? { left } : {}),
     at: typeof asked.at === 'string' ? asked.at : '',
   };

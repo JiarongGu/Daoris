@@ -243,9 +243,14 @@ export function censusOf(half, files, read) {
       if (program.everything) reach.add('*');
     }
     const reaches = chain.flatMap((each) => each.decls.flatMap((d) => reachesIn(d.attributes)));
+    const reads = [];
     for (const hand of reaches) {
       if (!hand.why) problems.push(`${entry.full}: a [Reaches] without its reason (Why = "…")`);
       for (const area of hand.areas) {
+        if (/^(src|tools)\//.test(area)) {
+          reads.push(area.replace(/\/+$/, ''));
+          continue;
+        }
         const full = area === '*' ? '*'
           : [...sources, ...programs.map((program) => program.folder)].map((folder) => {
             const base = posix.basename(folder);
@@ -261,7 +266,7 @@ export function censusOf(half, files, read) {
     classes.push({
       name: entry.full.split('.').at(-1), full: entry.full, files: [...reading].sort(),
       traits: Object.fromEntries([...traits].map(([name, values]) => [name, [...values].sort()])),
-      reach: [...reach].sort(), sourceFiles: [...sourceFiles].sort(), areaOnly: [...areaOnly].sort(), reaches, strings,
+      reach: [...reach].sort(), sourceFiles: [...sourceFiles].sort(), areaOnly: [...areaOnly].sort(), reaches, reads, strings,
     });
   }
   classes.sort((a, b) => a.full.localeCompare(b.full));
@@ -299,6 +304,9 @@ export function pathReach(path, census) {
     const classes = among((each) => words.some((word) => names(each.strings, word)));
     return classes.length ? { classes } : { none: `no class of the half names ${path}` };
   }
+  // A file or folder a class declares it reads (`[Reaches("src/…")]`), outside the projects the half compiles against.
+  const readers = among((each) => each.reads?.some((read) => path === read || path.startsWith(`${read}/`)));
+  if (readers.length) return { classes: readers };
   const area = areaOf(path, sources);
   if (area) return { areas: [area], file: path };
   const source = sources.find((folder) => path.startsWith(`${folder}/`));

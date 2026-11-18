@@ -65,7 +65,7 @@ export function useSought(box: RefObject<HTMLElement | null>, seek: Seek | null 
 /** A wait's name, as the strip's folded line and a raising block's mark say it. */
 export function waitName(t: TFunction, wait: Wait): string {
   switch (wait.kind) {
-    case 'question': return t('work.wait.name.question');
+    case 'question': return wait.signIn ? t('work.wait.name.signIn') : t('work.wait.name.question');
     case 'intake': return t('work.wait.name.intake', { ask: wait.ask });
     case 'goAhead': return t('work.wait.name.goAhead', { number: wait.number });
     default: return t(`work.wait.name.${wait.kind}`);

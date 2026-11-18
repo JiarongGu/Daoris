@@ -27,7 +27,7 @@ public static class MeetingCommand
     /// brainstorm desk's meeting kind (<see cref="BrainstormCommand"/>, <c>--kind meeting</c>), the one writer; <c>show</c> and
     /// <c>list</c> read the records here.
     /// </summary>
-    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null)
+    public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null, Func<string, IReadOnlyList<string>>? adapters = null)
     {
         _ = now;
         var files = new MeetingFiles(home);
@@ -46,14 +46,14 @@ public static class MeetingCommand
             case ["clear", var id]:
                 return BrainstormDoor.Press(doors, new ClearBrainstorm(id, BrainstormDoor.Meeting), output);
             case ["ask", var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal):
-                return Ask(question, rest, output, doors);
+                return Ask(question, rest, output, doors, home, adapters ?? BrainstormDoor.AdapterNames);
             default:
                 output.WriteLine(Usage);
                 return 2;
         }
     }
 
-    private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors)
+    private static int Ask(string question, IReadOnlyList<string> rest, TextWriter output, IServiceDoors? doors, string home, Func<string, IReadOnlyList<string>> adapters)
     {
         string? repository = null;
         string? named = null;
@@ -89,6 +89,8 @@ public static class MeetingCommand
             output.WriteLine(Usage);
             return 2;
         }
+
+        if (BrainstormDoor.RefusesAgents(agents, home, adapters, output)) return 1;
 
         return BrainstormDoor.Press(
             doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, [], named, meeting: true), output);

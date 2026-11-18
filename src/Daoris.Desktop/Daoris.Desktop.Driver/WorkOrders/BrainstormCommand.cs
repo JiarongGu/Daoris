@@ -36,7 +36,7 @@ public static class BrainstormCommand
             return 2;
         }
 
-        if (kinded.Meeting) return MeetingCommand.Run(kinded.Args, home, output, now, doors);
+        if (kinded.Meeting) return MeetingCommand.Run(kinded.Args, home, output, now, doors, adapters);
         args = kinded.Args;
         var files = new BrainstormFiles(home);
         switch (args)
@@ -56,7 +56,7 @@ public static class BrainstormCommand
             case ["clear", var id]:
                 return BrainstormDoor.Press(doors, new ClearBrainstorm(id), output);
             case [var question, .. var rest] when !question.StartsWith("--", StringComparison.Ordinal) && question is not ("show" or "send" or "stop" or "clear" or "list"):
-                return Ask(question, rest, output, doors, home, adapters ?? AdapterNames);
+                return Ask(question, rest, output, doors, home, adapters ?? BrainstormDoor.AdapterNames);
             default:
                 output.WriteLine(Usage);
                 return 2;
@@ -88,12 +88,6 @@ public static class BrainstormCommand
             default:
                 return null;
         }
-    }
-
-    private static IReadOnlyList<string> AdapterNames(string home)
-    {
-        var built = ProviderRegistry.Built();
-        return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)).Names;
     }
 
     private static int Ask(
@@ -134,11 +128,7 @@ public static class BrainstormCommand
             }
         }
 
-        if (agents.Count > 0 && adapters(home) is var known && agents.Where(agent => !known.Contains(agent, StringComparer.Ordinal)).ToList() is { Count: > 0 } unknown)
-        {
-            output.WriteLine($"daoris: no adapter answers to {string.Join(", ", unknown.Select(agent => $"`{agent}`"))}; the adapters are {string.Join(", ", known.Select(name => $"`{name}`"))}. Nothing was asked.");
-            return 1;
-        }
+        if (BrainstormDoor.RefusesAgents(agents, home, adapters, output)) return 1;
 
         return BrainstormDoor.Press(
             doors, BrainstormDoor.Ask(question, repository is { Length: > 0 } ? repository : null, agents, sources, named, meeting: false, design), output);

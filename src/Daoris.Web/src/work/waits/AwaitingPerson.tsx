@@ -6,6 +6,7 @@ import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { Note } from '../Note';
 import type { ParkQuestion } from './parkQuestion';
 import { QuestionCard } from './QuestionCard';
+import { SIGNED_IN, SignInAsk } from './SignInAsk';
 import { InConversation } from './WaitAnchor';
 
 /**
@@ -154,6 +155,10 @@ export function AwaitingPerson({
               selected={selected}
               onSelect={answering && onChoice ? select : undefined}
             />
+            {/* A question that names a site waits on the person's sign-in there: its presses, the answer *Signed in* sends. */}
+            {question.site && (
+              <SignInAsk site={question.site} busy={pending || sending} onSigned={onAnswer ? () => { void send(onAnswer(SIGNED_IN)); } : undefined} />
+            )}
           </div>
         )
         : <Note parts={parts} className="mt-1.5 text-body leading-relaxed" />}

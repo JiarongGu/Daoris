@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { CHANGED_VARIABLE, changedEnvironment, changedPaths, withChanged } from './merge/gate-hands.ts';
 import { treeOf, tsReader } from './test-map.mjs';
 import { verifyChecks } from './verify-checks.mjs';
+import { GATE_START, withGateStart } from './time-ratchet.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';
 import { runSteps } from './verify-checks/run.mjs';
 import { CHECK_STEPS, selectSteps } from './verify-checks/steps.mjs';
@@ -96,6 +97,12 @@ test('handed no paths the gate runs every step', async () => {
   const code = await verifyChecks({ root, env: {}, steps, run: (command) => (seen.push(command), { status: 0, output: '' }), say: () => {} });
   assert.equal(code, 0);
   assert.deepEqual(seen, ['one', 'two']);
+});
+
+test('a gate run hands its steps its own start, so a time ratchet judges only the records since it began', () => {
+  assert.deepEqual(withGateStart({ A: '1' }, 5000), { A: '1', [GATE_START]: '5000' });
+  const outer = { [GATE_START]: '1000' };
+  assert.equal(withGateStart(outer, 5000), outer, 'an enclosing gate run\'s earlier start stands');
 });
 
 test('the changed paths reach a step through its environment, and a list too long for one variable is not handed', async () => {

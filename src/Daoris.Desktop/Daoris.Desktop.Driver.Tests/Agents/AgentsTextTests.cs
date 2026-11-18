@@ -10,6 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <see cref="AgentsCommand"/> acting alone on a root of its own: the lines on each stream, the exit, and every file under the root
 /// after it. A row that differs on purpose says why under <c>changed</c>.
 /// </summary>
+[Reaches("Daoris.Desktop.Driver/Agents", "src/Daoris.Service/Daoris.Service.Mcp",
+    Why = "its `rules` rows list the knowledge connector's tools: the driver's lists (Agents/Permissions.cs) and the service's declaration of them (TOOLGOLDENS1)")]
 public sealed partial class AgentsTextTests
 {
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(

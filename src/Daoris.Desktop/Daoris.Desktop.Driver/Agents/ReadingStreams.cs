@@ -14,4 +14,6 @@ internal sealed class ReadingStreams(IReadingSink sink) : ISessionStreams
     public void Line(string streamId, string text) => sink.Read(new WireReading.StreamSaid(streamId, text));
 
     public void End(string streamId, string? state) => sink.Read(new WireReading.StreamEnded(streamId, state));
+
+    public void Said(string streamId, SessionEvent e) => sink.Read(new WireReading.ChildSaid(streamId, e));
 }

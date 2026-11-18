@@ -7,11 +7,12 @@ namespace Daoris.Driver;
 /// A session's question as <c>question_ask</c> wrote it: its id, the session, the agent's words, the answers it offers, the one it
 /// recommends by number from 1 (null for none, or one that names no answer), by when as it said, when it asked, and why it recommends
 /// that answer (null with none recommended), and the agent's mark that the question is the owner's alone
-/// (null for none), read as written, a mark this build does not know included: the supervisor answers no marked question.
+/// (null for none), read as written, a mark this build does not know included: the supervisor answers no marked question. And the
+/// site whose sign-in it waits on, a web page's address (null for none): the person's sign-in there, or Daoris's browser seeing it, settles it.
 /// </summary>
 public sealed record ParkQuestion(
     string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
-    string? Why = null, string? Owner = null);
+    string? Why = null, string? Owner = null, string? Site = null);
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
 public sealed record ParkQuestionChoice(string Label, string Does);
@@ -23,7 +24,14 @@ public sealed record ParkQuestionChoice(string Label, string Does);
 internal static class ParkQuestions
 {
     /// <summary>The writer's bounds (<c>QuestionBox</c>), held on read: the question, its answers, each label and each <c>does</c>, and by when.</summary>
-    public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200, MaxWhy = 300;
+    public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200, MaxWhy = 300, MaxSite = 500;
+
+    /// <summary>A site as a sign-in question names it: an http or https page's address with a host and no credentials, else null.</summary>
+    internal static string? SiteOf(string? address) =>
+        address is { Length: > 0 and <= MaxSite } && Uri.TryCreate(address, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp) && uri.Host.Length > 0 && uri.UserInfo.Length == 0
+            ? address
+            : null;
 
     /// <summary>The question a file's text holds, held to the writer's bounds; null where it holds none.</summary>
     internal static ParkQuestion? Parsed(string text, string session, Func<DateTimeOffset> written)
@@ -58,6 +66,6 @@ internal static class ParkQuestions
         var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
         // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
-        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner);
+        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")));
     }
 }

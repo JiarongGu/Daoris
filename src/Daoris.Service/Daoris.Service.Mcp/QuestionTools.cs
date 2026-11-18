@@ -37,6 +37,12 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
             + "theirs), `history` (a rewrite), `data` (deleting the owner's data), `publish` (to people outside beyond what the "
             + "repository declares). Otherwise leave it out.")]
         string? owner = null,
+        [Description(
+            "Only where the work needs the person to sign in at a site you reach through Daoris's browser (an identity expired, a "
+            + "sign-in page asks for a password): the page's address, at most 500 characters. Say in `question` which identity and "
+            + "why; offer no answers. The person gets *Open the sign-in…* and *Signed in*, and a sign-in Daoris's browser sees there "
+            + "answers it. Never type a password yourself.")]
+        string? site = null,
         CancellationToken ct = default)
     {
         var questions = box ?? QuestionBox.FromEnvironment();
@@ -44,7 +50,7 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
         return questions.Ask(
             record, session, question, choices?.Select(choice => (choice?.Label, choice?.Does)).ToList(), recommend, by, DateTimeOffset.UtcNow,
-            why, owner).Message;
+            why, owner, site).Message;
     }
 }
 

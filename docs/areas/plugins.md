@@ -93,9 +93,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     exact merged build (never twice), only where its action says so, as its README says. While it watches, its first look and each
     change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
     `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
-    before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view and in the session
-    page's dock, runs the plugin's `approve-release` under their own sign-in, declared as no agent's tool; a plugin that hands it to
-    agents gets the stage's page in its place (D304 point 6). A `no-release` names the
+    before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view, the session
+    page's dock and the step's *What needs you* row, runs the plugin's `approve-release` under their own sign-in, declared as no agent's
+    tool; a plugin that hands it to agents gets the stage's page in its place (D304 point 6). Given an id Azure DevOps does not answer,
+    `approve-release` says the release was not found with Azure DevOps' status, the id being the page's `releaseId` and not its name. A `no-release` names the
     definition's newest releases and the build each carries. Where the declared definition's CD trigger, read whole, leaves out the
     branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
     as for a merge the pipeline builds nothing from; a trigger not read waits and fails `no-release`. Its `discover-releases`, a tool that never
@@ -250,6 +251,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     50 event lines, one gap line, closing on `read up to`), ending on a second client, three bad frames, 30 s of gathering, its
     session's exit or 15 minutes. The plugin is the plugins repository's `event-relay`; Daoris holds none of it, and its process
     tests run a stand-in. The design is `docs/2026-11-06-event-channel-design.md`. (D244)
+34. A driven session whose work in Daoris's browser meets a sign-in only the person can make asks it with `question_ask`'s
+    `site` (the page; the question says which identity and why): the question is marked `sign-in`, offers no answers of the
+    agent's, and its park reads *Waiting on you · Sign in* with *Open the sign-in…* (the site in Daoris's browser) and *Signed in*
+    in its dock. The look's `browser-sign-ins` pass reads the running browser's pages (`IInAppBrowser.PagesAsync`, never bringing
+    it up) through `SignInSightings`, kept beside the browser: a page that went through a sign-in address and came back to the
+    site's host settles the park with Daoris's word under one key, and the next look takes it up. *Signed in* is the person's
+    answer, sent as those words. (D324)
 
 ## Where a change goes
 

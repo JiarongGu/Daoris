@@ -114,6 +114,10 @@ public sealed partial class ContinuedReadersCensusTests
         [
             (How.Follows, "a working session's refused step settle (D318): said at the head of its line whole, so the session that goes on reads why"),
         ],
+        ["BrowserSignInsLook.cs"] =
+        [
+            (How.Follows, "the sign-in Daoris's browser saw for a park that waits on it (SIGNINWAIT1): said at the head of its line, so the session that goes on reads it may"),
+        ],
         ["OverlapsToldLook.cs"] =
         [
             (How.NotOn, "the overlap word to a running unit (INTEGRATE1l), kept for the run this process holds (`running`): it goes into that run's own turn in this process alone, and the pair is marked told only once the say returned"),

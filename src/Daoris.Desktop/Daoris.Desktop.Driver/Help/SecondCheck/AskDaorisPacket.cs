@@ -214,7 +214,7 @@ public static class AskDaorisPacket
                 foreach (var e in events.Where(e => e.Seq >= turns[at].From && e.Seq <= turns[at].To))
                 {
                     if (e.Kind == SessionEventKind.Message) (open ??= new StringBuilder()).Append(e.Text);
-                    else if (open is not null && e.Kind != SessionEventKind.Usage)
+                    else if (open is not null && !e.Quiet())
                     {
                         messages.Add((at, open.ToString()));
                         open = null;

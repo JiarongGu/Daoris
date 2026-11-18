@@ -62,6 +62,27 @@ public sealed class QuestionFiles(string home)
     }
 
     /// <summary>
+    /// The questions on file that wait on the person's sign-in at a site, each its session's (a file is kept only while its park
+    /// stands): what Daoris's browser is read for. None where the folder is not there or cannot be listed.
+    /// </summary>
+    public IReadOnlyList<ParkQuestion> SignIns()
+    {
+        try
+        {
+            var folder = DaorisHome.Entry(home, HomeEntry.Sessions);
+            if (!Directory.Exists(folder)) return [];
+            return [.. Directory.EnumerateFiles(folder, "*" + Suffix)
+                .Select(path => Read(Path.GetFileName(path)[..^Suffix.Length]))
+                .OfType<ParkQuestion>()
+                .Where(question => question.Site is not null)];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
     /// Whether the session asked the person a question at or after <paramref name="since"/>:
     /// false where no file is on disk or its question is older, true where it is newer, and null where a file is there and
     /// does not read (busy, broken, past a bound), which a caller deciding that nobody waits on the person must read as a question.
@@ -134,6 +155,7 @@ public sealed class QuestionFiles(string home)
             if (question.Recommend is { } recommend) writer.WriteNumber("recommend", recommend);
             if (question.By is not null) writer.WriteString("by", question.By);
             if (question.Why is not null) writer.WriteString("why", question.Why);
+            if (question.Site is not null) writer.WriteString("site", question.Site);
             writer.WriteString("at", Moments.Write(question.At));
             writer.WriteEndObject();
         }

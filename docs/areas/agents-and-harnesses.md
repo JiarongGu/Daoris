@@ -57,7 +57,14 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 9. A provider translates; Daoris selects. A provider never walks accounts, picks a model, starts another participant or decides
    whether a line goes on. (D213, D67)
 10. The protocol door's wire enriches the console and transcript, but a record concludes from the exit code and the quest's
-    state, because the wire's stop reason flattens failures. (D46, D53)
+    state, because the wire's stop reason flattens failures. (D46, D53) Each door states what it says of what its session runs
+    beside itself and what of it it stops (`ReportsChildren`, `ReportsTasks`, `OneTaskStopped`, `OneChildStopped`, read as
+    `DoorAbilities.Beside`): Claude Code's native door says each subagent's and background command's start and end, each task's
+    call its `task_started`'s `tool_use_id`, and stops none; its protocol door says each subagent (its starting call the card it
+    writes in the `Agent` call's place, under the subagent's id) and each task (its call the one its first `async_task_progress`
+    names, so its start is said then, or at its end) and stops a task its harness marks `canStop`; Codex's says each task with
+    the `toolCallId` its `async_task_spawned` names, stops one marked `canStop`, and says no subagent: one is seen only when it
+    calls Daoris. A subagent's own events, mapped by its door, ride its stream (`ISessionStreams.Said`) to its own record. (D320)
 11. A driven session takes no person's line on its stdin; the protocol door's stdin carries Daoris's frames, and a driven native
     prompt goes on stdin under a bare `-p` as BOM-less UTF-8, never as an argument. (D213, D49)
     Every run of `TransportRun`, whichever harness is on it, keeps the frames of its pipe in one `FrameTape` beside its transcript
@@ -139,7 +146,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     (review, helper, intake, brainstorm, partner, supervise) is handed none. (D81, D184, D253)
     `daoris brainstorm "…" --agents <adapter,adapter>` reads each name against the adapters the home answers (the build's and its
     plugins') and refuses an unknown one at the terminal, naming the adapters, before the desk writes a request; no role's word
-    stands for an adapter there. A meeting's `--agents` is not yet read so.
+    stands for an adapter there. A meeting's `--agents` is read so too, by the same function (`BrainstormDoor.RefusesAgents`).
 24. Folder trust is written only on the person's act naming the folder, one flag in the harness's file: with no account named,
     for every account of the set, never the person's own home; a named account must exist here. Trust gates a start only where
     the handed rules would not let the connector through. (D73, D197)

@@ -52,6 +52,42 @@ public static class SessionEventKind
     /// the turn's ask, and <i>uncertain</i> the <see cref="SessionEventCodes.Lost"/> note.
     /// </summary>
     public const string Receipt = "receipt";
+
+    /// <summary>
+    /// A sub-agent the session ran beside itself, under its own <see cref="SessionEvent.Id"/>: its start, with the call that started it
+    /// (<see cref="SessionEvent.Call"/>), its parent and depth, name and task where its door said them; or its end, which
+    /// <see cref="SessionEvent.End"/> names. Its own words and calls are never here: they are its own record's (<see cref="ChildRecords"/>).
+    /// </summary>
+    public const string Child = "child";
+
+    /// <summary>
+    /// A background task the session ran beside itself, under its own <see cref="SessionEvent.Id"/>: its start, with its call and name where
+    /// its door said them, or its end, which <see cref="SessionEvent.End"/> names. Its output is its own file, never here.
+    /// </summary>
+    public const string Task = "task";
+}
+
+/// <summary>
+/// The words a <see cref="SessionEventKind.Child"/>'s or <see cref="SessionEventKind.Task"/>'s end is kept in, from its wire's own word
+/// (<see cref="Of"/>): ok, failed, stopped, or lost where no word said how.
+/// </summary>
+public static class ChildEnds
+{
+    public const string Ok = "ok";
+    public const string Failed = "failed";
+    public const string Stopped = "stopped";
+
+    /// <summary>Ended, how unsaid: a word this build does not know, none, or its session's close.</summary>
+    public const string Lost = "lost";
+
+    /// <summary>The end a wire's word says.</summary>
+    public static string Of(string? word) => word?.ToLowerInvariant() switch
+    {
+        "completed" or "complete" or "succeeded" or "success" or "done" or "ok" => Ok,
+        "failed" or "error" or "errored" => Failed,
+        "stopped" or "killed" or "cancelled" or "canceled" or "interrupted" or "aborted" => Stopped,
+        _ => Lost,
+    };
 }
 
 /// <summary>The receipts a <see cref="SessionEventKind.Receipt"/> event names.</summary>
@@ -410,6 +446,39 @@ public sealed record SessionEvent
 
     /// <summary>What an unknown or unreadable frame said, compact and bounded.</summary>
     public string? Raw { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.Child"/> and <see cref="SessionEventKind.Task"/>: the call that started it, a
+    /// <see cref="SessionEventKind.Tool"/> event's <see cref="Id"/> in this record, where its door names one.
+    /// </summary>
+    public string? Call { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Child"/>: the child that started it, where a child did and its door said which.</summary>
+    public string? Parent { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Child"/>: how far below the session's own agent it is, 1 for one it started, where said.</summary>
+    public int? Depth { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Child"/> and <see cref="SessionEventKind.Task"/>: its name, where its door gave one.</summary>
+    public string? Name { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Child"/>: what it is asked to do, as its door describes it.</summary>
+    public string? Task { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.Child"/> and <see cref="SessionEventKind.Task"/>: on its end, how it ended, one of
+    /// <see cref="ChildEnds"/>; null on its start.
+    /// </summary>
+    public string? End { get; init; }
+
+    /// <summary>
+    /// For <see cref="SessionEventKind.Child"/> and <see cref="SessionEventKind.Task"/>: who says it (<see cref="ReadingBy"/>, lower-cased):
+    /// <c>reported</c> where its door said it, <c>inferred</c> for an end only its session's close implies.
+    /// </summary>
+    public string? By { get; init; }
+
+    /// <summary>True for an event no run of the agent's message chunks breaks at: a usage reading, or a child's or task's start or end.</summary>
+    public bool Quiet() => Kind is SessionEventKind.Usage or SessionEventKind.Child or SessionEventKind.Task;
 }
 
 /// <summary>
@@ -530,6 +599,8 @@ public static class SessionEventText
         Input = Cut(e.Input, RawLimit),
         Output = Cut(e.Output, RawLimit),
         Raw = Cut(e.Raw, RawLimit),
+        Name = Cut(e.Name, RawLimit),
+        Task = Cut(e.Task, TextLimit),
     };
 
     /// <summary>A field cut to a limit, saying its full length — never silently shortened.</summary>
