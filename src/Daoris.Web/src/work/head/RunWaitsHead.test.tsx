@@ -60,4 +60,40 @@ describe('RunWaitsHead', () => {
     const { container } = render(<RunWaitsHead waits={[]} steps={[SIGN]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('offers the pass of an unchecked done at holds with your words', async () => {
+    const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'holds', act: 'skip', done: true });
+    const row: StepWaitRow = { run: 'q7', node: 'holds', why: 'pass', role: 'acceptor', holder: 'person', presses: ['skip', 'stop'] };
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'holds', why: 'pass', role: 'acceptor' }]} steps={[row]} onWord={onWord} />);
+
+    const line = screen.getByRole('group', { name: 'holds: waiting on acceptor: you' });
+    await userEvent.click(within(line).getByRole('button', { name: 'Not needed this run…' }));
+    await userEvent.type(within(line).getByRole('textbox'), 'It does what I asked.');
+    await userEvent.click(within(line).getByRole('button', { name: 'Not needed this run' }));
+    expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'holds', act: 'skip', words: 'It does what I asked.' });
+  });
+});
+
+// Every `PersonWaits.All` kind (read by its census) has its card here; a `carried` one's press is on the card that carries it.
+const CENSUS: Record<string, { presses: string[]; held?: StepWaitRow['held'] } | 'carried'> = {
+  'accept': 'carried',
+  'approval': { presses: ['approve', 'reject', 'skip'] },
+  'task': { presses: ['done', 'skip'] },
+  'go-ahead': { presses: ['skip', 'stop'] },
+  'held': 'carried',
+  'choose': { presses: ['stop'] },
+  'actor': { presses: ['done-outside'], held: { unit: 'run:q7', attempt: 1, words: ['done-outside'] } },
+  'left': 'carried',
+  'vacant': { presses: ['skip', 'stop'] },
+  'pass': { presses: ['skip', 'stop'] },
+};
+
+describe('RunWaitsHead, every wait', () => {
+  it.each(Object.entries(CENSUS))('draws `%s` with its press where a step row carries one', (why, carries) => {
+    const steps: StepWaitRow[] = carries === 'carried' ? [] : [{ run: 'q7', node: 'step', why, role: 'someone', holder: 'person', ...carries }];
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'step', why, role: 'someone' }]} steps={steps} onWord={vi.fn()} onHeld={vi.fn()} />);
+
+    const line = screen.getByRole('group', { name: 'step: waiting on someone: you' });
+    if (carries !== 'carried') expect(within(line).getAllByRole('button').length).toBeGreaterThan(0);
+  });
 });

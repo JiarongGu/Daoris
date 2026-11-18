@@ -14,7 +14,7 @@ public sealed record PersonWait(string Run, string Node, string Why, string Repo
 
 /// <summary>
 /// What a run step waits on the person for: a review's Accept, a person's task or approval, a go-ahead, an attempt held unknown for
-/// them, a plugin step's role they hold, and a second opinion nobody is free to give. Workflows reads the steps
+/// them, a plugin step's role they hold, a second opinion nobody is free to give, and an unchecked done's pass. Workflows reads the steps
 /// (<see cref="PersonWaitReader"/>); Sessions' groups and *What needs you* place the session each run stands for by them.
 /// </summary>
 public static class PersonWaits
@@ -46,6 +46,9 @@ public static class PersonWaits
     /// <summary>An <c>opinion</c> its gate holds for want of a reviewer: the vacancy goes up to the line's lead (<see cref="OpinionVacancy"/>).</summary>
     public const string Vacant = "vacant";
 
+    /// <summary>A <c>quest.holds</c> holding a done nothing checked (<c>UncheckedDones</c>) for the person's pass with their words.</summary>
+    public const string Pass = "pass";
+
     /// <summary>Every wait a step can stand at: what the census of <i>What needs you</i> holds a row with a press for, each.</summary>
-    public static IReadOnlyList<string> All { get; } = [Accept, Approval, Task, GoAhead, Held, Choose, Actor, Left, Vacant];
+    public static IReadOnlyList<string> All { get; } = [Accept, Approval, Task, GoAhead, Held, Choose, Actor, Left, Vacant, Pass];
 }

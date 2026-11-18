@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 // A session's page header and its acts, reviewing what a session landed, and acting on it, in the Work frame, one part of
 // its suite (the parts run beside each other). The bridge is mocked
-// as present, because the frame does not exist without one; what the parts share is in `test/workFrameBridge.ts`
+// as present, as the frame needs one; what the parts share is in `test/workFrameBridge.ts`
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
@@ -19,7 +19,7 @@ import { DiffPane } from './review/DiffPane';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
-const ACC = { run: 'q1', node: 'review' };
+const ACC = { run: 'q1', node: 'review', attempt: 1 };
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
