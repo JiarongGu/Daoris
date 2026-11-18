@@ -345,6 +345,9 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// <summary>Who holds the actor a decision's proposal is from, as its channel names it; null for the owner's own word.</summary>
     public string? Holder { get; init; }
 
+    /// <summary>The agent (<c>agent:&lt;name&gt;</c>) whose own answer settles a decision it holds, no proposal held; null on every other word.</summary>
+    public string? Decider { get; init; }
+
     /// <summary>
     /// The tenure the settle door admitted the word in, which the pass reads again before it applies it: a step passed on since is refused
     /// <c>ended-epoch</c>. Null where the door judged no holder (no tenure kept, an observation, the owner role's stop or answer).

@@ -250,7 +250,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     for its own broker check). Every turn's end of a done submitted in the run waits so while the run goes on: on the wait its record
     kept, else on its quest's run by the binding kept for it (`WorkflowRunStart.TurnWaitsAsync`), so a record an earlier end read as
     finished goes on with words and awaits the step again; `ended.submitted` (`completed`) is left for a done no graph run governs or one
-    whose run's end ended its sessions. A word kept on it wakes
+    whose run's end ended its sessions. A step of its run cast to the role's agent is such a word: the run's newest session awaiting it,
+    else the work's own session where it ended, is handed the step through the say door and settles it with `step_settle` (D318). A word
+    kept on it wakes
     it by the same go-on an ended record takes (`Went on with Daoris's words`), the planner reading it as any record with words waiting; it
     parks for the person, or ends `completed`, `declined` or `stopped`, never stands down. A run's end ends the sessions waiting on it
     (`RunSessionEnds`, through the runtime's `Finish` door, the service moving only a record still `awaiting-step`) in the write of rule 2:
