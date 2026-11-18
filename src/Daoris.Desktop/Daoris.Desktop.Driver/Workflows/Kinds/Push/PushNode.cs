@@ -52,7 +52,6 @@ internal sealed class PushNode : BuiltInNode, IObserves, IStarts, IAsksReads
 
     public NodeObservation Observe(NodeReading reading) => PushReading.Observe(reading);
 
-    /// <summary>A push the act refused is read again: the person's own push, or another's, may have left the branch on origin.</summary>
     public bool ObservesFailed(NodeStatus status) => string.Equals(status.Code, PushDoor.Refused, StringComparison.Ordinal);
 
     /// <summary>The push act of the act journal, under the loop's lease and drain rules.</summary>

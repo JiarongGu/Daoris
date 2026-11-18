@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>Performs a run's <c>push</c>: the branch its <c>land</c> made pushed by the one push act (<see cref="GitPushActs"/>) under its ref-bound grant, as the
 /// person's press pushes it. A push that ends is written on the landing record; one the act refuses fails the node with the act's sentence in the machine log,
-/// so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.</summary>
+/// so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own; one held only by busy trees is tried again.</summary>
 /// <param name="home">The Daoris home whose journal, landing record and node records the push is kept in.</param>
 public sealed class PushDoor(
     string home, Action<string>? log = null, Func<bool>? runs = null, Func<bool>? holdsLease = null, Func<DateTimeOffset>? clock = null) : IPushDoor, IDoorRuns
@@ -59,7 +59,6 @@ public sealed class PushDoor(
             return;
         }
 
-        // A refusal only because the repository's trees were busy passes with the hold, so it is tried again at a later pass; any other fails the node.
         if (run.Busy)
         {
             log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` was held, not refused: {run.Said} It is tried again at a later pass.");

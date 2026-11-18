@@ -47,7 +47,6 @@ public sealed record ActRun(string? Act, string? Outcome, string Said, bool Refu
     /// <summary>What the act's door adds in plain words beside the record's sentence (a commit's hook's rewrite, a hook's refusal); null where it has none.</summary>
     public string? Notes { get; init; }
 
-    /// <summary>Whether the refusal is only that the repository's trees were busy (a tidy, an update, another act held the checkout): tried again at a later pass, never a refusal of its own.</summary>
     public bool Busy { get; init; }
 }
 
