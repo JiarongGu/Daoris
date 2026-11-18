@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../../data/queries';
+import { useSessionGroups } from '../../bridge/sessions/sessions';
+import { stateLineOf, stateLineSaid } from '../head/stateLine';
 import { namer } from '../../settings/accounts/namer';
 import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess, useSessionStreams } from '../../bridge/shell';
 import { frameShortcut } from '../../menus/shortcuts';
@@ -50,6 +52,9 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   const scroller = useRef<HTMLDivElement>(null);
+  // Its state line is the main window's: the driver's reader's group for this session, never the record's word (D320). Nothing here
+  // docks a wait, so a wait the reader places under Needs you is said by its reason.
+  const groups = useSessionGroups([id]);
   // What the session runs beside itself, and the one picked; one it no longer lists falls
   // back to the session's own console, as the main window's panel does.
   const streams = useSessionStreams(id);
@@ -68,6 +73,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
     : null;
   // The console is this machine's to give only for a session this machine ran.
   const here = session ? sessionOrigin(session) === null : false;
+  const stateLine = session ? stateLineOf({ session, grouping: (groups.data ?? []).find((row) => row.session === session.id), docked: [] }) : null;
   // The process its own tree runs under, as the main window's head says it; never an intake's, which is told none.
   const told = useSessionProcess(session && here && !isIntake(session) ? session.id : null);
 
@@ -122,6 +128,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
           timeline="always"
           nameOf={nameOf}
           process={told.data?.process ?? null}
+          state={stateLine ? { line: stateLine, said: stateLineSaid(t, stateLine) } : null}
         />
         {here && (
           <div className="mt-2 min-w-0">

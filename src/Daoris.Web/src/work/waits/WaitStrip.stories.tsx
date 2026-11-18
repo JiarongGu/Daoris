@@ -125,6 +125,16 @@ export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, l
 /** The same in 中文 and dark. */
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
 
+/** The kind's workflow asks less of the person and its paths were exceeded; the terminal's Keep is the available door. */
+export const WorkflowPathsHeld: Story = { args: {
+  session: session({ state: 'completed' }), lands: LANDS, onReviewRun: nothing,
+  landing: { ...PLAN, workflow: { state: 'kind-paths', holds: true,
+    says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris workflow keep s1a2b3c4`.' } },
+} };
+export const WorkflowBindingUnread: Story = { ...WorkflowPathsHeld, args: { ...WorkflowPathsHeld.args,
+  landing: { ...PLAN, workflow: { state: 'unread', holds: true, says: 'Its stored run binding could not be read. Restore the binding to continue.' } },
+} };
+
 
 
 /** A dispute the review page answers, with its findings folded. */

@@ -60,8 +60,8 @@ export function AttendedPane({
     related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
     postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, supervision,
   } = record;
-  const { ownBranch, landEntry, entryOffered, workAskAt } = work;
-  const { waits, pieceSection, toEvent, ruleAskAt, seekAt } = waitsState;
+  const { ownBranch, landEntry, entryOffered } = work;
+  const { waits, pieceSection } = waitsState;
   const { continues, helps, originAsk } = headState;
   const { taking, lastTurns } = boxState;
   const brief = useSessionBrief(attended?.id);
@@ -70,8 +70,13 @@ export function AttendedPane({
 
   return (
     <AttendedSession
-      // What waits on the person, and every press on it: the strip at the foot is handed the same.
-      {...waits}
+      // What waits on the person is pressed in the dock above the composer (D320); the head keeps the words that say where a park is
+      // answered, and the helpers' asks it names.
+      session={waits.session}
+      onResolve={waits.onResolve}
+      onAnswerAsk={waits.onAnswerAsk}
+      onAnswerSession={waits.onAnswerSession}
+      helpers={waits.helpers}
       // Its pieces: what other agents write for it, and the ask of one; no wait of the person's.
       pieces={pieceSection}
       // What its line waits on of others, At work's line from At work's read, a door to At work at the request it names.
@@ -86,10 +91,6 @@ export function AttendedPane({
       supervisorCourse={<SessionSupervisorCourse session={attended.id} supervision={supervision} here={here} />}
       // A parked line keeping its checkout with paths of its own, with *Let others work here*.
       placeHold={<SessionPlaceHold session={attended} />}
-      workAsk={workAskAt('head')}
-      ruleAsk={ruleAskAt('head')}
-      toEvent={toEvent}
-      seek={seekAt('head')}
       quest={quest}
       ask={originAsk}
       opening={openings[attended.id]}

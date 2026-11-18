@@ -13,6 +13,11 @@ import { WaitStrip } from '../waits/WaitStrip';
 
 // A describe below presses what waits through the dock (D320) under the head's name; this keeps the head itself within reach.
 const Head = SessionHead;
+
+// The state line the page says beside the title where no header says it (D320): the reader's, said by `stateLineSaid`.
+const STATE = (word: string, rest = '') => ({
+  line: { kind: 'working' as const, since: null, wait: null, cause: null, more: 0, disagrees: null }, said: { word, rest },
+});
 import { said } from '../../test/said';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -175,11 +180,11 @@ describe('the attended session\'s head', () => {
    * each fact named, the account its own row, and the id with *Copy*.
    */
   it('is the record: identity, state, and what the session ran on and as, its reference folded', () => {
-    render(<SessionHead session={session()} quest={quest()} />);
+    render(<SessionHead session={session()} quest={quest()} state={STATE('Working', '4m')} />);
 
     expect(screen.getByRole('heading', { name: 'Expose a streaming budget on the chunk API' }))
       .toBeInTheDocument();
-    expect(screen.getByText('working')).toBeInTheDocument();
+    expect(screen.getByText('Working')).toBeInTheDocument();
     const fold = screen.getByRole('button', { name: /^Details/ });
     expect(fold).toHaveAttribute('aria-expanded', 'false');
     expect(fold).toHaveTextContent('quest #7a82cc · claude-code · 2.1.4 · started 2h ago');
@@ -420,20 +425,24 @@ describe('the attended session\'s head', () => {
     });
   });
 
-  /** The head says a live chat between turns is idle, as the rail does. */
-  it('says a live chat between turns is idle', () => {
-    const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} taking={false} />);
-    expect(screen.getByText('idle')).toBeInTheDocument();
+  /** A head with no header says the state line it is given, never the record's word, and none where it is given none. */
+  it('says the state line it is given beside the title, never the record\'s word', () => {
+    const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} state={STATE('Waiting on you', '38m · Accept')} />);
+    expect(screen.getByText('Waiting on you')).toBeInTheDocument();
+    expect(screen.getByText('38m · Accept')).toBeInTheDocument();
+    expect(screen.queryByText('working')).toBeNull();
 
-    rerender(<SessionHead session={session({ kind: 'chat' })} taking />);
-    expect(screen.getByText('working')).toBeInTheDocument();
+    rerender(<SessionHead session={session({ kind: 'chat' })} />);
+    expect(screen.queryByText('Waiting on you')).toBeNull();
+    expect(screen.queryByText('working')).toBeNull();
+    expect(screen.queryByText('idle')).toBeNull();
   });
 
   it('keeps the state beside the title rather than at the far edge', () => {
-    render(<SessionHead session={session()} quest={quest()} />);
+    render(<SessionHead session={session()} quest={quest()} state={STATE('Working')} />);
 
     const row = screen.getByRole('heading', { level: 2 }).parentElement!;
-    expect(row).toContainElement(screen.getByText('working'));
+    expect(row).toContainElement(screen.getByText('Working'));
     expect(row.className).not.toContain('justify-between');
   });
 
@@ -522,7 +531,6 @@ describe('the attended session\'s head', () => {
     expect(screen.getByText("The same session goes on with this answer at the driver's next look.")).toBeInTheDocument();
     expect(screen.queryByText('This one is waiting on you')).toBeNull();
     for (const name of ['Finish', 'Decline…', 'Answer and carry on…']) expect(screen.queryByRole('button', { name })).toBeNull();
-    expect(screen.getByText('answered')).toBeInTheDocument();
   });
 
   /**
@@ -654,7 +662,6 @@ describe('the attended session\'s head', () => {
         <Head
           session={session({ state: 'failed' })}
           branch={{ repository: 'engine', branch: 'daoris/s-43c14a70', kind: 'empty', where: 'main', commits: 0 } as SweepBranch}
-          onReviewRun={vi.fn()}
         />,
       );
       expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
@@ -961,7 +968,6 @@ describe('the attended session\'s head', () => {
 
     expect(screen.getByText('仓库')).toBeInTheDocument();
     expect(screen.getByText('详情')).toBeInTheDocument();
-    expect(screen.getByText('工作中')).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });
 });

@@ -254,10 +254,13 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   no id for its conversation, and, since FOUNDATION1 row p, *its record did not mark them attempted*, said of words left
   waiting on their record because a mark the record would not acknowledge stopped them being written);
   `frame/` (the window's frame: regions, lists, the dock, a page's header, the status bar), `strip/` (the app strip:
-  its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head,
-  timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's
+  its menus, command center and palette, the browser's door), `rail/` (Sessions' list), `head/` (a session's head: its state line,
+  which reads the driver's reader and the dock, never the record's state word (`stateLine.ts`; a detached session's window says the
+  same line), and which draws no wait's card; its timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's
   review: the diff, the patch, the landing, the file preview), `gates/` (a landing's review and second-opinion gates),
-  `waits/` (what waits on the person, and its answers), `attention/` (*What needs you*), `start/` (starting a
+  `waits/` (what waits on the person, and its answers: `WaitStrip` is the dock above the composer, the one place a wait of the
+  session's page is pressed, `dock.ts` holding what it draws, oldest first, and a census of the reader's reason for each kind),
+  `attention/` (*What needs you*), `start/` (starting a
   conversation, a hand-over or a helper), `console/` (a session's console and streams, the monitor, a detached
   session), `terminals/` (the person's terminals), `history/` (clearing finished work), `pausing/` (pausing and
   abandoning it), `atWork/` (the *At work* views of a line's and an ask's channel), `team/` (who works with a session,
@@ -304,13 +307,13 @@ FABRIC-PERFORM1j), a plugin step's failure Daoris will not retry, which `held` l
 (FABRIC-PERFORM1k), a close found closed only in part whose close node waits again, which `WORK_STATE` lists among its `ends` and
 the same door stops (FABRIC-CLOSE1j), and a tool call a session holds for
 their answer under asking (`usePermissionWaits` in `bridge/sessions/sessions.ts`, `PERMISSION_WAITS`, AUTONOMY1b3c), answered
-with a choice its agent offered on the session's head and foot and on its row (`useAnswerPermission`,
+with a choice its agent offered in the dock above the composer and on its row (`useAnswerPermission`,
 `SESSION_PERMISSION_ANSWER`); neither route publishes, so the page asks again itself: as a pushed call's `waiting`
 mark comes and goes where the calls are pushed, and every few seconds on a host that pushes none (D184's AUTONOMY1b3c
-and AUTONOMY1b3b notes). The rail's row and the head say such a call waits for the person's answer, timed from the hold.
+and AUTONOMY1b3b notes). The rail's row and the dock say such a call waits for the person's answer, timed from the hold.
 It includes, too, a third answer in a row with nobody between, which the answers-alone bound holds for the person (`useAnswerWaits`
 in `bridge/sessions/sessions.ts`, `ANSWER_WAITS`, COWORK1e, D188 point 4), answered with *Go on with this answer* or *Not now* on the
-session's head and foot and on its row (`useAnswerAlone`, `SESSION_ANSWER_ALONE`, which publishes the sessions and the driver).
+dock above the composer and on its row (`useAnswerAlone`, `SESSION_ANSWER_ALONE`, which publishes the sessions and the driver).
 A place of the activity bar counts only what waits on the person there (BADGEUX1, the UI/UX design §3.10): the bell's rows whose
 door opens it (`placeCounts` and `placeOf` in `work/attention/attention.ts`, a unit of work by its own door), so each place's
 number is the bell's for the same rows. Work under way is a mark, never a number: Sessions' while the driver's sessions run and

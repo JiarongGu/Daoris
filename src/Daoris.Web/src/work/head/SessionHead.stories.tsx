@@ -1,10 +1,9 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import type { GoAhead, Quest, Session } from '../../data/api';
+import type { Quest, Session } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { sessionWidths } from '../../design/storyWidths';
-import { STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN } from '../gates/reviewFixtures';
 import { SessionHead } from './SessionHead';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
@@ -62,19 +61,6 @@ export const DrivenHalf: Story = { decorators: [sessionWidths.half] };
 
 /** The same at the main area's 400 px floor. */
 export const DrivenNarrow: Story = { decorators: [sessionWidths.narrow] };
-
-/** The kind's workflow asks less of the person and its paths were exceeded; the terminal's Keep is the available door. */
-export const WorkflowPathsHeld: Story = { args: {
-  session: { ...SESSION, state: 'completed' },
-  lands: { branch: 'daoris/s-workflow', tree: 's-workflow', commits: 2, uncommitted: 0 },
-  onReviewRun: () => {},
-  landing: { form: 'branch', target: 'feature/docs', workflow: { state: 'kind-paths', holds: true,
-    says: 'Holds: this work changed paths outside Documentation. Keep its workflow with `daoris workflow keep s1a2b3c4`.' } },
-} };
-export const WorkflowPathsHeldChineseDark: Story = { ...WorkflowPathsHeld, decorators: [chinese, dark] };
-export const WorkflowBindingUnread: Story = { ...WorkflowPathsHeld, args: { ...WorkflowPathsHeld.args,
-  landing: { workflow: { state: 'unread', holds: true, says: 'Its stored run binding could not be read. Restore the binding to continue.' } },
-} };
 
 /** A conversation: no quest, so the identity is the kind and nothing is invented. */
 export const Conversation: Story = {
@@ -139,103 +125,7 @@ export const Answered: Story = {
   },
 };
 
-/** Two go-aheads a parked session asked on its quest's ask, both still waiting on the person. */
-const GO_AHEADS: GoAhead[] = [
-  {
-    number: 1, kind: 'write', on: 'production', act: 'chunk budget configuration', state: 'asked',
-    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(14), why: 'The cap is read from the live configuration.' }],
-  },
-  {
-    number: 2, kind: 'release', on: 'production', act: 'streaming budget build', state: 'asked',
-    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(12), why: 'The quest asks for it shipped.' }],
-  },
-];
-
-/**
- * Parked asking for go-aheads: what it asked stands beneath its card, each with *Approve* and
- * *Refuse*, and answering the last one open there sends the same session on, as on the ask's page.
- */
-export const ParkedAskingGoAheads: Story = {
-  args: {
-    session: {
-      ...SESSION,
-      state: 'awaiting-person',
-      created: at(52),
-      updated: at(11),
-      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production. Both are listed on the ask.',
-    },
-    goAheads: GO_AHEADS,
-    onResolve: () => {},
-    onGoAhead: () => {},
-  },
-};
-
-/**
- * Parked on a question its agent asked through the connector, beside a go-ahead, where the box
- * below answers it. The card shows the question and its answers in place of the whole last message, and the go-ahead is listed with
- * no press: every press is the box's, where the person writes.
- */
-export const ParkedOnAQuestionAnsweredBelow: Story = {
-  args: {
-    ...ParkedAskingGoAheads.args,
-    goAheads: [GO_AHEADS[0]!],
-    parkBox: true,
-    question: {
-      id: 'q5t10n00',
-      question: 'Where should the streaming budget live?',
-      choices: [
-        { label: 'On the chunk API', does: 'Cap hydration where the work is spent, as the quest asks; touches more call sites.' },
-        { label: 'In the scheduler', does: 'A smaller change, with the budget kept away from the API that spends it.' },
-      ],
-      recommend: 1,
-      why: 'It is where the quest asks for it.',
-      by: null,
-      at: at(12),
-    },
-  },
-};
-
-/** The same in 中文 at half the window. */
-export const ParkedOnAQuestionAnsweredBelowChineseHalf: Story = {
-  ...ParkedOnAQuestionAnsweredBelow, decorators: [sessionWidths.half, chinese],
-};
-
-/** The same in dark at the floor. */
-export const ParkedOnAQuestionAnsweredBelowDarkNarrow: Story = {
-  ...ParkedOnAQuestionAnsweredBelow, decorators: [sessionWidths.narrow, dark],
-};
-
-/**
- * The same park once the person approved the first: go-ahead 2 is still open, so it stays parked with no
- * answer, as at the ask's door, and goes on once the second is answered.
- */
-export const OneGoAheadAnsweredOneOpen: Story = {
-  args: {
-    session: {
-      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(11),
-      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production. Both are listed on the ask.',
-    },
-    goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],
-    onResolve: () => {},
-    onGoAhead: () => {},
-  },
-};
-
-/**
- * The same park answered on its card with a go-ahead still open: its blank answer is kept, so it goes on at
- * the driver's next look with what it holds, and the second, still waiting, can be answered before it does.
- */
-export const AnsweredWithAGoAheadWaiting: Story = {
-  args: {
-    session: {
-      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(1), said: [{ id: 'w1', text: 'carry on.', at: at(1), files: [] }],
-      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production.\n\nAnswered: carry on.',
-    },
-    goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],
-    onResolve: () => {},
-    onGoAhead: () => {},
-  },
-};
+// A park's go-aheads and its question's answers are the dock's now (D320): their stories are `WaitStrip`'s.
 
 /**
  * A parked INTAKE: it serves an ask and runs in Daoris's own room, so the record says *ask*
@@ -324,119 +214,7 @@ export const FailedItsBranchLeft: Story = {
   },
 };
 
-/**
- * Failed, its tree still here holding a commit no branch of the person's holds: what it left, its
- * branch and its tree, with *Accept…*, which asks once under the line, saying where the rule puts it.
- */
-export const FailedItsWorkToLand: Story = {
-  args: {
-    session: {
-      ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
-    },
-    lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 },
-    landing: { form: 'branch', target: 'feature/streaming-budget', plugin: 'azure-devops-pull-request' },
-    onReview: () => {},
-    onReviewRun: () => {},
-  },
-};
-
-/** Finished at a checkpoint by the person, its commits not landed yet: the same offer, with no word that it did not finish. */
-export const FinishedAtACheckpointToLand: Story = {
-  args: {
-    ...FailedItsWorkToLand.args,
-    session: {
-      ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
-    },
-    lands: { branch: 'daoris/s-56cb4d29', tree: 's-56cb4d29', commits: 2, uncommitted: 0 },
-  },
-};
-
-/** The review's presses on the desktop. */
-const REVIEW_ACTS = { reviewed: () => {}, notYet: () => {}, skip: () => {}, setUp: () => {}, showAgain: () => {}, open: () => {} };
-
-/**
- * Finished, its work waiting for the person's review: *Review in `local`* where *Accept…* would be, the set-up
- * step's showing, its tab still served, and *Reviewed*, *Not yet…*, *Show it again* and *Skip…*.
- */
-export const WaitsForReviewShown: Story = {
-  args: {
-    ...FinishedAtACheckpointToLand.args,
-    landing: { form: 'merge', target: 'main', review: { state: 'shown', environment: 'local', level: 'set-up-step', quest: 'q2' } },
-    review: { step: STEP_SHOWN, served: true, acts: REVIEW_ACTS },
-  },
-};
-
-/** The same in 中文. */
-export const WaitsForReviewShownChinese: Story = { ...WaitsForReviewShown, decorators: [chinese] };
-
-/** The same in dark. */
-export const WaitsForReviewShownDark: Story = { ...WaitsForReviewShown, decorators: [dark] };
-
-/** Nothing shows the work yet: *Set it up in `local`* and *Skip…* where *Accept…* would be. */
-export const WaitsForReviewNotShown: Story = {
-  args: {
-    ...FinishedAtACheckpointToLand.args,
-    landing: { form: 'merge', target: 'main', review: { state: 'not-shown', environment: 'local', level: 'repository' } },
-    review: { acts: REVIEW_ACTS },
-  },
-};
-
-/** The same in 中文. */
-export const WaitsForReviewNotShownChinese: Story = { ...WaitsForReviewNotShown, decorators: [chinese] };
-
-/** Its set-up step at work: being set up, the door to the step, and the skip. */
-export const WaitsForReviewBeingSetUp: Story = {
-  args: {
-    ...FinishedAtACheckpointToLand.args,
-    landing: { form: 'merge', target: 'main', review: { state: 'being-set-up', environment: 'local', quest: 'q2' } },
-    review: { step: STEP_SETTING_UP, acts: REVIEW_ACTS },
-  },
-};
-
-/** Reviewed, and work added since: what is reviewed does not hold it. */
-export const WaitsForReviewNotHeld: Story = {
-  args: {
-    ...FinishedAtACheckpointToLand.args,
-    landing: { form: 'merge', target: 'main', review: { state: 'not-held', environment: 'local', quest: 'q2' } },
-    review: { step: STEP_REVIEWED, acts: REVIEW_ACTS },
-  },
-};
-
-/**
- * Finished, its work squash-merged as a pull request and its tree still here: no *Accept…*,
- * the driver's sentence where it would be, and *Discard branch…*, which asks once naming the ref its commits stay at.
- */
-export const SquashMergedItsDiscard: Story = {
-  args: {
-    session: {
-      ...SESSION, state: 'completed', created: at(40), updated: at(31), note: 'The person finished this at a checkpoint.',
-    },
-    discards: {
-      branch: 'daoris/s-56cb4d29',
-      tree: 's-56cb4d29',
-      says: 'Its work is on `main` by content (a squash merge).',
-      keeps: 'refs/daoris/discarded/daoris/s-56cb4d29',
-      keptAt: 'Its commits stay at `refs/daoris/discarded/daoris/s-56cb4d29` until you delete that ref; '
-        + '`git branch daoris/s-56cb4d29 refs/daoris/discarded/daoris/s-56cb4d29` brings the branch back.',
-    },
-    onReview: () => {},
-    onDiscardTree: () => {},
-  },
-};
-
-/** The same, its tree holding a file no commit does: the driver says why it stays, and no unforced discard is offered. */
-export const SquashMergedItsTreeStays: Story = {
-  args: {
-    ...SquashMergedItsDiscard.args,
-    discards: {
-      ...SquashMergedItsDiscard.args!.discards!,
-      says: 'Its work is on `main` by content (a squash merge). Its tree stays: it holds 1 ignored path(s) your checkout does '
-        + 'not have: local.db, which a discard would destroy.',
-      keeps: null,
-      keptAt: null,
-    },
-  },
-};
+// The work to land, the review's gates and a discard are the dock's now (D320): their stories are `WaitStrip`'s.
 
 /**
  * The same with a long branch name, at the main area's 400 px floor, in the session's gutters. The name is whole,

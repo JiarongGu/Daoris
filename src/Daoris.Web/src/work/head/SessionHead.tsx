@@ -1,32 +1,26 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../../settings/Sweep';
-import type { GoAhead, Quest, Session } from '../../data/api';
+import type { Quest, Session } from '../../data/api';
 import type { AccountNamer } from '../../agents/tools';
 import { ago, elapsed, sessionTool, stamp } from '../../locales/format';
 import {
-  answeredPark, Inline, PathText, personsSaid, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Inline, PathText, personsSaid, Pill, SESSION_ACTIVE, shownState, WaitingCard,
 } from '../../design/ui';
-import type { GoAheadAnswer } from '../../asks/GoAheadList';
 import { WaitingOnLine } from '../atWork/AtWorkView';
 import type { AtWorkA } from '../atWork/types';
 import { AnsweredPark } from '../waits/AnsweredPark';
 import { AwaitingIntake } from '../waits/AwaitingIntake';
-import type { AnswerPick, QuestClose, Resolution } from '../waits/AwaitingPerson';
-import type { ParkQuestion } from '../waits/parkQuestion';
+import type { QuestClose, Resolution } from '../waits/AwaitingPerson';
+import { STATE_TONE, type StateLine } from './stateLine';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from './AccessFact';
 import { gitAccessRow, type SessionGitAccessHold } from './GitAccessFact';
 import { placeHoldRow } from './PlaceHoldFact';
 import { countRows, courseRow, type LineSupervision, NO_SUPERVISION, supervisorRow } from './lineSupervision';
 import { ChoiceChip } from './ChoiceChip';
-import type { WaitEvents } from '../waits/anchors';
 import type { Answered } from '../InlineConfirm';
-import type { LineBehind } from '../review/diff';
-import type { DiscardOffer, LandOffer } from '../groups';
 import { isIntake, sessionOrigin, sessionTitle } from '../identity';
-import type { SayRebase } from '../review/LandingSync';
-import type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/Lands';
 import { Note } from '../Note';
 import { Left, Said } from './HeadNote';
 import { leftParts } from '../notes/leftNote';
@@ -38,13 +32,8 @@ import { MemberThread } from '../team/MemberThread';
 import { type PieceSection, Pieces } from '../pieces/Pieces';
 import { hasNote } from '../noteLines';
 import { processCommitsSays, type SessionProcess } from './process';
-import type { PermissionWaits } from '../waits/PermissionAsks';
-import type { AnswerWaits } from '../waits/AnswerAlone';
-import type { GitAskWaits } from '../waits/GitAsk';
-import type { RuleAsk, RuleWaits } from '../waits/ProposedRules';
 import { movedAt } from '../rail/rail';
 import { RunningIntake } from './RunningIntake';
-import type { Seek } from '../waits/WaitAnchor';
 import { actorRows, notStartedLine } from '../actors';
 
 // The work's line is its own molecule, which the foot's strip draws too; its shapes are read from here too.
@@ -104,7 +93,7 @@ export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/La
 export function SessionHead({
   session, quest, opening, brief, taking, lastTurn, onResolve, onAnswerAsk, onAnswerSession, branch, ownBranch, onReview, onDiscardBranch,
   discardingBranch = false, headed = false, ownSignIn = false, nameOf, onOpenQuest, ask, continues, helps, onOpenSession, heavy, process, helpers,
-  pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION,
+  pieces, waitingOn, gitAccess, terminalHold, supervisorCourse, placeHold, supervision = NO_SUPERVISION, state = null,
 }: {
   /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
   supervisorCourse?: ReactNode;
@@ -126,57 +115,15 @@ export function SessionHead({
    */
   pieces?: PieceSection | null;
   /**
-   * Its question as its agent asked it, which its waiting card shows in place of its whole last
-   * message; null where it asked none through the connector.
+   * Its state line, the same the page's header says (`stateLineOf`, D320): the driver's reader's group on its pill, then its age
+   * and cause. A window with no header (a detached session) says it beside its title; never the record's word. Absent, none is said.
    */
-  question?: ParkQuestion | null;
-  /**
-   * The box below is the park's answer box, and carries every press of what it asks: its go-aheads are listed here with
-   * none, so the person answers in one place. False where no such box is below, and the head keeps their presses.
-   */
-  parkBox?: boolean;
-  /**
-   * The answers the answers-alone bound holds for the person, the frame's,
-   * handed to the foot's strip alike: every one the shell read, its own drawn, the agents' names, the answer's door and its pending.
-   */
-  answers?: AnswerWaits | null;
+  state?: { line: StateLine; said: { word: string; rest: string } } | null;
   /**
    * The helpers it asked for, the frame's: its asks as the driver's look leaves them, the agents' names, the
    * person's yes and a door to each helper. Absent, a browser or a teammate's record, none is drawn.
    */
   helpers?: HelperWaits | null;
-  /**
-   * The tool calls it holds for the person's answer under asking, the frame's, handed to the foot's
-   * strip alike: every request the shell read, its own drawn, the answer's one door and its pending. Absent, none is drawn.
-   */
-  permissions?: PermissionWaits | null;
-  /** The git go-aheads its git door holds, the frame's, handed to the foot's strip alike. */
-  gitAsks?: GitAskWaits | null;
-  /**
-   * The wait a raising block's *To the wait* leads to while the head's waits are on screen,
-   * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
-   */
-  seek?: Seek | null;
-  /**
-   * The rules it proposed that the person still answers, the frame's, handed to the foot's strip alike:
-   * the machine's proposals as the shell read them, the answer's door, its pending and whether the session takes words now.
-   */
-  rules?: RuleWaits | null;
-  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both. */
-  ruleAsk?: RuleAsk;
-  /**
-   * The way from each wait to the event in the conversation that raised it, where the conversation found one:
-   * *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
-   * strip alike.
-   */
-  toEvent?: WaitEvents;
-  /**
-   * Where the ask of its work's line (*Discard branch…*) is open, the frame's, so it is open in the head or in the
-   * foot's strip, never both. Absent, the line holds its own.
-   */
-  workAsk?: WorkAsk;
-  /** A landing or a discard of its work is on its way, pressed here or at the foot: the line's press waits for it. */
-  workBusy?: boolean;
   /**
    * Open the quest it serves: the press its *Started from* names it by, in the head and in *Details*. Absent where
    * nothing can open it, and then the quest is named with no door.
@@ -204,58 +151,12 @@ export function SessionHead({
    */
   process?: SessionProcess | null;
   /**
-   * The second opinion's gate where a level asks one: its findings beside their answers, where the frame read them,
-   * and its presses. Drawn from the landing's plan's own `opinion`.
-   */
-  opinion?: HeadOpinion | null;
-  /**
-   * What its own tree offers to land, as the driver's reader says it: commits no branch of the person's holds, on its
-   * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
-   */
-  lands?: LandOffer | null;
-  /**
-   * The review's gate where it holds that work: the set-up step's record, whether its tab is still served, and
-   * the verdict's presses. Read only where the landing's plan says the gate holds.
-   */
-  review?: HeadReview | null;
-  /**
-   * How the tree stands against its line, from the review's answer: where `ahead` is 0 and nothing is
-   * uncommitted, there is nothing to land and no *Accept…* is offered, as in the review. Absent before it answers or where not read.
-   */
-  behind?: LineBehind | null;
-  /**
-   * What its own tree offers where the line holds its commits by content, as the driver's reader says it: its
-   * sentences, shown as they are, and whether an unforced discard would go. Absent where it offers none.
-   */
-  discards?: DiscardOffer | null;
-  /** Discard its tree, unforced: the review's Discard, told back to its ask. Absent where nothing can press it. */
-  onDiscardTree?: (answered: Answered) => void;
-  /**
-   * Where accepting would put it, by the repository's rule: the review's own plan, said in the ask before the
-   * press. Absent while it is read.
-   */
-  landing?: LandingPlan | null;
-  /**
-   * The door to the review of the run whose Accept the work waits on: the head shows it where its Accept would be.
-   * Absent where nothing can press it (a browser, a story).
-   */
-  onReviewRun?: () => void;
-  /** The press that says the rebase words where replaying conflicts; the frame holds the say door. */
-  onSayRebase?: SayRebase;
-  /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account.
    */
   ownSignIn?: boolean;
   /** What a person calls an account, from the roster; absent, the record's id is said. */
   nameOf?: AccountNamer;
-  /** The go-aheads this session asked on its quest's ask, as the frame reads them; shown while it is parked. */
-  goAheads?: GoAhead[];
-  /**
-   * Answer one of them, which sends the park on once none is open: which go-ahead, yes or no, and
-   * the person's words where they gave any. Absent where nothing can answer them here, and then they are shown with no door.
-   */
-  onGoAhead?: GoAheadAnswer;
   /**
    * A page header above carries its state, its title and its facts: the head says
    * none again, the quest's whole title included: that is a row of *Details*. Absent, a window with no header
@@ -292,10 +193,9 @@ export function SessionHead({
   /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
   brief?: string | null;
-  resolving?: boolean;
   /**
-   * How a parked session is finished or declined, and a finish's close of its quest. Absent where nothing can
-   * act — a browser, or a story. Its stop is the page header's, its one owner.
+   * Whether anything can finish or decline a parked session here (the dock's card does); absent where nothing can
+   * act — a browser, or a story, which then say where it is answered. Its stop is the page header's, its one owner.
    */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /**
@@ -309,10 +209,6 @@ export function SessionHead({
    * park too, the card's answer goes through the box's own door; either settles with a refusal's sentence, or nothing.
    */
   onAnswerSession?: (answer: string) => Promise<string | null> | void;
-  /** A press of the park's question's answer from its card, with the card's words. */
-  onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** The answer selected in its question, the frame's, shared with the box below; absent, the card holds its own. */
-  answerPick?: AnswerPick;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -380,7 +276,12 @@ export function SessionHead({
           <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
             {sessionTitle(session, quest, opening)}
           </h2>
-          <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
+          {state && (
+            <span data-state-line={state.line.kind} className="inline-flex min-w-0 items-baseline gap-1.5 text-small text-ink-soft">
+              <Pill tone={STATE_TONE[state.line.kind]}>{state.said.word}</Pill>
+              {state.said.rest && <span>{state.said.rest}</span>}
+            </span>
+          )}
           {/* With no header's facts line to wear them, the choice its actor ran and the full-access chip follow the word. */}
           <ChoiceChip session={session} />
           {startedFull(session) && <AccessChip />}
