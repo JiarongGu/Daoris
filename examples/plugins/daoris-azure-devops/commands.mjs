@@ -3,6 +3,7 @@
 import { forget, keep, kept, refused, stored } from './credential.mjs';
 import { NAMES, pullRequestCommand } from './pull-request-commands.mjs';
 import { APPROVE, DISCOVER, approveCommand, discoverCommand } from './release-commands.mjs';
+import { ACTS, actCommand } from './release-acts.mjs';
 
 const ID = 'daoris-azure-devops';
 const MAKE = 'Make a personal access token in Azure DevOps (User settings, Personal access tokens) with the scopes Code (Read & write), '
@@ -15,6 +16,7 @@ export async function run({ command, args = {}, answers = {} }) {
   if (NAMES.includes(command)) return pullRequestCommand(command, args);
   if (command === DISCOVER) return discoverCommand(args);
   if (command === APPROVE) return approveCommand(args);
+  if (Object.hasOwn(ACTS, command)) return actCommand(command, args);
   if (!stored()) return { said: ['Daoris handed this plugin no private storage: switch its storage on in Plugins.'], exit: 1 };
   if (command === 'login') {
     const token = typeof answers.token === 'string' ? answers.token.trim() : '';

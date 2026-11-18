@@ -47,6 +47,12 @@ public static class PluginToolCall
                 + $"`daoris {plugin} {command.Name}` or its page's command instead.");
         }
 
+        // An act's receipt, whatever the round's exit, is kept for the session, so the pass journals it on the step the session holds (StepActs).
+        if (at.Session is { } session && round.Data is { ValueKind: JsonValueKind.Object } answered && answered.TryGetProperty("receipt", out var receipt))
+        {
+            PluginActRounds.Append(home, session, call.Run, tool.Name, receipt, DateTimeOffset.UtcNow);
+        }
+
         var text = round.Said.Count > 0 ? string.Join("\n", round.Said) : round.Data is { } data ? data.GetRawText() : $"`{tool.Name}` ended {round.Exit}.";
         var result = new Dictionary<string, object?>(StringComparer.Ordinal)
         {

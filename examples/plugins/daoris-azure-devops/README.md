@@ -226,12 +226,20 @@ process until a new one is kept. Daoris hands the plugin the browser's DevTools 
 
 ## Tools for an agent
 
-Four commands are marked `tool`, so a session at a place where the plugin's tools are on calls them through its `daoris-plugins`
-server: `status`, and the three an agent working a pull-request step needs, each naming the repository by its origin's address:
+Eight commands are marked `tool`, so a session at a place where the plugin's tools are on calls them through its `daoris-plugins`
+server: `status`, `discover-releases`, the three release acts below, and the three an agent working a pull-request step needs, each naming the repository by its origin's address:
 `create-pull-request` (a pushed branch, its target, a title and a description, and the step's auto-complete options as arguments; the active one found again), `pull-request-status` (by
 its address or id, or from its branch) and `complete-pull-request` (by `merge`, `squash`, `rebase` or `rebase-merge`, the source
 branch deleted where asked, the repository's policies still deciding). Each answers its pull request's id, address, state, branches
 and merge commit as `data` (`pull-request-commands.mjs`).
+
+The release manager's acts are tools too (`release-acts.mjs`), each naming the origin, the merged pull request and the target by id
+(pipeline, release definition, stage) as the repository's delivery knowledge names it: `create-release` and `start-stage` write,
+`release-status` reads. Each shares the release steps' reading, so it reads its fact first, makes it only where it is not there (a
+release keyed by its effect, a stage started once), keeps to the route of the merged build's branch, and answers a `receipt` as its
+`data`: its fact (`release-created`, `stage-started`, `stage-ended`), its state (`reached`, `waiting` with `waitsOn: approver` while
+an approval is pending, or `failed` with its code), its page, credit and words. Daoris journals each receipt on the step the agent
+holds, and the receipts settle it. `approve-release` stays no agent's tool. `release-acts.test.mjs` proves them against the stand-in.
 
 ## What it needs
 
