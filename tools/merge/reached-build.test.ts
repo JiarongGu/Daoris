@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixtureFolder } from './fixture-home.ts';
-import { buildDecision, buildInputs, buildOnce, inputsDigest, onBuilt, outputsDigest, readStamp } from './reached-build.ts';
+import { aheadOf, buildAhead, buildDecision, buildInputs, buildOnce, inputsDigest, onBuilt, outputsDigest, readStamp } from './reached-build.ts';
 
 // test-map: strings name paths as data — a made-up tree's projects, never read from this repository
 
@@ -107,6 +107,43 @@ test('each project is restored and built once and stamped; run again on the same
     const result = await buildOnce([TESTS], failing);
     assert.deepEqual(result.ready, []);
     assert.equal(result.failed.get(TESTS), 'its build failed (exit 1)');
+  } finally {
+    remove();
+  }
+});
+
+test('the projects built beside the plan: each whose build reads a changed path and stands unbuilt for its inputs, the most classes first', () => {
+  const other = 'src/Other/Other.Tests';
+  const all: Record<string, string> = { ...tree, [`${other}/Other.Tests.csproj`]: '<Project Sdk="Microsoft.NET.Sdk" />' };
+  const seams = { inputsOf: (project: string) => buildInputs(project, Object.keys(all), (path: string) => all[path] ?? ''), decide: () => ({ build: true, why: 'no build of it is stamped' }) };
+  const units = [{ project: TESTS }, { project: other }, { project: other }, {}];
+  assert.deepEqual(aheadOf(units, ['src/App/App.Core/Core.cs'], seams), [TESTS], 'a referenced project\'s file is read by its build');
+  assert.deepEqual(aheadOf(units, ['src/Web/page.ts', 'canon/other.md'], seams), [], 'a path no build reads builds nothing ahead');
+  assert.deepEqual(aheadOf(units, ['Directory.Build.props'], seams), [other, TESTS], 'a build file every project reads: the most classes first');
+  assert.deepEqual(aheadOf(units, ['src/App/App.Core/Core.cs'], { ...seams, decide: () => ({ build: false, why: 'built for these inputs' }) }), [], 'a project built for its inputs is not built again');
+});
+
+test('a project built beside the plan is built once, restore and all, and stamped, so the run after the plan builds it no more', async () => {
+  const { dir: root, remove } = fixtureFolder('reached-ahead');
+  try {
+    const calls: string[][] = [];
+    const bin = join(root, TESTS, 'bin', 'Debug', 'net10.0');
+    const seams = {
+      root, say: () => undefined, time: async <T>(_step: string, fn: () => T | Promise<T>) => fn(), inputsOf: () => 'in-1',
+      exec: (_command: string, args: string[]) => {
+        calls.push(args);
+        mkdirSync(bin, { recursive: true });
+        writeFileSync(join(bin, 'App.Tests.dll'), 'x');
+        return 0;
+      },
+    };
+    await buildAhead([TESTS], seams);
+    assert.deepEqual(calls, [['build', TESTS]], 'one command restores and builds it');
+    assert.equal(readStamp(root, TESTS)?.inputs, 'in-1');
+    assert.deepEqual(await buildOnce([TESTS], seams), { ready: [TESTS], failed: new Map() });
+    assert.equal(calls.length, 1, 'the run after the plan finds it built for its inputs');
+    await buildAhead([TESTS], { ...seams, inputsOf: () => 'in-2', exec: () => 1 });
+    assert.equal(readStamp(root, TESTS)?.inputs, 'in-1', 'a failed build stamps nothing');
   } finally {
     remove();
   }
