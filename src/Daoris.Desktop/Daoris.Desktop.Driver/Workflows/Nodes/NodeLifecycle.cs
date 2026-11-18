@@ -292,6 +292,7 @@ public static class NodeLifecycle
             new(NodeStates.Active, NodeStates.Reached, person, "its holder says it is done outside Daoris, with its link: the attempt in flight stands down"),
             new(NodeStates.Failed, NodeStates.Reached, person, "its holder says it was done outside Daoris, with its link, after its attempt failed"),
             new(NodeStates.Unknown, NodeStates.Ready, daoris, "a check Daoris could not run (unrun) with asks left: a new attempt (UnrunChecks)"),
+            new(NodeStates.Failed, NodeStates.Reached, authority, "an observed fact settles a failed attempt, whoever made it: a push refused whose branch origin holds at its tip (IObserves.ObservesFailed)"),
             new(NodeStates.Failed, NodeStates.Ready, daoris, "a declared retry: a transient code with attempts left, as a new attempt"),
             new(NodeStates.Failed, NodeStates.Ready, person, "a new attempt the person asks for"),
             new(NodeStates.Rejected, NodeStates.Ready, person, "a new attempt the person asks for"),

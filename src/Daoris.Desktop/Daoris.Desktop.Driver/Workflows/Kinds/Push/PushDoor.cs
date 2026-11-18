@@ -59,6 +59,13 @@ public sealed class PushDoor(
             return;
         }
 
+        // A refusal only because the repository's trees were busy passes with the hold, so it is tried again at a later pass; any other fails the node.
+        if (run.Busy)
+        {
+            log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` was held, not refused: {run.Said} It is tried again at a later pass.");
+            return;
+        }
+
         log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` was refused: {run.Said}");
         Fail(start);
     }

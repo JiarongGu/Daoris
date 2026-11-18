@@ -369,7 +369,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     line once (`PushLineRead`, the line's fetch under the git policy and the workspace's own access) and, where the line holds the
     landing's tip or its content as the same change, writes that proof on the landing (`LandedBranches.Delivered`) for the push to be
     passed over as delivered; else it fails once, `push-branch-gone` (the line lacks the work) or `push-line-unread` (origin could not be
-    read), worded for the person, and a refusal fails the attempt its start is for. A delivery step past a `land` that reached on a branch
+    read), worded for the person, and a refusal fails the attempt its start is for, except one only because the repository's trees were busy
+    (`ActRun.Busy`), which leaves the node active and is tried again at a later pass. A `push` failed `push-refused` whose landed branch
+    the remote-tracking ref holds at the landing's tip reads reached at the next observation, the person's own push included (an observed
+    fact settles it, D304); at another tip it stays failed. A delivery step past a `land` that reached on a branch
     no record names any more (`WireRun.LandingUnread`, every record of the work read) is passed over too, saying so. Where only the
     landing's entry is gone and the session branch's record stands (`UnrecordedLanding`), that record says: held on the line, the delivery
     steps are passed over with words; standing off it, the `push` is started once on the branch the `land`'s evidence names; neither, it
