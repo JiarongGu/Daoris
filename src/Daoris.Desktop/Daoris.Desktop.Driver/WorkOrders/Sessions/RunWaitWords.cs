@@ -21,6 +21,7 @@ internal static class RunWaitWords
         PersonWaits.Held => "is held for your word",
         PersonWaits.Left => "failed after its quest's done, and the steps after it never ran",
         PersonWaits.Choose => "waits for your choice of the files changed on both sides",
+        PersonWaits.Pass => "holds a done nothing checked for your pass with your words",
         _ => "waits for you",
     };
 }

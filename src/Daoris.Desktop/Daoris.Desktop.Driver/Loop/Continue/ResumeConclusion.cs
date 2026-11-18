@@ -137,6 +137,10 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                            && await _driver.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
         var awaitsCheck = stop is null && exitCode == 0 && !closed && status == "Taken" && !awaitsHelper
                           && await _driver.WaitsOnOwnCheckAsync(sessionId, openedAt, ct).ConfigureAwait(false);
+        // What it waits on in its workflow's run: the wait its record kept, or where an earlier end kept none, its quest's run while it goes on.
+        var stepWaits = stop is null && exitCode is int
+            ? await StartBinding.TurnWaitsAsync(_context, park.NoteParts, quest, after, ct).ConfigureAwait(false)
+            : null;
         var conclusion = stop is not null
             ? stop.Conclusion
             : exitCode is int code
@@ -155,7 +159,7 @@ internal sealed class ResumeConclusion(LoopContext context, Driver driver)
                     awaitsHelper: awaitsHelper, awaitsCheck: awaitsCheck,
                     // Its provider refused its turn, a failed run and never a park, as at a first run's end.
                     providerRefused: ended.ProviderRefused,
-                    reopenedFrom: Planner.ReopenedFrom(quest, after), waits: StepWaits.From(park.NoteParts))
+                    reopenedFrom: Planner.ReopenedFrom(quest, after), waits: stepWaits)
                 // A done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                     ? Observation.AfterQuiet(quietMinutes, quest.Status, status)

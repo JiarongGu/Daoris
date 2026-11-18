@@ -17,6 +17,10 @@ internal static class StartBinding
         return bound;
     }
 
+    /// <summary>What a turn's end waits on in its quest's run (<see cref="WorkflowRunStart.TurnWaitsAsync(IReadOnlyList{NotePart}, QuestView, QuestView, IWorkflowStartWorld, string, CancellationToken)"/>) over the loop's service and home.</summary>
+    public static Task<StepWait?> TurnWaitsAsync(LoopContext context, IReadOnlyList<NotePart>? kept, QuestView quest, QuestView? handed, CancellationToken ct) =>
+        WorkflowRunStart.TurnWaitsAsync(kept, quest, handed, new StartWorld(context.Service), context.Home, ct);
+
     /// <summary>
     /// The role a quest's run names for its work step, which its start walks: its kept binding's, or where the run is bound nowhere
     /// yet, the binding its bind would make now, since the walk comes before the bind; null where it names none.

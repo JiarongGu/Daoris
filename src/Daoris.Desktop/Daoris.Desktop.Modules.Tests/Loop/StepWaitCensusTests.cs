@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The census of waits: every wait a run's step can stand at (<see cref="PersonWaits.All"/>), read by the driver's one reading
 /// (<see cref="StepWaiting.Read"/>) where a step's record makes it, is a row of <i>What needs you</i> carrying at least one press of its
 /// own or the page where its act is taken. Seen failing first on a plugin's role wait (its row carried the page but no press field a
-/// census could read) and on a second opinion's vacancy (no reading of it at all).
+/// census could read), on a second opinion's vacancy (no reading of it at all), and on an unchecked done held at <c>quest.holds</c> for the
+/// person's pass (read as no wait, so no row offered the pass).
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class StepWaitCensusTests
@@ -38,6 +39,10 @@ public sealed class StepWaitCensusTests
         PersonWaits.GoAhead => (new("go", NodeKinds.GoAhead, 1, NodeReach.Pressed), Standing("go", Active("go"))),
         PersonWaits.Choose => (new("return", NodeKinds.Return, 1, NodeReach.Performed), Standing("return", Active("return") with { Code = ReturnNode.BothChanged })),
         PersonWaits.Vacant => (new("opinion", NodeKinds.Opinion, 1, NodeReach.Observed), Standing("opinion", Active("opinion") with { Holds = OpinionGateReading.Vacant })),
+        PersonWaits.Pass => (new("holds", NodeKinds.QuestHolds, 1, NodeReach.Observed), Standing("holds", Active("holds") with
+        {
+            Holds = UncheckedDones.Of(new("q7", "ask #a1", "engine", "Docs", "", "Taken")),
+        })),
         PersonWaits.Actor => (
             new("release", "acme.deploy/release", 1, NodeReach.Performed),
             Standing("release", Active("release") with { Unreconciled = 1 }, new NodeAttempt("release", 1, "acme.deploy",

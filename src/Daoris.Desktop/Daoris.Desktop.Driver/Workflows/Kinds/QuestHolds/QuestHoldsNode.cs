@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// not held for the person's yes or its evidence's verdict.
 /// </summary>
 [NodeKind(NodeKinds.QuestHolds, NodeGroup.Checks, NodeKinds.WorkRequests)]
-internal sealed class QuestHoldsNode : BuiltInNode, IObserves
+internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole
 {
     /// <summary>
     /// Reached by what Daoris reads at the bound tip; a hold that does not let go keeps it active with its reason, as <c>work.requests</c> is kept,
@@ -34,4 +34,7 @@ internal sealed class QuestHoldsNode : BuiltInNode, IObserves
     public override NodeLook Look => NodeLook.Holds;
 
     public NodeObservation Observe(NodeReading reading) => QuestHoldsReading.Observe(reading);
+
+    /// <summary>A done nothing checked waits on the person's pass with their words; a done held for their yes is its held row's.</summary>
+    string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => UncheckedDones.Says(status.Holds) ? PersonWaits.Pass : null;
 }

@@ -64,7 +64,7 @@ public static class StepWaiting
     /// </summary>
     public static string RoleOf(string why) => why switch
     {
-        PersonWaits.Accept => "acceptor",
+        PersonWaits.Accept or PersonWaits.Pass => "acceptor",
         PersonWaits.Approval or PersonWaits.GoAhead => "approver",
         PersonWaits.Task or PersonWaits.Choose => "worker",
         PersonWaits.Held => "operations",

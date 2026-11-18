@@ -137,6 +137,41 @@ public static class WorkflowRunStart
         }
     }
 
+    /// <summary>
+    /// What a turn's end waits on where its agent's done is a submission in a workflow's run: the wait its record kept
+    /// (<see cref="StepWaits.From"/>), else, where it kept none (an earlier end read the submission as finished, or its start's bind named
+    /// none), the run its quest's work is, by the binding kept for it and never one made here, while <paramref name="going"/> says that run
+    /// has not ended its sessions. Null where nothing is submitted or no such run is read: the done then ends its session.
+    /// </summary>
+    /// <param name="kept">The record's note parts as it ended last.</param>
+    /// <param name="handed">The quest as the turn left it, whose submission is read.</param>
+    /// <param name="going">Whether a run still governs its sessions: bound to a graph version and not ended, or ended failed at a step.</param>
+    public static async Task<StepWait?> TurnWaitsAsync(
+        IReadOnlyList<NotePart>? kept, QuestView quest, QuestView? handed, IWorkflowStartWorld world, IWorkflowRunStore runs, IWorkflowStore store,
+        Func<string, bool> going, CancellationToken ct)
+    {
+        if (StepWaits.From(kept) is { } waits) return waits;
+        if (quest.Status is not ("Open" or "Taken") || !QuestResults.Submitted(handed)) return null;
+        try
+        {
+            var run = await RunOfAsync(quest, world, new Every(), ct).ConfigureAwait(false);
+            return WorkflowRunBindings.IsRunId(run) && runs.Bound(run) && going(run) ? Kept(quest, runs, store, run).WaitsAfter(handed) : null;
+        }
+        catch (Exception error) when (Unbound(error, ct))
+        {
+            return null;
+        }
+    }
+
+    /// <summary><see cref="TurnWaitsAsync(IReadOnlyList{NotePart}, QuestView, QuestView, IWorkflowStartWorld, IWorkflowRunStore, IWorkflowStore, Func{string, bool}, CancellationToken)"/> over <paramref name="home"/>'s files.</summary>
+    public static Task<StepWait?> TurnWaitsAsync(
+        IReadOnlyList<NotePart>? kept, QuestView quest, QuestView? handed, IWorkflowStartWorld world, string home, CancellationToken ct) =>
+        TurnWaitsAsync(kept, quest, handed, world, WorkflowPorts.Runs(home), WorkflowPorts.Store(home), run => Going(home, run), ct);
+
+    /// <summary>Whether <paramref name="run"/> is a graph run of <paramref name="home"/> whose end has not ended its sessions (<see cref="RunSessionEnds.Ends"/>).</summary>
+    private static bool Going(string home, string run) =>
+        new GraphRuns(new NodeRecordFiles(home)).Find(run) is { } bound && (bound.Ended is not { } ended || !RunSessionEnds.Ends(ended));
+
     /// <summary>What the start's hold says of a bind that is not made.</summary>
     private const string NotBound = "its run was not bound to a workflow, and its quest is taken only once it is";
 
