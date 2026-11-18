@@ -36,6 +36,8 @@ export type LandingPlan = {
   conflict?: LandingConflict | null;
   /** The person's Accept is kept on the session, carried on to clear its tree, which lands the work once it is clean. */
   carried?: { carries: number; awaiting: boolean } | null;
+  /** The review the run's Accept is pressed on: its attempt absent until the review has begun and its card is drawn. */
+  accept?: import('../../bridge/sessions/trees').ReviewAccept | null;
 };
 
 /** The review's gate as the head draws it: the set-up step's record where the frame holds it, and the presses. */

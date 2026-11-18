@@ -63,7 +63,10 @@ export function landingStands({ lands, landing, behind }: {
   const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
   // Nothing beyond the line, committed or not, is nothing to land: the review's own condition.
   const nothingBeyond = behind?.ahead === 0 && !(typeof lands.uncommitted === 'number' && lands.uncommitted > 0);
-  const acceptable = !workflow && !review && !nothingBeyond && (!opinionWaits || answers !== null);
+  // A run's Accept is pressed on its review's card, drawn once its review has begun: before then the run waits on an earlier step,
+  // whose own card stands, and no *Accept…* leads anywhere.
+  const reviewBegun = !landing?.accept || landing.accept.attempt != null;
+  const acceptable = !workflow && !review && !nothingBeyond && (!opinionWaits || answers !== null) && reviewBegun;
   // Where replaying the work onto the line conflicts, the rebase words stand in the door's place until the tree changes.
   const conflict = acceptable ? landing?.conflict ?? null : null;
   return { review, workflow, second, opinionWaits, answers, acceptable, conflict };
