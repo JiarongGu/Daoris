@@ -76,7 +76,7 @@ import {
 // The install's layout, from the script that makes it — never a second spelling of it.
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_HOME, CONNECTOR_EXE, CONNECTOR_HOME, GIT_DOORS, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES,
-  LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
+  LAUNCHER, MARKER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, SHELL_EXE, SHELL_FILES,
   SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
 import { driverProblems } from './desktop-publish/driver-files.mjs';
@@ -460,8 +460,6 @@ const shellExe = join(install, ...SHELL_HOME, SHELL_EXE);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
 /** The knowledge connector the install carries, which a session on it is handed. */
 const installedConnector = join(install, ...CONNECTOR_HOME, CONNECTOR_EXE);
-/** Where a retired browser lives, with an engine of its own: a republish removes it. */
-const retiredBrowser = join(install, ...SHELL_HOME, RETIRED_IN_APP[0]);
 
 /** The line the stub says, and the line phase 5 looks for on disk. Both halves, one constant. */
 const NON_ASCII = 'stub: 道衍 — the unfolding of the way';
@@ -723,8 +721,8 @@ async function main() {
 
   // One Chromium: Daoris's browser is the application started with the browser's
   // argument, so no folder under `app/` carries an executable and an engine of its own.
-  check('one Chromium: the browser has no folder and no engine of its own under app/',
-    RETIRED_IN_APP.every((name) => !inApp.includes(name)) && !inApp.some((name) => /cefsharp/i.test(name)),
+  check('one Chromium: the browser has no engine of its own under app/',
+    !inApp.some((name) => /cefsharp/i.test(name)),
     `app holds: ${inApp.join(', ')}`);
 
   // The launcher is small and carries no runtime: it starts the application and exits.
@@ -834,17 +832,9 @@ async function main() {
   mkdirSync(assets, { recursive: true });
   writeFileSync(decoy, '// a bundle from a publish that is no longer current\n');
 
-  // The shell's own leftovers, planted the same way: the single-file launcher an older install
-  // still has, and an engine file the last publish recorded that this build no longer
-  // ships — an engine upgrade that dropped a library. Both are this script's, so both must go, and a
-  // neighbour's file beside them must not.
-  const retired = join(install, RETIRED_LAUNCHERS[0]);
-  writeFileSync(retired, '');
-  // …and the retired browser's own folder an older install has, with its executable and its second
-  // engine, which a republish removes.
-  mkdirSync(join(retiredBrowser, 'locales'), { recursive: true });
-  writeFileSync(join(retiredBrowser, RETIRED_BROWSER_EXE), '');
-  writeFileSync(join(retiredBrowser, 'libcef.dll'), '');
+  // The shell's own leftovers, planted the same way: an engine file the last publish recorded that this build no
+  // longer ships — an engine upgrade that dropped a library. It is this script's, so it must go, and a
+  // neighbour's file beside it must not.
   const staleEngine = join(install, ...SHELL_HOME, 'stale-engine.dll');
   writeFileSync(staleEngine, '');
   if (existsSync(join(install, ...SHELL_FILES))) {
@@ -853,7 +843,7 @@ async function main() {
   }
   // …and a file in each of the doctrine tool's folders that its last layout had and this one does not:
   // both folders are replaced whole.
-  const staleTool = [join(install, ...CLI_HOME, 'node_modules', 'daoris', 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
+  const staleTool = [join(install, ...CLI_HOME, 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
   for (const path of staleTool) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, '// from the publish before\n');
@@ -871,11 +861,7 @@ async function main() {
     republished.out.split('\n').slice(-8).join('\n'));
   check('…and it left no bundle from the publish before it', !existsSync(decoy),
     readdirSync(assets).filter((entry) => entry.endsWith('.js')).join(', '));
-  check('…nor the launcher the single-file shell had, nor an engine file it no longer ships',
-    !existsSync(retired) && !existsSync(staleEngine),
-    [retired, staleEngine].filter(existsSync).join(', '));
-  check(`…nor the browser's own folder and its second engine (${[...SHELL_HOME, RETIRED_IN_APP[0]].join('/')}/)`,
-    !existsSync(retiredBrowser), retiredBrowser);
+  check('…nor an engine file it no longer ships', !existsSync(staleEngine), staleEngine);
   check(`…nor a file the doctrine tool's last layout had, in ${CLI_HOME.join('/')}/ or ${CLI_BIN.join('/')}/`,
     staleTool.every((path) => !existsSync(path)) && cliProblems(install, canonVersion).length === 0,
     [...staleTool.filter(existsSync), ...cliProblems(install, canonVersion)].join('; '));

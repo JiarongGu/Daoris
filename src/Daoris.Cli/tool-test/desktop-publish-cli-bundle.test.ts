@@ -42,17 +42,18 @@ test('the install carries the doctrine tool as one bundled file and its canon, w
   assert.equal(readFileSync(join(install, ...CLI_BUNDLE), 'utf8').includes('node_modules/daoris'), false);
 });
 
-test('a republish replaces an older layout whole: the npm-style app/cli/node_modules goes', async (t) => {
+test('a republish replaces the folder whole: a file the publish before laid there goes', async (t) => {
   const fx = makeFixture('publish-cli-bundle-old');
   t.after(() => fx.cleanup());
   const install = join(fx.root, 'install');
-  mkdirSync(join(install, ...CLI_HOME, 'node_modules', 'daoris', 'dist'), { recursive: true });
-  writeFileSync(join(install, ...CLI_HOME, 'node_modules', 'daoris', 'dist', 'cli.js'), '// the layout before\n');
+  mkdirSync(join(install, ...CLI_HOME), { recursive: true });
+  const stale = join(install, ...CLI_HOME, 'stale-from-before.js');
+  writeFileSync(stale, '// the publish before\n');
 
   const built = join(fx.root, 'built');
   await bundleCli(workspace, built);
   await layCli(built, install);
 
-  assert.equal(existsSync(join(install, ...CLI_HOME, 'node_modules')), false);
+  assert.equal(existsSync(stale), false);
   assert.ok(existsSync(join(install, ...CLI_BUNDLE)));
 });

@@ -41,8 +41,8 @@ function cliProblem(folder) {
 /**
  * Lay the doctrine tool out in an install: the folder `bundleCli` made, copied to `<install>/app/cli/` with the build's stamp, and
  * `<install>/app/bin/` made empty for the programs laid out in it after (the command, the git doors, the partner's launcher:
- * `layBinPrograms`). Both folders are staged beside and swapped in whole, so a file an earlier publish wrote (an older layout's
- * `node_modules` among them) does not survive a republish, and a refused tool leaves the last one standing. Nothing is written
+ * `layBinPrograms`). Both folders are staged beside and swapped in whole, so a file an earlier publish wrote
+ * does not survive a republish, and a refused tool leaves the last one standing. Nothing is written
  * under the home. Fresh folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries.
  *
  * @returns the tool's version, which is the canon's.

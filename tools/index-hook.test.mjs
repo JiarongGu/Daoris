@@ -61,16 +61,14 @@ const committed = () => {
   return dir;
 };
 
-test('install writes the checkout hooks, removes its own pre-commit, and leaves a hook that is not its own', () => {
+test('install writes the checkout hooks and leaves a hook that is not its own', () => {
   const dir = repository(false);
   const hooks = join(dir, '.git', 'hooks');
   mkdirSync(hooks, { recursive: true });
-  writeFileSync(join(hooks, 'pre-commit'), '#!/bin/sh\n# daoris index-hook\nexec node tools/index-hook.mjs\n');
   writeFileSync(join(hooks, 'post-merge'), '#!/bin/sh\necho mine\n');
   const lines = [];
   assert.equal(install({ out: (line) => lines.push(line), err() {}, cwd: dir, env: clean(), script }), 0);
   assert.match(readFileSync(join(hooks, 'post-checkout'), 'utf8'), /index-fresh\.mjs" --root "\$root"/);
-  assert.equal(existsSync(join(hooks, 'pre-commit')), false);
   assert.equal(readFileSync(join(hooks, 'post-merge'), 'utf8'), '#!/bin/sh\necho mine\n');
   assert.ok(lines.some((line) => /post-merge is not its own/.test(line)), lines.join('\n'));
 });

@@ -40,15 +40,11 @@ folder is not the application's — repositories it drives, typically — and a 
 ## Where everything lives
 
 In this folder, in \`${HOME}/\` and the folders after it above, and nowhere under your user profile.
-A start after an update moves what an older version kept in \`${HOME}/\` into the folders above, once, when
-the update has settled and nothing else of this folder runs: the keys, the logs, the downloaded versions,
-the browsers' and the window's profiles, and what a run holds (D172). Account homes, session trees, rooms,
-kept files and \`${HOME}/bin/\` stay where they are, read there, because something outside Daoris names them by
-path; the machine log says each move. On first start the application sets
+On first start the application sets
 \`DAORIS_HOME\` to \`${HOME}/\` for itself and — once, if your account has none — for your account,
 which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
 one sets the other sees. When your account's \`DAORIS_HOME\` already names another folder — another
-install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves
+install's \`${HOME}/\` — the application still runs on its own, leaves
 that variable as it is, and says so on Settings' home row (D105): a terminal reads the folder the
 variable names. A \`.daoris\` folder under your profile from an earlier version moves in on
 that first start (its \`bin/\` stays: an install published with \`--service\` carries both hosts, and
