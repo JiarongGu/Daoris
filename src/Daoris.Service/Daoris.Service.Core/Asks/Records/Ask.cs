@@ -116,4 +116,10 @@ public sealed record Ask(
 
     /// <summary>The through words that stand, or null where none were given or the latest took them back.</summary>
     public AskThrough? Through => ThroughWords is [.., { Words: not null } latest] ? latest : null;
+
+    /// <summary>
+    /// The person's requirements given when it is made, each their words with the check: every quest it becomes carries them, an
+    /// intake's own added beside them. An ask from before carries none.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
 }

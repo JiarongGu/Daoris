@@ -9,8 +9,8 @@ internal sealed class AskPublishGuard(QuestExchange exchange, SessionStore? sess
 {
     /// <summary>Said of a quest an ask became that carries no requirement, so whoever published it knows its done is checked against nothing.</summary>
     public const string Unrequired =
-        "\n\nIt carries no requirement of the person's, so nothing checks its done against what was asked: a run's `quest.holds` keeps that "
-        + "done waiting, unchecked, until the person reads its handback.";
+        "\n\nPublished with no requirement: its run's holds step will wait on the person's word, since nothing checks its done against "
+        + "what was asked (`quest.holds` keeps that done waiting, unchecked, until the person reads its handback).";
 
     /// <summary>The states an intake answers its ask in: opened and neither parked nor ended.</summary>
     private static readonly SessionState[] Answering = [SessionState.Queued, SessionState.Starting, SessionState.Working];
