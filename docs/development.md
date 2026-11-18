@@ -235,7 +235,14 @@ Main is the development branch, and the cycle's aim is main green and the instal
    reached units run as an open merge's do. Its time goes to tests: it reads the census once per content tree (kept under
    `_fixtures/reached-census/`, so the test-map gate's reading or an earlier run's on the same tree serves it), restores and builds
    each test project once, not where its stamp under `_fixtures/reached-build/` still holds its inputs and output, and runs each
-   project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. Each step
+   project's reached classes in one `dotnet test --no-build --no-restore`; the censuses gate after it runs on that build. The
+   projects whose build the change makes stale start building before the plan, in one `dotnet build` each, so the build runs
+   through the plan rather than after it; and each light suite (the page's, the CLI's, the tools' units) runs in a lane of its own
+   beside the build and the .NET runs, which need nothing of it, while an end-to-end or Process group waits for them: the gate's
+   time is its longest lane. On 2026-11-18 every first run of a merge reaching the desktop was killed at its budget inside that
+   build, after 42 to 147 s of census and plan and 153 to 260 s of build, no test begun; replayed as a first run (no census, no
+   stamp, its C# files newer than their build, 3 to 5 heavy runs beside), PUSHBUSY1's took 299 s before and 238 s after,
+   gates14's 418 and 303, ACTORFLOW1a's 810 and 660. The census and plan of a new tree (55 to 138 s) are what is left. Each step
    (census, plan, restore and build per project, discovery and run per suite) is said as it goes and kept in the merge record's
    `steps`, so a gate killed over its budget names the step it was in and its breach is classed by its longest step. A list, a census or a structure red a branch brings stops its merge, in minutes, instead of waiting for
    a CI run of hours. The run keeps going past every failure but a blocking light gate's (universal, code-map, test-map), and
