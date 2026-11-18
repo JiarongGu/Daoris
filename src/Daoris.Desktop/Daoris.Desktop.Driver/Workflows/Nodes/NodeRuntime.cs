@@ -593,6 +593,7 @@ public sealed class NodeRuntime(
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
             AttemptTenures.Keep(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config?.PlaceRisk, clock());
+            await Keeping.HandStepsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
         }
     }
 

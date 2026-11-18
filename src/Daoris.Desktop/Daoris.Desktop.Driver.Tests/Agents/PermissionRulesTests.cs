@@ -61,6 +61,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__memory_propose",
         "mcp__daoris-knowledge__system_plan",
         "mcp__daoris-knowledge__team_plan",
+        "mcp__daoris-knowledge__step_settle",
     ];
 
     /// <summary>What the `commit` default allows, a rename among it.</summary>

@@ -221,7 +221,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
     role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person, and neither casts
     an agent to a role whose steps only their holder's press settles, nor does *Pass to…* pass such a step to one (`AgentSettles`, D312: no
-    agent's channel speaks an Accept, a task's Done, an approval or a decision yet; an agent settles a step by an observation or a plugin's
+    agent's channel speaks an Accept or an approval yet, a task's Done and a decision its working session's tool, D318; an agent settles a step by an observation or a plugin's
     act, and the work and the second opinion by its session); through words take no step another holder holds. Each holder's tenure
     of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
     which no older build reads: a pass writes each standing attempt's first epoch before its rounds and after them (`AttemptTenures`, the
@@ -570,8 +570,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     on another outcome is skipped by the decision (`WireDecisions`), its words the decision's line ("Not needed: proposed by
     release manager (why), confirmed by the owner"), and what follows it goes on as after any skip; it takes the line's newer words
     as the owner confirms, and is judged again once a changed answer opens its route. A step closed only behind a skipped one is not
-    skipped: it reads that skip. The channels naming a holder (a hand-back's proposal, the release manager's step, an appointed
-    agent) and a marked destination's wait for the owner's confirmation are not built yet: the window and the terminal are the
+    skipped: it reads that skip. An agent holding a decision answers it through its working session's tool (`step_settle`, D318), and
+    its answer settles the decision, no proposal held ("Not needed: decided by agent:<name> (why)", `NodeWord.Decider`). The other
+    channels naming a holder (a hand-back's proposal, an appointed agent) and a marked destination's wait for the owner's confirmation are
+    not built yet: the window and the terminal are the
     owner's.
 52. A system's `apply` hands the adapter the plan its review record names, never a newer one, one apply at a time per system; no
     such plan reaches it with *nothing applied*, an empty one with *changed nothing*. A system declaring its precondition `none` is
@@ -599,8 +601,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     go-ahead) waits on the step's role (`StepRoles.Of`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
     the line's `lead`. A wait is answered by its own role (`StepWaiting.HolderOf`, D312): the step's own role by its attempt's tenure, any
     other role (a vacancy's line, a plugin's actor such as `credentials-keeper`) by the place's cast of that role (`CastReading`), never
-    by the step's holder. A wait an agent holds that only a press settles (any but a plugin's actor and a go-ahead, `AgentSettles.Wait`)
-    has no settler yet, so it stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with *Take*, an Accept among them.
+    by the step's holder. A `task` an agent holds (its Done or a decision's answer, `AgentSettles.Tool`) is the run's working agent's to
+    take (D318): once the pass keeps its tenure, the run's newest session of this machine (awaiting the run's step, else the work's own,
+    resumed where it ended) is told it through the say door, once per attempt and epoch (`StepHandOffs`), with its outcomes, the evidence
+    its `evidence` option names and the tool that settles it, `step_settle`; the session's settle is a file under the home's sessions
+    folder the next look takes (`StepSettleAsks`) through the run's node door at the settle door as the agent its start ran, refused with
+    nothing kept where the step does not wait on its holder's word, its outcome or a named evidence is missing (`TaskEvidence`), or the door
+    refuses it, a refusal told to the session as its next turn; where it cannot do the step it asks up its line. Its row in *What needs
+    you* reads "waiting on `<role>`: <agent>" with *Take* its only press. Any other wait an agent holds that only a press settles (any but
+    a plugin's actor and a go-ahead, `AgentSettles.Wait`) has no settler yet, so it stays a `step` row of *What needs you*, "waiting on
+    `<role>`: <holder>" with *Take*, an Accept and an approval among them.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait, and its card on the session page's head

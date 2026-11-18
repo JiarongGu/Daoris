@@ -19,7 +19,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
         "knowledge_get", "knowledge_refresh", "knowledge_repositories", "knowledge_search", "line_read", "memory_end", "memory_get", "memory_propose",
         "memory_search", "memory_write", "opinion_answer", "opinion_give",
         "partner_answer", "permission_propose", "quest_list", "quest_publish", "quest_respond", "question_ask", "registry",
-        "review_ready", "review_serve", "system_plan", "team_plan",
+        "review_ready", "review_serve", "step_settle", "system_plan", "team_plan",
     ];
 
     /// <summary>A host registered as <c>Program.cs</c> registers its tools, over whatever services the test hands it.</summary>
@@ -75,7 +75,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
                 "BrainstormTools", "ChannelTools", "CheckTools", "CheckoutTools", "GoAheadTools", "HandOverTools", "HandbackTools",
                 "HelperTools", "KnowledgeSearchTools",
                 "LineTools", "MemoryTools", "OpinionTools", "PartnerTools", "QuestTools", "QuestionTools",
-                "ReviewTools", "RuleProposalTools", "SystemPlanTools", "TeamTools",
+                "ReviewTools", "RuleProposalTools", "StepSettleTools", "SystemPlanTools", "TeamTools",
             ],
             KnowledgeServer.ToolTypes.Select(type => type.Name).Order(StringComparer.Ordinal));
     }

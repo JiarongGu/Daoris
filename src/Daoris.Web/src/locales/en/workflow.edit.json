@@ -244,6 +244,7 @@
   "workflow.edit.option.request.declined.stop": "Stop the run",
   "workflow.edit.option.check.gates": "The checks to run",
   "workflow.edit.option.go-ahead.act": "What the go-ahead is for",
+  "workflow.edit.option.task.evidence": "The evidence its settle gives",
   "workflow.edit.option.quest.holds.yes": "Hold while a done waits for your yes",
   "workflow.edit.option.quest.holds.evidence": "Hold while a done's evidence is in question",
   "workflow.edit.option.content.holds.line": "Hold work the line already holds",

@@ -28,6 +28,8 @@ internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
 
+    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Names(TaskEvidence.Option)];
+
     /// <summary>Its outcomes are a task's, an approval's or a decision's own; one declaring none is a task reached with no outcome.</summary>
     public override bool TakesOutcomes(IReadOnlyList<string> outcomes) =>
         outcomes.SequenceEqual(Task) || outcomes.SequenceEqual(Approval) || TaskDecisions.Takes(outcomes);
