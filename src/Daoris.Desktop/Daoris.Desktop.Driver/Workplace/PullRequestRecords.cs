@@ -7,7 +7,7 @@ public interface IPullRequestRecords
     bool Keep(string repository, string branch, string plugin, string address);
 }
 
-/// <summary>The landing record of a home, <c>landings.json</c>, as <see cref="IPullRequestRecords"/>.</summary>
+/// <summary>The landing record of a home, <c>landings.json</c>, as <see cref="IPullRequestRecords"/>: a newly kept address tells the home's moments.</summary>
 public sealed class PullRequestRecords(string home) : IPullRequestRecords
 {
     /// <inheritdoc/>
@@ -21,6 +21,7 @@ public sealed class PullRequestRecords(string home) : IPullRequestRecords
         }
 
         landings.PullRequested(repository, branch, plugin, address);
+        PullRequestMoments.Pushed(home, repository);
         return true;
     }
 }

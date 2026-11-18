@@ -135,7 +135,7 @@ public static class RemoteFetches
 /// </summary>
 internal interface IPullRequestMomentWorld
 {
-    /// <summary>The standing landings whose pull request is open and whose end is not held (<see cref="PullRequestMoments.Concerns"/>).</summary>
+    /// <summary>The standing landings whose open pull request a moment concerns (<see cref="PullRequestMoments.Concerns"/>).</summary>
     IReadOnlyList<LandedBranch> Open();
 
     /// <summary>The repositories holding Daoris's work, at their main checkouts.</summary>
@@ -179,8 +179,8 @@ internal interface IPullRequestMomentWorld
 /// is read from git's files and compared with the commit last seen here. The person's fetch brought the remote's facts, so nothing is
 /// fetched. The first reading of a repository's line is its baseline, and asks nothing. A move that comes while a pull request is inside
 /// its minute is kept for it, and the first wake of that repository past the minute asks it, once.</item>
-/// <item><b>Daoris pushed</b> (<c>refs</c>, <see cref="Pushed"/>): after the landing's plugin step and its tidy, whose own ask it
-/// counts, and after a hand-off. The landing press's fetch of the line counts as the push's.</item>
+/// <item><b>A pull request opened</b> (<c>refs</c>, <see cref="Pushed"/>): after a run's <c>pull-request</c> step keeps the address it
+/// opened on the landing (<see cref="PullRequestRecords.Keep"/>). The landing press's fetch of the line counts as its fetch.</item>
 /// <item><b>The window's focus</b> (<c>focus</c>, <see cref="Focused"/>): every repository with an open pull request.</item>
 /// </list>
 ///
@@ -270,12 +270,13 @@ public sealed class PullRequestMoments : IAsyncDisposable
     internal Chain Chain => _chain;
 
     /// <summary>
-    /// Whether an entry's pull request is open and concerns a moment: a standing landing a plugin pushed, whose kept answer is neither
-    /// completed nor abandoned, and whose end is not held.
+    /// Whether a moment asks about an entry: standing, pushed by Daoris or naming a pull request whoever pushed it, its answer not settled, its
+    /// end not held or held while a monitor still reads it open (<see cref="PullRequestReading.Of"/>, <c>MonitorAskedTests</c>).
     /// </summary>
     public static bool Concerns(LandedBranch entry) =>
-        entry is { GoneAt: null, Held: null, Pushed: true }
-        && entry.PullRequestState?.State is not (PullRequestStates.Completed or PullRequestStates.Abandoned);
+        entry is { GoneAt: null } && (entry.Pushed || entry.PullRequest is not null)
+        && entry.PullRequestState?.State is not (PullRequestStates.Completed or PullRequestStates.Abandoned)
+        && (entry.Held is null || PullRequestReading.Of(entry).State is null);
 
     /// <summary>The ref watch judged <paramref name="repository"/> under <paramref name="home"/>: its refs moved. Never throws.</summary>
     public static void Moved(string home, RefRepository repository)
@@ -283,7 +284,7 @@ public sealed class PullRequestMoments : IAsyncDisposable
         foreach (var moments in Of(home)) moments.Heard(repository);
     }
 
-    /// <summary>Daoris pushed a handed branch of <paramref name="repository"/> under <paramref name="home"/>, and recorded it. Never throws.</summary>
+    /// <summary>A run's step opened a pull request of <paramref name="repository"/> under <paramref name="home"/>, and its address is recorded. Never throws.</summary>
     public static void Pushed(string home, string repository)
     {
         foreach (var moments in Of(home)) moments.HeardPushed(repository);
