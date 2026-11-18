@@ -4,7 +4,7 @@ import '../../locales/i18n';
 import type { Block } from './conversation';
 import { ToolCard } from './ToolCard';
 
-// A call that started a sub-agent or a background task names it on its card and says how it ended (SESSIONVIEW1e).
+// A call that started a sub-agent or a background task names it on its card and says how it ended.
 
 const at = '2026-11-19T10:00:00Z';
 const call = (beside: Block['beside']): Block => ({ key: '1', kind: 'tool', at, title: 'Agent', toolKind: 'think', status: 'completed', beside });

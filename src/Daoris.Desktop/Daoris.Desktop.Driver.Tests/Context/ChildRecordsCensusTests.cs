@@ -5,7 +5,7 @@ namespace Daoris.Driver.Tests;
 /// <summary>
 /// A subagent's own record is never read as its session's words: no reader of a session's record finds it, no enumeration of the
 /// sessions folder names it, and only the readers named here open it. And every reader that walks all of a session's events reads the
-/// two kinds of what it ran beside itself, <c>child</c> and <c>task</c>, as no word of the session's (SESSIONVIEW1e, design §8 and §3.4).
+/// two kinds of what it ran beside itself, <c>child</c> and <c>task</c>, as no word of the session's.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class ChildRecordsCensusTests : IDisposable

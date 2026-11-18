@@ -4,7 +4,7 @@ import type { SessionEvent } from './conversationTypes';
 
 const at = (second: number) => `2026-11-19T10:00:${String(second).padStart(2, '0')}Z`;
 
-/** A session's record with a sub-agent and a background task, each started by a call, as the driver keeps them (SESSIONVIEW1e). */
+/** A session's record with a sub-agent and a background task, each started by a call, as the driver keeps them. */
 const record: SessionEvent[] = [
   { seq: 1, at: at(0), kind: 'user', origin: 'person', text: 'split the work' },
   { seq: 2, at: at(1), kind: 'tool', id: 'toolu_ag', title: 'Agent', toolKind: 'think', status: 'in_progress' },

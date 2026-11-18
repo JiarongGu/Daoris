@@ -7,7 +7,7 @@ namespace Daoris.Driver.Tests;
 /// Each door's captures replayed into a session's record: every subagent's and background task's start and end kept as a
 /// <c>child</c> or <c>task</c> event under its own id, its start linked to the call that started it where the wire names one, an end
 /// only the session's close implies said as inferred, and a subagent's own words and calls in its own record beside the session's,
-/// never in it (SESSIONVIEW1e, design §8).
+/// never in it.
 /// </summary>
 public sealed class SessionChildrenReplayTests : IDisposable
 {
