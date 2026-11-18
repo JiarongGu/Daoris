@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 import { changedPaths } from './merge/gate-hands.ts';
+import { withGateStart } from './time-ratchet.mjs';
 import { runSteps, shellRun } from './verify-checks/run.mjs';
 import { CHECK_STEPS, selectSteps } from './verify-checks/steps.mjs';
 
@@ -30,7 +31,7 @@ export function planLines(chosen, changed, total) {
 }
 
 /** Runs the gate's steps at `root`; the exit code. */
-export async function verifyChecks({ root, env = process.env, steps = CHECK_STEPS, run = shellRun(root, env), say = console.log, now = Date.now, plan = false, width }) {
+export async function verifyChecks({ root, env = process.env, steps = CHECK_STEPS, now = Date.now, run = shellRun(root, withGateStart(env, now())), say = console.log, plan = false, width }) {
   const changed = changedPaths(env);
   const chosen = selectSteps(steps, changed, { gates: changed ? declaredGates(root) : [] });
   for (const line of planLines(chosen, changed, steps.length)) say(line);

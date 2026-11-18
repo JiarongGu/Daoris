@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
+import { GATE_START, LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
 import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
 import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
 
@@ -310,6 +310,28 @@ test('inside a run, only the records the run wrote are judged; the tree\'s older
     assert.ok(since !== null);
     assert.deepEqual(scanRecords(dir, '.', { since }).over, {}, 'the stale record is not read');
     assert.deepEqual(Object.keys(scanRecords(dir, '.').over), ['S.stale'], 'without the run start it is');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a gate run with no run start of its own judges only the records since the gate run began', () => {
+  const dir = join('_fixtures', 'time-ratchet-gate-test');
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    writeFileSync(join(dir, 'old.trx'), trx([['S.old', '00:00:57']]));
+    const old = new Date(Date.now() - 3_600_000);
+    utimesSync(join(dir, 'old.trx'), old, old);
+    const started = Date.now() - 60_000;
+    const env = { [GATE_START]: String(started) };
+    assert.equal(runStart(dir, env), started, 'the gate run\'s start bounds the judged records');
+    assert.deepEqual(scanRecords(dir, '.', { since: runStart(dir, env) }).over, {}, 'the older over-budget record reads clean');
+    writeFileSync(join(dir, 'new.trx'), trx([['S.new', '00:00:57']]));
+    assert.deepEqual(Object.keys(scanRecords(dir, '.', { since: runStart(dir, env) }).over), ['S.new'], 'a record written after the start is red');
+    writeFileSync(join(dir, 'run-start.json'), JSON.stringify({ startedAt: started + 1000 }));
+    assert.equal(runStart(dir, env), started + 1000, 'the later of the two starts holds');
+    assert.equal(runStart(dir, {}), started + 1000, 'the merge\'s own start alone still holds');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
