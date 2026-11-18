@@ -66,10 +66,7 @@ internal sealed class NodeRunKeeping(
         KeepPullRequests(governed);
     }
 
-    /// <summary>
-    /// A run's steps its agent holds: the acts its working session took journaled on them, settling each its receipts complete
-    /// (<see cref="StepActs"/>), then each handed to that session once its tenure is kept (<see cref="StepHandOffs"/>).
-    /// </summary>
+    /// <summary>A run's steps its agent holds: its acts journaled and settled (<see cref="StepActs"/>), then each handed on (<see cref="StepHandOffs"/>).</summary>
     public async Task HandStepsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
     {
         if (!holdsLease()) return;

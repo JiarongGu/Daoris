@@ -61,9 +61,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
   /** What a wait came to with its fact still not made: read once (a check), not yet so; else its deadline passed. */
   const late = (words, url) => (once ? answered('failed', 'not-yet', words, url) : answered('failed', 'timeout', `${words} The step's deadline passed.`, url));
 
-  // An act names its repository by its origin's address (release-acts.mjs); a step's unit by its checkout.
   const repo = unit.repo ?? located(unit);
-  // Read once (a check or an act), a write made in the reading is read once more, so its fact is seen without a second write.
   let reread = false;
   /** Refused once Daoris stood the attempt down (`attempt.signal`, the kit's): read before every write and in every wait, so nothing is made after it. */
   const standing = (what) => {
