@@ -25,7 +25,8 @@
  * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
  * Its time goes to tests: the census is read once per content tree (`merge/census-cache.ts`), each test project built once and its
- * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), and each step says a `reached-step: {…}` line
+ * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), the light suites' runs beside the build and the
+ * .NET runs rather than after them (`merge/reached-run.ts`), and each step says a `reached-step: {…}` line
  * as it starts and ends, so the merge records them and names the step a kill cut (`merge/reached-steps.ts`).
  *
  * A heavy group (Process tier, a rehearsal, a whole suite: `merge/reached-admit.ts`) takes one place in the machine's admission, the
@@ -54,7 +55,8 @@ import { deferredLines, splitTier, tierNamed } from './merge/heavy-tier.ts';
 import { nightLines, tiersOf } from './merge/tiers.ts';
 import { mainStandsRed } from './merge/reached-classify.ts';
 import { runPlan } from './merge/reached-run.ts';
-import { buildInputs, buildOnce, inputsDigest, treeIds } from './merge/reached-build.ts';
+import { aheadOf, buildAhead, buildDecision, buildInputs, buildOnce, inputsDigest, outputsDigest, readStamp, treeIds } from './merge/reached-build.ts';
+import { isHeavySuite } from './merge/heavy-tier.ts';
 import { StepClock } from './merge/reached-steps.ts';
 import { inPlace } from './merge/reached-admit.ts';
 import { createAdmission } from './machine-admission.mjs';
@@ -174,6 +176,25 @@ async function main(argv) {
   const clock = new StepClock(say);
   const world = paths.length || classes.length ? await clock.time('census', () => keyContextOf(root)) : null;
   if (world) say(`reached: the census of this tree was ${world.hit ? 'read from its cache' : 'read, and kept for this tree'}`);
+  const processSuites = world ? processSuitesOf(world.gates) : new Set();
+  const haltFile = valueOf(argv, '--halt-file');
+  const buildSeams = { root, exec: execAsync, say, time: (step, fn) => clock.time(step, fn), inputsOf: (project) => inputsOf(root, world, project) };
+  // The projects whose build the change makes stale start building before the plan, which holds the process: it runs beside them.
+  const ahead = world && !haltFile && !classes.length && tier !== 'heavy' && !argv.includes('--plan')
+    ? buildAhead(aheadOf(world.map.units.filter((unit) => unit.kind === 'dotnet' && !isHeavySuite(unit.suite, processSuites)), paths, {
+      inputsOf: (project) => {
+        try {
+          return buildInputs(project, world.files, world.read);
+        } catch {
+          return null;
+        }
+      },
+      decide: (project) => {
+        const inputs = buildSeams.inputsOf(project);
+        return inputs === null ? { build: true, why: 'its inputs could not be read' } : buildDecision({ inputs, outputs: outputsDigest(root, project), stamp: readStamp(root, project) });
+      },
+    }), buildSeams).catch(() => undefined)
+    : null;
   const { plan, night, keys, replayed, deferred } = await clock.time('plan', () => {
     const planned = planFor(root, paths, store, { bounds, classes, tier, world });
     world?.keep();
@@ -192,8 +213,6 @@ async function main(argv) {
     ? { ms: WAIT_BOUND_MS, say: (waited, sentence) => say(`${HEAVY_PREFIX} its reached run has waited ${Math.round(waited / 60_000)} min for the machine's heavy-run admission, past its bound of ${WAIT_BOUND_MS / 60_000} min: ${sentence}`) }
     : null;
   const admission = builderAdmission(createAdmission({ kind: 'session', bound }));
-  const processSuites = world ? processSuitesOf(world.gates) : new Set();
-  const haltFile = valueOf(argv, '--halt-file');
   const halt = haltFile && world
     ? createHalt({ file: haltFile, changedSince: (commit) => newerPaths(root, commit), reaches: (unit, path) => world.context.reaches(unit, path), end: (pid) => { endTree(pid); }, say })
     : null;
@@ -203,12 +222,15 @@ async function main(argv) {
   const startedAt = Date.now();
   const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock,
+    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock, processSuites,
     exec: run.exec,
     inPlace: run.inPlace,
     ...(halt ? { halt } : {}),
     mainRedOf: (unit) => mainStandsRed(unit, findings, verdicts),
-    build: (projects) => buildOnce(projects, { root, exec: execAsync, say, time: (step, fn) => clock.time(step, fn), inputsOf: (project) => inputsOf(root, world, project) }),
+    build: async (projects) => {
+      await ahead;
+      return buildOnce(projects, buildSeams);
+    },
   });
   unwatch?.();
   load.stop();

@@ -56,6 +56,8 @@
   "person.view.ask-new-workflow": "它的工作遵循工作流 {{workflow}}。",
   "person.view.ask-new-links": "它带有链接（{{count}}）：{{links}}。",
   "person.view.ask-new-files": "它带有本机的文件（{{count}}）：{{files}}。",
+  "person.view.ask-new-requirement": "你的要求，用你的原话：“{{words}}”。检验：{{check}}。它变成的每个委托都带着它。",
+  "person.view.ask-new-through": "按你的原话交付：“{{words}}”。",
   "person.view.work-pause": "在本机暂缓 {{scope}} {{id}} 的工作：现在运行的部分按你自己的停止方式停下（运行中的会话：{{stops}}），在你恢复之前不会再启动任何工作。",
   "person.view.work-pause-already": "{{scope}} {{id}} 的工作在本机已经暂缓，现在没有任何运行中的部分，所以这次不会改变任何东西。",
   "person.view.work-pause-nothing": "{{scope}} {{id}} 在本机没有未处理或已领取的内容，没有可暂缓的，所以这次不会改变任何东西。",

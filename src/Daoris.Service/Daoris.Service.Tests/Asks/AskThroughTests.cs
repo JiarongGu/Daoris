@@ -62,20 +62,42 @@ public sealed class AskThroughTests : IAsyncLifetime
         Assert.Equal(AskState.Published, kept.State);
         var quoted = Assert.Single(kept.Later);
         Assert.Equal((AskWordKind.Quoted, "merge all changes to remote too"), (quoted.Kind, quoted.Text));
-        Assert.DoesNotContain("carries no requirement", asked.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(Unrequired, asked.Message, StringComparison.Ordinal);
     }
 
+    private const string Unrequired = "Published with no requirement: its run's holds step will wait on the person's word";
+
     [Fact]
-    public async Task A_requirement_on_a_new_ask_with_no_receiver_is_refused_and_nothing_is_kept()
+    public async Task A_new_asks_requirements_with_no_receiver_are_kept_on_it_and_travel_on_each_quest_its_intake_publishes()
     {
         var asked = await _desk.AskAsync(new AskRequest("work", Sentence)
         {
-            Requirements = [new QuestRequirement("merge all changes to remote too", "the work reaches its pull request")],
+            Requirements = [new QuestRequirement("the export button", "the guide names the export button's place on the page")],
         }, Now);
 
-        Assert.Equal(AskRefusal.BadRequirement, asked.Refusal);
-        Assert.Contains("--to", asked.Message, StringComparison.Ordinal);
-        Assert.Empty(await _desk.ListAsync("work", includeClosed: true));
+        Assert.Equal(AskRefusal.None, asked.Refusal);
+        var kept = (await _desk.FindAsync(asked.Ask!.Id))!;
+        Assert.Equal(AskState.Proposed, kept.State);
+        Assert.Equal("the export button", Assert.Single(kept.Requirements).Quote);
+        Assert.Contains("1 requirement", asked.Message, StringComparison.Ordinal);
+
+        var own = new QuestRequirement("write the guide", "the guide is in the repository's docs");
+        var published = await _desk.PublishAsync(kept.Id, "reports", Now, draft: new AskDraft("The export guide", "Write it.") { Requirements = [own] },
+            byAgent: true);
+
+        Assert.Equal(AskRefusal.None, published.Refusal);
+        Assert.Equal(["the export button", "write the guide"], published.Quest!.Requirements.Select(r => r.Quote));
+        Assert.DoesNotContain(Unrequired, published.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_ask_published_with_no_requirement_says_its_holds_step_waits_on_the_persons_word()
+    {
+        var asked = await _desk.AskAsync(new AskRequest("work", Sentence) { To = "reports" }, Now);
+
+        Assert.Equal(AskRefusal.None, asked.Refusal);
+        Assert.Empty(asked.Quest!.Requirements);
+        Assert.Contains(Unrequired, asked.Message, StringComparison.Ordinal);
     }
 
     [Fact]

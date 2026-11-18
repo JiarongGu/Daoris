@@ -37,6 +37,26 @@ public sealed class AskNewViewTests
     }
 
     [Fact]
+    public async Task The_persons_requirements_and_through_words_are_on_the_card_so_their_yes_is_to_them()
+    {
+        var viewed = await View(new
+        {
+            workspace = "games", sentence = "fix the stall on load",
+            requirements = new[] { new { quote = "the stall on load", check = "a cold start reaches the menu in under two seconds" } },
+            through = "ship it without my accept", said = true,
+        });
+
+        Assert.Equal("ask-new", viewed.View!.Kind);
+        var required = Assert.Single(viewed.View.Also!, said => said.Kind == "ask-new-requirement");
+        Assert.Equal(("the stall on load", "a cold start reaches the menu in under two seconds"), (required.Facts["words"], required.Facts["check"]));
+        Assert.Equal("ship it without my accept", Assert.Single(viewed.View.Also!, said => said.Kind == "ask-new-through").Facts["words"]);
+        Assert.Equal(
+            "daoris ask --workspace games --require \"the stall on load\" \"a cold start reaches the menu in under two seconds\" "
+            + "--through \"ship it without my accept\" \"fix the stall on load\"",
+            viewed.View.Command);
+    }
+
+    [Fact]
     public async Task The_review_rule_choice_sends_no_choice_so_its_card_names_no_environment()
     {
         var viewed = await View(new { workspace = "default", sentence = "tidy the docs", review = "rule" });

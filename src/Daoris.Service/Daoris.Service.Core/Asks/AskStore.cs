@@ -85,6 +85,7 @@ public sealed class AskStore
         await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
 
         await SchemaColumns.EnsureAsync(_db, "asks", "through_words", "through_words TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_db, "asks", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
 
         // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
@@ -219,11 +220,12 @@ public sealed class AskStore
         await using var command = _db.Command();
         // The review, kind and workflow choices are written with a new ask and only appended after.
         command.CommandText = """
-            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths, through_words)
-            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths, $through)
+            INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, asker, note, links, attachments, proposal, quests, intake, review_choices, workflow_choices, short_title, paths, through_words, requirements)
+            VALUES ($id, $workspace, $sentence, $state, $tier, $asked, $updated, $asker, $note, $links, $attachments, $proposal, $quests, $intake, $reviewChoices, $workflowChoices, $short, $paths, $through, $requirements)
             ON CONFLICT (id) DO NOTHING
             """;
         command.Parameters.AddWithValue("$through", AskThroughs.Written(ask.ThroughWords));
+        command.Parameters.AddWithValue("$requirements", QuestRecordCodec.RequirementsJson(ask.Requirements));
         command.Parameters.AddWithValue("$reviewChoices", Json(ask.ReviewChoices, (w, choice) =>
         {
             w.WriteStartObject();
@@ -461,6 +463,7 @@ public sealed class AskStore
             WorkflowChoices = WorkflowChoicesOf(Text("workflow_choices")),
             WorkflowProposals = WorkflowProposalsOf(Text("workflow_proposals")),
             ThroughWords = AskThroughs.Read(Text("through_words")),
+            Requirements = QuestRecordCodec.ReadRequirements(Text("requirements")),
         };
     }
 

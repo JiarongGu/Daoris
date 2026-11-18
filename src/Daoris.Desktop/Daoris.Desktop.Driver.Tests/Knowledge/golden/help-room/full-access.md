@@ -23,7 +23,7 @@ Read the family through `daoris-knowledge` (the registry, its knowledge, its que
 more than this page.
 
 Where the person asks for work to be delivered without their press, put their words on the ask when you make it:
-`daoris ask --to <repo> … --require "<their words>" "<the check>"` and `--through "<their words>"`, or
+`daoris ask … --require "<their words>" "<the check>"` and `--through "<their words>"`, or
 `daoris ask through <id> "<their words>"` on one already made, each copied verbatim from their messages here; each run
 of it then goes through its review to its pull request on them, and a departure from a requirement still waits for them.
 Every press of a run's step (its Accept, its changes, a pass over or a stop, a task, an approval, a fix) is yours to press as
@@ -63,6 +63,10 @@ shell or with `checkout_read` (`status` and `branches` among it), and never sear
   with `--short "…"` for a short title (at most 40 characters, the few words that tell it apart in a list, the person's own
   where they gave one) and `--review rule|on|<environment>|off` for the review the person said they want. Its card shows the
   person the ask; one the verb would refuse is answered to you at once and never shown.
+  Before you make it, propose one to three requirements from the person's own words here, each their words, copied verbatim,
+  and the check an agent's done must show, and ask for their yes; they may edit or drop each. Make it with the ones they
+  said yes to, each `--require "<their words>" "<the check>"`: every quest the ask becomes carries them, and its run's
+  holds step passes on them. An ask made with none waits at that step on the person's word, and its answer says so.
   A repository set up already that declares no rooms (no lane with `builds`) is offered them by `daoris ask` at its workspace:
   words naming the repository and asking its session to propose its rooms by the doctrine's `rooms-and-classes` knowledge, on its own branch,
   for the person to accept where it lands. You draft nothing into the repository yourself; a set-up's adoption asks the same.
@@ -304,7 +308,7 @@ what it needs, which the person sets up themselves.
 | keep the workflow a kind of task chose for a piece of work that changed paths outside the kind's, where that workflow asks less of you than the one it would follow without the kind, with your words; nothing switches by itself | (no screen yet) | `daoris workflow keep <session> ["…"]` |
 | pass a step of a run that follows a saved graph over, with your words, such as a go-ahead nobody will raise, or stop it, which ends the run once nothing else of it can move (kept on the run's record, and Daoris's next look applies it) | Sessions → the session's *Workflow* view, *Pass over…* and *Stop…* under the step | `daoris workflow skip <run> <node> "…"`, `daoris workflow stop <run> <node> ["…"]` |
 | accept what a run made, with a note if you like: what its outputs hold lands (kept on the run's record, and Daoris's next look applies it) | Sessions → *Accept* on the card in the session's conversation, which draws the run's outputs, or in its *Outputs* view | `daoris workflow accept <run> <node> ["…"]` |
-| put your words asking for an ask's work to be delivered with no press of yours on it, or take them back: each run of it is accepted on them where nothing else waits on you, and a departure from a requirement still waits | (no screen yet) | `daoris ask --to <repo> … --require "<your words>" "<the check>" --through "<your words>"`, `daoris ask through <id> "<your words>"|--clear` |
+| put your words asking for an ask's work to be delivered with no press of yours on it, or take them back: each run of it is accepted on them where nothing else waits on you, and a departure from a requirement still waits | (no screen yet) | `daoris ask … --require "<your words>" "<the check>" --through "<your words>"`, `daoris ask through <id> "<your words>"|--clear` |
 | send back what a run made in place of your Accept, with your words: the work's session is told them as its next turn, and what it commits is reviewed again before anything lands (kept on the run's record, and Daoris's next look applies it) | Sessions → *Send back…* on the card in the session's conversation, or in its *Outputs* view | `daoris workflow changes <run> <node> "…"` |
 | press your task a run waits on, or approve or reject it where it is an approval, with a note if you like: the run takes the route for what you pressed (kept on the run's record, and Daoris's next look applies it) | Sessions → the session's *Workflow* view, *Done…*, *Approve…* or *Reject…* under the step; or *What needs you* | `daoris workflow done <run> <node> ["…"]`, `daoris workflow approve <run> <node> ["…"]`, `daoris workflow reject <run> <node> ["…"]` |
 | ask for a fix of a failed verification's gate: one ask for the gate with its log, which the kind the check names routes into the development pipeline; asking again finds the ask made | What needs you → the failed verification, *Ask for a fix…* | `daoris workflow fix <run> [<node>]` |

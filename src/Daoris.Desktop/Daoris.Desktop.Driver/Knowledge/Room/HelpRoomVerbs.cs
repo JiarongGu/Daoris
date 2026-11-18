@@ -26,6 +26,10 @@ internal sealed class HelpRoomVerbs : IHelpRoomSection
         text.Append("  with `--short \"…\"` for a short title (at most 40 characters, the few words that tell it apart in a list, the person's own\n");
         text.Append("  where they gave one) and `--review rule|on|<environment>|off` for the review the person said they want. Its card shows the\n");
         text.Append("  person the ask; one the verb would refuse is answered to you at once and never shown.\n");
+        text.Append("  Before you make it, propose one to three requirements from the person's own words here, each their words, copied verbatim,\n");
+        text.Append("  and the check an agent's done must show, and ask for their yes; they may edit or drop each. Make it with the ones they\n");
+        text.Append("  said yes to, each `--require \"<their words>\" \"<the check>\"`: every quest the ask becomes carries them, and its run's\n");
+        text.Append("  holds step passes on them. An ask made with none waits at that step on the person's word, and its answer says so.\n");
         text.Append(RoomsProposal.Ask());
         text.Append("- An agent's Update or a pin to one version is pressed, as Agents → the agent's page → Ways in offers them:\n");
         text.Append("  `daoris agent update <agent>`, `daoris agent pin <agent> <version>`. Update moves a pinned agent's pin to its newest\n");

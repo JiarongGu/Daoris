@@ -329,7 +329,7 @@ internal static class QuestRecordCodec
         writer.WriteEndArray();
     }
 
-    private static IReadOnlyList<QuestRequirement> ReadRequirements(string json)
+    internal static IReadOnlyList<QuestRequirement> ReadRequirements(string json)
     {
         using var document = JsonDocument.Parse(json);
         return ReadRequirements(document.RootElement);

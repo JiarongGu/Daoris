@@ -37,6 +37,29 @@ describe('a new ask on the Confirm card', () => {
     expect(screen.getByText(/^Makes an ask at workspace default: “tidy the docs”\. Its intake turns it into quests/)).toBeInTheDocument();
   });
 
+  it('shows each requirement and the through words it carries, so the yes is to them', async () => {
+    const view: PressView = {
+      kind: 'ask-new',
+      facts: { workspace: 'games', sentence: 'fix the stall on load' },
+      command: 'daoris ask --workspace games --require "the stall on load" "a cold start reaches the menu" "fix the stall on load"',
+      also: [
+        { kind: 'ask-new-requirement', facts: { words: 'the stall on load', check: 'a cold start reaches the menu' } },
+        { kind: 'ask-new-through', facts: { words: 'ship it without my accept' } },
+      ],
+    };
+    render(<PressViewLine view={view} />);
+
+    expect(screen.getByText(
+      'What you required, in your words: “the stall on load”. Check: a cold start reaches the menu. Every quest it becomes carries it.',
+    )).toBeInTheDocument();
+    expect(screen.getByText('Delivered on your words: “ship it without my accept”.')).toBeInTheDocument();
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    render(<PressViewLine view={view} />);
+    expect(screen.getByText('你的要求，用你的原话：“the stall on load”。检验：a cold start reaches the menu。它变成的每个委托都带着它。')).toBeInTheDocument();
+  });
+
   it('words them in 中文, the command as written', async () => {
     await i18n.changeLanguage('zh');
     render(<PressViewLine view={ASK} />);
