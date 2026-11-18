@@ -1,10 +1,10 @@
 import type { TFunction } from 'i18next';
 import { HELP_REPOSITORY } from '../data/api';
 import { en } from '../locales/index';
+// test-map: reads the catalogues by key — only the keys under the prefixes `HANDED` names
 
 /**
- * Where the shell's notifier reads its words in the catalogue: a headline and a body
- * per kind of notification, and the act of every `Person` route, by which a terminal's press is named. Its twin is the modules'
+ * Where the shell's notifier reads its words in the catalogue: a headline and a body per kind of notification, and the act of every `Person` route, by which a terminal's press is named. Its twin is the modules'
  * `SessionBalloon`, which reads them by these keys and whose English is held equal to this catalogue's.
  */
 const HANDED = ['notifications.system.', 'person.route.'] as const;

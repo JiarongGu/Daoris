@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)
+
+- **Sighting:** the `reached` gate of the WEBREACH1 and SVCLOCK1 merge ran the whole web unit run (its paths reach the web's test
+  set-up) at a quarter of the machine beside builders and another session's large deletion, and failed `app/notifications`,
+  `workflow/WorkflowEditorCanvas`, `workflow/edit/WorkflowEditor`, `app/browserDoor`, `app/listDoors` and `app/sessionEnd`, each
+  passing alone; two earlier runs of it were killed at the five-minute budget under the same load.
+- **Cause:** none found; load-shaped by the alone pass, and these are the full-app tests WEBREACH1b names as the run's slowest.
+
+## 2026-11-18 - RouteBudgetProcessTests failed with "database is locked" while writing its home (SVCLOCK1)
+
+- **Symptom:** `RouteBudgetProcessTests` failed at `BenchmarkHome.WriteAsync` with `SQLite Error 5: 'database is locked'`, run alone, on
+  every run since the store went to a log.
+- **Root cause:** the fixture ran `PRAGMA journal_mode = MEMORY` (0b053e4801, written for the rollback journal) on the store's connection.
+  The store keeps its file on two connections (the store's and the index's), and since 77c6b49098 (D236) the file is in WAL mode;
+  SQLite leaves WAL only for the one connection left on the file and answers any other at once with busy, no wait, so no timeout
+  applies. The store's own code was sound: it never leaves WAL. `ReturningLockTests` is not reproduced in this tree: ten runs
+  alone passed, and its failure in a gate's parallel run is the load of that gate, not a held lock (its read holds are rolled back
+  before the write is awaited).
+- **Fix:** the fixture keeps `synchronous = OFF` and leaves the journal mode the file's own.
+- **Verification:** `dotnet test src/Daoris.Service/Daoris.Service.Http.Tests --settings src/Daoris.Desktop/process.runsettings
+  --filter FullyQualifiedName~RouteBudgetProcessTests`: red before (the error above), green after. On a machine with some 28 other
+  `dotnet` hosts running, a later run missed a budget (`/api/sessions?includeClosed=true` p50 268 ms against 200 ms): load, not a lock.
+
 ## 2026-11-17 - The time ratchet's load mark ignored test runs outside the admission (LOADREAL1)
 
 - **Symptom:** a merge's `reached` gate ran beside four builders' own `dotnet test` and `node --test` runs; its records were marked
