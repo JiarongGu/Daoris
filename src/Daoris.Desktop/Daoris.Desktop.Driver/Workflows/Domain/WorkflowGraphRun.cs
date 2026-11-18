@@ -396,6 +396,8 @@ public static class WorkflowGraphRuns
             Default("form", process?.Landing?.Form);
         }
 
+        if (node.Kind == NodeKinds.Task) Default("role", StepRoles.Of(node));
+
         if (NodeKit.IsPlugin(node.Kind)) Default("plugin", node.Kind[..node.Kind.IndexOf('/')]);
 
         var (kind, participation, executor, press, _) = NodeKit.Of(node.Kind)?.Part(node) ?? NodePart.Automatic(node.Kind);

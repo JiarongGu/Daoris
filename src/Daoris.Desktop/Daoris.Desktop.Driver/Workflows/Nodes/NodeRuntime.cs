@@ -150,10 +150,8 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
-    /// <summary>The steps waiting on a role the person holds, from the runs the runtime last governed and each run's node record read now. Empty before a pass.</summary>
-    public IReadOnlyList<HeldStep> HeldSteps() => _governed is { } governed
-        ? Daoris.Driver.HeldSteps.Of(governed.Values, records.Read, new StepTenureFiles(records.Home, records.HoldsLease), new PlaceCastFiles(records.Home).Book(), _config?.PlaceRisk)
-        : [];
+    /// <inheritdoc cref="LeftSteps.With"/>
+    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -215,11 +213,12 @@ public sealed class NodeRuntime(
 
     /// <summary>
     /// Whether a run bound to a graph version arms the runtime: one whose record does not hold its end, one a start of
-    /// its chain asked a pass for, and every one at this process's first look. Lists the runs folder; a home with none costs one stat. A run
+    /// its chain asked a pass for, one ended failed at a step an observed fact may still settle, and every one at this process's first look. Lists the runs folder; a home with none costs one stat. A run
     /// whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
     /// </summary>
     private bool ArmsRuns =>
-        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run))
+        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)
+                || FailedHeldRuns.Arms(run, records.Read))
             // A conversation's run is owed a pass only once a press submitted a candidate, and again at the next one.
             && (!ChatRuns.IsChatRun(run.Run) || (run.Candidate?.Newest is { } candidate
                 && !string.Equals(candidate.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal)))
@@ -345,8 +344,8 @@ public sealed class NodeRuntime(
                 var home = records.Home;
                 var kept = _closer is null ? null : (Func<string, NodeGraph?>)(digest => ClosureGraphs.Read(home, digest));
                 // Each bound run is owed a pass at its chain's start and the first look, so a restart loses nothing; at its end, while a session waits.
-                var runs = await Keeping.WaitedAsync([.. _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) })], ct)
-                    .ConfigureAwait(false);
+                var runs = FailedHeldRuns.Mark(await Keeping.WaitedAsync([.. _graphRuns.Read().Select(run => run with { Asked = _restarted || asks.Contains(run.Run) })], ct)
+                    .ConfigureAwait(false), records.Read);
                 (_governed, _choices) = (NodeGoverning.Govern(look.Config, read, look.Steps(), kept, look.Bound, runs, bindings, Keeping.Skipped)
                     .ToDictionary(each => each.Unit.Id, StringComparer.Ordinal), choices);
                 _lastRead = _governed;
@@ -515,7 +514,9 @@ public sealed class NodeRuntime(
         {
             Keeping.Reopen(governed, scope);
             atEnd = Keeping.AtEnd(governed, scope);
-            tip = scope.Branch is not null && !atEnd ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
+            var observed = atEnd && FailedHeldRuns.Observed(governed.Graph, records.Read(unit));
+            tip = scope.Branch is not null && (!atEnd || observed) ? await tips.TipAsync(scope.Root, governed.Watched.Branch, ct).ConfigureAwait(false) : null;
+            if (observed && await FailedHeldRuns.AgainAsync(records, _graphRuns, governed, tip, git.Git, clock, ct).ConfigureAwait(false)) atEnd = false;
             await Keeping.ReopenSessionsAsync(governed, scope, said, ct).ConfigureAwait(false);
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
             // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.

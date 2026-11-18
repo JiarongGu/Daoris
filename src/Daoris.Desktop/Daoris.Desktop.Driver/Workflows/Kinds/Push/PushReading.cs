@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A <c>push</c>'s reading: Daoris's push (the push act) wrote the commit it pushed on the landing, and the node is reached when git's
-/// remote-tracking ref holds it. Unread it is unknown; nothing pushed, or a ref elsewhere, is not yet.
+/// remote-tracking ref holds it at the landing's tip. Unread it is unknown; nothing pushed, a push before the landing moved on, or a ref elsewhere, is not yet.
 /// </summary>
 internal static class PushReading
 {
@@ -11,9 +11,9 @@ internal static class PushReading
         if (NodeObserving.OfBranch(reading) is { } refused) return refused;
         if (NothingToDeliver.Empty(reading.Unit) is { } nothing) return NodeObserving.Seen(reading, NodeStates.Skipped, nothing) with { Source = NodeSource.Landing };
         var landing = NodeObserving.LandingOf(reading.Unit);
-        if (landing is not { Pushed: true, PushedTip: { } pushed })
+        if (landing is not { Pushed: true, PushedTip: { } pushed } || !string.Equals(pushed, landing.Tip, StringComparison.Ordinal))
         {
-            // A push made outside Daoris's push leaves no record: origin holding the landed tip is the fact (read only for a failed push).
+            // A push made outside Daoris's push leaves no record: origin holding the landed tip is the fact (read for a failed push or a moved landing).
             return reading.Git?.RemoteTip?.Invoke(landing) is { } held && string.Equals(held, landing.Tip, StringComparison.Ordinal)
                 ? NodeObserving.ReachedAt(reading, NodeSource.Git, reading.Binding.SubjectRevision, landing.Tip, LandedBranches.FileName, landing.Branch,
                     $"{TextBounds.ShortCommit(landing.Tip, 8)} is on the remote-tracking ref, pushed outside Daoris's push")

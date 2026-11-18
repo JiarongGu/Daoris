@@ -36,6 +36,16 @@ describe('stepTitle', () => {
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('integrate'))).toBe('集成请求');
   });
 
+  // A task's kind says nothing of it: a graph's tasks read by their role and id, so the release preset's four are told apart.
+  it('names a task by its role and its id, in English and in 中文', () => {
+    const task = (id: string, role: string): WorkflowStep => ({ ...stepOf('task'), id, settings: { role } });
+    expect(stepTitle(i18n.getFixedT('en'), task('config-needed', 'release-manager'))).toBe('Release manager · config-needed');
+    expect(stepTitle(i18n.getFixedT('en'), task('closed', 'owner'))).toBe('Owner · closed');
+    expect(stepTitle(i18n.getFixedT('en'), task('night', 'night-builder'))).toBe('night-builder · night');
+    expect(stepTitle(i18n.getFixedT('zh'), task('config-change', 'config-changer'))).toBe('配置变更人 · config-change');
+    expect(stepTitle(i18n.getFixedT('en'), stepOf('task'))).toBe('A task');
+  });
+
   // A graph's `request` node, another repository asked as a step, named as the driver's title names it.
   it('names the request step in English and in 中文', () => {
     expect(stepTitle(i18n.getFixedT('en'), stepOf('request'))).toBe('The quest to another repository');

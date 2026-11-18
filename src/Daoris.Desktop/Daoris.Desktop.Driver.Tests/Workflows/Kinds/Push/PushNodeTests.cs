@@ -43,6 +43,15 @@ public sealed class PushNodeTests
         Assert.Null(NodeObserving.Observe(Unit(Landed()), Push, Graph, 1).Outcome);
     }
 
+    [Fact]
+    public void A_landing_moved_on_since_its_push_is_not_reached_by_the_ref_at_the_commit_pushed_before()
+    {
+        var unit = Unit(Landed(pushed: true) with { Tip = "t2" });
+
+        Assert.Null(NodeObserving.Observe(unit, Push, Graph, 1, new NodeGitReads(RemoteTip: _ => "t1")).Outcome);
+        Assert.Equal(NodeStates.Reached, Applied(unit, new NodeGitReads(RemoteTip: _ => "t2")).Status.State);
+    }
+
     private static NodeObservation FailedRead(string remote)
     {
         var unit = Unit(Landed());
