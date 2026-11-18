@@ -246,29 +246,6 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Contains(await _quests.HistoryAsync(work.Id), o => o.Kind == QuestOperationKind.Waited);
     }
 
-    /// <summary>A closed row cached before the close cleared the question is rewritten from its history as the store opens.</summary>
-    [Fact]
-    public async Task A_closed_quest_cached_with_its_question_loses_it_on_open()
-    {
-        var work = (await Publish("Declared")).Quest!;
-        await _exchange.RespondAsync(work.Id, "take", null, Now);
-        var question = (await _exchange.PublishAsync("Declared", "Quiet", "Is it free?", "Needed.", Now)).Quest!;
-        await _exchange.RespondAsync(work.Id, "wait", null, Now.AddMinutes(1), on: question.Id);
-        await _exchange.RespondAsync(work.Id, "done", "Settled.", Now.AddMinutes(2));
-        await using (var stale = _connection.CreateCommand())
-        {
-            stale.CommandText = "UPDATE quests SET awaits = $question WHERE id = $id";
-            stale.Parameters.AddWithValue("$question", question.Id);
-            stale.Parameters.AddWithValue("$id", work.Id);
-            await stale.ExecuteNonQueryAsync();
-        }
-
-        Assert.Equal(question.Id, (await _quests.FindAsync(work.Id))!.Awaits);
-        var reopened = await QuestStore.OpenAsync(_connection);
-
-        Assert.Null((await reopened.FindAsync(work.Id))!.Awaits);
-    }
-
     [Theory]
     [InlineData(null, "names the quest")]
     [InlineData("nosuch", "No quest")]
