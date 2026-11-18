@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { Session } from '../../data/api';
-import type { PILL_TONE, ShownState } from '../../design/ui';
-import { shownKey } from '../../design/ui';
+import type { ComponentProps } from 'react';
+import { type Pill, type ShownState, shownKey } from '../../design/ui';
 import { ago, elapsed } from '../../locales/format';
 import { lineOf, type SessionGrouping } from '../groups';
 import { DOCKED_REASONS, type DockLine, dockName } from '../waits/dock';
@@ -29,7 +29,7 @@ export type StateLine = {
 };
 
 /** The pill's tone by the line's kind. */
-export const STATE_TONE: Record<StateKind, keyof typeof PILL_TONE> = {
+export const STATE_TONE: Record<StateKind, NonNullable<ComponentProps<typeof Pill>['tone']>> = {
   'needs-you': 'open', step: 'neutral', working: 'taken', pending: 'neutral', held: 'neutral', failed: 'declined', done: 'done', unread: 'neutral',
 };
 

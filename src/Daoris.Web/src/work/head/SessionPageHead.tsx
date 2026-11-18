@@ -11,6 +11,7 @@ import { cn } from '../../lib/cn';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
+import { STATE_TONE, type StateLine } from './stateLine';
 
 /**
  * **A session's page header**: Sessions' main area gains the header every view's chosen item has,
@@ -38,7 +39,14 @@ import { PageHead } from '../frame/ViewMain';
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar
  * pins beneath it rather than under it.
  */
-export function SessionPageHead({ session, title, shown, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null }: {
+export function SessionPageHead({
+  session, title, shown, state = null, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null,
+}: {
+  /**
+   * Its state line (`stateLineOf`, D320): the driver's reader's group on its pill, then its age and cause, the oldest wait's name a
+   * press to its line in the dock. The page always hands it; `shown` stands only where nothing reads the reader (a story).
+   */
+  state?: { line: StateLine; said: { word: string; rest: string }; onWait?: () => void } | null;
   /** Its line's state where another part or a co-worker decides it (`lineWords`), with *Open* to that one. */
   line?: { said: string; onOpen?: () => void } | null;
   /** The count a rule holds the line at, or one short of it (`supervisionChip`), said last on the facts line before the choice's chip. */
@@ -107,7 +115,20 @@ export function SessionPageHead({ session, title, shown, line = null, facts = []
         clamp={1}
         wholeElsewhere
         actsBeside
-        lead={<Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
+        lead={state ? (
+          <Tip content={t('work.head.state.tip')}>
+            <span data-state-line={state.line.kind} className="inline-flex min-w-0 items-baseline gap-1.5 text-small text-ink-soft">
+              <Pill tone={STATE_TONE[state.line.kind]}>{state.said.word}</Pill>
+              {state.said.rest && (state.onWait
+                ? (
+                  <button type="button" onClick={state.onWait} className="cursor-pointer rounded-control border-0 bg-transparent p-0 text-small text-ink-open underline-offset-2 hover:underline">
+                    {state.said.rest}
+                  </button>
+                )
+                : <span>{state.said.rest}</span>)}
+            </span>
+          </Tip>
+        ) : <Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>}
         facts={facts}
         // One line: a running call is said in a few words there (`callHead`), and whole in the line's tip.
         factsOneLine

@@ -289,11 +289,11 @@ export function useAttendedWaits({
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
-  // To the head's line while it is on screen, where the strip stands aside, else the strip's; a park's question and
-  // go-aheads to the box that answers them, which is always drawn. The head's *next* leads the same way.
+  // To its line in the dock, the one place a wait is pressed (D320); a park's go-aheads to the box that answers them, which is
+  // always drawn. The head's state line leads the same way.
   const goToWait = (anchor: AnchorWait) => {
     if (!attended) return;
-    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
+    const at = inTheBox(anchor) ? 'box' : 'foot';
     setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
   };
   const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);

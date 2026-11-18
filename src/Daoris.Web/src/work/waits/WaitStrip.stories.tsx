@@ -50,7 +50,6 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const meta: Meta<typeof WaitStrip> = {
   title: 'Work/Wait strip',
   component: WaitStrip,
-  args: { onTop: nothing },
   decorators: [foot],
 };
 export default meta;
@@ -127,11 +126,6 @@ export const WorkToAccept: Story = { args: { session: session(), lands: LANDS, l
 export const WorkToAcceptDarkChinese: Story = { ...WorkToAccept, decorators: [chinese, dark] };
 
 
-/**
- * The head's waits are on screen, so the strip stands aside and only the box is drawn here, each wait in the head
- * alone.
- */
-export const AsideWhileTheHeadIsOnScreen: Story = { args: { ...ParkedWithAGoAhead.args, aside: true } };
 
 /** A dispute the review page answers, with its findings folded. */
 export const Disputed: Story = {

@@ -18,6 +18,8 @@ import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { WaitStrip } from './waits/WaitStrip';
+import { dockOf } from './waits/dock';
+import { useRunWaitDoors } from './head/RunWaitsHead';
 import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
 import { coolingFor } from './say';
@@ -27,7 +29,7 @@ import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
-import { sessionTitle } from './identity';
+import { sessionOrigin, sessionTitle } from './identity';
 import { RightDock } from './frame/RightDock';
 import { SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
@@ -359,13 +361,19 @@ export function WorkFrame({
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
-    partnerPieces, waits, answerBelow, standing, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
+    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAskAt, waitPanel, tail, awayFromTop, toTop,
   } = waitsState;
+  // The run's steps held for the person or left failed, with their presses: the dock's, beside the page's own waits; and what the
+  // dock holds, which the head's state line names (D320).
+  const runWaitDoors = useRunWaitDoors(attended?.id ?? null);
+  const docked = attended && here && waits
+    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
+    : [];
   const headState = useAttendedHead({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
-    heavyTitleOf, integration, standing, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
+    heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
@@ -492,7 +500,9 @@ export function WorkFrame({
               keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
-          {attended && here && waits && (
+          {/* The dock: every wait the person settles, each with its own press, oldest first, never folded (D320); a teammate's
+              waits as a line with no press. */}
+          {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}
               {...waits}
@@ -502,8 +512,8 @@ export function WorkFrame({
               ruleAsk={ruleAskAt('foot')}
               toEvent={toEvent}
               seek={seekAt('foot')}
-              // Not yet told is aside too, for the frame the observer takes to say: no strip flashed over a head on screen.
-              aside={waitsOnScreen !== false}
+              runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
+              quest={quest}
             />
           )}
 
