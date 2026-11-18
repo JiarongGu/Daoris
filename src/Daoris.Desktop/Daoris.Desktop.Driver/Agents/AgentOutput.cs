@@ -14,4 +14,9 @@ public interface ISessionStreams
     void Open(SessionStream stream);
     void Line(string streamId, string text);
     void End(string streamId, string? state);
+
+    /// <summary>One of a subagent's own events on its stream, as its door mapped it: its own record's, never a console line.</summary>
+    void Said(string streamId, SessionEvent e)
+    {
+    }
 }

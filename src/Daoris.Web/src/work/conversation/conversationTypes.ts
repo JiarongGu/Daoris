@@ -17,7 +17,21 @@ export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
 
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
 export type SessionEventKind =
-  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw' | 'receipt' | 'transient';
+  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw' | 'receipt' | 'transient' | 'child' | 'task';
+
+/** How a sub-agent or a background task ended — `ChildEnds` in the driver. */
+export type BesideEnd = 'ok' | 'failed' | 'stopped' | 'lost';
+
+/** A sub-agent or background task the session ran beside itself, as the card of the call that started it holds it. */
+export type Beside = {
+  kind: 'child' | 'task';
+  id: string;
+  name?: string | null;
+  /** How it ended, once it has; absent while it runs. */
+  end?: BesideEnd | string | null;
+  /** Who says the end: `reported` by its door, `inferred` from its session's close. */
+  by?: string | null;
+};
 
 /** What a tool call carries: text, a diff, or a terminal — ACP's three shapes. */
 export type ToolContent = {
@@ -111,6 +125,14 @@ export type SessionEvent = {
    * harness returned) or `ended` (the turn that took it ended so). Each written only where observed.
    */
   receipt?: string | null;
+  /** For `child` and `task`: the call that started it, a `tool` event's `id`, where its door named one. */
+  call?: string | null;
+  /** For `child` and `task`: its name, where its door gave one. */
+  name?: string | null;
+  /** For `child` and `task`: on its end, how it ended; absent on its start. */
+  end?: string | null;
+  /** For `child` and `task`: who says it, `reported` or `inferred`. */
+  by?: string | null;
   /**
    * For a driver's note whose lines are worded by code (a refused sign-in among them): its parts, as a session
    * record's note carries them, which the page words in the reader's language. `text` beside them is the
@@ -290,6 +312,8 @@ export type Block = {
   continued?: boolean;
   /** When the call finished, by the driver's clock: the update that said it completed or failed. */
   finished?: string;
+  /** For a call that started a sub-agent or a background task: which, and how it ended once it has. */
+  beside?: Beside;
   /**
    * For the note that is a part's first line where it began by a move or a hand-over: the opening line the runner
    * wrote beside it, folded under it so it never draws as a line of its own.

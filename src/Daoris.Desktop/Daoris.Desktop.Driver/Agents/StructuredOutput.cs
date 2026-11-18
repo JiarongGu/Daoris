@@ -89,6 +89,14 @@ public interface IStreamsReader
     {
     }
 
+    /// <summary>
+    /// One of a child's own events, by the call that spawned it, as a reader of the wire's events mapped it: kept in that child's own
+    /// record, never the session's. A wire whose streams keep none passes over it.
+    /// </summary>
+    void Kept(string call, SessionEvent e)
+    {
+    }
+
     /// <summary>The file a running task's output is written to, named by an event: its stream follows it from there on.</summary>
     void Followed(string task, string path)
     {

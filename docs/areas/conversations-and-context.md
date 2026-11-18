@@ -64,6 +64,7 @@ of everything it handed, section by section.
 | `StandingBlock`, `StandingBlocks` | `Context/Domain/StandingBlock.cs`, `Context/StandingBlocks.cs` | The standing block (pure), and the facts a start reads for it |
 | `InstructionAccounting`, `HandedSections` | `Context/InstructionAccounting.cs`, `Events/Domain/HandedCodes.cs` | The account of what a session was handed; page `work/conversation/HandedAccount.tsx` |
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Events/Domain/LineKeys.cs` (below Context, which reads it too), `Course/Domain/LineCounts.cs`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
+| `ChildLifetimes`, `ChildRecords` | `Context/Events/ChildLifetimes.cs`, `Events/ChildRecords.cs` | Each child's and task's start and end in its session's record, and a subagent's own record beside it (rule 5) |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
 | `ConversationFacts`, `ConversationPlaces` | `Context/ConversationFacts.cs`, `Context/ConversationPlaces.cs` | What the person keeps of a conversation, one row each in the desktop store's `conversation_facts` by its id (a record's `line`, else its own id; Ask Daoris's is always its record's): name, pin, archive and its time, the earlier conversation it started from and what it was handed, and the places it spoke under. Every conversation's, one rename and pin pair (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by any part's id); a row holding nothing is removed. `ConversationFactsStep` (home migration) imported Ask Daoris's `<id>.help.json` files and `archived.json` once and took them out; it ends when no supported home holds either |
 | `ConversationArchive` | `Workplace/ConversationArchive.cs` | The archive judged and kept per conversation: archiving a part archives its conversation, refused whole where any part is live or needs the person; unarchiving or a word to any part shows it again |
@@ -102,7 +103,15 @@ of everything it handed, section by section.
    again. The home migration's `session-event-heads` step builds every head at the first start after an update, the
    newest-written record first, for up to eight seconds, each head saved as it is built: a record it left is built by its first
    reader. The file stays the record; without the store, or under 512 KB, a read is the whole file.
-   (from D76, D275)
+   What a session runs beside itself is in its record as two kinds, `child` (a subagent) and `task` (a background task), each
+   under its own id: its start with the call that started it where its door names one, its parent and depth, its name and task
+   words, and its end (`ok`, `failed`, `stopped`, `lost`) with who says it (`reported`, or `inferred` where only the session's
+   close ended it, which a later end its door says follows under the same id) (`ChildLifetimes`, the record's part of a run's
+   sink). Neither breaks the agent's words around it, and a failed one is no failed call (`SessionEventText.Quiet`). A subagent's
+   own words and calls, mapped by its door as the session's are, are in its own record, `sessions/<id>/children/<child>.jsonl`
+   (`ChildRecords`), which no enumeration of the sessions folder and no watch of the session's record reads, and which goes when
+   the session's record is forgotten; the second check reads a delegated child's calls from it. `ChildRecordsCensusTests` holds
+   both. (from D76, D275, D320)
 
 **Two contexts**
 
@@ -460,10 +469,5 @@ of everything it handed, section by section.
   older build left is removed once at the start by the home migration's `turn-marks` step
   (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
-- **SESSIONVIEW1e** (D320, proposed; nothing built): the event envelope the one session panel needs
-  (`docs/2026-11-18-session-view-design.md` §8). Today a session's record keeps its own events only: a sub-agent's and a background
-  task's start and end are readings the lineage (`ChildBindings`) and the console's streams (`subagent/<id>`, `task/<id>`) keep, a
-  task's reading names no starting call, and a sub-agent's own calls reach only its stream as text. Proposed: the record keeps each
-  child's and task's lifetime as kinds `child` and `task` with its starting call, parent and who says it, and a sub-agent's events
-  go to a record of its own beside the session's, never into it, since the driver reads the session's record for what the session
-  said.
+- **SESSIONVIEW1f** (D320): the record's `child` and `task` kinds and a subagent's own record (rule 5) read as rows of the
+  timeline; today the page names each on its spawning call's card alone (`ToolCard`'s `beside`).

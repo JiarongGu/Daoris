@@ -47,7 +47,10 @@ internal sealed class NativeTasks
         {
             case "task_started" when frame.Text("task_type") != NativeChildren.Subagent:
                 return _updated.TryAdd(task, default)
-                    ? new WireReading.TaskStarted(task) { Kind = frame.Text("task_type"), Name = frame.Text("description") }
+                    ? new WireReading.TaskStarted(task)
+                    {
+                        Call = frame.Text("tool_use_id"), Kind = frame.Text("task_type"), Name = frame.Text("description"),
+                    }
                     : null;
 
             // The ending's first word: the notification that follows is the end said, in this word where it gives none, and the close's

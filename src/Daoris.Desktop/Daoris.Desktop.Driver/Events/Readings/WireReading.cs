@@ -84,6 +84,12 @@ public abstract record WireReading
     public sealed record StreamEnded(string Stream, string? State) : WireReading;
 
     /// <summary>
+    /// One of a subagent's own events, mapped by its door as the session's are, by the stream it runs beside the session on: its own
+    /// record's (<see cref="ChildRecords"/>), never the session's.
+    /// </summary>
+    public sealed record ChildSaid(string Stream, SessionEvent Event) : WireReading;
+
+    /// <summary>
     /// A child the agent runs beside itself started, said once per child: its native id and the signal that said it, with its place and label
     /// in its wire's own words, unbounded.
     /// </summary>
@@ -120,6 +126,12 @@ public abstract record WireReading
     /// </summary>
     public sealed record TaskStarted(string Task) : WireReading
     {
+        /// <summary>
+        /// The call that started it, where its wire names one: the native door's <c>tool_use_id</c>, the protocol door's
+        /// <c>toolCallId</c>, the layer's call id.
+        /// </summary>
+        public string? Call { get; init; }
+
         /// <summary>The kind of task, where its wire named one.</summary>
         public string? Kind { get; init; }
 

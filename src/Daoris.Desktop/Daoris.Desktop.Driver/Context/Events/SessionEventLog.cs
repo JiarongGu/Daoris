@@ -580,14 +580,14 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 
     /// <summary>
     /// A record's words as a reader reads them: each thing the person said, and each run of the agent's
-    /// chunks joined into one message — broken, as the page breaks it, by anything but a usage reading.
+    /// chunks joined into one message — broken, as the page breaks it, by anything but a quiet event (<see cref="SessionEventText.Quiet"/>).
     /// </summary>
     private static IEnumerable<(long Seq, string Kind, string Text)> Passages(string path)
     {
         (long Seq, System.Text.StringBuilder Text)? message = null;
         foreach (var e in Lines(path))
         {
-            if (e.Kind == SessionEventKind.Usage) continue;
+            if (SessionEventText.Quiet(e)) continue;
             if (e.Kind == SessionEventKind.Message)
             {
                 message ??= (e.Seq, new System.Text.StringBuilder());
@@ -610,8 +610,8 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
     }
 
     /// <summary>
-    /// Remove a session's kept conversation, once its record is deleted, and forget where its numbering
-    /// stood. True when there is a file to remove; an id that names no session removes nothing.
+    /// Remove a session's kept conversation, and its subagents' own records beside it (<see cref="ChildRecords"/>), once its record is
+    /// deleted, and forget where its numbering stood. True when there is a file to remove; an id that names no session removes nothing.
     /// </summary>
     public bool Forget(string sessionId)
     {
@@ -622,6 +622,12 @@ public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
             _latest.Remove(path);
             SessionSpentKept.Shared.Forget(path);
             SessionEventHeads.In(directory)?.Forget(sessionId, path);
+            if (SessionEventText.IsLocalId(sessionId) && Path.Combine(directory, sessionId, ChildRecords.Folder) is var children
+                && Directory.Exists(children))
+            {
+                Directory.Delete(children, recursive: true);
+            }
+
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;

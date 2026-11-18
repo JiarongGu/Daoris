@@ -1,0 +1,15 @@
+{"from":"s-root","update":{"sessionUpdate":"subagent_spawned","subagentSessionId":"a8c41f3e0b2d97e15","name":"Read README first line","task":"Read the first line of README.md and say it.","capabilities":{}}}
+{"from":"a8c41f3e0b2d97e15","update":{"sessionUpdate":"tool_call","toolCallId":"toolu_child_read","title":"Read README.md","kind":"read","status":"pending","rawInput":{"file_path":"README.md"}}}
+{"from":"a8c41f3e0b2d97e15","update":{"sessionUpdate":"tool_call_update","toolCallId":"toolu_child_read","status":"completed"}}
+{"from":"a8c41f3e0b2d97e15","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"CHILDWORDS: the first line is # console3 room"}}}
+{"from":"s-root","update":{"sessionUpdate":"subagent_state_update","subagentSessionId":"a8c41f3e0b2d97e15","state":"completed"}}
+{"from":"s-root","update":{"sessionUpdate":"tool_call","toolCallId":"toolu_tick","title":"count twenty ticks","kind":"execute","status":"in_progress","rawInput":{"command":"for i in $(seq 20); do echo tick $i; sleep 1; done","run_in_background":true}}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_spawned","asyncTaskId":"bq7tick","name":"count twenty ticks","taskType":"shell","description":"count twenty ticks","showInTranscript":false,"canStop":true}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_progress","asyncTaskId":"bq7tick","toolCallId":"toolu_tick"}}
+{"from":"s-root","update":{"sessionUpdate":"tool_call_update","toolCallId":"toolu_tick","status":"completed"}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_state_update","asyncTaskId":"bq7tick","state":"stopped"}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_state_update","asyncTaskId":"bq7tick","state":"completed"}}
+{"from":"s-root","update":{"sessionUpdate":"tool_call","toolCallId":"toolu_serve","title":"dev server","kind":"execute","status":"in_progress","rawInput":{"command":"npm run dev","run_in_background":true}}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_spawned","asyncTaskId":"bq8serve","name":"dev server","taskType":"shell","canStop":true}}
+{"from":"s-root","update":{"sessionUpdate":"async_task_progress","asyncTaskId":"bq8serve","toolCallId":"toolu_serve"}}
+{"from":"s-root","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"The ticks are counted; the server is still up."}}}
