@@ -16,10 +16,10 @@ public static class HomeHistory
     /// <summary>The entries kept whole as history: every place of each moves out.</summary>
     public static IReadOnlyList<HomeEntry> Entries { get; } =
     [
-        HomeEntry.Reads, HomeEntry.RuleProposals, HomeEntry.Landings, HomeEntry.SessionBranches, HomeEntry.LinesMoved, HomeEntry.OverlapsTold,
+        HomeEntry.Reads, HomeEntry.RuleProposals, HomeEntry.LinesMoved, HomeEntry.OverlapsTold,
         HomeEntry.Abandoned, HomeEntry.Sessions, HomeEntry.Helpers, HomeEntry.Partners, HomeEntry.Checks, HomeEntry.Handed,
         HomeEntry.HelpProposals, HomeEntry.OpinionGates, HomeEntry.OpinionDues, HomeEntry.Brainstorms, HomeEntry.Keeping, HomeEntry.Notices,
-        HomeEntry.PipeWaiting, HomeEntry.PlaceReceipts, HomeEntry.StewardDesk, HomeEntry.Salvage, HomeEntry.FilesFound, HomeEntry.Intake,
+        HomeEntry.PipeWaiting, HomeEntry.PipeSent, HomeEntry.StewardDesk, HomeEntry.Salvage, HomeEntry.FilesFound, HomeEntry.Intake,
         HomeEntry.OpinionPackets, HomeEntry.QuestFiles, HomeEntry.AskFiles, HomeEntry.SessionFiles, HomeEntry.BrainstormRooms,
     ];
 
@@ -37,7 +37,7 @@ public static class HomeHistory
         HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.Migration, HomeEntry.TerminalActs, HomeEntry.UxTrail,
         HomeEntry.Keys, HomeEntry.Remotes, HomeEntry.AgentHomes, HomeEntry.BrowserEngine, HomeEntry.BrowserEdge, HomeEntry.EdgeCookies,
         HomeEntry.GitKeys, HomeEntry.GitTokens, HomeEntry.PluginPrivate, HomeEntry.GitSshConfig, HomeEntry.GitKnownHosts, HomeEntry.GitConfig,
-        HomeEntry.Window, HomeEntry.PipeSent, HomeEntry.DepsSecret,
+        HomeEntry.Window, HomeEntry.DepsSecret, HomeEntry.Landings, HomeEntry.SessionBranches, HomeEntry.PlaceReceipts,
         HomeEntry.Trees, HomeEntry.HelpRoom, HomeEntry.HelpRooms, HomeEntry.Proof, HomeEntry.UsageRead, HomeEntry.RoleRooms, HomeEntry.Deps,
         HomeEntry.TreeFiles, HomeEntry.Places, HomeEntry.Plans, HomeEntry.Evidence,
         HomeEntry.Toolchain, HomeEntry.ToolVersions, HomeEntry.Bin,
@@ -82,8 +82,8 @@ public static class HomeHistory
     public static IReadOnlyList<string> ServiceTables { get; } =
     [
         "said_settled", "session_opens", "sessions", "sessions_relaxed", "opinions", "channel_member_reads", "channel_members",
-        "channel_addressed_acks", "channel_addressed", "channel_acks", "channel_marks", "channel", "asks", "quest_log", "quest_retired",
-        "quest_forgotten", "quest_closes", "quest_forwards", "quests", "work_record_sessions", "work_records", "work_records_fts",
+        "channel_addressed_acks", "channel_addressed", "channel_acks", "channel_marks", "channel", "asks", "quest_log",
+        "quest_closes", "quest_forwards", "quests", "work_record_sessions", "work_records", "work_records_fts",
         "memory_reads", "memory_ops", "team_parts", "team_plans", "team_members", "team_decisions", "team_scouted", "event_journal",
     ];
 
@@ -96,9 +96,26 @@ public static class HomeHistory
         "store_identity", "session_cursor", "session_revision", "words_revision", "ask_revision", "channel_revision", "channel_cursor",
         "quest_machine", "quest_cursor", "quest_passes", "quest_declared", "quest_store_version", "work_record_version",
         "work_record_fts_version", "registrations", "registry_meta", "feed_provenance", "fed_code_maps", "registration_provenance",
-        "registry_retired", "api_keys",
+        "registry_retired", "api_keys", "quest_forgotten", "quest_retired",
     ];
+
+    /// <summary>
+    /// A history table that loses only the rows its condition names: the memory operations that finished. One still staged, awaiting its
+    /// approver, ready, applying or held is a write the service settles at its next start, so it stays.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> ServiceWhere { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["memory_ops"] = "state IN ('answered', 'applied', 'dropped', 'declined', 'stale')",
+    };
 
     /// <summary>The prefix of the knowledge index's own tables, which stay.</summary>
     public const string IndexPrefix = "index_";
+
+    /// <summary>
+    /// Whether a child of a history folder stays where it is: the older layout kept the requests folder and the processes' <c>.pid</c> markers
+    /// inside <c>sessions/</c>, which are run state and not a session's record.
+    /// </summary>
+    public static bool Spared(string parentName, string childName, bool folder) =>
+        string.Equals(parentName, "sessions", StringComparison.OrdinalIgnoreCase)
+        && (folder ? string.Equals(childName, "requests", StringComparison.OrdinalIgnoreCase) : childName.EndsWith(".pid", StringComparison.OrdinalIgnoreCase));
 }

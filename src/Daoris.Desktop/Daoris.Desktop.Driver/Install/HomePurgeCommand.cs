@@ -9,32 +9,39 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Refused while Daoris runs</b>, as a staged build waits for the desktop to close: a desktop, a <c>daoris drive</c> or another
-/// verb holding the home's lease, or the service the desktop left its address for, still living. It takes the lease for its act, so
-/// nothing starts on the home meanwhile. From a session's terminal it lists and never purges: a purge ends every session's record.</para>
+/// verb holding the home's lease, the service the desktop left its address for, or a session whose process still runs (its connector writes the
+/// store), still living. It takes the lease for its act, so nothing starts on the home meanwhile. From a session's terminal it lists and never
+/// purges: a purge ends every session's record. With no history in the home <c>--yes</c> says so and changes nothing.</para>
 ///
-/// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes: 0 listed or purged · 1 refused, or a
-/// purge stopped part-way, said with what moved · 2 a word it does not answer.</para>
+/// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes: 0 listed, purged or nothing to purge · 1 refused,
+/// or a purge stopped, said with what moved · 2 a word it does not answer.</para>
 /// </remarks>
 [CommandGroup("home", "purge")]
 public static class HomePurgeCommand
 {
     public const string Usage =
         "usage: daoris home purge --history --plan     what a purge would move out of the home, with sizes and counts\n"
-        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ beside it; configuration stays";
+        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays";
 
     /// <param name="args">The words after <c>home</c>.</param>
     /// <param name="home">The Daoris home.</param>
     /// <param name="session">The terminal's <c>DAORIS_SESSION_ID</c>: a session's terminal lists and never purges.</param>
     /// <param name="said">Everything the door said, for the caller to print.</param>
-    public static int Run(string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said)
+    public static int Run(string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said) =>
+        Run(args, home, clock, log, session, null, out said);
+
+    /// <param name="knowledgeDb">Where the environment moved the knowledge store to (<c>DAORIS_KNOWLEDGE_DB</c>), or null for the home's own.</param>
+    public static int Run(
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, string? knowledgeDb, out string said)
     {
         var output = new StringBuilder();
-        var code = Run(args, home, clock, log, session, output);
+        var code = Run(args, home, clock, log, session, knowledgeDb, output);
         said = output.ToString();
         return code;
     }
 
-    private static int Run(string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output)
+    private static int Run(
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, string? knowledgeDb, StringBuilder output)
     {
         if (args is not ["purge", .. var words] || !words.Contains("--history") || words.Any(word => word is not ("--history" or "--plan" or "--yes"))
             || words.Contains("--plan") == words.Contains("--yes"))
@@ -44,10 +51,9 @@ public static class HomePurgeCommand
             return 2;
         }
 
-        var plan = HomePurge.Plan(home);
         if (words.Contains("--plan"))
         {
-            Listed(plan, output);
+            Listed(HomePurge.Plan(home, knowledgeDb), output);
             return 0;
         }
 
@@ -58,20 +64,31 @@ public static class HomePurgeCommand
             return 1;
         }
 
-        if (Running(home) is { } why)
-        {
-            output.AppendLine($"home: {why} Close Daoris (its window's Quit, or Ctrl+C in a `daoris drive`), then run this again: nothing was moved.");
-            return 1;
-        }
+        if (Running(home) is { } why) return Refused(why, output);
 
         using var lease = HomeLease.TryAcquire(home, LeaseKind.Verb, out var holder, "home purge --history");
-        if (lease is null)
+        if (lease is null) return Refused($"{home} is held by {holder?.Named ?? "another process"}.", output);
+
+        var sessions = LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), CancellationToken.None).GetAwaiter().GetResult();
+        if (sessions.Problem is not null || sessions.Sessions.Count > 0)
         {
-            output.AppendLine($"home: {home} is held by {holder?.Named ?? "another process"}. Close it, then run this again: nothing was moved.");
-            return 1;
+            return Refused(sessions.Problem ?? $"a session still runs on {home}: its connector writes the store.", output);
+        }
+
+        var plan = HomePurge.Plan(home, knowledgeDb);
+        if (plan.Nothing)
+        {
+            output.AppendLine("home: nothing to purge: the home holds no history. Nothing was changed.");
+            return 0;
         }
 
         var done = HomePurge.Run(plan, clock(), log);
+        if (done.Failed is not null && !done.Changed)
+        {
+            output.AppendLine($"home: stopped: {done.Failed}");
+            return 1;
+        }
+
         output.AppendLine($"home: moved {done.Moved.Count} of {plan.Paths.Count} paths ({Size(done.Moved.Sum(path => path.Bytes))}) and "
             + $"{done.Emptied.Sum(table => table.Rows)} rows of {done.Emptied.Count} tables into {done.Into}; the configuration stays.");
         foreach (var path in done.Moved) output.AppendLine($"  moved   {path.Relative}  {Size(path.Bytes)}, {path.Files} files");
@@ -83,6 +100,12 @@ public static class HomePurgeCommand
         }
 
         output.AppendLine($"  stopped: {done.Failed} What moved is there; `daoris home purge --history --yes` moves the rest.");
+        return 1;
+    }
+
+    private static int Refused(string why, StringBuilder output)
+    {
+        output.AppendLine($"home: {why} Close Daoris (its window's Quit, or Ctrl+C in a `daoris drive`), then run this again: nothing was moved.");
         return 1;
     }
 

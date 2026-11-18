@@ -569,7 +569,8 @@ try
     {
         var exit = HomePurgeCommand.Run(
             homeArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
-            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable), out var homeSaid);
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable),
+            Environment.GetEnvironmentVariable(WiringVariables.KnowledgeDb)?.Trim(), out var homeSaid);
         (exit == 2 ? Console.Error : Console.Out).Write(homeSaid);
         return exit;
     }

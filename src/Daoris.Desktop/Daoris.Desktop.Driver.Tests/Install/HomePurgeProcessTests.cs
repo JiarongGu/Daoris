@@ -87,6 +87,7 @@ public sealed class HomePurgeProcessTests : IDisposable
         Assert.Empty(await after.SessionRecordsAsync());
         Assert.Empty(await after.EveryQuestAsync());
         Assert.Empty(await after.EveryAskAsync());
+        Assert.Equal(1, Rows(knowledge, "quest_forgotten"));
         Assert.Equal("Engine", Assert.Single(await after.RegistrationsAsync()).Repository);
         Assert.Equal(0, Rows(DaorisHome.Entry(Home, HomeEntry.DesktopDb), "notices"));
         Assert.Equal(1, Rows(DaorisHome.Entry(Home, HomeEntry.DesktopDb), "roles"));
