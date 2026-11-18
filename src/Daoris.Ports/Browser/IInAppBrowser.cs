@@ -27,7 +27,16 @@ public interface IInAppBrowser
     /// where the person chose that links open here. <paramref name="address"/> is already a web page's.
     /// </summary>
     void Open(string address);
+
+    /// <summary>
+    /// The pages open in it now, each its target and its address, read without bringing it up: null where it is not running, or the
+    /// host cannot say. What a park waiting on the person's sign-in reads to see it done (<c>SignInSightings</c>).
+    /// </summary>
+    Task<IReadOnlyList<BrowserPage>?> PagesAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<BrowserPage>?>(null);
 }
+
+/// <summary>A page open in Daoris's browser: its target, which stays while the page navigates, and the address it shows now.</summary>
+public sealed record BrowserPage(string Target, string Address);
 
 /// <summary>
 /// The shell's word on Daoris's own browser for clearing its caches: the shell's browser host, handed to the application as it hands
