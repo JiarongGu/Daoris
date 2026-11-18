@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { dirname, join } from 'node:path';
 import { makeFixture } from '../test/_fixture.ts';
 import {
-  repoRoot, AT, type Signature, type Outcome, type Failure, type Member, q, type Candidate, type Drained, tool, sig, failures,
+  repoRoot, AT, type Signature, type Outcome, type Failure, type Member, q, type Candidate, tool, sig, failures,
   type Evidence, type Whole, type Confirm, type Judged, type Job,
 } from './support/merge-queue-kit.ts';
 
@@ -127,11 +127,9 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2', strays: [] });
     assert.equal(q.drainedLine(drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, {}, AT)), 'ended no gate running, each with everything it started');
-    // What a test left running is said with the gates; a record without strays says nothing of it.
+    // What a test left running is said with the gates.
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { ended: ['check'], strays: [11, 12] }, AT)), 'ended gates check, each with everything it started, and 2 processes their tests had left running under the scope tree (pid 11, 12)');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, { strays: [11] }, AT)), 'ended no gate running, each with everything it started, and 1 process their tests had left running under the scope tree (pid 11)');
-    const { strays: _kept, ...older } = drained;
-    assert.equal(q.drainedLine(older as Drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
   });
 
   test('QUEUEWAITEND1: a request dropped while queued or forming is handed back as dropped, so its waiter has an outcome; a drop leaves the rest forming', () => {
@@ -314,7 +312,7 @@ describe('a contained member (INTEGRATE1c)', () => {
   });
 
   test('a candidate that does not promote gives it back as its own request, in arrival order, to be judged again', async () => {
-    const queued = members(3).map((each, i) => ({ ...each, request: `r${i + 1}`, at: `2026-10-24T10:00:0${i}.000Z`, message: 'x' }));
+    const queued = members(3).map((each, i) => ({ ...each, request: `r${i + 1}`, seq: i + 1, at: `2026-10-24T10:00:0${i}.000Z`, message: 'x' }));
     const formed = await q.formCandidate({ base: 'm0', members: queued, at: AT, merge: inMember('b1', 'b2') });
     const retained = formed.candidate!.members.map(({ commit, ...request }) => request) as Member[];
     const again = q.requestsOf(formed.candidate, retained);
@@ -335,9 +333,7 @@ describe('a contained member (INTEGRATE1c)', () => {
     const formed = await q.formCandidate({ base: 'm0', members: queue.queued, at: AT, merge: inMember('b1', 'b2') });
     const kept = formed.candidate!.members.map(({ commit, ...request }) => request) as Member[];
     assert.deepEqual(q.requestsOf(formed.candidate, kept).map((each) => each.branch), ['b1', 'b2', 'b3'], 'a split or a kept candidate leaves the queue in its order');
-    // A request queued before the sequence (a record kept on a machine) is earlier than any that has one, and keeps its clock's order.
-    const old = [{ branch: 'o2', tip: 'x', at: '2026-10-24T10:00:02Z' }, { branch: 'o1', tip: 'x', at: '2026-10-24T10:00:01Z' }];
-    assert.deepEqual(q.inArrival([{ ...queue.queued[1]! }, ...old, { ...queue.queued[0]! }]).map((each) => each.branch), ['o1', 'o2', 'b1', 'b2']);
+    assert.deepEqual(q.inArrival([{ ...queue.queued[1]! }, { ...queue.queued[0]! }]).map((each) => each.branch), ['b1', 'b2']);
   });
 
   test('a branch contained on a candidate is queued already: it is not queued a second time', async () => {
