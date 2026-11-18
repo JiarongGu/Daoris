@@ -254,10 +254,11 @@ internal static class NodeGoverning
         var newest = work.LastOrDefault();
 
         // An ended run is judged again once its chain comes back here, at a start's ask or the first look, or while a session waits on it at its end
-        // (RunReEnds); one skipped while a session waits says why. A conversation's comes back at its next candidate, never at a turn's end.
+        // (RunReEnds) or an observed fact may still settle the step it failed at (FailedHeldRuns); one skipped while a session waits says why. A
+        // conversation's comes back at its next candidate, never at a turn's end.
         if (run.Ended is { } ended
             && !(chat is not null ? !string.Equals(chat.IdIn(binding.Run), ended.Quest, StringComparison.Ordinal)
-                : newest is not null && (string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal) ? run.Waited : run.Asked)))
+                : newest is not null && (string.Equals(newest.Id, ended.Quest, StringComparison.Ordinal) ? run.Waited || run.Observed : run.Asked)))
         {
             if (run.Waited && chat is null) skipped?.Invoke(run.Run, newest is null ? EmptyRunEnds.QuestUnread : EmptyRunEnds.NotAsked);
             return null;
