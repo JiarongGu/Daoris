@@ -21,7 +21,7 @@ export function withReport(each: Pick<Command, 'command' | 'args' | 'cwd'>, name
   }
   // The runner's options come before the files it names.
   const at = each.args.indexOf('--test-force-exit') + 1;
-  const reporters = ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=junit', `--test-reporter-destination=../../${FOLDER}/${name}.xml`];
+  const reporters = ['--test-reporter=spec', '--test-reporter-destination=stdout', '--test-reporter=junit', `--test-reporter-destination=${posix.relative(each.cwd, `${FOLDER}/${name}.xml`)}`];
   return { args: [...each.args.slice(0, at), ...reporters, ...each.args.slice(at)], report: `${FOLDER}/${name}.xml` };
 }
 

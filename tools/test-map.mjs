@@ -6,15 +6,15 @@
  * ## The units
  *
  * A **unit** is what a runner selects: a .NET class of a declared `dotnet test` gate (each half, each test project of a
- * solution gate), a `node --test` file of the CLI's suite or the tool-tests, a vitest file, a Playwright spec, a rehearsal.
- * Each has:
+ * solution gate), a `node --test` file of the CLI's suite, the tool-tests or a `tools/` test a gate lists (`test-map/listed.mjs`),
+ * a vitest file, a Playwright spec, a rehearsal. Each has:
  *
  * - **its reach**. .NET: the Process census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
  *   a fast half's filter is read from its command, and a solution gate's test projects each count. TypeScript: a closure over
  *   the repository: every relative import and literal `import(…)` followed wherever it leads, every string that names a
  *   tracked file or folder (from the root or the file), every basename string with an extension that names tracked files,
- *   `import.meta.glob`'s patterns, and `// reaches: <path or folder or *> — <why>` lines for an edge no string names; an
- *   import the census cannot follow (a computed `import(…)`) reaches its whole suite. A rehearsal: its tool's import closure.
+ *   `import.meta.glob`'s patterns, and `// reaches: <path, folder, glob or *> — <why>` lines for an edge no string names (a census's
+ *   listing, `declaresRead`); a computed `import(…)` reaches its whole suite. A rehearsal: its tool's import closure.
  * - **its subject**: the module its own file sits in (§3.1): a test project's first folder, or the project at its root; the
  *   CLI's `test/<module>` is `src/<module>`'s; the page's tests sit beside their sources; a tool-test names its tool. A git-half
  *   class at its project's root carries `// subject: <module> — <why>`.
@@ -46,6 +46,7 @@ import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
 import { TOOL_PROJECTS } from './vitest.config.ts';
 import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
+import { listedUnits } from './test-map/listed.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';
 import { CHECK_STEPS } from './verify-checks/steps.mjs';
 export { literalsOf, tsFacts } from './test-map/ts-facts.mjs';
@@ -181,7 +182,7 @@ export function tsReader(files, read) {
   const ownOf = (file) => {
     if (own.has(file)) return own.get(file);
     const fact = factsOf(file);
-    const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [] };
+    const reach = { files: new Set(), folders: new Set(), globs: [], wide: [], imports: [], declared: [] };
     for (const spec of fact.imports) {
       const resolved = resolveImport(file, spec, tracked);
       if (resolved) reach.imports.push(resolved);
@@ -205,6 +206,7 @@ export function tsReader(files, read) {
       reach.globs.push(absolute);
     }
     for (const { target, why } of fact.reaches) {
+      if (target !== '*') reach.declared.push(target.replace(/\/+$/, ''));
       if (target === '*') reach.wide.push(`${file} declares it reaches its whole suite: ${why}`);
       else if (tracked.has(target)) reach.files.add(target);
       else if (folders.has(target.replace(/\/+$/, ''))) reach.folders.add(target.replace(/\/+$/, ''));
@@ -217,7 +219,7 @@ export function tsReader(files, read) {
   const reachOf = (unit) => {
     const closure = new Set([unit]);
     const queue = [unit];
-    const reach = { files: new Set([unit]), folders: new Set(), globs: [], wide: [] };
+    const reach = { files: new Set([unit]), folders: new Set(), globs: [], wide: [], declared: [] };
     while (queue.length) {
       const file = queue.pop();
       if (!CODE.test(file)) continue;
@@ -231,8 +233,10 @@ export function tsReader(files, read) {
       for (const each of mine.folders) reach.folders.add(each);
       reach.globs.push(...mine.globs);
       reach.wide.push(...mine.wide);
+      reach.declared.push(...mine.declared);
     }
-    return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide };
+    const declared = [...new Set(reach.declared)].sort();
+    return { files: [...reach.files].sort(), folders: [...reach.folders].sort(), globs: [...new Set(reach.globs)], wide: reach.wide, declared };
   };
   /** The files within `depth` reads of `unit` with their fewest reads: its own file 0, what it imports or names 1, and so on (never a folder or a glob). */
   const hopsFrom = (unit, depth) => {
@@ -263,6 +267,10 @@ export function tsReaches(reach, path) {
   if (reach.folders.some((folder) => path.startsWith(`${folder}/`))) return true;
   return reach.globs.some((glob) => globRegExp(glob).test(path));
 }
+
+/** Whether a unit's `// reaches:` lines declare `path`, one read from it (`unitHops`), and its reach even where that is wide. */
+export const declaresRead = (reach, path) => (!reach?.within || declaredHolds(reach.within, path)) && (reach?.declared ?? [])
+  .some((target) => target === path || path.startsWith(`${target}/`) || (/[*?{[]/.test(target) && globRegExp(target).test(path)));
 
 /** Whether a gate's declared `paths` hold `path`: an entry ending in `/` is a folder, any other a file, as the declaration writes them. */
 const declaredHolds = (paths, path) => paths.some((entry) => (entry.endsWith('/') ? path.startsWith(entry) : path === entry));
@@ -348,6 +356,8 @@ export function census(files, read, { suites = null } = {}) {
       units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
     }
   }
+  const bounded = (suite) => (TS_SUITES.some((each) => each.suite === suite && each.bounded) ? gates.find((gate) => gate.name === suite)?.paths ?? null : null);
+  units.push(...listedUnits({ gates, read, files, reachOf: ts.reachOf, wanted, within: bounded }));
   for (const rehearsal of REHEARSALS.filter((each) => wanted(each.suite))) {
     if (!files.includes(rehearsal.file)) continue;
     units.push({ suite: rehearsal.suite, kind: 'rehearsal', unit: rehearsal.file, name: posix.basename(rehearsal.file), file: rehearsal.file, subject: rehearsal.file, reach: ts.reachOf(rehearsal.file) });
@@ -391,7 +401,7 @@ export function unitHops(unit, paths, map, depth = 2) {
     return counts.length ? Math.min(...counts) : undefined;
   }
   const within = map.ts.hopsFrom(unit.file, depth);
-  const counts = paths.map((path) => within.get(path)).filter((each) => each !== undefined);
+  const counts = paths.map((path) => within.get(path) ?? (declaresRead(unit.reach, path) ? 1 : undefined)).filter((each) => each !== undefined);
   return counts.length ? Math.min(...counts) : undefined;
 }
 

@@ -137,7 +137,7 @@ test('the run settings a gate names are part of its declaration', () => {
   const declared = (settings: string): string => reuseContext({
     map: { dotnet: [], units: [] }, files: ['src/process.runsettings'], read: () => settings, toolchain: 't',
     gates: [{ name: 'driver-process', run: 'dotnet test src/Driver.Tests --settings src/process.runsettings' }],
-    readers: { tsSuites: [], tsReaches: () => false, unitReaches: () => false, pathReach: () => ({}) },
+    readers: { tsSuites: [], tsReaches: () => false, declaresRead: () => false, unitReaches: () => false, pathReach: () => ({}) },
   }).declaration('driver-process');
   assert.notEqual(declared('<Filter>A</Filter>'), declared('<Filter>B</Filter>'));
   assert.equal(declared('<Filter>A</Filter>'), declared('<Filter>A</Filter>'));
@@ -152,7 +152,7 @@ test("a .NET suite's candidate files and their placements are kept for the next 
   const read = (path: string) => `text of ${path}`;
   const make = (memo: { value: ReuseMemo; changed: () => void }) => reuseContext({
     map, files, read, toolchain: 't', gates: [], memo,
-    readers: { tsSuites: [], tsReaches: () => false, unitReaches: () => true, pathReach },
+    readers: { tsSuites: [], tsReaches: () => false, declaresRead: () => false, unitReaches: () => true, pathReach },
   });
   let changed = 0;
   const kept: ReuseMemo = {};

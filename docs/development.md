@@ -89,9 +89,8 @@ during the task. Before done, run `node tools/reached-checks.mjs --base main --t
 `npm run verify:checks`, and fix what your change reddens: they are the commands `daoris.gates.json` marks `"handback"`, every brief
 names them, and a workflow's `check` step verifies them at your tip while you are open. `npm run quick` is a builder's
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
-(`npm run verify:checks`, with the universal gates on the built-in patterns) but the time ratchet, and the layers' census's
-source counts (`--counts`), so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as
-handed back.
+(`npm run verify:checks`, with the universal gates on the built-in patterns, and the layers' census's source counts) but the time
+ratchet, so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as handed back.
 
 The `cli` gate, `npm run verify:checks`, is `tools/verify-checks.mjs`: the steps of `tools/verify-checks/steps.mjs`, the index's
 writer first and alone, the rest side by side (quick runs the same list through the same runner). Each step declares what it
@@ -100,13 +99,15 @@ strings name, a tsconfig's files and theirs); a step whose tool lists the tree b
 merge in place, a preflight and the queue's scoped run hand every gate their changed paths (`MERGE_BRANCH_CHANGED`,
 `tools/merge/gate-hands.ts`), and the gate then runs only the steps a changed path reaches, the devkit's universal step standing
 aside since the `universal` gate runs it in every merge with the private patterns; a docs-only merge runs twelve of its
-twenty-five steps. Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
+twenty-six steps. The layers' census's source counts (`tools/layers-census/counts.mjs`, about 12 s) are one, run where a `.cs` or
+`.csproj` file, the lanes or the census's list changes, so a merge sees the allowance or boundary its sources move (MAINRED1). Handed no paths (a developer's run, `--full`, the watch after a landing, the release workflow) it runs every
 step. `node tools/verify-checks.mjs --plan` says what it would run and why each other step would not. A new check is a step of
 that list with its reads, never a link of a chain. Quick judges no test time; the merge's gates and the full set judge it, on classes measured again alone. Last,
 committed and merged with main, a builder runs `node tools/merge-branch.mjs --preflight` in its worktree: its merge's fast plan
 (the queue's own choice, on the paths from the merge base, of which it runs the fast gates: never a Process or git half, a
-rehearsal, a browser spec or `tool-e2e`, a known red's half included, even where the branch changes `daoris.gates.json`; each is
-named deferred to the CI run on main), main and the queue untouched, each verdict kept where the merge of the same tree keeps it.
+rehearsal, a browser spec or the whole `tool-e2e`, a known red's half included, even where the branch changes `daoris.gates.json`;
+each is named deferred to the CI run on main, while its `reached` gate runs the three end-to-end specs nearest the change), main and
+the queue untouched, each verdict kept where the merge of the same tree keeps it.
 It runs within its bound, 25 minutes unless `--bound <minutes>` says otherwise: a gate waiting for the machine's heavy-run
 admission says so as it starts to wait, with who holds the places, and again each minute; the preflight says each minute what
 runs and what waits; at the bound it ends what it started, starts nothing more, and says which gates passed, which failed, which
@@ -191,10 +192,15 @@ started, and `node tools/live-logins.mjs` finds a test that names a real login c
 A branch that runs only its own classes still owes the censuses that read every source. No list of them is kept here: a
 census that reads sources by text is a test that names what it reads, and the selector reaches it from a changed path. The
 desktop's carry `[Trait("Category","Census")]` and are the `censuses` gate; a CLI or tool census names its reads as
-`// reaches: <glob> — <why>` lines (the home census and the provider census name `tools/**`), so `node tools/reached-checks.mjs
---base main` (a builder's checks and the merge's `reached` gate) runs it for a diff that touches those paths; the scripts
-(`partials`, `read-shares`, `optional-locks`, `live-logins`, `test-patience`, `tool-test-census`) are steps of `verify:checks`,
-which `npm run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line.
+`// reaches: <glob> — <why>` lines (the home census and the provider census name `tools/**`, the tree-base census every code
+file, the declarations test every `.d.mts` and script beside it), so `node tools/reached-checks.mjs --base main` (a builder's checks
+and the merge's `reached` gate) runs it for a diff that touches those paths. A declared path is one read from the test, so no
+suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). The
+`tools/*.test.mjs` files a gate lists one by one, the CLI's verify's (`cli-tests`) and the `layers` gate's, are units too
+(`tools/test-map/listed.mjs`), run from the root as their gate runs them. The scripts (`partials`, `read-shares`,
+`optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, the layers' counts) are steps of `verify:checks`, which `npm
+run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line. Each of the six
+reds that landed on 2026-11-17 and 18 past a green merge is replayed in `tools/merge/missed-reds.test.ts` (MAINRED1).
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
@@ -339,8 +345,10 @@ once and the tier four files, since the files one at a time took 57 minutes on a
 tool's start asks git once for each kind of fact (`tools/merge/home.ts`); a case copies the repository its file seeded once rather than build one, writes a branch in one
 `git fast-import`, runs stand-in gates, and proves one mode. An end-to-end spec is reached only by a path its gate's `paths` declare,
 the merge tool's own files (`tools/test-map.mjs`, `bounded`): a change to a tool the merge tool only imports reaches the unit
-tier and no end-to-end spec. A merge's reached checks defer the end-to-end specs to the run after the landing, as they defer a
-Process class. One case fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
+tier and no end-to-end spec. A merge's reached checks run the three specs nearest its change (`E2E_FAST`, `tools/merge/heavy-tier.ts`):
+of those within two reads of a changed path, a spec named as a changed file first, then the fewest reads; they defer the rest to the
+run after the landing, as they defer a Process class, and name each spec deferred. Three start side by side, so they cost a merge
+about the longest of them, and only a merge whose paths the tier's gate declares (MAINRED1). One case fails after thirty minutes and the run exits once its cases are done, whatever they left running, so the gate never waits on
 one unbounded; a case's invocation past its bound is ended with its tree, and one whose tree outlives the end is answered
 after the patience with the leak named (`tool-test/support/bounded-node.ts`). `npm test` and `npm run verify` do not run them. A merge runs either gate only when its paths reach it (`tools/merge-branch.mjs`
 and what it imports, the publisher, the kit, the folder); `--full` and the release workflow run both (GATESLIM1). A merge-queue

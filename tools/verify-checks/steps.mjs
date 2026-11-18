@@ -1,6 +1,6 @@
 /**
  * The steps of the merge's `cli` gate (`npm run verify:checks`), each with what it reads: the one list `tools/verify-checks.mjs` runs,
- * and `npm run quick` runs with its own writers before it and the layers' counts after.
+ * and `npm run quick` runs with its own writers before it.
  *
  * A step's `reads` holds paths as a gate's `paths` do (an entry ending in `/` is a folder, one with `*` a glob, any other a file), or is
  * `'*'`, every path. `node tools/test-map.mjs --check` holds each to what its command's code reads (`tools/verify-checks/reads.mjs`): a
@@ -47,6 +47,12 @@ export const CHECK_STEPS = Object.freeze([
   step('node tools/partials.mjs', [...NODE, ...PARTIALS, 'src/**/*.cs']),
   step('node tools/read-shares.mjs', [...NODE, ...PARTIALS, DRIVER, 'tools/read-shares.mjs']),
   step('node tools/optional-locks.mjs', [...NODE, ...PARTIALS, DRIVER, 'tools/']),
+  // The layers' counts list every C# source and project file wherever it sits, and hold them to the list and the lanes.
+  step('node tools/layers-census/counts.mjs', [
+    ...NODE, ...PARTIALS, '**/*.{cs,csproj}', 'src/Daoris.Adapters/', '**/daoris.lanes.json', 'tools/layers-census.json', 'tools/layers-census/',
+    'tools/merge/lanes-file.ts', 'tools/merge/packages.ts', 'daoris.packages.lock', 'src/Daoris.Assistant/', 'src/Daoris.Ports/',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver/resources.json', 'src/Daoris.Desktop/Directory.Packages.props',
+  ]),
   step('node tools/comment-gate.mjs', [...NODE, ...SOURCES, 'tools/']),
   step('node tools/comment-gate.mjs --all', [...NODE, ...SOURCES, 'tools/']),
   step('node tools/size-ratchet.mjs', [...NODE, ...SOURCES, 'tools/']),
