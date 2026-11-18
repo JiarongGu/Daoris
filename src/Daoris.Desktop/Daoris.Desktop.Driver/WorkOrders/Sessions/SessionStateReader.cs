@@ -6,8 +6,7 @@ namespace Daoris.Driver;
 /// <see cref="SessionGroups.Read"/>, so the list, the head, Notifications and the terminal say one state.
 /// </summary>
 /// <remarks>
-/// <para><b>The first state that holds</b>: a live record by its own state, one awaiting its run's step needing the person where a step of
-/// that run does; then what holds the person's words; a parked quest;
+/// <para><b>The first state that holds</b>: a live record by its own state, one awaiting its run's step by its run's waits; then what holds the person's words; a parked quest;
 /// a helper's ask; its run's waits; an awaiting reply; then its ending, read against the verdict where the planner still considers
 /// its quest. A tree holding commits no run waits on is said in its session, never as a state.</para>
 ///
@@ -107,8 +106,6 @@ internal sealed class SessionStateReader
             if (QuestClosedUnderPark(record)) return In(row with { Shown = "completed" }, SessionGroup.Done);
             if (SessionGroups.WaitsOnYou(record.Id, record.State, record.Answered)) return In(row, SessionGroup.NeedsYou, SessionReason.Question);
             if (_look.Between.Contains(record.Id)) return In(row with { Shown = ShownState.Idle }, SessionGroup.Working);
-            // Its turn ended and it waits on its workflow's run: where a step of that run waits on the person, so does it, with the
-            // run's waits on its row; else it still works, awaiting a step. Its tree is the run's, so it shows no work of its own.
             if (record.State == SessionStates.AwaitingStep && _runWaits.TryGetValue(record.Id, out var stepWaits))
             {
                 var waited = row.WaitedOn(stepWaits, work: null);

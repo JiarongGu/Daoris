@@ -4,9 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The person's stop of a session awaiting its run's step is their stop of that run (D316): kept on the run's record as their own
-/// `workflow stop` is, the next pass ends the run stopped, and the run's end ends the session; a record waiting on no run is not this
-/// stop's, and a run that cannot take it says why.
+/// The person's stop of a session awaiting its run's step is their stop of that run, as their own `workflow stop` is.
 /// </summary>
 public sealed class RunWaitStopsTests : NodeRunFixture
 {

@@ -24,10 +24,6 @@ internal interface IWorkOrdersWorkflows
 
     Task<IReadOnlyList<string>> EndRunsAsync(string home, Func<string, string?, bool> of, string words, Func<DateTimeOffset> clock, CancellationToken ct);
 
-    /// <summary>
-    /// The person's stop of the run <paramref name="record"/> awaits, its steps stopped through the run's node door as their own, so the run's
-    /// end ends the session; null where it awaits no run's step.
-    /// </summary>
     Task<RunWaitStopped?> StopRunAsync(string home, SessionRecord record, Func<DateTimeOffset> clock, CancellationToken ct);
 
     /// <summary>

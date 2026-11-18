@@ -447,7 +447,6 @@ public sealed class OrphanedSessionTests : IDisposable
             return new StandInService(listener, url, root) { WriteDelay = writeDelay, Refuses = refuses };
         }
 
-        /// <param name="parts">The note's parts its record answers, as a record awaiting its run's step names the run.</param>
         public void Seed(string id, string state, string? tree = null, string? baseCommit = null, DateTimeOffset? updated = null, IReadOnlyList<NotePart>? parts = null)
         {
             lock (_sessions)

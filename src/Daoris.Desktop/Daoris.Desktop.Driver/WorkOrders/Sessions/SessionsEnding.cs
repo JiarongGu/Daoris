@@ -85,7 +85,6 @@ internal static class SessionsEnding
 
         var run = world.StopsRun ?? ((record, at) => WorkOrdersWorkflows.Current.StopRunAsync(world.Home, record, world.Clock.GetUtcNow, at));
         var answer = await SessionMoves.StopAsync(world.Processes, world.Service, id, ct, run: run).ConfigureAwait(false);
-        // A session awaiting its run's step has no process to stop: it stops with that run, whose end ends it; what is kept, or why nothing is.
         if (answer.Run is { } ran)
         {
             output.WriteLine(ran.Said(id));

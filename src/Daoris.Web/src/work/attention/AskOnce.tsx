@@ -60,7 +60,6 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   // A declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
   const askAgain = act === 'ask-again';
   const goOn = act === 'go-on';
-  // A waiting step's stop says what it ends as the run's view says it, the person's reason optional.
   const stopNode = act === 'stop-node';
   // What ending a quiet session does, and that the person's waiting words go to the next part.
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';

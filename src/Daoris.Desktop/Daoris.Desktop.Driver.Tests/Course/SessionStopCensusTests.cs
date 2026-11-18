@@ -5,10 +5,7 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The class SESSIONCLOSE1 found (a live session state with no working close): every state the page counts active
-/// (<c>SESSION_ACTIVE</c>, read from the page's own list) has a person's stop at <c>session stop &lt;id&gt;</c>, the one implementation the
-/// window's Stop runs too, that ends the record or moves what holds it, with nothing on this machine running it: a start or a working
-/// record ends as an orphan, a parked one is stopped unanswered, one awaiting its run's step keeps the stop of that run (D316).
+/// Every state the page counts active (<c>SESSION_ACTIVE</c>) has a person's stop at <c>session stop &lt;id&gt;</c>, the one the window's Stop runs.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class SessionStopCensusTests : NodeRunFixture

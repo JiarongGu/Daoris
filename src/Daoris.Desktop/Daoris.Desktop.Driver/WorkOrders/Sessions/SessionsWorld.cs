@@ -20,10 +20,7 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// </summary>
     public InstanceWorld? Instance { get; init; }
 
-    /// <summary>
-    /// How a stop reaches the run a session awaits, answering null where it awaits none: a window running the verb speaks as its route's
-    /// channel. Null is Workflows' run stop as the person's own terminal speaks it, which a stop makes the owner role's, on <see cref="Clock"/>.
-    /// </summary>
+    /// <summary>How a stop reaches the run a session awaits (null where none); null here is the terminal's own stop.</summary>
     public Func<SessionRecord, CancellationToken, Task<RunWaitStopped?>>? StopsRun { get; init; }
 
     /// <summary>How long a request is waited for unless a world says otherwise: ten seconds.</summary>

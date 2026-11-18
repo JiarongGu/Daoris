@@ -46,7 +46,6 @@ export type AttentionActId =
   | 'ask-again' | 'go-on'
   // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject'
-  // A waiting step's stop, the run's node word as its view's *End this work…* is: the owner role's end of the work.
   | 'stop-node'
   | 'approve-end' | 'decline-end'; // an end the sweep wrote, which no session's page holds, decided in its row
 
@@ -112,7 +111,6 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'ask-again', 'go-on',
   // A task's press sends the run on its route, with a note the person may give.
   'task-done', 'task-approve', 'task-reject',
-  // A step's stop ends the work it waits on, and says so before it does.
   'stop-node',
 ]);
 

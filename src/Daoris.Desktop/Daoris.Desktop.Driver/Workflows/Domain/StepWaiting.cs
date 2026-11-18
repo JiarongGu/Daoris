@@ -208,8 +208,6 @@ public static class HeldSteps
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
         if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
 
-        // Its stop too where the node offers one: the owner role's end of the work, so a step no word of the row settles, a plugin's
-        // held by the person, still has the person's end of it where it waits.
         var presses = RunNodeWords.Acts(node, status).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt

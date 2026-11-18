@@ -96,10 +96,6 @@ public sealed class RunWaitGroupsTests
         Assert.Equal(SessionGroup.Working, Row(look, "s1").Group);
     }
 
-    /// <summary>
-    /// SESSIONCLOSE1: a session awaiting its run's step, the run's `release` held by the person's `operations`, sat under Working for days
-    /// and Needs you said nothing; one whose run waits on no person still works, awaiting a step.
-    /// </summary>
     [Fact]
     public void A_session_awaiting_its_run_s_step_needs_you_where_the_run_waits_on_you_and_works_where_it_waits_on_no_person()
     {
