@@ -29,6 +29,10 @@ export function stepTitle(t: TFunction, step: WorkflowStep): string {
     const environment = textOf(step, 'environment');
     return environment ? t('workflow.step.look', { environment }) : t('workflow.step.lookAnywhere');
   }
+  if (step.kind === 'task') {
+    const role = textOf(step, 'role');
+    if (role) return t('workflow.step.taskRole', { role: t(`workflow.role.${role}`, { defaultValue: role }), id: step.id });
+  }
   if (TITLED.has(step.kind)) return t(`workflow.step.${step.kind}`);
   const plugin = pluginNode(step.kind);
   if (plugin) return t('workflow.step.pluginNode', plugin);

@@ -47,6 +47,7 @@
   "workflow.step.unknown": "此页面无法描述的步骤：`{{kind}}`",
   "workflow.step.go-ahead": "你的放行",
   "workflow.step.task": "任务",
+  "workflow.step.taskRole": "{{role}} · {{id}}",
   "workflow.step.push": "推送",
   "workflow.step.isolate": "打开工作树",
   "workflow.wait.isolate.at-once": "等待：此处允许同时分开工作的会话已满。",
