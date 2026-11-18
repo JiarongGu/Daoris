@@ -409,9 +409,9 @@ public sealed class RepositoryLayoutTests : IDisposable
     // A target that leaves the repository: the CLI refuses; the service reads the lock as none.
     [InlineData("""{"entries":[],"target":"../outside"}""", """{"harness":"agents"}""", "-", ".agents")]
     [InlineData("""{"entries":[],"harness":"agents","target":".agents"}""", """{"harness":"agents"}""", ".agents", ".agents,.claude")]
-    // lockLayout's other branches: an older build wrote at the manifest's own target; a lock that names
-    // its harness and no target is at that harness's default; one the CLI does not know is refused there.
-    [InlineData("""{"entries":[]}""", """{"target":"docs/agent"}""", "docs/agent", "docs/agent")]
+    // lockLayout's other branches: a lock that names its harness and no target is at that harness's default, whatever
+    // target the manifest names; one the CLI does not know is refused there.
+    [InlineData("""{"entries":[]}""", """{"target":"docs/agent"}""", ".claude", ".claude")]
     [InlineData("""{"entries":[]}""", """{"target":"./.claude/"}""", ".claude", ".claude")]
     [InlineData("""{"entries":[],"harness":"agents"}""", """{}""", ".agents", ".agents,.claude")]
     [InlineData("""{"entries":[],"harness":"claude-code","target":"docs/x"}""", """{}""", "docs/x", "docs/x")]

@@ -190,13 +190,12 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
                 newest     INTEGER,
                 files      INTEGER,
                 fed        INTEGER NOT NULL,
-                read_at    TEXT NOT NULL
+                read_at    TEXT NOT NULL,
+                -- The stamp, and the generation it is written at.
+                scanner    TEXT,
+                scanned    INTEGER
             );
             """, inside).ConfigureAwait(false);
-        // The stamp, and the generation it is written at: a build before it moves the generation and never the stamp, so its
-        // write reads as unstamped.
-        await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanner", "scanner TEXT", inside).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, ReadingsTable, "scanned", "scanned INTEGER", inside).ConfigureAwait(false);
 
         await ExecuteAsync($"PRAGMA user_version = {SchemaVersion};", inside).ConfigureAwait(false);
         return true;

@@ -44,15 +44,14 @@ public sealed class OpinionStore
               handed_to   TEXT NULL,
               handed_word TEXT NULL,
               handed_at   TEXT NULL,
-              answers     TEXT NULL
+              answers     TEXT NULL,
+              -- The record findings are first handed to, once they are handed again after a hand-over.
+              handed_from TEXT NULL
             );
             CREATE INDEX IF NOT EXISTS opinions_working ON opinions (working);
             CREATE INDEX IF NOT EXISTS opinions_session ON opinions (session);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        // The record findings are first handed to, once they are handed again after a hand-over.
-        await SchemaColumns.EnsureAsync(_db, "opinions", "handed_from", "handed_from TEXT NULL", ct).ConfigureAwait(false);
-        await OpinionReviewerNames.RenameAsync(_db, ct).ConfigureAwait(false);
     }
 
     /// <summary>Keep a new pass, as asked: nothing given, handed or answered yet.</summary>

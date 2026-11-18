@@ -100,7 +100,6 @@ public sealed class AskWordsTests : IAsyncLifetime
 
         var first = Assert.Single(read.Words);
         Assert.Equal(new AskWord(AskWordKind.Asked, Sentence, Now), first);
-        Assert.Null(read.WordsKeptFrom);
         // The answer a door hands back is the same record a read gives.
         Assert.Equal(read.Words, ask.Words);
     }
@@ -276,52 +275,6 @@ public sealed class AskWordsTests : IAsyncLifetime
         var words = (await _desk.FindAsync(ask.Id))!.Words;
         Assert.Equal("the footer comes from the v3 page", words[^1].Text);
         Assert.Equal(2, words.Count);
-    }
-
-    /// <summary>
-    /// 🔴 A store from before the words were kept still reads every ask it holds, its sentence as its first word. Its
-    /// later words were never kept and are not back-filled, so the record says from when they are kept
-    /// rather than reading as though the person said nothing more; a word given afterwards is kept.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_words_reads_its_asks_and_says_from_when_their_words_are_kept()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE asks (
-                  id TEXT PRIMARY KEY, workspace TEXT NOT NULL, sentence TEXT NOT NULL, state TEXT NOT NULL,
-                  tier TEXT NOT NULL, asked TEXT NOT NULL, updated TEXT NOT NULL, asker TEXT NULL, note TEXT NULL,
-                  links TEXT NOT NULL DEFAULT '[]', attachments TEXT NOT NULL DEFAULT '[]',
-                  proposal TEXT NOT NULL DEFAULT '[]', quests TEXT NOT NULL DEFAULT '[]', intake TEXT NULL
-                );
-                INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated, quests)
-                VALUES ('a1b2c3', 'work', 'an older ask', 'Published', 'intake', '2026-10-01T02:26:00Z', '2026-10-01T02:29:00Z', '["q1"]');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var before = DateTimeOffset.UtcNow;
-        var asks = await AskStore.OpenAsync(old);
-        var kept = (await asks.FindAsync("a1b2c3"))!;
-
-        Assert.Equal("an older ask", kept.Sentence);
-        Assert.Equal(["q1"], kept.Quests);
-        Assert.Equal(
-            new AskWord(AskWordKind.Asked, "an older ask", DateTimeOffset.Parse("2026-10-01T02:26:00Z")),
-            Assert.Single(kept.Words));
-        Assert.NotNull(kept.WordsKeptFrom);
-        Assert.True(kept.WordsKeptFrom >= before, $"kept from {kept.WordsKeptFrom}, opened at {before}");
-
-        // Opening it again moves nothing: the moment its words began to be kept is a fact, set once.
-        var again = (await (await AskStore.OpenAsync(old)).FindAsync("a1b2c3"))!;
-        Assert.Equal(kept.WordsKeptFrom, again.WordsKeptFrom);
-
-        await asks.RecordWordAsync(
-            "a1b2c3", new AskWord(AskWordKind.Answered, "use the common-report", Now, "s1", "q1"), Now);
-        Assert.Equal("use the common-report", (await asks.FindAsync("a1b2c3"))!.Words[^1].Text);
     }
 
     /// <summary>A word kept by a newer build in a kind this one does not know is passed over, never a failed read.</summary>

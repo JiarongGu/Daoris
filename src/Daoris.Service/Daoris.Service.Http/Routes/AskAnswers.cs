@@ -35,7 +35,6 @@ public sealed class AskAnswers(HostWiring host)
             a.Quests, a.Intake, a.Deletable,
             // The person's words, served as the sentence is: these routes are a local host's alone.
             Words: a.Words.Select(w => new AskWordResponse(AskWord.Spell(w.Kind), w.Text, w.At, w.Session, w.Quest)).ToList(),
-            WordsKeptFrom: a.WordsKeptFrom,
             GoAheads: a.GoAheads.Select(g => new GoAheadResponse(
                 g.Number, g.Kind, g.On, g.Act, GoAhead.Spell(g.State),
                 g.Asked.Select(r => new GoAheadRequestResponse(r.Session, r.Quest, r.At, r.Why)).ToList(),

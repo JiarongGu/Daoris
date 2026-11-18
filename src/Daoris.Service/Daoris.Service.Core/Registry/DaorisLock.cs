@@ -39,15 +39,14 @@ public sealed class DaorisLock
 
     /// <summary>
     /// The descriptor the lock's entries were written under: <c>claude-code</c> when the lock names
-    /// none, the only layout older locks carry. Null when there is no lock, or it is read as none.
+    /// none. Null when there is no lock, or it is read as none.
     /// </summary>
     public string? Harness { get; }
 
     /// <summary>
     /// The root the lock's entries were written under, repository-relative with forward slashes: the
-    /// lock's own <c>target</c>, else the manifest's for a lock on the older layout, else the
-    /// descriptor's. Null when there is no lock, or it is read as none, and then nothing says where
-    /// daoris wrote anything.
+    /// lock's own <c>target</c>, else the descriptor's. Null when there is no lock, or it is read as none,
+    /// and then nothing says where daoris wrote anything.
     /// </summary>
     public string? Target { get; }
 
@@ -94,9 +93,8 @@ public sealed class DaorisLock
                 return Empty;
             }
 
-            // Lock targets are relative to the root the lock is written under. A lock on the older
-            // layout does not name it, so the manifest has to be read for it (the CLI's lockLayout).
-            if (Layout(document.RootElement, repositoryRoot) is not { } layout) return Empty;
+            // Lock targets are relative to the root the lock is written under (the CLI's lockLayout).
+            if (Layout(document.RootElement) is not { } layout) return Empty;
             var (harness, target) = layout;
 
             var mirrors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -173,27 +171,14 @@ public sealed class DaorisLock
     /// Read here as no lock at all, which is the safe direction <see cref="Read"/> already takes: every
     /// document is then the repository's own, and none is read outside it.
     /// </remarks>
-    private static (string Harness, string Target)? Layout(JsonElement lockRoot, string repositoryRoot)
+    private static (string Harness, string Target)? Layout(JsonElement lockRoot)
     {
         // A field of the wrong shape throws InvalidOperationException here, which Read turns into Empty.
         var named = lockRoot.TryGetProperty("harness", out var h) ? h.GetString() : null;
         var harness = named ?? RepositoryLayout.Older;
         if (!RepositoryLayout.Descriptors.TryGetValue(harness, out var descriptor)) return null;
 
-        string target;
-        if (lockRoot.TryGetProperty("target", out var t))
-        {
-            target = t.GetString() ?? descriptor.DefaultTarget;
-        }
-        else
-        {
-            // Neither field: an older build wrote it, at the manifest's own target while the manifest is
-            // still on that layout, and at `.claude` once the manifest has been flipped past it.
-            var manifest = RepositoryLayout.Manifest.Read(repositoryRoot);
-            target = named is null && manifest.OnOlderLayout
-                ? manifest.Target ?? descriptor.DefaultTarget
-                : descriptor.DefaultTarget;
-        }
+        var target = lockRoot.TryGetProperty("target", out var t) ? t.GetString() ?? descriptor.DefaultTarget : descriptor.DefaultTarget;
 
         var normal = RepositoryLayout.Declared(target);
         return RepositoryLayout.Escapes(normal) ? null : (harness, normal);

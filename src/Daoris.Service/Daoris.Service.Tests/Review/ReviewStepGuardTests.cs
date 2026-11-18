@@ -153,7 +153,7 @@ public sealed class ReviewStepGuardTests : ReviewStepFixture
     /// is compared by what crosses, so a local address, which the wire drops, never decides.
     /// </summary>
     [Fact]
-    public async Task A_set_up_carries_its_identity_across_and_one_from_before_reads_as_it_was()
+    public async Task A_set_up_carries_its_identity_across_and_one_pushed_without_it_reads_as_it_was()
     {
         var (_, _, setUp) = await Built();
         var kept = await _exchange.PostSetUpAsync(
@@ -164,7 +164,7 @@ public sealed class ReviewStepGuardTests : ReviewStepFixture
         Assert.Equal(made.Id, crossed[^1].SetUp!.Id);
         Assert.Null(crossed[^1].SetUp!.Look);
 
-        // As a build from before wrote one: no identity.
+        // A set-up pushed without an identity (the field is optional on the wire).
         var old = QuestWire.ReadPush($$"""
             { "base": 0, "operations": [{ "machine": "m1", "sequence": 9, "quest": "{{setUp.Id}}", "at": "2026-10-08T09:00:00Z",
               "kind": "setup", "setUp": { "commit": "{{Commit}}", "shows": "The report.", "local": true } }] }

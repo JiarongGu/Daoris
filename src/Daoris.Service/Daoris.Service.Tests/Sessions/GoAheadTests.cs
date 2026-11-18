@@ -313,11 +313,11 @@ public sealed class GoAheadTests : GoAheadFixture
     }
 
     /// <summary>
-    /// A store from before keeps every ask it had, reading none held; and a go-ahead this build cannot read (a newer kind,
-    /// a half-written entry) is passed over, never a failed read of the ask, and kept as written by the next request.
+    /// A go-ahead this build cannot read (a newer kind, a half-written entry) is passed over, never a failed read of the ask,
+    /// and kept as written by the next request.
     /// </summary>
     [Fact]
-    public async Task A_store_from_before_reads_none_and_an_unreadable_go_ahead_is_passed_over_and_kept()
+    public async Task An_unreadable_go_ahead_is_passed_over_and_kept()
     {
         var (ask, quest) = await Asked();
         await using (var raw = _connection.CreateCommand())
@@ -342,31 +342,6 @@ public sealed class GoAheadTests : GoAheadFixture
         read.Parameters.AddWithValue("$id", ask.Id);
         var stored = (string)(await read.ExecuteScalarAsync())!;
         Assert.Contains("teleport", stored, StringComparison.Ordinal);
-    }
-
-    /// <summary>A store opened before go-aheads existed gains the column and reads every ask as holding none.</summary>
-    [Fact]
-    public async Task A_store_opened_before_go_aheads_gains_the_column()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE asks (
-                  id TEXT PRIMARY KEY, workspace TEXT NOT NULL, sentence TEXT NOT NULL, state TEXT NOT NULL,
-                  tier TEXT NOT NULL, asked TEXT NOT NULL, updated TEXT NOT NULL, asker TEXT NULL, note TEXT NULL,
-                  links TEXT NOT NULL DEFAULT '[]', attachments TEXT NOT NULL DEFAULT '[]',
-                  proposal TEXT NOT NULL DEFAULT '[]', quests TEXT NOT NULL DEFAULT '[]');
-                INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated)
-                VALUES ('abc123', 'work', 'an old ask', 'Proposed', 'declarations', '2026-09-01T00:00:00Z', '2026-09-01T00:00:00Z');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await AskStore.OpenAsync(old);
-
-        Assert.Empty((await store.FindAsync("abc123"))!.GoAheads);
     }
 
     /// <summary>

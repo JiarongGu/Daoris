@@ -31,61 +31,28 @@ public sealed class AskStore
               links       TEXT NOT NULL DEFAULT '[]',
               attachments TEXT NOT NULL DEFAULT '[]',
               proposal    TEXT NOT NULL DEFAULT '[]',
-              quests      TEXT NOT NULL DEFAULT '[]'
+              quests      TEXT NOT NULL DEFAULT '[]',
+              -- Which intake session served it.
+              intake      TEXT NULL,
+              -- The person's words after the ask, appended where they are kept.
+              words       TEXT NOT NULL DEFAULT '[]',
+              -- The go-aheads its sessions asked for, beside the person's words.
+              go_aheads   TEXT NOT NULL DEFAULT '[]',
+              -- The person's review choices and the intake's proposals, each appended where it is kept.
+              review_choices   TEXT NOT NULL DEFAULT '[]',
+              review_proposals TEXT NOT NULL DEFAULT '[]',
+              -- The person's kind and workflow choices, and the intake's kind proposals, appended as the review's are.
+              workflow_choices   TEXT NOT NULL DEFAULT '[]',
+              workflow_proposals TEXT NOT NULL DEFAULT '[]',
+              -- The asker's short title, as a quest's, and the paths its asker declared.
+              short_title TEXT NULL,
+              paths       TEXT NULL,
+              through_words TEXT NOT NULL DEFAULT '[]',
+              requirements  TEXT NOT NULL DEFAULT '[]'
             );
             CREATE INDEX IF NOT EXISTS asks_workspace ON asks (workspace, state);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-
-        // Which intake session served it. An ask made before the intake existed keeps every
-        // word it had — it is the record of what a person asked, and nothing re-derives it.
-        await SchemaColumns.EnsureAsync(_db, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
-
-        // The person's words after the ask, appended where they are kept. A store from before keeps
-        // every row it had, and their earlier answers and messages are not kept, so the
-        // moment keeping began is written on each of them, once, rather than read as nothing more said.
-        await SchemaColumns.EnsureAsync(_db, "asks", "words", "words TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-        if (!await SchemaColumns.HasAsync(_db, "asks", "words_kept_from", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.EnsureAsync(_db, "asks", "words_kept_from", "words_kept_from TEXT NULL", ct)
-                .ConfigureAwait(false);
-            await using var mark = _db.Command();
-            mark.CommandText = "UPDATE asks SET words_kept_from = $now WHERE words_kept_from IS NULL";
-            mark.Parameters.AddWithValue("$now", Moments.Write(DateTimeOffset.UtcNow));
-            await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-
-        // The go-aheads its sessions asked for, beside the person's words. A store from before keeps
-        // every ask it had, each holding none: nothing has been asked on one in a way a later session could be handed.
-        await SchemaColumns.EnsureAsync(_db, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-
-        // The person's review choices and the intake's proposals, each appended where it is kept. A
-        // store from before keeps every ask it had, each holding none: nothing is chosen or proposed on it.
-        await SchemaColumns.EnsureAsync(_db, "asks", "review_choices", "review_choices TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, "asks", "review_proposals", "review_proposals TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-
-        // The person's kind and workflow choices, appended where they are kept. A store from before keeps
-        // every ask it had, each holding none: nothing is chosen on it, so each repository's choice decides.
-        await SchemaColumns.EnsureAsync(_db, "asks", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-
-        // The intake's kind proposals, appended as the review's are, beside the person's choices.
-        await SchemaColumns.EnsureAsync(_db, "asks", "workflow_proposals", "workflow_proposals TEXT NOT NULL DEFAULT '[]'", ct)
-            .ConfigureAwait(false);
-
-        // The asker's short title, as a quest's. A store from before keeps every ask it had,
-        // each holding none, so a page heads it with its sentence's first line.
-        await SchemaColumns.EnsureAsync(_db, "asks", "short_title", "short_title TEXT NULL", ct).ConfigureAwait(false);
-
-        // The paths its asker declared; an ask from before declared none.
-        await SchemaColumns.EnsureAsync(_db, "asks", "paths", "paths TEXT NULL", ct).ConfigureAwait(false);
-
-        await SchemaColumns.EnsureAsync(_db, "asks", "through_words", "through_words TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, "asks", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'", ct).ConfigureAwait(false);
 
         // The asks' revision, the change stream's `asks` family, one row moved by every insert, update and
         // delete of an ask. Kept by triggers, as `session_revision` is, because the triggers live in the file: a connector built
@@ -456,7 +423,6 @@ public sealed class AskStore
             Short = Maybe("short_title"),
             Paths = Maybe("paths") is { } paths ? Items(paths, e => e.GetString() ?? "") : [],
             Later = LaterWords(Text("words")),
-            WordsKeptFrom = Maybe("words_kept_from") is { } from ? Moments.ReadRequired(from) : null,
             GoAheads = GoAheads.Read(Text("go_aheads")),
             ReviewChoices = ReviewChoicesOf(Text("review_choices")),
             ReviewProposals = ReviewProposalsOf(Text("review_proposals")),

@@ -65,7 +65,17 @@ public sealed class MemoryOpStore
               holds         TEXT NULL,
               entry         TEXT NULL,
               applied       INTEGER NULL,
-              settled       TEXT NULL
+              settled       TEXT NULL,
+              -- The records a write cites.
+              recheck       TEXT NULL,
+              -- A replacement's predecessors as JSON.
+              predecessors  TEXT NULL,
+              -- A proposal's quest, the owner's answer and when its proposer is told.
+              carried       TEXT NULL,
+              answer        TEXT NULL,
+              told          TEXT NULL,
+              -- When the row began applying, against which a receipt's expiry is judged.
+              began         TEXT NULL
             );
             CREATE INDEX IF NOT EXISTS memory_ops_session ON memory_ops (session, state);
             CREATE INDEX IF NOT EXISTS memory_ops_state ON memory_ops (state);
@@ -74,17 +84,6 @@ public sealed class MemoryOpStore
             {EventJournal.MemorySchema}
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        await MemoryAuthorColumnNames.RenameAsync(_db, ct).ConfigureAwait(false);
-        // The records a write cites; a row from before reads none.
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "recheck", "recheck TEXT NULL", ct).ConfigureAwait(false);
-        // A replacement's predecessors as JSON; a row from before replaces none.
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "predecessors", "predecessors TEXT NULL", ct).ConfigureAwait(false);
-        // A proposal's quest, the owner's answer and when its proposer is told; a row from before reads none.
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "carried", "carried TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "told", "told TEXT NULL", ct).ConfigureAwait(false);
-        // When the row began applying, against which a receipt's expiry is judged; a row from before reads none.
-        await SchemaColumns.EnsureAsync(_db, "memory_ops", "began", "began TEXT NULL", ct).ConfigureAwait(false);
     }
 
     /// <summary>An operation its session made, kept <c>staged</c> until the session's commit point; nothing staged applies by itself.</summary>

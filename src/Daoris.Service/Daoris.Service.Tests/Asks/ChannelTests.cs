@@ -223,9 +223,9 @@ public sealed class ChannelTests : IAsyncLifetime
         Assert.Equal<bool?>([true, true, true, false, false], read.Select(m => m.Urgent));
     }
 
-    /// <summary>The person's message is kept at their default, urgent, or ordinary where they asked; a mirrored one from before says none.</summary>
+    /// <summary>The person's message is kept at their default, urgent, or ordinary where they asked; a mirrored one that says no level has none.</summary>
     [Fact]
-    public async Task The_persons_post_is_urgent_unless_asked_ordinary_and_one_from_before_says_no_level()
+    public async Task The_persons_post_is_urgent_unless_asked_ordinary_and_a_mirrored_one_without_a_level_says_none()
     {
         var (ask, _, _) = await AskedAsync();
 
