@@ -27,6 +27,8 @@
  * - Only what the files name is followed, not what the named types use in turn: the driver's modules name each other nearly
  *   all, so a closure over them would reach every class from every change. What that misses is the sweep's (the merge tool
  *   runs a whole half at least daily, and a release refuses older), and a hand-written `[Reaches]` with its reason.
+ * - A `[Reaches("src/…")]` naming a path from the root (a file or a folder of a project the test project compiles no reference
+ *   against, a golden's source) is reached by a change to that path alone: its classes, not the half.
  * - **A class with no reach** is reached by every source path that reaches its half: an unknown runs.
  *
  * ## What a changed path reaches (`pathReach`)
