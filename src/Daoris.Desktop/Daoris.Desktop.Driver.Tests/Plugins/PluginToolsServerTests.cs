@@ -198,7 +198,7 @@ public sealed class PluginToolsServerTests : IDisposable
         Directory.CreateDirectory(StepAnswer.Folder(_home));
         File.WriteAllText(StepAnswer.AskPath(_home, "i-1"), ask.Write());
         var at = PluginToolsHand.Read(["--session", "i-1", "--repository", "engine", "--workspace", "games", "--plugin", "acme-tickets", "--step", "i-1"])!;
-        var server = new PluginToolsServer(_home, at, PluginLog.None, (_, _) => Task.FromResult<IHookChannel>(new Channel(_ => "{}", _frames)));
+        var server = new PluginToolsServer(_home, at, PluginLog.None, (_, _) => Task.FromResult<IHookChannel>(new Channel(_ => "{}", _frames)), new Daoris.Testing.MovedClock());
 
         var listed = (await Ask(server, """{ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }""")).GetProperty("result").GetProperty("tools")
             .EnumerateArray().Select(tool => tool.GetProperty("name").GetString()).ToList();

@@ -41,7 +41,7 @@ public sealed class PluginToolsServer(
     /// stdout carries frames alone, so a refusal is said on <paramref name="error"/>: exit 2 with no home or no session named.
     /// </summary>
     public static async Task<int> ServeAsync(
-        string? home, IReadOnlyList<string> words, MachineLog? log, TextReader input, TextWriter output, TextWriter error, CancellationToken ct)
+        string? home, IReadOnlyList<string> words, MachineLog? log, TextReader input, TextWriter output, TextWriter error, TimeProvider clock, CancellationToken ct)
     {
         if (home is null)
         {
@@ -55,12 +55,18 @@ public sealed class PluginToolsServer(
             return 2;
         }
 
-        await new PluginToolsServer(home, at, new PluginLog(log)).RunAsync(input, output, ct).ConfigureAwait(false);
+        await new PluginToolsServer(home, at, new PluginLog(log), clock: clock).RunAsync(input, output, ct).ConfigureAwait(false);
         return 0;
     }
 
-    public PluginToolsServer(string home, PluginToolsAt at, PluginLog log, PluginCommandRun.Starter? start = null)
-        : this(home, at.Session, at.Place, at.Language, log, start) => _at = at;
+    public PluginToolsServer(string home, PluginToolsAt at, PluginLog log, PluginCommandRun.Starter? start = null, TimeProvider? clock = null)
+        : this(home, at.Session, at.Place, at.Language, log, start)
+    {
+        _at = at;
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock), "the root hands the tools server its clock");
+    }
+
+    private readonly TimeProvider _clock;
 
     private IReadOnlyList<PluginToolCommand> Tools() =>
         [.. PluginToolList.At(home, _at.Place).Where(tool => _at.Plugin is null || tool.Plugin.Manifest.Id == _at.Plugin)];
@@ -172,7 +178,7 @@ public sealed class PluginToolsServer(
         if (Tools().FirstOrDefault(tool => tool.Name == name) is not { } tool)
             return Failure(id, -32602, $"no tool `{name}` is handed here: it is not a plugin's tool, or its plugin's tools are switched off at {_at.Place.Key}");
         JsonElement? arguments = parameters!.Value.TryGetProperty("arguments", out var args) ? args : null;
-        return Success(id, await PluginToolCall.CallAsync(home, tool, arguments, _at, log, ct, start).ConfigureAwait(false));
+        return Success(id, await PluginToolCall.CallAsync(home, tool, arguments, _at, log, _clock, ct, start).ConfigureAwait(false));
     }
 
     private static object Success(JsonElement? id, object result) => new { jsonrpc = "2.0", id, result };

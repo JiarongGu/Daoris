@@ -66,12 +66,13 @@ internal sealed class NodeRunKeeping(
         KeepPullRequests(governed);
     }
 
-    /// <summary>A run's steps its agent holds and settles by its tool, each handed to the run's working session once its tenure is kept (<see cref="StepHandOffs"/>).</summary>
+    /// <summary>A run's steps its agent holds: its acts journaled and settled (<see cref="StepActs"/>), then each handed on (<see cref="StepHandOffs"/>).</summary>
     public async Task HandStepsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
     {
         if (!holdsLease()) return;
-        await StepHandOffs.HandAsync(records, governed, scope, sessions?.Invoke(), new PlaceCastFiles(records.Home).Book(), config?.PlaceRisk, say(), said, ct, _handed)
-            .ConfigureAwait(false);
+        var casts = new PlaceCastFiles(records.Home).Book();
+        await StepActs.JournalAsync(records, governed, scope, sessions?.Invoke(), casts, config?.PlaceRisk, clock, said, ct).ConfigureAwait(false);
+        await StepHandOffs.HandAsync(records, governed, scope, sessions?.Invoke(), casts, config?.PlaceRisk, say(), said, ct, _handed).ConfigureAwait(false);
     }
 
     /// <summary>

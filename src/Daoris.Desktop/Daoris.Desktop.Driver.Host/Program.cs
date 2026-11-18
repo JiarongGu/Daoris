@@ -626,7 +626,7 @@ try
         {
             using var stdin = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false));
             await using var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
-            return await PluginToolsServer.ServeAsync(pluginsHome, toolWords, log, stdin, stdout, Console.Error, CancellationToken.None);
+            return await PluginToolsServer.ServeAsync(pluginsHome, toolWords, log, stdin, stdout, Console.Error, TimeProvider.System, CancellationToken.None);
         }
 
         // Approve and withdraw go through the running Daoris where one answers, confirmed in its window.

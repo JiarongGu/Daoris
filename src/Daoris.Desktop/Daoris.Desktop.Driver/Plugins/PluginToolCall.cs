@@ -12,7 +12,7 @@ public static class PluginToolCall
 {
     /// <summary>The MCP result of the call: <c>{ content, structuredContent?, isError }</c>.</summary>
     public static async Task<object> CallAsync(
-        string home, PluginToolCommand tool, JsonElement? arguments, PluginToolsAt at, PluginLog log, CancellationToken ct,
+        string home, PluginToolCommand tool, JsonElement? arguments, PluginToolsAt at, PluginLog log, TimeProvider clock, CancellationToken ct,
         PluginCommandRun.Starter? start = null)
     {
         var plugin = tool.Plugin.Manifest.Id;
@@ -45,6 +45,11 @@ public static class PluginToolCall
         {
             return Error($"`{tool.Name}` asked for `{asked.Name}`, and no person answers a tool call: the person runs "
                 + $"`daoris {plugin} {command.Name}` or its page's command instead.");
+        }
+
+        if (at.Session is { } session && round.Data is { ValueKind: JsonValueKind.Object } answered && answered.TryGetProperty("receipt", out var receipt))
+        {
+            PluginActRounds.Append(home, session, call.Run, tool.Name, receipt, clock.GetUtcNow());
         }
 
         var text = round.Said.Count > 0 ? string.Join("\n", round.Said) : round.Data is { } data ? data.GetRawText() : $"`{tool.Name}` ended {round.Exit}.";

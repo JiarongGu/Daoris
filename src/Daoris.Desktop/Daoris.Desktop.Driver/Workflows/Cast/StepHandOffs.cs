@@ -62,8 +62,11 @@ public static class StepHandOffs
             ? $" Give its evidence by name: {string.Join(", ", names.Select(each => $"`{each}`"))}."
             : "";
         var epoch = step.Epoch is { } held ? $", epoch {held}" : "";
-        return $"Daoris hands you step `{node.Id}` of run #{run} (attempt {attempt}{epoch}), waiting on `{step.Role}`, which your agent holds.{outcomes}{evidence} "
-               + $"Do it, then settle it with `{StepSettles.Tool}` (run `{run}`, node `{node.Id}`{(step.Epoch is { } e ? $", epoch {e}" : "")}), with your words. "
+        var settles = StepReceipts.Mapped(node).Count > 0
+            ? $"{StepReceipts.Words(node)} "
+            : $"{evidence} Do it, then settle it with `{StepSettles.Tool}` (run `{run}`, node `{node.Id}`{(step.Epoch is { } e ? $", epoch {e}" : "")}), with your words. ";
+        return $"Daoris hands you step `{node.Id}` of run #{run} (attempt {attempt}{epoch}), waiting on `{step.Role}`, which your agent holds."
+               + $"{(StepReceipts.Mapped(node).Count > 0 ? "" : outcomes)}{StepReceipts.KnowledgeWords(node)}{settles}"
                + "Where you cannot (no access, a refusal, a yes you need), ask up your line (`question_ask`, or `go_ahead_ask` for an act that is the "
                + "person's to allow) and say so in your last message. Then end your turn: the next step, or why the settle was refused, is your next turn.";
     }
