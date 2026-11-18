@@ -21,12 +21,6 @@ public sealed class StoredOldNamesCensusTests : IDisposable
     /// <summary>Each kept record, by the name the area's census gives it, and the sources that spell its old word.</summary>
     private static readonly IReadOnlyDictionary<string, string[]> Kept = new Dictionary<string, string[]>
     {
-        ["the service stores' renamed columns and notes"] =
-        [
-            "Daoris.Service/Daoris.Service.Core/Sessions/SessionColumnNames.cs",
-            "Daoris.Service/Daoris.Service.Core/Knowledge/Memory/MemoryAuthorColumnNames.cs",
-            "Daoris.Service/Daoris.Service.Core/Sessions/NotePartNames.cs",
-        ],
         ["a plugin's work event"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/HookPoints.cs",

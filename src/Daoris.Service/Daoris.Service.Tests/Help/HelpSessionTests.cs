@@ -95,14 +95,13 @@ public sealed class HelpSessionTests : IAsyncLifetime
         Assert.Equal(alpha.Session.Tree, beta.Session.Tree);
     }
 
-    /// <summary>A record from before has no workspace of its own and is read as <c>default</c>.</summary>
+    /// <summary>A record told no workspace is kept in <c>default</c>.</summary>
     [Fact]
-    public async Task A_record_from_before_reads_as_default()
+    public async Task A_record_told_no_workspace_is_kept_in_default()
     {
-        // A record with no workspace named.
-        var before = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
+        var unsaid = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
 
-        Assert.Equal("default", (await _sessions.FindAsync(before.Id))!.Workspace);
+        Assert.Equal("default", (await _sessions.FindAsync(unsaid.Id))!.Workspace);
     }
 
     /// <summary>
@@ -159,16 +158,16 @@ public sealed class HelpSessionTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 A record from before the mode has none kept and reads as restricted, which is what every start before HELPMODE1a1 ran
-    /// under; the stored row is not rewritten. A record that is not Ask Daoris's has no mode at all.
+    /// 🔴 A help record told no mode has none kept and reads as restricted; the stored row is not rewritten. A record that is not Ask
+    /// Daoris's has no mode at all.
     /// </summary>
     [Fact]
-    public async Task A_help_record_from_before_the_mode_reads_restricted_and_no_other_record_has_one()
+    public async Task A_help_record_told_no_mode_reads_restricted_and_no_other_record_has_one()
     {
-        var before = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
+        var unsaid = await _sessions.CreateAsync(null, SessionLedger.HelpRepository, "stub", Now, kind: SessionKind.Chat, tree: Room());
         var chat = await _sessions.CreateAsync(null, "Engine", "stub", Now, kind: SessionKind.Chat);
 
-        Assert.Equal("restricted", (await _sessions.FindAsync(before.Id))!.HelpMode);
+        Assert.Equal("restricted", (await _sessions.FindAsync(unsaid.Id))!.HelpMode);
         Assert.Null((await _sessions.FindAsync(chat.Id))!.HelpMode);
     }
 

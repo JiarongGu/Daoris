@@ -142,10 +142,9 @@ public static class QuestLog
     /// reads lost. The take that beat it stands, so the operation is made on a claim its machine never held.
     /// </summary>
     /// <remarks>
-    /// One rule for the three places that judge it. The store's verbs refuse such an operation inside their write: the pass that finds a take lost leaves the session running until its driver's next look stops it,
+    /// One rule for the two places that judge it. The store's verbs refuse such an operation inside their write: the pass that finds a take lost leaves the session running until its driver's next look stops it,
     /// and the session does not know. A remote refuses it as a push arrives, because a machine on a build
-    /// that does not refuse it locally still pushes it, and applied it would move the winner's quest. A rebase loses one
-    /// such a build left pending, so an upgraded machine stops pushing what the remote refuses. A dismissal,
+    /// that does not refuse it locally still pushes it, and applied it would move the winner's quest. A dismissal,
     /// a yes and a verdict are no move on the take. An open quest is nobody's work, whatever an earlier incarnation of it held. And a machine whose take is numbered reads held, never lost, so a winner's own moves are never judged here.
     /// A set-up is the taker's too: its driver posts what its session showed, and a set-up from the tree of a
     /// take that lost would show the winner's step as work it never held.

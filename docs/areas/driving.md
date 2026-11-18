@@ -387,9 +387,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     session's id stays its first record's. A move out of a running turn
     hands what the door reported over the record's turns so far (`TurnSpent`, the event log's input and output tokens), and the
     record's last turn keeps its share, that less what the turns before it kept (`SessionTurnKeep.UsageAsync`); the window says
-    each turn's input and output on its row. A record from before turns reads its `from` link as its one turn
-    (`SessionTurns.Own`), and a turn kept before turns held their own fields reads its record's agent, account, adapter and
-    transcript; both reads go once no such record is kept (TURNSREAD1). A line Daoris cut and carries on with its own agent and
+    each turn's input and output on its row. A turn that kept none of its own fields reads its record's agent, account, adapter and
+    transcript (`SessionTurns.OfLine`). A line Daoris cut and carries on with its own agent and
     account goes on in its own record as its next turn (conversations area, rule 7); the moves to another account or agent still open a
     record of their own for each move's turn, which `OfLine` reads as the line's next turn alike, since a record's process, tree lease
     and event log are keyed by its id.
