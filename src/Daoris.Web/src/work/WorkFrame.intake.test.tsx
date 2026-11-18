@@ -51,11 +51,11 @@ describe('a parked intake', () => {
       </QueryClientProvider>,
     );
 
-    // The head's card, in the main area; the strip at the foot offers the same door.
-    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Answer ask #0fda18' }));
+    // The dock above the composer is the one place it is pressed: the head's card in the main area draws none.
+    await userEvent.click(await within(await screen.findByRole('region', { name: 'Waiting on you' })).findByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
-    await userEvent.click(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Answer ask #0fda18' }));
-    expect(onAnswerAsk).toHaveBeenCalledTimes(2);
+    expect(within(screen.getByRole('main')).queryByRole('button', { name: 'Answer ask #0fda18' })).toBeNull();
+    expect(onAnswerAsk).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'a note for the ask’s channel — the intake does not read it');
