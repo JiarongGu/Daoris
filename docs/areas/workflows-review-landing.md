@@ -177,8 +177,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 17. A graph run is the unit `run:<run>` of its own node record. `claimed` observes the chain's quests and carries the work on
     `work`; a `review` binds its review record (rule 22); the gates, landing and plugin nodes bind the run's branch at its tip, the
     one its tree moved onto once the look learned it; a `go-ahead` binds the run's ask. Once its landing has reached, the steps bound to
-    the landed branch keep it whatever branch stands as the run's after (an earlier attempt's once the landed one is tidied away), so only
-    its chain coming back here or the person's word takes a landed run back (`LandedBranchKept`). A branch is the work of the quest its
+    the landed branch keep it at the revision each was bound at, whatever branch stands as the run's after (an earlier attempt's once the
+    landed one is tidied away) and wherever the landed branch moves that no landing took it: its session going on after the landing, on
+    the person's words, is its turn, and what it commits then, or its tree brought to the line the work merged into, is new work for the
+    chain's next quest here, never the landed run's (D319); a tip a landing of its own stands at (an advance its record keeps) is
+    followed. So only its chain coming back here or the person's word takes a landed run back (`LandedBranchKept`,
+    `LandedRunGoesOnTests`). A branch is the work of the quest its
     session served, never of another repository's quest. A branch several
     runs made is each run's, one shared with Current's work held, said; a plugin's event on it goes to the runs awaiting it at that commit, else to those
     whose graph names the step. A node fed on a `data` wire binds that value, so a moved input rebinds only what it feeds; a
@@ -343,7 +347,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     of the branch the work stands on, read in the tree of its newest executor; a hold keeps its reason on the node, said by the
     plan and the run view. A unit's executors are oldest first by when their records were made, and the `land` judges the newest
     with a tree by that time (`LandSessions`), so a session that went on in a tree stands for the one it went on from and a branch
-    already landed moves on to its commits after the next Accept; a part a newer session superseded closes once as `superseded`, its end naming the session that stands for it; a push and a plugin's `pull-request` step after it are bound at the moved tip and performed again (`ReLandingPullRequestTests`); and
+    already landed moves on to the chain's next quest's commits after that quest's Accept (rule 17); a part a newer session superseded closes once as `superseded`, its end naming the session that stands for it; a push and a plugin's `pull-request` step after it are bound at the moved tip and performed again (`ReLandingPullRequestTests`); and
     each `landing.auto` line names the run whose `land` tried it. A live session on the tree holds the `land` back, but never the run's
     own part waiting on its step (`awaiting-step`, `LandTreeUse`), which waits on that landing; a look at which the `land` starts or says
     nothing writes a coded `landing.waits` line naming why, once per change of reason (`LandWaits`). Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
@@ -358,7 +362,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`sensitive.patternsFile`, read in the repository's own checkout) is held before anything is made, naming the path and the
     pattern's number, never its text. (D87, D215)
 31. Daoris pushes, as a `push` step or a press, through the one push act, off the pass under the lease: reached when the
-    remote-tracking ref holds the commit, failed by the act's refusal. Daoris opens no pull request: a plugin's step does, its
+    remote-tracking ref holds the landing's tip, failed by the act's refusal; a push of the tip a landing stood at before it re-landed at a
+    new one is not yet, so the new tip is pushed (`PushReading`, `ReLandingPullRequestTests`). Daoris opens no pull request: a plugin's step does, its
     evidence's `url` written on the landing for `work/state` to ask about; a graph whose `<plugin>/pull-request` no switched-on
     plugin performs is refused at its bind. `PushedGraphs`, an older build's plugin delivery (read, never sent) and the web's bare
     `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one

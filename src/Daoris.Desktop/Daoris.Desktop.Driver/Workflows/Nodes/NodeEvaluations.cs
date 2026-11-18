@@ -67,7 +67,7 @@ internal static class NodeEvaluations
 
         var landed = Landed(governed, before);
         if (landed is { } on) units.TryAdd(on.Unit.Id, on.Unit);
-        var landedOn = LandedBranchKept.Of(governed.Graph, before);
+        var landedOn = LandedBranchKept.Of(governed.Graph, before, scope.Branch, tip);
         var subjects = new Dictionary<string, string?>(StringComparer.Ordinal);
         var own = new Dictionary<string, string?>(StringComparer.Ordinal);
         foreach (var node in scope.Tip is null ? nodes : [])
@@ -96,7 +96,7 @@ internal static class NodeEvaluations
                     break;
                 case RunSubject.Branch:
                 case RunSubject.Record:
-                    if (LandedBranchKept.Revision(before[node.Id], landedOn, scope.Branch?.Id) is { } kept)
+                    if (LandedBranchKept.Revision(before[node.Id], landedOn) is { } kept)
                     {
                         (subjects[node.Id], own[node.Id]) = (landedOn, kept);
                         break;

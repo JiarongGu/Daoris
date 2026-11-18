@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-18 - A re-landed branch's push read reached on the commit pushed before, so the new tip was never pushed (RESUMERESET1)
+
+- **Symptom:** with RESUMERESET1's landed run taken back by the chain's next quest, `ReLandingPullRequestTests` failed: the branch
+  re-landed at its new tip (the landing record advanced, still `Pushed` at the first tip), and the `push` bound at the new tip read
+  reached in the pass that began it, its evidence the first tip, so the push act never ran and origin kept the first tip.
+- **Root cause:** `PushReading` read the record's pushed commit against the remote-tracking ref and never against the landing's tip, so a
+  landing advanced since its push still read pushed; since 7b5f578865 that reach is taken at the node's own binding, whatever tip it
+  is bound at. The test's earlier path (a second Accept on the same quest) passed; through the follow-on quest the `push` stands
+  blocked until the new landing, and is begun and read in one pass (traced: `blocked#1` to `reached#2` at the new tip).
+- **Fix:** the push reads pushed only where the record's pushed commit is the landing's tip; otherwise origin holding that tip is the fact
+  (a push outside Daoris), else not yet, which `PushAttempts.Due` already pushes again.
+- **Verification:** `PushNodeTests` (the moved landing's case red on reached at the old tip), `ReLandingPullRequestTests` (red on one push
+  at the first tip).
+
 ## 2026-11-18 - A run's push failed for a passing tidy and stayed failed after the person pushed (PUSHBUSY1)
 
 - **Symptom:** a run's `push` failed `push-refused` ("the session trees were being cleaned up: nothing was changed"), with no retry; the
@@ -14359,3 +14373,23 @@ installed window is not yet seen.
   repository and the machine's load bounding it), and would read them only from a judgement kept across processes.
 - **Verify:** `SessionListRouteProcessTests` (red at 3,489 ms, green at 1,805 ms), `SessionListBudgetProcessTests` (the terminal
   alone's stages besides its walks within 3 s; the walks said), the filtered `SessionList|SessionState|SessionLook` tests.
+
+## 2026-11-18 — Words to a released run's session took the run back to what the line holds (RESUMERESET1)
+
+- **Symptom:** on the install, a run on the D304 release path had merged its pull request and released to production. `session say`
+  to its working session for the after-release config change made the run's `content` step eligible at once (06:39:49: `content`
+  eligible, `review` through `config-change` ineligible); the run walked forward again, re-observing its release steps, and the
+  session's docs commit of the change asked the Accept again, which would have opened a second pull request and release.
+- **Root cause:** the resumed session's tree stood at the line's merge commit, so the run's branch, the one its landing reached on,
+  read a new tip. `content`, `review` and `landing` are bound to the run's branch at its tip, so the moved tip lapsed `content` as
+  `revision`, and every step after it lapsed through its receipt. `LandedBranchKept` (3bb97d1ae0) kept a landed run's steps only
+  where another branch came to stand as the run's (`branch != landed`), leaving the landed branch's own move to lapse them; and
+  LANDAGAIN1 (ab1a14f382) read that move as the run's work, asked again at the next Accept.
+- **Fix:** a step bound to the landed branch keeps its own revision once the landing has reached, wherever that branch moves that no
+  landing took it (`LandedBranchKept`); a tip a landing record stands at (an advance) is still followed (`IntegrateNodeTests`). A commit
+  after the landing is the chain's next quest's work, which takes the run back from its claim (D319); before the landing the run's
+  branch moving still lapses its steps.
+- **Verify:** `LandedRunGoesOnTests` (the released run's session's turn and a commit after the landing, each red on `content`
+  re-observed, attempt 1 to 2; the before-landing case green before and after), the filtered
+  `Invalidat|WireEvaluation|Content|RunWait|LandedRun` tests; `ReLandingPullRequestTests` now moves the landed branch on through the
+  chain's next quest.
