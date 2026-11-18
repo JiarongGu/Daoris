@@ -9,6 +9,10 @@ import type { Answered } from '../InlineConfirm';
 import { DETAIL, GATES } from '../gates/opinionFixtures';
 import type { SessionProcess } from './process';
 import { SessionHead } from './SessionHead';
+import { WaitStrip } from '../waits/WaitStrip';
+
+// A describe below presses what waits through the dock (D320) under the head's name; this keeps the head itself within reach.
+const Head = SessionHead;
 import { said } from '../../test/said';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -94,11 +98,12 @@ describe('the attended session\'s head', () => {
   /** A half-written decline reason carried into the next parked session, ready to decline it. */
   it('starts each parked session\'s decline empty — a reason written for one never carries to another', () => {
     const parked: Partial<Session> = { state: 'awaiting-person', note: 'needs a person' };
-    const { rerender } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} />);
+    // The park's card stands in the dock above the composer, the one place a wait is pressed (D320).
+    const { rerender } = render(<WaitStrip session={session(parked)} onResolve={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Decline…' }));
     fireEvent.change(screen.getByLabelText(/the reason/), { target: { value: 'the chunk API is being replaced' } });
 
-    rerender(<SessionHead session={session({ ...parked, id: 's9f8e7d6' })} onResolve={vi.fn()} />);
+    rerender(<WaitStrip session={session({ ...parked, id: 's9f8e7d6' })} onResolve={vi.fn()} />);
     expect(screen.queryByLabelText(/the reason/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
   });
@@ -599,6 +604,8 @@ describe('the attended session\'s head', () => {
    * branch and its tree, and a door to its run's review, where the one Accept is.
    */
   describe('the landing a session left', () => {
+    // The work's line stands in the dock above the composer, the one place a wait is pressed (D320).
+    const SessionHead = WaitStrip;
     const LANDS = { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 };
     const PLAN = { session: 's1a2b3c4', form: 'branch', target: 'feature/delta-release', plugin: 'azure-devops-pull-request' };
 
@@ -642,8 +649,9 @@ describe('the attended session\'s head', () => {
     });
 
     it('offers nothing where no commits wait or nothing can press', () => {
-      const { rerender } = render(
-        <SessionHead
+      // The head says a branch with nothing beyond the line, and offers no door.
+      const head = render(
+        <Head
           session={session({ state: 'failed' })}
           branch={{ repository: 'engine', branch: 'daoris/s-43c14a70', kind: 'empty', where: 'main', commits: 0 } as SweepBranch}
           onReviewRun={vi.fn()}
@@ -651,9 +659,10 @@ describe('the attended session\'s head', () => {
       );
       expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
       expect(screen.getByText('nothing beyond main')).toBeInTheDocument();
+      head.unmount();
 
-      // Nothing here can press it (a browser, a story): the work is said, with no press.
-      rerender(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
+      // Nothing here can press it (a browser, a story): the work is said in the dock, with no press.
+      render(<SessionHead session={session({ state: 'failed' })} lands={LANDS} />);
       expect(screen.getByText('1 commit no branch of yours holds')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Open outputs' })).toBeNull();
     });
@@ -736,6 +745,8 @@ describe('the attended session\'s head', () => {
 
   /** A session whose commits the line holds by content is offered no door to land: the head says the driver's sentence and offers the review's Discard unforced, asking once. */
   describe('a session whose work the line holds by content', () => {
+    // The work's line and its discard stand in the dock (D320).
+    const SessionHead = WaitStrip;
     const KEPT = 'refs/daoris/discarded/daoris/s-4e6837ed';
     const DISCARDS = {
       branch: 'daoris/s-4e6837ed',
@@ -925,7 +936,7 @@ describe('the attended session\'s head', () => {
   it('gives a parked intake its ask as the answer, not a parked session\'s three moves', () => {
     const onAnswerAsk = vi.fn();
     render(
-      <SessionHead
+      <WaitStrip
         session={session({
           ...INTAKE,
           note: 'published nothing: it asks you rather than guess.',
@@ -936,7 +947,7 @@ describe('the attended session\'s head', () => {
       />,
     );
 
-    expect(screen.getByText('published nothing: it asks you rather than guess.')).toBeInTheDocument();
+    expect(screen.getByText('Its intake asked you; the answer is on its ask.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Decline…' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Answer ask #0fda18' }));
@@ -1005,7 +1016,7 @@ describe('the head’s note, in the reader’s language', () => {
   });
 
   it('words a park’s lead-in on its card and keeps the agent’s question beneath it as written', () => {
-    render(<SessionHead session={session(PARKED)} onResolve={vi.fn()} onAnswerSession={vi.fn()} />);
+    render(<WaitStrip session={session(PARKED)} onResolve={vi.fn()} onAnswerSession={vi.fn()} />);
 
     const card = screen.getByRole('heading', { name: '这个会话在等你' }).closest('section')!;
     expect(within(card).getByText('它停了下来，委托仍已接下，想问你：')).toBeInTheDocument();
@@ -1052,14 +1063,16 @@ const ASKED: GoAhead[] = [
  * nothing to act through they are shown with no door; a park that asked none, or a session not parked, shows nothing new.
  */
 describe('a park\'s go-aheads', () => {
+  // The dock above the composer draws them (D320).
+  const SessionHead = WaitStrip;
   const parked: Partial<Session> = { state: 'awaiting-person', note: 'I need the two go-aheads to finish.' };
 
   it('lists what the park asked beneath its card, each with Approve and Refuse, saying it goes on once all are answered', () => {
-    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
+    const { container } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
 
-    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    // One still open keeps it parked, here as on the ask's page.
-    expect(section).toHaveTextContent('This session goes on once every go-ahead it asked is answered, here or on its ask');
+    // One line a go-ahead, the first leading with what they are.
+    const section = container.querySelector<HTMLElement>('[data-dock]')!;
+    expect(section).toHaveTextContent('Go-aheads it asked');
     const items = within(section).getAllByRole('listitem');
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent('write on production');
@@ -1070,14 +1083,15 @@ describe('a park\'s go-aheads', () => {
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
     // Beneath the card that asks, which stays: its finish and decline are still the person's.
-    expect(screen.getByText('This one is waiting on you').compareDocumentPosition(section)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const lines = [...section.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'));
+    expect(lines).toEqual(['question', 'goAhead:1', 'goAhead:2']);
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
   });
 
   it('says which go-ahead, the yes or the no, and the person\'s words, where they gave any', () => {
     const onGoAhead = vi.fn();
-    render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={onGoAhead} />);
-    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
+    const { container } = render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={onGoAhead} />);
+    const [first, second] = within(container.querySelector<HTMLElement>('[data-dock]')!).getAllByRole('listitem');
 
     fireEvent.change(within(second!).getByLabelText('your words, if any'), { target: { value: 'dev first, then production' } });
     fireEvent.click(within(second!).getByRole('button', { name: 'Approve' }));
@@ -1092,23 +1106,23 @@ describe('a park\'s go-aheads', () => {
       { ...ASKED[0]!, state: 'approved', answer: { approved: true, at: '2026-09-21T11:58:00Z' } },
       ASKED[1]!,
     ];
-    render(
+    const { container } = render(
       <SessionHead session={session({ ...parked, said: said('carry on.') })} goAheads={answered} onGoAhead={vi.fn()} />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
-    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
-    expect(first).toHaveTextContent('approved');
-    expect(within(first!).queryByRole('button', { name: 'Approve' })).toBeNull();
+    // The answered park is no wait; the go-ahead still open is, and the one approved is none.
+    const lines = [...container.querySelectorAll('[data-dock-line]')].map((line) => line.getAttribute('data-dock-line'));
+    expect(lines).toEqual(['goAhead:2']);
+    const [second] = within(container.querySelector<HTMLElement>('[data-dock]')!).getAllByRole('listitem');
     expect(within(second!).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   });
 
   it('shows them with no door where nothing can answer them', () => {
-    render(<SessionHead session={session(parked)} goAheads={ASKED} />);
+    const { container } = render(<SessionHead session={session(parked)} goAheads={ASKED} />);
 
-    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    expect(within(section).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(section).queryByRole('button')).toBeNull();
+    // Nothing stands where nothing can press it: the dock draws no line.
+    expect(container.querySelector('[data-dock]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
   /**
@@ -1121,13 +1135,12 @@ describe('a park\'s go-aheads', () => {
       id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, why: null, by: null, at: '2026-09-21T11:20:00Z',
       choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
     };
-    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
+    const { container } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
 
-    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
-    expect(within(section).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(section).queryByRole('button')).toBeNull();
-    expect(within(section).queryByLabelText('your words, if any')).toBeNull();
-    expect(section).toHaveTextContent('Each is answered in the box below, with your words there.');
+    // The box below carries every press of what the park asks, so the dock draws no go-ahead at all.
+    const section = container.querySelector<HTMLElement>('[data-dock]')!;
+    expect(section.querySelector('[data-go-ahead]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(screen.getByText('Which target should the tile show?')).toBeInTheDocument();
     expect(screen.getByText('If you choose this: Write 1,350.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1,200' })).toBeNull();
@@ -1138,19 +1151,19 @@ describe('a park\'s go-aheads', () => {
   });
 
   it('shows nothing new for a park that asked none, or a session no longer parked', () => {
-    const { rerender } = render(<SessionHead session={session(parked)} goAheads={[]} onGoAhead={vi.fn()} />);
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    const { container, rerender } = render(<SessionHead session={session(parked)} goAheads={[]} onGoAhead={vi.fn()} />);
+    expect(container.querySelector('[data-go-ahead]')).toBeNull();
 
     rerender(<SessionHead session={session({ state: 'working' })} goAheads={ASKED} onGoAhead={vi.fn()} />);
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(container.querySelector('[data-go-ahead]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
-    render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={vi.fn()} />);
+    const { container } = render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={vi.fn()} />);
 
-    expect(screen.getByRole('region', { name: '它请求的放行' })).toBeInTheDocument();
+    expect(container.querySelector('[data-dock]')).toHaveTextContent('它请求的放行');
     expect(screen.getAllByRole('button', { name: '放行' })).toHaveLength(2);
     await i18n.changeLanguage('en');
   });
@@ -1160,24 +1173,25 @@ describe('a park\'s go-aheads', () => {
  * Each of the head's waits whose raising event the conversation holds leads to it, *In the
  * conversation*; one with none found has no such press.
  */
-describe('the way from the head\'s waits to the conversation', () => {
+describe('the way from the dock\'s waits to the conversation', () => {
+  const SessionHead = WaitStrip;
   const parked: Partial<Session> = { state: 'awaiting-person', note: 'Which of the two should I keep?' };
   const LANDS = { branch: 'daoris/s-1a2b3c4', tree: 's-1a2b3c4', commits: 2, uncommitted: 0 };
   const PLAN = { session: 's1a2b3c4', form: 'merge', target: 'main' };
 
   it('leads the park\'s card, each go-ahead and the work to the event that raised each', async () => {
     const toEvent = { question: vi.fn(), work: vi.fn(), goAheads: { 2: vi.fn() } };
-    render(
+    const { container } = render(
       <SessionHead
         session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()}
         lands={LANDS} landing={PLAN} onReviewRun={vi.fn()} toEvent={toEvent}
       />,
     );
 
-    await userEvent.click(within(screen.getByText('This one is waiting on you').closest('section')!).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(within(container.querySelector<HTMLElement>('[data-dock-line="question"]')!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.question).toHaveBeenCalledTimes(1);
 
-    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
+    const [first, second] = within(container.querySelector<HTMLElement>('[data-dock]')!).getAllByRole('listitem');
     expect(within(first!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
     await userEvent.click(within(second!).getByRole('button', { name: 'In the conversation' }));
     expect(toEvent.goAheads[2]).toHaveBeenCalledTimes(1);
@@ -1192,32 +1206,32 @@ describe('the way from the head\'s waits to the conversation', () => {
   });
 
   /**
-   * Each section a wait stands in is marked, for the frame to watch; and while the head is on
-   * screen, where the strip stands aside, a raising block's *To the wait* leads here: the line takes the focus, outlined.
+   * Each wait stands in a line of its own, marked for the frame to watch; and a raising block's *To the wait* leads here: the
+   * line takes the focus, outlined.
    */
-  it('marks the sections its waits stand in, and shows the one a raising block leads to', () => {
+  it('marks the lines its waits stand in, and shows the one a raising block leads to', () => {
     const props = { session: session(parked), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), lands: LANDS, landing: PLAN, onReviewRun: vi.fn() };
     const { container, rerender } = render(<SessionHead {...props} />);
-    const sections = [...container.querySelectorAll('[data-wait-section]')];
-    expect(sections).toHaveLength(3);
-    expect(sections[0]).toHaveTextContent('This one is waiting on you');
-    expect(sections[1]).toBe(screen.getByRole('region', { name: 'Go-aheads it asked' }));
-    expect(sections[2]).toContainElement(screen.getByRole('button', { name: 'Open outputs' }));
+    const lines = [...container.querySelectorAll('[data-dock-line]')];
+    expect(lines.map((line) => line.getAttribute('data-dock-line'))).toEqual(['question', 'goAhead:1', 'goAhead:2', 'accept']);
+    const work = container.querySelector<HTMLElement>('[data-wait="work"]')!;
+    expect(work).toContainElement(screen.getByRole('button', { name: 'Open outputs' }));
 
     rerender(<SessionHead {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
-    const second = within(sections[1] as HTMLElement).getAllByRole('listitem')[1]!;
+    const second = container.querySelector<HTMLElement>('[data-go-ahead="2"]')!;
     expect(second).toHaveFocus();
     expect(second.className).toContain('outline-accent');
 
     rerender(<SessionHead {...props} seek={{ wait: 'work', n: 2 }} />);
-    expect(sections[2]).toHaveFocus();
-    expect((sections[2] as HTMLElement).className).toContain('outline-accent');
+    expect(work).toHaveFocus();
+    expect(work.className).toContain('outline-accent');
     expect(second.className).not.toContain('outline-accent');
   });
 });
 
 /** The rules the session proposed stand in its head, whatever its state, with their presses. */
 describe('the rules a session proposed', () => {
+  const SessionHead = WaitStrip;
   const RULE = {
     id: 'r1', state: 'waiting' as const, action: 'add' as const, scope: 'repository' as const, name: 'engine', list: 'allow' as const,
     rule: 'Bash(git branch -D:*)', why: 'Auto mode refused the branch delete you asked for.', session: 's1a2b3c4',
@@ -1227,13 +1241,14 @@ describe('the rules a session proposed', () => {
   it('shows its own open ones with Allow… and Decline, the same door the strip presses, and leads each to its call', async () => {
     const onAnswer = vi.fn();
     const toEvent = { rules: { r1: vi.fn() } };
-    render(
+    const { container } = render(
       <SessionHead
         session={session({ state: 'completed' })} toEvent={toEvent}
         rules={{ proposals: [RULE, { ...RULE, id: 'r2', session: 'o7h3r000' }, { ...RULE, id: 'r3', state: 'applied' }], onAnswer }}
       />,
     );
-    const section = screen.getByRole('region', { name: 'Rules it proposed' });
+    const section = container.querySelector<HTMLElement>('[data-dock]')!;
+    expect(section.querySelectorAll('[data-dock-line]')).toHaveLength(1);
     const items = within(section).getAllByRole('listitem');
     expect(items).toHaveLength(1);
     expect(items[0]).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
@@ -1245,13 +1260,14 @@ describe('the rules a session proposed', () => {
   });
 
   it('shows none where it proposed none still open', () => {
-    render(<SessionHead session={session()} rules={{ proposals: [{ ...RULE, state: 'declined' }], onAnswer: vi.fn() }} />);
-    expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
+    const { container } = render(<SessionHead session={session()} rules={{ proposals: [{ ...RULE, state: 'declined' }], onAnswer: vi.fn() }} />);
+    expect(container.querySelector('[data-dock]')).toBeNull();
   });
 });
 
 /** A tool call it holds for the person's answer stands in its head, a wait's section, with its presses. */
 describe('the tool calls a session holds for the person', () => {
+  const SessionHead = WaitStrip;
   const HELD = {
     session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T11:58:00Z', until: '2026-09-21T12:13:00Z',
     choices: [{ id: 'allow', name: 'Allow', kind: 'allow_once' }, { id: 'reject', name: 'Reject', kind: 'reject_once' }],
@@ -1259,9 +1275,9 @@ describe('the tool calls a session holds for the person', () => {
 
   it('shows its own with a press per choice, the same door the strip presses', async () => {
     const onAnswer = vi.fn();
-    render(<SessionHead session={session()} permissions={{ waits: [HELD, { ...HELD, session: 'o7h3r000', request: '1' }], onAnswer }} />);
-    const section = screen.getByRole('region', { name: 'Tool calls held for your answer' });
-    expect(section).toHaveAttribute('data-wait-section');
+    const { container } = render(<SessionHead session={session()} permissions={{ waits: [HELD, { ...HELD, session: 'o7h3r000', request: '1' }], onAnswer }} />);
+    const section = container.querySelector<HTMLElement>('[data-dock-line="permission:900"]')!;
+    expect(container.querySelectorAll('[data-dock-line]')).toHaveLength(1);
     const items = within(section).getAllByRole('listitem');
     expect(items).toHaveLength(1);
     await userEvent.click(within(items[0]!).getByRole('button', { name: 'Refuse' }));
@@ -1269,10 +1285,11 @@ describe('the tool calls a session holds for the person', () => {
   });
 
   it('shows none where it holds none, and no press where nothing can answer one', () => {
-    const { unmount } = render(<SessionHead session={session()} permissions={{ waits: [{ ...HELD, session: 'o7h3r000' }], onAnswer: vi.fn() }} />);
-    expect(screen.queryByRole('region', { name: 'Tool calls held for your answer' })).toBeNull();
+    const { container, unmount } = render(<SessionHead session={session()} permissions={{ waits: [{ ...HELD, session: 'o7h3r000' }], onAnswer: vi.fn() }} />);
+    expect(container.querySelector('[data-dock]')).toBeNull();
     unmount();
-    render(<SessionHead session={session()} permissions={{ waits: [HELD] }} />);
-    expect(within(screen.getByRole('region', { name: 'Tool calls held for your answer' })).queryByRole('button')).toBeNull();
+    const bare = render(<SessionHead session={session()} permissions={{ waits: [HELD] }} />);
+    // Nothing stands where nothing can press it.
+    expect(bare.container.querySelector('[data-dock]')).toBeNull();
   });
 });
