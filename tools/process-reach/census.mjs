@@ -243,7 +243,6 @@ export function censusOf(half, files, read) {
       if (program.everything) reach.add('*');
     }
     const reaches = chain.flatMap((each) => each.decls.flatMap((d) => reachesIn(d.attributes)));
-    // A path from the checkout's root (`src/…`, `tools/…`) is a read of a file or folder the half compiles no project against.
     const reads = [];
     for (const hand of reaches) {
       if (!hand.why) problems.push(`${entry.full}: a [Reaches] without its reason (Why = "…")`);

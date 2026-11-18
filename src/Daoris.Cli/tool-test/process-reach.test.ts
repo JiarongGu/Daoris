@@ -321,7 +321,7 @@ test('a changed path reaches the classes whose reach holds it; what acts unnamed
   assert.match(at('package.json').whole ?? '', /no class's reach places/);
 });
 
-test("a class's hand-written [Reaches] of a path outside the projects it compiles against is reached by that path alone (TOOLGOLDENS1)", () => {
+test("a class's hand-written [Reaches] of a path outside the projects it compiles against is reached by that path alone", () => {
   const files: Record<string, string> = {
     ...DESK,
     'src/Desk/Desk.Tests/ListTests.cs': [

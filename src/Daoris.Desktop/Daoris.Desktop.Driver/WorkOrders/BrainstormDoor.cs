@@ -14,17 +14,13 @@ internal static class BrainstormDoor
     /// <summary>The kind a meeting's presses name; a brainstorm's is none.</summary>
     public const string Meeting = "meeting";
 
-    /// <summary>The names of the adapters this home answers to: the built ones and the home's plugins.</summary>
     public static IReadOnlyList<string> AdapterNames(string home)
     {
         var built = ProviderRegistry.Built();
         return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)).Names;
     }
 
-    /// <summary>
-    /// The one refusal of an ask's <c>--agents</c>, the brainstorm's and the meeting's: a name no adapter answers is printed
-    /// with the adapters, and the ask is not made. True where it refused.
-    /// </summary>
+    /// <summary>The refusal of an ask's <c>--agents</c>, the brainstorm's and the meeting's: true where it refused.</summary>
     public static bool RefusesAgents(IReadOnlyList<string> agents, string home, Func<string, IReadOnlyList<string>> adapters, TextWriter output)
     {
         if (agents.Count == 0) return false;

@@ -72,9 +72,9 @@ test("this repository's census: every class carrying the Process trait is read i
   assert.deepEqual(missing, [], 'a class the census misses would never be kept, but it would be counted nowhere');
 });
 
-test("a change to the knowledge connector's tools reaches the driver tests whose goldens list them (TOOLGOLDENS1)", () => {
+test("a change to the knowledge connector's tools reaches the driver tests whose goldens list them", () => {
   const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'src/Daoris.Service/Daoris.Service.Mcp/ToolClasses.cs'], {
-    cwd: repoRoot, encoding: 'utf8', timeout: 600_000,
+    cwd: repoRoot, encoding: 'utf8', timeout: 600_000, windowsHide: true,
   });
   const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
   for (const name of ['AgentsTextTests', 'BrainstormPostureTests', 'SuperviseContainmentTests']) {
