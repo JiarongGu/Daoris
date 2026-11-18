@@ -12,8 +12,8 @@ export type Tab = View;
  */
 export const VIEW = 'daoris.view';
 
-// What each view's list has chosen is its list's memory (`work/frame/listPanes.ts`),
-// in its older keys: the session attended, since relaunching into Sessions landed on
+// What each view's list has chosen is its list's memory (`work/frame/listPanes.ts`):
+// the session attended, since relaunching into Sessions landed on
 // *Nothing attended* while a session sat parked, and Settings' domain, so the gear returns to it.
 // A session whose record is gone is let go by the Work frame, a remembered record that closed or went
 // once its view reads it, and a domain this window cannot show opens on Appearance, so a stale

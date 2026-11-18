@@ -36,7 +36,7 @@ afterEach(() => window.localStorage.clear());
  * chose.
  */
 describe('the frame\'s geometry (FRAME6)', () => {
-  const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockWidth', 'daoris.dockShare', 'daoris.dockClosed'];
+  const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockShare', 'daoris.dockClosed'];
   const widen = (width: number) => act(() => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
     window.dispatchEvent(new Event('resize'));
@@ -339,18 +339,6 @@ describe('the frame\'s geometry (FRAME6)', () => {
     widen(2400);
     expect(Number(screen.getByRole('separator', { name: 'side bar width' }).getAttribute('aria-valuenow')))
       .toBe(Math.round(2400 * (dragged / 1600)));
-  });
-
-  it('reads a width kept in pixels once, as its share of the window, and forgets the pixels', async () => {
-    window.localStorage.setItem('daoris.dockWidth', '400');
-    show('s1a2b3c4');
-
-    expect(await screen.findByRole('separator', { name: 'side bar width' })).toHaveAttribute('aria-valuenow', '400');
-    expect(window.localStorage.getItem('daoris.dockShare')).toBe(String(400 / 1600));
-    expect(window.localStorage.getItem('daoris.dockWidth')).toBeNull();
-
-    widen(2000);
-    expect(screen.getByRole('separator', { name: 'side bar width' })).toHaveAttribute('aria-valuenow', '500');
   });
 
   /**

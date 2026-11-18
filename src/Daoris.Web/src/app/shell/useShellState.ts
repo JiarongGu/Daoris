@@ -21,8 +21,7 @@ export function useShellState() {
   const [knowledgeMode, chooseKnowledgeMode] = useKnowledgeMode(lists);
   // The Agents place's mode: Agents or Roles, remembered for the place and held here for the same reason.
   const agentsModes = useAgentsMode(lists);
-  // A domain remembered from before it left Settings reads as the one Settings opens on, so Ask Daoris is told the domain
-  // shown: Plugins as Driver, which keeps its folder's row; Agents, Workspace and Permissions as Appearance.
+  // A remembered domain Settings lacks reads as the one Settings opens on, so Ask Daoris is told the domain shown.
   const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
   // The part of a Settings domain a menu item named, brought into view once it is drawn.
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);

@@ -110,17 +110,9 @@ export const SETTINGS_DOMAINS = [
 export type SettingsSection = (typeof SETTINGS_DOMAINS)[number]['id'];
 
 /**
- * A domain that left Settings and kept a row in it, by the domain that holds the row: Plugins' folder is Driver's,
- * with its door to the Plugins place.
- */
-const KEPT_IN: Readonly<Record<string, SettingsSection>> = { plugins: 'driver' };
-
-/**
- * Where a domain remembered under `daoris.settings` opens now: itself while Settings has it; one that left, at
- * the domain holding what stayed of it; and one that left for a page Settings holds no row of (Agents, Workspace
- * and Permissions), on Appearance, as any domain this window lacks does. A remembered id never opens nothing.
+ * Where a domain remembered under `daoris.settings` opens: itself while Settings has it, else on Appearance, as any
+ * domain this window lacks does. A remembered id never opens nothing.
  */
 export function rememberedDomain(id: string | null): SettingsSection {
-  const kept = id !== null && Object.hasOwn(KEPT_IN, id) ? KEPT_IN[id] : undefined;
-  return SETTINGS_DOMAINS.find((domain) => domain.id === id)?.id ?? kept ?? 'appearance';
+  return SETTINGS_DOMAINS.find((domain) => domain.id === id)?.id ?? 'appearance';
 }
