@@ -191,32 +191,52 @@ public static class HeldAttempts
             return 0;
         }
 
+        if (ReadWord(args) is not { } ask)
+        {
+            error.WriteLine(Usage);
+            return 2;
+        }
+
+        var done = Word(records, ask.Unit, ask.Node, ask.Attempt, ask.Word, clock, link: ask.Link, note: ask.Note, epoch: ask.Epoch);
+        (done.What == PerformedWhat.Worded ? output : error).WriteLine(Said(done, ask.Attempt, ask.Word));
+        return done.What == PerformedWhat.Worded ? 0 : 1;
+    }
+
+    /// <summary>
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for: a word is the window's
+    /// <c>WORK_HELD</c> press, sent and confirmed there, its lines the route's (<c>said</c>); the list, a word that is none and the verb with
+    /// no instance run as <see cref="Run"/>, which records only where this process holds the home.
+    /// </summary>
+    public static Task<int> RunAsync(
+        string home, IReadOnlyList<string> args, TextWriter output, TextWriter error, InstanceWorld? instance, Func<DateTimeOffset>? clock = null,
+        CancellationToken ct = default)
+    {
+        Task<int> Alone() => Task.FromResult(Run(home, args, output, error, clock));
+        if (instance is null || args is [] or ["--unit", _] || ReadWord(args) is not { } ask) return Alone();
+        var payload = InstanceDoor.Said(
+            ("unit", ask.Unit), ("node", ask.Node), ("attempt", ask.Attempt), ("resolution", ask.Word), ("link", ask.Link), ("note", ask.Note), ("epoch", ask.Epoch));
+        return InstanceDoor.ThroughAsync(instance, PersonPresses.WorkHeld, payload, Alone, output, ct);
+    }
+
+    /// <summary>A person's word on an attempt, as the verb's words say it.</summary>
+    private sealed record WordAsk(string Unit, string Node, int Attempt, string Word, string? Link, string? Note, int? Epoch);
+
+    /// <summary>The words of <c>work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt; &lt;word&gt;</c> read, or null where they are not one.</summary>
+    private static WordAsk? ReadWord(IReadOnlyList<string> args)
+    {
         // The epoch of the step's tenure its row read, wherever it is named: a word read in an epoch that has ended is refused.
         int? epoch = null;
         if (args.ToList().IndexOf("--epoch") is var flag and >= 0)
         {
-            if (flag + 1 >= args.Count || !int.TryParse(args[flag + 1], out var read) || read < 1)
-            {
-                error.WriteLine(Usage);
-                return 2;
-            }
-
+            if (flag + 1 >= args.Count || !int.TryParse(args[flag + 1], out var read) || read < 1) return null;
             epoch = read;
             args = [.. args.Take(flag), .. args.Skip(flag + 2)];
         }
 
         // Done outside Daoris takes its link, and a note where one is given; every other word stands alone.
         var outside = args is [_, _, _, HeldResolutions.DoneOutside, _] or [_, _, _, HeldResolutions.DoneOutside, _, _];
-        if ((!outside && args.Count != 4) || args.Count < 4 || !int.TryParse(args[2], out var attempt) || attempt < 1)
-        {
-            error.WriteLine(Usage);
-            return 2;
-        }
-
-        var (unit, node, word) = (args[0], args[1], args[3]);
-        var done = Word(records, unit, node, attempt, word, clock, link: outside ? args[4] : null, note: args.Count == 6 ? args[5] : null, epoch: epoch);
-        (done.What == PerformedWhat.Worded ? output : error).WriteLine(Said(done, attempt, word));
-        return done.What == PerformedWhat.Worded ? 0 : 1;
+        if ((!outside && args.Count != 4) || args.Count < 4 || !int.TryParse(args[2], out var attempt) || attempt < 1) return null;
+        return new(args[0], args[1], attempt, args[3], outside ? args[4] : null, args.Count == 6 ? args[5] : null, epoch);
     }
 
     /// <summary>
