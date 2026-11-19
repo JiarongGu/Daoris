@@ -6,7 +6,6 @@ import { MAIN_WIDTHS } from '../design/storyWidths';
 import i18n from '../locales/i18n';
 import { buildChain } from '../map/chain';
 import { AttendedSession } from './AttendedSession';
-import type { Channel } from './channel';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from './entries.fixtures';
 import { ViewMain } from './frame/ViewMain';
 import { sessionFacts } from './head/headFacts';
@@ -15,7 +14,7 @@ import { SessionPageHead } from './head/SessionPageHead';
 import { questName } from './identity';
 
 // The record head with every block it can carry, drawn in a real browser by `measured/head.spec.ts`: the pinned page head, the head, the parts folded to their line,
-// the chain folded to its line, the relations folded to theirs, the channel, the milestone folded to its line and the trace
+// the chain folded to its line, the milestone folded to its line and the trace
 // folded, then the first lines of the conversation, which a marked box stands in for. The frame is the main area at each width the window gives it (`MAIN_WIDTHS`), with the page's own gutters: `ViewMain` is that area, so no
 // `storyWidths` box is drawn around it.
 
@@ -32,15 +31,6 @@ const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
 const THEN = [{ to: 'db', title: 'Report the index back', body: '' }];
 const QUEST = quest({ id: 'q0000c', title: 'Read the export table from the app', parent: 'q0000b', then: THEN });
 const PARENT = quest({ id: 'q0000b', from: 'ask #c98a7e', to: 'db', title: 'Add the export table', status: 'Done' });
-
-/** A person's channel kept to this line of work: one message to the app, so the fold carries a count. */
-const CHANNEL: Channel = {
-  ask: 'c98a7e', entry: 'person', unread: 0, mark: null,
-  items: [{
-    kind: 'message', at: at(30), id: 'm1', person: false, session: 'db000003', repository: 'db', agent: 'claude-code',
-    entry: 'ask:c98a7e/db', to: 'app', text: 'Which column holds the export date?',
-  }],
-};
 
 /** Every line the milestone's fold can say at once: the end, a blocked clean-up, a recovery with its date, and an attempt held. */
 const MILESTONE: MilestoneUnit = {
@@ -107,12 +97,6 @@ function RecordHead({ width, milestone = MILESTONE, typical = false }: {
               headed
               parts={{ entry: ENTRY, attended: ATTENDED.id, rows: ROWS, onShow: nothing }}
               chain={buildChain(QUEST.id, [QUEST, PARENT], EVIDENCE_SESSIONS)}
-              relations={{
-                askedBy: { id: 'db000003', session: EVIDENCE_SESSIONS.find((session) => session.id === 'db000003') ?? null },
-                resumedAfter: null,
-                asked: [{ quest: quest({ id: 'q0000d', to: 'db', title: 'Index the export table by date', status: 'Taken' }), question: false }],
-              }}
-              channel={{ channel: CHANNEL, only: { entry: 'ask:c98a7e/app', repository: 'app' }, onPost: nothing }}
               milestone={milestone}
               trace={{ open: false, onToggle: nothing }}
             />

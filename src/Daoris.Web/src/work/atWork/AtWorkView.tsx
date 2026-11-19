@@ -1,107 +1,23 @@
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { leftFor, SOUGHT } from '../waits/WaitAnchor';
-import { type ExchangeSeek, useSoughtExchange } from './exchangeSeek';
-import { cn } from '../../lib/cn';
+import { SOUGHT } from '../waits/WaitAnchor';
 import { ago } from '../../locales/format';
-import { type ChannelAnswered, whoOf } from '../../asks/ChannelSection';
-import type { ChannelItem, ChannelPost } from '../channel';
-import { LineChannelComposer } from './LineChannelComposer';
-import { Dot, Inline, SectionTitle } from '../../design/ui';
-import { ExternalLink } from '../../design/links';
+import { whoOf } from '../../asks/ChannelSection';
+import type { ChannelItem } from '../channel';
+import { Dot, SectionTitle } from '../../design/ui';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
-import type { AtWorkA, AtWorkHeld, AtWorkPart, AtWorkQuest } from './types';
-import {
-  askerLine, exchangeSource, exchangeState, exchangeWhat, HINT_KEY, joinedLine, LANES_GUIDE, partStateKey, waitingOnLine, waitLine,
-} from './words';
+import type { AtWorkA, AtWorkQuest } from './types';
+import { partStateKey, waitingOnLine, waitLine } from './words';
 
 /**
- * The newest messages of the line's channel: on an ask, the lines the session's panel already holds, so
- * the view asks the channel for nothing; on no ask held here, its own channel's (`CHANNEL_LINE`), a message to one part naming
- * it. Absent while neither is read, and then no block.
+ * The newest messages of an ask's channel, the lines the ask page's section reads: each placed on the line of work that posted it.
+ * A session's own line has no such block: its messages are rows of its conversation (`work/exchanges/`).
  */
 export type AtWorkChannel = {
   words: readonly ChannelItem[];
-  /** *All messages*: opens the panel that holds the channel. Absent for a line's own channel, which no panel holds. */
+  /** *All messages*: opens the panel that holds the channel. */
   onOpen?: () => void;
-  /** The person's words on a line's own channel: present only for one, which then draws a composer under its words. */
-  onPost?: (post: ChannelPost, answered: ChannelAnswered) => void;
-  over?: boolean;
-  /** The repositories a post on a line's own channel may be addressed to, as its messages name them. */
-  recipients?: readonly string[];
 };
-
-export type AtWorkViewProps = {
-  /** The channel's last words, each placed on the part whose session posted it. */
-  channel?: AtWorkChannel;
-  /** What the read holds; undefined before its first answer, which draws as reading. */
-  held: AtWorkHeld | undefined;
-  /** A query in error (the bridge refused): its words, drawn failed where nothing is held and stale over an answer. */
-  error?: string | null;
-  /** Open a part's page. */
-  onOpen?: (session: string) => void;
-  /** Open a quest's page. */
-  onOpenQuest?: (quest: string) => void;
-  /**
-   * Why each open quest is sitting, as the driver's last look said it (the `considerations` slice): read beside the answer, never
-   * composed into it. Empty before the first look, when an untaken quest says only that it is not taken yet.
-   */
-  considered?: readonly Consideration[];
-  onRetry?: () => void;
-  now?: Date;
-  /** An agent's name as the person calls it, for its co-workers; its word where none is given. */
-  nameOf?: (agent: string) => string;
-  /** The request the head's *Waiting on* opened the view at: its row is outlined and takes the focus. */
-  seek?: ExchangeSeek | null;
-};
-
-/**
- * Who is at work on a session: the session's parts as the strip lists them, the
- * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
- * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
- */
-export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, channel, nameOf, seek }: AtWorkViewProps) {
-  const { t } = useTranslation();
-  const box = useRef<HTMLDivElement>(null);
-  const { sought, letGo } = useSoughtExchange(box, seek);
-  if (!held || 'reading' in held) {
-    if (!held && error) return <Failed why={error} onRetry={onRetry} />;
-    return (
-      <div aria-busy="true" className="grid gap-2 p-3">
-        <p className="m-0 text-small text-ink-faint">{t('work.atWork.reading')}</p>
-        <div className="h-4 w-2/3 rounded-control bg-line/60" />
-        <div className="h-4 w-1/2 rounded-control bg-line/60" />
-      </div>
-    );
-  }
-  if ('failed' in held) return <Failed why={held.failed.why || (error ?? '')} onRetry={onRetry} />;
-  // An ask's answer is the ask page's section, not a session's view.
-  if ('askAnswer' in held) return null;
-
-  const stale = held.stale?.why ?? error ?? null;
-  const { answer } = held;
-  return (
-    <div ref={box} className="grid min-w-0 gap-3 p-3" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
-      {stale !== null && (
-        <p role="status" className="m-0 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
-          {t('work.atWork.stale', { why: stale })}
-          {onRetry && <button type="button" className="text-accent underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
-        </p>
-      )}
-      <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
-        <WaitingOn answer={answer} nameOf={nameOf} />
-        <Parts answer={answer} onOpen={onOpen} channel={channel} />
-        <Coworkers answer={answer} nameOf={nameOf} onOpen={onOpen} sought={sought} />
-        {stale === null && nobody(answer) && <p className="m-0 text-small text-ink-faint">{t('work.atWork.empty')}</p>}
-        <QuestRows quests={answer.quests} more={answer.moreQuests ?? 0} considered={considered ?? []} onOpenQuest={onOpenQuest} sought={sought} />
-        <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
-        {channel && <ChannelWords channel={channel} parts={listsParts(answer, t) ? answer.parts : []} />}
-        <Hint answer={answer} />
-      </div>
-    </div>
-  );
-}
 
 export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) {
   const { t } = useTranslation();
@@ -114,21 +30,9 @@ export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) 
 }
 
 /**
- * What the line waits on, first: read from its requests that hold, a quest as
- * *Waiting on #q7 in core (docs lane)* and a co-worker by whom and where it stands. The head draws the same line from the same read.
- * Where it waits on nothing and the session published quests, and no part of the entry waits, *published 3, waits on none*.
- */
-function WaitingOn({ answer, nameOf }: { answer: AtWorkA; nameOf?: (agent: string) => string }) {
-  const { t } = useTranslation();
-  const line = waitingOnLine(t, answer.exchanges ?? [], nameOf);
-  if (line) return <p data-wait-line tabIndex={-1} className="m-0 text-small text-ink outline-none">{line}</p>;
-  if (!answer.published || answer.parts.some((part) => part.waits)) return null;
-  return <p className="m-0 text-small text-ink-soft">{t('work.atWork.published', { count: answer.published })}</p>;
-}
-
-/**
- * The head's *Waiting on*: *At work*'s line, the same words from the same read, and a door that opens
- * *At work* at the first request it names. Nothing where the line waits on nothing it asked.
+ * The head's *Waiting on*: what the line waits on, read from its requests that hold, a quest as *Waiting on #q7 in core (docs lane)*
+ * and a co-worker by whom and where it stands, with a door that scrolls the timeline to the first request's row. Nothing where the
+ * line waits on nothing it asked.
  */
 export function WaitingOnLine({ answer, nameOf, onOpen }: {
   answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void;
@@ -140,61 +44,9 @@ export function WaitingOnLine({ answer, nameOf, onOpen }: {
   return (
     <p data-waiting-on className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
       <span className="min-w-0 wrap-anywhere">{line}</span>
-      {onOpen && <button type="button" className="text-accent underline" onClick={() => onOpen(first.id)}>{t('work.atWork.openAtWork')}</button>}
+      {onOpen && <button type="button" className="text-accent underline" onClick={() => onOpen(first.id)}>{t('work.atWork.toRow')}</button>}
     </p>
   );
-}
-
-/**
- * Who the line asked to work with it: each helper, partner and successor it asked, by whom and
- * where it stands, its door where one took it up. A quest is *Asked through quests*' row. A source not read is said, never drawn as none.
- */
-function Coworkers({ answer, nameOf, onOpen, sought }: {
-  answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (session: string) => void; sought?: string | null;
-}) {
-  const { t } = useTranslation();
-  const rows = (answer.exchanges ?? []).filter((exchange) => exchangeSource(exchange) !== 'quest');
-  const unread = answer.unread ?? [];
-  if (rows.length === 0 && unread.length === 0) return null;
-  return (
-    <section className="grid min-w-0 gap-1">
-      <SectionTitle>{t('work.atWork.coworkers')}</SectionTitle>
-      {rows.length > 0 && (
-        <ul className="m-0 grid list-none gap-1 p-0">
-          {rows.map((exchange) => (
-            <li
-              key={exchange.id}
-              data-coworker={exchange.id}
-              data-exchange={exchange.id}
-              tabIndex={-1}
-              className={cn('flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink', sought === exchange.id ? SOUGHT : 'outline-none')}
-            >
-              <span className="min-w-0 wrap-anywhere">{exchangeWhat(t, exchange, nameOf)}</span>
-              <span className="text-ink-soft">{exchangeState(t, exchange)}</span>
-              {exchange.part !== answer.attended && <span className="text-ink-faint">{t('work.atWork.coworker.earlierPart')}</span>}
-              {exchange.session && onOpen && (
-                <button type="button" className="text-accent underline" onClick={() => onOpen(exchange.session!)}>{t('work.atWork.open')}</button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {unread.length > 0 && (
-        <p className="m-0 text-small text-ink-soft">{t('work.atWork.coworker.unread', { sources: unread.map((source) => t(`work.atWork.source.${source}`)).join(', ') })}</p>
-      )}
-    </section>
-  );
-}
-
-/** Whether the list says anything a lone part's page does not: a wait, how it joined, or parts folded away. */
-function worthListing(answer: AtWorkA, t: TFunction): boolean {
-  return answer.parts.some((part) => part.waits || (part.joined && joinedLine(t, part.joined) !== null)) || !!answer.earlier;
-}
-
-/** Whether the parts list is drawn: more than the one part, or something the one part's page does not say. */
-function listsParts(answer: AtWorkA, t: TFunction): boolean {
-  const more = Object.values(answer.moreParts ?? {}).reduce((sum, count) => sum + count, 0);
-  return !(answer.parts.length < 2 && more === 0 && !worthListing(answer, t));
 }
 
 /** One message of the channel's last words, as the channel draws it: who, to which part alone where it is to one, when, and the words. */
@@ -212,109 +64,10 @@ export function Word({ item }: { item: ChannelItem }) {
 }
 
 /**
- * The channel's last words that sit on no listed part: the person's, another line of work's, a session's
- * that this list does not hold; then *All messages*, which opens the panel the whole channel is in.
+ * The quests an ask's lines of work asked: one button each, opening the quest, with who took it and what the taker waits on. An
+ * untaken quest says why beside it from the driver's last look, none before the first. A chain's step is set in under the quest
+ * before it; the one a press sought is outlined (`quest:<id>`).
  */
-function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: readonly AtWorkPart[] }) {
-  const { t } = useTranslation();
-  const keys = new Set(parts.map((part) => part.key));
-  const loose = channel.words.filter((item) => !item.session || !keys.has(item.session));
-  return (
-    <section className="grid min-w-0 gap-1">
-      <SectionTitle level={3}>{t('work.atWork.group.channel')}</SectionTitle>
-      {channel.words.length === 0 && <p className="m-0 text-small text-ink-faint">{t('work.atWork.channel.none')}</p>}
-      {loose.length > 0 && <ol className="m-0 grid list-none gap-1 p-0">{loose.map((item) => <Word key={item.id ?? item.at} item={item} />)}</ol>}
-      {channel.onOpen && (
-        <div>
-          <button type="button" className="text-small text-accent underline underline-offset-2" onClick={channel.onOpen}>
-            {t('work.atWork.channel.all')}
-          </button>
-        </div>
-      )}
-      {channel.onPost && !channel.over && <LineChannelComposer onPost={channel.onPost} recipients={channel.recipients ?? []} />}
-    </section>
-  );
-}
-
-/**
- * The entry's parts, each one button opening its part: its number, agent, its record's own state, what it waits on as the strip places
- * it, how it joined, and its subagents' count. A waiting part is never folded; the attended part's wait is the line above, not repeated.
- */
-function Parts({ answer, onOpen, channel }: { answer: AtWorkA; onOpen?: (session: string) => void; channel?: AtWorkChannel }) {
-  const { t } = useTranslation();
-  const more = Object.values(answer.moreParts ?? {}).reduce((sum, count) => sum + count, 0);
-  if (!listsParts(answer, t)) return null;
-  return (
-    <section className="grid min-w-0 gap-1">
-      <SectionTitle level={3}>{t('work.atWork.group.parts')}</SectionTitle>
-      <ol className="m-0 grid list-none gap-0.5 p-0">
-        {answer.parts.map((part) => {
-          const joined = part.joined ? joinedLine(t, part.joined) : null;
-          return (
-            <li key={part.key}>
-              <button
-                type="button"
-                aria-current={part.key === answer.attended || undefined}
-                onClick={() => onOpen?.(part.key)}
-                className={cn(
-                  'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2 py-1 text-left text-small',
-                  'hover:bg-accent-soft/50',
-                  part.key === answer.attended ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
-                )}
-              >
-                {part.number !== undefined && <span className="font-mono text-meta text-ink-faint">{part.number}</span>}
-                {part.agent && <span className="font-mono text-meta text-ink-faint">{part.agent}</span>}
-                {part.state && <Dot tone={part.state === 'working' ? 'live' : 'ended'} label={t(partStateKey(part.state))} />}
-                {part.waits && part.key !== answer.attended && <Dot tone="idle" label={waitLine(t, part.waits)} className="whitespace-normal" />}
-                <PartChildren t={t} part={part} />
-                {(joined || part.alongside) && (
-                  <span className="basis-full text-meta text-ink-faint">
-                    {[joined, part.alongside ? t('work.atWork.part.alongside') : null].filter(Boolean).join(' · ')}
-                  </span>
-                )}
-              </button>
-              {(channel?.words ?? []).some((item) => item.session === part.key) && (
-                <ol className="m-0 mt-0.5 grid list-none gap-0.5 p-0 ps-4">
-                  {channel!.words.filter((item) => item.session === part.key).map((item) => <Word key={item.id ?? item.at} item={item} />)}
-                </ol>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-      {(answer.earlier ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.earlier', { count: answer.earlier })}</p>}
-      {more > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.more', { count: more })}</p>}
-    </section>
-  );
-}
-
-function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
-  const { children } = part;
-  if (children.elsewhere) return <span className="text-meta text-ink-faint">{t('work.atWork.elsewhere')}</span>;
-  if (children.unreadable) return <span className="text-meta text-ink-faint">{t('work.atWork.unreadable')}</span>;
-  if (!children.count) return null;
-  return (
-    <span className="text-meta text-ink-faint">
-      {t('work.atWork.part.children', { count: children.count, working: children.working ?? 0 })}
-    </span>
-  );
-}
-
-/** Whether *Nobody else is working on this* may be said: only where every source is read and holds nobody. */
-export function nobody(answer: AtWorkA): boolean {
-  const { subagents, parts } = answer;
-  return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.quests?.length && !answer.parts[0]!.waits
-    && (subagents.read === 'read' || subagents.read === 'none')
-    && subagents.children.length === 0 && !subagents.observed && !subagents.unplaced && !subagents.seenByCalls
-    && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);
-}
-
-/**
- * The quests the entry's parts asked that opened no part of it: one button each, opening the quest, with who took it
- * and what the taker waits on. An untaken quest says why beside it from the driver's last look, none before the first. A chain's step
- * is set in under the quest before it.
- */
-/** The quest rows, as a session's view and an ask's section both draw them; the one a press sought outlined (`quest:<id>`). */
 export function QuestRows({ quests, more, considered, onOpenQuest, sought }: {
   quests: readonly AtWorkQuest[] | undefined; more: number; considered: readonly Consideration[]; onOpenQuest?: (quest: string) => void;
   sought?: string | null;
@@ -378,39 +131,3 @@ function QuestTaker({ t, quest, considered }: { t: TFunction; quest: AtWorkQuest
     </span>
   );
 }
-
-/** What asked the attended part's quest: one row, opening that quest. */
-function AskedBy({ answer, onOpenQuest }: { answer: AtWorkA; onOpenQuest?: (quest: string) => void }) {
-  const { t } = useTranslation();
-  const { askedBy } = answer;
-  if (!askedBy) return null;
-  return (
-    <section className="grid min-w-0 gap-1">
-      <SectionTitle level={3}>{t('work.atWork.group.askedBy')}</SectionTitle>
-      <button
-        type="button"
-        onClick={() => onOpenQuest?.(askedBy.quest)}
-        className="w-full min-w-0 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
-      >
-        {askerLine(t, askedBy, answer.parts)}
-      </button>
-    </section>
-  );
-}
-
-/**
- * Where the repository's way to hand rows on is not open: the standing the driver judged, said where the
- * session ran subagents, with the guide's lanes section behind it. A fact about the repository and this machine, never a verdict on
- * the agent's choice.
- */
-function Hint({ answer }: { answer: AtWorkA }) {
-  const { t } = useTranslation();
-  if (!answer.hint) return null;
-  return (
-    <p data-hint={answer.hint} className="m-0 text-small text-ink-soft">
-      <Inline text={t(HINT_KEY[answer.hint])} />{' '}
-      <ExternalLink href={LANES_GUIDE} className="text-accent underline underline-offset-2">{t('work.atWork.hint.guide')}</ExternalLink>
-    </p>
-  );
-}
-

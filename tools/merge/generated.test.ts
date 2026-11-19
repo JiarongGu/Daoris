@@ -1,6 +1,16 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { regenerate, regenerations } from './generated.ts';
+import { readFileSync } from 'node:fs';
+import { regenerate, regenerations, inFolders, readFolders } from './generated.ts';
+
+test('the size list is a generated file of the merge: its shrinks are written from the merged tree, never failed for', () => {
+  const folders = readFolders(process.cwd(), (message) => new Error(message));
+  const list = folders.find(({ folder }) => folder === 'tools/size-ratchet.json');
+  assert.equal(list?.run, 'node tools/size-ratchet.mjs --shrink');
+  assert.equal(inFolders('tools/size-ratchet.json', folders), true);
+  assert.equal(inFolders('tools/size-ratchet.json.bak', folders), false);
+  assert.ok(JSON.parse(readFileSync('daoris.gates.json', 'utf8')).generated.length >= 1);
+});
 
 test('each regeneration the chosen gates declare is run once, in the plan\'s order, and a gate declaring none adds none', () => {
   const gates = [
