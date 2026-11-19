@@ -193,10 +193,18 @@ internal sealed class SessionsAskDesk(DriverContext context)
     {
         var id = press.Id;
         var record = _loop.Service is { } service ? await service.RecordAsync(id, cancellationToken).ConfigureAwait(false) : null;
-        if (record is not ({ Parked: true } or { State: SessionStates.AwaitingStep })) return new { Question = (object?)null };
+        // A conversation has no park: its sign-in question (its file marked so) stands whatever its state, until a word of the person's
+        // answers it, so the dock draws it between turns too.
+        var conversation = record is { Kind: "chat" };
+        if (record is null || (!conversation && record is not ({ Parked: true } or { State: SessionStates.AwaitingStep })))
+        {
+            return new { Question = (object?)null };
+        }
+
         return await Task.Run<object?>(() =>
         {
             var asked = new QuestionFiles(_loop.Home).Read(id);
+            if (conversation && asked is not { Conversation: true } && !record.Parked && record.State != SessionStates.AwaitingStep) asked = null;
             // the supervisor's defer on this question, which the card says above its answers; never its holder.
             var left = asked is null
                 ? null

@@ -215,9 +215,18 @@ public sealed class ConversationRoutes(DriverContext context)
         // The owner's answer to a question a supervisor's decision is on supersedes it at
         // once; the service's one owner-word operation took its released word back in the same step.
         if (said.Sent && asking is not null) await _loop.Supervisor.SupersedeAsync(id, asking, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        // A conversation's sign-in question is answered by any word of the person's the door kept, *Signed in* or their own: no run
+        // opens to clear its file as a park's does, so it goes here, and only where the file is a conversation's own.
+        if (said.Sent) ClearConversationQuestion(id);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued`.
         // `now`: the press is carried out; false where it is not asked, or the door could do neither, `why` saying so.
         return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };
+    }
+
+    private void ClearConversationQuestion(string session)
+    {
+        var files = new QuestionFiles(_loop.Home);
+        if (files.Read(session) is { Conversation: true }) files.Clear(session);
     }
 
     // *Start a conversation with these words*: words a session cannot go on with start a conversation in its repository, handed
