@@ -36,8 +36,7 @@ describe('the approval card', () => {
   it('reads the release and the stage the approval asks of from the wait, and offers the press where the person holds the approver', () => {
     expect(approvalOf(WORDS, URL)).toEqual({ release: '90', stage: 'Production' });
     expect(approvalOf('Waiting on the deployer: start Test of Release-90 in Azure DevOps.', URL)).toBeNull();
-    // The approval is the approver role's act: the person's press where they hold it, whether or not the plugin hands it to an agent
-    // holding the role as its tool; where an agent holds it, the card opens the page instead.
+    // Where an agent holds the approver, the card opens the page instead.
     expect(canApproveHere([{ name: 'approve-release', tool: false }], { kind: 'person' })).toBe(true);
     expect(canApproveHere([{ name: 'approve-release', tool: true }], { kind: 'person' })).toBe(true);
     expect(canApproveHere([{ name: 'approve-release', tool: true }], { kind: 'agent', name: 'builder-1' })).toBe(false);

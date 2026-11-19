@@ -21,13 +21,10 @@ async function discovered(args) {
 
 export const APPROVE = 'approve-release';
 
-/** The approver's act's fact, which its receipt names and the approval step its holder's act settles maps. */
 export const APPROVED = 'approved';
 
-/** A round of the approval with its receipt as its data: reached where the stage's approval reads given, else failed with its code. */
 const receipted = (said, exit, receipt) => ({ said: [said], exit, data: { receipt: { fact: APPROVED, ...receipt, message: said } } });
 
-/** The stage's approval, read first and again after the act: who gave it, from the approvals Azure DevOps keeps. */
 const givenBy = (approval) => `outside: ${approval?.approvedBy?.displayName ?? approval?.approver?.displayName ?? 'its approver'}`;
 
 async function approved(args) {
@@ -48,7 +45,6 @@ async function approved(args) {
   const approvals = environment?.preDeployApprovals ?? [];
   const pending = approvals.find((each) => each.status === 'pending');
   const given = approvals.findLast((each) => each.status === 'approved');
-  // An approval already given, by anyone, is the fact read first: nothing is changed and the receipt says who gave it.
   if (!pending && given && decision === 'approved') {
     return receipted(`${environment.name} of ${release.name} approved by ${givenBy(given)}.`, 0, { state: 'reached', ...of, by: givenBy(given) });
   }

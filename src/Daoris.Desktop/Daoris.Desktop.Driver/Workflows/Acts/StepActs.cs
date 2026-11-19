@@ -60,7 +60,6 @@ public static class StepActs
             said.Add(worded.Done
                 ? $"step {node.Id} of #{governed.Run} settled by its receipts"
                 : $"step {node.Id} of #{governed.Run} not settled by its receipts ({worded.Refused})");
-            // The long loop: what an act came to on the way is proposed into the step's delivery knowledge, for the next run's hand-off.
             if (worded.Done && StepReceipts.Knowledge(node) is { } entry && StepLessons.Of(node, rows) is { } lesson
                 && StepLessons.Propose(records.Home, new StepLesson(scope.Run.Binding.Repository, entry, governed.Run, node.Id, lesson, clock())))
             {

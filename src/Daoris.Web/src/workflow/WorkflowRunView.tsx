@@ -5,7 +5,7 @@ import { authoredText } from '../locales/authored';
 import i18n from '../locales/i18n';
 import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
-import { StepActRows } from './StepActRows';
+import { StepActRows } from './acts/StepActRows';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';

@@ -15,4 +15,10 @@ public static class CastReading
     /// <summary>The cast at the place as <paramref name="home"/>'s files say it now: its cast and its machine's place risk.</summary>
     public static Func<string, string> Home(string home, string? workspace, string? repository) =>
         At(new PlaceCastFiles(home).Book(), DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk, workspace, repository);
+
+    public static Func<string, bool> AgentHolds(string home, PluginPlace place)
+    {
+        var cast = new Lazy<Func<string, string>>(() => Home(home, place.Workspace, place.Repository));
+        return role => cast.Value(role) != CastHolders.Person;
+    }
 }

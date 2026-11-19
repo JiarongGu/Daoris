@@ -30,7 +30,6 @@ public static class StepHoldActs
             _ => true,
         })];
 
-    /// <summary>The person's acts on a step handed to its agent (<see cref="AgentSettles.Handed"/>): <i>Take</i> alone, none where the owner's mark keeps it.</summary>
     public static IReadOnlyList<string> Handed(StepTenure? tenure) => tenure?.Why == TenureWhy.Marked ? [] : [CastActs.Take];
 }
 

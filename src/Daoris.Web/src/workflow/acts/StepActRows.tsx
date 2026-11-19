@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ExternalLink } from '../design/links';
-import type { RunStep } from './run';
-import { roleSaid } from './stepRoles';
+import { ExternalLink } from '../../design/links';
+import type { RunStep } from '../run';
+import { roleSaid } from '../stepRoles';
 
 const STATES: Record<string, true> = { reached: true, waiting: true, failed: true };
 

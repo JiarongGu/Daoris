@@ -19,6 +19,9 @@ internal static class PluginCommandReader
     /// <summary>The types an argument takes.</summary>
     public static readonly IReadOnlyList<string> Types = ["text", "number", "boolean", "choice"];
 
+    public static readonly System.Text.RegularExpressions.Regex RoleShape =
+        new(@"^(?=.{1,40}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     public const int TitleMost = 80;
 
     public const int AboutMost = 2000;
@@ -46,7 +49,7 @@ internal static class PluginCommandReader
         if (!Words(row, "confirm", ConfirmMost, oneLine: true, null, out var confirm))
             return Refused($"command `{name}`'s `confirm` must be words on one line of at most {ConfirmMost}: the question the window asks once before it runs.");
         var role = Text(row, "role");
-        if (row.TryGetProperty("role", out _) && (role is null || !StepRoles.Shape.IsMatch(role) || !tool))
+        if (row.TryGetProperty("role", out _) && (role is null || !RoleShape.IsMatch(role) || !tool))
             return Refused($"command `{name}`'s `role` must name the role whose act it is (lowercase words joined by dashes), and only a `tool` names one.");
         if (Closed(row, "on", Records, [], atLeastOne: false) is not { } on)
             return Refused($"command `{name}`'s `on` must list the records whose menus offer it, each once: {Listed(Records)}.");

@@ -75,14 +75,13 @@ public sealed class PluginToolsServerTests : IDisposable
         Install("acme-deploy", """
             { "commands": [ { "name": "approve", "about": "The approver's act: approves the stage.", "tool": true, "writes": true, "role": "approver" } ] }
             """);
+        PluginRoleHolders.Reading = CastReading.AgentHolds;
         string[] Listed() => [.. PluginToolList.At(_home, Engine).Select(tool => tool.Name)];
 
-        // The person holds the approver where no cast names one: the act is no tool of the session's.
         Assert.DoesNotContain("acme-deploy_approve", Listed());
         new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", new DateTimeOffset(2026, 11, 19, 9, 0, 0, TimeSpan.Zero));
         Assert.Contains("acme-deploy_approve", Listed());
 
-        // A destination the place marks keeps the approval the owner role's: not listed, and a call is refused before any process starts.
         File.WriteAllText(DriverConfig.ResolvePath(_home), """{ "placeRisk": { "workspace/games": { "risk": "low", "marks": ["release.production"] } } }""");
         Assert.DoesNotContain("acme-deploy_approve", Listed());
         var refused = await Ask(Server(_ => """{"said":["approved"],"exit":0}"""),

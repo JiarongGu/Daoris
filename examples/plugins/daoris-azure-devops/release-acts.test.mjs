@@ -42,7 +42,6 @@ test('the manifest hands the release manager its acts as tools that write, its r
   assert.equal(of('create-release').writes, true);
   assert.equal(of('start-stage').writes, true);
   assert.notEqual(of('release-status').writes, true);
-  // The approval is the approver role's act: a tool that writes, handed only where the place casts the approver to an agent.
   assert.deepEqual([of('approve-release').tool, of('approve-release').writes, of('approve-release').role], [true, true, 'approver']);
   for (const name of ['create-release', 'start-stage', 'release-status']) assert.equal(of(name).role, undefined, `${name} is any session's tool`);
 });

@@ -173,7 +173,6 @@ public sealed record HeldStep(
     /// </summary>
     public WorkflowRunHeld? Held { get; init; }
 
-    /// <summary>Handed to the agent holding its role (<see cref="AgentSettles.Handed"/>): its working session's tool or acts settle it, the person's press <i>Take</i> alone.</summary>
     public bool Handed { get; init; }
 }
 
