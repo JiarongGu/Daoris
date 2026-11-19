@@ -166,7 +166,8 @@ Real-process suites use `src/Daoris.Desktop/process.runsettings` and may take su
 runs eight classes at once, and a class that sets the process's environment, measures the whole process or
 holds a bound of a few seconds on a real process runs alone after the rest, in the `Alone` collection
 (PROCPAR1); the modules' runs one class at a time, as its assembly says. The driver's test host, as it loads, takes out
-the Daoris and git variables its shell held, as the gates' environment does, and names a scratch home of its run's
+the Daoris and git variables its shell held (git's locating, door `GIT_SSH*`, prompt, trace and identity ones, `GCM_*`: what a Daoris session's
+shell carries, SESSIONTESTENV1), as the gates' environment does, and names a scratch home of its run's
 (`HostEnvironment`), so a run in a person's shell is the gate's run and never reaches the install's home; no other source
 sets the process's environment but those `ProcessEnvironmentCensusTests` names, each run alone. The driver's git-only Process
 classes, marked `Parallel=Git` beside `Category=Process`, run four at once in one host with
