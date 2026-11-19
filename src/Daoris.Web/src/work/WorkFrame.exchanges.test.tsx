@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // Who the attended session worked with reads in its one timeline, the side bar holding no At work view and the page no fold of its
-// own: a quest it published is a row where it was asked and one where it closed, between the turns it fell between. The Work frame
-// as a page over a mocked bridge, as the rest of its suite runs.
+// own: a quest it published is a row at its asking and one at its close, between the turns it fell between. The Work frame as a
+// page over a mocked bridge, as the rest of its suite runs.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
