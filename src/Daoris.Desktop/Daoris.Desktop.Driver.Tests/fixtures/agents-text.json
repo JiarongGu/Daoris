@@ -2317,11 +2317,13 @@
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "daoris: `claude-code` account `work` — <root>/daoris/profiles/agents/claude-code/<id>",
         "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"work\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile add, one that exists",
@@ -2338,7 +2340,7 @@
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: `claude-code` profile `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
+        "daoris: `claude-code` account `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
         "  It is empty until you log into it: `daoris agent login claude-code --account account-1`."
       ],
       "err": [],
@@ -2357,11 +2359,13 @@
       "exit": 0,
       "out": [
         "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
-        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "daoris: `claude-code` account `work` — <root>/daoris/profiles/agents/claude-code/<id>",
         "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"work\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile add, no account",
@@ -2375,7 +2379,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent account add` needs <agent> <profile> — e.g. `daoris agent account add claude-code`"
+        "daoris: `agent account add` needs <agent> <name> — e.g. `daoris agent account add claude-code`"
       ],
       "after": {}
     },
@@ -2404,12 +2408,15 @@
       ],
       "folders": [],
       "before": {},
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `../x` is not a usable profile name — letters, digits, dashes and dots. It becomes a directory Daoris owns the location of, so it may not point anywhere else."
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `../x` — <root>/daoris/profiles/agents/claude-code/<id>",
+        "  It is empty until you log into it: `daoris agent login claude-code --account \"../x\"`."
       ],
-      "after": {}
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"../x\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile remove, none of that name",
