@@ -294,7 +294,8 @@ function LineRow({ item, isNew, onOpenQuest }: { item: ChannelItem; isNew: boole
 }
 
 /** One message as written, with who, to whom, when, what it answers, what it reached, and a press to answer it. */
-function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
+/** One message of a channel, as the ask's page lists it and a session's timeline draws it where it was said. */
+export function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
   item: ChannelItem;
   anchor: string;
   anchorOf: (id: string) => string;
