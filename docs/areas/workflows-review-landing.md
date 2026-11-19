@@ -367,7 +367,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     earlier one there. `TOGETHER_PRESS` lands nothing. (D167, D227, D232, D259)
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed, the environment still the `reviews` rule's, and `SET_REVIEW required` is refused. (D154, D227)
-26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once. A
+26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once, as its next
+    turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
+    `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
+    `OpinionStepWaits`), never *working*. A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
+    the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
     never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
