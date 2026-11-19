@@ -25,6 +25,7 @@ test('the declared gates: each timeoutMinutes carries its reason, and the full s
   const budget = budgetMs(over, 'ci')!;
   assert.ok(budget > 10 * 60_000, 'a gate killed at the old budget has its measured one');
   assert.match(overBudgetNote(budget + 1000, budget, []), /^over-budget: killed after/, 'a gate over its new budget still fails');
+  assert.equal(budgetMs(gates.find((each) => each.name === 'reached')!, 'merge'), 20 * 60_000, 'reached: 13.4 min p90 unbudgeted, times 1.5 (MERGENOKILL1)');
 });
 
 test('--no-timeout gives no budget and says so in the summary', () => {

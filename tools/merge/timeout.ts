@@ -1,9 +1,11 @@
 /**
  * The wall-clock budget of a gate: its declared `timeoutMinutes`, else five minutes in a merge and ten in the full set or the CI.
- * A gate past it is killed with what it started, a breach that says why (`tools/time-why.mjs`). A kill while the load sampler (from
- * half the budget) saw more heavy runs than the gate's own fails nothing yet: the gate runs again once, whole and alone, after every
- * other gate and once the machine is free (`waitFree`), and only a kill alone fails as its time. The budget never scales with the
- * load: a kill alone is the one measure of the gate's own time. `--no-timeout` turns it off for an investigation, said in the summary.
+ * A gate past it alone is killed with what it started and fails as its time, a breach that says why (`tools/time-why.mjs`). A gate
+ * past it while the load sampler (from half the budget) sees more heavy runs than its own is never killed for the load (MERGENOKILL1,
+ * D346): it runs on to its own end, its verdict its own, and its time a `load` breach that fails nothing; only `LOAD_CAP` times its
+ * budget ends it, as a runaway, and fails. The budget never scales with the load: a kill alone is the one measure of the gate's own
+ * time. `--no-timeout` turns it off for an investigation, said in the summary. A gate whose hang bound killed a test under load still
+ * runs again alone once the machine is free (`waitFree`): that kill left it with no verdict.
  */
 import type { LoadSeam } from '../time-why.mjs';
 import { stepsLine, type Step } from './reached-steps.ts';
@@ -11,8 +13,10 @@ import type { Slow } from './timing.ts';
 
 export const MERGE_GATE_MINUTES = 5;
 export const FULL_GATE_MINUTES = 10;
+/** A gate that runs on past its budget under load is ended at this many times its budget: a runaway, not a slow machine. */
+export const LOAD_CAP = 3;
 
-/** How long a gate killed under load waits for the machine to be free before it runs again anyway, and how often it reads it. */
+/** How long a gate whose hang bound killed a test under load waits for the machine to be free before it runs again anyway, and how often it reads it. */
 export const FREE_WAIT_MS = 10 * 60_000;
 export const FREE_EVERY_MS = 15_000;
 
@@ -47,18 +51,15 @@ export async function waitFree(load: LoadSeam, halted: () => boolean = () => fal
   }
 }
 
-/** What a kill adds to the over-budget note: under load, that it runs again alone; on the run again, what that run showed. */
-export function killNote({ loaded, peak, again, waited }: { loaded: boolean; peak: number | null; again: boolean; waited: { free: boolean } | null }): string {
-  if (again) return `; under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`;
-  if (!waited) return '';
-  if (!loaded) return '; killed at its budget under load, then killed again run alone: the time is the gate\'s';
-  const why = waited.free ? 'the load came back while it ran' : `the machine was not free within ${minutes(FREE_WAIT_MS)} min`;
-  return `; killed at its budget under load, then again under load: ${why}; run it again when the machine is free`;
-}
+/** What a gate that ran on past its budget under load adds to its note. */
+export const ranOnNote = (ranMs: number, budget: number, peak: number): string => `ran on past its ${minutes(budget)} min budget under load (${peak} heavy runs at its peak): its time fails nothing (${minutes(ranMs)} min), a load breach the heavy tier measures alone`;
 
-/** The note of a gate killed under load whose run again alone ended without a kill. */
-export const againNote = (verdict: string, waited: { free: boolean; ms: number }, note: string, by = 'at its budget'): string => [
-  `killed ${by} under load, then ${verdict === 'PASS' ? 'passed' : `ended ${verdict}`} run again alone`
+/** What a gate ended at its cap adds to the over-budget note. */
+export const cappedNote = (peak: number): string => `; killed at its cap of ${LOAD_CAP} times its budget, having run on under load (${peak} heavy runs at its peak): a runaway`;
+
+/** The note of a gate whose hang bound killed a test under load, after its run again alone ended without a kill. */
+export const againNote = (verdict: string, waited: { free: boolean; ms: number }, note: string): string => [
+  `killed by its hang bound under load, then ${verdict === 'PASS' ? 'passed' : `ended ${verdict}`} run again alone`
   + `${waited.ms ? ` after ${minutes(waited.ms)} min waiting for the machine${waited.free ? '' : ', which was not free'}` : ''}`,
   note,
 ].filter(Boolean).join('; ');

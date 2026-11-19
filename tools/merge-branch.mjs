@@ -2204,7 +2204,7 @@ const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside)
 
 /**
  * A clock gate whose timed specs failed is run again by the same path, for those specs.
- * Each gate of this run that died of memory (or a kill under load), run again once, alone: once every other gate has ended, one at a time in
+ * Each gate of this run that died of memory (or a hang kill under load), run again once, alone: once every other gate has ended, one at a time in
  * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
  * none again: each keeps its first verdict, a failure named as memory, its note saying why it is not run again.
  */
