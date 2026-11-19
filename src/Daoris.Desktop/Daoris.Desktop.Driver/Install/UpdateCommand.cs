@@ -148,10 +148,24 @@ public static class UpdateCommand
             return 2;
         }
 
-        var (code, said) = UpdateFetch.RunAsync(install, UpdateRefusal.Running, CancellationToken.None, fetch).GetAwaiter().GetResult();
+        var (code, said) = UpdateFetch.RunAsync(install, InstalledVersion(install), CancellationToken.None, fetch).GetAwaiter().GetResult();
         output.Append(said);
         if (code == 0 && StagedBuild.Read(install, out _) is { } staged) log?.Info("update.fetched", ("version", staged.Version), ("build", staged.Id));
         return code;
+    }
+
+    /// <summary>The version of the build in <c>app/</c> of <paramref name="install"/>, from its library's version resource as the launcher reads it; null where it does not read.</summary>
+    internal static string? InstalledVersion(string install)
+    {
+        var library = Path.Combine(install, StagedBuild.AppFolder, "Daoris.Desktop.App.dll");
+        try
+        {
+            return File.Exists(library) && System.Diagnostics.FileVersionInfo.GetVersionInfo(library).ProductVersion is { Length: > 0 } version ? version : null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
     }
 
     private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)

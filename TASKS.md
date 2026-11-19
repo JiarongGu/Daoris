@@ -94,7 +94,7 @@ Gap patterns (the owner, 2026-11-16: a discrepancy found is a pattern; each row 
 
 ## Install, home and update
 
-- [ ] **RELEASEFEED1 — Daoris publishes its own releases and an install's update reads them** (driver, tools; D329; the owner's direction of 2026-11-19): built (the release workflow's `desktop-package` job attaches `Daoris-<version>-win-x64.zip` and its `.sha256` to the GitHub release, run only by the owner's dispatch; `DaorisReleaseSource` beside Claude's and Codex's; `daoris update --fetch` stages the newest published release newer than the build running, held to its checksum and its manifest); left: **no release is published until the owner's go** (the first dispatch, with `dry_run` off; a dry run first proves the job on a hosted Windows runner, which has not run), the running application looking for a newer release by itself, and the fetch proven end to end on a published release.
+- [ ] **RELEASEFEED1 — Daoris publishes its own releases and an install's update reads them** (driver, tools; D329; the owner's direction of 2026-11-19): built (`desktop-release.yml`, run only by a version tag the owner pushes, publishes the GitHub release with `Daoris-<version>-win-x64.zip` and its `.sha256` attached; `DaorisReleaseSource` beside Claude's and Codex's; `daoris update --fetch` stages the newest complete published release newer than the install's build, held to its checksum and its manifest in a staging before it is exposed); left: **no release is published until the owner's go** (the first version tag they push; the workflow has not yet run on a hosted Windows runner), the running application looking for a newer release by itself, and the fetch proven end to end on a published release.
 
 ## Driving
 

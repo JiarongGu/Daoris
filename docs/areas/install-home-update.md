@@ -29,7 +29,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `Drv/Install/` (`DaorisReleases`, `DaorisReleaseDownloads`, `DaorisReleaseSource`, `UpdateFetch`) | Daoris's own releases as Install's source, and the fetch that stages the newest one |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
-| `.github/workflows/release.yml` | The release workflow, run by the owner's dispatch alone; its `desktop-package` job zips the staged build and attaches it with its checksum to the GitHub release |
+| `.github/workflows/desktop-release.yml` | Run only by a version tag the owner pushes: zips the staged build and publishes the GitHub release with it and its checksum attached |
 
 ## Its rules
 
@@ -210,15 +210,16 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     a command line. (from D94, D139)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 48a. Daoris publishes its own releases: GitHub releases of its public repository, each carrying `Daoris-<version>-win-x64.zip`, one staged build
-    (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it, attached by the release workflow's
-    `desktop-package` job, which runs only when the owner dispatches the workflow (no tag-push trigger, no schedule; a dry run attaches nothing).
-    `daoris update --fetch` (`UpdateFetch`, over `DaorisReleaseSource` in `ReleaseChannels.Sources`) asks for the newest *published* release (a draft or a
-    prerelease is none), refuses one that is not one exact `X.Y.Z` or is no newer than the build running, and fetches the package: the checksum file
-    must list it, the asset's own digest must agree where the API states one, the download is held to the hash and unpacked into `update/staged/`
-    (`ToolArchives`' zip, which refuses a link, an escaping name and an encrypted entry), and `StagedBuild.Check` and the manifest's version, which must be
-    the release's, hold the build as a published stage is held, else it is removed and the sentence said. It stages and installs nothing: the
-    application installs by the one path of rules 37 to 46. It refuses while a swap is under way or a build is staged, from a session's terminal
-    (rule 35's), and on a machine that is not `win-x64`. (from D329)
+    (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it. `desktop-release.yml` makes them and runs only
+    on a `vX.Y.Z` tag the owner pushes (no dispatch, no schedule); it publishes the release only once both files are attached. `daoris update --fetch`
+    (`UpdateFetch`, over `DaorisReleaseSource` in `ReleaseChannels.Sources`) reads the list of releases for the newest published one that carries both files
+    (a draft, a prerelease and an incomplete release are passed over), refuses one that is not one exact `X.Y.Z` or is no newer than the build in the install's
+    own `app/` (not the program asking), and fetches the package: the checksum file must list it, the asset's own digest must agree where the API states
+    one, the download is held to the hash and unpacked into a staging beside `update/staged/` (`ToolArchives`' zip, which refuses a link, an escaping name and an
+    encrypted entry), and `StagedBuild.CheckAt` and the manifest's version, which must be the release's, hold the build there. Only a build that passed is
+    moved into `update/staged/`, so the application never meets one that fails; a build staged meanwhile is kept, and nothing this fetch did not publish is removed. It
+    stages and installs nothing: the application installs by the one path of rules 37 to 46. It refuses while a swap is under way or a build is staged,
+    from a session's terminal (rule 35's), and on a machine that is not `win-x64`. (from D329)
 
 **The store**
 
@@ -282,7 +283,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 - **Daoris's own releases:** `Drv/Install/DaorisReleases.cs` (what the channel says), `DaorisReleaseDownloads.cs` (the fetch), `UpdateFetch.cs` (the staging) and the
-  release workflow's `desktop-package` job; the package's name is spelled in both `DaorisReleases.Package` and the job.
+  `desktop-release.yml`; the package's name is spelled in both `DaorisReleases.Package` and the workflow.
 
 **Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit (`DaorisReleasesTests` and `UpdateFetchTests` for rule 48a),
 `ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,

@@ -14,7 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class UpdateFetchTests : ScratchInstall
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
-    private const string Latest = "https://api.github.com/repos/JiarongGu/Daoris/releases/latest";
+    private const string Latest = DaorisReleases.Releases;
     private const string ByTag = "https://api.github.com/repos/JiarongGu/Daoris/releases/tags/v";
     private const string Download = "https://github.test/releases/download/";
 
@@ -107,8 +107,72 @@ public sealed class UpdateFetchTests : ScratchInstall
         var (code, said) = await UpdateFetch.RunAsync(_install, "0.1.0", CancellationToken.None, New(new Served([])));
 
         Assert.Equal(1, code);
-        Assert.Contains("has published no release", said);
+        Assert.Contains("nothing answered at", said);
         Assert.False(StagedBuild.IsStaged(_install));
+    }
+
+    [Fact]
+    public async Task A_newest_release_without_its_package_is_passed_over_for_an_older_one_that_has_it()
+    {
+        var served = Release("0.2.0");
+        served.Files[Latest] = Encoding.UTF8.GetBytes(
+            """[ { "tag_name": "v0.3.0", "draft": false, "prerelease": false, "assets": [] }, { "tag_name": "v0.2.0", "draft": false, "prerelease": false, "assets": [ { "name": "Daoris-0.2.0-win-x64.zip" }, { "name": "Daoris-0.2.0-win-x64.zip.sha256" } ] } ]""");
+
+        var (code, said) = await UpdateFetch.RunAsync(_install, "0.1.0", CancellationToken.None, New(served));
+
+        Assert.True(code == 0, said);
+        Assert.Equal("0.2.0", StagedBuild.Read(_install, out _)!.Version);
+
+        served.Files[Latest] = Encoding.UTF8.GetBytes("""[ { "tag_name": "v0.3.0", "draft": false, "prerelease": false, "assets": [] } ]""");
+        StagedBuild.Unstage(_install);
+        (code, said) = await UpdateFetch.RunAsync(_install, "0.1.0", CancellationToken.None, New(served));
+        Assert.Equal(1, code);
+        Assert.Contains("no release carrying its desktop package", said);
+    }
+
+    [Fact]
+    public async Task A_build_another_publisher_stages_while_the_package_downloads_is_kept_and_this_one_is_not_staged()
+    {
+        var served = Release("0.2.0");
+        served.Asking = url =>
+        {
+            if (url == Download + "Daoris-0.2.0-win-x64.zip") Stage();
+        };
+
+        var (code, said) = await UpdateFetch.RunAsync(_install, "0.1.0", CancellationToken.None, New(served));
+
+        Assert.Equal(1, code);
+        Assert.Contains("while Daoris 0.2.0 downloaded", said);
+        Assert.Equal("0.0.1", StagedBuild.Read(_install, out _)!.Version);
+        Assert.Equal("new launcher", Read("update/staged/Daoris.exe"));
+        Assert.Null(StagedBuild.Check(_install));
+        Assert.Empty(Directory.GetDirectories(Path.Combine(_install, "update")).Where(folder => !folder.EndsWith("staged", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task A_package_that_fails_its_checks_is_never_visible_where_the_application_watches()
+    {
+        var served = Release("0.2.0", builtAs: "0.9.0");
+        var seen = new List<bool>();
+        served.Asking = _ => seen.Add(StagedBuild.IsStaged(_install));
+
+        var (code, _) = await UpdateFetch.RunAsync(_install, "0.1.0", CancellationToken.None, New(served));
+
+        Assert.Equal(1, code);
+        Assert.All(seen, staged => Assert.False(staged));
+        Assert.False(Directory.Exists(Path.Combine(_install, "update", "staged")));
+    }
+
+    [Fact]
+    public void An_install_s_version_is_read_from_its_own_library_and_not_from_the_program_asking()
+    {
+        Assert.Null(UpdateCommand.InstalledVersion(_install));
+
+        File.Copy(typeof(UpdateFetch).Assembly.Location, Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), overwrite: true);
+
+        Assert.Equal(
+            System.Diagnostics.FileVersionInfo.GetVersionInfo(typeof(UpdateFetch).Assembly.Location).ProductVersion,
+            UpdateCommand.InstalledVersion(_install));
     }
 
     [Fact]
@@ -164,7 +228,11 @@ public sealed class UpdateFetchTests : ScratchInstall
 
         return new Served(new()
         {
-            [Latest] = Encoding.UTF8.GetBytes(new JsonObject { ["tag_name"] = "v" + version }.ToJsonString()),
+            [Latest] = Encoding.UTF8.GetBytes(new JsonArray(new JsonObject
+            {
+                ["tag_name"] = "v" + version, ["draft"] = false, ["prerelease"] = false,
+                ["assets"] = new JsonArray(new JsonObject { ["name"] = name }, new JsonObject { ["name"] = name + ".sha256" }),
+            }).ToJsonString()),
             [ByTag + version] = Encoding.UTF8.GetBytes(metadata),
             [Download + name + ".sha256"] = Encoding.UTF8.GetBytes($"{listedHash ?? actual}  {name}\n"),
             [Download + name] = package,
@@ -207,13 +275,19 @@ public sealed class UpdateFetchTests : ScratchInstall
 
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler
     {
+        public Dictionary<string, byte[]> Files { get; } = files;
+
         public List<string> Asked { get; } = [];
+
+        /// <summary>Called as each address is asked: another run's act while a download is in flight.</summary>
+        public Action<string>? Asking { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var url = request.RequestUri!.ToString();
             Asked.Add(url);
-            return Task.FromResult(files.TryGetValue(url, out var body)
+            Asking?.Invoke(url);
+            return Task.FromResult(Files.TryGetValue(url, out var body)
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(body) }
                 : new HttpResponseMessage(HttpStatusCode.NotFound));
         }

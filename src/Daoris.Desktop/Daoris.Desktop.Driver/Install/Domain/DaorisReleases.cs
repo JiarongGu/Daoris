@@ -7,7 +7,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// Daoris's own release channel, what an install's update reads: the GitHub releases of Daoris's public repository, each
 /// carrying the desktop package of the build (<see cref="Package"/>, a zip of one staged build) and the checksum file beside it
-/// (<see cref="Sums"/>). A draft or a prerelease is no release of the channel: <see cref="Latest"/> names only a published one.
+/// (<see cref="Sums"/>). A draft, a prerelease and a release lacking either file is no release of the channel: <see cref="Newest"/>
+/// names only a complete published one, so a release made without them never hides an older one that has them.
 /// What the channel says is here; <see cref="DaorisReleaseDownloads"/> fetches and stages.
 /// </summary>
 public static partial class DaorisReleases
@@ -15,8 +16,8 @@ public static partial class DaorisReleases
     /// <summary>What a program declares to pin from this channel.</summary>
     public const string Channel = "daoris-releases";
 
-    /// <summary>Where the channel names its newest published release.</summary>
-    public const string Latest = "https://api.github.com/repos/JiarongGu/Daoris/releases/latest";
+    /// <summary>The newest releases, newest first, which <see cref="Newest"/> reads.</summary>
+    public const string Releases = "https://api.github.com/repos/JiarongGu/Daoris/releases?per_page=30";
 
     /// <summary>One release by its tag, which the tag's version completes.</summary>
     public const string ByTag = "https://api.github.com/repos/JiarongGu/Daoris/releases/tags";
@@ -63,12 +64,42 @@ public static partial class DaorisReleases
         return false;
     }
 
-    /// <summary>The version a release's metadata is tagged with (<c>v&lt;version&gt;</c>), or what it said instead.</summary>
-    public static string Tag(byte[] body)
+    /// <summary>
+    /// The highest version among the published releases a list holds that carry both the package and its checksum file, or null where
+    /// none does: a draft, a prerelease, a tag that is not <c>vX.Y.Z</c> and a release lacking either file are passed over.
+    /// </summary>
+    public static string? Newest(byte[] body)
     {
-        var tag = TagOf(Metadata(body, "the newest release"));
-        return tag is not null && tag.StartsWith('v') ? tag[1..] : tag ?? "";
+        JsonElement root;
+        try
+        {
+            root = JsonDocument.Parse(body).RootElement;
+        }
+        catch (JsonException)
+        {
+            throw new DriverException("the list of Daoris's releases is not JSON — nothing was fetched.");
+        }
+
+        if (root.ValueKind != JsonValueKind.Array) throw new DriverException("the list of Daoris's releases is not a list — nothing was fetched.");
+        string? best = null;
+        foreach (var release in root.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.Object))
+        {
+            var tag = TagOf(release);
+            var version = tag is not null && tag.StartsWith('v') ? tag[1..] : null;
+            if (version is null || !IsVersion(version) || Flag(release, "draft") || Flag(release, "prerelease")) continue;
+            var names = release.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array
+                ? assets.EnumerateArray()
+                    .Select(asset => asset.ValueKind == JsonValueKind.Object && asset.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null)
+                    .ToHashSet()
+                : [];
+            if (names.Contains(Package(version)) && names.Contains(Sums(version)) && (best is null || IsNewer(version, best))) best = version;
+        }
+
+        return best;
     }
+
+    private static bool Flag(JsonElement release, string name) =>
+        !release.TryGetProperty(name, out var said) || said.ValueKind != JsonValueKind.False;
 
     /// <summary>A release's metadata as an object, or the refusal that it is not one.</summary>
     internal static JsonElement Metadata(byte[] body, string which)

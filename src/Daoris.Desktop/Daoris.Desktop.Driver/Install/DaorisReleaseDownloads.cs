@@ -25,23 +25,16 @@ public static class DaorisReleaseDownloads
     }
 
     /// <summary>
-    /// The exact version the channel names as its newest published release. 🔴 The answer only chooses a version; it vouches for
-    /// nothing, so it is read as one exact version or refused, and the version is then fetched verified as a typed one would be.
+    /// The exact version of the newest published release that carries the package and its checksum. 🔴 The answer only chooses a version;
+    /// it vouches for nothing, so the version is fetched verified as a typed one would be.
     /// </summary>
     public static async Task<string> LatestAsync(CancellationToken ct, HttpMessageHandler? transport = null)
     {
         using var http = Downloads.Client(transport);
-        var body = await BytesAsync(http, DaorisReleases.Latest, ct).ConfigureAwait(false)
-            ?? throw new DriverException(
-                $"Daoris has published no release at {DaorisReleases.Latest} — nothing was fetched.");
-        var said = DaorisReleases.Tag(body);
-        if (!DaorisReleases.IsVersion(said))
-        {
-            throw new DriverException(
-                $"the newest release at {DaorisReleases.Latest} is tagged `{TextBounds.Clip(said, 60)}`, which is not a version — nothing was fetched.");
-        }
-
-        return said;
+        var body = await BytesAsync(http, DaorisReleases.Releases, ct).ConfigureAwait(false)
+            ?? throw new DriverException($"nothing answered at {DaorisReleases.Releases}, where Daoris lists its releases — nothing was fetched.");
+        return DaorisReleases.Newest(body)
+            ?? throw new DriverException("Daoris has published no release carrying its desktop package and checksum — nothing was fetched.");
     }
 
     /// <summary>

@@ -168,9 +168,6 @@ jobs:
   release:
     needs: [devkit, desktop]
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -472,75 +469,3 @@ jobs:
           # nobody can script against; published as a file beside the artefact, it can be recorded into
           # a consuming repository and checked there without a network (D27).
           files: publish/devkit/*
-
-  # The desktop package (RELEASEFEED1). An install's update reads Daoris's own GitHub releases (`daoris update --fetch`,
-  # `DaorisReleases`), so each release carries one build of the desktop: the staged build `desktop-publish --stage` writes
-  # (the launcher, `app/`, `INSTALLED.md` and the `build.json` that lists every file's size and hash), zipped, and the checksum
-  # file beside it. The updater holds the zip to that checksum, then the unpacked build to its manifest, before anything is staged.
-  #
-  # Runs after `release`, on the tag it pushed: the version in the build is the tag's. On a dry run nothing was tagged, so the
-  # checked-out tree is stamped as `release` stamped its own and the package is built and kept as an artefact, never attached.
-  # Nothing here runs unless the owner dispatches the workflow (the trigger above): no tag push, no schedule.
-  desktop-package:
-    needs: [release]
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ (inputs.create_tag && !inputs.dry_run) && needs.release.outputs.tag || '' }}
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Stamp the version (no tag to build from)
-        if: ${{ !(inputs.create_tag && !inputs.dry_run) }}
-        run: node tools/release-prep.mjs --version "${{ needs.release.outputs.version }}"
-
-      - name: Web dependencies
-        run: npm --prefix src/Daoris.Web ci
-
-      # `--stage` stages beside an install, so an empty one is made for it. Ungated by the publish's own rule because this
-      # workflow's `release` job is the gate: it ran every check before the tag that this builds from.
-      - name: Stage the build
-        shell: bash
-        run: |
-          mkdir -p publish/install
-          printf '# Daoris — installed desktop\n' > publish/install/INSTALLED.md
-          node tools/desktop-publish.mjs --to publish/install --service --stage --force-ungated
-
-      # Forward slashes in the entries and no folder above them: the updater unpacks the zip straight into `update/staged/`.
-      - name: Zip the build and write its checksum
-        shell: pwsh
-        run: |
-          $version = '${{ needs.release.outputs.version }}'
-          $name = "Daoris-$version-win-x64.zip"
-          New-Item -ItemType Directory -Force publish/desktop | Out-Null
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path publish/install/update/staged).Path, (Join-Path (Resolve-Path publish/desktop).Path $name), 'Optimal', $false)
-          $hash = (Get-FileHash (Join-Path publish/desktop $name) -Algorithm SHA256).Hash.ToLower()
-          "$hash  $name" | Out-File -Encoding ascii (Join-Path publish/desktop "$name.sha256")
-          Get-Content (Join-Path publish/desktop "$name.sha256")
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: desktop-package
-          path: publish/desktop/Daoris-*
-          if-no-files-found: error
-
-      # Attached to the release `release` created, with the same name and notes so nothing about it changes, and still a draft when it
-      # is one. Only on a real release.
-      - name: Attach to the GitHub release
-        if: ${{ inputs.create_tag && !inputs.dry_run }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.release.outputs.tag }}
-          name: Daoris ${{ needs.release.outputs.version }}
-          body: 'What changed: https://github.com/JiarongGu/Daoris/blob/${{ needs.release.outputs.tag }}/CHANGELOG.md'
-          draft: ${{ inputs.draft }}
-          files: publish/desktop/Daoris-*

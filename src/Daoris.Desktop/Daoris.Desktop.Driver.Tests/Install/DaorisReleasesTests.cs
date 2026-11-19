@@ -49,11 +49,23 @@ public sealed class DaorisReleasesTests
     }
 
     [Fact]
-    public void The_newest_release_is_its_tag_without_the_v()
+    public void The_newest_release_is_the_highest_published_one_carrying_the_package_and_its_checksum()
     {
-        Assert.Equal("0.3.1", DaorisReleases.Tag(Encoding.UTF8.GetBytes("""{ "tag_name": "v0.3.1" }""")));
-        Assert.Equal("", DaorisReleases.Tag(Encoding.UTF8.GetBytes("""{ "name": "x" }""")));
-        Assert.Throws<DriverException>(() => DaorisReleases.Tag(Encoding.UTF8.GetBytes("not json")));
+        static string Release(string version, bool draft = false, bool prerelease = false, bool complete = true)
+        {
+            var zip = $"{{ \"name\": \"Daoris-{version}-win-x64.zip\" }}";
+            var sums = $"{{ \"name\": \"Daoris-{version}-win-x64.zip.sha256\" }}";
+            return $"{{ \"tag_name\": \"v{version}\", \"draft\": {(draft ? "true" : "false")}, \"prerelease\": {(prerelease ? "true" : "false")}, "
+                + $"\"assets\": [ {(complete ? zip + ", " + sums : zip)} ] }}";
+        }
+
+        var list = (params string[] releases) => Encoding.UTF8.GetBytes("[" + string.Join(",", releases) + "]");
+
+        Assert.Equal("0.3.0", DaorisReleases.Newest(list(Release("0.2.0"), Release("0.10.0", draft: true), Release("0.3.0"), Release("0.9.0", prerelease: true), Release("0.4.0", complete: false))));
+        Assert.Null(DaorisReleases.Newest(list(Release("0.4.0", complete: false))));
+        Assert.Null(DaorisReleases.Newest(list("""{ "tag_name": "nightly", "assets": [] }""")));
+        Assert.Throws<DriverException>(() => DaorisReleases.Newest(Encoding.UTF8.GetBytes("not json")));
+        Assert.Throws<DriverException>(() => DaorisReleases.Newest(Encoding.UTF8.GetBytes("{}")));
     }
 
     [Fact]
