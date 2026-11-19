@@ -38,6 +38,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    that has a `driver.json` is never seeded and converts on the person's press. (D227)
 2. The workflow a chain's work follows is the first of: the task's choice, the repository's for the kind, its default, the
    workspace's for the kind, its default, the home default. With none, its run is bound to no workflow (`current`) and held.
+   An open quest has no run bound yet: its run reads "not started yet: waits to be taken" naming the workflow its start will bind
+   and the level that chose it (`WorkflowNotStarted`), and says "no workflow is chosen" only where the choice is none.
    A kind's paths hold its work where the kind chose a workflow that asks less of the person or runs fewer checks than the one it
    would follow without the kind (`KindLowering`: the person's part, then a check dropped or its gates narrowed): a change outside
    them holds until `daoris workflow keep`. Nothing infers a kind from paths. (D157, D227, D232)

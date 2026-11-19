@@ -247,9 +247,15 @@ public static class WorkflowRunReader
             return await GraphRunAsync(chain, repository, part, mine, sessions, workspace, current, process, graph, run, reads).ConfigureAwait(false);
         }
 
+        // An open quest has no run bound yet: its start will bind what its repository chooses for it, which is read here, never "no workflow".
+        var waits = process is { Binding: null, Unread: null } && part.Count > 0 && part.All(WorkflowNotStarted.Waits)
+            ? WorkflowNotStarted.Said(WorkflowSelection.Resolve(sources.Config, repository, sources.WorkspaceOf(repository),
+                WorkflowRunBindings.TaskOf(part[0], chain)))
+            : null;
         return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
         {
-            Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded,
+            Process = process, Problem = waits ?? process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded,
+            NotStarted = waits is not null,
             Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
         };
     }
