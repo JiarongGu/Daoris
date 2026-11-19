@@ -12,7 +12,6 @@ import { askAtWork, askAtWorkOf, AT_WORK, atWorkAskKey, atWorkKey, type AtWorkHe
 const key = atWorkKey('s1');
 const held = hashKey(key);
 
-/** An answer of `rows` parts: the number each delivery is told apart by. */
 const answer = (rows: number, n: number, epoch = 'e1') => ({
   answer: { of: { session: 's1' }, attended: 's1', parts: Array.from({ length: rows }, (_, i) => ({ key: `p${i}`, children: {} })) },
   at: { epoch, n },

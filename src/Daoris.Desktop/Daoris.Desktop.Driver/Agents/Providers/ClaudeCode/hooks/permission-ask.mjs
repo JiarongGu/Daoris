@@ -121,10 +121,7 @@ export function rulesOf(file) {
   }
 }
 
-/**
- * The request the loop holds for the person: a `permit` for the session, keyed, naming the tool, the call and the harness's id of the
- * call, and the subagent that made it by the hook's `agent_id` (its task's id), where a subagent did.
- */
+/** The request the loop holds for the person: a `permit` for the session, keyed, naming the tool, the call and the subagent. */
 export function requestOf(session, key, input, at = new Date()) {
   const command = input?.tool_input?.command ?? input?.tool_input?.file_path ?? input?.tool_input?.url;
   const title = `${input?.tool_name ?? 'a tool'}${typeof command === 'string' ? `: ${command}` : ''}`;

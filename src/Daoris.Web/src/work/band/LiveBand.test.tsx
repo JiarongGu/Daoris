@@ -121,7 +121,6 @@ describe('the live band', () => {
   it('draws a sub-agent another started under its parent, indented one past it, and opens it by the way to it', () => {
     const nested: SessionEvent[] = [
       ...LIFETIMES,
-      // Started by a1 after the tasks; its door said its parent but not its depth.
       { seq: 9, at: at(3), kind: 'child', id: 'a4', parent: 'a1', name: 'read fixtures', by: 'reported' },
       { seq: 10, at: at(4), kind: 'child', id: 'a5', parent: 'a4', depth: 3, name: 'grep names', by: 'reported' },
     ];

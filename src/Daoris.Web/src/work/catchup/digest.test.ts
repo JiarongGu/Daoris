@@ -85,7 +85,6 @@ describe('the digest at the read mark', () => {
   });
 
   it('counts a subagent another started after the mark, and jumps to it through the row of the subagent that started it', () => {
-    // Read past the outer subagent's start: only the one it started, and the ends, come after the mark.
     const mark: ReadMark = { ...DRIVEN_MARK, seq: 5, at: DRIVEN.find((event) => event.seq === 5)!.at };
     const children = line(digest(DRIVEN, 's-driven', mark)!.lines, 'children')!;
 

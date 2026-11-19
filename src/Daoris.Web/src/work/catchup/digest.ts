@@ -88,7 +88,6 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
     const started = since.filter((event) => !event.end);
     const ended = since.filter((event) => event.end);
     if (since.length === 0) continue;
-    // A subagent another started has no row of the session's own: its jump is to the row of the one its way starts from.
     const first = (started[0] ?? ended[0])!.id ?? '';
     const id = kind === 'child' ? pathTo(lifetimes, first)[0] : first;
     const to = turns.flatMap((turn) => turn.items).find((block) => block.beside?.id === id && block.beside?.kind === kind)?.key;

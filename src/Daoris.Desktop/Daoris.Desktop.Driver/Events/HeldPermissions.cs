@@ -37,11 +37,7 @@ public sealed record HeldPermission(
     /// <summary>The call's kind as the wire names it (<c>execute</c>, <c>edit</c>, …), or null.</summary>
     public string? Kind { get; init; }
 
-    /// <summary>
-    /// The subagent that asked, by the id the session's record keeps its lifetime under (a <c>child</c> event's id), where its door
-    /// said one: the protocol door's subagent session on the wire, the native door's hook's <c>agent_id</c>. Null where the session's
-    /// own agent asked, or the door did not say.
-    /// </summary>
+    /// <summary>The subagent that asked, by its lifetime's id in the record, or null.</summary>
     public string? Child { get; init; }
 
     /// <summary>
@@ -307,7 +303,6 @@ public sealed class PermissionHolds
     /// </summary>
     /// <param name="offered">Every option the agent offered, in its order: what the person may choose is read from them.</param>
     /// <param name="kind">The call's kind as the wire names it, or null.</param>
-    /// <param name="child">The subagent that asked, by its lifetime's id in the record, or null (<see cref="HeldPermission.Child"/>).</param>
     public Task<PermissionEnd>? Hold(
         string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind = null, string? child = null) =>
         _registry.Hold(this, request, call, title, offered, kind, child);

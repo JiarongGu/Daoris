@@ -123,10 +123,6 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// <summary>A native permit's call by the harness's id of it, where the hook's input carried one; null otherwise.</summary>
     public string? Call { get; init; }
 
-    /// <summary>
-    /// A native permit's subagent, by the hook's <c>agent_id</c>, which is its task's id and so its lifetime's in the record, where a
-    /// subagent made the call; null for the session's own agent's.
-    /// </summary>
     public string? Child { get; init; }
 
     /// <summary>The checkout's repository, for a checkout read; null for any other move.</summary>

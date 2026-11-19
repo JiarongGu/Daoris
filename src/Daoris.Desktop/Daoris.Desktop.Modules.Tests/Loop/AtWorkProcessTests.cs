@@ -63,10 +63,8 @@ public sealed class AtWorkProcessTests : IDisposable
     private AtWorkHeld Compose() =>
         AtWorkRead.Compose("s1", _groups, _sessions, _quests, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), session => ChildLineage.PathOf(_home, session));
 
-    /// <summary>The child's state as the composition's lineage read takes it, with this window's tokens.</summary>
     private string StateOfChild() => ChildLineage.Reading(_home, "s1", null, _tokens).Bindings.Children.Single().State;
 
-    /// <summary>The held composition's count of the part's working subagents.</summary>
     private int? WorkingOnPart() => Compose().Answer!.Parts.Single().Children.Working;
 
     private async Task<AtWorkWatch> HeldAsync()

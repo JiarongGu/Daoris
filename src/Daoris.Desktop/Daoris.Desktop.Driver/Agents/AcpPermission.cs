@@ -119,8 +119,6 @@ internal sealed class AcpPermission(ITurnWiring wiring) : ITurnStage
         var request = id.ValueKind == JsonValueKind.String ? id.GetString() ?? "" : id.GetRawText();
         // The registry keeps the agent's own title and kind, plain, for the page to word; the notes say it as a reader knows it.
         var plain = call is { } p && Json.Text(p, "title")?.Trim() is { Length: > 0 } written ? TextBounds.Clip(written, 160) : null;
-        // A subagent whose streams are routed asks under its own session on the wire, the id its lifetime is kept under; the
-        // session's own agent asks under the session's.
         var child = Json.Text(frame.GetProperty("params"), "sessionId") is { Length: > 0 } asker && asker != wiring.SessionId ? asker : null;
         // A turn waiting on the person is never silent, and its quiet counts from the answer (AnsweredAsync). The wake knows of the
         // hold before the hold can be seen, or answered, anywhere: a quiet judged between the two read a held turn as silent.

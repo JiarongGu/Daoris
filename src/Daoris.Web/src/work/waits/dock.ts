@@ -11,10 +11,7 @@ export type StepWait = { run: string; node: string; why: string; role?: string |
 /** A wait the dock holds: one of `waitsOf`'s, or a step of its run held for the person or left failed. */
 export type DockWait = Wait | ({ kind: 'step' } & StepWait);
 
-/**
- * One line of the dock: its key, its wait and since when it waits (the session's last move where nothing says sooner), and the
- * subagent that raised it, by its lifetime's id in the session's record, where its row names one.
- */
+/** One line of the dock: its key, its wait, since when it waits (the session's last move where nothing says sooner) and its subagent. */
 export type DockLine = { key: string; wait: DockWait; since: string; child?: string };
 
 /**
@@ -93,8 +90,7 @@ const at = (iso: string) => {
 
 /**
  * **What the dock holds**: every wait the person settles, `waitsOf`'s and the run's steps held for the person or left failed, oldest
- * first (a tie keeps the order they were read in), each keyed once. The session's last move dates a wait whose row says no since;
- * a wait a subagent raised is tagged with it, so the line names who asked.
+ * first (a tie keeps the order they were read in), each keyed once. The session's last move dates a wait whose row says no since.
  */
 export function dockOf(facts: WaitFacts, steps: readonly StepWait[] = []): DockLine[] {
   const waits: DockWait[] = [...waitsOf(facts), ...steps.map((step) => ({ kind: 'step' as const, ...step }))];

@@ -57,10 +57,8 @@ export type AtWorkViewProps = {
 
 /**
  * Who is at work on a session: the session's parts as the strip lists them, the
- * attended one first, each with its record's state and its subagents counted, then what the line waits on, its co-workers and the
- * quests it asked, read from Daoris's records and never from the conversation's text; the subagents themselves are the session's
- * timeline's, each under the call that spawned it. Reading is never *nobody*, a failure says its words, and a stale answer keeps its
- * rows dimmed.
+ * attended one first, each with its subagents counted (the subagents themselves are the timeline's), read from Daoris's records and
+ * never from the conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
 export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, channel, nameOf, seek }: AtWorkViewProps) {
   const { t } = useTranslation();
@@ -310,7 +308,6 @@ export function nobody(answer: AtWorkA): boolean {
     && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);
 }
 
-/** A harness whose subagents appear only when they call Daoris (Codex): none counted never proves nobody. */
 function seenByCalls(agent: string | undefined): boolean {
   return agent === 'codex' || !!agent?.startsWith('codex-');
 }
