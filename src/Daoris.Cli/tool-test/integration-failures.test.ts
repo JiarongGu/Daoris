@@ -31,7 +31,7 @@ const f = await import(
   repositoryPath: (file: string | null, root?: string | null) => string | null;
   readReport: (text: string, unit?: string | null) => Failure[];
   signatureOf: (failure: Failure, read?: ((path: string) => string | null) | null, root?: string | null) => Signature;
-  gateSignature: (gate: string, step: string, output: string, root?: string | null) => Signature;
+  gateSignature: (gate: string, step: string, output: string, root?: string | null, exit?: number | null) => Signature;
   signatureKey: (signature: Signature) => string;
   sameSignature: (a: Signature, b: Signature) => boolean;
 };
@@ -46,7 +46,7 @@ const TABLE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url
   reports: Report[];
   sources: Record<string, string>;
   signatures: { name: string; failure: Failure; root?: string; signature: Signature; key: string }[];
-  gates: { name: string; gate: string; step: string; output: string; root: string | null; signature: Signature; key: string }[];
+  gates: { name: string; gate: string; step: string; output: string; root: string | null; exit?: number; signature: Signature; key: string }[];
 };
 
 const read = (path: string) => TABLE.sources[path] ?? null;
@@ -88,14 +88,14 @@ describe('INTEGRATE1f: the failure reader, row for row with the driver', () => {
 
   test("a gate that names no failing test is signed by its step: a build by the set of its errors, else its first error line", () => {
     for (const row of TABLE.gates) {
-      const signature = f.gateSignature(row.gate, row.step, row.output, row.root);
+      const signature = f.gateSignature(row.gate, row.step, row.output, row.root, row.exit ?? null);
       assert.deepEqual(signature, row.signature, row.name);
       assert.equal(f.signatureKey(signature), row.key, row.name);
     }
   });
 
   test('the table holds its rows', () => {
-    assert.ok(TABLE.normalise.length >= 6 && TABLE.signatures.length >= 10 && TABLE.gates.length >= 9);
+    assert.ok(TABLE.normalise.length >= 6 && TABLE.signatures.length >= 10 && TABLE.gates.length >= 13);
     assert.equal(TABLE.reports.map((report) => report.kind).join(), 'trx,vitest,tap');
   });
 });

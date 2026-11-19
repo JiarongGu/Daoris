@@ -47,6 +47,22 @@ test('a log names its failing tests with their file and line, or its first error
   assert.deepEqual(placeIn('   at X.Y() in C:/r/src/A/ATests.cs:line 42'), { file: 'C:/r/src/A/ATests.cs', line: 42 });
 });
 
+const PASS_LINES = ['✔ reports an error (2.1ms)', 'src/A/A.cs(3,5): warning CS8602: a possible null error', '    0 Error(s)', 'ℹ fail 0'];
+
+test('a log whose first error-like line is a pass line, a count or a warning names its failing test, or says none failed', () => {
+  const spec = failuresInLog([...PASS_LINES, '✖ breaks the page (1.5ms)', '  AssertionError: x'].join('\n'));
+  assert.equal(spec.length, 1);
+  assert.match(spec[0]!.lines[0]!, /^✖ breaks the page/);
+  const tap = failuresInLog(['ok 1 - names an error case', 'not ok 2 - breaks the page', '  ---', "  error: 'x'"].join('\n'));
+  assert.equal(tap[0]!.lines[0], 'not ok 2 - breaks the page');
+  const none = failuresInLog(PASS_LINES.join('\n'), 143);
+  assert.equal(none[0]!.test, null);
+  assert.equal(none[0]!.lines[0], 'ended without a failing test, exit 143');
+  assert.equal(failuresInLog(PASS_LINES.join('\n'))[0]!.lines[0], 'ended without a failing test');
+  const build = failuresInLog([...PASS_LINES, 'src/B/B.cs(9,1): error CS1002: ; expected'].join('\n'));
+  assert.deepEqual(build.map((each) => [each.test, each.file, each.line]), [[null, 'src/B/B.cs', 9]]);
+});
+
 test('a planted failure in two gates gives one brief with both, each marked by its run on main', async () => {
   const { dir, remove } = fixtureFolder('red-brief');
   try {

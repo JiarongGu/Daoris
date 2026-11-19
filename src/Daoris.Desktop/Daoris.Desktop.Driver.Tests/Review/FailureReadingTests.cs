@@ -134,7 +134,7 @@ public sealed class FailureReadingTests
     {
         using var table = Table();
         var row = Row(table, "gates", at);
-        var signature = FailureReader.GateSignature(Text(row, "gate")!, Text(row, "step")!, Text(row, "output")!, Text(row, "root"));
+        var signature = FailureReader.GateSignature(Text(row, "gate")!, Text(row, "step")!, Text(row, "output")!, Text(row, "root"), row.TryGetProperty("exit", out var exit) ? exit.GetInt32() : null);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(row.GetProperty("signature").GetRawText()), signature.ToJson()), Text(row, "name"));
         Assert.Equal((Text(row, "name"), Text(row, "key")), (Text(row, "name"), signature.Key));
     }

@@ -31,7 +31,8 @@
  * as messages are, and its ordinal among identical lines of that method. Where no location can be read the message line,
  * normalised, takes its place (`{ test, exception, message }`). A gate that names no failing test is signed by
  * `gateSignature`: the gate, the step, and for a build the **set** of its compiler error codes with their files, since MSBuild
- * prints each project's errors as its node finishes; otherwise the step's first error line. `sameSignature` compares two.
+ * prints each project's errors as its node finishes; otherwise the first line that names a failing test (`not ok`, `✖`), else the
+ * first error line (never a pass line, a count of none or a warning), else that the run ended without a failing test, with its exit. `sameSignature` compares two.
  *
  *   node tools/test-failures.mjs <report>…     each failure a report holds, and its signature against this tree
  *
@@ -291,20 +292,38 @@ export function signatureOf(failure, read = null, root = null) {
   return { test: failure.test, exception: failure.exception, message: normalise(failure.message) };
 }
 
+const PASSED = /^\s*(?:reached: [^:\n]+: )?(?:[✔✓ℹ]|ok \d|# )/;
+const TALLY = /(?<![A-Za-z0-9_])(?:\d+\s+(?:Error|Warning)\(s\)|(?:0|no)\s+(?:errors?|failed|failures?)|(?:fail|failed|errors?)\s*:?\s*0)(?![A-Za-z0-9_])/i;
+const WARNED = /:\s*warning\s|(?<![A-Za-z0-9_])warning\s+[A-Za-z]+\d+/i;
+const FAILED_TEST = /(?:^|\s)(?:not ok \d+|[✖✗])\s+\S|(?<![A-Za-z0-9_])failed test '/;
+const ERROR_LINE = /(?<![A-Za-z0-9_])error(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])failed(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])error:/i;
+const BUILD_ERROR_LINE = /(?<![A-Za-z0-9_])error(?![A-Za-z0-9_])/i;
+
+export const notAFailure = (line) => PASSED.test(line) || TALLY.test(line) || WARNED.test(line);
+
+export const failingTestLine = (line) => FAILED_TEST.test(line) && !PASSED.test(line);
+
+export const noneFailed = (exit = null) => (Number.isInteger(exit) ? `ended without a failing test, exit ${exit}` : 'ended without a failing test');
+
+const firstLineOf = (output, pattern) => String(output ?? '').split(/\r?\n/).find((line) => pattern.test(line) && !notAFailure(line)) ?? null;
+
 /**
  * A gate that names no failing test, signed by its step: for a build, the set of its compiler errors' codes with their files
- * (`<code> src/…/X.cs`), sorted, because MSBuild prints each project's errors as its node finishes; otherwise the step's first
- * error line, normalised.
+ * (`<code> src/…/X.cs`), sorted, because MSBuild prints each project's errors as its node finishes. Otherwise the first line
+ * that names a failing test (`not ok`, `✖`), else the first error line (a build's the first with `error`, never a pass line,
+ * a count of none or a warning), normalised; where the output holds none, the run ended without a failing test, said as
+ * `ended without a failing test` and, where it is known, its exit.
  */
-export function gateSignature(gate, step, output, root = null) {
+export function gateSignature(gate, step, output, root = null, exit = null) {
   const errors = new Set();
   for (const [, file, code] of String(output ?? '').matchAll(/^\s*(.+?)\(\d+,\d+\):\s+error\s+((?:CS|TS|MSB|NU)\d+)\b/gm)) {
     errors.add(`${code} ${repositoryPath(file.trim(), root) ?? file.trim()}`);
   }
   for (const [, file, code] of String(output ?? '').matchAll(/^(.+?\.tsx?)\(\d+,\d+\): error (TS\d+)/gm)) errors.add(`${code} ${repositoryPath(file.trim(), root) ?? file.trim()}`);
   if (step === 'build' && errors.size) return { gate, step, errors: [...errors].sort() };
-  const first = String(output ?? '').split(/\r?\n/).find((line) => /\berror\b|\bfailed\b|\bError:/i.test(line)) ?? '';
-  return { gate, step, message: normalise(first) };
+  const first = (step === 'build' ? null : firstLineOf(output, FAILED_TEST)) ?? firstLineOf(output, step === 'build' ? BUILD_ERROR_LINE : ERROR_LINE);
+  if (first !== null) return { gate, step, message: normalise(first) };
+  return { gate, step, message: noneFailed(exit) };
 }
 
 /** Whether two signatures are one failure: every field equal, a build's errors as sets. */

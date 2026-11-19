@@ -11,6 +11,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BLOCKING } from './reach.ts';
+import { failingTestLine, notAFailure, noneFailed } from '../test-failures.mjs';
 
 /**
  * Whether a failure of `gate` starts nothing more, so every red is found in one round: under `--keep-going` (`true`) none does;
@@ -122,17 +123,18 @@ function dotnetFailures(lines: string[]): BriefFailure[] {
   return out;
 }
 
-/** The failures a gate's log names, or, where it names no test, its first error with the place it names. */
-export function failuresInLog(text: string): BriefFailure[] {
+/** The failures a gate's log names, or its first error with its place; none named says the run ended without a failing test, with its exit. */
+export function failuresInLog(text: string, exit: number | null = null): BriefFailure[] {
   const lines = plain(text).split('\n');
   for (const read of [vitestFailures, nodeFailures, dotnetFailures]) {
     const found = read(lines);
     if (found.length) return found;
   }
-  const first = lines.findIndex((line) => ERROR.test(line) && !NOISE.test(line.trim()));
+  const named = lines.findIndex((line) => failingTestLine(line));
+  const first = named >= 0 ? named : lines.findIndex((line) => ERROR.test(line) && !NOISE.test(line.trim()) && !notAFailure(line));
   if (first < 0) {
     const tail = lines.filter((line) => line.trim()).slice(-BRIEF_LINES).map(clip);
-    return [{ test: null, file: null, line: null, lines: tail }];
+    return [{ test: null, file: null, line: null, lines: [noneFailed(exit), ...tail] }];
   }
   const place = placeIn(lines[first] as string) ?? placeAfter(lines, first + 1, 8);
   return [{ test: null, file: place?.file ?? null, line: place?.line ?? null, lines: errorLines(lines, first) }];
@@ -197,7 +199,7 @@ export function writeBrief(dir: string, text: string): string {
 }
 
 /** A failed gate's result as the brief reads it. */
-export type Failed = { gate: { name: string }; log?: string | null; trx?: string | null; cause?: string | null };
+export type Failed = { gate: { name: string }; log?: string | null; trx?: string | null; cause?: string | null; code?: number | null };
 /** A failure signed for the main check (`failuresOf`'s shape): a test from its trx, or the gate read whole. */
 export type Signed = { names: 'test' | 'gate'; test: string; failure?: { test: string; message?: string; frames?: { file?: string | null; line?: number | null }[] } };
 
@@ -214,7 +216,7 @@ export async function briefGates(results: readonly Failed[], seams: {
     const log = result.log ? seams.shown(result.log) : null;
     const text = result.log ? seams.read(result.log) ?? '' : '';
     if (result.cause === 'memory') {
-      gates.push({ gate: result.gate.name, log, failures: failuresInLog(text), mark: { on: 'unchecked', why: "it died of memory: the machine's, not the change's" } });
+      gates.push({ gate: result.gate.name, log, failures: failuresInLog(text, result.code ?? null), mark: { on: 'unchecked', why: "it died of memory: the machine's, not the change's" } });
       continue;
     }
     const signed = seams.signed(result);
@@ -226,7 +228,7 @@ export async function briefGates(results: readonly Failed[], seams: {
       continue;
     }
     const whole = signed[0];
-    gates.push({ gate: result.gate.name, log, failures: failuresInLog(text), ...(whole ? { mark: await seams.mark(whole, result) } : {}) });
+    gates.push({ gate: result.gate.name, log, failures: failuresInLog(text, result.code ?? null), ...(whole ? { mark: await seams.mark(whole, result) } : {}) });
   }
   return gates;
 }
