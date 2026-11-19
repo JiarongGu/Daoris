@@ -118,6 +118,12 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 
 20. What moves is one of three acts. Say expects nothing. A request names what it expects back: an answer, work, a piece, an
     opinion or a decision. Hand over expects a successor. (from D225)
+20a. A session asks another role through one door, `question_ask` (`RoleRequests`, D325): it names the role that can where it is not
+    the line above (`credentials-keeper` for a sign-in, `helper` for one agent's reading, `approver` or `owner`) and, for an act the
+    person allows, the act (`act`, `on`). Each request goes out on the channel its role's holder takes it on: a helper's reading, a
+    go-ahead held on the ask, the person's sign-in at its site, or a question naming the role in the asker's conversation; a role of
+    another repository travels as a quest (`quest_publish`). `go_ahead_ask` and `helper_ask` make the same request on their channel,
+    so their callers keep working through the fold. The answer is the asker's next turn, a run's working session's included.
 21. `Exchanges.Of` is the one read of a line's requests, over helpers, pieces, questions, hand-overs, quests, opinions and
     go-aheads, walked back along `from`. It keeps delivery apart from outcome, and says a source it could not read. (from D225)
 22. A helper's answer, a partner's and an opinion's findings reach the line's head through one door, kept once under

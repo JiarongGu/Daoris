@@ -41,9 +41,10 @@ export function useAttendedBox({ t, attended, here, intake, oneTurn, conversatio
   const asks = useAsks(false, parkAsk !== null);
   const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
   // A park's question as its agent asked it and the driver kept it for this park, read only for a
-  // driven park of this machine's still waiting on the person. Drawn in its box with its answers as presses, and in its head's card.
-  const parkWaits = Boolean(attended && here && !intake && attended.kind !== 'chat' && attended.state === 'awaiting-person'
-    && !answeredPark(attended));
+  // driven park of this machine's still waiting on the person, or a run's working session awaiting its step, whose request the driver
+  // keeps where it asked one (the route answers none otherwise). Drawn in its box with its answers as presses, and in its head's card.
+  const parkWaits = Boolean(attended && here && !intake && attended.kind !== 'chat'
+    && (attended.state === 'awaiting-person' || attended.state === 'awaiting-step') && !answeredPark(attended));
   const parkQuestion = useSessionQuestion(parkWaits ? attended!.id : null);
   const question = parkWaits ? parkQuestion.data ?? null : null;
   const talking = Boolean(attended && conversation && here && !oneTurn);

@@ -43,6 +43,17 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: { ...parked, said: said('the first') }, onResolve: press, answerBelow: true })).toEqual([]);
   });
 
+  it('names the request a run\'s working session asked as it ended its turn awaiting its step, and none where it asked none', () => {
+    const awaiting = session({ state: 'awaiting-step' });
+    const request = {
+      id: 'q-keys', question: 'The release identity expired: sign in.', choices: [], recommend: null, why: null, by: null,
+      owner: 'sign-in', site: 'https://dev.example/org/_signin', at: '2026-11-19T09:00:00Z',
+    };
+    expect(waitsOf({ session: awaiting, question: request, onAnswerSession: press })).toEqual([{ kind: 'question', below: false, signIn: true }]);
+    expect(waitsOf({ session: awaiting, question: null, onAnswerSession: press })).toEqual([]);
+    expect(waitsOf({ session: { ...awaiting, said: said('Signed in') }, question: request, onAnswerSession: press })).toEqual([]);
+  });
+
   it('names an intake\'s park by its ask, whose door answers it', () => {
     const intake = session({ state: 'awaiting-person', kind: 'chat', quest: null, ask: '0fda18', repository: 'ask #0fda18' });
     expect(waitsOf({ session: intake, onAnswerAsk: press, onResolve: press })).toEqual([{ kind: 'intake', ask: '0fda18' }]);

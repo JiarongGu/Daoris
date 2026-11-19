@@ -166,6 +166,21 @@ public sealed class RoleRequestLoopTests : NodeRunFixture
         Assert.Contains("sign-in expired", next, StringComparison.Ordinal);
     }
 
+    /// <summary>D325 point 6: the run's view draws one row per act journaled on the step's attempt, a wait naming its role and that role's holder.</summary>
+    [Fact]
+    public void The_runs_view_draws_one_row_per_act_journaled_on_the_steps_attempt()
+    {
+        StepActRow Row(string id, string node, int attempt, string state, string? waitsOn = null) =>
+            new(id, Work, "release-status", "stage-ended", state, $"{id} {state}", "https://dev.example/r/91", "Daoris", waitsOn, _now) { Node = node, Attempt = attempt };
+        var journal = new[] { Row("a1", "release", 1, "failed"), Row("a2", "release", 2, "waiting", StepRoles.Approver), Row("a3", "release", 2, "reached"), Row("a4", "other", 2, "reached") };
+
+        var rows = StepActViews.Of(journal, "release", 2, role => role == StepRoles.Approver ? "person" : "agent")!;
+
+        Assert.Equal([("a2 waiting", "waiting", StepRoles.Approver, "person"), ("a3 reached", "reached", null, null)],
+            rows.Select(row => (row.Message, row.State, row.WaitsOn, row.Holder)));
+        Assert.Null(StepActViews.Of(journal, "release", 3, null));
+    }
+
     [Fact]
     public void A_step_whose_acts_all_reached_first_proposes_nothing()
     {

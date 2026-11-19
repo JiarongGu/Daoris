@@ -1,5 +1,5 @@
 import type { GoAhead, Session } from '../../data/api';
-import { answeredPark } from '../../design/ui';
+import { answeredPark, personsSaid } from '../../design/ui';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { OPEN_STATES } from '../../settings/repository/proposals';
 import { workflowHolds } from '../../workflow/gate';
@@ -153,7 +153,10 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   const { session } = facts;
   const waits: Wait[] = [];
   const parked = session.state === 'awaiting-person';
-  const waiting = parked && !answeredPark(session);
+  // A run's working session that ended its turn awaiting its step with a request it asked (D325's one door): the person answers it
+  // as they answer a park's question, and the answer is its next turn.
+  const requested = session.state === 'awaiting-step' && Boolean(facts.question) && personsSaid(session) === null;
+  const waiting = (parked && !answeredPark(session)) || requested;
   const intake = isIntake(session);
   if (waiting && intake && facts.onAnswerAsk && session.ask) waits.push({ kind: 'intake', ask: session.ask });
   if (waiting && !intake && (facts.answerBelow || facts.onResolve || facts.onAnswerSession)) {
