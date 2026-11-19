@@ -572,23 +572,26 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
-    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
-    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
+    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy, and the `reached` runner given `{tier}` `all`); any other
+    verification pipeline's check runs the runner given `{tier}` `fast`, never the Process half the run after the landing owes. A sent check the executor has not started says what it waits for on its step, never
     *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
     check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
-    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A run's check (`RunChecks`, `AsMerged`) judges the work
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A check holds one place in the machine's admission, taken
+    after its tree is prepared and held while its regeneration and each of its gates or its runner run, never one place for each. A run's check (`RunChecks`, `AsMerged`) judges the work
     as merged onto its line's tip (the remote's head, else `main` or `master`): the verification tree takes the work where it holds that tip,
     else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
     session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands
     then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
     saying so; a line's own run and a declaration's runner judge their commit as it stands (D299). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
-    gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
-    preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.
+    checkout's declared local inputs), again only where its stamp moved (a dependency key, or a declared local input's presence or content); a
+    preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run. Each check then runs the
+    declared `regenerate` of the gates it runs (each distinct command once, before the first gate; every command for a reached runner), as the
+    merge tool does, never the `treeBaseline`: a command that fails fails the check, its gate `regenerate`, no gate run.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**

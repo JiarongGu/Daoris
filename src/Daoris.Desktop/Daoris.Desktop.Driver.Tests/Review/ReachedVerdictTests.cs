@@ -9,7 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 public sealed class ReachedVerdictTests
 {
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
-    private const string Declaration = """{ "gates": [], "reached": { "run": "node tools/reached-checks.mjs --base {base}", "outcome": "reached-classes: ", "clock": true } }""";
+    private const string Declaration = """{ "gates": [], "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "outcome": "reached-classes: ", "clock": true } }""";
 
     private static VerifyResult Judge(int exit, string log) => ReachedVerdict.Judge("i-1", Commit, exit, log, "reached.log", "reached-classes: ");
 
@@ -19,9 +19,17 @@ public sealed class ReachedVerdictTests
         var runner = ReachedRunner.Of(Declaration);
 
         Assert.NotNull(runner);
-        Assert.Equal("node tools/reached-checks.mjs --base main", runner.CommandFor("main"));
+        Assert.Equal("node tools/reached-checks.mjs --tier fast --base main", runner.CommandFor("main", ReachedRunner.FastTier));
         Assert.Equal("reached-classes: ", runner.Outcome);
         Assert.True(runner.Clock);
+    }
+
+    [Fact]
+    public void The_command_takes_the_tier_the_step_asks()
+    {
+        var runner = ReachedRunner.Of(Declaration)!;
+
+        Assert.Equal("node tools/reached-checks.mjs --tier all --base main", runner.CommandFor("main", ReachedRunner.EveryTier));
     }
 
     [Fact]
@@ -38,9 +46,9 @@ public sealed class ReachedVerdictTests
     {
         var runner = ReachedRunner.Of(Declaration)!;
 
-        Assert.Equal("node tools/reached-checks.mjs --base origin/main", runner.CommandFor("origin/main"));
-        Assert.Null(runner.CommandFor("main; rm -rf x"));
-        Assert.Null(runner.CommandFor(""));
+        Assert.Equal("node tools/reached-checks.mjs --tier fast --base origin/main", runner.CommandFor("origin/main", ReachedRunner.FastTier));
+        Assert.Null(runner.CommandFor("main; rm -rf x", ReachedRunner.FastTier));
+        Assert.Null(runner.CommandFor("", ReachedRunner.FastTier));
     }
 
     [Fact]

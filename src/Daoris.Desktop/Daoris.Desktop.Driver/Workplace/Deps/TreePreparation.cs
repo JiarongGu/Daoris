@@ -51,40 +51,11 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
 /// What a repository declares to make a tree like its checkout, once its dependencies and machine-local files stand: each <c>regenerate</c>
 /// makes a generated input current, and the <c>treeBaseline</c> records the base a later check reads its reds against. A session's tree
 /// is handed without either and told them (<see cref="Told"/>): run before the hand they held its open minutes with its agent idle, for
-/// work only its later checks read. A verification tree, which no session prepares, runs each <c>regenerate</c>, never the baseline.
+/// work only its later checks read. A verification tree, which no session prepares, runs the <c>regenerate</c> of the gates a check runs,
+/// before each check (<c>VerifyExecution</c>), never the baseline.
 /// </summary>
-/// <remarks>
-/// Run as a gate's command is (<see cref="IInstallRunner.GateEnvironment"/>), inside the machine's admission, and ended with all it started at the
-/// bound, a cancel or a terminal's visit. The commands are the repository's own, from the checkout's declaration, and write only
-/// what git ignores.
-/// </remarks>
 internal static class TreePreparation
 {
-    /// <summary>How long one command may run: a regenerate may build, as a gate does.</summary>
-    internal static readonly TimeSpan Bound = TimeSpan.FromMinutes(30);
-
-    /// <summary>
-    /// Runs each declared <c>regenerate</c> in <paramref name="tree"/>, saying each that failed. True where a terminal's visit ended one,
-    /// which stops the stage as it does an install.
-    /// </summary>
-    internal static async Task<bool> RegenerateAsync(
-        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited)
-    {
-        var declared = TreePrepDeclared.Read(checkout);
-        if (declared.Regenerate.Count == 0) return false;
-        using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
-        var environment = InstallRunner.Current.GateEnvironment();
-        foreach (var command in declared.Regenerate)
-        {
-            var ran = await DependencyCommands.RunAsync(home, tree, command, tree, environment, Bound, ct, visited).ConfigureAwait(false);
-            if (ran.Code == DependencyCommands.Visited) return true;
-            if (ran.Code == 0) continue;
-            said.Add(Noted.Of(StartNoteCodes.StartedPrepFailed, $"The tree's preparation `{command}` did not finish: {ran.Tail}.", ("command", command), ("why", ran.Tail)));
-        }
-
-        return false;
-    }
-
     /// <summary>What a session handed a fresh tree is told of its checkout's declaration; null where it declares nothing.</summary>
     internal static string? Told(string checkout)
     {

@@ -119,6 +119,21 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     private const string Reached = "reached";
 
+    /// <summary>Whether the check's <c>gates</c> is the word <c>heavy</c>: the one way a step asks the heavy tier; any other step runs the fast one.</summary>
+    public static bool NamesHeavy(NodeDeclaration node)
+    {
+        if (!node.Options.TryGetValue("gates", out var text)) return false;
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement is { ValueKind: JsonValueKind.String } word && word.GetString() == "heavy";
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>The gates a check names (its <c>gates</c> option): null for <c>heavy</c> or <c>reached</c>, else the names it lists.</summary>
     public static IReadOnlyList<string>? GatesOf(NodeDeclaration node)
     {

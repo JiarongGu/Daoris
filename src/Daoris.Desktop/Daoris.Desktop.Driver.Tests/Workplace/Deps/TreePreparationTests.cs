@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What a repository declares to prepare a tree: a session's tree is handed without it, its session told the commands; a verification
-/// tree runs each gate's <c>regenerate</c> once, never the <c>treeBaseline</c>. Real git and real commands; fixtures live under the
+/// tree is prepared by no declared command: a check runs the <c>regenerate</c> of its gates (<c>VerifyExecutionRegenerateProcessTests</c>). Real git and real commands; fixtures live under the
 /// repository's gitignored <c>_fixtures/</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -74,29 +74,4 @@ public sealed class TreePreparationTests : IDisposable
         Assert.DoesNotContain("files.prep", line);
     }
 
-    [Fact]
-    public async Task A_verification_tree_regenerates_once_and_never_runs_the_baseline()
-    {
-        var tree = await MakeTreeAsync(Declared, "1");
-        var said = new List<Noted>();
-
-        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None, regenerate: true);
-
-        Assert.Equal("x", await File.ReadAllTextAsync(Path.Combine(tree, "local", "regen.txt")));
-        Assert.False(File.Exists(Path.Combine(tree, "local", "base.txt")));
-        Assert.DoesNotContain(StartNoteCodes.StartedPrepFailed.Code, said.SelectMany(each => each.Parts).Select(part => part.Code));
-        Assert.Null(outcome.Told);
-    }
-
-    [Fact]
-    public async Task A_regenerate_that_could_not_run_is_said_and_the_preparation_goes_on()
-    {
-        var tree = await MakeTreeAsync("""{ "gates": [ { "name": "a", "run": "x", "regenerate": "node -e \"process.exit(2)\"" } ] }""", "0");
-        var said = new List<Noted>();
-
-        var outcome = await TreeFilesStep.RunAsync(Home, Root, tree, "engine", said.Add, CancellationToken.None, regenerate: true);
-
-        Assert.Contains(StartNoteCodes.StartedPrepFailed.Code, said.SelectMany(each => each.Parts).Select(part => part.Code));
-        Assert.False(outcome.Stopped);
-    }
 }

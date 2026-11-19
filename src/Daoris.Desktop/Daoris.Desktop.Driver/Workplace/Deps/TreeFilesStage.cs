@@ -22,7 +22,7 @@ internal sealed record TreeFilesOutcome(IReadOnlyList<Noted> Said, bool Stopped,
 /// through each write, never while an install or the hook runs: once a terminal's visit has taken it, which ends a running install or
 /// hook, the stage stops, takes its <c>installing</c> mark away and leaves what it had not finished as the line's own.
 /// </remarks>
-internal sealed class TreeFilesStage(string home, string root, string tree, string repository, bool regenerate = false, LookStages? steps = null)
+internal sealed class TreeFilesStage(string home, string root, string tree, string repository, LookStages? steps = null)
 {
     private const string Zeros = "0000000000000000000000000000000000000000";
 
@@ -129,9 +129,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         _said.AddRange(based.Said);
         At("files.local");
         await CopyLocalAsync(ct).ConfigureAwait(false);
-        if (unworked && regenerate) At("files.prep");
-        if (unworked && regenerate && await TreePreparation.RegenerateAsync(home, repository, root, tree, _said, ct, _visited).ConfigureAwait(false)) return Stop();
-        var prepared = unworked && !regenerate ? TreePreparation.Told(root) : null;
+        var prepared = unworked ? TreePreparation.Told(root) : null;
         var outcome = Outcome();
         var told = string.Join(' ', new[] { outcome.Told, shared.Told, based.Told, prepared }.OfType<string>());
         return told.Length == 0 ? outcome : outcome with { Told = told };

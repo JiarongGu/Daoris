@@ -86,7 +86,8 @@ public static class VerifyRuns
         return new VerifySend(run.Run, attempt.Call.Invocation, run.Repository, run.Root, run.Commit, run.Accepted)
         {
             Gates = CheckNode.GatesOf(node),
-            Reach = CheckNode.ReachesByPaths(node) && run is { Base: { } from, Line: not null } ? new VerifyReach(from, GatesPassed.Of(home, run)) : null,
+            Heavy = CheckNode.NamesHeavy(node),
+            Reach =CheckNode.ReachesByPaths(node) && run is { Base: { } from, Line: not null } ? new VerifyReach(from, GatesPassed.Of(home, run)) : null,
             Base = run.Base ?? run.Line,
             Bound = WorkPerformer.Timeout(node),
         };

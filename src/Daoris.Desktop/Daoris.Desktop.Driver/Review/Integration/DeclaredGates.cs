@@ -12,6 +12,8 @@ internal sealed record DeclaredGate(string Name, string Run, string? Cwd, bool H
 
     public string? HandbackRun { get; init; }
 
+    public string? Regenerate { get; init; }
+
     /// <summary>
     /// The repository-relative paths a change must touch to reach it (<see cref="GateReach"/>): a file, or a folder written with a trailing
     /// <c>/</c>. Null where the declaration names none, which every change reaches.
@@ -51,6 +53,7 @@ internal static class DeclaredGates
                     Clock = each.TryGetProperty("clock", out var clock) && clock.ValueKind == JsonValueKind.True,
                     Handback = each.TryGetProperty("handback", out var handback) && (handback.ValueKind == JsonValueKind.True || Text("handback") is not null),
                     HandbackRun = Text("handback"),
+                    Regenerate = Text("regenerate"),
                     Paths = each.TryGetProperty("paths", out var paths) && paths.ValueKind == JsonValueKind.Array
                         ? [.. paths.EnumerateArray().Where(path => path.ValueKind == JsonValueKind.String && path.GetString() is { Length: > 0 }).Select(path => path.GetString()!)]
                         : null,

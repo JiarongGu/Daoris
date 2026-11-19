@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A check's verification tree is prepared again whenever any input its preparation reads moves: the stamp changes with a dependency
-/// key, a declared <c>regenerate</c> command, and each declared local input's presence and content, so a new input cannot be left out
-/// silently (a tree that kept a stale stamp lacked the local file the files stage copies).
+/// key and each declared local input's presence and content, so a new input cannot be left out silently (a tree that kept a stale stamp
+/// lacked the local file the files stage copies). A <c>regenerate</c> command is none: a check runs it before every gate.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -60,7 +60,9 @@ public sealed class VerifyTreeStampTests : IDisposable
             seen.Add(stamp);
         }
 
-        await MovedBy("a regenerate command changed", async () => { await WriteAsync("daoris.gates.json", Gates("node b.cjs", "")); await CommitAsync(); });
+        await WriteAsync("daoris.gates.json", Gates("node b.cjs", ""));
+        await CommitAsync();
+        Assert.Equal(seen[0], await StampAsync());
         await MovedBy("a local input was declared", async () => { await WriteAsync("daoris.gates.json", Gates("node b.cjs", "\"local/one.props\"")); await CommitAsync(); });
         await MovedBy("the declared local input appeared", () => WriteAsync("local/one.props", "first"));
         await MovedBy("the declared local input's content changed", () => WriteAsync("local/one.props", "second"));
