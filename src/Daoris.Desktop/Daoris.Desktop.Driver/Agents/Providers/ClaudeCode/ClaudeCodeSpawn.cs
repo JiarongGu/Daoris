@@ -44,11 +44,21 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront = new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
+    /// <summary>
+    /// 🔴 Read in the binary (Claude Code 2.1.284, 2.1.322, 2.1.325) and measured (<c>ClaudeResumedToolsProcessTests</c>): left on, a
+    /// conversation's system prompt and tools are recorded at its first request (<c>prompt_snapshot</c>) and that record is sent at every
+    /// later request and resume until a compaction, so a resumed session gets a tool name its servers added but never an existing tool's new
+    /// parameters, nor rules or memory that changed (TOOLSCHEMA1, D326). Off, each request renders them from what its servers serve now. Ahead
+    /// of <c>-p</c>, so a driven run on the layer, which keeps the arguments before it as its program, carries it too. The protocol door's
+    /// twin is the preset's <c>snapshot</c> (<see cref="ClaudeProtocolDialect"/>).
+    /// </summary>
+    internal static readonly IReadOnlyList<string> FreshPrompt = ["--system-prompt-snapshot", "off"];
+
     public ProcessRecipe Start(SpawnRequest request)
     {
         var resolved = Resolve(request.Command);
         return PromptOnInput(ProcessRecipe.Of(
-            resolved, ["-p", "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
+            resolved, [.. FreshPrompt, "-p", "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
     }
 
     /// <summary>
@@ -61,7 +71,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         var resolved = Resolve(request.Command);
         return PromptOnInput(ProcessRecipe.Of(
             resolved,
-            ["-p", "--resume", conversation, "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
+            [.. FreshPrompt, "-p", "--resume", conversation, "--permission-mode", Mode(request), .. request.Asked?.NativeArguments(resolved) ?? [], .. StreamJsonOut]));
     }
 
     /// <summary>
@@ -75,7 +85,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
         return ProcessRecipe.Of(
             resolved,
             [
-                "-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", Mode(request),
+                .. FreshPrompt, "-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", Mode(request),
                 .. request.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : Array.Empty<string>(),
                 .. request.Asked?.NativeArguments(resolved) ?? [],
                 .. StreamJsonOut,

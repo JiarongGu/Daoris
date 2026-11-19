@@ -20,10 +20,13 @@ public sealed class SpawnTableTests
 
     private static readonly string[] Stream = ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
 
+    /// <summary>What the native door runs every recipe with ahead of <c>-p</c>: its prompt and tools rendered fresh at every request (TOOLSCHEMA1).</summary>
+    private static readonly string[] Fresh = ["--system-prompt-snapshot", "off"];
+
     /// <summary>Door, configured command, program, arguments, stdin open, and the recipe's own variable (name=value).</summary>
     public static TheoryData<string, string[]?, string, string[], bool, string?> Starts => new()
     {
-        { "claude-code", null, "claude", ["-p", "--permission-mode", "acceptEdits", .. Stream], true, null },
+        { "claude-code", null, "claude", [.. Fresh, "-p", "--permission-mode", "acceptEdits", .. Stream], true, null },
         { "claude-code-acp", null, "claude-agent-acp", [], true, null },
         { "codex-acp", null, "codex-acp", [], true, null },
         { "dsh", null, "dsh", ["--profile", "acp"], true, "DSH_PERMISSION_MODE=workspace-write" },
@@ -34,7 +37,7 @@ public sealed class SpawnTableTests
     /// <summary>Door, configured command, program and arguments of a conversation.</summary>
     public static TheoryData<string, string[]?, string, string[]> Chats => new()
     {
-        { "claude-code", null, "claude", ["-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "acceptEdits", .. Stream] },
+        { "claude-code", null, "claude", [.. Fresh, "-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "acceptEdits", .. Stream] },
         { "claude-code-acp", null, "claude-agent-acp", [] },
         { "codex-acp", null, "codex-acp", [] },
         { "stub", ["node", "agent.mjs"], "node", ["agent.mjs"] },
@@ -80,7 +83,7 @@ public sealed class SpawnTableTests
         var info = ProviderRegistry.Built().Resume("claude-code", Target(), null, "conversation-1")!;
 
         Assert.Equal("claude", info.FileName);
-        Assert.Equal(["-p", "--resume", "conversation-1", "--permission-mode", "acceptEdits", .. Stream], info.ArgumentList);
+        Assert.Equal([.. Fresh, "-p", "--resume", "conversation-1", "--permission-mode", "acceptEdits", .. Stream], info.ArgumentList);
         Assert.True(info.RedirectStandardInput);
         Shelled(info);
         Assert.Null(ProviderRegistry.Built().Resume("codex-acp", Target(), null, "conversation-1"));
@@ -107,13 +110,13 @@ public sealed class SpawnTableTests
             Command = ["claude-pinned"], Mode = "default", Asked = asked, Resume = "conversation-1",
         };
 
-        Assert.Equal(["-p", "--permission-mode", "default", "--model", "opus", .. Stream], spawn.Start(request).Arguments);
+        Assert.Equal([.. Fresh, "-p", "--permission-mode", "default", "--model", "opus", .. Stream], spawn.Start(request).Arguments);
         Assert.Equal("claude-pinned", spawn.Start(request).Program);
         Assert.Equal(
-            ["-p", "--resume", "conversation-1", "--permission-mode", "default", "--model", "opus", .. Stream],
+            [.. Fresh, "-p", "--resume", "conversation-1", "--permission-mode", "default", "--model", "opus", .. Stream],
             spawn.Resume(request)!.Arguments);
         Assert.Equal(
-            ["-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "default", "--resume", "conversation-1", "--model", "opus", .. Stream],
+            [.. Fresh, "-p", "--input-format", "stream-json", "--replay-user-messages", "--permission-mode", "default", "--resume", "conversation-1", "--model", "opus", .. Stream],
             spawn.Chat(request).Arguments);
         Assert.Null(spawn.Resume(request with { Resume = null }));
     }
@@ -163,7 +166,7 @@ public sealed class SpawnTableTests
         pipe.Spawned().HandPlugins(info, ["one", "two"]);
         Assert.Equal(
             ["--mcp-config", "servers.json", "--settings", "settings.json", "--plugin-dir", "one", "--plugin-dir", "two"],
-            info.ArgumentList.Skip(3 + Stream.Length));
+            info.ArgumentList.Skip(Fresh.Length + 3 + Stream.Length));
         Assert.Equal("false", pipe.Spawned().ToolsUpFront["ENABLE_TOOL_SEARCH"]);
         Assert.Equal("false", ProviderRegistry.Built().Door("claude-code-acp").Spawned().ToolsUpFront["ENABLE_TOOL_SEARCH"]);
         Assert.Empty(ProviderRegistry.Built().Door("codex-acp").Spawned().ToolsUpFront);
