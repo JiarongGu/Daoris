@@ -145,7 +145,7 @@ finishes first and the whole set runs once.
     TypeScript in `tools/merge/` (strict, run by type stripping, checked by `npm run typecheck:tools`), which `merge-branch.mjs` calls,
     tested beside it on Vitest (`tools/vitest.config.ts`, a process per file): the `unit` project (`*.test.ts`) runs whole in `npm run
     verify`, the `e2e` project (`*.e2e.ts`, a seeded scratch repository per case) in the end-to-end tier's `npm run tooltests:e2e`, and their folders are made
-    under `_fixtures/tool-tests/`; no node test or tool asks for the OS temporary folder (`temp-folder-census.test.ts` names a file and line that does). A typed module reaches an untyped script through a `.d.mts` beside the script, which
+    under `_fixtures/tool-tests/`; no node source of the repository, the plugin examples' tests included, asks for the OS temporary folder (`temp-folder-census.test.ts` names a file and line that does). A prune reports the unmerged builder worktrees and sweeps the main checkout's `_fixtures/` by `fixtures-keep` (DEVLEAK1). A typed module reaches an untyped script through a `.d.mts` beside the script, which
     `declarations.test.ts` holds to the script's exports (D287). (from D180, MERGEFLOW1, D287)
 20. A test's fixture is built one way, by the shared builder linked into each project that needs it: a scratch home is
     `ScratchFolders.New` under `TestHomes.Root` and goes with `ScratchFolders.Remove`; the service stood in over HTTP is a

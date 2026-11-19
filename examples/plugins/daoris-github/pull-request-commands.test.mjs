@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 const folder = dirname(fileURLToPath(import.meta.url));
 const TOKEN = 'throwaway-token-for-the-stand-in';
 const ORIGIN = 'https://github.com/acme/app.git';
-const scratch = mkdtempSync(join(tmpdir(), 'github-commands-'));
+const scratch = mkdtempSync(join(scratchRoot(), 'github-commands-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
 /** GitHub's pull-request calls as the REST API answers them, for one token. */
