@@ -14,6 +14,9 @@
  * The `notes` driver `.gitattributes` names for `docs/decisions/*.md` merges by union and puts a blank line
  * before each glued `**Note, ` line, so the merge's own result is right. A clone without the driver merges those files as
  * ordinary text, which conflicts on two notes added at one place rather than gluing them.
+ *
+ * The same install writes `pre-commit`, which runs `tools/commit-checks.mjs` on the staged paths (the comment gate, the size ratchet,
+ * the contracts, the layers' counts); only that tool's refusal, its exit 1, stops a commit.
  */
 import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -37,6 +40,22 @@ export function hookText(gate, script) {
     + `node ${fresh} --root "$root" >/dev/null 2>&1\nexit 0\n`;
 }
 
+/**
+ * The `pre-commit` hook's text: the bookkeeping checks on the staged paths (`tools/commit-checks.mjs`). Only a refusal (its exit 1) stops
+ * the commit; a detached head (a tool's tree) and `DAORIS_COMMIT_HOOK=0` run nothing. `script` names the tool by absolute path (tests).
+ */
+export function commitHookText(script) {
+  const checks = script ? `"${script.replaceAll('\\', '/')}"` : '"$root/tools/commit-checks.mjs"';
+  return `#!/bin/sh\n${MARK}\n[ "$DAORIS_COMMIT_HOOK" = 0 ] && exit 0\n`
+    + 'root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\n'
+    + 'git symbolic-ref -q HEAD >/dev/null || exit 0\n'
+    + (script ? '' : '[ -f "$root/tools/commit-checks.mjs" ] || exit 0\n')
+    + `node ${checks} --root "$root"\n[ $? = 1 ] && exit 1\nexit 0\n`;
+}
+
+/** Whether a hook file is this installer's: marked, or the older install's pre-commit that called this tool with nothing. */
+const ours = (text) => text.includes(MARK) || /index-hook\.mjs/.test(text);
+
 /** The notes merge driver's command as `--install` configures it, run by git from the work tree's top. */
 export const NOTES_DRIVER = 'node tools/index-hook.mjs --merge-notes %O %A %B';
 
@@ -56,16 +75,17 @@ export function install({ out, err, cwd, env, script }) {
   const fresh = script ? join(dirname(script), 'index-fresh.mjs') : undefined;
   try {
     mkdirSync(folder, { recursive: true });
-    for (const [name, gate] of HOOKS) {
+    const written = [...HOOKS.map(([name, gate]) => [name, hookText(gate, fresh)]), ['pre-commit', commitHookText(script && join(dirname(script), 'commit-checks.mjs'))]];
+    for (const [name, text] of written) {
       const file = join(folder, name);
-      if (existsSync(file) && !readFileSync(file, 'utf8').includes(MARK)) {
+      if (existsSync(file) && !ours(readFileSync(file, 'utf8'))) {
         out(`index-hook: ${file} is not its own; left as it is`);
         continue;
       }
-      writeAtomic(file, hookText(gate, fresh));
+      writeAtomic(file, text);
       chmodSync(file, 0o755);
     }
-    out('index-hook: checkout hooks installed');
+    out('index-hook: checkout hooks and the commit checks installed');
   } catch (error) {
     err(`index-hook: ${error.message}`);
     return 2;
@@ -113,11 +133,10 @@ export function separateNotes(text) {
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });
   if (argv[0] === '--merge-notes') return mergeNotes(argv.slice(1), { err, cwd, env });
-  // A clone's own pre-commit hook, written by an install before 2026-11-04, still calls this with nothing: it is the clone's file, so
-  // the commit goes on and the person is told how to take the hook out, once per commit until they do.
+  // A clone's pre-commit hook written by an install before 2026-11-04 still calls this with nothing: the commit goes on and the person
+  // is told to install again, which replaces it. Ends when no clone holds that hook.
   if (argv.length === 0) {
-    err('index-hook: this clone\'s pre-commit hook was written by an older install and does nothing now: remove it '
-      + '(git rev-parse --git-path hooks/pre-commit names the file), then run node tools/index-hook.mjs --install');
+    err('index-hook: this clone\'s pre-commit hook was written by an older install and does nothing now: run node tools/index-hook.mjs --install, which replaces it');
     return 0;
   }
   err('usage: node tools/index-hook.mjs --install | --merge-notes <base> <ours> <theirs>');

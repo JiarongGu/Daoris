@@ -73,10 +73,19 @@ test('install writes the checkout hooks and leaves a hook that is not its own', 
   assert.ok(lines.some((line) => /post-merge is not its own/.test(line)), lines.join('\n'));
 });
 
-test("an older install's pre-commit hook, calling with nothing, lets the commit go on and says how to remove it", () => {
+test("an older install's pre-commit hook, calling with nothing, lets the commit go on, and the next install replaces it", () => {
   const said = [];
   assert.equal(main([], { out() {}, err: (line) => said.push(line) }), 0);
-  assert.match(said.join('\n'), /pre-commit hook was written by an older install .* remove it \(git rev-parse --git-path hooks\/pre-commit/);
+  assert.match(said.join('\n'), /pre-commit hook was written by an older install .* --install, which replaces it/);
+  const dir = repository(false);
+  const hooks = join(dir, '.git', 'hooks');
+  mkdirSync(hooks, { recursive: true });
+  writeFileSync(join(hooks, 'pre-commit'), '#!/bin/sh\nnode tools/index-hook.mjs\n');
+  assert.equal(install({ out() {}, err() {}, cwd: dir, env: clean(), script }), 0);
+  assert.match(readFileSync(join(hooks, 'pre-commit'), 'utf8'), /commit-checks\.mjs" --root "\$root"/);
+  writeFileSync(join(hooks, 'pre-commit'), '#!/bin/sh\necho mine\n');
+  assert.equal(install({ out() {}, err() {}, cwd: dir, env: clean(), script }), 0);
+  assert.equal(readFileSync(join(hooks, 'pre-commit'), 'utf8'), '#!/bin/sh\necho mine\n');
   assert.equal(main(['--unknown'], { out() {}, err() {} }), 2);
 });
 
