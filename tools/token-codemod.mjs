@@ -42,7 +42,8 @@ export const ALIASES = ['st-open', 'ink-open', 'warn'];
 /** Where the codemod reads, under the web package. */
 export const FOLDERS = ['src', '.storybook', 'measured'];
 
-const START = String.raw`(?<![\w-])`;
+// A class starts after anything but a word's letter or a dash, or after a pattern's `\b`, as a test's `/\btext-ink\b/` holds it.
+const START = String.raw`(?<=^|[^\w-]|\\b)`;
 const END = String.raw`(?![\w-])`;
 const UTILITY = String.raw`(?:text|bg|border(?:-(?:x|y|t|r|b|l|s|e))?|fill|stroke|ring-offset|ring|outline|decoration|divide|caret|accent|shadow|placeholder|from|via|to)`;
 const OPACITY = String.raw`(?:\/(?:\d+|\[[^\]\s]+\]))?`;

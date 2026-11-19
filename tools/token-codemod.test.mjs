@@ -21,6 +21,9 @@ test('a status colour moves to its role, with its variant, side and opacity', ()
   assert.equal(moved("'text-ink-done bg-st-done border-l-st-done'"), "'text-ok-ink bg-ok border-l-ok'");
   assert.equal(moved("'text-ink-taken stroke-st-taken border-st-taken/40'"), "'text-live-ink stroke-live border-live/40'");
   assert.equal(moved("'data-[state=on]:ring-st-declined [&>svg]:fill-st-done'"), "'data-[state=on]:ring-fail [&>svg]:fill-ok'");
+  // A test's pattern holds a class between word boundaries.
+  assert.equal(moved('expect(className).toMatch(/\\btext-ink-danger\\b/);'), 'expect(className).toMatch(/\\btext-fail-ink\\b/);');
+  assert.equal(moved('/\\btext-meta\\b/.test(name)'), '/\\btext-caption\\b/.test(name)');
 });
 
 test("a hue's light field becomes its soft token", () => {
