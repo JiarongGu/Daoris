@@ -30,6 +30,11 @@ export type WaitCardFacts = {
   known: string[];
   from: { role: string; agent: string; model: string | null; at: string };
   meanwhile?: string | null;
+  /**
+   * Where its answer takes more than a press (a landing's gates, a step's *Try again*, a sign-in, a park's *Finish…*): its own
+   * presses, drawn in place of the effects' rows and the yes and no.
+   */
+  presses?: ReactNode;
 };
 
 /** What a press answered: yes, no, or an option by its place. */
@@ -92,7 +97,7 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
       </header>
       <p className="m-0 whitespace-pre-line text-body text-ink">{wait.what}</p>
       <dl className="m-0 grid gap-1">
-        {options.length > 0
+        {wait.presses ? null : options.length > 0
           ? options.map((option, index) => (
             <Row key={option.label} label={`${index + 1}`}>{option.effect}</Row>
           ))
@@ -128,8 +133,9 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
         </Row>
         {wait.meanwhile && <Row label={t('work.session.wait.meanwhile')}>{wait.meanwhile}</Row>}
       </dl>
+      {wait.presses && <div className="grid min-w-0 gap-2">{wait.presses}</div>}
       <div className="flex flex-wrap items-center gap-2">
-        {options.length > 0
+        {wait.presses ? null : options.length > 0
           ? options.map((option, index) => (
             <Button key={option.label} variant={index === 0 ? 'primary' : 'default'} onClick={() => onAnswer({ option: index })}>
               {option.label}

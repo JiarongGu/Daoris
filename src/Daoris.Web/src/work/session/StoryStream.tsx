@@ -152,11 +152,13 @@ function Line({ item, actor }: { item: StoryItem; actor: StoryActor }) {
  * line that opens to each call; a helper's question and answer sit indented; a second opinion and a channel message are a line each.
  * The person's read mark is a dashed rule before the first line after it.
  */
-export function StoryStream({ story, actor, readMark, loading = false }: {
+export function StoryStream({ story, actor, readMark, since: digest, loading = false }: {
   story: readonly StoryItem[];
   actor: StoryActor;
   /** When the person last read this session (ms); absent, no mark is drawn. */
   readMark?: number | null;
+  /** What happened since the mark (*Since you left*), drawn under it. */
+  since?: ReactNode;
   loading?: boolean;
 }) {
   const { t } = useTranslation();
@@ -181,6 +183,7 @@ export function StoryStream({ story, actor, readMark, loading = false }: {
               <span className="w-4 border-t border-dashed border-st-open" aria-hidden="true" />
             </li>
           )}
+          {index === since && digest && <li data-part="digest" className="min-w-0">{digest}</li>}
           <li data-block={item.key} className="min-w-0">
             <Line item={item} actor={actor} />
           </li>

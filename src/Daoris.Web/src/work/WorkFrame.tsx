@@ -17,15 +17,14 @@ import { useAttendedWaits } from './waits/useAttendedWaits';
 import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
-import { WaitStrip } from './waits/WaitStrip';
+import { SessionDock } from './session/SessionDock';
+import { AttendedSessionPanel } from './session/AttendedSessionPanel';
 import { SessionBand } from './band/SessionBand';
 import { dockOf } from './waits/dock';
 import { useRunWaitDoors } from './head/useRunWaitDoors';
-import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
-import { coolingFor } from './say';
+import { useSessionDiff } from '../bridge/shell';
 import { type FrameIntent, memoryOfIntent, outputsOfIntent } from '../menus/commands';
-import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
@@ -52,9 +51,6 @@ import { useSessionsList } from './rail/useSessionsList';
 import { AttendedPane } from './head/AttendedPane';
 import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
-import { AttendedConversation } from './conversation/AttendedConversation';
-import { channelHomeOf } from './conversation/channelHome';
-import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
 /**
@@ -298,11 +294,8 @@ export function WorkFrame({
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
   const agentRoster = agentRosterOf(t, roster, accounts.data);
-  // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose
-  // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
-  const between = attended && here && attended.kind !== 'chat'
-    && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
-  const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
+  // What the session's work changed, for the panel's Changes rail: the review's own read of its tree.
+  const diff = useSessionDiff(attended && here ? attended.id : null, attended ? { updated: attended.updated, live } : null);
 
   const asks = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
   const { setArchivingEnded, doors } = asks;
@@ -362,11 +355,11 @@ export function WorkFrame({
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
-    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAsk, waitPanel, tail, awayFromTop, toTop,
+    partnerPieces, waits, answerBelow, toEvent, goToWait, seekAt, ruleAsk,
   } = waitsState;
   const runWaitDoors = useRunWaitDoors(attended?.id ?? null, { awaitingStep: attended?.state === 'awaiting-step', onQuest: onOpenQuest });
   const docked = attended && here && waits
-    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
+    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits)
     : [];
   const headState = useAttendedHead({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
@@ -375,7 +368,7 @@ export function WorkFrame({
     heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
     steps: runWaitDoors.steps, onFlowchart: () => setFlowchartOpen(true),
   });
-  const { limitLine, pageMenu, pageHead } = headState;
+  const { pageMenu } = headState;
 
   // The head's *Waiting on* opens At work at the request it names.
   const atWorkSeek = useAtWorkSeek(openView);
@@ -391,7 +384,7 @@ export function WorkFrame({
     t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
-  const { partBox, seek } = useSeekPart();
+  const { seek } = useSeekPart();
 
   return (
     // Positioned, so a dock filling the frame lies over exactly this and nothing more.
@@ -404,17 +397,82 @@ export function WorkFrame({
       {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={go.setOver} />}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {elsewhere ? viewLayout.main : (<>
+        {elsewhere ? viewLayout.main : attended ? (
+          // The session panel: one session's head, story, live band, dock, composer and Changes rail, in one column.
+          <ViewMain ref={centre} gutters="session" menu={pageMenu} state="chosen">
+            <div className="flex h-full min-h-0 min-w-0 flex-col">
+              <AttendedSessionPanel
+                t={t}
+                notify={notify}
+                session={session}
+                boxState={boxState}
+                words={words}
+                boxWords={boxWords}
+                waitsState={waitsState}
+                headState={headState}
+                grouping={grouping}
+                roster={roster}
+                refusal={refusal}
+                openPreview={openPreview}
+                channel={attendedEntry && channelAsk && record.channel.available ? record.channel.channel?.items ?? [] : []}
+                diff={diff.data}
+                prelude={(
+                  <AttendedPane
+                    t={t}
+                    notify={notify}
+                    session={session}
+                    record={record}
+                    work={work}
+                    boxState={boxState}
+                    waitsState={waitsState}
+                    headState={headState}
+                    roster={roster}
+                    nameOf={nameOf}
+                    agentRoster={agentRoster}
+                    memorySeek={memorySeek}
+                    following={following}
+                    atWorkHeld={atWorkHeld}
+                    heavy={heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
+                    partRows={partRows}
+                    onShowPart={(id) => { attend(id); seek(); }}
+                    openAtWork={atWorkSeek.open}
+                    attend={attend}
+                    onOpenQuest={onOpenQuest}
+                    onAnswerAsk={onAnswerAsk}
+                    onOpenBranch={onOpenBranch}
+                  />
+                )}
+                band={here ? (
+                  <>
+                    <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />
+                    {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
+                  </>
+                ) : undefined}
+                dock={waits ? (
+                  <SessionDock
+                    key={`dock:${attended.id}`}
+                    {...waits}
+                    answerBelow={answerBelow}
+                    workAsk={workAsk}
+                    ruleAsk={ruleAsk}
+                    toEvent={toEvent}
+                    seek={seekAt('foot')}
+                    runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
+                    quest={quest}
+                    onRefused={(said) => notify(said, 'error')}
+                  />
+                ) : undefined}
+              />
+            </div>
+          </ViewMain>
+        ) : (<>
         <ViewMain
           ref={centre}
           gutters="session"
-          // Pinned at the top while the conversation scrolls under it; none with nothing attended.
-          header={pageHead || undefined}
-          menu={pageMenu}
           // A remembered session is found in the list, so while the list first loads it is on its way, never
           // the composer. With nothing attended the main area is *New conversation*: no notice is
           // handed, so the state's body is the composer.
-          state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
+          state={selected && sessions.isPending ? 'loading' : 'none'}
         >
           {/* *New conversation*, the main area while nothing is attended. */}
           {!attended && (
@@ -429,108 +487,7 @@ export function WorkFrame({
               attend={attend}
             />
           )}
-          <AttendedPane
-            t={t}
-            notify={notify}
-            session={session}
-            record={record}
-            work={work}
-            boxState={boxState}
-            waitsState={waitsState}
-            headState={headState}
-            roster={roster}
-            nameOf={nameOf}
-            agentRoster={agentRoster}
-            memorySeek={memorySeek}
-            following={following}
-            atWorkHeld={atWorkHeld}
-            heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
-            partRows={partRows}
-            onShowPart={(id) => { attend(id); seek(); }}
-            openAtWork={atWorkSeek.open}
-            attend={attend}
-            onOpenQuest={onOpenQuest}
-            onAnswerAsk={onAnswerAsk}
-            onOpenBranch={onOpenBranch}
-          />
-          <AttendedConversation
-            onOpenOutputs={onReviewRun}
-            t={t}
-            session={session}
-            boxState={boxState}
-            words={words}
-            waitsState={waitsState}
-            headState={headState}
-            grouping={grouping}
-            coolsUntil={coolsUntil}
-            roster={roster}
-            rootOf={rootOf}
-            openPreview={openPreview}
-            centre={centre}
-            partRows={partRows}
-            partBox={partBox}
-            attend={attend}
-            // The channel its panel reads names each message's poster, and a turn's door opens that panel.
-            channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
-              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
-            ) : undefined}
-          />
         </ViewMain>
-
-        {/* The waiting panel: the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
-            and the conversation's *To the top* and *Back to bottom* above that edge, never under it. */}
-        <WaitPanel
-          height={waitPanel.height}
-          onResize={waitPanel.resize}
-          onReset={waitPanel.reset}
-          controls={attended && here && (awayFromTop || (tail && !tail.atTail)) ? (
-            <>
-              {awayFromTop && <ToTheTop onPress={toTop} className="bg-overlay shadow-sm" />}
-              {tail && !tail.atTail && <BackToBottom onPress={tail.toTail} className="bg-overlay shadow-sm" />}
-            </>
-          ) : undefined}
-        >
-          {/* The dock: every wait the person settles, above the box and outside the conversation's scroll, each with its own
-              press; a teammate's record draws them as lines with none. Keyed by the session. 🔴 The strip, the settler and the composer each name their kind beside the id:
-              keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
-          {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
-          {waitsOnScreen === false && limitLine('mb-2')}
-          {/* The live band: what runs now, above the dock, each line ticking with its last line and its presses. */}
-          {attended && here && <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />}
-          {attended && waits && (
-            <WaitStrip
-              key={`strip:${attended.id}`}
-              {...waits}
-              // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
-              answerBelow={answerBelow}
-              workAsk={workAsk}
-              ruleAsk={ruleAsk}
-              toEvent={toEvent}
-              seek={seekAt('foot')}
-              runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
-              quest={quest}
-            />
-          )}
-
-          {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
-
-          <AttendedBoxes
-            t={t}
-            notify={notify}
-            session={session}
-            boxState={boxState}
-            words={words}
-            boxWords={boxWords}
-            asks={asks}
-            waitsState={waitsState}
-            headState={headState}
-            refusal={refusal}
-            roster={roster}
-            rootOf={rootOf}
-            attend={attend}
-          />
-        </WaitPanel>
-
         </>)}
 
         {/* An emptied panel that is hidden is not drawn at all, unless a view is being dragged to it;

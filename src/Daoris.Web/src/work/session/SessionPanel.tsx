@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, SkeletonRows } from '../../design/ui';
 import { useRootRem, useWidth } from '../../design/useWidth';
@@ -37,17 +37,19 @@ export type PanelFacts = {
  * **The dock**: every wait of the session as its card, oldest first under its count, pinned. At most 40% of the panel, scrolling
  * inside; narrow, one card whole and the rest a line each, a line's press making it the whole one.
  */
-function Dock({ waits, now, narrow, onAnswer }: {
-  waits: readonly WaitCardFacts[]; now: number; narrow: boolean; onAnswer: PanelFacts['onAnswer'];
+export function Dock({ waits, now, narrow, onAnswer, children }: {
+  waits: readonly WaitCardFacts[]; now: number; narrow: boolean; onAnswer: PanelFacts['onAnswer']; children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [whole, setWhole] = useState<string | null>(null);
   const shown = whole && waits.some((wait) => wait.id === whole) ? whole : waits[0]?.id;
   return (
     <div data-region="dock" className="grid max-h-[40%] min-h-0 shrink-0 content-start gap-1.5 overflow-y-auto py-1.5">
-      <p className="sticky top-0 m-0 bg-page text-meta font-semibold uppercase tracking-wide text-ink-open">
-        {t('work.session.wait.count', { count: waits.length })}
-      </p>
+      {waits.length > 0 && (
+        <p className="sticky top-0 m-0 bg-page text-meta font-semibold uppercase tracking-wide text-ink-open">
+          {t('work.session.wait.count', { count: waits.length })}
+        </p>
+      )}
       {waits.map((wait) => (
         <WaitCard
           key={wait.id}
@@ -58,6 +60,7 @@ function Dock({ waits, now, narrow, onAnswer }: {
           onAnswer={(answer) => onAnswer(wait.id, answer)}
         />
       ))}
+      {children}
     </div>
   );
 }
@@ -69,12 +72,24 @@ function Dock({ waits, now, narrow, onAnswer }: {
  * the composer. Below 40rem the rail goes and the head carries the changes as one fact. With no session it says so; loading, it
  * draws its skeleton in the real layout.
  */
-export function SessionPanel({ facts, band, acts, loading = false, width: given }: {
+export function SessionPanel({ facts, band, acts, track, asking, dock, composer, story, reading, loading = false, width: given }: {
   facts: PanelFacts | null;
+  /** The host's track (`RunTrack`, with its holders and *Flowchart*), in place of the chips of `facts.track`. */
+  track?: ReactNode;
+  /** What asks under the head: a stop's, a delete's, a rename's, a hand-over's or a pause's ask, the host's. */
+  asking?: ReactNode;
   /** What runs now (the host's live band), drawn above the dock. */
   band?: ReactNode;
   /** The head's acts: *Pause*, *Resume*, *Stop* and ⋯, the host's. */
   acts?: ReactNode;
+  /** The host's dock (`SessionDock`), in place of the cards of `facts.waits`: the page's, which reads its waits itself. */
+  dock?: ReactNode;
+  /** The composer's foot where the host has more to say than the composer: a line where nothing takes words. */
+  composer?: ReactNode;
+  /** The host's drawing of the story, in place of the stream over `facts.story`: the page's, with its way through the record. */
+  story?: ReactNode;
+  /** The story region and its tail where the host's reading follows it, not the panel. */
+  reading?: { scroller: RefObject<HTMLDivElement | null>; atTail: boolean; toTail: (smooth?: boolean) => void };
   loading?: boolean;
   /** The panel's width in px where the host knows it (a story, a test); measured otherwise. */
   width?: number;
@@ -86,11 +101,14 @@ export function SessionPanel({ facts, band, acts, loading = false, width: given 
   const layout = panelLayoutOf(given ?? measured, rem);
   const modelWords = useModelWords();
   // The story follows its tail only while the reader is at it; an ended session opens at its top. Away from the tail, what
-  // arrived since is counted on the pill that goes back.
-  const scroller = useRef<HTMLDivElement>(null);
+  // arrived since is counted on the pill that goes back. A host that reads the record follows it itself.
+  const own = useRef<HTMLDivElement>(null);
+  const nobody = useRef<HTMLDivElement>(null);
+  const scroller = reading?.scroller ?? own;
   const count = facts?.story.length ?? 0;
   const ended = !facts || facts.head.state === 'finished' || facts.head.state === 'stopped';
-  const { atTail, toTail } = useFollowTail(scroller, `${count}:${facts?.story[count - 1]?.key ?? ''}`, facts?.id ?? '', ended);
+  const followed = useFollowTail(reading ? nobody : own, `${count}:${facts?.story[count - 1]?.key ?? ''}`, facts?.id ?? '', ended);
+  const { atTail, toTail } = reading ?? followed;
   const [seen, setSeen] = useState(count);
   useEffect(() => { if (atTail) setSeen(count); }, [atTail, count]);
   const fresh = atTail ? 0 : Math.max(0, count - seen);
@@ -121,16 +139,19 @@ export function SessionPanel({ facts, band, acts, loading = false, width: given 
       {loading ? (
         <div data-region="head" className="grid gap-1.5 border-b border-line pb-2"><SkeletonRows rows={2} /></div>
       ) : <PanelHead head={head} now={facts.now} acts={acts} changes={fact} />}
-      {!loading && facts.track && <PanelTrack track={facts.track} onStep={facts.onStep} />}
+      {!loading && (track ?? (facts.track && <PanelTrack track={facts.track} onStep={facts.onStep} />))}
+      {asking && <div data-region="asking" className="shrink-0">{asking}</div>}
       <div className="flex min-h-0 min-w-0 flex-1 gap-4">
         <div className="relative flex min-h-0 min-w-0 flex-1">
           <div ref={scroller} data-region="story" className="min-h-0 min-w-0 flex-1 overflow-y-auto py-2">
-            <StoryStream
-              story={facts.story}
-              actor={{ maker: head.maker, model: head.model }}
-              readMark={facts.readMark}
-              loading={loading}
-            />
+            {story ?? (
+              <StoryStream
+                story={facts.story}
+                actor={{ maker: head.maker, model: head.model }}
+                readMark={facts.readMark}
+                loading={loading}
+              />
+            )}
           </div>
           {!atTail && count > 0 && (
             <button
@@ -149,14 +170,16 @@ export function SessionPanel({ facts, band, acts, loading = false, width: given 
         )}
       </div>
       {band && <div data-region="band" className="shrink-0">{band}</div>}
-      {facts.waits.length > 0 && <Dock waits={facts.waits} now={facts.now} narrow={layout.narrow} onAnswer={facts.onAnswer} />}
+      {dock ?? (facts.waits.length > 0 && <Dock waits={facts.waits} now={facts.now} narrow={layout.narrow} onAnswer={facts.onAnswer} />)}
       <div data-region="composer" className="shrink-0">
-        <PanelComposer
-          reads={facts.reads}
-          chip={`${head.maker} · ${modelWords(head)}`}
-          onSend={facts.onSend}
-          disabled={loading}
-        />
+        {composer ?? (
+          <PanelComposer
+            reads={facts.reads}
+            chip={`${head.maker} · ${modelWords(head)}`}
+            onSend={facts.onSend}
+            disabled={loading}
+          />
+        )}
       </div>
     </section>
   );
