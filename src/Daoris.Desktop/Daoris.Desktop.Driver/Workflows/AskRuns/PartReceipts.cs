@@ -23,21 +23,12 @@ public static class PartReceipts
         RunOf(report, part) is { } run ? StepActFiles.Journal(home, RunUnits.IdOf(run)).LastOrDefault(row => row.Fact == fact) : null;
 
     /// <summary>What the run's part waits on before it starts: each wait its plan names whose part's newest receipt of the fact has not reached.</summary>
-    public static IReadOnlyList<PartWait> Waiting(string home, string run, RunScope scope)
-    {
-        if (scope.Parts is not { } report || PartOf(report, run, scope.Quests.Select(quest => quest.Id)) is not { } part
-            || !report.Waits.TryGetValue(part, out var waits))
-        {
-            return [];
-        }
+    public static IReadOnlyList<PartWait> Waiting(string home, string run, RunScope scope) =>
+        scope.Parts is { } report ? Waiting(home, report, run, scope.Quests.Select(quest => quest.Id)) : [];
 
-        return [.. waits.Where(wait => Newest(home, report, wait.On, wait.Fact) is not { State: StepReceipts.Reached })];
-    }
-
-    /// <summary>
-    /// The asks the runs bound here and not ended name, whose reports the look reads: a part's run reads what it waits on, and a joint check
-    /// its parts' receipts, from its ask's report whether or not the train holds a request for it yet.
-    /// </summary>
-    public static IEnumerable<string> RunAsks(string home) =>
-        new GraphRuns(new NodeRecordFiles(home, () => false)).Read().Where(run => run.Ended is null).Select(run => run.Binding.Ask).OfType<string>();
+    /// <summary>What the part of <paramref name="report"/>'s plan whose quest is <paramref name="run"/> (or one of <paramref name="quests"/>) waits on still.</summary>
+    public static IReadOnlyList<PartWait> Waiting(string home, PartsReport report, string run, IEnumerable<string> quests) =>
+        PartOf(report, run, quests) is { } part && report.Waits.TryGetValue(part, out var waits)
+            ? [.. waits.Where(wait => Newest(home, report, wait.On, wait.Fact) is not { State: StepReceipts.Reached })]
+            : [];
 }

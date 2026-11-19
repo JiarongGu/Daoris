@@ -79,6 +79,8 @@ export interface RunStep {
   requests?: RunRequest[] | null;
   /** The acts journaled on the step's attempt while its holder acts, one row each; none where none is. */
   journal?: RunActRow[] | null;
+  /** A joint check's parts' receipts, held or waited for, and the part its failure went back to; none on any other step. */
+  joint?: RunJoint | null;
   /**
    * The unit's integration state as the integration record says it, on the `integrate`
    * node only; none from a shell before it, or where nothing is asked.
@@ -106,6 +108,24 @@ export interface RunActRow {
   at?: string | null;
   waitsOn?: string | null;
   holder?: string | null;
+}
+
+/**
+ * One part's receipt as the run names it (`WorkflowRunPartReceipt`): *`<part>`'s `<fact>`*, the quest the ask's plan gave that part, and
+ * the state (`reached`, `waiting`, `failed`) and words of the newest receipt of the fact its run journaled; no state where it journaled none.
+ */
+export interface RunPartReceipt {
+  part: string;
+  fact: string;
+  quest?: string | null;
+  state?: string | null;
+  message?: string | null;
+}
+
+/** A joint check (`WorkflowRunJoint`): each part's receipt it holds over, and the part its newest failed test went back to. */
+export interface RunJoint {
+  parts: RunPartReceipt[];
+  returned?: RunPartReceipt | null;
 }
 
 /** A graph run's node's wait (`WorkflowRunWait`): one of its kind's `waits`, worded as `workflow.wait.<kind>.<code>` with its facts. */
@@ -264,6 +284,8 @@ export interface GraphRun {
   unread: boolean;
   /** The quest it ended at, where its record keeps its end. */
   ended?: string | null;
+  /** What its part of its ask's plan waits on before any of its steps is handed: other parts' receipts not reached yet; none where none. */
+  partWaits?: RunPartReceipt[] | null;
   /** Its `back` wires, apart from `wires`, which the run is read along; none from a shell before it. */
   backs?: GraphBack[] | null;
   /** The nodes no route can start any more given the outcomes reached; none from a shell before it. */

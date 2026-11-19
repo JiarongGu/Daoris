@@ -60,8 +60,8 @@ describe('ConversationView', () => {
     expect(screen.getByText('cap the hydration')).toBeTruthy();
     // The answer is open, and Markdown.
     expect(screen.getByText('4').tagName).toBe('STRONG');
-    // The work is one row that counts it, and nothing of it is drawn yet.
-    const fold = screen.getByRole('button', { name: /2 tool calls · thought/ });
+    // The turn is one line that counts it, none of its work drawn yet.
+    const fold = screen.getByRole('button', { name: /1 read · 1 edit · 1 file · thought/ });
     expect(screen.queryByText('Read src/chunk.rs')).toBeNull();
 
     await userEvent.click(fold);
@@ -106,7 +106,7 @@ describe('ConversationView', () => {
   /** An edit's lines are the review's lines — highlighted in the file's own language, and signed. */
   it('highlights an edit in the language of the file it changed', async () => {
     view(FINISHED());
-    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
+    await userEvent.click(screen.getByRole('button', { name: /1 file/ }));
     await userEvent.click(screen.getByText('Edit src/chunk.rs'));
 
     const keyword = document.querySelector('.hljs-keyword');
@@ -576,10 +576,7 @@ describe('ConversationView', () => {
     expect(container.textContent).toBe('');
   });
 
-  /**
-   * A driven session is one turn, so folding the turn whole would hide
-   * the agent's account of hundreds of calls behind one row. Its words stay; the work between them folds.
-   */
+  /** A driven session's one turn, ended: its closing words and its failure stay, the rest folds; opened, its words and runs. */
   it('keeps every word the agent said, and folds the work between them into runs that count failures', async () => {
     view([
       ev({ kind: 'user', origin: 'target', text: 'Your target is the quest…' }),
@@ -591,14 +588,15 @@ describe('ConversationView', () => {
       ev({ kind: 'turn', stopReason: 'end_turn' }),
     ]);
 
-    expect(screen.getByText('Looking at the loader first.')).toBeTruthy();
-    expect(screen.getByText('Clean. Now the gates.')).toBeTruthy();
-    const fold = screen.getByRole('button', { name: /2 tool calls · 1 failed/ });
+    expect(screen.getByText('Landed.')).toBeTruthy();
+    expect(screen.getByText('git stash list')).toBeTruthy();
+    expect(screen.queryByText('Clean. Now the gates.')).toBeNull();
+    const fold = screen.getByRole('button', { name: /1 read · 1 command.* 1 failed/ });
     expect(screen.queryByText('Read loader.rs')).toBeNull();
 
     await userEvent.click(fold);
+    expect(screen.getByText('Looking at the loader first.')).toBeTruthy();
     expect(screen.getByText('Read loader.rs')).toBeTruthy();
-    expect(screen.getByText('refused')).toBeTruthy();
   });
 
   /** A long run is read from its ask, and *load earlier* sits where the missing events belong. */
@@ -1256,15 +1254,15 @@ describe('ConversationView', () => {
       ev({ kind: 'turn', stopReason: 'end_turn' }),
     ];
     const { turns, where } = toTurns(events);
-    const failedAt = events[3]!.seq;
-    render(<Tooltip.Provider><ConversationView turns={turns} reveal={where[failedAt]} /></Tooltip.Provider>);
+    const readAt = events[2]!.seq;
+    render(<Tooltip.Provider><ConversationView turns={turns} reveal={where[readAt]} /></Tooltip.Provider>);
 
-    expect(screen.getByText('npm test')).toBeTruthy();
-    const block = screen.getByText('npm test').closest('[data-block]')!;
+    expect(screen.getByText('Read a')).toBeTruthy();
+    const block = screen.getByText('Read a').closest('[data-block]')!;
     expect(block.className).toContain('outline-accent');
 
-    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
-    expect(screen.queryByText('npm test')).toBeNull();
+    await userEvent.click(screen.getAllByRole('button', { name: /2 other calls/ })[0]!);
+    expect(screen.queryByText('Read a')).toBeNull();
   });
 
   /**
@@ -1418,12 +1416,11 @@ describe('the waits a block raised', () => {
       ev({ kind: 'tool', id: 'r1', title: 'Read the dashboard', status: 'completed' }),
       asked,
       ev({ kind: 'message', text: 'Waiting on go-ahead #3.' }),
-      ev({ kind: 'turn', stopReason: 'end_turn' }),
-    ], { marks: { [`e${asked.seq}`]: [{ kind: 'goAhead', number: 3 }] }, onToWait: vi.fn() });
+    ], { marks: { [`e${asked.seq}`]: [{ kind: 'goAhead', number: 3 }] }, onToWait: vi.fn(), live: true });
 
     expect(screen.queryByText('go_ahead_ask')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'To the wait: go-ahead #3' })).toHaveLength(1);
-    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
+    await userEvent.click(screen.getByRole('button', { name: /2 other calls/ }));
     // Open, the mark is the call's own, said once.
     const block = screen.getByText('go_ahead_ask').closest<HTMLElement>('[data-block]')!;
     expect(within(block).getByRole('button', { name: 'To the wait: go-ahead #3' })).toBeTruthy();

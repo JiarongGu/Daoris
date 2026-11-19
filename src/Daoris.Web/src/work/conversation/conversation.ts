@@ -614,9 +614,8 @@ const isWork = (item: Block) => WORK.has(item.kind) || (item.kind === 'note' && 
  * hand is in view.
  *
  * @remarks
- * A driven session is one turn — one ask, then the run —
- * so folding the whole turn would hide the agent's narration of hundreds of calls behind one row, and a run that
- * never ended would fold nothing at all.
+ * A driven session is one turn — one ask, then the run — so while it goes on its narration stays in view between the runs;
+ * once it ends the turn folds whole (`catchup/turnFold.ts`), and opened, it is drawn by these segments again.
  */
 export function segments(items: readonly Block[], tailOpen: boolean, standsAlone?: (block: Block) => boolean): Segment[] {
   const parts: Segment[] = [];

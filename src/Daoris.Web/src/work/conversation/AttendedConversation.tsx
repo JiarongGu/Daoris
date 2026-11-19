@@ -21,6 +21,7 @@ import { dockKeyOf, markOf, rowsWithin, stepRowsOf } from '../track/passage';
 import { toDockLine } from '../track/seek';
 import { StepActs } from '../track/StepActs';
 import { StepRows } from '../track/StepRows';
+import { stepsNow } from '../catchup/digest';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
 
@@ -112,6 +113,8 @@ export function AttendedConversation({
             onTail={setTail}
             // What runs now, for the live band above the dock, which opens one in the panel's focus.
             onBeside={setBeside}
+            // Its line's read mark on this machine, opened at under *Since you left* with what waits now and the steps passed.
+            catchup={{ line: attended.line ?? attended.id, waiting: standing.length, steps: stepsNow(grouping?.passage) }}
             onUsage={onUsage}
             onWaiting={onWaiting}
             // Its limit's wait, read from its events: the head and the foot say it.

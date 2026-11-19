@@ -206,6 +206,28 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Equal(("https://portal.example.com/settings", "sign-in", 0), (kept.Site, kept.Owner, kept.Choices.Count));
     }
 
+    /// <summary>🔴 A conversation asks for a sign-in with its site and it is kept, marked as a conversation's; any other question, and
+    /// Ask Daoris's own conversation, stay refused.</summary>
+    [Fact]
+    public async Task A_conversation_asks_a_sign_in_with_its_site_and_no_other_question()
+    {
+        var (connector, _, store) = await ConnectorAsync();
+        var at = new DateTimeOffset(2026, 11, 19, 9, 0, 0, TimeSpan.Zero);
+        var chat = (await store.CreateAsync(null, "Owner", "claude-code", at, kind: SessionKind.Chat)).Id;
+        var help = (await store.CreateAsync(null, SessionLedger.HelpRepository, "claude-code", at, kind: SessionKind.Chat)).Id;
+        const string Expired = "The ops identity expired at the portal's sign-in: sign in so I can go on.";
+
+        Assert.Contains("is a conversation", await connector(chat).AskAsync("Which one?"));
+        Assert.Contains("Ask Daoris's own conversation", await connector(help).AskAsync(Expired, site: "https://portal.example.com/"));
+        Assert.False(File.Exists(Sessions(chat + QuestionBox.Suffix)));
+
+        var said = await connector(chat).AskAsync(Expired, site: "https://portal.example.com/settings");
+
+        Assert.Contains("Signed in", said);
+        var kept = QuestionBox.Read(Home, chat)!;
+        Assert.Equal(("https://portal.example.com/settings", "sign-in", true), (kept.Site, kept.Owner, kept.Conversation));
+    }
+
     /// <summary>With no home the question is refused and nothing is written, as a hand-over's ask is.</summary>
     [Fact]
     public async Task question_ask_with_no_home_says_so()

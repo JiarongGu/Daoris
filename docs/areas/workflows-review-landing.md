@@ -17,7 +17,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 | Where | Its job |
 |---|---|
-| `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
+| `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`, whose list skips the home's own files kept beside them, `casts.json` and `quests.json`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
@@ -127,7 +127,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    its own. A failed test naming its part (the receipt's `part`) goes back once (`JointReturns`): the request said to that part's working
    session as the tester's, a row journaled on the part's step (`returned:<id>`, naming the session asked), that session's later rounds
    of the fact journaled on the same step as its fix whether the part's run still stands or ended, and a reached fix proposed into the
-   step's delivery knowledge (`StepLessons`).
+   step's delivery knowledge (`StepLessons`). The look's one read of the run bindings (`AskRunReads`) gives every open run's ask, whose
+   plan it reads for a part's run whether or not the train holds a request for it. The run's one reading reads its ask's plan and the
+   parts' journals as the pass does (`PartViews`): its graph's `partWaits`, each other part's receipt it still waits on with that part's
+   quest and its newest state, and on a joint check's step its `joint`, each part's receipt held or waited for and the part its newest
+   failed test went back to once that return is journaled. The run's view draws them, "waits on `<part>`'s `<fact>`" under its graph's
+   lines and "holds" or "waits for" under the check (`workflow/parts/PartRows`), each with the other part's quest as a door, and the
+   session page's dock draws the same while its session awaits its step (desktop-app rule 38). No shipped preset holds a joint check:
+   no team preset releases (`team-part` lands a part, `ask-delivery` the ask's branch; `pull-request-release` is one repository's), and
+   `joint` names the ask's own parts and the fact each gives, which only its plan knows.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -711,7 +719,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **A shipped workflow:** a JSON file under `Defaults/workflows/`; the presets derive.
 - **A landing:** `Workflows/Kinds/Land/`; the act in `Workplace/` (`LandPerformer`, `TreeLands`, the deliveries).
 - **An ask's parts landing:** `Workplace/Train/` (`TrainParts`, `TrainPlan`, `TrainSelection`, `TrainBranch`, `TrainBases`, `TrainRefs`), hooked at `IntegrationReplayAsk.Train` and `.TrainBase`; the part a quest is the worker's of (`TrainPartOf`) beside the scope's landing in `Workflows/AskRuns/`; the `parts` kind in `Workflows/Kinds/Parts/`.
-- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunContent`, `AskLanding`, `AskRunEnds`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` (its send, `Kinds/Check/RunChecks`) and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
+- **An ask's delivery run:** `Workflows/AskRuns/` (`AskRunKey`, `AskRunBinder`, `AskRunReads`, `AskRunScopes`, `AskRunContent`, `AskLanding`, `AskRunEnds`; a part's wait and its run's view of the parts, `PartReceipts`, `PartViews`), hooked at `WatchNodes` (the bind and the read), `NodeGoverning.Governs`, `NodeRunKeeping.EndAsync`, `CheckNode.Door` (its send, `Kinds/Check/RunChecks`) and `LandNode.Door` (`LandingDoor`'s `asks`); held by `Workflows/AskRuns/` tests.
 - **A gate or hold:** `Review/Domain/` (look, opinion) or `Workflows/Domain/GraphGate.cs`.
 - **A door:** a route in the module's `Bridge/Routes/`, its census rows, the page under `src/workflow/` or `src/agents/setup/`.
 - **Tests:** driver `Workflows/`, `Review/`, `Workplace/` (each landing through a run bound by `GraphLand`), `Setup/`; modules

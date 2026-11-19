@@ -124,6 +124,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>The acts journaled on the step's attempt, one row each (<see cref="StepActViews"/>); null where none is.</summary>
     public IReadOnlyList<WorkflowRunAct>? Journal { get; init; }
 
+    /// <summary>A joint check's parts' receipts, held or waited for, and the part its failure went back to (<see cref="PartViews"/>); null on any other step.</summary>
+    public WorkflowRunJoint? Joint { get; init; }
+
     /// <summary>The unit's integration state, on a graph run's <c>integrate</c> node only, as its record says it.</summary>
     public IntegrationHead? Integration { get; init; }
 

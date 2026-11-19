@@ -25,7 +25,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
 | `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
-| web `work/` | Sessions: `WorkFrame`, its hooks and parts by folder (`head/`, `conversation/`, `start/`, `review/`, `waits/`, `rail/`, `attention/`), a session's note |
+| web `work/` | Sessions: `WorkFrame`, its hooks and parts by folder (`head/`, `conversation/`, `catchup/`, `start/`, `review/`, `waits/`, `rail/`, `attention/`), a session's note |
 | web `menus/`, `notifications/` | The command table, keys, the right-click menu; the bell, *Notifications* and *What needs you* |
 | web `bridge/`, `app/ShellSignals.tsx`, `data/api.ts` | The page's calls by domain, the state hub, pushed slices into the query cache, the person key on writes |
 | web `design/`, `tokens.css` | Tokens, the atoms (`design/atoms/`, re-exported by `design/ui.tsx`), the flows and the canvas (`design/canvas/`) |
@@ -235,6 +235,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     workspace's checkout of its repository, else the stage's page. A park whose question names a site waits on the person's sign-in there: named *Sign in*, its card carries
     *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34). A step its agent holds reads "waiting on `<role>`:
     `<agent>`" with *Take* alone, and names the dock's question or sign-in its agent is blocked on with a link to it (`RunWaitsHead`).
+    While the session awaits its step, the dock reads its run (`useRunWaitDoors`) and draws below its waits, uncounted since no press
+    of the person's settles them, what its part of an ask's plan waits on ("waits on `<part>`'s `<fact>`") and each joint check's parts
+    held or waited for and the part its failure went back to, each with that part's quest as a door (`RunParts`, as the run's view
+    draws them; workflows rule 3f); with nothing else in it, the dock is named *What its run waits on*.
     The head draws none of their cards. Its state
     line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
     the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest
@@ -247,7 +251,15 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     focus: a subagent's timeline, a task's whole console, a breadcrumb back) and *Stop* only on a task its streams mark `canStop`,
     asked once in place, *stopping* until its end is read, sent as `STOP_TASK`; elsewhere its tip says why. Empty it reads
     *Nothing running*; a window under 640 px tall folds it to its count. A task the person stopped reads *stopped by you* where
-    it ended. (from D168, D185, D320)
+    it ended. The conversation opens at the person's read mark (`work/catchup/`): one per conversation on this machine, the newest
+    part and event on screen while the window had focus, in the desktop store's `read_marks`, moved only forward (`READ_MARK`,
+    `READ_MARK_MOVE`). Opened with anything after it, the attended part sits at the mark under *Since you left*, computed from the
+    record and the run with no model: turns, files changed, commands and which failed, subagents and tasks started and ended, steps
+    passed since the mark, what waits on the person and the helpers asked and answered, and the agent's last words quoted as its own,
+    each line a jump to its first row; otherwise at its tail. Each ended turn folds to one line (its calls by kind, how many failed,
+    files changed, duration), and under it stays what never folds: its closing words, the person's words, a failure or a stop, an act
+    outside (a push, a pull request, a release), a call standing alone, a part's boundary and a block a wait was raised at; a turn
+    that goes on folds the work between the agent's words into runs counted by kind. (from D168, D185, D320)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it
     landed on once its tree is gone (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -446,7 +458,8 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
   the head and the conversation, and keeps Timeline and At work as side bar views; each row removes the place whose job it
   moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar; ACTORFLOW1e's
-  part rows join the step rows once they land. SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
+  part rows (`workflow/parts/`) are not among the step rows yet.
+  SESSIONVIEW1c built the read mark, *Since you left* and the folds (rule 38). SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
   session's raw console alone; a task's whole console is read in the conversation's focus. SESSIONVIEW1f moved the subagents into the conversation: a subagent
   is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
   words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent

@@ -41,16 +41,19 @@ public static class PartsReports
         foreach (var ask in parts.Asks().Concat(runAsks ?? []).Distinct(StringComparer.Ordinal))
         {
             if (await plans.OfAsync(ask, ct).ConfigureAwait(false) is not { } plan) continue;
-            read[ask] = new PartsReport(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], parts.Landed(ask))
-            {
-                Repositories = plan.Parts.Where(part => part.Repository is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Repository!, StringComparer.Ordinal),
-                Quests = plan.Parts.Where(part => part.Quest is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Quest!, StringComparer.Ordinal),
-                Waits = plan.Parts.Where(part => part.Waits.Count > 0).ToDictionary(part => part.Id, part => part.Waits, StringComparer.Ordinal),
-            };
+            read[ask] = Of(ask, plan, parts.Landed(ask));
         }
 
         return read;
     }
+
+    public static PartsReport Of(string ask, TrainPlan plan, IReadOnlySet<string> landed) =>
+        new(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], landed)
+        {
+            Repositories = plan.Parts.Where(part => part.Repository is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Repository!, StringComparer.Ordinal),
+            Quests = plan.Parts.Where(part => part.Quest is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Quest!, StringComparer.Ordinal),
+            Waits = plan.Parts.Where(part => part.Waits.Count > 0).ToDictionary(part => part.Id, part => part.Waits, StringComparer.Ordinal),
+        };
 }
 
 /// <summary>
