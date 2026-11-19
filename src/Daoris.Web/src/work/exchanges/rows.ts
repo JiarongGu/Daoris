@@ -12,6 +12,7 @@ export type LineRow =
   | { kind: 'exchange'; key: string; side: 'asked' | 'back'; at: number | null; exchange: AtWorkExchange }
   | { kind: 'quest'; key: string; side: 'asked' | 'back'; at: number | null; quest: Quest; question: boolean }
   | { kind: 'askedBy'; key: string; at: number; session: string }
+  | { kind: 'resumed'; key: string; at: number | null; quest: Quest }
   | { kind: 'message'; key: string; at: number | null; item: ChannelItem; quoted: ChannelItem | null };
 
 /** The protocol's words for a request still on its way: asked, waiting on a word or a slot, being worked. */
@@ -28,17 +29,20 @@ export const cameBack = (exchange: AtWorkExchange): boolean => Boolean(exchange.
 /**
  * The rows of a line: its exchanges (less those drawn elsewhere: `carded`, an agent's helper ask drawn as its card at its call), the
  * quests its session published (`asked`, whose `quest:` exchange is the same request), the session that published its own quest, and
- * its channel's messages; oldest first, an untimed row after every timed one in the read's order.
+ * the answered question its session resumed after, and its channel's messages; oldest first, an untimed row after every timed one in the read's order.
  */
-export function lineRowsOf({ exchanges = [], carded, asked = [], askedBy = null, messages = [] }: {
+export function lineRowsOf({ exchanges = [], carded, asked = [], askedBy = null, resumedAfter = null, messages = [] }: {
   exchanges?: readonly AtWorkExchange[];
   carded?: ReadonlySet<string>;
   asked?: readonly { quest: Quest; question: boolean }[];
   askedBy?: string | null;
+  /** The answered question an earlier session asked, which its quest waited on: the line resumed once it came back. */
+  resumedAfter?: Quest | null;
   messages?: readonly ChannelItem[];
 }): LineRow[] {
   const rows: LineRow[] = [];
   if (askedBy) rows.push({ kind: 'askedBy', key: `asked-by:${askedBy}`, at: Number.NEGATIVE_INFINITY, session: askedBy });
+  if (resumedAfter) rows.push({ kind: 'resumed', key: `resumed:${resumedAfter.id}`, at: time(resumedAfter.updated), quest: resumedAfter });
   const published = new Set(asked.map(({ quest }) => `quest:${quest.id}`));
   for (const exchange of exchanges) {
     // A source the read could not reach is said by the read, never drawn as a request.

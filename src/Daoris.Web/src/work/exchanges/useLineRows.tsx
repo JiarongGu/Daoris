@@ -51,7 +51,7 @@ export function useLineRows({
     if (!session) return [];
     const relations = relationsOf(session, quest, quests, sessions);
     const carded = new Set((helperAsks ?? []).filter((ask) => ask.askedBy === 'agent').map((ask) => `helper:${ask.id}`));
-    return lineRowsOf({ exchanges, carded, asked: relations.asked, askedBy: relations.askedBy?.id ?? null, messages: messages ?? [] });
+    return lineRowsOf({ exchanges, carded, asked: relations.asked, askedBy: relations.askedBy?.id ?? null, resumedAfter: relations.resumedAfter, messages: messages ?? [] });
   }, [session, quest, quests, sessions, helperAsks, exchanges, messages]);
   if (!session || rows.length === 0) return undefined;
 

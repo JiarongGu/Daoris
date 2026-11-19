@@ -50,11 +50,11 @@ import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
 import { AttendedPane } from './head/AttendedPane';
-import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
 import { AttendedConversation } from './conversation/AttendedConversation';
 import { channelHomeOf } from './conversation/channelHome';
-import { toChannelRow, toDockLine } from './exchanges/seek';
+import { toChannelRow, toExchangeRow } from './exchanges/seek';
+import { toDockLine } from './track/seek';
 import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
@@ -279,7 +279,6 @@ export function WorkFrame({
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
     else if (intent === 'workflow') setFlowchartOpen(true);
-    else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
 
@@ -378,11 +377,9 @@ export function WorkFrame({
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
-  // The head's *Waiting on* opens At work at the request it names.
-  const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, work, views, boxState, onReviewRun, attend, runNodeWord,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
     flowchartOpen,
@@ -448,7 +445,7 @@ export function WorkFrame({
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
             partRows={partRows}
             onShowPart={(id) => { attend(id); seek(); }}
-            openAtWork={atWorkSeek.open}
+            openAtWork={toExchangeRow}
             attend={attend}
             onOpenQuest={onOpenQuest}
             onAnswerAsk={onAnswerAsk}

@@ -29,6 +29,14 @@ describe("a line's exchanges and channel messages as rows", () => {
     expect(rows.map((row) => row.key)).toEqual(['piece:p1/asked']);
   });
 
+  it('draws a row where the line resumed after the question its quest waited on came back', () => {
+    const question = { id: 'q9', to: 'docs', status: 'Done', filed: at(1), updated: at(7) } as Quest;
+    const rows = lineRowsOf({ exchanges: [HELPER], resumedAfter: question });
+    expect(rows.map((row) => row.key)).toEqual(['helper:h1/asked', 'helper:h1/back', 'resumed:q9']);
+    expect(rows.find((row) => row.kind === 'resumed')).toMatchObject({ at: Date.parse(at(7)), quest: question });
+    expect(lineRowsOf({ exchanges: [HELPER] }).some((row) => row.kind === 'resumed')).toBe(false);
+  });
+
   it('places each row between the turns it fell between, an untimed one under the last', () => {
     const rows = lineRowsOf({ exchanges: [HELPER, OPINION], messages: CHANNEL_WORDS });
     expect(rowsWithin(rows, at(0), at(3)).map((row) => row.key)).toEqual(['helper:h1/asked']);

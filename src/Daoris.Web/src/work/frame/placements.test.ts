@@ -7,11 +7,10 @@ import { DEFAULT_PLACES, placesOf, viewsIn } from './placements';
 describe('where the views stand', () => {
   it('starts every view where the frame always drew it', () => {
     expect(placesOf(null)).toEqual(DEFAULT_PLACES);
-    // The terminal stands in the panel, beside the console, as VS Code's does; *Notifications* on the right, first; *At work*
-    // on the right after the outputs.
+    // The terminal stands in the panel, beside the console, as VS Code's does; *Notifications* on the right, first; no *At work*
+    // among them, who the line worked with being rows in its timeline.
     expect(DEFAULT_PLACES).toEqual({
-      notifications: 'right', timeline: 'right', outputs: 'right', atWork: 'right', ask: 'right', console: 'panel',
-      terminal: 'panel',
+      notifications: 'right', timeline: 'right', outputs: 'right', ask: 'right', console: 'panel', terminal: 'panel',
     });
   });
 
@@ -19,7 +18,11 @@ describe('where the views stand', () => {
     expect(placesOf(JSON.stringify({ terminal: 'right' }))).toEqual({ ...DEFAULT_PLACES, terminal: 'right' });
     expect(viewsIn(DEFAULT_PLACES, 'panel')).toEqual(['console', 'terminal']);
     expect(viewsIn({ ...DEFAULT_PLACES, terminal: 'right' }, 'right'))
-      .toEqual(['notifications', 'timeline', 'outputs', 'atWork', 'ask', 'terminal']);
+      .toEqual(['notifications', 'timeline', 'outputs', 'ask', 'terminal']);
+  });
+
+  it('drops the At work view an earlier build kept, who the line worked with now read in its timeline’s rows', () => {
+    expect(placesOf(JSON.stringify({ atWork: 'panel' }))).toEqual(DEFAULT_PLACES);
   });
 
   it('drops the Workflow view an earlier build kept, its run now read in the session head’s track', () => {
@@ -43,12 +46,12 @@ describe('where the views stand', () => {
 
   it('lists a region\'s own views first, then what was moved into it, each in the frame\'s order', () => {
     const places = { ...DEFAULT_PLACES, console: 'right' as const, ask: 'panel' as const };
-    expect(viewsIn(places, 'right')).toEqual(['notifications', 'timeline', 'outputs', 'atWork', 'console']);
+    expect(viewsIn(places, 'right')).toEqual(['notifications', 'timeline', 'outputs', 'console']);
     expect(viewsIn(places, 'panel')).toEqual(['terminal', 'ask']);
   });
 
   it('leaves out a view that is not here, wherever it stands', () => {
-    expect(viewsIn(DEFAULT_PLACES, 'right', (view) => view !== 'ask' && view !== 'notifications')).toEqual(['timeline', 'outputs', 'atWork']);
+    expect(viewsIn(DEFAULT_PLACES, 'right', (view) => view !== 'ask' && view !== 'notifications')).toEqual(['timeline', 'outputs']);
     // No shell, no terminal: the panel holds the console alone.
     expect(viewsIn(DEFAULT_PLACES, 'panel', (view) => view !== 'terminal')).toEqual(['console']);
   });

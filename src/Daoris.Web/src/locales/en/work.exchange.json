@@ -13,6 +13,7 @@
   "work.exchange.quest.back": "#{{quest}}: {{outcome}}",
   "work.exchange.quest.open": "Open the quest",
   "work.exchange.askedBy": "Its quest was published by another session",
+  "work.exchange.resumed": "Resumed after #{{quest}} came back",
   "work.exchange.channel.note": "Your words, to {{to}} on the channel.",
   "work.exchange.channel.cancel": "Cancel"
 }

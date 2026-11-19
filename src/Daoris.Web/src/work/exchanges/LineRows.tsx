@@ -89,6 +89,14 @@ export function LineRows({ rows, attended, docked, onToDock, onOpenSession, onOp
     );
   };
 
+  const resumedRow = (row: Extract<LineRow, { kind: 'resumed' }>) => (
+    <li key={row.key} data-exchange-row={row.key} className="m-0 flex min-w-0 items-center gap-2 text-small text-ink-soft">
+      <Icon name="quests" size={14} className="shrink-0 text-ink-faint" />
+      <span className="min-w-0 truncate">{t('work.exchange.resumed', { quest: row.quest.id })}</span>
+      {onOpenQuest && <button type="button" onClick={() => onOpenQuest(row.quest.id)} className={PRESS}>{t('work.exchange.quest.open')}</button>}
+    </li>
+  );
+
   const messageRow = (row: Extract<LineRow, { kind: 'message' }>) => {
     const { item } = row;
     const id = item.id!;
@@ -119,6 +127,7 @@ export function LineRows({ rows, attended, docked, onToDock, onOpenSession, onOp
           case 'exchange': return exchangeRow(row);
           case 'quest': return questRow(row);
           case 'message': return messageRow(row);
+          case 'resumed': return resumedRow(row);
           default: return (
             <li key={row.key} data-exchange-row={row.key} className="m-0 flex min-w-0 items-center gap-2 text-small text-ink-soft">
               <Icon name="quests" size={14} className="shrink-0 text-ink-faint" />

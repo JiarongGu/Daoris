@@ -13,6 +13,7 @@
   "work.exchange.quest.back": "委托 #{{quest}}：{{outcome}}",
   "work.exchange.quest.open": "打开委托",
   "work.exchange.askedBy": "它的委托由另一个会话发布",
+  "work.exchange.resumed": "委托 #{{quest}} 已回复，会话继续",
   "work.exchange.channel.note": "你的话，在频道上发给 {{to}}。",
   "work.exchange.channel.cancel": "取消"
 }

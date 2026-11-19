@@ -60,7 +60,7 @@ export function AttendedConversation({
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
   const { waits, standing, setAnchored, helperWaits, goToWait, setTail, setBeside } = waitsState;
   const { setChatHeld } = headState;
-  const beneath = useLineRows({
+  const lineBeneath = useLineRows({
     ...along,
     session: attended, quest: session.quest, quests: session.quests.data ?? [], sessions: sessions.data ?? [], helperAsks: helperWaits?.asks,
     channelAsk: session.channelAsk ?? null,
@@ -73,7 +73,7 @@ export function AttendedConversation({
   const stepRows = passage ? stepRowsOf(passage) : [];
   const docked = (grouping?.waits ?? []).map((wait) => dockKeyOf(wait.run, wait.node));
   const atStep = passage?.steps.find((step) => markOf(step.mark) === 'current');
-  const beneath = stepRows.length > 0 ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
+  const stepBeneath = stepRows.length > 0 ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
     <StepRows
       rows={rowsWithin(stepRows, first ? undefined : ask.at, until)}
       docked={docked}
@@ -82,6 +82,12 @@ export function AttendedConversation({
         ? <StepActs session={attended.id} node={row.node} />
         : null)}
     />
+  ) : undefined;
+  const beneath = stepBeneath || lineBeneath ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
+    <>
+      {stepBeneath?.(ask, until, first)}
+      {lineBeneath?.(ask, until, first)}
+    </>
   ) : undefined;
 
   const beganOf = (id: string) => {

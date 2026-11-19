@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, within } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
+import type { Quest } from '../../data/api';
 import type { SessionEvent } from '../conversation/conversationTypes';
 import { toTurns } from '../conversation/conversation';
 import { ConversationView } from '../conversation/ConversationView';
@@ -82,6 +83,18 @@ describe("a line's helper, second opinion and channel message in its one timelin
 
     fireEvent.click(within(row).getByRole('button', { name: /Send to its session/ }));
     expect(onForward).toHaveBeenCalledWith('m1', 'web', expect.anything());
+  });
+});
+
+describe('a line that resumed after a question came back', () => {
+  it('says so where it resumed and opens the quest that was answered', () => {
+    const onOpenQuest = vi.fn();
+    const question = { id: 'q9', to: 'docs', status: 'Done', filed: at(1), updated: at(7) } as Quest;
+    render(<LineRows rows={lineRowsOf({ resumedAfter: question })} attended="s1" docked={[]} onToDock={vi.fn()} onOpenQuest={onOpenQuest} />);
+    const row = document.querySelector<HTMLElement>('[data-exchange-row="resumed:q9"]')!;
+    expect(row.textContent).toContain('Resumed after #q9 came back');
+    fireEvent.click(within(row).getByRole('button', { name: 'Open the quest' }));
+    expect(onOpenQuest).toHaveBeenCalledWith('q9');
   });
 });
 

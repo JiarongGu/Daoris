@@ -150,7 +150,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     overlay opens above a full side bar. (from D118)
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
-26. The side bar and panel hold movable views: *Notifications*, Timeline, Review, Workflow, At work and Ask Daoris on
+26. The side bar and panel hold movable views: *Notifications*, Timeline, Review and Ask Daoris on
     the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body always holds its
     scrollbar's width (`DOCK_BODY`), since a chart placed by the pane's width otherwise flips as a scrollbar comes and goes.
     (from D118, D196, D96)
@@ -458,8 +458,9 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline and At work as side bar views; each row removes the place whose job it
-  moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar; ACTORFLOW1e's
+  the head and the conversation, and keeps the Timeline as a side bar view; each row removes the place whose job it
+  moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar, SESSIONVIEW1h
+  took the At work view off it (an ask's page keeps its own section); ACTORFLOW1e's
   part rows (`workflow/parts/`) are not among the step rows yet.
   SESSIONVIEW1c built the read mark, *Since you left* and the folds (rule 38). SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
   session's raw console alone; a task's whole console is read in the conversation's focus. SESSIONVIEW1f moved the subagents into the conversation: a subagent
@@ -479,7 +480,9 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   hand-over or an opinion is a row where it was asked and one where it came back, between the turns it fell between (one whose read
   keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's findings beside the work
   it judged; one waiting on the person leads to its dock line (`dockKeyOfExchange`) with no press of its own; a quest the session
-  published and the session that published its own are rows too; each channel message of its line is a row naming its sender,
-  answered in place and sent on to its session. The article's *Who it worked with* and *Channel* folds are gone.
+  published, the session that published its own and the answered question it resumed after are rows too; each channel message of
+  its line is a row naming its sender, answered in place and sent on to its session. The head's *Waiting on* line scrolls the
+  timeline to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it worked with* and *Channel* folds and the side
+  bar's At work view are gone.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

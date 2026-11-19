@@ -517,10 +517,10 @@ describe('a session’s page header and its acts', () => {
 
   /**
    * A running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
-   * its record. Its *Who it worked with* and its milestone are keyed apart under the record, so a draw never leaves one more
-   * copy of the relations line in the page.
+   * its record. Its milestone is keyed under the record, so a draw never leaves one more copy of it in the page, and no
+   * *Who it worked with* fold stands under the head: who it worked with is rows of its timeline.
    */
-  it('keeps one line of who a running session worked with, however often its record changes', async () => {
+  it('keeps one milestone and no who-it-worked-with fold, however often its record changes', async () => {
     const intake = { ...PARKED_INTAKE, id: 'i9n8t7k6', state: 'completed', note: undefined };
     const quests = [{ ...QUESTS[0]!, publishedBy: intake.id }];
     const unit = {
@@ -534,14 +534,13 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [DRIVEN, intake];
     show('s1a2b3c4');
 
-    expect(await screen.findByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by ask #0fda18');
     await screen.findByRole('region', { name: 'Where this work stands' });
     for (let minute = 10; minute < 20; minute += 1) {
       SESSIONS = [{ ...DRIVEN, updated: `2026-09-02T01:${minute}:00Z` }, intake];
       await act(() => moved());
       await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument());
     }
-    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Who it worked with' })).toBeNull();
     expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
   });
 
