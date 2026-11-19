@@ -33,7 +33,6 @@ internal sealed class PoolGitFixture : IDisposable
     /// <summary>The commit the repository's first line stands at.</summary>
     internal string Start { get; set; } = "";
 
-    /// <param name="ignored">Lines the first commit's <c>.gitignore</c> holds beside the fixture's own: a test that ignores more makes it here, once per run, not as a commit of its own that is two git starts a test.</param>
     internal static async Task<PoolGitFixture> CreateAsync(string? rules = null, string ignored = "")
     {
         var fixture = new PoolGitFixture();
