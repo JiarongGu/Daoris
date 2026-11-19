@@ -14,8 +14,8 @@ namespace Daoris.Knowledge;
 /// reviewer, an intake or Ask Daoris's own conversation, and that no ask of its own waits already. The person's <c>handOver</c> rule,
 /// the next agent in their order and whether the session has a turn since it is handed over are the driver's, which alone reads
 /// <c>driver.json</c> and the session's turns; its verdict is the state file's.</para>
-/// <para><b>Not the hand-over's box.</b> <c>&lt;session&gt;.hand-over.json</c> is taken by whoever runs the session at once; this ask
-/// becomes one only where the rule or the person's yes says so. The driver's <c>HandOverAskFiles</c> and this share no code; each side's
+/// <para><b>Not the hand-over itself.</b> This ask becomes one only where the rule or the person's yes says so, and the hand-over is then
+/// the driver's move. The driver's <c>HandOverAskFiles</c> and this share no code; each side's
 /// tests hold the same shapes (<c>McpHandOverToolTests</c>, <c>HandOverAskFilesTests</c>).</para>
 /// </remarks>
 /// <param name="home">The home the files go under, or null when there is none: every ask is then refused.</param>

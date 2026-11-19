@@ -258,11 +258,6 @@ public sealed class SessionLedger(
         string? noteParts, DateTimeOffset now, CancellationToken ct = default, IReadOnlyCollection<string>? passed = null) =>
         new RunEnds(quests, sessions, advances).EndAsync(run, named, ended, state, note, noteParts, now, ct, passed ?? []);
 
-    /// <summary>A run's records ended done under the older meaning, waiting on its next step once; see <see cref="RunReopens.ReopenAsync"/>.</summary>
-    public Task<RunReopenOutcome> ReopenForRunAsync(
-        string run, IReadOnlyList<string> named, string note, string? noteParts, DateTimeOffset now, CancellationToken ct = default) =>
-        new RunReopens(sessions).ReopenAsync(run, named, note, noteParts, now, ct);
-
     /// <summary>Clear a parked line's mark: all at the person's press, or the <paramref name="paths"/> a discard took out; null where no record of this machine's has the id.</summary>
     public async Task<Session?> ReleasePlaceAsync(string id, IReadOnlyList<string>? paths = null, CancellationToken ct = default) =>
         await new SessionPlaceLease(sessions).ReleaseAsync(id, paths, ct).ConfigureAwait(false)

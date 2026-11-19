@@ -70,18 +70,6 @@ public sealed record Ask(
     public IReadOnlyList<AskWord> Words => [new(AskWordKind.Asked, Sentence, Asked), .. Later];
 
     /// <summary>
-    /// From when its later words are kept, for an ask made before they were: the moment this
-    /// machine's store first opened on a build that keeps them. Its answers and messages before then were
-    /// never kept and are not back-filled, so <see cref="Words"/> is not all it has been told. Null for every ask
-    /// made since, whose words are kept from its first.
-    /// </summary>
-    /// <remarks>
-    /// Kept from then by the doors that report a word: the say door's answer to a park at once, and a message added to a
-    /// running session once its driver reports it (`POST /api/sessions/{id}/added`).
-    /// </remarks>
-    public DateTimeOffset? WordsKeptFrom { get; init; }
-
-    /// <summary>
     /// The go-aheads its sessions asked the person for, one per act, oldest first, each with every
     /// session's request for it and the person's answer: kept beside their words, so a later session is handed what is
     /// approved and refused rather than asking it again.

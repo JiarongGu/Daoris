@@ -42,8 +42,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
 
     /// <summary>
     /// The quests handed to another agent, at a look: each agent's ask to hand over settled by the person's rule, each move decided for a
-    /// quest's session taken from the store (an older build's box is imported into it first, and one a terminal decided
-    /// is received from that run), a quest that left this machine goes back to the machine's agent, and what stands is read into the snapshot
+    /// quest's session taken from the store (one a terminal decided is received from that run), a quest that left this machine goes back to the machine's agent, and what stands is read into the snapshot
     /// for the planner. Nothing is read where no ask, no move and no store is on file. A conversation's move is the shell's chat runner's, and
     /// is left to it.
     /// </summary>
@@ -52,10 +51,6 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         await AgentAsksAsync(events, ct).ConfigureAwait(false);
 
         var handed = new HandedQuests(_context.Home);
-
-        // An older build's box a quest session's is imported by this holder's take-up, once, at each look that finds one (the watch's first look
-        // took up dead loops' moves; a box an older build writes later is found here). Never faults: a store that will not answer is read again.
-        if (new HandOverBox(_context.Home).Pending().Count > 0) await Moves.LookAsync(ct).ConfigureAwait(false);
 
         var stopped = false;
         foreach (var waiting in Moves.HandOversWaiting(MoveExecutors.Driven))

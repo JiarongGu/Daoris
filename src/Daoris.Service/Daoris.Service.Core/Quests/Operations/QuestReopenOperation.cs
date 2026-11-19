@@ -43,8 +43,8 @@ internal sealed class QuestReopenOperation : IQuestOperation
         var held = await tx.FindAsync(id).ConfigureAwait(false);
         if (held is null) return new QuestReopening(QuestReopenRefusal.NotFound, null, null);
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
-        if (history.Count == 0) history = await tx.GiveHistoryAsync(held).ConfigureAwait(false);
-        var standing = QuestLog.Replay(history)!;
+        var standing = QuestLog.Replay(history);
+        if (standing is null) return new QuestReopening(QuestReopenRefusal.NotFound, null, null);
 
         QuestReopening Refused(QuestReopenRefusal refusal, Quest? step = null) => new(refusal, standing, step);
         if (standing.Status != QuestStatus.Taken) return Refused(QuestReopenRefusal.NotTaken);

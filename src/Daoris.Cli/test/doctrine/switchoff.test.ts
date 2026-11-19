@@ -54,7 +54,7 @@ function sync(canonFx: Fixture, repoFx: Fixture, force = false) {
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   const plan = planSync({ root: repoFx.root, manifest, canon, lock: readLock(repoFx.root) });
-  applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force });
+  applySync({ root: repoFx.root, manifest, plan, canon, force });
   return plan;
 }
 

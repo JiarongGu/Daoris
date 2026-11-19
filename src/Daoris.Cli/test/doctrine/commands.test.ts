@@ -65,7 +65,7 @@ test('status says when the shipped canon is newer than the lock', () => {
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
   repoFx.write(
     'daoris.lock',
-    JSON.stringify({ version: 1, canonVersion: '0.0.9', source: 's', entries: [] }),
+    JSON.stringify({ version: 1, canonVersion: '0.0.9', canonDigest: 'aa', source: 's', entries: [], index: '.claude/INDEX.md' }),
   );
   process.env.DAORIS_CANON = canonFx.root;
 
@@ -92,7 +92,7 @@ test('status is not silent when the versions match and the canon has a file the 
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
   repoFx.write(
     'daoris.lock',
-    JSON.stringify({ version: 1, canonVersion: '0.1.0', source: 's', entries: [] }),
+    JSON.stringify({ version: 1, canonVersion: '0.1.0', canonDigest: 'aa', source: 's', entries: [], index: '.claude/INDEX.md' }),
   );
   process.env.DAORIS_CANON = canonFx.root;
 
@@ -127,7 +127,7 @@ test('status names what changed, ignoring a pure version bump', () => {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: before.version,
+    canon: before,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon: before, lock: null }),
   });
@@ -165,7 +165,7 @@ test('status names a change to a rule the canon moved into a pack', () => {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: before.version,
+    canon: before,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon: before, lock: null }),
   });
@@ -195,7 +195,7 @@ test('status prints why the canon changed, for the versions being skipped', () =
   repoFx.write('daoris.json', '{"source":"s","packs":[]}');
   repoFx.write(
     'daoris.lock',
-    JSON.stringify({ version: 1, canonVersion: '0.1.0', source: 's', entries: [] }),
+    JSON.stringify({ version: 1, canonVersion: '0.1.0', canonDigest: 'aa', source: 's', entries: [], index: '.claude/INDEX.md' }),
   );
   canonFx.write('canon.json', '{"version":"0.3.0"}');
   canonFx.write(
@@ -232,7 +232,7 @@ test('status --json emits the same facts as the text, machine-readable', () => {
   repoFx.write('.claude/knowledge/house-style.md', '# local\n');
   repoFx.write(
     'daoris.lock',
-    JSON.stringify({ version: 1, canonVersion: '0.0.9', source: 's', entries: [] }),
+    JSON.stringify({ version: 1, canonVersion: '0.0.9', canonDigest: 'aa', source: 's', entries: [], index: '.claude/INDEX.md' }),
   );
   process.env.DAORIS_CANON = canonFx.root;
 

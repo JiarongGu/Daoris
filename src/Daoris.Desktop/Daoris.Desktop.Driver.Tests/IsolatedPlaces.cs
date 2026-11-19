@@ -38,14 +38,16 @@ public static class IsolatedPlaces
     public static string In(string home, bool overlapWaits = false, string? checks = null)
     {
         var options = checks is null ? "" : $$""","options":{"checks":"{{checks}}"}""";
-        var plain = JsonNode.Parse($$$"""
-            {"id":"{{{Flow}}}","name":"Apart","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["work"],"end":"line",
-             "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"{{{options}}} },
+        var overlap = overlapWaits ? $$""","{{IsolateStep.OverlapOption}}":"{{IsolateStep.Wait}}" """ : "";
+        var isolated = JsonNode.Parse($$$"""
+            {"id":"{{{Flow}}}","name":"Apart","versions":[{"version":1,"at":"2026-11-01T09:00:00Z","door":"screen","schema":2,"graph":{"schemaVersion":2,"entries":["apart"],"end":"line",
+             "nodes":[{"id":"apart","kind":"{{{NodeKinds.Isolate}}}","version":1,"reach":"observed","options":{"{{{IsolateStep.KindOption}}}":"{{{IsolateStep.Worktree}}}"{{{overlap}}}}},
+                      {"id":"work","kind":"claimed","version":1,"reach":"observed"{{{options}}} },
                       {"id":"landing","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}},
                       {"id":"line","kind":"line","version":1,"reach":"observed"}],
-             "wires":[{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"line"}]}}]}
+             "wires":[{"id":"apart>work","kind":"after","from":"apart","to":"work"},{"id":"a","kind":"after","from":"work","to":"landing"},{"id":"b","kind":"after","from":"landing","to":"line"}]}}]}
             """)!.AsObject();
-        WorkflowPorts.Store(home).Write(Flow, IsolatedFiles.Isolated(plain, overlapWaits ? IsolateStep.Wait : "")!);
+        WorkflowPorts.Store(home).Write(Flow, isolated);
         return Flow;
     }
 }

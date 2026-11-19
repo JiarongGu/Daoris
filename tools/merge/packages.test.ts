@@ -1,10 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { join } from 'node:path';
-import {
-  emptyLock, fingerprintOf, gitSight, judge, treeHash, withRow, type Entry, type Lock, type LockRow, type Sight,
-} from './packages.ts';
+import { emptyLock, fingerprintOf, judge, withRow, type Lock, type LockRow, type Sight } from './packages.ts';
 
 const MANIFEST = JSON.stringify({
   suite: 'adapters-store',
@@ -17,13 +13,6 @@ const MANIFEST = JSON.stringify({
 const PINS = '<PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.14" />\n<PackageVersion Include="Other" Version="1" />';
 const FOLDER = 'src/Daoris.Adapters/Daoris.Adapters.Store';
 const AT = `${FOLDER}/daoris.package.json`;
-
-/** The package's folder as git lists it: its manifest beside its sources. */
-const ENTRIES: Entry[] = [
-  { mode: '100644', tree: false, sha: '1'.repeat(40), name: 'daoris.package.json' },
-  { mode: '100644', tree: false, sha: '2'.repeat(40), name: 'Store.cs' },
-  { mode: '040000', tree: true, sha: '3'.repeat(40), name: 'Rows' },
-];
 
 /** A commit as a map: a path to its tree or blob hash, and a few files to their text. */
 function commit(changes: Record<string, string | null> = {}): Sight {
@@ -48,7 +37,6 @@ function commit(changes: Record<string, string | null> = {}): Sight {
     text: (path) => texts[path] ?? null,
     dirty: () => [],
     packages: () => [{ name: NAME, folder: FOLDER }],
-    listing: (path) => (path === FOLDER ? ENTRIES : null),
   };
 }
 
@@ -83,7 +71,7 @@ test('a package of several projects is fingerprinted over the sources and evalua
     };
     return {
       tree: (path) => hashes[path] ?? null, text: (path) => (path === `${root}/daoris.package.json` ? manifest : null), dirty: () => [],
-      packages: () => [{ name: 'Daoris.Assistant', folder: root }], listing: () => null,
+      packages: () => [{ name: 'Daoris.Assistant', folder: root }],
     };
   };
   const base = fingerprintOf('Daoris.Assistant', sight()).fingerprint;
@@ -166,21 +154,6 @@ test('a row equal to the fingerprint is kept, a different one stale and none mis
   assert.equal(judge(emptyLock(), sight)[0]?.state, 'missing');
   assert.equal(judge(lock(at()), commit({ 'Directory.Build.props': 'edited' }))[0]?.state, 'kept', 'a shared build change asks for no release');
   assert.equal(judge(lock(at()), commit({ [FOLDER]: 'edited' }))[0]?.state, 'stale', 'its own sources do');
-});
-
-test('a tree is hashed as git hashes it, so a row the adapters\' tool wrote is read as that tool took it', () => {
-  const root = join(import.meta.dirname, '..', '..');
-  const folder = 'src/Daoris.Adapters/Daoris.Adapters.Clock';
-  const sight = gitSight(root);
-  assert.equal(treeHash(sight.listing(folder)!), sight.tree(folder), 'the hash of a folder\'s listing is git\'s own tree');
-
-  // The adapters' tool hashed the folder with its manifest named adapter.json, the rest of the fingerprint as it is today.
-  const old = ENTRIES.map((entry) => (entry.name === 'daoris.package.json' ? { ...entry, name: 'adapter.json' } : entry));
-  const { suite, contract, ports, outside } = { suite: 'tree-suite', contract: { 'src/Daoris.Testing/Store': 'tree-contract' }, ports: { Store: 'tree-port-store' }, outside: { 'nuget:Microsoft.Data.Sqlite': '10.0.14' } };
-  const written = createHash('sha256').update(JSON.stringify({ name: NAME, tree: treeHash(old), suite, contract, ports, over: {}, outside })).digest('hex');
-  const verdict = judge(withRow(emptyLock(), NAME, row(written)), commit())[0]!;
-  assert.deepEqual([verdict.state, verdict.carried], ['kept', true], 'the row carried byte for byte holds its package');
-  assert.equal(judge(withRow(emptyLock(), NAME, row(written)), { ...commit(), listing: () => [...ENTRIES, ENTRIES[1]!] })[0]?.state, 'stale', 'a change to its folder does not');
 });
 
 test('the lock keeps its rows in name order, and a row its evaluations\' result', () => {

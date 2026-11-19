@@ -69,10 +69,9 @@ internal static class WireEligible
                     return (OutcomeReceipt(receipt.Id, outcome), null);
 
                 case WireKinds.Trigger when receipt?.Kind == WireReceiptKinds.Reached:
-                    // A firing is looked for under both key rules, so one kept under the graph's and the run's key still counts.
                     var key = FiringKey(run, node.Id, wire.Id, receipt.Id);
                     var rests = status.Binding?.PrerequisiteReceipts.Contains(receipt.Id, StringComparer.Ordinal) == true;
-                    var spent = rests || run.Fired.Contains(key) || (run.Places.ContainsKey(node.Id) && run.Fired.Contains(LegacyKey(run, wire.Id, receipt.Id)));
+                    var spent = rests || run.Fired.Contains(key);
                     var firing = spent ? null : new WireFiring(key, wire.Id, receipt.Id, node.Id);
                     return status.State == NodeStates.Ready || (rests && NodeStates.Bound.Contains(status.State)) || !spent ? (receipt.Id, firing) : (null, null);
 

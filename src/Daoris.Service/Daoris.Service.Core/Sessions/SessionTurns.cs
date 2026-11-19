@@ -99,16 +99,12 @@ public static class SessionTurns
         return parts.Length >= 3 && int.TryParse(parts[^1], out var attempt) ? (parts[^2], attempt) : (null, null);
     }
 
-    /// <summary>
-    /// A record's own turns: those it kept, or for a record opened before records kept turns, one turn read from its <c>from</c> link.
-    /// That read stands while such a record is kept, and goes when none is.
-    /// </summary>
-    public static IReadOnlyList<SessionTurn> Own(Session record) =>
-        record.Turns ?? [First(record.FromWhy, record.FromBy, record.Created, null, null, null)];
+    /// <summary>A record's own turns: those it kept, none where it kept none (a record's opening writes its first).</summary>
+    public static IReadOnlyList<SessionTurn> Own(Session record) => record.Turns ?? [];
 
     /// <summary>
     /// The session's turns across the records of its line, oldest first and numbered from one, each named with the record it ran in and its
-    /// agent, account, adapter and transcript, as the turn kept them; a turn kept before turns kept their own reads its record's. A turn
+    /// agent, account, adapter and transcript, as the turn kept them; a turn that kept none reads its record's. A turn
     /// ends where the next begins, or where its record ended.
     /// </summary>
     public static IReadOnlyList<SessionTurn> OfLine(IEnumerable<Session> members)

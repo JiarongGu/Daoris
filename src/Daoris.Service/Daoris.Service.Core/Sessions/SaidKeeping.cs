@@ -9,7 +9,7 @@ internal static class SaidKeeping
     /// <summary>The answer a park keeps where its go-aheads sent it on with no words of the person's: what it goes on with.</summary>
     internal const string CarryOn = "carry on.";
 
-    /// <summary>A new word's id: random, as a session's is, and never <see cref="SessionStore.AnswerWordId"/>.</summary>
+    /// <summary>A new word's id: random, as a session's is.</summary>
     internal static string NewWordId() => Guid.NewGuid().ToString("N")[..8];
 
     /// <summary>

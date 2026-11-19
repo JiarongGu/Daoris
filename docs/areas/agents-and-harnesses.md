@@ -302,8 +302,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     Without the layer no seeding is bound. `LauncherRunner` arms no inactivity clock and states it can pause one, so a request the layer holds for the
     person waits with no clock; a door's private container stays Daoris's, the layer declining a door without one (Lyntai D249).
     The parity oracle (`Tests/Agents/Parity/`) names each difference of the two paths a `ParityGap`. (D213, D248)
-48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`
-    and the service stores' renames (`SessionColumnNames` and its kin), deleted with nocompat1's steps; a plugin's `session.ended`
+48. An old adapter-seam name is read only where it has its end: `driver.json`'s `adapter`, `intakeAdapter` and `helperAdapter`,
+    by the staffing's import alone, until NOCOMPAT2 (the service stores' renames are gone, D323); a plugin's `session.ended`
     frame's `adapter`, renamed with the work-event grammar's next version; a machine-log line's `adapter`, until its file ages out.
     An older remote host's `adapter` reads as the door `unknown`. `StoredOldNamesCensusTests` holds the rest. (D232)
 49. What a door can do is one reading (`AbilityReading`): the ability its provider states as a `Known` with its source and, where

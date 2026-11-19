@@ -10,11 +10,11 @@ import { driverFile } from '../test/_csharp.ts';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
   BUILD_MANIFEST, CLI_BIN, CLI_BUNDLE, CLI_HOME, CLI_LAUNCHERS, CONNECTOR_EXE, CONNECTOR_HOME, HOME, HOST_EXE, HOST_HOME,
-  KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
-  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, insideFixtures,
+  KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE,
+  SHELL_EXE, SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, insideFixtures,
   DRIVER_EXE, DRIVER_HOME, DRIVER_PROJECT, driverPublishCommand,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
-  installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
+  installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, servicePlan, stageRefusal,
   stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport, stagedAdvice,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
@@ -537,10 +537,9 @@ test('the install note says Daoris’s own children find the doctrine tool first
 
 /**
  * The note (the install layout design §2 and §4) says what each top folder of the Daoris folder is
- * and who may lose it, a row each, in the design's order; that `data/` is the one to back up and holds no key; and what a start
- * after an update moves out of an older `data/`, once, and what it never moves.
+ * and who may lose it, a row each, in the design's order; and that `data/` is the one to back up and holds no key.
  */
-test('the install note says what each top folder is, and what a start moves out of an older data/ (HOMELAYOUT4)', () => {
+test('the install note says what each top folder is and which one to back up', () => {
   const note: string = installedNote();
   const rows = note.split('\n').filter((line) => line.startsWith('| `'));
   const named = rows.map((line) => /^\| `([^`]+)`/.exec(line)?.[1]);
@@ -551,9 +550,6 @@ test('the install note says what each top folder is, and what a start moves out 
   assert.match(row('profiles/'), /sign-ins/);
   assert.match(row('cache/'), /never back it up/i);
   assert.match(row('run/'), /while Daoris is closed/);
-  const prose = note.replace(/\s+/g, ' ');
-  assert.match(prose, /moves what an older version kept in `data\/` into the folders above, once/);
-  assert.match(prose, /account homes, session trees, rooms, kept files and `data\/bin\/` stay where they are/i);
   assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
 });
 
@@ -764,27 +760,6 @@ test('told an output of its own, every publish builds and stages there; untold, 
     for (const args of calls) assert.match(args, /,\s*artifacts$/, `${recipe}(${args}) builds into the projects' own folders`);
   }
   assert.match(main, /\bpublishStages\(repoRoot, artifacts\)/);
-});
-
-/**
- * What an earlier publish wrote and this one no longer does: a republish into its own
- * install removes exactly those names — the single-file shell's launcher at the root, and
- * the browser's own folder under `app/`, with its executable and its second engine — and a folder
- * it never published is never asked to lose anything.
- */
-test('a republish removes what an earlier publish wrote and this one no longer does, by name', () => {
-  assert.deepEqual(RETIRED_LAUNCHERS, ['daoris-desktop.exe']);
-  assert.deepEqual(RETIRED_IN_APP, ['daoris-browser']);
-
-  const at = folder();
-  mkdirSync(join(at, ...SHELL_HOME, 'daoris-browser'), { recursive: true });
-  writeFileSync(join(at, 'daoris-desktop.exe'), '');
-  assert.deepEqual(retiredPaths(at), [], 'not an install: nothing of it is this script’s to remove');
-
-  markInstalled(at);
-  assert.deepEqual(retiredPaths(at),
-    [join(at, 'daoris-desktop.exe'), join(at, ...SHELL_HOME, 'daoris-browser')]);
-  assert.ok(!retiredPaths(at).some((path: string) => path === join(at, ...SHELL_HOME)), 'never the application’s folder');
 });
 
 /**
@@ -1137,14 +1112,15 @@ test('laying the doctrine tool out puts the bundle and its canon in app/cli, mak
 test('a republish replaces the doctrine tool whole: a stale file in either folder goes', async () => {
   const fx = makeFixture('publish-cli-replace');
   const install = join(fx.root, 'install');
-  mkdirSync(join(install, ...CLI_HOME, 'node_modules', 'daoris'), { recursive: true });
-  writeFileSync(join(install, ...CLI_HOME, 'node_modules', 'daoris', 'stale.js'), '// from the publish before\n');
+  mkdirSync(join(install, ...CLI_HOME), { recursive: true });
+  const stale = join(install, ...CLI_HOME, 'stale.js');
+  writeFileSync(stale, '// from the publish before\n');
   mkdirSync(join(install, ...CLI_BIN), { recursive: true });
   writeFileSync(join(install, ...CLI_BIN, 'daoris.cmd'), '@echo off\n');
 
   await layCli(bundleFolder(fx.root, 'built', '0.4.3'), install);
 
-  assert.equal(existsSync(join(install, ...CLI_HOME, 'node_modules')), false, 'the npm-style layout of an older publish goes');
+  assert.equal(existsSync(stale), false, 'a file of the publish before goes');
   assert.deepEqual(readdirSync(join(install, ...CLI_BIN)), [], 'the batch file an earlier publish wrote goes');
   assert.equal(JSON.parse(readFileSync(join(install, ...CLI_HOME, 'package.json'), 'utf8')).version, '0.4.3');
   fx.cleanup();

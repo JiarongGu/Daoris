@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The participants' bindings in the desktop store: the kept conversation of each
-/// session record of this machine, <c>bindings</c>. The store is the only place a conversation is kept; the files an older build kept are
-/// imported once by the home's migration (<see cref="BindingFilesStep"/>).
+/// session record of this machine, <c>bindings</c>. The store is the only place a conversation is kept.
 /// </summary>
 /// <remarks>
 /// <para>Every keep writes the row, naming its own columns and never replacing the row, and every read reads it.</para>

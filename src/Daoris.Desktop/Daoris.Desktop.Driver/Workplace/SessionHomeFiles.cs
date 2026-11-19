@@ -26,7 +26,7 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move) and its move records in the desktop store under the same name, the spawn files a crash left, Ask Daoris's name and pin for it, its receipts and what it published, its held words, its closed automatic
+/// session, its agent's hand-over ask and that ask's state (<see cref="HandOverAskFiles"/>) and its move records in the desktop store under the same name, the spawn files a crash left, Ask Daoris's name and pin for it, its receipts and what it published, its held words, its closed automatic
 /// landing and its archive mark.</para>
 ///
 /// <para><b>Never</b> a tree, a branch, the usage, the machine log, the harness's own conversation in an account's home,
@@ -47,7 +47,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Mark = "mark";
     public const string Choice = "choice";
 
-    /// <summary>A conversation's ask to go on with another agent (<see cref="HandOverBox"/>).</summary>
+    /// <summary>A session's ask to go on with another agent, and the driver's state of it (<see cref="HandOverAskFiles"/>).</summary>
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
@@ -98,15 +98,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
-    internal const string ImportedSuffix = ".imported";
-
     internal const string GoOnMarkSuffix = ".cannot.json";
     internal const string ReopenMarkSuffix = ".reopened.json";
     internal const string NewSessionChoiceSuffix = ".new-session.json";
-    internal const string HandOverBoxSuffix = ".hand-over.json";
     internal const string HandOverAskSuffix = ".hand-over-ask.json";
     internal const string HandOverStateSuffix = ".hand-over-state.json";
-    internal const string LimitMoveSuffix = ".limit-move.json";
 
     internal const string HelpWiredSuffix = ".wired.json";
     internal const string HelpPublishedSuffix = ".published.json";
@@ -143,18 +139,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Mark, Place.Sessions, SupervisorDecisionsSuffix, true, Beside),
         new(Mark, Place.Sessions, SupervisorPointerSuffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoiceSuffix, false, Beside),
-        new(HandOver, Place.Sessions, HandOverBoxSuffix, false, Beside),
-        // The agent's ask to hand its session over and the driver's state of it (HandOverAskFiles), and an ended
-        // conversation's move at its limit's wake (LimitBoxes): each a box of a record that goes with it, under the name
-        // its sibling box has, since each is a hand-over's file and the page says no new word for it.
+        // The agent's ask to hand its session over and the driver's state of it (HandOverAskFiles): each a file of a record that goes
+        // with it, under one name, since each is a hand-over's file.
         new(HandOver, Place.Sessions, HandOverAskSuffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverStateSuffix, false, Beside),
-        new(HandOver, Place.Sessions, LimitMoveSuffix, false, Beside),
-        // That box once the come-up imports it into the move record, set aside beside it (MoveBoxImport), which goes
-        // with its record's delete as the box did, under the same name.
-        new(HandOver, Place.Sessions, LimitMoveSuffix + ImportedSuffix, false, Beside),
-        // A conversation's hand-over box once the come-up imports it, set aside beside it the same way.
-        new(HandOver, Place.Sessions, HandOverBoxSuffix + ImportedSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeServers.FileSuffix, false, Beside),
         new(Spawn, Place.Spawn, ClaudeRules.FileSuffix, false, Beside),
         // The checks its run took, which `run-heavy` reads by the session its tree's lock names.

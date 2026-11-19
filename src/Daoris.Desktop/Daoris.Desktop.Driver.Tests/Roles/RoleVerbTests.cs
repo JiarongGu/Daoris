@@ -23,7 +23,6 @@ public sealed class RoleVerbTests : IDisposable
         RoleStaffing.Wire(_home, () => StoreSettled.Yes).ImportFile();
         // The seeded Design role takes design machine-wide; the cases below add one that does, so it is removed first.
         RoleCatalog.Write(DesktopStore.LocationIn(_home), RoleChange.Remove("design"), () => StoreSettled.Yes);
-        HomeMigration.Run(_home, [new SupervisorStep(() => null)]);
     }
 
     [Fact]

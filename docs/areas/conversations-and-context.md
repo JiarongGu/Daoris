@@ -18,9 +18,9 @@ of everything it handed, section by section.
 |---|---|---|
 | `CourseDecision`, `LimitCourse` | `Course/Domain/LineCourse.Decide.cs`, `Course/Domain/LimitCourse.cs` | The one pure decision of how a line goes on, paths A to N, for both loops; the limit paths (D, E, F), the carry-on and the transient bound are `LimitCourse` |
 | `CourseTrigger`, `CourseFacts` | `Course/Domain/CourseTriggers.cs`, `CourseFacts.cs` | What asks the course, and the facts an executor hands it |
-| `MoveStore`, `MovePhases` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, `MoveImporter` writes a box's move with its receipt, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
+| `MoveStore`, `MovePhases` | `Course/MoveStore.cs`, `Course/MoveRecords.cs` | Every move's one durable row (`moves`, `move_words`) and its phases. `MoveRows` holds the columns by store version and the row's reading, and `MoveTakes` takes or receives a move from a run that goes no further; the store keeps one-line doors to them |
 | `ConversationMoves`, `MoveTakeUp` | `Course/ConversationMoves.cs`, `Course/MoveTakeUp.cs` | The conversations' move holder; takes up a dead shell's moves at come-up and at each look |
-| `MoveDelivery`, `MoveResolve`, `MoveBoxImport` | `Course/` (`MoveBoxImports.cs`) | Delivers moved words; settles a held move; imports an older build's boxes once |
+| `MoveDelivery`, `MoveResolve` | `Course/` | Delivers moved words; settles a held move |
 | `ChatRunner` | `Loop/Chat/ChatRunner.cs` (root, 37 KB) | Wires a conversation's units and the registered executors; keeps the doors callers use, each one line to the unit or executor that does the work |
 | `ChatRun` | `Loop/Chat/ChatRun.cs` | The run of a conversation whose record is open, one method for every kind: its process spawned with its rules and servers, its door's turns held, its watch started, or its record concluded when the spawn fails |
 | `ExecutorAttribute`, `IExecutor`, `IExecutorWiring` | `Course/Chat/Executors/` | A conversation's kinds of run, each registered with its phase (a start before a move) and what it comes after; the runner builds them in that order from its wiring and refuses a cycle; listed in `docs/index/registered.md` |
@@ -66,7 +66,7 @@ of everything it handed, section by section.
 | `LineKeys`, `LineCounts`, `LineCountsRead`, `CountTexts` | `Events/Domain/LineKeys.cs` (below Context, which reads it too), `Course/Domain/LineCounts.cs`, `Course/LineCountsRead.cs`, `Roles/Domain/CountTexts.cs` | A conversation's membership (the records whose `line` names it, which the service's `SessionLines` sets), its counts, and Daoris's words for them |
 | `ChildLifetimes`, `ChildRecords` | `Context/Events/ChildLifetimes.cs`, `Events/ChildRecords.cs` | Each child's and task's start and end in its session's record, and a subagent's own record beside it (rule 5) |
 | `SessionEventLog`, `TranscriptFile` | `Context/Events/`, `Context/TranscriptFile.cs` | A session's events and verbatim transcript, kept on the machine; every writer of a record, whichever instance, shares one gate and numbers from the record's own length and last line |
-| `ConversationFacts`, `ConversationPlaces` | `Context/ConversationFacts.cs`, `Context/ConversationPlaces.cs` | What the person keeps of a conversation, one row each in the desktop store's `conversation_facts` by its id (a record's `line`, else its own id; Ask Daoris's is always its record's): name, pin, archive and its time, the earlier conversation it started from and what it was handed, and the places it spoke under. Every conversation's, one rename and pin pair (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by any part's id); a row holding nothing is removed. `ConversationFactsStep` (home migration) imported Ask Daoris's `<id>.help.json` files and `archived.json` once and took them out; it ends when no supported home holds either |
+| `ConversationFacts`, `ConversationPlaces` | `Context/ConversationFacts.cs`, `Context/ConversationPlaces.cs` | What the person keeps of a conversation, one row each in the desktop store's `conversation_facts` by its id (a record's `line`, else its own id; Ask Daoris's is always its record's): name, pin, archive and its time, the earlier conversation it started from and what it was handed, and the places it spoke under. Every conversation's, one rename and pin pair (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by any part's id); a row holding nothing is removed |
 | `ConversationArchive` | `Workplace/ConversationArchive.cs` | The archive judged and kept per conversation: archiving a part archives its conversation, refused whole where any part is live or needs the person; unarchiving or a word to any part shows it again |
 | `HelpConversations` | `Context/HelpConversations.cs` | Ask Daoris's history list over the facts: a briefed continuation (facts `from` with `handed` brief) folds into one row |
 | `HelpRoom`, `HelpMode`, `HelpPlaces` | `Help/` | Ask Daoris's room, access mode and the places its go links name |
@@ -100,9 +100,7 @@ of everything it handed, section by section.
    each word is pressed as. Its newest page or the page before a number, the events after one, its plan, its choices, its
    turns ended and what it spent read from the head and a part of the file, never the whole; the first reader builds the
    head, the next to find the file longer reads on from where it stopped, and one whose last line no longer stands is built
-   again. The home migration's `session-event-heads` step builds every head at the first start after an update, the
-   newest-written record first, for up to eight seconds, each head saved as it is built: a record it left is built by its first
-   reader. The file stays the record; without the store, or under 512 KB, a read is the whole file.
+   again. The file stays the record; without the store, or under 512 KB, a read is the whole file.
    What a session runs beside itself is in its record as two kinds, `child` (a subagent) and `task` (a background task), each
    under its own id: its start with the call that started it where its door names one, its parent and depth, its name and task
    words, and its end (`ok`, `failed`, `stopped`, `lost`) with who says it (`reported`, or `inferred` where only the session's
@@ -133,8 +131,7 @@ of everything it handed, section by section.
 9. Every executor asks `CourseDecision.Decide(facts, trigger)` and acts on the answer. What never goes on is judged first:
    a teammate's record, an intake, a stood-down record, a superseded record, a standing move's old part. (from D212, D137)
 10. Every move is one durable row in the desktop store, with phases `decided` to `delivered`, `fell-back` or `held`, then
-    `closed`. This build writes no box. An older build's `.hand-over.json` or `.limit-move.json` is imported once.
-    (from D212)
+    `closed`. No box file is written or read: the store's row is the move. (from D212)
 11. While a move stands, its destination takes no move of its own. A press holds the line's reservation, so a second
     hand-over waits. Nothing opens while the application winds up. (from D212)
 
@@ -394,7 +391,7 @@ of everything it handed, section by section.
 - **Tests that pin it:** `LineCourseTests` (the pinned path table), `CourseCensusTests` (`fixtures/course-sites.json`),
   `CourseBoundaryTests`, `CoursePortsTests`; `ChatGoOnTests`, `BriefedMoveTests`, `LimitWaitsTests`, `LimitMoveStoreTests`, `ChatLimitCarryProcessTests`,
   `CurveMoveTests`, `ChatHandOverTests`, `HandOverTests`, `PartLeftTests`, `HandOverLeftProcessTests`, `MoveStoreTests`, `MoveStoreCensusTests`, `MoveDeliveryTests`; the
-  `*CrashProcessTests`, `*DowngradeProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
+  `*CrashProcessTests`, `*OlderBuildProcessTests` per move; `ContextBriefTests`,
   `StandingBlockTests`, `InstructionAccountTests`, `CourseCountsTests`, `LineCountsTests`, `LineKeysTests`,
   `AnswersAloneHoldTests` (all in `Daoris.Desktop.Driver.Tests`); `Loop/ChatGoesOnProcessTests`, `Loop/ChatTurnsTests`;
   `DriverModuleConversationTests` (modules); `LineEventsShapeTests`, `LineEventFilesTests` (service);
@@ -466,9 +463,8 @@ of everything it handed, section by section.
   a turn stop and the end of input are held requests; Ctrl+C at rest lets go; with no Daoris running they refuse and run nothing.
   `ask-daoris resume` is gone (`session say`). No terminal path runs a conversation: `ChatConsole` only hands to
   `HeldChatConsole`, the instance's loop makes the one `ChatRunner`, and the terminal's turn marks, their owner and the request
-  folder's watch for them are gone, so a window reads every conversation's queue from the instance alone. A `*.turn` mark an
-  older build left is removed once at the start by the home migration's `turn-marks` step
-  (`Daoris.Desktop.Driver/Transitional/Migration/TurnMarksStep.cs`). `TerminalConversationCensusTests` holds all of it.
+  folder's watch for them are gone, so a window reads every conversation's queue from the instance alone.
+  `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
 - **SESSIONVIEW1f** (D320), the rest: a child's wait raised to the dock tagged with it, the live band's indent of children and the
   digest's count of them. The record's `child` and `task` kinds and a subagent's own record (rule 5) are rows of the timeline

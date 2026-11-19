@@ -24,11 +24,10 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
     /// <summary>
     /// Each writer and the files that reach the judge or the staffing's write for it. The role door, which `SET_ROLE`,
-    /// and `daoris role` call, is the one door; the release's migration writes an older home's five orders once.
+    /// and `daoris role` call, is the one door.
     /// </summary>
     private static readonly (string Writer, string[] Files)[] Census =
     [
-        ("the migration's staffing step", ["Daoris.Desktop.Driver/Transitional/Migration/StaffingStep.cs"]),
         ("the import and the check", ["Daoris.Desktop.Driver/Roles/RoleStaffing.cs"]),
         ("the judges themselves", ["Daoris.Desktop.Driver/Roles/RoleCatalog.cs"]),
         ("the role door", ["Daoris.Desktop.Driver/Roles/RoleDoor.cs"]),
@@ -36,7 +35,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
         ("daoris role", ["Daoris.Desktop.Driver/Roles/RoleVerbs.cs"]),
     ];
 
-    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|staffing\.Replace\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
+    [GeneratedRegex(@"ActorChoices\.(Judge|Judged|With)\(|RoleStaffing\.SetAt\(|\.WithIntake\(|\.WithHelper\(|RoleCatalog\.Write(In)?\(|RoleDoor\.Apply\(|public static DriverConfig With(Intake|Helper)\(")]
     private static partial Regex Reaches();
 
     private static IEnumerable<string> Reaching()
@@ -60,7 +59,7 @@ public sealed partial class RoleCatalogCensusTests : IDisposable
 
         Assert.Equal(named, Reaching().Order(StringComparer.Ordinal).ToList());
         Assert.Equal(
-            ["the migration's staffing step", "the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role"],
+            ["the import and the check", "the judges themselves", "the role door", "SET_ROLE", "daoris role"],
             Census.Select(each => each.Writer));
     }
 

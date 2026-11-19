@@ -320,15 +320,12 @@ public static class ServiceFactory
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
 
+        // A store an older build wrote and no purge emptied is refused here, before anything writes to it.
+        await StoreShape.RequireCurrentAsync(options.DatabasePath, async connection => await OpenStoresAsync(connection, ct).ConfigureAwait(false))
+            .ConfigureAwait(false);
         var store = await SqliteKnowledgeStore.OpenAsync(options.DatabasePath).ConfigureAwait(false);
-        var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var opinions = await OpinionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var records = await WorkRecordStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
-        var channel = await ChannelStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var (quests, sessions, opinions, records, registrations, keys, asks, channel) =
+            await OpenStoresAsync(store.Connection, ct).ConfigureAwait(false);
 
         // 🔴 A rebuilt index holds nothing, so nothing may claim it holds a commit. Otherwise the
         // re-feed that restores a shared deployment is judged already held, and it stays empty until
@@ -468,4 +465,17 @@ public static class ServiceFactory
             .Where(root => !string.IsNullOrWhiteSpace(root))
             .Select(root => root!)
             .ToList();
+
+    /// <summary>The service's stores over one connection, each made with its one current shape where it is not there yet.</summary>
+    private static async Task<(QuestStore Quests, SessionStore Sessions, OpinionStore Opinions, WorkRecordStore Records,
+        RegistrationStore Registrations, ApiKeyStore Keys, AskStore Asks, ChannelStore Channel)> OpenStoresAsync(
+        Microsoft.Data.Sqlite.SqliteConnection connection, CancellationToken ct) =>
+        (await QuestStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await SessionStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await OpinionStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await WorkRecordStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await RegistrationStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await ApiKeyStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await AskStore.OpenAsync(connection, ct).ConfigureAwait(false),
+         await ChannelStore.OpenAsync(connection, ct).ConfigureAwait(false));
 }

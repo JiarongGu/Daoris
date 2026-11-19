@@ -21,7 +21,6 @@
     { "name": "Workflows", "folder": "Workflows", "domain": true },
     { "name": "Setup", "folder": "Setup", "domain": true },
     { "name": "Conversion", "folder": "Conversion", "domain": true },
-    { "name": "Transitional", "folder": "Transitional", "domain": true },
     { "name": "Help", "folder": "Help", "domain": false },
     { "name": "Loop", "folder": "Loop", "domain": false }
   ],

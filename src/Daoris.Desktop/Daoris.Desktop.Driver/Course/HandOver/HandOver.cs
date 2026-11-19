@@ -1,49 +1,6 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An older build's hand-over ask: <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c>, beside the
-/// session's marks, kept with when it is given. This build keeps a hand-over as a move row in the store and writes no box;
-/// a box left behind is imported once as the move it keeps (<see cref="HandOverBoxImport"/>) and holds its record from every go-on until then.
-/// </summary>
-/// <remarks>
-/// <para><b>This machine's, never the record's.</b> A file that does not read is no ask: nothing is handed over, which loses nothing.</para>
-///
-/// <para>What is kept is this store's; the file and its format are <see cref="HandOverFiles"/>'.</para>
-/// </remarks>
-public sealed class HandOverBox(string home)
-{
-    public const string Suffix = SessionHomeFiles.HandOverBoxSuffix;
-
-    /// <summary>Where a session's box is kept.</summary>
-    public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
-
-    /// <summary>Keep the ask, replacing any before. An id that is not a session's keeps nothing.</summary>
-    /// <exception cref="IOException">The ask could not be written: the asker is told, rather than told it is kept.</exception>
-    public void Write(string session, HandOverRequest request)
-    {
-        if (!SessionEventText.IsLocalId(session)) return;
-        HandOverFiles.WriteBox(PathOf(session), request);
-    }
-
-    /// <summary>The ask kept for this session, or null for none, a file that does not read, or an id that is not one.</summary>
-    public HandOverRequest? Read(string session) => SessionEventText.IsLocalId(session) ? HandOverFiles.ReadBox(PathOf(session)) : null;
-
-    /// <summary>The sessions with a box, in the order of their ids: what a shell coming up takes.</summary>
-    public IReadOnlyList<string> Pending() =>
-        [.. HandOverFiles.Leaves(DaorisHome.Entry(home, HomeEntry.Sessions),"*" + Suffix)
-            .Select(leaf => leaf[..^Suffix.Length])
-            .Where(SessionEventText.IsLocalId)
-            .Order(StringComparer.Ordinal)];
-
-    /// <summary>Take a session's box away: it is taken, or cannot be. Nothing to take is no failure.</summary>
-    public void Clear(string session)
-    {
-        // A box left behind is judged again when it is taken, and refused if it no longer holds.
-        if (SessionEventText.IsLocalId(session)) HandOverFiles.Delete(PathOf(session));
-    }
-}
-
-/// <summary>
 /// *Hand a conversation over*: a conversation goes on with another agent
 /// when its own account's allowance runs low. This is the ask's judge: it refuses what cannot be handed over by a code before
 /// anything is kept, and keeps the hand-over as a move row in the store, which the conversation's executor takes.
@@ -162,7 +119,7 @@ public static class HandOver
 
     /// <summary>
     /// What can be known of a hand-over before anything is kept or taken: the refusal by its code, or the record as the ledger holds
-    /// it. Judged again when the box is taken, since the conversation, its tree or the roster may have changed while it waited.
+    /// it. Judged again when the move is taken, since the conversation, its tree or the roster may have changed while it waited.
     /// </summary>
     internal static async Task<(HandOverAnswer? Refused, PriorSession? Prior)> JudgeAsync(
         ServiceClient service, Func<string, IReadOnlyList<string>?> accountsOf, string id, string agent, string? account,

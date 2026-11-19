@@ -102,7 +102,6 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal(["ended.handed-over"], NoteAssert.Codes(stop.Note.Parts));
         Assert.Equal("codex-acp", stop.Note.Parts[0].Value("agent"));
         Assert.Equal(("codex-acp", "s1", HandOverWhy.Limit), (new HandedQuests(_home).Read("q1")!.Agent, new HandedQuests(_home).Read("q1")!.From, new HandedQuests(_home).Read("q1")!.Why));
-        Assert.Null(new HandOverBox(_home).Read("s1"));
         Assert.Equal("quiescing", _phaseAtStop);
         var move = Assert.Single(Store("run-probe").Of("s1"));
         Assert.Equal(("old-ended", "run-loop", MoveExecutors.Driven), (move.PhaseWord, move.ClaimRun, move.Executor));
@@ -114,21 +113,6 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal("s1", carry.Resumes!.Session);
         Assert.Equal("carrying on in `engine` — session `s1` was handed over to codex-acp.", carry.Reason);
         Assert.Equal(["q1"], _starts.Select(start => start.Quest.Id));
-    }
-
-    /// <summary>A box for a conversation is the shell's, not this look's: nothing is stopped and the box stays for its runner, which imports it.</summary>
-    [Fact]
-    public async Task A_conversation_s_box_is_left_to_the_shell()
-    {
-        _ledger.Working("c0nv0001", "engine", Path.Combine(_home, "tree-c"));
-        new HandOverBox(_home).Write("c0nv0001", new HandOverRequest("codex-acp", null, HandOverWhy.Limit, HandOverBy.Person, T0));
-
-        await Driver().TickAsync().WaitAsync(Bound);
-
-        Assert.Empty(_stopped);
-        Assert.NotNull(new HandOverBox(_home).Read("c0nv0001"));
-        Assert.Empty(new HandedQuests(_home).All());
-        Assert.Empty(Store("run-probe").Of("c0nv0001"));
     }
 
     /// <summary>A move judged again as it is taken: a quest closed meanwhile stops nothing and keeps nothing, and the move ends on its old part.</summary>
@@ -158,32 +142,6 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Empty(_stopped);
         Assert.Contains(look.Events, line => line == "hand-over  session `s1` (#q1): no agent here is called no-such-agent.");
         Assert.Equal("fell-back", MoveFrom("s1")!.PhaseWord);
-    }
-
-    /// <summary>
-    /// 🔴 An older build's quest box is imported once by the driven take-up and set aside, each look that finds one pending,
-    /// and its move is taken as an ask's is: the session stopped, the quest held on the agent named, no box taken as a file.
-    /// </summary>
-    [Fact]
-    public async Task An_older_build_s_quest_box_is_imported_once_by_the_look_and_set_aside_and_its_move_taken()
-    {
-        var box = new HandOverBox(_home);
-        box.Write("s1", new HandOverRequest("codex-acp", null, HandOverWhy.Limit, HandOverBy.Person, T0));
-
-        var first = await Driver().TickAsync().WaitAsync(Bound);
-
-        Assert.Null(box.Read("s1"));
-        Assert.True(File.Exists(box.PathOf("s1") + ".imported"));
-        Assert.Equal("s1", Assert.Single(_stopped).Session);
-        Assert.Equal("codex-acp", new HandedQuests(_home).Read("q1")!.Agent);
-        var move = Assert.Single(Store("run-probe").Of("s1"));
-        Assert.Equal(("old-ended", "run-loop", HandOverWhy.Limit, HandOverBy.Person), (move.PhaseWord, move.ClaimRun, move.Why, move.By));
-        Assert.Contains(first.Events, line => line == "hand-over  session `s1` (#q1): stopped, and `#q1` goes on with codex-acp.");
-
-        // Once: another look imports and stops nothing more.
-        await Driver().TickAsync().WaitAsync(Bound);
-        Assert.Single(_stopped);
-        Assert.Single(Store("run-probe").Of("s1"));
     }
 
     /// <summary>

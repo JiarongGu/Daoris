@@ -299,13 +299,13 @@ public sealed class RoleStaffingTests : IDisposable
 
         Assert.Equal(
             [
-                // The role door alone writes the family; SET_ACTOR, its context write and the retired verbs' press do not; the limit move reads it.
+                // The role door alone writes the family, beside a fresh home's seed of the second check; SET_ACTOR, its context write and the
+                // retired verbs' press do not; the limit move reads it.
                 "../Daoris.Desktop.App/Program.cs", "../Daoris.Desktop.Driver.Host/Program.cs",
                 "../Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs",
                 "../Daoris.Desktop.Modules/Platform/Views/RoleChangeView.cs",
                 "Course/Chat/LimitMove.cs",
-                "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs",
-                "Transitional/Migration/PlaceRiskStep.cs", "Transitional/Migration/SecondCheckStep.cs", "Transitional/Migration/StaffingStep.cs",
+                "Loop/Watch/WatchRun.cs", "Roles/RoleDoor.cs", "Roles/RoleVerbs.cs", "Roles/SecondCheck.cs",
             ],
             naming);
     }
@@ -319,16 +319,9 @@ public sealed class RoleStaffingTests : IDisposable
             var wired = text.IndexOf("RoleStaffing.WireHome(Environment.GetEnvironmentVariable)", StringComparison.Ordinal);
             Assert.True(wired > 0, $"{root} wires no staffing");
             // The shell's own loads are its loop's and routes', made after Program wires it; the host's are its doors' and its loop's.
-            // The one exception is the home's migration, which finds the home by the variable to convert it once before any read of its config.
-            var migrating = text.IndexOf("HomeMigration.Run(", StringComparison.Ordinal);
             foreach (var first in (string[])["DriverConfig.Load(", "DriverConfig.FindHome(", "new DriverLoop("])
             {
                 var at = text.IndexOf(first, StringComparison.Ordinal);
-                if (first == "DriverConfig.FindHome(" && at >= 0 && migrating > at && migrating < wired)
-                {
-                    at = text.IndexOf(first, migrating, StringComparison.Ordinal);
-                }
-
                 Assert.True(at < 0 || wired < at, $"{root} reaches `{first}` before it wires the staffing");
             }
         }

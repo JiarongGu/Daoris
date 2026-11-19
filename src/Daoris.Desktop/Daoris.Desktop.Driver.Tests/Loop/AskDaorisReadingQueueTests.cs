@@ -40,7 +40,6 @@ public sealed class AskDaorisReadingQueueTests : IDisposable
         File.WriteAllText(file, """{ "adapter": "claude-code-acp" }""");
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         staffing.ImportFile();
-        HomeMigration.Run(_home, [new SupervisorStep(() => null)]);
         var seed = RoleCatalog.Seed.Single(role => role.Id == SecondCheck.Role);
         if (holder == RoleHolders.Agent)
         {

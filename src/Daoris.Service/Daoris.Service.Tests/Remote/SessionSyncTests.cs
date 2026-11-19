@@ -442,42 +442,6 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A store from before the sync: a mirrored row's origin is read from its id, every row is given its
-    /// place in the write order, and the first pass pushes this machine's own records it holds.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_sync_pushes_what_it_holds_and_knows_whose_is_whose()
-    {
-        var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE sessions (
-                  id TEXT PRIMARY KEY, quest TEXT NULL, repository TEXT NOT NULL, adapter TEXT NOT NULL,
-                  state TEXT NOT NULL, note TEXT NULL, evidence TEXT NULL, transcript TEXT NULL,
-                  created TEXT NOT NULL, updated TEXT NOT NULL, workspace TEXT NOT NULL DEFAULT 'default',
-                  kind TEXT NOT NULL DEFAULT 'Driven', harness_version TEXT NULL, profile TEXT NULL,
-                  tree TEXT NULL, base_commit TEXT NULL
-                );
-                INSERT INTO sessions (id, quest, repository, adapter, state, created, updated)
-                  VALUES ('abcd1234', 'q1', 'Shared', 'stub', 'Completed', '2026-09-20T10:00:00Z', '2026-09-20T10:05:00Z');
-                INSERT INTO sessions (id, quest, repository, adapter, state, created, updated)
-                  VALUES ('b@two/ef567890', 'q2', 'Shared', 'stub', 'Working', '2026-09-20T10:00:00Z', '2026-09-20T10:05:00Z');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await OpenAsync(old);
-        var pass = await SyncAsync(store, "a@one");
-
-        Assert.Equal("b@two", (await store.FindAsync("b@two/ef567890"))!.Origin);
-        Assert.Null((await store.FindAsync("abcd1234"))!.Origin);
-        Assert.Equal(1, pass.Pushed);
-        Assert.Null(await store.ActiveForAsync("Shared"));
-    }
-
-    /// <summary>
     /// 🔴 The entry's key rides the wire. A record from before it, which holds none, goes up with the
     /// key derived by the rule from the quest it serves, and comes down to a teammate carrying it — and the sender's own record
     /// is not rewritten.

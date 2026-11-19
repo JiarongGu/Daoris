@@ -219,7 +219,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
-    nothing; the migration's driver-keys step takes it out. (D200)
+    nothing. (D200)
 32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the person at 3Q; while it
     waits on its own background work, 3Q and 5Q. A wait for a permission answer is never quiet. Daoris ends nothing quiet but a
     dead process and a headless `--quiet-end`. A quest session on a door that takes words is told once, as Daoris's urgent word,
@@ -262,12 +262,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     person's word. A run ended failed ends none (`RunSessionEnds.Ends`, said once as `failed-held`): its step's holder may still settle
     it done outside Daoris or try it again, which governs the run again, so the sessions awaiting its later steps wait on. Where the
     step's kind reads a failed attempt (a push refused, or one its holder says was pushed outside), it is still observed at each look and
-    a reach governs the run again too (`FailedHeldRuns`, its record's end read again whenever a word lifts it). A run not ended
-    whose work ended done under the older meaning (its quest done or at a submission, its session `completed`) asks once a process, at
-    its look, that its sessions wait on its next step (`RunSessionReopens`, `POST /api/runs/{run}/reopen`): the ledger moves a record
-    `completed` that its event journal never shows awaiting a step (`RunReopens`), so a record ended since by its workflow or the person
-    stays as it is, and a run already ended asks nothing. A run whose quests all closed asks nothing either: its sessions are never
-    reopened, and its end (`quest-closed`) ends any that wait on it as stopped by Daoris, with the reason in their note.
+    a reach governs the run again too (`FailedHeldRuns`, its record's end read again whenever a word lifts it). A run whose quests all
+    closed asks nothing: its end (`quest-closed`) ends any session that waits on it as stopped by Daoris, with the reason in their note.
 37. The end is observed, never self-reported. Done ends completed and a decline ends declined, except in a run bound to a graph version,
     where the agent's done or its submission ends its turn and waits on the run's next step (`StepWaits`: a first start's bind, which names the run and the commit
     its submission handed, a later turn's own `waits.step`), a fix turn whose quest closed before it included. A clean exit holding its own quest
@@ -388,9 +384,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     session's id stays its first record's. A move out of a running turn
     hands what the door reported over the record's turns so far (`TurnSpent`, the event log's input and output tokens), and the
     record's last turn keeps its share, that less what the turns before it kept (`SessionTurnKeep.UsageAsync`); the window says
-    each turn's input and output on its row. A record from before turns reads its `from` link as its one turn
-    (`SessionTurns.Own`), and a turn kept before turns held their own fields reads its record's agent, account, adapter and
-    transcript; both reads go once no such record is kept (TURNSREAD1). A line Daoris cut and carries on with its own agent and
+    each turn's input and output on its row. A turn that kept none of its own fields reads its record's agent, account, adapter and
+    transcript (`SessionTurns.OfLine`). A line Daoris cut and carries on with its own agent and
     account goes on in its own record as its next turn (conversations area, rule 7); the moves to another account or agent still open a
     record of their own for each move's turn, which `OfLine` reads as the line's next turn alike, since a record's process, tree lease
     and event log are keyed by its id.

@@ -280,7 +280,6 @@ public sealed class LimitWaitsProcessTests : IDisposable
 
         await Poll.Until(() => ledger.Said(chat).Count == 0, () => Seen(ledger, events, chat));
         Assert.Contains((chat, kept, "c2"), ledger.TakenBy);
-        Assert.False(File.Exists(new LimitBoxes(_home).PathOf(chat)));
         Assert.Empty(await again.WakeLimitsAsync(config));
         Assert.Equal(2, ledger.Count);
     }
@@ -1039,45 +1038,9 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A box an older build wrote after its limit move opened its new part and moved the words there, a
-    /// shell ending before they were delivered. The come-up imports it once into the move record and sets it aside; the move is ended by its
-    /// phase with the words waiting on the new part never attempted, so the new part goes on with them in its own conversation, heard once,
-    /// and nothing is delivered from the box.
-    /// </summary>
-    [Fact]
-    public async Task A_box_an_older_build_wrote_is_imported_at_the_come_up_and_its_new_part_goes_on_with_the_moved_word_once()
-    {
-        var events = Events;
-        var ledger = HeldEnded(events);
-        ledger.Chat("c2", "stopped", "acp-stub", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris))
-            .Say("w1", "And add a test.");
-        new HarnessConversations(_home).Keep("c2", "acp-stub", "conv-account-2");
-        AccountCooling.End(_home, "stub", "account-2", _now);
-        Cooling("account-1", _now.AddDays(1));
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
-        var config = Config();
-        using var client = ledger.Client();
-        var adapters = ProviderRegistry.Built();
-        using var runner = Runner(client, adapters, Roster(adapters), events);
-
-        await runner.TakeUpAsync();
-        await Poll.Until(() => Prompts.Count > 0 && ledger.Said("c2").Count == 0, () => Seen(ledger, events, "c2"));
-        var handed = Assert.Single(Prompts);
-        Assert.StartsWith("prompt[account-2]", handed, StringComparison.Ordinal);
-        Assert.Equal(1, Count(handed, "And add a test."));
-        Assert.Contains("resumed[account-2]: conv-account-2", StubFile.Lines(Heard));
-
-        // Imported once and set aside, never deleted; the move it kept is ended, and no box is left for today's readers.
-        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
-        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + ".imported"));
-        Assert.Equal("closed", new MoveStore(_home).Of("c1").Single().PhaseWord);
-        Assert.Equal(2, ledger.Count);
-    }
-
-    /// <summary>
     /// 🔴 A word kept on the old record after the move is decided and before the new part opens is in neither the decision's
     /// words nor the new part's record, so the move reads the record again at its go-on: the new part is handed it once, after the word
-    /// the move named, and the old part never; it leaves the old record as taken by the new part. No box is written meanwhile.
+    /// the move named, and the old part never; it leaves the old record as taken by the new part.
     /// </summary>
     [Fact]
     public async Task A_word_kept_between_the_moves_decision_and_its_go_on_reaches_the_new_part_once()
@@ -1092,7 +1055,6 @@ public sealed class LimitWaitsProcessTests : IDisposable
             // The new part's record opening is the go-on: the word lands on the old record just before it, the move already decided.
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat" && Interlocked.Exchange(ref kept, 1) == 0)
             {
-                Assert.Null(new LimitBoxes(_home).Read("c1"));
                 Assert.Equal("opening", new MoveStore(_home).Of("c1").Single().PhaseWord);
                 ledger.For("c1").Say("w2", "And add a test.");
             }
@@ -1112,37 +1074,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal((1, 1, 1), (Count(handed, "Make the port configurable."), Count(handed, "Make it fast."), Count(handed, "And add a test.")));
         Assert.True(handed.IndexOf("Make it fast.", StringComparison.Ordinal) < handed.IndexOf("And add a test.", StringComparison.Ordinal));
         Assert.Contains(ledger.TakenBy, taken => taken.Session == "c1" && taken.Ids.Contains("w2", StringComparison.Ordinal) && taken.By == "c2");
-        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
         Assert.Empty(await runner.WakeLimitsAsync(config));
         Assert.Single(Prompts);
-    }
-
-    /// <summary>
-    /// 🔴 A box an older build wrote as its move's words are delivered, its new part having taken its turn
-    /// (the moved word left the new part with it). The come-up imports it and sets it aside, and the move ends by what the new part holds:
-    /// nothing is delivered again, said again or taken again.
-    /// </summary>
-    [Fact]
-    public async Task A_box_whose_new_part_took_its_turn_is_imported_and_nothing_is_delivered_again()
-    {
-        var events = Events;
-        var ledger = HeldEnded(events);
-        ledger.Chat("c2", "stopped", "acp-stub", _root, profile: "account-2", from: new ContinuedFrom("c1", HandOverWhy.Limit, HandOverBy.Daoris));
-        new HarnessConversations(_home).Keep("c2", "acp-stub", "conv-account-2");
-        events.Append("c2", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the port configurable.\n\nAnd add a test." });
-        new LimitBoxes(_home).Write("c1", new LimitMoveBox(HandOverWhy.Limit, 2, events.After("c1", 0).Events.Count, ["w1"], "c2", Moved: true));
-        Config();
-        using var client = ledger.Client();
-        var adapters = ProviderRegistry.Built();
-        using var runner = Runner(client, adapters, Roster(adapters), events);
-
-        await runner.TakeUpAsync();
-        Assert.Empty(ledger.TakenBy);
-        Assert.Empty(ledger.Said("c1"));
-        Assert.Empty(ledger.Said("c2"));
-        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
-        Assert.True(File.Exists(new LimitBoxes(_home).PathOf("c1") + ".imported"));
-        Assert.Empty(StubFile.Lines(Heard));
     }
 
     /// <summary>
@@ -1239,7 +1172,6 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var went = Assert.Single(events.After("c1", 0).Events, e => Coded(e, "moved.on"));
         Assert.Equal("acp-second", went.Parts!.Single(part => part.Code == "moved.on").Value("agent"));
         Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
-        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
         Assert.Empty(await runner.WakeLimitsAsync(config));
         Assert.Equal(2, ledger.Count);
     }

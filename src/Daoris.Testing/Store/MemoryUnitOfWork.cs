@@ -33,7 +33,7 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
     }
 
     /// <summary>The engines a unit test's root hands the application: this fake over files and memory, and a plain connection for the rest.</summary>
-    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, Backup, SqliteConnection.ClearAllPools);
+    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, SqliteConnection.ClearAllPools);
 
     /// <inheritdoc />
     public string Location { get; }
@@ -172,18 +172,6 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
         var connection = new SqliteConnection(text);
         connection.Open();
         return connection;
-    }
-
-    private static void Backup(string source, string target)
-    {
-        using (var from = (SqliteConnection)Connect(source, DesktopOpen.ReadWrite))
-        using (var to = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = target, Pooling = false }.ToString()))
-        {
-            to.Open();
-            from.BackupDatabase(to);
-        }
-
-        SqliteConnection.ClearAllPools();
     }
 
     private static DbConnection Connect(string path, DesktopOpen mode)

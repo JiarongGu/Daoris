@@ -25,7 +25,6 @@ internal sealed class QuestBindOperation : IQuestOperation
         var held = await tx.FindAsync(id).ConfigureAwait(false);
         if (held is null) return new QuestMove(null, Moved: false);
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
-        if (history.Count == 0) history = await tx.GiveHistoryAsync(held).ConfigureAwait(false);
         var standing = QuestLog.Replay(history);
         var judged = new QuestOperation(id, QuestOperationKind.Bound, tx.Machine, 0, now, RunClosure(run));
         if (!QuestLog.Applies(standing, judged)) return new QuestMove(held, Moved: false);
@@ -62,7 +61,6 @@ internal sealed class QuestBindOperation : IQuestOperation
         if (held is null) return new QuestMove(null, Moved: false);
 
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
-        if (history.Count == 0) history = await tx.GiveHistoryAsync(held).ConfigureAwait(false);
         var standing = QuestLog.Replay(history);
         if (!QuestLog.Applies(standing, judged)) return new QuestMove(held, Moved: false);
         if (QuestLog.OnALostTake(standing, history, judged)) return new QuestMove(held, Moved: false) { ClaimLost = true };

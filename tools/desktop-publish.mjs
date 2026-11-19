@@ -81,13 +81,13 @@ import { appPublishCommand, artifactsOf, BIN_STAGES, commandPublishCommand, driv
 import { GATE_TREE, childArgs, gatedSource, gitIn, mainCheckout, recordStage, recordStaged, samePath, stageReport, stagedAdvice } from './desktop-publish/gate-tree.mjs';
 import { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
 import { sessionRefusal } from './desktop-publish/session.mjs';
-import { HOST_HOME, INSTALL_RID, LAUNCHER, MARKER, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, retiredPaths, servicePlan } from './desktop-publish/names.mjs';
+import { HOST_HOME, INSTALL_RID, LAUNCHER, MARKER, SHELL_EXE, SHELL_FILES, SHELL_HOME, servicePlan } from './desktop-publish/names.mjs';
 import { HOME, KEPT_LOCALES, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, layOffers, layResources } from './desktop-publish/lay.mjs';
 import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME } from './desktop-publish/launchers.mjs';
 import { layCli } from './desktop-publish/cli.mjs';
 import { bundleCli } from './desktop-publish/cli-bundle.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
-export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, RETIRED_LAUNCHERS, RETIRED_IN_APP, RETIRED_BROWSER_EXE, retiredPaths, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
+export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
 export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
 export { driverPublishCommand, LAUNCHER_PROJECT, APP_PROJECT, launcherPublishCommand, appPublishCommand, publishStages, artifactsOf, GIT_DOOR_PROJECT, GIT_DOORS, gitDoorPublishCommand, layGitDoors, PIECE_START_PROJECT, PIECE_START, pieceStartPublishCommand, layPieceStart, COMMAND_PROJECT, COMMAND, commandPublishCommand, layCommand, BIN_STAGES, layBinPrograms } from './desktop-publish/publish-commands.mjs';
@@ -209,20 +209,12 @@ async function main() {
    * lines of `Microsoft.NET.HostModel.Bundle` internals for "close the app". Checked before anything
    * is built, so the answer arrives in a second rather than after the whole web bundle.
    */
-  // The application and the single-file shell an older install may still have: the launcher at
-  // the root exits once it has started the application, so it is the application that holds files.
-  const shells = [join(to, ...SHELL_HOME, SHELL_EXE), ...RETIRED_LAUNCHERS.map((name) => join(to, name))]
-    .filter(existsSync);
+  // The launcher at the root exits once it has started the application, so it is the application that holds files.
+  const shells = [join(to, ...SHELL_HOME, SHELL_EXE)].filter(existsSync);
   // A stage writes nothing the running application holds, so it is never refused for one running.
   if (!stage && process.platform === 'win32' && shells.length > 0) {
-    // Everything from the application's executable, its browser and its engine's processes
-    // included; and the browser an older install runs from its own folder, which
-    // this publish removes. The browser follows the shell out, so a running one is a shell still
-    // running, or just gone.
-    const held = [
-      ...shells.flatMap((shell) => running(shell)),
-      ...RETIRED_IN_APP.flatMap((name) => running(join(to, ...SHELL_HOME, name, RETIRED_BROWSER_EXE))),
-    ];
+    // Everything from the application's executable, its browser and its engine's processes included.
+    const held = shells.flatMap((shell) => running(shell));
     if (held.length > 0) {
       console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
       console.error('  Close it and re-run — a running application holds its own executable open, and');
@@ -303,7 +295,6 @@ async function main() {
     process.exit(1);
   }
   for (const name of recordedShellFiles(root)) rmSync(join(app, name), { recursive: true, force: true });
-  for (const path of retiredPaths(root)) rmSync(path, { recursive: true, force: true });
   mkdirSync(app, { recursive: true });
   for (const name of staged) cpSync(join(shellStage, name), join(app, name), { recursive: true });
   writeFileSync(join(root, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);

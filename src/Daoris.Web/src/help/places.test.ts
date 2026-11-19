@@ -3,12 +3,10 @@ import { VIEWS } from '../menus/commands';
 import { askItem } from '../app/opener';
 import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';
-import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
+import { PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_PARTS, PLACE_VIEWS, placeDoor } from './places';
 
 // The places Ask Daoris's go may name, a twin of the driver's `HelpPlaces`: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
-
-const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');
 
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
@@ -23,13 +21,6 @@ describe('the places a go may name', () => {
       'start/agent', 'start/helper', 'start/repositories', 'start/setUp', 'start/rules',
       'agents/accounts', 'agents/rules', 'agents/usage', 'agents/roles',
     ]);
-    expect(PLACE_KEPT.map(({ was, now }) => `${spelled(was)} → ${spelled(now)}`)).toEqual([
-      'search → knowledge/search', 'convergence → knowledge/convergence', 'settings/plugins → plugins',
-      'settings/workspace → projects/workspace-details', 'settings/workspace/wiring → projects/workspace-remote',
-      'settings/workspace/lines → projects/workspace-defaults', 'settings/workspace/landing → projects/workspace-defaults',
-      'settings/workspace/sweep → projects/workspace-branches', 'settings/permissions → agents/rules',
-      'settings/permissions/across → projects/workspace-defaults',
-    ]);
     // The views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`); Sessions too.
     expect(PLACE_ITEM_VIEWS).toEqual(['sessions', 'quests', 'plugins']);
     expect(offerItem('')).toBe('offer:');
@@ -39,7 +30,7 @@ describe('the places a go may name', () => {
   /**
    * The views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
    *  is a place a go names once it is added here and to `HelpPlaces` together. Workspace and
-   * Permissions are not Settings domains, and the twins name neither: a go still spelled so is kept.
+   * Permissions are not Settings domains, and the twins name neither.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
     expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view as string).sort());
@@ -175,43 +166,14 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'sessions', part: 'failed', repository: 'engine', sentence: 'x' })).toEqual({ view: 'sessions', group: 'failed' });
   });
 
-  /**
-   * Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
-   * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
-   * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. Each is a kept row of
-   * the twin, the retired spelling with its part, and one no row names opens nothing.
-   */
-  it("open a retired domain's part where it went: the workspace's page, or what agents may do", () => {
-    expect(placeDoor({ view: 'settings', domain: 'workspace' })).toEqual({ view: 'projects', workspaceTab: 'details' });
-    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'wiring' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
-    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'lines' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
-    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'landing' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
-    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'sweep' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
-    expect(placeDoor({ view: 'settings', domain: 'permissions' })).toEqual({ view: 'agents', agentPart: 'rules' });
-    expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'across' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
-    expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'workspace-defaults' })).toBeNull();
-  });
-
-  /**
-   * A go spelled under an older place name, kept in an earlier conversation, opens where the place
-   * went rather than nowhere: Settings → Plugins the Plugins place, Search and Convergence Knowledge in that mode.
-   * None has parts, so one spelled with a part opens nothing.
-   */
-  it('open a place that moved where it went', () => {
-    expect(placeDoor({ view: 'settings', domain: 'plugins' })).toEqual({ view: 'plugins' });
-    expect(placeDoor({ view: 'settings', domain: 'plugins', part: 'kit' })).toBeNull();
-    expect(placeDoor({ view: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
-    expect(placeDoor({ view: 'convergence', domain: null, part: null })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
-    expect(placeDoor({ view: 'convergence', part: 'findings' })).toBeNull();
-    expect(placeDoor({ view: 'search', domain: 'ai' })).toBeNull();
-  });
-
   it('refuse a place the window does not have, rather than guess at one', () => {
     expect(placeDoor({ view: 'dashboard' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'billing' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'colours' })).toBeNull();
     expect(placeDoor({ view: 'quests', part: 'drawer' })).toBeNull();
-    // Settings → Agents and Permissions' Proposals are not in Settings; the twins do not name them.
+    // Settings → Agents, Workspace and Permissions are not in Settings; the twins do not name them.
+    expect(placeDoor({ view: 'settings', domain: 'workspace' })).toBeNull();
+    expect(placeDoor({ view: 'settings', domain: 'permissions' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'agents' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'proposals' })).toBeNull();
     expect(placeDoor({ view: 'agents', part: 'workspaces' })).toBeNull();

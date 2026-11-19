@@ -811,7 +811,7 @@ public sealed class QuestClosureTests : IAsyncLifetime
         Assert.Equal(QuestLoss.Forgotten, QuestLog.Lost(QuestOperationKind.Bound));
     }
 
-    // ——— Quests from before.
+    // ——— Unbound.
 
     [Fact]
     public async Task A_quest_no_graph_binds_closes_done_as_it_always_did()

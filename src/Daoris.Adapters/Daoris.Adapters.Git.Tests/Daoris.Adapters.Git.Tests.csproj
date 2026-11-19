@@ -3,7 +3,7 @@
   <!--
     The dependency tier of the git adapter: the contract cases the scripted git passes, run on real git through the machine's process
     host, and what only real git shows (an input written whole, a read stopped at its limit, a run ended past its bound). It runs when
-    the adapter's fingerprint differs from its row of daoris.adapters.lock, and never in a unit half.
+    the adapter's fingerprint differs from its row of daoris.packages.lock, and never in a unit half.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

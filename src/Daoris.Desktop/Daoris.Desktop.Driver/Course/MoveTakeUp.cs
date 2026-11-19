@@ -25,16 +25,13 @@ public sealed record MoveTakeUpScope(string Executor, Func<string, bool>? Lines 
 }
 
 /// <summary>What one come-up or look found and did (<see cref="MoveTakeUp.LookAsync"/>), which the caller's own sweep reads.</summary>
-/// <param name="Imported">The moves an older build's box kept, imported this look.</param>
-/// <param name="ImportsHeld">Why the imports wait, the start's confirmation not settled among the reasons; null where none does.</param>
-/// <param name="Never">The records whose box is still to be imported: their old part is the course's <c>Never</c>, which no go-on or sweep acts on.</param>
 /// <param name="Taken">The dead runs' moves this run took up, to go on from their phase.</param>
 /// <param name="Held">The dead runs' moves taken and held for the person: an effect marked and never recorded, never made again by itself.</param>
 /// <param name="Gone">The dead runs' moves taken and closed <c>gone</c>: a record they name no longer exists.</param>
 /// <param name="Quiet">The live runs' moves said <c>move.quiet</c> this look.</param>
 /// <param name="Refused">The takes refused, another taker having claimed first.</param>
 public sealed record MoveLook(
-    IReadOnlyList<MoveRecord> Imported, string? ImportsHeld, IReadOnlyList<string> Never, IReadOnlyList<MoveTaken> Taken, IReadOnlyList<MoveRecord> Held,
+    IReadOnlyList<MoveTaken> Taken, IReadOnlyList<MoveRecord> Held,
     IReadOnlyList<MoveRecord> Gone, IReadOnlyList<MoveRecord> Quiet, IReadOnlyList<MoveTaken> Refused)
 {
     /// <summary>The dead runs' moves taken at <c>delivering</c> and closed <c>delivered</c> by their words' <c>sent</c>.</summary>
@@ -47,14 +44,11 @@ public sealed record MoveLook(
 /// <summary>
 /// The take-up of dead runs' moves: one unit an executor calls at
 /// its come-up and at each look, before anything else that could act on the same records, in the order below. A conversation's runs at
-/// the shell's come-up before its go-ons and beside each of its looks (through <see cref="ConversationMoves"/>, which
-/// hands it the ended limit move's box importer); a driven line's, where the look settles uncertain words, is the line's own.
+/// the shell's come-up before its go-ons and beside each of its looks (through <see cref="ConversationMoves"/>);
+/// a driven line's, where the look settles uncertain words, is the line's own.
 /// </summary>
 /// <remarks>
-/// <para><b>1. The imports</b> of any box an older build wrote, each its importer's, which waits until the start's confirmation is settled and
-/// is asked again at every look until then; a record whose box is still to be imported is <c>Never</c>, so neither the take-up below nor the
-/// caller's sweep acts on it meanwhile.</para>
-/// <para><b>2. The take-up.</b> Every standing move of this unit's kind and lines whose claim's run is dead by the lease's own test is taken,
+/// <para><b>1. The take-up.</b> Every standing move of this unit's kind and lines whose claim's run is dead by the lease's own test is taken,
 /// once, by the guarded update that names the run and the generation read, so of two takers the second is refused by the
 /// generation. A run that lives, however long it pauses, or that cannot be told dead keeps its moves; so does a move at a phase a newer build
 /// wrote. A taken move whose record left or destination no longer exists closes <c>gone</c>; one from the open's answer to the delivery is
@@ -65,19 +59,17 @@ public sealed record MoveLook(
 /// <c>resolved</c> once nothing it names waits on its destination; a live run's is its own executor's to read. A live run's move past
 /// <c>old-ended</c> whose phase has stood ten minutes is said <c>move.quiet</c> once, on its line and in the log, whichever process looks, and
 /// never taken over.</para>
-/// <para><b>3. The caller's own sweep</b>, handed what the look found.</para>
+/// <para><b>2. The caller's own sweep</b>, handed what the look found.</para>
 /// <para>A shell's come-up first records its run and says once, refusing nothing, that another shell runs on its home.</para>
 /// </remarks>
 /// <param name="home">The home whose move record this is.</param>
 /// <param name="store">The move record, under this process's run.</param>
 /// <param name="scope">Whose moves this unit takes up.</param>
-/// <param name="imports">The importers of the boxes an older build writes, run first; none where none are handed.</param>
 /// <param name="note">Keeps a note on a record's line: how <c>move.quiet</c> is said there.</param>
 /// <param name="clock">What time it is, for a phase's quiet.</param>
 /// <param name="said">The destinations' <c>said</c> the delivery and hold readings read; none reads none, so a hold naming a word stands and a delivery is not read.</param>
 public sealed class MoveTakeUp(
-    string home, MoveStore store, MoveTakeUpScope scope, IReadOnlyList<IMoveBoxImport>? imports = null, Action<string, Noted>? note = null,
-    TimeProvider? clock = null, IMoveSaid? said = null)
+    string home, MoveStore store, MoveTakeUpScope scope, Action<string, Noted>? note = null, TimeProvider? clock = null, IMoveSaid? said = null)
 {
     /// <summary>How long a move's phase past <c>old-ended</c> stands under a live run before it is said quiet.</summary>
     public static readonly TimeSpan QuietAfter = TimeSpan.FromMinutes(10);
@@ -122,25 +114,11 @@ public sealed class MoveTakeUp(
         return await LookAsync(stands, sweep, ct).ConfigureAwait(false);
     }
 
-    /// <summary>One look in the order above: the imports, the take-up, then <paramref name="sweep"/>, handed what the look found.</summary>
+    /// <summary>One look in the order above: the take-up, then <paramref name="sweep"/>, handed what the look found.</summary>
     /// <param name="stands">Whether a record still exists in the ledger; null where it cannot be told, which closes nothing.</param>
     public async Task<MoveLook> LookAsync(Func<string, bool?> stands, Func<MoveLook, CancellationToken, Task>? sweep = null, CancellationToken ct = default)
     {
-        // 1. The imports, before anything that could act on a box's record.
-        var imported = new List<MoveRecord>();
-        var waiting = new HashSet<string>(StringComparer.Ordinal);
-        var never = new SortedSet<string>(StringComparer.Ordinal);
-        string? importsHeld = null;
-        foreach (var import in imports ?? [])
-        {
-            var pass = import.Import();
-            imported.AddRange(pass.Imported);
-            waiting.UnionWith(pass.Waiting);
-            never.UnionWith(pass.Never);
-            importsHeld ??= pass.Held;
-        }
-
-        // 2. The take-up of dead runs' moves of this unit's kind and lines, and a live run's quiet.
+        // 1. The take-up of dead runs' moves of this unit's kind and lines, and a live run's quiet.
         var taken = new List<MoveTaken>();
         var held = new List<MoveRecord>();
         var gone = new List<MoveRecord>();
@@ -152,8 +130,8 @@ public sealed class MoveTakeUp(
         foreach (var move in store.StandingOf(scope.Executor).Where(scope.Holds))
         {
             ct.ThrowIfCancellationRequested();
-            // A box still to be imported holds its record; a phase a newer build wrote is that build's to go on with.
-            if (waiting.Contains(move.Left) || move.Phase is null) continue;
+            // A phase a newer build wrote is that build's to go on with.
+            if (move.Phase is null) continue;
             try
             {
                 var run = runs.GetValueOrDefault(move.ClaimRun);
@@ -229,9 +207,9 @@ public sealed class MoveTakeUp(
             }
         }
 
-        var look = new MoveLook(imported, importsHeld, [.. never], taken, held, gone, quiet, refused) { Delivered = delivered, Resolved = resolved };
+        var look = new MoveLook(taken, held, gone, quiet, refused) { Delivered = delivered, Resolved = resolved };
 
-        // 3. The caller's own sweep.
+        // 2. The caller's own sweep.
         if (sweep is not null) await sweep(look, ct).ConfigureAwait(false);
         return look;
     }

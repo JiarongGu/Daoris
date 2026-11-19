@@ -20,9 +20,6 @@ internal sealed class QuestTx(QuestStore store, SqliteTransaction transaction, C
 
     internal Task<IReadOnlyList<QuestOperation>> HistoryAsync(string id) => store.HistoryAsync(id, transaction, ct);
 
-    /// <summary>A quest's history from its row, for a quest the log never saw.</summary>
-    internal Task<IReadOnlyList<QuestOperation>> GiveHistoryAsync(Quest quest) => store.GiveHistoryAsync(quest, transaction, ct);
-
     /// <summary>
     /// Appends <paramref name="draft"/> under this machine and its next sequence, each field kept only on the kinds that carry it; its
     /// machine and sequence are the store's. Answers it as it reads back.

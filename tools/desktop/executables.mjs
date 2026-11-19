@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
-import { LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME } from '../desktop-publish.mjs';
+import { LAUNCHER, SHELL_EXE, SHELL_HOME } from '../desktop-publish.mjs';
 import { scratchPlan } from './environment.mjs';
 import { run } from './run.mjs';
 
@@ -72,13 +72,10 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
 export function installedExe(directory) {
   if (!directory) return null;
   // The application the launcher starts: what holds the window, the debug port and the files,
-  // so what every instrument addresses. An older install has the single-file shell at
-  // its root instead, until its next publish replaces it.
-  if (existsSync(join(directory, LAUNCHER))) {
-    const shell = join(directory, ...SHELL_HOME, SHELL_EXE);
-    return existsSync(shell) ? shell : null;
-  }
-  return RETIRED_LAUNCHERS.map((name) => join(directory, name)).find(existsSync) ?? null;
+  // so what every instrument addresses.
+  if (!existsSync(join(directory, LAUNCHER))) return null;
+  const shell = join(directory, ...SHELL_HOME, SHELL_EXE);
+  return existsSync(shell) ? shell : null;
 }
 
 /**
