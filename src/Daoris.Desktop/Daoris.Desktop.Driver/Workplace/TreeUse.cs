@@ -1,49 +1,30 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the tidy reads of a session tree on disk: when it was last used and how many bytes it holds. A tree's use is a commit, a switch of
-/// branch or a new top-level entry, which git writes in the tree's own git folder and the tree's top; an edit with no commit is
-/// uncommitted work, which keeps the tree whatever its age (<see cref="TreeReleases"/>).
+/// What the tidy reads of a session tree on disk: when it last moved and how many bytes it holds. A tree moves by a commit or a switch of
+/// branch, which its reflog records, or by a new top-level entry; an edit with no commit is uncommitted work, which keeps the tree at any
+/// age (<see cref="TreeReleases"/>).
 /// </summary>
 internal static class TreeUse
 {
-    /// <summary>The newest of the tree's top folder, its <c>.git</c> link and its git folder's <c>HEAD</c> and <c>logs/HEAD</c>.</summary>
-    internal static DateTimeOffset LastAt(string tree)
+    /// <summary>The later of the tree's top folder's write time and its HEAD's last move, git's reflog read; the folder's time alone where git says none.</summary>
+    internal static async Task<DateTimeOffset> LastAtAsync(string tree, CancellationToken ct)
     {
         var latest = DateTimeOffset.MinValue;
-        void Note(string path)
+        try
         {
-            try
-            {
-                if (!Path.Exists(path)) return;
-                var at = new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
-                if (at > latest) latest = at;
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // A time that cannot be read is no use seen.
-            }
+            latest = new DateTimeOffset(Directory.GetLastWriteTimeUtc(tree), TimeSpan.Zero);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // No time of its own.
         }
 
-        Note(tree);
-        var link = Path.Combine(tree, ".git");
-        Note(link);
-        if (File.Exists(link))
+        var (code, output, _) = await WorkingTree.GitAsync(tree, ["log", "-g", "-1", "--format=%ct", "HEAD"], ct).ConfigureAwait(false);
+        if (code == 0 && long.TryParse(output.Trim(), out var seconds))
         {
-            try
-            {
-                var line = File.ReadLines(link).FirstOrDefault(each => each.StartsWith("gitdir:", StringComparison.Ordinal));
-                if (line is not null)
-                {
-                    var folder = Path.GetFullPath(line["gitdir:".Length..].Trim(), tree);
-                    Note(Path.Combine(folder, "HEAD"));
-                    Note(Path.Combine(folder, "logs", "HEAD"));
-                }
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                // Read as the top folder's time alone.
-            }
+            var moved = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            if (moved > latest) latest = moved;
         }
 
         return latest;

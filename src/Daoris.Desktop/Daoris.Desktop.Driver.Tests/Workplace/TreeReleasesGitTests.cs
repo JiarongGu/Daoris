@@ -186,7 +186,7 @@ public sealed class TreeReleasesGitTests : LandedFixture
     private static Task<IReadOnlySet<string>> Nobody(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
     /// <summary>The fixture's days on: every tree's last use is read against this clock.</summary>
-    private static Func<DateTimeOffset> DaysOn(int days) => () => DateTimeOffset.UtcNow.AddDays(days);
+    private Func<DateTimeOffset> DaysOn(int days) => () => new DateTimeOffset(Directory.GetCreationTimeUtc(Home), TimeSpan.Zero).AddDays(days);
 
     [Fact]
     public async Task The_sweep_ends_an_unused_ended_tree_past_its_days_and_keeps_its_branch_and_says_what_it_freed()

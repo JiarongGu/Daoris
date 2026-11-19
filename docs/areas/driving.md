@@ -425,7 +425,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     own unforced proof, so a tree with uncommitted work or commits no branch of the person's holds stays and its reason is kept
     on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a
     tree no run owns is the look's tidy's and the person's, and the same sweep takes it, with its branch standing, once no session runs or
-    waits in it, nothing has used it for 14 days (`TreeReleases.Unused`, `TreeUse.LastAt`) and it holds no uncommitted work; where the
+    waits in it, nothing has used it for 14 days (`TreeReleases.Unused`, `TreeUse.LastAtAsync`), whether no run owns it or its ended run's proof keeps it, and it holds no uncommitted work; where the
     sessions in the repository's trees cannot be read it takes none. The report and the machine log say each tree ended and the bytes it
     freed (`tree.ended`). (D228)
 

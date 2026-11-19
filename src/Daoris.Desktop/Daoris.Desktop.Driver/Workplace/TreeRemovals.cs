@@ -22,7 +22,6 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     /// <param name="force">The person saying it again, meaning it: work and branch go too.</param>
     /// <param name="service">The person's door supplies the local ledger: a held tree stays, and force can lift an ended session's own lock.</param>
     /// <param name="landing">A landing's own tidy, which holds the tree's landing hold already.</param>
-    /// <param name="treeOnly">The tree goes and its branch stays whatever it holds (an unused tree past its days, <see cref="TreeReleases"/>); uncommitted work still keeps it.</param>
     internal async Task<TreeRemoval> RemoveAsync(
         string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false, bool treeOnly = false)
     {

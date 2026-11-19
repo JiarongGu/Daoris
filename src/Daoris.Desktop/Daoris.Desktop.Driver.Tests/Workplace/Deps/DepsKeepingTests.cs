@@ -18,7 +18,7 @@ public sealed class DepsKeepingTests : IDisposable
         File.WriteAllText(Path.Combine(Tree, "deps", "a.bin"), new string('a', 1000));
         var manifest = DependencyManifest.Read(Tree, "deps", [], out _, hashed: true);
         foreach (var key in new[] { "stale", "stale-too", "used" }) Assert.True(DependencyStore.Seal(Home, key, Tree, "deps", manifest, CancellationToken.None));
-        var now = DateTimeOffset.UtcNow;
+        var now = new DateTimeOffset(Directory.GetCreationTimeUtc(_scratch), TimeSpan.Zero);
         File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "stale"), "placed"), now.AddDays(-45).UtcDateTime);
         File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "stale-too"), "placed"), now.AddDays(-31).UtcDateTime);
         File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "used"), "placed"), now.AddDays(-1).UtcDateTime);

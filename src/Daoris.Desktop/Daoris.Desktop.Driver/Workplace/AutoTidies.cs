@@ -227,7 +227,7 @@ internal sealed class AutoTidies(
             }
 
             // The trees of runs whose tidy ended their part, that ended or whose record is gone, for those no release reached.
-            released = await new TreeReleases(context.Home).SweepAsync(root, repository, inUse, ct).ConfigureAwait(false);
+            released = await new TreeReleases(context.Home, context.Clock).SweepAsync(root, repository, inUse, ct).ConfigureAwait(false);
         }
 
         var against = line is null ? null : await ComparableAsync(root, line, ct, refs).ConfigureAwait(false);

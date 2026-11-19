@@ -77,8 +77,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 17a. Nothing Daoris writes is kept forever unnoticed. The bounds that keep `work/` from growing without end are two. The dependency store
     (`work/deps`, the Disk space card's `deps` kind) evicts a copy not placed in a tree for 30 days, then the least recently placed past 10 GB,
     in the Keeping pass once a day; a copy is the tree's own once placed, so none is in use. A session tree no run owns, that no session runs
-    or waits in and that nothing has used for 14 days (`TreeReleases.Unused`: the newest of the tree's top folder, `.git` link, and its git
-    folder's `HEAD` and `logs/HEAD`) is removed by the look's tidy with its branch standing and holding every commit; uncommitted work,
+    or waits in and that nothing has used for 14 days (`TreeReleases.Unused`: the later of the tree's top folder's write time and its HEAD's last move in
+    git's reflog) is removed by the look's tidy with its branch standing and holding every commit; uncommitted work,
     a live run's tree and an open session's tree keep it. Each such removal and each eviction is said in the machine log (`tree.ended`,
     `deps.evicted`) with the bytes freed. A tree's files record and install logs go with the tree (the tidy's set-aside,
     a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
