@@ -1,5 +1,7 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { laneMatcher } from './lanes-file.ts';
 import { gatePlan, isHeavyGate, isProcessLane, laneSchedule, rootScripts } from './plan.ts';
 import { BASELINE, BLOCKING, PATH_CHECKS, pathsReaching, reachingOf, selectGates, selectionLines } from './reach.ts';
@@ -274,9 +276,13 @@ test('a merge that changes the web\'s sources blocks on its design and structure
   const asks = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
   const check = repoPlan.find((gate) => gate.name === webRules)!;
   const scripts = rootScripts(repoRoot);
-  assert.equal(scripts[check.run.replace(/^npm run /, '')],
-    'npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts src/test/structure.test.ts src/test/providerCensus.test.ts src/design/presentational.test.ts src/design/pageMeasure.test.tsx',
-    'the five files, not the whole unit run');
+  assert.match(scripts[check.run.replace(/^npm run /, '')] ?? '', /node tools\/test-sets\.mjs run web-rules$/, 'its declared pick, not the whole unit run');
+  const declared = JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { tests: { sets: { name: string; of?: string; files: string[] }[] } };
+  const pick = declared.tests.sets.find((set) => set.name === webRules)!;
+  assert.equal(pick.of, 'web-unit');
+  assert.deepEqual(pick.files.map((file) => file.replace('src/Daoris.Web/', '')),
+    ['src/design/tokens.test.ts', 'src/test/structure.test.ts', 'src/test/providerCensus.test.ts', 'src/design/presentational.test.ts', 'src/design/pageMeasure.test.tsx'],
+    'the five files');
   assert.equal(check.kind, 'check', 'among the checks, fast first');
   assert.equal(isHeavyGate(check), false);
   assert.equal(isProcessLane(check), false);
