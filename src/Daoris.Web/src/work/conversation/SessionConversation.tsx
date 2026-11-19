@@ -23,6 +23,9 @@ import type { ReasonValues } from '../say';
 import { useFollowTail } from './followTail';
 import type { Wait } from '../waits/waits';
 import { type ChatLimitHeld, chatLimitHeldOf } from '../waits/limitWait';
+import { type CatchUpFacts, useCatchUp } from '../catchup/useCatchUp';
+import { SinceYouLeft } from '../catchup/SinceYouLeft';
+import { useNow } from '../useNow';
 
 /** How many blocks a conversation holds before it is offered a way through. */
 const LONG = 20;
@@ -122,8 +125,13 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath, onBeside,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath, onBeside, catchup,
 }: {
+  /**
+   * The conversation's line, what waits on the person and its run's steps, for the attended part's read mark and *Since you left*
+   * (`catchup/useCatchUp.ts`); absent, the part opens where it always did and moves no mark.
+   */
+  catchup?: CatchUpFacts;
   dividers?: Readonly<Record<string, ReactNode>>;
   beneath?: ComponentProps<typeof ConversationView>['beneath'];
   /** The home of the channel messages its turns took, the attended session's alone — `ConversationView`'s. */
@@ -367,6 +375,11 @@ export function SessionConversation({
   const words = lastWords(turns);
   // Each subagent's and task's start and end, which a subagent's own timeline is joined with.
   const lifetimes = useMemo(() => lifetimesIn(events), [events]);
+  // Opened with anything after the person's read mark, the attended part sits at the mark under *Since you left*.
+  const caught = useCatchUp({
+    facts: own ? catchup : undefined, session, scroller, events, turns, where, lifetimes, exchanges, loaded, earlier, loadEarlier,
+  });
+  const now = useNow(60_000);
   // What the panel's focus holds, which the live band opens too; another session's starts with none.
   const [focus, setFocus] = useState<BesideFocus | null>(null);
   useEffect(() => setFocus(null), [session]);
@@ -392,6 +405,9 @@ export function SessionConversation({
     <ReadingSession.Provider value={session}>
       <ConversationView
         beside={{ reader: BESIDE_READER, lifetimes, focus, onFocus: setFocus }}
+        atMark={caught.digest && caught.read
+          ? { turn: caught.digest.turn, row: <SinceYouLeft digest={caught.digest} read={caught.read} now={now} onJump={show} /> }
+          : undefined}
         turns={turns}
         tree={tree}
         structured={structured}

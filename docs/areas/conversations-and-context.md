@@ -110,7 +110,9 @@ of everything it handed, section by section.
    (`ChildRecords`), which no enumeration of the sessions folder and no watch of the session's record reads, and which goes when
    the session's record is forgotten; the second check reads a delegated child's calls from it, and the session's page its whole
    record (`SESSION_CHILD_HISTORY`). `ChildRecordsCensusTests` holds
-   both. (from D76, D275, D320)
+   both. Where the person left each conversation is this machine's too, never the record's: its read mark, one row by the
+   conversation's id in the desktop store's `read_marks` (`ReadMarks`: the part, the event's number and time, when it moved and the
+   steps passed then), which moves only forward, to a later event of the same part or another part's later event. (from D76, D275, D320)
 
 **Two contexts**
 

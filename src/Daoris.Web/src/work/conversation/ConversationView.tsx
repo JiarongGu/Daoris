@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, Fragment, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
@@ -74,8 +74,10 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath, beside,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath, beside, atMark,
 }: {
+  /** The row the host draws at the person's read mark (*Since you left*), above the turn that holds the first thing after it. */
+  atMark?: { turn: string; row: ReactNode };
   /**
    * What the session ran beside itself: the reader of each subagent's own record and task's last lines, and the record's starts and
    * ends of each. A subagent is a row under the call that spawned it, opened in place, a deeper one the panel's focus with a
@@ -229,8 +231,9 @@ export function ConversationView({
           {!focused && earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
           {!focused && began && <BeganLine words={began} />}
           {!focused && turns.map((turn, index) => (
+            <Fragment key={turn.key}>
+            {atMark?.turn === turn.key && atMark.row}
             <TurnView
-              key={turn.key}
               turn={turn}
               tree={tree}
               // Words waiting at the foot are no run of the agent's: nothing runs until its first prompt takes them.
@@ -241,6 +244,7 @@ export function ConversationView({
               divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
               beneath={turn.ask && beneath ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at) : undefined}
             />
+            </Fragment>
           ))}
         </section>
         </BesideHomes.Provider>

@@ -23,6 +23,14 @@ export type Digest = { turn: string; lines: DigestLine[] };
 /** How the run's steps stand now: how many passed, and the names of those that failed. */
 export type StepsNow = { passed: number; failed: string[] };
 
+/** How a session's run stands, read from its passage (`SESSION_GROUPS`' `passage`); none where its session runs no workflow. */
+export const stepsNow = (passage?: { steps: readonly { node: string; mark: string }[] } | null): StepsNow | null => (passage
+  ? {
+    passed: passage.steps.filter((step) => step.mark === 'passed').length,
+    failed: passage.steps.filter((step) => step.mark === 'failed').map((step) => step.node),
+  }
+  : null);
+
 const FAILED_ENDS = new Set(['failed', 'lost']);
 
 /** The longest of the agent's last words quoted, cut at a word. */
@@ -80,7 +88,7 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
     const ended = since.filter((event) => event.end);
     if (since.length === 0) continue;
     const id = (started[0] ?? ended[0])!.id;
-    const to = turns.flatMap((turn) => turn.items).find((block) => block.beside?.id === id && block.beside.kind === kind)?.key;
+    const to = turns.flatMap((turn) => turn.items).find((block) => block.beside?.id === id && block.beside?.kind === kind)?.key;
     lines.push({
       kind: kind === 'child' ? 'children' : 'tasks', started: started.length, ended: ended.length,
       failed: ended.filter((event) => FAILED_ENDS.has(event.end ?? '')).length, ...(to ? { to } : {}),
