@@ -1146,7 +1146,14 @@ and the window must keep working while it changes.
 **The trial**, written before it runs. *Where:* Overview with its `WaitCard` queue, after wave 3. *Baseline*, recorded on the
 current window over the week before UISE2 starts by UISE23 (the UX trail switched on, read by `tools/ux-trail.mjs`): the time from a return after 2 h or more to the last waiting item answered;
 screens opened per answer; items that reached the owner outside the owner kinds; answers given on a question that had already
-changed; amber the owner saw that did not need them. *Kept if:* at least nine waits in ten are answered from Overview or a dock
+changed; amber the owner saw that did not need them. *How the baseline is read:* the owner's install runs with the trail on for seven
+whole days (the first and last day are written in the steward's scratch with the five numbers, before UISE2's first commit), and
+`node tools/ux-trail.mjs <home's ux-trail folder> --from <first day> --to <last day>` prints them, days as the entries' UTC dates. A return
+is an entry after a silence of 2 h or more with waits open, timed to the last of those waits pressed in; a screen is a page opened
+between an answer and the one before it, the return or its wait; an answer is the first press in a wait's row, so the numbers are an
+upper bound where a press only opens the row; a question has changed when the row's wait began again or a go-ahead went stale before the
+press; amber that did not need the owner is a wait outside the owner kinds (`OWNER_KINDS`, §5.2) or one that cleared with no press in
+its row. The kept-if rules are read from the same command on the new Overview's week. *Kept if:* at least nine waits in ten are answered from Overview or a dock
 without opening another screen; the time from return to the last answer is below the baseline; no answer runs twice and none
 lands on a changed question; nothing outside the owner kinds reaches *Waiting on you*; no amber that did not need the owner;
 Overview's stories are green in the visual run in both languages, both themes, 1600 and 900. *Retired* (back to the card's fields,

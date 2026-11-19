@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readUxTrail, sendUxTrail, setUxTrail } from '../bridge/logs/uxTrail';
 import { useAttention } from '../bridge/attention';
+import type { PushedAttention } from '../work/attention/attentionPushed';
 
 // The person's own UX trail:opt-in, off by default, kept on the desktop only (`UX_TRAIL`, the driver's `UxTrail`). It records
 // the pages the person opens and the presses they make, a press named by its button's words and the *What needs you* row it is in, and
@@ -12,7 +13,9 @@ export type TrailEntry =
   | { kind: 'start'; at: string; page: string }
   | { kind: 'page'; at: string; page: string; from: string }
   | { kind: 'press'; at: string; page: string; press: string; row?: string }
-  | { kind: 'wait'; at: string; row: string; since?: string };
+  | { kind: 'wait'; at: string; row: string; since?: string }
+  | { kind: 'changed'; at: string; row: string }
+  | { kind: 'cleared'; at: string; row: string };
 
 /** What a press is: a control the person presses, never a field they type or choose in. */
 const PRESSED = 'button,a,[role=button],[role=tab],[role=menuitem],[role=option],[role=link],summary';
@@ -55,6 +58,25 @@ export function recordTrail({ doc, keep, page, now = () => new Date().toISOStrin
   };
 }
 
+/**
+ * What the rows' move since `known` (each row's key to its question's mark) adds to the trail: a row that begins to wait, one whose
+ * question changed (its wait began again, or a go-ahead went stale), one that cleared; and what is known now.
+ */
+export function trailOfRows(known: ReadonlyMap<string, string>, rows: readonly PushedAttention[], at: string): { entries: TrailEntry[]; known: Map<string, string> } {
+  const entries: TrailEntry[] = [];
+  const now = new Map<string, string>();
+  for (const row of rows) {
+    const key = `${row.kind}:${row.id}`;
+    const said = `${row.since ?? ''}|${row.stale ? 'stale' : ''}`;
+    now.set(key, said);
+    const before = known.get(key);
+    if (before === undefined) entries.push({ kind: 'wait', at, row: key, ...(row.since ? { since: row.since } : {}) });
+    else if (before !== said) entries.push({ kind: 'changed', at, row: key });
+  }
+  for (const key of known.keys()) if (!now.has(key)) entries.push({ kind: 'cleared', at, row: key });
+  return { entries, known: now };
+}
+
 const KEY = ['ux-trail'] as const;
 
 /** Whether the trail is on, and the press that turns it on or off: Settings' row. */
@@ -72,7 +94,7 @@ export const useUxTrail = () => {
 export function useUxTrailRecorder() {
   const { on } = useUxTrail();
   const attention = useAttention();
-  const waiting = useRef(new Set<string>());
+  const waiting = useRef(new Map<string, string>());
   const queue = useRef<TrailEntry[]>([]);
   useEffect(() => {
     if (!on) return undefined;
@@ -86,11 +108,8 @@ export function useUxTrailRecorder() {
   const rows = attention.state === 'known' ? attention.rows : null;
   useEffect(() => {
     if (!on || !rows) return;
-    const now = new Set(rows.map((row) => `${row.kind}:${row.id}`));
-    for (const row of rows) {
-      const key = `${row.kind}:${row.id}`;
-      if (!waiting.current.has(key)) queue.current.push({ kind: 'wait', at: new Date().toISOString(), row: key, ...(row.since ? { since: row.since } : {}) });
-    }
-    waiting.current = now;
+    const moved = trailOfRows(waiting.current, rows, new Date().toISOString());
+    queue.current.push(...moved.entries);
+    waiting.current = moved.known;
   }, [on, rows]);
 }
