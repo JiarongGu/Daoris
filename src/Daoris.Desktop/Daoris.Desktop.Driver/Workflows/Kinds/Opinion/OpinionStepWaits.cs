@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the <c>opinion</c> step says while it stands on someone (OPINIONWAKE1): with its findings handed to the work's session it waits on that
+/// What the <c>opinion</c> step says while it stands on someone: with its findings handed to the work's session it waits on that
 /// session's answer (<see cref="Answer"/>, naming it), the agent's wait and never <i>working</i>; and a pass whose reviewer ended without giving
 /// an opinion, or whose minutes ran out first, fails it, saying so, until another pass reaches it.
 /// </summary>

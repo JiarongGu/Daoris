@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GateFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The <c>opinion</c> step on a graph run while it stands on someone (OPINIONWAKE1): with its findings handed to the work's session it waits on
+/// The <c>opinion</c> step on a graph run while it stands on someone: with its findings handed to the work's session it waits on
 /// that session's answer, said so and never <i>working</i>; a pass whose reviewer ended without an opinion fails it, saying so.
 /// </summary>
 public sealed class OpinionStepTests

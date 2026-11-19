@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work's session awaiting its run's step while that step is the second opinion (OPINIONWAKE1): the opinion's findings, and the person's
+/// The work's session awaiting its run's step while that step is the second opinion: the opinion's findings, and the person's
 /// words, are its next turn through the one go-on every record with words waiting takes, never held for a turn's end that has come. The
 /// service's own table is <c>SolicitedAnswersTests</c>; the host here is <see cref="OpinionStandIn"/>, in process.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class OpinionAwaitingStepTests : IDisposable
         {
             Said = whose == "person"
                 ? PersonWords.Of("Answer the opinion's findings.")
-                : [new SaidWordView("op-w1", "Another agent read your work.", DateTimeOffset.UtcNow, [], true) { By = "op1" }],
+                : [new SaidWordView("op-w1", "Another agent read your work.", DateTimeOffset.UnixEpoch, [], true) { By = "op1" }],
             Profile = "account-1",
             Adapter = "claude-code-acp",
         };

@@ -13,7 +13,6 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRo
 
     public NodeObservation Observe(NodeReading reading) => OpinionGateReading.Observe(reading);
 
-    /// <summary>A step a pass left with no opinion is observed still, so the next pass that settles reaches it.</summary>
     public bool ObservesFailed(NodeStatus status) => OpinionStepWaits.EndedSaid(status.Code) is not null;
 
     /// <summary>
@@ -24,7 +23,6 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRo
     public override NodeAuthority Row { get; } =
         new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, NodeSource.Opinion, false, true, true, true) { SkipBy = NodeSource.Opinion };
 
-    /// <summary>Its findings with the work's session, it waits on that session's answer (<see cref="OpinionStepWaits.WaitOf"/>).</summary>
     public override IReadOnlyList<string> Waits { get; } = [OpinionStepWaits.Answer];
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;

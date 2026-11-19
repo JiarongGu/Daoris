@@ -78,7 +78,6 @@ public static class OpinionGateReading
             OpinionGateStates.Settled or OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered =>
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
-            // A pass that ended with no opinion fails the step, saying so; another pass that settles reaches it (OPINIONWAKE1).
             OpinionGateStates.Unavailable when OpinionStepWaits.EndedSaid(gate.Code) is { } ended =>
                 Seen(NodeStates.Failed, ended) with { Source = NodeSource.Opinion, Code = gate.Code },
             OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),

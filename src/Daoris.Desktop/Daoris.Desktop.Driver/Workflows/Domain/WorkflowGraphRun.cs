@@ -217,7 +217,6 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
-            // An opinion whose findings are with the work's session waits on that session's answer, the agent's wait (OPINIONWAKE1).
             var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(status, run.Opinion) : null;
             if (answers is not null && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
@@ -362,7 +361,6 @@ public static class WorkflowGraphRuns
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
         : node.Kind == NodeKinds.Land && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
-        // An opinion's wait on the work's session is said by its wait, and a pass left with no opinion by why it failed.
         : node.Kind == NodeKinds.Opinion && status.Holds == OpinionGateStates.WithSession ? null
         : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Failed ? OpinionStepWaits.EndedSaid(status.Code)
         : status.State == NodeStates.Active ? status.Holds
