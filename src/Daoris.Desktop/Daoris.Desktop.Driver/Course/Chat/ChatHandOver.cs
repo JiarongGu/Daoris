@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A conversation goes on with another agent: conversations live in the
-/// shell's chat runner, so the ask, the box and the take are here, over the runner's context.
-/// <see cref="HandOver"/> judges and keeps the box; <see cref="HandOverTake"/> runs the sequence with the runner's own end, start
+/// shell's chat runner, so the ask and the take are here, over the runner's context.
+/// <see cref="HandOver"/> judges and keeps the move; <see cref="HandOverTake"/> runs the sequence with the runner's own end, start
 /// and say.
 /// </summary>
 /// <remarks>
@@ -36,7 +36,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
     /// <summary>
     /// The conversations' move record the hand-over is decided in and taken from, over the
-    /// home's one store file the limit move and the curve share: a hand-over keeps its move there and writes no box. A test hands one of its
+    /// home's one store file the limit move and the curve share: a hand-over keeps its move there. A test hands one of its
     /// own run; the runner hands every move the one holder it comes up through.
     /// </summary>
     internal ConversationMoves Moves { get; set; } = new(wiring.Context.Home, wiring.Context.Service, wiring.Context.Events, wiring.Context.Output);
@@ -52,10 +52,9 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
-    /// Whether a hand-over holds the record from every go-on, sweep and take-up: a box an older build left for
-    /// a conversation and not yet imported, or imported and waiting behind a standing move, or a move the store carries that waits to be taken.
+    /// Whether a hand-over holds the record from every go-on, sweep and take-up: a move the store carries that waits to be taken.
     /// </summary>
-    public bool Holds(string sessionId) => new HandOverBox(_context.Home).Read(sessionId) is not null || Moves.HandOverStanding(sessionId) is not null;
+    public bool Holds(string sessionId) => Moves.HandOverStanding(sessionId) is not null;
 
     /// <summary>
     /// *Hand a conversation over*: <see cref="HandOver.AskAsync"/> judges and decides the move in the store; a conversation
@@ -126,8 +125,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
     /// <summary>
     /// Every hand-over this run holds that waits to be taken is taken, as the shell comes up and at each look: an ask decided while
-    /// no runner heard it, or while its conversation talked and the shell closed, a dead run's the take-up left standing, or an older build's box
-    /// the come-up imported. Each is judged again as it is taken; one whose conversation is talking or being taken is
+    /// no runner heard it, or while its conversation talked and the shell closed, or a dead run's the take-up left standing. Each is judged again as it is taken; one whose conversation is talking or being taken is
     /// left for its turn's end.
     /// </summary>
     /// <param name="onEnded">Told as each new conversation ends: the runner's own announcement, since no route started it.</param>
@@ -166,7 +164,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
 
     /// <summary>
     /// The curve's move taken: handed the request its decision made,
-    /// since its move is in the store and no box is written. The sequence is <see cref="HandOverTake"/>'s, shared with the person's and the
+    /// since its move is in the store. The sequence is <see cref="HandOverTake"/>'s, shared with the person's and the
     /// agent's hand-overs, whose move waits for the turn's end (<c>keeps</c>); the move's phases are written around it: <c>old-ended</c> as
     /// the old part ends, then <c>opening</c> under the key the open is sent with, the answer, <c>opened</c>, <c>delivering</c> with the prompt
     /// marked before the hand, the prompt's outcome as the door's write returns (the curve's message carries no word id, so no word's
@@ -241,7 +239,7 @@ internal sealed class ChatHandOver(IExecutorWiring wiring) : IExecutor
             }
 
             // A move by the usage curve says which accounts it moved between: its decision, which the caller holds. A hand-over
-            // taken without it (an older build's box imported, or a shell come up since) says the hand-over's lines, its reason curve.
+            // taken without it (a shell come up since) says the hand-over's lines, its reason curve.
             return await HandOverTake.RunAsync(
                 _context.Service, _context.Home, _context.Events, _context.Output, sessionId, ask, AccountsOf,
                 async old =>

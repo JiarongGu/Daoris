@@ -598,9 +598,9 @@ public sealed class ReviewStepTests : ReviewStepFixture
         Assert.Empty(await FollowUps(ask, setUp));
     }
 
-    /// <summary>A store from before reviews reads every quest as it did: no choice, no set-up step, nothing shown, nothing held for it.</summary>
+    /// <summary>A quest that chose no review reads plain: no choice, no set-up step, nothing shown, nothing held for it.</summary>
     [Fact]
-    public async Task A_quest_from_before_reviews_reads_as_it_did()
+    public async Task A_quest_that_chose_no_review_reads_plain()
     {
         var ask = await Asked();
         var plain = (await Publish(ask, [new QuestStep("checker", "Check {parent}", "Look.")], title: "Plain")).Quest!;

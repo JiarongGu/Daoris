@@ -94,7 +94,7 @@ public static class QuestHandOver
 
     /// <summary>
     /// Judge and decide the move for a quest's session of this machine's: the hand-over is kept as a
-    /// driven move record in the store, decided as it is asked and claimed by the run that asks, and no <c>&lt;s&gt;.hand-over.json</c> is written.
+    /// driven move record in the store, decided as it is asked and claimed by the run that asks.
     /// The driver's look takes it, stops the session and holds the quest on the agent named, and the carry-on it starts goes on from the same move.
     /// A record a move still stands for, a hand-over waiting or another move under way, takes no second ask, read from the store.
     /// </summary>

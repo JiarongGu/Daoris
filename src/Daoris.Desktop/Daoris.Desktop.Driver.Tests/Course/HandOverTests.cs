@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The door by which a conversation goes on with another agent. The ask judges and
-/// keeps the box <c>&lt;home&gt;/sessions/&lt;id&gt;.hand-over.json</c>; what cannot be handed over is refused by a code with its
+/// keeps the move in the store; what cannot be handed over is refused by a code with its
 /// sentence, before anything is kept; the briefing the new conversation's agent reads is a pure function of what Daoris kept.
 /// </summary>
 /// <remarks>In-process: the service is a stand-in reached through the real client, and the roster's accounts are handed in. The fast half.</remarks>
@@ -65,7 +65,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Empty(HandOverAccounts.Of(adapters, _home, "claude-code")!.Where(string.IsNullOrEmpty));
     }
 
-    /// <summary>🔴 A conversation handed to another agent keeps its move in the store, decided: the agent, the account, why and by whom; no box.</summary>
+    /// <summary>🔴 A conversation handed to another agent keeps its move in the store, decided: the agent, the account, why and by whom.</summary>
     [Fact]
     public async Task A_conversation_is_handed_over_by_deciding_its_move()
     {
@@ -77,7 +77,6 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal("it goes on with codex-acp as soon as its turn is over, in a conversation of its own.", answer.Message);
         var move = Assert.Single(Store().Of("c0nv0001"));
         Assert.Equal(("decided", "codex-acp", "work", HandOverWhy.Limit, HandOverBy.Person), (move.PhaseWord, move.Agent, move.Account, move.Why, move.By));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     public static TheoryData<string, string, string?, string, string> Refusals => new()
@@ -108,7 +107,6 @@ public sealed class HandOverTests : IDisposable
         var answer = await AskAsync(room, id, agent, account);
 
         Assert.Equal((false, why, message), (answer.Kept, answer.Why, answer.Message));
-        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
         Assert.Empty(Store().Of(id));
     }
 
@@ -242,44 +240,7 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal((HandOverWhy.Agent, HandOverBy.Agent), (kept.Why, kept.By));
     }
 
-    // ——— The box.
-
-    [Fact]
-    public void The_box_round_trips_without_a_byte_order_mark_or_a_carriage_return_and_clears()
-    {
-        var box = new HandOverBox(_home);
-        box.Write("c0nv0001", new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Agent, T0));
-
-        var bytes = File.ReadAllBytes(box.PathOf("c0nv0001"));
-        Assert.NotEqual(0xEF, bytes[0]);
-        Assert.DoesNotContain((byte)'\r', bytes);
-        Assert.Equal(new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Agent, T0), box.Read("c0nv0001"));
-        Assert.Equal(["c0nv0001"], box.Pending());
-
-        box.Clear("c0nv0001");
-        Assert.Null(box.Read("c0nv0001"));
-
-        // The choice approved is kept with the ask; a box without one names none.
-        var approved = new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Person, T0, "gpt-5", "high");
-        box.Write("c0nv0002", approved);
-        Assert.Equal(approved, box.Read("c0nv0002"));
-        box.Write("c0nv0003", new HandOverRequest("codex-acp", null, HandOverWhy.Press, HandOverBy.Person, T0));
-        Assert.DoesNotContain("model", File.ReadAllText(box.PathOf("c0nv0003")));
-        box.Clear("c0nv0002");
-        box.Clear("c0nv0003");
-        Assert.Empty(box.Pending());
-    }
-
-    [Fact]
-    public void A_box_that_does_not_read_is_none()
-    {
-        File.WriteAllText(new HandOverBox(_home).PathOf("c0nv0001"), "{ not json");
-
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
-        Assert.Null(new HandOverBox(_home).Read("../escape"));
-    }
-
-    // ——— Taking the box: end the old conversation, start the new in its tree, brief it, say where it went.
+    // ——— Taking the move: end the old conversation, start the new in its tree, brief it, say where it went.
 
     private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
 
@@ -376,7 +337,6 @@ public sealed class HandOverTests : IDisposable
         var old = Assert.Single(events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.handed-over"], NoteAssert.Codes(old.Parts!));
         Assert.Equal(("codex-acp", "n3w00001"), (old.Parts![0].Value("agent"), old.Parts[0].Value("session")));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>
@@ -443,7 +403,6 @@ public sealed class HandOverTests : IDisposable
         var went = Assert.Single(events.Page("c0nv0001", limit: SessionEventText.MaxPage).Events, e => e.Kind == SessionEventKind.Note);
         Assert.Equal(["chat.moved"], NoteAssert.Codes(went.Parts!));
         Assert.Equal(("account-3", "account-1"), (went.Parts![0].Value("to"), went.Parts[0].Value("from")));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>A box judged again as it is taken: a tree gone while it waited ends nothing and starts nothing, and the box is gone.</summary>
@@ -456,7 +415,6 @@ public sealed class HandOverTests : IDisposable
 
         Assert.Empty(taken.Calls);
         Assert.Equal(((string?)null, false, HandOver.TreeGone), (handed.SessionId, handed.Kept, handed.Why));
-        Assert.Null(new HandOverBox(_home).Read("tr33g0n3"));
     }
 
     /// <summary>A start the roster refuses is said with its own sentence, the old conversation already ended, and the box does not stay to be tried at every come-up.</summary>
@@ -472,7 +430,6 @@ public sealed class HandOverTests : IDisposable
         Assert.Equal(
             "c0nv0001 ended, but the conversation with codex-acp did not start: every account of codex-acp is cooling. Its tree is as it was.",
             handed.Message);
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>A new conversation whose briefing did not reach it is still the new conversation: said, so the person writes to it.</summary>
@@ -668,11 +625,10 @@ public sealed class HandOverTests : IDisposable
 
         Assert.False(asked);
         Assert.Equal("sessions: it is stopped at the driver's next look, then goes on in the same tree with codex-acp.\n", output.ToString().ReplaceLineEndings("\n"));
-        // The verb decides the driven move in the store, claimed by its own run, and writes no box.
+        // The verb decides the driven move in the store, claimed by its own run.
         var move = QuestMove("qu3st000")!;
         Assert.Equal((MoveExecutors.Driven, "decided", "codex-acp", "work", HandOverWhy.Press, HandOverBy.Person), (move.Executor, move.PhaseWord, move.Agent, move.Account, move.Why, move.By));
         Assert.Equal(StoreProcess.Run, move.ClaimRun);
-        Assert.Null(new HandOverBox(_home).Read("qu3st000"));
     }
 
     /// <summary>
@@ -724,7 +680,7 @@ public sealed class HandOverTests : IDisposable
     }
 
     // ——— A quest's session: judged by the quest's state, whose take it is, the session's place
-    // among the quest's runs here, and the named agent's door; kept as a box the driver's next look takes.
+    // among the quest's runs here, and the named agent's door; kept as a move the driver's next look takes.
 
     /// <summary>The roster as the terminal reads it for a driven start: an agent's accounts and whether it drives an unadopted repository.</summary>
     private static HandOverAgent? Drives(string agent) => agent switch
@@ -835,7 +791,7 @@ public sealed class HandOverTests : IDisposable
 
     /// <summary>
     /// 🔴 A quest's session handed to another agent keeps its move in the store, decided at the ask, and says the driver's
-    /// next look takes it; no box is written.
+    /// next look takes it.
     /// </summary>
     /// <summary>
     /// 🔴 FABRIC-CLOSE1c20: a take lost to the person's own reopen is refused in the reopen's words and its own code, never as another
@@ -866,8 +822,6 @@ public sealed class HandOverTests : IDisposable
         var move = QuestMove("qu3st000")!;
         Assert.Equal(("decided", "run-ask", MoveExecutors.Driven, MoveHows.Brief), (move.PhaseWord, move.ClaimRun, move.Executor, move.How));
         Assert.Equal(("codex-acp", "work", HandOverWhy.Limit, HandOverBy.Person), (move.Agent, move.Account, move.Why, move.By));
-        Assert.Null(new HandOverBox(_home).Read("qu3st000"));
-        Assert.Empty(new HandOverBox(_home).Pending());
     }
 
     public static TheoryData<string, string, string?, string, string> QuestRefusals => new()
@@ -901,7 +855,6 @@ public sealed class HandOverTests : IDisposable
         var answer = await AskQuestAsync(room, id, agent, account);
 
         Assert.Equal((false, why, message), (answer.Kept, answer.Why, answer.Message));
-        Assert.Empty(Directory.EnumerateFiles(DaorisHome.Entry(_home, HomeEntry.Sessions), "*" + HandOverBox.Suffix));
         Assert.Null(QuestMove(id));
     }
 

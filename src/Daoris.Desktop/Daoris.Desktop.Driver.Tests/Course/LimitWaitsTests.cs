@@ -146,7 +146,7 @@ public sealed class LimitWaitsTests : IDisposable
         };
     }
 
-    /// <summary>🔴 A wake the go-on held off (here by an older build's hand-over box) is asked again at the next look, the stamp unchanged.</summary>
+    /// <summary>🔴 A wake the go-on held off (here by a hand-over waiting to be taken) is asked again at the next look, the stamp unchanged.</summary>
     [Fact]
     public async Task A_wake_that_answered_held_is_asked_again_at_the_next_look_at_the_same_stamp()
     {
@@ -157,12 +157,12 @@ public sealed class LimitWaitsTests : IDisposable
         using var r = runner;
         using var c = client;
         var config = Config();
-        var box = new HandOverBox(_home);
-        box.Write("c1", new HandOverRequest("acp-stub", null, HandOverWhy.Press, HandOverBy.Person, _now));
+        var moves = new MoveStore(_home);
+        var waiting = moves.Decide(new MoveDecision("c1", MoveExecutors.Conversation, MoveHows.Brief, HandOverWhy.Press, HandOverBy.Person) { Agent = "acp-stub" });
 
         var held = Assert.Single(await runner.WakeLimitsAsync(config));
         Assert.Null(held.SessionId);
-        box.Clear("c1");
+        moves.Close(waiting.Claim!, MoveCloseWhy.Superseded);
 
         Assert.Single(await runner.WakeLimitsAsync(config));
     }
@@ -202,7 +202,6 @@ public sealed class LimitWaitsTests : IDisposable
         Assert.Contains(("c2", "w1,w2", (string?)null), ledger.TakenBy);
         Assert.Empty(ledger.Said("c2"));
         await Poll.Until(() => Moved("c1")?.PhaseWord == "delivered", () => Seen(ledger, "c2"));
-        Assert.Empty(new LimitBoxes(_home).Pending());
 
         await Poll.Until(() => Events.After("c2", 0).Events.Any(e => e.Kind == SessionEventKind.Message), () => Seen(ledger, "c2"));
         var shown = Events.After("c2", 0).Events.ToList();
@@ -235,7 +234,6 @@ public sealed class LimitWaitsTests : IDisposable
         await Poll.Until(() => ledger.TakenBy.Any(taken => taken.Session == "c2"), () => Seen(ledger, "c2"));
         Assert.Equal(["w1"], ledger.Said("c2"));
         Assert.DoesNotContain(ledger.TakenBy, taken => taken.Session == "c1");
-        Assert.Empty(new LimitBoxes(_home).Pending());
         var move = Moved("c1");
         Assert.NotNull(move);
         Assert.Equal("c2", move!.Destination);

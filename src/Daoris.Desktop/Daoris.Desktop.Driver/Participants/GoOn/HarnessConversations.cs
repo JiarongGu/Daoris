@@ -17,8 +17,7 @@ namespace Daoris.Driver;
 /// <para><b>A binding that does not read is no conversation</b>: the answer falls back to a carry-on, saying Daoris kept no
 /// id (<see cref="ContinueWhy.Unkept"/>), and never throws.</para>
 ///
-/// <para><b>The store alone</b>: the binding files an older build kept are imported once by the
-/// home's migration (<see cref="BindingFilesStep"/>), and nothing here reads or writes a file. A deleted record takes its binding with
+/// <para><b>The store alone</b>: nothing here reads or writes a file. A deleted record takes its binding with
 /// its files (<see cref="SessionHomeFiles"/>).</para>
 /// </remarks>
 public sealed class HarnessConversations(string home, Func<StoreSettled>? settled = null) : IWorkplaceHarnessBindings

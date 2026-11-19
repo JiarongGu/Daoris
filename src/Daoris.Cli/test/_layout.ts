@@ -70,7 +70,7 @@ export function layoutFixture(tag: string, harness = 'claude-code'): LayoutFixtu
       const canon = readCanon(canonFx.root);
       const manifest = readManifest(repoFx.root);
       const plan = planSync({ root: repoFx.root, manifest, canon, lock: readLock(repoFx.root) });
-      return applySync({ root: repoFx.root, manifest, plan, canonVersion: canon.version, force });
+      return applySync({ root: repoFx.root, manifest, plan, canon, force });
     },
     lock: () => readLock(repoFx.root)!,
     cli(...argv) {

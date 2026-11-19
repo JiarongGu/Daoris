@@ -40,9 +40,6 @@ public sealed class ConversationMoves
 
     private readonly MoveTakeUp _takeUp;
 
-    /// <summary>The quests' own sessions as the ledger listed them at this holder's last look, which the hand-over box's import reads a record's kind by; null until the ledger answered.</summary>
-    private volatile HashSet<string>? _quests;
-
     /// <param name="home">The home whose move record this is.</param>
     /// <param name="service">The service whose ledger holds the records.</param>
     /// <param name="events">Where a record's notes are kept: a quiet move's, and a settled word's <c>lost</c> note.</param>
@@ -66,19 +63,7 @@ public sealed class ConversationMoves
         Delivery = new MoveDelivery(Store, Said);
         Resolve = new MoveResolve(Store, Said);
         scope ??= MoveTakeUpScope.Conversations;
-
-        // The conversations' scope imports the ended limit move's box an older build writes, at its
-        // come-up and look, and the hand-over's box of a conversation. The lease holder's scope has no limit box of its own
-        // to import, the driven carry-on never having written one; it imports the hand-over box of a quest session, so each box is
-        // imported by exactly one holder, by its record's kind. A shared loop's scope imports only the sessions of the lines it runs.
-        IMoveBoxImport[] imports = string.Equals(scope.Executor, MoveExecutors.Conversation, StringComparison.Ordinal)
-            ?
-            [
-                new LimitBoxImport(home, Store, (session, through) => LimitHeld.Of([.. events.After(session, 0).Events.Take(through)]) is not null),
-                new HandOverBoxImport(home, Store, session => _quests is { } quests && !quests.Contains(session)),
-            ]
-            : [new HandOverBoxImport(home, Store, session => _quests is { } quests && quests.Contains(session) && (scope.Lines?.Invoke(session) ?? true), MoveExecutors.Driven)];
-        _takeUp = new MoveTakeUp(home, Store, scope, imports, note: Note, clock: clock, said: Said);
+        _takeUp = new MoveTakeUp(home, Store, scope, note: Note, clock: clock, said: Said);
     }
 
     /// <summary>
@@ -182,17 +167,10 @@ public sealed class ConversationMoves
 
         // A dead run's move: whether its prompt reached the write is not known here, so its delivery is read by its evidence alone.
         // A hand-over found decided or quiescing goes on from its phase, not fallen back: it stays standing under this run,
-        // which the shell's hand-over take takes, as a box left on disk is taken at the next come-up.
+        // which the shell's hand-over take takes.
         foreach (var taken in look.Taken)
         {
             if (taken is { Claim: { } claim, Move: { } move } && !WaitsToBeTaken(move)) await Settle(() => EndAsync(claim, move.Phase, unwritten: false, ct)).ConfigureAwait(false);
-        }
-
-        // A box an older build wrote, imported this look: the importing run claims the move, so the take-up never
-        // takes it, and it goes on from its phase here as a taken move does, its prompt's write unknown.
-        foreach (var imported in look.Imported)
-        {
-            if (imported.Stands && !WaitsToBeTaken(imported)) await Settle(() => EndAsync(new MoveClaim(imported.Id, imported.ClaimRun, imported.ClaimGeneration), imported.Phase, unwritten: false, ct)).ConfigureAwait(false);
         }
     }
 
@@ -371,12 +349,10 @@ public sealed class ConversationMoves
         {
             var records = SessionRecords.Parse(await _service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
             var ids = records.Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
-            _quests = records.Where(QuestHandOver.IsQuestSession).Select(record => record.Id).ToHashSet(StringComparer.Ordinal);
             return record => ids.Contains(record);
         }
         catch (Exception error) when (Unanswered(error, ct))
         {
-            _quests = null;
             return _ => null;
         }
     }

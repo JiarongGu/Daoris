@@ -43,12 +43,6 @@ public sealed class SessionStore
     /// <summary>The memory coordinator's log of record, whose rows a session's commit point moves inside the ledger's step.</summary>
     public MemoryOpStore Memory { get; }
 
-    /// <summary>
-    /// The id a record's answer from before <see cref="Session.Said"/> took as its word when the desktop's migration converted it.
-    /// Never one a word is given now, which are hexadecimal.
-    /// </summary>
-    public const string AnswerWordId = "answer";
-
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new SessionStore(connection);

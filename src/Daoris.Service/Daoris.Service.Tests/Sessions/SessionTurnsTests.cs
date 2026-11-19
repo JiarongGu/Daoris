@@ -130,26 +130,6 @@ public sealed class SessionTurnsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_record_from_before_turns_reads_its_from_link_as_its_turn()
-    {
-        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);
-        var first = (await _ledger.OpenAsync(quest.Id, "claude-code", Now, tree: "/trees/s-5")).Session!;
-        await Move(first.Id, "starting", "working", "failed");
-        var moved = (await _ledger.OpenAsync(quest.Id, "codex", Now.AddMinutes(2), tree: "/trees/s-5",
-            from: first.Id, fromWhy: "curve", fromBy: "daoris")).Session!;
-        await using (var forget = _connection.CreateCommand())
-        {
-            forget.CommandText = "UPDATE sessions SET turns = NULL";
-            await forget.ExecuteNonQueryAsync();
-        }
-
-        var line = SessionTurns.OfLine([(await _sessions.FindAsync(first.Id))!, (await _sessions.FindAsync(moved.Id))!]);
-
-        Assert.Equal([(1, SessionTurns.Start, "claude-code"), (2, SessionTurns.Curve, "codex")],
-            line.Select(turn => (turn.Number, turn.Cause, turn.Agent!)));
-    }
-
-    [Fact]
     public async Task A_turn_s_end_keeps_what_its_door_reported_since_the_turns_before_it()
     {
         var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Here is why.", Now);

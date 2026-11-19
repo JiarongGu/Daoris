@@ -111,7 +111,7 @@ public sealed class SupervisorRuleStore(string home, Func<StoreSettled>? settled
         return WriteIn(write, place, set.Revision, [.. kept, .. rules], door, world);
     }
 
-    /// <summary>Whether the machine's rules were ever written here (a revision row at the machine's place): a home's seed or its migration.</summary>
+    /// <summary>Whether the machine's rules were ever written here (a revision row at the machine's place): a home's seed.</summary>
     public bool Seeded() => All().Any(set => set.Place == SupervisorRules.Machine);
 
     /// <summary>Whether the store this write is in has the rules' tables.</summary>

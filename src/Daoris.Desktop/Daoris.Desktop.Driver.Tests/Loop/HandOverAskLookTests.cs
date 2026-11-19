@@ -101,7 +101,6 @@ public sealed class HandOverAskLookTests : IDisposable
 
         Assert.Equal((HandOverAskStates.Waiting, "codex-acp"), (State("c0nv0001")!.State, State("c0nv0001")!.Agent));
         Assert.Equal(["handover.asked"], Notes("c0nv0001"));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Contains(look.Events, line => line.Contains("waits for the person's yes or no in What needs you", StringComparison.Ordinal));
     }
 
@@ -116,7 +115,6 @@ public sealed class HandOverAskLookTests : IDisposable
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.Off), (State("c0nv0001")!.State, State("c0nv0001")!.Code));
         Assert.Equal(["handover.refused"], Notes("c0nv0001"));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
     /// <summary>
@@ -131,10 +129,9 @@ public sealed class HandOverAskLookTests : IDisposable
 
         await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
-        // Kept as a move the store carries, decided, and no box.
+        // Kept as a move the store carries, decided.
         var move = new MoveStore(_home).Standing("c0nv0001")!;
         Assert.Equal(("decided", "codex-acp", HandOverWhy.Agent, HandOverBy.Agent), (move.PhaseWord, move.Agent, move.Why, move.By));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
         Assert.Equal((HandOverAskStates.Taken, "codex-acp"), (State("c0nv0001")!.State, State("c0nv0001")!.Agent));
         Assert.Equal(["handover.taking"], Notes("c0nv0001"));
 
@@ -143,7 +140,6 @@ public sealed class HandOverAskLookTests : IDisposable
         await Driver(HandOverRules.On, wired: true).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal([("c0nv0002", "codex-acp")], _handed);
-        Assert.Null(new HandOverBox(_home).Read("c0nv0002"));
         Assert.Equal(HandOverAskStates.Taken, State("c0nv0002")!.State);
     }
 
@@ -202,7 +198,6 @@ public sealed class HandOverAskLookTests : IDisposable
 
         Assert.Equal((HandOverAskStates.Approved, "codex-acp"), (State("s1")!.State, State("s1")!.Agent));
         Assert.Equal("working", _ledger.Session("s1")["state"]!.GetValue<string>());
-        Assert.Null(new HandOverBox(_home).Read("s1"));
         Assert.Empty(new HandedQuests(_home).All());
         Assert.Equal(["handover.taking"], Notes("s1"));
     }
@@ -254,7 +249,6 @@ public sealed class HandOverAskLookTests : IDisposable
         await Driver(HandOverRules.On).TickAsync().WaitAsync(Poll.Patience);
 
         Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.JustHanded), (State("c0nv0001")!.State, State("c0nv0001")!.Code));
-        Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
 
         // Its first turn ended before a later ask: that one is the rule's.
         var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));

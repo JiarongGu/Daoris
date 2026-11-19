@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The install's case replayed through whole passes: runs whose quests were Done under the older meaning, each held at the quest's holds
-/// on a done nothing reads, are ended together with their sessions as stopped by Daoris, and no session is reopened to wait on them.
+/// The install's case replayed through whole passes: runs whose quests are closed Done, each held at the quest's holds on a done nothing
+/// reads, are ended together with their sessions as stopped by Daoris.
 /// </summary>
 public sealed class ClosedQuestRunReplayTests : NodeRunFixture
 {
@@ -18,7 +18,7 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
         """;
 
     [Fact]
-    public async Task Runs_whose_quests_are_done_and_held_at_the_quests_holds_end_stopped_by_daoris_with_their_sessions_and_reopen_none()
+    public async Task Runs_whose_quests_are_done_and_held_at_the_quests_holds_end_stopped_by_daoris_with_their_sessions()
     {
         var digest = RunHome.SaveGraph(_home, ClaimedHoldsHanded);
         var runs = Enumerable.Range(0, 14).Select(each => $"r{each:D2}").ToList();
@@ -38,7 +38,6 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
 
         _units = [.. runs.Select(run => RunHome.QuestUnit(RunHome.Quest(run, "Done") with { Held = true, Hold = "failed" }) with { Executors = ["s-" + run] })];
         var finished = new List<RunFinish>();
-        var reopened = new List<RunReopen>();
         var runtime = Runtime();
         runtime.Finish = (end, _) =>
         {
@@ -47,15 +46,9 @@ public sealed class ClosedQuestRunReplayTests : NodeRunFixture
         };
         runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(
             [.. runs.Select(run => new SessionRecord("s-" + run, "Owner", SessionStates.AwaitingStep) { NoteParts = new StepWait(run).Note().Parts })]);
-        runtime.Reopen = (reopen, _) =>
-        {
-            reopened.Add(reopen);
-            return Task.FromResult<RunReopenResponse?>(new RunReopenResponse("reopened", reopen.Sessions));
-        };
 
         for (var pass = 0; pass < 20 && runs.Any(run => Files.Read(RunUnits.IdOf(run))?.Ended is null); pass++) await RunPassAsync(runtime);
 
-        Assert.Empty(reopened);
         Assert.All(runs, run =>
         {
             var ended = Files.Read(RunUnits.IdOf(run))!.Ended;

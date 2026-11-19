@@ -139,17 +139,12 @@ internal sealed class QuestRequirementJudge(AskStore? asks)
             .ToList();
         if (unsaid.Count == 0) return null;
 
-        var since = held.WordsKeptFrom is { } keptFrom
-            ? " Its words are kept from "
-              + keptFrom.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)
-              + " UTC: what the person said on it before then is in its sessions' records, not on the ask."
-            : "";
         return (QuestPublishRefusal.NotQuoted,
             (unsaid.Count == 1 ? "A requirement quotes" : $"{unsaid.Count} requirements quote")
             + $" words the person never said on ask `#{held.Id}`:\n\n"
             + string.Join("\n", unsaid.Select(quoted => $"- requirement {quoted.Index}: \"{Clip(quoted.Quote)}\""))
             + "\n\nA requirement is the person's own words, verbatim (whitespace and case aside), from the ask or from "
             + "what they said on it since: an answer to a session, or a message added to one. Copy their words; your "
-            + "reading of them belongs in the body." + since);
+            + "reading of them belongs in the body.");
     }
 }

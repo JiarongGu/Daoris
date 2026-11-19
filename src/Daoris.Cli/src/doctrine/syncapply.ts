@@ -1,8 +1,9 @@
-import type { CoreSwitch, Harness, Lock, Manifest, PlannedWrite, SyncPlan } from './records.ts';
+import type { Canon, CoreSwitch, Harness, Lock, Manifest, PlannedWrite, SyncPlan } from './records.ts';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeBytesAtomic, writeTextAtomic } from '../platform/fsx.ts';
 import { writeLock } from './config.ts';
+import { canonDigest } from './canon.ts';
 import { rosterExtras } from './indexgen.ts';
 import { renderTier } from './tierrender.ts';
 import { ensureImport, writeRegion } from './region.ts';
@@ -102,10 +103,11 @@ export function keptInMove(plan: SyncPlan): string[] {
 }
 
 export function applySync(
-  { root, manifest, plan, canonVersion, canonDigest, force }:
-  { root: string; manifest: Manifest; plan: SyncPlan; canonVersion: string; canonDigest?: string; force?: boolean },
+  { root, manifest, plan, canon, force }:
+  { root: string; manifest: Manifest; plan: SyncPlan; canon: Canon; force?: boolean },
 ): Lock {
   refuseWhatForceCannot(plan);
+  const canonVersion = canon.version;
 
   const mirrorReader = manifest.harnessDescriptor?.mirror?.reader ?? 'the agent that reads only there';
   const indexCollides = plan.index.collision;
@@ -253,7 +255,7 @@ export function applySync(
   const lock: Lock = {
     canonVersion,
     // Which canon of that version: `status` tells two apart by it, and never orders them by it.
-    ...(canonDigest !== undefined ? { canonDigest } : {}),
+    canonDigest: canonDigest(canon),
     source: manifest.source,
     // A kept file's entry unchanged: the disk against it stays what this repository changed.
     entries: plan.writes.map(({ pack, source, target, sha256: digest, in: within, kept }) => kept ? { ...kept } : ({
@@ -280,7 +282,7 @@ export function applySync(
 
   // The region LAST: its rooms' rows read each room as it stands, and its pointer names the index
   // this sync just wrote.
-  writeSpans({ root, manifest, writes: plan.writes, canonVersion, off: plan.switchedOff ?? [], from });
+  writeSpans({ root, manifest, writes: plan.writes, canonVersion, off: plan.switchedOff ?? [] });
   writePointers(root, plan);
   writeLock(root, lock);
   return lock;
@@ -303,10 +305,10 @@ function writePointers(root: string, plan: SyncPlan): void {
  * file, never one per rule: each rewrite of the same file would re-read all that the last one just wrote.
  */
 function writeSpans(
-  { root, manifest, writes, canonVersion, off, from }:
+  { root, manifest, writes, canonVersion, off }:
   {
     root: string; manifest: Manifest; writes: PlannedWrite[]; canonVersion: string;
-    off: CoreSwitch[]; from: string;
+    off: CoreSwitch[];
   },
 ): void {
   const spans = writes.filter((write) => write.in);
@@ -339,13 +341,6 @@ function writeSpans(
     const held = existsSync(abs) ? readFileSync(abs, 'utf8') : '';
     const body = renderTier(input);
     writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
-
-    // 🔴 The migration's last piece. An older repository has a generated `RULES_INDEX.md` in the
-    // directory the tier just left. It is not in the lock — generated files never are — so no
-    // retirement rule reaches it, and it would sit there as a roster that looks authoritative and
-    // is frozen at the moment the tier moved. Only ever a file daoris wrote.
-    const legacy = join(root, from, 'rules', 'RULES_INDEX.md');
-    if (existsSync(legacy)) rmSync(legacy, { force: true });
 
     // The pointer, for the one harness that reads another file and follows imports.
     if (harness.pointer) {

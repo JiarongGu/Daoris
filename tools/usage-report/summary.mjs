@@ -94,7 +94,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
 function harnessActionsOf(lines) {
   const rows = new Map();
   const rowOf = (line) => {
-    const harness = doorOf(line.data, 'harness') ?? '(unnamed)';
+    const harness = doorOf(line.data) ?? '(unnamed)';
     const action = named(line.data.action) ?? '(unnamed)';
     const id = `${harness}\u0000${action}`;
     if (!rows.has(id)) rows.set(id, { harness, action, started: [], prompted: [], ended: [] });

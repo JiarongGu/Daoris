@@ -12,6 +12,7 @@ public sealed class HomeDefaultTests : IDisposable
 
     public void Dispose()
     {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -34,6 +35,21 @@ public sealed class HomeDefaultTests : IDisposable
         Assert.Equal(1, WorkflowPorts.Store(_home).Load("merge-after-accept")!.Read.Versions.Count);
     }
 
+    /// <summary>A fresh home's seed gives <i>Second check</i> its first choices with their day's budget; no conversion of a home does.</summary>
+    [Fact]
+    public void A_fresh_home_s_seed_gives_the_second_check_its_first_choices_with_their_day_s_budget()
+    {
+        Assert.True(HomeSeed.Once(DaorisHome.Entry(_home, HomeEntry.DriverConfig), _home));
+
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(SecondCheck.Choices, staffing.Read()!.Actors[SecondCheck.Role]);
+        var policy = staffing.Policy(SecondCheck.Role).Policy!;
+        Assert.Equal(StaffRules.Order, policy.Rule);
+        Assert.All(SecondCheck.Choices, choice => Assert.Equal(SecondCheck.StartsADay, policy.Of(StaffKey.Of(choice))!.Budget!.Starts));
+        Assert.False(SecondCheck.SeedFresh(_home, () => StoreSettled.Yes));
+        Assert.Equal(1, staffing.Policy(SecondCheck.Role).Revision);
+    }
+
     [Fact]
     public void A_home_that_already_has_a_file_is_not_seeded()
     {
@@ -44,6 +60,22 @@ public sealed class HomeDefaultTests : IDisposable
         Assert.False(HomeSeed.Once(path, _home));
         Assert.Null(DriverConfig.Load(path).DefaultWorkflow);
         Assert.Null(WorkflowPorts.Store(_home).Load("merge-after-accept"));
+    }
+
+    [Fact]
+    public void A_home_whose_file_came_first_still_gets_its_rules_and_second_check_once()
+    {
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{}\n");
+
+        Assert.False(HomeSeed.Once(path, _home));
+
+        Assert.True(new SupervisorRuleStore(_home, () => StoreSettled.Yes).Seeded());
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(SecondCheck.Choices, staffing.Read()!.Actors[SecondCheck.Role]);
+        Assert.False(HomeSeed.Once(path, _home));
+        Assert.Equal(1, staffing.Policy(SecondCheck.Role).Revision);
     }
 
     [Fact]

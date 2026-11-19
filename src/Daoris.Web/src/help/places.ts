@@ -20,20 +20,19 @@ export type HelpPlace = {
  * The places Ask Daoris's go may name: the views, Settings' domains, and the parts of them a door
  * already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a domain's
  * cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two modes, an
- * agent's page's sections — and the places a go named before they moved.
+ * agent's page's sections.
  * @remarks
  * A twin (`.claude/knowledge/twins.md`) of the driver's `HelpPlaces`, which judges a go before the person
  * sees its card and lists these places in Ask Daoris's room. They share no code; each side's test holds
  * the same table, and they change together.
  * The bar's eight places and Settings, in the bar's order. The table holds the window's views only (its
- * test holds it to the bar); Knowledge's modes are parts within it (`PLACE_PARTS`), and a kept go that
- * names a mode as a view lands through `PLACE_KEPT`.
+ * test holds it to the bar); Knowledge's modes are parts within it (`PLACE_PARTS`).
  */
 export const PLACE_VIEWS: readonly View[] = [
   'overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins', 'settings',
 ];
 
-// The guide is Get started, Plugins a place of its own; Workspace and Permissions are a workspace's page's, kept below.
+// The guide is Get started, Plugins a place of its own; a workspace's page and what agents may do are not Settings domains.
 export const PLACE_DOMAINS: readonly SettingsSection[] = [
   'start', 'appearance', 'driver', 'ai', 'git', 'browser', 'space', 'updates', 'wiring', 'logs',
 ];
@@ -44,26 +43,6 @@ export const PLACE_DOMAINS: readonly SettingsSection[] = [
  * an offer as `offerItem`; in the bar's order. The driver's `HelpPlaces.ItemViews`.
  */
 export const PLACE_ITEM_VIEWS: readonly View[] = ['sessions', 'quests', 'plugins'];
-
-/**
- * The places a go named under an older spelling, each with the place it is now: Search and Convergence
- * are Knowledge's modes, and Settings → Plugins is the Plugins place. Settings → Workspace and
- * Permissions are a workspace's page, each old spelling with its part a row of its own, and
- * Permissions alone what agents may do; a part no row names opens nothing. The twins list none of them, and a go still
- * spelled so, kept in an earlier conversation, opens where the place went rather than nowhere.
- */
-export const PLACE_KEPT: readonly { was: HelpPlace; now: HelpPlace }[] = [
-  { was: { view: 'search' }, now: { view: 'knowledge', part: 'search' } },
-  { was: { view: 'convergence' }, now: { view: 'knowledge', part: 'convergence' } },
-  { was: { view: 'settings', domain: 'plugins' }, now: { view: 'plugins' } },
-  { was: { view: 'settings', domain: 'workspace' }, now: { view: 'projects', part: 'workspace-details' } },
-  { was: { view: 'settings', domain: 'workspace', part: 'wiring' }, now: { view: 'projects', part: 'workspace-remote' } },
-  { was: { view: 'settings', domain: 'workspace', part: 'lines' }, now: { view: 'projects', part: 'workspace-defaults' } },
-  { was: { view: 'settings', domain: 'workspace', part: 'landing' }, now: { view: 'projects', part: 'workspace-defaults' } },
-  { was: { view: 'settings', domain: 'workspace', part: 'sweep' }, now: { view: 'projects', part: 'workspace-branches' } },
-  { was: { view: 'settings', domain: 'permissions' }, now: { view: 'agents', part: 'rules' } },
-  { was: { view: 'settings', domain: 'permissions', part: 'across' }, now: { view: 'projects', part: 'workspace-defaults' } },
-];
 
 /**
  * A workspace's page's parts: its three tabs and its two sections, each the door that opens it.
@@ -87,9 +66,6 @@ const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
   'quests/asks': 'asks',
   'quests/held': 'held',
 };
-
-const same = (one: HelpPlace, other: HelpPlace) =>
-  one.view === other.view && (one.domain ?? null) === (other.domain ?? null) && (one.part ?? null) === (other.part ?? null);
 
 /** The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain. */
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
@@ -127,16 +103,14 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * Quests it may name the one quest or ask instead of a part, and on Sessions the one session, which
  * the list chooses as any door's item. A go to Add or Import may name a workspace, the one the drawer
  * opens filled with; on any other place a workspace is ignored.
- * Knowledge with no part opens in the mode it is left in. A go spelled under an older place name opens where
- * it went (`PLACE_KEPT`).
+ * Knowledge with no part opens in the mode it is left in.
  */
 export function placeDoor(asked: HelpPlace): StarterDoor | null {
-  const place = PLACE_KEPT.find(({ was }) => same(was, asked))?.now ?? asked;
-  // The table holds the window's views only; a mode is a view's name only in a kept go, handled above.
-  const view = PLACE_VIEWS.find((known): known is View => known === place.view);
+  // The table holds the window's views only; a mode is a part within one.
+  const view = PLACE_VIEWS.find((known): known is View => known === asked.view);
   if (!view) return null;
-  const domain = place.domain ?? null;
-  const part = place.part ?? null;
+  const domain = asked.domain ?? null;
+  const part = asked.part ?? null;
 
   // The one quest or ask, alone in its view, named as Quests' list names it.
   const item = asked.item?.trim() || null;

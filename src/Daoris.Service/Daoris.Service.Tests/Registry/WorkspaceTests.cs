@@ -119,34 +119,6 @@ public sealed class WorkspaceWiringTests : IAsyncLifetime
 
         Assert.Equal("aurora", effective.Workspace);
     }
-
-    /// <summary>
-    /// A store written before workspaces existed must survive the upgrade with its registrations
-    /// intact and in `default` — the same property the root and remote columns already hold, for the
-    /// same reason: a schema that only works on a fresh database drops every connected repository.
-    /// </summary>
-    [Fact]
-    public async Task An_existing_store_without_the_workspace_column_is_migrated_in_place()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE registrations (
-                  repository TEXT PRIMARY KEY, summary TEXT NULL, owns TEXT NOT NULL,
-                  accepts TEXT NOT NULL, packs TEXT NOT NULL, updated TEXT NOT NULL
-                );
-                INSERT INTO registrations VALUES ('Elder', 'Was here first.', '[]', '[]', '[]', '2026-01-01');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var store = await RegistrationStore.OpenAsync(old);
-        var elder = Assert.Single(await store.AllAsync());
-
-        Assert.Equal("default", elder.Workspace);
-    }
 }
 
 /// <summary>

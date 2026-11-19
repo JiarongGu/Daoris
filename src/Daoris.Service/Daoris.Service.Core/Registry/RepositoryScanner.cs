@@ -102,9 +102,9 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
         // What git ignores, asked once and only when a folder of records is walked.
         var ignored = new Lazy<IgnoredPaths>(() => IgnoredPaths.Of(repositoryRoot));
 
-        // The always-loaded tier, wherever this repository keeps it. A repository on the old layout
-        // has files under `rules/`; a synced one has a SPAN in the file every
-        // harness reads, and the lock is what says which — so both are read and neither is guessed at.
+        // The always-loaded tier, wherever this repository keeps it. A repository may keep its own files under `rules/`
+        // (the one harness that reads them); the synced doctrine is a SPAN in the file every harness reads, and the lock
+        // is what says which — so both are read and neither is guessed at.
         foreach (var root in layout.Roots)
         {
             entries.AddRange(ScanDocuments(repositoryRoot, name, daorisLock, RepositoryLayout.Under(root, "rules"), EntryKind.Rule));

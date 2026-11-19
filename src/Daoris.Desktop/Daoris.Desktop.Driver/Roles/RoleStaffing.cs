@@ -212,27 +212,6 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>
-    /// The migration's write (<see cref="StaffingStep"/>): each named role's row replaced by its own, none where it is null, in one
-    /// transaction. The caller holds the staffing's lock.
-    /// </summary>
-    internal void Replace(IReadOnlyList<(string Role, StaffingRow? Row)> rows)
-    {
-        using var store = DesktopStore.Open(Location, StoreProcess.Options(Settled));
-        store.Write(Family, write =>
-        {
-            var at = Now();
-            foreach (var (role, row) in rows)
-            {
-                write.Execute("DELETE FROM role_staffing WHERE role = $role", ("$role", role));
-                if (row is null) continue;
-                write.Execute(
-                    "INSERT INTO role_staffing (role, state, choices, why, first_agent, at) VALUES ($role, $state, $choices, $why, $first, $at)",
-                    ("$role", role), ("$state", row.State), ("$choices", row.Choices), ("$why", row.Why), ("$first", row.First), ("$at", at));
-            }
-        });
-    }
-
-    /// <summary>
     /// Import the home's <c>driver.json</c> staffing now, once the start's confirmation is settled and under the staffing's record lock, where
     /// the store holds none yet. Nothing is written for a home with no file, a file that does not read, a start not settled, a lock held past
     /// <see cref="LockWait"/> or a store that will not take it. Throws what the store's own failure is not: a kill, here a test's seam.
@@ -536,8 +515,8 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     private sealed record Staffing(IReadOnlyList<StaffingRow> Rows, bool Holds);
 
     /// <summary>
-    /// <c>driver.json</c>'s staffing keys: <c>actors</c>, and the three first-agent keys only nocompat1's <see cref="StaffingStep"/> meets,
-    /// since it takes them out once it has imported them.
+    /// <c>driver.json</c>'s staffing keys: <c>actors</c>, and the three first-agent keys of the single-agent shape, which no build writes
+    /// and the tests' configurations still carry: they go with those fixtures.
     /// </summary>
     private static readonly string[] Keys = ["actors", "adapter", "intakeAdapter", "helperAdapter"];
 

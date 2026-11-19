@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { listFiles, listMarkdown } from '../platform/fsx.ts';
 import { canonDigest, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { DEFAULT_CORE_BUDGET_WORDS, MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
+import { DEFAULT_CORE_BUDGET_WORDS, MANIFEST_FILE, lockIndex, lockedDigest, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { newerLock } from './lockversion.ts';
@@ -170,8 +170,8 @@ export function commandStatus(
      * canons differ, which no content comparison can order.
      */
     direction: 'newer' | 'unknown';
-    /** This daoris's canon and the one the lock is written from (null for a lock from before the digest). */
-    digest: { carried: string; locked: string | null };
+    /** This daoris's canon and the one the lock is written from. */
+    digest: { carried: string; locked: string };
     changed: string[];
     added: string[];
     retired: string[];
@@ -224,7 +224,8 @@ export function commandStatus(
   if (canon && lock && !selectionProblem && !behind) {
     const newer = canon.version !== lock.canonVersion;
     const carried = canonDigest(canon);
-    if (newer || lock.canonDigest !== carried) {
+    const locked = lockedDigest(lock);
+    if (newer || locked !== carried) {
       // Naming what moved is the difference between a prompt to act and a
       // prompt to investigate. All of it comes from the lock, so it stays offline.
       const changes = planChanges({ root, manifest, canon, lock });
@@ -234,7 +235,7 @@ export function commandStatus(
           available: canon.version,
           locked: lock.canonVersion,
           direction: newer ? 'newer' : 'unknown',
-          digest: { carried, locked: lock.canonDigest ?? null },
+          digest: { carried, locked },
           changed: changes.changed,
           added: changes.added,
           retired: changes.retired,
@@ -373,7 +374,7 @@ export function commandStatus(
     // No side is named and sync is not offered: from the older of the two it would write the older text back.
     write(`  update        differs from this CLI's canon (newer or older cannot be told): both are canon ${update.available}`);
     write(`                  this CLI's canon  ${update.digest.carried.slice(0, 12)}`);
-    write(`                  the lock's canon  ${update.digest.locked?.slice(0, 12) ?? 'none recorded'}`);
+    write(`                  the lock's canon  ${update.digest.locked.slice(0, 12)}`);
     for (const target of update.changed) write(`                  differs           ${target}`);
     for (const target of update.added) write(`                  not in the lock   ${target}`);
     for (const target of update.retired) write(`                  not in this canon ${target}`);

@@ -27,8 +27,8 @@ const DEFAULTS: Pick<Manifest, 'packs' | 'harness' | 'coreBudget'> & { target: s
   { packs: [], harness: DEFAULT_HARNESS, target: null, coreBudget: { words: DEFAULT_CORE_BUDGET_WORDS, fails: false } };
 
 /**
- * `coreBudget` as `check` reads it, or a refusal. The byte ceiling it replaced is refused with the line that replaces
- * it, because a ceiling silently ignored is one nobody knows has stopped applying.
+ * `coreBudget` as `check` reads it, or a refusal. The manifest is written by hand, so the byte ceiling it replaced is refused with
+ * the line that replaces it: a ceiling silently ignored is one nobody knows has stopped applying.
  */
 function checkCoreBudget(parsed: Record<string, unknown>): Manifest['coreBudget'] {
   if ('coreBudgetBytes' in parsed) {
@@ -163,6 +163,18 @@ export function readLock(root: string): Lock | null {
 }
 
 /**
+ * The canon digest a lock names, or a refusal: a lock is the repository's own file, so one with no digest is in front of this
+ * daoris, and comparing against nothing would crash. `sync` writes the digest, so it never asks this.
+ */
+export function lockedDigest(lock: Lock): string {
+  const digest = (lock as Partial<Lock>).canonDigest;
+  if (typeof digest !== 'string' || digest.length === 0) {
+    throw new DaorisError(`${LOCK_FILE}: the lock predates its digest: run daoris sync`, 1);
+  }
+  return digest;
+}
+
+/**
  * Entries are sorted by target and the shape is fixed, so the lock diffs
  * cleanly in review — a reviewer should see what moved, not a reshuffle.
  */
@@ -170,8 +182,7 @@ export function writeLock(root: string, lock: Lock): void {
   const sorted = {
     version: LOCK_VERSION,
     canonVersion: lock.canonVersion,
-    // Beside the version it qualifies; absent only in a lock written before it.
-    ...(lock.canonDigest !== undefined ? { canonDigest: lock.canonDigest } : {}),
+    canonDigest: lock.canonDigest,
     source: lock.source,
     entries: [...lock.entries].sort((a, b) => compareOrdinal(a.target, b.target)),
     // Only when something is off, so a lock that switches nothing is byte-for-byte unchanged.
@@ -181,8 +192,7 @@ export function writeLock(root: string, lock: Lock): void {
     // The same for the layout: absent means the older one, so a lock on it is unchanged.
     ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
     ...(lock.target !== undefined ? { target: lock.target } : {}),
-    // Where the index is written; absent in a lock from before it, which reads as none yet.
-    ...(lock.index !== undefined ? { index: lock.index } : {}),
+    index: lock.index,
     ...(lock.mirrors?.length
       ? { mirrors: [...lock.mirrors].sort((a, b) => compareOrdinal(a.path, b.path)) }
       : {}),

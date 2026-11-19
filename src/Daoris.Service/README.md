@@ -25,8 +25,7 @@ scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a 
 searchable. The ledger side grew with it: a session record keys on the **working tree** it was held in
 (D51), not on the repository that owns it, and carries the diff a review reads (SURF6a). A `stopped`
 record says whether it was **interrupted** (D104): ended by the driver's orphan sweep or its shutdown,
-not by the person. The ledger carries an interrupted take on as it does a failed one (D80); the column
-arrives by `SchemaColumns`, so an older record reads as the person's. A person's stop holds its quest in
+not by the person. The ledger carries an interrupted take on as it does a failed one (D80). A person's stop holds its quest in
 the driver until *Try again* releases it (SESSUX1b, D126), so the ledger carries it on too, but only a take
 a session of this machine's made (`took`): a stop before the take leaves the quest to whoever took it. Every
 carry-on asks whose the take is (CARRY2): one the quest's log says another machine made, a lost race

@@ -327,35 +327,6 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A store from before the mark starts it at the newest revision it holds, so a delete made after the upgrade
-    /// cannot take the revision back either.
-    /// </summary>
-    [Fact]
-    public async Task A_store_from_before_the_mark_starts_it_at_the_newest_revision()
-    {
-        await Create();
-        var newest = await Create();
-        var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision);
-        await using (var older = _connection.CreateCommand())
-        {
-            // An older build: no mark, and nothing that moves one.
-            older.CommandText = """
-                DROP TRIGGER IF EXISTS session_revision_written;
-                DROP TRIGGER IF EXISTS session_revision_moved;
-                DROP TABLE IF EXISTS session_revision;
-                """;
-            await older.ExecuteNonQueryAsync();
-        }
-
-        var upgraded = await SessionStore.OpenAsync(_connection);
-        Assert.True(await upgraded.DeleteAsync(newest.Id));
-        var next = await upgraded.CreateAsync("abc123", "Owner", "stub", Now.AddMinutes(1));
-
-        var written = Assert.Single(await upgraded.OwnChangedSinceAsync(through, Workspaces.Default));
-        Assert.Equal((next.Id, through + 1), (written.Session.Id, written.Revision));
-    }
-
-    /// <summary>
     /// The store deletes a record whole when asked, and says whether there is one. It judges nothing: whether a
     /// record may go is the ledger's.
     /// </summary>

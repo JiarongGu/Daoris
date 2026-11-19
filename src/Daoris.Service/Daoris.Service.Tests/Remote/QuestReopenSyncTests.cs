@@ -457,33 +457,10 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// What a machine on a build before FABRIC-CLOSE1c18 writes for a move it makes after its take lost to the reopen: the store's own
-    /// append, with no claim judged on an open step, pending as any move is. Written by hand because no verb of this build writes it.
-    /// </summary>
-    private async Task WriteAsAnOlderBuildAsync(QuestStore machine, string quest, QuestOperationKind kind, string note, DateTimeOffset at)
-    {
-        await using var append = _connections[1].CreateCommand();
-        append.CommandText = """
-            INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
-            VALUES ($quest, $kind, $machine,
-                    (SELECT MAX(
-                       COALESCE((SELECT MAX(sequence) FROM quest_log WHERE machine = $machine), 0),
-                       COALESCE((SELECT sequence FROM quest_machine WHERE one = 1 AND id = $machine), 0)) + 1),
-                    $at, $payload)
-            """;
-        append.Parameters.AddWithValue("$quest", quest);
-        append.Parameters.AddWithValue("$kind", kind.ToString().ToLowerInvariant());
-        append.Parameters.AddWithValue("$machine", machine.Machine);
-        append.Parameters.AddWithValue("$at", at.ToString("O"));
-        append.Parameters.AddWithValue("$payload", System.Text.Json.JsonSerializer.Serialize(new { note }));
-        await append.ExecuteNonQueryAsync();
-    }
-
-    /// <summary>
     /// 🔴 A take lost to the reopen leaves the step open, where the table allows a done or a decline from open. B's session runs until its
     /// driver's next look stops it, and closes or declines nothing meanwhile: B's store refuses the move inside its write, in the reopen's
-    /// words; a remote refuses one pushed by a build that did not; and B's rebase loses one such a build left pending, as a conflict of its
-    /// own. The step stays open on the new submission everywhere. A take is not refused so: a fresh one of the open step is B's to make.
+    /// words, and a remote refuses one pushed by a build that did not. The step stays open on the new submission everywhere. A take is
+    /// not refused so: a fresh one of the open step is B's to make.
     /// </summary>
     [Theory]
     [InlineData(QuestOperationKind.Done)]
@@ -504,11 +481,10 @@ public sealed class QuestReopenSyncTests : IAsyncLifetime
         Assert.Empty(pushed.Accepted);
         Assert.Contains("the person's reopen", Assert.Single(pushed.Refused, r => r.Quest == step.Id).Reason);
 
-        await WriteAsAnOlderBuildAsync(_b, step.Id, kind, "After the take lost.", Now.AddHours(6));
-        var upgraded = await SyncAsync(_b);
+        var after = await SyncAsync(_b);
         await SyncAsync(_a);
-        Assert.Empty(upgraded.Refused);
-        Assert.Equal((status, "After the take lost."), (Assert.Single(upgraded.Conflicts).Attempted, upgraded.Conflicts[0].Note));
+        Assert.Empty(after.Refused);
+        Assert.Empty(after.Conflicts);
         Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
         foreach (var store in new[] { _a, _b, _remote })
         {

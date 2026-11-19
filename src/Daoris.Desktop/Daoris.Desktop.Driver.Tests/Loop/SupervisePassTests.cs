@@ -53,7 +53,6 @@ public sealed class SupervisePassTests : IDisposable
         File.WriteAllText(file, """{ "adapter": "claude-code-acp" }""");
         var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
         staffing.ImportFile();
-        HomeMigration.Run(_home, [new SupervisorStep(() => null)]);
         var seed = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
         RoleDoor.Apply(staffing, RoleChange.Set(seed with { Hold = seed.Hold! with { Holder = RoleHolders.Agent } }),
             [new("claude-code-acp", "opus", "high"), new("claude-code-acp", "sonnet", "medium")]);

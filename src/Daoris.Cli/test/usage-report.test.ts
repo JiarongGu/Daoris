@@ -142,8 +142,8 @@ function week(): string {
     line('2026-09-29T22:01:00.000Z', 'desktop', 'info', 'view.opened', { view: 'overview' }),
     line('2026-09-29T22:02:00.000Z', 'desktop', 'info', 'view.opened', { view: 'sessions' }),
     line('2026-09-29T22:03:00.000Z', 'desktop', 'info', 'command.run', { command: 'go.quests' }),
-    line('2026-09-29T22:04:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', kind: 'chat', adapter: 'claude-code-acp', repository: 'engine' }),
-    line('2026-09-29T22:04:06.000Z', 'desktop', 'info', 'session.opened', { session: 's1', adapter: 'claude-code-acp', openMs: 6000 }),
+    line('2026-09-29T22:04:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', kind: 'chat', door: 'claude-code-acp', repository: 'engine' }),
+    line('2026-09-29T22:04:06.000Z', 'desktop', 'info', 'session.opened', { session: 's1', door: 'claude-code-acp', openMs: 6000 }),
     line('2026-09-29T22:04:08.000Z', 'desktop', 'info', 'message.sent', { session: 's1', kind: 'chat', length: 42, files: 0 }),
     line('2026-09-29T22:04:10.000Z', 'desktop', 'info', 'turn.answered', { session: 's1', firstAnswerMs: 2000 }),
     line('2026-09-29T22:05:00.000Z', 'desktop', 'info', 'turn.ended', { session: 's1', stopReason: 'end_turn', turnMs: 50000 }),
@@ -156,11 +156,11 @@ function week(): string {
     line('2026-09-30T08:02:00.000Z', 'desktop', 'info', 'panel.moved', { view: 'console', region: 'right' }),
     'not json',
     line('2026-09-30T08:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'driven', door: 'codex-acp', repository: 'game' }),
-    line('2026-09-30T08:03:02.000Z', 'desktop', 'info', 'session.opened', { session: 's2', adapter: 'codex-acp', openMs: 2000 }),
+    line('2026-09-30T08:03:02.000Z', 'desktop', 'info', 'session.opened', { session: 's2', door: 'codex-acp', openMs: 2000 }),
     line('2026-09-30T08:03:05.000Z', 'desktop', 'info', 'turn.answered', { session: 's2', firstAnswerMs: 4000 }),
     line('2026-09-30T08:04:00.000Z', 'desktop', 'info', 'turn.ended', { session: 's2', stopReason: 'cancelled', turnMs: null }),
-    line('2026-09-30T08:05:00.000Z', 'desktop', 'info', 'session.started', { session: 's3', kind: 'chat', adapter: 'claude-code-acp' }),
-    line('2026-09-30T08:05:10.000Z', 'desktop', 'info', 'session.opened', { session: 's3', adapter: 'claude-code-acp', openMs: 10000 }),
+    line('2026-09-30T08:05:00.000Z', 'desktop', 'info', 'session.started', { session: 's3', kind: 'chat', door: 'claude-code-acp' }),
+    line('2026-09-30T08:05:10.000Z', 'desktop', 'info', 'session.opened', { session: 's3', door: 'claude-code-acp', openMs: 10000 }),
     line('2026-09-30T08:06:00.000Z', 'desktop', 'info', 'turn.answered', { session: 's3', firstAnswerMs: 3000 }),
     line('2026-09-30T08:07:00.000Z', 'desktop', 'info', 'turn.ended', { session: 's3', stopReason: 'end_turn', turnMs: 70000 }),
     line('2026-09-30T08:08:00.000Z', 'desktop', 'info', 'session.ended', { session: 's2', state: 'stopped', seconds: 300 }),
@@ -299,8 +299,8 @@ test('what was refused, by code, most first, with the requests that met it', () 
  */
 test('agent actions: each one\'s runs by how they ended and each phase\'s time, and a refused one by its action', () => {
   const at = (minute: number) => `2026-09-30T09:${String(minute).padStart(2, '0')}:00.000Z`;
-  const codex = { harness: 'codex-acp', action: 'login-new' };
-  const claude = { harness: 'claude-code', action: 'login' };
+  const codex = { door: 'codex-acp', action: 'login-new' };
+  const claude = { door: 'claude-code', action: 'login' };
   const lines = [
     line(at(0), 'desktop', 'info', 'harness.started', { ...codex, ms: 1200 }),
     line(at(1), 'desktop', 'info', 'harness.prompted', { ...codex, ms: 1800 }),
@@ -414,16 +414,16 @@ function asksWeek(): string {
   mkdirSync(logs);
   const refused = (time: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', 'permission.refused', data);
   writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
-    line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', kind: 'driven', adapter: 'claude-code', repository: 'engine' }),
-    line('2026-09-29T09:01:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'chat', adapter: 'claude-code-acp', repository: 'engine' }),
-    line('2026-09-29T09:02:00.000Z', 'desktop', 'info', 'session.started', { session: 's3', kind: 'driven', adapter: 'codex-acp', repository: 'game' }),
-    line('2026-09-29T09:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's4', kind: 'driven', adapter: 'claude-code', repository: 'game' }),
-    refused('2026-09-29T09:10:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
-    refused('2026-09-29T09:11:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
-    refused('2026-09-29T09:12:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'WebFetch', kind: 'fetch', by: null }),
-    refused('2026-09-29T09:13:00.000Z', { session: 's2', adapter: 'claude-code-acp', tool: null, kind: 'execute', by: null }),
+    line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', kind: 'driven', door: 'claude-code', repository: 'engine' }),
+    line('2026-09-29T09:01:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'chat', door: 'claude-code-acp', repository: 'engine' }),
+    line('2026-09-29T09:02:00.000Z', 'desktop', 'info', 'session.started', { session: 's3', kind: 'driven', door: 'codex-acp', repository: 'game' }),
+    line('2026-09-29T09:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's4', kind: 'driven', door: 'claude-code', repository: 'game' }),
+    refused('2026-09-29T09:10:00.000Z', { session: 's1', door: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
+    refused('2026-09-29T09:11:00.000Z', { session: 's1', door: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
+    refused('2026-09-29T09:12:00.000Z', { session: 's1', door: 'claude-code', tool: 'WebFetch', kind: 'fetch', by: null }),
+    refused('2026-09-29T09:13:00.000Z', { session: 's2', door: 'claude-code-acp', tool: null, kind: 'execute', by: null }),
     // A session whose start is not in the period: its ask is counted, and no session's.
-    refused('2026-09-29T09:14:00.000Z', { session: 's9', adapter: 'claude-code', tool: 'Edit', kind: 'edit', by: 'mode' }),
+    refused('2026-09-29T09:14:00.000Z', { session: 's9', door: 'claude-code', tool: 'Edit', kind: 'edit', by: 'mode' }),
   ].join('\n')}\n`);
 
   const proposals = homeEntry(home, 'rule-proposals');
@@ -490,7 +490,7 @@ test('asks per session: the mean, the median, the 90th percentile and the share 
  * unsaid, never a word from somewhere else.
  */
 const ASK_LINES: [why: string, data: Record<string, unknown>, s1: number, unstarted: number, kind: string][] = [
-  ['a whole line', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }, 1, 0, 'execute'],
+  ['a whole line', { session: 's1', door: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }, 1, 0, 'execute'],
   ['a session nobody started in the period', { session: 's7', kind: 'execute' }, 0, 1, 'execute'],
   ['no session', { kind: 'edit' }, 0, 1, 'edit'],
   ['a session that is no string', { session: 1, kind: 'edit' }, 0, 1, 'edit'],
@@ -499,7 +499,7 @@ const ASK_LINES: [why: string, data: Record<string, unknown>, s1: number, unstar
 ];
 
 test('each shape of an asks line counts as the parse table says', () => {
-  const started = parseLine(line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', adapter: 'claude-code', repository: 'engine' }));
+  const started = parseLine(line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', door: 'claude-code', repository: 'engine' }));
   for (const [why, data, s1, unstarted, kind] of ASK_LINES) {
     const ask = parseLine(line('2026-09-29T09:10:00.000Z', 'desktop', 'info', 'permission.refused', data));
     const { asks } = summarise([started, ask], { from: since, to: NOW }) as Report;
@@ -612,7 +612,7 @@ function setupWeeks(): string {
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
   const started = (time: string, session: string, kind: string, repository: string, workspace: string, setup?: boolean) =>
-    at(time, 'session.started', { session, kind, adapter: 'claude-code-acp', repository, workspace, ...(setup ? { setup } : {}) });
+    at(time, 'session.started', { session, kind, door: 'claude-code-acp', repository, workspace, ...(setup ? { setup } : {}) });
   const parked = (time: string, session: string, kind: string | null, repository: string | null, workspace: string | null) =>
     at(time, 'session.parked', { session, kind, repository, workspace });
   writeFileSync(join(logs, '2026-09-24.desktop.jsonl'), `${[
@@ -762,7 +762,7 @@ test('the text report says each set-up\'s cost and the parks by week, and none w
  * conversation beside them that are no driven session's, and a turn of a session the period never saw start.
  */
 const DRIVEN_LINES: [time: string, event: string, data: Record<string, unknown>][] = [
-  ['2026-09-29T09:00:00.000Z', 'session.started', { session: 'd1', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T09:00:00.000Z', 'session.started', { session: 'd1', kind: 'driven', door: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
   ['2026-09-29T09:00:05.000Z', 'actor.ran', { session: 'd1', actor: 'build', models: ['sonnet'], more: 0 }],
   ['2026-09-29T09:01:00.000Z', 'turn.ended', {
     session: 'd1', stopReason: 'end_turn', turnMs: 60000, input: 10, cacheRead: 1000000, cacheWrite: 100, output: 50, calls: 10, used: 100000, size: 1000000,
@@ -771,16 +771,16 @@ const DRIVEN_LINES: [time: string, event: string, data: Record<string, unknown>]
   ['2026-09-29T09:05:00.000Z', 'turn.ended', {
     session: 'd1', stopReason: 'end_turn', turnMs: 120000, input: 5, cacheRead: 500000, cacheWrite: 50, output: 25, calls: 5, used: 150000, size: 1000000,
   }],
-  ['2026-09-29T10:00:00.000Z', 'session.started', { session: 'd2', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T10:00:00.000Z', 'session.started', { session: 'd2', kind: 'driven', door: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
   ['2026-09-29T10:00:05.000Z', 'actor.ran', { session: 'd2', actor: 'chat', models: 'System.String[]', more: 0 }],
   ['2026-09-29T10:01:00.000Z', 'turn.ended', {
     session: 'd2', stopReason: 'end_turn', turnMs: null, input: 4, cacheRead: 227462, cacheWrite: 1864, output: 199, calls: 0, used: 229529, size: 1000000,
   }],
-  ['2026-09-29T11:00:00.000Z', 'session.started', { session: 'd3', kind: 'driven', adapter: 'codex', repository: 'Other', workspace: 'games' }],
+  ['2026-09-29T11:00:00.000Z', 'session.started', { session: 'd3', kind: 'driven', door: 'codex', repository: 'Other', workspace: 'games' }],
   ['2026-09-29T11:00:05.000Z', 'actor.ran', { session: 'd3', actor: 'build', models: ['gpt-x'], more: 0 }],
-  ['2026-09-29T11:10:00.000Z', 'session.started', { session: 'u1', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games', setup: true }],
+  ['2026-09-29T11:10:00.000Z', 'session.started', { session: 'u1', kind: 'driven', door: 'claude-code-acp', repository: 'Daoris', workspace: 'games', setup: true }],
   ['2026-09-29T11:11:00.000Z', 'turn.ended', { session: 'u1', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
-  ['2026-09-29T11:20:00.000Z', 'session.started', { session: 'c1', kind: 'chat', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T11:20:00.000Z', 'session.started', { session: 'c1', kind: 'chat', door: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
   ['2026-09-29T11:21:00.000Z', 'turn.ended', { session: 'c1', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
   ['2026-09-29T11:30:00.000Z', 'turn.ended', { session: 'ghost', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
 ];
@@ -839,7 +839,7 @@ test('driven sessions rolled up by repository and by adapter and model, with the
 
 test('the median and the slowest of a roll-up are over the sessions that were timed', () => {
   const { byRepository } = drivenOf([
-    ['2026-09-29T12:00:00.000Z', 'session.started', { session: 'd4', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+    ['2026-09-29T12:00:00.000Z', 'session.started', { session: 'd4', kind: 'driven', door: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
     ['2026-09-29T12:01:00.000Z', 'turn.ended', { session: 'd4', stopReason: 'end_turn', turnMs: 600000, calls: 4, cacheRead: 40 }],
   ]);
   const daoris = byRepository[0]!;
@@ -873,7 +873,7 @@ test('the text lists the newest driven sessions to a terminal\'s width and count
     const minute = String(at).padStart(2, '0');
     many.push(
       [`2026-09-30T08:${minute}:00.000Z`, 'session.started', {
-        session: `m${minute}`, kind: 'driven', adapter: 'claude-code-acp', repository: 'a-repository-with-a-very-long-name-'.repeat(2), workspace: 'a-long-workspace',
+        session: `m${minute}`, kind: 'driven', door: 'claude-code-acp', repository: 'a-repository-with-a-very-long-name-'.repeat(2), workspace: 'a-long-workspace',
       }],
       [`2026-09-30T08:${minute}:30.000Z`, 'actor.ran', { session: `m${minute}`, models: ['a-model-with-a-long-name', 'another-model-with-a-long-name'] }],
       [`2026-09-30T08:${minute}:40.000Z`, 'turn.ended', {
@@ -1083,7 +1083,7 @@ function outcomeHome(): string {
   mkdirSync(logs);
   const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
   const started = (time: string, session: string, adapter: string) =>
-    at(time, 'session.started', { session, kind: 'driven', adapter, repository: 'engine', workspace: 'work' });
+    at(time, 'session.started', { session, kind: 'driven', door: adapter, repository: 'engine', workspace: 'work' });
   writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
     started('2026-09-29T08:05:00.000Z', 's1', 'claude-code'),
     started('2026-09-29T08:35:00.000Z', 's2', 'claude-code'),

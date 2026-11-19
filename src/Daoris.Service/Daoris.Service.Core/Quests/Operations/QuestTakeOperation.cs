@@ -51,8 +51,6 @@ internal sealed class QuestTakeOperation : IQuestOperation
         if (held is null || QuestTransitions.KindFor(status) is not { } kind) return new QuestMove(held, Moved: false);
 
         var history = await tx.HistoryAsync(id).ConfigureAwait(false);
-        // A row the log never saw is given its history now, as the open would have, and keeps it even if the move is refused.
-        if (history.Count == 0) history = await tx.GiveHistoryAsync(held).ConfigureAwait(false);
 
         // Judged by the replay's own rule, so the store refuses here exactly what a rebase or a remote would not apply.
         var open = whileOpen && status == QuestStatus.Declined;

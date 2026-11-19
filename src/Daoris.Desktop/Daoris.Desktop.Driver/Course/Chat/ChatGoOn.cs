@@ -107,7 +107,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     {
         if (_context.Closing || !string.Equals(moved.State, "stopped", StringComparison.OrdinalIgnoreCase)) return;
         var session = moved.Session;
-        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session) || Boxed(session)) return;
+        if (_context.Talking.ContainsKey(session) || _context.Turned.ContainsKey(session) || _context.GoingOn.ContainsKey(session) || HandOverWaits(session)) return;
 
         _ = Task.Run(async () =>
         {
@@ -152,12 +152,10 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Whether an older build's box for the record's ended limit move or its hand-over is still in place, or a hand-over the store carries waits
-    /// to be taken: the record is the course's <c>Never</c> until the come-up's import has set
-    /// the box aside and the hand-over has been taken, so no go-on, sweep or take-up resumes its old part meanwhile. The box's presence is the
-    /// reading, which holds between come-ups and for a box held behind a standing move or for the start's confirmation alike.
+    /// Whether a hand-over the store carries waits to be taken: the record is the course's <c>Never</c> until the hand-over has been taken,
+    /// so no go-on, sweep or take-up resumes its old part meanwhile.
     /// </summary>
-    private bool Boxed(string session) => new LimitBoxes(_context.Home).Read(session) is not null || _handOver.Holds(session);
+    private bool HandOverWaits(string session) => _handOver.Holds(session);
 
     /// <summary>
     /// The ended chats whose words wait on their record from while no runner heard them: words kept while no shell
@@ -170,8 +168,6 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     {
         // A dead shell's conversation moves are taken up first, before anything else that
         // could act on their records, each ended by its phase so its records go on below by their own come-up; nothing is sent there.
-        // A box an older build wrote for an ended limit move is imported there first, once this start's
-        // confirmation is settled, and ended by its phase like a dead shell's; until it is, the box in place is its record's `Never`, below.
         await _limit.Moves.ComeUpAsync(say: null, ct).ConfigureAwait(false);
 
         string json;
@@ -207,9 +203,8 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
             // One handed over or moved went on in another, which holds its tree: words left on it never restart it.
             if (WordsNever.ContinuedIn(records, each.Id) is not null) continue;
 
-            // An older build's box for an ended limit move still in place, held for the start's
-            // confirmation or behind a standing move, is the record's `Never`: no go-on, sweep or take-up acts on it meanwhile.
-            if (Boxed(each.Id)) continue;
+            // A hand-over waiting to be taken is the record's `Never`: no go-on, sweep or take-up acts on it meanwhile.
+            if (HandOverWaits(each.Id)) continue;
 
             if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
 
@@ -392,7 +387,7 @@ internal sealed class ChatGoOn(IExecutorWiring wiring) : IExecutor
     {
         if (_context.Closing) return new(null, "the application is closing, so no conversation goes on now.");
         if (_context.Talking.ContainsKey(sessionId)) return new(null, $"conversation `{sessionId}` runs here: its words reach it at its door.");
-        if (Boxed(sessionId)) return new(null, $"conversation `{sessionId}` has a move an older Daoris began that is not taken up yet, so it goes on once it is.");
+        if (HandOverWaits(sessionId)) return new(null, $"conversation `{sessionId}` has a hand-over that is not taken up yet, so it goes on once it is.");
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!_context.GoingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");

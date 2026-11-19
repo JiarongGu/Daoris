@@ -1,68 +1,61 @@
 ---
 name: compatible-builds
-applies_when: changing what a store keeps where a build already shipped may still open it (a table's columns, what a row means, who may write it), or choosing how a newer build keeps its rows from an older one
-enforces: a mark binds only the builds that read it; to keep stored rows safe from builds already built, put them in a shape those builds cannot see, a new table, rather than marking them where those builds still read and write; a version stamp guards only the builds from the stamp on
+applies_when: changing what a store keeps (a table's columns, what a row means, a file's keys, a stored name or value), or tempted to keep a reader, a migration or a guard so that a record an earlier build wrote still works
+enforces: no build reads a record shape an earlier build wrote; a store changes in place to the one current shape, and a store an older build opens after a purge is not supported
 ---
 
-# Compatible builds — a mark binds only the builds that read it
+# Compatible builds — none: every store has the one current shape
 
-**An older build sharing a store does what it was built to do, and it was built before your change. A column,
-a flag or a version it never reads changes nothing it does. To keep rows safe from builds already shipped,
-put them where those builds cannot look: a new table. This is the boundary beside the rule that a stored
-shape is never changed in place (`.claude/agents/branch-worker.md`): there the old shape keeps being read
-the old way, and here the new rows keep out of the old builds' reach.**
+**No build reads a record in a shape an earlier build wrote. A change to what a store keeps changes the
+shape, the writer, the reader and the tests together, and leaves nothing behind that accepts the old
+shape.** The owner decided it (D323, NOCOMPAT1): a home's history is purged (CLEANSTART1, D322) and every
+repository keeps its own records, so there is nothing written by an earlier build left to read. A store an
+older build opens after a purge is not supported: the older build does what it was built to do over a shape
+it does not know, and nothing here is kept to make that work.
 
-## Why
+## What goes with a change of shape
 
-A take-bind's contract was fixed twice before it held against the builds already built (D173):
+- **The old reader.** A column, key, file, stored name or value, event-log line or lock field that only an
+  earlier build wrote is read by no code. The new shape is the only one a reader names; a value outside it
+  is refused as unknown or read as absent, never mapped to a former spelling.
+- **The migration.** A store's schema step that converts old rows, a one-off conversion of a home's files,
+  an importer of an older file or folder, a receipt of what was folded: none is written. A change of shape
+  edits the store's one creating statement, and a store whose shape moved is purged, not converted.
+- **The shim and its allowance.** A census that permits a place to name a former spelling lists no such
+  place; a test that lays an older record and asserts it still reads is deleted with its reader. A comment
+  that says "an older build wrote" or "kept for records already written" is a reader this rule removes.
+- **The doctrine's rule 4 is met without a wait.** Where it lets an older reader stay "until a condition
+  ends", the condition is met here for every reader: one install, one owner, a purged history.
 
-- **FABRIC-CLOSE1o** gave a take-bind an owner, a publication and an expiry, as four nullable columns
-  added to `quest_take_binds`. An older build over the migrated store kept working: its upsert of
-  `(id, graph, at)` landed, and its take's `DELETE … RETURNING graph` read the row as before. That was the
-  point of nullable columns, and it was also the gap. The older build's take still bound by the quest's id
-  alone, whoever took and however late. Its naming replaced the graph of a row this build owned and left
-  the owner in place, so the owner's take bound the older build's graph.
-- **FABRIC-CLOSE1w** moved the owned binds into `quest_owned_take_binds`, every column required, a table
-  no older build knows. An older build's upsert cannot reach an owned bind, and its take finds none. A
-  row in the old table is now an older build's whatever it names, consumed as owning nothing and
-  discarded at the open. Its note rejects the other two ways. Detecting an older upsert by an owner that
-  disagrees with its graph catches the collision, but an older build's take still binds by the id. A store
-  version, like the knowledge index's `user_version` (`NewerIndexException`), binds only this build and
-  later ones, and the builds to guard against were CLOSE1l to CLOSE1v, none of which reads it.
+## What stays
+
+- **A guard that refuses a store a newer build wrote.** A build that finds a version stamp above its own
+  refuses to write (`NewerIndexException`, `StoreNewerException`): it reads no older shape, it declines a
+  newer one. It is not a reader of an earlier build's record, and it stays where it exists. A new stamp is
+  added only for a store that has one already; no stamp is added to keep rows safe from older builds.
+- **A shape that is still written.** A field a current writer still produces, even where it is often
+  absent, is the current shape. If you are unsure that a shape is still written, find its writer: where no
+  writer remains, it is an old record and goes; where one does, it is current and stays.
+- **A reader of what a purge keeps.** A purge takes history, not configuration: saved workflows and their
+  versions, a hand-written file (`daoris.json`, `driver.json`), a repository's own lock and hooks. An older
+  shape there is still in front of this build, so its reader stays, naming the condition that ends it (no
+  saved instance spells it, counted where it can be), or the read refuses with a sentence saying what to do.
+  It never crashes and never ignores the shape in silence.
+- **A refusal of a store that was not purged.** A home older than this build's shape, never purged, is
+  refused at open, naming the home and what to do (purge it, or start fresh), not failed at its first query.
+- **Wire fields that an older peer may omit,** while the peer and this build run together over a wire (a
+  page and its host in one install, a service and its client), are not records. The rule governs what a
+  store keeps, not the two ends of a request that are one release.
 
 ## How to apply
 
-- **Name the builds you are guarding against, and ask what each one reads.** Builds before your change
-  read what they were built to read. A new column, a flag or a version number is invisible to them. They
-  read and write around it, and an upsert that names only its own columns keeps what you added and
-  replaces what it owns.
-- **Rows an older build must not reach go in a new table.** Make every column required, since no build
-  writing there leaves one out. Read the old table's rows as the older build's, owning nothing, and say
-  what the newer build does with them at a take and at an open.
-- **Nullable columns are for rows an older build may keep writing.** They keep its statements landing,
-  as CLOSE1o's did. That makes the store compatible. It does not keep the older build's rows from
-  meaning what they meant before.
-- **A version stamp guards the builds that read it, from the stamp on.** The quest store has kept one since
-  CLOSETAKE1 (QUESTSTOREVER1): `quest_store_version`, `QuestStore.StoreVersion`, never lowered, in its own
-  table because the knowledge index sharing the file owns `user_version`. A store stamped ahead still opens
-  and refuses a take's bind, saying it was written by a newer Daoris. So a later change to the take-bind
-  contract can bump the stamp instead of hiding its rows. Builds from before the stamp still read none of
-  it, and against them only a shape they cannot see works.
-- **A raise of the desktop store's stamp refuses an older build's every write, to every table** (first
-  taken by the delivery record, LANDNODE1b, D212's note, to 2; then by a role's staffing policy,
-  STAFFPOLICY1a, D226's note, to 3, since an older build still reads the role's choices and would start
-  one the policy holds back). Each migration step names the stamp it leaves by its own constant,
-  `DesktopStore.FirstWriter` before the first raise, `DeliveryWriter` and `PolicyWriter` from each raise,
-  never `WriterStamp`, which moves with the build and would turn every earlier step into a raise. A test
-  that fakes a newer build stamps it `WriterStamp + 1`; a fake at a fixed number becomes this build once
-  the stamp reaches it.
-- **A `driver.json` key is kept by older writers and read by no older reader** (`defaultWorkflow` and `linePolicies`,
-  WORKFLOWCLEAN1 1a, D227's note). An older build's save keeps them as unknown keys and reads none, so a fresh home falls to
-  Current there, and a converted home would be drawn as the default merge: only the update's `workflows` rollback refusal
-  (`InstallRollback`) guards that, and a mark binds only the builds that read it.
-- **Say what is left.** An older build still acts on its own rows as it always did: CLOSE1w's note keeps
-  that its take of a quest this build named takes it unbound and closes by its done. Write the remainder
-  into the decision's note, so nobody reads the boundary as wider than it is.
-- **Hold it with the older build's own statements.** `QuestSyncTests` writes and pushes as an older build
-  (`WriteAsAnOlderBuildAsync`, `PushAsAnOlderBuildAsync`) over this build's store. A test that runs only this build's code
-  never sees the boundary.
+- **Change the shape in place.** Rename the column, drop the key, replace the value; update the one
+  creating statement, the writer, the reader and the tests in the same change. Do not add a second reading
+  "for now".
+- **Do not guard against older builds.** No nullable column kept so an older statement still lands, no
+  separate table kept so an older build cannot reach a row, no version stamp bumped to refuse an older
+  build's writes. Say in the change's note that older builds over a purged store are not supported, once.
+- **Find the writer before you delete a reader.** The test that a shape is old is that nothing writes it
+  now. A reader of a shape a current writer produces is a current reader.
+- **A test lays only the current shape.** A fixture that lays an older record to prove it still reads is
+  the reader's own test and leaves with it.

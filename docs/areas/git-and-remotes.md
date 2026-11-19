@@ -124,8 +124,7 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 27. The doors judge by git access. `no-push` and `no-publish` are opt-in defaults, off until the person switches them on (rules
     page, `agent rules default`, `defaultsOn` in the rules file); a session in full access has Write `allow` at the doors where no
     one set one (its record's `unrestricted`, Dangerous unchanged). A proposal to allow or ask a rule that a deny would beat, the
-    person's own or `no-push` once on, is refused where it is proposed, naming the deny and where it is set (`DeadApprovals`).
-    The home's migration made a switched-off `no-push` the machine's Write `allow` where unset (`GitPushStep`). (D198, D277)
+    person's own or `no-push` once on, is refused where it is proposed, naming the deny and where it is set (`DeadApprovals`). (D198, D277)
 28. While `no-push` is on, a session's harness rules follow its Write (`GitAccessPolicy`): `deny` or the default keeps every push
     form denied; `ask` or `allow` opens the plain push and denies force, delete, tag, mirror and prune unless Dangerous is `allow`.
     Codex holds no rules file; its block and the access setup say so. (D198, D72, D233)

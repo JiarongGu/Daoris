@@ -453,21 +453,6 @@ test('an install is addressed by its folder, and the launcher is the one at its 
 });
 
 /**
- * An install published before the rename has the single-file shell's launcher, and the instruments still
- * reach it until its next publish replaces it: that is the install the owner has open meanwhile.
- */
-test('an install from before the rename is found by the launcher it has', () => {
-  const root = scratchFolder('daoris-install');
-  writeFileSync(join(root, 'daoris-desktop.exe'), '');
-  assert.equal(installedExe(root), join(root, 'daoris-desktop.exe'));
-
-  writeFileSync(join(root, 'Daoris.exe'), '');
-  mkdirSync(join(root, 'app'), { recursive: true });
-  writeFileSync(join(root, 'app', 'Daoris.Desktop.exe'), '');
-  assert.equal(installedExe(root), join(root, 'app', 'Daoris.Desktop.exe'), 'the current layout first');
-});
-
-/**
  * A folder with no launcher is NOT an install, and saying so beats launching nothing. The first
  * deployment's own folder had the executable one level down (`<family>/app`), so "point it at the
  * folder you published to" is a thing a person gets wrong on their first try.

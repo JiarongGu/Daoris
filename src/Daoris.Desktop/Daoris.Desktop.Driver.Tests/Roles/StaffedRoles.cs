@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The roles' orders a test's configuration runs by, as the home migration's staffing step writes them from the single-agent keys
-/// (<see cref="StaffingStep"/>): Build, Chat and Brainstorm on the machine's agent, Intake and Ask Daoris on theirs where named. A role
-/// runs by its stored order alone.
+/// The roles' orders a test's configuration runs by: Build, Chat and Brainstorm on one agent, Intake and Ask Daoris on theirs where
+/// named. A role runs by its stored order alone.
 /// </summary>
 internal static class StaffedRoles
 {

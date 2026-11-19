@@ -127,7 +127,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
     private async Task<StartedFrom?> MoveOnceAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, StrongBox<bool> stale, CancellationToken ct)
     {
-        // A hand-over's box an older build left, or its move the store carries and has not begun, holds the record from a move.
+        // A hand-over's move the store carries and has not begun holds the record from a move.
         if (context.Closing || context.GoingOn.ContainsKey(sessionId) || handOver.Holds(sessionId)) return null;
         if (!context.Turned.TryGetValue(sessionId, out var chat)) return null;
         var seen = context.Events.After(sessionId, 0).Events;

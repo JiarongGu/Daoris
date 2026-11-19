@@ -24,36 +24,6 @@ export const SHELL_HOME = Object.freeze(['app']);
 export const SHELL_EXE = 'Daoris.Desktop.exe';
 
 /**
- * Launchers an earlier publish wrote at the root: the single-file shell. A publish into
- * its own install removes them, and the dev loop still finds an install not yet republished.
- */
-export const RETIRED_LAUNCHERS = Object.freeze(['daoris-desktop.exe']);
-
-/**
- * Folders an earlier publish wrote under `app/` and this one does not: Daoris's browser as
- * an executable of its own (`daoris-browser.exe`) with a second Chromium beside it. The
- * application is the browser. A publish into its own install removes them by name, as it
- * removes {@link RETIRED_LAUNCHERS}: exactly what it once wrote, never a folder it did not.
- */
-export const RETIRED_IN_APP = Object.freeze(['daoris-browser']);
-
-/** The retired browser's executable inside its folder: a running one holds the folder a republish removes. */
-export const RETIRED_BROWSER_EXE = 'daoris-browser.exe';
-
-/**
- * What a publish into `install` removes before it writes, because an earlier publish wrote it and
- * this one does not: {@link RETIRED_LAUNCHERS} at the root and {@link RETIRED_IN_APP} under `app/`.
- * None in a folder this script never published, which holds nothing of its to remove.
- */
-export function retiredPaths(install) {
-  if (!isInstall(install)) return [];
-  return [
-    ...RETIRED_LAUNCHERS.map((name) => join(install, name)),
-    ...RETIRED_IN_APP.map((name) => join(install, ...SHELL_HOME, name)),
-  ];
-}
-
-/**
  * The names the shell's last publish put in `app/`, one per line. What makes a republish
  * remove the previous engine's files and nothing it did not write.
  */

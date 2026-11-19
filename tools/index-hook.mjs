@@ -15,7 +15,7 @@
  * before each glued `**Note, ` line, so the merge's own result is right. A clone without the driver merges those files as
  * ordinary text, which conflicts on two notes added at one place rather than gluing them.
  */
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setApart } from './doc-duplicates.mjs';
@@ -56,9 +56,6 @@ export function install({ out, err, cwd, env, script }) {
   const fresh = script ? join(dirname(script), 'index-fresh.mjs') : undefined;
   try {
     mkdirSync(folder, { recursive: true });
-    // The pre-commit hook an older install wrote, which staged the index into each commit.
-    const old = join(folder, 'pre-commit');
-    if (existsSync(old) && readFileSync(old, 'utf8').includes(MARK)) rmSync(old, { force: true });
     for (const [name, gate] of HOOKS) {
       const file = join(folder, name);
       if (existsSync(file) && !readFileSync(file, 'utf8').includes(MARK)) {
@@ -116,8 +113,13 @@ export function separateNotes(text) {
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });
   if (argv[0] === '--merge-notes') return mergeNotes(argv.slice(1), { err, cwd, env });
-  // An older install's pre-commit hook calls this with nothing, until `--install` removes that hook.
-  if (argv.length === 0) return 0;
+  // A clone's own pre-commit hook, written by an install before 2026-11-04, still calls this with nothing: it is the clone's file, so
+  // the commit goes on and the person is told how to take the hook out, once per commit until they do.
+  if (argv.length === 0) {
+    err('index-hook: this clone\'s pre-commit hook was written by an older install and does nothing now: remove it '
+      + '(git rev-parse --git-path hooks/pre-commit names the file), then run node tools/index-hook.mjs --install');
+    return 0;
+  }
   err('usage: node tools/index-hook.mjs --install | --merge-notes <base> <ours> <theirs>');
   return 2;
 }

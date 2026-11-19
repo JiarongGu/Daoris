@@ -3,7 +3,7 @@ import type { Canon, CanonFile, Lock, Manifest } from './records.ts';
 import type { ExitCode } from '../platform/errors.ts';
 import { join } from 'node:path';
 import { canonDigest, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
-import { readLock, readManifest } from './config.ts';
+import { lockedDigest, readLock, readManifest } from './config.ts';
 import { inspect } from './drift.ts';
 import { canonFileDigest, holds, keepStates } from './keep.ts';
 import { refuseNewerLock } from './lockversion.ts';
@@ -117,7 +117,7 @@ export function composeReconcile(
   const direction = lock.canonVersion !== carried
     ? `This repository was synced from canon ${lock.canonVersion}, older than the canon ${carried} this tool carries, so `
       + "the canon's text is the newer."
-    : lock.canonDigest !== canonDigest(canon)
+    : lockedDigest(lock) !== canonDigest(canon)
       ? `This repository was synced from canon ${carried}, and this tool carries canon ${carried} too: both are canon `
         + `${carried}, and the two differ: which is newer cannot be told from here. Adopting writes this tool's text, so `
         + "adopt an item only where the canon's text reads as the newer, and where it reads as the older, keep yours and say so."

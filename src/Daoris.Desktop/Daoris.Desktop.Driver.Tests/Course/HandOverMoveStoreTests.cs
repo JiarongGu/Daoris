@@ -7,11 +7,10 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A conversation's hand-over, the person's press and the agent's ask,
-/// keeps its move record in the store and writes no <c>&lt;s&gt;.hand-over.json</c> beside it. The move is decided at the ask, under this run's
+/// keeps its move record in the store. The move is decided at the ask, under this run's
 /// claim, and waits there for the conversation's turn to end; then <c>old-ended</c>, <c>opening</c> under the key its keyed open is sent with,
 /// <c>opened</c>, <c>delivering</c> and the prompt's mark before the hand, and <c>delivered</c>. A standing move means no second ask; a dead run's
-/// hand-over found decided is taken at the come-up, not fallen back; an older build's conversation box is imported once at the come-up and set
-/// aside, and a quest session's box, which is the driver's look's, is left where it is.
+/// hand-over found decided is taken at the come-up, not fallen back.
 /// </summary>
 /// <remarks>As <c>CurveMoveStoreTests</c>: the in-process ledger, the real turns over a door that writes nothing, a scratch home of each case's own under <c>_fixtures/</c>.</remarks>
 public sealed class HandOverMoveStoreTests : IDisposable
@@ -54,8 +53,6 @@ public sealed class HandOverMoveStoreTests : IDisposable
         new(_home, () => StoreSettled.Yes, each => !_dead.Contains(each.Run), run, StoreProcess.Shell);
 
     private MoveRecord? MoveFrom(string left) => Store("run-probe").Of(left).LastOrDefault();
-
-    private string[] Boxes() => [.. new HandOverBox(_home).Pending()];
 
     /// <summary>The person's decision as the press writes it: to <c>talk</c> on <c>account-2</c>, by its why and its asker.</summary>
     private static MoveDecision Decision(string left, string why = HandOverWhy.Press, string by = HandOverBy.Person) =>
@@ -208,13 +205,12 @@ public sealed class HandOverMoveStoreTests : IDisposable
     /// <summary>
     /// 🔴 The person's press decides the move in the store as it is asked, then writes it in the design's order: <c>old-ended</c>, <c>opening</c>
     /// under the very key the keyed open is sent with, <c>opened</c>, <c>delivering</c> with the prompt marked before its write, and
-    /// <c>delivered</c>; and at no point is a <c>&lt;s&gt;.hand-over.json</c> written.
+    /// <c>delivered</c>.
     /// </summary>
     [Fact]
-    public async Task The_press_decides_the_move_in_the_store_and_writes_it_in_order_with_no_box()
+    public async Task The_press_decides_the_move_in_the_store_and_writes_it_in_order()
     {
         MoveRecord? atOpen = null;
-        string[] boxesAtOpen = [];
         string? openedUnder = null;
         MoveRecord? atWire = null;
         var world = Live(wire: _ => atWire = MoveFrom("c1"));
@@ -225,7 +221,6 @@ public sealed class HandOverMoveStoreTests : IDisposable
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat")
             {
                 atOpen = MoveFrom("c1");
-                boxesAtOpen = Boxes();
                 openedUnder = JsonNode.Parse(body!)!["opens"]?.GetValue<string>();
             }
 
@@ -251,9 +246,6 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
         var asked = Assert.Single(world.Runner.Asked);
         Assert.Equal(("c1", true), (asked!.From, asked.Opens is { Length: > 0 }));
-        Assert.Empty(boxesAtOpen);
-        Assert.Empty(Boxes());
-        Assert.Null(new HandOverBox(_home).Read("c1"));
     }
 
     /// <summary>
@@ -309,7 +301,6 @@ public sealed class HandOverMoveStoreTests : IDisposable
         var waiting = Assert.Single(Store("run-probe").Of("c1"));
         Assert.Equal(("quiescing", "run-shell"), (waiting.PhaseWord, waiting.ClaimRun));
         Assert.Empty(world.Ledger.Opened);
-        Assert.Empty(Boxes());
 
         world.Runner.Busy = false;
         world.HandOver.Due("c1", ChatQueue.Idle, Config(), null);
@@ -346,33 +337,6 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.Equal("c3", Assert.Single(taken).SessionId);
         await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
-    }
-
-    /// <summary>
-    /// 🔴 An older build's conversation box is imported once at the come-up and set aside, and its move is then taken as the press's is; the
-    /// box is never taken as a file.
-    /// </summary>
-    [Fact]
-    public async Task An_older_build_s_conversation_box_is_imported_set_aside_and_taken()
-    {
-        var world = Live();
-        using var c = world.Client;
-        world.Ledger.Edit("c1", record => record["state"] = "stopped");
-        var box = new HandOverBox(_home);
-        box.Write("c1", new HandOverRequest("talk", "account-2", HandOverWhy.Agent, HandOverBy.Agent, Now));
-
-        await world.Moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.Null(box.Read("c1"));
-        Assert.True(File.Exists(box.PathOf("c1") + ".imported"));
-        var imported = Assert.Single(Store("run-probe").Of("c1"));
-        Assert.Equal(("decided", "run-shell", HandOverWhy.Agent, HandOverBy.Agent, "talk", "account-2"), (imported.PhaseWord, imported.ClaimRun, imported.Why, imported.By, imported.Agent, imported.Account));
-
-        var taken = await world.HandOver.TakeAllAsync((_, _) => Task.CompletedTask, CancellationToken.None);
-
-        Assert.Equal("c3", Assert.Single(taken).SessionId);
-        await Poll.Until(() => MoveFrom("c1")?.PhaseWord == "delivered", () => $"the move at {MoveFrom("c1")?.PhaseWord}");
-        Assert.Empty(Boxes());
     }
 
     /// <summary>
@@ -418,36 +382,15 @@ public sealed class HandOverMoveStoreTests : IDisposable
         Assert.NotNull(decided.Claim);
     }
 
-    /// <summary>🔴 A quest session's box is the driver's look's, and the conversations' come-up leaves it where it is, with no move for it.</summary>
-    [Fact]
-    public async Task A_quest_session_s_box_is_left_for_the_look()
-    {
-        var world = Live();
-        using var c = world.Client;
-        var box = new HandOverBox(_home);
-        box.Write("q1s", new HandOverRequest("talk", null, HandOverWhy.Press, HandOverBy.Person, Now));
-
-        await world.Moves.ComeUpAsync(say: null, CancellationToken.None);
-
-        Assert.NotNull(box.Read("q1s"));
-        Assert.Empty(Store("run-probe").Of("q1s"));
-        Assert.False(File.Exists(box.PathOf("q1s") + ".imported"));
-    }
-
     /// <summary>
-    /// 🔴 A box still on disk keeps the go-on off its record: the conversation's hand-over is taken first, and no word waiting on the old part
-    /// resumes it before the box is imported.
+    /// 🔴 A waiting hand-over keeps the go-on off its record: the conversation's hand-over is taken first, and no word waiting on the old part
+    /// resumes it before the move is taken.
     /// </summary>
     [Fact]
-    public async Task A_box_or_a_waiting_hand_over_holds_the_record_as_the_course_s_never()
+    public async Task A_waiting_hand_over_holds_the_record_as_the_course_s_never()
     {
         var world = Live();
         using var c = world.Client;
-        Assert.False(world.HandOver.Holds("c1"));
-
-        new HandOverBox(_home).Write("c1", new HandOverRequest("talk", "account-2", HandOverWhy.Press, HandOverBy.Person, Now));
-        Assert.True(world.HandOver.Holds("c1"));
-        new HandOverBox(_home).Clear("c1");
         Assert.False(world.HandOver.Holds("c1"));
 
         world.Runner.Busy = true;
