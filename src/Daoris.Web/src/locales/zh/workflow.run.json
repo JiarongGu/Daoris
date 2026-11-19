@@ -361,6 +361,7 @@
   "workflow.run.check.said.again": "你要求再运行一次；Daoris 下次查看时会开始。",
   "workflow.run.check.said.notNow": "你暂时放下了它；不会再向它询问什么。",
   "workflow.run.check.said.waiting": "它还没有开始：正排在其他重型运行之后等待。",
+  "workflow.run.check.said.running": "它的检查项正在运行。",
   "workflow.run.check.again": "再运行一次",
   "workflow.run.check.stop": "暂不处理",
   "workflow.run.step.tryAgain": "重试",
