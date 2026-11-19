@@ -454,6 +454,8 @@ shell's and the suites that read every source; a catalogue reaches the sources n
 of one, and the parity suites. A reader that takes the catalogues whole but reads them by keys its own strings name says
 `// test-map: reads the catalogues by key — <why>` (`locales/i18n.ts`, `notifications/noticeWords.ts`).
 
+A work-frame test that is about a person's words, not their keys, puts a phrase in with the kit's `userEvent.say` (a click and one paste), never `type`: each typed key re-renders the whole frame, 9 s for a thirty-key phrase in a session's check (SESSIONTESTENV2).
+
 A vitest settles what it starts inside `act`: a native `focus()` goes through the work-frame kit's `focus`
 (`test/workFrameKit.tsx`), since a focused trigger opens its tooltip outside `act` otherwise, and a fixture's update
 waits for what it renders. An agent's run of vitest prints no console output of a passing test, so a run looking for

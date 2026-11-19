@@ -19,6 +19,16 @@ export const userEvent = {
   ...realUserEvent,
   type: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['type']>) => realUserEvent.setup({ delay: null }).type(...args),
   keyboard: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['keyboard']>) => realUserEvent.setup({ delay: null }).keyboard(...args),
+  /**
+   * A person's words put in at once, as a paste: the element is clicked and the whole phrase arrives as one input event. Typing
+   * re-renders the whole frame for each of its keys, which a loaded machine stretched past a test's ten seconds (a phrase of thirty
+   * keys in `WorkFrame.conversation`); a test about the words, not the keys, says them here. Enter stays `keyboard('{Enter}')`.
+   */
+  say: async (element: Element, text: string) => {
+    const user = realUserEvent.setup({ delay: null });
+    await user.click(element);
+    await user.paste(text);
+  },
 };
 
 /**

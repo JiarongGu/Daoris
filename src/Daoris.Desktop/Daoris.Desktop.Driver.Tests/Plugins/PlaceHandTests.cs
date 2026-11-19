@@ -96,17 +96,10 @@ public sealed class PlaceHandTests : IDisposable
     public async Task The_place_is_judged_by_origins_push_address_where_a_pushurl_differs_from_the_fetch_address()
     {
         GitIdentityActs.ReadOnly(Home, Serving().Id, on: true);
-        var checkout = Path.Combine(_root, "checkout");
-        Directory.CreateDirectory(checkout);
-        foreach (var arguments in new[]
-        {
-            new[] { "init", "-q" },
-            ["remote", "add", "origin", "https://elsewhere.example.invalid/acme/app.git"],
-            ["remote", "set-url", "--push", "origin", Origin],
-        })
-        {
-            Assert.Equal(0, (await WorkingTree.GitAsync(checkout, arguments, CancellationToken.None)).Code);
-        }
+        // The checkout is written as files (no `init`, `remote add` or `remote set-url`, a git start each): the judgement's own read is the one start.
+        var checkout = EmptyCheckout.Make(
+            Path.Combine(_root, "checkout"),
+            $"[remote \"origin\"]\n\turl = https://elsewhere.example.invalid/acme/app.git\n\tpushurl = {Origin}\n");
 
         var hand = await PlaceHands.For(Home)(Plugin(), new WorkPlace("app", "work", checkout), CancellationToken.None);
 

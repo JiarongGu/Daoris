@@ -245,7 +245,8 @@ describe('starting and holding a conversation', () => {
     });
 
     const { onSelect } = show(null);
-    await userEvent.type(await promptBox(), 'what is this repository for?{Enter}');
+    await userEvent.say(await promptBox(), 'what is this repository for?');
+    await userEvent.keyboard('{Enter}');
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
     expect(starts()).toEqual([
@@ -295,7 +296,8 @@ describe('starting and holding a conversation', () => {
       : DRIVER_STATE));
     const { onSelect, notify } = held(null);
     const box = await promptBox();
-    await userEvent.type(box, 'Keep these words{Enter}');
+    await userEvent.say(box, 'Keep these words');
+    await userEvent.keyboard('{Enter}');
 
     // Where Start is pressed, not a corner toast cut mid-sentence.
     expect(await within(screen.getByRole('main')).findByRole('alert'))
@@ -318,7 +320,8 @@ describe('starting and holding a conversation', () => {
       return DRIVER_STATE;
     });
     const { onSelect } = held(null);
-    await userEvent.type(await promptBox(), 'what is this repository for?{Enter}');
+    await userEvent.say(await promptBox(), 'what is this repository for?');
+    await userEvent.keyboard('{Enter}');
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
     expect(await screen.findByLabelText('Message')).toHaveValue('what is this repository for?');
@@ -364,7 +367,7 @@ describe('starting and holding a conversation', () => {
 
     show('c0ffee11');
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'what is this repository for?');
+    await userEvent.say(box, 'what is this repository for?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
@@ -385,7 +388,7 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('Message'), 'what is this repository for?');
+    await userEvent.say(await screen.findByLabelText('Message'), 'what is this repository for?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     const logged = invoke.mock.calls.filter(([module]) => module === 'DAORIS.LOG');
@@ -411,7 +414,7 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
     await userEvent.upload(await screen.findByLabelText('Choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
     const box = screen.getByLabelText('Message');
-    await userEvent.type(box, 'a long paragraph worth keeping');
+    await userEvent.say(box, 'a long paragraph worth keeping');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText(/went nowhere/)).toBeTruthy();
@@ -438,7 +441,8 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'and the line?{Enter}');
+    await userEvent.say(box, 'and the line?');
+    await userEvent.keyboard('{Enter}');
     expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
 
     await act(async () => { stop(); });
@@ -469,7 +473,8 @@ describe('starting and holding a conversation', () => {
     });
     show('c0ffee11');
 
-    await userEvent.type(await screen.findByLabelText('Message'), 'are you there?{Enter}');
+    await userEvent.say(await screen.findByLabelText('Message'), 'are you there?');
+    await userEvent.keyboard('{Enter}');
 
     expect(await screen.findByText('The conversation ended before this reached it. It is back in the box.')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('are you there?'));
@@ -572,7 +577,7 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
     const waiting = await screen.findByRole('list', { name: 'waiting for this turn to end' });
     expect(waiting.textContent).toBe('and then test it');
-    await userEvent.type(screen.getByLabelText('Message'), 'and push nothing');
+    await userEvent.say(screen.getByLabelText('Message'), 'and push nothing');
     await userEvent.click(await screen.findByRole('button', { name: 'Stop turn' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11' } });
@@ -735,7 +740,7 @@ describe('starting and holding a conversation', () => {
 
     show('c0ffee11');
     await userEvent.upload(await screen.findByLabelText('Choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
-    await userEvent.type(screen.getByLabelText('Message'), 'what does this say?');
+    await userEvent.say(screen.getByLabelText('Message'), 'what does this say?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
@@ -925,7 +930,7 @@ describe('starting and holding a conversation', () => {
     const OTHER = { ...CHAT, id: 'decaf222', repository: 'game' };
     SESSIONS = [CHAT, OTHER];
     const view = show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('Message'), 'half a thought for the engine');
+    await userEvent.say(await screen.findByLabelText('Message'), 'half a thought for the engine');
 
     view.rerender(
       <QueryClientProvider client={view.client}>
@@ -978,7 +983,7 @@ describe('starting and holding a conversation', () => {
 
     const box = await screen.findByLabelText('Message');
     expect(box).toHaveAttribute('placeholder', expect.stringMatching(/tell it something while it works/));
-    await userEvent.type(box, 'the budget is in level.json');
+    await userEvent.say(box, 'the budget is in level.json');
     await userEvent.click(await screen.findByRole('button', { name: 'Send' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'the budget is in level.json' } });
 
@@ -1033,7 +1038,7 @@ describe('starting and holding a conversation', () => {
     show('s1a2b3c4', notify);
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'drop the cache');
+    await userEvent.say(box, 'drop the cache');
     await sendAt(/Now, cutting its step/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 's1a2b3c4', text: 'drop the cache', level: 'now' },
@@ -1058,7 +1063,7 @@ describe('starting and holding a conversation', () => {
     show('s1a2b3c4', notify);
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'and the tests');
+    await userEvent.say(box, 'and the tests');
     await sendAt(/Now, cutting its step/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 's1a2b3c4', text: 'and the tests', level: 'now' },
@@ -1138,7 +1143,7 @@ describe('starting and holding a conversation', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Asked the agent to stop this turn; the conversation stays open.'));
     expect(screen.getByLabelText('Message')).toHaveValue('');
 
-    await userEvent.type(screen.getByLabelText('Message'), 'use the blue one');
+    await userEvent.say(screen.getByLabelText('Message'), 'use the blue one');
     await sendAt(/When its turn ends/);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 'c0ffee11', text: 'use the blue one', level: 'ordinary' } });
   });
@@ -1158,7 +1163,7 @@ describe('starting and holding a conversation', () => {
     show('s1a2b3c4', notify);
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'the budget is in level.json');
+    await userEvent.say(box, 'the budget is in level.json');
     await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
     expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('the budget is in level.json');
 

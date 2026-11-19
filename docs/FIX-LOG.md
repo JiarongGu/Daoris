@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-20 - Tests that red only inside a session's check spent its git starts and keystrokes (SESSIONTESTENV2)
+
+- **Symptom:** ten `*PortsTests`, `PlaceHandTests`, the web `WorkFrame.conversation`, `WorkFrame` and `WorkFrame.landed` files and
+  `TreePoolSharesGitTests` failed in a Daoris session's check and passed outside it (FLAKE1's sightings, SESSIONTESTENV1's note).
+- **Root cause:** not the session's variables: from a session's own shell (`GIT_SSH_COMMAND`, `GIT_CONFIG_*`, `DAORIS_*` planted) the ten
+  `*PortsTests` and `PlaceHandTests` all pass (236), `HostEnvironment` having stripped them since SESSIONTESTENV1, and the web tests read no
+  variable. A session's machine is busy, and a git start there takes 1 to 5 s (`GitLaunch.Count`: 0.5 to 3 s to create the process, 0.5 to
+  3 s to run `symbolic-ref`) against 0.3 s from a quiet shell. `ContextPortsTests`' review case put its tree under the checkout's scratch,
+  a plain folder, so the brief's `git log` and `git status` answered for the whole checkout around it (8 s alone, 24 s loaded);
+  `PlaceHandTests`' push-address case made its repository by three starts (5 s, 21 s loaded); the web conversation cases typed 30 keys,
+  each re-rendering the whole frame (9.3 s of the 10 s bound alone on a quiet machine, six timeouts in a session).
+  `TreePoolSharesGitTests` is 35 product starts a case, 29 to 146 s in a session; its slow start is not `status --ignored`.
+- **Fix:** `EmptyCheckout` writes a checkout as files (no start) for the two driver tests; `userEvent.say` (a click and one paste) for
+  the long phrases of `WorkFrame.conversation` and `WorkFrame.test` (slowest case 9.3 s to 2.3 s); `PoolGitFixture.CreateAsync(ignored:)` makes
+  the pool tests' extra ignore lines in the seed, two starts a case fewer. The pool's own repeated starts are TREEPOOLSTARTS1.
+- **Verification:** `ContextPortsTests`, `PlaceHandTests`, `TreePoolSharesGitTests` and the three web files, run from a session's shell.
+
 ## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
 
 - **Symptom:** a run ended failed-held at `push`, revived by LEFTSTEP1 once origin held its branch at the landed tip, opened its pull

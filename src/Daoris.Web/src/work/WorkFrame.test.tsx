@@ -512,7 +512,7 @@ describe('the Work frame', () => {
     it('adds from the picker, keeps the words, chooses the repository and puts the focus back in the prompt', async () => {
       show(null);
       const prompt = await promptBox();
-      await userEvent.type(prompt, 'Fix the cursor');
+      await userEvent.say(prompt, 'Fix the cursor');
 
       await openFoot('Add repository…');
       expect(screen.queryByRole('listbox')).toBeNull();
@@ -1077,7 +1077,7 @@ describe('a park\'s go-aheads', () => {
     const [one, two, three] = ASK_WITH_GO_AHEADS.goAheads;
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [one, { ...two, state: 'approved' }, three] }];
 
-    await userEvent.type(screen.getByLabelText('Message'), 'dev first, then production');
+    await userEvent.say(screen.getByLabelText('Message'), 'dev first, then production');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
@@ -1152,7 +1152,7 @@ describe('a park\'s go-aheads', () => {
     show('g0ah3ad0', notify);
     const second = (await boxLines())[1]!;
 
-    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry');
+    await userEvent.say(screen.getByLabelText('Message'), 'only the menu entry');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
     // The box says a refusal word for word, as it says every other.
@@ -1380,7 +1380,7 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
     expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your words, sent with “1,350” — or send it alone');
-    await userEvent.type(screen.getByLabelText('Message'), 'but only on the dashboard');
+    await userEvent.say(screen.getByLabelText('Message'), 'but only on the dashboard');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,350\n\nbut only on the dashboard', question: 'q5t10n00' }]));
@@ -1408,7 +1408,8 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
-    await userEvent.type(screen.getByLabelText('Message'), 'Neither yet.{Enter}');
+    await userEvent.say(screen.getByLabelText('Message'), 'Neither yet.');
+    await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(inputs()).toEqual([
       { id: 'g0ah3ad0', text: '1,200', question: 'q5t10n00' },
       { id: 'g0ah3ad0', text: 'Neither yet.' },
@@ -1439,7 +1440,7 @@ describe('a park\'s question', () => {
     await within(card).findByText('Which quarterly target should the dashboard tile show?');
 
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
-    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'Hold the tile.');
+    await userEvent.say(within(card).getByLabelText('your answer — the same session goes on with these words'), 'Hold the tile.');
     await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: 'Hold the tile.' }]));
@@ -1453,7 +1454,7 @@ describe('a park\'s question', () => {
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,200/ }));
-    await userEvent.type(screen.getByLabelText('Message'), 'and say so');
+    await userEvent.say(screen.getByLabelText('Message'), 'and say so');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
     await screen.findByRole('alert');
     expect(screen.getByLabelText('Message')).toHaveValue('and say so');
@@ -1497,7 +1498,7 @@ describe('a park\'s question', () => {
     const ask = await screen.findByRole('region', { name: 'It asks you' });
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
-    await userEvent.type(screen.getByLabelText('Message'), 'Neither: hold the tile until the review.');
+    await userEvent.say(screen.getByLabelText('Message'), 'Neither: hold the tile until the review.');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {

@@ -33,10 +33,11 @@ internal sealed class PoolGitFixture : IDisposable
     /// <summary>The commit the repository's first line stands at.</summary>
     internal string Start { get; set; } = "";
 
-    internal static async Task<PoolGitFixture> CreateAsync(string? rules = null)
+    /// <param name="ignored">Lines the first commit's <c>.gitignore</c> holds beside the fixture's own: a test that ignores more makes it here, once per run, not as a commit of its own that is two git starts a test.</param>
+    internal static async Task<PoolGitFixture> CreateAsync(string? rules = null, string ignored = "")
     {
         var fixture = new PoolGitFixture();
-        var seed = await GitSeed.SeedAsync($"pool:{rules}", async folder =>
+        var seed = await GitSeed.SeedAsync($"pool:{rules}:{ignored}", async folder =>
         {
             var built = Path.Combine(folder, Repository);
             Directory.CreateDirectory(Path.Combine(built, "src"));
@@ -47,7 +48,7 @@ internal sealed class PoolGitFixture : IDisposable
             await File.WriteAllTextAsync(Path.Combine(built, "README.md"), "# engine\n");
             await File.WriteAllTextAsync(Path.Combine(built, "Engine.csproj"), "<Project Sdk=\"Microsoft.NET.Sdk\" />\n");
             await File.WriteAllTextAsync(Path.Combine(built, "src", "Engine.cs"), "class Engine {}\n");
-            await File.WriteAllTextAsync(Path.Combine(built, ".gitignore"), "obj/\n_fixtures/\n*.log\n");
+            await File.WriteAllTextAsync(Path.Combine(built, ".gitignore"), "obj/\n_fixtures/\n*.log\n" + ignored);
             if (rules is not null) await File.WriteAllTextAsync(Path.Combine(built, "daoris.files.json"), rules);
             await GitSeed.GitAsync(built, "add", ".");
             await GitSeed.GitAsync(built, "commit", "--quiet", "-m", "first");
