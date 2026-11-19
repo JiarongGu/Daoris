@@ -553,7 +553,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
-    the change reaches (driving rule 7); `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    the change reaches (driving rule 7), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
+    and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
+    run, replayed from passes of the same inputs, red and owed after the landing said in the verdict's why (`ReachedVerdict.Told`). The
+    runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
+    after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
+    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
+    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
+    *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
+    check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other

@@ -29,7 +29,19 @@ internal static class ReachedVerdict
             : new VerifyResult(invocation, commit, VerifyVerdicts.Failed, said, [new VerifyGate(Gate, RunnerVerdicts.Fail, exit) { Log = logPath }]) { Failed = Gate };
     }
 
-    private sealed record Outcome(int Ran, int Replayed, IReadOnlyList<string> Flaked, IReadOnlyList<string> MainRed, IReadOnlyList<string> Red);
+    internal static string? Told(string log, string marker)
+    {
+        if (OutcomeOf(log, marker) is not { } outcome) return null;
+        var said = $"the reached classes: {outcome.Ran} run, {outcome.Replayed} replayed from passes of the same inputs, {outcome.Red.Count} red";
+        if (outcome.Deferred.Count == 0) return said;
+        var bySuite = outcome.Deferred.GroupBy(id => id.Split('|')[0], StringComparer.Ordinal).Select(group => $"{group.Key} {group.Count()}");
+        return $"{said}; {outcome.Deferred.Count} heavy-tier class{(outcome.Deferred.Count == 1 ? "" : "es")} owed after the landing ({string.Join(", ", bySuite)})";
+    }
+
+    private sealed record Outcome(int Ran, int Replayed, IReadOnlyList<string> Flaked, IReadOnlyList<string> MainRed, IReadOnlyList<string> Red)
+    {
+        public IReadOnlyList<string> Deferred { get; init; } = [];
+    }
 
     private static string Summary(Outcome outcome)
     {
@@ -52,7 +64,9 @@ internal static class ReachedVerdict
             IReadOnlyList<string> Names(string name) => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
                 ? [.. value.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)]
                 : [];
-            return root.ValueKind == JsonValueKind.Object ? new Outcome(Count("ran"), Count("replayed"), Names("flaked"), Names("mainRed"), Names("red")) : null;
+            return root.ValueKind == JsonValueKind.Object
+                ? new Outcome(Count("ran"), Count("replayed"), Names("flaked"), Names("mainRed"), Names("red")) { Deferred = Names("deferred") }
+                : null;
         }
         catch (JsonException)
         {

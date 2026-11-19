@@ -361,6 +361,7 @@
   "workflow.run.check.said.again": "You asked to run it again; Daoris's next look starts it.",
   "workflow.run.check.said.notNow": "You left it for now; nothing more is asked of it.",
   "workflow.run.check.said.waiting": "It has not started: it waits its turn behind other heavy runs.",
+  "workflow.run.check.said.running": "Its gates run in the machine's check slot.",
   "workflow.run.check.again": "Run again",
   "workflow.run.check.stop": "Not now",
   "workflow.run.step.tryAgain": "Try again",

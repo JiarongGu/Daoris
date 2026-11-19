@@ -146,6 +146,8 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// <summary>The gate each failed check named, by node, read by the reader from the attempt's result; none where unread.</summary>
     public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
+    public IReadOnlyDictionary<string, WorkflowRunWait> Slots { get; init; } = new Dictionary<string, WorkflowRunWait>(StringComparer.Ordinal);
+
     /// <summary>What each refused step's <c>needs</c> came to (<see cref="RunNeeds"/>), by node; none where unread.</summary>
     public IReadOnlyDictionary<string, RunNeed> Needs { get; init; } = new Dictionary<string, RunNeed>(StringComparer.Ordinal);
 
@@ -249,7 +251,8 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder)
+                    : facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }

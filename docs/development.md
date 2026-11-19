@@ -93,7 +93,10 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
 during the task. Before done, run `node tools/reached-checks.mjs --base main --tier fast` and
 `npm run verify:checks`, and fix what your change reddens: they are the commands `daoris.gates.json` marks `"handback"`, every brief
-names them, and a workflow's `check` step verifies them at your tip while you are open. `npm run quick` is a builder's
+names them, and a workflow's `check` step verifies them at your tip while you are open: the fast tier, saying the classes it replayed
+and the heavy-tier classes it leaves owed to the run after the landing, which runs them on main's new tip; the integration boundary's
+full set runs every tier. Each group's passes are kept as it ends, so a check asked again at a new commit, a merge of main included,
+replays every class whose inputs that commit left unchanged. `npm run quick` is a builder's
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns, and the layers' census's source counts) but the time
 ratchet, so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as handed back.

@@ -247,6 +247,7 @@ public static class WorkflowRunWords
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
         if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
+        if (step.Detail == WorkflowGraphDetails.Active && node == NodeKinds.Check && step.Wait is { Code: CheckSlotWaits.HeldBy or CheckSlotWaits.Queued } slot) return CheckSlotWaits.Said(slot);
         var on = On(step);
         return step.Detail switch
         {
