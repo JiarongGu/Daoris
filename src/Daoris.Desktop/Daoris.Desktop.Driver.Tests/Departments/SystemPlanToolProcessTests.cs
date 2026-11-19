@@ -12,7 +12,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
-public sealed class SystemPlanToolProcessTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class SystemPlanToolProcessTests: IDisposable
 {
     private static readonly NodeDeclaration Apply = new(NodeKinds.Apply, NodeKinds.Apply, 1, NodeReach.Performed);
     private static readonly SystemPlace Place = new("stand-in-system", "stand-in");

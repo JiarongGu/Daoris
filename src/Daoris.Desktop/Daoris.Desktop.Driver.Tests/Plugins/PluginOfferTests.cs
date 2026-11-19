@@ -7,7 +7,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// install's <c>app/plugin-offers/</c>, read as the catalogue reads a plugin with the placeholders as
 /// written, each with what its README says it needs. None is installed until a press.
 /// </summary>
-public sealed class PluginOfferTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginOfferTests: IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-plugin-offers-" + Guid.NewGuid().ToString("N")[..8]);
 

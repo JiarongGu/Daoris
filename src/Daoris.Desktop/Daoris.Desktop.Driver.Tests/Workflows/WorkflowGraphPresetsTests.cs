@@ -8,7 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// steps, each saved by <c>daoris workflow new --from</c> as a graph version that reads and binds a run, with the opinion and look
 /// variants read by the graph's own order; <i>with no press</i> refused where the line does not declare its gates and have them accepted.
 /// </summary>
-public sealed class WorkflowGraphPresetsTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class WorkflowGraphPresetsTests: IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "workflow-graph-presets", Guid.NewGuid().ToString("N")[..8]);
     private readonly StringWriter _out = new();

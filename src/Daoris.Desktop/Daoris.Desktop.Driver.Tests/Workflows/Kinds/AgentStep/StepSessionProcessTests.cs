@@ -20,7 +20,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Needs, Needed.Git)]
 [Trait(Category.Needs, Needed.Harness)]
 [Trait(Category.Needs, Needed.Network)]
-public sealed class StepSessionProcessTests : IAsyncLifetime
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class StepSessionProcessTests: IAsyncLifetime
 {
     private const string Plugin = "daoris-azure-devops";
     private const string Unit = "run:v-0123456789abcdef";
