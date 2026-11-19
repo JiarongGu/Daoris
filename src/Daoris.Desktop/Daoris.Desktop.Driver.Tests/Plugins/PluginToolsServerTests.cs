@@ -70,6 +70,28 @@ public sealed class PluginToolsServerTests : IDisposable
         JsonSerializer.SerializeToElement(await server.AnswerAsync(Frame(json), CancellationToken.None));
 
     [Fact]
+    public async Task A_roles_act_is_handed_only_where_the_place_casts_the_role_to_an_agent_and_never_at_a_destination_it_marks()
+    {
+        Install("acme-deploy", """
+            { "commands": [ { "name": "approve", "about": "The approver's act: approves the stage.", "tool": true, "writes": true, "role": "approver" } ] }
+            """);
+        string[] Listed() => [.. PluginToolList.At(_home, Engine).Select(tool => tool.Name)];
+
+        // The person holds the approver where no cast names one: the act is no tool of the session's.
+        Assert.DoesNotContain("acme-deploy_approve", Listed());
+        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", new DateTimeOffset(2026, 11, 19, 9, 0, 0, TimeSpan.Zero));
+        Assert.Contains("acme-deploy_approve", Listed());
+
+        // A destination the place marks keeps the approval the owner role's: not listed, and a call is refused before any process starts.
+        File.WriteAllText(DriverConfig.ResolvePath(_home), """{ "placeRisk": { "workspace/games": { "risk": "low", "marks": ["release.production"] } } }""");
+        Assert.DoesNotContain("acme-deploy_approve", Listed());
+        var refused = await Ask(Server(_ => """{"said":["approved"],"exit":0}"""),
+            """{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"acme-deploy_approve","arguments":{}}}""");
+        Assert.Equal(-32602, refused.GetProperty("error").GetProperty("code").GetInt32());
+        Assert.Empty(_frames);
+    }
+
+    [Fact]
     public void The_list_holds_each_tool_command_by_plugin_and_name_and_leaves_out_the_rest()
     {
         var names = PluginToolList.At(_home, Engine).Select(tool => tool.Name).ToList();

@@ -29,7 +29,8 @@
       { "id": "release", "kind": "task", "version": 1, "reach": "pressed", "role": "release-manager",
         "options": { "knowledge": "release-path", "evidence": ["release", "started", "ended"],
                      "receipts": { "release": "release-created", "started": "stage-started", "ended": "stage-ended" } } },
-      { "id": "release-approve", "kind": "daoris-azure-devops/release-approve", "version": 1, "reach": "performed", "role": "approver" },
+      { "id": "release-approve", "kind": "daoris-azure-devops/release-approve", "version": 1, "reach": "performed", "role": "approver",
+        "options": { "receipts": { "approval": "approved" } } },
       { "id": "config-needed", "kind": "task", "version": 1, "reach": "pressed", "outcomes": ["needed", "not-needed"], "role": "release-manager" },
       { "id": "config-change", "kind": "task", "version": 1, "reach": "pressed", "role": "config-changer" },
       { "id": "check-release", "kind": "task", "version": 1, "reach": "pressed", "role": "operations" }

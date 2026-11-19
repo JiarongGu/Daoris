@@ -21,6 +21,15 @@ async function discovered(args) {
 
 export const APPROVE = 'approve-release';
 
+/** The approver's act's fact, which its receipt names and the approval step its holder's act settles maps. */
+export const APPROVED = 'approved';
+
+/** A round of the approval with its receipt as its data: reached where the stage's approval reads given, else failed with its code. */
+const receipted = (said, exit, receipt) => ({ said: [said], exit, data: { receipt: { fact: APPROVED, ...receipt, message: said } } });
+
+/** The stage's approval, read first and again after the act: who gave it, from the approvals Azure DevOps keeps. */
+const givenBy = (approval) => `outside: ${approval?.approvedBy?.displayName ?? approval?.approver?.displayName ?? 'its approver'}`;
+
 async function approved(args) {
   const repo = azureOf(args.origin);
   if (!repo) throw new Refusal('no-origin', `\`${args.origin}\` names no Azure DevOps repository`);
@@ -29,15 +38,29 @@ async function approved(args) {
   const read = await releases(repo, 'GET', `/releases/${Number(args.release)}`);
   if (read.status !== 200 || read.json?.id === undefined) {
     const why = typeof read.json?.message === 'string' ? `: ${read.json.message.slice(0, 160)}` : '';
-    return { said: [`Release ${args.release} was not found in Azure DevOps (${read.status})${why}; the id is the page's releaseId, not its name: nothing is changed.`], exit: 1 };
+    return receipted(`Release ${args.release} was not found in Azure DevOps (${read.status})${why}; the id is the page's releaseId, not its name: nothing is changed.`, 1,
+      { state: 'failed', code: 'no-release' });
   }
   const release = read.json;
+  const page = release._links?.web?.href;
+  const of = { release: release.id, ...(page ? { url: page } : {}) };
   const environment = (release?.environments ?? []).find((each) => String(each.definitionEnvironmentId) === String(args.stage) || each.name === args.stage);
-  const pending = (environment?.preDeployApprovals ?? []).find((each) => each.status === 'pending');
-  if (!pending) return { said: [`${release.name ?? `Release ${args.release}`} has no approval of ${args.stage} pending: nothing is changed.`], exit: 1 };
+  const approvals = environment?.preDeployApprovals ?? [];
+  const pending = approvals.find((each) => each.status === 'pending');
+  const given = approvals.findLast((each) => each.status === 'approved');
+  // An approval already given, by anyone, is the fact read first: nothing is changed and the receipt says who gave it.
+  if (!pending && given && decision === 'approved') {
+    return receipted(`${environment.name} of ${release.name} approved by ${givenBy(given)}.`, 0, { state: 'reached', ...of, by: givenBy(given) });
+  }
+  if (!pending) {
+    return receipted(`${release.name ?? `Release ${args.release}`} has no approval of ${args.stage} pending: nothing is changed.`, 1, { state: 'failed', code: 'not-pending' });
+  }
   const set = await releases(repo, 'PATCH', `/approvals/${pending.id}`, { status: decision, comments: String(args.comment ?? '') });
   if (set.status !== 200) throw new Refusal('rejected', `Azure DevOps did not take the ${args.decision} (${set.status})`);
-  return { said: [`${environment.name} of ${release.name} ${decision}.`], exit: 0 };
+  const now = set.json?.status ?? decision;
+  return now === 'approved'
+    ? receipted(`${environment.name} of ${release.name} approved by Daoris.`, 0, { state: 'reached', ...of, by: 'Daoris' })
+    : receipted(`${environment.name} of ${release.name} ${now}.`, 0, { state: 'failed', code: now, ...of });
 }
 
 export function approveCommand(args = {}) {
@@ -45,7 +68,7 @@ export function approveCommand(args = {}) {
     try {
       return ways(await approved(args));
     } catch (error) {
-      if (error instanceof Refusal) return ways({ said: [error.message], exit: 1 });
+      if (error instanceof Refusal) return ways(receipted(error.message, 1, { state: 'failed', code: error.code }));
       throw error;
     }
   });

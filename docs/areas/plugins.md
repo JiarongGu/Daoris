@@ -94,8 +94,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     change of what the stage waits on are a `progress` on the attempt naming its actor (`approver` with who is asked and since when,
     `deployer` for an observed stage nothing started) and the release's page, so a watch started again replaces a wait kept from
     before; the approval stays the person's (D303): their one press on the step's approval card, in the run's view, the session
-    page's dock and the step's *What needs you* row, runs the plugin's `approve-release` under their own sign-in, declared as no agent's
-    tool; a plugin that hands it to agents gets the stage's page in its place (D304 point 6). Given an id Azure DevOps does not answer,
+    page's dock and the step's *What needs you* row, runs the plugin's `approve-release` under their own sign-in where they hold the
+    approver; where an agent holds it the card opens the stage's page and the command is that agent's tool (`role: approver`, rule 29a),
+    its receipt `approved` settling the step (D325, APPROVEACT1). It reads the approval first, whoever gave it. Given an id Azure DevOps does not answer,
     `approve-release` says the release was not found with Azure DevOps' status, the id being the page's `releaseId` and not its name. A `no-release` names the
     definition's newest releases and the build each carries. Where the declared definition's CD trigger, read whole, leaves out the
     branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
@@ -192,7 +193,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`PluginCommand.Verbs`: list, add, update, remove, enable, disable, try-again, switch) to `plugin`, and the kit's `new` and `try`,
     `install`, `show`, `activity`, `approve`, `withdraw`, `tools` and a bare `plugin` to the host's `plugins` door (`CommandTree`).
 29. A manifest's `interfaces` names what Daoris reaches the plugin through besides its points: `commands` (each `{ name, title,
-    about, interactive, tool, writes, confirm, on, args, adopts }`), `storage` (`{ for, forget }`) and `views` (each `{ id, title,
+    about, interactive, tool, writes, role, confirm, on, args, adopts }`, `role` naming the role whose act a `tool` is), `storage` (`{ for, forget }`) and `views` (each `{ id, title,
     icon, where, places, context, body }`), every word authored (D222). `args` are `{ name, type: text | number | boolean | choice,
     title, required, choices }`, `choices` only and always for a `choice`; `on` lists the records (`session`, `quest`, `run`,
     `repository`, `workspace`) whose menus offer the command with the record's id; a `tool` never asks the person; one command at
@@ -218,7 +219,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 29a. A command marked `tool` reaches an agent through one MCP server per session, `daoris-plugins`, handed a quest's session at its
     start and going on and an intake's and a repository's chat's at their start, only where its place lists a tool and the
     desktop's program is found. It lists each tool command, not `interactive`, of each installed plugin that is on, sound and not
-    refused, where its `commands` and `tools` are on at the session's place, read again at each list and call; each is named
+    refused, where its `commands` and `tools` are on at the session's place, a role's act (`role`) only where the place casts that role
+    to an agent, so never where the person holds it, at a destination the place marks included (`PluginToolList`), read again at each
+    list and call; each is named
     `<plugin>_<command>`, described by its `about` and `title` in the session's language, its input schema from `args`, read-only
     unless it `writes`. A call is one round `from: agent`: `said` the text, `data` the structured content, an exit other than 0 an
     error, and a `receipt` in its data kept for the session whatever its exit, for the run's pass to journal (workflows rule 3e, D325); a round that asks is refused, since no person answers a tool call, an argument missing or mistyped is refused before any

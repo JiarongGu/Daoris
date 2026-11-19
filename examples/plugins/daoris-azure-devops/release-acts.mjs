@@ -2,7 +2,7 @@
 // to its approval and its end. Each reads its fact first, whoever made it, makes it only where it is not there yet (a release keyed by its
 // effect, a stage started once), and answers a receipt as its data: the plugin's own reading of Azure DevOps after the act, which Daoris
 // journals on the step the agent holds and which settles it. The target is the act's arguments, as the repository's delivery knowledge
-// names it, held to the route of the merged build's branch. No act approves: `approve-release` stays the approver's alone.
+// names it, held to the route of the merged build's branch. No act here approves: the approval is the approver role's act, `approve-release`.
 import { Refusal, azureOf } from './azure.mjs';
 import { within } from './browser.mjs';
 import { ways } from './pull-request-commands.mjs';

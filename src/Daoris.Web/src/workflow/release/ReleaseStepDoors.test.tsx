@@ -51,6 +51,25 @@ describe('the run’s view at a release’s approval', () => {
     expect(within(card()).queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
+  it('offers the person no press where an agent holds the approver, the approval its tool: the card opens the stage’s page', async () => {
+    wireRelease(invoke, { tool: true });
+    const held = {
+      ...GRAPH_RUN_APPROVAL,
+      steps: GRAPH_RUN_APPROVAL.steps.map((step) => (step.step.id === 'release-approve' ? { ...step, holder: { kind: 'agent' as const, name: 'builder-1' } } : step)),
+    };
+    show(<WorkflowRunView answer={answerOf(held)} releaseDoors={(run, step) => <ReleaseStepDoors run={run} step={step} />} />);
+    await waitFor(() => expect([sentTo(invoke, 'PLUGINS').length, sentTo(invoke, 'GIT_BRANCHES').length]).toEqual([1, 1]));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    expect(within(card()).getByRole('button', { name: 'Open' })).toBeInTheDocument();
+    expect(within(card()).queryByRole('button', { name: 'Approve' })).toBeNull();
+  });
+
+  it('offers the person holding the approver the press though the plugin hands the approval to an agent holding it as its tool', async () => {
+    wireRelease(invoke, { tool: true });
+    draw();
+    expect(await within(card()).findByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
   it('approves a production stage of the work workspace’s run by the page’s id, through its own checkout’s origin', async () => {
     wireRelease(invoke, { workspace: 'work' });
     show(<WorkflowRunView answer={answerOf(GRAPH_RUN_PROD_APPROVAL)} releaseDoors={(run, step) => <ReleaseStepDoors run={run} step={step} />} />);

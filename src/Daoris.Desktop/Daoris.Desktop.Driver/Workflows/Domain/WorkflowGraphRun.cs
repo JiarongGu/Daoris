@@ -220,6 +220,8 @@ public static class WorkflowGraphRuns
             var tenure = facts.Holding.GetValueOrDefault(node.Id) is { } kept && kept.Attempt == status.Attempt ? kept : null;
             var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
             var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
+            // A step handed to the agent holding its role offers the person Take alone, as its row in What needs you does.
+            var toAgent = waits is not null && AgentSettles.Handed(node, status, waits);
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
@@ -227,12 +229,12 @@ public static class WorkflowGraphRuns
                 Holder = waits?.Holder,
                 HeldBy = tenure?.Holder,
                 Epoch = tenure?.Epoch,
-                Holds = standing && waits?.Why != PersonWaits.GoAhead ? StepHoldActs.Of(tenure) : null,
+                Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,
-                Acts = acts.Count > 0 ? acts : null,
+                Acts = acts.Count > 0 && !toAgent ? acts : null,
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
