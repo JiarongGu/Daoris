@@ -279,6 +279,7 @@ public static class WorkflowRunWords
                 "Its branch no longer stands and the line's remote does not hold its work, so nothing was pushed: restore the branch, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
                 "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate => $"Failed: the gate `{gate}` failed; its words went to the work.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",

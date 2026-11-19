@@ -33,6 +33,7 @@ internal static class ReachedVerdict
     {
         if (OutcomeOf(log, marker) is not { } outcome) return null;
         var said = $"the reached classes: {outcome.Ran} run, {outcome.Replayed} replayed from passes of the same inputs, {outcome.Red.Count} red";
+        if (outcome.Flaked.Count > 0) said += $"; passed on a second run alone: {string.Join(", ", outcome.Flaked)}";
         if (outcome.Deferred.Count == 0) return said;
         var bySuite = outcome.Deferred.GroupBy(id => id.Split('|')[0], StringComparer.Ordinal).Select(group => $"{group.Key} {group.Count()}");
         return $"{said}; {outcome.Deferred.Count} heavy-tier class{(outcome.Deferred.Count == 1 ? "" : "es")} owed after the landing ({string.Join(", ", bySuite)})";
