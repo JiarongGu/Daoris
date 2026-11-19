@@ -23,7 +23,8 @@ mkdirSync(scratch, { recursive: true });
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
 const clean = () => {
-  const env = { ...process.env };
+  // The commit checks have their own test (commit-checks.test.mjs); the commits here are the index's and the driver's.
+  const env = { ...process.env, DAORIS_COMMIT_HOOK: '0' };
   for (const key of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'DAORIS_INDEX_HOOK']) delete env[key];
   return env;
 };
