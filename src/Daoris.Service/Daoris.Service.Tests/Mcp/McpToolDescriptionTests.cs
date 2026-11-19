@@ -226,16 +226,19 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
-    /// What a session reads of `question_ask` says the person answers with a press at the conversation's end, sends a
-    /// go-ahead to `go_ahead_ask`, and says the turn ends after it; and `go_ahead_ask` itself names no question tool.
+    /// What a session reads of `question_ask` says the person answers with a press at the conversation's end, that it is the one door
+    /// to another role (the role that can, and for an act the act), and says the turn ends after it.
     /// </summary>
     [Fact]
-    public void The_question_tool_says_its_answers_are_presses_and_a_go_ahead_is_asked_elsewhere()
+    public void The_question_tool_says_its_answers_are_presses_and_it_asks_the_role_that_can()
     {
         var question = string.Join(" ", Descriptions().Where(d => d.Tool == "question_ask").Select(d => d.Text));
 
         Assert.Contains("press", question);
-        Assert.Contains("go_ahead_ask", question);
+        Assert.Contains("`role`", question);
+        Assert.Contains("`act`", question);
+        Assert.Contains("`credentials-keeper`", question);
+        Assert.DoesNotContain("go_ahead_ask", question);
         Assert.Contains("end your turn", question);
         Assert.Contains("recommend", question);
     }

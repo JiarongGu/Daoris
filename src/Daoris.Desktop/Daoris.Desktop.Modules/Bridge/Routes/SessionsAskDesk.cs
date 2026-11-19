@@ -193,7 +193,7 @@ internal sealed class SessionsAskDesk(DriverContext context)
     {
         var id = press.Id;
         var record = _loop.Service is { } service ? await service.RecordAsync(id, cancellationToken).ConfigureAwait(false) : null;
-        if (record is not { Parked: true }) return new { Question = (object?)null };
+        if (record is not ({ Parked: true } or { State: SessionStates.AwaitingStep })) return new { Question = (object?)null };
         return await Task.Run<object?>(() =>
         {
             var asked = new QuestionFiles(_loop.Home).Read(id);

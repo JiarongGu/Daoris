@@ -308,7 +308,7 @@ public static class WorkflowRunReader
             {
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
                 Needs = RunNeeds.Of(sources.Home, record), Holding = StepTenureFiles.HoldingOf(sources.Home, bound, record),
-                Cast = CastReading.Home(sources.Home, workspace, repository),
+                Cast = CastReading.Home(sources.Home, workspace, repository), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
             },
             workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
@@ -353,6 +353,7 @@ public static class WorkflowRunReader
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
                 Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository),
+                Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),
             },
             workspace, askId);
     }

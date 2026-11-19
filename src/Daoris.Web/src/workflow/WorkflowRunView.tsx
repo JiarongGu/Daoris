@@ -5,6 +5,7 @@ import { authoredText } from '../locales/authored';
 import i18n from '../locales/i18n';
 import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
+import { StepActRows } from './StepActRows';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
@@ -219,6 +220,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
           {step.requests.map((request) => <RequestRow key={`${request.kind}:${request.id}`} request={request} doors={doors} />)}
         </ul>
       )}
+      <StepActRows step={step} />
       {/* The integrate node's record, in one line; a state this page has no words for is said as recorded. */}
       {step.integration && (
         <p className="m-0 text-small text-ink-soft">

@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
-| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), and the pass that journals and settles by them (`StepActs`) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), and the pass that journals and settles by them (`StepActs`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -100,7 +100,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    plugin's words and page in the hand-off, *Take* alone the person's press), its act `approve-release` reaching only a session at a place
    that casts the approver to an agent (plugins rule 29a), and its reached receipt, the plugin's own reading after the act, is applied as
    the attempt's reached outcome credited as the receipt says; a destination the place marks keeps the approver the person's, so nothing
-   is handed and no agent's receipt settles it. The shipped
+   is handed and no agent's receipt settles it. The run's
+   view draws one row per act journaled on the step's attempt under it (`StepActViews`, the step's `journal`): the fact, its state, its
+   words, credit and page, and "waiting on `<role>`: <holder>" where a receipt waits on another role. A holder that cannot take an act
+   asks the role that can through `question_ask` (the hand-off says so); the request a run's working session asked as it ended its turn
+   awaiting its step is kept for its answer (`QuestionFiles.Settle`) and drawn in its dock, and the answer, the person's sign-in Daoris's
+   browser sees (`SignInAnswers`) or their words, is its next turn through the say door, its retry's receipt settling the step with no
+   one relaying it. The long loop: a step its receipts settle whose act reached only after a receipt that did not (failed, or waiting on
+   another role) proposes what it came to for the knowledge entry it names (`StepLessons`, `workflows/acts/proposed.json`), carried
+   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. The shipped
    `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
    `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
    after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its

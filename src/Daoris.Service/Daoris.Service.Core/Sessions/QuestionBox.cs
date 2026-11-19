@@ -83,7 +83,7 @@ public sealed class QuestionBox(string? home)
     /// </param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
-        DateTimeOffset at, string? why = null, string? owner = null, string? site = null)
+        DateTimeOffset at, string? why = null, string? owner = null, string? site = null, string? role = null)
     {
         var signIn = site?.Trim() is { Length: > 0 } address ? address : null;
         if (signIn is not null)
@@ -190,6 +190,7 @@ public sealed class QuestionBox(string? home)
             if (when is null) writer.WriteNull("by"); else writer.WriteString("by", when);
             if (mark is null) writer.WriteNull("owner"); else writer.WriteString("owner", mark);
             if (signIn is not null) writer.WriteString("site", signIn);
+            if (role is not null) writer.WriteString("role", role);
             writer.WriteString("at", Moments.Write(at));
         });
 
@@ -204,7 +205,7 @@ public sealed class QuestionBox(string? home)
 
         return (id,
             $"Asked `#{id}`. The person sees your question at the end of this session's conversation, each answer you offered a press "
-            + "beside their own words, with what you said each does. A go-ahead for an act is asked with `go_ahead_ask`, never here. Now "
+            + "beside their own words, with what you said each does. An act the person allows is asked with `act` and `on`. Now "
             + "say in your last message that the work waits on this question, commit what you have, and end your turn with your quest "
             + "still taken. Their answer is your next prompt: an answer they pressed as `chose: ` and its label, as you wrote it, then any "
             + "words of theirs after a blank line; or their words alone.");
@@ -269,6 +270,7 @@ public sealed class QuestionBox(string? home)
                 Why = Text(root, "why"),
                 Owner = Text(root, "owner") is { Length: > 0 } owner ? owner : null,
                 Site = SiteOf(Text(root, "site")),
+                Role = Text(root, "role") is { Length: > 0 } role ? role : null,
             };
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -312,6 +314,8 @@ public sealed record QuestionKept(
 
     /// <summary>The page whose sign-in it waits on, a web page's address, or null for a question that waits on none.</summary>
     public string? Site { get; init; }
+
+    public string? Role { get; init; }
 }
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
