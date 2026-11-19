@@ -37,7 +37,6 @@
   "work.trace.ask.close": "关闭时写道",
   "work.trace.ask.words": "你的原话，按时间先后",
   "work.trace.ask.wordsNone": "服务没有返回你的任何原话：这个需求早于开始保存原话，这不等于你什么都没说。它的原句：",
-  "work.trace.ask.wordsKeptFrom": "你的原话从 {{at}} 起才有保存。在那之前说的话，在它各会话的记录里。",
   "work.trace.ask.goAheads": "放行",
   "work.trace.ask.goAheadsNone": "没有问过放行。",
   "work.trace.ask.goAheadsBefore": "服务没有返回任何放行：这个需求早于开始保存放行。",

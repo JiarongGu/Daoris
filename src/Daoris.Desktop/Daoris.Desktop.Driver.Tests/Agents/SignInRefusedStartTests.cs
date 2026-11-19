@@ -221,8 +221,8 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
     }
 
-    // ——— One fresh reading: a refusal of an account last read signed in owes it one question, taken by the next start
-    // that walks to it whatever the mark and hour say, and its answer is honoured; then the mark and hour again.
+    // ——— Within its reading's hour: a refusal reads its account signed out, passed until a sign-in marks it or the hour is over,
+    // whatever the agent's status says between: Claude Code's status reads its own store, which a sign-in revoked at its server leaves.
 
     /// <summary>
     /// The fake agent whose status question a test answers in-process (<see cref="HarnessRoster.Asking"/>), each question
@@ -249,71 +249,40 @@ public sealed class SignInRefusedStartTests : IDisposable
         AccountReads.Keep(_home, "fake", "account-1", LoginState.In, Seen.AddMinutes(-30));
     }
 
-    [Fact]
-    public async Task A_refused_account_last_read_signed_in_is_asked_once_by_the_next_start_and_its_yes_runs_it()
-    {
-        SignedInBefore();
-        List<string> asked = [];
-        var roster = FakeAsked(asked, _ => LoginState.In);
-
-        roster.SignedOut("fake", "account-1");
-        var next = await roster.SelectAsync("fake", FakeConfig, null, null);
-
-        // The person signed in again since: the one fresh reading says so, it is kept, and the start runs on the account.
-        Assert.Equal(["account-1"], asked);
-        Assert.Equal(("account-1", true), (next.Profile, next.Allowed));
-        Assert.Equal((LoginState.In, Seen), WordOf("fake", "account-1"));
-    }
-
-    [Fact]
-    public async Task A_refused_account_whose_fresh_reading_says_signed_out_is_walked_past_and_asked_nothing_more()
-    {
-        SignedInBefore();
-        List<string> asked = [];
-        var roster = FakeAsked(asked, _ => LoginState.Out);
-
-        roster.SignedOut("fake", "account-1");
-        var next = await roster.SelectAsync("fake", FakeConfig, null, null);
-        var after = await roster.SelectAsync("fake", FakeConfig, null, null);
-        var later = await roster.SelectAsync("fake", FakeConfig, null, null);
-
-        Assert.Equal(["account-1"], asked);
-        Assert.Equal(["account-2", "account-2", "account-2"], new[] { next, after, later }.Select(selection => selection.Profile));
-        Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
-    }
-
     /// <summary>
-    /// 🔴 Never every look: an agent whose status says signed in while it refuses every start costs one more start, not one per
-    /// look. The refusal of the signed-in reading the fresh reading itself made owes none, so the mark and hour hold it.
+    /// 🔴 The incident (2026-11-19): an account last read signed in, its sign-in revoked at its server while its status still says signed in.
+    /// The refusal is its newest word, so the next start takes the other account and asks nothing; once the hour is over its status is
+    /// asked again and stands.
     /// </summary>
     [Fact]
-    public async Task A_refusal_of_the_fresh_reading_s_own_yes_owes_no_second_question()
+    public async Task A_refused_account_whose_status_still_says_signed_in_is_passed_within_its_reading_s_hour()
     {
         SignedInBefore();
         List<string> asked = [];
         var roster = FakeAsked(asked, _ => LoginState.In);
-        roster.SignedOut("fake", "account-1");
-        var retried = await roster.SelectAsync("fake", FakeConfig, null, null);
 
         roster.SignedOut("fake", "account-1");
         var next = await roster.SelectAsync("fake", FakeConfig, null, null);
-        var after = await roster.SelectAsync("fake", FakeConfig, null, null);
 
-        Assert.Equal("account-1", retried.Profile);
-        Assert.Equal(["account-1"], asked);
-        Assert.Equal(("account-2", "account-2"), (next.Profile, after.Profile));
+        Assert.Empty(asked);
+        Assert.Equal(("account-2", true), (next.Profile, next.Allowed));
         Assert.Equal((LoginState.Out, Seen), WordOf("fake", "account-1"));
+
+        _now = Seen + HarnessRoster.SignedOutAskedAgain;
+        var later = await roster.SelectAsync("fake", FakeConfig, null, null);
+        Assert.Equal(["account-1"], asked);
+        Assert.Equal(("account-1", true), (later.Profile, later.Allowed));
     }
 
     /// <summary>
-    /// Only a refusal that contradicts a reading saying signed in owes the question: an account never read, or last read signed
-    /// out, keeps its word until the mark or hour, which still ask it.
+    /// A refusal owes no question, whatever the account last read: it keeps its word until the mark or hour, which still ask it.
     /// </summary>
     [Theory]
     [InlineData(null)]
+    [InlineData(LoginState.In)]
     [InlineData(LoginState.Out)]
     [InlineData(LoginState.Unknown)]
-    public async Task A_refusal_of_an_account_not_read_signed_in_owes_no_question_and_the_mark_still_asks_it(LoginState? before)
+    public async Task A_refusal_owes_no_question_whatever_the_account_last_read_and_the_mark_still_asks_it(LoginState? before)
     {
         Accounts("fake", "account-1", "account-2");
         Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]));
@@ -334,12 +303,12 @@ public sealed class SignInRefusedStartTests : IDisposable
     }
 
     /// <summary>
-    /// The refused start's own conclusion owes it (the one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
-    /// so does a conversation's refused turn, which reads its refusal by the same reader: the next start asks each
-    /// once, in the order it walks them.
+    /// The refused start's own conclusion reads its account signed out (the one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
+    /// so does a conversation's refused turn, which reads its refusal by the same reader: the next start passes each and asks neither,
+    /// though each last read signed in.
     /// </summary>
     [Fact]
-    public async Task A_refused_start_and_a_conversation_s_refused_turn_each_owe_their_account_its_fresh_reading()
+    public async Task A_refused_start_and_a_conversation_s_refused_turn_each_hold_their_account_and_the_next_start_asks_neither()
     {
         SignedInBefore();
         AccountReads.Keep(_home, "fake", "account-2", LoginState.In, Seen.AddMinutes(-30));
@@ -354,7 +323,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         var held = await roster.SelectAsync("fake", FakeConfig, null, null);
         var again = await roster.SelectAsync("fake", FakeConfig, null, null);
 
-        Assert.Equal(["account-1", "account-2"], asked);
+        Assert.Empty(asked);
         Assert.False(held.Allowed);
         Assert.Equal(["account-1", "account-2"], held.SignedOut!.Accounts);
         Assert.Equal(["account-1", "account-2"], again.SignedOut!.Accounts);

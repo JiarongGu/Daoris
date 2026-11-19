@@ -84,7 +84,7 @@ public sealed class StepAgentProcessTests: IDisposable
     /// <summary>The step's session as a harness runs one: the stand-in agent, handed the server entry with the built program in its place.</summary>
     private sealed class StandInSessions(string agent, List<string> said) : IStepSessions
     {
-        public async Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> toolsOf, CancellationToken ct)
+        public async Task<StepSessionEnd> RunAsync(StepAgentAsk ask, Func<string, ServerEntry> toolsOf, string? movedOff, CancellationToken ct)
         {
             var tools = toolsOf("s-stand-in");
             var info = new ProcessStartInfo("node")
@@ -99,6 +99,7 @@ public sealed class StepAgentProcessTests: IDisposable
             using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(90));
             await process.WaitForExitAsync(bound.Token);
             lock (said) said.Add(output.Trim());
+            return StepSessionEnd.None;
         }
 
         public void Stop(string invocation)

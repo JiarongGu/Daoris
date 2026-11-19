@@ -11,18 +11,13 @@ internal static class StrayAgentFolders
     internal static bool Is(string home, IReadOnlyCollection<string> agents, string name) =>
         HarnessAccountFolders.StrayAgents(home, agents).Contains(name, StringComparer.Ordinal);
 
-    /// <summary>The stray folder at each place of the account homes it lies in, removed whole; false where none lies there.</summary>
+    /// <summary>The stray folder in the account homes, removed whole; false where none lies there.</summary>
     internal static bool Remove(string home, IReadOnlyCollection<string> agents, string name)
     {
         if (!Is(home, agents, name)) return false;
-        var removed = false;
-        foreach (var place in DaorisHome.Places(home, HomeEntry.AgentHomes, name))
-        {
-            if (!Directory.Exists(place)) continue;
-            HarnessAccountFolders.DeleteFolder(place);
-            removed = true;
-        }
-
-        return removed;
+        var place = DaorisHome.Entry(home, HomeEntry.AgentHomes, name);
+        if (!Directory.Exists(place)) return false;
+        HarnessAccountFolders.DeleteFolder(place);
+        return true;
     }
 }

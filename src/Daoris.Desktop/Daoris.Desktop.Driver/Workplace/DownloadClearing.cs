@@ -104,16 +104,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
     public static DownloadJudge Of(
         string home, string harnesses, string? configPath, Func<CancellationToken, Task<LiveSessions>> sessions, Func<DateTimeOffset>? now = null)
     {
-        string? tools;
-        try
-        {
-            tools = DaorisHome.Entry(home, HomeEntry.Tools);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            // Both places hold one: the tools' read says so, and every version is kept as unread.
-            tools = null;
-        }
+        var tools = DaorisHome.Entry(home, HomeEntry.Tools);
 
         return new(() => DownloadUses.Read(home, HarnessSettings.Load(harnesses), configPath), now ?? (() => DateTimeOffset.UtcNow))
         {
@@ -181,16 +172,8 @@ public static class DownloadClearing
         string? home, DownloadUses uses, DateTimeOffset now, CancellationToken cancellationToken = default, bool measure = true)
     {
         if (home is null) return new DownloadListing([], "no-home");
-        string agents, tools;
-        try
-        {
-            agents = DaorisHome.Entry(home, HomeEntry.Toolchain);
-            tools = DaorisHome.Entry(home, HomeEntry.ToolVersions);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return new DownloadListing([], "twice");
-        }
+        var agents = DaorisHome.Entry(home, HomeEntry.Toolchain);
+        var tools = DaorisHome.Entry(home, HomeEntry.ToolVersions);
 
         var versions = new List<DownloadedVersion>();
         foreach (var agent in Folders(agents))
@@ -397,16 +380,8 @@ public static class DownloadClearing
     /// </summary>
     public static IReadOnlyList<string> Handed(string home, ProcessStartInfo info)
     {
-        string agents, tools;
-        try
-        {
-            agents = DaorisHome.Entry(home, HomeEntry.Toolchain);
-            tools = DaorisHome.Entry(home, HomeEntry.ToolVersions);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return [];
-        }
+        var agents = DaorisHome.Entry(home, HomeEntry.Toolchain);
+        var tools = DaorisHome.Entry(home, HomeEntry.ToolVersions);
 
         var keys = new SortedSet<string>(StringComparer.Ordinal);
         Look(info.FileName);

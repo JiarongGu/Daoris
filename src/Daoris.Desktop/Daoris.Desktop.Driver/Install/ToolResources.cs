@@ -255,7 +255,7 @@ public static class ToolResources
 
     /// <summary>The list built in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>): its <c>app/resources.json</c>, which an install makes one folder with the application's.</summary>
     public static string BesideHome(string home) =>
-        System.IO.Path.Combine([DaorisHome.FolderOf(System.IO.Path.GetFullPath(home)).Folder, .. Layout]);
+        System.IO.Path.Combine([DaorisHome.FolderOf(System.IO.Path.GetFullPath(home)), .. Layout]);
 
     /// <summary>The list built in beside a running application, whose folder is the install's <c>app/</c>.</summary>
     public static string BesideApplication(string baseDirectory) =>

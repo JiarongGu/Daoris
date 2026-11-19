@@ -104,11 +104,6 @@ internal static class TraceWords
             {
                 text.Append($"    {When(word.At)} · {Given(word)}\n").Append(Quoted(word.Text, "      "));
             }
-
-            if (ask.WordsKeptFrom is { } from)
-            {
-                text.Append($"  their words are kept from {When(from)}: what they said before then is in its sessions' records\n");
-            }
         }
 
         if (ask.GoAheads is not { } goAheads)

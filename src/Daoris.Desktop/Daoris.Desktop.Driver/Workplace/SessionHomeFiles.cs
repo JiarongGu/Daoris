@@ -202,10 +202,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         Place.Gates => [Path.Combine(WorkplaceRunFiles.GatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Looks => [Path.Combine(WorkplaceRunFiles.LooksFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Candidates => [Path.Combine(WorkplaceRunFiles.CandidatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
-        Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
+        Place.Files => [.. new[] { DaorisHome.Entry(home, HomeEntry.SessionFiles, id), Path.Combine(Sessions, id) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         // And beside its records, where a tracker handed the sessions' folder for its markers kept it.
-        Place.Pids => [.. DaorisHome.Places(home, HomeEntry.SessionPids, id).Append(Path.Combine(Sessions, id + file.Suffix))
+        Place.Pids => [.. new[] { DaorisHome.Entry(home, HomeEntry.SessionPids, id), Path.Combine(Sessions, id + file.Suffix) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         _ => [Path.Combine(Sessions, id + file.Suffix)],
     };

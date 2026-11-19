@@ -33,7 +33,7 @@ public static class AsksStateSlice
     ];
 
     /// <summary>What the service answers of an ask that is never pushed: every word the person gave on it, which a trace reads.</summary>
-    public static readonly IReadOnlyList<string> PulledOnly = ["words", "wordsKeptFrom", "paths"];
+    public static readonly IReadOnlyList<string> PulledOnly = ["words", "paths"];
 
     /// <summary>The change stream's families that move an ask as the service answers it.</summary>
     public static readonly IReadOnlyList<string> Families = ["asks", "quests", "sessions"];

@@ -13,7 +13,7 @@ import { pollUnlessTold } from './state/published';
 export type {
   DownloadCleared, DownloadedVersion, DownloadsListing, SpaceKind, SpacePlan, SpaceRun, SpaceStarted, SpaceUnit, SystemSpace, SystemWiring,
   WiringFile, WiringFolder, WiringLocated,
-  WiringOld, WiringToolFolder, WiringVariable,
+  WiringToolFolder, WiringVariable,
 } from '../data/wiring';
 
 /**

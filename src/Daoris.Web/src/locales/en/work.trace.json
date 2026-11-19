@@ -37,7 +37,6 @@
   "work.trace.ask.close": "Its close said",
   "work.trace.ask.words": "Your words, oldest first",
   "work.trace.ask.wordsNone": "The service answers none of your words: the ask is from before they were kept, which is not the same as none said. Its sentence:",
-  "work.trace.ask.wordsKeptFrom": "Your words are kept from {{at}}. What you said before then is in its sessions' records.",
   "work.trace.ask.goAheads": "Go-aheads",
   "work.trace.ask.goAheadsNone": "No go-ahead was asked.",
   "work.trace.ask.goAheadsBefore": "The service answers no go-aheads: the ask is from before they were kept.",

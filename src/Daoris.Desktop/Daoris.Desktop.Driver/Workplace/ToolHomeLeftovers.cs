@@ -172,10 +172,10 @@ public static class ToolHomeLeftovers
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    /// <summary>Daoris's working roots in a home: each <c>work</c> entry's folder where it holds its items, new place and old.</summary>
+    /// <summary>Daoris's working roots in a home: each <c>work</c> entry's folder where it holds its items.</summary>
     public static IReadOnlyList<string> Roots(string home) =>
         [.. HomeEntry.Table.Where(entry => entry.Category == HomeCategory.Work)
-            .SelectMany(entry => DaorisHome.Places(home, entry))
+            .Select(entry => DaorisHome.Entry(home, entry))
             .Select(place => System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(place)))
             .Distinct(StringComparer.OrdinalIgnoreCase)];
 

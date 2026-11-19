@@ -46,14 +46,7 @@ internal static class WiringFiles
         if (entry == HomeEntry.DriverConfig) return (ConfigPath(world), why);
         if (!string.IsNullOrWhiteSpace(named)) return (named.Trim(), why);
         if (world.Home is not { } home) return (null, why);
-        try
-        {
-            return (DaorisHome.Entry(home, entry), why);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return (null, "twice");
-        }
+        return (DaorisHome.Entry(home, entry), why);
     }
 
     internal static JsonObject FileRow(

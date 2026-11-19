@@ -66,23 +66,14 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// <para>Cleared as a reading signed out is: a sign-in or a key through either door marks the account, and the next start
     /// asks it again (<see cref="AskAgain"/>); a sign-in on the screen reads it as it ends; a press reads it; and the hour's
     /// backstop. A reading not written costs the next start one more refusal, never this one's record.</para>
-    /// <para>🔴 <b>A refusal of an account last read signed in owes it one fresh reading</b>: the refusal contradicts
-    /// the agent's own last word, so the next start that walks to the account asks it once, whatever the mark and the hour say,
-    /// and its answer is kept and honoured; a sign-in the person made since, at a door of Daoris's or not, runs it again. One:
-    /// the refusal of a signed-in reading that fresh reading itself made owes none, so an agent that says signed in while it
-    /// refuses every start costs one more start, never one per look. Never the tool's own sign-in, which only a person's press
-    /// asks. Held in memory, as <see cref="Refuse"/> is: after a restart the reading waits for the mark or the hour.</para>
+    /// <para>🔴 <b>The refusal outranks the agent's status for its hour</b>, whatever the account last read: Claude Code's
+    /// status reads its own store, which a sign-in revoked at its server leaves in place, so a question asked before the mark or
+    /// the hour would read signed in and spend the next start, a step's one move among them, on the same refusal.</para>
     /// </remarks>
     public void SignedOut(string adapter, string? profile)
     {
         if (CoolingAgent(roster.Adapters.Door(adapter)) is not { } owner) return;
-        var before = profile is null ? null : AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(profile);
         Keep(owner, profile, new LoginRead(LoginState.Out, null), roster.Clock());
-        if (profile is not null && before is { Login: LoginState.In }
-            && !(roster._fresh.TryGetValue(HarnessRoster.AccountKey(owner, profile), out var made) && made == before.At))
-        {
-            roster._owed[HarnessRoster.AccountKey(owner, profile)] = true;
-        }
     }
 
     /// <summary>
@@ -286,8 +277,6 @@ internal sealed class RosterCooling(HarnessRoster roster)
     {
         var login = said.Login;
         roster._who[HarnessRoster.AccountKey(owner, account)] = (at, login == LoginState.In ? said : new LoginRead(login, null));
-        // A newer word on the account settles a fresh reading a refusal owed it.
-        roster._owed.TryRemove(HarnessRoster.AccountKey(owner, account), out _);
         // Its usage history's binding epoch: a sign-out marks it, and another plan as read begins the next.
         UsageHistory.Login(roster.Home, owner, account ?? AccountWindows.Own, login, login == LoginState.In ? said.Plan : null, at);
         try
@@ -308,8 +297,6 @@ internal sealed class RosterCooling(HarnessRoster roster)
     public void Removed(string agent, string account)
     {
         roster._who.TryRemove(HarnessRoster.AccountKey(agent, account), out _);
-        roster._owed.TryRemove(HarnessRoster.AccountKey(agent, account), out _);
-        roster._fresh.TryRemove(HarnessRoster.AccountKey(agent, account), out _);
         // One made later under its name is another binding in the usage history.
         UsageHistory.Unbound(roster.Home, agent, account, roster.Clock());
         try

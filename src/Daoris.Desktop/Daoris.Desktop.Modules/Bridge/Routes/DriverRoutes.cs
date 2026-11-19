@@ -315,7 +315,7 @@ public sealed class DriverRoutes(DriverContext context)
         static int? Clamped(long? value) => value is { } number ? (int)Math.Clamp(number, int.MinValue, int.MaxValue) : null;
         // A floor's size in GB, its share, or `off`: a size is judged against half the Daoris folder's volume as read here.
         var set = new KeepSet(press.Kind, Clamped(press.Days), press.Never, press.Whole, press.Default, Clamped(press.Gb), Clamped(press.Percent), press.Off);
-        if ((KeepRules.IsFloor(set.Kind) || KeepRules.IsAllowance(set.Kind)) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home).Folder)?.Total };
+        if ((KeepRules.IsFloor(set.Kind) || KeepRules.IsAllowance(set.Kind)) && set.Gb is not null) set = set with { Volume = SpaceVolumes.Read(DaorisHome.FolderOf(_loop.Home))?.Total };
         _context.Change(config => KeepRules.Apply(config, set));
         return State(_loop);
     }
