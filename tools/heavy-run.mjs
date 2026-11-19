@@ -16,8 +16,7 @@
  * runs the union once, from the oldest base, on its own commit. Each says the handover on a `heavy tier:` line of its log and in its
  * record (`handedTo`, `handed`; `took`, `from`). So two tiers never run their git halves at once, and a run waiting for the tree, or
  * (in its reached run) for the machine's admission, past `WAIT_BOUND_MS` says so; one waiting for the tree past `WAIT_DEADLINE_MS`
- * gives up, its range carried by the next tier. It is a background run (`merge/background.ts`, MERGENOKILL1): below normal priority,
- * its places in the admission yield to a merge's gates, and it starts no group while one waits.
+ * gives up, its range carried by the next tier.
  * Exit codes: 0 green · 1 red, superseded or an error · 2 a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -210,7 +209,6 @@ async function main(argv) {
     return 2;
   }
   const home = resolve(process.cwd());
-  // A background run: below normal, its reached run's places yield to a merge's gates (MERGENOKILL1).
   const lowered = startBackground();
   if (lowered) console.log(`${HEAVY_PREFIX} it could not lower its priority (${lowered}); it runs at the priority it has, its places still background ones`);
   const input = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };

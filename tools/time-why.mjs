@@ -148,9 +148,9 @@ export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', 
 }
 
 /**
- * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `inherited` (main's, RATCHETOWN1:
- * a known red with its cause and row, failing nothing; `main`, main's alone record, where there is one) and `loaded` (timed only
- * under load), each key -> { ms, limit }. `records()` maps a key to its record.
+ * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `inherited` (main's: a known
+ * red with its cause and row, failing nothing; `main`, main's alone record, where there is one) and `loaded` (timed only under
+ * load), each key -> { ms, limit }. `records()` maps a key to its record.
  */
 export function ratchetBreaches({ found, inherited = {}, loaded = {}, listedAt = () => undefined, records = () => new Map(), source = () => null }) {
   if (!Object.keys(found).length && !Object.keys(inherited).length && !Object.keys(loaded).length) return [];

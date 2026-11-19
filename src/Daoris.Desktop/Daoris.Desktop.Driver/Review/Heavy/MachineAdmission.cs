@@ -19,10 +19,7 @@ namespace Daoris.Driver;
 public sealed record AdmissionEntry(
     string Id, string Kind, int Pid, string What, DateTimeOffset Since, DateTimeOffset Beat, string? Session, string? Repository, string? Tree)
 {
-    /// <summary>
-    /// A background run's (<c>background: true</c>, MERGENOKILL1): the heavy tier, the CI beside, which yield to the blocking runs
-    /// (<see cref="MachineAdmission.Judge"/>). The driver asks only blocking places and keeps the merge tool's background ones as written.
-    /// </summary>
+    /// <summary>A background run's (the heavy tier, the CI beside), which yields to blocking ones; the driver asks none and keeps them.</summary>
     public bool Background { get; init; }
 }
 

@@ -16,11 +16,8 @@
  * nothing is released by a timeout while the holder lives and beats. A run is admitted when the live holds, plus the live waits
  * ahead of it, are fewer than the capacity: first come, first served, a queue gate and a session's run alike.
  *
- * Two kinds of run (MERGENOKILL1, D346): blocking, a run someone waits on (a merge's gate, a check, a builder's run: no
- * `background`), and background (`background: true`: the heavy tier after a landing, the CI beside, marked by `BACKGROUND` in
- * their environment). A blocking run waits only for the blocking runs asked before it. A background run takes a place only when no
- * blocking run waits and no other background run holds one (they hold one place at most between them), and `pause` holds its
- * groups that take no place while a blocking run waits. A writer that keeps no `background` makes the entry blocking: today's rule.
+ * A run is blocking, or background (`background: true`, the heavy tier and the CI beside, `BACKGROUND` in their environment):
+ * see `judge` and `pause`. A writer that keeps no `background` makes the entry blocking.
  *
  * The file is changed under `admission.json.lock`, the keeping write's lock (`keeplock.ts`, the driver's `KeepLock.cs`: put in place
  * with no overwrite, `{ pid, since }`, stale when its process is gone or it is a minute old); a change takes milliseconds, and the
@@ -38,7 +35,6 @@ import { availableParallelism } from 'node:os';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { withKeepLock } from '../src/Daoris.Cli/src/platform/keeplock.ts';
 import { writeAtomic } from './fsx.mjs';
-// The variable, `1`, that marks a run and what it starts as background: the heavy tier, the CI beside.
 import { BACKGROUND } from './merge/background.ts';
 
 /** How long an entry that has not beat still counts, and how often a live one beats (the twin's `StaleAfter` and `BeatEvery`). */
@@ -163,9 +159,8 @@ export function pruned(state, seam = {}) {
 
 /**
  * Whether the run `id` is admitted (the twin's `Judge`), over a pruned state: `{ admitted, ahead, holds }`. A blocking run is when the
- * holds, plus the blocking waits before it, are fewer than `capacity`. A background run is when nothing goes before it (no blocking
- * wait, no background wait asked before it), no background run holds a place and one is free. A run not among the waits is a blocking
- * one, last in line.
+ * holds, plus the blocking waits before it, are fewer than `capacity`; a background one when no blocking run waits, no background run
+ * asked before it or holds a place, and a place is free. A run not among the waits is a blocking one, last in line.
  */
 export function judge({ holds, waits }, id, capacity) {
   const at = waits.findIndex((entry) => entry.id === id);
@@ -485,10 +480,7 @@ export function createAdmission({
     return { held: true, ids, capacity: n, beat, end };
   }
 
-  /**
-   * A background run's group that takes no place, held while a blocking run waits (a halt's "start no group more", read as a pause):
-   * said once as it begins, looked at again every `pollMs`, ended by `halted()`. A blocking run, or one with no home, never pauses.
-   */
+  /** A background run's group that takes no place, held while a blocking run waits (said once) until `halted()`; a blocking run never waits. */
   async function pause({ what = 'a group', halted = () => false } = {}) {
     let said = false;
     while (file && background) {

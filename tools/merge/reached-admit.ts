@@ -2,7 +2,7 @@
  * Which groups of a reached plan are heavy, and a group run in its place in the machine's admission. A builder's check and a merge's
  * gate share that admission (`tools/machine-admission.mjs`, one capacity), so a Process run, a rehearsal or a whole suite of
  * classes waits for its turn behind the others instead of loading the machine beside them. A light group runs at once, but in a
- * background run (the heavy tier, MERGENOKILL1) it starts only while no blocking run waits (`pause`).
+ * background run (the heavy tier) it starts only while no blocking run waits (`pause`).
  */
 import { isHeavySuite } from './heavy-tier.ts';
 import type { ReachedGroup } from './reached.ts';

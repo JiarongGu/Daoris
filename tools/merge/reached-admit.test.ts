@@ -74,7 +74,7 @@ test('a heavy group waits while the capacity is full and runs when it is freed; 
   }
 });
 
-test('a background run starts no light group while a blocking run waits, and starts it once none waits (MERGENOKILL1)', async () => {
+test('a background run starts no light group while a blocking run waits, and starts it once none waits', async () => {
   const { dir, remove } = fixtureFolder('reached-admit');
   try {
     let gateLives = true;

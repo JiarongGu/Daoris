@@ -1,11 +1,7 @@
 /**
  * The wall-clock budget of a gate: its declared `timeoutMinutes`, else five minutes in a merge and ten in the full set or the CI.
- * A gate past it alone is killed with what it started and fails as its time, a breach that says why (`tools/time-why.mjs`). A gate
- * past it while the load sampler (from half the budget) sees more heavy runs than its own is never killed for the load (MERGENOKILL1,
- * D346): it runs on to its own end, its verdict its own, and its time a `load` breach that fails nothing; only `LOAD_CAP` times its
- * budget ends it, as a runaway, and fails. The budget never scales with the load: a kill alone is the one measure of the gate's own
- * time. `--no-timeout` turns it off for an investigation, said in the summary. A gate whose hang bound killed a test under load still
- * runs again alone once the machine is free (`waitFree`): that kill left it with no verdict.
+ * Past it alone, a gate is killed and fails as its time; past it under load it runs on, its time a `load` breach failing nothing,
+ * until `LOAD_CAP` times its budget. `--no-timeout` turns it off for an investigation, said in the summary.
  */
 import type { LoadSeam } from '../time-why.mjs';
 import { stepsLine, type Step } from './reached-steps.ts';
@@ -51,10 +47,8 @@ export async function waitFree(load: LoadSeam, halted: () => boolean = () => fal
   }
 }
 
-/** What a gate that ran on past its budget under load adds to its note. */
 export const ranOnNote = (ranMs: number, budget: number, peak: number): string => `ran on past its ${minutes(budget)} min budget under load (${peak} heavy runs at its peak): its time fails nothing (${minutes(ranMs)} min), a load breach the heavy tier measures alone`;
 
-/** What a gate ended at its cap adds to the over-budget note. */
 export const cappedNote = (peak: number): string => `; killed at its cap of ${LOAD_CAP} times its budget, having run on under load (${peak} heavy runs at its peak): a runaway`;
 
 /** The note of a gate whose hang bound killed a test under load, after its run again alone ended without a kill. */

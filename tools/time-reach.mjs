@@ -1,9 +1,7 @@
 /**
- * Whose a test the time ratchet found over its limit is (RATCHETOWN1, D346): the merge's where the merge adds or changes the test's
- * file, or the test ran over half slower than main's alone record of it (`tools/time-main.mjs`); else main's, inherited as a known
- * red with its cause and row, said and failing nothing. Reach alone made a test the merge's (TIMEREACH2): seven of the thirteen
- * ratchet reds with causes in a week were one slow case of a file the merges never changed. The merge's tests are judged after they
- * are measured again alone (`tools/time-ratchet.mjs`).
+ * Whose a test the time ratchet found over its limit is: the merge's where the merge adds or changes the test's file, or the test
+ * ran over half slower than main's alone record of it (`tools/time-main.mjs`); else main's, inherited as a known red with its cause
+ * and row, said and failing nothing. The merge's are judged after they are measured again alone (`tools/time-ratchet.mjs`).
  *
  * A record's key names its unit: a `file::name` key (Vitest, the node reporter) is the census's unit of that file, a dotnet key
  * `Namespace.Class.Method(args)` the census's class `Namespace.Class`, whose file the census names. A test of no known file is the
@@ -21,16 +19,15 @@ export function unitOfKey(key, units) {
   return null;
 }
 
-/** How much slower than main's alone record a test the merge does not change must run to be the merge's (RATCHETOWN1). */
+/** How much slower than main's alone record a test the merge does not change must run to be the merge's. */
 export const SLOWER = 1.5;
 
-/** The source file of the test `key`: a `file::name` key's file, else its census unit's; null where neither is known. */
 const fileOfKey = (key, units) => (key.includes('::') ? key.split('::')[0].replace(/\\/g, '/') : unitOfKey(key, units)?.file?.replace(/\\/g, '/') ?? null);
 
 /**
- * `found` (key -> { ms, limit }) split into the merge's tests and those it inherits from main (RATCHETOWN1, D346): a test is the
- * merge's where `changed` adds or changes its file (`why: 'changed'`; one of no known file is judged, never excused), or where it ran
- * over half slower than `mainMs(key)`, main's alone record of it (`why: 'slower'`). Each carries `main`, that record, where there is one.
+ * `found` (key -> { ms, limit }) split into the merge's tests and those it inherits from main: the merge's where `changed` adds or
+ * changes its file (`why: 'changed'`; one of no known file is judged, never excused), or where it ran over half slower than
+ * `mainMs(key)`, main's alone record of it (`why: 'slower'`). Each carries `main`, that record, where there is one.
  */
 export function splitByOwner(found, { changed, world, mainMs }) {
   const mine = {};

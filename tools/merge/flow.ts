@@ -132,7 +132,6 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     expired = why;
     for (const pid of roots) deps.killTree(pid);
   };
-  // Past its budget under load the gate runs on (MERGENOKILL1): only its cap ends it.
   let ranOn: number | null = null;
   let cap: ReturnType<typeof setTimeout> | null = null;
   const timer = budget === null ? null : setTimeout(() => {

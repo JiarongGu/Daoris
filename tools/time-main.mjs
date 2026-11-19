@@ -1,7 +1,7 @@
 /**
- * Main's alone records of each test (RATCHETOWN1, D346), which the time ratchet reads to tell a test a merge made slower from one
- * that was slow before it: `local/time-main.json` in the checkout every worktree shares, machine-local, written by each ratchet run
- * that judges a merge or a commit and read by the next.
+ * Main's alone records of each test, which the time ratchet reads to tell a test a merge made slower from one slow before it:
+ * `local/time-main.json` in the checkout every worktree shares, machine-local, written by each ratchet run that judges a merge or
+ * a commit and read by the next.
  *
  *   { "schema": 1, "tests": { "<key>": [{ "ms": 8123, "commit": "<sha>", "at": "<iso>" }] } }   newest first, `KEEP` a test
  *

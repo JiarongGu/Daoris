@@ -10,13 +10,12 @@ import { judgeByOwner, splitByOwner, unitsOf } from './time-reach.mjs';
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
   `<UnitTestResult executionId="x" testName="${name}" duration="${duration}" outcome="${outcome}" />`).join('')}</Results></TestRun>`;
 
-/** A census world of units by their source file (the dotnet class's, a node or Vitest unit's own). */
 const worldOf = (files) => ({ units: new Map(Object.entries(files).map(([unit, file]) => [unit, { unit, file }])), reaches: () => true });
 const DOTNET_KEY = 'D.Tests.LineAccountTests.A_recorded_pick(x: 1)';
 const WEB_KEY = 'src/Web/a/Box.test.tsx::opens';
 const NO_RECORD = () => null;
 
-test('a slow test is the merge\'s only where the merge adds or changes its file, or it ran over half slower than main\'s alone record (RATCHETOWN1)', () => {
+test('a slow test is the merge\'s only where the merge adds or changes its file, or it ran over half slower than main\'s alone record', () => {
   const world = worldOf({ 'D.Tests.LineAccountTests': 'src/D.Tests/LineAccountTests.cs', 'src/Web/a/Box.test.tsx': 'src/Web/a/Box.test.tsx' });
   const found = { [DOTNET_KEY]: { ms: 54_000, limit: 30_000 }, [WEB_KEY]: { ms: 11_000, limit: 10_000 } };
   const reads = splitByOwner(found, { changed: ['src/D/Ports/Driver.cs'], world, mainMs: NO_RECORD });
@@ -52,12 +51,7 @@ test('a test the merge owns is measured again alone and its alone time decides; 
   assert.equal(none.world, 0);
 });
 
-/**
- * The week of 2026-11-17 to 19 replayed (RATCHETOWN1's proof): the fourteen merges whose ratchet failed with a cause, 21 breaches, each
- * merge's changed paths none of the slow tests' files (as each merge's record shows), and main keeping no alone record yet. Under the
- * rule none is the merge's; a planted slowdown in a test the merge changes is the one red.
- */
-test('this week\'s ratchet breaches replayed: each is inherited from main, and only a planted slowdown in a changed test fails', () => {
+test('the fourteen ratchet reds of 2026-11-17 to 19 replayed, main keeping no alone record yet: each breach is inherited, and only a planted slowdown in a changed test fails', () => {
   const FLOW = 'tools/merge/flow.test.ts::a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails';
   const census = (name) => `Daoris.Desktop.Driver.Tests.${name}`;
   const units = Object.fromEntries(['CensusReachTests', 'SharedCompileTests', 'SettledReadersCensusTests', 'CheckoutWritersCensusTests', 'ContinuedReadersCensusTests',

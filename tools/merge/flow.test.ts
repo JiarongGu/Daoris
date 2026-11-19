@@ -204,10 +204,6 @@ test('a gate past its budget has what it started killed, and fails as over-budge
   }
 });
 
-/**
- * A gate with a 20 ms budget whose load sampler reads `peak` heavy runs (MERGENOKILL1): `ends` its own run after that many ms with
- * PASS, or never (null), so only a kill ends it. What it started is pid 77.
- */
 function loadHarness(peak: number, ends: number | null) {
   const killed: number[] = [];
   const h = harness({

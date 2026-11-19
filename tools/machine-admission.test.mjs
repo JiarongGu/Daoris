@@ -80,10 +80,6 @@ function admission(home, extra = {}) {
   return { ...made, said };
 }
 
-/**
- * MERGENOKILL1: a background run (the heavy tier, the CI beside) yields to a blocking one (a merge's gate). Its place waits while a
- * blocking run waits, and `pause` holds a group that takes no place until none waits. The planted wait is this process's, so it lives.
- */
 describe('a background run yields to a blocking one', () => {
   // The planted gate's process is a seam's: it lives until the test lets it end.
   const GATE_PID = 999_999;

@@ -1,5 +1,5 @@
 /**
- * A background run (MERGENOKILL1, D346): the heavy tier after a landing (`tools/heavy-run.mjs`) and the CI beside the merges
+ * A background run: the heavy tier after a landing (`tools/heavy-run.mjs`) and the CI beside the merges
  * (`startBesideRun`). Nobody waits on it, so it gives the machine to the runs someone does wait on: it runs below normal priority,
  * and its environment marks it (`BACKGROUND`), so each place it or what it starts asks of the machine's admission is a background
  * one, taken only while no blocking run waits (`tools/machine-admission.mjs`).
