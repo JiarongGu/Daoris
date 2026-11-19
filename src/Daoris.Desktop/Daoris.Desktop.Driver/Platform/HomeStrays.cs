@@ -86,7 +86,7 @@ public static class HomeStrays
         {
             if (entry is not null && !sizeEntries) continue;
             var place = System.IO.Path.Combine([folder, .. relative.Split('/')]);
-            var measure = WiringSizes.MeasurePlaces([place], [], left, CancellationToken.None);
+            var measure = PlacesWalk.Measure([place], [], left, CancellationToken.None);
             if (entry is null) sizes.Add(new HomeStray(relative, measure.Bytes));
             walked.Add(new HomeWalked(relative, measure.Bytes, entry));
             partial ??= measure.Partial;
@@ -134,8 +134,8 @@ public static class HomeStrays
 
     private static bool IsInstalls(string name) =>
         string.Equals(name, DaorisHome.InstallApp, PathCase) || string.Equals(name, DaorisHome.InstallMarker, PathCase)
-        || string.Equals(name, Purged, PathCase) || string.Equals(name, StagedBuild.Folder, PathCase)
-        || string.Equals(name, StagedBuild.Launcher, PathCase);
+        || string.Equals(name, Purged, PathCase) || string.Equals(name, DaorisHome.InstallUpdate, PathCase)
+        || string.Equals(name, DaorisHome.InstallLauncher, PathCase);
 
     /// <summary>What a database keeps beside its file while open: part of the entry, as <c>WiringPlaces</c> counts it.</summary>
     private static readonly string[] Beside = ["-wal", "-shm", "-journal", ".wake"];

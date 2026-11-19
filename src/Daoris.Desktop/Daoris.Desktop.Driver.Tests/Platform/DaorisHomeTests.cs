@@ -9,6 +9,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class DaorisHomeTests
 {
+    /// <summary>The install's own folder and launcher the home compares are the names the launcher's staged build keeps.</summary>
+    [Fact]
+    public void The_install_names_are_the_staged_builds()
+    {
+        Assert.Equal(StagedBuild.Folder, DaorisHome.InstallUpdate);
+        Assert.Equal(StagedBuild.Launcher, DaorisHome.InstallLauncher);
+    }
+
     private static Func<string, string?> Env(params (string Name, string? Value)[] pairs) =>
         name => pairs.FirstOrDefault(p => p.Name == name).Value;
 

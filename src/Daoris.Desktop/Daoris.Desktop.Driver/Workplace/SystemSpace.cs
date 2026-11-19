@@ -113,7 +113,7 @@ public static class SpaceKinds
 public sealed record KindReading(DateTimeOffset Measured, long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Folders);
 
 /// <summary>
-/// The card's sizes: a bounded walk per kind through <see cref="WiringSizes.MeasurePlaces"/>, never a
+/// The card's sizes: a bounded walk per kind through <see cref="PlacesWalk.Measure"/>, never a
 /// ledger and never the whole home on a look. Each kind has its own budget, so one large kind never starves the rest. Walks run in the
 /// background, one home's at a time and one kind after another; each kind's reading publishes as it ends, so the card fills in kind by
 /// kind. Kept for the process, as <see cref="WiringSizes.Shared"/> keeps the folders' measure.
@@ -210,7 +210,7 @@ public sealed class SpaceSizes
     public KindReading MeasureNow(string home, string kind, WiringBudget budget, CancellationToken cancellationToken)
     {
         var places = SpaceKinds.Places(home, kind);
-        var measure = WiringSizes.MeasurePlaces(places.Places, places.Skip, budget, cancellationToken, groupDepth: kind == "set-aside" ? 3 : 0);
+        var measure = PlacesWalk.Measure(places.Places, places.Skip, budget, cancellationToken, groupDepth: kind == "set-aside" ? 3 : 0);
         var reading = new KindReading(DateTimeOffset.UtcNow, measure.Bytes, measure.Files, measure.Partial, measure.Groups);
 
         _readings[Key(home, kind)] = reading;
