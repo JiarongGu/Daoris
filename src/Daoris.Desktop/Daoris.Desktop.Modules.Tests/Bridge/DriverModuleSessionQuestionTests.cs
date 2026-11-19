@@ -84,6 +84,26 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
         Assert.Equal("https://portal.example.com/settings", question.GetProperty("site").GetString());
     }
 
+    /// <summary>A conversation's marked sign-in question reads whatever its state; an unmarked one or another kind of record's reads only parked.</summary>
+    [Theory]
+    [InlineData("chat", "working", true, true)]
+    [InlineData("chat", "completed", true, true)]
+    [InlineData("chat", "working", false, false)]
+    [InlineData("driven", "working", true, false)]
+    public async Task A_conversations_sign_in_question_reads_whatever_its_state(string kind, string state, bool marked, bool reads)
+    {
+        Asked("s1", $$"""{"id":"c3","session":"s1","question":"Sign in as ops.","choices":[],"owner":"sign-in","site":"https://portal.example.com/settings",{{(marked ? "\"conversation\":true," : "")}}"at":"2026-11-19T09:05:00Z"}""");
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Records(
+            $$"""[{"id":"s1","repository":"engine","state":"{{state}}","kind":"{{kind}}","created":"2026-10-22T08:00:00Z"}]"""))));
+        var module = new DriverModule(Bus, loop);
+
+        var answer = await AnswerAsync(module, "SESSION_QUESTION", new { id = "s1" });
+
+        Assert.Equal(reads, answer.TryGetProperty("question", out var question) && question.ValueKind == JsonValueKind.Object);
+        if (reads) Assert.Equal("https://portal.example.com/settings", question.GetProperty("site").GetString());
+    }
+
     /// <summary>
     /// 🔴 Fable's read, Q7: a record that is not parked has no question, whatever a file says (a run that works, one that ended, one the
     /// service no longer holds, and before the loop is up).

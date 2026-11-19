@@ -206,6 +206,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // person's *Send now*, which a running session carries out by its door.
         // `key`, the press's own where the page names one, so a press that arrives twice keeps one word; the shell gives each
         // press one otherwise.
+        var dispatched = DateTimeOffset.UtcNow;
         var said = await _loop.Words
             .SayAsync(id, text, files, press.Preface, door: "screen", cancellationToken, level, press.Key, choice, asking)
             .ConfigureAwait(false) ?? throw NotReady();
@@ -215,6 +216,7 @@ public sealed class ConversationRoutes(DriverContext context)
         // The owner's answer to a question a supervisor's decision is on supersedes it at
         // once; the service's one owner-word operation took its released word back in the same step.
         if (said.Sent && asking is not null) await _loop.Supervisor.SupersedeAsync(id, asking, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        if (said.Sent) new QuestionFiles(_loop.Home).ClearConversation(said.At ?? id, dispatched);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued`.
         // `now`: the press is carried out; false where it is not asked, or the door could do neither, `why` saying so.
         return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };

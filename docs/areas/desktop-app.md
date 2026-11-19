@@ -233,7 +233,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     plugin's actor wait, since the row names no step kind), and so does its *What needs you* row (the run its work quest, else its run's id, names):
     *Approve* and *Reject* where the plugin declares `approve-release` and the person holds the approver, sent with the origin of the run's own
     workspace's checkout of its repository, else the stage's page. A park whose question names a site waits on the person's sign-in there: named *Sign in*, its card carries
-    *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34). A step its agent holds reads "waiting on `<role>`:
+    *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34), and so does a conversation's sign-in question,
+    whatever its state, with no finish or decline (`ConversationSignIn`). A step its agent holds reads "waiting on `<role>`:
     `<agent>`" with *Take* alone, and names the dock's question or sign-in its agent is blocked on with a link to it (`RunWaitsHead`).
     While the session awaits its step, the dock reads its run (`useRunWaitDoors`) and draws below its waits, uncounted since no press
     of the person's settles them, what its part of an ask's plan waits on ("waits on `<part>`'s `<fact>`") and each joint check's parts
