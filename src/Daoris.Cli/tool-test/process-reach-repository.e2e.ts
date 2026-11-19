@@ -82,9 +82,9 @@ test("a change to the knowledge connector's tools reaches the driver tests whose
   }
 });
 
-test('a change to an example plugin manifest reaches PluginInterfacesTests, and every path a [Reaches] reads exists (REACHPLUGIN1)', () => {
+test('a change to an example plugin manifest reaches PluginInterfacesTests, and every path a [Reaches] reads exists',() => {
   const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'examples/plugins/daoris-azure-devops/plugin.json'], {
-    cwd: repoRoot, encoding: 'utf8', timeout: 600_000,
+    cwd: repoRoot, encoding: 'utf8', windowsHide: true, timeout: 600_000,
   });
   const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
   assert.match(driver, /\.PluginInterfacesTests\b/, `the driver's reached classes name PluginInterfacesTests: ${plan.stdout.slice(-600)}`);

@@ -338,7 +338,7 @@ test("a class's hand-written [Reaches] of a path outside the projects it compile
   assert.equal(reach.classesReached(['src/Other/Mcp/Other.cs'], census).whole.length, 1, 'a path no class names is as before: the half, where the lane table sends it');
 });
 
-test('a [Reaches] of a data folder (examples/...) is reached by a change to a file under it (REACHPLUGIN1)', () => {
+test('a [Reaches] of a data folder (examples/...) is reached by a change to a file under it',() => {
   const files: Record<string, string> = {
     ...DESK,
     'src/Desk/Desk.Tests/ListTests.cs': [
