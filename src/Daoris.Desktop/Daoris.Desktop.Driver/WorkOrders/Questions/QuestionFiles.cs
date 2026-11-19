@@ -98,7 +98,7 @@ public sealed class QuestionFiles(string home)
 
     /// <summary>
     /// Bind the session's question to the park its run ended in: kept where <paramref name="state"/> parks and the
-    /// question has been asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
+    /// question has been asked at or after <paramref name="since"/> (or awaits its step with one so asked); else deleted, said where it stays.
     /// </summary>
     /// <remarks>
     /// A park keeps a file that does not read (busy, broken, past a bound) too. Neither its
@@ -111,6 +111,7 @@ public sealed class QuestionFiles(string home)
         var path = PathOf(session);
         if (!File.Exists(path)) return QuestionSettle.None;
         if (SessionStates.IsParked(state) && (Read(session) is not { } asked || asked.At >= since)) return QuestionSettle.Kept;
+        if (state == SessionStates.AwaitingStep && Read(session) is { } requested && requested.At >= since) return QuestionSettle.Kept;
         return Delete(path);
     }
 
@@ -156,6 +157,7 @@ public sealed class QuestionFiles(string home)
             if (question.By is not null) writer.WriteString("by", question.By);
             if (question.Why is not null) writer.WriteString("why", question.Why);
             if (question.Site is not null) writer.WriteString("site", question.Site);
+            if (question.Role is not null) writer.WriteString("role", question.Role);
             writer.WriteString("at", Moments.Write(question.At));
             writer.WriteEndObject();
         }

@@ -67,7 +67,7 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.Contains("press", said);
         Assert.Contains("end your turn", said);
         Assert.Contains("label", said);
-        Assert.Contains("go_ahead_ask", said);
+        Assert.Contains("`act`", said);
     }
 
     /// <summary>A question with no answers offered is a free answer's, and keeps no recommendation nor deadline it is not given.</summary>

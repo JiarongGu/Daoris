@@ -7,8 +7,8 @@ import type { RunStep, WorkflowRun } from './run';
 import { answerOf, IN_REVIEW } from './runFixtures';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// A `task` step cast to the role's agent reads as the agent's, with *Take* its one press and none of the person's task presses;
-// the step a person holds keeps its presses.
+// A `task` step cast to the role's agent reads as the agent's, with *Take* its one press as the driver sends it (no acts, `holds` take);
+// the step a person holds keeps its presses. The driver alone decides the presses: the view draws what it sends, whoever holds the step.
 
 const TASK: WorkflowStep = {
   id: 'config-change', kind: 'task', participation: 'you', executor: 'daoris', press: null,
@@ -34,7 +34,7 @@ const rowOf = () => screen.getAllByRole('listitem').find((item) => item.getAttri
 
 describe('a task step by who holds it', () => {
   it('reads an agent-held step as the agent’s with Take alone, none of the person’s presses', () => {
-    draw(runWith({ holder: { kind: 'agent', name: 'builder-1' }, acts: ['done', 'skip', 'stop'], holds: ['take', 'hand'], epoch: 1 }));
+    draw(runWith({ holder: { kind: 'agent', name: 'builder-1' }, holds: ['take'], epoch: 1 }));
     const row = rowOf();
     expect(row).toHaveTextContent('config-changer');
     expect(row).toHaveTextContent('builder-1');
@@ -43,6 +43,13 @@ describe('a task step by who holds it', () => {
     expect(screen.getAllByText('agent alone').length).toBeGreaterThan(1);
     expect(within(row).getByRole('button', { name: /take/i })).toBeInTheDocument();
     for (const name of ['Done…', 'Not needed this run…', 'End this work…']) expect(within(row).queryByRole('button', { name })).toBeNull();
+  });
+
+  it('withholds nothing the driver sends on a step an agent holds: one place decides its presses', () => {
+    draw(runWith({ holder: { kind: 'agent', name: 'builder-1' }, acts: ['skip'], holds: ['take'], epoch: 1 }));
+    const row = rowOf();
+    expect(screen.getAllByText('agent alone').length).toBeGreaterThan(1);
+    expect(within(row).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
   });
 
   it('keeps the presses of a step the person holds', () => {

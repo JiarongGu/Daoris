@@ -32,7 +32,7 @@ const run = async (plugin, command, args) => {
 };
 const writes = (api) => api.calls.filter((call) => call.method === 'POST' || call.method === 'PATCH');
 
-test('the manifest hands the release manager its acts as tools that write, its read as a tool, and the approval to no agent', () => {
+test('the manifest hands the release manager its acts as tools that write, its read as a tool, and the approval to the approver\'s holder alone', () => {
   const commands = JSON.parse(readFileSync(join(folder, 'plugin.json'), 'utf8')).interfaces.commands;
   const of = (name) => commands.find((each) => each.name === name);
   for (const name of ['create-release', 'start-stage', 'release-status']) {
@@ -42,7 +42,9 @@ test('the manifest hands the release manager its acts as tools that write, its r
   assert.equal(of('create-release').writes, true);
   assert.equal(of('start-stage').writes, true);
   assert.notEqual(of('release-status').writes, true);
-  assert.notEqual(of('approve-release').tool, true);
+  // The approval is the approver role's act: a tool that writes, handed only where the place casts the approver to an agent.
+  assert.deepEqual([of('approve-release').tool, of('approve-release').writes, of('approve-release').role], [true, true, 'approver']);
+  for (const name of ['create-release', 'start-stage', 'release-status']) assert.equal(of(name).role, undefined, `${name} is any session's tool`);
 });
 
 test('an agent creates the release, starts its stage, reads it waiting on its approver and then ended, each with its receipt, and nothing twice', async (t) => {

@@ -383,5 +383,12 @@
   "workflow.run.line.wall": "{{seconds}} s",
   "workflow.run.line.join": " · ",
   "workflow.run.line.batch": "what landed on {{line}} since {{base}}",
-  "workflow.run.line.first": "the first verification of {{line}}"
+  "workflow.run.line.first": "the first verification of {{line}}",
+  "workflow.run.acts.title": "Acts",
+  "workflow.run.acts.row": "{{fact}}: {{state}}",
+  "workflow.run.acts.state.reached": "reached",
+  "workflow.run.acts.state.waiting": "waiting",
+  "workflow.run.acts.state.failed": "failed",
+  "workflow.run.acts.by": "by {{by}}",
+  "workflow.run.acts.page": "Open its page"
 }

@@ -36,13 +36,21 @@ public sealed record PluginToolCommand(PluginEntry Plugin, PluginCommandDeclared
 
 /// <summary>
 /// The tools a session at a place is handed: each command marked <c>tool</c> and asking nothing of the person, of each installed plugin
-/// that is on, not refused and speaks, where its <c>commands</c> and <c>tools</c> are both on at that place (<see cref="PluginSwitches"/>).
-/// Read again at each list and call, so a switch moved during a session holds at its next call.
+/// that is on, not refused and speaks, where its <c>commands</c> and <c>tools</c> are both on at that place (<see cref="PluginSwitches"/>);
+/// a role's act (<see cref="PluginCommandDeclared.Role"/>) only where the place casts that role to an agent, so never where the person
+/// holds it, a destination's mark included (<see cref="PlaceCastBook.At"/>). Read again at each list and call, so a switch or a cast moved
+/// during a session holds at its next call.
 /// </summary>
 public static class PluginToolList
 {
     public static IReadOnlyList<PluginToolCommand> At(string home, PluginPlace place)
     {
+        PlaceCastBook? casts = null;
+        PlaceRiskNow? risk = null;
+        bool AgentHolds(string role) =>
+            (casts ??= new PlaceCastFiles(home).Book())
+            .At(role, place.Workspace, place.Repository, risk ??= DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk.At(place.Workspace, place.Repository))
+            .Holder != CastHolders.Person;
         var tools = new List<PluginToolCommand>();
         foreach (var plugin in PluginCatalog.Load(home).Plugins)
         {
@@ -51,7 +59,7 @@ public static class PluginToolList
             if (marked.Count == 0) continue;
             var id = plugin.Manifest.Id;
             if (!PluginSwitches.IsOn(home, id, PluginSwitches.Commands, place) || !PluginSwitches.IsOn(home, id, PluginSwitches.Tools, place)) continue;
-            tools.AddRange(marked.Select(command => new PluginToolCommand(plugin, command)));
+            tools.AddRange(marked.Where(command => command.Role is not { } role || AgentHolds(role)).Select(command => new PluginToolCommand(plugin, command)));
         }
 
         return tools;

@@ -383,5 +383,12 @@
   "workflow.run.line.wall": "{{seconds}} 秒",
   "workflow.run.line.join": " · ",
   "workflow.run.line.batch": "自 {{base}} 以来落到主线 {{line}} 的提交",
-  "workflow.run.line.first": "主线 {{line}} 的首次验证"
+  "workflow.run.line.first": "主线 {{line}} 的首次验证",
+  "workflow.run.acts.title": "动作",
+  "workflow.run.acts.row": "{{fact}}：{{state}}",
+  "workflow.run.acts.state.reached": "已达成",
+  "workflow.run.acts.state.waiting": "等待中",
+  "workflow.run.acts.state.failed": "失败",
+  "workflow.run.acts.by": "由 {{by}}",
+  "workflow.run.acts.page": "打开其页面"
 }

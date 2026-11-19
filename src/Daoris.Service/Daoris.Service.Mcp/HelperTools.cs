@@ -28,19 +28,19 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
         string? part = null,
         CancellationToken ct = default)
     {
-        var box = helpers ?? HelperBox.FromEnvironment();
         var session = intake?.Session;
-        var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
         HelperScout? scout = null;
         if (!string.IsNullOrWhiteSpace(part))
         {
             if (teams is null) return "This host keeps no team plan, so there is no part to orient. Nothing was asked.";
+            var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
             var judged = await teams.Scouts.JudgeAsync(record, part, ct).ConfigureAwait(false);
             if (judged.Scout is null) return $"{judged.Refusal} Nothing was asked.";
             scout = judged.Scout;
         }
 
-        return box.Ask(record, session, question, agent, DateTimeOffset.UtcNow, urgent == true, scout).Message;
+        var request = new RoleRequest(session, question) { Role = RoleRequests.Helper, Agent = agent, Urgent = urgent == true, Scout = scout };
+        return await QuestionTools.Requests(intake, ledger, null, helpers).AskAsync(request, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
     }
 
     [McpServerTool(Name = "helper_answer")]

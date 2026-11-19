@@ -239,7 +239,13 @@ The release manager's acts are tools too (`release-acts.mjs`), each naming the o
 release keyed by its effect, a stage started once), keeps to the route of the merged build's branch, and answers a `receipt` as its
 `data`: its fact (`release-created`, `stage-started`, `stage-ended`), its state (`reached`, `waiting` with `waitsOn: approver` while
 an approval is pending, or `failed` with its code), its page, credit and words. Daoris journals each receipt on the step the agent
-holds, and the receipts settle it. `approve-release` stays no agent's tool. `release-acts.test.mjs` proves them against the stand-in.
+holds, and the receipts settle it. `release-acts.test.mjs` proves them against the stand-in.
+
+The approval is the approver role's act, `approve-release` (`role: approver`): it reads the stage's approval first, whoever gave it, and
+approves or rejects the pending one only where none is given, answering a receipt (fact `approved`, `reached` once the approval reads
+given, else `failed` with `not-pending`, `no-release` or the decision). The person holding the approver presses it on the approval card
+under their own sign-in; Daoris hands it to an agent as its tool only where the place casts the approver to an agent, never at a
+destination the place marks, and its receipt settles the approval step. `release-commands.test.mjs` proves it against the stand-in.
 
 ## What it needs
 

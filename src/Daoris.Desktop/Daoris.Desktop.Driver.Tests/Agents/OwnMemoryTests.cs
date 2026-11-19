@@ -76,7 +76,7 @@ public sealed class OwnMemoryTests : IDisposable
 
         using var none = JsonDocument.Parse(JsonSerializer.Serialize(acp.AcpSessionMeta("rules.json", [], Tools(OwnFamilies.Skills))));
         var plain = none.RootElement.GetProperty("claudeCode").GetProperty("options");
-        Assert.False(plain.TryGetProperty("systemPrompt", out _));
+        Assert.False(plain.GetProperty("systemPrompt").TryGetProperty("append", out _));
         Assert.False(plain.TryGetProperty("extraArgs", out _));
         Assert.Equal(
             JsonSerializer.Serialize(acp.AcpSessionMeta("rules.json", [])),

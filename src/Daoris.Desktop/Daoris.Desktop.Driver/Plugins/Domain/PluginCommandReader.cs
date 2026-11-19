@@ -45,6 +45,9 @@ internal static class PluginCommandReader
             return Refused($"command `{name}`'s `writes` must be true or false: whether it changes something outside the plugin.");
         if (!Words(row, "confirm", ConfirmMost, oneLine: true, null, out var confirm))
             return Refused($"command `{name}`'s `confirm` must be words on one line of at most {ConfirmMost}: the question the window asks once before it runs.");
+        var role = Text(row, "role");
+        if (row.TryGetProperty("role", out _) && (role is null || !StepRoles.Shape.IsMatch(role) || !tool))
+            return Refused($"command `{name}`'s `role` must name the role whose act it is (lowercase words joined by dashes), and only a `tool` names one.");
         if (Closed(row, "on", Records, [], atLeastOne: false) is not { } on)
             return Refused($"command `{name}`'s `on` must list the records whose menus offer it, each once: {Listed(Records)}.");
         if (Args(row, name, out var args) is { } wrong) return Refused(wrong);
@@ -61,7 +64,7 @@ internal static class PluginCommandReader
             adopts = new(hosts, answer);
         }
 
-        return new(new(name, about, interactive, tool, adopts) { Title = title!, Args = args, On = on, Writes = writes, Confirm = confirm }, name, null);
+        return new(new(name, about, interactive, tool, adopts) { Title = title!, Args = args, On = on, Writes = writes, Confirm = confirm, Role = role }, name, null);
     }
 
     /// <summary>Its arguments, or the problem with the first that does not read.</summary>

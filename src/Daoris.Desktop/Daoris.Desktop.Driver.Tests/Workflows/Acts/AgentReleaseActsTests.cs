@@ -19,7 +19,8 @@ public sealed class AgentReleaseActsTests : NodeRunFixture
                   {"id":"release","kind":"task","version":1,"reach":"pressed","outcomes":["done"],"role":"release-manager",
                    "options":{"knowledge":"release-path","evidence":["release","started","ended"],
                               "receipts":{"release":"release-created","started":"stage-started","ended":"stage-ended"}}},
-                  {"id":"approve","kind":"acme.deploy/approve","version":1,"reach":"performed","role":"approver"},
+                  {"id":"approve","kind":"acme.deploy/approve","version":1,"reach":"performed","role":"approver",
+                   "options":{"receipts":{"approval":"approved"}}},
                   {"id":"config-needed","kind":"task","version":1,"reach":"pressed","outcomes":["needed","not-needed"],"role":"release-manager"},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"}],
          "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"release"},
@@ -74,10 +75,21 @@ public sealed class AgentReleaseActsTests : NodeRunFixture
     }
 
     /// <summary>A pass at the look's deadline, which judges every governed run, as the acts' journal is read then.</summary>
-    private async Task PassAsync(NodeRuntime runtime, bool whole = true)
+    private async Task PassAsync(NodeRuntime runtime, bool whole = true, string config = "{}")
     {
         Read();
-        await runtime.PassAsync(RunLook(whole: whole) with { Steps = () => [Step, Build, Deployed, Approve] }, CancellationToken.None);
+        await runtime.PassAsync(RunLook(config, whole) with { Steps = () => [Step, Build, Deployed, Approve] }, CancellationToken.None);
+    }
+
+    private const string Link = Origin + "/_releaseProgress?releaseId=91";
+
+    /// <summary>The approval's plugin says the started stage waits on its approver, as its observation does.</summary>
+    private void WaitsOnApprover()
+    {
+        var invocation = _port.Sent.Single(call => call.Step == Approve.Kind).Invocation;
+        var said = new WorkEvidence(null, Link, "Production", "Waiting on the approver: approve Production of Release-91, carrying 11111111 from `main`.");
+        _port.Heard.Enqueue(new(Plugin, 1, new WorkStepFrame("approve", new WorkOutcome(WorkStates.Progress, Evidence: said) { Actor = StepRoles.Approver }, _now,
+            "e-wait", Invocation: invocation)));
     }
 
     /// <summary>A round of a plugin's tool whose answer carries a receipt, as the session's tools server keeps it.</summary>
@@ -156,6 +168,59 @@ public sealed class AgentReleaseActsTests : NodeRunFixture
         Assert.Equal(4, StepActFiles.Journal(_home, RunUnit).Count);
         Assert.Equal(NodeStates.Active, RunStatus("config-needed").State);
         Assert.Contains(_told, each => each.Key.Contains(":config-needed:", StringComparison.Ordinal) && each.Session == Work);
+    }
+
+    [Fact]
+    public async Task An_agent_holding_the_approver_approves_by_its_tool_and_the_receipt_settles_the_approval()
+    {
+        Casts.Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", _now);
+        _sessions = [new SessionRecord(Work, RunHome.Repository, SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId).Note().Parts }];
+        BoundTo(ActorRelease);
+        var runtime = Telling();
+        await PassAsync(runtime, whole: true);
+        await PassAsync(runtime);
+        WaitsOnApprover();
+        await PassAsync(runtime);
+        await PassAsync(runtime);
+
+        // The approval is handed to the run's working session as the approver's act: what it approves, its tool and the receipt that settles it.
+        var handed = Assert.Single(_told, each => each.Key.Contains(":approve:", StringComparison.Ordinal));
+        Assert.Equal(Work, handed.Session);
+        Assert.Contains("approve Production of Release-91", handed.Text, StringComparison.Ordinal);
+        Assert.Contains("`approved`", handed.Text, StringComparison.Ordinal);
+        Assert.Equal(NodeStates.Active, RunStatus("approve").State);
+
+        // Its tool's receipt is journaled on the step and settles it, credited as the receipt says, with no observation of the plugin's.
+        Acted("a1", "approve-release", "approved", "reached", "Stage Production of Release-91 approved by Daoris.", Link);
+        await PassAsync(runtime);
+        await PassAsync(runtime);
+        var journaled = Assert.Single(StepActFiles.Journal(_home, RunUnit));
+        Assert.Equal(("approve", "approved"), (journaled.Node, journaled.Fact));
+        var approved = RunStatus("approve");
+        Assert.Equal(NodeStates.Reached, approved.State);
+        Assert.Equal("Daoris", Files.Read(RunUnit)!.Attempts.Last(each => each.Node == "approve").By);
+    }
+
+    [Fact]
+    public async Task A_destination_the_place_marks_keeps_the_approval_the_owners_so_an_agents_receipt_settles_nothing()
+    {
+        const string marked = """{ "placeRisk": { "machine": { "risk": "low", "marks": ["release.production"] } } }""";
+        Casts.Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", _now);
+        _sessions = [new SessionRecord(Work, RunHome.Repository, SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId).Note().Parts }];
+        BoundTo(ActorRelease);
+        var runtime = Telling();
+        await PassAsync(runtime, whole: true, config: marked);
+        await PassAsync(runtime, config: marked);
+        WaitsOnApprover();
+        await PassAsync(runtime, config: marked);
+
+        Acted("a1", "approve-release", "approved", "reached", "Stage Production of Release-91 approved by Daoris.", Link);
+        await PassAsync(runtime, config: marked);
+        await PassAsync(runtime, config: marked);
+
+        Assert.DoesNotContain(_told, each => each.Key.Contains(":approve:", StringComparison.Ordinal));
+        Assert.Empty(StepActFiles.Journal(_home, RunUnit));
+        Assert.Equal(NodeStates.Active, RunStatus("approve").State);
     }
 
     [Fact]
