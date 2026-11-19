@@ -289,7 +289,7 @@ pinned on an account's row or a repository's page. One wait has one id; answered
 
 ### 5.4 With the agents
 
-Rows the agents take show on Overview under *Kept off your desk* (交给智能体), uncounted and without amber: who answers each and
+Rows the agents take show on Overview under *With the agents* (交给智能体), uncounted and without amber: who answers each and
 how it went. A role's answers and the supervisor's courses since the owner left are *Decided without you*, each with its role,
 maker, model and one line of why, and *Reverse…* (which opens New ask with "Reverse: <the decision>" written in) or *Overrule*
 while a course is still open.
@@ -314,7 +314,7 @@ Notifications, §14). A notification opens `/overview/waits/<id>` in the main wi
 
 | Today's group | Becomes |
 |---|---|
-| *What needs you* | Overview's *Waiting on you* (owner kinds) and *Kept off your desk* (the agents') |
+| *What needs you* | Overview's *Waiting on you* (owner kinds) and *With the agents* (the agents') |
 | A terminal's press (`person/Confirmations.tsx`) | a *Confirm it was you* wait (D156's door unchanged: no answer without the person key) |
 | *Messages* | unread marks where they belong and a *Since you left* line (`messagesRead` stays) |
 | *Done and failed* | Failed waits and *Since you left* lines |
@@ -462,7 +462,7 @@ A group shows its most urgent: ◆ > ▲ > ● > ○ > ◌ > ‖ > ✓ > –, wi
 | Asks, Workspaces, Company | 需求, 工作区, 公司 | now places; *Company* gets its glossary row |
 | All workspaces | 全部工作区 | replaces "Every workspace · 2" |
 | {{count}} waiting on you; Nothing waits on you | {{count}} 个等你处理; 没有等你处理的事 | one phrase per job; *What needs you* goes |
-| Kept off your desk; Decided without you; Cleared without you | 交给智能体; 已代你决定; 已自行解除 | |
+| With the agents; Decided without you; Cleared without you | 交给智能体; 已代你决定; 已自行解除 | |
 | While you were away; Since you left; Caught up; Back to where you were | 你离开期间; 你离开之后; 已看完; 回到刚才的位置 | |
 | Not mine; Later | 不归我定; 稍后 | *Later* replaces *Set aside* |
 | Search, go to or run a command | 搜索、跳转或执行命令 | the palette's placeholder |
@@ -576,7 +576,7 @@ left* above *Moving now* on the right, one below):
 │     │ ╰────────────────────────────────╯ │                                     │  – Codex · personal signed back in│
 │     │ ▸ ◆ Sign in: Claude · work  40 m   │ Pending 2 ▸   Ended today 23 ▸      │ Used  $14.20 · 2.4 M tokens ▸     │
 │ ⚙   │ ▸ ◆ CSV or XLSX first?       2 h   │                                     │ Install  updated to 1.8.3 · 12:00 │
-│     │ Kept off your desk 6 ▸  Answered 4▸│                                     │                                   │
+│     │ With the agents 6 ▸     Answered 4▸│                                     │                                   │
 └─────┴────────────────────────────────────┴─────────────────────────────────────┴───────────────────────────────────┘
 ```
 
@@ -609,8 +609,8 @@ repository and model name stay as written):
 
 - **Waiting on you**: every owner wait from every workspace, a `WaitCard` each, tagged with its workspace when outside the
   scope; wide, the first card whole and each next whole while the column has height, then one-line rows; narrow, the focused
-  card whole and the rest one line each (a one-line wait opens before it is answered). Foot lines *+ n later*, *Kept off your
-  desk n ▸*, *Answered today n ▸* (today's presses, a read the driver keeps).
+  card whole and the rest one line each (a one-line wait opens before it is answered). Foot lines *+ n later*, *With the
+  agents n ▸*, *Answered today n ▸* (today's presses, a read the driver keeps).
 - **Moving now**: the sessions in Working, Pending and Failed-retrying, grouped by ask (switches: by repository, by state);
   *Your conversations* for those the owner opened; a group head with its most urgent mark and workspace; a row with its mark,
   repository, step or whom it waits on, the model that ran, its time in state; a teammate's tagged *on a teammate's machine*,
@@ -1137,7 +1137,7 @@ is its baseline).
 | D333 | The title strip: no menu bar, one app menu, the scope named once, the waits pill and + Ask | D152's menus, D75's double naming (supersedes) |
 | D334 | No movable views: the side bar is Ask Daoris's, the panel the terminal's; a closed list hides | D118 (supersedes), desktop-app rule 25's strip |
 | D335 | Notifications retire; each part has a home; the computer announces only counted waits | D196 (supersedes) |
-| D336 | Only the owner's kinds wait on the owner, counted as one number, each answered on one card in place; the rest is kept off their desk | D196 §5, D40's landing (amends) |
+| D336 | Only the owner's kinds wait on the owner, counted as one number, each answered on one card in place; the rest is with the agents | D196 §5, D40's landing (amends) |
 | D337 | A failure stops only its region | D217 (amends) |
 | D338 | Get started is a path the owner finishes alone, and Daoris takes the other setup choices once | D97 (amends) |
 | D339 | The session panel's facts rail and its Changes focus | D320 §9 and its rejection of a right rail (amends) |
@@ -1191,7 +1191,7 @@ Where the plans disagreed, and what was decided:
 4. **Notifications.** The view retires (UISH12); Settings' *Notifications* is only the domain of the computer's announcements
    (UIST1, UIST13), and loses UIST1's door from the view.
 5. **One census.** UISH6's `OwnerKinds` and UISE9's `AttentionOwnership` are one census, `AttentionOwnership`, built in UISH6;
-   UISE9 keeps the supervisor's routing and *Kept off your desk*.
+   UISE9 keeps the supervisor's routing and *With the agents*.
 6. **One presence.** UISH8's machine-wide record and caught-up mark serve Overview; UISE8 merges into it, and UISE5 reads its
    mark (no `desk_marks` table).
 7. **The closed list's strip.** UISE kept it for marks at 900 px; UISH removes it, since marks without names identify nothing and
