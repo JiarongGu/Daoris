@@ -23,8 +23,6 @@
   "work.conversation.show": "展开",
   "work.conversation.hide": "收起",
   "work.conversation.thought": "思考",
-  "work.conversation.tools": "{{count}} 次工具调用",
-  "work.conversation.tools_other": "{{count}} 次工具调用",
   "work.conversation.worked": "过程",
   "work.conversation.working": "工作中…",
   "work.conversation.firstAnswer": "自 {{time}} 起等待它的第一次回答（已 {{elapsed}}）",

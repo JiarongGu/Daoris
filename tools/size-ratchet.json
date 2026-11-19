@@ -98,7 +98,7 @@
   "src/Daoris.Web/src/work/attention/AttentionRow.test.tsx": 46233,
   "src/Daoris.Web/src/work/attention/attention.stories.tsx": 44517,
   "src/Daoris.Web/src/work/attention/attention.test.ts": 87643,
-  "src/Daoris.Web/src/work/conversation/ConversationView.test.tsx": 78009,
+  "src/Daoris.Web/src/work/conversation/ConversationView.test.tsx": 77978,
   "src/Daoris.Web/src/work/conversation/conversation.test.ts": 76960,
   "src/Daoris.Web/src/work/head/SessionHead.test.tsx": 66941,
   "src/Daoris.Web/src/work/noteLines.test.ts": 105583,

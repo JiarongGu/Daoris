@@ -64,7 +64,7 @@ public static class HomeHistory
         "integration_parts", "integration_epochs", "integration_candidates", "integration_requests", "delivery_phases", "deliveries",
         "binding_roles", "binding_picks", "bindings", "role_moves", "role_starts", "continuation_admissions", "continuation_made",
         "continuation_epochs", "continuation_lines", "held_decisions", "notices", "news_said", "journal_cursors", "conversation_facts",
-        "session_event_offsets", "session_event_heads",
+        "session_event_offsets", "session_event_heads", "read_marks",
     ];
 
     /// <summary>The desktop store's tables that stay: its own bookkeeping, the roles and their policies, the workspaces, the trees, the act journal.</summary>

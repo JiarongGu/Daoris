@@ -17,6 +17,7 @@ import { type EarlierPart, EarlierParts } from './EarlierParts';
 import { lineMembersBefore } from '../lineState';
 import { ReviewCards } from '../review/card/ReviewCards';
 import { SessionConversation } from './SessionConversation';
+import { stepsNow } from '../catchup/digest';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
 
@@ -92,6 +93,8 @@ export function AttendedConversation({
             onTail={setTail}
             // What runs now, for the live band above the dock, which opens one in the panel's focus.
             onBeside={setBeside}
+            // Its line's read mark on this machine, opened at under *Since you left* with what waits now and the steps passed.
+            catchup={{ line: attended.line ?? attended.id, waiting: standing.length, steps: stepsNow(grouping?.passage) }}
             onUsage={onUsage}
             onWaiting={onWaiting}
             // Its limit's wait, read from its events: the head and the foot say it.
