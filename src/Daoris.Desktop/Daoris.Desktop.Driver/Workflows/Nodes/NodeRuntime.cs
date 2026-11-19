@@ -359,6 +359,8 @@ public sealed class NodeRuntime(
                 foreach (var run in runs) ends[run.Unit] = run.Ended is not null;
                 _ends = ends;
                 QuestReads.Keep(home, _quests); // The terminal's `work held` judges on it; the lease is held here.
+                // The values a workflow's newest version reads no more, moved into the delivery knowledge it names, cleared once it holds them (D325).
+                bindings.AddRange(ValuesMoves.Keep(home, look.Config, read.Roots, runs, clock()));
                 if (_closer is not null) bindings.AddRange(NodeGoverning.Bindings(look.Config, read, _governed));
             }
 
