@@ -2,10 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// A row's <c>passage</c> as the groups' answer writes it: its run, workflow and version, and each step with its mark, its role, its newest
-/// attempt's number, start and failure and the attempts before it; null for none.
-/// </summary>
+/// <summary>A row's <c>passage</c> as the groups' answer writes it: its run, workflow and version, and each step as it reads; null for none.</summary>
 internal static class SessionPassageJson
 {
     public static void Write(Utf8JsonWriter writer, RunPassage? passage)

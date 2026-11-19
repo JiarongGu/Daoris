@@ -28,10 +28,7 @@ public static class RunPassageReader
         return passages;
     }
 
-    /// <summary>
-    /// A node as its run's passage says it: its mark and role, its newest attempt's number, start and failure, and the attempts its record
-    /// keeps before that one, so a session's track and its step rows read one answer.
-    /// </summary>
+    /// <summary>A node as its passage says it, so a session's track and its step rows read one answer.</summary>
     private static PassageStep StepOf(NodeDeclaration node, NodeRecord kept)
     {
         var status = WorkPerformer.StatusOf(kept, node.Id);

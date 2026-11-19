@@ -36,13 +36,11 @@ let RUN = answerOf(WORKING);
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const asked = () => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === 'WORKFLOW_RUN');
 
-/** The session's place in the groups' answer, with its run's passage, which its head's track draws. */
 const GROUPED = {
   session: 's1', group: 'working', shown: 'working', archived: false, teammate: false,
   passage: { run: 'q1', workflow: 'release', version: 1, steps: [{ node: 'write', kind: 'work', mark: 'current', attempt: 1, since: '2026-10-09T09:00:00Z' }] },
 };
 
-/** Opens the run's flowchart from the head's track, and answers the drawer it opens in. */
 async function openChart() {
   const track = await screen.findByRole('navigation', { name: 'Its workflow: release' });
   await userEvent.click(within(track).getByRole('button', { name: 'Flowchart' }));

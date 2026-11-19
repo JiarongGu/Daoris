@@ -189,7 +189,7 @@
   "workflow.run.door.needs": "{{command}}",
   "workflow.run.door.review": "打开产出",
   "workflow.run.door.pullRequest": "打开拉取请求",
-  "workflow.run.door.view": "工作流",
+  "workflow.run.door.view": "流程图",
   "workflow.run.viewNamed": "打开这项工作在工作流中的进展",
   "workflow.run.graph.says": "它的流程图所说的",
   "workflow.run.graph.on.quest": "委托 #{{quest}}",

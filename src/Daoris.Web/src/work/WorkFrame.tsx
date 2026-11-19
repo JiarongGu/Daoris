@@ -260,7 +260,6 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
-  // The attended session's run's flowchart, opened from its head's track or by a door into its run.
   const [flowchartOpen, setFlowchartOpen] = useState(false);
   // The run `outputs/<run>` opened, at the attempt an Accept card named, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null; attempt: number | null } | null>(null);
@@ -388,7 +387,6 @@ export function WorkFrame({
     flowchartOpen,
   });
   const { surface, previewSurface, consoleView, withWhose, flowchart } = regions;
-  // A row its run's waits placed opens on its page, where its track says where the run stands and the dock holds the step's press.
   const spec = useSessionsList({
     t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
   });

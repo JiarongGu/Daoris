@@ -46,7 +46,6 @@ export function useRegionSurfaces({
   session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
   reviewAttempt = null, flowchartOpen = false,
 }: {
-  /** Whether the followed session's run's flowchart is open from its track: only then is its run read. */
   flowchartOpen?: boolean;
   reviewRun?: string | null;
   reviewAttempt?: number | null;
@@ -81,8 +80,7 @@ export function useRegionSurfaces({
   const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
 
-  // Where the followed session's work stands: asked only while its run's flowchart is open from its track, and again at every tick
-  // under the driver's key.
+  // Asked only while the run's flowchart is open, and again at every tick under the driver's key.
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: following !== null && flowchartOpen });
   // A line on no ask held here has a channel of its own, which *At work* draws: read only while *At work* shows.
   const atWorkShown = following !== null && (placed.places.atWork === 'panel'

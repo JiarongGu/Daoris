@@ -43,7 +43,6 @@ export function SessionPageHead({
   session, title, shown, state = null, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null,
   track,
 }: {
-  /** Its run's track under the head (`RunTrack`), pinned with it; none where no run is bound to it. */
   track?: ReactNode;
   /**
    * Its state line (`stateLineOf`): the reader's group on its pill, then its age and cause, the oldest wait's name a press to its

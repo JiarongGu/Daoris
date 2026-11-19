@@ -652,7 +652,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a plugin's actor and a go-ahead, `AgentSettles.Wait`) has no settler yet, so it stays a `step` row of *What needs you*, "waiting on
     `<role>`: <holder>" with *Take*, an Accept and an approval among them.
     The waits whose role the person holds are theirs: Sessions places the run's newest
-    session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
+    session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
     session page's head (`RunWaitsHead`, its census beside it): an Accept and a part left after a done are the placed session's
     rows, the step a run ended failed at its own `step` row whatever its quest's state (`LeftSteps`: *Try again*, *Done outside
@@ -662,7 +662,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
     with the same presses beside it, each passing the epoch its row read, and the row's *Take*, *Pass to…* and *Give back*
-    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
+    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`).
+    That session's page reads its run from one answer, `SESSION_GROUPS`' `passage` (`RunPassageReader`: each step's mark, its role, its
+    newest attempt's number, start and failure code, and the attempts its record keeps before it): the track under its head and a row for
+    each attempt's start and end between its turns (`work/track/`), the record keeping no moment for an outcome, so an end stands where
+    the next attempt or step started; the run's view opens from the track's *Flowchart*. A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step

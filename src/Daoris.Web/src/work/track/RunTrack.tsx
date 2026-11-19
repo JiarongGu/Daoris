@@ -9,7 +9,7 @@ const GLYPH: Record<TrackChip['mark'], string> = { passed: '✓', current: '●'
 
 /**
  * **The workflow's track** under a session's head: its run's steps in its graph's order, each a chip with its mark, the standing one
- * with its attempt and, where it waits, whom it waits on ("waiting on `<role>`: `<holder>`", D304); how far it came; and *Flowchart*,
+ * with its attempt and, where it waits, whom it waits on ("waiting on `<role>`: `<holder>`"); how far it came; and *Flowchart*,
  * which opens the run's whole view. A press on a chip leads to its step's rows in the timeline.
  *
  * Presentational: the track (`trackOf`), the holder's words and the presses arrive as props.

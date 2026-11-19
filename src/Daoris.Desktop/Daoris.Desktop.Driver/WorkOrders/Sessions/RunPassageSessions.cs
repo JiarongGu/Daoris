@@ -1,30 +1,21 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// One step of a run's bound graph version as its session's page draws it, in its track and as its rows: passed, current, to come, or
-/// failed, the role that takes it, and its newest attempt's number, start and failure with the attempts kept before it.
-/// </summary>
+/// <summary>A step of a run's graph version as its session's track and rows draw it: its mark, role, newest attempt, start and failure.</summary>
 /// <param name="Mark">One of the run passage reader's marks: <c>passed</c>, <c>current</c>, <c>next</c> or <c>failed</c>.</param>
 public sealed record PassageStep(string Node, string Kind, string Mark)
 {
-    /// <summary>The role that takes it (<see cref="StepRoles.Of"/>).</summary>
     public string? Role { get; init; }
 
-    /// <summary>Its newest attempt's number, from 1; null before its first start.</summary>
     public int? Attempt { get; init; }
 
-    /// <summary>When its newest attempt started, where its start was clocked.</summary>
     public DateTimeOffset? Since { get; init; }
 
-    /// <summary>What failed it: its failure's code, on a failed step alone.</summary>
     public string? Code { get; init; }
 
-    /// <summary>Its dispatched attempts before the newest, oldest first, as its record keeps them; null where none is.</summary>
     public IReadOnlyList<PassageAttempt>? Earlier { get; init; }
 }
 
-/// <summary>An attempt of a step before its newest: its number, when it was sent, what it came to and what failed it.</summary>
-/// <param name="Outcome">Its plugin's word: <c>reached</c>, <c>failed</c>, <c>not-started</c> or <c>unknown</c>; null where none came.</param>
+/// <summary>A dispatched attempt of a step before its newest, as its record keeps it: its send's moment, its plugin's outcome and code.</summary>
 public sealed record PassageAttempt(int Attempt, DateTimeOffset At, string? Outcome, string? Code);
 
 /// <summary>A run's passage through its bound workflow version: its steps in the graph's order, each with its mark.</summary>

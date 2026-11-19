@@ -60,9 +60,7 @@ export function useAttendedHead({
   atWorkHeld, heavyPart, heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
   steps = [], onFlowchart,
 }: {
-  /** *What needs you*'s step rows, which name who holds a step its track says it waits on. */
   steps?: readonly StepWaitRow[];
-  /** Opens its run's flowchart from its track; absent, the track offers none. */
   onFlowchart?: () => void;
   docked: readonly DockLine[];
   groupings?: readonly SessionGrouping[];
@@ -284,7 +282,6 @@ export function useAttendedHead({
     const [session = '', group = '', reason = '', docked = ''] = disagrees.split('|');
     logEvent('wait.disagreed', { session, group, reason, docked });
   }, [disagrees]);
-  // Its run's track: the passage the groups' answer gives its run's newest session, which its step rows read too.
   const passage = grouping?.passage?.steps.length ? grouping.passage : null;
   const track = passage && (
     <RunTrack
