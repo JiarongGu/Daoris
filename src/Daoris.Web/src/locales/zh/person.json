@@ -409,6 +409,7 @@
   "person.route.HELP_START_FROM": "从之前的对话开始与问道衍的新对话",
   "person.route.CONVERSATION_RENAME": "为一段对话改名",
   "person.route.CONVERSATION_PIN": "置顶一段对话，或取消置顶",
+  "person.route.READ_MARK_MOVE": "在本机标记一段对话你读到了哪里",
   "person.route.HELP_FOCUS": "更改与问道衍的一段对话的聚焦",
   "person.route.PLACE_APPLY": "应用一个位置的配置",
   "person.route.RECONCILE_APPLY": "请一个仓库自己的会话将其与典章对齐",
