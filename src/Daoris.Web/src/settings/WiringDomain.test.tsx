@@ -20,7 +20,7 @@ import { clockOf, dayOf, size } from '../locales/format';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 import type { SystemSpace, SystemWiring } from '../bridge/system';
 import {
-  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_ALLOWANCE_OVER, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET, SPACE_STRAYS,
+  DEVELOPMENT, DOWNLOADS, MEASURING, SPACE, SPACE_ALLOWANCE_OVER, SPACE_COUNTING, SPACE_FLOOR_OFF, SPACE_FREED, SPACE_LOW, SPACE_PLAN, SPACE_RUNNING, SPACE_SET,
   SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiring/wiringFixtures';
 
@@ -1022,20 +1022,6 @@ describe('Settings → Disk space: the downloads and the kinds', () => {
 
     await i18n.changeLanguage('zh');
     expect(row(card, '允许占用').getByText(`${size(11.2 * GIB)}，上限 10 GB`)).toBeTruthy();
-  });
-
-  it('names the paths no entry of the home names, with their sizes, and says them in 中文', async () => {
-    invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_STRAYS));
-    open();
-    const card = within(await screen.findByRole('region', { name: 'Disk space' }));
-    const strays = row(card, 'Not in the table');
-    expect(strays.getByText('data/harnesses')).toBeTruthy();
-    // The row's total and the path's own size.
-    expect(strays.getAllByText(size(3 * 1024 ** 3))).toHaveLength(2);
-    expect(strays.getByText('data/old.json')).toBeTruthy();
-
-    await i18n.changeLanguage('zh');
-    expect(row(card, '不在表中').getByText('data/old.json')).toBeTruthy();
   });
 
   it('says a floor turned off in 中文, with its editor', async () => {

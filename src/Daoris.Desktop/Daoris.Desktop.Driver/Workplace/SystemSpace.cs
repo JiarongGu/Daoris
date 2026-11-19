@@ -313,7 +313,7 @@ public sealed record SpaceWorld(string Home)
     public SpaceRuns Runs { get; init; } = SpaceRuns.Shared;
 
     /// <summary>The paths under the home no entry names; the walk's kept reading by default.</summary>
-    public Func<string, HomeStrayReading> Strays { get; init; } = HomeStrays.Cached;
+    public Func<string, DateTimeOffset, HomeStrayReading> Strays { get; init; } = HomeStrays.Cached;
 
     /// <summary>The terminal's world: this home, its downloads' uses read from the files as the loop resolves them.</summary>
     public static SpaceWorld OfThisTerminal(string home) => new(home)
@@ -372,8 +372,7 @@ public static class SystemSpace
             ["kinds"] = kinds,
             // The allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
             ["allowance"] = Allowance(world, policy),
-            // The paths under the Daoris folder no entry of the home's table names (HOMEORPHAN1), with their bytes.
-            ["strays"] = Strays(world.Strays(home)),
+            ["strays"] = Strays(world.Strays(home, now)),
             // The press's run, under way or last ended in this process; none where this process ran none.
             ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null

@@ -309,11 +309,7 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.ok(!namesEntry(["'data'"]) && !namesEntry(['"work"', '"engine"']) && !namesEntry(['"profiles"', 'adapter.Name']));
 });
 
-/**
- * HOMEORPHAN1: the table's places are recorded in `fixtures/home-places.json`, and a place the table drops carries the one-time move
- * of what an install holds there, or the change is refused: a removed place cannot orphan an install's files silently. The refusals
- * for a recorded table, its dropped places and the table as it now stands.
- */
+// The refusals for the table against `fixtures/home-places.json`, which says how a dropped place is declared.
 function placeRefusals(
   table: readonly string[],
   record: { places: readonly string[]; dropped: readonly { place: string; move?: string }[] },
@@ -334,7 +330,6 @@ function placeRefusals(
 }
 
 test('a place dropped from the table carries a declared one-time move, or the census refuses', () => {
-  // Red first: a place the record holds and the table no longer names, with no move declared.
   assert.deepEqual(placeRefusals(['a', 'b'], { places: ['a', 'b', 'c'], dropped: [] }).map((each) => each.split(' ')[0]), ['c']);
   assert.match(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c' }] })[0] ?? '', /^c is dropped with no declared move/);
   assert.match(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c', move: '  ' }] })[0] ?? '', /no declared move/);
@@ -342,7 +337,6 @@ test('a place dropped from the table carries a declared one-time move, or the ce
   assert.deepEqual(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c', move: 'moved to a, once' }] }), []);
   assert.match(placeRefusals(['a', 'n'], { places: ['a'], dropped: [] })[0] ?? '', /^n is in the table and not recorded/);
 
-  // The table as it stands against its record.
   const record = JSON.parse(readFileSync(new URL('../fixtures/home-places.json', import.meta.url), 'utf8')) as Parameters<typeof placeRefusals>[1];
   assert.deepEqual(placeRefusals([...new Set(HOME_ENTRIES.map((entry) => entry.new))], record), []);
 });

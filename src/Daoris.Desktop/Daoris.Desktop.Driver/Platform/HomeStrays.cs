@@ -12,7 +12,7 @@ public sealed record HomeStrayReading(IReadOnlyList<HomeStray> Paths, string? Pa
 }
 
 /// <summary>
-/// The home's files that no entry of the table names (HOMEORPHAN1): a place a build dropped from the table while an install still holds
+/// The home's files that no entry of the table names: a place a build dropped from the table while an install still holds
 /// files there, which no reader finds. The walk goes down only the folders an entry's place passes through; a path no entry's pattern
 /// matches is a stray, named at its first such part and sized whole, and an entry's own children are never named (its pattern covers
 /// them). A junction is not followed: it is named, and counts nothing. The install's own <c>app/</c>, its marker and its <c>purged/</c>
@@ -30,16 +30,16 @@ public static class HomeStrays
     /// The reading for the window, kept for five minutes per home so a page that asks often walks once; a stray is a rare file and
     /// its size is for the person's eye, not a rule.
     /// </summary>
-    public static HomeStrayReading Cached(string home)
+    public static HomeStrayReading Cached(string home, DateTimeOffset now)
     {
         var key = Path.GetFullPath(home);
         lock (Kept)
         {
-            if (Kept.TryGetValue(key, out var held) && DateTimeOffset.UtcNow - held.At < TimeSpan.FromMinutes(5)) return held.Reading;
+            if (Kept.TryGetValue(key, out var held) && now - held.At < TimeSpan.FromMinutes(5) && now >= held.At) return held.Reading;
         }
 
         var reading = Read(home);
-        lock (Kept) Kept[key] = (DateTimeOffset.UtcNow, reading);
+        lock (Kept) Kept[key] = (now, reading);
         return reading;
     }
 

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The paths under the home no <see cref="HomeEntry"/> names (HOMEORPHAN1): a file in a place the table dropped is named with its size,
+/// The paths under the home no <see cref="HomeEntry"/> names : a file in a place the table dropped is named with its size,
 /// an entry's children are not, and <c>daoris home</c> says them in its own section.
 /// </summary>
 public sealed class HomeStraysTests : IDisposable
@@ -88,7 +88,7 @@ public sealed class HomeStraysTests : IDisposable
     {
         Put("data/old/thing.bin", 2048);
 
-        var code = HomePurgeCommand.Run([], _home, () => DateTimeOffset.UtcNow, null, null, out var said);
+        var code = HomePurgeCommand.Run([], _home, () => default, null, null, out var said);
 
         Assert.Equal(0, code);
         Assert.Contains("Not in the table", said);
@@ -100,7 +100,7 @@ public sealed class HomeStraysTests : IDisposable
     {
         Put("data/driver.json", 1);
 
-        var code = HomePurgeCommand.Run([], _home, () => DateTimeOffset.UtcNow, null, null, out var said);
+        var code = HomePurgeCommand.Run([], _home, () => default, null, null, out var said);
 
         Assert.Equal(0, code);
         Assert.Contains("Not in the table: nothing", said);
