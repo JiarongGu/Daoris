@@ -127,9 +127,6 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
     /// </summary>
     public IReadOnlyList<AskWordView>? Words { get; init; }
 
-    /// <summary>For an ask made before its words were kept: from when they are, since nothing is back-filled.</summary>
-    public DateTimeOffset? WordsKeptFrom { get; init; }
-
     /// <summary>
     /// The go-aheads its sessions ask the person for, oldest first, one per act. Null where the host
     /// answers none, an older host.

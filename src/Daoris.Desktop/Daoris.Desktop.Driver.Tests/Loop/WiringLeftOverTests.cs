@@ -27,10 +27,10 @@ public sealed class WiringLeftOverTests : IDisposable
     private static readonly string[] Files =
     [
         "desktop.db", "desktop.db-shm", "desktop.db-wal", "desktop.db.wake", "knowledge.db", "knowledge.db-wal", "memory.db", "memory.db-shm", "memory.db-wal",
-        "files-found.json", "last-build.json", "migration.json", "overlaps-told.json", "agent-offers.json", "usage.json",
+        "files-found.json", "last-build.json", "overlaps-told.json", "agent-offers.json", "usage.json",
     ];
 
-    private static readonly string[] Folders = ["pipe-waiting", "salvage"];
+    private static readonly string[] Folders = ["pipe-waiting"];
 
     private static void Lay(string home)
     {
@@ -90,7 +90,7 @@ public sealed class WiringLeftOverTests : IDisposable
     {
         var home = Path.Combine(_root, "press");
         Lay(home);
-        var held = HomeEntry.Table.SelectMany(entry => DaorisHome.Places(home, entry)).Select(Path.GetFullPath).ToList();
+        var held = HomeEntry.Table.Select(entry => DaorisHome.Entry(home, entry)).Select(Path.GetFullPath).ToList();
         foreach (var path in SpaceKinds.Places(home, "left-over").Places.Select(Path.GetFullPath))
         {
             Assert.DoesNotContain(held, place => place.Equals(path, StringComparison.OrdinalIgnoreCase) || place.StartsWith(path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));

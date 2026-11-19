@@ -23,12 +23,12 @@ public sealed class TerminalActsTests : IDisposable
     private string Path0 => DaorisHome.Entry(_home, HomeEntry.TerminalActs);
 
     [Fact]
-    public void It_is_a_data_file_of_its_own_after_the_salvage()
+    public void It_is_a_data_file_of_its_own_after_the_last_build()
     {
         Assert.Same(HomeEntry.TerminalActs, HomeEntry.Named("terminal-acts"));
         Assert.Equal((HomeCategory.Data, "data/terminal-acts.json"), (HomeEntry.TerminalActs.Category, HomeEntry.TerminalActs.New));
         var table = HomeEntry.Table.ToList();
-        Assert.Equal(table.IndexOf(HomeEntry.Salvage) + 1, table.IndexOf(HomeEntry.TerminalActs));
+        Assert.Equal(table.IndexOf(HomeEntry.LastBuild) + 1, table.IndexOf(HomeEntry.TerminalActs));
     }
 
     [Fact]

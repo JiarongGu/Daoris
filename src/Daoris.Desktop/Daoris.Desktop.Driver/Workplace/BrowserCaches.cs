@@ -145,7 +145,7 @@ public static class BrowserCacheStart
 
             return bytes > gb * unit ? BrowserCacheClearing.Clear(home, SpaceKinds.BrowserCaches, move) : null;
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // What does not read is not counted, and the unknown keeps.
             return null;

@@ -18,10 +18,10 @@ public sealed class HomeFilesKeepTests
         string name, string file, string edit, string start, string? between, string? refused, string expected, string? reads)
     {
         var home = Path.Combine(TestHomes.Root, "daoris-keepall-" + Guid.NewGuid().ToString("N")[..8]);
-        var path = Path.Combine(home, file);
+        var path = Place(home, file);
         try
         {
-            Directory.CreateDirectory(home);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, start);
             var error = Record.Exception(() => Applied(home, file, JsonDocument.Parse(edit).RootElement, () =>
             {
@@ -41,6 +41,19 @@ public sealed class HomeFilesKeepTests
             if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
         }
     }
+
+    /// <summary>Where the home keeps a table row's file: the home table's one place for it.</summary>
+    private static string Place(string home, string file) => file switch
+    {
+        "keys.json" => DaorisHome.Entry(home, HomeEntry.Keys),
+        "remotes.json" => DaorisHome.Entry(home, HomeEntry.Remotes),
+        "plugins.json" => DaorisHome.Entry(home, HomeEntry.PluginState),
+        "permissions.json" => DaorisHome.Entry(home, HomeEntry.Permissions),
+        "plugin-approvals.json" => DaorisHome.Entry(home, HomeEntry.PluginApprovals),
+        "tools.json" => DaorisHome.Entry(home, HomeEntry.Tools),
+        "harnesses.json" => DaorisHome.Entry(home, HomeEntry.Harnesses),
+        _ => throw new InvalidOperationException($"the table names a file this test does not place: {file}"),
+    };
 
     /// <summary>The edit through the door's own methods, as the window's pages, Ask Daoris and the host call them.</summary>
     private static void Applied(string home, string file, JsonElement edit, Action between)
@@ -110,7 +123,7 @@ public sealed class HomeFilesKeepTests
                 Tools.RemoveLocation(home, Text("address"));
                 return;
             case ("harnesses.json", var op):
-                var path = Path.Combine(home, file);
+                var path = Place(home, file);
                 var wiring = HarnessSettings.Load(path);
                 between();
                 var workspace = edit.TryGetProperty("workspace", out var circle) ? circle.GetString() : null;
@@ -128,7 +141,7 @@ public sealed class HomeFilesKeepTests
                 }).Save(path);
                 return;
             case ("remotes.json", var op):
-                var map = Path.Combine(home, file);
+                var map = Place(home, file);
                 switch (op)
                 {
                     case "remote-set": RemoteOperations.Set(map, Text("workspace"), Text("url"), Text("key"), between); break;

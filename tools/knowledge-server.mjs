@@ -169,18 +169,17 @@ export function installConnector(home, executable) {
 }
 
 /**
- * The home's `bin/` copy at each place the home layout gives it: `cache/bin/` under the Daoris folder, then `bin/`
- * under the old home. A copy of the table's reading for this one entry, not an import, for the reason above;
- * `home-census.test.ts` holds it to `homePlaces(home, 'bin', …)`. The Daoris folder an install's `data/` names is the install.
+ * The home's `bin/` copy: `cache/bin/` under the Daoris folder. A copy of the table's reading for this one entry, not an
+ * import, for the reason above; `home-census.test.ts` holds it to `homeEntry(home, 'bin', …)`. The Daoris folder an install's
+ * `data/` names is the install.
  */
-export function homeBins(home, executable) {
-  if (!home?.trim()) return [];
+export function homeBin(home, executable) {
+  if (!home?.trim()) return null;
   const full = resolve(home.trim());
   const installed = existsSync(join(full, INSTALL_MARKER));
   const named = !installed && basename(full).toLowerCase() === INSTALL_HOME && existsSync(join(dirname(full), INSTALL_MARKER));
   const folder = named ? dirname(full) : full;
-  const old = installed ? join(full, INSTALL_HOME) : full;
-  return [join(folder, 'cache', 'bin', executable), join(old, 'bin', executable)];
+  return join(folder, 'cache', 'bin', executable);
 }
 
 /** What to run, or null when there is nothing: the machine's host first for a driven session, then the build. */
@@ -188,9 +187,8 @@ export function serverCommand(mode, env, located, platform = process.platform) {
   if (mode === 'driven') {
     const executable = platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
     const home = env.DAORIS_HOME?.trim();
-    // The driver's order: the person's word, the install's own copy, then the home's `bin/` at either of its
-    // places, which no republish refreshes.
-    const machine = [env.DAORIS_MCP_HOST?.trim(), installConnector(home, executable), ...homeBins(home, executable)]
+    // The driver's order: the person's word, the install's own copy, then the home's `bin/`, which no republish refreshes.
+    const machine = [env.DAORIS_MCP_HOST?.trim(), installConnector(home, executable), homeBin(home, executable)]
       .filter(Boolean)
       .find((path) => existsSync(path));
     if (machine) return { command: machine, args: [], what: `the machine's host, ${machine}` };

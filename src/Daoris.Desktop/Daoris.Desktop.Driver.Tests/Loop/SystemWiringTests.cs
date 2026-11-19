@@ -163,35 +163,32 @@ public sealed class SystemWiringTests : IDisposable
     }
 
     /// <summary>
-    /// The layout as it runs (the second opinion's point 4): every entry where it is, an install's sign-ins still in its
-    /// <c>data/</c> (a home laid out in an earlier build), said under <c>profiles</c> with why they stay; never the planned
-    /// table as an installed fact.
+    /// The layout as it runs (the second opinion's point 4): each category's folder is present where an entry of it is
+    /// laid, and absent where none is; a folder names no old place, as no entry has one; never the planned table as an
+    /// installed fact.
     /// </summary>
     [Fact]
-    public void Each_entry_is_shown_where_it_runs_and_an_old_place_says_why_it_stays()
+    public void Each_folder_is_shown_where_it_runs_present_only_where_an_entry_is_laid()
     {
         var (install, home, driver) = Install();
         File.WriteAllText(DaorisHome.Entry(home, HomeEntry.DriverConfig), "{}");
-        File.WriteAllText(DaorisHome.Places(home, HomeEntry.Keys)[^1], "{}");
-        Directory.CreateDirectory(DaorisHome.Places(home, HomeEntry.Trees, "a", "b", "c")[^1]);
-        Directory.CreateDirectory(DaorisHome.Places(home, HomeEntry.Bin)[^1]);
+        File.WriteAllText(DaorisHome.Entry(home, HomeEntry.Keys), "{}");
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Trees, "a", "b", "c"));
+        Directory.CreateDirectory(DaorisHome.Entry(home, HomeEntry.Bin));
 
         var wiring = SystemWiring.Read(Terminal(home, driver));
 
         var data = Folder(wiring, "data");
         Assert.Equal(home, (string?)data["path"]);
         Assert.True((bool)data["present"]!);
-        Assert.Empty(data["old"]!.AsArray());
 
         var profiles = Folder(wiring, "profiles");
         Assert.Equal(Path.Combine(install, "profiles"), (string?)profiles["path"]);
-        Assert.False((bool)profiles["present"]!);
-        var keys = profiles["old"]!.AsArray().Single(row => (string?)row!["entry"] == "keys")!;
-        Assert.Equal(DaorisHome.Entry(home, HomeEntry.Keys), (string?)keys["path"]);
-        Assert.Equal("not-moved", (string?)keys["why"]);
-
-        Assert.Equal("resumes", (string?)Folder(wiring, "work")["old"]!.AsArray().Single(row => (string?)row!["entry"] == "trees")!["why"]);
-        Assert.Equal("mcp", (string?)Folder(wiring, "cache")["old"]!.AsArray().Single(row => (string?)row!["entry"] == "bin")!["why"]);
+        Assert.True((bool)profiles["present"]!);
+        Assert.True((bool)Folder(wiring, "work")["present"]!);
+        Assert.True((bool)Folder(wiring, "cache")["present"]!);
+        Assert.False((bool)Folder(wiring, "run")["present"]!);
+        Assert.All(wiring["folders"]!.AsArray(), row => Assert.False(row!.AsObject().ContainsKey("old")));
     }
 
     [Fact]
@@ -232,9 +229,9 @@ public sealed class SystemWiringTests : IDisposable
 
     /// <summary>A named workspace's Ask Daoris room is the table's, so the census does not list it left over.</summary>
     [Theory]
-    [InlineData("help", true)]
-    [InlineData("help-alpha", true)]
-    [InlineData("help-e4_b8_ad", true)]
+    [InlineData("work", true)]
+    [InlineData("help", false)]
+    [InlineData("help-alpha", false)]
     [InlineData("helper", false)]
     [InlineData("xhelp-alpha", false)]
     public void A_named_workspace_s_help_room_is_held_by_the_table_and_a_look_alike_is_not(string name, bool held) =>

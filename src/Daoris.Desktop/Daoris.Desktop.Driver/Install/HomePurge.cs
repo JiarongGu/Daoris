@@ -69,11 +69,11 @@ public static class HomePurge
     /// <param name="knowledgeDb">Where the environment moved the knowledge store to, or null for the home's own.</param>
     public static PurgePlan Plan(string home, string? knowledgeDb = null)
     {
-        var (folder, _) = DaorisHome.FolderOf(home);
+        var folder = DaorisHome.FolderOf(home);
         var backup = Path.GetFullPath(Path.Combine(folder, BackupFolder));
         var places = new List<string>();
-        foreach (var entry in HomeHistory.Entries) places.AddRange(DaorisHome.Places(home, entry));
-        foreach (var part in HomeHistory.WorkflowRecords) places.AddRange(DaorisHome.Places(home, HomeEntry.Workflows, part));
+        foreach (var entry in HomeHistory.Entries) places.Add(DaorisHome.Entry(home, entry));
+        foreach (var part in HomeHistory.WorkflowRecords) places.Add(DaorisHome.Entry(home, HomeEntry.Workflows, part));
 
         var paths = new List<PurgePath>();
         // The shortest first, so a place inside one already taken (a session's files under the sessions' old folder) is taken with it.
@@ -81,10 +81,7 @@ public static class HomePurge
         {
             if (!File.Exists(place) && !Directory.Exists(place)) continue;
             if (paths.Any(taken => Under(taken.Full, place)) || Under(backup, place) || Under(place, backup)) continue;
-            foreach (var part in Parts(place))
-            {
-                if (Relative(folder, part) is { } relative) paths.Add(Measure(relative, part));
-            }
+            if (Relative(folder, place) is { } relative) paths.Add(Measure(relative, place));
         }
 
         var desktop = Stored(home, folder, HomeEntry.DesktopDb, null);
@@ -195,23 +192,10 @@ public static class HomePurge
         return names;
     }
 
-    /// <summary>
-    /// A history folder as the pieces that move: itself, or where it holds a child that stays (<see cref="HomeHistory.Spared"/>), each other
-    /// child on its own, so the older layout's requests and markers stay in a sessions folder that is otherwise moved.
-    /// </summary>
-    private static IEnumerable<string> Parts(string place)
-    {
-        if (!Directory.Exists(place)) return [place];
-        var name = Path.GetFileName(place);
-        var children = Directory.EnumerateFileSystemEntries(place).ToList();
-        var spared = children.Any(child => HomeHistory.Spared(name, Path.GetFileName(child), Directory.Exists(child)));
-        return spared ? children.Where(child => !HomeHistory.Spared(name, Path.GetFileName(child), Directory.Exists(child))) : [place];
-    }
-
     /// <summary>The store the entry names, at the place the environment moved it to where that is given; null where there is no file.</summary>
     private static PurgeStore? Stored(string home, string folder, HomeEntry entry, string? wired)
     {
-        var store = wired is { Length: > 0 } ? Path.GetFullPath(wired) : DaorisHome.Places(home, entry).FirstOrDefault(File.Exists);
+        var store = wired is { Length: > 0 } ? Path.GetFullPath(wired) : DaorisHome.Entry(home, entry);
         if (store is null || !File.Exists(store)) return null;
         return new(entry.Name, store, Relative(folder, store) ?? Path.GetFileName(store));
     }

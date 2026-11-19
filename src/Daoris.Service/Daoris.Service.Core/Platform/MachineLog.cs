@@ -72,7 +72,7 @@ public sealed class MachineLog : IDisposable
         {
             _folder = _home is null ? null : DaorisHome.Entry(_home, HomeEntry.Logs);
         }
-        catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // Resolving a log's folder can fail before the write's guard. Logging stays optional;
             // ambiguous entries are still refused, so write and prune neither place rather than choosing one.

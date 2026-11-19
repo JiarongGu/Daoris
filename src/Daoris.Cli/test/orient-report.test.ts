@@ -293,7 +293,7 @@ const started = (time: string, session: string, repository: string, workspace: s
 function home() {
   const fx = makeFixture('orient-report-home');
   const engineTree = homeEntry(fx.root, 'trees', 'main', 'engine', 's-1a2b3c4d');
-  fx.write('trees/main/engine/s-1a2b3c4d/daoris.json', JSON.stringify({ source: 'daoris@0.0.1', documents: { index: 'docs/where/README.md' } }));
+  fx.write('work/trees/main/engine/s-1a2b3c4d/daoris.json', JSON.stringify({ source: 'daoris@0.0.1', documents: { index: 'docs/where/README.md' } }));
   fx.write('logs/2026-10-01.desktop.jsonl', `${[
     started('2026-10-01T09:00:00.000Z', 's-native', 'engine', 'main', 'claude'),
     started('2026-10-01T09:30:00.000Z', 's-setup', 'engine', 'main', 'claude', { setup: true }),
@@ -305,11 +305,11 @@ function home() {
     started('2026-10-02T09:00:00.000Z', 's-acp', 'game', 'play', 'claude-acp'),
     started('2026-10-02T10:00:00.000Z', 's-missing', 'game', 'play', 'codex-acp'),
   ].join('\n')}\n`);
-  fx.write('sessions/s-native.events.jsonl', nativeSession(engineTree));
-  fx.write('sessions/s-native.log', 'the rendered transcript: text a person reads, never this report\'s');
-  fx.write('sessions/s-setup.events.jsonl', nativeSession(engineTree));
-  fx.write('sessions/s-noedit.events.jsonl', noEditSession(homeEntry(fx.root, 'trees', 'main', 'engine', 's-5e6f7a8b')));
-  fx.write('sessions/s-acp.events.jsonl', acpSession());
+  fx.write('data/sessions/s-native.events.jsonl', nativeSession(engineTree));
+  fx.write('data/sessions/s-native.log', 'the rendered transcript: text a person reads, never this report\'s');
+  fx.write('data/sessions/s-setup.events.jsonl', nativeSession(engineTree));
+  fx.write('data/sessions/s-noedit.events.jsonl', noEditSession(homeEntry(fx.root, 'trees', 'main', 'engine', 's-5e6f7a8b')));
+  fx.write('data/sessions/s-acp.events.jsonl', acpSession());
   return fx;
 }
 

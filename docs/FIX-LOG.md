@@ -93,7 +93,7 @@ repository.
   same way; gates15's `tools/merge/flow.test.ts`; gates16's web `WorkFrame.conversation` and `Composer` files; on 2026-11-19
   APPROVEPRESS2's web `app/notifications.test.tsx`, and builders' runs `app/sessionEnd`, `AttentionBand` and ten `*PortsTests`;
   SESSIONVIEW1d's `Driver.Tests.LookAccountTests` again, and SIGNINWAIT2's once more (a third sighting: it is a candidate for its
-  own row if it flakes again).
+  own row if it flakes again); NOCOMPAT2's `LookAccountTests` a fourth time (its row is LOOKFLAKE1) and web `app/pageRoot.test.tsx`.
 - **Cause:** none found; load-shaped by the alone passes.
 
 ## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)

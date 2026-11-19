@@ -44,6 +44,6 @@ public static class CommitAskers
     {
         var key = TreeHandOffs.KeyOf(tree);
         return new SessionBranches(home).All().FirstOrDefault(grown => grown.Unit is not null
-            && DaorisHome.Places(home, HomeEntry.Trees, grown.Workspace, grown.Repository, Path.GetFileName(grown.Branch)).Any(place => TreeHandOffs.KeyOf(place) == key))?.Unit;
+            && TreeHandOffs.KeyOf(DaorisHome.Entry(home, HomeEntry.Trees, grown.Workspace, grown.Repository, Path.GetFileName(grown.Branch))) == key)?.Unit;
     }
 }
