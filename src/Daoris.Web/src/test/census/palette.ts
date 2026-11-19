@@ -1,5 +1,5 @@
 /**
- * `tokens.css` read as numbers (D330): its four colour blocks as maps, and WCAG 2's luminance and contrast, so the tests that
+ * `tokens.css` read as numbers: its four colour blocks as maps, and WCAG 2's luminance and contrast, so the tests that
  * hold the role set compute on the values the window draws. Only tests import it.
  */
 

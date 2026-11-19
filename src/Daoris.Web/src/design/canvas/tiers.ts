@@ -6,7 +6,7 @@ import type { Box, Size } from './viewMath';
 
 export type Tier = 'full' | 'chip' | 'dot';
 
-/** `text-caption` in px at the root's default size and a zoom of 1 (D330: 12, the floor Han is never drawn under). */
+/** `text-caption` in px at the root's default size and a zoom of 1: 12, the floor Han is never drawn under. */
 const META = 12;
 /** The effective size from which a node is its own component, and from which it is a chip. */
 export const FULL_FROM = 9;

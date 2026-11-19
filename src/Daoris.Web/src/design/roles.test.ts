@@ -5,7 +5,7 @@ import { TYPE_STEPS } from '../lib/cn';
 import { contrast, hueAngle, hueApart, palettes } from '../test/census/palette';
 
 /**
- * **The role set reads in both themes** (D330, the design §7.1). Components name roles; `tokens.css` holds the values, and
+ * **The role set reads in both themes** (the window design §7.1). Components name roles; `tokens.css` holds the values, and
  * this holds the contrast table on them: every text pair at 4.5:1 on every surface and every role's soft field, every mark,
  * focus ring and control edge at 3:1 on the grounds and on its own field, and each label on its solid fill at 4.5:1. The
  * design's worst cases are pinned, so a value moved is a diff here as well as there.

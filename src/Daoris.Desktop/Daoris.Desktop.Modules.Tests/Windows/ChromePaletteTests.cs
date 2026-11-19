@@ -96,7 +96,7 @@ public sealed class ChromePaletteTests
 
     /// <summary>
     /// The close glyph is a label on a solid fill, so it reads at 4.5:1 on the red in both themes, as every label on a
-    /// fill does in the page (D330). The dark red is light, so its glyph is dark.
+    /// fill does in the page. The dark red is light, so its glyph is dark.
     /// </summary>
     [Fact]
     public void TheCloseGlyphReadsOnItsRed()

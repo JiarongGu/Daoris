@@ -33,7 +33,7 @@ public sealed record ChromePalette(
     Color ClosePressed,
     Color CloseGlyphHot)
 {
-    /// <summary>Warm paper: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c> (D330's role set).</summary>
+    /// <summary>Warm paper: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c>, from the page's role set.</summary>
     public static readonly ChromePalette Light = new(
         Page: Rgb("#f7f6f2"),
         Surface: Rgb("#ffffff"),

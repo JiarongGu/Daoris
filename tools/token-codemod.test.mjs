@@ -1,5 +1,5 @@
 /**
- * The token codemod (UIDS1, D330): the web sources move from the old tokens' names to the role set's, by whole class.
+ * The token codemod: the web sources move from the old tokens' names to the role set's, by whole class.
  *
  *   node --test tools/token-codemod.test.mjs
  *

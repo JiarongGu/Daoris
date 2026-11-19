@@ -306,9 +306,9 @@ describe('the chosen themes', () => {
 /**
  * 🔴 **A status word wears its role's ink, never the mark's colour**. The hues are drawn as marks, edges and fills; as
  * words they fell under the 4.5:1 text floor (declined's red at 3.18:1 on an overlay, open's and done's at 2.8 to 3.8:1 in
- * light, UXFIX5), and the role set's marks still do on some surfaces (`fail` on `sunken`, `live` on `hover` in dark). Each
+ * light), and the role set's marks still do on some surfaces (`fail` on `sunken`, `live` on `hover` in dark). Each
  * role's `-ink` is the colour its word wears, which `roles.test.ts` holds at 4.5:1 everywhere; an alias of the owner's
- * amber is read the same way until UIDS18.
+ * amber is read the same way while it stands.
  */
 const HUES = '(?:live|you|fail|ok|st-open)';
 const STATUS_AS_TEXT = new RegExp(String.raw`(?<![\w-])text-${HUES}(?![\w-])`, 'g');

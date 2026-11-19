@@ -1,9 +1,9 @@
 /**
- * The token codemod (UIDS1, D330): the web sources move from the old tokens' names to the role set's, by whole class.
+ * The token codemod: the web sources move from the old tokens' names to the role set's, by whole class.
  *
  *   node tools/token-codemod.mjs [--check] [--aliases]
  *
- * Re-runnable, and kept until UIDS18 deletes the aliases: a web branch that lands after UIDS1 runs it after merging main, and
+ * Re-runnable, and kept while the amber aliases stand: a web branch that predates the role set runs it after merging main, and
  * a second run changes nothing. It reads `src/Daoris.Web/src`, `.storybook` and `measured` (`.ts`, `.tsx`, `.css`, `.mdx`),
  * leaves `tokens.css`, which declares the names, and rewrites in place:
  *
@@ -36,7 +36,7 @@ export const COLOURS = {
 /** The type steps and the step each becomes; `small` and `body` keep their names. */
 export const STEPS = { meta: 'caption', title: 'heading', view: 'display', wordmark: 'display', value: 'display' };
 
-/** The amber aliases, listed until UIDS18. */
+/** The amber aliases, listed until each site is split. */
 export const ALIASES = ['st-open', 'ink-open', 'warn'];
 
 /** Where the codemod reads, under the web package. */

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-// The token gallery (D330, the window design §7): the role set on the shipped variables. Components name these roles,
+// The token gallery (the window design §7): the role set on the shipped variables. Components name these roles,
 // never a base colour; `roles.test.ts` holds every text pair at 4.5:1 and every mark at 3:1 in both themes.
 
 function Swatch({ name, note }: { name: string; note?: string }) {

@@ -5,11 +5,11 @@ import { rooted } from '../test/sources';
 import ALIAS_SITES from './amberAliases.json';
 
 /**
- * **Amber is the owner's alone** (D330, the design §7.1): `you`, `you-ink`, `you-soft` and `on-you` mark only what waits on
+ * **Amber is the owner's alone** (the window design §7.1): `you`, `you-ink`, `you-soft` and `on-you` mark only what waits on
  * the owner (◆, the waits pill, a wait card's edge and field, its *yes*), so this is a census over the sources. A file that
  * draws the role is one of the owner's waits, named here with its reason. Today's `st-open`, `ink-open` and `warn` draw the
  * same amber as aliases until each site is split into `you` or neutral by its screen's row; `amberAliases.json` counts them
- * per file, a list that may only shrink, and UIDS18 deletes it with the aliases.
+ * per file, a list that may only shrink and goes with the aliases.
  */
 const OWNERS_WAITS: Record<string, string> = {};
 
