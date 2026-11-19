@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// opinion covers the tip, is delivered and answered, under the rule that applies, is the gate's judgement, which the caller hands in.
 /// This reads its state as the run reads it (<c>WorkflowRun</c>'s opinion step): <i>settled</i> and the person's three answers reach
 /// it; <i>none</i>, and an <i>unavailable</i> the rule does not require, pass it over, by the gate's record and never in the person's
-/// words (<see cref="NodeAuthority.SkipBy"/>); every other state is pending, never failed, since nothing fails an opinion.</para>
+/// words (<see cref="NodeAuthority.SkipBy"/>); a pass that ended with no opinion fails it, saying so; every other state is pending.</para>
 /// <para><b>Bound to its commit and its work.</b> A judgement at another commit than the binding's, with no commit read, for another
 /// repository, or not handed in at all says nothing: the node stays pending, never completed or passed over on a guess. A rule that asks
 /// no opinion here judges no commit, and its read carries none, so it passes the node over whatever it is bound to.</para>
@@ -78,6 +78,9 @@ public static class OpinionGateReading
             OpinionGateStates.Settled or OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered =>
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
+            // A pass that ended with no opinion fails the step, saying so; another pass that settles reaches it (OPINIONWAKE1).
+            OpinionGateStates.Unavailable when OpinionStepWaits.EndedSaid(gate.Code) is { } ended =>
+                Seen(NodeStates.Failed, ended) with { Source = NodeSource.Opinion, Code = gate.Code },
             OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),
             _ => Seen(null, $"its gate says {gate.State}") with { Holds = gate.Required && OpinionVacancy.Of(gate) is not null ? Vacant : gate.State },
         };

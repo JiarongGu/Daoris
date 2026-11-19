@@ -52,6 +52,7 @@
   "workflow.step.isolate": "打开工作树",
   "workflow.wait.isolate.at-once": "等待：此处允许同时分开工作的会话已满。",
   "workflow.wait.isolate.overlap": "等待：与其路径重叠的先前工作集成之后。",
+  "workflow.wait.opinion.answer": "等待 `{{session}}` 回应第二意见。",
   "workflow.wait.return.place-busy": "等待：有会话正在这个文件夹里工作。",
   "workflow.wait.return.both-changed": "等待你为文件夹和会话的副本里都改过的文件做选择。",
   "workflow.step.monitor": "等待拉取请求合并",

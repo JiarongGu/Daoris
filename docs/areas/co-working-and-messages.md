@@ -127,7 +127,8 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 21. `Exchanges.Of` is the one read of a line's requests, over helpers, pieces, questions, hand-overs, quests, opinions and
     go-aheads, walked back along `from`. It keeps delivery apart from outcome, and says a source it could not read. (from D225)
 22. A helper's answer, a partner's and an opinion's findings reach the line's head through one door, kept once under
-    `<case>:<id>`. An answered park takes each beside the person's answer. (from D225, D203)
+    `<case>:<id>`. An answered park takes each beside the person's answer; a head awaiting its run's step runs nothing and takes each as
+    an ended record does, so a step waiting on its answer (a second opinion's) never waits on it in turn (OPINIONWAKE1). (from D225, D203)
 23. A solicited answer may extend or reopen its asker's run once per ask. Go-ons by answers alone are counted durably, one
     admission per line; the person's or Daoris's word resets the count. (from D188, D225)
 24. The count is a fact, not a limit. The line's answers-alone rule decides, seeded as *hold after 2 in a row* at the machine's
