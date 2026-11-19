@@ -32,20 +32,30 @@ public sealed class StepAgentPerformTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    /// <summary>The loop's sessions as the port sees them: each run answers as <see cref="Answer"/> says, or not at all.</summary>
+    /// <summary>
+    /// The loop's sessions as the port sees them: each run ends as <see cref="Ends"/> says in turn, else as one that ran; one that ran
+    /// answers as <see cref="Answer"/> says, or not at all.
+    /// </summary>
     private sealed class Sessions(string home) : IStepSessions
     {
         public List<(StepAgentAsk Ask, ServerEntry Tools)> Ran { get; } = [];
+
+        /// <summary>The account each run was handed as refused before it, in the order run.</summary>
+        public List<string?> MovedOff { get; } = [];
+
+        public Queue<StepSessionEnd> Ends { get; } = new();
 
         public string? Answer { get; set; }
 
         public List<string> Stopped { get; } = [];
 
-        public Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, CancellationToken ct)
+        public Task<StepSessionEnd> RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, string? movedOff, CancellationToken ct)
         {
             Ran.Add((ask, tools("s-step")));
-            if (Answer is { } answer) Assert.Null(StepAnswer.Answer(home, ask, JsonDocument.Parse(answer).RootElement.Clone()));
-            return Task.CompletedTask;
+            MovedOff.Add(movedOff);
+            var end = Ends.Count > 0 ? Ends.Dequeue() : StepSessionEnd.None;
+            if (end == StepSessionEnd.None && Answer is { } answer) Assert.Null(StepAnswer.Answer(home, ask, JsonDocument.Parse(answer).RootElement.Clone()));
+            return Task.FromResult(end);
         }
 
         public void Stop(string invocation) => Stopped.Add(invocation);
@@ -145,6 +155,113 @@ public sealed class StepAgentPerformTests : IDisposable
         await performer.ReconcileAsync(Declared, CancellationToken.None);
 
         Assert.Equal((NodeStates.Failed, StepAnswer.NoAnswer), (Status().State, Status().Code));
+    }
+
+    // ——— A sign-in (ACCOUNTREVOKED1): a session its agent refused for its account's sign-in goes on once under the walk's next account,
+    // by Daoris itself; where none is left the step fails `sign-in`, naming the accounts and the sign-in to make, never a bare `no-answer`.
+
+    private async Task<StepEnded> PerformedAsync()
+    {
+        var agents = Agents();
+        var performer = Performer(agents);
+        await StartAsync(performer);
+        await agents.IdleAsync();
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        return new StepEnded(Status(), StepAnswer.Read(_home, Attempt().Call.Invocation)!.Outcome!.Evidence!.Message!);
+    }
+
+    /// <summary>The step's status after its answer is reconciled, and its answer's message, which the run's step shows.</summary>
+    private sealed record StepEnded(NodeStatus Status, string Message);
+
+    [Fact]
+    public async Task A_session_refused_for_its_account_s_sign_in_goes_on_once_under_the_next_account_with_no_press()
+    {
+        _sessions.Ends.Enqueue(StepSessionEnd.Refused("claude-code", "account-1"));
+        _sessions.Answer = """{ "state": "reached", "decision": "opened", "message": "opened ticket 7" }""";
+
+        var done = await PerformedAsync();
+
+        Assert.Equal([null, "account-1"], _sessions.MovedOff);
+        Assert.Equal(NodeStates.Reached, done.Status.State);
+    }
+
+    [Fact]
+    public async Task A_second_refusal_fails_the_step_sign_in_naming_both_accounts_and_the_sign_in()
+    {
+        _sessions.Ends.Enqueue(StepSessionEnd.Refused("claude-code", "account-1"));
+        _sessions.Ends.Enqueue(StepSessionEnd.Refused("claude-code", "account-2"));
+
+        var done = await PerformedAsync();
+
+        Assert.Equal(2, _sessions.Ran.Count);
+        Assert.Equal((NodeStates.Failed, StepAnswer.SignIn), (done.Status.State, done.Status.Code));
+        Assert.Equal(
+            "`claude-code` refused this step's session on `account-1` and `account-2` for their sign-in. Sign one in on its card under Agents, "
+            + "or with `daoris agent login claude-code --account account-1`, then try the step again.",
+            done.Message);
+    }
+
+    [Fact]
+    public async Task With_no_account_left_after_a_refusal_the_step_fails_sign_in_naming_each_account()
+    {
+        _sessions.Ends.Enqueue(StepSessionEnd.Refused("claude-code", "account-1"));
+        _sessions.Ends.Enqueue(StepSessionEnd.NoAccount("claude-code", ["account-1", "account-2"]));
+
+        var done = await PerformedAsync();
+
+        Assert.Equal((NodeStates.Failed, StepAnswer.SignIn), (done.Status.State, done.Status.Code));
+        Assert.Equal(
+            "`claude-code` refused this step's session on `account-1` for its sign-in, and no other account could take it: `account-2` is "
+            + "not signed in either. Sign one in on its card under Agents, or with `daoris agent login claude-code --account account-1`, then try "
+            + "the step again.",
+            done.Message);
+    }
+
+    [Fact]
+    public async Task A_step_no_account_could_take_for_its_sign_ins_fails_sign_in_at_once()
+    {
+        _sessions.Ends.Enqueue(StepSessionEnd.NoAccount("claude-code", ["account-1", "Gmail"]));
+
+        var done = await PerformedAsync();
+
+        Assert.Single(_sessions.Ran);
+        Assert.Equal((NodeStates.Failed, StepAnswer.SignIn), (done.Status.State, done.Status.Code));
+        Assert.Equal(
+            "No `claude-code` account could take this step: `account-1` and `Gmail` are not signed in. Sign one in on its card under Agents, "
+            + "or with `daoris agent login claude-code --account account-1`, then try the step again.",
+            done.Message);
+    }
+
+    /// <summary>
+    /// The loop's side: a staffing walk held because every agent it may use has no account signed in ends the session with no account,
+    /// naming the accounts the walk passed; held for anything else, it ends as any session does.
+    /// </summary>
+    [Fact]
+    public void A_walk_held_for_its_sign_ins_ends_with_no_account_naming_the_accounts_it_passed()
+    {
+        var signedOut = new ReviewerTried("claude-code-acp", ReviewerLabels.AnotherMaker, ReviewerHeld.SignedOut, "no account is signed in")
+        {
+            SignedOut = new SignedOutAccounts("claude-code", ["account-1", "Gmail"]),
+        };
+        var cooling = new ReviewerTried("codex-acp", ReviewerLabels.AnotherMaker, ReviewerHeld.Cooling, "cooling");
+
+        var held = StepSessionEnd.Held(new ReviewerChoice(null, null, ReviewerUnavailable.SignedOut, "held") { Tried = [signedOut] });
+        var other = StepSessionEnd.Held(new ReviewerChoice(null, null, ReviewerUnavailable.Refused, "held") { Tried = [signedOut, cooling] });
+
+        Assert.Equal("claude-code", held.Agent);
+        Assert.Equal(["account-1", "Gmail"], held.SignedOut);
+        Assert.Same(StepSessionEnd.None, other);
+    }
+
+    [Fact]
+    public async Task A_refusal_whose_next_account_ends_unanswered_fails_no_answer_as_any_session_does()
+    {
+        _sessions.Ends.Enqueue(StepSessionEnd.Refused("claude-code", "account-1"));
+
+        var done = await PerformedAsync();
+
+        Assert.Equal(2, _sessions.Ran.Count);
+        Assert.Equal((NodeStates.Failed, StepAnswer.NoAnswer), (done.Status.State, done.Status.Code));
     }
 
     [Fact]

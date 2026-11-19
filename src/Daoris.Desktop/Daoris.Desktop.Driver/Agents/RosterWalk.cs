@@ -187,8 +187,8 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (pass.Ask is { } asking)
             {
                 // Asked again, as the install above is, since the person may have signed in since: that account
-                // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old, or once after a refusal
-                // its last reading said signed in. An account never read is unknown, and a start runs on it as on any unknown: a
+                // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old, a refusal's word as any
+                // (D328). An account never read is unknown, and a start runs on it as on any unknown: a
                 // look asks nothing. One whose lock another question keeps past its patience is unknown for this walk
                 // alone, and passed.
                 HarnessProbe.LoginAnswer answer;
@@ -203,11 +203,6 @@ internal sealed class RosterWalk(HarnessRoster roster)
 
                 if (answer.Locked) walk.Unknown.Add(asking);
                 else walk.Said[asking] = answer.Login;
-                if (pass.Owed && AccountReads.Of(roster.Home, owner).Accounts.GetValueOrDefault(asking) is { Login: LoginState.In } fresh)
-                {
-                    roster._fresh[HarnessRoster.AccountKey(owner, asking)] = fresh.At;
-                }
-
                 continue;
             }
 
@@ -307,7 +302,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
     /// as one; it reads files and asks no agent.
     /// </summary>
     /// <remarks>
-    /// An account read signed out that is owed a question (a sign-in mark, the hour's backstop or a fresh reading) is handed back to be
+    /// An account read signed out that is owed a question (a sign-in mark or the hour's backstop) is handed back to be
     /// asked outside the gate, claimed so no other walk asks it beside this one; one another walk is asking is passed as its
     /// last reading says, never waited on. An account unknown for this walk is passed; where nothing else is chosen, the start is
     /// held on it, for the next start to try again.
@@ -354,13 +349,11 @@ internal sealed class RosterWalk(HarnessRoster roster)
             var keyOnly = !asked ? KeyOnlyWalk.Reading(roster, owner, account, read) : null;
             if (keyOnly is { } held) login = held.Login;
             var key = HarnessRoster.AccountKey(owner, account);
-            // A view's read asks nothing (`asks` false): the reading stands, and the one fresh reading a refusal owes stays
-            // owed to the next start that asks.
+            // A view's read asks nothing (`asks` false): the reading stands. A refusal's word is a reading, so its account is passed
+            // until a sign-in marks it or the hour is over, whatever the agent's status would say before (D328).
             if (asks && (login == LoginState.Out || keyOnly?.Unread == true) && !asked && _asking.TryAdd(key, true))
             {
-                // The one fresh reading a refusal of a signed-in reading owes it, spent here whatever it answers.
-                var owed = roster._owed.TryRemove(key, out _);
-                if (owed || keyOnly?.Unread == true || roster.AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account, Owed: owed);
+                if (keyOnly?.Unread == true || roster.AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account);
                 _asking.TryRemove(key, out _);
             }
 
