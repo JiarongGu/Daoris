@@ -5,23 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## 2026-11-20 - Tests that red only inside a session's check spent its git starts and keystrokes (SESSIONTESTENV2)
+## 2026-11-20 - A git class outside the Process half aborted the unit half's host, and the classes beside it failed with it (SESSIONTESTENV2)
 
-- **Symptom:** ten `*PortsTests`, `PlaceHandTests`, the web `WorkFrame.conversation`, `WorkFrame` and `WorkFrame.landed` files and
-  `TreePoolSharesGitTests` failed in a Daoris session's check and passed outside it (FLAKE1's sightings, SESSIONTESTENV1's note).
-- **Root cause:** not the session's variables: from a session's own shell (`GIT_SSH_COMMAND`, `GIT_CONFIG_*`, `DAORIS_*` planted) the ten
-  `*PortsTests` and `PlaceHandTests` all pass (236), `HostEnvironment` having stripped them since SESSIONTESTENV1, and the web tests read no
-  variable. A session's machine is busy, and a git start there takes 1 to 5 s (`GitLaunch.Count`: 0.5 to 3 s to create the process, 0.5 to
-  3 s to run `symbolic-ref`) against 0.3 s from a quiet shell. `ContextPortsTests`' review case put its tree under the checkout's scratch,
-  a plain folder, so the brief's `git log` and `git status` answered for the whole checkout around it (8 s alone, 24 s loaded);
-  `PlaceHandTests`' push-address case made its repository by three test starts and read it by a fourth (5 s, 21 s loaded); the web conversation cases typed 30 keys,
-  each re-rendering the whole frame (9.3 s of the 10 s bound alone on a quiet machine, six timeouts in a session).
-  `TreePoolSharesGitTests` is 35 product starts a case, 29 to 146 s in a session; its slow start is not `status --ignored`.
-- **Fix:** `ContextPortsTests`' case answers the product's git starts with none (`ProcessStarts.Within`), its subject being the gates read, not git; `PlaceHandTests`' copies the plain seed
-  (`init` is no start of the test's); `userEvent.say` (a click and one paste) for
-  the long phrases of `WorkFrame.conversation` and `WorkFrame.test` (slowest case 9.3 s to 2.3 s); `PoolGitFixture.CreateAsync(ignored:)` makes
-  the pool tests' extra ignore lines in the seed, two starts a case fewer. The pool's own repeated starts are TREEPOOLSTARTS1.
-- **Verification:** `ContextPortsTests`, `PlaceHandTests`, `TreePoolSharesGitTests` and the three web files, run from a session's shell.
+- **Symptom:** ten `*PortsTests`, `PlaceHandTests` (and, in other runs, `LookAccountTests`, `PipeConfirmTests`) failed in a Daoris
+  session's check and passed run again alone (FLAKE1's sightings, SESSIONTESTENV1's note); the web `WorkFrame.conversation`,
+  `WorkFrame.reviewchat` and `WorkFrame.words` files failed the same way in the same check.
+- **Root cause:** not the session's variables: from a session's own shell (`GIT_SSH_COMMAND`, `GIT_CONFIG_*` and `DAORIS_*` planted) the
+  ten `*PortsTests` and `PlaceHandTests` pass (236 tests), `HostEnvironment` having stripped them since SESSIONTESTENV1. In the check's own
+  run (`reached-checks --tier fast`, in this session) the host was aborted by the 60 s hang bound
+  ("The test running when the crash occurred: `TreePoolSharesGitTests.A_take_and_a_retirement_never_delete_the_shared_places_files`"), and the
+  classes in flight in that host were the failed ones: `ContextPortsTests` and `PlaceHandTests` there. `TreePoolSharesGitTests` starts about 35
+  to 70 git processes a case over real git, and a start costs 1 to 5 s in a busy session (`GitLaunch.Count`: 0.5 to 3 s to create the process, 0.5 to
+  3 s to run `symbolic-ref`), 29 to 146 s a case; `git status --ignored` is 0.3 to 1.7 s of it, not the slow start. Its three siblings over
+  `PoolGitFixture` carry `Category.Process` and `Parallel=Git`, which put a git class in the Process half with the five-minute bound
+  (`Category.cs`); this class carried none, so the unit half ran it under 60 s, where a kill ends the whole half.
+  The web files wait `findBy` five seconds for the frame's first render, and the check runs them beside a three-minute build: that is load,
+  and the typed phrases (a thirty-key phrase re-renders the whole frame per key) were what a quiet machine already stretched to 9.3 s of the 10 s bound.
+- **Fix:** `TreePoolSharesGitTests` carries the four traits its siblings do; `PoolGitFixture.CreateAsync(ignored:)` makes its extra ignore lines in the
+  seed, two starts a case fewer; `ContextPortsTests`' review case answers the product's git starts with none (`ProcessStarts.Within`), its subject
+  being the gates read, and under the checkout's scratch a plain folder had the brief's `git status` answer for the whole checkout (8 s alone to under 1 s);
+  `PlaceHandTests`' push-address case copies the plain seed (an `init` fewer); `userEvent.say` (a click and one paste) for the long phrases of
+  `WorkFrame.conversation` and `WorkFrame.test` (slowest case 9.3 s to 2.3 s). Not fixed: the web files' first render under a build's load
+  (`WorkFrame.reviewchat`, `.words`, and the `findBy` of `.conversation` that wait on it), and the pool cases' own repeated starts, TREEPOOLSTARTS1.
+- **Verification:** the three web files, `ContextPortsTests`, `PlaceHandTests` and `GitCeilingCensusTests`, run from a session's shell; the pool class as a
+  Process class.
 
 ## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
 
