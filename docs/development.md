@@ -133,16 +133,21 @@ the fix (UNITPURE1 for a unit test that is not pure, LAYERS1 f or COMPONENT1 for
 E2EFAST1, REACHCOST1 and CLIREACH1 for their gates). No test host records yet what each test started, opened or waited on, so a
 test's cause is its category (the Process trait, a Process or git half's record, an end-to-end spec) and its class's source, read
 by the layers census's counters; a gate's is its longest step clock. Three or more classes of one domain over by one cause name
-it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
-places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
-other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
-time; the budget itself never stretches with the load. The hang bound is read the same way: a .NET gate whose blame
-collector killed a test while the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs
-again alone as above; a hang in that run again fails as the test's own. The bound is not raised under load: it is one fixed
-setting in `Directory.Build.props`, a longer one would make every real hang cost more, and a rerun costs only when a kill
-happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
+it a separation candidate. A gate past its budget while the load sampler saw more heavy runs than its own (the admission's
+places and other trees' test runs) is never killed for the load (MERGENOKILL1, D346): it runs on to its own end, its verdict
+its own, and its time is a `load` breach that fails nothing; only three times its budget ends it, as a runaway, and that
+fails. A gate past its budget alone is killed and fails as its time; the budget itself never stretches with the load. The hang
+bound is read differently, since its kill leaves the gate with no verdict: a .NET gate whose blame collector killed a test while
+the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs again once, whole and alone,
+after every other gate has ended and once the machine is free (read every 15 s, for up to 10 min); a hang in that run again
+fails as the test's own. The bound is not raised under load: it is one fixed setting in `Directory.Build.props`, a longer one
+would make every real hang cost more, and a rerun costs only when a kill happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
 and modules halves) is sampled from its start and its records are marked with the peak (`stampLoad`, as `reached` marks its
-own), so the time ratchet judges only timings taken alone.
+own), so the time ratchet judges only timings taken alone. At a merge the ratchet fails only on what the branch made slow
+(RATCHETOWN1, D346): a test over its limit whose file the merge adds or changes, or one over half slower than main's alone
+record of it (`local/time-main.json`, `tools/time-main.mjs`: each judging run keeps each test's alone times with the commit it
+ran on, and main's record is the slowest of the newest five whose commit is in main's history). Any other breach is inherited
+from main: a known red, said in the summary with its cause and row, failing nothing.
 
 | Change | Additional verification |
 |---|---|
@@ -307,7 +312,8 @@ slowest classes print by their own times beside the half's wall. Before a heavy 
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
 that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
-killed at its budget under load, once the machine is free (TIMEWHY1, *Choose the checks*). Add
+whose hang bound killed a test under load, once the machine is free; one past its budget under load runs on instead (D346,
+*Choose the checks*). Add
 `--one-at-a-time` on a loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
 while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a
@@ -532,7 +538,11 @@ its own. The CI's watch gates every promoted tip, and the stage's rules are CISC
 heavy runs all take a place in before they start a heavy process, so a session's focused `dotnet test` beside a candidate no longer
 doubles the candidate's gate times into timeouts and unresolved flakes. It holds the runs that hold a place and the runs that ask,
 first come first served up to a capacity (one for each seven processors, two to six; `DAORIS_ADMISSION_SLOTS` sets it, 3 on 22
-processors). A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
+processors). A run is blocking (someone waits on it: a merge's gate, a check, a builder's run) or background (the heavy tier
+after a landing and the CI beside, marked `background` by `DAORIS_ADMISSION_BACKGROUND` in their environment,
+`tools/merge/background.ts`; MERGENOKILL1, D346): a blocking run waits only for the blocking runs asked before it, and a
+background run runs below normal priority, holds one place at most between all of them, takes it only while no blocking run
+waits, and starts no group, even one that takes no place, while one waits. A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
 and looks again every two seconds; **it never times out and a gate's clock starts only once it has its place**, so a wait is no
 failure of the gate. An entry counts while its process runs and it has beaten within two minutes (its writer rewrites `beat` every
 twenty seconds), so a holder that dies, however it dies, releases at once, and nothing is released by a timeout while it lives.
