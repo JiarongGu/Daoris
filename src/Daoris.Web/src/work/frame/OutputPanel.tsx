@@ -1,29 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, DotMark, Icon, type IconName } from '../../design/ui';
+import { Button, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
 import { useTabFit } from './tabFit';
-
-/**
- * One tab of the output panel: the session's own console, or something it runs beside
- * itself — a subagent, or background work.
- */
-export type PanelTab = {
-  /** What the console under it tails. */
-  key: string;
-  kind: 'session' | 'subagent' | 'task';
-  label: string;
-  tone: 'live' | 'ended' | 'failed' | 'idle';
-  /** How it stands, in words: the tab is named by it, so the mark is never hue alone. */
-  status: string;
-  /** Whether a person can stop it from here: a running task its harness says can be stopped. */
-  stoppable?: boolean;
-};
-
-const TAB_ICON: Record<PanelTab['kind'], IconName> = { session: 'frameWork', subagent: 'think', task: 'execute' };
 
 /** What a person can drag the panel between. Below the floor it is not a panel, it is a sliver. */
 export const PANEL_MIN = 96;
@@ -45,17 +27,15 @@ const PANEL_STEP = 48;
  * console's rule, and the reason is that a layout which springs back on a window resize teaches
  * people not to trust the control.
  *
- * **A tab per thing that is running**: the session, then each subagent and background
- * task it started, so none of their output is missed. One tab is no tabs — a session running
- * nothing beside itself keeps the header it had.
+ * **The session's raw console, never its streams**: what the session runs beside itself is the live band's above the dock, which
+ * puts a task's console in the conversation's focus (SESSIONVIEW1d).
  *
  * **A region, not the console's alone**: it holds whichever views stand in the panel, the
  * console by default, as VS Code's panel does; with more than one, each is a tab, and the list at
  * the header's end names them all and moves the shown one to the right side bar.
  */
 export function OutputPanel({
-  console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect, onStop,
-  views = ['console'], view, onView, onMove, onReset, onDrag, children,
+  console: stream, height, collapsed, onResize, onToggle, views = ['console'], view, onView, onMove, onReset, onDrag, children,
 }: {
   /**
    * The attended session's console, or null when nothing is attended — a state rather than an
@@ -67,13 +47,6 @@ export function OutputPanel({
   collapsed: boolean;
   onResize: (height: number) => void;
   onToggle: () => void;
-  /** The session's tab first, then its streams, oldest first. */
-  tabs?: PanelTab[];
-  /** The tab whose console is shown. */
-  selected?: string;
-  onSelect?: (key: string) => void;
-  /** Stop a stoppable tab's task. */
-  onStop?: (key: string) => void;
   /** The views standing in the panel, the console alone until the person moves one. */
   views?: readonly ViewId[];
   /** The view shown; ignored when it is not one of `views`. */
@@ -94,13 +67,9 @@ export function OutputPanel({
   const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
   const entries = viewEntries(t, views);
   const shown = entries.some((entry) => entry.id === view) ? view : entries[0]?.id;
-  const tabbed = shown === 'console' && tabs && tabs.length > 1;
-  // Whether the unselected views are their icons. The header also holds the console's streams, a
-  // stop and the show or hide, so what they say changes what the views' names need too.
-  const fit = useTabFit([
-    ...entries.map((entry) => entry.label), shown ?? '', collapsed,
-    ...(tabbed ? tabs.map((tab) => tab.label) : []), tabbed ? selected ?? '' : '',
-  ].join('\n'));
+  // Whether the unselected views are their icons. The header also holds the show or hide, so what it says changes what the views'
+  // names need too.
+  const fit = useTabFit([...entries.map((entry) => entry.label), shown ?? '', collapsed].join('\n'));
 
   const drag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -184,7 +153,6 @@ export function OutputPanel({
               {shown === 'console' ? t('work.panel.title') : entries[0].label}
             </span>
           )}
-        {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} onStop={onStop} />}
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {/* Absent where it would list one view and offer nothing (absent, never a door that does
               nothing): a detached session's window, which has no side bar to move a view to. */}
@@ -223,63 +191,5 @@ export function OutputPanel({
           </div>
         ))}
     </section>
-  );
-}
-
-/**
- * The console's own tabs: the session, then each subagent and background task it runs,
- * each named by how it stands. Its own molecule, because the console can stand in the
- * right side bar too, and its streams go with it.
- *
- * @remarks
- * **The selected task carries its stop, after the tabs**, as VS Code's panel carries *Kill
- * Terminal* for the terminal in view: only while it runs and its harness says it can be stopped, and
- * named for the task it stops. Not inside the tab list, which owns tabs and nothing else, and not
- * inside a tab, whose content is one label to a screen reader.
- */
-export function StreamTabs({ tabs, selected, onSelect, onStop }: {
-  tabs: PanelTab[];
-  selected?: string;
-  onSelect?: (key: string) => void;
-  onStop?: (key: string) => void;
-}) {
-  const { t } = useTranslation();
-  const stoppable = tabs.find((tab) => tab.key === selected && tab.stoppable);
-  return (
-    <div className="flex min-w-0 items-center gap-1">
-      <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={selected === tab.key}
-            aria-label={`${tab.label} — ${tab.status}`}
-            title={tab.status}
-            onClick={() => onSelect?.(tab.key)}
-            className={cn(
-              'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
-              selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
-            )}
-          >
-            <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
-            <span className="min-w-0 truncate">{tab.label}</span>
-            <DotMark tone={tab.tone} />
-          </button>
-        ))}
-      </div>
-      {stoppable && onStop && (
-        <button
-          type="button"
-          aria-label={t('work.panel.stream.stop', { name: stoppable.label })}
-          title={t('work.panel.stream.stop', { name: stoppable.label })}
-          onClick={() => onStop(stoppable.key)}
-          className="flex shrink-0 cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent px-1.5 py-0.5 text-meta text-ink-faint transition-colors duration-(--speed) hover:bg-raised hover:text-warn"
-        >
-          <Icon name="stop" size={10} />
-          <span>{t('work.panel.stream.stopShort')}</span>
-        </button>
-      )}
-    </div>
   );
 }

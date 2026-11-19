@@ -10,6 +10,7 @@ import type { Session } from '../../data/api';
 import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import type { AnchorState, TailState } from '../conversation/SessionConversation';
+import type { BandTold } from '../band/bandRows';
 import { useAwayFromTop } from '../conversation/followTail';
 import type { useBoxWords } from '../conversation/useBoxWords';
 import type { ViewId } from '../frame/placements';
@@ -306,6 +307,8 @@ export function useAttendedWaits({
   // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
   const waitPanel = useWaitPanelHeight();
   const [tail, setTail] = useState<TailState | null>(null);
+  // What runs now, told by the conversation (`onBeside`), for the live band above the dock.
+  const [beside, setBeside] = useState<BandTold | null>(null);
   const awayFromTop = useAwayFromTop(centre, attended?.id);
   // *To the top*, above the waiting panel: the record's head, where every wait stands with its
   // reading, the focus with it.
@@ -320,6 +323,6 @@ export function useAttendedWaits({
 
   return {
     partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, waitsOnScreen, goToWait, seekAt,
-    ruleAsk, waitPanel, tail, setTail, awayFromTop, toTop,
+    ruleAsk, waitPanel, tail, setTail, beside, setBeside, awayFromTop, toTop,
   };
 }

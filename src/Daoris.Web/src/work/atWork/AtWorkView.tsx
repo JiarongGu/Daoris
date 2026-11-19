@@ -49,12 +49,6 @@ export type AtWorkViewProps = {
    */
   considered?: readonly Consideration[];
   onRetry?: () => void;
-  /**
-   * Read by nothing, since the session's timeline draws its subagents under their calls: taken until `work/frame/regionSurface.tsx`
-   * stops passing them, which ends them.
-   */
-  streamOf?: (child: string) => string | undefined;
-  onOpenStream?: (stream: string) => void;
   now?: Date;
   /** An agent's name as the person calls it, for its co-workers; its word where none is given. */
   nameOf?: (agent: string) => string;

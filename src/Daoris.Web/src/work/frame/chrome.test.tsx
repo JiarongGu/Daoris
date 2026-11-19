@@ -9,7 +9,7 @@ import { SessionConsole } from '../console/SessionConsole';
 import { layTabs } from '../../test/tabRoom';
 import { FRAME_HELD, SESSION_ACTIVE } from '../../design/ui';
 import { ActivityBar, AppStrip, Splitter, StatusBar } from './frame';
-import { OutputPanel, type PanelTab } from './OutputPanel';
+import { OutputPanel } from './OutputPanel';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
@@ -594,43 +594,12 @@ describe('the output panel', () => {
     expect(container.querySelector('pre')).toBeNull();
   });
 
-  // A tab for each thing that is running, so no console is missed.
-  const TABS: PanelTab[] = [
-    { key: 's1', kind: 'session', label: 'session', tone: 'idle', status: "the session's own console" },
-    { key: 's1/subagent/a2fe', kind: 'subagent', label: 'Read README first line', tone: 'ended', status: 'subagent · completed' },
-    { key: 's1/task/bs00', kind: 'task', label: 'dev server', tone: 'live', status: 'background · running' },
-  ];
-
-  it('has a tab for the session and each stream it runs, named by how each stands', () => {
-    const onSelect = vi.fn();
-    render(
-      <OutputPanel
-        console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
-        tabs={TABS} selected="s1/task/bs00" onSelect={onSelect}
-      />,
-    );
-
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual([
-      "session — the session's own console",
-      'Read README first line — subagent · completed',
-      'dev server — background · running',
-    ]);
-    expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual(['false', 'false', 'true']);
-
-    fireEvent.click(tabs[1]!);
-    expect(onSelect).toHaveBeenCalledWith('s1/subagent/a2fe');
-  });
-
-  it('keeps the header it had when the session runs nothing beside itself', () => {
-    render(
-      <OutputPanel
-        console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
-        tabs={TABS.slice(0, 1)} selected="s1" onSelect={() => {}}
-      />,
-    );
+  // The session's raw console alone: what it runs beside itself is the live band's, never a tab here.
+  it('keeps one header for the console, with no tab for what the session runs beside itself', () => {
+    render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} />);
 
     expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByText('the console')).toBeTruthy();
   });
 
   // A region, not the console's alone — it holds whichever views stand in the panel.
@@ -639,7 +608,7 @@ describe('the output panel', () => {
     render(
       <OutputPanel
         console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
-        tabs={TABS} selected="s1" views={['console', 'ask']} view="ask" onView={onView}
+        views={['console', 'ask']} view="ask" onView={onView}
       >
         <p>the ask panel</p>
       </OutputPanel>,
@@ -649,9 +618,7 @@ describe('the output panel', () => {
     expect(Array.from(views.querySelectorAll('[role="tab"]')).map((tab) => [tab.getAttribute('aria-label'), tab.getAttribute('aria-selected')]))
       .toEqual([['Console', 'false'], ['Ask Daoris', 'true']]);
     expect(screen.getByText('the ask panel')).toBeTruthy();
-    // The console's streams are the console's: not in the header while another view is shown.
     expect(screen.queryByText('the console')).toBeNull();
-    expect(screen.queryByRole('tablist', { name: 'what is running' })).toBeNull();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Console' }));
     expect(onView).toHaveBeenCalledWith('console');

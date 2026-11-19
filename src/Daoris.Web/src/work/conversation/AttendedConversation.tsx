@@ -51,7 +51,7 @@ export function AttendedConversation({
   const { attended, attendedEntry, sessions, harnesses, live, here, openedAt } = session;
   const { talking, chatTurns, turns, onUsage, onWaiting } = boxState;
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
-  const { waits, standing, setAnchored, helperWaits, goToWait, setTail } = waitsState;
+  const { waits, standing, setAnchored, helperWaits, goToWait, setTail, setBeside } = waitsState;
   const { setChatHeld } = headState;
   if (!attended || !here) return null;
 
@@ -90,6 +90,8 @@ export function AttendedConversation({
             scroller={centre}
             // *Back to bottom* is the waiting panel's to draw, above it, not the transcript's foot.
             onTail={setTail}
+            // What runs now, for the live band above the dock, which opens one in the panel's focus.
+            onBeside={setBeside}
             onUsage={onUsage}
             onWaiting={onWaiting}
             // Its limit's wait, read from its events: the head and the foot say it.
