@@ -13,8 +13,11 @@ namespace Daoris.Driver;
 /// kept after it, so the later end under the same id is how it ended.</para>
 ///
 /// <para>One per run, as its sink is: a child outlives no process.</para>
+///
+/// <para><b>Who stopped a task.</b> A task's end the person asked for (<see cref="SessionProcesses.PersonStopped"/>, read through
+/// <c>personStopped</c>) keeps <c>person</c> as its origin, so its row says they stopped it.</para>
 /// </remarks>
-internal sealed class ChildLifetimes
+internal sealed class ChildLifetimes(Func<string, bool>? personStopped = null)
 {
     private enum Held
     {
@@ -55,7 +58,8 @@ internal sealed class ChildLifetimes
                     Name = Said(started.Name),
                     By = By(started.By),
                 },
-                WireReading.TaskEnded ended => Ended(_tasks, SessionEventKind.Task, ended.Task, ChildEnds.Of(ended.Word), ended.By),
+                WireReading.TaskEnded ended => Ended(
+                    _tasks, SessionEventKind.Task, ended.Task, ChildEnds.Of(ended.Word), ended.By, personStopped?.Invoke(ended.Task) == true ? "person" : null),
                 WireReading.StreamEnded { State: SessionStream.SessionEnded } closed => Closed(closed.Stream),
                 _ => null,
             };
@@ -76,11 +80,11 @@ internal sealed class ChildLifetimes
         return new SessionEvent { Kind = kind, Id = id, End = ChildEnds.Lost, By = By(ReadingBy.Inferred) };
     }
 
-    private static SessionEvent? Ended(Dictionary<string, Held> held, string kind, string id, string end, ReadingBy by)
+    private static SessionEvent? Ended(Dictionary<string, Held> held, string kind, string id, string end, ReadingBy by, string? origin = null)
     {
         if (!held.TryGetValue(id, out var was) || was == Held.Ended) return null;
         held[id] = Held.Ended;
-        return new SessionEvent { Kind = kind, Id = id, End = end, By = By(by) };
+        return new SessionEvent { Kind = kind, Id = id, End = end, By = By(by), Origin = origin };
     }
 
     private static string? Said(string? text) => text is { Length: > 0 } ? text : null;

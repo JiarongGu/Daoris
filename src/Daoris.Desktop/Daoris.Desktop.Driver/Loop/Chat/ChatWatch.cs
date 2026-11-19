@@ -68,7 +68,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // Last, so the queue told empty above judges nothing it still waited on.
             answers.Forget(sessionId);
         });
-        // Its background work stoppable from its tab for as long as the conversation lasts, on the session the run holds.
+        // Its background work stoppable from the window's live band for as long as the conversation lasts, on the session the run holds.
         using var stops = chat is null || Context.Output is null
             ? null
             : processes.OpenTaskStops(sessionId, (task, ct) => run.Session is { } session ? session.StopTaskAsync(task, ct) : Task.FromResult(false));
@@ -83,7 +83,9 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
             run.HandSink(ReadingSinks.Of(
                 account,
-                new RecordReadings(sessionId, Context.Output, Context.Events, new ChildRecords(DaorisHome.Entry(Context.Home, HomeEntry.Sessions), Context.Harnesses.Clock)),
+                new RecordReadings(
+                    sessionId, Context.Output, Context.Events, new ChildRecords(DaorisHome.Entry(Context.Home, HomeEntry.Sessions), Context.Harnesses.Clock),
+                    processes),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
                 // Each child its door says, in the part's lineage.

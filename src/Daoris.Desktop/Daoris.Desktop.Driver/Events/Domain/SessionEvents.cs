@@ -245,6 +245,7 @@ public sealed record SessionEvent
     /// <summary>
     /// For <see cref="SessionEventKind.User"/>: <c>person</c>, or <c>target</c> for the driver's composed prompt and every word that is
     /// not the person's (<see cref="Opinion"/>, <see cref="From"/>), so a reader that knows neither field never reads them as theirs.
+    /// For a <see cref="SessionEventKind.Task"/>'s end: <c>person</c> where the person stopped it from the window; absent otherwise.
     /// </summary>
     public string? Origin { get; init; }
 
