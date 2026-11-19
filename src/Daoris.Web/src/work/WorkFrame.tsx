@@ -364,7 +364,7 @@ export function WorkFrame({
   const {
     partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAsk, waitPanel, tail, awayFromTop, toTop,
   } = waitsState;
-  const runWaitDoors = useRunWaitDoors(attended?.id ?? null);
+  const runWaitDoors = useRunWaitDoors(attended?.id ?? null, { awaitingStep: attended?.state === 'awaiting-step', onQuest: onOpenQuest });
   const docked = attended && here && waits
     ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
     : [];

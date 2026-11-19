@@ -6,6 +6,7 @@ import i18n from '../locales/i18n';
 import { ago } from '../locales/format';
 import { ExternalLink } from '../design/links';
 import { StepActRows } from './acts/StepActRows';
+import { JointCheckRows, PartWaitRows } from './parts/PartRows';
 import { Button, Icon, Inline, Pill, Prose, SkeletonRows } from '../design/ui';
 import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
@@ -221,6 +222,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
         </ul>
       )}
       <StepActRows step={step} />
+      <JointCheckRows joint={step.joint} onQuest={doors?.quest} />
       {/* The integrate node's record, in one line; a state this page has no words for is said as recorded. */}
       {step.integration && (
         <p className="m-0 text-small text-ink-soft">
@@ -433,6 +435,8 @@ function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHe
           ))}
         </ul>
       )}
+      {/* A part of an ask's plan says what it waits on before any of its steps is handed: another part's receipt. */}
+      <PartWaitRows waits={run.graph?.partWaits} onQuest={doors?.quest} />
       {/* A chat run's checks are not yet enforced for a conversation, so they are never shown as a limit its tree holds. */}
       {checks && <p className="m-0 text-small text-ink-soft"><Inline text={checks} /></p>}
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}

@@ -230,6 +230,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     workspace's checkout of its repository, else the stage's page. A park whose question names a site waits on the person's sign-in there: named *Sign in*, its card carries
     *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34). A step its agent holds reads "waiting on `<role>`:
     `<agent>`" with *Take* alone, and names the dock's question or sign-in its agent is blocked on with a link to it (`RunWaitsHead`).
+    While the session awaits its step, the dock reads its run (`useRunWaitDoors`) and draws below its waits, uncounted since no press
+    of the person's settles them, what its part of an ask's plan waits on ("waits on `<part>`'s `<fact>`") and each joint check's parts
+    held or waited for and the part its failure went back to, each with that part's quest as a door (`RunParts`, as the run's view
+    draws them; workflows rule 3f); with nothing else in it, the dock is named *What its run waits on*.
     The head draws none of their cards. Its state
     line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
     the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest

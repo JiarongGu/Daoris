@@ -7,6 +7,8 @@ import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
 import { answeredPark, Button } from '../../design/ui';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { RunWaitsHead } from '../head/RunWaitsHead';
+import { partsOf, RunParts } from '../../workflow/parts/RunParts';
+import type { WorkflowRun } from '../../workflow/run';
 import { sessionOrigin } from '../identity';
 import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
 import { type DockLine, dockName, dockOf, type DockWait, type StepWait } from './dock';
@@ -116,6 +118,8 @@ export type RunWaitDoors = {
   onHeld?: Parameters<typeof RunWaitsHead>[0]['onHeld'];
   hold?: Parameters<typeof RunWaitsHead>[0]['hold'];
   release?: Parameters<typeof RunWaitsHead>[0]['release'];
+  /** The session's runs as their one reading says them, whose ask's parts the dock names (`RunParts`), with a quest's door; none where unread. */
+  parts?: { runs: readonly WorkflowRun[]; onQuest?: (id: string) => void } | null;
 };
 
 /** The dock's waits the session itself asked the person: a step its agent holds says it waits on these. */
@@ -174,7 +178,8 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   // though only an open gate is counted as a wait.
   const workLine = props.lands || props.discards ? { key: 'work', wait: { kind: props.lands ? 'accept' : 'discard' }, since: '' } as DockLine : null;
   const drawnLines = workLine && !lines.some((line) => (WORK_WAITS as ReadonlySet<string>).has(line.wait.kind) || line.wait.kind === 'discard') ? [...lines, workLine] : lines;
-  if (drawnLines.length === 0) return null;
+  const parts = runWaits?.parts && partsOf(runWaits.parts.runs).length > 0 ? runWaits.parts : null;
+  if (drawnLines.length === 0 && !parts) return null;
   const pageWaits = (of: readonly DockLine[]) => of.flatMap((line) => (line.wait.kind === 'step' ? [] : [line.wait]));
   // The count is of obligations, keyed as the bell and *What needs you* key them, so a park on the go-ahead it asked is one; and
   // each step its run holds for the person.
@@ -320,7 +325,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   return (
     <section
       ref={section}
-      aria-label={title}
+      aria-label={drawnLines.length > 0 ? title : t('work.wait.parts')}
       data-wait-part=""
       data-dock=""
       className="shrink-0 border-t border-line bg-page"
@@ -337,6 +342,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
           const drawn = lineOf(line);
           return drawn ? <div key={line.key} data-dock-line={line.key} className="grid min-w-0 gap-1">{drawn}</div> : null;
         })}
+        {parts && <div data-dock-line="parts" className="grid min-w-0 gap-1"><RunParts runs={parts.runs} onQuest={parts.onQuest} /></div>}
       </div>
     </section>
   );

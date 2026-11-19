@@ -114,6 +114,9 @@ public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries,
     /// <summary>The quest it ended at, where its record keeps its end; null while it goes on.</summary>
     public string? Ended { get; init; }
 
+    /// <summary>The other parts' receipts its part of its ask's plan waits on before any step is handed (<see cref="PartViews"/>); null where none.</summary>
+    public IReadOnlyList<WorkflowRunPartReceipt>? PartWaits { get; init; }
+
     /// <summary>
     /// Where it stands: the first step that is neither not reached nor settled (live, or failed, refused or stopped there); with none, nowhere
     /// where it ended or its graph's end is settled, its first entry where Daoris has not judged it, else its first step not settled.
@@ -153,6 +156,8 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     public Func<string, string>? Cast { get; init; }
 
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
+
+    public RunPartsView Parts { get; init; } = RunPartsView.None;
 }
 
 /// <summary>
@@ -234,6 +239,7 @@ public static class WorkflowGraphRuns
                 Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Journal = StepActViews.Of(facts.Acts, node.Id, status.Attempt, facts.Cast),
+                Joint = facts.Parts.Joints.GetValueOrDefault(node.Id),
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,
@@ -276,6 +282,7 @@ public static class WorkflowGraphRuns
             Judged = record is { Statuses.Count: > 0 },
             Unread = record is null,
             Ended = record?.Ended?.Quest,
+            PartWaits = facts.Parts.Waits.Count > 0 ? facts.Parts.Waits : null,
             Backs = [.. drawn.Where(wire => wire.Kind == WireKinds.Back)],
             NotTaken = WireEvaluation.NotTakenOn(graph.Nodes, graph.Wires, statuses, self),
             Outcomes = graph.Nodes

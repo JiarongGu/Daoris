@@ -354,6 +354,9 @@ public static class WorkflowRunReader
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
                 Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository),
                 Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),
+                // What its part waits on and its joint checks hold, read from its ask's plan and the parts' journals as the pass reads them.
+                Parts = PartViews.Read(reads.Sources.Home, askId is null ? null : await reads.PartsAsync(askId).ConfigureAwait(false), run,
+                    part.Select(quest => quest.Id), graph, record),
             },
             workspace, askId);
     }
@@ -427,6 +430,25 @@ public static class WorkflowRunReader
         : IOpinionWorld
     {
         private readonly Dictionary<string, (AskView?, string?)> _asks = new(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, PartsReport?> _plans = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>The ask's plan as the look reads it (<see cref="ServiceTrainPlans"/>), once a read; null where it has none or is not answered.</summary>
+        public async Task<PartsReport?> PartsAsync(string ask)
+        {
+            if (_plans.TryGetValue(ask, out var kept)) return kept;
+            TrainPlan? plan;
+            try
+            {
+                plan = await new ServiceTrainPlans(sources.Service).OfAsync(ask, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (Unanswered(error, ct))
+            {
+                plan = null;
+            }
+
+            return _plans[ask] = plan is null ? null : PartsReports.Of(ask, plan, new HashSet<string>(StringComparer.Ordinal));
+        }
 
         public WorkflowRunSources Sources => sources;
 
