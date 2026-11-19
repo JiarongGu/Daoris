@@ -390,5 +390,11 @@
   "workflow.run.acts.state.waiting": "waiting",
   "workflow.run.acts.state.failed": "failed",
   "workflow.run.acts.by": "by {{by}}",
-  "workflow.run.acts.page": "Open its page"
+  "workflow.run.acts.page": "Open its page",
+  "workflow.run.parts.title": "Waits before it starts",
+  "workflow.run.parts.waitsOn": "waits on `{{part}}`’s `{{fact}}`",
+  "workflow.run.joint.title": "Tested together",
+  "workflow.run.joint.holds": "holds `{{part}}`’s `{{fact}}`",
+  "workflow.run.joint.waitsFor": "waits for `{{part}}`’s `{{fact}}`",
+  "workflow.run.joint.returned": "failed on `{{part}}`, sent back to it"
 }

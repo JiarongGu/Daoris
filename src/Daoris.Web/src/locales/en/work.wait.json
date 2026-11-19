@@ -70,5 +70,6 @@
   "work.wait.permission.refused.standing": "That answer would allow it for the rest of the session, which is a rule: propose the rule instead. Nothing was answered.",
   "work.wait.name.step": "step {{node}}",
   "work.wait.name.stepAccept": "Accept",
-  "work.wait.teammate": "Waits on its owner: {{names}}"
+  "work.wait.teammate": "Waits on its owner: {{names}}",
+  "work.wait.parts": "What its run waits on"
 }

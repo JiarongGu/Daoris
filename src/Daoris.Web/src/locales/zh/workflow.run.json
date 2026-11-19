@@ -390,5 +390,11 @@
   "workflow.run.acts.state.waiting": "等待中",
   "workflow.run.acts.state.failed": "失败",
   "workflow.run.acts.by": "由 {{by}}",
-  "workflow.run.acts.page": "打开其页面"
+  "workflow.run.acts.page": "打开其页面",
+  "workflow.run.parts.title": "开始前等待",
+  "workflow.run.parts.waitsOn": "等待 `{{part}}` 的 `{{fact}}`",
+  "workflow.run.joint.title": "共同测试",
+  "workflow.run.joint.holds": "已有 `{{part}}` 的 `{{fact}}`",
+  "workflow.run.joint.waitsFor": "等待 `{{part}}` 的 `{{fact}}`",
+  "workflow.run.joint.returned": "在 `{{part}}` 上失败，已退回给它"
 }

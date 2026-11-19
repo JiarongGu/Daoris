@@ -70,5 +70,6 @@
   "work.wait.permission.refused.standing": "这个答复会在会话剩余的时间里一直允许它，那是一条规则：请改为提议这条规则。未作答。",
   "work.wait.name.step": "步骤 {{node}}",
   "work.wait.name.stepAccept": "采纳",
-  "work.wait.teammate": "等它的所有者处理：{{names}}"
+  "work.wait.teammate": "等它的所有者处理：{{names}}",
+  "work.wait.parts": "它的进展在等什么"
 }

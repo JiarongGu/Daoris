@@ -24,8 +24,12 @@ export function RunReleaseDoors({ scope, wait }: { scope: RunScope; wait: WaitAt
 
 export const actorWait = (wait: { why: string }) => wait.why === 'actor';
 
-/** The dock's run waits of `session` with their doors; a plugin's actor wait's are its run's view's, read from the run `scope` names. */
-export function useRunWaitDoors(session: string | null) {
+/**
+ * The dock's run waits of `session` with their doors; a plugin's actor wait's are its run's view's, read from the run `scope` names. While
+ * the session awaits its step, its runs' reading too, whose ask's parts the dock names (what its part waits on, its joint checks).
+ */
+export function useRunWaitDoors(session: string | null, { awaitingStep = false, onQuest }: { awaitingStep?: boolean; onQuest?: (id: string) => void } = {}) {
+  const runs = useWorkflowRun(session ? { session } : null, { enabled: awaitingStep });
   const groups = useSessionGroups();
   const attention = useAttention();
   const word = useRunNodeWord();
@@ -38,5 +42,6 @@ export function useRunWaitDoors(session: string | null) {
     return <StepHold bridge={stepHoldBridge} run={step.run} workspace={row?.workspace ?? ''} repository={row?.where ?? ''} node={step.node} holds={step.holds} />;
   };
   const release = (wait: StepWait) => (session && actorWait(wait) ? <RunReleaseDoors scope={{ session }} wait={wait} /> : null);
-  return { waits, steps, onWord: word.mutateAsync, onHeld: held.mutateAsync, hold, release };
+  const parts = awaitingStep && Array.isArray(runs.data?.runs) ? { runs: runs.data.runs, onQuest } : null;
+  return { waits, steps, onWord: word.mutateAsync, onHeld: held.mutateAsync, hold, release, parts };
 }
