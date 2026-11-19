@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../locales/format';
 import { Button } from '../design/ui';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
-import { type NodeAct, type NodeWordAnswer, type NodeWordAsk, type RunStep, takeFirst } from './run';
+import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 import { isReturnAct, RETURN_ACTS, ReturnChoice, returnWaits } from './return/ReturnChoice';
 import { DecidePress, decideOutcomes } from './task/DecidePress';
 import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
@@ -60,7 +60,6 @@ export function NodeWord({ run, step, onWord }: {
     );
   }
 
-  if (takeFirst(step)) return null;
   const acts = (step.acts ?? []).filter((act): act is NodeAct => act !== 'changes' && ACTS.includes(act as NodeAct));
   const outcomes = decideOutcomes(step.acts ?? []);
   const choosing = acts.some(isReturnAct) && returnWaits(step);

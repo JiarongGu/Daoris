@@ -646,11 +646,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step
-    the run's agent holds and the person may *Take* reads as the agent's on every surface (`heldByAgent`, `takeFirst`): its node's part says
-    "agent alone", by an agent, never the *you* its kind declares (`whoSaid`), its card and the head's carry *Take* alone and none of the
-    step's own presses (Done, a skip, a stop: `NodeWord` draws none until a take), and where the session's dock holds a question, sign-in
-    or go-ahead its agent asked, the head's card says the agent waits on the person for it with a link to that line. The person's held
-    step keeps its presses. (AGENTSTEPCARD1) That an
+    the run's agent holds reads as the agent's on every surface (`heldByAgent`): its node's part says "agent alone", by an agent, never
+    the *you* its kind declares (`whoSaid`), and where the session's dock holds a question, sign-in or go-ahead its agent asked, the head's
+    card says the agent waits on the person for it with a link to that line. Its presses are the driver's alone: a step handed to the agent
+    holding its role (`AgentSettles.Handed`) offers *Take* alone, no act of its own (Done, a skip, a stop), in the run's reading as in its
+    *What needs you* row (`StepHoldActs.Handed`), and the window draws what it is sent, withholding nothing itself; the person's held
+    step keeps its presses. (AGENTSTEPCARD1, AGENTSTEPCARD2) That an
     agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record

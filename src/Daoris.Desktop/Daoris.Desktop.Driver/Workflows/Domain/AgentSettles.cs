@@ -23,6 +23,13 @@ public static class AgentSettles
         status.State == NodeStates.Active && node.Kind == NodeKinds.Task && NodeKit.Of(node.Kind) is IWaitsOnRole waits
         && waits.Waits(node, status) == PersonWaits.Task;
 
+    /// <summary>
+    /// Whether the step <paramref name="node"/> standing at <paramref name="wait"/> is handed to the agent holding its own role, its working
+    /// session's tool settling it: the person's one press is <i>Take</i> (<see cref="StepHoldActs.Handed"/>), in its row and the run's reading alike.
+    /// </summary>
+    public static bool Handed(NodeDeclaration node, NodeStatus status, RoleWait wait) =>
+        wait.Holder.Kind != StepHolders.Person && wait.Role == StepRoles.Of(node) && Tool(node, status);
+
     /// <summary>Whether <paramref name="node"/> settles only by its own role's press where it stands: an Accept or an approval.</summary>
     public static bool Pressed(NodeDeclaration node) =>
         NodeKit.Of(node.Kind) is IWaitsOnRole waits

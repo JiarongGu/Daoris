@@ -210,11 +210,11 @@ public static class HeldSteps
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
 
         // A step its agent's working session settles by its tool is handed to that session: the person's one press is Take.
-        if (wait.Holder.Kind != StepHolders.Person && wait.Role == StepRoles.Of(node) && AgentSettles.Tool(node, status))
+        if (AgentSettles.Handed(node, status, wait))
         {
             return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, [], work, wait.Since)
             {
-                Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Epoch = tenure?.Epoch, Holds = tenure?.Why == TenureWhy.Marked ? [] : [CastActs.Take],
+                Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Epoch = tenure?.Epoch, Holds = StepHoldActs.Handed(tenure),
             };
         }
 

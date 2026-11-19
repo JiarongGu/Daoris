@@ -199,4 +199,30 @@ public sealed class AgentStepSettleTests : NodeRunFixture
         Assert.Equal([CastActs.Take], row.Holds);
         Assert.Equal(PersonWaits.Task, row.Why);
     }
+
+    [Fact]
+    public async Task Its_step_in_the_runs_reading_offers_the_person_only_take_as_its_row_does()
+    {
+        await HandedAsync();
+        var bound = new GraphRuns(Files).Find(RunId)!;
+        var digest = bound.Version.GraphDigest!;
+        var attempt = RunStatus("config-needed").Attempt;
+        var held = new StepTenureFiles(_home, () => true).Current(RunUnit, "config-needed", attempt)!;
+        var facts = new WorkflowRunFacts(RunHome.Repository, new CurrentWorkflow([], [], digest))
+        {
+            Process = WorkflowProcess.Declared(DriverConfig.Empty, RunHome.Repository, "default") with
+            {
+                Binding = new WorkflowRunBinding(RunId, RunHome.Repository, "default", "docs", WorkflowLevels.Repository, DateTimeOffset.UnixEpoch) { Version = 1, Digest = digest },
+                Run = RunId,
+            },
+        };
+
+        var run = WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, RunId, bound.Version.Graph!, Files.Read(RunUnit)) { Holding = new Dictionary<string, StepTenure> { ["config-needed"] = held } }, "default");
+        var step = run.Steps.Single(each => each.Step.Id == "config-needed");
+
+        // The person's one press on a step the agent holds is Take, in the run's reading as in its row: none of the step's own (D318 point 5).
+        Assert.Equal((WorkflowRunStates.Waiting, StepHolders.Agent), (step.State, step.Holder?.Kind));
+        Assert.Null(step.Acts);
+        Assert.Equal([CastActs.Take], step.Holds);
+    }
 }
