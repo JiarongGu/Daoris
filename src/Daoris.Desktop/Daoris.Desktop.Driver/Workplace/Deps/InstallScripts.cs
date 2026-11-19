@@ -6,6 +6,7 @@ namespace Daoris.Driver;
 /// Which installs leave the repository's lifecycle scripts out. A dependency whose rule declares a <c>setup</c> has taken its own
 /// scripts over, so its npm install runs <c>--ignore-scripts</c> and can seal, but only where the lockfile shows no package needing a
 /// script: none marks <c>hasInstallScript</c>, and none resolves from git, whose <c>prepare</c> npm runs without the lockfile marking it.
+/// A package npm leaves out on this system (<see cref="NpmPlatform"/>) runs nothing here, so it keeps no script in.
 /// </summary>
 internal static class InstallScripts
 {
@@ -45,6 +46,7 @@ internal static class InstallScripts
             if (!document.RootElement.TryGetProperty("packages", out var packages) || packages.ValueKind != JsonValueKind.Object) return false;
             foreach (var package in packages.EnumerateObject())
             {
+                if (NpmPlatform.LeavesOut(package.Value)) continue;
                 if (package.Value.TryGetProperty("hasInstallScript", out var marked) && marked.ValueKind == JsonValueKind.True) return false;
                 if (package.Value.TryGetProperty("resolved", out var resolved) && resolved.ValueKind == JsonValueKind.String && FromGit(resolved.GetString()!)) return false;
             }

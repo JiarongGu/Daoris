@@ -11,7 +11,7 @@
       "caches": [".cache/", ".vite/", ".vite-temp/"] },
     { "kind": "dependency", "paths": ["/node_modules/", "/src/Daoris.Cli/node_modules/"],
       "key": ["package-lock.json", "package.json", "src/Daoris.Cli/package.json", ".npmrc"],
-      "setup": ["node tools/merge-rows.mjs --install", "node tools/index-hook.mjs --install"], "per": "repository" },
+      "setup": ["node tools/merge-rows.mjs --install", "node tools/merge-backlog.mjs --install", "node tools/index-hook.mjs --install"], "per": "repository" },
     { "kind": "intermediate", "paths": ["/src/**/obj/", "/tools/**/obj/"], "toolchain": ["dotnet --version"] },
     { "kind": "output", "paths": ["bin/"], "take": "base",
       "refuses": ["node tools/desktop.mjs run", "node tools/desktop.mjs restart", "node tools/proof-kit.mjs", "node tools/family-rehearsal.mjs",

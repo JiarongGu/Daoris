@@ -213,14 +213,14 @@ internal static partial class FileAnalysis
     private static FileRule WithMembers(FileRule rule, string folder, IReadOnlyList<string> members) =>
         members.Count == 0 ? rule : rule with { Paths = [.. rule.Paths.Concat(WorkspaceMembers.Modules(folder, members)).Distinct(StringComparer.Ordinal)] };
 
-    /// <summary>The first package a lockfile marks as running its own install script, but those its signature lists as reading nothing.</summary>
+    /// <summary>The first package a lockfile marks as running its own install script, but those its signature lists as reading nothing and those npm leaves out on this system.</summary>
     private static string? InstallScript(string lockfile, IReadOnlyList<string> readsNothing)
     {
         try
         {
             using var document = JsonDocument.Parse(lockfile);
             if (!document.RootElement.TryGetProperty("packages", out var packages) || packages.ValueKind != JsonValueKind.Object) return null;
-            return packages.EnumerateObject().Where(each => Json.Flag(each.Value, "hasInstallScript"))
+            return packages.EnumerateObject().Where(each => Json.Flag(each.Value, "hasInstallScript") && !NpmPlatform.LeavesOut(each.Value))
                 .Select(each => each.Name[(each.Name.LastIndexOf("node_modules/", StringComparison.Ordinal) is var at and >= 0 ? at + "node_modules/".Length : 0)..])
                 .FirstOrDefault(package => !readsNothing.Contains(package, StringComparer.Ordinal));
         }

@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-20 - Every driven session of this repository took 5 to 9.5 minutes to open, most of it reinstalling the root dependencies (SESSIONOPEN2)
+
+- **Symptom:** on the install all of 2026-11-19, `session.opening` said 317 to 567 s an open, `files` 101 to 333 s of it, with no
+  `files.*` step named; each session's notes said "`node_modules` was installed in this tree and not stored: its install wrote
+  `docs/index/` outside its folder".
+- **Measured first,** on `OpeningShapeProcessTests` (11,500 tracked files, build output in the checkout, the root installed by a real
+  `npm ci` from a lockfile marking one script, an optional package for another system, under a `prepare` that reads the whole tree and
+  writes beside its folder, a web dependency of 17,000 files): the second opening 132,084 ms, `tree` 15,774, `files` 116,311
+  (`files.read` 27,894, `files.deps` 81,687), the root installed again and unstored. On a clone of this repository: the root's
+  `npm ci` 38 s, its `prepare` 54 s (the index alone 39 s), the web folder's placement by the store's copy 6 s.
+- **Root cause:** `InstallScripts` read a package npm never installs on this system as one whose script the install runs. Since
+  01bd3fc1de (the merge tool's tests on Vitest) the root lockfile marks `fsevents` (`optional`, `os: darwin`), so the root kept its
+  scripts: `prepare` wrote `docs/index/` and git's own files, the install was never sealed, and every open ran `npm ci`, the three set-up
+  tools and an index write again. And `TreeFilesRun` never handed its steps to the stage (since de02b4c460, which added them as an
+  optional parameter), so the line named no `files.*` step.
+- **Fix:** `NpmPlatform.LeavesOut` (a package whose `os` leaves this system out runs nothing here), read by `InstallScripts` and the
+  analysis's `InstallScript`; the run's `files` stage hands its steps; the hand times its plugins' servers as `hand.servers`; the root
+  rule's `setup` names `merge-backlog.mjs --install` as `prepare` does.
+- **Left:** the fixture's time after the fix is not yet said: with the web folder now sealed its run passed the test host's five
+  minutes on a loaded machine, so it is a bench (`OPENING_SHAPE_BENCH=1`). After the root, `files.read` (18.8 to 27.9 s, npm's
+  three toolchain reads one after another among it) and `tree` (11.0 to 15.8 s) are the next costs; and this repository's own
+  `post-checkout` hook writes the index at every new tree (41 s, 30 s when nothing changed).
+- **Verify:** `InstallScriptsTests` (a package another system's runs no script here; one for this system keeps the scripts).
+
 ## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
 
 - **Symptom:** a run ended failed-held at `push`, revived by LEFTSTEP1 once origin held its branch at the landed tip, opened its pull
