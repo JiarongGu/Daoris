@@ -219,7 +219,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (D68, D181)
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
-    nothing; the migration's driver-keys step takes it out. (D200)
+    nothing. (D200)
 32. The watcher marks a session quiet after Q with nothing heard and its job idle, and brings it to the person at 3Q; while it
     waits on its own background work, 3Q and 5Q. A wait for a permission answer is never quiet. Daoris ends nothing quiet but a
     dead process and a headless `--quiet-end`. A quest session on a door that takes words is told once, as Daoris's urgent word,

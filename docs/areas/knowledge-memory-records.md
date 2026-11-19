@@ -188,8 +188,7 @@ one job each, checked by `verify`.
     answer stands unconfirmed and the next sync decides. (from D68, D69)
     A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
     by one remover, `Core/Quests/QuestClosedRemoval.cs`: tombstoned with a `deleted` operation where it may have travelled, simply gone where it never left;
-    it removes no open or taken quest, and the person's delete of an open one (`QuestDeleteOperation`) writes the same tombstone. The home migration's `closed-quests` step
-    clears the closed six-character quests the same way; an open one stays until it closes. A quest's id derives from its
+    it removes no open or taken quest, and the person's delete of an open one (`QuestDeleteOperation`) writes the same tombstone. A quest's id derives from its
     sender, receiver, title, lanes, workflow request key and parent. The same plain words published while that quest is open or
     taken are a retry: the answer is that quest, said, and nothing is written. Published after it closed (done or declined), or
     after this machine forgot it, they are a new ask under the next id (`~again<n>`), and the closed quest stays as it was. A

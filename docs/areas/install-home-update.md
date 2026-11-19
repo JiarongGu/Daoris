@@ -7,8 +7,8 @@ category folders beside it. The install's `data/` is the Daoris home. Every mach
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
 Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
-new build, or rolls back. A release that changes a stored shape carries one migration, which converts the home once at its
-first start; nothing reads an older shape after it. The build's own plugins (`app/plugin-offers/`) that are installed older update
+new build, or rolls back. A release that changes a stored shape converts nothing: the home's history is purged, and nothing
+reads an older shape (rule 51). The build's own plugins (`app/plugin-offers/`) that are installed older update
 at that start, before any hook runs (plugins area, rule 18a).
 
 Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/` for `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
@@ -24,7 +24,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
 | `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
-| `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
+| `Drv/Store/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
 
@@ -79,9 +79,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 17a. Nothing Daoris writes is kept forever unnoticed. A tree's files record and install logs go with the tree (the tidy's set-aside,
     a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
     sweep (`DeadMarkers`); each store limits its log to 32 MB and the knowledge store truncates it and returns its free pages at
-    open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the `salvage` kind (a migration's folder under
-    `data/salvage` whose newest file is 30 days old goes, `SalvageKeeping`; a row of Disk space, a `space free` group the person
-    may take earlier, a rule no one sets) and the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
+    open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
     days, then an emptied folder, `PluginOutputKeeping`, handed to the tidy as its `IOutputKeeping` port by the loop's watch; no card
     row, the plugin's other data stays). `agent account list` names a
     folder beside an agent's accounts that is no account (a lock's) and a folder under the account homes that no agent names

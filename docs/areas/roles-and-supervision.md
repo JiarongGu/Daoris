@@ -78,9 +78,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     effort is *account default*: nothing is passed. One judge serves every door (`ActorChoices.Judge`). (D205)
 12. The staffing lives in `role_staffing` alone, and every write is the store's. A fresh home is seeded with each role's seed.
     (D205, D212, D232)
-13. The release's migration imports an older home's `driver.json` staffing once: Build, Intake, Ask Daoris, Chat and Brainstorm as
-    they ran, at account default, an unreadable entry kept; Second opinion, Partner and Helper left to their caller's rule; the
-    four keys taken out. (D232)
+13. A home's staffing is imported once into the store (`RoleStaffing`): `driver.json`'s `actors` as written, an unreadable entry
+    kept, or a fresh home's seeds where the file holds none. A file holding only the single-agent keys (`adapter`, `intakeAdapter`,
+    `helperAdapter`) is not seeded and gives no order, until NOCOMPAT2 takes the keys out. (D232, D323)
 14. A role of the five with no stored order has no agent: nothing reads the old single-agent keys. (D232)
 15. A change of `driver.json`'s staffing by hand is read nowhere. (D232)
 16. A start walks its role's order choice by choice, each choice's accounts before the next. A choice that cannot run is passed
@@ -138,8 +138,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one choice
     acting at or past failures, and where two rules on one count at a place would apply to one line (`ladder`); a rule naming a
     role beside the every-role rule stands. A place's set is written whole at the revision read. (D229, D232)
-35. One seed serves a fresh home's first start and the release's migration: answers alone at 2, failures at 3 (an older home's
-    `strikes`), tries at 5 and moves 3 a day before the next asks, for every role. Where the machine holds nothing, or the store
+35. One seed serves a fresh home's first start: answers alone at 2, failures at 3, tries at 5 and moves 3 a day before the next
+    asks, for every role. Where the machine holds nothing, or the store
     does not read, the seeded rules decide, and a write is judged against them too. (D229, D232)
 36. Every executor reads the effective rules, one rule per count; a count no rule watches acts on nothing. A line's role and place
     are resolved once (`RuledLine`): the role its start was bound to while the catalogue holds it, else the role taking its work
@@ -291,9 +291,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     comes from, each press `SET_PLACE_RISK` naming that repository), `daoris settings risk`, and Ask
     Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
     (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
-    decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line;
-    the home's migration (`place-risk`) wrote today's person-held levels (the machine's seed and every supervisor held by rules or nobody)
-    as such marks, moving no routing, and a risk the build does not know reads high. A `driver.json` with no record (an older build
+    decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line,
+    and a risk the build does not know reads high. A `driver.json` with no record (an older build
     rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A run step is settled only through one door (`SettleDoor`): by the holder its attempt's tenure names now, in its epoch, by an
     observation, or by the owner role's stop and decision answer in any epoch; a supervisor's held word only where the person holds the
@@ -385,7 +384,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 57. Restricted mode adds the access the person configures: the checkouts it reads, each read judged at the call; and the families
     of acts it presses with no card, the one shape a grant has: `pause`, `clean-up`, `discard` and `settings`. A granted family
     runs a proved press as the person's own, read at each press; a look asks no grant. An older record's `housekeeping` and
-    `settings` lists grant nothing until the home's migration converts them. Its tool calls outside its allow-list are held for the
+    `settings` lists grant nothing. Its tool calls outside its allow-list are held for the
     person (agents-and-harnesses 23). No family reaches a role, and none reaches a department's creation or a room's ask
     (`REGISTRY_CREATE`, `PLACE_APPLY`): restricted mode carries a card for them whatever is granted. (D183, D205, D253, D261, D276)
 58. Full access runs its harness's unrestricted mode, keeps `checkout_read` and names each readable checkout and where it is, and a proved press runs at once with no card as the person's own, said once
@@ -407,8 +406,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 59. What each start handed is recorded at the start and shown on the panel, never worked out again. (D183)
 60. A route's view, a room's door row or a terminal verb exists only where one is wanted; no census asks one of every action. The
     room's doors table says where each change is and, where Ask Daoris never asks it on the card, why; *Done at a terminal* names
-    the acts it never presses. An older home's Ask Daoris proposals folder is removed once by the home's migration, each file
-    salvaged. (D110, D170, D233, D261)
+    the acts it never presses. (D110, D170, D233, D261)
 61. A plugin's servers and skills reach Ask Daoris only where its manifest declares them for it, approved by the person in
     restricted mode. A plugin changes Daoris only through the person's presses, each on its card. (D170, D183, D261)
 62. The room says each role's staffing, policy and last seven days, so *why did this run on Opus?* is answered from the records.

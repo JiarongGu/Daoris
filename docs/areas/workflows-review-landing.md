@@ -25,7 +25,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
 | `Review/` | The look and the opinion (`Review/Domain/`), entry Accepts, the session-tree gates, the heavy executor |
-| `Setup/`, `Settings/LinePolicyKey.cs`, `Workflows/Migration/` | *Set up…*'s plan and Apply; the line policies; the release's conversion |
+| `Setup/`, `Settings/LinePolicyKey.cs` | *Set up…*'s plan and Apply; the line policies |
 | modules `Bridge/Routes/` | `WORKFLOW_*`, `LANDING`, `LAND_ENTRY`, `RUN_REVIEW*`, the set-up and tree doors; the Accept's waits and answers |
 | web `src/workflow/`, `src/work/review/run/`, `src/agents/setup/` | The chart, the editor, the place page, the run view and the review page |
 
@@ -530,13 +530,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and refused where no plugin performing steps serves the remote's platform. *Keep how it lands* writes nothing. (D221, D227)
 43. `PLACE_APPLY` is the one door of a place's set-up: its adoption, and a room asked of an adopted repository (`--room`, a part that rides with no
     other and is a quest to that repository's own session, driving rule 53). `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (D227, D276)
-44. The release's one migration converts the workflow records once: each steps, `handed` or `land`+`accept` newest gets its next
-    version as a graph; each place on the landing rules follows the home default or a saved copy of what they drew; a rule's
-    `integrate` becomes its line's policy; the rules and work cycles leave `driver.json`. `run-rebinds` binds again, as a first
-    start would, a run whose version does not read here. `review-records` keeps an older build's Accept on a branchless review only
-    where the pinned graph ends there, else drops it, said. `abandoned-runs` stops each live step of a run whose quest is declined
-    or ask closed. No door, receipt or undo. (D232, D273)
-45. There is no landing rule: nothing reads or writes `landings` or `workspaceLandings` but the migration. Every door that lands,
+44. No migration converts a workflow record: a saved version is read as it was written, a graph. A saved version is configuration
+    a purge keeps, so its former `human` step reads as a `task` (`HumanFormerKind`) until no saved version on the install spells
+    `human` (NOCOMPAT2). (D232, D323)
+45. There is no landing rule: nothing reads or writes `landings` or `workspaceLandings`. Every door that lands,
     plans, names a branch or says how work lands reads the run's bound `land`; ungoverned work lands as the declared merge, held by
     its gate. A line's integration reads its policy, and `LINES` and `SESSION_PROCESS` answer no landing. (D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
