@@ -140,10 +140,7 @@ internal static class AgentAccountsCommand
         }
     }
 
-    /// <summary>
-    /// <c>profile add &lt;agent&gt; &lt;name&gt;</c>: an account folder under a drawn id, the word given as its name; one already
-    /// so named is an answer.
-    /// </summary>
+    /// <summary><c>profile add &lt;agent&gt; &lt;name&gt;</c>: a folder under a drawn id, the word its name; one so named is an answer.</summary>
     private static AgentPress Add(AccountVerbContext at)
     {
         var owner = at.Owner();
