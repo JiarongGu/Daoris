@@ -71,7 +71,7 @@ describe('the box on every session that takes words', () => {
     const box = await screen.findByLabelText('Message');
     expect(box).toHaveAttribute('placeholder', 'write to it — the same session goes on with your words');
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
-    await userEvent.type(box, 'also say so in the release notes');
+    await userEvent.say(box, 'also say so in the release notes');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
@@ -134,7 +134,7 @@ describe('the box on every session that takes words', () => {
     show('s1a2b3c4');
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'one more thing');
+    await userEvent.say(box, 'one more thing');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText('It stood down: #abc123 is someone else\'s, so it has nothing to go on with.')).toBeInTheDocument();
@@ -164,7 +164,7 @@ describe('the box on every session that takes words', () => {
     show('s1a2b3c4');
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.type(box, 'keep the old flag for a release');
+    await userEvent.say(box, 'keep the old flag for a release');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText('held until this run ends — then the same session goes on with them')).toBeInTheDocument();
@@ -266,7 +266,7 @@ describe('the box on every session that takes words', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit the waiting message: and the red' }));
     const box = screen.getByLabelText('Message');
     await userEvent.clear(box);
-    await userEvent.type(box, 'use the green one');
+    await userEvent.say(box, 'use the green one');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE_EDIT', {
       payload: { session: 's1a2b3c4', id: 'w2', text: 'use the green one' },
@@ -508,7 +508,7 @@ describe('clearing a parked session', () => {
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
     expect(within(box.closest('form')!).queryByRole('button', { name: 'Finish' })).toBeNull();
 
-    await userEvent.type(box, 'go ahead with the PUT');
+    await userEvent.say(box, 'go ahead with the PUT');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     // Through the one door every box says through: the driver keeps it on the record, shows it at once in the
@@ -565,7 +565,7 @@ describe('clearing a parked session', () => {
     const card = (await screen.findByText(/I recommend the second/)).closest('section')!;
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
     const field = within(card).getByLabelText('your answer — the same session goes on with these words');
-    await userEvent.type(field, 'the second');
+    await userEvent.say(field, 'the second');
     await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
 
     expect(await within(card).findByText('It stood down: #abc123 is someone else\'s, so it has nothing to go on with.')).toBeInTheDocument();
@@ -642,7 +642,7 @@ describe('clearing a parked session', () => {
     });
     show('p4rk3d00', notify);
 
-    await userEvent.type(await screen.findByLabelText('Message'), 'go ahead with the PUT');
+    await userEvent.say(await screen.findByLabelText('Message'), 'go ahead with the PUT');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     expect(await screen.findByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
@@ -747,7 +747,7 @@ describe('clearing a parked session', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Finish…' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Mark it done as yours' }));
-    await userEvent.type(screen.getByLabelText(/your note on the quest/), 'The write-up is in the shared folder.');
+    await userEvent.say(screen.getByLabelText(/your note on the quest/), 'The write-up is in the shared folder.');
     await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
@@ -780,7 +780,7 @@ describe('clearing a parked session', () => {
   it('carries the reason a decline was given', async () => {
     show('p4rk3d00');
     await userEvent.click(await screen.findByRole('button', { name: 'Decline…' }));
-    await userEvent.type(screen.getByLabelText(/the reason/), 'the chunk API is being replaced');
+    await userEvent.say(screen.getByLabelText(/the reason/), 'the chunk API is being replaced');
     await userEvent.click(screen.getByRole('button', { name: 'Decline with this reason' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {

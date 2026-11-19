@@ -117,7 +117,7 @@ describe('a driven session waiting for review is driven on from its page', () =>
           expect(await within(await screen.findByRole('region', { name: /waiting on you|等你处理/i })).findByRole('button', { name: WORDS[language].review })).toBeInTheDocument();
           expect(within(screen.getByRole('main')).queryByRole('button', { name: WORDS[language].review })).toBeNull();
         }
-        await userEvent.type(box, 'also update the notes');
+        await userEvent.say(box, 'also update the notes');
         await userEvent.click(screen.getByRole('button', { name: WORDS[language].send }));
         expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
           payload: { id: 'c4c4c4c4', text: 'also update the notes' },

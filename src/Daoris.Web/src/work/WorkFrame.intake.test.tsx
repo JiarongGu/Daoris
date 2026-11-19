@@ -68,7 +68,7 @@ describe('a parked intake', () => {
     const notify = vi.fn();
     show('i9n8t7k6', notify);
 
-    await userEvent.type(await screen.findByLabelText('Message'), 'the engine owns it');
+    await userEvent.say(await screen.findByLabelText('Message'), 'the engine owns it');
     await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_POST', { payload: { ask: '0fda18', text: 'the engine owns it' } }));
@@ -84,7 +84,7 @@ describe('a parked intake', () => {
     const notify = vi.fn();
     show('i9n8t7k6', notify);
 
-    await userEvent.type(await screen.findByLabelText('Message'), 'a very long answer');
+    await userEvent.say(await screen.findByLabelText('Message'), 'a very long answer');
     await userEvent.click(screen.getByRole('button', { name: 'Post on the ask' }));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), 'error'));
