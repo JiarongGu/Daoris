@@ -66,8 +66,15 @@ public static class HomePurgeCommand
 
         if (Running(home) is { } why) return Refused(why, output);
 
-        using var lease = HomeLease.TryAcquire(home, LeaseKind.Verb, out var holder, "home purge --history");
-        if (lease is null) return Refused($"{home} is held by {holder?.Named ?? "another process"}.", output);
+        // The host already holds the home for this verb when it runs as a terminal command; a test calling the door in-process does not.
+        HomeLease? lease = null;
+        if (!OwnLease(home))
+        {
+            lease = HomeLease.TryAcquire(home, LeaseKind.Verb, out var holder, "home purge --history");
+            if (lease is null) return Refused($"{home} is held by {holder?.Named ?? "another process"}.", output);
+        }
+
+        using var held = lease;
 
         var sessions = LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), CancellationToken.None).GetAwaiter().GetResult();
         if (sessions.Problem is not null || sessions.Sessions.Count > 0)
@@ -109,10 +116,14 @@ public static class HomePurgeCommand
         return 1;
     }
 
+    /// <summary>Whether the home's lease is this verb's own, which the host took for it before the door ran.</summary>
+    private static bool OwnLease(string home) =>
+        HomeLease.HeldHere(home) && HomeLease.HeldBy(home) is { Kind: LeaseKind.Verb, What: { } what } && what.Contains("home purge", StringComparison.Ordinal);
+
     /// <summary>What holds the home now, in a sentence, or null where nothing of Daoris runs on it.</summary>
     private static string? Running(string home)
     {
-        if (HomeLease.HeldBy(home) is { } holder) return $"{home} is held by {holder.Named}.";
+        if (HomeLease.HeldBy(home) is { } holder && !OwnLease(home)) return $"{home} is held by {holder.Named}.";
         return RunningAddress.Read(home) is { } entry && RunningService.Lives(entry.Pid, entry.Started)
             ? $"Daoris's service runs on {home} (process {entry.Pid.ToString(CultureInfo.InvariantCulture)})."
             : null;

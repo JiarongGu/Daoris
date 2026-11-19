@@ -14472,3 +14472,15 @@ installed window is not yet seen.
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~PluginInterfacesTests"`: 41
   passed. Left: a plugin manifest's change does not reach the driver classes that read it (`[Reaches]` takes only folders the
   test project compiles against); REACHPLUGIN1.
+
+## 2026-11-19 — `daoris home purge --history --yes` refused on its own lease (CLEANSTART1)
+
+- **Seen:** on the installed f954387020, with Daoris closed, the purge refused every time: "held by a terminal's `daoris home
+  purge` (pid N, since now)", N its own process.
+- **Cause:** the host takes the home's lease for a mutating verb before the verb's door runs (`HomeLease.ForVerb`,
+  `daoris home purge`); the purge's door then judged that lease another holder (`Running`, its own `TryAcquire`). Its tests call
+  the door in-process, where no host lease is taken (92aff33a07, 37aaa25f3c).
+- **Fix:** a verb lease held by this process naming `home purge` is the purge's own (`OwnLease`): `Running` passes it and the door
+  takes no second lease.
+- **Verify:** `HomePurgeEdgeTests.The_lease_the_host_took_for_the_purge_is_its_own` red before, green after; the 19 `HomePurge`
+  tests; the fixed build purged the install's home (31 paths, 2.44 GB; 21,493 rows of 55 tables), its configuration kept.
