@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// `daoris update`, the terminal's door to an install's update: what is staged, what holds for it and how the last swap ended; and
-/// <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c>, written to <c>$DAORIS_HOME/update.json</c> as the banner's buttons write it.
+/// <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c>, written to <c>$DAORIS_HOME/update.json</c> as the banner's buttons write it; and
+/// <c>--fetch</c>, which reads Daoris's own releases and stages the newest one beside the install (<see cref="UpdateFetch"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>The install is the home's</b>: the folder above a home that is its <c>data</c>. A home named for itself — a
@@ -21,24 +22,29 @@ public static class UpdateCommand
 {
     public const string Usage =
         "usage: daoris update [--install <folder>]                 what is staged, what holds for it, the last swap\n"
-        + "       daoris update --when-idle|--now|--cancel [--install <folder>]";
+        + "       daoris update --when-idle|--now|--cancel [--install <folder>]\n"
+        + "       daoris update --fetch [--install <folder>]              stage Daoris's newest published release beside the install";
 
     /// <param name="home">The Daoris home, where the request is written.</param>
     /// <param name="log">This host's machine log: a word said here is a line, as the screen's is.</param>
     /// <param name="session">The terminal's <c>DAORIS_SESSION_ID</c>: a session's reads, and its verb is refused as the person's.</param>
     /// <param name="said">Everything the door said, for the caller to print.</param>
-    public static int Run(string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said)
+    /// <param name="fetch">How <c>--fetch</c> reaches the releases: the network and this machine's build, unless a test names its own.</param>
+    public static int Run(
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, out string said, ReleaseFetch? fetch = null)
     {
         var output = new StringBuilder();
-        var code = Run(args, home, clock, log, session, output);
+        var code = Run(args, home, clock, log, session, output, fetch);
         said = output.ToString();
         return code;
     }
 
-    private static int Run(string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output)
+    private static int Run(
+        string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch)
     {
         string? mode = null;
         string? install = null;
+        var fetching = false;
         for (var at = 0; at < args.Length; at++)
         {
             var word = args[at];
@@ -49,9 +55,15 @@ public static class UpdateCommand
                 "--cancel" => UpdateMode.NotNow,
                 _ => null,
             };
-            if (verb is not null && mode is null)
+            if (verb is not null && mode is null && !fetching)
             {
                 mode = verb;
+                continue;
+            }
+
+            if (word == "--fetch" && mode is null && !fetching)
+            {
+                fetching = true;
                 continue;
             }
 
@@ -61,14 +73,16 @@ public static class UpdateCommand
                 continue;
             }
 
-            output.AppendLine(verb is not null
-                ? "update: one of --when-idle, --now or --cancel, not two."
+            output.AppendLine(verb is not null || word == "--fetch"
+                ? "update: one of --when-idle, --now, --cancel or --fetch, not two."
                 : $"update: `{word}` is not a word this door answers.");
             output.AppendLine(Usage);
             return 2;
         }
 
         install ??= InstallUpdate.InstallOf(home);
+        if (fetching) return Fetch(install, home, log, session, output, fetch);
+
         var manifest = install is null ? null : StagedBuild.Read(install, out _);
 
         if (mode is null)
@@ -117,6 +131,27 @@ public static class UpdateCommand
         }
 
         return 0;
+    }
+
+    private static int Fetch(string? install, string home, MachineLog? log, string? session, StringBuilder output, ReleaseFetch? fetch)
+    {
+        if (session is { Length: > 0 })
+        {
+            output.AppendLine($"update: {DriverChoicesCommand.SessionsTerminal}");
+            return 1;
+        }
+
+        if (install is null)
+        {
+            output.AppendLine($"update: {home} is not an install's data folder, so there is no install beside it to stage a release for; "
+                + "name one with --install <folder>.");
+            return 2;
+        }
+
+        var (code, said) = UpdateFetch.RunAsync(install, UpdateRefusal.Running, CancellationToken.None, fetch).GetAwaiter().GetResult();
+        output.Append(said);
+        if (code == 0 && StagedBuild.Read(install, out _) is { } staged) log?.Info("update.fetched", ("version", staged.Version), ("build", staged.Id));
+        return code;
     }
 
     private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
