@@ -1275,7 +1275,7 @@ test('the roll-up by repository: quests, first passes of those done, carry-ons a
     },
     {
       repository: 'game', quests: 3, done: 0, declined: 1,
-      firstPass: { yes: 0, of: 0, unknown: 0 }, carryOn: { quests: 1, of: 2, carryOns: 2 }, answers: { total: 0, over: 1, unknown: 2 },
+      firstPass: { yes: 0, of: 0, unknown: 0 }, carryOn: { quests: 1, of: 2, carryOns: 2 }, answers: { total: 0, over: 2, unknown: 1 },
     },
   ]);
 });
@@ -1286,7 +1286,7 @@ test('the roll-up by agent and account, each quest under its first working sessi
   assert.deepEqual(byAgent.map((each) => [each.agent, each.account, each.quests, each.done, each.firstPass, each.carryOn, each.answers]), [
     ['claude-code', 'work', 2, 2, { yes: 1, of: 2, unknown: 0 }, { quests: 1, of: 2, carryOns: 1 }, { total: 1, over: 2, unknown: 0 }],
     ['claude-code', 'personal', 1, 1, { yes: 0, of: 1, unknown: 0 }, { quests: 0, of: 1, carryOns: 0 }, { total: 0, over: 0, unknown: 1 }],
-    ['claude-code-acp', 'work', 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 0, of: 1, carryOns: 0 }, { total: 0, over: 0, unknown: 1 }],
+    ['claude-code-acp', 'work', 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 0, of: 1, carryOns: 0 }, { total: 0, over: 1, unknown: 0 }],
     ['codex-acp', '(own sign-in)', 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 1, of: 1, carryOns: 2 }, { total: 0, over: 0, unknown: 1 }],
     ['(no session)', null, 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 0, of: 0, carryOns: 0 }, { total: 0, over: 1, unknown: 0 }],
   ]);
@@ -1420,7 +1420,7 @@ test('the text report says each quest\'s outcome, its sessions and what is not k
     assert.match(text, /^ {22}not known: closed — the person's yes is its last moment/m);
     assert.match(text, /^ {2}q-strikes {3}game {4}taken · 3 sessions · 2 carry-ons · 2 strikes$/m);
     assert.match(text, /^ {22}not known: parks — the period read holds no start for s4 .*; answers — asked by a repository/m);
-    assert.match(text, /^ {2}q-declined {2}game {4}declined in 45m 0s by its session · 1 session$/m);
+    assert.match(text, /^ {2}q-declined {2}game {4}declined in 45m 0s by its session · 1 session · answers 0$/m);
     assert.match(text, /q-held {6}engine {2}done in 2h 0m · not first pass · 1 departure, held for the person's yes · 2 sessions \(1 a teammate's\) · parked 1$/m);
     assert.match(text, /^ {2}q-quiet {5}game {4}open · 0 sessions · answers 0$/m);
     assert.match(text, new RegExp([
@@ -1428,7 +1428,7 @@ test('the text report says each quest\'s outcome, its sessions and what is not k
       '    engine  3 quests · done 3 · first pass 1 of 3 done · carried on 1 of 3 run here \\(1 carry-on\\)',
       ' · answers 1 over 2 quests \\(0\\.5 a quest\\), 1 not kept\\n',
       '    game    3 quests · done 0 · declined 1 · first pass: none done · carried on 1 of 2 run here \\(2 carry-ons\\)',
-      ' · answers 0 over 1 quest \\(0 a quest\\), 2 not kept$',
+      ' · answers 0 over 2 quests \\(0 a quest\\), 1 not kept$',
     ].join(''), 'm'));
     assert.match(text, /^ {2}by agent and account, each quest under its first session\n {4}claude-code · work {9}2 quests · done 2 · first pass 1 of 2 done/m);
     assert.match(text, /^ {4}codex-acp · \(own sign-in\) {2}1 quest · done 0 · first pass: none done · carried on 1 of 1 run here \(2 carry-ons\) · answers not kept \(1\)$/m);

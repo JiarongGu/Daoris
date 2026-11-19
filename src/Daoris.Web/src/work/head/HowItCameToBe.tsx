@@ -256,7 +256,6 @@ function AskStep({ ask, doors }: { ask: TraceAskLink; doors: Doors }) {
       {ask.words ? (
         <Part title={t('work.trace.ask.words')}>
           {ask.words.map((word, index) => <Said key={index} meta={`${at(word.at)} · ${given(t, word)}`}>{word.text}</Said>)}
-          {ask.wordsKeptFrom && <p className="m-0 text-small text-ink-soft">{t('work.trace.ask.wordsKeptFrom', { at: at(ask.wordsKeptFrom) })}</p>}
         </Part>
       ) : (
         <Part title={t('work.trace.ask.words')}>
