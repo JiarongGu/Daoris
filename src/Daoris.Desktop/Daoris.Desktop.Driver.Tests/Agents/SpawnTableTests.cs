@@ -20,7 +20,6 @@ public sealed class SpawnTableTests
 
     private static readonly string[] Stream = ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
 
-    /// <summary>What the native door runs every recipe with ahead of <c>-p</c>: its prompt and tools rendered fresh at every request (TOOLSCHEMA1).</summary>
     private static readonly string[] Fresh = ["--system-prompt-snapshot", "off"];
 
     /// <summary>Door, configured command, program, arguments, stdin open, and the recipe's own variable (name=value).</summary>

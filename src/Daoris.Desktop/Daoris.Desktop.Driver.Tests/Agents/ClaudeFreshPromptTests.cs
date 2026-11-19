@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// Both of Claude Code's doors run a session with its system prompt and tools rendered from what its servers serve now at every request,
-/// never the record of its first (TOOLSCHEMA1, D326): the native door's flag ahead of <c>-p</c> on every recipe, so the layer's program
+/// never the record of its first: the native door's flag ahead of <c>-p</c> on every recipe, so the layer's program
 /// carries it too, and the protocol door's preset with <c>snapshot: false</c> on every open and resume. <c>ClaudeResumedToolsProcessTests</c>
 /// measures it on the real program.
 /// </summary>

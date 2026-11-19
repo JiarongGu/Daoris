@@ -24,10 +24,8 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// <summary>Claude Code's seam, for every door that runs its program (<see cref="ISpawn.PointAtClaude"/>): the Agent SDK told which <c>claude</c> to run.</summary>
     internal static void PointAt(ProcessStartInfo info, string managedClaude) => ClaudeAcp.PointAtClaude(info, managedClaude);
 
-    /// <summary>
-    /// Its own structured output, checked against the binary:
-    /// <c>stream-json</c> needs <c>--verbose</c> beside it, and partial messages let the words stream as they are written.
-    /// </summary>
+    /// <summary>Its own structured output, checked against the binary: <c>stream-json</c> needs <c>--verbose</c> beside it, and partial
+    /// messages let the words stream as they are written.</summary>
     private static readonly string[] StreamJsonOut = ["--output-format", "stream-json", "--verbose", "--include-partial-messages"];
 
     /// <summary>
@@ -44,14 +42,7 @@ internal sealed class ClaudeCodeSpawn : ISpawn, IServerHanding
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront = new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
-    /// <summary>
-    /// 🔴 Read in the binary (Claude Code 2.1.284, 2.1.322, 2.1.325) and measured (<c>ClaudeResumedToolsProcessTests</c>): left on, a
-    /// conversation's system prompt and tools are recorded at its first request (<c>prompt_snapshot</c>) and that record is sent at every
-    /// later request and resume until a compaction, so a resumed session gets a tool name its servers added but never an existing tool's new
-    /// parameters, nor rules or memory that changed (TOOLSCHEMA1, D326). Off, each request renders them from what its servers serve now. Ahead
-    /// of <c>-p</c>, so a driven run on the layer, which keeps the arguments before it as its program, carries it too. The protocol door's
-    /// twin is the preset's <c>snapshot</c> (<see cref="ClaudeProtocolDialect"/>).
-    /// </summary>
+    /// <summary>🔴 Its record of a conversation's prompt and tools, off: a resume gets what its servers serve now. Before <c>-p</c>, for the layer.</summary>
     internal static readonly IReadOnlyList<string> FreshPrompt = ["--system-prompt-snapshot", "off"];
 
     public ProcessRecipe Start(SpawnRequest request)

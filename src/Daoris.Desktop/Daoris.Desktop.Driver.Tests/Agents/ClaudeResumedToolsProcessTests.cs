@@ -8,7 +8,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A resumed Claude Code session is sent the tools its servers serve now (TOOLSCHEMA1): the real <c>claude</c> on the path, started and
+/// A resumed Claude Code session is sent the tools its servers serve now: the real <c>claude</c> on the path, started and
 /// resumed by the native door's own recipes, a stand-in server whose one tool gains a parameter between the start and the resume, and a
 /// keyless stand-in model on loopback that keeps the tools each request carried. Claude Code records the system prompt and the tools in
 /// the conversation (<c>prompt_snapshot</c>) and, left to itself, sends that record again at every resume, a new tool name added and an

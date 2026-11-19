@@ -6,12 +6,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class ClaudeProtocolDialect : IProtocolDialect
 {
-    /// <summary>
-    /// The rules Daoris composed as the options' <c>settings</c>, a file read against the session's cwd (claude-agent-acp
+    /// <summary>The rules Daoris composed as the options' <c>settings</c>, a file read against the session's cwd (claude-agent-acp
     /// 0.79.0, <c>dist/acp-agent.js</c>, l. 5934–6045 and 6003–6010), and the harness plugins a spawn composed as its
     /// <c>plugins</c>, each <c>{ type: "local", path }</c>, which the SDK passes to Claude Code as one <c>--plugin-dir</c> each
-    /// (claude-agent-acp 0.91.0, l. 8115–8223; the SDK 0.3.300, <c>sdk.d.ts</c>, l. 2036–2049).
-    /// </summary>
+    /// (claude-agent-acp 0.91.0, l. 8115–8223; the SDK 0.3.300, <c>sdk.d.ts</c>, l. 2036–2049).</summary>
     public object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins, OwnTools? own)
     {
         var options = new Dictionary<string, object?> { ["settings"] = settingsFile };
@@ -32,12 +30,7 @@ internal sealed class ClaudeProtocolDialect : IProtocolDialect
 
     private static object[] Plugins(IReadOnlyList<string> plugins) => [.. plugins.Select(path => new { type = "local", path })];
 
-    /// <summary>
-    /// The preset every session runs on, its system prompt and tools rendered from what its servers serve now at every request, never the
-    /// record of its first (<c>snapshot: false</c>, the Agent SDK 0.3.322's <c>systemPrompt.snapshot</c>): the native door's
-    /// <see cref="ClaudeCodeSpawn.FreshPrompt"/>, said in the SDK's words (TOOLSCHEMA1, D326). The person's memory is appended where it is
-    /// handed.
-    /// </summary>
+    /// <summary>The preset, its record off as <see cref="ClaudeCodeSpawn.FreshPrompt"/> is, and the person's memory appended where handed.</summary>
     private static Dictionary<string, object> Preset(string? memory)
     {
         var preset = new Dictionary<string, object> { ["type"] = "preset", ["preset"] = "claude_code", ["snapshot"] = false };
@@ -47,8 +40,7 @@ internal sealed class ClaudeProtocolDialect : IProtocolDialect
 
     private static object Own(Dictionary<string, object?> options, OwnTools? own)
     {
-        // The client's options are spread after the adapter's own, so this preset replaces its own whole, which is the bare preset when no
-        // client prompt is sent; a null extra argument is a bare flag.
+        // The client's options are spread after the adapter's own, so this preset replaces its own whole; a null extra argument is a bare flag.
         options["systemPrompt"] = Preset(own is not null ? ClaudeOwnMemory.Text(own) : null);
 
         if (own is not null && ClaudeOwnChrome.On(own))
