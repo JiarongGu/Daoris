@@ -25,7 +25,7 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
         ["proposal"] = new JsonArray(new JsonObject { ["repository"] = "engine", ["score"] = 3, ["matched"] = new JsonArray("glow") }),
         ["quests"] = new JsonArray("q1"), ["intake"] = null, ["deletable"] = false,
         ["words"] = new JsonArray(new JsonObject { ["kind"] = "asked", ["text"] = "the person's own words", ["at"] = "2026-10-19T08:00:00+00:00" }),
-        ["wordsKeptFrom"] = null, ["goAheads"] = new JsonArray(), ["reviewChoices"] = null, ["reviewProposals"] = null,
+        ["goAheads"] = new JsonArray(), ["reviewChoices"] = null, ["reviewProposals"] = null,
         ["workflowChoices"] = null, ["workflowProposals"] = null, ["short"] = null,
         ["throughWords"] = new JsonArray(new JsonObject { ["words"] = "please do without my accept", ["at"] = "2026-10-19T08:30:00+00:00" }),
         ["planQuestions"] = new JsonArray(new JsonObject { ["key"] = "contract:viewers", ["kind"] = "open", ["text"] = "Viewers or admins?", ["yes"] = "Both.", ["blocks"] = "The web app.", ["default"] = "Admins." }),
@@ -98,7 +98,6 @@ public sealed class AsksStateSliceTests : DriverModuleBridge
     {
         var hostile = Ask("a1", "default");
         hostile["token"] = "sk-hostile-top";
-        hostile["wordsKeptFrom"] = "2026-10-01T00:00:00+00:00";
         _service.Asks = QuestsStateSliceTests.List(hostile);
         var (_, slice) = await UpAsync();
 

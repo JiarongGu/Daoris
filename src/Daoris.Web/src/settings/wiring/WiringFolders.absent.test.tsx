@@ -5,7 +5,7 @@ import type { SystemWiring, WiringFolder } from '../../data/wiring';
 import { WiringFolders } from './WiringFolders';
 
 const folder = (over: Partial<WiringFolder>): WiringFolder => ({
-  id: 'app', path: 'D:/somewhere/app', pathWhy: null, present: true, bytes: 1024, bytesWhy: null, measured: null, old: [], ...over,
+  id: 'app', path: 'D:/somewhere/app', pathWhy: null, present: true, bytes: 1024, bytesWhy: null, measured: null, ...over,
 } as WiringFolder);
 
 const draw = (folders: WiringFolder[]) => render(

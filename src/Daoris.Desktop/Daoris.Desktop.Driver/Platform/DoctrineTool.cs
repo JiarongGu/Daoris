@@ -11,7 +11,7 @@ public static class DoctrineTool
 
     /// <summary>The bundle the install of a home carries, or null where its file is not there.</summary>
     public static string? OfHome(string home) =>
-        Existing(Path.Combine(DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, DaorisHome.InstallApp, "cli", Bundle));
+        Existing(Path.Combine(DaorisHome.FolderOf(Path.GetFullPath(home)), DaorisHome.InstallApp, "cli", Bundle));
 
     /// <summary>The bundle beside the desktop's program (<c>app/daoris-driver/</c>), or null where its file is not there.</summary>
     public static string? BesideProgram(string programFolder) => Existing(Path.Combine(programFolder, "..", "cli", Bundle));

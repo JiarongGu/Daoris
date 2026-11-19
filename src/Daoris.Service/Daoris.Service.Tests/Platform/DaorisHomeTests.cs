@@ -46,42 +46,27 @@ public sealed class DaorisHomeTests
     /// <c>A_home_names_its_folder</c>, whose summary says each column, row for row; the CLI's <c>home.test.ts</c> holds both.
     /// </summary>
     [Theory]
-    [InlineData("install", "data", "", "driver", "", "data/driver.json")]
-    [InlineData("install", "", "", "driver", "", "data/driver.json")]
-    [InlineData("install", "data", "", "keys", "", "profiles/keys.json")]
-    [InlineData("install", "data", "data/keys.json", "keys", "", "data/keys.json")]
-    [InlineData("install", "", "data/keys.json", "keys", "", "data/keys.json")]
-    [InlineData("install", "data", "data/keys.json,profiles/keys.json", "keys", "", "refused")]
-    [InlineData("install", "data", "data/logs/desktop.log", "logs", "", "data/logs")]
-    [InlineData("install", "data", "", "logs", "", "logs")]
-    [InlineData("install", "data", "data/chromium/", "window", "", "data")]
-    [InlineData("install", "data", "", "window", "", "profiles/window")]
-    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/work", "data/harnesses/claude-code/work")]
-    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/new", "profiles/agents/claude-code/new")]
-    [InlineData("install", "data", "", "home-lease", "", "run/home.lease")]
-    [InlineData("root", "", "", "driver", "", "data/driver.json")]
-    [InlineData("root", "", "driver.json", "driver", "", "driver.json")]
-    [InlineData("root", "", "", "running", "", "run/running.json")]
-    [InlineData("root", "", "", "logs", "", "logs")]
-    [InlineData("root", "data", "", "driver", "", "data/data/driver.json")]
-    public void A_home_names_its_folder(string shape, string homeAs, string present, string name, string asked, string expected)
+    [InlineData("install", "data", "driver", "", "data/driver.json")]
+    [InlineData("install", "", "driver", "", "data/driver.json")]
+    [InlineData("install", "data", "keys", "", "profiles/keys.json")]
+    [InlineData("install", "data", "logs", "", "logs")]
+    [InlineData("install", "data", "window", "", "profiles/window")]
+    [InlineData("install", "data", "agent-homes", "claude-code/new", "profiles/agents/claude-code/new")]
+    [InlineData("install", "data", "home-lease", "", "run/home.lease")]
+    [InlineData("root", "", "driver", "", "data/driver.json")]
+    [InlineData("root", "", "running", "", "run/running.json")]
+    [InlineData("root", "", "logs", "", "logs")]
+    [InlineData("root", "data", "driver", "", "data/data/driver.json")]
+    public void A_home_names_its_folder(string shape, string homeAs, string name, string asked, string expected)
     {
         var root = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(root);
         try
         {
             if (shape == "install") File.WriteAllText(Path.Combine(root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
-            Lay(root, present);
             var home = homeAs.Length == 0 ? root : Path.Combine(root, homeAs);
             var entry = HomeEntry.Named(name)!;
             var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (expected == "refused")
-            {
-                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
-                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
-                return;
-            }
-
             Assert.Equal(
                 Path.GetFullPath(Path.Combine([root, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)])),
                 Path.GetFullPath(DaorisHome.Entry(home, entry, asking)));
@@ -93,19 +78,16 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// The home a file of it is in: the driver's <c>A_home_is_found_from_its_entry_at_either_place</c>, row for row; the CLI's
+    /// The home a file of it is in: the driver's <c>A_home_is_found_from_its_entry</c>, row for row; the CLI's
     /// <c>home.test.ts</c> holds both.
     /// </summary>
     [Theory]
     [InlineData("install", "data/driver.json", "driver", "data")]
     [InlineData("install", "data/harnesses.json", "harnesses", "data")]
     [InlineData("root", "data/driver.json", "driver", "")]
-    [InlineData("root", "driver.json", "driver", "")]
     [InlineData("install", "profiles/browser/engine", "browser-engine", "data")]
-    [InlineData("install", "data/browser/engine", "browser-engine", "data")]
     [InlineData("root", "profiles/browser/engine", "browser-engine", "")]
-    [InlineData("root", "browser/engine", "browser-engine", "")]
-    public void A_home_is_found_from_its_entry_at_either_place(string shape, string file, string name, string expected)
+    public void A_home_is_found_from_its_entry(string shape, string file, string name, string expected)
     {
         var root = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(root);
@@ -134,92 +116,28 @@ public sealed class DaorisHomeTests
         });
     }
 
-    /// <summary>A row's disk, as the driver's rows lay it: <c>{}</c> for JSON and a letter otherwise, what follows <c>=</c>, a trailing <c>/</c> a folder.</summary>
-    private static void Lay(string root, string present)
-    {
-        foreach (var item in present.Split(',', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var (file, text) = item.IndexOf('=') is var at and >= 0
-                ? (item[..at], item[(at + 1)..])
-                : (item, item.EndsWith(".json", StringComparison.Ordinal) ? "{}" : "x");
-            var path = Path.Combine([root, .. file.Split('/', StringSplitOptions.RemoveEmptyEntries)]);
-            if (file.EndsWith('/'))
-            {
-                Directory.CreateDirectory(path);
-                continue;
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, text);
-        }
-    }
-
     /// <summary>
-    /// 🔴 The driver's
-    /// <c>An_entry_is_where_it_is</c>, whose summary says each column, row for row. The CLI's <c>home.test.ts</c> holds these
-    /// rows and the driver's to its own, cell for cell.
+    /// 🔴 The driver's <c>An_entry_is_where_it_is</c>, whose summary says each column, row for row. The CLI's <c>home.test.ts</c>
+    /// holds these rows and the driver's to its own, cell for cell.
     /// </summary>
     [Theory]
-    [InlineData("a.json", "a.json", "", "", "", "a.json")]
-    [InlineData("a.json", "a.json", "", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "data/a.json", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json", "", "refused")]
-    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json=torn", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json=torn,data/a.json", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json=torn", "", "a.json")]
-    [InlineData("data/k.db", "k.db", "", "k.db,data/k.db=", "", "k.db")]
-    [InlineData("data/s", "s", "", "s/x.log", "x.log", "s/x.log")]
-    [InlineData("data/s", "s", "", "s/x.log", "y.log", "s/y.log")]
-    [InlineData("data/s", "s", "", "s/x.log,data/s/", "y.log", "s/y.log")]
-    [InlineData("data/s", "s", "", "s/x.log,data/s/z.log", "", "refused")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one", "t/a/one")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/two", "work/t/a/two")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/one/HEAD", "a/one", "refused")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one/notes.md", "t/a/one/notes.md")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a", "t/a")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/two/HEAD", "a", "work/t/a")]
-    [InlineData("work/f/*", "s/*/files", "", "s/one/files/a.png", "one/b.png", "s/one/files/b.png")]
-    [InlineData("work/f/*", "s/*/files", "", "", "one", "work/f/one")]
-    [InlineData("run/s/*.pid", "s/*.pid", "", "s/one.pid", "one", "s/one.pid")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/proposals/p.json", "", "work/rooms/help")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md", "", "help")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md,work/rooms/help/notes.md", "", "help")]
-    [InlineData("profiles/window", "", "chromium|config", "config/window-state.json", "", "")]
-    [InlineData("profiles/window", "", "chromium|config", "", "", "profiles/window")]
-    public void An_entry_is_where_it_is(string next, string old, string holds, string present, string asked, string expected)
+    [InlineData("data/a.json", "", "", "data/a.json")]
+    [InlineData("data/s", "", "x.log", "data/s/x.log")]
+    [InlineData("work/t/*/*", "", "a/one", "work/t/a/one")]
+    [InlineData("work/t/*/*", "", "a/one/notes.md", "work/t/a/one/notes.md")]
+    [InlineData("work/t/*/*", "", "a", "work/t/a")]
+    [InlineData("work/t/*/*", "", "", "work/t")]
+    [InlineData("work/f/*", "", "one/b.png", "work/f/one/b.png")]
+    [InlineData("run/s/*.pid", "", "one", "run/s/one.pid")]
+    [InlineData("work/rooms/help", "CLAUDE.md", "", "work/rooms/help")]
+    public void An_entry_is_where_it_is(string next, string holds, string asked, string expected)
     {
         var home = Path.Combine(Path.GetTempPath(), "daoris-home-tests", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(home);
         try
         {
-            foreach (var item in present.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var (file, text) = item.IndexOf('=') is var at and >= 0
-                    ? (item[..at], item[(at + 1)..])
-                    : (item, item.EndsWith(".json", StringComparison.Ordinal) ? "{}" : "x");
-                var path = Path.Combine([home, .. file.Split('/', StringSplitOptions.RemoveEmptyEntries)]);
-                if (file.EndsWith('/'))
-                {
-                    Directory.CreateDirectory(path);
-                    continue;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                File.WriteAllText(path, text);
-            }
-
-            var entry = new HomeEntry("probe", HomeCategory.Data, next, old, holds.Split('|', StringSplitOptions.RemoveEmptyEntries));
+            var entry = new HomeEntry("probe", HomeCategory.Data, next, holds.Split('|', StringSplitOptions.RemoveEmptyEntries));
             var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (expected == "refused")
-            {
-                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
-                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
-                Assert.Equal(string.Format(DaorisHome.Twice, "probe", refusal.New, refusal.Old), refusal.Message);
-                return;
-            }
-
             Assert.Equal(
                 Path.Combine([home, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)]),
                 DaorisHome.Entry(home, entry, asking));
@@ -228,23 +146,6 @@ public sealed class DaorisHomeTests
         {
             Directory.Delete(home, recursive: true);
         }
-    }
-
-    /// <summary>A list of an entry's items reads both places: the driver's <c>A_list_reads_both_places</c>, row for row.</summary>
-    [Theory]
-    [InlineData("a.json", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "data/a.json|a.json")]
-    [InlineData("work/t/*/*", "t/*/*", "", "work/t|t")]
-    [InlineData("work/t/*/*", "t/*/*", "a", "work/t/a|t/a")]
-    [InlineData("work/f/*", "s/*/files", "one", "work/f/one|s/one/files")]
-    [InlineData("run/s/*.pid", "s/*.pid", "", "run/s|s")]
-    public void A_list_reads_both_places(string next, string old, string asked, string expected)
-    {
-        var home = Path.Combine(AppContext.BaseDirectory, "places");
-        var entry = new HomeEntry("probe", HomeCategory.Data, next, old);
-        Assert.Equal(
-            expected.Split('|').Select(place => Path.Combine([home, .. place.Split('/')])),
-            DaorisHome.Places(home, entry, asked.Split('/', StringSplitOptions.RemoveEmptyEntries)));
     }
 
     /// <summary>The table, one entry each: a name says one entry, and an entry is found by it.</summary>
@@ -278,16 +179,6 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.Notices, HomeEntry.Named("notices"));
         Assert.Equal((HomeCategory.Data, "data/notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New));
-    }
-
-    /// <summary>The standing confirmation, a data file the service's table names as its twins do, and never reads.</summary>
-    [Fact]
-    public void The_standing_confirmation_is_a_data_file()
-    {
-        Assert.Same(HomeEntry.StandingConfirmation, HomeEntry.Named("standing-confirmation"));
-        Assert.Equal(
-            (HomeCategory.Data, "data/standing-confirmation.json"),
-            (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New));
     }
 
     /// <summary>What each agent last offered, a data file the service's table names as its twins do, and never reads.</summary>

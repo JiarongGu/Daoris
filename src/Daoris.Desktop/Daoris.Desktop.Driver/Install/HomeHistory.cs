@@ -18,8 +18,8 @@ public static class HomeHistory
     [
         HomeEntry.Reads, HomeEntry.RuleProposals, HomeEntry.LinesMoved, HomeEntry.OverlapsTold,
         HomeEntry.Abandoned, HomeEntry.Sessions, HomeEntry.Helpers, HomeEntry.Partners, HomeEntry.Checks, HomeEntry.Handed,
-        HomeEntry.HelpProposals, HomeEntry.OpinionGates, HomeEntry.OpinionDues, HomeEntry.Brainstorms, HomeEntry.Keeping, HomeEntry.Notices,
-        HomeEntry.PipeWaiting, HomeEntry.PipeSent, HomeEntry.StewardDesk, HomeEntry.Salvage, HomeEntry.FilesFound, HomeEntry.Intake,
+        HomeEntry.OpinionGates, HomeEntry.OpinionDues, HomeEntry.Brainstorms, HomeEntry.Keeping, HomeEntry.Notices,
+        HomeEntry.PipeWaiting, HomeEntry.PipeSent, HomeEntry.StewardDesk, HomeEntry.FilesFound, HomeEntry.Intake,
         HomeEntry.OpinionPackets, HomeEntry.QuestFiles, HomeEntry.AskFiles, HomeEntry.SessionFiles, HomeEntry.BrainstormRooms,
     ];
 
@@ -33,8 +33,8 @@ public static class HomeHistory
         HomeEntry.Files, HomeEntry.FilesAsks, HomeEntry.Tools, HomeEntry.PluginState, HomeEntry.Plugins, HomeEntry.PluginApprovals,
         HomeEntry.Usage, HomeEntry.RegistryFollowed, HomeEntry.Update, HomeEntry.Knowledge, HomeEntry.DesktopDb, HomeEntry.Memory,
         HomeEntry.Setup, HomeEntry.Workflows, HomeEntry.ConfiguredAccess, HomeEntry.BrowserSettings, HomeEntry.BrowserFavorites,
-        HomeEntry.HomeId, HomeEntry.UsageHistory, HomeEntry.GitIdentities, HomeEntry.StandingConfirmation, HomeEntry.AgentOffers,
-        HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.Migration, HomeEntry.TerminalActs, HomeEntry.UxTrail,
+        HomeEntry.HomeId, HomeEntry.UsageHistory, HomeEntry.GitIdentities, HomeEntry.AgentOffers,
+        HomeEntry.ActFiles, HomeEntry.LastBuild, HomeEntry.TerminalActs, HomeEntry.UxTrail,
         HomeEntry.Keys, HomeEntry.Remotes, HomeEntry.AgentHomes, HomeEntry.BrowserEngine, HomeEntry.BrowserEdge, HomeEntry.EdgeCookies,
         HomeEntry.GitKeys, HomeEntry.GitTokens, HomeEntry.PluginPrivate, HomeEntry.GitSshConfig, HomeEntry.GitKnownHosts, HomeEntry.GitConfig,
         HomeEntry.Window, HomeEntry.DepsSecret, HomeEntry.Landings, HomeEntry.SessionBranches, HomeEntry.PlaceReceipts,
@@ -110,12 +110,4 @@ public static class HomeHistory
 
     /// <summary>The prefix of the knowledge index's own tables, which stay.</summary>
     public const string IndexPrefix = "index_";
-
-    /// <summary>
-    /// Whether a child of a history folder stays where it is: the older layout kept the requests folder and the processes' <c>.pid</c> markers
-    /// inside <c>sessions/</c>, which are run state and not a session's record.
-    /// </summary>
-    public static bool Spared(string parentName, string childName, bool folder) =>
-        string.Equals(parentName, "sessions", StringComparison.OrdinalIgnoreCase)
-        && (folder ? string.Equals(childName, "requests", StringComparison.OrdinalIgnoreCase) : childName.EndsWith(".pid", StringComparison.OrdinalIgnoreCase));
 }

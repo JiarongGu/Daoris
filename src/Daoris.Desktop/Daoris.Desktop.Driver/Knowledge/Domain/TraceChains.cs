@@ -100,7 +100,6 @@ internal static class TraceChains
             Note = ask.Note is { Length: > 0 } note ? note : null,
             Sentence = ask.Words is null ? ask.Sentence : null,
             Words = ask.Words,
-            WordsKeptFrom = ask.Words is null ? null : ask.WordsKeptFrom,
             GoAheads = ask.GoAheads?.Select(goAhead =>
             {
                 var first = goAhead.Asked.MinBy(request => request.At);

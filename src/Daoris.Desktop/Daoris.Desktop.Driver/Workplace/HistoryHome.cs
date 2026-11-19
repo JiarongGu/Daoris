@@ -127,13 +127,13 @@ internal static class HistoryHome
         }
 
         // A session's kept files and its process's marker have places of their own (`work/files/sessions/`,
-        // `run/sessions/`): read there too, where the home keeps them there.
-        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.SessionFiles).Take(1).Where(place => !SamePlace(place, sessions)).SelectMany(Folders))
+        // `run/sessions/`).
+        foreach (var folder in new[] { DaorisHome.Entry(world.Home, HomeEntry.SessionFiles) }.Where(place => !SamePlace(place, sessions)).SelectMany(Folders))
         {
             if (Gone(Path.GetFileName(folder))) Add(folder, folder: true);
         }
 
-        foreach (var file in DaorisHome.Places(world.Home, HomeEntry.SessionPids).Take(1).Where(place => !SamePlace(place, sessions)).SelectMany(Files))
+        foreach (var file in new[] { DaorisHome.Entry(world.Home, HomeEntry.SessionPids) }.Where(place => !SamePlace(place, sessions)).SelectMany(Files))
         {
             if (IdOf(Path.GetFileName(file), SessionHomeFiles.SessionSuffixes) is { } id && Gone(id)) Add(file, folder: false);
         }
@@ -143,13 +143,13 @@ internal static class HistoryHome
             if (IdOf(Path.GetFileName(file), SessionHomeFiles.SpawnSuffixes) is { } id && Gone(id)) Add(file, folder: false);
         }
 
-        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.QuestFiles).SelectMany(Folders))
+        foreach (var folder in Folders(DaorisHome.Entry(world.Home, HomeEntry.QuestFiles)))
         {
             var id = Path.GetFileName(folder);
             if (Plain(id) && !quests.Contains(id)) Add(folder, folder: true);
         }
 
-        foreach (var folder in DaorisHome.Places(world.Home, HomeEntry.AskFiles).SelectMany(Folders))
+        foreach (var folder in Folders(DaorisHome.Entry(world.Home, HomeEntry.AskFiles)))
         {
             var id = Path.GetFileName(folder);
             if (Plain(id) && !asks.Contains(id)) Add(folder, folder: true);

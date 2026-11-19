@@ -65,14 +65,12 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 11. A program the install carries, given no home, takes its install's `data/` as its home. (from D171)
 12. The Daoris folder is found from the home: a folder holding the marker; a `data` folder whose parent holds it; else the home
     itself. Folders "beside the home" (`app/bin/`, plugin offers, the tool list) are read in the Daoris folder. (from D172)
-13. Every home file is an entry of `HomeEntry`: a name, a category, a new place and an old place. The three twins hold the same
-    rows in the same order. A reader asks `DaorisHome.Entry` by name and never joins a home path by hand. (from D172)
-14. An entry is read at its new place where that holds it, else at its old place where that is there, else at its new place.
-    "Holds" is a non-empty file that parses when JSON, a non-empty folder, or one of the entry's named files. (from D172)
-15. An entry held in both places is refused, naming both, for the person to keep one. A list of items reads both places.
-    Asking for a new place makes its category's folder. (from D172)
-16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`, but for an older account's home, which stays
-    at `data/harnesses/<agent>/<account>` (rule 21; the Disk space card's sign-ins row says so). (from D172)
+13. Every home file is an entry of `HomeEntry`: a name, a category, a place and the names it holds, where it is known by them. The
+    three twins hold the same rows in the same order. A reader asks `DaorisHome.Entry` by name and never joins a home path by hand.
+    (from D172, D323)
+14. An entry has one place, and is read there. "Holds" (an entry known by its names) is one of its named files being there. (from D172, D323)
+15. Asking for an entry's place makes its category's folder. A home laid out in an earlier build is purged, not read. (from D172, D323)
+16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`. (from D172, D323)
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
@@ -92,10 +90,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 19. A home has one id, in `data/home.json`, read alike through every path to the folder. (from D171)
 20. A start moves nothing into the home: no `~/.daoris` is moved in, and no entry is moved from one place to another. A
     home whose layout changed is purged, not moved. (from D323)
-21. Agents' account homes, session trees, rooms and kept files are read at the place of their entry that holds them; an
-    account's home at `data/harnesses/<agent>/<account>` is where `data/` holds a sign-in (rule 16's exception). (from D172)
-22. `bin/` is read at `cache/bin/` and at `bin/` under the home (`homeBins`, the table's two places of `bin`). (from D172)
-23. A tree is one under either place of `trees`; new trees open at the new place. (from D172)
+21. Agents' account homes, session trees, rooms and kept files are read at the place of their entry. (from D172, D323)
+22. `bin/` is read at `cache/bin/` under the home. (from D172, D323)
+23. A tree is one under the place of `trees`. (from D172, D323)
 
 **Tools and pins**
 
@@ -249,8 +246,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 
 | Kind | History (moved or emptied) | Configuration (stays) |
 |---|---|---|
-| Entries, whole | `sessions` (events, frames, logs, lineage and `session-files`), `helpers`, `partners`, `checks`, `handed`, `help-proposals`, `rule-proposals`, `brainstorms` and `brainstorm-rooms`, `opinion-gates`, `opinion-dues`, `opinion-packets`, `intake` rooms, `quest-files`, `ask-files`, `lines-moved`, `overlaps-told`, `abandoned`, `salvage`, `keeping`, `notices`, `reads`, `files-found`, `pipe-waiting` and `pipe-sent`, `steward-desk` | everything else in the table: `driver`, `harnesses`, `accounts`, `cooling`, `windows`, `permissions`, `tools`, `plugin-state`, `plugins`, `plugin-approvals`, `registry-followed`, `configured-access`, `browser-settings`, `browser-favorites`, `home-id`, `git-identities`, `agent-offers`, `memory`, `keys`, `remotes`, `agent-homes`, the browser, git and window profiles, `plugin-private`, `deps-secret`, `last-build`, `update`, `migration`, the caches and the `run/` state |
-| Entries kept where unsure | | `files`, `files-asks`, `usage`, `usage-history`, `setup`, `terminal-acts`, `ux-trail`, `act-files` (the act journal's bytes, kept with its table), `trees` and `tree-files` (a tree holds work not landed), `help-room(s)`, `role-rooms`, `proof`, `usage-read`, `places`, `plans`, `evidence`, `logs` (the machine log is open while the command runs), `standing-confirmation`; kept for what a restart settles: `place-receipts` (a half-done apply), `landings` and `session-branches` (the tidy never judges a branch with no record, and the trees stay) |
+| Entries, whole | `sessions` (events, frames, logs, lineage and `session-files`), `helpers`, `partners`, `checks`, `handed`, `rule-proposals`, `brainstorms` and `brainstorm-rooms`, `opinion-gates`, `opinion-dues`, `opinion-packets`, `intake` rooms, `quest-files`, `ask-files`, `lines-moved`, `overlaps-told`, `abandoned`, `keeping`, `notices`, `reads`, `files-found`, `pipe-waiting` and `pipe-sent`, `steward-desk` | everything else in the table: `driver`, `harnesses`, `accounts`, `cooling`, `windows`, `permissions`, `tools`, `plugin-state`, `plugins`, `plugin-approvals`, `registry-followed`, `configured-access`, `browser-settings`, `browser-favorites`, `home-id`, `git-identities`, `agent-offers`, `memory`, `keys`, `remotes`, `agent-homes`, the browser, git and window profiles, `plugin-private`, `deps-secret`, `last-build`, `update`, the caches and the `run/` state |
+| Entries kept where unsure | | `files`, `files-asks`, `usage`, `usage-history`, `setup`, `terminal-acts`, `ux-trail`, `act-files` (the act journal's bytes, kept with its table), `trees` and `tree-files` (a tree holds work not landed), `help-room(s)`, `role-rooms`, `proof`, `usage-read`, `places`, `plans`, `evidence`, `logs` (the machine log is open while the command runs); kept for what a restart settles: `place-receipts` (a half-done apply), `landings` and `session-branches` (the tidy never judges a branch with no record, and the trees stay) |
 | `data/workflows/` | the folders `agent-steps`, `candidates`, `closures`, `lines`, `looks`, `rebases`, `resolves`, `resources`, `run-ends-owed`, `runs`, `tenures`, `units` and `quests.json` (run, unit, tenure and agent-step records) | each workflow's definition, `casts.json`, risk marks and the roles' floor file, which sit beside them |
 | `desktop.db` | the move, integration, delivery, binding, continuation, role-move and role-start tables, `held_decisions`, `notices`, `news_said`, `journal_cursors`, `conversation_facts`, `session_event_offsets`, `session_event_heads` (named in `HomeHistory.DesktopTables`) | its own bookkeeping (`store_version`, `store_revisions`, `store_runs`, `imports`: an import's mark stays so a purged file is never imported again), `roles` and their revisions, staffing, `role_policy`, `supervisor_rules`, `repository_workspaces`, `kept_trees`, `tree_claims`, `tree_visits`, `line_ends`, `tree_hand_offs`, `git_acts`, `git_act_steps` (`HomeHistory.DesktopKept`) |
 | `knowledge.db` | sessions and their opens, opinions, the channel and its marks, asks, quests and their log, closes and forwards (each quest id written into `quest_forgotten` first, so a remote's later operations on it make no half quest), work records, memory reads, the memory operations that finished (one still staged, awaiting, ready, applying or held stays), team plans, parts and decisions, and the event journal last (`HomeHistory.ServiceTables`) | the knowledge index (`index_*` tables), the registry and its provenance, the keys, `quest_forgotten` and `quest_retired` (a remote a person retired stays retired), the store's identity and every family's revision mark and cursor, so a revision never moves back (`HomeHistory.ServiceKept`) |
@@ -295,10 +292,7 @@ drains, swaps, rolls back and refuses.
 6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs` (`Tools`' remarks and `Declared`: the driver
    alone; the CLI's `tools.ts` is gone) and the `ToolVersions` entry (`cache/tools`). The code reads right.
 7. D57 (managed agents under `~/.daoris/toolchain/`) vs the `Toolchain` entry (`cache/toolchain`). The code reads right.
-8. D323 (no build reads an earlier build's record) vs `HomeEntry.Old` places (rules 13 to 15, 21 to 23), still read by every
-   twin of the home table. The code is today's behaviour until NOCOMPAT1's rest takes the old column out of all three twins.
 
 ## Open
 
-- **NOCOMPAT1's rest**: the home table's old column and every reader of an old place, in the three twins at once.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

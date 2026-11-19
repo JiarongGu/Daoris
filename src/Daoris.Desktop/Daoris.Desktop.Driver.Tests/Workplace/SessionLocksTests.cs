@@ -159,20 +159,13 @@ public sealed class SessionLocksTests : IDisposable
         Assert.Equal(0, (await RunAsync(root, "worktree", "remove", tree)).ExitCode);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task The_sweep_releases_an_ended_lock_at_either_place_but_keeps_a_parked_tree(bool oldPlace)
+    [Fact]
+    public async Task The_sweep_releases_an_ended_lock_but_keeps_a_parked_tree()
     {
         var root = await MakeRepositoryAsync();
         var trees = new SessionTrees(_home);
         var ended = (await trees.OpenAsync(root, "engine", "aurora")).Path;
         var parked = (await trees.OpenAsync(root, "engine", "aurora")).Path;
-        if (oldPlace)
-        {
-            ended = await ToOldPlaceAsync(root, ended);
-            parked = await ToOldPlaceAsync(root, parked);
-        }
 
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
@@ -194,19 +187,15 @@ public sealed class SessionLocksTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false, "session")]
-    [InlineData(true, "session")]
-    [InlineData(false, "path")]
-    [InlineData(true, "path")]
-    [InlineData(false, "branch")]
-    [InlineData(true, "branch")]
-    public async Task A_forced_removal_releases_a_stale_ended_lock(bool oldPlace, string by)
+    [InlineData("session")]
+    [InlineData("path")]
+    [InlineData("branch")]
+    public async Task A_forced_removal_releases_a_stale_ended_lock(string by)
     {
         var root = await MakeRepositoryAsync();
         var trees = new SessionTrees(_home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         var tree = opened.Path;
-        if (oldPlace) tree = await ToOldPlaceAsync(root, tree);
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
         ledger.Driven("s1", "q1", tree, state: "completed");
@@ -226,25 +215,14 @@ public sealed class SessionLocksTests : IDisposable
         Assert.False(Directory.Exists(tree));
     }
 
-    private async Task<string> ToOldPlaceAsync(string root, string tree)
-    {
-        var old = DaorisHome.Places(_home, HomeEntry.Trees, "aurora", "engine", Path.GetFileName(tree))[^1];
-        Directory.CreateDirectory(Path.GetDirectoryName(old)!);
-        Assert.Equal(0, (await RunAsync(root, "worktree", "move", tree, old)).ExitCode);
-        return old;
-    }
-
     [Theory]
-    [InlineData("working", false)]
-    [InlineData("working", true)]
-    [InlineData("awaiting-person", false)]
-    [InlineData("awaiting-person", true)]
-    public async Task A_forced_path_removal_keeps_a_tree_a_running_or_parked_session_holds(string state, bool oldPlace)
+    [InlineData("working")]
+    [InlineData("awaiting-person")]
+    public async Task A_forced_path_removal_keeps_a_tree_a_running_or_parked_session_holds(string state)
     {
         var root = await MakeRepositoryAsync();
         var trees = new SessionTrees(_home);
         var tree = (await trees.OpenAsync(root, "engine", "aurora")).Path;
-        if (oldPlace) tree = await ToOldPlaceAsync(root, tree);
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
         ledger.Driven("s1", "q1", tree, state: state);

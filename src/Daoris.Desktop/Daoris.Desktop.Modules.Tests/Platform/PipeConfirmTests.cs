@@ -626,7 +626,6 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(Path, ReadRecord(record).GetProperty("request").GetString());
         Assert.Equal([record], Files().Except(before));
         Assert.Empty(before.Except(Files()));
-        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.StandingConfirmation)));
 
         await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
         Assert.Equal(InstancePipe.Refused, Code(await client.AnswerAsync(id)));
