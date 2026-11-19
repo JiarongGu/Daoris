@@ -652,7 +652,7 @@ describe('the Work frame', () => {
     expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
       .toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!))
-      .toEqual({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel', console: 'right' });
+      .toEqual({ timeline: 'panel', outputs: 'panel', atWork: 'panel', console: 'right' });
   });
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {

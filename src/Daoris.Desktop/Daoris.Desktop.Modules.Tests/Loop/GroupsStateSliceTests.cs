@@ -169,7 +169,10 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
             Discards = new DiscardOffer("daoris/s1", "s1", new HeldWork(new ContentHold("main", Squash: true), "refs/daoris/kept/s1", null)),
             Calling = new RunningCall("npm test", At),
             Waits = [new PersonWait("q1", "review", PersonWaits.Accept, "engine", At), new PersonWait("q1", "release", PersonWaits.Actor, "engine", At) { Role = "approver" }],
-            Passage = new RunPassage("q1", "integrated", 3, [new PassageStep("check", "check", RunPassageReader.Current)]),
+            Passage = new RunPassage("q1", "integrated", 3, [new PassageStep("check", "check", RunPassageReader.Current)
+            {
+                Role = "builder", Attempt = 2, Since = At, Code = "red", Earlier = [new PassageAttempt(1, At, "failed", "red")],
+            }]),
             Line = new LineStanding(SessionGroup.Working, SessionGroup.Working, "working", "h1", LineRole.Helper),
         };
         var entry = new SessionEntry("quest:q1/engine", "quest:q1", "engine", SessionGroup.Pending, "s1",
