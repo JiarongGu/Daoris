@@ -115,6 +115,26 @@ public sealed class SolicitedAnswersTests : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// 🔴 A driven head awaiting its run's step runs nothing: its turn ended, so it takes the word as an ended head does and goes on with it,
+    /// never refused as a step in flight while the step (a second opinion among them) waits on its answer. (OPINIONWAKE1)
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public async Task A_head_awaiting_its_runs_step_takes_the_word_as_an_ended_head_does(string kind)
+    {
+        var lead = await LeadAsync(SessionState.AwaitingStep, SessionKind.Driven);
+        var hand = await GivenAsync(kind, lead);
+
+        var result = await hand.Press(false);
+
+        Assert.True(result.Kept, result.Message);
+        Assert.Equal(lead.Id, result.Holder);
+        var word = Assert.Single((await _sessions.FindAsync(lead.Id))!.Said);
+        Assert.StartsWith(kind + ":", word.Key);
+        Assert.True(word.Reopens);
+    }
+
     [Theory]
     [MemberData(nameof(Cases))]
     public async Task A_park_unanswered_waits_and_a_park_answered_takes_the_word_beside_the_answer(string kind)
