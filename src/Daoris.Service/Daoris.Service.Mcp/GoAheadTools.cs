@@ -27,13 +27,8 @@ public sealed class GoAheadTools(IntakeScope? intake = null, SessionLedger? ledg
         string why,
         CancellationToken ct = default)
     {
-        // Only a session the driver started names itself on its connector, and only its record says which ask it is on.
-        if (ledger is null || intake?.Session is not { } session)
-        {
-            return "This connector speaks for no session the driver started, so there is no ask to hold a go-ahead on: say "
-                   + "exactly what you need and why in your last message, and end your turn.";
-        }
-
-        return (await ledger.AskGoAheadAsync(session, kind, on, act, why, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)).Message;
+        // A channel of the one door (D325): the same request `question_ask` makes for an act, held once per act on the ask.
+        var request = new RoleRequest(intake?.Session, why) { Kind = kind ?? "", Touches = act, On = on };
+        return await QuestionTools.Requests(intake, ledger, null, null).AskAsync(request, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
     }
 }
