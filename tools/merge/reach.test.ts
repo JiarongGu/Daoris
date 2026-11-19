@@ -276,7 +276,7 @@ test('a merge that changes the web\'s sources blocks on its design and structure
   const asks = ['src/Daoris.Service/Daoris.Service.Core/Asks.cs'];
   const check = repoPlan.find((gate) => gate.name === webRules)!;
   const scripts = rootScripts(repoRoot);
-  assert.match(scripts[check.run.replace(/^npm run /, '')] ?? '', /node tools\/test-sets\.mjs run web-rules$/, 'its declared pick, not the whole unit run');
+  assert.equal(scripts[check.run.replace(/^npm run /, '')], 'npm --prefix src/Daoris.Web run rules', 'the page\'s script of its declared pick, not the whole unit run');
   const declared = JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { tests: { sets: { name: string; of?: string; files: string[] }[] } };
   const pick = declared.tests.sets.find((set) => set.name === webRules)!;
   assert.equal(pick.of, 'web-unit');

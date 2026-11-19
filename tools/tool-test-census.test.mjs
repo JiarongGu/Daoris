@@ -4,7 +4,7 @@
  *
  *   node --test tools/tool-test-census.test.mjs
  *
- * `checkToolTests` reads a source tree. Each case builds a small tree in a gitignored scratch folder of the repository, with a
+ * `checkToolTests` reads a source tree. Each case builds a small tree in its own folder of `_fixtures/`, with a
  * `daoris.gates.json` declaring gates and test sets, and holds the verdict; the real tree passes.
  */
 import assert from 'node:assert/strict';
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { checkToolTests } from './tool-test-census.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const scratch = join(root, 'local', 'scratch', 'tool-test-census-test');
+const scratch = join(root, '_fixtures', 'tool-test-census-test');
 rmSync(scratch, { recursive: true, force: true });
 after(() => rmSync(scratch, { recursive: true, force: true }));
 

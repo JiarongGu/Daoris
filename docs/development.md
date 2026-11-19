@@ -219,7 +219,8 @@ Which tests run is declared once, in `daoris.gates.json`'s `tests`: a list of se
 runs it, the census's `suite` for its units, the folder its runner starts in and the runner's own `args`. A test file is in the
 first set whose pattern holds it, so a new file under a pattern is run by its gate, censused and reached with no list to edit;
 to scope a test apart, declare a narrower set before the wider one it carves from (`layers` before `tools`). A gate or script runs
-its sets with `node tools/test-sets.mjs run --gate <gate>` (a set by its name; `list` says each set's files); the tools' Vitest
+its sets with `node tools/test-sets.mjs run --gate <gate>` (a set by its name; `list` says each set's files, `reach <path>` the
+sets a changed path reaches); the tools' Vitest
 projects read their files from their sets; a change reaches a set's units by the census's reach of each (`tools/test-map.mjs`),
 a `bounded` set's only within its gate's `paths`; a pick (`of`) runs some of another set's files apart, as `web-rules` does.
 `node tools/tool-test-census.mjs`, a step of `verify:checks`, refuses a test file no set holds, a set that holds none or names

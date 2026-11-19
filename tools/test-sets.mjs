@@ -5,6 +5,7 @@
  *
  *   node tools/test-sets.mjs run [--gate <gate>]… [<set>]…   run the sets named and every set of each gate, in the declaration's order
  *   node tools/test-sets.mjs list [<set>]…                   each set's files
+ *   node tools/test-sets.mjs reach <path>…                   the sets each changed path reaches, before the census narrows each to its units
  *
  * A file is in the first set whose `files` hold it. `gate` names the gate that runs a set, `suite` the census's name for its units
  * (`tools/test-map.mjs`; the gate's where none), `cwd` where its runner starts (the root where none), `args` the runner's own, and
@@ -143,12 +144,17 @@ function main(argv) {
   const gates = rest.flatMap((word, at) => (rest[at - 1] === '--gate' ? [word] : []));
   const names = rest.filter((word, at) => word !== '--gate' && rest[at - 1] !== '--gate');
   const sets = declaredSets();
+  if (verb === 'reach') {
+    const gateList = JSON.parse(readFileSync(join(ROOT, 'daoris.gates.json'), 'utf8')).gates ?? [];
+    for (const path of names) console.log(`${path}: ${setsReaching(sets, gateList, path).map((set) => `${set.name}${set.bounded ? ' (within its gate\'s paths)' : ''}`).join(', ')}`);
+    return 0;
+  }
   if (verb === 'list') {
     const held = filesBySet(sets, listFiles(ROOT, sets));
     for (const set of names.length ? selectSets(sets, { names }) : sets) console.log(`${set.name} (${set.gate}, ${set.runner}): ${held.get(set.name).join(' ')}`);
     return 0;
   }
-  if (verb !== 'run' || (!gates.length && !names.length)) throw new Error('usage: node tools/test-sets.mjs run [--gate <gate>]... [<set>]... | list [<set>]...');
+  if (verb !== 'run' || (!gates.length && !names.length)) throw new Error('usage: node tools/test-sets.mjs run [--gate <gate>]... [<set>]... | list [<set>]... | reach <path>...');
   return runSets(ROOT, selectSets(sets, { names, gates }), { sets });
 }
 
