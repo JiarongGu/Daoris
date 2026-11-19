@@ -46,6 +46,13 @@ public static class StepActs
             if (kept.Pending.Any(word => word.Node == node.Id)) continue;
             var rows = journal.Where(row => row.Node == node.Id && row.Attempt == attempt).ToList();
             if (StepReceipts.Settled(node, rows) is not { } evidence) continue;
+            if (JointChecks.Over(node).Count > 0)
+            {
+                var parts = JointChecks.Receipts(records.Home, scope.Parts, node);
+                if (!JointChecks.Passed(node, rows, parts)) continue;
+                evidence = new Dictionary<string, string>(evidence, StringComparer.Ordinal) { ["parts"] = JointChecks.Evidence(parts) };
+            }
+
             if (step.Why == PersonWaits.Actor)
             {
                 var observed = Observed(records, governed.Unit.Id, node, attempt, evidence, rows[^1], clock);

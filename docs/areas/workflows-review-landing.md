@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
-| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), and the pass that journals and settles by them (`StepActs`) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), the pass that journals and settles by them (`StepActs`), and testing a quest's parts together (`JointChecks`, `JointReturns`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -117,6 +117,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    `config-change` on the record naming both holders. Each step after the merge declares its role (`role`: the release manager for the
    release and the decision; the approver for approve; operations for the check; the config changer for the change), and the chart draws
    the decision's `not-needed` route as *Not needed this run*, never as *No further step*.
+3f. One quest across repositories is its ask's plan (D325, ACTORFLOW1d): each part a quest in its own repository whose run its own
+   roles hold and whose steps name its own delivery knowledge; no part's holder changes another repository. A part waits on another's
+   receipt by the plan's `after` edge naming a `receipt` (`PartWait`, read into the look's `PartsReport` with each part's quest): until
+   the run of the part it follows has the newest receipt of that fact reached, none of its steps is handed (`PartReceipts`). Testing
+   together is a `task` step whose `joint` option maps each part to the fact its receipt gives, held by the tester or operations role
+   before the marked destination (`JointChecks`): handed once every part's newest receipt of its fact is reached, again whenever a part
+   acts after the last test, and settled by its own receipts only on a test newer than them all, the parts' receipts its evidence beside
+   its own. A failed test naming its part (the receipt's `part`) goes back once (`JointReturns`): the request said to that part's working
+   session as the tester's, a row journaled on the part's step (`returned:<id>`, naming the session asked), that session's later rounds
+   of the fact journaled on the same step as its fix whether the part's run still stands or ended, and a reached fix proposed into the
+   step's delivery knowledge (`StepLessons`).
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -745,7 +756,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   the place casts its role to, and no runtime code branches on it. The named steps' reading, gate and diff (`NamedStepReading`,
   `Involvement` in `WorkflowGate`, `WorkflowDiff`) read a stage's `start` and a landing's `accept` the same way, as the holder a version's
   step casts (`HolderWords.First(NamedStep)`), and a census holds them to it beside the runtime.
-- **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. `wait.unit` gains
-  its run-time reader of typed receipts (a joint check before `review` and `land`, the upstream release before a release, the
-  production example), a release target names its deployable and the earliest act that deploys, and every provider write a step makes
-  is judged and journaled; until then nothing reads a `wait.unit`'s commitment at run time and an ask's release order is kept by hand.
+- **DELIVERY1** (`docs/2026-11-13-delivery-framework-design.md`): an ask's repositories delivered under one plan. A part waiting on
+  another's receipt and the joint check are rule 3f's, on the plan's edges and the parts' receipts; left: the plan's release orders
+  read at run time (the upstream release before a release, the production example), a release target naming its deployable and the
+  earliest act that deploys, and every provider write a step makes judged and journaled; until then nothing reads a `wait.unit`'s
+  commitment at run time and an ask's release order is kept by hand.

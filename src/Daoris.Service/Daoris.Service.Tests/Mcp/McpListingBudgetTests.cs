@@ -30,10 +30,10 @@ public sealed class McpListingBudgetTests(ITestOutputHelper output)
 
     /// <summary>
     /// The second tool over <see cref="ToolBudget"/>: team_plan writes a plan whole in one call, so its schema carries the shapes of a
-    /// part, an edge, a deployable, a release order, a question and the ask's integration (some 70 characters of schema before a word);
-    /// its text says only what the shapes do not, and a second tool for some of them would be a second way to write a plan.
+    /// part, an edge with the receipt it may start on, a deployable, a release order, a question and the ask's integration (some 70 characters
+    /// of schema before a word); its text says only what the shapes do not, and a second tool for some would be a second way to write a plan.
     /// </summary>
-    internal const int PlanBudget = 7_200;
+    internal const int PlanBudget = 7_350;
 
     /// <summary>The third: brainstorm_synthesize carries a design pass's comparison, some 840 characters of schema before a word.</summary>
     internal const int SynthesisBudget = 3_300;

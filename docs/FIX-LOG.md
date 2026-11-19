@@ -14498,3 +14498,14 @@ installed window is not yet seen.
 - **Also:** a store another process held stopped the purge only after 30 s, not the 1.5 s its `busy_timeout` meant, because the
   SQLite client retries a busy command until its own command timeout; the write-lock take carries a 2 s command timeout
   (`A_store_another_process_holds_stops_the_purge_before_anything_changes` 32 s → 4 s).
+
+## 2026-11-19 — Two reds on main a builder's reached checks found: the drain verb's usage and the knowledge tools' listing
+
+- **Seen:** ACTORFLOW1d's reached checks: `DriverCommandTests.ONEWAY1ai_i_the_tree_reaches_every_verb_the_host_answers` (the
+  `settings` usage names no `drain`) and `McpListingBudgetTests.The_listing_is_within_its_budget` (53,084 characters over 51,400;
+  `question_ask` 4,149 over its 2,600 share), both red on main d7f25b2841.
+- **Cause:** DRAINSTALL1 (d7f25b2841) added `daoris settings drain` and not its usage line; SIGNINWAIT1 (`site`) and ACTORFLOW1c
+  (`role`, `act`, `on`) grew `question_ask`'s schema and words past its share; neither merge's reached plan selected the class.
+- **Fix:** the `settings` usage names `settings drain <minutes>`; `question_ask`'s words are cut to what an agent needs (2,4xx
+  characters), the listing 51,392.
+- **Verify:** the driver's command and text tests (838 passed); the service's listing, description and question tests (84 passed).
