@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, Fragment, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, elapsed, moment, span } from '../../locales/format';
 import { cn } from '../../lib/cn';
@@ -23,6 +23,8 @@ import { ChildFocus, TaskFocus } from '../beside/ChildFocus';
 import { type BesideFocus, type BesideReader, pathTo } from '../beside/besides';
 
 const NO_LIFETIMES: readonly SessionEvent[] = [];
+import { callsByKind, foldOf } from '../catchup/turnFold';
+import { callWords, TurnFoldLine } from '../catchup/TurnFoldLine';
 import { WaitMark } from '../waits/WaitAnchor';
 import type { Wait } from '../waits/waits';
 
@@ -45,11 +47,11 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
  * turn ended — drawn from the typed events the driver keeps, never parsed from the console.
  *
  * @remarks
- * - **Every word the agent said stays in view, and the work between two of them folds**: a
- *   run of calls and thinking is one row that counts it and its failures, one press from its cards.
+ * - **A turn that goes on keeps every word the agent said in view, and the work between two of them folds**: a
+ *   run of calls and thinking is one row that counts it by kind and its failures, one press from its cards.
  *   The run in hand stays open while the turn goes on, and where the session ended inside a turn.
- *   Folding a finished turn whole would hide a driven session's account of its run behind one row, since a
- *   driven session is one turn.
+ * - **An ended turn folds to one line** (`catchup/turnFold.ts`): its calls by kind, files, duration; under it stays what never
+ *   folds, its closing words, the person's words, failures, acts outside, a part's boundary and what raised a wait.
  * - **A long run reads from its ask**: the ask comes first, and *load earlier* sits where
  *   the events the page does not hold belong.
  * - **The agent's words are Markdown**; the person's are shown as written. Both are content, never
@@ -72,8 +74,10 @@ const AskedCards = createContext<{ exchanges: Exchanges; onOpenHelper?: (session
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
   reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
-  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath, beside,
+  exchanges = NO_EXCHANGES, onOpenHelper, onShow, channel = NO_CHANNEL_HOME, dividers, beneath, beside, atMark,
 }: {
+  /** The row the host draws at the person's read mark (*Since you left*), above the turn that holds the first thing after it. */
+  atMark?: { turn: string; row: ReactNode };
   /**
    * What the session ran beside itself: the reader of each subagent's own record and task's last lines, and the record's starts and
    * ends of each. A subagent is a row under the call that spawned it, opened in place, a deeper one the panel's focus with a
@@ -227,8 +231,9 @@ export function ConversationView({
           {!focused && earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
           {!focused && began && <BeganLine words={began} />}
           {!focused && turns.map((turn, index) => (
+            <Fragment key={turn.key}>
+            {atMark?.turn === turn.key && atMark.row}
             <TurnView
-              key={turn.key}
               turn={turn}
               tree={tree}
               // Words waiting at the foot are no run of the agent's: nothing runs until its first prompt takes them.
@@ -239,6 +244,7 @@ export function ConversationView({
               divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
               beneath={turn.ask && beneath ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at) : undefined}
             />
+            </Fragment>
           ))}
         </section>
         </BesideHomes.Provider>
@@ -303,8 +309,16 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divide
   const { exchanges, onShow } = useContext(AskedCards);
   // The run in hand stays open while the turn goes on, and where the session ended inside it.
   // A call that started a subagent or a task stands alone, so the row under it is never folded away.
-  const parts = segments(turn.items, running || Boolean(turn.cut), (block) => block.key in exchanges.cards || Boolean(block.beside));
+  const alone = (block: Block) => block.key in exchanges.cards || Boolean(block.beside);
+  const parts = segments(turn.items, running || Boolean(turn.cut), alone);
   const calling = running ? runningCall([turn]) : null;
+  // An ended turn folds to one line, what never folds standing under it; a jump that lands on a folded block opens it, as a run's does.
+  const fold = running ? null : foldOf(turn, { raised: (key) => Boolean(marks?.[key]), alone });
+  const [opened, setOpened] = useState(false);
+  const [dismissed, setDismissed] = useState<string | undefined>();
+  const holds = Boolean(fold && reveal) && reveal !== dismissed && turn.items.some((item) => item.key === reveal)
+    && !fold!.shown.some((block) => block.key === reveal);
+  const whole = !fold || opened || holds;
   // An answer its card holds is drawn there; the turn that took it holds a line that opens the card.
   const taken = turn.ask ? exchanges.cards[exchanges.takenAt[turn.ask.key] ?? ''] : undefined;
 
@@ -317,8 +331,18 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divide
         </Held>
       )}
       {onLoadEarlier && <Earlier onLoadEarlier={onLoadEarlier} />}
-      {parts.map((part) => (part.kind === 'run'
-        ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} reveal={reveal} />
+      {fold && (
+        <TurnFoldLine line={fold.line} open={whole} onToggle={() => {
+          if (holds) setDismissed(reveal);
+          setOpened(!whole);
+        }} />
+      )}
+      {!whole && fold.shown.map((block) => (
+        <Held key={block.key} id={block.key} reveal={reveal}><BlockView block={block} tree={tree} reveal={reveal} /></Held>
+      ))}
+      {whole && parts.map((part) => (part.kind === 'run'
+        // A folded turn the person opened shows its work open: one press for the whole turn, never one more per run.
+        ? <RunView key={part.key} items={part.items} open={part.open || Boolean(fold)} tree={tree} reveal={reveal} />
         : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} reveal={reveal} /></Held>))}
       {beneath}
       {turn.waiting && <NewSessionDoor turn={turn} />}
@@ -531,9 +555,9 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
   // A wait a folded call raised is said on the run's line, so the fold never hides it; open, the call says it.
   const { marks, onToWait } = useContext(WaitMarks);
   const raised = !shown && onToWait && marks ? items.flatMap((item) => marks[item.key] ?? []) : [];
-  const { tools, failed, thought } = runCount(items);
+  const { failed, thought } = runCount(items);
   const parts = [
-    tools > 0 && t('work.conversation.tools', { count: tools }),
+    ...callWords(t, callsByKind(items)),
     thought && t('work.conversation.thought'),
   ].filter(Boolean);
 
