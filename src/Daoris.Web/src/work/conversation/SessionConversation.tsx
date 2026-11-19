@@ -127,10 +127,7 @@ export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
   waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath, onBeside, catchup,
 }: {
-  /**
-   * The conversation's line, what waits on the person and its run's steps, for the attended part's read mark and *Since you left*
-   * (`catchup/useCatchUp.ts`); absent, the part opens where it always did and moves no mark.
-   */
+  /** Its line, what waits and its steps, for the read mark and *Since you left*; absent, no mark is read or moved. */
   catchup?: CatchUpFacts;
   dividers?: Readonly<Record<string, ReactNode>>;
   beneath?: ComponentProps<typeof ConversationView>['beneath'];
@@ -375,7 +372,6 @@ export function SessionConversation({
   const words = lastWords(turns);
   // Each subagent's and task's start and end, which a subagent's own timeline is joined with.
   const lifetimes = useMemo(() => lifetimesIn(events), [events]);
-  // Opened with anything after the person's read mark, the attended part sits at the mark under *Since you left*.
   const caught = useCatchUp({
     facts: own ? catchup : undefined, session, scroller, events, turns, where, lifetimes, exchanges, loaded, earlier, loadEarlier,
   });

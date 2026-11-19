@@ -47,7 +47,7 @@ const quoted = (text: string): string => {
  * What happened in the attended part `part` after the person's mark, as the lines of *Since you left*; null where nothing came after
  * it. A turn counts where it holds anything of the agent's or the person's after the mark; files
  * are those its edits changed, each once; a command failed where its call did; subagents and tasks count their starts and ends the
- * record keeps after the mark; steps passed are those the run passed since the mark was set (`steps`, the mark's own count then);
+ * record keeps after the mark; steps passed are those the run passed since the mark moved (`steps`, the mark's own count then);
  * waits are those open on the person now (`waiting`) and the helpers asked and answered since; the agent's last words are quoted as
  * its own where it said them after the mark.
  */

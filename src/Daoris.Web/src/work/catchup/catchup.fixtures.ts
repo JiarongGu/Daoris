@@ -2,13 +2,13 @@ import type { SessionEvent } from '../conversation/conversationTypes';
 import type { ReadMark } from './readMark';
 import { SESSION as BESIDE } from '../beside/beside.fixtures';
 
-// Three recorded sessions a person left and came back to, shaped as the driver keeps their records, each with the mark it was left at.
+// Three recorded sessions a person left and came back to, shaped as the driver keeps their records, each with the mark left in it.
 
 const at = (hour: number, minute: number, second = 0) =>
   `2026-11-19T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}Z`;
 
 /**
- * A conversation read through its first turn, then two more while the person was away: a failed test run and a passing one, two
+ * A conversation read through its first turn, then two more in the person's absence: a failed test run and a passing one, two
  * files edited, and a push.
  */
 export const CHAT: SessionEvent[] = [
@@ -39,8 +39,8 @@ export const DRIVEN: SessionEvent[] = BESIDE;
 export const DRIVEN_MARK: ReadMark = { part: 's-driven', seq: 1, at: '2026-11-19T10:00:00Z', read: '2026-11-19T10:00:30Z', steps: 1 };
 
 /**
- * The newest part of a line that went on after a limit while the person was away: their mark is in the part before. Its first turn
- * was stopped with lint failing, and the next opened a pull request.
+ * The newest part of a line that went on after a limit in the person's absence: their mark is in the part before. Its first turn
+ * ended stopped with lint failing, and the next opened a pull request.
  */
 export const MOVED: SessionEvent[] = [
   { seq: 1, at: at(10, 30), kind: 'note', text: 'Went on after the account limit.' },

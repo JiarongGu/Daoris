@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Where the person left a conversation: the newest event of a part of its line they had on screen while the window had focus (its
-/// number and its time), when that was, and how many of its run's steps had passed then (null where its session runs none).
+/// number and its time), when it moved there, and how many of its run's steps had passed then (null where its session runs none).
 /// </summary>
 public sealed record ReadMark(string Part, long Seq, DateTimeOffset At, DateTimeOffset Read, int? Steps);
 
@@ -64,10 +64,10 @@ public sealed class ReadMarks(string home, Func<StoreSettled>? settled = null)
                 ReadMark standing = mark;
                 store.Write(Family, write =>
                 {
-                    var was = write.Query($"SELECT {Columns} FROM read_marks WHERE conversation = $c", Row, ("$c", conversation)).FirstOrDefault();
-                    if (was is not null && !Forward(was, mark))
+                    var kept = write.Query($"SELECT {Columns} FROM read_marks WHERE conversation = $c", Row, ("$c", conversation)).FirstOrDefault();
+                    if (kept is not null && !Forward(kept, mark))
                     {
-                        standing = was;
+                        standing = kept;
                         return;
                     }
 
@@ -89,9 +89,9 @@ public sealed class ReadMarks(string home, Func<StoreSettled>? settled = null)
         }
     }
 
-    /// <summary>Whether <paramref name="next"/> is past <paramref name="was"/>: a later event of the same part, or another part's later event.</summary>
-    public static bool Forward(ReadMark was, ReadMark next) =>
-        string.Equals(was.Part, next.Part, StringComparison.Ordinal) ? next.Seq > was.Seq : next.At > was.At;
+    /// <summary>Whether <paramref name="next"/> is past <paramref name="standing"/>: a later event of the same part, or another part's later event.</summary>
+    public static bool Forward(ReadMark standing, ReadMark next) =>
+        string.Equals(standing.Part, next.Part, StringComparison.Ordinal) ? next.Seq > standing.Seq : next.At > standing.At;
 
     private static bool Names(string id) => SessionEventText.IsId(id);
 

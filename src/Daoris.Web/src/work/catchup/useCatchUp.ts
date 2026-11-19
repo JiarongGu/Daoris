@@ -63,7 +63,7 @@ export function useCatchUp({ facts, session, scroller, events, turns, where, lif
     return () => cancelAnimationFrame(frame);
   }, [settled, placed, visit, digest, scroller]);
 
-  // What was last sent, so a mark is sent only forward of it.
+  // The mark last sent, so a mark is sent only forward of it.
   const sent = useRef<MarkPlace | null>(null);
   useEffect(() => { sent.current = held ?? null; }, [held]);
   const timeOf = useCallback((seq: number) => events.find((event) => event.seq === seq)?.at, [events]);

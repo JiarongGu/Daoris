@@ -9,11 +9,11 @@ export type ReadMark = { part: string; seq: number; at: string; read: string; st
 export type MarkPlace = { part: string; seq: number; at: string };
 
 /**
- * Whether `next` stands past `was`: a later event of the same part, or another part's event kept later, since a line's parts follow
- * one another. The driver's `ReadMarks.Forward` is the same rule, so a page and the store never disagree on which way is forward.
+ * Whether `next` stands past `standing`: a later event of the same part, or another part's event kept later, since a line's parts
+ * follow one another. The driver's `ReadMarks.Forward` is the same rule, so a page and the store never disagree on which way is forward.
  */
-export const isForward = (was: MarkPlace | null | undefined, next: MarkPlace): boolean =>
-  !was || (was.part === next.part ? next.seq > was.seq : Date.parse(next.at) > Date.parse(was.at));
+export const isForward = (standing: MarkPlace | null | undefined, next: MarkPlace): boolean =>
+  !standing || (standing.part === next.part ? next.seq > standing.seq : Date.parse(next.at) > Date.parse(standing.at));
 
 /** Whether an event of `part` happened after the mark: what the digest counts and the mark's row stands above. */
 export const isAfter = (mark: MarkPlace, part: string, event: { seq: number; at: string }): boolean =>

@@ -45,7 +45,7 @@ export const failedCall = (block: Block): boolean => block.kind === 'tool' && bl
  * Whether a block of an ended turn stays in view while the turn is folded (design §6's never-folded list): the turn's closing
  * words; the person's words; a failure or a stopped call; a call that acts outside the conversation; a call standing alone
  * (a request's card, a subagent's or task's start, its header row); a task's end; the driver's notes about the session (a part's
- * boundary, a limit, a stop, where words went); and a block a wait was raised at. A row folds only where it changed nothing outside
+ * boundary, a limit, a stop, where words went); and a block that raised a wait. A row folds only where it changed nothing outside
  * the conversation and failed nothing: thinking, successful calls, a plan, the agent's words before its last.
  */
 export function staysOpen(block: Block, { closing, raised, alone }: {
