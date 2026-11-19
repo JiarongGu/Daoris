@@ -14,9 +14,7 @@
  * The `notes` driver `.gitattributes` names for `docs/decisions/*.md` merges by union and puts a blank line
  * before each glued `**Note, ` line, so the merge's own result is right. A clone without the driver merges those files as
  * ordinary text, which conflicts on two notes added at one place rather than gluing them.
- *
- * The same install writes `pre-commit`, which runs `tools/commit-checks.mjs` on the staged paths (the comment gate, the size ratchet,
- * the contracts, the layers' counts); only that tool's refusal, its exit 1, stops a commit.
+ * It also writes `pre-commit`, which runs `tools/commit-checks.mjs`; only that tool's exit 1 stops a commit.
  */
 import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -40,10 +38,7 @@ export function hookText(gate, script) {
     + `node ${fresh} --root "$root" >/dev/null 2>&1\nexit 0\n`;
 }
 
-/**
- * The `pre-commit` hook's text: the bookkeeping checks on the staged paths (`tools/commit-checks.mjs`). Only a refusal (its exit 1) stops
- * the commit; a detached head (a tool's tree) and `DAORIS_COMMIT_HOOK=0` run nothing. `script` names the tool by absolute path (tests).
- */
+/** The `pre-commit` hook's text; a detached head and `DAORIS_COMMIT_HOOK=0` run nothing, and `script` names the tool by absolute path (tests). */
 export function commitHookText(script) {
   const checks = script ? `"${script.replaceAll('\\', '/')}"` : '"$root/tools/commit-checks.mjs"';
   return `#!/bin/sh\n${MARK}\n[ "$DAORIS_COMMIT_HOOK" = 0 ] && exit 0\n`
@@ -53,7 +48,7 @@ export function commitHookText(script) {
     + `node ${checks} --root "$root"\n[ $? = 1 ] && exit 1\nexit 0\n`;
 }
 
-/** Whether a hook file is this installer's: marked, or the older install's pre-commit that called this tool with nothing. */
+/** Whether a hook file is this installer's, an older install's included. */
 const ours = (text) => text.includes(MARK) || /index-hook\.mjs/.test(text);
 
 /** The notes merge driver's command as `--install` configures it, run by git from the work tree's top. */
@@ -133,8 +128,7 @@ export function separateNotes(text) {
 export function main(argv, { out = console.log, err = console.error, cwd = process.cwd(), env = process.env } = {}) {
   if (argv[0] === '--install' && argv.length === 1) return install({ out, err, cwd, env });
   if (argv[0] === '--merge-notes') return mergeNotes(argv.slice(1), { err, cwd, env });
-  // A clone's pre-commit hook written by an install before 2026-11-04 still calls this with nothing: the commit goes on and the person
-  // is told to install again, which replaces it. Ends when no clone holds that hook.
+  // The older install's pre-commit hook calls this with nothing; the next install replaces it.
   if (argv.length === 0) {
     err('index-hook: this clone\'s pre-commit hook was written by an older install and does nothing now: run node tools/index-hook.mjs --install, which replaces it');
     return 0;
