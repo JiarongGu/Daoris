@@ -6,7 +6,7 @@ import { store, stored } from '../../lib/stored';
  * bottom panel hold, as VS Code's views move between its secondary side bar and its panel. The terminal
  * is the person's own shell, beside the console as VS Code's terminal is beside its output.
  */
-export type ViewId = 'notifications' | 'timeline' | 'outputs' | 'atWork' | 'ask' | 'console' | 'terminal';
+export type ViewId = 'notifications' | 'timeline' | 'outputs' | 'ask' | 'console' | 'terminal';
 
 /**
  * Every view, in the frame's order: a region's tabs read in it, whichever were moved there.
@@ -20,15 +20,15 @@ export type ViewId = 'notifications' | 'timeline' | 'outputs' | 'atWork' | 'ask'
  * joins the frame tests that move every side bar view to the panel.
  */
 // *Notifications* first: everything that comes to the person, the same on every view.
-// *At work*: who is at work on the attended session, from Daoris's records. Where its run stands is its head's track, no view.
-export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'outputs', 'atWork', 'ask', 'console', 'terminal'];
+// Where its run stands is its head's track, and who it worked with its timeline's rows: neither is a view.
+export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'outputs', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
 export type Place = 'right' | 'panel';
 
 /** Where each view stands until the viewer moves it: where the frame always drew it. */
 export const DEFAULT_PLACES: Readonly<Record<ViewId, Place>> = {
-  notifications: 'right', timeline: 'right', outputs: 'right', atWork: 'right', ask: 'right', console: 'panel', terminal: 'panel',
+  notifications: 'right', timeline: 'right', outputs: 'right', ask: 'right', console: 'panel', terminal: 'panel',
 };
 
 const ORDER = VIEW_IDS;
