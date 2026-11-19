@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's values moved into its delivery knowledge (D325 point 5): where the newest version of a workflow it keeps values for
+/// A repository's values moved into its delivery knowledge: where the newest version of a workflow it keeps values for
 /// (<see cref="WorkflowValuesKey"/>) holds no node some of them are for, and holds a step naming a delivery knowledge entry
 /// (<see cref="StepReceipts.Knowledge"/>), those values are proposed into that entry (<see cref="StepLessons"/>, its <see cref="StepLesson.Moved"/>),
 /// carried by every hand-off of a step naming it to its holder, the repository's own agent, who writes them in its own change. They stay
@@ -18,26 +18,26 @@ public static class ValuesMoves
     public static string Reason(string entry) => $"moved into the delivery knowledge `{entry}`, which holds each value (D325)";
 
     /// <summary>
-    /// The entry the values of <paramref name="was"/>, a node <paramref name="next"/> holds no more, move into: that of a step of the same role
+    /// The entry the values of <paramref name="dropped"/>, a node <paramref name="next"/> holds no more, move into: that of a step of the same role
     /// naming one, else the one entry <paramref name="next"/>'s steps name; null where they name none, or several and none of that role.
     /// </summary>
-    public static string? EntryFor(NodeDeclaration? was, NodeGraph next)
+    public static string? EntryFor(NodeDeclaration? dropped, NodeGraph next)
     {
         var named = next.Nodes.Select(node => (Node: node, Entry: StepReceipts.Knowledge(node))).Where(each => each.Entry is not null).ToList();
-        if (was is not null && named.FirstOrDefault(each => StepRoles.Of(each.Node) == StepRoles.Of(was)).Entry is { } same) return same;
+        if (dropped is not null && named.FirstOrDefault(each => StepRoles.Of(each.Node) == StepRoles.Of(dropped)).Entry is { } same) return same;
         var entries = named.Select(each => each.Entry!).Distinct(StringComparer.Ordinal).ToList();
         return entries.Count == 1 ? entries[0] : null;
     }
 
     /// <summary><paramref name="nodes"/>' values that <paramref name="next"/> reads no more, by the entry each moves into; a node of no entry is left out.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> ByEntry(
-        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> nodes, Func<string, NodeDeclaration?> was, NodeGraph next)
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> nodes, Func<string, NodeDeclaration?> declared, NodeGraph next)
     {
         var held = next.Nodes.Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
         var grouped = new SortedDictionary<string, SortedDictionary<string, IReadOnlyDictionary<string, string>>>(StringComparer.Ordinal);
         foreach (var (node, options) in nodes.Where(pair => !held.Contains(pair.Key)))
         {
-            if (EntryFor(was(node), next) is not { } entry) continue;
+            if (EntryFor(declared(node), next) is not { } entry) continue;
             if (!grouped.TryGetValue(entry, out var of)) grouped[entry] = of = new(StringComparer.Ordinal);
             of[node] = options;
         }
@@ -195,15 +195,32 @@ public static class ValuesMoves
             }
 
             if (!moved.Values.Any(pair => WorkflowValuesKey.Of(config.WorkflowValues, move.Repository, moved.Workflow, pair.Key) is { } current && Same(current, pair.Value))) continue;
-            var before = disk ??= DriverConfig.Load(path);
-            var lines = new List<string>();
-            disk = Cleared(before, move, runs, lines);
-            cleared |= !ReferenceEquals(before, disk);
-            said.AddRange(landed ? lines : lines.Where(line => line.EndsWith(Reason(move.Entry), StringComparison.Ordinal)));
+            try
+            {
+                var before = disk ??= DriverConfig.Load(path);
+                var lines = new List<string>();
+                disk = Cleared(before, move, runs, lines);
+                cleared |= !ReferenceEquals(before, disk);
+                said.AddRange(landed ? lines : lines.Where(line => line.EndsWith(Reason(move.Entry), StringComparison.Ordinal)));
+            }
+            catch (DriverException ex)
+            {
+                said.Add($"values  the driver's file was not read, so moved values are cleared at a later look: {ex.Message}");
+                break;
+            }
         }
 
-        if (proposed) StepLessons.Write(home, kept);
-        if (cleared) disk!.Save(path);
+        // A failed write leaves both files as they stand: the next look proposes, marks and clears from them again.
+        try
+        {
+            if (proposed) StepLessons.Write(home, kept);
+            if (cleared) disk!.Save(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DriverException)
+        {
+            said.Add($"values  the moved values were not kept this look, and are kept at a later one: {ex.Message}");
+        }
+
         return said;
     }
 }

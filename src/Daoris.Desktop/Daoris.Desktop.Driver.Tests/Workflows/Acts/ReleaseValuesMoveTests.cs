@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A repository's release values move into its delivery knowledge (D325 point 5): a new version of its workflow holding the actor form reads
+/// A repository's release values move into its delivery knowledge: a new version of its workflow holding the actor form reads
 /// none of the values its fixed release steps took, so they are proposed into the entry the release step names, handed to its holder, kept
 /// where they are until the entry in the repository's checkout holds each, then cleared with that reason; the approval node's values stay its
 /// reader (point 7). Each seen failing first.
@@ -106,7 +106,7 @@ public sealed class ReleaseValuesMoveTests : NodeRunFixture
         }, CancellationToken.None);
     }
 
-    /// <summary>The entry as the holder writes it in its repository's own change, from the values it was handed.</summary>
+    /// <summary>The entry as the holder writes it in its repository's own change, from the values handed to it.</summary>
     private void Landed(string stage = "403") => Write(Path.Combine(Checkout, ".claude", "knowledge", "release-path.md"), $"""
         ---
         name: release-path

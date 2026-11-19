@@ -16,7 +16,7 @@ public sealed record StepLesson(string Repository, string Entry, string Run, str
     /// <summary>The values a repository held for steps its workflow's new version holds no more, moved into the entry; null for a run's lesson.</summary>
     public MovedValues? Moved { get; init; }
 
-    /// <summary>When the entry, in the repository's checkout, was found holding each moved value; null while it does not.</summary>
+    /// <summary>When the entry, in the repository's checkout, first held each moved value; null while it does not.</summary>
     public DateTimeOffset? Landed { get; init; }
 }
 
