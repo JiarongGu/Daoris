@@ -22,8 +22,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     /// <param name="force">The person saying it again, meaning it: work and branch go too.</param>
     /// <param name="service">The person's door supplies the local ledger: a held tree stays, and force can lift an ended session's own lock.</param>
     /// <param name="landing">A landing's own tidy, which holds the tree's landing hold already.</param>
+    /// <param name="treeOnly">The tree goes and its branch stays whatever it holds (an unused tree past its days, <see cref="TreeReleases"/>); uncommitted work still keeps it.</param>
     internal async Task<TreeRemoval> RemoveAsync(
-        string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false)
+        string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null, bool landing = false, bool treeOnly = false)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -88,7 +89,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         // The name a recovery ref is kept under: the branch, or for a detached tree the one its layout names.
         var named = detached ? follows.BranchOfTree(full)?.Branch ?? "HEAD" : branch;
         // The branch the session's agent made where the tree is on one: it goes with no tree, whatever force says.
-        var madeBy = detached ? null : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
+        var madeBy = detached ? null : treeOnly ? branch : await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false);
         ContentHold? held = null;
         ContentHolds.TreeHolds? seen = null;
         LandedBranch? squashedOn = null;
@@ -259,6 +260,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
 
         // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
         // without them git let go of the tree, then failed deleting its files (2026-09-28).
+        var freed = TreeUse.Bytes(full);
         var removed = await MachinePorts.Repository.RemoveTreeAsync(root, full, force, ct).ConfigureAwait(false);
         string? left = null;
         if (!removed.Ok)
@@ -283,8 +285,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         if (madeBy is not null)
         {
             // Never a branch the session's agent made, which is the pull request's and the only copy of its commits.
-            return new(true, $"removed the session tree at {path}, and kept its branch `{madeBy}`, which the session made and which holds its "
-                + "commits; delete it with git where you no longer want it." + (left is null ? "" : $" {left}"));
+            return new(true, $"removed the session tree at {path}, and kept its branch `{madeBy}`, which "
+                + (treeOnly ? "holds its commits, the tree being unused for its days;" : "the session made and which holds its commits;") + " delete it with git where you no longer want it." + (left is null ? "" : $" {left}"), freed);
         }
 
         if (!detached)
@@ -306,20 +308,20 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         {
             // Not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
             return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: git "
-                + "would not show what its proof rested on standing where the proof read it, once the tree went." + (left is null ? "" : $" {left}"));
+                + "would not show what its proof rested on standing where the proof read it, once the tree went." + (left is null ? "" : $" {left}"), freed);
         }
 
         if (stays is not null)
         {
             return new(true, $"removed the session tree at {path}, and kept its branch `{branch}`: {stays}"
-                + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"));
+                + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"), freed);
         }
 
         // How the work is found held, where ancestry could not say, and where its commits stay: the
         // sentence the review's Discard shows as it is.
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
             + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")
-            + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"));
+            + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"), freed);
     }
 
     /// <summary>The found layer's finish for one removed tree; a layer that cannot be written is written again by the next reading.</summary>

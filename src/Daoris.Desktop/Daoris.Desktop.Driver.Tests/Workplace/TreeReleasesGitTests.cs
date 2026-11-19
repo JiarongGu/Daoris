@@ -183,6 +183,60 @@ public sealed class TreeReleasesGitTests : LandedFixture
         Assert.Contains("has not taken", Entry(branch).Kept, StringComparison.Ordinal);
     }
 
+    private static Task<IReadOnlySet<string>> Nobody(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
+
+    /// <summary>The fixture's days on: every tree's last use is read against this clock.</summary>
+    private static Func<DateTimeOffset> DaysOn(int days) => () => DateTimeOffset.UtcNow.AddDays(days);
+
+    [Fact]
+    public async Task The_sweep_ends_an_unused_ended_tree_past_its_days_and_keeps_its_branch_and_says_what_it_freed()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (runTree, runBranch) = await OwnedAsync(trees, root, "q1", "a.txt");
+        var unowned = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(unowned.Path, "b.txt", "b\n", "work on b");
+        Record("q1", ended: true);
+
+        var swept = await new TreeReleases(Home, DaysOn(20)).SweepAsync(root, "engine", Nobody);
+
+        Assert.All(swept, each => Assert.True(each.Gone, each.Said));
+        Assert.Equal(new[] { runBranch, unowned.Branch }.Order(), swept.Select(each => each.Branch).Order());
+        Assert.All(swept, each => Assert.True(each.Freed > 0));
+        Assert.False(Directory.Exists(runTree));
+        Assert.False(Directory.Exists(unowned.Path));
+        Assert.NotEmpty((await GitAsync(root, "branch", "--list", unowned.Branch)).Trim());
+        Assert.NotEmpty((await GitAsync(root, "branch", "--list", runBranch)).Trim());
+    }
+
+    [Fact]
+    public async Task The_sweep_keeps_a_tree_used_within_its_days_one_with_uncommitted_work_one_a_session_holds_and_a_live_runs()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var fresh = await trees.OpenAsync(root, "engine", "aurora");
+        var dirty = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(dirty.Path, "wip.txt"), "unsaved\n");
+        var busy = await trees.OpenAsync(root, "engine", "aurora");
+        var (liveTree, _) = await OwnedAsync(trees, root, "q9", "c.txt");
+        Record("q9", ended: false);
+
+        // Younger than its days: nothing goes, though every session is over.
+        Assert.Empty(await new TreeReleases(Home, DaysOn(3)).SweepAsync(root, "engine", Nobody));
+
+        var swept = await new TreeReleases(Home, DaysOn(20)).SweepAsync(
+            root, "engine", _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string> { busy.Path }));
+
+        Assert.Equal([fresh.Branch], swept.Where(each => each.Gone).Select(each => each.Branch));
+        Assert.False(Directory.Exists(fresh.Path));
+        Assert.True(Directory.Exists(dirty.Path));
+        Assert.True(File.Exists(Path.Combine(dirty.Path, "wip.txt")));
+        Assert.True(Directory.Exists(busy.Path));
+        Assert.True(Directory.Exists(liveTree));
+        // Where no session list is known, nothing ages out.
+        Assert.Empty(await new TreeReleases(Home, DaysOn(60)).SweepAsync(root, "engine", null));
+    }
+
     [Fact]
     public async Task The_look_leaves_a_live_runs_tree_to_its_run_and_ends_it_once_the_run_is_over_saying_so()
     {
