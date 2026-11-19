@@ -1,5 +1,6 @@
-// The approver's own press, `approve-release`, against the stand-in: a release id Azure DevOps does not answer is said not found, with
-// Azure DevOps' status, and never read as a release with nothing pending; a release it answers with no approval pending says so.
+// The approver role's act, `approve-release`, against the stand-in: a release id Azure DevOps does not answer is said not found, with
+// Azure DevOps' status, and never read as a release with nothing pending; a release it answers with no approval pending says so; each
+// answers its receipt (fact `approved`), and an approval given already is read first, whoever gave it, and given no second time.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { POINTS, TOKEN, WEB, signedIn, standIn, start } from './stand-in.mjs';
@@ -40,4 +41,20 @@ test('a release Azure DevOps answers with no approval of the stage pending says 
   assert.equal(answer.exit, 1);
   assert.match(answer.said[0], /^Release-2019 has no approval of Prod pending: nothing is changed\./);
   assert.deepEqual(writes(api), []);
+  assert.deepEqual(answer.data.receipt, { fact: 'approved', state: 'failed', code: 'not-pending', message: answer.said[0] });
+});
+
+test('the approver\'s act answers its receipt, read after it, and a second approves nothing more: the approval read first, whoever gave it', async (t) => {
+  const api = await released();
+  api.releases[0].environments[0].preDeployApprovals.push({ id: 77, status: 'pending', approver: { displayName: 'Release Approvers' } });
+
+  const first = await approve(t, api, '13515');
+  assert.equal(first.exit, 0);
+  assert.deepEqual(first.data.receipt, { fact: 'approved', state: 'reached', release: 13515, by: 'Daoris', message: 'Prod of Release-2019 approved by Daoris.' });
+  assert.deepEqual(writes(api).map((call) => call.path), ['/acme/Proj/_apis/release/approvals/77']);
+
+  const again = await approve(t, api, '13515');
+  assert.equal(again.exit, 0);
+  assert.deepEqual(again.data.receipt, { fact: 'approved', state: 'reached', release: 13515, by: 'outside: Daoris', message: 'Prod of Release-2019 approved by outside: Daoris.' });
+  assert.equal(writes(api).length, 1);
 });

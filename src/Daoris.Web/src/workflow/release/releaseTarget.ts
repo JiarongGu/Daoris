@@ -1,5 +1,6 @@
 // A release step's target as the window chooses it:what the Azure DevOps plugin's `discover-releases` found, read
 // defensively, and the values the one door (`SET_WORKFLOW_VALUES`, twin `daoris workflow values`) sets on each release step of a workflow.
+import { holdsIt, type RunHolder } from '../run';
 
 /** The actions a release step takes on its target, the plugin's own (`target.mjs`' ACTIONS). */
 export const RELEASE_ACTIONS = ['observe', 'start-stage', 'create-and-start'] as const;
@@ -52,15 +53,15 @@ export const isReleaseKind = (kind: string | null | undefined): boolean => /^[^/
 /** The ids of a workflow's release steps, in their order: each takes the same target. */
 export const releaseNodesOf = (nodes: { id: string; kind: string }[]): string[] => nodes.filter((node) => isReleaseKind(node.kind)).map((node) => node.id);
 
-/** The plugin's approval command:the approver's own press, which no agent is handed. */
+/** The plugin's approval command: the approver role's act, the person's press or the holding agent's tool. */
 export const APPROVE_COMMAND = 'approve-release';
 
 /**
- * Whether the card may approve here: the plugin declares its approval command, and as no agent's tool. A plugin handing it to agents is
- * no approver's press, so the card opens the system's page instead.
+ * Whether the card may approve here: the plugin declares its approval command and the person holds the approver role. Where an agent
+ * holds it, the command is that agent's tool, so the card opens the system's page instead (APPROVEACT1, D325).
  */
-export const canApproveHere = (commands: { name: string; tool: boolean }[]): boolean =>
-  commands.some((command) => command.name === APPROVE_COMMAND && !command.tool);
+export const canApproveHere = (commands: { name: string; tool: boolean }[], holder: RunHolder | null | undefined): boolean =>
+  holdsIt(holder) && commands.some((command) => command.name === APPROVE_COMMAND);
 
 /** The release and the stage an approval wait asks of (`approve <stage> of <release>` and the page's `releaseId`), or null for another wait. */
 export function approvalOf(words: string | null | undefined, url: string | null | undefined): { release: string; stage: string } | null {

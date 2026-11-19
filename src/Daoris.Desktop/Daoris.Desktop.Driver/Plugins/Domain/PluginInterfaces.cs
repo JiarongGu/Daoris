@@ -22,6 +22,12 @@ public sealed record PluginCommandDeclared(string Name, AuthoredText About, bool
     public bool Writes { get; init; }
 
     public AuthoredText? Confirm { get; init; }
+
+    /// <summary>
+    /// The role whose act it is (an approval is the <c>approver</c>'s), or null for any session's tool: a tool handed only where the
+    /// session's place casts that role to an agent, so never at a destination the place marks (<see cref="PluginToolList"/>, D325).
+    /// </summary>
+    public string? Role { get; init; }
 }
 
 /// <summary>

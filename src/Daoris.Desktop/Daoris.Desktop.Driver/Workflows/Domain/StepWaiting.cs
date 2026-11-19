@@ -172,6 +172,9 @@ public sealed record HeldStep(
     /// is said on; null on every other wait.
     /// </summary>
     public WorkflowRunHeld? Held { get; init; }
+
+    /// <summary>Handed to the agent holding its role (<see cref="AgentSettles.Handed"/>): its working session's tool or acts settle it, the person's press <i>Take</i> alone.</summary>
+    public bool Handed { get; init; }
 }
 
 /// <summary>
@@ -206,18 +209,19 @@ public static class HeldSteps
         var status = WorkPerformer.StatusOf(record, node.Id);
         if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
-        if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
 
-        // A step its agent's working session settles by its tool is handed to that session: the person's one press is Take.
-        if (AgentSettles.Handed(node, status, wait))
+        // A step its agent's working session settles by its tool or its acts is handed to that session: the person's one press is Take.
+        if (!carried && AgentSettles.Handed(node, status, wait))
         {
             return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, [], work, wait.Since)
             {
-                Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Epoch = tenure?.Epoch, Holds = StepHoldActs.Handed(tenure),
+                Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Epoch = tenure?.Epoch,
+                Holds = StepHoldActs.Handed(tenure), Handed = true,
             };
         }
 
+        if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
         var presses = RunNodeWords.Acts(node, status).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt

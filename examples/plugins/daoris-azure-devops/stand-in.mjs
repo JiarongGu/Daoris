@@ -130,6 +130,13 @@ export async function standIn() {
       api.deployed.push({ release: held.id, environment: environment.name, comment: sent.comment });
       return [200, environment];
     }
+    const approval = /^\/acme\/Proj\/_apis\/release\/approvals\/(\d+)$/.exec(path);
+    const asked = approval ? api.releases.flatMap((each) => each.environments ?? []).flatMap((each) => each.preDeployApprovals ?? []).find((each) => each.id === Number(approval[1])) : null;
+    if (asked && request.method === 'PATCH') {
+      const sent = JSON.parse(text);
+      Object.assign(asked, { status: sent.status, comments: sent.comments, approvedBy: { displayName: api.me.providerDisplayName } });
+      return [200, asked];
+    }
     return [404, { message: 'not found' }];
   };
   const server = createServer((request, response) => {

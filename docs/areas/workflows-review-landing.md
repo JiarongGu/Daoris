@@ -64,9 +64,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
    approval's card, on the step in the run's view, in the session page's dock and in its *What needs you* row, names the release, its
    definition, the build and its source branch (APPROVEHERE1, APPROVEPRESS1, APPROVEPRESS2): where the plugin declares
-   `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
-   holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
-   observed. No release step approves, whatever its action.
+   `approve-release` and the person holds the approver role (the step's holder, never the command's `tool` flag), *Approve* and *Reject*
+   on the card run it through the window's plugin command door under their own sign-in; otherwise *Open* takes the person to the system's
+   page in Daoris's browser, and the step settles on the approval observed. No release step approves, whatever its action; where the place
+   casts the approver to an agent the approval is that agent's tool (rule 3e, APPROVEACT1).
 3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
    `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
    while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
@@ -80,7 +81,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    (`build <n> / CD`) and under `observe` for its holder's, to the step's deadline, never making one. Start starts only where the action
    says, once (a start Azure DevOps shows late is waited for, and a refused start that reads started is taken), else waits on the
    deployer; every step reads the kit's stand-down signal before each write and in each wait, so nothing is made after its attempt
-   stands down; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
+   stands down; approve never approves (the approval is the approver role's act, the plugin's `approve-release`, rule 3e); a key or
    sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1); at the
    deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
    owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
@@ -93,7 +94,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    the pass at the look's deadline journals it once on the run (`workflows/acts/<key>.json`) against the agent-held step waiting whose receipts take its fact,
    with its attempt and epoch, where the round came after the step waited (`StepActs`, before the hand-off in `HandStepsAsync`); a round no
    such step takes is journaled nowhere. Once the newest receipt of each mapped fact is reached the pass settles the step done at the
-   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The shipped
+   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The approval
+   is the approver role's act (APPROVEACT1): a plugin's step waiting on its own role's act whose `receipts` map it (`release-approve`,
+   `{"approval":"approved"}`) is handed, where an agent holds the role, to the working session like a task (`AgentSettles.Handed`, its
+   plugin's words and page in the hand-off, *Take* alone the person's press), its act `approve-release` reaching only a session at a place
+   that casts the approver to an agent (plugins rule 29a), and its reached receipt, the plugin's own reading after the act, is applied as
+   the attempt's reached outcome credited as the receipt says; a destination the place marks keeps the approver the person's, so nothing
+   is handed and no agent's receipt settles it. The shipped
    `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
    `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
    after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its

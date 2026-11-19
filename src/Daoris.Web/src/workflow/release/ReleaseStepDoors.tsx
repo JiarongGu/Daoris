@@ -61,7 +61,7 @@ export function ReleaseTarget({ repository, workflow, plugin, nodes }: { reposit
   );
 }
 
-/** The approval card on a release step waiting on its approver, with the press the plugin's channel allows. */
+/** The approval card on a release step waiting on its approver, with the press where the person holds the role. */
 function Approval({ run, step }: { run: WorkflowRun; step: RunStep }) {
   const { i18n } = useTranslation();
   const opener = useContext(LinkOpener);
@@ -82,7 +82,11 @@ function Approval({ run, step }: { run: WorkflowRun; step: RunStep }) {
   };
   const open = (address: string) => (opener ? opener(address) : window.open(address, '_blank', 'noopener'));
 
-  return <ApprovalCard words={step.wait?.values?.words ?? ''} url={url} canApprove={Boolean(asked && origin) && canApproveHere(commands)} onDecide={decide} onOpen={open} />;
+  return (
+    <ApprovalCard
+      words={step.wait?.values?.words ?? ''} url={url} canApprove={Boolean(asked && origin) && canApproveHere(commands, step.holder)} onDecide={decide} onOpen={open}
+    />
+  );
 }
 
 /**

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
@@ -119,15 +119,12 @@ describe('the dock, at a release step waiting on its approver', () => {
     }]));
   });
 
-  it('opens the stage’s page, with no press of its own, where the plugin hands the command to agents', async () => {
+  it('keeps the person’s press where they hold the approver, though the plugin hands the command to an agent holding it as its tool', async () => {
     wireRelease(invoke, { tool: true });
     drawDock();
 
     const line = screen.getByRole('group', { name: 'release-approve: waiting on approver: you' });
-    await waitFor(() => expect([sentTo(invoke, 'PLUGINS').length, sentTo(invoke, 'GIT_BRANCHES').length]).toEqual([1, 1]));
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-    expect(within(line).getByRole('button', { name: 'Open' })).toBeInTheDocument();
-    expect(within(line).queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(within(line).queryByRole('button', { name: 'Reject' })).toBeNull();
+    expect(await within(line).findByRole('button', { name: 'Approve' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'Reject' })).toBeInTheDocument();
   });
 });

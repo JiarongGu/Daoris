@@ -51,6 +51,8 @@ public sealed class ReleasePresetTests : NodeRunFixture
         Assert.True(TaskDecisions.Is(graph.Nodes.Single(node => node.Id == "config-needed")));
         Assert.Contains(graph.Wires, wire => wire.From?.Node == "release" && wire.To?.Node == "config-needed");
         Assert.Contains(graph.Wires, wire => wire.From?.Node == "release-approve" && wire.To?.Node == "config-needed");
+        // The approval is the approver's act: where an agent holds the role, its tool's `approved` receipt settles it (APPROVEACT1, D325).
+        Assert.Equal(new Dictionary<string, string> { ["approval"] = "approved" }, StepReceipts.Mapped(graph.Nodes.Single(node => node.Id == "release-approve")));
         Assert.Contains(graph.Wires, wire => wire.Kind == WireKinds.When && wire.From?.Node == "config-needed" && wire.Outcome == "needed" && wire.To?.Node == "config-change");
         Assert.Equal("check-release", graph.End);
         Assert.Equal(
@@ -70,8 +72,10 @@ public sealed class ReleasePresetTests : NodeRunFixture
         // The reader kept for runs bound before the actor form: each fixed step still performs, until no unended run names them.
         Assert.Subset(steps.ToHashSet(), new HashSet<string?> { "release-target", "release-create", "release-start", "release-approve", "release-watch" });
         var commands = manifest["interfaces"]!["commands"]!.AsArray().Where(command => (bool?)command!["tool"] == true).Select(command => (string?)command!["name"]).ToList();
-        Assert.Subset(commands.ToHashSet(), new HashSet<string?> { "create-release", "start-stage", "release-status" });
-        Assert.DoesNotContain("approve-release", commands);
+        Assert.Subset(commands.ToHashSet(), new HashSet<string?> { "create-release", "start-stage", "release-status", "approve-release" });
+        // The approval is a tool only as the approver role's act, handed where the place casts the approver to an agent (APPROVEACT1).
+        var approve = manifest["interfaces"]!["commands"]!.AsArray().Single(command => (string?)command!["name"] == "approve-release")!;
+        Assert.Equal(StepRoles.Approver, (string?)approve["role"]);
     }
 
     [Fact]
