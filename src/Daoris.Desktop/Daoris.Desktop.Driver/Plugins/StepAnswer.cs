@@ -15,6 +15,8 @@ public static class StepAnswer
     /// <summary>The code a step fails with whose session ended unanswered.</summary>
     public const string NoAnswer = "no-answer";
 
+    public const string SignIn = "sign-in";
+
     public static string Folder(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "agent-steps");
 
     public static string AskPath(string home, string invocation) => Path.Combine(Folder(home), $"{invocation}.json");
@@ -90,8 +92,8 @@ public static class StepAnswer
         return null;
     }
 
-    /// <summary>The failure kept for a session that ended without answering; nothing where an answer is kept already.</summary>
-    public static void Unanswered(string home, string invocation)
+    /// <summary>The failure kept for a session that ended without answering, <see cref="SignIn"/> with its words where given; nothing where an answer is kept already.</summary>
+    public static void Unanswered(string home, string invocation, string? signIn = null)
     {
         if (File.Exists(AnswerPath(home, invocation))) return;
         var answer = new JsonObject
@@ -99,8 +101,8 @@ public static class StepAnswer
             ["state"] = ReconcileStates.Done,
             ["outcome"] = new JsonObject
             {
-                ["state"] = WorkStates.Failed, ["code"] = NoAnswer,
-                ["evidence"] = new JsonObject { ["message"] = "the step's session ended without calling step_answer." },
+                ["state"] = WorkStates.Failed, ["code"] = signIn is null ? NoAnswer : SignIn,
+                ["evidence"] = new JsonObject { ["message"] = signIn ?? "the step's session ended without calling step_answer." },
             },
         };
         Directory.CreateDirectory(Folder(home));
