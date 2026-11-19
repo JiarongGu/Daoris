@@ -7,8 +7,8 @@ category folders beside it. The install's `data/` is the Daoris home. Every mach
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
 Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
-new build, or rolls back. A release that changes a stored shape carries one migration, which converts the home once at its
-first start; nothing reads an older shape after it. The build's own plugins (`app/plugin-offers/`) that are installed older update
+new build, or rolls back. A release that changes a stored shape converts nothing: the home's history is purged, and nothing
+reads an older shape (rule 51). The build's own plugins (`app/plugin-offers/`) that are installed older update
 at that start, before any hook runs (plugins area, rule 18a).
 
 Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/` for `src/Daoris.Desktop/Daoris.Desktop.Modules/`.
@@ -20,11 +20,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | Where | Its job |
 |---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Launcher/` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
-| `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), a folder moved across volumes (`FolderMove`: a failed copy leaves the target as it was), the one-time placing into D172's places (`HomePlacing`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
+| `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
 | `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
 | `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
-| `Drv/Store/`, `Drv/Transitional/Migration/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`); the release's one migration (`HomeMigration` and its steps) |
+| `Drv/Store/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
 
@@ -72,38 +72,30 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 15. An entry held in both places is refused, naming both, for the person to keep one. A list of items reads both places.
     Asking for a new place makes its category's folder. (from D172)
 16. `data/` holds no secret: a file with a key is a sign-in and lives in `profiles/`, but for an older account's home, which stays
-    at `data/harnesses/<agent>/<account>` until HOMELAYOUT5 (rule 23; the Disk space card's sign-ins row says so). (from D172)
+    at `data/harnesses/<agent>/<account>` (rule 21; the Disk space card's sign-ins row says so). (from D172)
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
 17a. Nothing Daoris writes is kept forever unnoticed. A tree's files record and install logs go with the tree (the tidy's set-aside,
     a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
     sweep (`DeadMarkers`); each store limits its log to 32 MB and the knowledge store truncates it and returns its free pages at
-    open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the `salvage` kind (a migration's folder under
-    `data/salvage` whose newest file is 30 days old goes, `SalvageKeeping`; a row of Disk space, a `space free` group the person
-    may take earlier, a rule no one sets) and the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
+    open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
     days, then an emptied folder, `PluginOutputKeeping`, handed to the tidy as its `IOutputKeeping` port by the loop's watch; no card
     row, the plugin's other data stays). `agent account list` names a
     folder beside an agent's accounts that is no account (a lock's) and a folder under the account homes that no agent names
     (`<agent>$a`, `StrayAgentFolders`), and `agent account remove <agent> <account>` or `remove <folder>` takes each.
-18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb, the first-start migration and the
-    launcher's swap hold it for their act. A stale lease never blocks, and is removed by moving it aside and
-    judging what moved, so a lease written meanwhile is put back. A live `driver.lock`, or a lease at the old place,
-    still holds the home. A workflow verb that writes a run's record holds it (`NodeLease`: `keep`, `skip`, `stop`, `changes`,
-    `accept`, `take`, `hand`, `give-back`, and `values` set or cleared); a look holds none. (from D104, D171)
+18. One writer per home: `run/home.lease`. An instance holds it for its life; a verb and the launcher's swap hold it for
+    their act. A stale lease never blocks, and is removed by moving it aside and judging what moved, so a lease written
+    meanwhile is put back. No other file holds the home. A workflow verb that writes a run's record holds it (`NodeLease`:
+    `keep`, `skip`, `stop`, `changes`, `accept`, `take`, `hand`, `give-back`, and `values` set or cleared); a look holds none.
+    (from D104, D171, D323)
 19. A home has one id, in `data/home.json`, read alike through every path to the folder. (from D171)
-20. A home with no state, on a machine whose `~/.daoris` holds state, moves it in at the first start, `bin/` excepted, and
-    says so once. (from D63)
-21. At a start, an install moves once into D172's places only the entries Daoris alone names by a derived path: keys, remotes,
-    the browsers' and window's profiles, the downloads, run files, logs. It runs only when the last update is at rest, no other
-    process of the folder runs, and the `migration` lease is free at once; else the next start tries. (from D172)
-22. The move renames on one volume and deletes nothing but an empty new folder. Each rename is journalled in
-    `run/home-move.json` first, and a stopped move is put back at the next start. The machine log says `home.moved`,
-    `home.move-recovered`, `home.move-failed`, `home.move-held`. (from D172)
-23. Never moved: agents' account homes, session trees, rooms and kept files; an older account's home stays at
-    `data/harnesses/<agent>/<account>`, which is where `data/` holds a sign-in (rule 16's exception until HOMELAYOUT5 moves them).
-    `bin/` is not moved either, and its old place, `data/bin`, is removed by the migration's `old-bin` step once `app/` carries both
-    service hosts. A tree is one under either place of `trees`; new trees open at the new place. (from D172)
+20. A start moves nothing into the home: no `~/.daoris` is moved in, and no entry is moved from one place to another. A
+    home whose layout changed is purged, not moved. (from D323)
+21. Agents' account homes, session trees, rooms and kept files are read at the place of their entry that holds them; an
+    account's home at `data/harnesses/<agent>/<account>` is where `data/` holds a sign-in (rule 16's exception). (from D172)
+22. `bin/` is read at `cache/bin/` and at `bin/` under the home (`homeBins`, the table's two places of `bin`). (from D172)
+23. A tree is one under either place of `trees`; new trees open at the new place. (from D172)
 
 **Tools and pins**
 
@@ -210,7 +202,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     a command line. (from D94, D139)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
 
-**The store and the migration**
+**The store**
 
 49. `data/desktop.db` is the desktop's SQLite store, opened by the driver library alone and never synced: one connection per
     process, write-ahead logging, `synchronous = FULL`, every write one immediate transaction. The engine that does this is
@@ -222,31 +214,13 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 50. Store changes are numbered steps, forward only, one exclusive transaction each. The writer stamp (3) is never lowered. A
     build whose stamp is below the store's reads it and writes nothing. A stamp-raising step, and every import, waits until
     the start is settled. (from D139, D212, D226)
-51. No code reads a record, key, file or layout in a shape an older build wrote. A release that changes a stored shape carries
-    one migration, `HomeMigration`, run by the application's start once the home is known and before the staffing, the loop
-    and the routes read it, under the home's lease; a lease held past its wait, or one that changed under every attempt to take it, runs nothing and says `home.migration-held`, and the next start runs it. A home the launcher's swap holds
-    is not converted then, since a build that fails to confirm is rolled back onto the home it left: the application runs the
-    migration again in the same process once the update has confirmed and the swap has let go. (from D232)
-52. The migration is a list of steps, each converting its own records and idempotent. Before a file's first change it is
-    copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a SQLite store through SQLite's backup
-    (`SalvageCopy`: one file, never its log or index copied by hand); a copy already there is kept. The copy is the undo, and
-    the Disk space card's `salvage` kind (rule 17a) ends it. (from D232)
-53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
-    nothing; a step that throws, or whose record cannot be written, stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
-    `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
-54. This release's migration is `nocompat1`, its steps in the order of `HomeMigration.Steps`, each named for the records it
-    converts. Two judge rather than convert: `review-records` keeps a person's Accept given with no commit as legacy only where the
-    run's pinned graph has nothing after its review, its receipt saying it was given before Daoris drew a revision, else drops it
-    and says so on the run (a supervisor's such word dropped stale); `closed-runs` ends a closed quest's runs whose standing steps
-    cannot move by the runtime's own judgement, counted by why in `home.migrated`'s `counts`, and `reopened-runs` lapses such an end
-    an older build made under a step still to run after a reached landing. Records nothing reads are removed
-    uncopied (`tree-records`, `unbound-records`, `old-bin`). `conversation-facts` imports Ask Daoris's `<id>.help.json` files and the
-    `archived.json` marks into the conversations' facts (a conversation is archived where its newest part was marked) and takes both out.
-    The next release that changes a shape replaces them. (from D232)
+51. No code reads a record, key, file or layout in a shape an older build wrote, and none converts one: a change of shape edits
+    the store's one current shape, and a home whose shape moved is purged. A store an older build opens after a purge is not
+    supported. No migration runs at a start. (from D323, `.claude/knowledge/compatible-builds.md`)
 
 **Purging a home's history**
 
-55. `daoris home purge --history --plan` lists every file, folder and store table the home holds as history, with sizes and row
+52. `daoris home purge --history --plan` lists every file, folder and store table the home holds as history, with sizes and row
     counts, and changes nothing; `--yes` does it. Everything it moves goes to `purged/<UTC stamp>/` in the Daoris folder (an
     install's root, a bare home's own folder, never in a place it purges), each path at its own place under the Daoris folder, with
     a `purge.json` listing it. A session's connector and a person's own agent write `knowledge.db` directly, so both stores take
@@ -256,12 +230,12 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     file move that fails stops the purge there and says so; what moved is in the backup and the next purge moves the rest into a
     folder of its own. A knowledge store `DAORIS_KNOWLEDGE_DB` moved is the one it reads. Nothing else is touched: configuration is
     never listed. A home with no history says nothing to purge and changes nothing, so a second `--yes` does nothing. (from D322)
-56. `--yes` refuses while Daoris runs on the home: a desktop, a `daoris drive` or another verb holding the home's lease, the
+53. `--yes` refuses while Daoris runs on the home: a desktop, a `daoris drive` or another verb holding the home's lease, the
     service its address file (`run/running.json`) names still living, or a session whose process marker is alive. It names the
     holder and says to close Daoris, and moves nothing. It takes the lease for its act, so nothing starts on the home meanwhile. From a
     session's terminal (`DAORIS_SESSION_ID`) only `--plan` answers: a purge ends every session's record, so it is the person's. A
     service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it. (from D322)
-57. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
+54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
     of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
 
@@ -277,20 +251,20 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **Install layout or publish:** `tools/desktop-publish.mjs`, with its twins in the same change: `StagedBuild`'s names,
   the launcher's `AppFolder`/`ShellExe`, `DaorisHome.InstallBinLayout`. `desktop-publish.test.ts` reads them all.
 - **A new home file:** a `HomeEntry` row in all three twins, same order and cells, asked by name. Pick its category by
-  rule 17. Add it to `HomePlacing.Moves` only if Daoris alone names it by a derived path.
-- **Start-time home work:** `Mod/Update/InstallHome.cs`, `HomePlacing.cs`.
+  rule 17.
+- **Start-time home work:** `Mod/Update/InstallHome.cs`.
 - **What the swap does:** `Drv/Install/StagedBuild.cs`, `InstallSwap.cs`, on the base library alone, since the launcher compiles
   them. **When to update:** `Mod/Update/InstallUpdater.cs`, over the loop's work (`Mod/Loop/DriverLoop.cs`, `Work`), its plugin
   steps in flight counted by `Drv/Workflows/Nodes/PluginStepsInFlight.cs` through `NodeRuntime`. **The request:**
   `Drv/Install/InstallUpdate.cs`.
 - **A refusal to go back:** `Drv/Workflows/InstallRollback.cs`.
-- **A changed stored shape:** a step of its own in `Drv/Transitional/Migration/`, one entry of `HomeMigration.Steps`, and the old
-  reader deleted in the same chunk.
+- **A changed stored shape:** the shape, its writer, its reader and its tests in one change, with no reader of the old shape
+  left (rule 51).
 - **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
-**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit, `HomeMigrationTests`,
+**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit,
 `ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
 `home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.
@@ -308,19 +282,15 @@ drains, swaps, rolls back and refuses.
    code reads right; D43 itself carries no amendment.
 3. D172 point 2 (`DAORIS_HOME` names the Daoris folder) vs `DaorisHome.InstallOf`/`OfInstall` (`Drv/Platform/DaorisHome.cs`) and
    `Mod/Update/InstallHome.cs`'s home setting (an install's home is `<install>/data`). The code and D172's HOMELAYOUT3 note read right.
-4. D172 point 6 (the move runs "at a start after a confirmed update") vs the `HomePlacing` summary (`Mod/Update/HomePlacing.cs`: any start with the
-   update at rest, never the first after a swap). The code reads right.
+4. D172 point 6 (the move runs "at a start after a confirmed update") vs rule 20 (a start moves nothing, D323). The rule reads right.
 5. D139 §3 (`daoris-driver update`) vs `Drv/Install/UpdateCommand.cs` (the verb is `daoris update`). The tree reads right.
 6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs` (`Tools`' remarks and `Declared`: the driver
    alone; the CLI's `tools.ts` is gone) and the `ToolVersions` entry (`cache/tools`). The code reads right.
 7. D57 (managed agents under `~/.daoris/toolchain/`) vs the `Toolchain` entry (`cache/toolchain`). The code reads right.
-8. D232 (no older reader) vs `HomeEntry.Old` places, `HomeLease.OlderIn` (old lease and `driver.lock`) and
-   `InstallHome.Migrate` (D63's `~/.daoris` move-in), none of them in the migration. The code is today's
-   behaviour until ONEWAY1w moves them into the migration.
+8. D323 (no build reads an earlier build's record) vs `HomeEntry.Old` places (rules 13 to 15, 21 to 23), still read by every
+   twin of the home table. The code is today's behaviour until NOCOMPAT1's rest takes the old column out of all three twins.
 
 ## Open
 
-- **ONEWAY1w**: the home's old places as a migration step: every entry at its old place moved, `driver.lock`, D63's move-in and
-  the flat service host ended.
-- **HOMELAYOUT5**: measure, per harness, whether account homes, trees, rooms and kept files can move safely.
+- **NOCOMPAT1's rest**: the home table's old column and every reader of an old place, in the three twins at once.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

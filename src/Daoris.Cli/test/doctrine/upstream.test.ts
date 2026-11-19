@@ -26,7 +26,7 @@ function synced() {
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: canon.version,
+    canon,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
@@ -115,7 +115,7 @@ function syncedFiles() {
   const canon = readCanon(canonFx.root);
   const manifest = readManifest(repoFx.root);
   applySync({
-    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    root: repoFx.root, manifest, canon, force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
   return { canonFx, repoFx };
@@ -193,7 +193,7 @@ test('upstreamAll promotes every drifted file and leaves clean ones alone', () =
   applySync({
     root: repoFx.root,
     manifest,
-    canonVersion: canon.version,
+    canon,
     force: false,
     plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
   });
@@ -265,7 +265,7 @@ test('a promoted edit survives a canon version bump on top of it', () => {
   const plan = planSync({ root: fx.repoFx.root, manifest, canon, lock: readLock(fx.repoFx.root) });
   assert.deepEqual(plan.drifted, [], 'the repo holds exactly what the canon says');
 
-  applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
+  applySync({ root: fx.repoFx.root, manifest, plan, canon, force: false });
   const after = fx.repoFx.region()!;
   assert.match(after, /IMPROVED\./);
   assert.match(after, /@ 0\.9\.0 /);
@@ -286,7 +286,7 @@ test('after upstreaming, a re-sync closes the loop without --force', () => {
     lock: readLock(fx.repoFx.root),
   });
   assert.deepEqual(plan.drifted, [], 'a file already matching the canon is not drift');
-  applySync({ root: fx.repoFx.root, manifest, plan, canonVersion: canon.version, force: false });
+  applySync({ root: fx.repoFx.root, manifest, plan, canon, force: false });
   const after = planSync({
     root: fx.repoFx.root,
     manifest,

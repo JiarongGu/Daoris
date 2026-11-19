@@ -108,7 +108,7 @@ public static class GraphRefusal
     /// <summary>A <c>land</c> written with an <c>accept</c>: the press is the graph's <c>review</c> before it.</summary>
     public const string Accept = "accept";
 
-    /// <summary>A <c>land</c> saved with no <c>method</c>: a stored one still reads, and a run resolves it.</summary>
+    /// <summary>A <c>land</c> saved with no <c>method</c>: a save refuses it, and a run resolves one left open.</summary>
     public const string LandMethod = "land-method";
 
     /// <summary>A second hold of one kind: the graph judges each hold once.</summary>

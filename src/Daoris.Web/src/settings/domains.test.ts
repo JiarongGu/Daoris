@@ -73,15 +73,10 @@ describe('the Settings registry', () => {
     expect(en['projects.tab.setup']).toBe('Setup');
   });
 
-  /**
-   * A domain remembered under `daoris.settings` from before it left opens where what it held stayed: Plugins at
-   * Driver, which keeps its folder's row and the door to the Plugins place. One that left for a page Settings holds no row
-   * of (Agents, Workspace, Permissions) opens on Appearance, as any domain this window lacks does.
-   */
-  it('opens a remembered domain that left Settings where what it held stayed, else on Appearance', () => {
+  /** A domain remembered under `daoris.settings` opens itself while Settings has it, else on Appearance, as any domain this window lacks does. */
+  it('opens a remembered domain Settings has, else on Appearance', () => {
     expect(rememberedDomain('driver')).toBe('driver');
-    expect(rememberedDomain('plugins')).toBe('driver');
-    for (const gone of ['agents', 'workspace', 'permissions', 'billing', null]) expect(rememberedDomain(gone)).toBe('appearance');
+    for (const gone of ['agents', 'workspace', 'permissions', 'plugins', 'billing', null]) expect(rememberedDomain(gone)).toBe('appearance');
   });
 
   /**

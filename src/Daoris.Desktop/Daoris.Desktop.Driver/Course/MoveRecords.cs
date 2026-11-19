@@ -246,30 +246,6 @@ public static class MoveWordDispositions
     public static readonly IReadOnlyList<string> All = [Sent, Left, Uncertain, Held];
 }
 
-/// <summary>
-/// A move an older build's box kept, as its import writes it: the decision, the phase the box shows it at
-/// (<c>decided</c>, <c>old-ended</c> or <c>opened</c>), and what that phase carries.
-/// </summary>
-/// <param name="Decision">The move as the box decided it.</param>
-/// <param name="Phase">The phase the box shows.</param>
-public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
-{
-    /// <summary>The moment the box says it decided, ISO 8601; null for the import's own.</summary>
-    public string? DecidedAt { get; init; }
-
-    /// <summary>The record its open made, at <c>opened</c>.</summary>
-    public string? Destination { get; init; }
-
-    /// <summary>The words the box names, at <c>opened</c>, in their order.</summary>
-    public IReadOnlyList<MoveRecordWord> Words { get; init; } = [];
-}
-
-/// <summary>
-/// What a box's import came to: the move written, the record's standing move it waits behind (the one it left, or the one whose open made
-/// it), or why the import is held, nothing written.
-/// </summary>
-public sealed record MoveImported(MoveRecord? Move, MoveRecord? Standing, string? Held);
-
 /// <summary>A move's claim: the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
 public sealed record MoveClaim(long Move, string Run, long Generation);
 

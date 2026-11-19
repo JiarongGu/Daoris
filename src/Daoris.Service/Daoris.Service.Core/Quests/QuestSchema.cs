@@ -1,14 +1,13 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The tables the quest store keeps, made and upgraded as it opens. Every table is created if missing and every column added if
-/// missing, so a store from any earlier build opens and keeps its quests; a table only this machine reads is never pushed or served.
+/// The tables the quest store keeps, made as it opens. Every table is created if missing, with the one current shape; a table only
+/// this machine reads is never pushed or served.
 /// </summary>
 internal static class QuestSchema
 {
     /// <summary>
-    /// Makes the store's tables, stamps the version this build keeps, adds the columns an older store lacks and settles the rows an older
-    /// build left behind.
+    /// Makes the store's tables and stamps the version this build keeps.
     /// </summary>
     /// <returns>The version a newer build stamped on the store, or null where this build's is the newest that has written it.</returns>
     internal static async Task<int?> EnsureAsync(ConnectionGate db, CancellationToken ct)
@@ -152,6 +151,9 @@ internal static class QuestSchema
                   accepted    TEXT NULL,
                   held        INTEGER NOT NULL DEFAULT 0,
                   short_title TEXT NULL,
+                  weight      TEXT NULL,
+                  paths       TEXT NULL,
+                  request     TEXT NULL,
                   evidence    TEXT NULL,
                   review      TEXT NULL,
                   set_up_in   TEXT NULL,
@@ -166,112 +168,13 @@ internal static class QuestSchema
                   workflow_choices TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
+                -- A chain is walked by its steps' parent, once for each session record a list answers, so the parent is indexed.
+                CREATE INDEX IF NOT EXISTS quests_parent ON quests (parent);
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // A store from before workspaces has no workspace; one from before quests carried anything
-        // has neither list; one from before sync has no conflicts, and a log with no numbers.
-        // Their quests survive the upgrade — the one workspace there is, and nothing carried or
-        // raced, which is exactly right, because everything in them is its own.
-        foreach (var (table, column, definition) in new[]
-        {
-            ("quests", "workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
-            ("quests", "links", "links TEXT NOT NULL DEFAULT '[]'"),
-            ("quests", "attachments", "attachments TEXT NOT NULL DEFAULT '[]'"),
-            // A chain: `then` is an SQL keyword, so the column says what it holds.
-            ("quests", "then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
-            ("quests", "parent", "parent TEXT NULL"),
-            ("quests", "conflicts", "conflicts TEXT NOT NULL DEFAULT '[]'"),
-            // Ask and wait: the question a taken quest waits on.
-            ("quests", "awaits", "awaits TEXT NULL"),
-            // The session that published it; a quest from before says none, which is true.
-            ("quests", "published_by", "published_by TEXT NULL"),
-            // The lanes it addresses; a quest from before asked the whole repository.
-            ("quests", "lanes", "lanes TEXT NOT NULL DEFAULT '[]'"),
-            // What the person requires; a quest from before named none.
-            ("quests", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'"),
-            // How a done answered them, and the person's yes to a departure; a quest from before has
-            // neither, and nothing it carries waits. `held` is the replay's own reading, kept so a list can ask it.
-            ("quests", "answers", "answers TEXT NOT NULL DEFAULT '[]'"),
-            ("quests", "accepted", "accepted TEXT NULL"),
-            ("quests", "held", "held INTEGER NOT NULL DEFAULT 0"),
-            // The publisher's short title; a quest from before is given none, and is named from its words.
-            ("quests", "short_title", "short_title TEXT NULL"),
-            // The work's mark; a quest from before is marked none, and starts on Build's order.
-            ("quests", "weight", "weight TEXT NULL"),
-            // The paths it declares; a quest from before declared none.
-            ("quests", "paths", "paths TEXT NULL"),
-            // The workflow request's key; a quest from before no request published.
-            ("quests", "request", "request TEXT NULL"),
-            // What Daoris last read of a done's evidence; a quest from before named none, so none is read.
-            ("quests", "evidence", "evidence TEXT NULL"),
-            // The chain's review choice, a set-up step's environment, its set-ups and the person's verdicts; a
-            // quest from before chose nothing, is no set-up step, and is never shown or reviewed.
-            ("quests", "review", "review TEXT NULL"),
-            ("quests", "set_up_in", "set_up_in TEXT NULL"),
-            ("quests", "set_ups", "set_ups TEXT NOT NULL DEFAULT '[]'"),
-            ("quests", "verdicts", "verdicts TEXT NOT NULL DEFAULT '[]'"),
-            // The note's parts; a quest from before has a note with none, which the page shows as recorded.
-            ("quests", "note_parts", "note_parts TEXT NULL"),
-            // A closure graph's binding and its current submission; a quest from before has neither.
-            ("quests", "closure", "closure TEXT NULL"),
-            ("quests", "submission", "submission TEXT NULL"),
-            // The submission a step grew from, and the one its source's reopen withdrew it from; a quest from before
-            // has neither, which reads as before.
-            ("quests", "grew_from", "grew_from TEXT NULL"),
-            ("quests", "source_reopened", "source_reopened TEXT NULL"),
-            // A quest's own reopen no later submission answered; a row from before keeps none, and the next replay
-            // that writes it reads the log.
-            ("quests", "reopened", "reopened TEXT NULL"),
-            // The person's workflow choices on a quest before it started; no build before it made one, so no row from
-            // before needs its log read again.
-            ("quests", "workflow_choices", "workflow_choices TEXT NOT NULL DEFAULT '[]'"),
-            ("quest_log", "remote", "remote INTEGER NULL"),
-            // The remote's handshake as a circle's last pass heard it; a pass from before heard none, which binds nothing.
-            ("quest_passes", "closure", "closure TEXT NULL"),
-        })
-        {
-            await SchemaColumns.EnsureAsync(db, table, column, definition, ct).ConfigureAwait(false);
-        }
-
-        // A chain is walked by its steps' parent, once for each session record a list answers, so the parent is indexed.
-        await using (var steps = db.Command())
-        {
-            steps.CommandText = "CREATE INDEX IF NOT EXISTS quests_parent ON quests (parent)";
-            await steps.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-
-        // No build names a graph for a take now: the two tables that held one are dropped, the quests and their history untouched.
-        await using (var binds = db.Command())
-        {
-            binds.CommandText = "DROP TABLE IF EXISTS quest_take_binds; DROP TABLE IF EXISTS quest_owned_take_binds;";
-            await binds.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-
-        // The mirror is gone. Its rows were copies of a remote's quests, so they are
-        // dropped rather than migrated: this machine's cursor starts at zero, and its first fetch
-        // brings every one of them back as history. The column that marked them goes with them.
-        if (await SchemaColumns.HasAsync(db, "quests", "home", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.ApplyAsync(db, """
-                DELETE FROM quests WHERE home IS NOT NULL;
-                ALTER TABLE quests DROP COLUMN home;
-                """, ct).ConfigureAwait(false);
-        }
-
-        // A store from before the mark starts it at the highest sequence its own machine holds in the log, which every
-        // number so far is one past, so a removal after the upgrade cannot take the sequence back.
-        if (!await SchemaColumns.HasAsync(db, "quest_machine", "sequence", ct).ConfigureAwait(false))
-        {
-            await SchemaColumns.ApplyAsync(db, """
-                ALTER TABLE quest_machine ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;
-                UPDATE quest_machine SET sequence =
-                  (SELECT COALESCE(MAX(sequence), 0) FROM quest_log WHERE machine = quest_machine.id);
-                """, ct).ConfigureAwait(false);
-        }
-
-        // After the column, which it names. The mark is moved by the statement that writes the operation, not by its
+        // The trigger names `quest_machine.sequence`, so it follows the table. The mark is moved by the statement that writes the operation, not by its
         // callers, so no way into the log can forget it (the registry's tombstones are kept the same way). An operation
         // of this machine's kept back from a remote raises it too: that number is this machine's, and is held there.
         await using (var trigger = db.Command())

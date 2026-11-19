@@ -1,9 +1,10 @@
-import { type ComponentProps, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentProps, createContext, type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
 import { useDebounced } from '../../lib/useDebounced';
 import { searchable } from '../../lib/searchable';
-import { useHarnesses, useSessionEvents, useSessionSearch } from '../../bridge/shell';
+import { useChildHistory, useHarnesses, useSessionConsole, useSessionEvents, useSessionSearch } from '../../bridge/shell';
+import { type BesideReader, type ChildRead, lifetimesIn } from '../beside/besides';
 import { Icon } from '../../design/ui';
 import { accountNames } from '../accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from '../waits/anchors';
@@ -34,6 +35,22 @@ export type TailState = { atTail: boolean; toTail: () => void };
 export type AnchorState = { anchored: AnchorWait[]; show: (wait: AnchorWait) => void };
 
 const NO_ANCHORS: Anchors = { held: {}, earlier: [] };
+
+/** The session whose subagents' and tasks' rows the reader below reads for. */
+const ReadingSession = createContext('');
+
+/** A subagent's own record, read through the driver for the row that names it. */
+function ChildReader({ child, running = false, children }: { child: string; running?: boolean; children: (read: ChildRead) => ReactNode }) {
+  return children(useChildHistory(useContext(ReadingSession), child, running));
+}
+
+/** A background task's last lines, from its own console stream (`<session>/task/<id>`). */
+function TaskTail({ task, children }: { task: string; children: (lines: readonly string[]) => ReactNode }) {
+  const tail = useSessionConsole(`${useContext(ReadingSession)}/task/${task}`);
+  return children(tail.lines.slice(-3).map((line) => line.text));
+}
+
+const READER: BesideReader = { Child: ChildReader, Tail: TaskTail };
 
 /**
  * The two scroll presses' one look: a 28 px square with its arrow alone, its name its label and its tooltip. Their words once
@@ -326,6 +343,8 @@ export function SessionConversation({
   }, [reveal, scroller]);
 
   const words = lastWords(turns);
+  // Each subagent's and task's start and end, which a subagent's own timeline is joined with.
+  const lifetimes = useMemo(() => lifetimesIn(events), [events]);
   const step = (by: 1 | -1) => {
     if (hits.length === 0) return;
     const next = (at + by + hits.length) % hits.length;
@@ -334,8 +353,9 @@ export function SessionConversation({
   };
 
   return (
-    <>
+    <ReadingSession.Provider value={session}>
       <ConversationView
+        beside={{ reader: READER, lifetimes }}
         turns={turns}
         tree={tree}
         structured={structured}
@@ -386,6 +406,6 @@ export function SessionConversation({
       {away && own && !onTail && (
         <BackToBottom onPress={() => toTail(true)} className="sticky bottom-2 ml-auto bg-overlay shadow-sm" />
       )}
-    </>
+    </ReadingSession.Provider>
   );
 }

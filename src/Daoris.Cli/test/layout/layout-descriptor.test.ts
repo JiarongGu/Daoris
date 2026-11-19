@@ -97,8 +97,7 @@ test('rooms are a list of folders, normalised to forward slashes, and a duplicat
 });
 
 /**
- * 🔴 §5.1: the lock, not the manifest, says where the files are. Absent means the only layout written
- * before, so every lock on disk today reads as `claude-code` under `.claude`.
+ * 🔴 §5.1: the lock, not the manifest, says where the files are. Absent means `claude-code` under `.claude`.
  */
 test('the layout a lock was written under is its own fields, else claude-code under .claude', () => {
   const fx = layoutFixture('layout-desc-order');
@@ -116,6 +115,19 @@ test('the layout a lock was written under is its own fields, else claude-code un
 
   // No lock: nothing is written anywhere, so the manifest's own layout is the answer.
   assert.equal(lockLayout(fx.repoFx.root, null, flipped).target, '.agents');
+  fx.cleanup();
+});
+
+test('a lock naming no layout beside a claude-code manifest with a target of its own is refused, naming the fix', () => {
+  const fx = layoutFixture('layout-desc-lock-untold');
+  fx.sync();
+  fx.repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [], target: 'docs/agent' }));
+  const manifest = readManifest(fx.repoFx.root);
+
+  assert.throws(() => lockLayout(fx.repoFx.root, fx.lock(), manifest),
+    /names no layout, and daoris\.json names 'docs\/agent'.*Add "target": "<the folder that holds them>" to daoris\.lock/s);
+  writeLock(fx.repoFx.root, { ...fx.lock(), target: '.claude' });
+  assert.equal(lockLayout(fx.repoFx.root, fx.lock(), manifest).target, '.claude');
   fx.cleanup();
 });
 
@@ -160,7 +172,7 @@ test('a lock mirror outside the mirror root, or on a layout with none, is refuse
 test('a claude-code lock carries no layout fields; an agents lock carries harness, target and mirrors', () => {
   const old = layoutFixture('layout-desc-lock-old');
   old.sync();
-  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'source', 'entries', 'index']);
+  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'canonDigest', 'source', 'entries', 'index']);
   assert.equal(old.lock().index, '.claude/INDEX.md');
   old.cleanup();
 

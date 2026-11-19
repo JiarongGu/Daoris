@@ -49,7 +49,24 @@ public sealed class RegistrationStore
                   updated    TEXT NOT NULL,
                   root       TEXT NULL,
                   workspace  TEXT NOT NULL DEFAULT '{Workspaces.Default}',
-                  adopted    INTEGER NOT NULL DEFAULT 1
+                  -- Adoption is a stored fact: every row here arrived by being pushed, which is what adoption looks like from a
+                  -- service. Hence the default.
+                  adopted    INTEGER NOT NULL DEFAULT 1,
+                  joined     INTEGER NOT NULL DEFAULT 0,
+                  shares_knowledge INTEGER NOT NULL DEFAULT 0,
+                  -- The canonical line, told by the checkout that registered. NULL is "nobody said", which makes any branch
+                  -- feedable for a repository that never declared one.
+                  default_branch TEXT NULL,
+                  -- What it says it uses: part of the declaration, replaced with it on every registration like `owns`.
+                  uses       TEXT NOT NULL DEFAULT '[]',
+                  -- The lanes it declares, as their words. NULL is unstated, which a registration that says nothing of lanes preserves.
+                  lanes      TEXT NULL,
+                  -- The place's kind. NULL is unstated, which reads as a repository.
+                  kind       TEXT NULL,
+                  -- The person's own excludes, a JSON list. NULL is unstated and preserved; `[]` clears.
+                  excludes   TEXT NULL,
+                  -- A system department's adapter, `<plugin>/<system>`. NULL is unstated and preserved, as the kind is.
+                  system     TEXT NULL
                 );
 
                 -- Facts about the registry itself rather than about any repository — today exactly one:
@@ -70,7 +87,9 @@ public sealed class RegistrationStore
                   commit_id    TEXT NOT NULL,
                   committed_at TEXT NOT NULL,
                   branch       TEXT NOT NULL,
-                  origin       TEXT NULL
+                  origin       TEXT NULL,
+                  -- What the held knowledge says, hashed. NULL is "compare nothing, take the same commit once".
+                  digest       TEXT NULL
                 );
 
                 -- A repository's fed code map (MAP3b), at its own commit: the map and the knowledge are
@@ -112,47 +131,7 @@ public sealed class RegistrationStore
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // What the held knowledge says, hashed. NULL on every row from before it, which the
-        // ordering reads as "compare nothing, take the same commit once".
-        await SchemaColumns.EnsureAsync(_db, "feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
-
-        // An older store has no root column or declaration columns. Registrations must survive the
-        // upgrade: a schema that only works on a fresh database silently drops every repository that
-        // ever connected, which is exactly the failure this store exists to remove.
-        foreach (var (column, definition) in new[]
-        {
-            ("root", "root TEXT NULL"),
-            ("joined", "joined INTEGER NOT NULL DEFAULT 0"),
-            ("shares_knowledge", "shares_knowledge INTEGER NOT NULL DEFAULT 0"),
-            // A registration that predates workspaces belongs to the one group there is — which is
-            // what the default spells.
-            ("workspace", $"workspace TEXT NOT NULL DEFAULT '{Workspaces.Default}'"),
-            // Adoption is a stored fact: every row here arrived by being pushed — which is
-            // what adoption looks like from a service. Hence the default.
-            ("adopted", "adopted INTEGER NOT NULL DEFAULT 1"),
-            // The canonical line, told by the checkout that registered. NULL for every row
-            // that predates it, which is exactly what "nobody said" means — and what makes any branch
-            // feedable for a repository that never declared one.
-            ("default_branch", "default_branch TEXT NULL"),
-            // What it says it uses: part of the declaration, replaced with it on every
-            // registration like `owns`. Empty for every row from before it — nothing declared.
-            ("uses", "uses TEXT NOT NULL DEFAULT '[]'"),
-            // The lanes it declares, as their words. NULL is unstated, which is every row
-            // from before it and what a registration that says nothing of lanes preserves.
-            ("lanes", "lanes TEXT NULL"),
-            // The place's kind. NULL is unstated, every row from before it, which reads as a repository.
-            ("kind", "kind TEXT NULL"),
-            // The person's own excludes, a JSON list. NULL is unstated and preserved; `[]` clears.
-            ("excludes", "excludes TEXT NULL"),
-            // A system department's adapter, `<plugin>/<system>`. NULL is unstated and preserved, as the kind is.
-            ("system", "system TEXT NULL"),
-        })
-        {
-            await SchemaColumns.EnsureAsync(_db, "registrations", column, definition, ct).ConfigureAwait(false);
-        }
-
-        // After the columns, because the triggers name three of them an old store only has once
-        // migrated.
+        // After the table, because the triggers name its columns.
         await using (var command = _db.Command())
         {
             command.CommandText = """

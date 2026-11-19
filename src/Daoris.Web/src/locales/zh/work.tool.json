@@ -15,13 +15,5 @@
   "work.tool.status.session-ended": "随会话结束",
   "work.tool.input": "输入",
   "work.tool.output": "输出",
-  "work.tool.terminal": "终端 {{id}}",
-  "work.tool.beside.child": "子智能体",
-  "work.tool.beside.task": "后台任务",
-  "work.tool.beside.end.running": "运行中",
-  "work.tool.beside.end.ok": "已完成",
-  "work.tool.beside.end.failed": "失败",
-  "work.tool.beside.end.stopped": "已停止",
-  "work.tool.beside.end.lost": "已结束，未说明结果",
-  "work.tool.beside.end.withSession": "随会话结束"
+  "work.tool.terminal": "终端 {{id}}"
 }

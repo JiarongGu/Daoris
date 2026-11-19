@@ -360,7 +360,7 @@ public static class SystemWiring
     private static JsonObject Loop(WiringWorld world)
     {
         var loop = new JsonObject();
-        // Who holds the home's lease: an instance for its life, or a verb, a migration or a swap for its act.
+        // Who holds the home's lease: an instance for its life, or a verb or a swap for its act.
         var holder = world.Home is { } home ? HomeLease.HeldBy(home) : null;
         loop["holder"] = holder is null ? null : new JsonObject
         {
@@ -369,7 +369,6 @@ public static class SystemWiring
                 LeaseKind.Desktop => "desktop",
                 LeaseKind.Headless => "headless",
                 LeaseKind.Verb => "verb",
-                LeaseKind.Migration => "migration",
                 LeaseKind.Swap => "swap",
                 _ => "unknown",
             },

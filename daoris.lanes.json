@@ -58,7 +58,6 @@
         "!src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/AskDaoris*.cs",
         "!src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/SecondCheck.cs",
         "!src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/HelpModeNames.cs",
-        "!src/Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/{HelpProposalsStep,SecondCheckStep}.cs",
         "!src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/{HelpFocusMark,HelpKept}.cs"
       ],
       "builds": {
@@ -138,7 +137,6 @@
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/AskDaoris*.cs",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Roles/SecondCheck.cs",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/HelpModeNames.cs",
-        "src/Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/{HelpProposalsStep,SecondCheckStep}.cs",
         "src/Daoris.Desktop/Daoris.Desktop.Driver/Workplace/{HelpFocusMark,HelpKept}.cs",
         "src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/Help*.cs",
         "src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/SupervisorKinds/AskDaorisKind.cs",

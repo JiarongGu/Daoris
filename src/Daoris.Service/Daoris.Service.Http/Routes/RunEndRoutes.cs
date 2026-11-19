@@ -4,8 +4,7 @@ namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
 /// The driver's doors on a workflow run's quests, a local host's alone: a run is this machine's, and so are its sessions. The bind makes
-/// the agent's done a submission; the run's end writes the quests' Done and ends its waiting sessions in one write; the reopen carries a
-/// run's records ended done under the older meaning on to wait for its next step.
+/// the agent's done a submission; the run's end writes the quests' Done and ends its waiting sessions in one write.
 /// </summary>
 public sealed class RunEndRoutes(HostWiring host) : IRouteModule
 {
@@ -17,15 +16,6 @@ public sealed class RunEndRoutes(HostWiring host) : IRouteModule
 
         routes.Map<BindQuestToRun, RunBindResponse>(BindAsync);
         routes.Map<EndRun, RunEndResponse>(EndAsync);
-        routes.Map<ReopenRunSessions, RunReopenResponse>(ReopenAsync);
-    }
-
-    private async Task<Answer<RunReopenResponse>> ReopenAsync(ReopenRunSessions request, HttpContext http, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(request.Note)) return Refusal.BadRequest("A reopen says what its sessions wait on, in its note.");
-        var outcome = await Service.Ledger.ReopenForRunAsync(
-            request.Run, request.Sessions ?? [], request.Note, NoteParts.Normalize(request.NoteParts), DateTimeOffset.UtcNow, ct);
-        return new RunReopenResponse(outcome.Message, [.. outcome.Reopened.Select(session => session.Id)]);
     }
 
     private async Task<Answer<RunBindResponse>> BindAsync(BindQuestToRun request, HttpContext http, CancellationToken ct)

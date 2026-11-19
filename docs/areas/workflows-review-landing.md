@@ -21,11 +21,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), and the pass that journals and settles by them (`StepActs`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
 | `Review/` | The look and the opinion (`Review/Domain/`), entry Accepts, the session-tree gates, the heavy executor |
-| `Setup/`, `Settings/LinePolicyKey.cs`, `Workflows/Migration/` | *Set up…*'s plan and Apply; the line policies; the release's conversion |
+| `Setup/`, `Settings/LinePolicyKey.cs` | *Set up…*'s plan and Apply; the line policies |
 | modules `Bridge/Routes/` | `WORKFLOW_*`, `LANDING`, `LAND_ENTRY`, `RUN_REVIEW*`, the set-up and tree doors; the Accept's waits and answers |
 | web `src/workflow/`, `src/work/review/run/`, `src/agents/setup/` | The chart, the editor, the place page, the run view and the review page |
 
@@ -84,14 +85,23 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
    owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
    page, its step still under way until its holder's word. Saved
-   versions keep the bundled `release` step; the shipped `pull-request-release` preset names the five steps after its Azure DevOps pull
-   request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
-   work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
-   config changer, whose *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by
-   operations; "not needed" passes `config-change` on the record naming both holders. Each step after the merge declares its role
-   (`role`: the release manager for the target, create, start and the decision; the approver for approve; operations for the watch and
-   the check; the config changer for the change), and the chart draws the decision's `not-needed` route as *Not needed this run*, never
-   as *No further step*.
+   versions keep the bundled `release` step, and versions naming the five steps keep them, the reader D325 names with its end.
+3e. A role's acts are its holder's tools, settled by their receipts (D325). A `task` step's `receipts` option maps each evidence name to
+   the fact a tool's receipt names, and its `knowledge` option names the repository's delivery knowledge entry holding its procedure
+   (`StepReceipts`); its hand-off names that entry, its acts and their facts in place of `step_settle`. Each round of the run's working
+   session's plugin tools that answered a receipt is kept for the session by the tools server (`StepActFiles`, whatever its exit), and
+   the pass at the look's deadline journals it once on the run (`workflows/acts/<key>.json`) against the agent-held step waiting whose receipts take its fact,
+   with its attempt and epoch, where the round came after the step waited (`StepActs`, before the hand-off in `HandStepsAsync`); a round no
+   such step takes is journaled nowhere. Once the newest receipt of each mapped fact is reached the pass settles the step done at the
+   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The shipped
+   `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
+   `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
+   after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its
+   hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the config changer, whose
+   *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by operations; "not needed" passes
+   `config-change` on the record naming both holders. Each step after the merge declares its role (`role`: the release manager for the
+   release and the decision; the approver for approve; operations for the check; the config changer for the change), and the chart draws
+   the decision's `not-needed` route as *Not needed this run*, never as *No further step*.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -368,8 +378,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     remote-tracking ref holds the landing's tip, failed by the act's refusal; a push of the tip a landing stood at before it re-landed at a
     new one is not yet, so the new tip is pushed (`PushReading`, `ReLandingPullRequestTests`). Daoris opens no pull request: a plugin's step does, its
     evidence's `url` written on the landing for `work/state` to ask about; a graph whose `<plugin>/pull-request` no switched-on
-    plugin performs is refused at its bind. `PushedGraphs`, an older build's plugin delivery (read, never sent) and the web's bare
-    `pull-request` end when no home saved before G8's release can start; G8-CONVERT1 deletes them. A `monitor` watches the one
+    plugin performs is refused at its bind. A `monitor` watches the one
     step wired into it and reaches with that step's state; open or unanswered it is pending and never fails. A pull request is
     `merged` once its plugin says completed into the work's line (a squash counts), or unanswered once the keeper proves the line
     holds it, and `closed` once abandoned. Its plugin is asked at the moments of plugins rule 11 whatever reached the `push` before it,
@@ -404,7 +413,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     said in the step's words. It reaches either way and fails nothing; in a graph that sets nothing apart it finds no tree and says
     so. A save refuses one no way from a `land` reaches (`release-landing`). The shipped development workflows put one after the
     landing (after the line, or the tidy), the editor draws it in `Git` after the line, and a drawn graph matches its shipped copy
-    with or without it (`MigratedGraphs.Shape`). A tree whose part a run's `tidy` ended, and the trees of a run that holds no
+    with or without it. A tree whose part a run's `tidy` ended, and the trees of a run that holds no
     `release`, ended or abandoned, are ended by the look's sweep (driving rule 51). (D228)
 31a. A plugin step declaring a `goal` (at most 1,200 characters) is performed by an agent, never the plugin's process. Its ask (the
     goal, the run's place and commit, the landing's evidence, the step's outcomes, schema and options as its graph writes them) is kept under
@@ -531,13 +540,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and refused where no plugin performing steps serves the remote's platform. *Keep how it lands* writes nothing. (D221, D227)
 43. `PLACE_APPLY` is the one door of a place's set-up: its adoption, and a room asked of an adopted repository (`--room`, a part that rides with no
     other and is a quest to that repository's own session, driving rule 53). `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (D227, D276)
-44. The release's one migration converts the workflow records once: each steps, `handed` or `land`+`accept` newest gets its next
-    version as a graph; each place on the landing rules follows the home default or a saved copy of what they drew; a rule's
-    `integrate` becomes its line's policy; the rules and work cycles leave `driver.json`. `run-rebinds` binds again, as a first
-    start would, a run whose version does not read here. `review-records` keeps an older build's Accept on a branchless review only
-    where the pinned graph ends there, else drops it, said. `abandoned-runs` stops each live step of a run whose quest is declined
-    or ask closed. No door, receipt or undo. (D232, D273)
-45. There is no landing rule: nothing reads or writes `landings` or `workspaceLandings` but the migration. Every door that lands,
+44. No migration converts a workflow record: a saved version is read as it was written, a graph. A saved version is configuration
+    a purge keeps, so its former `human` step reads as a `task` (`HumanFormerKind`) until no saved version on the install spells
+    `human` (NOCOMPAT2). (D232, D323)
+45. There is no landing rule: nothing reads or writes `landings` or `workspaceLandings`. Every door that lands,
     plans, names a branch or says how work lands reads the run's bound `land`; ungoverned work lands as the declared merge, held by
     its gate. A line's integration reads its policy, and `LINES` and `SESSION_PROCESS` answer no landing. (D228, D232)
 46. Each old way still read is registered with the condition that ends it and the row that deletes it. There is no auto lander,
@@ -566,11 +572,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     note, or rejected by *Reject* with a reason, as a review's changes are; a person and an agent hold it alike, the kind saying what
     settles it and never who, and a step naming no role is the `owner` role's (D304 point 2). Its outcome (`done`, `approved`, or none)
     routes a `when` wire, a rejection the `rejected` wire. A press on a node not waiting is refused `not-waiting`, on another kind `not-task`.
-    A saved version's former `human` step reads as a `task` under its role at the digest the version was saved with (`HumanFormerKind`,
-    `NodeGraphs.ReadSaved`) until its census finds none; a save names the kinds now, so one naming `human` is refused, and a save writing
+    A step naming `human` is refused as an unknown kind, and a save writing
     a `task` step closes going back below its build (`tasks-since.txt`, kept apart from the roles' floor, `WorkflowRolesSince.Floors`); each floor is written whole or not at all
-    (`AtomicFile`). A saved copy of a shipped default, or a quest's kept closure, that an earlier build saved spelling `human` is known by its
-    graph read as a `task` (`WorkflowDefaults.IsCopy`, `ClosureGraphs`, through `NodeGraphs.ReadSaved`), its own digest staying as saved.
+    (`AtomicFile`).
     One declaring two or more outcomes of its own is a per-run decision (`TaskDecisions`, D304 point 5), answered by `decide` with
     one of them (`daoris workflow decide <run> <node> <outcome> "why"`; the run's view offers each outcome); another is refused
     `not-outcome`, and a save refuses a decision no `when` wire leaves on any outcome (`decision-unwired`). A word naming a holder
@@ -635,7 +639,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
-    point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. That an
+    point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step
+    the run's agent holds and the person may *Take* reads as the agent's on every surface (`heldByAgent`, `takeFirst`): its node's part says
+    "agent alone", by an agent, never the *you* its kind declares (`whoSaid`), its card and the head's carry *Take* alone and none of the
+    step's own presses (Done, a skip, a stop: `NodeWord` draws none until a take), and where the session's dock holds a question, sign-in
+    or go-ahead its agent asked, the head's card says the agent waits on the person for it with a link to that line. The person's held
+    step keeps its presses. (AGENTSTEPCARD1) That an
     agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record

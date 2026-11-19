@@ -6,7 +6,7 @@
 // `KeepLockTests` does. The rules both keep:
 //
 //   1. Where: `<file>.lock`, the file's full path with `.lock` after it, beside the file whoever names it (never the home's
-//      `locks/`, which a writer handed a file does not know, and never `driver.lock`, an older build's lease).
+//      `locks/`, which a writer handed a file does not know).
 //   2. Taking it is putting it in place with no overwrite, written beside first (twins.md: Node links, C# moves), so it is never
 //      seen half written. It says `{ "pid", "since" }`, `since` in UTC to the millisecond. A release removes it only while it still
 //      says what its holder wrote.

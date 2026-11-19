@@ -80,19 +80,16 @@ internal static class Program
         // The home before anything else: an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
-        // scratch home stays the dev loop's. An install's older home is moved into its current places here too,
-        // before anything resolves a path: the log and the window's memory among them.
+        // scratch home stays the dev loop's.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
         // Named once for what carries no home of its own (Daoris's own git, a probe's tools): never the variable a process inherited.
         Daoris.Driver.ProgramHome.Named = Daoris.Driver.DaorisHome.Resolve();
         stages.Mark(StartStages.Home);
 
         // The machine log, opened as soon as there is a home to put it in, so an exception
-        // nothing else catches is written before the process ends; with no home it writes nothing. Then
-        // what the move did, which ran before the log had its place.
+        // nothing else catches is written before the process ends; with no home it writes nothing.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
-        InstallHome.Log(home, log);
         stages.Log = log;
         var started = DateTimeOffset.UtcNow;
 
@@ -110,15 +107,6 @@ internal static class Program
                 "Daoris cannot start", MessageBoxButtons.OK, MessageBoxIcon.Error);
             Environment.ExitCode = 2;
             return;
-        }
-
-        // This release's migration converts the home once, before the staffing, the loop and the routes read any of it.
-        string? afterSwap = null;
-        if (Daoris.Driver.DriverConfig.FindHome(Environment.GetEnvironmentVariable) is { } migrating)
-        {
-            var migrated = Daoris.Driver.HomeMigration.Run(migrating);
-            Daoris.Driver.HomeMigration.Log(migrated, log);
-            if (migrated.Held is not null && Daoris.Driver.HomeLease.HeldBy(migrating) is { Kind: Daoris.Driver.LeaseKind.Swap }) afterSwap = migrating;
         }
 
         // The home's driver.json reads its staffing from the store, wired before the loop
@@ -388,12 +376,6 @@ internal static class Program
             _ = started.ContinueWith(
                 look => log.Warn("update.look", ("message", look.Exception!.GetBaseException().Message)),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
-            if (afterSwap is not null)
-            {
-                _ = Daoris.Driver.HomeMigration.RunAfterSwapAsync(afterSwap, TimeSpan.FromMinutes(2), TimeSpan.FromMilliseconds(500))
-                    .ContinueWith(done => Daoris.Driver.HomeMigration.Log(done.Result, log),
-                        CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
-            }
             updater.Start();
             // The system's resume is told to the loop's change watch, which reopens its roots and judges them;
             // SystemEvents raises on its own thread, and the handler lives as long as the process does.

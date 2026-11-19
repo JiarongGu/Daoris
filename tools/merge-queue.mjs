@@ -283,8 +283,7 @@ export function drainedLine(drained) {
   const gates = drained.ended.length ? `gates ${drained.ended.join(', ')}` : 'no gate running';
   const probe = drained.probe ? `, the probe ${drained.probe}` : '';
   const left = drained.left.length ? `; never started: ${drained.left.join(', ')}` : '';
-  // A record written before strays were kept has none.
-  const strays = drained.strays?.length ? `, and ${drained.strays.length === 1 ? '1 process' : `${drained.strays.length} processes`} their tests had left running under the scope tree (pid ${drained.strays.join(', ')})` : '';
+  const strays = drained.strays.length ? `, and ${drained.strays.length === 1 ? '1 process' : `${drained.strays.length} processes`} their tests had left running under the scope tree (pid ${drained.strays.join(', ')})` : '';
   return `ended ${gates}${probe}, each with everything it started${strays}${left}`;
 }
 
@@ -367,13 +366,9 @@ const requestOf = ({ containedIn, containedAt, ...request }) => request;
 
 /**
  * Requests in the order they arrived (the queue's order, §4.1 point 1): by the sequence `enqueue` gave each (`seq`), since `at` has
- * whole seconds and three requests queued in one second once came back re-ordered. A request kept from before the sequence has none
- * and arrived before any that has one; such requests keep their clock's order, and a tie keeps the order given.
+ * whole seconds and three requests queued in one second once came back re-ordered.
  */
-export const inArrival = (requests) => requests
-  .map((request, i) => ({ request, i }))
-  .sort((a, b) => (a.request.seq ?? 0) - (b.request.seq ?? 0) || (timeOf(a.request.at) || 0) - (timeOf(b.request.at) || 0) || a.i - b.i)
-  .map(({ request }) => request);
+export const inArrival = (requests) => [...requests].sort((a, b) => a.seq - b.seq);
 
 /**
  * What a candidate that did not promote gives back to be judged again (C4): its provisional contained members, each as its own

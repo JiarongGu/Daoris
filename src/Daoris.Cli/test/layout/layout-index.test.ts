@@ -82,9 +82,8 @@ test('169 knowledge documents and 18 skills leave the region\'s bytes unchanged'
 test('index cell: not in the lock, the same as would be written — adopted silently', () => {
   const fx = layoutFixture('index-adopt');
   fx.sync();
-  // A lock written before the index, or by a build that does not know it, beside the file as written.
-  const { index: _dropped, ...older } = fx.lock();
-  writeLock(fx.repoFx.root, older);
+  // No lock beside the file as written.
+  rmSync(join(fx.repoFx.root, 'daoris.lock'));
 
   const plan = fx.plan();
   assert.equal(plan.index.collision, false);
@@ -149,50 +148,6 @@ test('a document added and never synced: check names the index, and not the regi
   assert.equal(code, 1, out);
   assert.match(out, /index\s+\.claude\/INDEX\.md is out of date/);
   assert.doesNotMatch(out, /roster/);
-  fx.cleanup();
-});
-
-test('a lock written before the index: check says it is absent until sync writes it', () => {
-  const fx = layoutFixture('index-older-lock');
-  fx.sync();
-  const { index: _dropped, ...older } = fx.lock();
-  writeLock(fx.repoFx.root, older);
-  rmSync(join(fx.repoFx.root, INDEX));
-
-  const absent = fx.cli('check');
-  assert.equal(absent.code, 1, absent.out);
-  assert.match(absent.out, /\.claude\/INDEX\.md is absent/);
-  assert.equal(fx.sync().index, INDEX);
-  assert.equal(fx.cli('check').code, 0);
-  fx.cleanup();
-});
-
-/** Every adopter meets this at its next sync, and `check` says so until then. */
-test('a repository synced before the index: check names both halves, and one sync migrates it', () => {
-  const fx = layoutFixture('index-migrate');
-  fx.sync();
-  // The region as the previous build wrote it: the tables where the pointer is, no index, no lock field.
-  const older = fx.repoFx.read('AGENTS.md').replace(`${pointer(INDEX)}\n`, [
-    '| Knowledge | Applies when | Enforces |', '|---|---|---|', '| [storage](.claude/knowledge/storage.md) | w | e |', '',
-    '## Invoke by name', '', '| Skill | Use when |', '|---|---|', '| [finder](.claude/skills/finder) | Use when finder is wanted. |', '',
-  ].join('\n'));
-  assert.notEqual(older, fx.repoFx.read('AGENTS.md'));
-  fx.repoFx.write('AGENTS.md', older);
-  rmSync(join(fx.repoFx.root, INDEX));
-  const { index: _dropped, ...lock } = fx.lock();
-  writeLock(fx.repoFx.root, lock);
-
-  const stale = fx.cli('check');
-  assert.equal(stale.code, 1, stale.out);
-  assert.match(stale.out, /index\s+\.claude\/INDEX\.md is absent — run 'daoris sync'/);
-  assert.match(stale.out, /roster\s+the doctrine region's pointer or rooms are out of date — run 'daoris sync'/);
-  assert.doesNotMatch(stale.out, /drifted/, 'no rule moved');
-
-  const synced = fx.cli('sync');
-  assert.equal(synced.code, 0, synced.out);
-  assert.doesNotMatch(fx.repoFx.region()!, /## Invoke by name|\[storage\]/);
-  assert.ok(fx.repoFx.exists(INDEX));
-  assert.equal(fx.cli('check').code, 0);
   fx.cleanup();
 });
 

@@ -385,11 +385,8 @@ export interface Lock {
   /** Stamped by the writer, so a caller hands over entries and provenance without inventing it. */
   version?: number;
   canonVersion: string;
-  /**
-   * The digest of the canon `sync` wrote from (`canonDigest`), which tells two canons of one version apart. Absent in a
-   * lock written before it, which reads as not known.
-   */
-  canonDigest?: string;
+  /** The digest of the canon `sync` wrote from (`canonDigest`), which tells two canons of one version apart. */
+  canonDigest: string;
   source: string;
   entries: LockEntry[];
   /**
@@ -405,11 +402,8 @@ export interface Lock {
    */
   harness?: string;
   target?: string;
-  /**
-   * Where `sync` wrote the index of the on-demand tiers, repository-relative:
-   * always `<target>/INDEX.md`. Absent in a lock written before it, which reads as no index written yet.
-   */
-  index?: string;
+  /** Where `sync` wrote the index of the on-demand tiers, repository-relative: always `<target>/INDEX.md`. */
+  index: string;
   /** Every mirror file `sync` wrote, and what it hashed to. Absent when there are none. */
   mirrors?: MirrorEntry[];
   /** The rooms whose pointers `sync` keeps, so a room taken out of the manifest loses its pointer. */

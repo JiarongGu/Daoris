@@ -101,7 +101,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     branch the found build ran on, `observe` and `start-stage` reach at once saying *Nothing to release* and the trigger's branches,
     as for a merge the pipeline builds nothing from; a trigger not read waits and fails `no-release`. Its `discover-releases`, a tool that never
     writes, lists the same candidates (each definition's stages with what starts them, triggers, links and a proposed `deploysOn`) for
-    the person or a planner to declare from, choosing none. (D288, D290) Where no token is kept or Azure
+    the person or a planner to declare from, choosing none. (D288, D290) The release manager's acts are its own tools (D325):
+    `create-release` and `start-stage` (writes) and `release-status` (a read), each taking the origin, the merged pull request and the
+    target by id as the repository's delivery knowledge names it, sharing the release steps' reading (read first, made once by effect,
+    held to the route), and answering a receipt as its data (`release-created`, `stage-started`, `stage-ended`; `waiting` with
+    `waitsOn: approver` while an approval is pending), which Daoris journals on the step the agent holds (workflows rule 3e). Where no token is kept or Azure
     DevOps refuses the kept one, Azure DevOps's plugin makes its calls from a tab of its own in the person's signed-in browser: its
     manifest's `hooks.browser` hands each process the in-app browser's DevTools address as `DAORIS_BROWSER` (`PluginBrowser`), the
     calls are page-side `fetch`es that read no cookie, and each answer's evidence ends `Way: the token.` or `Way: the browser.`
@@ -217,7 +221,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     refused, where its `commands` and `tools` are on at the session's place, read again at each list and call; each is named
     `<plugin>_<command>`, described by its `about` and `title` in the session's language, its input schema from `args`, read-only
     unless it `writes`. A call is one round `from: agent`: `said` the text, `data` the structured content, an exit other than 0 an
-    error; a round that asks is refused, since no person answers a tool call, an argument missing or mistyped is refused before any
+    error, and a `receipt` in its data kept for the session whatever its exit, for the run's pass to journal (workflows rule 3e, D325); a round that asks is refused, since no person answers a tool call, an argument missing or mistyped is refused before any
     process starts, and a tool not listed is a `-32602` error. No call asks an approval: the `tools` switch per place is the opt-in. Every round by any door is a
     `plugin.command` line of names alone, and *Done and failed* notices the rounds nobody watched and any that failed, over the
     last day. Ask Daoris is handed the server only as the person approved its tools (rule 24; its rules

@@ -46,7 +46,9 @@ public sealed class ChannelStore
               re         TEXT NULL,
               question   INTEGER NOT NULL DEFAULT 0,
               text       TEXT NOT NULL,
-              origin     TEXT NULL
+              origin     TEXT NULL,
+              -- A message's level, said on every message kept: 1 urgent, 0 ordinary; null for a mirrored one that says none.
+              urgent     INTEGER NULL
             );
             CREATE UNIQUE INDEX IF NOT EXISTS channel_id ON channel (COALESCE(origin, ''), id);
             CREATE INDEX IF NOT EXISTS channel_ask ON channel (ask, seq);
@@ -96,25 +98,16 @@ public sealed class ChannelStore
             """;
         await revision.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
-        // A message's level, said on every message kept from now; a message from before says
-        // none, which keeps its old reach and is never read as ordinary.
-        await SchemaColumns.EnsureAsync(_db, "channel", "urgent", "urgent INTEGER NULL", ct).ConfigureAwait(false);
         await ChannelMemberStore.EnsureSchemaAsync(_db, ct).ConfigureAwait(false);
 
-        // A message kept as a row of the event journal, minted by a trigger in the
-        // statement that writes it. After the columns the trigger reads (`urgent` is the last added), so it names none that is not there.
+        // A message kept as a row of the event journal, minted by a trigger in the statement that writes it.
         await using (var journal = _db.Command())
         {
             journal.CommandText = EventJournal.ChannelSchema;
             await journal.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        // Each entry's acknowledgment of each message, by its id, which a mark by moment could not keep. A
-        // channel from before has marks and no rows: every message at or before an entry's mark counts as taken, written once as the
-        // table is made, so a message mirrored later with an older moment is still the entry's to be handed.
-        await using var probe = _db.Command();
-        probe.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'channel_acks'";
-        var had = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
+        // Each entry's acknowledgment of each message, by its id, which a mark by moment could not keep.
         await using var acks = _db.Command();
         acks.CommandText = """
             CREATE TABLE IF NOT EXISTS channel_acks (
@@ -128,55 +121,9 @@ public sealed class ChannelStore
             );
             """;
         await acks.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        if (!had) await AcknowledgedByMarksAsync(ct).ConfigureAwait(false);
 
         await ChannelAddressedStore.EnsureSchemaAsync(_db, ct).ConfigureAwait(false);
         return this;
-    }
-
-    /// <summary>A channel from before the acknowledgments: each message at or before an entry's mark, taken. Called inside the gate.</summary>
-    private async Task AcknowledgedByMarksAsync(CancellationToken ct)
-    {
-        var marks = new List<(string Ask, string Entry, DateTimeOffset Through)>();
-        await using (var read = _db.Command())
-        {
-            read.CommandText = "SELECT ask, entry, read_at FROM channel_marks WHERE entry <> $person";
-            read.Parameters.AddWithValue("$person", ChannelDesk.PersonEntry);
-            await using var reader = await read.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false))
-            {
-                if (Moments.Read(reader.GetString(2)) is { } through) marks.Add((reader.GetString(0), reader.GetString(1), through));
-            }
-        }
-
-        foreach (var (ask, entry, through) in marks)
-        {
-            var taken = new List<string>();
-            await using (var messages = _db.Command())
-            {
-                messages.CommandText = "SELECT id, at FROM channel WHERE ask = $ask";
-                messages.Parameters.AddWithValue("$ask", ask);
-                await using var reader = await messages.ExecuteReaderAsync(ct).ConfigureAwait(false);
-                while (await reader.ReadAsync(ct).ConfigureAwait(false))
-                {
-                    if (Moments.Read(reader.GetString(1)) is { } at && at <= through) taken.Add(reader.GetString(0));
-                }
-            }
-
-            foreach (var id in taken)
-            {
-                await using var write = _db.Command();
-                write.CommandText = """
-                    INSERT OR IGNORE INTO channel_acks (ask, entry, message, state, session, at) VALUES ($ask, $entry, $message, $state, NULL, $at)
-                    """;
-                write.Parameters.AddWithValue("$ask", ask);
-                write.Parameters.AddWithValue("$entry", entry);
-                write.Parameters.AddWithValue("$message", id);
-                write.Parameters.AddWithValue("$state", ChannelAcks.Taken);
-                write.Parameters.AddWithValue("$at", Moments.Write(through));
-                await write.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
-        }
     }
 
     /// <summary>An acknowledgment's rank, in SQL: a state never moves back to a lower one (<see cref="ChannelAcks"/>).</summary>

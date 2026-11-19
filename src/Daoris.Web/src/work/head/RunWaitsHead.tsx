@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inline } from '../../design/ui';
+import { Button, Inline } from '../../design/ui';
 import { NodeWord } from '../../workflow/NodeWord';
-import type { CheckHeldAnswer, CheckHeldAsk, NodeWordAnswer, NodeWordAsk, RunStep } from '../../workflow/run';
+import { type CheckHeldAnswer, type CheckHeldAsk, heldByAgent, type NodeWordAnswer, type NodeWordAsk, type RunStep } from '../../workflow/run';
 import { FailedStepHeld } from '../../workflow/wait/FailedStepHeld';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { stepHolder } from '../attention/taskRead';
@@ -14,7 +14,11 @@ type SessionWait = NonNullable<SessionGrouping['waits']>[number];
 const stepOf = (wait: SessionWait, row: StepWaitRow | undefined): RunStep => ({
   step: { id: wait.node, kind: '' } as RunStep['step'], state: 'waiting', detail: '',
   acts: (row?.presses ?? []).filter((act) => !row?.held?.words.includes(act)), held: row?.held ?? null, epoch: row?.epoch ?? null,
+  holder: row ? { kind: row.holder === 'agent' ? 'agent' : 'person', name: row.holderName ?? null } : null, holds: row?.holds ?? null,
 });
+
+/** A wait of the session's dock, by its line's key and its name, that the step's agent may be blocked on. */
+export type BlockedWait = { key: string; name: string };
 
 /**
  * **The steps of the session's run that wait on a role the person holds**, on its page's head: each reads
@@ -25,7 +29,7 @@ const stepOf = (wait: SessionWait, row: StepWaitRow | undefined): RunStep => ({
  *
  * A molecule: the waits, the rows and the doors arrive as props, the holder presses as `hold`.
  */
-export function RunWaitsHead({ waits, steps, onWord, onHeld, hold, release }: {
+export function RunWaitsHead({ waits, steps, onWord, onHeld, hold, release, blocked, onTo }: {
   /** The session's run's waits on the person, as Sessions placed it (`SessionGrouping.waits`). */
   waits: readonly SessionWait[];
   /** *What needs you*'s step rows, whose presses each wait offers. */
@@ -35,6 +39,10 @@ export function RunWaitsHead({ waits, steps, onWord, onHeld, hold, release }: {
   /** A row's holder presses, drawn where it offers any. */
   hold?: (row: StepWaitRow) => ReactNode;
   release?: (wait: SessionWait) => ReactNode;
+  /** The other waits on the person this session's dock holds: a step its agent holds says it waits on them, each a link to its line. */
+  blocked?: readonly BlockedWait[];
+  /** Leads to the dock line a `blocked` wait names. */
+  onTo?: (key: string) => void;
 }) {
   const { t } = useTranslation();
   if (waits.length === 0) return null;
@@ -47,6 +55,14 @@ export function RunWaitsHead({ waits, steps, onWord, onHeld, hold, release }: {
         return (
           <div key={`${wait.run}/${wait.node}`} role="group" aria-label={said.replace(/`/g, '')} className="grid min-w-0 gap-1">
             <p className="m-0 text-small text-ink"><Inline text={said} /></p>
+            {row && heldByAgent(step) && blocked && blocked.length > 0 && onTo && (
+              <p className="m-0 flex flex-wrap items-center gap-x-1.5 text-small text-ink-soft">
+                <Inline text={t('work.head.runWaitBlocked', { holder: stepHolder(row) })} />
+                {blocked.map((each) => (
+                  <Button key={each.key} variant="ghost" className="min-h-0 px-1.5 py-0 text-small" onClick={() => onTo(each.key)}>{each.name}</Button>
+                ))}
+              </p>
+            )}
             {release?.(wait)}
             {row && <NodeWord run={wait.run} step={step} onWord={onWord} />}
             {row?.held && <FailedStepHeld step={step} onHeld={onHeld} />}

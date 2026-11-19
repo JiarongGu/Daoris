@@ -190,9 +190,6 @@ public sealed partial class RepositoryLayout
     {
         private static readonly Manifest None = new(null, null, []);
 
-        /// <summary>Whether it names the older layout: by name, or by naming none.</summary>
-        public bool OnOlderLayout => Harness is null or Older;
-
         public static Manifest Read(string repositoryRoot)
         {
             var file = Path.Combine(repositoryRoot, "daoris.json");

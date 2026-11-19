@@ -6,14 +6,14 @@ namespace Daoris.Driver;
 /// A conversation over its account's usage curve moves on its own as its turn ends: to another account of the same agent in its scope that has room, as a hand-over with its agent unchanged, why
 /// <c>curve</c>, asked by <c>daoris</c>. <see cref="SwitchDecision"/> reads the account and <see cref="CourseDecision"/> decides whether and where the line moves
 /// (the scope's switch is its consent); this class asks the first, reads the others where it says so, asks
-/// again, asks the course, decides the move in the store (<see cref="Moves"/>; no hand-over box is written beside it), and takes it
+/// again, asks the course, decides the move in the store (<see cref="Moves"/>), and takes it
 /// (<see cref="ChatHandOver"/>'s take of a move), which ends the old conversation and starts the new one, its record continuing the old.
 /// Over the runner's context.
 /// </summary>
 /// <remarks>
 /// <para><b>Never mid-turn, never during a take.</b> A conversation is judged once per turn's end, as its turns tell it with
-/// nothing running, opening or queued (<see cref="TurnJustEnded"/>); never while a hand-over waits or is taken, whose box is kept
-/// until its take is done (a box an older build left is still the hand-over's own); and the take holds the turns
+/// nothing running, opening or queued (<see cref="TurnJustEnded"/>); never while a hand-over waits or is taken, whose move stands
+/// until its take is done; and the take holds the turns
 /// (<see cref="ChatTurns.Hold"/>), so a word said as it begins either runs its turn first, the move then closed and the next turn's end
 /// judging again, or takes nothing.</para>
 /// <para><b>Never across agents, never outside the scope's list.</b> The candidates are the other accounts of the scope's list of
@@ -75,7 +75,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
     public async Task<SwitchChoice?> MoveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)
     {
-        // A hand-over's box an older build left, or its move the store carries and has not begun, holds the record from a move.
+        // A hand-over's move the store carries and has not begun holds the record from a move.
         if (_context.Closing || _context.GoingOn.ContainsKey(sessionId) || _handOver.Holds(sessionId))
         {
             return null;
@@ -138,12 +138,12 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
         Decided?.Invoke(sessionId, course);
         if (course is not LineCourse.Move { Where.Account: { } to } || choice is not SwitchChoice.MoveTo move) return choice;
 
-        // What the hand-over's own ask judged before it kept a box (no such session, a conversation that went on, an account not the agent's,
+        // What the hand-over's own ask judged before it kept a move (no such session, a conversation that went on, an account not the agent's,
         // a tree gone): refused here the same way, quietly, before anything is decided.
         var (refused, _) = await HandOver.JudgeAsync(_context.Service, _handOver.AccountsOf, sessionId, agent, to, ct, _context.Home).ConfigureAwait(false);
         if (refused is not null) return choice;
 
-        // The move is decided in the store, and no box is written beside it.
+        // The move is decided in the store.
         // A record a move still stands for, the one it left or the one whose open made it, takes no move now; a store that will not take the
         // decision moves nothing, and the next turn's end judges again.
         var begun = await Moves.BeginAsync(Decision(sessionId, to), ct).ConfigureAwait(false);

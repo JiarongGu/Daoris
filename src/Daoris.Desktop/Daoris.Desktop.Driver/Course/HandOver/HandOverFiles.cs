@@ -6,10 +6,8 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A hand-over's two files under the home: a conversation's box,
-/// <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c> (<see cref="HandOverBox"/>), and a quest held on another agent,
-/// <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c> (<see cref="HandedQuests"/>), read without trusting their shape and written whole,
-/// atomically, as BOM-less UTF-8 with LF.
+/// A quest held on another agent, <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c> (<see cref="HandedQuests"/>), read without trusting its shape
+/// and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
 /// The stores decide what is kept and by which name; this reads and writes
@@ -17,67 +15,6 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class HandOverFiles
 {
-    /// <summary>A box written to <paramref name="path"/>, its folder made where it is not.</summary>
-    public static void WriteBox(string path, HandOverRequest request)
-    {
-        // LF on every platform, as every file under the home is written (JsonFile).
-        JsonFile.Write(path, writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("agent", request.Agent);
-            if (request.Account is { } account) writer.WriteString("account", account); else writer.WriteNull("account");
-            writer.WriteString("why", request.Why);
-            writer.WriteString("askedBy", request.AskedBy);
-            writer.WriteString("at", Moments.Write(request.At));
-            // Only where the choice approved names them, so every box from before keeps its shape.
-            if (request.Model is { } model) writer.WriteString("model", model);
-            if (request.Effort is { } effort) writer.WriteString("effort", effort);
-            writer.WriteEndObject();
-        });
-    }
-
-    /// <summary>The box at <paramref name="path"/>, or null for none or a file that does not read.</summary>
-    public static HandOverRequest? ReadBox(string path)
-    {
-        try
-        {
-            return File.Exists(path) ? ParseBox(AtomicFile.ReadText(path)) : null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// A box's text read as its ask, or null where it does not read as one: the one reading of the format, which the move record's import
-    /// reads the bytes it took once by.
-    /// </summary>
-    public static HandOverRequest? ParseBox(string text)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(text);
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object
-                || Text(root, "agent") is not { Length: > 0 } agent
-                || Text(root, "why") is not { } why || !HandOverWhy.Known(why)
-                || Text(root, "askedBy") is not { } by || !HandOverBy.Known(by)
-                || Moments.Read(root, "at") is not { } at)
-            {
-                return null;
-            }
-
-            return new HandOverRequest(
-                agent, Text(root, "account") is { Length: > 0 } account ? account : null, why, by, at,
-                Text(root, "model") is { Length: > 0 } model ? model : null, Text(root, "effort") is { Length: > 0 } effort ? effort : null);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
     /// <summary>A quest as handed, written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteHanded(string path, HandedQuest handed)
     {

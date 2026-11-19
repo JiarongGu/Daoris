@@ -267,35 +267,4 @@ public sealed class IntakeTests : IAsyncLifetime
         Assert.Equal(AskDesk.ByDeclarations, byStranger.Ask!.Tier);
         Assert.Equal(2, byStranger.Ask.Quests.Count);
     }
-
-    /// <summary>A store from before the intake gains the two columns and keeps every row it had.</summary>
-    [Fact]
-    public async Task A_store_from_before_the_intake_gains_its_columns_and_keeps_its_rows()
-    {
-        await using var old = new SqliteConnection("Data Source=:memory:");
-        await old.OpenAsync();
-        await using (var create = old.CreateCommand())
-        {
-            create.CommandText = """
-                CREATE TABLE asks (
-                  id TEXT PRIMARY KEY, workspace TEXT NOT NULL, sentence TEXT NOT NULL, state TEXT NOT NULL,
-                  tier TEXT NOT NULL, asked TEXT NOT NULL, updated TEXT NOT NULL, asker TEXT NULL, note TEXT NULL,
-                  links TEXT NOT NULL DEFAULT '[]', attachments TEXT NOT NULL DEFAULT '[]',
-                  proposal TEXT NOT NULL DEFAULT '[]', quests TEXT NOT NULL DEFAULT '[]'
-                );
-                INSERT INTO asks (id, workspace, sentence, state, tier, asked, updated)
-                VALUES ('a1b2c3', 'work', 'an older ask', 'Proposed', 'declarations', '2026-09-23T10:00:00Z', '2026-09-23T10:00:00Z');
-                """;
-            await create.ExecuteNonQueryAsync();
-        }
-
-        var asks = await AskStore.OpenAsync(old);
-        var sessions = await SessionStore.OpenAsync(old);
-
-        var kept = (await asks.FindAsync("a1b2c3"))!;
-        Assert.Null(kept.Intake);
-        Assert.Equal("an older ask", kept.Sentence);
-        var chat = await sessions.CreateAsync(null, "ask #a1b2c3", "stub", Now, "work", SessionKind.Chat, ask: "a1b2c3");
-        Assert.Equal("a1b2c3", (await sessions.FindAsync(chat.Id))!.Ask);
-    }
 }

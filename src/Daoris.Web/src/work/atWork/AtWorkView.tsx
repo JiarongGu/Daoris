@@ -4,17 +4,16 @@ import type { TFunction } from 'i18next';
 import { leftFor, SOUGHT } from '../waits/WaitAnchor';
 import { type ExchangeSeek, useSoughtExchange } from './exchangeSeek';
 import { cn } from '../../lib/cn';
-import { ago, clockOf } from '../../locales/format';
+import { ago } from '../../locales/format';
 import { type ChannelAnswered, whoOf } from '../../asks/ChannelSection';
 import type { ChannelItem, ChannelPost } from '../channel';
 import { LineChannelComposer } from './LineChannelComposer';
 import { Dot, Inline, SectionTitle } from '../../design/ui';
 import { ExternalLink } from '../../design/links';
 import { type Consideration, sittingBecause, sittingSentence } from '../../data/signals';
-import type { AtWorkA, AtWorkChild, AtWorkHeld, AtWorkPart, AtWorkQuest, AtWorkSubagents } from './types';
+import type { AtWorkA, AtWorkHeld, AtWorkPart, AtWorkQuest } from './types';
 import {
-  askerLine, CHILD_STATE_KEY, childTone, exchangeSource, exchangeState, exchangeWhat, HINT_KEY, joinedLine, LANES_GUIDE, LAST_SEEN, partStateKey,
-  waitingOnLine, waitLine,
+  askerLine, exchangeSource, exchangeState, exchangeWhat, HINT_KEY, joinedLine, LANES_GUIDE, partStateKey, waitingOnLine, waitLine,
 } from './words';
 
 /**
@@ -50,11 +49,12 @@ export type AtWorkViewProps = {
    */
   considered?: readonly Consideration[];
   onRetry?: () => void;
-  /** The console stream the window holds for a child, by its native id; a child with none offers no console. */
+  /**
+   * Read by nothing, since the session's timeline draws its subagents under their calls: taken until `work/frame/regionSurface.tsx`
+   * stops passing them, which ends them.
+   */
   streamOf?: (child: string) => string | undefined;
-  /** Open a stream's tab in the console. */
   onOpenStream?: (stream: string) => void;
-  /** The clock a time is read against; the window's now by default. */
   now?: Date;
   /** An agent's name as the person calls it, for its co-workers; its word where none is given. */
   nameOf?: (agent: string) => string;
@@ -67,7 +67,7 @@ export type AtWorkViewProps = {
  * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
  * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
  */
-export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, streamOf, onOpenStream, now, channel, nameOf, seek }: AtWorkViewProps) {
+export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, channel, nameOf, seek }: AtWorkViewProps) {
   const { t } = useTranslation();
   const box = useRef<HTMLDivElement>(null);
   const { sought, letGo } = useSoughtExchange(box, seek);
@@ -99,7 +99,7 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
         <WaitingOn answer={answer} nameOf={nameOf} />
         <Parts answer={answer} onOpen={onOpen} channel={channel} />
         <Coworkers answer={answer} nameOf={nameOf} onOpen={onOpen} sought={sought} />
-        <Subagents answer={answer} quiet={stale !== null} now={now} streamOf={streamOf} onOpenStream={onOpenStream} />
+        {stale === null && nobody(answer) && <p className="m-0 text-small text-ink-faint">{t('work.atWork.empty')}</p>}
         <QuestRows quests={answer.quests} more={answer.moreQuests ?? 0} considered={considered ?? []} onOpenQuest={onOpenQuest} sought={sought} />
         <AskedBy answer={answer} onOpenQuest={onOpenQuest} />
         {channel && <ChannelWords channel={channel} parts={listsParts(answer, t) ? answer.parts : []} />}
@@ -315,46 +315,6 @@ export function nobody(answer: AtWorkA): boolean {
     && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);
 }
 
-/** The attended part's subagents as a tree, the bound's counts under them. */
-function Subagents({ answer, quiet, now, streamOf, onOpenStream }: {
-  answer: AtWorkA; quiet: boolean; now?: Date; streamOf?: AtWorkViewProps['streamOf']; onOpenStream?: AtWorkViewProps['onOpenStream'];
-}) {
-  const { t } = useTranslation();
-  const subagents: AtWorkSubagents = answer.subagents;
-  if (subagents.read === 'elsewhere') return <p className="m-0 text-small text-ink-faint">{t('work.atWork.elsewhere')}</p>;
-  if (!quiet && nobody(answer)) return <p className="m-0 text-small text-ink-faint">{t('work.atWork.empty')}</p>;
-
-  const more = Object.values(subagents.more ?? {}).reduce((sum, count) => sum + count, 0);
-  const moreWorking = subagents.more?.working ?? 0;
-  return (
-    <section className="grid min-w-0 gap-1">
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <SectionTitle level={3}>{t('work.atWork.group.subagents')}</SectionTitle>
-        {subagents.working > 0 && <span className="text-meta text-accent">{t('work.atWork.subagentsWorking', { count: subagents.working })}</span>}
-        {subagents.turnWaits && <span className="text-meta text-ink-soft">{t('work.atWork.subagentsTurnWaits')}</span>}
-      </div>
-      <p className="m-0 text-meta text-ink-faint">{t('work.atWork.subagentsNote')}</p>
-      {subagents.read === 'unreadable' && <p className="m-0 text-small text-ink-soft">{t('work.atWork.unreadable')}</p>}
-      {subagents.seenByCalls && <p className="m-0 text-small text-ink-faint">{t('work.atWork.subagentsByCalls')}</p>}
-      {(subagents.observed ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.observed', { count: subagents.observed })}</p>}
-      {(subagents.unplaced ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.unplaced', { count: subagents.unplaced })}</p>}
-      {subagents.children.length > 0 && (
-        <ol className="m-0 grid list-none gap-0.5 p-0">
-          {subagents.children.map((child) => (
-            <ChildRow key={child.key} child={child} now={now} stream={streamOf?.(child.key)} onOpenStream={onOpenStream} />
-          ))}
-        </ol>
-      )}
-      {(subagents.folded ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.child.folded', { count: subagents.folded })}</p>}
-      {more > 0 && (
-        <p className="m-0 text-meta text-ink-faint">
-          {moreWorking > 0 ? t('work.atWork.moreWorking', { count: more, working: moreWorking }) : t('work.atWork.more', { count: more })}
-        </p>
-      )}
-    </section>
-  );
-}
-
 /**
  * The quests the entry's parts asked that opened no part of it: one button each, opening the quest, with who took it
  * and what the taker waits on. An untaken quest says why beside it from the driver's last look, none before the first. A chain's step
@@ -460,43 +420,3 @@ function Hint({ answer }: { answer: AtWorkA }) {
   );
 }
 
-/** How far a row is set in: at most two steps, a deeper child saying its depth. */
-const STEPS = 2;
-
-function ChildRow({ child, now, stream, onOpenStream }: {
-  child: AtWorkChild; now?: Date; stream?: string; onOpenStream?: AtWorkViewProps['onOpenStream'];
-}) {
-  const { t, i18n } = useTranslation();
-  const time = (iso: string | undefined) => (iso ? clockOf(iso, now, i18n.language) : '');
-  const depth = child.depth ?? 1;
-  const tone = childTone(child.state);
-  const word = t(CHILD_STATE_KEY[child.state]);
-  const said = (() => {
-    if (child.state === 'unsaid') return `${t('work.atWork.child.firstSeen', { time: time(child.since) })} · ${word}`;
-    if (LAST_SEEN.has(child.state)) return child.lastSeen ? `${word} · ${t('work.atWork.child.lastSeen', { time: time(child.lastSeen) })}` : word;
-    if (child.state === 'working') return child.startSaid || !child.since ? word : `${word} · ${t('work.atWork.child.firstSeen', { time: time(child.since) })}`;
-    return child.ended ? `${word} ${time(child.ended)}` : word;
-  })();
-  return (
-    <li
-      className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 py-0.5 text-small"
-      style={{ paddingInlineStart: `${Math.min(Math.max(depth - 1, 0), STEPS) * 12}px` }}
-    >
-      {child.type && <span className="text-ink">{child.type}</span>}
-      {child.label && <span className="min-w-0 truncate text-ink-soft" title={child.label.text}>{child.label.text}</span>}
-      {!child.label && !child.type && <span className="font-mono text-meta text-ink-faint">{child.key}</span>}
-      {tone === 'live'
-        ? <Dot tone="live" label={said} />
-        : <span className={cn('text-meta', tone === 'warn' ? 'text-warn' : tone === 'failed' ? 'text-ink-danger' : 'text-ink-soft')}>{said}</span>}
-      {stream !== undefined && onOpenStream && (
-        <button type="button" className="text-meta text-accent underline" onClick={() => onOpenStream(stream)}>
-          {t('work.atWork.child.console')}
-        </button>
-      )}
-      {child.parentKey === undefined && child.depth === undefined && (
-        <span className="text-meta text-ink-faint">{t('work.atWork.child.noParent')}</span>
-      )}
-      {depth - 1 > STEPS && <span className="text-meta text-ink-faint">{t('work.atWork.child.depth', { depth })}</span>}
-    </li>
-  );
-}

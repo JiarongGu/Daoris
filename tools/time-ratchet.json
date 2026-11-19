@@ -9,11 +9,6 @@
     "why": "real git (a worktree open and a commit or two a case) and a real node install script run by the tree-files stage, and one real npm ci; sealing an install and placing it in the next tree is what it proves, and the repository is already a copy of a seed per lock",
     "class": true
   },
-  "Daoris.Desktop.Driver.Tests.DrivenMoveDowngradeProcessTests": {
-    "ms": 120000,
-    "why": "each case kills a loop at a boundary, then runs two more real loop incarnations, each waiting three quiet looks of a whole real look (about thirty git starts, a second or more on this machine); the quiet looks are the claim, since a second delivery would show in them, and a loop paced at 200 ms was measured to save nothing because a look, not the pace, is the time",
-    "class": true
-  },
   "Daoris.Desktop.Driver.Tests.GitSshPinnedProcessTests": {
     "ms": 120000,
     "why": "the same real ssh cases as GitSshProcessTests with the toolchain's pinned MinGit as the git: each is a real clone, fetch or push over a real ssh client, and the pin is what it adds, so neither the wire nor the git can be scripted",

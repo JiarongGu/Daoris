@@ -207,30 +207,23 @@ public sealed class CurveMoveStoreTests : IDisposable
 
     private static DriverConfig Config() => DriverConfig.Empty;
 
-    /// <summary>The shell's own hand-over box files, none of which a move the store carries may leave.</summary>
-    private string[] Boxes() => [.. new HandOverBox(_home).Pending()];
-
     /// <summary>
     /// 🔴 One curve move, written in the design's order (§13.4): decided under this run's claim as the move begins, then <c>opening</c> under the
     /// very key its keyed open is sent with, then <c>opened</c>, then <c>delivering</c> with the prompt marked before its write; the prompt's
-    /// outcome as the write returns and before any take, and <c>delivered</c> after it. A message with no word id writes no word's <c>sent</c>;
-    /// and no box is written at any point.
+    /// outcome as the write returns and before any take, and <c>delivered</c> after it. A message with no word id writes no word's <c>sent</c>.
     /// </summary>
     [Fact]
-    public async Task The_curve_move_is_decided_opening_opened_marked_sent_and_delivered_in_that_order_and_writes_no_box()
+    public async Task The_curve_move_is_decided_opening_opened_marked_sent_and_delivered_in_that_order()
     {
         var seen = new List<string>();
         MoveRecord? atWire = null;
-        string[] boxesAtWire = [];
         var world = Live(opens: 2, wire: _ =>
         {
             atWire = MoveFrom("c1");
-            boxesAtWire = Boxes();
             lock (seen) seen.Add("wire");
         });
         using var c = world.Client;
         MoveRecord? atOpen = null;
-        string[] boxesAtOpen = [];
         string? openedUnder = null;
         world.Ledger.BeforeRequest = (request, body) =>
         {
@@ -238,7 +231,6 @@ public sealed class CurveMoveStoreTests : IDisposable
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat")
             {
                 atOpen = MoveFrom("c1");
-                boxesAtOpen = Boxes();
                 openedUnder = JsonNode.Parse(body!)!["opens"]?.GetValue<string>();
                 lock (seen) seen.Add("open");
             }
@@ -271,12 +263,6 @@ public sealed class CurveMoveStoreTests : IDisposable
         Assert.Equal((MoveWordDispositions.Sent, "c2", "account-2"), (delivered.Effect!.Outcome, delivered.Destination, delivered.Account));
         Assert.Empty(Store("run-probe").WordsOf(delivered.Id));
         Assert.Equal(1, world.Runner.Opened!.Prompts.Count);
-
-        // No box is kept beside the record.
-        Assert.Empty(boxesAtOpen);
-        Assert.Empty(boxesAtWire);
-        Assert.Empty(Boxes());
-        Assert.Null(new HandOverBox(_home).Read("c1"));
     }
 
     /// <summary>
@@ -297,7 +283,6 @@ public sealed class CurveMoveStoreTests : IDisposable
         Assert.Equal(("c1", true), (asked!.From, asked.Opens is { Length: > 0 }));
         Assert.Empty(asked.Words);
         Assert.Empty(asked.Read);
-        Assert.Empty(Boxes());
     }
 
     /// <summary>
@@ -332,7 +317,6 @@ public sealed class CurveMoveStoreTests : IDisposable
         var move = MoveFrom("c1")!;
         Assert.Equal(("closed", "c2", ConversationMoves.Unsent), (move.PhaseWord, move.Destination, move.Effect!.Outcome));
         Assert.Equal((MoveHoldWhy.Undelivered, MoveCloseWhy.Resolved), (move.HeldWhy, move.ClosedWhy));
-        Assert.Empty(Boxes());
     }
 
     /// <summary>
@@ -351,7 +335,6 @@ public sealed class CurveMoveStoreTests : IDisposable
         var move = MoveFrom("c1")!;
         Assert.Equal(("closed", MoveHoldWhy.Unrecorded, MoveCloseWhy.Resolved), (move.PhaseWord, move.HeldWhy, move.ClosedWhy));
         Assert.Null(world.Runner.Opened);
-        Assert.Empty(Boxes());
     }
 
     /// <summary>
@@ -377,48 +360,6 @@ public sealed class CurveMoveStoreTests : IDisposable
         Assert.True(world.Old.Turns.Hold(), "the move left the old part's turns held");
         world.Old.Turns.Release();
         Assert.Equal("opened", Store("run-probe").Read(into.Move.Id)!.PhaseWord);
-        Assert.Empty(Boxes());
-    }
-
-    /// <summary>
-    /// 🔴 A box an older build left for the conversation is still the hand-over's own: the curve judges nothing and decides nothing, and the box
-    /// stands for its own take.
-    /// </summary>
-    [Fact]
-    public async Task A_box_an_older_build_left_is_taken_as_before_and_no_move_is_decided()
-    {
-        var world = Live(opens: 2);
-        using var c = world.Client;
-        var asked = new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, Now);
-        new HandOverBox(_home).Write("c1", asked);
-
-        Assert.Null(await world.Curve.MoveAsync("c1", Config(), null));
-
-        Assert.Empty(Store("run-probe").Of("c1"));
-        Assert.Empty(world.Ledger.Opened);
-        Assert.Equal(asked, new HandOverBox(_home).Read("c1"));
-    }
-
-    /// <summary>
-    /// <summary>
-    /// 🔴 A box an older build left is not taken as a file: the hand-over's take reads the store, so with the box
-    /// not yet imported nothing waits to be taken and the box stays for the come-up's import.
-    /// </summary>
-    [Fact]
-    public async Task The_hand_over_s_take_reads_the_store_so_a_box_not_yet_imported_is_not_taken()
-    {
-        var world = Live(opens: 2);
-        using var c = world.Client;
-        var asked = new HandOverRequest("talk", "account-2", HandOverWhy.Curve, HandOverBy.Daoris, Now);
-        new HandOverBox(_home).Write("c1", asked);
-        var handOver = new ChatHandOver(new ExecutorStand(world.Runner, world.Context));
-
-        var taken = await handOver.TakeAsync("c1", Config(), null);
-
-        Assert.Equal((null, false), (taken.SessionId, taken.Kept));
-        Assert.Empty(Store("run-probe").Of("c1"));
-        Assert.Empty(world.Runner.Asked);
-        Assert.Equal(asked, new HandOverBox(_home).Read("c1"));
     }
 
     // ——— The conversations' take-up (§3.3, §13.4, §19.1).
@@ -462,6 +403,5 @@ public sealed class CurveMoveStoreTests : IDisposable
         Assert.Empty(ledger.Opened);
         Assert.Empty(ledger.TakenBy);
         Assert.Empty(ledger.Said("c1"));
-        Assert.Empty(Boxes());
     }
 }

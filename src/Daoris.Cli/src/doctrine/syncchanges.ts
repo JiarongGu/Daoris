@@ -38,9 +38,6 @@ export function detectRenames(
 
     let best: { target: string; score: number } | null = null;
     for (const write of created) {
-      // 🔴 Never itself. A rule MIGRATING out of its old file into the region is a delete and a
-      // create at the same target, and pairing those reads as a rename of x to x.
-      if (write.target === from) continue;
       if (claimed.has(write.target)) continue;
       const score = containment(old, significantTokens(write.content));
       if (score >= RENAME_SIMILARITY && (!best || score > best.score)) {

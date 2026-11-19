@@ -3,8 +3,7 @@ using System.Text.Json;
 namespace Daoris.Contracts.Quests;
 
 // The driver's doors on a workflow run's quests, a local host's alone: the bind at a session's first start, which makes the
-// agent's done a submission, the run's end, which writes the quests' Done and ends the sessions waiting on it in one write, and the
-// reopen that carries a run's older records ended done on to wait for it.
+// agent's done a submission, and the run's end, which writes the quests' Done and ends the sessions waiting on it in one write.
 
 /// <summary>Binds a quest to the run whose end writes its Done: once, open or taken here, before any submission.</summary>
 public sealed record BindQuestToRun(string Id, string? Run) : IRoute<RunBindResponse>
@@ -29,20 +28,6 @@ public sealed record EndRun(
     public static string Method => "POST";
     public static string Path => "/api/runs/{run}/end";
 }
-
-/// <summary>
-/// A run still going on carries its records that ended done under the older meaning: each session named that is <c>completed</c> and has
-/// never waited on a step waits on the run's next step, once, with the note given; any other is left as it stands.
-/// </summary>
-public sealed record ReopenRunSessions(string Run, IReadOnlyList<string>? Sessions, string? Note, JsonElement? NoteParts = null)
-    : IRoute<RunReopenResponse>
-{
-    public static string Method => "POST";
-    public static string Path => "/api/runs/{run}/reopen";
-}
-
-/// <summary>What the reopen moved: the sessions now waiting on the run's next step.</summary>
-public sealed record RunReopenResponse(string Message, IReadOnlyList<string> Reopened);
 
 /// <summary>A quest a run's end closes, with the submission (its machine and sequence) it closes on, and whether the person passed its holds.</summary>
 public sealed record RunEndQuest(string Id, string Machine, long Sequence, bool Passed = false);

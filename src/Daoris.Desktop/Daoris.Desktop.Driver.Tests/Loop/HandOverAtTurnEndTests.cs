@@ -136,7 +136,6 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         // No ask from the agent: the standing rule hands nothing over, however the repository's mode is set.
         Assert.Null(await handOvers.AtTurnEndAsync("s1", "q1", CancellationToken.None));
         Assert.Empty(new HandedQuests(_home).All());
-        Assert.Null(new HandOverBox(_home).Read("s1"));
 
         // The person's press, at the offer's choice (Build's next entry on another agent), is kept under either rule.
         var next = HandOverOrder.Steps("stub", [new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)], ActorChoices.Effective("build", ActorChoices.With(DriverConfig.Empty with { Actors = StaffedRoles.On("stub") }, "build", build)))[0];
@@ -148,9 +147,8 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         var pressed = await QuestHandOver.AskAsync(
             client, moves, _ => new HandOverAgent([], Unadopted: true), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person);
         Assert.True(pressed.Kept, pressed.Message);
-        // The press is kept as a driven move in the store, never a box.
+        // The press is kept as a driven move in the store.
         Assert.Equal("dsh", new MoveStore(_home).Standing("s1")!.Agent);
-        Assert.Null(new HandOverBox(_home).Read("s1"));
     }
 
     /// <summary>🔴 A quest's session a hand-over started works its quest in its first turn: its ask then is refused, no second hand-over in a row.</summary>

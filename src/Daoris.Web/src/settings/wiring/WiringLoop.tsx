@@ -5,7 +5,7 @@ import { moment } from '../../locales/format';
 import { Fact, WiringCard } from './WiringParts';
 
 /** The holders the catalogue words; one it does not (`unknown`) says it is something else. */
-const HOLDERS = new Set(['desktop', 'headless', 'verb', 'migration', 'swap']);
+const HOLDERS = new Set(['desktop', 'headless', 'verb', 'swap']);
 
 /**
  * Driver loop: who holds the home, when the loop last looked, what holds its starts, and how

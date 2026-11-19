@@ -346,26 +346,4 @@ public sealed class QuestRequirementTests : IAsyncLifetime
         Assert.Null(_exchange.JudgeReceived(asked with { Requirements = [new("the v3 bridge", "It opens.")] }, registered));
         Assert.Contains("Requirement 1", _exchange.JudgeReceived(asked with { Requirements = [new("the v3 bridge", " ")] }, registered));
     }
-
-    /// <summary>
-    /// An ask from before its words were kept holds its sentence, and nothing the person said on
-    /// it before then: the refusal says from when its words are kept, rather than reading as though nothing
-    /// more were said.
-    /// </summary>
-    [Fact]
-    public async Task A_refusal_on_an_ask_from_before_its_words_were_kept_says_from_when()
-    {
-        var ask = await Asked();
-        await using (var mark = _connection.CreateCommand())
-        {
-            mark.CommandText = "UPDATE asks SET words_kept_from = '2026-10-02T12:00:00Z' WHERE id = $id";
-            mark.Parameters.AddWithValue("$id", ask.Id);
-            await mark.ExecuteNonQueryAsync();
-        }
-
-        var refused = await Publish(ask, new QuestRequirement("use the common-report", "It is a configuration."));
-
-        Assert.Equal(AskRefusal.QuestRefused, refused.Refusal);
-        Assert.Contains("2026-10-02 12:00 UTC", refused.Message);
-    }
 }

@@ -4,8 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The places a conversation spoke under as one JSON object: its focus, the one chosen and not yet applied, each place it held and
-/// each message that changed it. The conversation's facts keep it in one column, and the home's migration reads an older
-/// file's same properties through it.
+/// each message that changed it. The conversation's facts keep it in one column.
 /// </summary>
 internal static class ConversationPlaces
 {

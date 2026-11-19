@@ -164,8 +164,8 @@ public static class WireEvaluation
             if (status.State == NodeStates.Failed && move.To != NodeStates.Reached) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. An attempt with no scope kept
-            // takes its binding's own rule, a place with a place and a whole-graph binding with that graph, so the lifecycle compares like with like.
-            Make(node, move.To == NodeStates.Skipped ? move with { Scope = status.Scope ?? run.Own(node.Id, binding.GraphDigest) } : move, WireWhy.Observed, observation.Said);
+            // takes its node's place, so the lifecycle compares like with like.
+            Make(node, move.To == NodeStates.Skipped ? move with { Scope = status.Scope ?? run.ScopeOf(node.Id) } : move, WireWhy.Observed, observation.Said);
         }
 
         // 3. Each started sink, on the receipt of the path into it: a failure or a rejection its binding rests on, read through a failed or
@@ -370,9 +370,6 @@ public static class WireEvaluation
     /// nothing again.
     /// </summary>
     public static string FiringKey(WireRun run, string target, string wire, string receipt) => Digest("trg-", run.GraphOf(target), run.Run, wire, receipt);
-
-    /// <summary>A firing's key by the whole graph's digest and the run's earlier name.</summary>
-    internal static string LegacyKey(WireRun run, string wire, string receipt) => Digest("trg-", run.GraphDigest, run.Legacy ?? run.Run, wire, receipt);
 
     internal static string Digest(string prefix, params string?[] parts)
     {

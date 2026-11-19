@@ -14460,3 +14460,14 @@ installed window is not yet seen.
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~AgentsTextTests"`: 262 passed.
   Left: a knowledge tool's addition does not reach every golden that lists the tools (the brainstorm goldens, `agents-text.json`,
   the service's `call-table.json`); TOOLGOLDENS1.
+
+## 2026-11-19 — The Azure DevOps example's command list read three commands short on main (PluginInterfacesTests)
+
+- **Seen:** the NOCOMPAT1 merge's `reached` gate failed `PluginInterfacesTests.Each_pull_request_example_signs_in_through_its_own_
+  commands_and_storage(daoris-azure-devops)` alone, on code the branch did not touch; two builders saw it on main too.
+- **Cause:** ACTORFLOW1b (42ee86679a) added `create-release`, `start-stage` and `release-status` to the plugin's manifest and
+  updated its own tests, not this class's expected list; the gates19 merge's reached plan did not select the class.
+- **Fix:** the expected list names the three, as the APPROVEACT1 branch also writes it.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~PluginInterfacesTests"`: 41
+  passed. Left: a plugin manifest's change does not reach the driver classes that read it (`[Reaches]` takes only folders the
+  test project compiles against); REACHPLUGIN1.

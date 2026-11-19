@@ -2,21 +2,21 @@
   "schema": 2,
   "packages": {
     "Daoris.Adapters.Clock": {
-      "fingerprint": "f8ad1fb65bffe80dd2472b9c448fb23d2cea5dbf60f24abf09dce13b0174a34a",
-      "tree": "d884a557b217e901e853242255ea39329952aa4d",
+      "fingerprint": "64d195f1fc3933a8f0b93609e62f65e5759c2e7a05faf9b0f71ebe498c0ed2a5",
+      "tree": "81e7b6bfb1aca8ee9173d730eed55359975ccb60",
       "ports": {
         "Clocks": "c4cfb07d2c72265f2be3f83e4cd8a719c0c62d82"
       },
       "outside": {},
       "suite": "adapters-clock",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:22:11.701Z"
+      "passed": "2026-11-18T15:10:07.640Z"
     },
     "Daoris.Adapters.DesktopStore.Sqlite": {
-      "fingerprint": "8197ac8101bf4ae07ffcf7bb9590e60936e699e9ee1eba4655b9e4fc9535c5ed",
-      "tree": "79a123a20ce206f2c4b8f64be58943efc874f87c",
+      "fingerprint": "91e635b3bda78ef03da0410dd8839f302adfccd326b18295bbc10f31d71a2734",
+      "tree": "73e06a6160348608a54565fb6eff886eefc433cc",
       "ports": {
-        "Store": "1f6fe3edfd68b5832e70a2102c2835e0adbf8f36"
+        "Store": "5bf499b08c4d17266f53d7b2ac9bfd2c279243dd"
       },
       "outside": {
         "nuget:Microsoft.Data.Sqlite": "10.0.14",
@@ -24,11 +24,11 @@
       },
       "suite": "adapters-desktopstore-sqlite",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:22:23.522Z"
+      "passed": "2026-11-18T23:35:43.302Z"
     },
     "Daoris.Adapters.Git": {
-      "fingerprint": "a31fd09bb76b1f6202a04af9a8d6518664cc6f408792e3b375d3096f3bf643b9",
-      "tree": "bb4b161ea6d65b2b85f34940a9bdf44b3809a9bb",
+      "fingerprint": "b3fb90b8d933df084c178f25affffa8545fa5e11bc626baf79af67baa6d443b6",
+      "tree": "f232a169d43aa64417d6073d093d0ff91d9265e6",
       "ports": {
         "Git": "66b6e35a16b7e767c7220b4556776bd6cc063557",
         "Processes": "02109a6c612fa4cb0892fb9dee044f6e782b30c2"
@@ -38,11 +38,11 @@
       },
       "suite": "adapters-git",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:22:47.120Z"
+      "passed": "2026-11-18T15:13:22.368Z"
     },
     "Daoris.Adapters.Machine": {
-      "fingerprint": "03e3f8422dcc178c20a030181db0ad321cccc4d2d483b4d139613cd7c168dec3",
-      "tree": "155a2ae5a067d1fefc08d8f40a629293a672433b",
+      "fingerprint": "6a5cb284f23ddde413651966dc61de9227690beb631494f18913194478928eb5",
+      "tree": "fe745a74015cab3875f340fff5e476abe0c5f540",
       "ports": {
         "Processes": "02109a6c612fa4cb0892fb9dee044f6e782b30c2"
       },
@@ -51,11 +51,11 @@
       },
       "suite": "adapters-machine",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:23:32.778Z"
+      "passed": "2026-11-18T15:12:05.530Z"
     },
     "Daoris.Adapters.Memory.Lyntai": {
-      "fingerprint": "ef309e83a10db6ab9bcff05fa3d6f358db51bf475fba72a310bbd514f87313c8",
-      "tree": "3e0b08ec6f4ddfb4c8287357c4cbd7b605748b67",
+      "fingerprint": "fc8fddbed1d66fb03d417347a65836e5d54643218aa864a562caaa38ae59d16d",
+      "tree": "28c17e1c9e2948b97945de8207da1f408f232a14",
       "ports": {
         "Memory": "1e77cb9362572125f99c496eb38e9cf90fa71246"
       },
@@ -65,18 +65,18 @@
       },
       "suite": "adapters-memory-lyntai",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:24:10.303Z"
+      "passed": "2026-11-18T15:14:07.299Z"
     },
     "Daoris.Adapters.SshKeys": {
-      "fingerprint": "c67a09b127264e8b3511081fdaec22190b522d3bc5233b293b581023211778e6",
-      "tree": "e9128e8c47e1dbac37ef48c3ad7d4eaaf5de1480",
+      "fingerprint": "f1cd22661066f2decf3a350cac040444e94c41ad06638b92c752b6ecbb7513aa",
+      "tree": "2c8d0879fe6734dc7fbfe5d9361caa063b991f33",
       "ports": {
         "Git": "66b6e35a16b7e767c7220b4556776bd6cc063557"
       },
       "outside": {},
       "suite": "adapters-ssh-keys",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-15T17:24:29.307Z"
+      "passed": "2026-11-18T15:14:52.281Z"
     },
     "Daoris.Assistant": {
       "fingerprint": "d59bd5cf94d5ee7f4207526bcf11a1add8ecb93882cdb6774d3b8daf5deee5dc",

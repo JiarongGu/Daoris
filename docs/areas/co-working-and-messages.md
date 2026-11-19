@@ -220,7 +220,7 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 ***At work*, *What needs you* and the steward desk**
 
 45. *At work* draws the attended line from records, never conversation text: its parts, its co-workers (reviewers from records
-    whose `serves` names the line), the quests it asked, its subagents and the last words of its channel, its ask's or, on no ask
+    whose `serves` names the line), the quests it asked and the last words of its channel, its ask's or, on no ask
     held here, its own, a message to one part naming it. *Waiting on* is the requests that hold; the head draws the same line,
     and its door opens *At work* at the first request the line names, that row outlined and focused. (from D203, D225)
 46. A message is drawn whole once, at its home. Each word's turn is headed by its sender chip: who, by the one rule, and when it

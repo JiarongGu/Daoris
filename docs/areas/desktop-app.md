@@ -228,7 +228,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     plugin's actor wait, since the row names no step kind), and so does its *What needs you* row (the run its work quest, else its run's id, names):
     *Approve* and *Reject* where the plugin declares `approve-release` as no agent's tool, sent with the origin of the run's own
     workspace's checkout of its repository, else the stage's page. A park whose question names a site waits on the person's sign-in there: named *Sign in*, its card carries
-    *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34). The head draws none of their cards. Its state
+    *Open the sign-in…* and *Signed in* (`SignInAsk`; plugins area, rule 34). A step its agent holds reads "waiting on `<role>`:
+    `<agent>`" with *Take* alone, and names the dock's question or sign-in its agent is blocked on with a link to it (`RunWaitsHead`).
+    The head draws none of their cards. Its state
     line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
     the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
@@ -429,7 +431,11 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each sub-agent and task as a tab of the
-  bottom panel; each row removes the place whose job it moves.
+  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each subagent and task as a tab of the
+  bottom panel; each row removes the place whose job it moves. SESSIONVIEW1f moved the subagents into the conversation: a subagent
+  is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
+  words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent
+  takes the conversation's place with a breadcrumb back (`work/beside/`); a background task is a row under its call and a row where
+  it ended, with its last lines from its console stream, each leading to the other. *At work* draws no subagents of its own.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

@@ -156,14 +156,10 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
-    /// <summary>
-    /// The files a limit's move and an agent's ask to hand over keep for a session, named by its id, and the limit's box once the
-    /// come-up has imported it into the move record and set it aside.
-    /// </summary>
+    /// <summary>The files an agent's ask to hand over keeps for a session, named by its id: the ask and its state.</summary>
     private string[] Boxes(string id) =>
     [
-        Path.Combine(Sessions, id + LimitBoxes.Suffix), Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix),
-        Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix), Path.Combine(Sessions, id + LimitBoxes.Suffix + MoveBoxImport.SetAsideSuffix),
+        Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix), Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix),
     ];
 
     private void KeepBoxes(string id)
@@ -172,11 +168,11 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// A session's limit-move box and its agent's hand-over ask and state are in the inventory, so a
-    /// delete takes all three. They go under the name <c>hand-over</c>, in the inventory's order; another session's stay.
+    /// A session's hand-over ask and its state are in the inventory, so a delete takes both. They go under the name
+    /// <c>hand-over</c>, in the inventory's order; another session's stay.
     /// </summary>
     [Fact]
-    public async Task A_delete_takes_a_limit_moves_box_and_a_hand_over_asks_two_files_too()
+    public async Task A_delete_takes_a_hand_over_asks_two_files_too()
     {
         foreach (var id in new[] { "c1", "c2" })
         {
@@ -221,7 +217,6 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Equal(["hand-over"], outcome.Stayed);
         Assert.True(File.Exists(Boxes("c1")[0]));
         Assert.False(File.Exists(Boxes("c1")[1]));
-        Assert.False(File.Exists(Boxes("c1")[2]));
         Assert.Contains("its hand-over, which the disk would not let go of and is left over; the next clear of a workspace takes it.", outcome.Message);
     }
 

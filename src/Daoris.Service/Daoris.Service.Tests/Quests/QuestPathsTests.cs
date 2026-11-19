@@ -103,25 +103,6 @@ public sealed class QuestPathsTests : IAsyncLifetime
         Assert.NotNull(QuestWire.ReadPush(json.Replace("../up", "src/up/**")));
     }
 
-    /// <summary>A store from before the field has no column: it gains one, and its quests declare none.</summary>
-    [Fact]
-    public async Task A_store_from_before_the_paths_opens_and_its_quests_declare_none()
-    {
-        await using var older = new SqliteConnection("Data Source=:memory:");
-        await older.OpenAsync();
-        var store = await QuestStore.OpenAsync(older);
-        await store.PublishAsync("game", "engine", "Cap the frame's work", "b", Now);
-        await using (var drop = older.CreateCommand())
-        {
-            drop.CommandText = "ALTER TABLE quests DROP COLUMN paths";
-            await drop.ExecuteNonQueryAsync();
-        }
-
-        var reopened = await QuestStore.OpenAsync(older);
-
-        Assert.Empty(Assert.Single(await reopened.ListAsync(receiver: "engine")).Paths);
-    }
-
     /// <summary>
     /// The person's declaration on the ask stands whatever the intake's draft says: an agent's own declaration adds paths and never
     /// removes another's, so it cannot release the hold the person's paths make.

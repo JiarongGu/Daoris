@@ -39,17 +39,10 @@ export function readLandings(checkout, { since } = {}) {
     .filter(r => !since || r.at.slice(0, 10) >= since);
 }
 
-/** A schema-1 record has no classes: its builder's transcript, where it stands, gives them. */
-function reread(record, checkout, options) {
-  if (record.schema !== 1 || !record.builder || record.builder.preEditBytes === null) return record;
-  const built = builderOf(record.branch, checkout, options);
-  return built.builder ? { ...record, builder: built.builder } : record;
-}
-
 /** The log's records, and for each branch the merge record shows landed before the log began, a record built now from the same sources (commit null). */
 export function landingsSince(checkout, { since, before, options } = {}) {
   const early = r => !before || Date.parse(r.at) < Date.parse(before);
-  const logged = readLandings(checkout, { since }).filter(early).map(r => reread(r, checkout, options));
+  const logged = readLandings(checkout, { since }).filter(early);
   const known = new Set(readLandings(checkout).map(r => r.branch));
   const history = landedBranches(checkout)
     .filter(l => !known.has(l.branch) && (!since || l.at.slice(0, 10) >= since) && early(l))
@@ -66,13 +59,12 @@ const median = values => {
 const spread = values => ({ mean: mean(values), median: median(values) });
 
 function byClassOf(edited) {
-  const classed = edited.filter(r => r.builder.preEditByClass);
-  if (!classed.length) return missing('no landing in the range has a transcript read by class');
+  if (!edited.length) return missing('no landing in the range has a transcript read by class');
   return {
-    records: classed.length,
-    bytes: spread(classed.map(r => r.builder.preEditBytes)),
-    ...Object.fromEntries(CLASSES.map(c => [c, spread(classed.map(r => r.builder.preEditByClass[c]))])),
-    libraryReads: spread(classed.map(r => r.builder.libraryReads)),
+    records: edited.length,
+    bytes: spread(edited.map(r => r.builder.preEditBytes)),
+    ...Object.fromEntries(CLASSES.map(c => [c, spread(edited.map(r => r.builder.preEditByClass[c]))])),
+    libraryReads: spread(edited.map(r => r.builder.libraryReads)),
   };
 }
 

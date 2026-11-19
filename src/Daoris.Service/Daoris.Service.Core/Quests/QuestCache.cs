@@ -4,104 +4,11 @@ using static Daoris.Knowledge.QuestRecordCodec;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The <c>quests</c> table: a cache of what each quest's history replays to, written whole by the replay and nowhere else, and replayed again
-/// at open where an older build left a row the log can say better.
+/// The <c>quests</c> table: a cache of what each quest's history replays to, written whole by the replay and nowhere else.
 /// </summary>
 internal sealed class QuestCache(QuestStore store)
 {
     private readonly ConnectionGate _db = store.Db;
-
-    /// <summary>Replays, from the log, every row an older build left that the log says better.</summary>
-    internal async Task RepairAsync(CancellationToken ct)
-    {
-        await RecacheUnnamedConflictsAsync(ct).ConfigureAwait(false);
-        await RecacheClosedAwaitsAsync(ct).ConfigureAwait(false);
-        await RecacheUnkeptReopensAsync(ct).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// A source reopened by an older build has a row that keeps no reopen, though its log holds one no submission
-    /// answered since. Those taken quests are replayed from the log, which reads it, so the driver tells it from one not yet ready.
-    /// A step its source's reopen reached, or one that went on after it, keeps no reopen of its own for a replay to set, so only a
-    /// replay that sets one is written; once written a source's row keeps its reopen, so no later open selects it again.
-    /// </summary>
-    private Task RecacheUnkeptReopensAsync(CancellationToken ct) =>
-        RecacheAsync(
-            """
-            SELECT id FROM quests
-            WHERE status = 'Taken' AND submission IS NULL AND reopened IS NULL
-              AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'reopened')
-              AND EXISTS (SELECT 1 FROM quest_log WHERE quest_log.quest = quests.id AND kind = 'submitted')
-            """,
-            ct, changes: quest => quest.Reopened is not null);
-
-    /// <summary>
-    /// A cache written before dismissals holds conflicts without the sequence that names them,
-    /// and a conflict that cannot be named cannot be dismissed. Those quests are replayed from the log,
-    /// which has always kept the sequence — the cache is only ever what the history replays to.
-    /// </summary>
-    private Task RecacheUnnamedConflictsAsync(CancellationToken ct) =>
-        RecacheAsync("SELECT id FROM quests WHERE conflicts <> '[]' AND conflicts NOT LIKE '%\"sequence\"%'", ct);
-
-    /// <summary>
-    /// A quest closed before a close cleared <c>awaits</c> still names the question it waited on.
-    /// Those closed rows are replayed from the log, which clears it and keeps the Waited operation.
-    /// </summary>
-    private Task RecacheClosedAwaitsAsync(CancellationToken ct) =>
-        RecacheAsync("SELECT id FROM quests WHERE status IN ('Done', 'Declined') AND awaits IS NOT NULL", ct);
-
-    /// <summary>Replays the rows <paramref name="stale"/> selects; with <paramref name="changes"/> the write opens only for a replay it holds.</summary>
-    private async Task RecacheAsync(string stale, CancellationToken ct, Func<Quest, bool>? changes = null)
-    {
-        await using (var probe = _db.Command())
-        {
-            probe.CommandText = $"SELECT EXISTS ({stale})";
-            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0) return;
-        }
-
-        if (changes is not null && !await AnyChangesAsync(stale, changes, ct).ConfigureAwait(false)) return;
-
-        await _db.InTransactionAsync(async (transaction, inside) =>
-        {
-            var ids = new List<string>();
-            await using (var select = _db.Command())
-            {
-                select.Transaction = transaction;
-                select.CommandText = stale;
-                await using var reader = await select.ExecuteReaderAsync(inside).ConfigureAwait(false);
-                while (await reader.ReadAsync(inside).ConfigureAwait(false)) ids.Add(reader.GetString(0));
-            }
-
-            foreach (var id in ids)
-            {
-                if (QuestLog.Replay(await store.HistoryAsync(id, transaction, inside).ConfigureAwait(false)) is { } quest
-                    && (changes is null || changes(quest)))
-                {
-                    await WriteAsync(quest, transaction, inside).ConfigureAwait(false);
-                }
-            }
-
-            return ids.Count;
-        }, ct).ConfigureAwait(false);
-    }
-
-    private async Task<bool> AnyChangesAsync(string stale, Func<Quest, bool> changes, CancellationToken ct)
-    {
-        var ids = new List<string>();
-        await using (var select = _db.Command())
-        {
-            select.CommandText = stale;
-            await using var reader = await select.ExecuteReaderAsync(ct).ConfigureAwait(false);
-            while (await reader.ReadAsync(ct).ConfigureAwait(false)) ids.Add(reader.GetString(0));
-        }
-
-        foreach (var id in ids)
-        {
-            if (QuestLog.Replay(await store.HistoryAsync(id, ct).ConfigureAwait(false)) is { } quest && changes(quest)) return true;
-        }
-
-        return false;
-    }
 
     /// <summary>
     /// Write a quest's row as its replay gives it. The row is a cache, so it is written whole: a
