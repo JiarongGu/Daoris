@@ -1,7 +1,7 @@
 {
   "work.session.label": "会话",
   "work.session.empty.headline": "没有打开的会话",
-  "work.session.empty.body": "从列表中选一个会话，或开始一次对话。跨仓库的工作从需求开始。",
+  "work.session.empty.body": "从列表中选一个会话，或开始一次对话。要同时修改几个仓库，就开始一个需求。",
   "work.session.state.loading": "正在载入",
   "work.session.state.live": "工作中",
   "work.session.state.idle": "空闲",

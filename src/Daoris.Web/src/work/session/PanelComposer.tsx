@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
+import { isComposing } from '../../lib/composing';
 
 /**
  * When the agent reads the person's words: now (between turns), after the current step (while it works), when the session goes on
@@ -50,7 +51,8 @@ export function PanelComposer({ reads, chip, onSend, disabled = false }: {
         disabled={disabled}
         onChange={(event) => setWords(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing) {
+          if (isComposing(event)) return;
+          if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
             event.preventDefault();
             send();
           }

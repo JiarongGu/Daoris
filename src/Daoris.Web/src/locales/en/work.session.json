@@ -1,7 +1,7 @@
 {
   "work.session.label": "Session",
   "work.session.empty.headline": "No session open",
-  "work.session.empty.body": "Choose a session from the list, or start a conversation. Work across repositories starts from an ask.",
+  "work.session.empty.body": "Choose a session from the list, or start a conversation. To change several repositories at once, start an ask.",
   "work.session.state.loading": "Loading",
   "work.session.state.live": "Working",
   "work.session.state.idle": "Idle",

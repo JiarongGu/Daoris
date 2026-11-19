@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ExternalLink } from '../../design/links';
 import { Button } from '../../design/ui';
 import { clockOf, phaseTime } from '../../locales/format';
 import { cn } from '../../lib/cn';
@@ -105,7 +106,7 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
           {wait.look.length === 0 ? <Unsaid /> : (
             <span className="flex flex-wrap gap-x-3">
               {wait.look.map((door) => (door.href
-                ? <a key={door.label} href={door.href} className="text-accent underline">{door.label} ↗</a>
+                ? <ExternalLink key={door.label} href={door.href} className="text-accent underline">{door.label} ↗</ExternalLink>
                 : (
                   <button key={door.label} type="button" onClick={door.onOpen} className="cursor-pointer border-0 bg-transparent p-0 text-accent underline">
                     {door.label}
