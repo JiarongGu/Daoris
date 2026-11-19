@@ -23,9 +23,12 @@ public static class StepReceipts
     public const string Reached = "reached";
 
     /// <summary>The facts <paramref name="node"/>'s receipts give, by the evidence name each gives; none where it maps none or its option does not read.</summary>
-    public static IReadOnlyDictionary<string, string> Mapped(NodeDeclaration node)
+    public static IReadOnlyDictionary<string, string> Mapped(NodeDeclaration node) => Map(node, Option);
+
+    /// <summary>The names <paramref name="node"/>'s <paramref name="option"/> maps to facts, each trimmed; none where it maps none or does not read.</summary>
+    internal static IReadOnlyDictionary<string, string> Map(NodeDeclaration node, string option)
     {
-        if (!node.Options.TryGetValue(Option, out var text)) return new Dictionary<string, string>();
+        if (!node.Options.TryGetValue(option, out var text)) return new Dictionary<string, string>();
         try
         {
             using var document = JsonDocument.Parse(text);

@@ -36,7 +36,7 @@ public static class StepHandOffs
         if (say is null || records.Read(governed.Unit.Id) is not { Ended: null } kept) return;
         var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk)
             .Where(step => step.Handed).ToList();
-        if (steps.Count == 0) return;
+        if (steps.Count == 0 || PartReceipts.Waiting(records.Home, governed.Run, scope).Count > 0) return;
         var executors = (IReadOnlyList<string>)[.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []];
         var read = sessions is null ? null : await sessions(ct).ConfigureAwait(false);
         if (SessionOf(governed.Run, executors, read) is not { } session) return;
@@ -45,6 +45,14 @@ public static class StepHandOffs
             if (governed.Graph.Nodes.FirstOrDefault(node => node.Id == step.Node) is not { } node) continue;
             var attempt = WorkPerformer.StatusOf(kept, node.Id).Attempt;
             var key = KeyOf(governed.Run, node.Id, attempt, step.Epoch);
+            if (JointChecks.Over(node).Count > 0)
+            {
+                var parts = JointChecks.Receipts(records.Home, scope.Parts, node);
+                var own = StepActFiles.Journal(records.Home, governed.Unit.Id).Where(row => row.Node == node.Id && row.Attempt == attempt);
+                if (!JointChecks.Ready(node, own, parts)) continue;
+                key += ":" + JointChecks.Latest(parts)!.Id;
+            }
+
             if (told?.Contains(key) == true) continue;
             var entry = StepReceipts.Knowledge(node);
             var lessons = entry is null ? [] : StepLessons.Open(records.Home, scope.Run.Binding.Repository, entry, governed.Run);
@@ -70,7 +78,7 @@ public static class StepHandOffs
             : $"{evidence} Do it, then settle it with `{StepSettles.Tool}` (run `{run}`, node `{node.Id}`{(step.Epoch is { } e ? $", epoch {e}" : "")}), with your words. ";
         var waits = step is { Why: PersonWaits.Actor, Words.Length: > 0 } ? $" Its plugin says: {step.Words}{(step.Url is { } url ? $" ({url})" : "")}" : "";
         return $"Daoris hands you step `{node.Id}` of run #{run} (attempt {attempt}{epoch}), waiting on `{step.Role}`, which your agent holds.{waits}"
-               + $"{(StepReceipts.Mapped(node).Count > 0 ? "" : outcomes)}{StepReceipts.KnowledgeWords(node)}{lessons}{settles}"
+               + $"{(StepReceipts.Mapped(node).Count > 0 ? "" : outcomes)}{StepReceipts.KnowledgeWords(node)}{JointChecks.Words(node)}{lessons}{settles}"
                + "Where you cannot (a sign-in, an approval, a yes, a change another's to make), ask the role that can through `question_ask`, naming "
                + $"it (`role`: `{StepRoles.CredentialsKeeper}` for a sign-in, with its `site`) and, for an act, the act (`act`), and say so in your last "
                + "message. Then end your turn: the answer, the next step, or why the settle was refused, is your next turn.";

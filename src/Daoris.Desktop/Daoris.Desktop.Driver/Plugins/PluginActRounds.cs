@@ -16,6 +16,9 @@ public sealed record StepActRow(
     public int? Attempt { get; init; }
 
     public int? Epoch { get; init; }
+
+    /// <summary>The part of an ask's plan a joint check's receipt says it failed on (<see cref="JointChecks"/>), or null.</summary>
+    public string? Part { get; init; }
 }
 
 /// <summary>
@@ -37,7 +40,10 @@ public static class PluginActRounds
     {
         if (!SessionEventText.IsLocalId(session) || receipt.ValueKind != JsonValueKind.Object) return;
         if (Text(receipt, "fact") is not { Length: > 0 } fact || Text(receipt, "state") is not { Length: > 0 } state) return;
-        var row = new StepActRow(id, session, tool, fact, state, Text(receipt, "message"), Text(receipt, "url"), Text(receipt, "by"), Text(receipt, "waitsOn"), at);
+        var row = new StepActRow(id, session, tool, fact, state, Text(receipt, "message"), Text(receipt, "url"), Text(receipt, "by"), Text(receipt, "waitsOn"), at)
+        {
+            Part = Text(receipt, "part"),
+        };
         Write(SessionPath(home, session), [.. Rounds(home, session), row]);
     }
 
@@ -71,7 +77,7 @@ public static class PluginActRounds
 
         return new StepActRow(id, session, tool, fact, state, Text(row, "message"), Text(row, "url"), Text(row, "by"), Text(row, "waitsOn"), at)
         {
-            Node = Text(row, "node"), Attempt = Int(row, "attempt"), Epoch = Int(row, "epoch"),
+            Node = Text(row, "node"), Attempt = Int(row, "attempt"), Epoch = Int(row, "epoch"), Part = Text(row, "part"),
         };
     }
 
@@ -88,7 +94,7 @@ public static class PluginActRounds
             writer.WriteString("tool", row.Tool);
             writer.WriteString("fact", row.Fact);
             writer.WriteString("state", row.State);
-            foreach (var (name, value) in new[] { ("message", row.Message), ("url", row.Url), ("by", row.By), ("waitsOn", row.WaitsOn), ("node", row.Node) })
+            foreach (var (name, value) in new[] { ("message", row.Message), ("url", row.Url), ("by", row.By), ("waitsOn", row.WaitsOn), ("node", row.Node), ("part", row.Part) })
             {
                 if (value is not null) writer.WriteString(name, value);
             }

@@ -7,6 +7,12 @@ public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string>
 {
     public IReadOnlyDictionary<string, string> Repositories { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>The quest the plan gave each part, whose run is the part's: a part with none yet is not named.</summary>
+    public IReadOnlyDictionary<string, string> Quests { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>What each part waits on before it starts: another part's receipt, by the plan's <c>after</c> edges naming one.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<PartWait>> Waits { get; init; } = new Dictionary<string, IReadOnlyList<PartWait>>();
+
     /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet.</summary>
     public PartsReport For(string repository) =>
         this with
