@@ -27,7 +27,7 @@ describe('Since you left', () => {
     const row = screen.getByRole('region', { name: 'What happened since you left' });
 
     expect(row.textContent).toContain(`Since you left · ${elapsed(DRIVEN_MARK.read, new Date(NOW).toISOString())}`);
-    for (const said of ['1 turn', '1 command', 'subagents: 2 started, 2 ended', 'background tasks: 1 started, 1 ended', '1 step passed',
+    for (const said of ['1 turn', '1 command', 'subagents: 2 started, 2 ended · 1 started by another subagent','background tasks: 1 started, 1 ended', '1 step passed',
       'failed: release', '1 waiting on you', 'Its last words (the agent\'s):', 'The refresh now checks expiry first.']) {
       expect(row.textContent).toContain(said);
     }

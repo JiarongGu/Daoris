@@ -288,7 +288,7 @@ public sealed class AcpTests
     /// that waits, announces <c>c10</c>. It answers its prompt only once request 900 is answered: the call completed where an option
     /// it offered allowed it, else failed, and the turn <c>cancelled</c> where a cancel came first. Each answer to 900 is kept.
     /// </summary>
-    private static FakeAgent AskingAgent(string options, ConcurrentQueue<JsonElement> answers)
+    private static FakeAgent AskingAgent(string options, ConcurrentQueue<JsonElement> answers, string asker = "s-1")
     {
         JsonElement? prompt = null;
         var cancelled = false;
@@ -316,7 +316,7 @@ public sealed class AcpTests
                 case "session/prompt":
                     prompt = frame.Clone();
                     self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c9","title":"npm start","kind":"execute","status":"pending"}"""));
-                    self.Push($$$"""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"npm start","kind":"execute"},"options":{{{options}}}}}""");
+                    self.Push($$$"""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"{{{asker}}}","toolCall":{"toolCallId":"c9","title":"npm start","kind":"execute"},"options":{{{options}}}}}""");
                     self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c10","title":"read the log","kind":"read","status":"pending"}"""));
                     return null;
                 case "session/cancel":
@@ -384,6 +384,32 @@ public sealed class AcpTests
         Assert.Equal("completed", events.Last(e => e is { Kind: SessionEventKind.Tool, Id: "c9" }).Status);
         Assert.Contains(lines, line => line.StartsWith("  permission allowed by the person:", StringComparison.Ordinal));
         Assert.Empty(registry.Held("d1"));
+    }
+
+    /// <summary>
+    /// A subagent's request rises with its subagent (SESSIONVIEW1f2): one its own session asks on the wire is held tagged with that
+    /// session, the id the record keeps its lifetime under; the session's own agent's is held with none.
+    /// </summary>
+    [Theory]
+    [InlineData("child-7", "child-7")]
+    [InlineData("s-1", null)]
+    public async Task A_request_asked_on_a_subagents_own_session_is_held_tagged_with_it(string asker, string? child)
+    {
+        var registry = new HeldPermissions();
+        var agent = AskingAgent(Choices, new ConcurrentQueue<JsonElement>(), asker);
+        var asking = Asking();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, asking.Posture!)
+        {
+            Unoffered = asking.Unoffered,
+            Permissions = registry.For("d1"),
+        };
+
+        var run = session.RunAsync("X:/daoris/engine", "start the server", CancellationToken.None);
+        var held = await HeldAsync(registry, "d1");
+
+        Assert.Equal(("c9", child), (held.Call, held.Child));
+        Assert.True(registry.Answer("d1", "900", "no").Answered);
+        await run.WaitAsync(Poll.Patience);
     }
 
     /// <summary>

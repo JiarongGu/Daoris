@@ -22,7 +22,7 @@ describe('the strip and the view over one entry', () => {
   it('lists the same parts in the same order, the strip wording a completed part awaiting a helper and the view its record\'s own state', () => {
     const entry = { ...APP, parts: APP.parts.map((part) => (part.session === 'ap000002' ? { ...part, shown: 'awaiting-helper' } : part)) };
     const held: AtWorkHeld = answerOf(
-      { read: 'read', harness: 'claude-code', working: 0, children: [] },
+      { count: 0, working: 0 },
       {
         attended: 'ap000003',
         parts: entry.parts.map((part) => {
@@ -64,7 +64,7 @@ describe('the strip and the view over one entry', () => {
     const waitsOf = (shown: string) => (shown === 'awaiting-reply' ? { quest: 'q7', of: 'core' } : shown === 'awaiting-helper' ? { helper: true as const } : undefined);
     const listed = [entry.parts[7]!, ...entry.parts.filter((part, index) => part.session !== 'now' && (waitsOf(part.shown) || index >= 3))];
     const held: AtWorkHeld = answerOf(
-      { read: 'none', working: 0, children: [] },
+      {},
       {
         attended: 'now',
         earlier: 2,

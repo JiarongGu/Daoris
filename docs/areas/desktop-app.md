@@ -223,7 +223,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 38. Every wait the person settles stands in one dock above the composer (`work/waits/WaitStrip.tsx`), its only place on the
     session's page: `waitsOf`'s kinds and each step of its run held for the person or left failed (`SESSION_GROUPS`' `waits`, with
     *What needs you*'s presses), oldest first under a count, never folded, each with its own press and its way to where it arose
-    (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A release step waiting on its approver carries
+    (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A wait a subagent raised (a tool call its own
+    session or its hook's `agent_id` asked for, `HeldPermission.Child`) is tagged on its line with that subagent's name from the
+    record's lifetimes and *Open*, its focus by the way through the subagents that started it; one the record does not hold yet
+    reads *From a subagent*. A release step waiting on its approver carries
     the approval card its run's view draws (`ReleaseStepDoors` through `RunReleaseDoors`, the session's run read on the line of a
     plugin's actor wait, since the row names no step kind), and so does its *What needs you* row (the run its work quest, else its run's id, names):
     *Approve* and *Reject* where the plugin declares `approve-release` and the person holds the approver, sent with the origin of the run's own
@@ -240,7 +243,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
     each docked kind. A teammate's session draws its waits as one line with no press. Above the dock stands the live band
     (`work/band/`), a session running here only: one line for the agent's act while a turn runs and for each subagent and background
-    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), each
+    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), a
+    subagent another started drawn right under its parent and indented one past it (one whose parent has ended stands in its own
+    place at its said depth), each
     with its time ticking from its start on the page's clock, its last line (a subagent's last act from its own record, a task's
     last console line), *no output 6 m* past the quiet threshold, *Follow* (its last three lines), *Open* (the conversation's
     focus: a subagent's timeline, a task's whole console, a breadcrumb back) and *Stop* only on a task its streams mark `canStop`,
@@ -249,7 +254,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     it ended. The conversation opens at the person's read mark (`work/catchup/`): one per conversation on this machine, the newest
     part and event on screen while the window had focus, in the desktop store's `read_marks`, moved only forward (`READ_MARK`,
     `READ_MARK_MOVE`). Opened with anything after it, the attended part sits at the mark under *Since you left*, computed from the
-    record and the run with no model: turns, files changed, commands and which failed, subagents and tasks started and ended, steps
+    record and the run with no model: turns, files changed, commands and which failed, subagents and tasks started and ended (the
+    subagents another started counted among them, their jump the row of the one their way starts from), steps
     passed since the mark, what waits on the person and the helpers asked and answered, and the agent's last words quoted as its own,
     each line a jump to its first row; otherwise at its tail. Each ended turn folds to one line (its calls by kind, how many failed,
     files changed, duration), and under it stays what never folds: its closing words, the person's words, a failure or a stop, an act
@@ -457,6 +463,6 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
   words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent
   takes the conversation's place with a breadcrumb back (`work/beside/`); a background task is a row under its call and a row where
-  it ended, with its last lines from its console stream, each leading to the other. *At work* draws no subagents of its own.
+  it ended, with its last lines from its console stream, each leading to the other. *At work* draws no subagents of its own: its answer (`SESSION_AT_WORK`, `daoris session at-work`) counts each part's subagents and lists none.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

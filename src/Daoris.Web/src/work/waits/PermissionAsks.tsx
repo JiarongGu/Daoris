@@ -29,6 +29,8 @@ export type PermissionWait = {
   choices: PermissionChoice[];
   since: string;
   until: string | null;
+  /** The subagent that asked, by the id the session's record keeps its lifetime under; null or absent where its own agent asked. */
+  child?: string | null;
 };
 
 /** The person's answer as the driver took it (`SESSION_PERMISSION_ANSWER`): whether it stands, and where not, its code and sentence. */

@@ -49,7 +49,6 @@ export type AtWorkViewProps = {
    */
   considered?: readonly Consideration[];
   onRetry?: () => void;
-  now?: Date;
   /** An agent's name as the person calls it, for its co-workers; its word where none is given. */
   nameOf?: (agent: string) => string;
   /** The request the head's *Waiting on* opened the view at: its row is outlined and takes the focus. */
@@ -58,8 +57,10 @@ export type AtWorkViewProps = {
 
 /**
  * Who is at work on a session: the session's parts as the strip lists them, the
- * attended one first, and its subagents, each with its state and its end, read from Daoris's records and never from the
- * conversation's text. Reading is never *nobody*, a failure says its words, and a stale answer keeps its rows dimmed.
+ * attended one first, each with its record's state and its subagents counted, then what the line waits on, its co-workers and the
+ * quests it asked, read from Daoris's records and never from the conversation's text; the subagents themselves are the session's
+ * timeline's, each under the call that spawned it. Reading is never *nobody*, a failure says its words, and a stale answer keeps its
+ * rows dimmed.
  */
 export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRetry, channel, nameOf, seek }: AtWorkViewProps) {
   const { t } = useTranslation();
@@ -302,11 +303,16 @@ function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
 
 /** Whether *Nobody else is working on this* may be said: only where every source is read and holds nobody. */
 export function nobody(answer: AtWorkA): boolean {
-  const { subagents, parts } = answer;
-  return answer.parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.quests?.length && !answer.parts[0]!.waits
-    && (subagents.read === 'read' || subagents.read === 'none')
-    && subagents.children.length === 0 && !subagents.observed && !subagents.unplaced && !subagents.seenByCalls
+  const { parts } = answer;
+  const only = parts[0]!;
+  return parts.length === 1 && !answer.moreParts && !answer.earlier && !answer.published && !answer.quests?.length && !only.waits
+    && !only.children.count && !only.children.observed && !only.children.unplaced && !seenByCalls(only.agent)
     && parts.every((part) => !part.children.unreadable && !part.children.elsewhere);
+}
+
+/** A harness whose subagents appear only when they call Daoris (Codex): none counted never proves nobody. */
+function seenByCalls(agent: string | undefined): boolean {
+  return agent === 'codex' || !!agent?.startsWith('codex-');
 }
 
 /**

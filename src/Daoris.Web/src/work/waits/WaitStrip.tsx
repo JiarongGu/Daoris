@@ -4,7 +4,9 @@ import type { GoAhead, Quest, Session } from '../../data/api';
 import { cn } from '../../lib/cn';
 import type { WaitEvents } from './anchors';
 import { type GoAheadAnswer, GoAheadList } from '../../asks/GoAheadList';
-import { answeredPark, Button } from '../../design/ui';
+import { answeredPark, Button, Icon } from '../../design/ui';
+import type { BandTold } from '../band/bandRows';
+import { lifetimeOf, pathTo } from '../beside/besides';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { RunWaitsHead } from '../head/RunWaitsHead';
 import { partsOf, RunParts } from '../../workflow/parts/RunParts';
@@ -146,7 +148,7 @@ const ASKED: ReadonlySet<DockWait['kind']> = new Set(['question', 'intake', 'goA
  *
  * Nothing waits, nothing is drawn. A molecule: no hook beyond its focus and sought line.
  */
-export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWaits = null, quest = null, ...props }: WaitProps & {
+export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWaits = null, quest = null, beside = null, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
   /** Where the work's ask is open, the frame's. */
@@ -162,6 +164,11 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   runWaits?: RunWaitDoors | null;
   /** The quest it serves, which a park's *Finish…* may close as the person's. */
   quest?: Quest | null;
+  /**
+   * What the conversation told of what the session runs beside itself: the record's lifetimes a subagent's wait is named from, and
+   * the way into a subagent's focus. Absent, a subagent's wait is said as one with nothing to open.
+   */
+  beside?: BandTold | null;
 }) {
   const { t } = useTranslation();
   const section = useRef<HTMLElement>(null);
@@ -340,11 +347,43 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
         {owed > 0 && <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>}
         {drawnLines.map((line) => {
           const drawn = lineOf(line);
-          return drawn ? <div key={line.key} data-dock-line={line.key} className="grid min-w-0 gap-1">{drawn}</div> : null;
+          return drawn ? (
+            <div key={line.key} data-dock-line={line.key} className="grid min-w-0 gap-1">
+              {line.child && <ChildTag child={line.child} beside={beside} />}
+              {drawn}
+            </div>
+          ) : null;
         })}
         {parts && <div data-dock-line="parts" className="grid min-w-0 gap-1"><RunParts runs={parts.runs} onQuest={parts.onQuest} /></div>}
       </div>
     </section>
+  );
+}
+
+/**
+ * **Who raised a wait, where a subagent did**: its name as the session's record keeps its lifetime, and *Open*, which puts the
+ * panel in that subagent's focus by the way to it through the subagents that started it. One the record does not hold yet is said
+ * as a subagent's, with nothing to open.
+ */
+function ChildTag({ child, beside }: { child: string; beside: BandTold | null }) {
+  const { t } = useTranslation();
+  const held = beside ? lifetimeOf(beside.lifetimes, child) : null;
+  const name = held ? held.name ?? held.task ?? held.id : null;
+  return (
+    <p data-wait-child={child} className="m-0 flex min-w-0 items-center gap-x-2 text-meta text-ink-faint">
+      <Icon name="atWork" size={12} className="shrink-0" />
+      <span className="min-w-0 truncate">{name ? t('work.wait.child', { name }) : t('work.wait.childUnheld')}</span>
+      {name && beside && (
+        <button
+          type="button"
+          aria-label={t('work.wait.childOpen', { name })}
+          onClick={() => beside.open({ child: pathTo(beside.lifetimes, child) })}
+          className="shrink-0 border-0 bg-transparent p-0 text-meta text-accent underline decoration-dotted underline-offset-2 hover:text-ink"
+        >
+          {t('work.band.open')}
+        </button>
+      )}
+    </p>
   );
 }
 

@@ -16,6 +16,7 @@ function said(t: TFunction, line: DigestLine): string {
     case 'children':
     case 'tasks':
       return [t(`work.catchup.${line.kind}`, { started: line.started, ended: line.ended }),
+        ...(line.kind === 'children' && line.nested ? [t('work.catchup.nested', { count: line.nested })] : []),
         ...(line.failed > 0 ? [t('work.catchup.endedFailed', { count: line.failed })] : [])].join(' · ');
     case 'steps':
       return [...(line.passed > 0 ? [t('work.catchup.steps', { count: line.passed })] : []),

@@ -229,7 +229,7 @@ export function useRegionSurfaces({
   };
 
   const atWorkSurface = () => {
-    // Who is at work on the followed session: its parts and its subagents, from Daoris's
+    // Who is at work on the followed session: its parts, each with its subagents counted, from Daoris's
     // records; each part opens its page.
     return following
       ? withWhose(

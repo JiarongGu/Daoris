@@ -1,51 +1,5 @@
 // Who is at work on a session: what the shell's read answers and the view draws.
 
-/** A child's state: its latest run's, as the driver's fold read it. */
-export type AtWorkChildState =
-  | 'working' | 'unsaid' | 'completed' | 'failed' | 'cancelled' | 'disconnected' | 'stopped' | 'finished' | 'ended' | 'lost'
-  | 'unrecorded' | 'uncertain' | 'agentEnded';
-
-export const AT_WORK_CHILD_STATES: readonly AtWorkChildState[] = [
-  'working', 'unsaid', 'completed', 'failed', 'cancelled', 'disconnected', 'stopped', 'finished', 'ended', 'lost', 'unrecorded',
-  'uncertain', 'agentEnded',
-];
-
-export type AtWorkChild = {
-  /** Its native id. */
-  key: string;
-  type?: string;
-  /** The harness's announcement: the agent's words. */
-  label?: { text: string; claim: true };
-  /** Absent with `depth` where no harness said: *parent not said*. */
-  parentKey?: string;
-  depth?: number;
-  state: AtWorkChildState;
-  /** Its run's start, or its first line where none is said (`startSaid` false): *first seen*. */
-  since?: string;
-  startSaid: boolean;
-  /** The moment its end is said. */
-  ended?: string;
-  /** Its last line, for a run read not known, unrecorded or whose agent ended. */
-  lastSeen?: string;
-};
-
-export type AtWorkSubagents = {
-  read: 'read' | 'none' | 'unreadable' | 'elsewhere';
-  unreadable?: string;
-  harness?: string;
-  /** A harness whose children appear only when they call Daoris (Codex). */
-  seenByCalls?: boolean;
-  working: number;
-  turnWaits?: boolean;
-  /** Agent ids named that no announcement matched: never children. */
-  observed?: number;
-  /** Agent ids named by lines tied to no process: never children. */
-  unplaced?: number;
-  children: AtWorkChild[];
-  folded?: number;
-  more?: Record<string, number>;
-};
-
 /** What a part waits on as the strip places it: a quest, with the repository it is asked of and its lanes, or its helper. */
 export type AtWorkWait = { quest?: string; of?: string; lanes?: string[]; helper?: true };
 
@@ -72,6 +26,7 @@ export type AtWorkPart = {
   agent?: string;
   /** The record's own state, never the strip's shown word. */
   state?: string;
+  /** Its subagents counted: agent ids no announcement matched (`observed`) and ids tied to no process (`unplaced`) are never children. */
   children: { count?: number; working?: number; observed?: number; unplaced?: number; unreadable?: boolean; elsewhere?: boolean };
   /** Its place in the strip, from one. Absent from a host before the routing half. */
   number?: number;
@@ -164,7 +119,6 @@ export type AtWorkA = {
   unread?: string[];
   /** Where its newest generation started two subagents and the repository's routing standing is not open. */
   hint?: AtWorkHint;
-  subagents: AtWorkSubagents;
   /** When the shell's process began; absent where the answer has none. */
   windowOpened?: string;
 };

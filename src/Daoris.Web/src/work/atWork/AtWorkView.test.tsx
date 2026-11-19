@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import { en, zh } from '../../locales';
 import { AtWorkView } from './AtWorkView';
 import { PART_STATES, partStateKey } from './words';
-import { CODEX_NONE, ELSEWHERE, EMPTY, FAILED, IDS_ONLY, NOW, PARTS, READING, STALE, THREE, UNREADABLE } from './atWork.fixtures';
+import { CODEX_NONE, ELSEWHERE, EMPTY, FAILED, IDS_ONLY, PARTS, READING, STALE, THREE, UNREADABLE } from './atWork.fixtures';
 
 // Who is at work, drawn from the read's answer.
 
@@ -16,7 +16,7 @@ describe('who is at work on a session', () => {
   });
 
   it('draws no subagents of its own: the session\'s timeline draws each under the call that spawned it (D320 point 9)', () => {
-    render(<AtWorkView held={THREE} now={NOW} />);
+    render(<AtWorkView held={THREE} />);
     expect(screen.queryByText('Subagents')).toBeNull();
     expect(screen.queryByText('1 working')).toBeNull();
     expect(screen.queryByRole('button', { name: /^Console/ })).toBeNull();
@@ -42,7 +42,7 @@ describe('who is at work on a session', () => {
   });
 
   it('keeps a stale answer’s rows dimmed under its words, and never says nobody while stale', () => {
-    const { container, rerender } = render(<AtWorkView held={{ ...(PARTS as object), stale: (STALE as { stale: unknown }).stale } as never} now={NOW} />);
+    const { container, rerender } = render(<AtWorkView held={{ ...(PARTS as object), stale: (STALE as { stale: unknown }).stale } as never} />);
     expect(screen.getByText(/Could not read again: the service timed out/)).toBeTruthy();
     expect(container.querySelector('.opacity-60')?.textContent).toContain('codex');
 
@@ -54,7 +54,7 @@ describe('who is at work on a session', () => {
     const { rerender } = render(<AtWorkView held={EMPTY} />);
     expect(screen.getByText('Nobody else is working on this')).toBeTruthy();
 
-    for (const held of [CODEX_NONE, IDS_ONLY, UNREADABLE, ELSEWHERE, PARTS]) {
+    for (const held of [THREE, CODEX_NONE, IDS_ONLY, UNREADABLE, ELSEWHERE, PARTS]) {
       rerender(<AtWorkView held={held} />);
       expect(screen.queryByText('Nobody else is working on this')).toBeNull();
     }

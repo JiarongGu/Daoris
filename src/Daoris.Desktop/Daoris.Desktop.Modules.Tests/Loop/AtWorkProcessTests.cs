@@ -63,7 +63,11 @@ public sealed class AtWorkProcessTests : IDisposable
     private AtWorkHeld Compose() =>
         AtWorkRead.Compose("s1", _groups, _sessions, _quests, record => ChildLineage.Reading(_home, record.Id, record.Kind, _tokens), session => ChildLineage.PathOf(_home, session));
 
-    private string StateOfChild() => Compose().Answer!.Subagents.Children.Single().State;
+    /// <summary>The child's state as the composition's lineage read takes it, with this window's tokens.</summary>
+    private string StateOfChild() => ChildLineage.Reading(_home, "s1", null, _tokens).Bindings.Children.Single().State;
+
+    /// <summary>The held composition's count of the part's working subagents.</summary>
+    private int? WorkingOnPart() => Compose().Answer!.Parts.Single().Children.Working;
 
     private async Task<AtWorkWatch> HeldAsync()
     {
@@ -97,14 +101,14 @@ public sealed class AtWorkProcessTests : IDisposable
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
         await _quests.JudgeAsync();
-        Assert.Equal("working", StateOfChild());
+        Assert.Equal(("working", 1), (StateOfChild(), WorkingOnPart()));
         var watch = await HeldAsync();
 
         process.Kill(entireProcessTree: true);
         await UntilAsync(() => _tokens.Reading(token) == TokenReading.Gone);
 
         Assert.True(_woken >= 1, "the held composition was not woken by the token's leaving");
-        Assert.Equal("agentEnded", StateOfChild());
+        Assert.Equal(("agentEnded", 0), (StateOfChild(), WorkingOnPart()));
         Assert.Equal(0, watch.Holding);
     }
 
@@ -116,11 +120,11 @@ public sealed class AtWorkProcessTests : IDisposable
         await _groups.JudgeAsync();
         await _sessions.JudgeAsync();
         await _quests.JudgeAsync();
-        Assert.Equal("uncertain", StateOfChild());
+        Assert.Equal(("uncertain", 0), (StateOfChild(), WorkingOnPart()));
 
         process.Kill(entireProcessTree: true);
         await process.WaitForExitAsync();
 
-        Assert.Equal("uncertain", StateOfChild());
+        Assert.Equal(("uncertain", 0), (StateOfChild(), WorkingOnPart()));
     }
 }

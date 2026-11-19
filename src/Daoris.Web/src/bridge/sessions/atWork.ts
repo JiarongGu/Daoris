@@ -8,7 +8,7 @@ import type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkHeld } from '../../work/atWor
 // the records Daoris keeps (its parts, its lineage), never from the conversation's text. On an ask the same route is
 // keyed `{ ask }` and answers a branch of its own.
 
-export type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkChild, AtWorkHeld } from '../../work/atWork/types';
+export type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkHeld } from '../../work/atWork/types';
 
 export const atWorkKey = (session: string): QueryKey => ['atWork', session];
 
@@ -145,7 +145,7 @@ export const useAskAtWork = (ask: string | null | undefined, { enabled = true }:
 };
 
 /**
- * Who is at work on `session`: its entry's parts and the attended part's subagents, held as `AtWorkHeld`. The query never rejects
+ * Who is at work on `session`: its entry's parts, each with its subagents counted, held as `AtWorkHeld`. The query never rejects
  * for a work's failure (the shell answers it with its words) and is never retried; the hub's `atWork` asks it again.
  */
 export const useSessionAtWork = (session: string | null | undefined) => {

@@ -3,9 +3,9 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { AtWorkView } from './AtWorkView';
 import {
-  ASKED_BY, BOUND, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CODEX, CODEX_NONE, CONSIDERED, CONTINUED, COWORKERS, ELSEWHERE, EMPTY, FAILED, HINTED, HISTORY, IDS_ONLY,
-  JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN, LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LOST, NO_PARENT, NOW, OVERFLOW_AND_EARLIER, PARTS,
-  LINE_SAID, PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, REVIEWERS, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
+  ASKED_BY, CHAIN_AND_QUESTION, CHAT_TOOK_A_QUEST, CONSIDERED, COWORKERS, EMPTY, FAILED, HINTED, JOINED_EACH_WAY, LANES_ALONGSIDE_AND_UNTAKEN,
+  LEAD_WAITING_ON_HELPER, LEAD_WAITING_ON_LANE, LINE_SAID, OVERFLOW_AND_EARLIER, PARTS, PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING,
+  RESUMED_AND_EARLIER, REVIEWERS, SAID, STALE,
 } from './atWork.fixtures';
 
 // Who is at work: each state the view draws, at the side bar's floor (300 px), a roomier
@@ -16,7 +16,7 @@ const nothing = () => {};
 const meta: Meta<typeof AtWorkView> = {
   title: 'Work/AtWorkView',
   component: AtWorkView,
-  args: { held: THREE, now: NOW, onOpen: nothing, onRetry: nothing },
+  args: { held: PARTS, onOpen: nothing, onRetry: nothing },
 };
 export default meta;
 
@@ -26,67 +26,21 @@ const WIDTHS = [300, 430, 680] as const;
 const light = [atWidths(WIDTHS), inLight];
 const zhDark = [chinese, atWidths(WIDTHS), inDark];
 
-/** A chat with three subagents: one working, one completed, one failed. */
-export const ThreeSubagents: Story = { decorators: light };
-export const ThreeSubagentsChinese: Story = { decorators: zhDark };
-
-/** A nested child whose parent no harness said. */
-export const ParentNotSaid: Story = { args: { held: NO_PARENT }, decorators: light };
-export const ParentNotSaidChinese: Story = { args: { held: NO_PARENT }, decorators: zhDark };
-
-/** A Codex lead: a child first seen whose end is not said, counted in no *working*. */
-export const CodexByCalls: Story = { args: { held: CODEX }, decorators: light };
-export const CodexByCallsChinese: Story = { args: { held: CODEX }, decorators: zhDark };
-
-/** A Codex lead with no lineage yet: its *appear only when they call Daoris* line where *Nobody* would be. */
-export const CodexNoLineage: Story = { args: { held: CODEX_NONE }, decorators: light };
-export const CodexNoLineageChinese: Story = { args: { held: CODEX_NONE }, decorators: zhDark };
-
-/** A lost child beside one whose agent's exit this window saw before its end said how. */
-export const LostAndAgentEnded: Story = { args: { held: LOST }, decorators: light };
-export const LostAndAgentEndedChinese: Story = { args: { held: LOST }, decorators: zhDark };
-
-/** Agent ids alone, unmatched and tied to no process: their counts, never *Nobody*. */
-export const IdsOnly: Story = { args: { held: IDS_ONLY }, decorators: light };
-export const IdsOnlyChinese: Story = { args: { held: IDS_ONLY }, decorators: zhDark };
-
-/** Another Daoris process's run, *not known whether it still runs*, beside one working and one lost. */
-export const NotKnown: Story = { args: { held: UNCERTAIN }, decorators: light };
-export const NotKnownChinese: Story = { args: { held: UNCERTAIN }, decorators: zhDark };
-
-/** Reading, failed and stale over a held answer, and a part whose lineage could not be read. */
+/** Reading, failed, and stale over a held answer. */
 export const Reading: Story = { args: { held: READING }, decorators: light };
 export const ReadingChinese: Story = { args: { held: READING }, decorators: zhDark };
 export const Failed: Story = { args: { held: FAILED }, decorators: light };
 export const FailedChinese: Story = { args: { held: FAILED }, decorators: zhDark };
 export const Stale: Story = { args: { held: STALE }, decorators: light };
 export const StaleChinese: Story = { args: { held: STALE }, decorators: zhDark };
-export const Unreadable: Story = { args: { held: UNREADABLE }, decorators: light };
-export const UnreadableChinese: Story = { args: { held: UNREADABLE }, decorators: zhDark };
 
-/** An entry of three parts, the attended first, one a teammate's, and more past the bound. */
+/** An entry of three parts, the attended first, one a teammate's, each with its subagents counted, and more past the bound. */
 export const ThreeParts: Story = { args: { held: PARTS }, decorators: light };
 export const ThreePartsChinese: Story = { args: { held: PARTS }, decorators: zhDark };
-
-/** The bound: forty working drawn, one more not drawn, the heading *41 working*, three ended folded. */
-export const TheBound: Story = { args: { held: BOUND }, decorators: light };
-export const TheBoundChinese: Story = { args: { held: BOUND }, decorators: zhDark };
 
 /** The empty view: *Nobody else is working on this*. */
 export const Nobody: Story = { args: { held: EMPTY }, decorators: light };
 export const NobodyChinese: Story = { args: { held: EMPTY }, decorators: zhDark };
-
-/** On the protocol door, its turn waiting for the child working. */
-export const TurnWaits: Story = { args: { held: TURN_WAITS }, decorators: light };
-export const TurnWaitsChinese: Story = { args: { held: TURN_WAITS }, decorators: zhDark };
-
-/** A driven record's history: an end not recorded beside ends the harness said, *finished* and *stopped* among them. */
-export const DrivenHistory: Story = { args: { held: HISTORY }, decorators: light };
-export const DrivenHistoryChinese: Story = { args: { held: HISTORY }, decorators: zhDark };
-
-/** An attended teammate's part: its subagents not visible on this machine. */
-export const Elsewhere: Story = { args: { held: ELSEWHERE }, decorators: light };
-export const ElsewhereChinese: Story = { args: { held: ELSEWHERE }, decorators: zhDark };
 
 // The routing half's stories at the main area's three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's
 // 300 px floor, each in English in light and in 中文 in dark.
@@ -172,10 +126,6 @@ export const HintNoLanesChinese: Story = { args: { held: HINTED('no-lanes') }, d
 /** Two subagents ran in a repository whose sessions run one at a time here. */
 export const HintOneAtATime: Story = { args: { held: HINTED('one-at-a-time') }, decorators: routingLight };
 export const HintOneAtATimeChinese: Story = { args: { held: HINTED('one-at-a-time') }, decorators: routingZh };
-
-/** An ended first process's child *ended with its agent* beside its continuation's child working. */
-export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };
-export const EndedBesideItsContinuationChinese: Story = { args: { held: CONTINUED }, decorators: zhDark };
 
 // The line's co-workers, a member in each state (asked, starting, reading, answered and taken, refused, a successor asked by an
 // earlier part with its delivery not certain) and a source not read, at the main area's three widths and the 300 px dock floor.

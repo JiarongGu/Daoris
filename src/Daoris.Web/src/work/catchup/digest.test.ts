@@ -23,6 +23,7 @@ function fromRecord(events: SessionEvent[], part: string, mark: ReadMark) {
     commands: commands.length,
     failed: commands.filter((event) => event.status === 'failed').map((event) => event.title),
     children: [after.filter((event) => event.kind === 'child' && !event.end).length, ends('child').length],
+    nested: after.filter((event) => event.kind === 'child' && !event.end && event.parent).length,
     tasks: [after.filter((event) => event.kind === 'task' && !event.end).length, ends('task').length],
     words: after.filter((event) => event.kind === 'message').at(-1)?.text?.split('\n')[0],
   };
@@ -68,7 +69,7 @@ describe('the digest at the read mark', () => {
     expect(read.lines).toEqual([
       { kind: 'turns', count: 1, to: 'e2' },
       { kind: 'commands', count: 1, failed: [], to: 'e4' },
-      { kind: 'children', started: 2, ended: 2, failed: 0, to: 'e2' },
+      { kind: 'children', started: 2, ended: 2, failed: 0, nested: 1, to: 'e2' },
       { kind: 'tasks', started: 1, ended: 1, failed: 0, to: 'e4' },
       { kind: 'steps', passed: 1, failed: [] },
       { kind: 'waits', open: 1, asked: 0, answered: 0 },
@@ -77,9 +78,18 @@ describe('the digest at the read mark', () => {
     expect(line(read.lines, 'turns')!.count).toBe(record.turns);
     expect(line(read.lines, 'commands')!.count).toBe(record.commands);
     expect([line(read.lines, 'children')!.started, line(read.lines, 'children')!.ended]).toEqual(record.children);
+    expect(line(read.lines, 'children')!.nested).toBe(record.nested);
     expect([line(read.lines, 'tasks')!.started, line(read.lines, 'tasks')!.ended]).toEqual(record.tasks);
     expect(line(read.lines, 'words')!.text).toBe(record.words);
     landsAfter(read.lines, DRIVEN, 's-driven', DRIVEN_MARK);
+  });
+
+  it('counts a subagent another started after the mark, and jumps to it through the row of the subagent that started it', () => {
+    // Read past the outer subagent's start: only the one it started, and the ends, come after the mark.
+    const mark: ReadMark = { ...DRIVEN_MARK, seq: 5, at: DRIVEN.find((event) => event.seq === 5)!.at };
+    const children = line(digest(DRIVEN, 's-driven', mark)!.lines, 'children')!;
+
+    expect(children).toEqual({ kind: 'children', started: 1, ended: 2, failed: 0, nested: 1, to: 'e2' });
   });
 
   it('counts the whole of a newer part when the mark is in the part before it, from the part boundary on', () => {

@@ -11,8 +11,11 @@ export type StepWait = { run: string; node: string; why: string; role?: string |
 /** A wait the dock holds: one of `waitsOf`'s, or a step of its run held for the person or left failed. */
 export type DockWait = Wait | ({ kind: 'step' } & StepWait);
 
-/** One line of the dock: its key, its wait and since when it waits (the session's last move where nothing says sooner). */
-export type DockLine = { key: string; wait: DockWait; since: string };
+/**
+ * One line of the dock: its key, its wait and since when it waits (the session's last move where nothing says sooner), and the
+ * subagent that raised it, by its lifetime's id in the session's record, where its row names one.
+ */
+export type DockLine = { key: string; wait: DockWait; since: string; child?: string };
 
 /**
  * **The census**: for each kind the dock holds, the reason the driver's reader gives a session that holds it, and whether the
@@ -77,6 +80,12 @@ function sinceOf(wait: DockWait, facts: WaitFacts): string | null | undefined {
   }
 }
 
+/** The subagent that raised a wait, where its row names one: a tool call a subagent's own session asked the person for. */
+function childOf(wait: DockWait, facts: WaitFacts): string | undefined {
+  if (wait.kind !== 'permission') return undefined;
+  return heldFor(facts.permissions?.waits ?? [], facts.session.id).find((held) => held.request === wait.request)?.child || undefined;
+}
+
 const at = (iso: string) => {
   const ms = Date.parse(iso);
   return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
@@ -84,7 +93,8 @@ const at = (iso: string) => {
 
 /**
  * **What the dock holds**: every wait the person settles, `waitsOf`'s and the run's steps held for the person or left failed, oldest
- * first (a tie keeps the order they were read in), each keyed once. The session's last move dates a wait whose row says no since.
+ * first (a tie keeps the order they were read in), each keyed once. The session's last move dates a wait whose row says no since;
+ * a wait a subagent raised is tagged with it, so the line names who asked.
  */
 export function dockOf(facts: WaitFacts, steps: readonly StepWait[] = []): DockLine[] {
   const waits: DockWait[] = [...waitsOf(facts), ...steps.map((step) => ({ kind: 'step' as const, ...step }))];
@@ -94,7 +104,8 @@ export function dockOf(facts: WaitFacts, steps: readonly StepWait[] = []): DockL
     const key = keyOf(wait);
     if (seen.has(key)) continue;
     seen.add(key);
-    lines.push({ key, wait, since: sinceOf(wait, facts) || facts.session.updated });
+    const child = childOf(wait, facts);
+    lines.push({ key, wait, since: sinceOf(wait, facts) || facts.session.updated, ...(child ? { child } : {}) });
   }
   return lines
     .map((line, order) => ({ line, order }))

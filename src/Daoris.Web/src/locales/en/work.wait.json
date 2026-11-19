@@ -1,6 +1,9 @@
 {
   "work.wait.title": "Waiting on you",
   "work.wait.several": "{{n}} waiting on you",
+  "work.wait.child": "From subagent {{name}}",
+  "work.wait.childUnheld": "From a subagent",
+  "work.wait.childOpen": "Open {{name}}",
   "work.wait.fold": "Fold",
   "work.wait.show": "Show",
   "work.wait.top": "To the top",

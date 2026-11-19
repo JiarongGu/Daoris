@@ -118,6 +118,23 @@ describe('the live band', () => {
     expect(onOpen).toHaveBeenLastCalledWith({ task: 'b1' });
   });
 
+  it('draws a sub-agent another started under its parent, indented one past it, and opens it by the way to it', () => {
+    const nested: SessionEvent[] = [
+      ...LIFETIMES,
+      // Started by a1 after the tasks; its door said its parent but not its depth.
+      { seq: 9, at: at(3), kind: 'child', id: 'a4', parent: 'a1', name: 'read fixtures', by: 'reported' },
+      { seq: 10, at: at(4), kind: 'child', id: 'a5', parent: 'a4', depth: 3, name: 'grep names', by: 'reported' },
+    ];
+    const { onOpen } = band({ lifetimes: nested });
+
+    expect(rows()).toEqual(['act', 'a1', 'a4', 'a5', 'b1', 'b2']);
+    expect(row('a1').style.marginLeft).toBe('');
+    expect(row('a4').style.marginLeft).toBe('16px');
+    expect(row('a5').style.marginLeft).toBe('32px');
+    fireEvent.click(within(row('a5')).getByRole('button', { name: 'Open' }));
+    expect(onOpen).toHaveBeenLastCalledWith({ child: ['a1', 'a4', 'a5'] });
+  });
+
   it('says nothing runs where nothing does', () => {
     band({ lifetimes: LIFETIMES.slice(3), act: null });
 

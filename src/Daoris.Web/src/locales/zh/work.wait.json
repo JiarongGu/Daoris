@@ -1,6 +1,9 @@
 {
   "work.wait.title": "等你处理",
   "work.wait.several": "{{n}} 项等你处理",
+  "work.wait.child": "来自子智能体 {{name}}",
+  "work.wait.childUnheld": "来自一个子智能体",
+  "work.wait.childOpen": "打开 {{name}}",
   "work.wait.fold": "收起",
   "work.wait.show": "展开",
   "work.wait.top": "到顶部",

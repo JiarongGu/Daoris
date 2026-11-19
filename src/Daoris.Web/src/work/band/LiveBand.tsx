@@ -9,7 +9,7 @@ import { actsIn, type BandAct, quietFor, runningIn } from './bandRows';
 
 /**
  * The live band above the dock: one line for each thing running now, the agent's act first, then each subagent and background task
- * whose start the record keeps and no end, a subagent indented by its depth. Each line says its kind and name, its time ticking from
+ * whose start the record keeps and no end, a subagent another started drawn under its parent and indented one past it. Each line says its kind and name, its time ticking from
  * its start on the page's clock, its last line of output or last act, and *no output 6 m* past the quiet threshold; *Follow* pins its
  * last three lines under it, *Open* puts it in the panel's focus, *Stop* stands where its door can stop it, asked once in place, and
  * reads *stopping* until its end is read; elsewhere its tip says why. Empty, it says *Nothing running*; in a short window it folds to
