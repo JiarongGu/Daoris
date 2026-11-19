@@ -44,8 +44,10 @@ import type { useFrameLayout } from './useFrameLayout';
 export function useRegionSurfaces({
   t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
   session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
-  reviewAttempt = null,
+  reviewAttempt = null, flowchartOpen = false,
 }: {
+  /** Whether the followed session's run's flowchart is open from its track: only then is its run read. */
+  flowchartOpen?: boolean;
   reviewRun?: string | null;
   reviewAttempt?: number | null;
   t: TFunction;
@@ -79,12 +81,9 @@ export function useRegionSurfaces({
   const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
 
-  // Where the followed session's work stands: asked only while the Workflow view shows,
-  // in whichever region it stands, and again at every tick under the driver's key.
-  const workflowShown = following !== null && (placed.places.workflow === 'panel'
-    ? !collapsed && panelView === 'workflow'
-    : !dockClosed && dock === 'workflow');
-  const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
+  // Where the followed session's work stands: asked only while its run's flowchart is open from its track, and again at every tick
+  // under the driver's key.
+  const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: following !== null && flowchartOpen });
   // A line on no ask held here has a channel of its own, which *At work* draws: read only while *At work* shows.
   const atWorkShown = following !== null && (placed.places.atWork === 'panel'
     ? !collapsed && panelView === 'atWork'
@@ -162,8 +161,8 @@ export function useRegionSurfaces({
       />
   );
 
-  const workflowSurface = () => {
-    // Where the followed session's work stands in its workflow. Its look's presses are the review's
+  const flowchartSurface = () => {
+    // Where the followed session's work stands in its workflow, opened from its head's track. Its look's presses are the review's
     // own gate, drawn under the step where it waits, never a second implementation; every other step opens where its record is.
     const lookControl = following && following.id === attended?.id && gateHolds && headReview ? (
       <ReviewGate
@@ -273,7 +272,6 @@ export function useRegionSurfaces({
     if (view === 'notifications') return notifications;
     if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
     if (view === 'outputs') return outputsSurface();
-    if (view === 'workflow') return workflowSurface();
     if (view === 'atWork') return atWorkSurface();
     if (view === 'console' && where === 'right') {
       return withWhose(
@@ -316,5 +314,5 @@ export function useRegionSurfaces({
     )
     : null;
 
-  return { surface, previewSurface, consoleView, withWhose };
+  return { surface, previewSurface, consoleView, withWhose, flowchart: flowchartOpen ? flowchartSurface() : null };
 }

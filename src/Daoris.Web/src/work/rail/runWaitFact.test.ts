@@ -4,7 +4,6 @@ import type { SessionGrouping } from '../groups';
 import { rowRun } from '../attention/attention';
 import type { Attention } from '../attention/AttentionRow';
 import { placedFact } from './SessionRow';
-import { opensRun } from './runWaitFact';
 
 // A session the driver placed by its run's waits: its row says the step its run waits at, one way whoever holds it, "waiting on
 // <role>: you", in each shipped language, and the band's row opens its run. Which session stands for which run, and in which group, is
@@ -49,10 +48,8 @@ describe('a row its run waits placed', () => {
     expect(said(placed({ group: 'needs-you', waits: [{ run: 'q1', node: 'next', why: 'newer', role: 'lead' }] }))).toBe('its run’s next: waiting on `lead`: you');
   });
 
-  it('is offered in What needs you as a review row that opens its run, and the list opens it on its run', () => {
+  it('is offered in What needs you as a review row that opens its run', () => {
     const row = { kind: 'review', id: 's1', placed: accept } as unknown as Attention;
     expect(rowRun(row)).toEqual({ session: 's1' });
-    expect(opensRun([accept, placed({ session: 's2', group: 'done' })], 's1')).toBe(true);
-    expect(opensRun([accept, placed({ session: 's2', group: 'done' })], 's2')).toBe(false);
   });
 });
