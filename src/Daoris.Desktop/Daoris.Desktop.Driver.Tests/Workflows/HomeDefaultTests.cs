@@ -62,10 +62,6 @@ public sealed class HomeDefaultTests : IDisposable
         Assert.Null(WorkflowPorts.Store(_home).Load("merge-after-accept"));
     }
 
-    /// <summary>
-    /// A home whose <c>driver.json</c> came before its first start (a terminal's verb wrote it) gets no workflow's seed, and still gets the
-    /// supervisor's rules and <i>Second check</i>'s first choices, once: the rules' record says it is done.
-    /// </summary>
     [Fact]
     public void A_home_whose_file_came_first_still_gets_its_rules_and_second_check_once()
     {

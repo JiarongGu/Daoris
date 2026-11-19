@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// A store an older build wrote and no purge emptied is refused at open, naming the file and what to do, and left as it was: no
+/// A store an older build wrote and no purge emptied is refused at open, naming the file and what to do, and left as it is: no
 /// build reads its shape, so its first query would fail on a column it lacks. A store of this build's shape opens.
 /// </summary>
 public sealed class OlderStoreTests : IDisposable

@@ -10,7 +10,7 @@ public sealed class OlderStoreException(string store, IReadOnlyList<string> miss
     $"{store} was written by an older Daoris and its history was never purged: {string.Join(", ", missing)}. "
     + "Close Daoris, then purge the home's history or start a fresh home; nothing was changed.")
 {
-    /// <summary>The file, as it was named to the service.</summary>
+    /// <summary>The file, as the service names it.</summary>
     public string Store { get; } = store;
 
     /// <summary>Each table's missing column, as <c>table.column</c>.</summary>

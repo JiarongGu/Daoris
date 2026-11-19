@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// What a home is given once. Where it has no <c>driver.json</c> yet: the copy of <c>merge-after-accept</c> saved, and
 /// <c>defaultWorkflow</c> naming it, so a place follows a saved graph from its first start. Where the machine's supervisor rules were
-/// never written, whether or not a <c>driver.json</c> came first (a terminal's verb writes one): the seeded rules and <i>Second check</i>'s
-/// first choices, the rules' own record being what says the home was seeded.
+/// never written, with or without a <c>driver.json</c> beside them (a terminal's verb writes one): the seeded rules and
+/// <i>Second check</i>'s first choices, the rules' own record saying the home is seeded.
 /// </summary>
 public static class HomeSeed
 {

@@ -109,13 +109,11 @@ export function checkRooms(raw: unknown, target: string, harness: Harness): stri
  *
  * 🔴 **The lock, not the manifest, says where the files are.** Between a manifest's flip and the sync
  * that moves them, the manifest names the new root and the files are still at the old. Absent fields
- * mean `claude-code` under `.claude`: `layoutFields` omits both only for that layout. A lock with neither
- * field beside a `claude-code` manifest with a target of its own is refused: a lock from before the fields
- * was written at the manifest's target, one of today's at `.claude`, and which this is cannot be told.
+ * mean `claude-code` under `.claude`: `layoutFields` omits both only for that layout. Beside a `claude-code`
+ * manifest with a target of its own, such a lock names no place that can be told, and is refused.
  *
- * @throws DaorisError when the lock's target leaves the repository: the lock is generated, the
- * file nobody reads closely, so a crafted root is refused rather than written into; and for the lock
- * whose layout cannot be told.
+ * @throws DaorisError when the lock's target leaves the repository (a crafted root is refused rather than
+ * written into), or its place cannot be told.
  */
 export function lockLayout(
   _root: string, lock: Lock | null, manifest: Manifest,

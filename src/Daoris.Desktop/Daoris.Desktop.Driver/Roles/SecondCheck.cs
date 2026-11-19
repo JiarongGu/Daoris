@@ -35,7 +35,7 @@ public static class SecondCheck
         staffing.Publish([], write =>
         {
             if (write.Query(Own, row => row.GetString(0), ("$role", Role)).Count > 0) return;
-            if (write.Query(Records, row => (row.GetString(0), row.GetString(1))).Any(role => role.Item1 == Role || DecidesTheKind(role.Item2))) return;
+            if (write.Query(RoleRows, row => (row.GetString(0), row.GetString(1))).Any(role => role.Item1 == Role || DecidesTheKind(role.Item2))) return;
             RoleStaffing.AddedRows(write, [(Role, Choices)]);
             StaffPolicies.Save(write, Role, Policy(Choices), Choices, 0, Moments.Write((clock ?? TimeProvider.System).GetUtcNow()));
             write.Moved(StaffPolicies.Family);
@@ -46,7 +46,7 @@ public static class SecondCheck
 
     private const string Own = "SELECT role FROM role_staffing WHERE role = $role UNION ALL SELECT role FROM role_policy WHERE role = $role";
 
-    private const string Records = "SELECT id, COALESCE(record, '') FROM roles";
+    private const string RoleRows = "SELECT id, COALESCE(record, '') FROM roles";
 
     private static bool DecidesTheKind(string record)
     {
@@ -55,7 +55,7 @@ public static class SecondCheck
             return System.Text.Json.Nodes.JsonNode.Parse(record) is System.Text.Json.Nodes.JsonObject root
                 && root["decides"] is System.Text.Json.Nodes.JsonArray decides
                 && decides.Any(kind => kind is System.Text.Json.Nodes.JsonValue value && value.TryGetValue<string>(out var named)
-                    && named == SupervisorKinds.AskDaoris);
+                    && named == CheckedKind);
         }
         catch (System.Text.Json.JsonException)
         {
@@ -65,5 +65,8 @@ public static class SecondCheck
 
     /// <summary>Whether a supervisor reads Ask Daoris's acts: held by the person's rules alone, the machine's reads nothing.</summary>
     public static bool On(IReadOnlyList<RoleSlot> slots) =>
-        SupervisorResolution.Find(slots, SupervisorKinds.AskDaoris, new RolePlace()).Role?.Hold?.Holder is RoleHolders.Agent or RoleHolders.Terminal;
+        SupervisorResolution.Find(slots, CheckedKind, new RolePlace()).Role?.Hold?.Holder is RoleHolders.Agent or RoleHolders.Terminal;
+
+    /// <summary>The kind the check reads: Ask Daoris's acts.</summary>
+    private const string CheckedKind = SupervisorKinds.AskDaoris;
 }

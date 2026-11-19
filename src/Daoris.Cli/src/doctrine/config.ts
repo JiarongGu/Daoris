@@ -163,8 +163,8 @@ export function readLock(root: string): Lock | null {
 }
 
 /**
- * The canon digest a lock was synced from, or a refusal: a lock is the repository's own file, so one written before the digest
- * is still in front of this daoris, and comparing against nothing would crash. `sync` writes it again, so it never asks this.
+ * The canon digest a lock names, or a refusal: a lock is the repository's own file, so one with no digest is in front of this
+ * daoris, and comparing against nothing would crash. `sync` writes the digest, so it never asks this.
  */
 export function lockedDigest(lock: Lock): string {
   const digest = (lock as Partial<Lock>).canonDigest;
