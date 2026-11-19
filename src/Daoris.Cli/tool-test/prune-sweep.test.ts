@@ -5,7 +5,7 @@ import { unmergedLines, unmergedWorktrees } from '../../../tools/merge/prune-rep
 import { tool } from './support/merge-branch.ts';
 import { tree } from './support/merge-branch-kit.ts';
 
-// reaches: tools/merge/prune-verdict.ts, tools/merge/prune-report.ts — the sweep of builder worktrees (DEVLEAK1)
+// reaches: tools/merge/prune-verdict.ts, tools/merge/prune-report.ts — the sweep of builder worktrees
 
 const clean: Facts = { tracked: [], untracked: [], local: null };
 const DAY = 86_400_000;

@@ -78,7 +78,6 @@ export const processSaid = (one: Proc): string => `pid ${one.pid}: ${one.command
  */
 export function disposableLocal(path: string, directory = false, setupCopies: readonly string[] = []): boolean {
   if (path === 'local/scratch' || path.startsWith('local/scratch/')) return true;
-  // A quick run's detached copy of main (`BASE_TREE`), made and removed within the run; a killed run leaves it, and it is no work.
   if (path === 'local/quick-base-tree' || path.startsWith('local/quick-base-tree/')) return true;
   if (!directory && /^local\/quick-(?:base|verdicts)\.json$/.test(path)) return true;
   if (!directory && (/^local\/[^/]+\.props$/.test(path) || setupCopies.includes(path))) return true;

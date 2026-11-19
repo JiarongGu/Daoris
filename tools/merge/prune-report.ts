@@ -1,6 +1,6 @@
 /**
  * The builder worktrees the prune keeps because their branch is not merged, said for the steward: each with its age and last
- * commit, oldest first, so a builder that ended without landing is seen instead of holding a gigabyte unremarked (DEVLEAK1).
+ * commit, oldest first, so a builder that ended without landing is seen instead of holding a gigabyte unremarked.
  * The prune never removes one: an unmerged branch is work until someone says otherwise.
  */
 import type { Worktree } from './git.ts';

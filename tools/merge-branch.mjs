@@ -223,7 +223,7 @@
  *
  * Every prune ends by reporting each builder worktree whose branch main does not hold, oldest first with its last commit
  * (`prune-report.ts`; the steward lands or removes it, the prune never does), and by removing the main checkout's
- * `_fixtures/` entries untouched for a day (`sweepFixtures`, `tools/fixtures-keep.mjs`; DEVLEAK1).
+ * `_fixtures/` entries untouched for a day (`sweepFixtures`, `tools/fixtures-keep.mjs`).
  *
  * A folder directly under the main checkout's `.claude/worktrees/` that git does not list and that holds
  * no `.git` is what a `git worktree remove` left when it could not finish. It is removed, looked at again just before: a

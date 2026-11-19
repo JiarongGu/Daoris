@@ -82,10 +82,7 @@ export function removeStale(root, entries, { remove = (path) => rmSync(path, { r
   return { removed, held };
 }
 
-/**
- * The rule applied to `root`'s `_fixtures/`: throws where git does not ignore the folder, else removes the stale entries
- * and returns `{ removed, held }`. The merge's prune runs it on the main checkout (DEVLEAK1); the command below is the same call.
- */
+/** The rule applied to `root`'s `_fixtures/` (the merge's prune runs it): throws where git does not ignore the folder, else returns `{ removed, held }`. */
 export function sweepFixtures(root, { now = Date.now(), hours = 24 } = {}) {
   try {
     execGit(['check-ignore', '-q', '_fixtures/'], { cwd: root });

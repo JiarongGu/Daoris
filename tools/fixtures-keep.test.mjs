@@ -72,7 +72,7 @@ test('TESTDIET1: a link is never followed nor removed, and what it names outside
   }
 });
 
-test('DEVLEAK1: the sweep the prune runs removes what the rule says, and refuses a folder git does not ignore', () => {
+test('the sweep the prune runs removes what the rule says, and refuses a folder git does not ignore', () => {
   const root = checkout([{ name: 'left-by-a-killed-run', hours: 72 }, { name: 'today', hours: 1 }, { name: KEPT[1], hours: 900 }]);
   try {
     const done = sweepFixtures(root, { now: NOW, hours: 24 });
