@@ -79,3 +79,6 @@ src/Daoris.Web/src/bridge/generated/
 
 # Test runs' own output: a blame collector's sequence files and the like (the durations are kept under _fixtures/test-timing).
 TestResults/
+
+# Git's own scratch while it merges a file (left behind when a merge is stopped mid-way), never a change.
+.merge_file_*

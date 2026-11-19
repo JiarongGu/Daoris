@@ -222,6 +222,35 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 51. No code reads a record, key, file or layout in a shape an older build wrote, and none converts one: a change of shape edits
     the store's one current shape, and a home whose shape moved is purged. A store an older build opens after a purge is not
     supported. No migration runs at a start. (from D323, `.claude/knowledge/compatible-builds.md`)
+
+**Purging a home's history**
+
+52. `daoris home purge --history --plan` lists every file, folder and store table the home holds as history, with sizes and row
+    counts, and changes nothing; `--yes` does it. Everything it moves goes to `purged/<UTC stamp>/` in the Daoris folder (an
+    install's root, a bare home's own folder, never in a place it purges), each path at its own place under the Daoris folder, with
+    a `purge.json` listing it. A session's connector and a person's own agent write `knowledge.db` directly, so both stores take
+    their write lock first (`BEGIN IMMEDIATE`) and are copied while held (`VACUUM INTO`, through a reader), so no row committed between
+    the copy and the delete is lost; a holder that will not let go stops the purge before anything changes, saying which store; both
+    stores commit together once both are emptied, and the files move after, so a store that refuses leaves every file in place. A
+    file move that fails stops the purge there and says so; what moved is in the backup and the next purge moves the rest into a
+    folder of its own. A knowledge store `DAORIS_KNOWLEDGE_DB` moved is the one it reads. Nothing else is touched: configuration is
+    never listed. A home with no history says nothing to purge and changes nothing, so a second `--yes` does nothing. (from D322)
+53. `--yes` refuses while Daoris runs on the home: a desktop, a `daoris drive` or another verb holding the home's lease, the
+    service its address file (`run/running.json`) names still living, or a session whose process marker is alive. It names the
+    holder and says to close Daoris, and moves nothing. It takes the lease for its act, so nothing starts on the home meanwhile. From a
+    session's terminal (`DAORIS_SESSION_ID`) only `--plan` answers: a purge ends every session's record, so it is the person's. A
+    service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it. (from D322)
+54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
+    of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
+    place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
+
+| Kind | History (moved or emptied) | Configuration (stays) |
+|---|---|---|
+| Entries, whole | `sessions` (events, frames, logs, lineage and `session-files`), `helpers`, `partners`, `checks`, `handed`, `help-proposals`, `rule-proposals`, `brainstorms` and `brainstorm-rooms`, `opinion-gates`, `opinion-dues`, `opinion-packets`, `intake` rooms, `quest-files`, `ask-files`, `lines-moved`, `overlaps-told`, `abandoned`, `salvage`, `keeping`, `notices`, `reads`, `files-found`, `pipe-waiting` and `pipe-sent`, `steward-desk` | everything else in the table: `driver`, `harnesses`, `accounts`, `cooling`, `windows`, `permissions`, `tools`, `plugin-state`, `plugins`, `plugin-approvals`, `registry-followed`, `configured-access`, `browser-settings`, `browser-favorites`, `home-id`, `git-identities`, `agent-offers`, `memory`, `keys`, `remotes`, `agent-homes`, the browser, git and window profiles, `plugin-private`, `deps-secret`, `last-build`, `update`, `migration`, the caches and the `run/` state |
+| Entries kept where unsure | | `files`, `files-asks`, `usage`, `usage-history`, `setup`, `terminal-acts`, `ux-trail`, `act-files` (the act journal's bytes, kept with its table), `trees` and `tree-files` (a tree holds work not landed), `help-room(s)`, `role-rooms`, `proof`, `usage-read`, `places`, `plans`, `evidence`, `logs` (the machine log is open while the command runs), `standing-confirmation`; kept for what a restart settles: `place-receipts` (a half-done apply), `landings` and `session-branches` (the tidy never judges a branch with no record, and the trees stay) |
+| `data/workflows/` | the folders `agent-steps`, `candidates`, `closures`, `lines`, `looks`, `rebases`, `resolves`, `resources`, `run-ends-owed`, `runs`, `tenures`, `units` and `quests.json` (run, unit, tenure and agent-step records) | each workflow's definition, `casts.json`, risk marks and the roles' floor file, which sit beside them |
+| `desktop.db` | the move, integration, delivery, binding, continuation, role-move and role-start tables, `held_decisions`, `notices`, `news_said`, `journal_cursors`, `conversation_facts`, `session_event_offsets`, `session_event_heads` (named in `HomeHistory.DesktopTables`) | its own bookkeeping (`store_version`, `store_revisions`, `store_runs`, `imports`: an import's mark stays so a purged file is never imported again), `roles` and their revisions, staffing, `role_policy`, `supervisor_rules`, `repository_workspaces`, `kept_trees`, `tree_claims`, `tree_visits`, `line_ends`, `tree_hand_offs`, `git_acts`, `git_act_steps` (`HomeHistory.DesktopKept`) |
+| `knowledge.db` | sessions and their opens, opinions, the channel and its marks, asks, quests and their log, closes and forwards (each quest id written into `quest_forgotten` first, so a remote's later operations on it make no half quest), work records, memory reads, the memory operations that finished (one still staged, awaiting, ready, applying or held stays), team plans, parts and decisions, and the event journal last (`HomeHistory.ServiceTables`) | the knowledge index (`index_*` tables), the registry and its provenance, the keys, `quest_forgotten` and `quest_retired` (a remote a person retired stays retired), the store's identity and every family's revision mark and cursor, so a revision never moves back (`HomeHistory.ServiceKept`) |
 ## Where a change goes
 
 - **Install layout or publish:** `tools/desktop-publish.mjs`, with its twins in the same change: `StagedBuild`'s names,

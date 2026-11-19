@@ -151,10 +151,10 @@ internal sealed class RealServiceHost : IDisposable
         throw new InvalidOperationException($"building the service's host ({project}) exited {process.ExitCode}; its last lines:\n{last}");
     }
 
-    /// <summary>Start the host over <paramref name="scratch"/> and wait until it answers as itself.</summary>
-    public static async Task<RealServiceHost> StartAsync(string scratch)
+    /// <summary>Start the host over <paramref name="scratch"/> and wait until it answers as itself; <paramref name="atHome"/> runs it over that home and its own store.</summary>
+    public static async Task<RealServiceHost> StartAsync(string scratch, string? atHome = null)
     {
-        var home = Path.Combine(scratch, "home");
+        var home = atHome ?? Path.Combine(scratch, "home");
         var repositories = Path.Combine(scratch, "repositories");
         Directory.CreateDirectory(home);
         Directory.CreateDirectory(repositories);
@@ -179,7 +179,9 @@ internal sealed class RealServiceHost : IDisposable
         }
 
         info.Environment["DAORIS_HOME"] = home;
-        info.Environment["DAORIS_KNOWLEDGE_DB"] = Path.Combine(scratch, "index", "knowledge.db");
+        info.Environment["DAORIS_KNOWLEDGE_DB"] = atHome is null
+            ? Path.Combine(scratch, "index", "knowledge.db")
+            : DaorisHome.Entry(home, HomeEntry.Knowledge);
         info.Environment["DAORIS_KNOWLEDGE_ROOT"] = repositories;
         info.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         info.Environment["ASPNETCORE_URLS"] = url;
