@@ -188,6 +188,23 @@ public sealed class QuestAcrossRepositoriesTests : NodeRunFixture
         Assert.Equal(NodeStates.Reached, RunStatus("release-approve").State);
     }
 
+    /// <summary>The plan's edge naming a receipt is the part's wait and the look's report carries it with the parts' quests; it holds no landing.</summary>
+    [Fact]
+    public void A_plans_receipt_edge_is_the_parts_wait_and_never_a_landings()
+    {
+        var answer = new Daoris.Contracts.Asks.AskPlanResponse("a1",
+        [
+            new Daoris.Contracts.Asks.AskPlanRevisionResponse(null, 1, 1, "two repositories",
+                [new("app", RunHome.Repository, RunId, "the app runs", [], []), new("config", Settings, ConfigRun, "its configuration is read", [], [])],
+                [new("config", "app", "after", "configured once the app's stage ended") { Receipt = "stage-ended" }], [], [], [], [], []),
+        ], [], []);
+
+        var part = TrainPlan.Of(answer)!.Parts.Single(each => each.Id == "config");
+
+        Assert.Empty(part.After);
+        Assert.Equal([new PartWait("app", "stage-ended")], part.Waits);
+    }
+
     /// <summary>A check passes only on a test taken after every part's newest receipt: a part acting again sends it back to its tester.</summary>
     [Fact]
     public void A_joint_check_passes_only_on_a_test_newer_than_every_parts_receipt()

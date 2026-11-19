@@ -26,7 +26,7 @@ public sealed class TeamTools(TeamDesk teams, IntakeScope? intake = null, Sessio
         [Description("The ask, where this session does not answer one or serve a part of one.")] string? ask = null,
         [Description("The parts of the next revision, whole.")]
         TeamPart[]? parts = null,
-        [Description("The edges: `kind` is `after` or `orders`; `milestone` is oriented, submitted or landed.")]
+        [Description("The edges: `kind` is `after` or `orders`; `milestone` is oriented, submitted or landed, or `receipt` the fact of the other's receipt it starts on.")]
         TeamEdge[]? edges = null,
         [Description("One paragraph: why these parts, and what changed since the last revision. Needed with `parts`.")] string? why = null,
         [Description("Across repositories: what each releases, from its `deployables` (`daoris repository deployables`). A `mirror` or `reads` of what another provides is a release order.")]

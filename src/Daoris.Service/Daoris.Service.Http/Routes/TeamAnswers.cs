@@ -21,7 +21,7 @@ internal static class TeamAnswers
         plan.Scope, plan.Revision, plan.Depth, plan.Why,
         [.. plan.Parts.Select(part => new AskPlanPartResponse(
             part.Id, part.Repository, rows.FirstOrDefault(row => row.Part == part.Id)?.Quest, part.Outcome, part.Lanes, part.Claims))],
-        [.. plan.Edges.Select(edge => new AskPlanEdgeResponse(edge.Part, edge.On, edge.Kind, edge.Why))],
+        [.. plan.Edges.Select(edge => new AskPlanEdgeResponse(edge.Part, edge.On, edge.Kind, edge.Why) { Receipt = edge.Receipt })],
         [.. plan.Flags.Select(flag => new AskPlanFlagResponse(flag.Kind, flag.Part, flag.Text))],
         [.. plan.Deployables.Select(each => new AskPlanDeployableResponse(
             each.Ref.Repository, each.Ref.Id, [.. each.Provides.Select(Use)], [.. each.Consumes.Select(Use)]))],

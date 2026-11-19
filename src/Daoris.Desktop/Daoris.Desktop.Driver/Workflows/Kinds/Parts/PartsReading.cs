@@ -45,11 +45,20 @@ public static class PartsReports
             read[ask] = new PartsReport(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], parts.Landed(ask))
             {
                 Repositories = plan.Parts.Where(part => part.Repository is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Repository!, StringComparer.Ordinal),
+                Quests = plan.Parts.Where(part => part.Quest is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Quest!, StringComparer.Ordinal),
+                Waits = plan.Parts.Where(part => part.Waits.Count > 0).ToDictionary(part => part.Id, part => part.Waits, StringComparer.Ordinal),
             };
         }
 
         return read;
     }
+
+    /// <summary>
+    /// The asks the runs bound here and not ended name: a part's run reads what it waits on (<see cref="PartReceipts"/>) and a joint check
+    /// its parts' receipts (<see cref="JointChecks"/>) from its ask's report, whether or not the train holds a request for it yet.
+    /// </summary>
+    public static IEnumerable<string> RunAsks(string home) =>
+        new GraphRuns(new NodeRecordFiles(home, () => false)).Read().Where(run => run.Ended is null).Select(run => run.Binding.Ask).OfType<string>();
 }
 
 /// <summary>

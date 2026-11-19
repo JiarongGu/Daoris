@@ -12,6 +12,9 @@ public static partial class TeamPlanJudge
     /// <summary>The longest a part's id may be.</summary>
     public const int LongestId = 60;
 
+    /// <summary>A receipt's fact, as a plugin's receipts name it: lowercase words of letters and digits joined by dashes.</summary>
+    private static readonly Regex Fact = new(@"^(?=.{1,60}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
+
     /// <summary>Judges one plan against the parts and edges the ask's other plans already hold.</summary>
     /// <param name="parts">The plan's parts, in the order written.</param>
     /// <param name="edges">The plan's edges.</param>
@@ -87,6 +90,11 @@ public static partial class TeamPlanJudge
         {
             if (edge.Kind is not (TeamEdge.After or TeamEdge.Orders)) return $"An edge is `{TeamEdge.After}` or `{TeamEdge.Orders}`: `{edge.Kind}` is neither.";
             if (edge.Milestone is { } milestone && !TeamEdge.Milestones.Contains(milestone)) return $"A milestone is oriented, submitted or landed: `{milestone}` is none.";
+            if (edge.Receipt is { } receipt && (edge.Kind != TeamEdge.After || edge.Milestone is not null || !Fact.IsMatch(receipt)))
+            {
+                return $"Edge `{edge.Part}` on `{edge.On}`: a `receipt` is the fact an `after` edge waits on instead of a milestone, lowercase words joined by dashes.";
+            }
+
             if (string.IsNullOrWhiteSpace(edge.Why)) return $"Edge `{edge.Part}` {edge.Kind} `{edge.On}` needs its reason.";
         }
 

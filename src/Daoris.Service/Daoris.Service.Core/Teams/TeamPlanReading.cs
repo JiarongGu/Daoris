@@ -48,7 +48,11 @@ public static class TeamPlanReading
                 }
             }
 
-            foreach (var edge in plan.Edges) text.AppendLine($"- `{edge.Part}` {edge.Kind} `{edge.On}`: {edge.Why}");
+            foreach (var edge in plan.Edges)
+            {
+                text.AppendLine($"- `{edge.Part}` {edge.Kind} `{edge.On}`{(edge.Receipt is { } receipt ? $"'s `{receipt}` receipt" : "")}: {edge.Why}");
+            }
+
             foreach (var line in DeliveryReading.Lines(plan, seen)) text.AppendLine(line);
             foreach (var flag in plan.Flags) text.AppendLine($"- flag `{flag.Kind}`: {flag.Text}");
         }
