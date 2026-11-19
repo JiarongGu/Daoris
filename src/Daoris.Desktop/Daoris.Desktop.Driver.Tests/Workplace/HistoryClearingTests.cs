@@ -26,6 +26,8 @@ public sealed class HistoryClearingTests : IDisposable
 
     private string Sessions => DaorisHome.Entry(_home, HomeEntry.Sessions);
 
+    private string Spawn(string name) => DaorisHome.Entry(_home, HomeEntry.Spawn, name);
+
     private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
 
     private HistoryWorld World(StandIn service, MachineLog? log = null, Func<DateTimeOffset>? clock = null)
@@ -54,12 +56,12 @@ public sealed class HistoryClearingTests : IDisposable
         // An agent's ask to hand over with its state.
         foreach (var suffix in Boxes) File.WriteAllText(Path.Combine(Sessions, id + suffix), "{}");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
+        foreach (var suffix in Spawned) File.WriteAllText(Spawn(id + suffix), "{}");
     }
 
     /// <summary>What follows a session's id in the hand-over ask's two files (the ask and its state).</summary>
-    private static readonly string[] Boxes = [HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix];
+    private static readonly string[] Spawned = [".mcp.json", ".settings.json"];
+    private static readonly string[] Boxes =[HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix];
 
     private string[] KeptOf(string id) =>
     [
@@ -67,15 +69,15 @@ public sealed class HistoryClearingTests : IDisposable
             .Concat(Boxes)
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
-        .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => DaorisHome.Entry(_home, HomeEntry.Spawn,id + suffix)).Where(File.Exists),
+        .. Spawned.Select(suffix => Spawn(id + suffix)).Where(File.Exists),
         .. Directory.Exists(Path.Combine(Sessions, id)) ? [Path.Combine(Sessions, id)] : Array.Empty<string>(),
     ];
 
     private void KeptFiles(string folder, string id)
     {
-        var kept = DaorisHome.Entry(_home, folder == "asks" ? HomeEntry.AskFiles : HomeEntry.QuestFiles, id);
-        Directory.CreateDirectory(Path.Combine(kept, "attachments"));
-        File.WriteAllText(Path.Combine(kept, "attachments", "abc123-spec.md"), "a spec");
+        var at = DaorisHome.Entry(_home, folder == "asks" ? HomeEntry.AskFiles : HomeEntry.QuestFiles, id, "attachments");
+        Directory.CreateDirectory(at);
+        File.WriteAllText(Path.Combine(at, "abc123-spec.md"), "a spec");
     }
 
     private static readonly DateTimeOffset At = new(2026, 10, 3, 9, 0, 0, TimeSpan.Zero);
@@ -679,7 +681,7 @@ public sealed class HistoryClearingTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Sessions, "gone1", "files"));
         File.WriteAllText(Path.Combine(Sessions, "gone1", "files", "x.png"), "png");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
-        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,"gone2.settings.json"), "{}");
+        File.WriteAllText(Spawn("gone2.settings.json"), "{}");
         KeptFiles("quests", "qgone");
         KeptFiles("asks", "agone");
         // Never left over: a file touched within the hour, a file Daoris did not write, and a terminal's requests.
@@ -734,7 +736,7 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.True(File.Exists(Path.Combine(tree, "work.txt")));
         Assert.False(File.Exists(Path.Combine(Sessions, "gone1.log")));
         Assert.False(Directory.Exists(Path.Combine(Sessions, "gone1")));
-        Assert.False(File.Exists(DaorisHome.Entry(_home, HomeEntry.Spawn,"gone2.settings.json")));
+        Assert.False(File.Exists(Spawn("gone2.settings.json")));
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles,"qgone")));
         Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.AskFiles,"agone")));
         Assert.True(File.Exists(Path.Combine(Sessions, "young1.log")));
