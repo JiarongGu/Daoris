@@ -54,8 +54,8 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
         };
     }
 
-    // Stopping one task a session runs, from its tab: the harness's own stop, sent by
-    // the session that runs it. Its stream ends when the wire says how. False is an answer — no
+    // Stopping one task a session runs, from the live band: the harness's own stop, sent by
+    // the session that runs it, its end kept as the person's. Its stream ends when the wire says how. False is an answer — no
     // session here runs it, or its harness stopped nothing — and a key that is not one of this
     // session's tasks is refused in the driver's words, because the page never sends one.
     [DriverRoute("STOP_TASK", PipeClass.Person, Drain = PipeDrain.Passes)]
@@ -69,7 +69,7 @@ public sealed class ConsoleRoutes(DriverLoop loop, AgentActions actions)
         var prefix = SessionOutput.Key(id, $"{SessionStreamKind.Task}/");
         if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || key.Length == prefix.Length)
         {
-            throw new DriverException($"`{key}` is not background work of session {id}: only a task can be stopped from its tab.");
+            throw new DriverException($"`{key}` is not background work of session {id}: only a task can be stopped from the live band.");
         }
 
         // The stop is a question asked of the agent, which may never answer; the page's own wait

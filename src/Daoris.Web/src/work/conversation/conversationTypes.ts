@@ -41,6 +41,8 @@ export type Beside = {
   end?: BesideEnd | string | null;
   /** Who says the end: `reported` by its door, `inferred` from its session's close. */
   by?: string | null;
+  /** For a task: `person` where the person stopped it from the window, as its end's `origin` keeps it. */
+  stoppedBy?: 'person';
   /** For a background task that ended: the key of its row where it ended, which its start's row leads to. */
   endKey?: string;
   /** On a task's row where it ended: the key of the call that started it, which the row leads back to. */

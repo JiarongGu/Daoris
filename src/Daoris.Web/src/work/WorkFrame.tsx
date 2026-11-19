@@ -18,6 +18,7 @@ import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { WaitStrip } from './waits/WaitStrip';
+import { SessionBand } from './band/SessionBand';
 import { dockOf } from './waits/dock';
 import { useRunWaitDoors } from './head/useRunWaitDoors';
 import { WaitPanel } from './waits/WaitPanel';
@@ -378,12 +379,12 @@ export function WorkFrame({
   // The head's *Waiting on* opens At work at the request it names.
   const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
-    t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
+    t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
     session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
   });
-  const { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose } = regions;
+  const { surface, previewSurface, consoleView, withWhose } = regions;
   // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
   const attendRow = (id: string) => {
     attend(id);
@@ -497,6 +498,8 @@ export function WorkFrame({
               keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
+          {/* The live band: what runs now, above the dock, each line ticking with its last line and its presses. */}
+          {attended && here && <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />}
           {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}
@@ -542,14 +545,6 @@ export function WorkFrame({
             collapsed={collapsed}
             onResize={frame.resize}
             onToggle={frame.toggle}
-            tabs={streamTabs}
-            selected={shown ?? undefined}
-            onStop={stopStream}
-            onSelect={(key) => {
-              pickStream(key);
-              // Picking what to read is asking to read it: a hidden panel opens.
-              if (collapsed) frame.toggle();
-            }}
             views={panelViews}
             view={panelView}
             onView={setPanelPick}

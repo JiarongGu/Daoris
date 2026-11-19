@@ -1,0 +1,19 @@
+{
+  "work.band.running_one": "Running {{count}}",
+  "work.band.running_other": "Running {{count}}",
+  "work.band.nothing": "Nothing running",
+  "work.band.agent": "agent",
+  "work.band.thinking": "thinking",
+  "work.band.quiet": "no output {{span}}",
+  "work.band.follow": "Follow",
+  "work.band.open": "Open",
+  "work.band.stop": "Stop {{name}}",
+  "work.band.stopShort": "Stop",
+  "work.band.ask": "Stop {{name}}? Its output ends with it.",
+  "work.band.stopIt": "Stop it",
+  "work.band.keep": "Keep it running",
+  "work.band.stopping": "stopping",
+  "work.band.notStopped": "{{name}} did not stop: nothing here runs it any more, or its agent stopped nothing.",
+  "work.band.why.child": "No agent stops a subagent alone: it ends with its session.",
+  "work.band.why.task": "Its agent cannot stop this task from here: only a task its agent marks as stoppable can be."
+}

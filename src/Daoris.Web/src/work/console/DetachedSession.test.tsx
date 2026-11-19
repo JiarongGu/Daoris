@@ -81,18 +81,14 @@ describe('a session in a window of its own', () => {
   });
 
   /**
-   * What the session runs beside itself has a tab here too, as in the main window, and a
-   * picked tab shows that stream. Read-only, as this window is: a
-   * task its harness can stop has no stop here, where no move is made.
+   * The panel holds the session's raw console alone: what it runs beside itself is no tab here, as in the main window, and
+   * read-only, as this window is, nothing in it stops a task.
    */
-  it('grows the session’s stream tabs, shows a picked one, and offers no stop', async () => {
+  it('holds the session’s raw console, with no tab for its streams and no stop', async () => {
     show();
 
-    expect(await screen.findByText(/→ background: dev server/)).toBeInTheDocument();
-    await userEvent.click(await screen.findByRole('tab', { name: /dev server — background · running/ }));
-
-    expect(await screen.findByText(/listening on 4200/)).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 's1a2b3c4/task/bs00' } });
+    expect(await within(await panelShown()).findByText(/→ background: dev server/)).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /dev server/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
   });
 
@@ -158,14 +154,6 @@ describe('a session in a window of its own', () => {
     expect(within(panel()).queryByText(/→ background: dev server/)).toBeNull();
     await userEvent.keyboard('{Control>}j{/Control}');
     expect(await within(panel()).findByText(/→ background: dev server/)).toBeInTheDocument();
-  });
-
-  it('opens a hidden console when a stream is picked, as the main window\'s does', async () => {
-    window.localStorage.setItem('daoris.detached.panelClosed', '1');
-    show();
-
-    await userEvent.click(await screen.findByRole('tab', { name: /dev server — background · running/ }));
-    expect(await within(panel()).findByText(/listening on 4200/)).toBeInTheDocument();
   });
 
   /** The disclosure boundary: a session another machine runs has no console here, so no panel. */

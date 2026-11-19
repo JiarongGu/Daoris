@@ -19,8 +19,8 @@ import { ExchangeCardView, TakenLine } from './ExchangeCard';
 import { type Exchanges, NO_EXCHANGES } from './exchanges';
 import type { SessionEvent } from './conversationTypes';
 import { type BesideHome, BesideHomes, BesideStart, TaskEnd } from '../beside/BesideRows';
-import { ChildFocus } from '../beside/ChildFocus';
-import { type BesideReader, pathTo } from '../beside/besides';
+import { ChildFocus, TaskFocus } from '../beside/ChildFocus';
+import { type BesideFocus, type BesideReader, pathTo } from '../beside/besides';
 
 const NO_LIFETIMES: readonly SessionEvent[] = [];
 import { WaitMark } from '../waits/WaitAnchor';
@@ -78,8 +78,11 @@ export function ConversationView({
    * What the session ran beside itself: the reader of each subagent's own record and task's last lines, and the record's starts and
    * ends of each. A subagent is a row under the call that spawned it, opened in place, a deeper one the panel's focus with a
    * breadcrumb back; a task is a row where it started and one where it ended. Absent, the rows say what the record holds and open nothing.
+   * With `onFocus` the host holds the panel's focus (the live band opens a subagent or a task's console there), else the view does.
    */
-  beside?: { reader?: BesideReader; lifetimes: readonly SessionEvent[] };
+  beside?: {
+    reader?: BesideReader; lifetimes: readonly SessionEvent[]; focus?: BesideFocus | null; onFocus?: (focus: BesideFocus | null) => void;
+  };
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
   /** What the host draws under a turn's answer, from its words until the next turn's (Ask Daoris's receipt). */
@@ -169,13 +172,19 @@ export function ConversationView({
   onLoadEarlier?: () => void;
 }) {
   const { t } = useTranslation();
-  // The subagent in the panel's focus, by the way to it from the session; one the record no longer names is no focus.
-  const [focus, setFocus] = useState<readonly string[]>([]);
+  // What is in the panel's focus: a subagent by the way to it, or a task's console; the host's where it holds it (the live band opens
+  // one), else its own. One the record no longer names is no focus.
+  const [ownFocus, setOwnFocus] = useState<BesideFocus | null>(null);
+  const focus = beside?.onFocus ? beside.focus ?? null : ownFocus;
+  const setFocus = beside?.onFocus ?? setOwnFocus;
   const lifetimes = beside?.lifetimes ?? NO_LIFETIMES;
-  const focused = focus.length > 0 && lifetimes.some((event) => event.kind === 'child' && event.id === focus[focus.length - 1]);
+  const named = (kind: string, id: string | undefined) => lifetimes.some((event) => event.kind === kind && event.id === id);
+  const path = focus && 'child' in focus && named('child', focus.child[focus.child.length - 1]) ? focus.child : null;
+  const task = focus && 'task' in focus && named('task', focus.task) ? focus.task : null;
+  const focused = path !== null || task !== null;
   const home: BesideHome = {
     reader: beside?.reader, lifetimes, nested: false, onShow,
-    onFocus: (child) => setFocus(pathTo(lifetimes, child)),
+    onFocus: (child) => setFocus({ child: pathTo(lifetimes, child) }),
     draw: (shown) => shown.map((turn) => <TurnView key={turn.key} turn={turn} tree={tree} running={false} reveal={reveal} />),
   };
 
@@ -205,7 +214,8 @@ export function ConversationView({
         <ChannelHomes.Provider value={channel}>
         <BesideHomes.Provider value={home}>
         <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
-          {focused && <ChildFocus path={focus} home={home} onBack={(to) => setFocus(focus.slice(0, to))} />}
+          {path && <ChildFocus path={path} home={home} onBack={(to) => setFocus(to === 0 ? null : { child: path.slice(0, to) })} />}
+          {task && <TaskFocus task={task} home={home} onBack={() => setFocus(null)} />}
           {/* Pinned beneath the session's page header where one is pinned above it: the header says its
               height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
           {!focused && toolbar && (

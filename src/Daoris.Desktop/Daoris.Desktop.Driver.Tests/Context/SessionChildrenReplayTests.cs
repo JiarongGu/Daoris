@@ -166,6 +166,17 @@ public sealed class SessionChildrenReplayTests : IDisposable
         Assert.Null(lifetimes.Read(new WireReading.StreamEnded("task/t1", SessionStream.SessionEnded)));
     }
 
+    [Fact]
+    public void A_task_the_person_stopped_keeps_who_on_its_end()
+    {
+        var lifetimes = new ChildLifetimes(task => task == "t1");
+        lifetimes.Read(new WireReading.TaskStarted("t1"));
+        lifetimes.Read(new WireReading.TaskStarted("t2"));
+
+        Assert.Equal(("stopped", "person"), lifetimes.Read(new WireReading.TaskEnded("t1", "killed")) is { } mine ? (mine.End, mine.Origin) : default);
+        Assert.Equal(("stopped", null), lifetimes.Read(new WireReading.TaskEnded("t2", "killed")) is { } its ? (its.End, its.Origin) : default);
+    }
+
     private static (string?, string?) Ended(IReadOnlyList<SessionEvent> record, string kind, string id) =>
         record.Last(e => e.Kind == kind && e.Id == id && e.End is not null) is var end ? (end.End, end.By) : default;
 

@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../../data/queries';
 import { useSessionGroups } from '../../bridge/sessions/sessions';
 import { stateLineOf, stateLineSaid } from '../head/stateLine';
 import { namer } from '../../settings/accounts/namer';
-import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess, useSessionStreams } from '../../bridge/shell';
+import { useChatTurns, useHarnesses, useSessionOpenings, useSessionProcess } from '../../bridge/shell';
 import { frameShortcut } from '../../menus/shortcuts';
 import { EmptyState, Inline, type Notify, Prose, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../../design/ui';
 import { sentence } from '../../locales/format';
@@ -14,7 +14,6 @@ import { useDetachedPanel } from '../frame/closings';
 import { OutputPanel, PANEL_MIN } from '../frame/OutputPanel';
 import { isIntake, sessionOrigin } from '../identity';
 import { SessionConversation } from '../conversation/SessionConversation';
-import { panelTabs } from './streams';
 
 /**
  * One session in a window of its own.
@@ -54,12 +53,6 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const scroller = useRef<HTMLDivElement>(null);
   // Nothing here docks a wait, so a wait the reader places under Needs you is said by its reason.
   const groups = useSessionGroups([id]);
-  // What the session runs beside itself, and the one picked; one it no longer lists falls
-  // back to the session's own console, as the main window's panel does.
-  const streams = useSessionStreams(id);
-  const [picked, setPicked] = useState<string | null>(null);
-  const shown = picked && streams.some((row) => row.key === picked) ? picked : id;
-  const tabs = panelTabs(id, streams);
   const panel = useDetachedPanel();
 
   useErrorNotify(sessions.error, notify);
@@ -141,18 +134,11 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
           // The raw view, beside the conversation it is the text of. A sentence rather than an empty
           // well, for the reason the monitor's tiles have one: a bordered empty box in a read-only window
           // reads as a field to type in.
-          console={<SessionConsole id={shown} fill quiet={t(shown === id ? 'work.panel.silent' : 'work.panel.streamSilent')} />}
+          console={<SessionConsole id={id} fill quiet={t('work.panel.silent')} />}
           height={Math.max(PANEL_MIN, panel.height)}
           collapsed={panel.closed}
           onResize={panel.setHeight}
           onToggle={() => panel.setClosed(!panel.closed)}
-          tabs={tabs}
-          selected={shown}
-          onSelect={(key) => {
-            setPicked(key === id ? null : key);
-            // Picking what to read is asking to read it: a hidden console opens, as the main window's does.
-            if (panel.closed) panel.setClosed(false);
-          }}
         />
       )}
 

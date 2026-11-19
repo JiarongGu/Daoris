@@ -8,9 +8,10 @@ namespace Daoris.Driver;
 /// <remarks>
 /// An event the record cannot keep costs a console line, never the run: the conversation enriches a run, it does not run it.
 /// </remarks>
-internal sealed class RecordReadings(string sessionId, ISessionOutput? output, ISessionEvents? events, ChildRecords? children = null) : IReadingSink
+internal sealed class RecordReadings(
+    string sessionId, ISessionOutput? output, ISessionEvents? events, ChildRecords? children = null, SessionProcesses? stops = null) : IReadingSink
 {
-    private readonly ChildLifetimes _lifetimes = new();
+    private readonly ChildLifetimes _lifetimes = new(stops is null ? null : task => stops.PersonStopped(sessionId, task));
     private ISessionStreams? _streams;
 
     public bool Watched => output is not null;

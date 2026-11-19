@@ -1,11 +1,9 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { TFunction } from 'i18next';
-import {
-  useConsidered, useResolveHeld, useReviewedPatch, useSessionStreams, useStopTask, useTreeFile, useWorkflowRun,
-} from '../../bridge/shell';
+import { useConsidered, useResolveHeld, useReviewedPatch, useTreeFile, useWorkflowRun } from '../../bridge/shell';
 import type { useRunNodeWord, useTerminals } from '../../bridge/shell';
 import type { useSessionAtWork } from '../../bridge/sessions/atWork';
-import { type Notify, SESSION_ACTIVE } from '../../design/ui';
+import { SESSION_ACTIVE } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { sentence } from '../../locales/format';
 import { ReleaseStepDoors } from '../../workflow/release/ReleaseStepDoors';
@@ -18,7 +16,6 @@ import { useLineChannel, usePostLineChannel } from '../../bridge/sessions/asks';
 import { lastMessages, lastWords, repositoriesOf } from '../channel';
 import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
-import { panelTabs } from '../console/streams';
 import type { useAttendedBox } from '../conversation/useAttendedBox';
 import { OpinionGate } from '../gates/OpinionGate';
 import { opinionHolds } from '../gates/opinion';
@@ -34,7 +31,6 @@ import { OutputsPage } from '../outputs/OutputsPage';
 import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
 import type { HandOverRoster } from '../start/HandOverAsk';
-import { StreamTabs } from './OutputPanel';
 import { NothingFollowed } from './RightDock';
 import type { Place, ViewId } from './placements';
 import type { useDockViews } from './useDockViews';
@@ -46,14 +42,13 @@ import type { useFrameLayout } from './useFrameLayout';
  * speaks for.
  */
 export function useRegionSurfaces({
-  t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
+  t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
   session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
   reviewAttempt = null,
 }: {
   reviewRun?: string | null;
   reviewAttempt?: number | null;
   t: TFunction;
-  notify: Notify;
   ask?: ReactNode;
   notifications?: ReactNode;
   elsewhere: boolean;
@@ -78,21 +73,11 @@ export function useRegionSurfaces({
   atWorkSeek?: ExchangeSeek | null;
 }) {
   const { attended, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
-  const { following, previewing, openPreview, openView, dock, panelView } = views;
+  const { following, previewing, openPreview, dock, panelView } = views;
   const { placed, collapsed, dockClosed, layout, closeDock } = frame;
   const { taking } = boxState;
   const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
-
-  // What the session runs beside itself, a tab each in the panel. The panel shows the
-  // session's own console unless the person picked a stream of it, and one it no longer lists falls
-  // back to the session rather than to an empty well.
-  const streams = useSessionStreams(attended?.id ?? null);
-  const [picked, setPicked] = useState<string | null>(null);
-  useEffect(() => setPicked(null), [attended?.id]);
-  const shown = attended
-    ? (picked && streams.some((row) => row.key === picked) ? picked : attended.id)
-    : null;
 
   // Where the followed session's work stands: asked only while the Workflow view shows,
   // in whichever region it stands, and again at every tick under the driver's key.
@@ -113,25 +98,11 @@ export function useRegionSurfaces({
   const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
   const previewPatch = useReviewedPatch(previewing ? following!.id : null, previewing?.path ?? null);
 
-  // The console and its streams, for whichever region it stands in. A session with nothing
-  // held here says so as a sentence, not as an empty bordered well, which would read as a field.
-  const consoleView = following && shown
-    ? <SessionConsole id={shown} fill quiet={t(shown === following.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
+  // The session's raw console, for whichever region it stands in; what it runs beside itself is the live band's above the dock.
+  // A session with nothing held here says so as a sentence, not as an empty bordered well, which would read as a field.
+  const consoleView = following && attended
+    ? <SessionConsole id={attended.id} fill quiet={t('work.panel.silent')} />
     : null;
-  const streamTabs = following ? panelTabs(following.id, streams) : undefined;
-  const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
-  // A task stopped from its tab: asked of the session that runs it; its tab changes when the
-  // wire says how it ended. What the task is called is the tab's, for the notice.
-  const stopTask = useStopTask();
-  const stopStream = (key: string) => {
-    if (!attended) return;
-    const name = streams.find((row) => row.key === key)?.name ?? key;
-    stopTask.mutate({ id: attended.id, key }, {
-      onSuccess: ({ stopped }) => notify(t(stopped ? 'work.panel.stream.stopping' : 'work.panel.stream.notStopped', { name }),
-        stopped ? undefined : 'error'),
-      onError: (error) => notify(sentence(error), 'error'),
-    });
-  };
 
   // Off Sessions the session views speak for the session attended there, which nothing else on
   // the screen names — so each says whose it is, with the way back to it.
@@ -291,9 +262,6 @@ export function useRegionSurfaces({
             }),
           } : undefined}
           onRetry={() => { void atWork.refetch(); }}
-          // A child's console tab, while the window holds its stream (the harness's agent id ends the stream's key).
-          streamOf={(child) => streams.find((row) => row.key.endsWith(`/${child}`))?.key}
-          onOpenStream={(key) => { pickStream(key); openView('console'); }}
         />,
       )
       : nothing();
@@ -308,12 +276,8 @@ export function useRegionSurfaces({
     if (view === 'workflow') return workflowSurface();
     if (view === 'atWork') return atWorkSurface();
     if (view === 'console' && where === 'right') {
-      // In the side bar its streams go with it, above it, where the panel carries them in its header.
       return withWhose(
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
-          {streamTabs && streamTabs.length > 1 && (
-            <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} onStop={stopStream} />
-          )}
           {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
         </div>,
       );
@@ -352,5 +316,5 @@ export function useRegionSurfaces({
     )
     : null;
 
-  return { surface, previewSurface, consoleView, streamTabs, shown, pickStream, stopStream, withWhose };
+  return { surface, previewSurface, consoleView, withWhose };
 }
