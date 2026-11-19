@@ -146,17 +146,17 @@ internal static class AgentAccountsCommand
         var owner = at.Owner();
         var profile = at.Bare(3, "<agent> <name>");
         var existed = AccountNames.Resolve(HarnessSettings.Profiles(at.Home, owner), AccountNames.Of(at.Home, owner), profile) is not null;
-        var id = "";
         return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated,
             new JsonObject { ["action"] = "profile-add", ["door"] = owner, ["profile"] = profile },
             _ =>
             {
-                id = AccountAdd.Make(at.Home, owner, profile);
+                AccountAdd.Make(at.Home, owner, profile);
                 return Done();
             },
             _ => null,
             _ =>
             {
+                var id = AccountNames.Resolve(HarnessSettings.Profiles(at.Home, owner), AccountNames.Of(at.Home, owner), profile)!;
                 var where = Folder(at.Home, owner, id);
                 at.Say(existed
                     ? $"{Prefix}: `{owner}` account `{profile}` already exists — {where}"
