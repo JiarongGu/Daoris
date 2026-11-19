@@ -152,7 +152,10 @@ finishes first and the whole set runs once.
     `RoutedHandler`; a clock a test moves is `Daoris.Testing`'s `MovedClock`, the one copy; a wait on a signal is `Poll`; the web's window over a mocked shell is `test/doubles/appShell.ts` and its service
     over `fetch` is `test/doubles/fetchRoutes.ts`. The service's, the HTTP host's and the devkit's tests have their process's temporary folder at
     `_fixtures/test-homes/temp` (`ScratchTemp`), so what they root at `Path.GetTempPath()` stays in the checkout's scratch; the
-    desktop's tests name `TestHomes.Root` and `TestHomesCensusTests` refuses the call. A golden holds one full render; each other
+    desktop's tests name `TestHomes.Root` and `TestHomesCensusTests` refuses the call. A test never reads or writes what a Daoris session
+    wires its shell or its tree with: the driver's test host takes the git door's variables (`GIT_SSH*`), prompt, trace and identity variables out of
+    its environment as it loads (`HostEnvironment`, held by `HostEnvironmentTests`), and a node test writes the files it needs under
+    its own folder of `_fixtures/`, never the tree's `local/` (read-only in a session's tree). A golden holds one full render; each other
     case is held against it section by section, the sentence that makes a section differ asserted and every other section equal.
     (from TESTDIET1)
 21. The development cycle keeps main green and the install current within the hour: a builder runs `node tools/worktree-setup.mjs`
