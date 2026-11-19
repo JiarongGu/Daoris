@@ -228,8 +228,8 @@ const gitOrNull = (root, args) => {
 };
 
 /** The files a change touches, `{ path, from, status }`, `from` the path they had at the base. */
-function touched(root, base, tip) {
-  const out = git(root, ['--no-optional-locks', 'diff', '-z', '--name-status', '--find-renames', base, ...(tip ? [tip] : [])]).split('\0').filter(Boolean);
+function touched(root, base, tip, staged = false) {
+  const out = git(root, ['--no-optional-locks', 'diff', ...(staged ? ['--cached'] : []), '-z', '--name-status', '--find-renames', base, ...(tip ? [tip] : [])]).split('\0').filter(Boolean);
   const files = [];
   for (let i = 0; i < out.length; ) {
     const status = out[i++];
@@ -241,7 +241,7 @@ function touched(root, base, tip) {
       files.push({ path, from: path, status: status[0] });
     }
   }
-  if (!tip) {
+  if (!tip && !staged) {
     for (const path of git(root, ['ls-files', '-z', '--others', '--exclude-standard']).split('\0').filter(Boolean)) {
       files.push({ path, from: path, status: 'A' });
     }
@@ -249,12 +249,13 @@ function touched(root, base, tip) {
   return files.filter((f) => f.status !== 'D' && isSource(f.path) && !SKIPPED.test(f.path));
 }
 
-/** The breaches of the change `base`..`tip` (the working tree where `tip` is null) in the repository at `root`. */
-export function checkChange(root, base, tip = null) {
+/** The breaches of the change `base`..`tip` (the working tree where `tip` is null, the index where `staged`) in the repository at `root`. */
+export function checkChange(root, base, tip = null, { staged = false } = {}) {
   const problems = [];
   let checked = 0;
-  for (const file of touched(root, base, tip)) {
-    const after = tip ? gitOrNull(root, ['show', `${tip}:${file.path}`]) : readWork(root, file.path);
+  for (const file of touched(root, base, tip, staged)) {
+    const after = tip ? gitOrNull(root, ['show', `${tip}:${file.path}`])
+      : staged ? gitOrNull(root, ['show', `:${file.path}`]) : readWork(root, file.path);
     if (after === null) continue;
     const before = file.status === 'A' ? null : gitOrNull(root, ['show', `${base}:${file.from}`]);
     problems.push(...judge(file.path, before, after));
