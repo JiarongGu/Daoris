@@ -11,7 +11,7 @@ import { BARE_WAIT, CHANGES, HEAD, LINE, RELEASE_WAIT, TRACK } from './session.f
 
 const NOW = Date.parse('2026-11-20T15:18:00Z');
 const FACTS: PanelFacts = {
-  head: HEAD, track: TRACK, story: storyOf(LINE), waits: [RELEASE_WAIT, BARE_WAIT], changes: CHANGES, now: NOW,
+  id: 's1', head: HEAD, track: TRACK, story: storyOf(LINE), waits: [RELEASE_WAIT, BARE_WAIT], changes: CHANGES, now: NOW,
   reads: 'next', onAnswer: () => {}, onSend: () => {},
 };
 const regions = (container: HTMLElement) => [...container.querySelectorAll('[data-region]')].map((node) => node.getAttribute('data-region'));

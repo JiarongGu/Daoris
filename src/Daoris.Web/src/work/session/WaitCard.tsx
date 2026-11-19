@@ -16,7 +16,7 @@ export type WaitCardFacts = {
   id: string;
   title: string;
   kind: string;
-  /** When it was asked (ISO): the card's age. */
+  /** When its asker filed it (ISO): the card's age. */
   since: string;
   /** How many sessions or quests wait on it. */
   holds?: number;

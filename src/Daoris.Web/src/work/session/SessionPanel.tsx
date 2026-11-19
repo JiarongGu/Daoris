@@ -1,7 +1,8 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, SkeletonRows } from '../../design/ui';
 import { useRootRem, useWidth } from '../../design/useWidth';
+import { useFollowTail } from '../conversation/followTail';
 import type { Track } from '../track/passage';
 import { ChangesRail, type ChangesFacts, changesFact } from './ChangesRail';
 import { PanelComposer, type Reads } from './PanelComposer';
@@ -13,6 +14,8 @@ import { type WaitAnswer, WaitCard, type WaitCardFacts } from './WaitCard';
 
 /** Everything the panel draws of one session, read by its host from the hooks the page already holds. */
 export type PanelFacts = {
+  /** The session's id: another one opens fresh, at its tail or, ended, at its top. */
+  id: string;
   head: HeadFacts;
   track: Track | null;
   story: readonly StoryItem[];
@@ -82,6 +85,15 @@ export function SessionPanel({ facts, band, acts, loading = false, width: given 
   const rem = useRootRem();
   const layout = panelLayoutOf(given ?? measured, rem);
   const modelWords = useModelWords();
+  // The story follows its tail only while the reader is at it; an ended session opens at its top. Away from the tail, what
+  // arrived since is counted on the pill that goes back.
+  const scroller = useRef<HTMLDivElement>(null);
+  const count = facts?.story.length ?? 0;
+  const ended = !facts || facts.head.state === 'finished' || facts.head.state === 'stopped';
+  const { atTail, toTail } = useFollowTail(scroller, `${count}:${facts?.story[count - 1]?.key ?? ''}`, facts?.id ?? '', ended);
+  const [seen, setSeen] = useState(count);
+  useEffect(() => { if (atTail) setSeen(count); }, [atTail, count]);
+  const fresh = atTail ? 0 : Math.max(0, count - seen);
   if (!facts) {
     return (
       <section ref={root} aria-label={t('work.session.label')} className="grid h-full place-content-center">
@@ -111,13 +123,24 @@ export function SessionPanel({ facts, band, acts, loading = false, width: given 
       ) : <PanelHead head={head} now={facts.now} acts={acts} changes={fact} />}
       {!loading && facts.track && <PanelTrack track={facts.track} onStep={facts.onStep} />}
       <div className="flex min-h-0 min-w-0 flex-1 gap-4">
-        <div data-region="story" className="min-h-0 min-w-0 flex-1 overflow-y-auto py-2">
-          <StoryStream
-            story={facts.story}
-            actor={{ maker: head.maker, model: head.model }}
-            readMark={facts.readMark}
-            loading={loading}
-          />
+        <div className="relative flex min-h-0 min-w-0 flex-1">
+          <div ref={scroller} data-region="story" className="min-h-0 min-w-0 flex-1 overflow-y-auto py-2">
+            <StoryStream
+              story={facts.story}
+              actor={{ maker: head.maker, model: head.model }}
+              readMark={facts.readMark}
+              loading={loading}
+            />
+          </div>
+          {!atTail && count > 0 && (
+            <button
+              type="button"
+              onClick={() => toTail(true)}
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 cursor-pointer rounded-full border border-line bg-overlay px-3 py-1 text-small text-ink shadow-sm"
+            >
+              ↓ {fresh > 0 ? t('work.session.story.newBelow', { count: fresh }) : t('work.conversation.bottom')}
+            </button>
+          )}
         </div>
         {layout.rail && changes && (
           <aside data-region="rail" className="w-72 shrink-0 overflow-y-auto border-l border-line py-2 pl-4">

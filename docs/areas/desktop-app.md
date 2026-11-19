@@ -474,5 +474,11 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), budgets that follow how an
   account is paid (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
   row rewrites the rule it makes false.
+- **SESSIONUI1**: the session panel rebuilt from the fresh design rather than adjusted row by row. Its parts stand in
+  `work/session/`, drawn in every state in their stories and not yet mounted: the head (the state from the reader's line, where
+  and who with the model that ran, `headFactsOf`), the track, one story of turns, steps, helpers, second opinions and channel
+  messages in time order with each burst of activity folded (`storyOf`), the wait card, the composer and the Changes rail from
+  68rem, folded below 40rem (`panelLayout.ts`). Rules 37 and 38 stay true until the panel replaces the page's head, conversation,
+  dock and composer in `WorkFrame`, and their components and tests go with that change.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

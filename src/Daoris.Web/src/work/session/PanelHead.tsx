@@ -24,7 +24,7 @@ export type HeadFacts = {
   branch?: string | null;
   role?: string | null;
   maker: string;
-  /** The model that ran, as the record acknowledged it; null where none was reported, never the asked one. */
+  /** The model that ran, as the record acknowledged it; null where the record reports none, never the asked one. */
   model: string | null;
   /** The model asked, where it differs from the one that ran. */
   asked?: string | null;
@@ -38,7 +38,7 @@ const TONE: Readonly<Record<PanelState, keyof typeof DOT_TONE>> = {
 
 const CHIP_GLYPH = { passed: '✓', current: '●', failed: '▲', next: '·' } as const;
 
-/** The model that ran, said once: "asked X, ran Y" where they differ, "model not reported" where none was. */
+/** The model that ran, said once: "asked X, ran Y" where they differ, "model not reported" where the record names none. */
 export function useModelWords() {
   const { t } = useTranslation();
   return (head: Pick<HeadFacts, 'model' | 'asked'>) => {

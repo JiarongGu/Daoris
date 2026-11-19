@@ -14,7 +14,7 @@ import { BARE_WAIT, CHANGES, HEAD, LINE, RELEASE_WAIT, TRACK, at } from './sessi
 const NOW = Date.parse(at(15, 18));
 const STORY = storyOf(LINE);
 const LIVE: PanelFacts = {
-  head: HEAD, track: TRACK, story: STORY, waits: [], changes: CHANGES, now: NOW, reads: 'next', readMark: Date.parse(at(9, 22)),
+  id: 's1', head: HEAD, track: TRACK, story: STORY, waits: [], changes: CHANGES, now: NOW, reads: 'next', readMark: Date.parse(at(9, 22)),
   onAnswer: () => {}, onSend: () => {}, onStep: () => {}, onReview: () => {}, onFile: () => {},
 };
 const ACTS = (
