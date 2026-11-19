@@ -11,9 +11,13 @@ export type ChildRead = { events: readonly SessionEvent[] | null; loaded: boolea
 export type BesideReader = {
   /** A subagent's own record (`SESSION_CHILD_HISTORY`). */
   Child: ComponentType<{ child: string; running?: boolean; children: (read: ChildRead) => ReactNode }>;
-  /** A background task's last lines on its console, where its reader keeps them; absent, its end's row draws none. */
-  Tail?: ComponentType<{ task: string; children: (lines: readonly string[]) => ReactNode }>;
+  /** A background task's last lines on its console and when the page heard its last; absent, its end's row draws none. */
+  Tail?: ComponentType<{ task: string; children: (lines: readonly string[], heard: number | null) => ReactNode }>;
+  /** A background task's whole console, drawn in the panel's focus. */
+  Stream?: ComponentType<{ task: string }>;
 };
+
+export type BesideFocus = { child: readonly string[] } | { task: string };
 
 /** The record's starts and ends of each subagent and background task: what a subagent's own timeline is joined with. */
 export const lifetimesIn = (events: readonly SessionEvent[]): SessionEvent[] =>
@@ -27,7 +31,9 @@ export function besideOf(was: Beside | undefined, event: SessionEvent): Beside {
     ...(event.name ? { name: event.name } : {}),
     ...(event.task ? { task: event.task } : {}),
     ...(event.depth ? { depth: event.depth } : {}),
-    ...(event.end ? { end: event.end, by: event.by ?? null, ended: event.at } : { started: beside.started ?? event.at }),
+    ...(event.end
+      ? { end: event.end, by: event.by ?? null, ended: event.at, ...(event.origin === 'person' ? { stoppedBy: 'person' as const } : {}) }
+      : { started: beside.started ?? event.at }),
   };
 }
 
@@ -38,7 +44,7 @@ export function standing(beside: Beside): string {
   switch (beside.end) {
     case 'ok': return 'work.beside.end.ok';
     case 'failed': return 'work.beside.end.failed';
-    case 'stopped': return 'work.beside.end.stopped';
+    case 'stopped': return beside.stoppedBy === 'person' ? 'work.beside.end.stoppedByYou' : 'work.beside.end.stopped';
     default: return 'work.beside.end.lost';
   }
 }

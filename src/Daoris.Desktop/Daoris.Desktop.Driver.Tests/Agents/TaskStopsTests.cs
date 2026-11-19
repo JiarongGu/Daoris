@@ -46,4 +46,21 @@ public sealed class TaskStopsTests
         first.Dispose();
         Assert.True(await processes.StopTaskAsync("c-1", "t9", CancellationToken.None));
     }
+
+    /// <summary>A stop its harness said it made is the person's, kept until the session's stops close; one it refused is no one's.</summary>
+    [Fact]
+    public async Task A_stop_the_harness_made_is_kept_as_the_person_s()
+    {
+        var processes = new SessionProcesses();
+        var held = processes.OpenTaskStops("c-1", (task, _) => Task.FromResult(task == "t9"));
+
+        Assert.True(await processes.StopTaskAsync("c-1", "t9", CancellationToken.None));
+        Assert.False(await processes.StopTaskAsync("c-1", "t8", CancellationToken.None));
+        Assert.True(processes.PersonStopped("c-1", "t9"));
+        Assert.False(processes.PersonStopped("c-1", "t8"));
+        Assert.False(processes.PersonStopped("c-2", "t9"));
+
+        held.Dispose();
+        Assert.False(processes.PersonStopped("c-1", "t9"));
+    }
 }

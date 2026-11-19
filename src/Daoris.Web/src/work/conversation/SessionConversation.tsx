@@ -4,7 +4,9 @@ import { cn } from '../../lib/cn';
 import { useDebounced } from '../../lib/useDebounced';
 import { searchable } from '../../lib/searchable';
 import { useChildHistory, useHarnesses, useSessionConsole, useSessionEvents, useSessionSearch } from '../../bridge/shell';
-import { type BesideReader, type ChildRead, lifetimesIn } from '../beside/besides';
+import { type BesideFocus, type BesideReader, type ChildRead, lifetimesIn } from '../beside/besides';
+import type { BandTold } from '../band/bandRows';
+import { SessionConsole } from '../console/SessionConsole';
 import { Icon } from '../../design/ui';
 import { accountNames } from '../accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from '../waits/anchors';
@@ -44,13 +46,28 @@ function ChildReader({ child, running = false, children }: { child: string; runn
   return children(useChildHistory(useContext(ReadingSession), child, running));
 }
 
-/** A background task's last lines, from its own console stream (`<session>/task/<id>`). */
-function TaskTail({ task, children }: { task: string; children: (lines: readonly string[]) => ReactNode }) {
+/** A background task's last lines, from its own console stream (`<session>/task/<id>`), and when the page heard its last. */
+function TaskTail({ task, children }: { task: string; children: (lines: readonly string[], heard: number | null) => ReactNode }) {
   const tail = useSessionConsole(`${useContext(ReadingSession)}/task/${task}`);
-  return children(tail.lines.slice(-3).map((line) => line.text));
+  const last = tail.lines[tail.lines.length - 1]?.sequence ?? 0;
+  const [heard, setHeard] = useState<number | null>(null);
+  useEffect(() => { if (last > 0) setHeard(Date.now()); }, [last]);
+  return children(tail.lines.slice(-3).map((line) => line.text), heard);
 }
 
-const READER: BesideReader = { Child: ChildReader, Tail: TaskTail };
+/** A background task's whole console, in the panel's focus. */
+function TaskStream({ task }: { task: string }) {
+  const { t } = useTranslation();
+  return <SessionConsole id={`${useContext(ReadingSession)}/task/${task}`} quiet={t('work.panel.streamSilent')} />;
+}
+
+/** How the rows and the live band read what a session runs beside itself, under `BesideReading`. */
+export const BESIDE_READER: BesideReader = { Child: ChildReader, Tail: TaskTail, Stream: TaskStream };
+
+/** The session whose subagents and tasks `BESIDE_READER` reads, for a host outside the conversation: the live band. */
+export function BesideReading({ session, children }: { session: string; children: ReactNode }) {
+  return <ReadingSession.Provider value={session}>{children}</ReadingSession.Provider>;
+}
 
 /**
  * The two scroll presses' one look: a 28 px square with its arrow alone, its name its label and its tooltip. Their words once
@@ -105,7 +122,7 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
-  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath,
+  waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel, dividers, beneath, onBeside,
 }: {
   dividers?: Readonly<Record<string, ReactNode>>;
   beneath?: ComponentProps<typeof ConversationView>['beneath'];
@@ -122,6 +139,11 @@ export function SessionConversation({
   onSayAgain?: (words: string[]) => void;
   /** The call the driver's grouping says the session is in, held or not (AUTONOMY1b3e) — `ConversationView`'s. */
   callMark?: CallMark;
+  /**
+   * Told what the live band above the dock draws, on a change: the record's starts and ends of what the session runs beside itself,
+   * its agent's act, and the way to put one in the panel's focus. Told empty once this conversation is gone.
+   */
+  onBeside?: (told: BandTold) => void;
   /**
    * What waits on the person in this session, and what its joins name: the waits that stand, its
    * go-aheads, the opinion the landing's gate names. Each is anchored to the event that raised it where the join finds one.
@@ -345,6 +367,20 @@ export function SessionConversation({
   const words = lastWords(turns);
   // Each subagent's and task's start and end, which a subagent's own timeline is joined with.
   const lifetimes = useMemo(() => lifetimesIn(events), [events]);
+  // What the panel's focus holds, which the live band opens too; another session's starts with none.
+  const [focus, setFocus] = useState<BesideFocus | null>(null);
+  useEffect(() => setFocus(null), [session]);
+  // The band's: what runs beside it, and the agent's act while a turn runs (the call it is inside, else it thinks since its last event).
+  const working = live && (turnRunning ?? (turns.length > 0 && !turns[turns.length - 1]!.ended));
+  const act = call ? { title: call.title, since: call.since } : working ? { since: last?.at } : null;
+  const besideKey = `${lifetimes.length}:${lifetimes[lifetimes.length - 1]?.seq ?? 0}|${act ? `${act.title ?? ''}@${act.since ?? ''}` : ''}`;
+  const tellBeside = useRef(onBeside);
+  tellBeside.current = own ? onBeside : undefined;
+  useEffect(() => {
+    tellBeside.current?.({ session, lifetimes, act, open: setFocus });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `besideKey` stands for `lifetimes` and `act`
+  }, [session, besideKey]);
+  useEffect(() => () => tellBeside.current?.({ session, lifetimes: [], act: null, open: () => {} }), [session]);
   const step = (by: 1 | -1) => {
     if (hits.length === 0) return;
     const next = (at + by + hits.length) % hits.length;
@@ -355,7 +391,7 @@ export function SessionConversation({
   return (
     <ReadingSession.Provider value={session}>
       <ConversationView
-        beside={{ reader: READER, lifetimes }}
+        beside={{ reader: BESIDE_READER, lifetimes, focus, onFocus: setFocus }}
         turns={turns}
         tree={tree}
         structured={structured}

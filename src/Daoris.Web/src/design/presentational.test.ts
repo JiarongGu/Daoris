@@ -44,6 +44,7 @@ const ORGANISMS = new Set<string>([
   // The conversation's organism: it holds the record and the scroll, so the view,
   // the tool card and the Markdown below it hold neither.
   './work/conversation/SessionConversation.tsx',
+  './work/band/SessionBand.tsx',
   // The earlier parts of a line: each is the conversation's organism in its earlier mode, so this holds none of its own.
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',

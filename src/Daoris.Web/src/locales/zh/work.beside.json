@@ -5,6 +5,7 @@
   "work.beside.end.ok": "已完成",
   "work.beside.end.failed": "失败",
   "work.beside.end.stopped": "已停止",
+  "work.beside.end.stoppedByYou": "已由你停止",
   "work.beside.end.lost": "已结束，未说明结果",
   "work.beside.end.withSession": "随会话结束",
   "work.beside.calls_one": "{{count}} 次调用",

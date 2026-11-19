@@ -5,6 +5,7 @@
   "work.beside.end.ok": "finished",
   "work.beside.end.failed": "failed",
   "work.beside.end.stopped": "stopped",
+  "work.beside.end.stoppedByYou": "stopped by you",
   "work.beside.end.lost": "ended, how not said",
   "work.beside.end.withSession": "ended with its session",
   "work.beside.calls_one": "{{count}} call",

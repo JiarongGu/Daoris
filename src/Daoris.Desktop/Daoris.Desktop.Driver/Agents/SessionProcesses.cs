@@ -175,20 +175,38 @@ public sealed class SessionProcesses(string? markers = null)
         {
             lock (_gate)
             {
-                if (_taskStops.TryGetValue(sessionId, out var held) && held == stop) _taskStops.Remove(sessionId);
+                if (!_taskStops.TryGetValue(sessionId, out var held) || held != stop) return;
+                _taskStops.Remove(sessionId);
+                _personStops.RemoveWhere(each => string.Equals(each.Session, sessionId, StringComparison.OrdinalIgnoreCase));
             }
         });
     }
 
+    private readonly HashSet<(string Session, string Task)> _personStops = [];
+
     /// <summary>
-    /// Stop one task a session runs — true when its harness said it stopped. Null when no
-    /// session held here runs tasks under that id: one on the pipe door, another machine's, or ended.
+    /// Stop one task a session runs at the person's press (the window's live band) — true when its harness said it stopped, which is
+    /// kept as theirs (<see cref="PersonStopped"/>). Null when no session held here runs tasks under that id: one on the pipe door,
+    /// another machine's, or ended.
     /// </summary>
     public async Task<bool?> StopTaskAsync(string sessionId, string taskId, CancellationToken ct)
     {
         Func<string, CancellationToken, Task<bool>>? stop;
         lock (_gate) stop = _taskStops.GetValueOrDefault(sessionId);
-        return stop is null ? null : await stop(taskId, ct).ConfigureAwait(false);
+        if (stop is null) return null;
+        var stopped = await stop(taskId, ct).ConfigureAwait(false);
+        if (stopped)
+        {
+            lock (_gate) _personStops.Add((sessionId.ToLowerInvariant(), taskId));
+        }
+
+        return stopped;
+    }
+
+    /// <summary>Whether the person stopped this task of the session, while its stops are held: its record's end says so.</summary>
+    public bool PersonStopped(string sessionId, string taskId)
+    {
+        lock (_gate) return _personStops.Contains((sessionId.ToLowerInvariant(), taskId));
     }
 
     private readonly Dictionary<string, Func<DriverConfig, SetupSwap?>> _setups = new(StringComparer.OrdinalIgnoreCase);

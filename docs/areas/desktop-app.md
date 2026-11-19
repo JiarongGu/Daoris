@@ -234,7 +234,15 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     line reads the driver's reader (`SESSION_GROUPS`' group and reason, a line's by `LineStandings`) with its cause and age, never
     the record's state word (`work/head/stateLine.ts`): a docked wait reads *Waiting on you* whatever the record says, the oldest
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
-    each docked kind. A teammate's session draws its waits as one line with no press. (from D168, D185, D320)
+    each docked kind. A teammate's session draws its waits as one line with no press. Above the dock stands the live band
+    (`work/band/`), a session running here only: one line for the agent's act while a turn runs and for each subagent and background
+    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), each
+    with its time ticking from its start on the page's clock, its last line (a subagent's last act from its own record, a task's
+    last console line), *no output 6 m* past the quiet threshold, *Follow* (its last three lines), *Open* (the conversation's
+    focus: a subagent's timeline, a task's whole console, a breadcrumb back) and *Stop* only on a task its streams mark `canStop`,
+    asked once in place, *stopping* until its end is read, sent as `STOP_TASK`; elsewhere its tip says why. Empty it reads
+    *Nothing running*; a window under 640 px tall folds it to its count. A task the person stopped reads *stopped by you* where
+    it ended. (from D168, D185, D320)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it
     landed on once its tree is gone (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -431,8 +439,9 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline, Workflow and At work as dock views and each subagent and task as a tab of the
-  bottom panel; each row removes the place whose job it moves. SESSIONVIEW1f moved the subagents into the conversation: a subagent
+  the head and the conversation, and keeps Timeline, Workflow and At work as dock views; each row removes the place whose job it
+  moves. SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
+  session's raw console alone; a task's whole console is read in the conversation's focus. SESSIONVIEW1f moved the subagents into the conversation: a subagent
   is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
   words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent
   takes the conversation's place with a breadcrumb back (`work/beside/`); a background task is a row under its call and a row where

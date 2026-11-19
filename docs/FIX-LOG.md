@@ -91,7 +91,8 @@ repository.
   `Driver.Tests.LookAccountTests` and `Modules.Tests.PipeConfirmTests`, each passing alone; the same merge's in-run time ratchet
   failed and passed alone, as ACCEPTWAIT1's had. ACTORFLOW1a's merge the same morning: `Driver.Tests.ContextPortsTests`, the
   same way; gates15's `tools/merge/flow.test.ts`; gates16's web `WorkFrame.conversation` and `Composer` files; on 2026-11-19
-  APPROVEPRESS2's web `app/notifications.test.tsx`, and builders' runs `app/sessionEnd`, `AttentionBand` and ten `*PortsTests`.
+  APPROVEPRESS2's web `app/notifications.test.tsx`, and builders' runs `app/sessionEnd`, `AttentionBand` and ten `*PortsTests`;
+  SESSIONVIEW1d's `Driver.Tests.LookAccountTests` again.
 - **Cause:** none found; load-shaped by the alone passes.
 
 ## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)

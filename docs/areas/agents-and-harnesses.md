@@ -64,7 +64,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     writes in the `Agent` call's place, under the subagent's id) and each task (its call the one its first `async_task_progress`
     names, so its start is said then, or at its end) and stops a task its harness marks `canStop`; Codex's says each task with
     the `toolCallId` its `async_task_spawned` names, stops one marked `canStop`, and says no subagent: one is seen only when it
-    calls Daoris. A subagent's own events, mapped by its door, ride its stream (`ISessionStreams.Said`) to its own record. (D320)
+    calls Daoris. A subagent's own events, mapped by its door, ride its stream (`ISessionStreams.Said`) to its own record. A task
+    the person stops from the window (`SessionProcesses.StopTaskAsync`, its harness saying it stopped) keeps `person` as its
+    record end's origin (`PersonStopped`, read by `ChildLifetimes`). (D320)
 11. A driven session takes no person's line on its stdin; the protocol door's stdin carries Daoris's frames, and a driven native
     prompt goes on stdin under a bare `-p` as BOM-less UTF-8, never as an argument. (D213, D49)
     Every run of `TransportRun`, whichever harness is on it, keeps the frames of its pipe in one `FrameTape` beside its transcript
