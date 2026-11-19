@@ -26,7 +26,7 @@ export type LineRowsProps = {
   channel?: { onPost: (post: ChannelPost, answered: ChannelAnswered) => void; onForward?: ChannelForward };
 };
 
-const PRESS = 'shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small text-accent underline-offset-2 hover:underline';
+const PRESS = 'shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink underline-offset-2 hover:underline';
 
 /** The protocol's word for where it stands, in the reader's language; one the page has no word for is said as recorded. */
 const outcomeOf = (t: TFunction, word: string): string =>
