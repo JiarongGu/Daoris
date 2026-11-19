@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The test host's own environment, set once as the assembly loads, before any test runs and so beside none: what the shell that started
-/// it held of Daoris's and of git's locating variables is taken out, as the merge tool's gates take it (its <c>GATE_REMOVED</c>), and
+/// it held of Daoris's and of git's locating, door (ssh), prompt, trace and identity variables is taken out (a Daoris session's shell
+/// carries the door's, <see cref="Daoris.Driver.GitWiring"/> hands them), as the merge tool's gates take it (its <c>GATE_REMOVED</c>), and
 /// the process's home is a scratch one of this run's.
 /// </summary>
 /// <remarks>
@@ -29,13 +30,7 @@ internal static partial class HostEnvironment
     {
         // Read before the removal below takes the switch out with the rest of Daoris's variables.
         var pinned = PinnedLeg.Apply();
-        // The suite's own switches are never Daoris's, so they are the ones kept.
-        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
-                     .Where(name => Removed().IsMatch(name) && !SuiteSwitches.Contains(name, StringComparer.OrdinalIgnoreCase))
-                     .ToList())
-        {
-            Environment.SetEnvironmentVariable(name, null);
-        }
+        Strip();
 
         Directory.CreateDirectory(Home);
         Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
@@ -46,8 +41,20 @@ internal static partial class HostEnvironment
         };
     }
 
+    /// <summary>Take out of this process what a shell wired for a Daoris session holds; the suite's own switches are never Daoris's, so they are kept.</summary>
+    internal static void Strip()
+    {
+        foreach (var name in Environment.GetEnvironmentVariables().Keys.Cast<string>()
+                     .Where(name => Removed().IsMatch(name) && !SuiteSwitches.Contains(name, StringComparer.OrdinalIgnoreCase))
+                     .ToList())
+        {
+            Environment.SetEnvironmentVariable(name, null);
+        }
+    }
+
     [GeneratedRegex(
-        "^(DAORIS_.*|GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*))$",
+        "^(DAORIS_.*|GIT_(DIR|WORK_TREE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|COMMON_DIR|NAMESPACE|CEILING_DIRECTORIES|CONFIG.*"
+        + "|SSH.*|ASKPASS|TERMINAL_PROMPT|TRACE.*|CURL_VERBOSE|OPTIONAL_LOCKS|AUTHOR_.*|COMMITTER_.*)|SSH_ASKPASS.*|GCM_.*)$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Removed();
 }

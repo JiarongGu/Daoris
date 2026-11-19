@@ -30,6 +30,7 @@ public sealed class ProcessEnvironmentCensusTests
     private static readonly Dictionary<string, (string Why, string? AloneIn)> Kept = new(StringComparer.Ordinal)
     {
         ["HostEnvironment.cs"] = ("the test host's own, once as the assembly loads and before any test: the shell's Daoris and git variables out, a scratch home in", null),
+        ["HostEnvironmentTests.cs"] = ("the wiring a session's shell carries is planted to show the host takes it out and a fixture's git does not inherit it", null),
         ["CommandShimTests.cs"] = ("the product resolves a command on the process's PATH, and the shim it finds is put first on it", null),
         ["Agents/HarnessRunTests.cs"] = ("the product resolves a harness on the process's PATH, and the stand-in it finds is put first on it", null),
         ["Review/HeavyToolsProcessTests.cs"] = ("the product resolves the heavy tools on the process's PATH, and the stand-ins it finds are put first on it", null),
