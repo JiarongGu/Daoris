@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { records } from './storage.mjs';
@@ -14,7 +14,7 @@ const store = pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), 'stora
 
 /** A file of the test's own, in a folder removed after. */
 function scratch(t) {
-  const at = mkdtempSync(join(tmpdir(), 'daoris-storage-'));
+  const at = mkdtempSync(join(scratchRoot(), 'daoris-storage-'));
   t.after(() => rmSync(at, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
   return join(at, 'records.json');
 }

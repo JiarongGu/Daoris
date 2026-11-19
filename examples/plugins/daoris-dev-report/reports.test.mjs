@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const entry = join(dirname(fileURLToPath(import.meta.url)), 'plugin.mjs');
 
 function storage(t) {
-  const at = mkdtempSync(join(tmpdir(), 'daoris-dev-report-'));
+  const at = mkdtempSync(join(scratchRoot(), 'daoris-dev-report-'));
   t.after(() => rmSync(at, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
   return at;
 }
