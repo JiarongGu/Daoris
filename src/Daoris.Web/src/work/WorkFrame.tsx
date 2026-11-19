@@ -54,6 +54,7 @@ import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
 import { AttendedConversation } from './conversation/AttendedConversation';
 import { channelHomeOf } from './conversation/channelHome';
+import { toChannelRow, toDockLine } from './exchanges/seek';
 import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
@@ -470,10 +471,14 @@ export function WorkFrame({
             partRows={partRows}
             partBox={partBox}
             attend={attend}
-            // The channel its panel reads names each message's poster, and a turn's door opens that panel.
+            // The channel its rows read names each message's poster, and a turn's door brings that message's row.
             channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
-              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
+              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, toChannelRow,
             ) : undefined}
+            along={{
+              atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
+              nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
+            }}
           />
         </ViewMain>
 
@@ -496,7 +501,14 @@ export function WorkFrame({
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
           {/* The live band: what runs now, above the dock, each line ticking with its last line and its presses. */}
-          {attended && here && <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />}
+          {attended && here && (
+            <SessionBand
+              key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify}
+              // A helper or a reviewer at work for its line, a line each, its session a press away.
+              exchanges={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.exchanges : undefined}
+              onOpenSession={attend} nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
+            />
+          )}
           {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}

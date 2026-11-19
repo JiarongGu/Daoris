@@ -245,7 +245,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
     each docked kind. A teammate's session draws its waits as one line with no press. Above the dock stands the live band
     (`work/band/`), a session running here only: one line for the agent's act while a turn runs and for each subagent and background
-    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), each
+    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), and for
+    each request its line waits on that a session took up, a helper or a reviewer at work for it (`AtWorkExchange`, its *Open* that
+    session), each
     with its time ticking from its start on the page's clock, its last line (a subagent's last act from its own record, a task's
     last console line), *no output 6 m* past the quiet threshold, *Follow* (its last three lines), *Open* (the conversation's
     focus: a subagent's timeline, a task's whole console, a breadcrumb back) and *Stop* only on a task its streams mark `canStop`,
@@ -473,5 +475,11 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), budgets that follow how an
   account is paid (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
   row rewrites the rule it makes false.
+- SESSIONVIEW1h moved the line's exchanges and its channel into the conversation (`work/exchanges/`): a helper, a piece, a quest, a
+  hand-over or an opinion is a row where it was asked and one where it came back, between the turns it fell between (one whose read
+  keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's findings beside the work
+  it judged; one waiting on the person leads to its dock line (`dockKeyOfExchange`) with no press of its own; a quest the session
+  published and the session that published its own are rows too; each channel message of its line is a row naming its sender,
+  answered in place and sent on to its session. The article's *Who it worked with* and *Channel* folds are gone.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.
