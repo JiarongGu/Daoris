@@ -261,7 +261,8 @@ every UI and UX row set up from it (`docs/2026-11-19-window-design.md`, D329 to 
 rows of a wave run together. A row starts when every row it names is done. Every row's stories draw at the window widths in English
 and Chinese, light and dark, through UIDS3's globals, tagged for UIDS5's pictures; its words go in both catalogues with glossary rows
 for new names; it rewrites the area rule it makes false. Named as dependencies and left as they are: SESSIONVIEW1d2, 1f2, 1g, 1h,
-1i, CHATUX1, ACTORFLOW1, ACCESS1, ACCOUNTREVOKED1, USAGEMODEL1, APIKEYACCT1.
+1i, CHATUX1, ACTORFLOW1, FOUNDATION1 (UISH24 builds the first kinds of its Act contract), ACCESS1, ACCOUNTREVOKED1,
+USAGEMODEL1, APIKEYACCT1.
 
 **Wave 0, the design system's foundation.**
 
@@ -285,7 +286,7 @@ for new names; it rewrites the area rule it makes false. Named as dependencies a
 - [ ] **UIDS15 — Who did something, how it is known and how much read on chips, the model that ran always named and every name peeking on hover** (web-shell; M; after UIDS9, UIDS11): `AgentChip` (requires `ran`), `KnownBy` (check, review, read, stated, yours, default, inherited, stale), `EntityChip` with `Peek`, `Meter` (limit, budget, share; unknown never zero), `FactList`, `DigestLine`. Proof: a type test that an `AgentChip` without `ran` does not compile; asked≠ran and unknown-meter tests. → design §8
 - [ ] **UIDS16 — Every wait reads with the same parts and is answered in one press or key, with Undo while it can be taken back** (web-shell; L; after UIDS10, UIDS14, UIDS15): `WaitCard` (its kinds, required parts, options 1–4, Reply, Not mine, Later, eight states, three layouts), the queue's keys (inactive in a field or while composing), the held press; `WaitingCard` retired. Proof: the `States` sheet at visual-full; key, grace and hold play functions; a type test that a card without its yes or no line does not compile. → design §5.3
 - [ ] **UIDS17 — A session's rows and the steps work went through read with one grammar wherever they show** (web-shell; M; after UIDS15): `TimelineRow` (actors, step rule, folds, hand-off, second opinion, steering, waits; live append, new since), `StepTrack` (across; down with a body per step), `NewAbovePill`. Proof: a nine-step track in 中文 fits 900 px with no label cut (measured). → design §8
-- [ ] **UISH24 — Every owner act is defined once, with what it does, whether it can be undone, what it needs and who holds it, and the window's presses read it** (driver, modules, web-shell; L; after UIDS16; D340): `OwnerActs` in the modules with each act of §6 and its doors (the route, the `daoris` verb, the tool where an agent may hold it), pushed to the page; `acts/` maps a definition to `WaitCard`'s and `Button`'s props (label, consequence, grace or hold, held by another). Proof: a census that every press performing an owner act has a definition and every definition a door; APPROVEACT1's approval read through it unchanged. → design §6
+- [ ] **UISH24 — Every owner act is defined once, with what it does, whether it can be undone, what it needs and who holds it, and the window's presses read it** (driver, modules, web-shell; L; after UIDS16; D340): `OwnerActs` in the modules, the first kinds of FOUNDATION1's one Act contract and built in its shape (a handler, journaled, closed by its receipt), with each act of §6 and its doors (the route, the `daoris` verb, the tool where an agent may hold it), pushed to the page; `acts/` maps a definition to `WaitCard`'s and `Button`'s props (label, consequence, grace or hold, held by another). Proof: a census that every press performing an owner act has a definition and every definition a door; APPROVEACT1's approval read through it unchanged. → design §6
 
 **Wave 2, the frame.**
 

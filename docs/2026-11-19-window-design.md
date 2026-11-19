@@ -329,7 +329,9 @@ outside effect its holder's tool, and APPROVEACT1 made a release approval the ap
 place casts the approver to an agent and the owner's card where it does not. This extends that to every act the window lets the
 owner perform.
 
-- **An act is defined once** (`OwnerActs`, a unit of its own in the driver's modules): its id; its verb and its effect sentence
+- **An act is defined once**, as a kind of FOUNDATION1's one Act contract (`docs/2026-11-14-foundation-design.md` point 2:
+  registered with its handler, journaled, closed by its receipt); the owner's acts are its first kinds (`OwnerActs`, a unit of its
+  own in the driver's modules), built in that shape so FOUNDATION1 extends them and never adds a second registry. Each has its id; its verb and its effect sentence
   (catalogue keys); whether it can be undone (`grace`: the press is held 5 s before it is sent, with *Undo*) or not (`hold`: a
   held press, 800 ms, its consequence on the control); what it needs (a role, a sign-in, a place's declaration, a budget);
   the role that holds it at each place (the place's cast, D304, D318; the owner by default for the closed list); and its
@@ -1170,7 +1172,7 @@ own folders (a one-line registration in a shared table, `domains.ts`, `ui.tsx`, 
 Between UISH2 and a place's own rows, a place shows today's content under its new name (Company mounts today's Agents and
 Plugins; Workspaces today's Repositories, Map and Knowledge; Asks today's Quests view), so the window works at every step.
 Rows in flight that these name: SESSIONVIEW1d2, 1f2, 1g, 1h, 1i (the panel), CHATUX1 (the composer), ACTORFLOW1 (acts and
-receipts), ACCESS1 rows c, d and n (rules and access), ACCOUNTREVOKED1 (sign-outs), USAGEMODEL1 and APIKEYACCT1 (usage and
+receipts), FOUNDATION1 (its one Act contract, whose first kinds UISH24 builds), ACCESS1 rows c, d and n (rules and access), ACCOUNTREVOKED1 (sign-outs), USAGEMODEL1 and APIKEYACCT1 (usage and
 balances), SIGNINWAIT3 (a conversation's sign-in in its dock). Rows the redesign supersedes, to close when the named row lands:
 FLOWCHART2 (UIWF10), AGENTSPLACE1 (UIRP1), MAPUX1 (UIWF12), CANVAS1g (UIWF8 keeps the read-only drawing), SETTINGSUX1
 (UIST11), UIREVIEW1 (its findings are these rows).
