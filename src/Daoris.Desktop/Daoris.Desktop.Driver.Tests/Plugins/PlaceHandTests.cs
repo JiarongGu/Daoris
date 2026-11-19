@@ -96,10 +96,12 @@ public sealed class PlaceHandTests : IDisposable
     public async Task The_place_is_judged_by_origins_push_address_where_a_pushurl_differs_from_the_fetch_address()
     {
         GitIdentityActs.ReadOnly(Home, Serving().Id, on: true);
-        var checkout = await GitSeed.PlainAsync(Path.Combine(_root, "checkout"), "engine");
+        var checkout = Path.Combine(_root, "checkout");
+        Directory.CreateDirectory(checkout);
         foreach (var arguments in new[]
         {
-            new[] { "remote", "add", "origin", "https://elsewhere.example.invalid/acme/app.git" },
+            new[] { "init", "-q" },
+            ["remote", "add", "origin", "https://elsewhere.example.invalid/acme/app.git"],
             ["remote", "set-url", "--push", "origin", Origin],
         })
         {
