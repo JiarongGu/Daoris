@@ -13,6 +13,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Notify { get; } = Person("SET_NOTIFY");
     public static InstanceRoute CoolOff { get; } = Person("SET_COOLOFF");
     public static InstanceRoute Quiet { get; } = Person("SET_QUIET");
+    public static InstanceRoute Drain { get; } = Person("SET_DRAIN");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
     public static InstanceRoute Terminal { get; } = Person("SET_TERMINAL");
     public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
@@ -44,6 +45,7 @@ public static class ChoiceRoutes
         ("driver notify on|off", Notify, "the window's notify switch"),
         ("driver cooloff <minutes>", CoolOff, "the window's cool-off"),
         ("driver quiet <minutes>", Quiet, "the window's quiet bound"),
+        ("driver drain <minutes>", Drain, "the window's bound on an update's drain"),
         ("driver cap <n>", Cap, "the window's session cap"),
         ("driver terminal ask|act", Terminal, "the window's tier of a terminal's presses"),
         ("driver manifest files|minutes <n>", Manifest, "the window's bounds on a folder's manifest read"),

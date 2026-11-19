@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// One of the machine's dials as the card shows it: <c>daoris settings notify</c> (<c>SET_NOTIFY</c>), <c>cap</c> (<c>SET_CAP</c>),
-/// <c>cooloff</c> (<c>SET_COOLOFF</c>), <c>quiet</c> (<c>SET_QUIET</c>) and <c>manifest</c> (<c>SET_MANIFEST</c>), one bound a press. A value the route would refuse is refused at the ask in the
+/// <c>cooloff</c> (<c>SET_COOLOFF</c>), <c>quiet</c> (<c>SET_QUIET</c>), <c>drain</c> (<c>SET_DRAIN</c>) and <c>manifest</c> (<c>SET_MANIFEST</c>), one bound a press. A value the route would refuse is refused at the ask in the
 /// driver's own words, before any card.
 /// </summary>
 public sealed class MachineSettingView : IPressView
@@ -43,6 +43,13 @@ public sealed class MachineSettingView : IPressView
         if (Number(payload, "minutes") is not { } minutes || !QuietSetting.Takes(minutes)) return PressViewed.Refused(QuietSetting.Refusal);
         var text = minutes.ToString(CultureInfo.InvariantCulture);
         return Shown("quiet", new() { ["minutes"] = text }, $"daoris settings quiet {text}");
+    });
+
+    public static MachineSettingView Drain() => new("SET_DRAIN", payload =>
+    {
+        if (Number(payload, "minutes") is not { } minutes || !DrainSetting.Takes(minutes)) return PressViewed.Refused(DrainSetting.Refusal);
+        var text = minutes.ToString(CultureInfo.InvariantCulture);
+        return Shown("drain", new() { ["minutes"] = text }, $"daoris settings drain {text}");
     });
 
     public static MachineSettingView Terminal() => new("SET_TERMINAL", payload =>

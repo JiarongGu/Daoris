@@ -1,17 +1,21 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { list, moment } from '../../locales/format';
+import { clockOf, list, moment } from '../../locales/format';
 import { Button, Card, MetaLine, Pill, SectionTitle, SettingList, SettingRow } from '../../design/ui';
 import type { UpdateMode, UpdateOutcome, UpdateState } from '../../update/UpdateBanner';
 
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
-const STATE_TONE: Record<string, string> = { draining: 'taken', applying: 'taken', waiting: 'neutral', refused: 'declined' };
+const STATE_TONE: Record<string, string> = {
+  draining: 'taken', deferred: 'neutral', applying: 'taken', waiting: 'neutral', refused: 'declined',
+};
 
 /** The pill a swap's ending wears: each an outcome, so installed is done's and the rest declined's. */
 const OUTCOME_TONE: Record<string, string> = { installed: 'done', 'rolled-back': 'declined', refused: 'declined' };
 
 /** The words each state offers, the move first, as the banner offers them. */
-const WORDS: Record<string, readonly UpdateMode[]> = { waiting: ['when-idle', 'now'], draining: ['now', 'not-now'], refused: ['now'] };
+const WORDS: Record<string, readonly UpdateMode[]> = {
+  waiting: ['when-idle', 'now'], draining: ['now', 'not-now'], deferred: ['now', 'not-now'], refused: ['now'],
+};
 
 const WORD_KEY: Record<UpdateMode, string> = { 'when-idle': 'update.whenIdle', now: 'update.now', 'not-now': 'update.notNow' };
 
@@ -57,6 +61,10 @@ export function UpdateSection({ update, busy = false, onSay }: {
   const standing = (): string => {
     switch (state) {
       case 'draining': return t('settings.update.join', { first: t('settings.update.draining'), second: waits() });
+      case 'deferred': return t('settings.update.join', {
+        first: t('settings.update.join', { first: t('settings.update.deferred'), second: waits() }),
+        second: update.since ? t('settings.update.since', { time: clockOf(update.since, new Date(), i18n.language) }) : '',
+      }).trim();
       case 'waiting': return t('settings.update.waiting');
       case 'applying': return t('settings.update.applying');
       case 'refused': return t('settings.update.refused', { why: why(problem?.code, problem?.message) });

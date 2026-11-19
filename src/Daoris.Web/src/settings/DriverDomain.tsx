@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetGitAccess, useSetManifest, useSetNotify, useSetQuiet, useSetTerminal,
+  useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetDrain, useSetGitAccess, useSetManifest, useSetNotify, useSetQuiet,
+  useSetTerminal,
 } from '../bridge/shell';
 import { terminalTierOf } from './machine/TerminalTierSetting';
 import { terminalActsOf } from '../person/terminalActs';
@@ -46,6 +47,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setNotify = useSetNotify();
   const setCoolOff = useSetCoolOff();
   const setQuiet = useSetQuiet();
+  const setDrain = useSetDrain();
   const setCap = useSetCap();
   const setManifest = useSetManifest();
   const setTerminal = useSetTerminal();
@@ -58,13 +60,14 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   return (
     <DriverCards
       uxTrail={{ on: trail.on, pending: trail.set.isPending, onChange: (on) => trail.set.mutate(on) }}
-      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), manifest: settingOf('manifest') }}
+      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest') }}
       facts={{
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
         notify: driver.data?.notify ?? true,
         coolOff: driver.data?.coolOff,
         quiet: driver.data?.quiet,
+        drain: driver.data?.drain,
         manifestFiles: driver.data?.manifestFiles,
         manifestMinutes: driver.data?.manifestMinutes,
         manifestCopy: driver.data?.manifestCopy,
@@ -91,6 +94,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onQuiet={(value) => setQuiet.mutate({ minutes: value }, {
         onSuccess: () => notify(t('settings.quiet.set', { count: value })),
+        onError,
+      })}
+      onDrain={(value) => setDrain.mutate({ minutes: value }, {
+        onSuccess: () => notify(t('settings.drain.set', { count: value })),
         onError,
       })}
       onManifest={(bound) => setManifest.mutate(bound, {

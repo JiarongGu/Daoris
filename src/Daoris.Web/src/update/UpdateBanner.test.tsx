@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../locales/i18n';
 import { en } from '../locales';
+import { clockOf } from '../locales/format';
 import { UpdateBanner, type UpdateState } from './UpdateBanner';
 
 // The install's update as a quiet strip — staged and waiting, draining, applying, refused, and how
@@ -54,6 +55,32 @@ describe('the update banner', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Update now' }));
     expect(onSay.mock.calls).toEqual([['not-now'], ['now']]);
     expect(screen.queryByRole('button', { name: 'Update when idle' })).toBeNull();
+  });
+
+  it('while draining, says until when new work waits at the latest', async () => {
+    const until = '2026-11-19T00:39:00Z';
+    draw(state({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 1, turns: 1, since: '2026-11-19T00:29:00Z', until }));
+
+    expect(screen.getByRole('status')).toHaveTextContent(`New work waits until ${clockOf(until)} at the latest.`);
+    await i18n.changeLanguage('zh');
+    expect(await screen.findByText(new RegExp(`新工作最晚等到 ${clockOf(until, new Date(), 'zh')}。`))).toBeTruthy();
+  });
+
+  it('deferred past its bound, says a build waits, on what and since when, and offers Update now and Not now', async () => {
+    const since = '2026-11-19T00:29:00Z';
+    const { onSay } = draw(state({
+      state: 'deferred', staged: STAGED, mode: 'when-idle', driven: 1, turns: 1, since, until: '2026-11-19T00:39:00Z',
+    }));
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      `Daoris 0.0.1 (abc1234) has waited to install since ${clockOf(since)}; new work starts again, and it installs once nothing runs.`);
+    expect(screen.getByRole('status')).toHaveTextContent('2 sessions still running.');
+    await userEvent.click(screen.getByRole('button', { name: 'Update now' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(onSay.mock.calls).toEqual([['now'], ['not-now']]);
+    expect(screen.queryByRole('button', { name: 'Update when idle' })).toBeNull();
+    await i18n.changeLanguage('zh');
+    expect(await screen.findByText(new RegExp(`自 ${clockOf(since, new Date(), 'zh')} 起等待安装`))).toBeTruthy();
   });
 
   it('while draining on a plugin step in flight, says the step it waits on', async () => {

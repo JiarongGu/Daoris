@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
+import { clockOf } from '../../locales/format';
 import type { UpdateState } from '../../update/UpdateBanner';
 import { UpdateSection } from './Update';
 
@@ -56,6 +57,18 @@ describe("Settings' update row", () => {
     draw(standing({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 1, turns: 2, steps: 1 }));
 
     expect(screen.getByText(/Waits on 1 driven session, 2 conversations mid-turn, and 1 plugin step in flight\./)).toBeTruthy();
+  });
+
+  it('deferred past the drain\'s bound, says what it waits on and since when, with Update now and Not now', async () => {
+    const since = '2026-11-19T00:29:00Z';
+    const { onSay } = draw(standing({ state: 'deferred', staged: STAGED, mode: 'when-idle', driven: 1, turns: 1, since }));
+
+    expect(screen.getByText('once nothing runs')).toBeTruthy();
+    expect(screen.getByText(new RegExp(`Waited past the drain's bound: new work starts again, and it installs at the first moment nothing runs\\. `
+      + `Waits on 1 driven session and 1 conversation mid-turn\\. Waiting since ${clockOf(since)}\\.`))).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(onSay).toHaveBeenCalledWith('not-now');
+    expect(screen.getByRole('button', { name: 'Update now' })).toBeTruthy();
   });
 
   it('holds its words while one is on its way', async () => {

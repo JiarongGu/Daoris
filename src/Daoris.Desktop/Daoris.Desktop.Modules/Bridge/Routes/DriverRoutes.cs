@@ -272,6 +272,19 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // How long a staged build's drain may hold new work: whole minutes in the setting's bounds, the same `drain`
+    // `daoris settings drain <minutes>` edits, read at the update's next look. Out of its bounds is the driver's refusal.
+    [DriverRoute("SET_DRAIN", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_DRAIN", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_DRAIN", nameof(PipeReads.Drain))]
+    [Publishes("SET_DRAIN", StateScopes.Driver)]
+    private object? SetDrain(SetDrain press)
+    {
+        var minutes = press.Minutes is { } value && DrainSetting.Takes(value) ? (int)value : throw new DriverException(DrainSetting.Refusal);
+        _context.Change(config => config.WithDrain(minutes));
+        return State(_loop);
+    }
+
     // The bounds of a folder's manifest read, one at a time: whole files or whole minutes in the setting's bounds, the same `manifest`
     // `daoris settings manifest files|minutes <n>` edits. Both, neither, or one out of its bounds is the driver's refusal.
     [DriverRoute("SET_MANIFEST", PipeClass.Person, Drain = PipeDrain.Passes)]

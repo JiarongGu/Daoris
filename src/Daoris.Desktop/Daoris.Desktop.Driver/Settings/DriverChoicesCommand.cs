@@ -18,14 +18,14 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "drain", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
     /// <summary>The verbs this program has, each the CLI hands on (the CLI's allow-list is held to it).</summary>
     public static IReadOnlyList<string> Verbs { get; } =
     [
-        "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
+        "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "drain", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
         "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", MachineSettingsSaid.Every,
     ];
 
@@ -33,8 +33,8 @@ public static class DriverChoicesCommand
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris settings [notify|cap|cooloff|quiet|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
-               daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
+               daoris settings [notify|cap|cooloff|quiet|drain|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
+               daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · drain <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why "…"]
                daoris quest retry <quest> [--at <n> | --session <id>]
@@ -324,6 +324,20 @@ public static class DriverChoicesCommand
                 {
                     Say($"daoris: a session that says nothing and runs nothing for {minutes} minutes is looked in on; none is ever stopped for running long.");
                     Say($"  Written to {path} — read at the next look, so nothing restarts.");
+                    return 0;
+                });
+            }
+
+            case "drain":
+            {
+                var value = Number(Named(args, verb));
+                if (!IsWhole(value) || !DrainSetting.Takes((long)value)) throw new ChoiceWords(DrainSetting.Refusal);
+
+                var minutes = (int)value;
+                return Change(ChoiceRoutes.Drain, new JsonObject { ["minutes"] = minutes }, config => config.WithDrain(minutes), () =>
+                {
+                    Say($"daoris: a staged build holds new work for {minutes} minutes at most; then work starts again, and it installs once nothing runs.");
+                    Say($"  Written to {path} — read at the update's next look, so nothing restarts.");
                     return 0;
                 });
             }
