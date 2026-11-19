@@ -247,7 +247,7 @@ export function censusOf(half, files, read) {
     for (const hand of reaches) {
       if (!hand.why) problems.push(`${entry.full}: a [Reaches] without its reason (Why = "…")`);
       for (const area of hand.areas) {
-        if (/^(src|tools)\//.test(area)) {
+        if (/^(src|tools|examples)\//.test(area)) {
           reads.push(area.replace(/\/+$/, ''));
           continue;
         }

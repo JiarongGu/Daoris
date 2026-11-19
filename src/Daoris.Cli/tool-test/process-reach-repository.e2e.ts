@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -79,5 +79,21 @@ test("a change to the knowledge connector's tools reaches the driver tests whose
   const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
   for (const name of ['AgentsTextTests', 'BrainstormPostureTests', 'SuperviseContainmentTests']) {
     assert.match(driver, new RegExp(`\\.${name}\\b`), `the driver's reached classes name ${name}: ${plan.stdout.slice(-600)}`);
+  }
+});
+
+test('a change to an example plugin manifest reaches PluginInterfacesTests, and every path a [Reaches] reads exists (REACHPLUGIN1)', () => {
+  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'examples/plugins/daoris-azure-devops/plugin.json'], {
+    cwd: repoRoot, encoding: 'utf8', timeout: 600_000,
+  });
+  const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
+  assert.match(driver, /\.PluginInterfacesTests\b/, `the driver's reached classes name PluginInterfacesTests: ${plan.stdout.slice(-600)}`);
+  const { files, read } = reach.repository(repoRoot);
+  const gates = (JSON.parse(readFileSync(join(repoRoot, 'daoris.gates.json'), 'utf8')) as { gates: { name: string; run: string }[] }).gates
+    .filter((gate) => /process\.runsettings/.test(gate.run));
+  for (const gate of gates) {
+    for (const each of reach.censusOf(reach.halfOf(gate.run)!, files, read).classes as { full: string; reads?: string[] }[]) {
+      for (const path of each.reads ?? []) assert.ok(existsSync(join(repoRoot, path)), `${each.full}: [Reaches("${path}")] names a path that does not exist`);
+    }
   }
 });

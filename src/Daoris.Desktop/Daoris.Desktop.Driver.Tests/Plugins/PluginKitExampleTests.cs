@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
-public sealed class PluginKitExampleTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginKitExampleTests: IDisposable
 {
     private readonly string _scratch = Path.Combine(TestHomes.Root, "daoris-kit-examples-" + Guid.NewGuid().ToString("N")[..8]);
 

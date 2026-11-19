@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// service's REST API, so it declares Node.js alone, the one program it starts. No <c>git</c>, <c>gh</c> or <c>az</c> is declared, checked
 /// or started. Each floor is read by the driver's catalogue as written, and the README's <i>Why each version</i> says where it comes from.
 /// </summary>
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
 public sealed class ExamplePluginToolsTests
 {
     private static string Examples => Path.Combine(WorkspaceRoot.Folder, "examples", "plugins");

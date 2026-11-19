@@ -26,7 +26,7 @@
  *   the sources it compiles in by link, and every area where it compiles against a source project (the driver's host).
  * - Only what the files name is followed, not what the named types use in turn: the driver's modules name each other nearly
  *   all, so a closure over them would reach every class from every change. What that misses is the sweep's (the merge tool
- *   runs a whole half at least daily, and a release refuses older), and a hand-written `[Reaches]` with its reason (`src/…`: that path alone).
+ *   runs a whole half at least daily, and a release refuses older), and a hand-written `[Reaches]` with its reason (`src/…`, `tools/…` or `examples/…`: that path alone).
  * - **A class with no reach** is reached by every source path that reaches its half: an unknown runs.
  *
  * ## What a changed path reaches (`pathReach`)

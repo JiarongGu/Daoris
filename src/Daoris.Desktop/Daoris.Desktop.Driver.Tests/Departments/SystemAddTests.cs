@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Adding a system department from the terminal: the registration names its kind and its adapter's system, never a root, and is
 /// refused where the word names no system or no plugin installed and on adapts it.
 /// </summary>
-public sealed class SystemAddTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class SystemAddTests: IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-system-add-" + Guid.NewGuid().ToString("N")[..8]);
 

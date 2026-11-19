@@ -6,7 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The systems an adapter plugin declares: each a place reached only through its console, by its id, its name and the precondition
 /// its writes are guarded by. The rules' one table; a problem refuses the plugin, as a step's does.
 /// </summary>
-public sealed class PluginSystemsTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginSystemsTests: IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-systems-" + Guid.NewGuid().ToString("N")[..8]);
 

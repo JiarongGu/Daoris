@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// and a terminal names a plugin running commands by its id, or by the id without its family where no other installed plugin's id
 /// ends the same, an ambiguous short form refused with the candidates named.
 /// </summary>
-public sealed class PluginFamilyTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginFamilyTests: IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-plugin-family-" + Guid.NewGuid().ToString("N")[..8]);
 

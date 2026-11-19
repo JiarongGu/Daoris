@@ -201,7 +201,9 @@ finishes first and the whole set runs once.
     area reached through a program or a `[Reaches]`; the names are followed one level only, as before. A `[Reaches]` naming a
     path from the root (`src/Daoris.Service/Daoris.Service.Mcp`) is reached by a change to that path alone, its classes and not
     the half: the driver's tests whose goldens list the knowledge connector's tools (`AgentsTextTests`, `BrainstormPostureTests`,
-    `SuperviseContainmentTests`) carry it, so a tool's addition reaches each (TOOLGOLDENS1). A class reached by the merge's
+    `SuperviseContainmentTests`) carry it, so a tool's addition reaches each (TOOLGOLDENS1). The path may also be a data folder
+    (`examples/plugins`): the driver's classes that read the example plugins carry it, so a change to an example's manifest
+    reaches each, `PluginInterfacesTests` among them (REACHPLUGIN1); a census check holds that every such path exists. A class reached by the merge's
     paths has by definition inputs that moved from main, so a class pass replays only where the same inputs were proved before:
     by a builder's own checks (`node tools/reached-checks.mjs --base main`, or `--classes <names>`, which record each pass under the
     key the merge computes, and which take one place in the machine's heavy-run admission, said while they wait, for each heavy group:

@@ -8,7 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// entry alone and never the plugin, an interface this build does not know is named and skipped, and what names a refused entry is
 /// disabled with the reason.
 /// </summary>
-public sealed class PluginInterfacesTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginInterfacesTests: IDisposable
 {
     private readonly string _home = ScratchFolders.New("daoris-plugin-interfaces-");
 

@@ -2,7 +2,8 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-public sealed class PluginBriefsTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginBriefsTests: IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "plugin-briefs-" + Guid.NewGuid().ToString("N"));
     private static readonly PluginPlace Place = new("engine", "games");
