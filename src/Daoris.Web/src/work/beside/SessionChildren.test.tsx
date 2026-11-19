@@ -12,7 +12,7 @@ import { RECORDS, SESSION } from './beside.fixtures';
 
 const reader: BesideReader = {
   Child: ({ child, children }) => <>{children({ events: RECORDS[child] ?? null, loaded: true })}</>,
-  Tail: ({ children }) => <>{children(['Tests: 41 passed, 0 failed', 'Watching for changes…'])}</>,
+  Tail: ({ children }) => <>{children(['Tests: 41 passed, 0 failed', 'Watching for changes…'], null)}</>,
 };
 
 const view = (with_: BesideReader, onShow?: (key: string) => void) => render(

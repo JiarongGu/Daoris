@@ -41,6 +41,8 @@ export type Beside = {
   end?: BesideEnd | string | null;
   /** Who says the end: `reported` by its door, `inferred` from its session's close. */
   by?: string | null;
+  /** For a task: `person` where the person stopped it from the window, as its end's `origin` keeps it. */
+  stoppedBy?: 'person';
   /** For a background task that ended: the key of its row where it ended, which its start's row leads to. */
   endKey?: string;
   /** On a task's row where it ended: the key of the call that started it, which the row leads back to. */
@@ -66,7 +68,10 @@ export type SessionEvent = {
   /** A tool call's id: its updates carry the same one. */
   id?: string | null;
   text?: string | null;
-  /** For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. */
+  /**
+   * For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. For a `task`'s
+   * end: `person` where the person stopped it.
+   */
   origin?: string | null;
   /**
    * For `user`: `daoris` on Daoris's own words to the session, a reopen told or a step's go-on. Its origin is

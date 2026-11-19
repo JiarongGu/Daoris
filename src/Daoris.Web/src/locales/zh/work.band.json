@@ -1,0 +1,19 @@
+{
+  "work.band.running_one": "运行中 {{count}}",
+  "work.band.running_other": "运行中 {{count}}",
+  "work.band.nothing": "没有在运行的",
+  "work.band.agent": "智能体",
+  "work.band.thinking": "思考中",
+  "work.band.quiet": "{{span}} 无输出",
+  "work.band.follow": "跟随",
+  "work.band.open": "打开",
+  "work.band.stop": "停止 {{name}}",
+  "work.band.stopShort": "停止",
+  "work.band.ask": "停止 {{name}}？它的输出随之结束。",
+  "work.band.stopIt": "停止它",
+  "work.band.keep": "继续运行",
+  "work.band.stopping": "正在停止",
+  "work.band.notStopped": "{{name}} 没有停止：这里已没有运行它的会话，或者它的智能体什么也没有停止。",
+  "work.band.why.child": "没有智能体能单独停止子智能体：它随会话结束。",
+  "work.band.why.task": "它的智能体无法从这里停止这个任务：只有智能体标为可停止的任务才可以。"
+}
