@@ -53,7 +53,7 @@ public sealed class SignInWaitTests : IDisposable
             Task.FromResult(readings[Math.Min(_next++, readings.Length - 1)]);
     }
 
-    private void Asked(string session, string? site = Site)
+    private void Asked(string session, string? site = Site, bool conversation = false)
     {
         var file = new System.Text.Json.Nodes.JsonObject
         {
@@ -62,6 +62,7 @@ public sealed class SignInWaitTests : IDisposable
             ["at"] = "2026-11-19T09:00:00.0000000+00:00",
         };
         if (site is not null) file["site"] = site;
+        if (conversation) file["conversation"] = true;
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Sessions));
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, session + QuestionFiles.Suffix), file.ToJsonString());
     }
@@ -147,6 +148,31 @@ public sealed class SignInWaitTests : IDisposable
     [InlineData("not an address", false)]
     public void A_sign_in_address_is_one_whose_host_or_path_names_a_sign_in(string address, bool signIn) =>
         Assert.Equal(signIn, SignInSightings.SignInAddress(address));
+
+    /// <summary>
+    /// 🔴 A conversation's sign-in question (its file marked as a conversation's) is answered as a park's is: the browser's sign-in
+    /// is said to the conversation once, as its next turn, and its question goes, so no later look says it again.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_sign_in_is_said_to_it_once_and_its_question_goes()
+    {
+        Asked("c1", conversation: true);
+        var browser = new Pages(
+            [Page("t1", "https://portal.example.com/settings")],
+            [Page("t1", "https://login.example.net/oauth2/authorize?client=portal")],
+            [Page("t1", "https://portal.example.com/settings")]);
+        var said = new List<(string Session, string Key)>();
+        Task<SayAnswer> Say(string session, string text, string key, CancellationToken ct)
+        {
+            said.Add((session, key));
+            return Task.FromResult(new SayAnswer(true, "kept."));
+        }
+
+        for (var look = 0; look < 5; look++) await SignInAnswers.SayAsync(_home, browser, Say, _closing.Token);
+
+        Assert.Equal([("c1", "sign-in:c1:q-sign")], said);
+        Assert.Null(new QuestionFiles(_home).Read("c1"));
+    }
 
     /// <summary>The question's file keeps its site, read back as a web page's address alone.</summary>
     [Fact]

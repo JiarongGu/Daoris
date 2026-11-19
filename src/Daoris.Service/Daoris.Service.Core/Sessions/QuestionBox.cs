@@ -109,7 +109,7 @@ public sealed class QuestionBox(string? home)
 
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to ask in. Nothing was asked.");
-        if (Unfit(asker) is { } unfit) return (null, $"{unfit} Nothing was asked.");
+        if (Unfit(asker, signIn is not null) is { } unfit) return (null, $"{unfit} Nothing was asked.");
 
         var words = question?.Trim() ?? "";
         if (words.Length == 0) return (null, "A question needs the question: what only the person can decide, in a sentence or two. Nothing was asked.");
@@ -189,6 +189,7 @@ public sealed class QuestionBox(string? home)
             if (when is null) writer.WriteNull("by"); else writer.WriteString("by", when);
             if (mark is null) writer.WriteNull("owner"); else writer.WriteString("owner", mark);
             if (signIn is not null) writer.WriteString("site", signIn);
+            if (signIn is not null && IsConversation(asker)) writer.WriteBoolean("conversation", true);
             if (role is not null) writer.WriteString("role", role);
             writer.WriteString("at", Moments.Write(at));
         });
@@ -216,8 +217,9 @@ public sealed class QuestionBox(string? home)
     /// has none to hold while it waits, and one parked or ended runs no turn to end on it. The sentence says which, or null when it
     /// may ask. Judged here whole: the hand-over ask's <c>Unfit</c> lets a conversation and a record on no quest through.
     /// </summary>
-    private static string? Unfit(Session asker) =>
-        asker.Opinion is { } opinion
+    private static string? Unfit(Session asker, bool signIn) =>
+        signIn && IsConversation(asker) ? null
+        : asker.Opinion is { } opinion
             ? $"Session `{asker.Id}` reads another session's work for second opinion `{opinion}`: a reviewer asks the person nothing."
         : asker.Serves is { } serves
             ? $"Session `{asker.Id}` is a helper for session `{serves}`: a helper answers one question and asks the person nothing."
@@ -232,6 +234,11 @@ public sealed class QuestionBox(string? home)
         : asker.State is not (SessionState.Queued or SessionState.Starting or SessionState.Working)
             ? $"Session `{asker.Id}` is not running a turn, so it has no turn to end on a question."
         : null;
+
+    /// <summary>A conversation proper: a chat that is no helper, reviewer, intake or Ask Daoris's own, whose person reads its words as they come.</summary>
+    private static bool IsConversation(Session asker) =>
+        asker.Kind == SessionKind.Chat && asker.Opinion is null && asker.Serves is null && asker.Ask is null && asker.HelpMode is null
+        && !string.Equals(asker.Repository, SessionLedger.HelpRepository, StringComparison.Ordinal);
 
     /// <summary>The question kept for a session, or null when there is none or it does not read.</summary>
     public static QuestionKept? Read(string home, string session)
@@ -269,6 +276,7 @@ public sealed class QuestionBox(string? home)
                 Why = Text(root, "why"),
                 Owner = Text(root, "owner") is { Length: > 0 } owner ? owner : null,
                 Site = SiteOf(Text(root, "site")),
+                Conversation = root.TryGetProperty("conversation", out var chat) && chat.ValueKind == JsonValueKind.True,
                 Role = Text(root, "role") is { Length: > 0 } role ? role : null,
             };
         }
@@ -315,6 +323,9 @@ public sealed record QuestionKept(
     public string? Site { get; init; }
 
     public string? Role { get; init; }
+
+    /// <summary>Asked by a conversation (a sign-in only): there is no park to bind it to, so its sign-in is said to the conversation and the file goes.</summary>
+    public bool Conversation { get; init; }
 }
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
