@@ -57,6 +57,13 @@ export function executorSaid(t: TFunction, step: WorkflowStep): string {
     : t('workflow.executor.agent');
 }
 
+/** Who takes part and who acts: the agent alone where one holds the step, else what its kind declares. */
+export function whoSaid(t: TFunction, step: WorkflowStep, agentHolds = false): { participation: WorkflowStep['participation']; executor: string } {
+  return agentHolds
+    ? { participation: 'agent', executor: t('workflow.executor.agent') }
+    : { participation: step.participation, executor: executorSaid(t, step) };
+}
+
 /** What a step is set to, as sentences: the settings its kind carries, in the reader's words. */
 export function stepSet(t: TFunction, step: WorkflowStep): string | null {
   const join = (parts: string[]) => parts.join(t('workflow.set.join'));

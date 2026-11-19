@@ -43,17 +43,53 @@ describe('RunWaitsHead', () => {
 
   it('names the holder its row reads, passes the epoch the row read, and draws the row’s holder presses', async () => {
     const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'sign', act: 'approve', done: true });
-    const row: StepWaitRow = { ...SIGN, holder: 'agent', holderName: 'beta', epoch: 3, holds: ['take', 'hand', 'give-back'] };
+    const row: StepWaitRow = { ...SIGN, holder: 'agent', holderName: 'beta', epoch: 3, holds: ['hand', 'give-back'] };
     render(
       <RunWaitsHead waits={[{ run: 'q7', node: 'sign', why: 'approval', role: 'approver' }]} steps={[row]} onWord={onWord}
         hold={(held) => <button type="button">{`hold ${held.holds?.join(' ')}`}</button>} />,
     );
 
     const line = screen.getByRole('group', { name: 'sign: waiting on approver: beta' });
-    expect(within(line).getByRole('button', { name: 'hold take hand give-back' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'hold hand give-back' })).toBeInTheDocument();
     await userEvent.click(within(line).getByRole('button', { name: 'Approve…' }));
     await userEvent.click(within(line).getByRole('button', { name: 'Approve' }));
     expect(onWord).toHaveBeenCalledWith({ run: 'q7', node: 'sign', act: 'approve', epoch: 3, words: null });
+  });
+
+  it('reads an agent-held task step as the agent’s with Take alone, and none of the person’s presses', () => {
+    const row: StepWaitRow = {
+      run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer', holder: 'agent', holderName: 'builder-1', presses: ['done', 'skip', 'stop'],
+      epoch: 2, holds: ['take', 'hand'],
+    };
+    render(
+      <RunWaitsHead waits={[{ run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer' }]} steps={[row]} onWord={vi.fn()}
+        hold={(held) => <button type="button">{`hold ${held.holds?.join(' ')}`}</button>} />,
+    );
+
+    const line = screen.getByRole('group', { name: 'config-change: waiting on config-changer: builder-1' });
+    expect(within(line).getByRole('button', { name: 'hold take hand' })).toBeInTheDocument();
+    for (const name of ['Done…', 'Not needed this run…', 'End this work…']) expect(within(line).queryByRole('button', { name })).toBeNull();
+  });
+
+  it('says what the agent is blocked on the person for, linking that wait in the dock, never offering the task’s presses', async () => {
+    const row: StepWaitRow = {
+      run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer', holder: 'agent', holderName: 'builder-1', presses: [], epoch: 2, holds: ['take'],
+    };
+    const onTo = vi.fn();
+    render(
+      <RunWaitsHead waits={[{ run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer' }]} steps={[row]}
+        blocked={[{ key: 'intake:a1', name: 'question' }]} onTo={onTo} />,
+    );
+
+    const line = screen.getByRole('group', { name: 'config-change: waiting on config-changer: builder-1' });
+    expect(line).toHaveTextContent('builder-1 is waiting on you');
+    await userEvent.click(within(line).getByRole('button', { name: 'question' }));
+    expect(onTo).toHaveBeenCalledWith('intake:a1');
+  });
+
+  it('draws no blocked line on a step the person holds', () => {
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'sign', why: 'approval', role: 'approver' }]} steps={[SIGN]} blocked={[{ key: 'intake:a1', name: 'question' }]} onTo={vi.fn()} />);
+    expect(screen.queryByText(/is waiting on you/)).toBeNull();
   });
 
   it('offers the step a run ended failed at its Try again, Done outside Daoris and End this work, whatever its quest', async () => {

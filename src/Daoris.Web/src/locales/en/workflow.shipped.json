@@ -26,7 +26,7 @@
   "workflow.shipped.in-copy.name": "In-copy workflow",
   "workflow.shipped.in-copy.for": "For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
   "workflow.shipped.pull-request-release.name": "Pull request and release workflow",
-  "workflow.shipped.pull-request-release.for": "For a repository on Azure DevOps that releases: you review the work, a plugin pushes its branch and opens a pull request; once it is merged the release runs as steps of its own (target, create, start, approve, watch), each settled on what Azure DevOps holds, whoever made it. Then the release manager proposes whether a config change is needed and the owner confirms it; the config changer changes the live config where it is needed, and operations checks the release.",
+  "workflow.shipped.pull-request-release.for": "For a repository on Azure DevOps that releases: you review the work, a plugin pushes its branch and opens a pull request; once it is merged the release manager releases it by its own acts, as the repository's delivery knowledge says, each settled by its receipt, while the approver approves the stage. Then the release manager proposes whether a config change is needed and the owner confirms it; the config changer changes the live config where it is needed, and operations checks the release.",
 
   "workflow.shipped.delivery.merge-after-accept.name": "Merge after you accept",
   "workflow.shipped.delivery.merge-after-accept.for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",

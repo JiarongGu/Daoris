@@ -4,7 +4,7 @@ import type { IconName } from '../design/ui';
 import { textOf, type CurrentWorkflow, type WorkflowStep } from './current';
 import { type DrawnNode, type DrawnWire, type DrawOptions, FINISHED, type GraphFlow, graphFlow, WORKFLOW_TRACK } from './graphFlow';
 import type { GraphRun } from './run';
-import { executorSaid, stepTitle } from './said';
+import { stepTitle, whoSaid } from './said';
 
 // A workflow and its run drawn as flowcharts: what
 // `WORKFLOW_CURRENT` and `WORKFLOW_RUN` answer, read onto the one drawing (`graphFlow`). The page derives nothing the driver
@@ -63,7 +63,7 @@ export function outcomeSaid(t: TFunction, outcome: StepOutcome): string {
 }
 
 /** How a run lights one step, and its end: the state's word and tone (`runTone`), and whether it is reached, is current or is done. */
-export type StepLit = { state: { word: string; tone: PillTone }; reached: boolean; current: boolean; settled: boolean };
+export type StepLit = { state: { word: string; tone: PillTone }; reached: boolean; current: boolean; settled: boolean; agent?: boolean };
 export type FlowLit = { steps: Partial<Record<string, StepLit>>; finished: { word: string; tone: PillTone } | null };
 
 export type WorkflowFlow = GraphFlow;
@@ -103,13 +103,14 @@ export function workflowFlow(
   };
   const nodeOf = (step: WorkflowStep): DrawnNode => {
     const on = lit?.steps[step.id];
+    const who = whoSaid(t, step, on?.agent);
     return {
       id: step.id,
       kind: step.kind,
       ...returned(step),
       title: plain(stepTitle(t, step)),
       glyph: glyphOf(step),
-      actor: t('workflow.flow.who', { part: t(`workflow.participation.${step.participation}`), executor: plain(executorSaid(t, step)) }),
+      actor: t('workflow.flow.who', { part: t(`workflow.participation.${who.participation}`), executor: plain(who.executor) }),
       ...(on ? { state: on.state, reached: on.reached, current: on.current, settled: on.settled } : {}),
     };
   };

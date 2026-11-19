@@ -61,7 +61,8 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
   /** What a wait came to with its fact still not made: read once (a check), not yet so; else its deadline passed. */
   const late = (words, url) => (once ? answered('failed', 'not-yet', words, url) : answered('failed', 'timeout', `${words} The step's deadline passed.`, url));
 
-  const repo = located(unit);
+  const repo = unit.repo ?? located(unit);
+  let reread = false;
   /** Refused once Daoris stood the attempt down (`attempt.signal`, the kit's): read before every write and in every wait, so nothing is made after it. */
   const standing = (what) => {
     if (attempt.signal?.aborted) throw new Refusal('stood-down', `stood down (${attempt.signal.reason ?? 'by Daoris'}) before ${what}, so nothing was made`);
@@ -79,7 +80,8 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
         else if (!TRANSIENT.includes(error.code)) throw error;
         else say(`${error.message}; asked again.`);
       }
-      if (once || Date.now() + asked.every > ends) return undefined;
+      if ((once && !reread) || Date.now() + asked.every > ends) return undefined;
+      reread = false;
       await pause(asked.every, attempt.signal);
     }
   };
@@ -218,6 +220,7 @@ export async function releaseStep(id, attempt, unit, say, progress = () => {}, o
         const set = await releases(repo, 'PATCH', `/releases/${release.id}/environments/${environment.id}`, { status: 'inProgress', comment: `Started by Daoris for ${short}.`, scheduledDeploymentTime: null });
         if (set.status === 200) {
           started = true;
+          reread = true;
           return undefined;
         }
         const again = (await releases(repo, 'GET', `/releases/${release.id}`)).json;

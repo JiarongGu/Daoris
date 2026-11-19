@@ -32,6 +32,11 @@ public static class StepSettles
         var act = decision ? NodeWordActs.Decide : NodeWordActs.Done;
         var status = records.Read(bound.Unit) is { } kept ? WorkPerformer.StatusOf(kept, node) : null;
         if (status is null || !AgentSettles.Tool(declared, status)) return new(run, node, act, RunNodeWords.NotWaiting) { State = status?.State };
+        if (StepReceipts.Mapped(declared) is { Count: > 0 } receipts)
+        {
+            return new(run, node, act, StepReceipts.ByReceipt) { Detail = string.Join(", ", receipts.Values.Distinct(StringComparer.Ordinal)), State = status.State };
+        }
+
         var outcome = string.IsNullOrWhiteSpace(ask.Outcome) ? null : ask.Outcome.Trim();
         if (decision ? outcome is null || !declared.Outcomes.Contains(outcome, StringComparer.Ordinal) : outcome is not null && outcome != "done")
         {
@@ -50,6 +55,8 @@ public static class StepSettles
     public static string Said(NodeWorded done) => (done.Refused, done.Act) switch
     {
         (null, _) => $"Your settle of `{done.Node}` on run #{done.Run} is kept; Daoris's next look applies it and hands you the next step it holds for you.",
+        (StepReceipts.ByReceipt, _) =>
+            $"Your settle of `{done.Node}` on run #{done.Run} is refused: the receipts of your acts settle it ({done.Detail}), journaled as you take them. Nothing was kept.",
         (MissingEvidence, _) => $"Your settle of `{done.Node}` on run #{done.Run} is refused: it names its evidence, and leaves out {done.Detail}. Nothing was kept.",
         (RunNodeWords.NotOutcome, _) => $"Your settle of `{done.Node}` on run #{done.Run} is refused: answer with one of its outcomes ({done.Detail}). Nothing was kept.",
         (RunNodeWords.NotWaiting, _) =>

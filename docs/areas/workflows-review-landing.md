@@ -21,6 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), and the pass that journals and settles by them (`StepActs`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -84,14 +85,23 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
    owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
    page, its step still under way until its holder's word. Saved
-   versions keep the bundled `release` step; the shipped `pull-request-release` preset names the five steps after its Azure DevOps pull
-   request merges, then the after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the
-   work's session from its hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the
-   config changer, whose *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by
-   operations; "not needed" passes `config-change` on the record naming both holders. Each step after the merge declares its role
-   (`role`: the release manager for the target, create, start and the decision; the approver for approve; operations for the watch and
-   the check; the config changer for the change), and the chart draws the decision's `not-needed` route as *Not needed this run*, never
-   as *No further step*.
+   versions keep the bundled `release` step, and versions naming the five steps keep them, the reader D325 names with its end.
+3e. A role's acts are its holder's tools, settled by their receipts (D325). A `task` step's `receipts` option maps each evidence name to
+   the fact a tool's receipt names, and its `knowledge` option names the repository's delivery knowledge entry holding its procedure
+   (`StepReceipts`); its hand-off names that entry, its acts and their facts in place of `step_settle`. Each round of the run's working
+   session's plugin tools that answered a receipt is kept for the session by the tools server (`StepActFiles`, whatever its exit), and
+   the pass at the look's deadline journals it once on the run (`workflows/acts/<key>.json`) against the agent-held step waiting whose receipts take its fact,
+   with its attempt and epoch, where the round came after the step waited (`StepActs`, before the hand-off in `HandStepsAsync`); a round no
+   such step takes is journaled nowhere. Once the newest receipt of each mapped fact is reached the pass settles the step done at the
+   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The shipped
+   `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
+   `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
+   after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its
+   hand-back) and the owner confirms at a marked destination, `config-change` where it is needed, waiting on the config changer, whose
+   *Done* note gives the new version's id and a capture's link, and `check-release` after either, held by operations; "not needed" passes
+   `config-change` on the record naming both holders. Each step after the merge declares its role (`role`: the release manager for the
+   release and the decision; the approver for approve; operations for the check; the config changer for the change), and the chart draws
+   the decision's `not-needed` route as *Not needed this run*, never as *No further step*.
 3b. A release target is keyed by the deployable it releases. A repository declares its deployables in its own `daoris.json`
    (`deployables`: an `id` unique in it, the repository-relative `paths` that build it, and what it `provides`, `owns` or `migrates`,
    and `consumes`, as a `mirror`, `calls` or `reads`, by resource), read from its line's `daoris.json` blob (`DeployableDeclaration`;
@@ -635,7 +645,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
-    point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. That an
+    point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step
+    the run's agent holds and the person may *Take* reads as the agent's on every surface (`heldByAgent`, `takeFirst`): its node's part says
+    "agent alone", by an agent, never the *you* its kind declares (`whoSaid`), its card and the head's carry *Take* alone and none of the
+    step's own presses (Done, a skip, a stop: `NodeWord` draws none until a take), and where the session's dock holds a question, sign-in
+    or go-ahead its agent asked, the head's card says the agent waits on the person for it with a link to that line. The person's held
+    step keeps its presses. (AGENTSTEPCARD1) That an
     agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record

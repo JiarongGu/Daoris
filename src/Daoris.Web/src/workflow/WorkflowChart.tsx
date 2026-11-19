@@ -7,7 +7,7 @@ import { FlowChart } from './chart/FlowChart';
 import type { ChartNode } from './chart/stepKinds';
 import { aroundTheLanding, setupDoorOf, textOf, type CurrentWorkflow, type WorkflowParticipation, type WorkflowStep } from './current';
 import { stateSaid } from './runSaid';
-import { edgeSaid, executorSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle } from './said';
+import { edgeSaid, holdsSaid, limitSaid, sourceSaid, stepSet, stepTitle, whoSaid } from './said';
 import { type FlowGraph, type FlowLit, glyphOf, outcomeOf, outcomeSaid, WORKFLOW_TRACK, workflowFlow } from './workflowFlow';
 
 /** Where a step's door leads: this page's own Setup at a section, the workspace's Setup, or a repository's own workflow. */
@@ -32,6 +32,7 @@ export type RunMarks = Record<string, {
   at?: boolean;
   state?: { word: string; tone: PillTone };
   settled?: boolean;
+  agent?: boolean;
   node?: ReactNode;
   open?: () => void;
 }>;
@@ -137,6 +138,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
   const { t } = useTranslation();
   const titleId = useId();
   const limit = limitSaid(t, step, limits);
+  const who = whoSaid(t, step, run?.agent);
   // A step the work has not come to keeps its words at a token ink, never faint by opacity (the flowchart design §3.3, trap 9).
   const faint = run !== undefined && !run.reached;
 
@@ -151,7 +153,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
       className={cn(RAIL_ROW, 'rounded-control')}
     >
       <div aria-hidden className="flex flex-col items-center">
-        <span className="flex h-5 items-center"><PartMark participation={step.participation} /></span>
+        <span className="flex h-5 items-center"><PartMark participation={who.participation} /></span>
         <RailLine into={into} />
       </div>
       <div className="min-w-0 pb-1">
@@ -161,9 +163,9 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
             <span className="min-w-0"><Inline text={stepTitle(t, step)} /></span>
           </h4>
           <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
-            {t(`workflow.participation.${step.participation}`)}
+            {t(`workflow.participation.${who.participation}`)}
           </span>
-          <span className="min-w-0 text-small text-ink-soft"><Inline text={executorSaid(t, step)} /></span>
+          <span className="min-w-0 text-small text-ink-soft"><Inline text={who.executor} /></span>
         </div>
         {run
           ? (
@@ -244,15 +246,16 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
 }
 
 /** Who acts in a step's node: the person's part by its shape and its word, and the executor, names as code. */
-export function Who({ step }: { step: WorkflowStep }) {
+export function Who({ step, agent = false }: { step: WorkflowStep; agent?: boolean }) {
   const { t } = useTranslation();
+  const who = whoSaid(t, step, agent);
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
       <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
-        <PartMark participation={step.participation} />
-        {t(`workflow.participation.${step.participation}`)}
+        <PartMark participation={who.participation} />
+        {t(`workflow.participation.${who.participation}`)}
       </span>
-      <span className="min-w-0"><Inline text={executorSaid(t, step)} /></span>
+      <span className="min-w-0"><Inline text={who.executor} /></span>
     </span>
   );
 }
@@ -391,6 +394,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
       if (!mark) return [];
       return [[step.id, {
         state: mark.state ?? { word: '', tone: 'neutral' as const }, reached: mark.reached, current: mark.at === true, settled: mark.settled === true,
+        agent: mark.agent === true,
       }]];
     })),
     finished: finished ? { word: stateSaid(t, 'done'), tone: 'done' } : null,
@@ -406,7 +410,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
     const open = mark ? mark.open : press?.open;
     return {
       ...node,
-      who: <Who step={step} />,
+      who: <Who step={step} agent={mark?.agent} />,
       lines: (
         <>
           {node.lines && <p className="m-0 mb-1 text-meta">{node.lines}</p>}

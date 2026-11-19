@@ -41,6 +41,7 @@
   "work.head.letGo": "Let go of the terminal",
   "work.head.notHeld": "No terminal holds this conversation now.",
   "work.head.runWait": "{{node}}: waiting on `{{role}}`: {{holder}}",
+  "work.head.runWaitBlocked": "{{holder}} is waiting on you:",
   "work.head.state.needsYou": "Waiting on you",
   "work.head.state.step": "Waiting on a step",
   "work.head.state.working": "Working",
