@@ -264,7 +264,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     in its dock. The look's `browser-sign-ins` pass reads the running browser's pages (`IInAppBrowser.PagesAsync`, never bringing
     it up) through `SignInSightings`, kept beside the browser: a page that went through a sign-in address and came back to the
     site's host settles the park with Daoris's word under one key, and the next look takes it up. *Signed in* is the person's
-    answer, sent as those words. (D324)
+    answer, sent as those words. A conversation asks the same way (the one question `question_ask` takes from it; Ask Daoris's
+    own conversation, helpers, reviewers and intakes none): its file is marked `conversation`, the sighting says the word to it as
+    its next turn, and the question goes once the word is kept, since a conversation has no run opening to clear it. (D324)
 
 ## Where a change goes
 

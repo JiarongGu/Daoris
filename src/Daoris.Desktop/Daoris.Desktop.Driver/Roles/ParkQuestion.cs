@@ -12,7 +12,11 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record ParkQuestion(
     string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
-    string? Why = null, string? Owner = null, string? Site = null, string? Role = null);
+    string? Why = null, string? Owner = null, string? Site = null, string? Role = null)
+{
+    /// <summary>Asked by a conversation, which has no park: its sign-in is said to it and the file goes.</summary>
+    public bool Conversation { get; init; }
+}
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
 public sealed record ParkQuestionChoice(string Label, string Does);
@@ -70,6 +74,9 @@ internal static class ParkQuestions
         // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
         var role = Text(root, "role") is { } asked && RoleShape.IsMatch(asked) ? asked : null;
-        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")), role);
+        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")), role)
+        {
+            Conversation = root.TryGetProperty("conversation", out var chat) && chat.ValueKind == JsonValueKind.True,
+        };
     }
 }
