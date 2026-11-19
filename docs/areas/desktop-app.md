@@ -458,5 +458,13 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent
   takes the conversation's place with a breadcrumb back (`work/beside/`); a background task is a row under its call and a row where
   it ended, with its last lines from its console stream, each leading to the other. *At work* draws no subagents of its own.
+- **The window redesign** (UIDS, UISH, UISE, UIWF, UIRP, UIST; D329 to D344; `docs/2026-11-19-window-design.md`): every screen
+  is redesigned over the records Daoris keeps: a token role set with amber the owner's alone and one type scale for Latin and Han
+  (D330) on a Radix-based library (D329) with a catalogue of globals and tracked pictures (D331); six places (D332), a title
+  strip with no menu bar (D333), fixed regions (D334), Notifications retired (D335), the owner's kinds alone counted and answered
+  on one card (D336), a failure held to its region (D337), Get started as a path (D338), a session's facts rail (D339), every owner
+  act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), money against a
+  weekly budget (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
+  row rewrites the rule it makes false.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.
