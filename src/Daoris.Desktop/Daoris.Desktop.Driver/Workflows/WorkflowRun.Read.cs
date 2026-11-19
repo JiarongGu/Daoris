@@ -313,6 +313,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, bound, graph, record)
             {
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+                Slots = CheckSlotWaits.Read(sources.Home, graph, record),
                 Needs = RunNeeds.Of(sources.Home, record), Holding = StepTenureFiles.HoldingOf(sources.Home, bound, record),
                 Cast = CastReading.Home(sources.Home, workspace, repository), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
             },
@@ -357,6 +358,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, run, graph, record)
             {
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
+                Slots = CheckSlotWaits.Read(reads.Sources.Home, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
                 Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository),
                 Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),

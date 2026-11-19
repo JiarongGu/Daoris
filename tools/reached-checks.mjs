@@ -22,7 +22,7 @@
  * which the merge tool hands its gate in `{base}`. `--paths` names them, `--plan` runs nothing. With nothing changed nothing is reached.
  *
  * A builder's own checks: `--base main` takes what its branch changed, `--classes` names classes (`--measure` times them whatever a
- * standing pass says, recording none); each pass is recorded for the merge to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
+ * standing pass says, recording none); each pass is recorded as its group ends, for the merge and the next check to replay. A failed class runs again alone once (a pass alone is a FLAKE); the last line, `reached-classes: {…}`, is the record's.
  *
  * Its time goes to tests: the census is read once per content tree (`merge/census-cache.ts`), each test project built once and its
  * classes run in one `dotnet test --no-build --no-restore` (`merge/reached-build.ts`), the light suites' runs beside the build and the
@@ -222,7 +222,7 @@ async function main(argv) {
   const startedAt = Date.now();
   const load = loadSampler(); // the records this run writes are marked with the heavy runs under way
   const outcome = await runPlan({
-    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock, processSuites,
+    root, plan, keys, store, replayed, night, deferred: deferred.map((unit) => unitId(unit)), say, clock, processSuites, record: !measure,
     exec: run.exec,
     inPlace: run.inPlace,
     ...(halt ? { halt } : {}),
