@@ -6,7 +6,7 @@ import { roleSaid } from './stepRoles';
 const STATES: Record<string, true> = { reached: true, waiting: true, failed: true };
 
 /**
- * The acts journaled on a step while its holder acts (D325 point 6), one row each under it: the fact its receipt names and its state, its
+ * The acts journaled on a step while its holder acts, one row each under it: the fact its receipt names and its state, its
  * words, its credit and page, and *waiting on `<role>`: <holder>* where the receipt waits on another role. Nothing where none is journaled.
  */
 export function StepActRows({ step }: { step: RunStep }) {

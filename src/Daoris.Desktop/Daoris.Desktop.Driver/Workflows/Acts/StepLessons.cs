@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a step's acts came to, proposed into the repository's delivery knowledge entry the step names (D325's long loop): a step settled by
+/// What a step's acts came to, proposed into the repository's delivery knowledge entry the step names (the long loop): a step settled by
 /// its receipts whose act did not reach at once (refused, failed, waiting on another role) and reached after, its failure and what reached
 /// it, from one run and step.
 /// </summary>

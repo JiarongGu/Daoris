@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// that answer (null with none recommended), and the agent's mark that the question is the owner's alone
 /// (null for none), read as written, a mark this build does not know included: the supervisor answers no marked question. And the
 /// site whose sign-in it waits on, a web page's address (null for none): the person's sign-in there, or Daoris's browser seeing it, settles it.
-/// And the role the request asks (D325's one door: <c>credentials-keeper</c>, <c>approver</c>, <c>owner</c>), a role's id, or null for the line above.
 /// </summary>
 public sealed record ParkQuestion(
     string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
@@ -26,6 +25,9 @@ internal static class ParkQuestions
 {
     /// <summary>The writer's bounds (<c>QuestionBox</c>), held on read: the question, its answers, each label and each <c>does</c>, and by when.</summary>
     public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200, MaxWhy = 300, MaxSite = 500;
+
+    private static readonly System.Text.RegularExpressions.Regex RoleShape =
+        new(@"^(?=.{1,40}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>A site as a sign-in question names it: an http or https page's address with a host and no credentials, else null.</summary>
     internal static string? SiteOf(string? address) =>
@@ -67,7 +69,7 @@ internal static class ParkQuestions
         var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
         // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
-        var role = Text(root, "role") is { } asked && StepRoles.Shape.IsMatch(asked) ? asked : null;
+        var role = Text(root, "role") is { } asked && RoleShape.IsMatch(asked) ? asked : null;
         return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")), role);
     }
 }

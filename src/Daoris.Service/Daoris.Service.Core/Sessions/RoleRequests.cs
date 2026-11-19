@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One request to another role (D325, ACTORFLOW1c): what the asker needs, the role it asks where it is not the line above it, and, for an
+/// One request to another role: what the asker needs, the role it asks where it is not the line above it, and, for an
 /// act, the act (its kind, what it touches and where it lands); and each channel's own parts. <c>question_ask</c> makes it, and
 /// <c>go_ahead_ask</c> and <c>helper_ask</c> make it on their channel.
 /// </summary>
@@ -45,7 +45,7 @@ public sealed record RoleRequest(string? Session, string? Question)
 }
 
 /// <summary>
-/// The one door a session asks another role through (D325, ACTORFLOW1c), each request going out on the channel the role's holder takes it on,
+/// The one door a session asks another role through, each request going out on the channel the role's holder takes it on,
 /// and each answer coming back as the asker's next turn: the helper role's is one helper's reading (<see cref="HelperBox"/>); an act the person
 /// allows, a go-ahead held on the ask (<see cref="SessionGoAheads"/>); the credentials keeper's, the person's sign-in, a question marked
 /// <c>sign-in</c> at its site; any other, a question in the asker's conversation naming the role (<see cref="QuestionBox"/>), which a supervisor

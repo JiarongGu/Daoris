@@ -5,7 +5,7 @@ using Daoris.Ports.Browser;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D325's ACTORFLOW1c proof: an agent holding the release, whose start is refused for its sign-in, asks the credentials keeper through the
+/// The request loop's proof: an agent holding the release, whose start is refused for its sign-in, asks the credentials keeper through the
 /// one request door; the person's sign-in answers it as the agent's next turn through the say door, the agent's retry's receipt settles the
 /// step with no word from anyone else, and what the act came to is proposed into the repository's delivery knowledge entry, carried by the
 /// next run's hand-off of a step naming it. Each seen failing first.
@@ -166,7 +166,7 @@ public sealed class RoleRequestLoopTests : NodeRunFixture
         Assert.Contains("sign-in expired", next, StringComparison.Ordinal);
     }
 
-    /// <summary>D325 point 6: the run's view draws one row per act journaled on the step's attempt, a wait naming its role and that role's holder.</summary>
+    /// <summary>The run's view draws one row per act journaled on the step's attempt, a wait naming its role and that role's holder.</summary>
     [Fact]
     public void The_runs_view_draws_one_row_per_act_journaled_on_the_steps_attempt()
     {

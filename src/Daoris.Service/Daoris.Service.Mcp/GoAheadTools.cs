@@ -27,7 +27,7 @@ public sealed class GoAheadTools(IntakeScope? intake = null, SessionLedger? ledg
         string why,
         CancellationToken ct = default)
     {
-        // A channel of the one door (D325): the same request `question_ask` makes for an act, held once per act on the ask.
+        // A channel of the one door: the same request `question_ask` makes for an act, held once per act on the ask.
         var request = new RoleRequest(intake?.Session, why) { Kind = kind ?? "", Touches = act, On = on };
         return await QuestionTools.Requests(intake, ledger, null, null).AskAsync(request, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
     }

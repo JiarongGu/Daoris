@@ -5,12 +5,14 @@ using Daoris.Knowledge.Mcp;
 namespace Daoris.Service.Tests;
 
 /// <summary>
-/// D325's one door: `question_ask` names the role asked and, for an act, the act, and the request goes out on the channel that role's
-/// holder takes it on. `go_ahead_ask` and `helper_ask` are channels of the same request: each fold is answered as the old tool's was, and
-/// a caller of the old tool lands on the same request. Each seen failing first.
+/// The one door: `question_ask` names the role asked and, for an act, the act, and the request goes out on the channel that role's
+/// holder takes it on. `go_ahead_ask` and `helper_ask` are channels of the same request, so a caller of either lands on it. Each seen
+/// failing first.
 /// </summary>
 public sealed class McpRoleRequestTests : McpToolsFixture
 {
+    private static readonly DateTimeOffset At = new(2026, 11, 19, 9, 0, 0, TimeSpan.Zero);
+
     private string Home => Path.Combine(_root, "request-home");
 
     private async Task<(SessionLedger Ledger, AskDesk Desk, AskOutcome Asked)> AskedAsync()
@@ -19,7 +21,7 @@ public sealed class McpRoleRequestTests : McpToolsFixture
         var asks = await AskStore.OpenAsync(_connection);
         var ledger = new SessionLedger(_quests, sessions, _service, asks);
         var desk = new AskDesk(_service, asks, new QuestExchange(_service, _quests, files: _files), _files);
-        var asked = await desk.AskAsync(new AskRequest("default", "The dashboard figure reads zero.") { To = "Owner" }, DateTimeOffset.UtcNow);
+        var asked = await desk.AskAsync(new AskRequest("default", "The dashboard figure reads zero.") { To = "Owner" }, At);
         return (ledger, desk, asked);
     }
 
@@ -31,8 +33,8 @@ public sealed class McpRoleRequestTests : McpToolsFixture
     {
         var (ledger, desk, asked) = await AskedAsync();
         var quest = asked.Quest!;
-        var first = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "a"))).Session!;
-        var second = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b"))).Session!;
+        var first = (await ledger.OpenAsync(quest.Id, "stub", At, tree: Path.Combine(_root, "trees", "a"))).Session!;
+        var second = (await ledger.OpenAsync(quest.Id, "stub", At, tree: Path.Combine(_root, "trees", "b"))).Session!;
 
         var asking = await Door(ledger, first.Id).AskAsync(
             "The tile's target needs the production configuration changed; I would set it to 1,200.", act: "write dashboard configuration", on: "production");
@@ -49,7 +51,7 @@ public sealed class McpRoleRequestTests : McpToolsFixture
     public async Task The_helper_role_asked_through_the_door_is_a_helpers_reading_as_helper_ask_writes_it()
     {
         var (ledger, _, asked) = await AskedAsync();
-        var session = (await ledger.OpenAsync(asked.Quest!.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "h"))).Session!;
+        var session = (await ledger.OpenAsync(asked.Quest!.Id, "stub", At, tree: Path.Combine(_root, "trees", "h"))).Session!;
 
         var said = await Door(ledger, session.Id).AskAsync("Does the retry loop in Report.cs stop at five?", role: "helper");
         var refused = await Door(ledger, session.Id).AskAsync("Release it for me.", role: "helper", act: "release the app", on: "production");
@@ -67,7 +69,7 @@ public sealed class McpRoleRequestTests : McpToolsFixture
     public async Task The_credentials_keeper_is_asked_for_a_sign_in_kept_with_its_role_and_another_repositorys_role_travels_as_a_quest()
     {
         var (ledger, _, asked) = await AskedAsync();
-        var session = (await ledger.OpenAsync(asked.Quest!.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "k"))).Session!;
+        var session = (await ledger.OpenAsync(asked.Quest!.Id, "stub", At, tree: Path.Combine(_root, "trees", "k"))).Session!;
 
         var said = await Door(ledger, session.Id).AskAsync(
             "The release identity's sign-in expired: sign in so I can start stage 403.", role: "credentials-keeper", site: "https://dev.example/org/_signin");

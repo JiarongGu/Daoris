@@ -3,11 +3,8 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>A driven session asks another role through the one door (D325, <see cref="RoleRequests"/>): what it cannot decide or do itself
-/// before it ends its turn on it, naming the role that can and, for an act, the act. The question is drawn at the conversation's end with
-/// each answer a press; an owner-class mark keeps it from every supervisor; an act the person allows is a go-ahead held on the ask; the
-/// helper role's is one helper's reading. Its answer is the asker's next turn.
-/// </summary>
+/// <summary>A driven session asks another role through the one door (<see cref="RoleRequests"/>): what it cannot decide or do itself before
+/// it ends its turn on it, naming the role that can and, for an act, the act. Its answer is the asker's next turn.</summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
 /// <param name="ledger">The ledger, for the session's record the box judges.</param>
 /// <param name="box">Where the question is written, under the home's sessions folder.</param>

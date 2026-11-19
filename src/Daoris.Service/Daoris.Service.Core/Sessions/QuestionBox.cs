@@ -81,7 +81,6 @@ public sealed class QuestionBox(string? home)
     /// The page where the work needs the person's sign-in, or null: the question then waits on their sign-in there, marked
     /// <c>sign-in</c>, with no answers of the agent's, and the driver's look settles it when Daoris's browser sees the sign-in.
     /// </param>
-    /// <param name="role">The role the request asks (<see cref="RoleRequests"/>), kept for whoever holds it to read; null for the line above.</param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
         DateTimeOffset at, string? why = null, string? owner = null, string? site = null, string? role = null)
@@ -316,7 +315,6 @@ public sealed record QuestionKept(
     /// <summary>The page whose sign-in it waits on, a web page's address, or null for a question that waits on none.</summary>
     public string? Site { get; init; }
 
-    /// <summary>The role the request asks (<see cref="RoleRequests"/>), or null for the line above.</summary>
     public string? Role { get; init; }
 }
 

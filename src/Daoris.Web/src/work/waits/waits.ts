@@ -153,8 +153,6 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   const { session } = facts;
   const waits: Wait[] = [];
   const parked = session.state === 'awaiting-person';
-  // A run's working session that ended its turn awaiting its step with a request it asked (D325's one door): the person answers it
-  // as they answer a park's question, and the answer is its next turn.
   const requested = session.state === 'awaiting-step' && Boolean(facts.question) && personsSaid(session) === null;
   const waiting = (parked && !answeredPark(session)) || requested;
   const intake = isIntake(session);

@@ -7,7 +7,7 @@ import type { RunStep, WorkflowRun } from './run';
 import { answerOf, IN_REVIEW } from './runFixtures';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// D325 point 6: while the holder acts, the run's view draws one row per act journaled on the step, under it: the fact, its state,
+// While the holder acts, the run's view draws one row per act journaled on the step, under it: the fact, its state,
 // its credit and page, and "waiting on `<role>`: <holder>" where a receipt waits on another role.
 
 const RELEASE: WorkflowStep = {

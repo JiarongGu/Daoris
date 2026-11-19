@@ -39,7 +39,6 @@ public sealed class HelperTools(IntakeScope? intake = null, SessionLedger? ledge
             scout = judged.Scout;
         }
 
-        // A channel of the one door (D325): the helper role's request, as `question_ask` with `role` helper makes it.
         var request = new RoleRequest(session, question) { Role = RoleRequests.Helper, Agent = agent, Urgent = urgent == true, Scout = scout };
         return await QuestionTools.Requests(intake, ledger, null, helpers).AskAsync(request, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
     }

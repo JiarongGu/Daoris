@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One act journaled on a run's step as the run's view draws it (D325 point 6): the fact its receipt names, its state, its words, its credit
+/// One act journaled on a run's step as the run's view draws it: the fact its receipt names, its state, its words, its credit
 /// and page, when, and where it waits on another role, that role and its holder: <i>waiting on &lt;role&gt;: &lt;holder&gt;</i>.
 /// </summary>
 public sealed record WorkflowRunAct(string Fact, string State, string? Message, string? Url, string? By, DateTimeOffset At)

@@ -3,14 +3,14 @@ using Daoris.Ports.Browser;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's sign-in as the answer to a request waiting on it (D324, D325's short loop): each question on file that waits on a sign-in at a
+/// The person's sign-in as the answer to a request waiting on it: each question on file that waits on a sign-in at a
 /// site, a park's or a step-awaiting session's, that Daoris's browser shows done (<see cref="SignInSightings"/>) is said to its session in
 /// Daoris's word under one key through the say door, so it is the asker's next turn with no one relaying it. Nothing where no question waits
 /// on a sign-in or the browser is not running.
 /// </summary>
 public static class SignInAnswers
 {
-    /// <summary>The sentences of what was said, one per question the browser shows signed.</summary>
+    /// <summary>One sentence per question the browser shows signed, saying whether its word is kept.</summary>
     /// <param name="say">The say door, as Daoris speaks: the session, the words and their key.</param>
     public static async Task<IReadOnlyList<string>> SayAsync(
         string home, IInAppBrowser browser, Func<string, string, string, CancellationToken, Task<SayAnswer>> say, CancellationToken ct)

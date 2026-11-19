@@ -152,7 +152,6 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// <summary>The run's place's cast, role to holder (<see cref="CastReading"/>): the holder of a role a wait is on other than its step's own.</summary>
     public Func<string, string>? Cast { get; init; }
 
-    /// <summary>The acts journaled on the run (<see cref="StepActFiles.Journal"/>), drawn under their steps; none where none is or unread.</summary>
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
 }
 

@@ -77,7 +77,7 @@ export interface RunStep {
    * published and the helpers they asked. None where there are none, and from a shell before it.
    */
   requests?: RunRequest[] | null;
-  /** The acts journaled on the step's attempt while its holder acts, one row each (D325 point 6); none where none is. */
+  /** The acts journaled on the step's attempt while its holder acts, one row each; none where none is. */
   journal?: RunActRow[] | null;
   /**
    * The unit's integration state as the integration record says it, on the `integrate`

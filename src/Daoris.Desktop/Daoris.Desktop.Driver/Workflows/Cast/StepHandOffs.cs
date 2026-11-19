@@ -46,7 +46,6 @@ public static class StepHandOffs
             var attempt = WorkPerformer.StatusOf(kept, node.Id).Attempt;
             var key = KeyOf(governed.Run, node.Id, attempt, step.Epoch);
             if (told?.Contains(key) == true) continue;
-            // What earlier runs' acts came to, proposed into the entry this step names and not carried yet, goes with it (D325's long loop).
             var entry = StepReceipts.Knowledge(node);
             var lessons = entry is null ? [] : StepLessons.Open(records.Home, scope.Run.Binding.Repository, entry, governed.Run);
             var answer = await say(session, Words(governed.Run, node, step, attempt, entry is null ? "" : StepLessons.Words(entry, lessons)), key, ct).ConfigureAwait(false);
@@ -57,10 +56,7 @@ public static class StepHandOffs
         }
     }
 
-    /// <summary>
-    /// The step's words as its session reads them: what it is, its outcomes, its evidence, the one tool that settles it, the one door to ask
-    /// another role through, and what earlier runs proposed into its delivery knowledge (<paramref name="lessons"/>, <see cref="StepLessons.Words"/>).
-    /// </summary>
+    /// <summary>The step's words as its session reads them: what it is, its outcomes, its evidence, the tool that settles it, and <see cref="StepLessons.Words"/>.</summary>
     public static string Words(string run, NodeDeclaration node, HeldStep step, int attempt, string lessons = "")
     {
         var decision = TaskDecisions.Is(node);

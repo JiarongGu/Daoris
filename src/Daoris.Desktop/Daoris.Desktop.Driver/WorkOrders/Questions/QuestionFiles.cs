@@ -98,9 +98,7 @@ public sealed class QuestionFiles(string home)
 
     /// <summary>
     /// Bind the session's question to the park its run ended in: kept where <paramref name="state"/> parks and the
-    /// question has been asked at or after <paramref name="since"/>, or where the run's working session ended its turn awaiting its step
-    /// with a request asked since (D325's one door: its answer is the session's next turn through the say door); deleted otherwise, and said
-    /// where the disk would not let it go.
+    /// question has been asked at or after <paramref name="since"/> (or awaits its step with one so asked); else deleted, said where it stays.
     /// </summary>
     /// <remarks>
     /// A park keeps a file that does not read (busy, broken, past a bound) too. Neither its
