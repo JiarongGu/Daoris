@@ -40,12 +40,13 @@ test('slow timings written before a rerun pass it when its own are within budget
   const records = [{ at: 2000, ms: 45_000 }, { at: 6000, ms: 100 }];
   const judge = (since: number) => {
     const over = records.filter((record) => record.at >= since && record.ms > 30_000);
-    return over.length ? { status: 1, output: `time-ratchet: over budget ${over[0].ms}\n` } : { status: 0, output: 'clean\n' };
+    return over.length ? { status: 1, output: `time-ratchet: over budget ${over[0]?.ms}\n` } : { status: 0, output: 'clean\n' };
   };
   const clock = () => 5000;
-  assert.equal((await withFinalRatchet(async () => [{}], judge, clock, 1000)).at(-1)?.verdict, 'PASS');
+  const gates = async () => [ratchetStep(() => ({ status: 0, output: 'clean\n' }), 0, clock)];
+  assert.equal((await withFinalRatchet(gates, judge, clock, 1000)).at(-1)?.verdict, 'PASS');
   records.push({ at: 6500, ms: 40_000 });
-  assert.equal((await withFinalRatchet(async () => [{}], judge, clock, 1000)).at(-1)?.verdict, 'FAIL');
+  assert.equal((await withFinalRatchet(gates, judge, clock, 1000)).at(-1)?.verdict, 'FAIL');
 });
 
 test('a repository with no time ratchet has nothing to judge: the last check passes and says so', () => {
