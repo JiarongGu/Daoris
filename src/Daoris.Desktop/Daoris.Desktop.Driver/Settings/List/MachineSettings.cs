@@ -39,6 +39,8 @@ public static class MachineSettings
         // Less would mark a session thinking through a long step; more would leave a stuck one unseen for hours.
         new("quiet", "quietMinutes", Card: Driver, Least: 5, Most: 120),
         new("cap", "cap", Card: Driver, Least: 1),
+        // How long a staged build's drain may hold new work: past it, work starts again and the build installs once nothing runs.
+        new("drain", DrainSetting.File, Card: Driver, Least: 1, Most: 120),
         // The minutes a folder's manifest read takes; its files have bounds of their own in the setting.
         new("manifest", "manifest", Card: Driver, Least: 1, Most: 60),
         // Its kinds are the Disk space card's, worded there.

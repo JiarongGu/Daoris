@@ -72,6 +72,8 @@ export type DriverState = {
   coolOff?: number;
   /** How long a session may say nothing before Daoris looks in, in minutes: the file's, or the default; left out where none is set. */
   quiet?: number;
+  /** How long a staged build's drain may hold new work, in minutes: the file's, or the default. */
+  drain?: number;
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;
@@ -353,6 +355,9 @@ export const useSetCoolOff = () => useDriverChange('SET_COOLOFF');
 
 /** How long a session may be quiet before Daoris looks in: the same `quiet` `daoris settings quiet <minutes>` edits. */
 export const useSetQuiet = () => useDriverChange('SET_QUIET');
+
+/** How long a staged build's drain may hold new work: the same `drainMinutes` `daoris settings drain <minutes>` edits. */
+export const useSetDrain = () => useDriverChange('SET_DRAIN');
 
 /** One bound of a folder's manifest read, files or minutes: the same `manifest` `daoris settings manifest files|minutes <n>` edits. */
 export const useSetManifest = () => useDriverChange('SET_MANIFEST');

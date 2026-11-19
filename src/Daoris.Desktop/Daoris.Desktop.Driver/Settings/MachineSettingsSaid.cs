@@ -44,6 +44,10 @@ internal static class MachineSettingsSaid
                 write.WriteLine($"  quiet      {choices.QuietMinutes ?? QuietSetting.Default} minutes before Daoris looks in on a session"
                     + Set(choices.QuietMinutes is null, "quiet <minutes>"));
                 break;
+            case "drain":
+                write.WriteLine($"  drain      {choices.DrainMinutes ?? DrainSetting.Default} minutes a staged build holds new work at most, then installs once nothing runs"
+                    + Set(choices.DrainMinutes is null, "drain <minutes>"));
+                break;
             case "cap":
                 write.WriteLine($"  cap        {choices.Cap} concurrent session(s)" + Set(choices.Cap == DriverConfig.Empty.Cap, "cap <n>"));
                 break;

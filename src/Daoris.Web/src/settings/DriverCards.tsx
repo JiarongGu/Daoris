@@ -25,6 +25,8 @@ export type DriverFacts = {
   coolOff?: number | null;
   /** Minutes a session may be quiet before Daoris looks in; absent where the answer lacks it. */
   quiet?: number | null;
+  /** Minutes a staged build's drain may hold new work; absent where the answer lacks it. */
+  drain?: number | null;
   /** How many sessions Daoris starts at once here, and the tier of a terminal's presses; absent where the answer lacks it. */
   cap?: number | null;
   terminal?: TerminalTier | null;
@@ -46,10 +48,10 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onDrain, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
   facts: DriverFacts;
   /** The settings held in minutes as the driver's list declares them, which the domain reads from the list. */
-  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; manifest?: MinutesDeclared };
+  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared };
   busy: { access: boolean; gitAccess?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
@@ -57,6 +59,8 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onCoolOff: (minutes: number) => void;
   /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
   onQuiet?: (minutes: number) => void;
+  /** A drain's bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
+  onDrain?: (minutes: number) => void;
   /** One bound of the manifest setting the person typed and left, the copy's in megabytes: whole, and not the one held. */
   onManifest?: (bound: { files: number } | { minutes: number } | { copy: number }) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held. */
@@ -107,6 +111,11 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
               shell says it. A session is never stopped for running long. */}
           {typeof facts.quiet === 'number' && onQuiet && (
             <MinutesSetting setting={minutes.quiet} held={facts.quiet} onSet={onQuiet} />
+          )}
+
+          {/* How long a staged build's drain may hold new work before work starts again and the build waits for nothing to run. */}
+          {typeof facts.drain === 'number' && minutes.drain && onDrain && (
+            <MinutesSetting setting={minutes.drain} held={facts.drain} onSet={onDrain} />
           )}
 
           {/* How large a folder's manifest read may grow before the folder is too large to follow: files and minutes, one setting. */}

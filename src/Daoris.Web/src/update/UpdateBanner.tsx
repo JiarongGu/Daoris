@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '../design/ui';
+import { clockOf } from '../locales/format';
 
 /** The person's word on a staged build, as `DAORIS.UPDATE` · `SET` takes it. */
 export type UpdateMode = 'when-idle' | 'now' | 'not-now';
@@ -11,7 +12,8 @@ export type UpdateOutcome = {
 
 /** Where an install's update stands, as the shell's `InstallUpdater` answers it: no path of this machine's. */
 export type UpdateState = {
-  state: 'none' | 'waiting' | 'draining' | 'applying' | 'refused';
+  /** `deferred` is a drain past its bound: new work starts again, and the build installs once nothing runs. */
+  state: 'none' | 'waiting' | 'draining' | 'deferred' | 'applying' | 'refused';
   staged: { id: string; version: string; commit?: string | null; at?: string | null } | null;
   mode: UpdateMode | null;
   /** Driven sessions still running, conversations with a turn in flight and runs' plugin steps in flight: what the drain waits on. */
@@ -30,6 +32,8 @@ export type UpdateState = {
   last: UpdateOutcome | null;
   /** When the drain began: what a held Confirm's card says it waits since. Null with no drain; absent where the answer has none. */
   since?: string | null;
+  /** When the drain stops holding new work, by the machine's `drain` setting: while it drains, and once deferred. */
+  until?: string | null;
 };
 
 /**
@@ -57,7 +61,7 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
   onSay: (mode: UpdateMode) => void;
   onDismiss: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (!update) return null;
   const { state, staged, outcome, problem } = update;
   if (state === 'none' && !outcome) return null;
@@ -88,9 +92,12 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
         <div className="flex flex-wrap items-center gap-2 px-3 py-1.5">
           <span className="min-w-0 flex-1">
             {state === 'waiting' && t('update.waiting', { version })}
-            {state === 'draining' && (
+            {(state === 'draining' || state === 'deferred') && (
               <>
-                {t('update.draining', { version })}
+                {state === 'draining'
+                  ? t('update.draining', { version })
+                  : t('update.deferred', { version, since: update.since ? clockOf(update.since, new Date(), i18n.language) : '' })}
+                {state === 'draining' && update.until && <> {t('update.until', { time: clockOf(update.until, new Date(), i18n.language) })}</>}
                 {running > 0 && <> {t('update.running', { count: running })}</>}
                 {steps > 0 && <> {t('update.steps', { count: steps })}</>}
               </>
@@ -104,7 +111,7 @@ export function UpdateBanner({ update, busy = false, onSay, onDismiss }: {
               <Button variant="primary" disabled={busy} onClick={() => onSay('now')}>{t('update.now')}</Button>
             </>
           )}
-          {state === 'draining' && (
+          {(state === 'draining' || state === 'deferred') && (
             <>
               <Button variant="primary" disabled={busy} onClick={() => onSay('now')}>{t('update.now')}</Button>
               <Button variant="ghost" disabled={busy} onClick={() => onSay('not-now')}>{t('update.notNow')}</Button>

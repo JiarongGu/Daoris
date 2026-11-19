@@ -40,6 +40,12 @@ public sealed record UpdateState(
 {
     /// <summary>The plugin steps in flight the drain waits on (<see cref="UpdateWork.Steps"/>), while it drains and as it applies.</summary>
     public int Steps { get; init; }
+
+    /// <summary>
+    /// When the drain stops holding new work: <paramref name="Since"/> and the machine's bound (<see cref="DrainSetting"/>), while it
+    /// drains and once it has deferred. Null with no drain.
+    /// </summary>
+    public DateTimeOffset? Until { get; init; }
 }
 
 /// <summary>The states an update is in, as the page reads them.</summary>
@@ -54,6 +60,12 @@ public static class UpdateStates
     /// <summary>Staged and installed when idle: nothing new starts, and what runs is counted down.</summary>
     public const string Draining = "draining";
 
+    /// <summary>
+    /// Staged and installed when idle, its drain past its bound (<see cref="DrainSetting"/>): new work starts again, and the build
+    /// installs at the first look that finds nothing running.
+    /// </summary>
+    public const string Deferred = "deferred";
+
     /// <summary>Checked, the launcher started, and the application closing for it.</summary>
     public const string Applying = "applying";
 
@@ -63,9 +75,10 @@ public static class UpdateStates
 
 /// <summary>
 /// The application's half of an install's update: it watches what is staged and what the person
-/// said of it, holds the loop's starts while it drains, and once no driven session runs and no turn or plugin step is in flight — or at
-/// once on *Update now* — checks the build, starts the launcher with <c>--update --after &lt;pid&gt;</c> and closes the
-/// application the way the person's close does. At the next start it says once how the swap ended.
+/// said of it, holds the loop's starts while it drains, for the machine's bound at most (<see cref="Bound"/>, then deferred), and once
+/// no driven session runs and no turn or plugin step is in flight — or at once on *Update now* — checks the build, starts the launcher
+/// with <c>--update --after &lt;pid&gt;</c> and closes the application the way the person's close does. At the next start it says once
+/// how the swap ended.
 /// </summary>
 /// <remarks>
 /// <para><b>Every effect is handed in</b> — the work, the launcher, the close, the clock — so the tests drive it against a
@@ -76,7 +89,7 @@ public static class UpdateStates
 /// that asked, the window's for *Update now*. What it decides, the drain and *applying* included, is decided before its
 /// first wait, and one relaunch is asked however many looks meet the moment.</para>
 ///
-/// <para><b>Said in the window and the machine log</b>: <c>update.staged</c>, <c>update.draining</c>,
+/// <para><b>Said in the window and the machine log</b>: <c>update.staged</c>, <c>update.draining</c>, <c>update.deferred</c>,
 /// <c>update.requested</c>, <c>update.applying</c>, <c>update.refused</c>, and at the next start <c>update.installed</c> or
 /// <c>update.rolled-back</c>. A name or a count each, never a path: the launcher writes no log, so its journal is turned into
 /// these lines here.</para>
@@ -108,11 +121,19 @@ public sealed class InstallUpdater(
     private string? _seen;
     private string? _drainedFor;
     private DateTimeOffset? _drainSince;
+    // Whether this drain's deferral was said: once a drain, again for a newer build's.
+    private bool _deferred;
     private bool _applying;
     private Task? _loop;
 
     /// <summary>How often the loop looks when nothing pokes it.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// How long a drain may hold new work, read at each look of a drain: the machine's <c>drain</c> setting (<see cref="DrainSetting"/>).
+    /// Past it the drain defers itself (<see cref="UpdateStates.Deferred"/>), and the loop's starts are held no longer.
+    /// </summary>
+    public Func<TimeSpan> Bound { get; init; } = () => TimeSpan.FromMinutes(DrainSetting.Default);
 
     /// <summary>The version this application runs, which a staged build below goes back from (<see cref="InstallRollback"/>).</summary>
     public string? Running { get; init; } = UpdateRefusal.Running;
@@ -126,7 +147,7 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// Whether the loop's starts are held for the update: the driver watch asks at every look. True while it drains and while
-    /// it applies, which <see cref="Applying"/> tells apart.
+    /// it applies, which <see cref="Applying"/> tells apart; false once the drain has deferred past its bound.
     /// </summary>
     public bool Draining
     {
@@ -276,26 +297,50 @@ public sealed class InstallUpdater(
         var now = work();
         if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, request, now, "now").ConfigureAwait(false);
 
-        DateTimeOffset? since;
         lock (_gate)
         {
             if (!string.Equals(_drainedFor, id, StringComparison.Ordinal))
             {
                 _drainedFor = id;
                 _drainSince = Now;
+                _deferred = false;
                 log.Info("update.draining", ("build", id), ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
             }
-
-            since = _drainSince;
         }
 
         return now.Idle
             ? await ApplyAsync(id, staged, mode, request, now, "idle").ConfigureAwait(false)
-            : Publish(Drains(staged, mode, now, since));
+            : Publish(Drains(staged, mode, now));
     }
 
-    private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now, DateTimeOffset? since) =>
-        new(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since) { Steps = now.Steps };
+    /// <summary>
+    /// The drain as this look finds it, by the bound read now: holding new work until <see cref="UpdateState.Until"/>, deferred from
+    /// then on, its deferral said once in the machine log.
+    /// </summary>
+    private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now)
+    {
+        var bound = Bound();
+        DateTimeOffset? since;
+        bool deferred, said = false;
+        lock (_gate)
+        {
+            since = _drainSince;
+            deferred = since is { } began && Now - began >= bound;
+            if (deferred && !_deferred) _deferred = said = true;
+        }
+
+        if (said)
+        {
+            log.Info("update.deferred", ("build", staged?.Id), ("waitedSeconds", (long)bound.TotalSeconds),
+                ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
+        }
+
+        return new(deferred ? UpdateStates.Deferred : UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since)
+        {
+            Steps = now.Steps,
+            Until = since + bound,
+        };
+    }
 
     /// <summary>
     /// The person's word, from the screen, written to the request the terminal writes, for the build staged now,
@@ -334,7 +379,8 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// How often the loop looks while nothing is staged or draining: the reconciliation behind the watch of the staged
-    /// folder and the request, which wake it at once. A drain looks every <see cref="Pace"/>, since it waits on sessions no file says ended.
+    /// folder and the request, which wake it at once. A drain, and a deferred one, looks every <see cref="Pace"/>, since it waits on
+    /// sessions no file says ended.
     /// </summary>
     public TimeSpan Idle { get; init; } = TimeSpan.FromSeconds(30);
 
@@ -380,7 +426,7 @@ public sealed class InstallUpdater(
 
                 try
                 {
-                    await _poke.WaitAsync(Draining || _files is null ? Pace : Idle, ct).ConfigureAwait(false);
+                    await _poke.WaitAsync(Draining || State.State == UpdateStates.Deferred || _files is null ? Pace : Idle, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -431,14 +477,8 @@ public sealed class InstallUpdater(
             // goes on for it. *Update now* closes whatever runs, so it reads nothing.
             else if (by == "idle" && work() is { Idle: false } again)
             {
-                DateTimeOffset? since;
-                lock (_gate)
-                {
-                    _applying = false;
-                    since = _drainSince;
-                }
-
-                return Publish(Drains(staged, mode, again, since));
+                lock (_gate) _applying = false;
+                return Publish(Drains(staged, mode, again));
             }
         }
         catch

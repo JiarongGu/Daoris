@@ -2,6 +2,8 @@
   "update.label": "更新",
   "update.waiting": "Daoris {{version}} 已可安装。",
   "update.draining": "正在运行的工作结束后将安装 Daoris {{version}}，在此之前不会开始新的工作。",
+  "update.until": "新工作最晚等到 {{time}}。",
+  "update.deferred": "Daoris {{version}} 自 {{since}} 起等待安装；新工作照常开始，等没有任何工作在运行时再安装。",
   "update.running": "还有 {{count}} 个会话在运行。",
   "update.running_other": "还有 {{count}} 个会话在运行。",
   "update.steps": "还有 {{count}} 个插件步骤在进行中。",
