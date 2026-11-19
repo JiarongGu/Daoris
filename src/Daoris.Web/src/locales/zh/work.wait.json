@@ -14,6 +14,7 @@
   "work.wait.signIn.lead": "在 {{site}} 登录",
   "work.wait.signIn.open": "打开登录页…",
   "work.wait.signIn.done": "已登录",
+  "work.wait.signIn.conversation": "按「已登录」，或在下方输入框里告诉它：你的话无论哪种都算作回答。",
   "work.wait.name.intake": "需求 #{{ask}}",
   "work.wait.name.goAhead": "放行 #{{number}}",
   "work.wait.name.accept": "待采纳的工作",
