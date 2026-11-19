@@ -10,8 +10,7 @@ namespace Daoris.Driver;
 public sealed record ChannelStaged(string Where, string Staging, string Executable);
 
 /// <summary>
-/// The makers' own release channels this build installs a pin from, and Daoris's own releases (<see cref="DaorisReleases"/>, which
-/// <see cref="UpdateFetch"/> reads, staging a build beside the install rather than a pin), each Install's <see cref="IReleaseSource"/> in
+/// The makers' own release channels this build installs a pin from, each Install's <see cref="IReleaseSource"/> in
 /// <see cref="Sources"/>, the CLI's <c>channels.ts</c> until it left. A pin is staged where no reader takes it and no other run meets it, <c>&lt;where&gt;.part-&lt;pid&gt;</c>, holding
 /// nothing while it downloads, then published by one folder move after a look again at what is there: a
 /// terminal's pin publishes under the home's lease, which it waited for; the window's loop holds its home already.
