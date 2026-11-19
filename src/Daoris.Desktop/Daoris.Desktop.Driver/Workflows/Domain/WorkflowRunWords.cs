@@ -247,6 +247,7 @@ public static class WorkflowRunWords
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
         if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
+        if (step.Detail == WorkflowGraphDetails.Active && node == NodeKinds.Check && step.Wait is { Code: CheckSlotWaits.HeldBy or CheckSlotWaits.Queued } slot) return CheckSlotWaits.Said(slot);
         var on = On(step);
         return step.Detail switch
         {
@@ -279,6 +280,7 @@ public static class WorkflowRunWords
                 "Its branch no longer stands and the line's remote does not hold its work, so nothing was pushed: restore the branch, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
                 "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate => $"Failed: the gate `{gate}` failed; its words went to the work.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Opinion && OpinionStepWaits.EndedSaid(step.Code) is { } ended => ended,
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.

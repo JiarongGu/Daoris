@@ -82,4 +82,16 @@ public sealed class ReachedVerdictTests
         Assert.Equal(VerifyVerdicts.Unknown, result.Verdict);
         Assert.Contains("exited 2", result.Why);
     }
+
+    [Fact]
+    public void A_hand_back_s_reached_command_whose_plan_held_Process_classes_says_it_ran_the_fast_tier_replayed_and_owes_the_heavy()
+    {
+        const string log = "reached: 3 heavy-tier classes deferred to the run after the landing (driver-process 2, modules-process 1)\n"
+            + """reached-classes: {"ran":12,"replayed":40,"flaked":[],"mainRed":[],"red":[],"deferred":["driver-process|A","driver-process|B","modules-process|C"]}""" + "\n";
+
+        Assert.Equal(
+            "the reached classes: 12 run, 40 replayed from passes of the same inputs, 0 red; 3 heavy-tier classes owed after the landing (driver-process 2, modules-process 1)",
+            ReachedVerdict.Told(log, "reached-classes: "));
+        Assert.Null(ReachedVerdict.Told("no outcome line\n", "reached-classes: "));
+    }
 }

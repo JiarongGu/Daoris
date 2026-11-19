@@ -41,6 +41,7 @@ export type RunOptions = {
   clock?: Clock;
   epoch?: () => number;
   processSuites?: ReadonlySet<string>;
+  record?: boolean;
 };
 
 const untimed: Clock = { time: async (_name, fn) => fn(), steps: () => [] };
@@ -106,6 +107,7 @@ export async function runPlan(options: RunOptions): Promise<ClassOutcome> {
       }
       const first = await runGroup(group, `reached-${group.suite}-${index + 1}`, ready, options);
       for (const unit of first.passed) store.add(unitId(unit), keys.get(unitId(unit)) as string, now());
+      if (first.passed.length && options.record !== false) store.save();
       if (halt?.ended(group)) {
         result.ran += first.passed.length;
         hand(group.units.filter((unit) => !first.passed.includes(unit)));

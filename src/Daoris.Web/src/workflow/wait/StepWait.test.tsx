@@ -27,6 +27,16 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'rebase', { code: 'turn' })).not.toMatch(/[A-Za-z]{4}/);
   });
 
+  it('says a check waiting for the machine\'s check slot by the run holding it and since when, or by its place in the queue, never as ready', async () => {
+    const held = { code: 'slot', values: { run: 'r-41', heldSince: '2026-11-20T08:15:00Z', position: '2', of: '3' }, since: '2026-11-20T08:20:00Z' };
+    const at = new Date('2026-11-20T08:15:00Z').toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
+    expect(waitSaid(t, 'check', held)).toBe(`Waits for the machine's check slot, held by run \`r-41\`'s check since ${at}: 2 of 3 in its queue.`);
+    expect(waitSaid(t, 'check', { code: 'slot-queued', values: { position: '1', of: '2' } })).toBe('Waits for the machine\'s check slot: 1 of 2 in its queue.');
+    await i18n.changeLanguage('zh');
+    expect(waitSaid(t, 'check', held, 'zh')).toContain('`r-41`');
+    expect(waitSaid(t, 'check', held, 'zh')).not.toMatch(/[A-Za-z]{4}/);
+  });
+
   it('says a wait this page has no words for as recorded', () => {
     expect(waitSaid(t, 'merge', { code: 'newer-wait' })).toBe('Waits: newer-wait');
     expect(waitSaid(t, 'acme/deploy', { code: 'approval' })).toBe('Waits: approval');

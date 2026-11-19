@@ -23,6 +23,8 @@ internal sealed class CheckNode : BuiltInNode, IJournalled
 
     public override NodeLook Look => NodeLook.Check;
 
+    public override IReadOnlyList<string> Waits => [CheckSlotWaits.HeldBy, CheckSlotWaits.Queued];
+
     public override NodeArrivals Arrives { get; } =
         NodeArrivals.Taking(("commit", WireValues.Commit)) with { Outputs = new Dictionary<string, string>(StringComparer.Ordinal) { ["commit"] = WireValues.Commit } };
 
