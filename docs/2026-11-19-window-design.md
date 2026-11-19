@@ -1079,7 +1079,7 @@ Today differs from both almost everywhere. The six plans read each difference ag
 | 1 | Which model ran is buried in *Details* ("not reported"); a head names the harness's version | `work/actors.ts`; shot `work-attendedsession--attending` | high | S–M | UISE1, UIDS15, UIRP6 |
 | 2 | A wait is not answered where it is seen: Overview's lines open *Notifications*; no card says what yes and no do | `overview/NeedsSummary.tsx`; shot `work-wait-strip--parked-with-a-go-ahead` | high | M | UIDS16, UISE2, UISE3 |
 | 3 | Most rows that reach the owner are manager questions: 36 kinds, the band's story holds 23 rows | `work/attention/attention.ts`; shot `work-attention--band` | high | M | UISH6, UISE9, UISE10 |
-| 4 | A sign-out is seen only after a step fails | ACCOUNTREVOKED1 | high | M | UIRP4 |
+| 4 | A sign-out is seen only after a step fails | ACCOUNTREVOKED1's finding; D328 now moves the step, but the window still learns of it at the refusal | high | M | UIRP4 |
 | 5 | The owner dispatches: publishes an ask to each repository, applies the kind, takes quests, runs a terminal command to release a hold | `asks/AskPage.tsx`; shot `workflow-workflowhold--outside-kind-paths` | high | M | UIWF2, UIWF6, UIWF11 |
 | 6 | Nothing says what finished while the owner was away; there is no window-level mark | `work/catchup/SinceYouLeft.tsx` (per session only) | high | M | UISH8, UISE5, UISE6 |
 | 7 | The owner's amber and the interactive bronze are one hue family (1.55:1 apart in dark); the faint ink carries text at 3.38:1; Han at 11 px and in mono | `atoms/Marks.tsx`; `tokens.test.ts`; shot `work-sessionlist--by-state--dark` | high | L, mechanical | UIDS1, UIDS2, UIDS9 |
@@ -1172,7 +1172,7 @@ own folders (a one-line registration in a shared table, `domains.ts`, `ui.tsx`, 
 Between UISH2 and a place's own rows, a place shows today's content under its new name (Company mounts today's Agents and
 Plugins; Workspaces today's Repositories, Map and Knowledge; Asks today's Quests view), so the window works at every step.
 Rows in flight that these name: SESSIONVIEW1d2, 1f2, 1g, 1h, 1i (the panel), CHATUX1 (the composer), ACTORFLOW1 (acts and
-receipts), FOUNDATION1 (its one Act contract, whose first kinds UISH24 builds), ACCESS1 rows c, d and n (rules and access), ACCOUNTREVOKED1 (sign-outs), USAGEMODEL1 and APIKEYACCT1 (usage and
+receipts), FOUNDATION1 (its one Act contract, whose first kinds UISH24 builds), ACCESS1 rows c, d and n (rules and access), USAGEMODEL1 and APIKEYACCT1 (usage and
 balances), SIGNINWAIT3 (a conversation's sign-in in its dock). Rows the redesign supersedes, to close when the named row lands:
 FLOWCHART2 (UIWF10), AGENTSPLACE1 (UIRP1), MAPUX1 (UIWF12), CANVAS1g (UIWF8 keeps the read-only drawing), SETTINGSUX1
 (UIST11), UIREVIEW1 (its findings are these rows).
