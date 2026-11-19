@@ -166,10 +166,7 @@ function head(place: string): string | null {
   return taken.length === 0 || taken.some((part) => part.includes('*')) ? null : taken.join('/');
 }
 
-/**
- * The head of every place the table holds, with and without its category's folder (a reader that joined `sessions` by hand is
- * as wrong as one that joined `data/sessions`), and the names a place is known by: what a test's join may not name.
- */
+/** The head of every place the table holds, with and without its category's folder, and the names a place is known by: what a test's join may not name. */
 const NAMED = new Set(HOME_ENTRIES.flatMap((entry) => [
   ...[entry.new, entry.new.replace(/^(?:data|profiles|cache|run)\//, '')].map(head).filter((part): part is string => part !== null),
   ...entry.holds,

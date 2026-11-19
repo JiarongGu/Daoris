@@ -197,7 +197,7 @@ test('a home names its folder: an install by its folder or its data/, any other 
   }
 });
 
-test('a home is found from its entry, an install’s spelled as its data/ (HOMELAYOUT3)', () => {
+test('a home is found from its entry, an install’s spelled as its data/', () => {
   for (const [shape, file, name, expected] of HOME_OF_ROWS) {
     const fx = shaped('home-of', shape!);
     try {
