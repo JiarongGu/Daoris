@@ -758,6 +758,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §11): an ask's split is the supervisor's, made without a press
+  (D341, UIWF2, UIWF6), and the workflow step editor goes for a before-and-after card (D342, UIWF8, UIWF10). Today the rules
+  below stand; each row rewrites the one it makes false.
 - **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
   line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
   for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and
