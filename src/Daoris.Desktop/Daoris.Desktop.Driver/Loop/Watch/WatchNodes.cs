@@ -346,7 +346,7 @@ internal sealed class WatchNodes
         {
             Tips = await QuestClosing.TipsAsync(units, roots, token).ConfigureAwait(false), Unread = unlinked, AskBranches = branches,
             Parts = await PartsReports.ReadAsync(
-                new IntegrationStore(home), new ServiceTrainPlans(service), token, branches.Values.Select(each => each.Ask).Concat(PartsReports.RunAsks(home))).ConfigureAwait(false),
+                new IntegrationStore(home), new ServiceTrainPlans(service), token, branches.Values.Select(each => each.Ask).Concat(PartReceipts.RunAsks(home))).ConfigureAwait(false),
         };
     }
 

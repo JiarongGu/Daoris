@@ -137,7 +137,6 @@ public sealed class TeamDeskTests : IAsyncLifetime
         Assert.Equal(1, (await _desk.ReadAsync(_ask.Id)).Plans.Single().Revision);
     }
 
-    /// <summary>A part across repositories starts on another's receipt: an <c>after</c> edge naming the fact, kept, read and refused elsewhere.</summary>
     [Fact]
     public async Task An_after_edge_waits_on_another_parts_receipt_and_no_other_edge_names_one()
     {

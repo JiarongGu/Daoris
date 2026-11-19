@@ -7,10 +7,9 @@ public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string>
 {
     public IReadOnlyDictionary<string, string> Repositories { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The quest the plan gave each part, whose run is the part's: a part with none yet is not named.</summary>
     public IReadOnlyDictionary<string, string> Quests { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>What each part waits on before it starts: another part's receipt, by the plan's <c>after</c> edges naming one.</summary>
+    /// <summary>What each part waits on before it starts (<see cref="PartReceipts"/>), and the quest the plan gives each, whose run is the part's.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<PartWait>> Waits { get; init; } = new Dictionary<string, IReadOnlyList<PartWait>>();
 
     /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet.</summary>
@@ -52,13 +51,6 @@ public static class PartsReports
 
         return read;
     }
-
-    /// <summary>
-    /// The asks the runs bound here and not ended name: a part's run reads what it waits on (<see cref="PartReceipts"/>) and a joint check
-    /// its parts' receipts (<see cref="JointChecks"/>) from its ask's report, whether or not the train holds a request for it yet.
-    /// </summary>
-    public static IEnumerable<string> RunAsks(string home) =>
-        new GraphRuns(new NodeRecordFiles(home, () => false)).Read().Where(run => run.Ended is null).Select(run => run.Binding.Ask).OfType<string>();
 }
 
 /// <summary>

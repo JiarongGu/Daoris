@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D325's quest across repositories: an app part and a configuration part of one ask's plan, each a run in its own repository held by
+/// A quest across repositories: an app part and a configuration part of one ask's plan, each a run in its own repository held by
 /// its own role. The configuration part starts once the app's run journals a reached <c>stage-ended</c> (the plan's edge, no new graph); the
 /// tester's joint check over every part's receipts fails on the configuration part, whose holder is asked through the request door; its
 /// fix's receipt passes the check when the tester takes it again, what it came to is proposed into the part's delivery knowledge, and then

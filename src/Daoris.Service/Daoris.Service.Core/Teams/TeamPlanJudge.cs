@@ -12,7 +12,6 @@ public static partial class TeamPlanJudge
     /// <summary>The longest a part's id may be.</summary>
     public const int LongestId = 60;
 
-    /// <summary>A receipt's fact, as a plugin's receipts name it: lowercase words of letters and digits joined by dashes.</summary>
     private static readonly Regex Fact = new(@"^(?=.{1,60}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
 
     /// <summary>Judges one plan against the parts and edges the ask's other plans already hold.</summary>

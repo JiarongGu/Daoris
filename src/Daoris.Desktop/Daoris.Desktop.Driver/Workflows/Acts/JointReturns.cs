@@ -43,7 +43,7 @@ public static class JointReturns
     }
 
     /// <summary>
-    /// The rounds of the part's asked session journaled on the step a failure was sent back to, while it is open: whether one is open (the part
+    /// The rounds of the part's asked session journaled on the step a failure went back to, while it is open: whether one is open (the part
     /// then has nothing more to be asked until its fix reaches).
     /// </summary>
     private static bool Fix(NodeRecordFiles records, string run, string fact, List<StepActRow> journal, Func<DateTimeOffset> clock, List<string> said)

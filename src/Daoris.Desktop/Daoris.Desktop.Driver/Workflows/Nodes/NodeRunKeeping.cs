@@ -54,10 +54,7 @@ internal sealed class NodeRunKeeping(
         KeepPullRequests(governed);
     }
 
-    /// <summary>
-    /// A run's steps its agent holds: its acts journaled and settled (<see cref="StepActs"/>), a joint check's failure sent back to its part
-    /// and its fix taken (<see cref="JointReturns"/>), then each handed on (<see cref="StepHandOffs"/>).
-    /// </summary>
+    /// <summary>A run's steps its agent holds: its acts journaled and settled (<see cref="StepActs"/>), a joint check's failure sent back (<see cref="JointReturns"/>), then each handed on.</summary>
     public async Task HandStepsAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
     {
         if (!holdsLease()) return;

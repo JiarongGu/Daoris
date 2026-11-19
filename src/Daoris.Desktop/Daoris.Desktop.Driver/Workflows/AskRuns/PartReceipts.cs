@@ -34,6 +34,10 @@ public static class PartReceipts
         return [.. waits.Where(wait => Newest(home, report, wait.On, wait.Fact) is not { State: StepReceipts.Reached })];
     }
 
-    /// <summary>The waits as words: each part and the fact its receipt is to give.</summary>
-    public static string Words(IEnumerable<PartWait> waits) => string.Join(", ", waits.Select(wait => $"`{wait.On}`'s `{wait.Fact}`"));
+    /// <summary>
+    /// The asks the runs bound here and not ended name, whose reports the look reads: a part's run reads what it waits on, and a joint check
+    /// its parts' receipts, from its ask's report whether or not the train holds a request for it yet.
+    /// </summary>
+    public static IEnumerable<string> RunAsks(string home) =>
+        new GraphRuns(new NodeRecordFiles(home, () => false)).Read().Where(run => run.Ended is null).Select(run => run.Binding.Ask).OfType<string>();
 }

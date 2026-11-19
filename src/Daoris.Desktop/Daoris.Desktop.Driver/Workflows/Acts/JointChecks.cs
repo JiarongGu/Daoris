@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Testing together as a joint constraint (D325, ACTORFLOW1d): a <c>task</c> step whose <c>joint</c> option maps each part of its run's ask's
+/// Testing together as a joint constraint: a <c>task</c> step whose <c>joint</c> option maps each part of its run's ask's
 /// plan to the fact that part's receipt gives (<c>{"app":"stage-ended","config":"config-written"}</c>), held by the tester or operations
 /// role before the marked destination. It is handed to its holder once every part's newest receipt of its fact is reached
 /// (<see cref="PartReceipts"/>), and again whenever a part acts after its last test; its own receipts settle it only on a test taken after

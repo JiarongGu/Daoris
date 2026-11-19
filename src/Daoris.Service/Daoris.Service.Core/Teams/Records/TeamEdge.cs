@@ -8,10 +8,7 @@ namespace Daoris.Knowledge;
 /// <param name="Why">Why the order stands.</param>
 public sealed record TeamEdge(string Part, string On, string Kind, string? Milestone, string Why)
 {
-    /// <summary>
-    /// For <see cref="After"/> across repositories, the fact of the other part's receipt it waits on instead of a milestone (<c>stage-ended</c>):
-    /// the part starts once that part's run has the newest receipt of the fact reached. Not a build dependency, so no landing waits on it.
-    /// </summary>
+    /// <summary>For <see cref="After"/> instead of a milestone, the fact of the other part's receipt it starts on (<c>stage-ended</c>): no landing waits on it.</summary>
     public string? Receipt { get; init; }
 
     /// <summary>A build dependency: the other part's commits are this one's base.</summary>

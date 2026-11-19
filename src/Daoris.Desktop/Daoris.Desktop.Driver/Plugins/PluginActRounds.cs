@@ -17,7 +17,6 @@ public sealed record StepActRow(
 
     public int? Epoch { get; init; }
 
-    /// <summary>The part of an ask's plan a joint check's receipt says it failed on (<see cref="JointChecks"/>), or null.</summary>
     public string? Part { get; init; }
 }
 
