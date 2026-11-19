@@ -633,7 +633,7 @@ describe('the Work frame', () => {
   });
 
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
-    // All moved to the panel, the workflow and *At work* among it, and the side bar closed: it
+    // All moved to the panel (the workflow and *At work* views an earlier build kept are dropped), and the side bar closed: it
     // is not drawn at all.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');
@@ -652,7 +652,7 @@ describe('the Work frame', () => {
     expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
       .toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!))
-      .toEqual({ timeline: 'panel', outputs: 'panel', atWork: 'panel', console: 'right' });
+      .toEqual({ timeline: 'panel', outputs: 'panel', console: 'right' });
   });
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {
@@ -694,39 +694,6 @@ describe('the Work frame', () => {
     // Back where it started, and still hidden: only the person opens it again.
     expect(screen.getByRole('button', { name: 'Show the panel' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
-  });
-
-  /**
-   * Who a session worked with, from what the records declare — a quest it published names it
-   * (`publishedBy`), so its head says what it asked of another repository, and the quest opens where
-   * quests are read.
-   */
-  it('says what the attended session asked of another repository, and opens that quest', async () => {
-    const asked = {
-      id: 'def456', from: 'engine', to: 'game', title: 'Read the budget from the level file', body: 'b',
-      status: 'Done', note: 'Done: it reads level.budget now.', filed: '2026-09-02T00:30:00Z', updated: '2026-09-02T00:50:00Z',
-      publishedBy: 's1a2b3c4',
-    };
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (String(input).startsWith('/api/quests')
-      ? Response.json([...QUESTS, asked])
-      : respond(String(input)))));
-    const onOpenQuest = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider>
-          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onOpenQuest={onOpenQuest} />
-        </Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-
-    // Folded to its line, opened in place on the press.
-    const worked = await screen.findByRole('region', { name: 'Who it worked with' });
-    expect(worked).toHaveTextContent('asked 1 of another repository');
-    await userEvent.click(within(worked).getByRole('button', { name: 'Show who it worked with' }));
-    expect(within(worked).getByText('Answered: Done: it reads level.budget now.')).toBeInTheDocument();
-    await userEvent.click(within(worked).getByRole('button', { name: 'Read the budget from the level file' }));
-    expect(onOpenQuest).toHaveBeenCalledWith('def456');
   });
 
   /**

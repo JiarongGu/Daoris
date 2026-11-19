@@ -63,6 +63,16 @@ const keyOf = (wait: DockWait): string => {
   }
 };
 
+/** The dock line an exchange (`helper:<ask>`, `hand-over:<id>`) stands in while it waits on the person; null where none does. */
+export function dockKeyOfExchange(id: string): string | null {
+  const split = id.indexOf(':');
+  const of = id.slice(split + 1);
+  if (split < 0 || !of) return null;
+  const source = id.slice(0, split);
+  if (source === 'helper') return keyOf({ kind: 'helper', id: of });
+  return source === 'hand-over' ? keyOf({ kind: 'handOver', id: of }) : null;
+}
+
 /** Since when a wait waits, where its own row says; else null, and the session's last move stands for it. */
 function sinceOf(wait: DockWait, facts: WaitFacts): string | null | undefined {
   const { session } = facts;

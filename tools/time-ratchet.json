@@ -49,6 +49,11 @@
     "why": "the end-to-end tier's queue specs (merge-queue-*.e2e.ts, TOOLTIER1) run the merge queue against real git repositories and real child processes, so a file's total is the sum of whole flows",
     "row": "MERGETS1"
   },
+  "tools/merge/flow.test.ts::a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails": {
+    "ms": 35000,
+    "why": "starts the gate's child process twice, once killed under a planted load and once alone, and waits for each to end; 10 to 31 s on this machine, the time being the two processes' start and kill",
+    "row": "PUREPROC1"
+  },
   "src/Daoris.Web/src/work/WorkFrame.test.tsx::a park's question sends the free answer through the box as before, naming no question": {
     "ms": 47000,
     "why": "types a 40-character answer one key at a time with userEvent into the work frame's box, each key re-rendering the whole frame in jsdom; the typing is what the case exercises"

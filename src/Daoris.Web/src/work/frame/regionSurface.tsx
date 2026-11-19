@@ -1,19 +1,13 @@
 import type { ReactNode } from 'react';
 import type { TFunction } from 'i18next';
-import { useConsidered, useResolveHeld, useReviewedPatch, useTreeFile, useWorkflowRun } from '../../bridge/shell';
+import { useResolveHeld, useReviewedPatch, useTreeFile, useWorkflowRun } from '../../bridge/shell';
 import type { useRunNodeWord, useTerminals } from '../../bridge/shell';
-import type { useSessionAtWork } from '../../bridge/sessions/atWork';
-import { SESSION_ACTIVE } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { sentence } from '../../locales/format';
 import { ReleaseStepDoors } from '../../workflow/release/ReleaseStepDoors';
 import { WorkflowRunView } from '../../workflow/WorkflowRunView';
 import { stepHoldBridge } from '../../bridge/repositories/cast';
 import { noteIsInTheHead } from '../AttendedSession';
-import { AtWorkView } from '../atWork/AtWorkView';
-import type { ExchangeSeek } from '../atWork/exchangeSeek';
-import { useLineChannel, usePostLineChannel } from '../../bridge/sessions/asks';
-import { lastMessages, lastWords, repositoriesOf } from '../channel';
 import { SessionConsole } from '../console/SessionConsole';
 import { TerminalView } from '../terminals/TerminalView';
 import type { useAttendedBox } from '../conversation/useAttendedBox';
@@ -22,7 +16,6 @@ import { opinionHolds } from '../gates/opinion';
 import { ReviewGate } from '../gates/ReviewGate';
 import { reviewState } from '../gates/review';
 import { shownOf } from '../groups';
-import type { useAttendedRecord } from '../head/useAttendedRecord';
 import type { useAttendedSession } from '../head/useAttendedSession';
 import { SessionTimeline } from '../head/SessionTimeline';
 import { ownTree, sessionTitle } from '../identity';
@@ -30,11 +23,9 @@ import { DiffPane } from '../review/DiffPane';
 import { OutputsPage } from '../outputs/OutputsPage';
 import { FilePreview } from '../review/FilePreview';
 import type { useSessionLanding } from '../review/useSessionLanding';
-import type { HandOverRoster } from '../start/HandOverAsk';
 import { NothingFollowed } from './RightDock';
 import type { Place, ViewId } from './placements';
 import type { useDockViews } from './useDockViews';
-import type { useFrameLayout } from './useFrameLayout';
 
 /**
  * What the frame's regions draw: each view's surface in whichever region it stands, the console and the streams the
@@ -43,7 +34,7 @@ import type { useFrameLayout } from './useFrameLayout';
  */
 export function useRegionSurfaces({
   t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-  session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek, reviewRun = null,
+  session, work, views, boxState, onReviewRun, attend, runNodeWord, reviewRun = null,
   reviewAttempt = null, flowchartOpen = false,
 }: {
   flowchartOpen?: boolean;
@@ -60,36 +51,20 @@ export function useRegionSurfaces({
   terminals: ReturnType<typeof useTerminals>;
   terminalCwd: string | undefined;
   session: ReturnType<typeof useAttendedSession>;
-  record: ReturnType<typeof useAttendedRecord>;
   work: ReturnType<typeof useSessionLanding>;
   views: ReturnType<typeof useDockViews>;
-  frame: ReturnType<typeof useFrameLayout>;
   boxState: ReturnType<typeof useAttendedBox>;
   onReviewRun: (run: string, attempt?: number | null) => void;
-  agentRoster: HandOverRoster;
   attend: (id: string) => void;
   runNodeWord: ReturnType<typeof useRunNodeWord>;
-  atWork: ReturnType<typeof useSessionAtWork>;
-  /** The request the head's *Waiting on* opened *At work* at. */
-  atWorkSeek?: ExchangeSeek | null;
 }) {
-  const { attended, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
-  const { following, previewing, openPreview, dock, panelView } = views;
-  const { placed, collapsed, dockClosed, layout, closeDock } = frame;
+  const { attended, quest, openings, registry, groups, here } = session;
+  const { following, previewing, openPreview } = views;
   const { taking } = boxState;
   const { discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
-  const { channel, setChannelOpened } = record;
 
   // Asked only while the run's flowchart is open, and again at every tick under the driver's key.
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: following !== null && flowchartOpen });
-  // A line on no ask held here has a channel of its own, which *At work* draws: read only while *At work* shows.
-  const atWorkShown = following !== null && (placed.places.atWork === 'panel'
-    ? !collapsed && panelView === 'atWork'
-    : !dockClosed && dock === 'atWork');
-  const lineChannel = useLineChannel(attended && !channelAsk ? attended.id : null, { enabled: atWorkShown });
-  const postLine = usePostLineChannel();
-  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory.
-  const considered = useConsidered().data;
   // *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
   const resolveHeld = useResolveHeld();
   const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
@@ -225,52 +200,12 @@ export function useRegionSurfaces({
       : nothing();
   };
 
-  const atWorkSurface = () => {
-    // Who is at work on the followed session: its parts and its subagents, from Daoris's
-    // records; each part opens its page.
-    return following
-      ? withWhose(
-        <AtWorkView
-          held={atWork.data}
-          error={atWork.error ? sentence(atWork.error) : null}
-          onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
-          onOpenQuest={onOpenQuest}
-          considered={considered}
-          // Its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
-          nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
-          seek={atWorkSeek}
-          // The newest three messages of the page's own channel read, the panel's; for a line on no ask held here,
-          // the newest three of its own channel, which no panel holds.
-          channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
-            words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
-            onOpen: () => {
-              setChannelOpened((n) => n + 1);
-              // Under 768 px the view replaces the conversation: leaving it shows the panel it opened.
-              if (layout.dock.mode === 'full') closeDock(true);
-            },
-          } : lineChannel && attended ? {
-            words: lastMessages(lineChannel),
-            // The person's words on it, to every part of the line or one repository its messages name.
-            recipients: repositoriesOf(lineChannel.items, []),
-            over: !SESSION_ACTIVE.has(attended.state),
-            onPost: (post, answered) => postLine.mutate({ session: attended.id, post }, {
-              onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
-              onError: (error) => answered.refused(sentence(error)),
-            }),
-          } : undefined}
-          onRetry={() => { void atWork.refetch(); }}
-        />,
-      )
-      : nothing();
-  };
-
   /** A view's surface, drawn in whichever region it stands. The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
     if (view === 'notifications') return notifications;
     if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
     if (view === 'outputs') return outputsSurface();
-    if (view === 'atWork') return atWorkSurface();
     if (view === 'console' && where === 'right') {
       return withWhose(
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">

@@ -80,7 +80,7 @@ export type KeyBinding = { combo: string; reach: KeyReach };
 
 /** What the frame does with the session attended on Sessions, which only the frame can; `outputs/<run>` opens that run's outputs. */
 export type FrameIntent =
-  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'atWork' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
+  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
   | `outputs/${string}` | `memory/${string}`;
 
 export const outputsOfIntent = (intent: FrameIntent | null | undefined): string | null =>

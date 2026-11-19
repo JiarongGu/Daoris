@@ -8,7 +8,7 @@ import {
   repliesTo, repositoriesOf, sinceMark,
 } from '../work/channel';
 import { Refused } from '../work/InlineConfirm';
-import { Button, Icon, Pill, SelectField } from '../design/ui';
+import { Button, Pill, SelectField } from '../design/ui';
 
 /** How a post ended, as the composer hears it: `done` once the service kept it, `refused` with the service's code, which this page words. */
 export type ChannelAnswered = { done: () => void; refused: (code: string) => void };
@@ -43,7 +43,7 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
 /**
  * **An ask's channel**: where its sessions and the person talk,
  * messages and Daoris's own lines in time order, newest at the foot, and the person's composer under them. The ask's page
- * draws all of it; a session's panel (`ChannelPanel`) draws what concerns its line of work and starts *To* on its repository.
+ * draws all of it; a session's timeline draws each message of its line of work as a row at its moment (`work/exchanges/`).
  *
  * @remarks
  * **A molecule**: the channel arrives as the shell answered it, and a post leaves as a call with how it ended; nothing is asked
@@ -294,7 +294,8 @@ function LineRow({ item, isNew, onOpenQuest }: { item: ChannelItem; isNew: boole
 }
 
 /** One message as written, with who, to whom, when, what it answers, what it reached, and a press to answer it. */
-function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
+/** One message of a channel, as the ask's page lists it and a session's timeline draws it at its moment. */
+export function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
   item: ChannelItem;
   anchor: string;
   anchorOf: (id: string) => string;
@@ -397,59 +398,5 @@ function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward
       </span>
       {refused && <Refused sentence={refused} />}
     </li>
-  );
-}
-
-/**
- * **A session's Channel**: the ask's channel kept to its line of work, under its head,
- * folded to its title and a count. Open, it lists what is said to everyone, to its repository and by it, with the lines of the
- * quests that concern it, and the composer with *To* starting at its repository. The whole channel is the ask's page's.
- *
- * @remarks
- * A molecule over `ChannelSection`: it counts nothing unread and moves no mark, which the ask's page owns, since this reads a
- * part of the channel and a mark is for all of it.
- */
-export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, onOpenAsk, repositories, opened = 0 }: {
-  /** A press elsewhere (the at-work view's *All messages*) asked it open: each new number opens it and brings it into view. */
-  opened?: number;
-  channel: Channel | null;
-  only: { entry: string; repository: string };
-  onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session*, as the ask's page offers it. */
-  onForward?: ChannelForward;
-  onOpenQuest?: (quest: string) => void;
-  /** Open the ask's own page, where the whole channel is. Absent where there is nowhere to open it. */
-  onOpenAsk?: () => void;
-  repositories?: readonly string[];
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const section = useRef<HTMLElement>(null);
-  const count = channel ? forEntry(channel.items, only).length : 0;
-  useEffect(() => {
-    if (opened <= 0) return;
-    setOpen(true);
-    section.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [opened]);
-  return (
-    <section ref={section} aria-label={t('asks.channel.title')} className="min-w-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((was) => !was)}
-        className="flex w-full min-w-0 cursor-pointer items-start gap-1.5 border-0 bg-transparent p-0 text-left text-small text-ink-faint hover:text-ink"
-      >
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} className="mt-1 shrink-0" />
-        <span className="min-w-0 truncate font-semibold">{count > 0 ? `${t('asks.channel.title')} · ${count}` : t('asks.channel.title')}</span>
-      </button>
-      {open && (
-        <div className="mt-2 grid gap-2">
-          <ChannelSection
-            channel={channel} only={only} onPost={onPost} onForward={onForward} onOpenQuest={onOpenQuest} repositories={repositories}
-          />
-          {onOpenAsk && <div><Button variant="ghost" className="px-1.5 py-0 text-small" onClick={onOpenAsk}>{t('asks.channel.panel.open')}</Button></div>}
-        </div>
-      )}
-    </section>
   );
 }

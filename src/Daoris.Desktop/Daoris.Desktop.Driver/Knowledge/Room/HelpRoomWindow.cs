@@ -26,15 +26,16 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
         // Notifications is a view, on the right by default, shown
         // by the title bar's bell; it holds the presses waiting for the person's confirmation and What needs you.
-        // At work, after Outputs, says who works on the attended session from Daoris's records. A session's run is no view: its head's
-        // track draws it, and the track's Flowchart opens the run's whole view.
-        text.Append("attended session. A session's run is read in the track under its head, whose Flowchart opens the run's whole view.\n");
-        text.Append("Seven views stand in the two regions and move between them:\n");
-        text.Append("Notifications, the timeline, Outputs, At work and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        // A session's run is no view: its head's track draws it, and the track's Flowchart opens the run's whole view. Who it worked
+        // with is no view either: each helper, piece, quest and channel message is a row of its conversation.
+        text.Append("attended session. A session's run is read in the track under its head, whose Flowchart opens the run's whole view,\n");
+        text.Append("and who it worked with is read in its conversation: each helper, piece, quest and channel message is a row naming\n");
+        text.Append("who took part, read from Daoris's records and never from the conversation's text.\n");
+        text.Append("Six views stand in the two regions and move between them:\n");
+        text.Append("Notifications, the timeline, Outputs and the console of the session attended on Sessions, Ask Daoris, and the\n");
         text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
         text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
-        text.Append("terminal is the person's, never a session's. At work lists the session's parts and its subagents, each with\n");
-        text.Append("its state and its end, read from Daoris's records and never from the conversation's text.\n");
+        text.Append("terminal is the person's, never a session's.\n");
         text.Append("Notifications, in the right side bar unless the person moved it, is everything that came to the person: first\n");
         text.Append("each press a terminal sent that waits for their confirmation, as its whole card, then What needs you, every\n");
         text.Append("row with its acts. The bell on the title bar shows it (View → Notifications too) and counts what needs them,\n");
