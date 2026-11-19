@@ -73,7 +73,7 @@ test("this repository's census: every class carrying the Process trait is read i
 });
 
 test("a change to the knowledge connector's tools reaches the driver tests whose goldens list them", () => {
-  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'src/Daoris.Service/Daoris.Service.Mcp/ToolClasses.cs'], {
+  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--measure', '--paths', 'src/Daoris.Service/Daoris.Service.Mcp/ToolClasses.cs'], {
     cwd: repoRoot, encoding: 'utf8', timeout: 600_000, windowsHide: true,
   });
   const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
@@ -82,8 +82,8 @@ test("a change to the knowledge connector's tools reaches the driver tests whose
   }
 });
 
-test('a change to an example plugin manifest reaches PluginInterfacesTests, and every path a [Reaches] reads exists',() => {
-  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--paths', 'examples/plugins/daoris-azure-devops/plugin.json'], {
+test('a change to an example plugin manifest reaches PluginInterfacesTests, and every path a [Reaches] reads exists', () => {
+  const plan = spawnSync(process.execPath, [join(repoRoot, 'tools', 'reached-checks.mjs'), '--plan', '--measure', '--paths', 'examples/plugins/daoris-azure-devops/plugin.json'], {
     cwd: repoRoot, encoding: 'utf8', windowsHide: true, timeout: 600_000,
   });
   const driver = plan.stdout.split('\n').find((line) => /^\s+driver: dotnet test/.test(line)) ?? '';
