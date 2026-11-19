@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own release channel, what an install's update reads (RELEASEFEED1): the GitHub releases of Daoris's public repository, each
+/// Daoris's own release channel, what an install's update reads: the GitHub releases of Daoris's public repository, each
 /// carrying the desktop package of the build (<see cref="Package"/>, a zip of one staged build) and the checksum file beside it
 /// (<see cref="Sums"/>). A draft or a prerelease is no release of the channel: <see cref="Latest"/> names only a published one.
 /// What the channel says is here; <see cref="DaorisReleaseDownloads"/> fetches and stages.

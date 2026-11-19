@@ -4,7 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>What Daoris's own release channel says (RELEASEFEED1): a version is one exact release, a release is newer than the build running, and an asset is an HTTPS address with its hash.</summary>
+/// <summary>What Daoris's own release channel says: a version is one exact release, a release is newer than the build running, and an asset is an HTTPS address with its hash.</summary>
 public sealed class DaorisReleasesTests
 {
     [Theory]

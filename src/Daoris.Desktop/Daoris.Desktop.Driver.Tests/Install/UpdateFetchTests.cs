@@ -8,11 +8,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An install's update reading Daoris's own releases (RELEASEFEED1): the newest published release, newer than the build running, fetched
+/// An install's update reading Daoris's own releases: the newest published release, newer than the build running, fetched
 /// by its checksum, unpacked as a staged build and held to its own manifest, over a stand-in transport, never the network.
 /// </summary>
 public sealed class UpdateFetchTests : ScratchInstall
 {
+    private static readonly DateTimeOffset Now = new(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
     private const string Latest = "https://api.github.com/repos/JiarongGu/Daoris/releases/latest";
     private const string ByTag = "https://api.github.com/repos/JiarongGu/Daoris/releases/tags/v";
     private const string Download = "https://github.test/releases/download/";
@@ -129,15 +130,15 @@ public sealed class UpdateFetchTests : ScratchInstall
     {
         var served = Release("9.9.9");
 
-        Assert.Equal(1, UpdateCommand.Run(["--fetch"], Path.Combine(_install, "data"), () => DateTimeOffset.UtcNow, null, "s-1", out var refused, New(served)));
+        Assert.Equal(1, UpdateCommand.Run(["--fetch"], Path.Combine(_install, "data"), () => Now, null, "s-1", out var refused, New(served)));
         Assert.Contains(DriverChoicesCommand.SessionsTerminal, refused);
         Assert.Empty(served.Asked);
 
-        Assert.Equal(0, UpdateCommand.Run(["--fetch"], Path.Combine(_install, "data"), () => DateTimeOffset.UtcNow, null, null, out var said, New(served)));
+        Assert.Equal(0, UpdateCommand.Run(["--fetch"], Path.Combine(_install, "data"), () => Now, null, null, out var said, New(served)));
         Assert.Contains("Daoris 9.9.9 is staged", said);
         Assert.Equal("9.9.9", StagedBuild.Read(_install, out _)!.Version);
 
-        Assert.Equal(2, UpdateCommand.Run(["--fetch", "--now"], Path.Combine(_install, "data"), () => DateTimeOffset.UtcNow, null, null, out said, New(served)));
+        Assert.Equal(2, UpdateCommand.Run(["--fetch", "--now"], Path.Combine(_install, "data"), () => Now, null, null, out said, New(served)));
         Assert.Contains("not two", said);
     }
 
