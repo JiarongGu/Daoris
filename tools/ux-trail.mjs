@@ -34,13 +34,102 @@ export function summarise(entries) {
   };
 }
 
+/** The attention kinds that may wait on the owner (design §5.2, the conditional ones included); a row is `kind:id`. */
+export const OWNER_KINDS = [
+  'signed-out', 'git-held', 'account-wait', 'confirmation', 'go-ahead', 'git-ask', 'trust', 'space', 'step', 'set-up',
+  'integration', 'departure', 'intake', 'plan-question', 'design-question', 'unanswerable', 'policy-hold', 'memory',
+];
+
+const HOUR = 3600 * 1000;
+
+/** The entries whose UTC day lies from `from` to `to` (YYYY-MM-DD, either may be missing), both included. */
+export function inRange(entries, from, to) {
+  return entries.filter((entry) => {
+    const day = String(entry.at ?? '').slice(0, 10);
+    return (!from || day >= from) && (!to || day <= to);
+  });
+}
+
+/**
+ * The trial's five measures (design §17) from a trail in order: a row waits once, from its first `wait`, and its answer is its first
+ * press; a return follows `away` hours (2) of silence with waits open. `returns`, `screens`, `outside`, `changed` and `amber` as §17 says.
+ */
+export function measures(entries, { ownerKinds = OWNER_KINDS, away = 2 } = {}) {
+  const time = (entry) => Date.parse(entry.at);
+  const kindOf = (row) => row.split(':')[0];
+  const waitAt = new Map();
+  for (const [index, entry] of entries.entries()) if (entry.kind === 'wait' && !waitAt.has(entry.row)) waitAt.set(entry.row, index);
+  const pressOf = (row, from = 0) => {
+    const start = waitAt.get(row);
+    return entries.slice(Math.max(start ?? 0, from)).find((entry) => entry.kind === 'press' && entry.row === row);
+  };
+  const gaps = entries.flatMap((entry, index) => (index > 0 && time(entry) - time(entries[index - 1]) >= away * HOUR ? [{ index, at: time(entry) }] : []));
+  const resets = [...gaps, ...entries.flatMap((entry, index) => (entry.kind === 'start' ? [{ index, at: time(entry) }] : []))];
+
+  const returns = gaps.flatMap((reset) => {
+    const open = [...waitAt].filter(([row, index]) => {
+      const wait = entries[index];
+      if (time(wait) > reset.at + 60 * 1000 || Date.parse(wait.since ?? wait.at) >= reset.at) return false;
+      const gone = entries.find((entry) => (entry.kind === 'press' || entry.kind === 'cleared') && entry.row === row && index < entries.indexOf(entry));
+      return !gone || time(gone) >= reset.at;
+    }).map(([row]) => row);
+    if (open.length === 0) return [];
+    const answers = open.flatMap((row) => pressOf(row, reset.index) ?? []);
+    const last = Math.max(...answers.map(time));
+    return [{ at: entries[reset.index].at, open: open.length, answered: answers.length, seconds: answers.length ? Math.round((last - reset.at) / 1000) : null }];
+  });
+
+  const answers = [...waitAt].flatMap(([row, index]) => {
+    const press = pressOf(row);
+    return press ? [{ row, wait: entries[index], press }] : [];
+  }).sort((a, b) => time(a.press) - time(b.press));
+  const perAnswer = answers.map((answer, n) => {
+    const before = n > 0 ? time(answers[n - 1].press) : -Infinity;
+    const reset = Math.max(-Infinity, ...resets.map((r) => r.at).filter((at) => at <= time(answer.press)));
+    const from = Math.max(time(answer.wait), before, reset);
+    return entries.filter((entry) => entry.kind === 'page' && time(entry) > from && time(entry) < time(answer.press)).length;
+  });
+  const changed = answers.filter(({ row, wait, press }) =>
+    entries.some((entry) => entry.kind === 'changed' && entry.row === row && time(entry) >= time(wait) && time(entry) < time(press))).map(({ row }) => row);
+
+  const rows = [...waitAt.keys()];
+  const outside = rows.filter((row) => !ownerKinds.includes(kindOf(row)));
+  const needless = rows.filter((row) => {
+    if (outside.includes(row)) return true;
+    const cleared = entries.find((entry, index) => entry.kind === 'cleared' && entry.row === row && index > waitAt.get(row));
+    const press = pressOf(row);
+    return cleared && !(press && time(press) < time(cleared));
+  });
+  return {
+    returns,
+    screens: { answers: answers.length, perAnswer, withoutOpening: perAnswer.filter((pages) => pages === 0).length },
+    outside: { waits: rows.length, outside: outside.length, rows: outside },
+    changed: { answers: answers.length, onChanged: changed.length, rows: changed },
+    amber: { waits: rows.length, needless: needless.length, rows: needless },
+  };
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const path = process.argv[2];
+  const args = process.argv.slice(2);
+  const option = (name) => { const at = args.indexOf(name); return at < 0 ? undefined : args.splice(at, 2)[1]; };
+  const [from, to] = [option('--from'), option('--to')];
+  const path = args[0];
   if (!path) {
-    console.error('usage: node tools/ux-trail.mjs <ux-trail folder | day.jsonl>');
+    console.error('usage: node tools/ux-trail.mjs <ux-trail folder | day.jsonl> [--from YYYY-MM-DD] [--to YYYY-MM-DD]');
     process.exit(2);
   }
-  const summary = summarise(readTrail(path));
+  const entries = inRange(readTrail(path), from, to);
+  const summary = summarise(entries);
+  const trial = measures(entries);
+  const share = (part, whole) => `${part} of ${whole}`;
+  console.log(`The trial's five measures, ${from ?? 'the first day'} to ${to ?? 'the last'}:`);
+  console.log(`1. Return to the last wait answered: ${trial.returns.length === 0 ? 'no return after 2 h with waits open'
+    : trial.returns.map((r) => `${r.at}: ${r.seconds === null ? 'none answered' : `${r.seconds} s`} (${r.answered} of ${r.open} open answered)`).join('; ')}.`);
+  console.log(`2. Screens opened per answer: ${trial.screens.answers === 0 ? 'no answers' : `${(trial.screens.perAnswer.reduce((a, b) => a + b, 0) / trial.screens.answers).toFixed(2)} on average, ${share(trial.screens.withoutOpening, trial.screens.answers)} with none`}.`);
+  console.log(`3. Waits outside the owner kinds: ${share(trial.outside.outside, trial.outside.waits)}${trial.outside.rows.length ? ` (${trial.outside.rows.join(', ')})` : ''}.`);
+  console.log(`4. Answers on a changed question: ${share(trial.changed.onChanged, trial.changed.answers)}.`);
+  console.log(`5. Amber that did not need the owner: ${share(trial.amber.needless, trial.amber.waits)}.`);
+  console.log('');
   console.log(`${summary.pages} pages opened, ${summary.presses} presses.`);
   for (const wait of summary.waits) {
     console.log(wait.press === null
