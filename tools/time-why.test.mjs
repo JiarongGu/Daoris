@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
+import { breachLine, breachLines, domainOf, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, ratchetBreaches, sayBreach, separations, sourceReader, testBreach } from './time-why.mjs';
 
 const PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests';
 const cls = (name, body, trait = '') => `namespace Daoris.Desktop.Driver.Tests;\n\n${trait}public sealed class ${name}\n{\n    [Fact]\n    public async Task Runs()\n    {\n        ${body}\n    }\n}\n`;
@@ -118,7 +118,7 @@ test('a test the blame collector killed at its hang timeout is a breach of that 
 test('each ratchet test over its limit is a breach: an unlisted one fails, a listed one within its time and one no path reaches do not, load is load', () => {
   const breaches = ratchetBreaches({
     found: { 'Daoris.Desktop.Driver.Tests.WaitsTests.Runs': { ms: 40_000, limit: 30_000 }, 'Daoris.Desktop.Driver.Tests.ScansTests.Runs': { ms: 35_000, limit: 30_000 } },
-    others: { 'B.Tests.Far.c': { ms: 31_000, limit: 30_000 } },
+    inherited: { 'B.Tests.Far.c': { ms: 31_000, limit: 30_000, main: 29_000 } },
     loaded: { 'C.Tests.Busy.d': { ms: 50_000, limit: 30_000 } },
     listedAt: (key) => (key.includes('ScansTests') ? 36_000 : undefined),
     records: () => new Map([['Daoris.Desktop.Driver.Tests.WaitsTests.Runs', 'reached-driver-1.trx']]),
@@ -128,7 +128,9 @@ test('each ratchet test over its limit is a breach: an unlisted one fails, a lis
     ['WaitsTests', 'clock', true], ['ScansTests', 'scan', false], ['Far', 'unclassed', false], ['Busy', 'load', false],
   ]);
   assert.match(breaches[1].evidence, /listed at 36000 ms/);
-  assert.match(breaches[2].evidence, /not this merge's/);
+  assert.match(breaches[2].evidence, /inherited from main: the merge does not change its file, and it ran within half again main's alone record, 29000 ms/);
+  assert.deepEqual(breaches.map((each) => each.inherited === true), [false, false, true, false]);
+  assert.match(breachLine(breaches[2]), /main's known red, failing nothing$/);
   assert.deepEqual(ratchetBreaches({ found: {} }), [], 'nothing over, nothing read');
 });
 
