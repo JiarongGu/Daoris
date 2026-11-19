@@ -185,7 +185,6 @@ public sealed class TreeReleasesGitTests : LandedFixture
 
     private static Task<IReadOnlySet<string>> Nobody(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
-    /// <summary>The fixture's days on: every tree's last use is read against this clock.</summary>
     private Func<DateTimeOffset> DaysOn(int days) => () => new DateTimeOffset(Directory.GetCreationTimeUtc(Home), TimeSpan.Zero).AddDays(days);
 
     [Fact]
@@ -221,7 +220,6 @@ public sealed class TreeReleasesGitTests : LandedFixture
         var (liveTree, _) = await OwnedAsync(trees, root, "q9", "c.txt");
         Record("q9", ended: false);
 
-        // Younger than its days: nothing goes, though every session is over.
         Assert.Empty(await new TreeReleases(Home, DaysOn(3)).SweepAsync(root, "engine", Nobody));
 
         var swept = await new TreeReleases(Home, DaysOn(20)).SweepAsync(
@@ -233,7 +231,6 @@ public sealed class TreeReleasesGitTests : LandedFixture
         Assert.True(File.Exists(Path.Combine(dirty.Path, "wip.txt")));
         Assert.True(Directory.Exists(busy.Path));
         Assert.True(Directory.Exists(liveTree));
-        // Where no session list is known, nothing ages out.
         Assert.Empty(await new TreeReleases(Home, DaysOn(60)).SweepAsync(root, "engine", null));
     }
 

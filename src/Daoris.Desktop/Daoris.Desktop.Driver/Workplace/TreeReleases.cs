@@ -2,16 +2,13 @@ namespace Daoris.Driver;
 
 /// <summary>What ending one run-owned tree came to: whether it is gone, and the words either way.</summary>
 /// <param name="Said">The removal's own sentence; for a tree that stays, the reason the record keeps (<see cref="GrownBranch.Kept"/>).</param>
-/// <param name="Freed">The bytes the removed tree held, read before it went; 0 where it stays.</param>
-/// <param name="ByDays">Whether the tree is taken for its unused days (<see cref="TreeReleases.Unused"/>), not for its run being over.</param>
 public sealed record TreeReleased(string Repository, string Branch, bool Gone, string Said, long Freed = 0, bool ByDays = false);
 
 /// <summary>
 /// The one act that ends a workflow run's trees: the clean-up's own removal (<see cref="SessionTrees.RemoveBranchAsync"/>), unforced, so a
 /// tree whose work is uncommitted or on no branch of the person's stays, and its reason is written on its branch's record where the tree
 /// list reads it. The run's <c>release</c> step takes it for the branches its run owns, and the sweep (<see cref="SweepAsync"/>) for the
-/// branches whose part the run's tidy ended and those of runs that ended or whose record is gone; a tree no run owns is neither's, except by its days: a tree no run owns that no session runs or waits in and that nothing has used
-/// for <see cref="Unused"/> goes too, its branch standing and holding every commit, and only where it holds no uncommitted work.
+/// branches whose part the run's tidy ended and those of runs that ended or whose record is gone; past <see cref="Unused"/> days a tree no session is in goes too, its branch standing, unless it holds uncommitted work.
 /// </summary>
 /// <param name="home">The Daoris home whose session branches and run records are read.</param>
 /// <param name="clock">The time unused trees are read against; the root hands it, and with none no tree is taken for its days.</param>
@@ -78,7 +75,6 @@ public sealed class TreeReleases(string home, Func<DateTimeOffset>? clock = null
         {
             if (trees.GetValueOrDefault(owned.Branch) is { } tree && busy.Any(path => TreeGit.SamePath(path, tree))) continue;
             var released = await ReleaseAsync(root, repository, owned.Branch, ct).ConfigureAwait(false);
-            // An ended run's tree the proof keeps (commits no branch of the person's holds) goes by its days too, its branch standing.
             if (!released.Gone && inUse is not null && clock is not null && trees.GetValueOrDefault(owned.Branch) is { } kept
                 && now - await TreeUse.LastAtAsync(kept, ct).ConfigureAwait(false) > Unused)
                 released = await ReleaseAsync(root, repository, owned.Branch, ct, treeOnly: true).ConfigureAwait(false);
