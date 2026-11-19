@@ -169,11 +169,12 @@ public sealed class WorkplaceLoopBoundaryTests : IDisposable
             var install = Path.Combine(scratch, "install");
             var home = Path.Combine(install, "data");
             var tool = Path.Combine(scratch, "person");
+            // The marker comes first: it is what says the Daoris folder is the install, which the tree's place is under.
+            Directory.CreateDirectory(home);
+            File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris\n");
             var tree = DaorisHome.Entry(home, HomeEntry.Trees, "default", "engine", "s1");
             var project = Path.Combine(tool, "projects", ToolHomeLeftovers.Flatten(tree));
-            Directory.CreateDirectory(home);
             Directory.CreateDirectory(project);
-            File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "# Daoris\n");
             var kept = Path.Combine(project, "session.jsonl");
             File.WriteAllText(kept, "kept\n");
             var world = new WiringWorld

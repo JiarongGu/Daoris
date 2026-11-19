@@ -73,8 +73,9 @@ public sealed class HistoryClearingTests : IDisposable
 
     private void KeptFiles(string folder, string id)
     {
-        Directory.CreateDirectory(Path.Combine(_home, folder, id, "attachments"));
-        File.WriteAllText(Path.Combine(_home, folder, id, "attachments", "abc123-spec.md"), "a spec");
+        var kept = DaorisHome.Entry(_home, folder == "asks" ? HomeEntry.AskFiles : HomeEntry.QuestFiles, id);
+        Directory.CreateDirectory(Path.Combine(kept, "attachments"));
+        File.WriteAllText(Path.Combine(kept, "attachments", "abc123-spec.md"), "a spec");
     }
 
     private static readonly DateTimeOffset At = new(2026, 10, 3, 9, 0, 0, TimeSpan.Zero);

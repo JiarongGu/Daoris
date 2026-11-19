@@ -54,17 +54,13 @@ public sealed class InstallHomeTests : IDisposable
     }
 
     /// <summary>
-    /// The window's memory, the kit's data area: an install's <c>data/</c> while its engine's profile or its
-    /// geometry is there, <c>profiles/window/</c> for a new install, and the kit's own for a root that is no install.
+    /// The window's memory, the kit's data area: an install's <c>profiles/window/</c>, and the kit's own for a root that is no install.
     /// </summary>
     [Fact]
-    public void The_windows_memory_is_the_installs_window_entry_where_it_is()
+    public void The_windows_memory_is_the_installs_window_entry()
     {
         var install = Install();
         Assert.Equal(Path.Combine(install, "profiles", "window"), InstallHome.WindowMemory(install));
-
-        Lay(install, "data/config/window-state.json");
-        Assert.Equal(Path.Combine(install, "data"), InstallHome.WindowMemory(install));
 
         Assert.Null(InstallHome.WindowMemory(Path.Combine(_root, "bare")));
     }
@@ -91,9 +87,6 @@ public sealed class InstallHomeTests : IDisposable
         var root = Path.Combine(_root, "scratch");
         Directory.CreateDirectory(root);
         Assert.Equal(Path.Combine("profiles", "window"), Path.GetRelativePath(root, InstallHome.WindowMemoryOfRun(root)));
-
-        Lay(root, "chromium/Default/Preferences");
-        Assert.Equal(root, InstallHome.WindowMemoryOfRun(root));
     }
 
     /// <summary>A workspace build is not an install: the dev loop names the home itself, and nothing here applies.</summary>
