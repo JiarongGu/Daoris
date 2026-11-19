@@ -21,6 +21,7 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     {
         ["SESSION_WHERE"] = new { sessions = Array.Empty<object>() },
         ["CHANNEL_MEMBERS"] = new { line = "a1b2c3d4" },
+        ["READ_MARK"] = new { conversation = "a1b2c3d4" },
         ["SESSION_OPENINGS"] = new { ids = new[] { "a1b2c3d4" } },
         ["SESSION_RECORD"] = new { id = "a1b2c3d4" },
         ["SESSION_CHILD_HISTORY"] = new { id = "a1b2c3d4", child = "a1" },

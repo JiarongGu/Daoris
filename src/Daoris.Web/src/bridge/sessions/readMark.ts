@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import type { ReadMark } from '../../work/catchup/readMark';
 import { call } from '../call';
+import { askHeld, isPending } from '../state/held';
+
+/** What the query holds until the shell's work answers: no mark is known yet, which is not the mark of one never read. */
+const NOT_YET = 'not-yet' as const;
 
 // Where the person left each conversation on this machine: read as the conversation opens, moved as they read.
 
@@ -21,14 +25,17 @@ const markOf = (answer: unknown): ReadMark | null => {
  */
 export function useReadMark(conversation: string | null): { mark: ReadMark | null | undefined } {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = markKey(conversation ?? '');
   const read = useQuery({
-    queryKey: markKey(conversation ?? ''),
-    queryFn: async () => markOf(await call('READ_MARK', { conversation: conversation! })),
+    queryKey,
+    // Told by event: the shell answers what it holds, and its read of the store comes as `ANSWERED`; until then no mark is known.
+    queryFn: () => askHeld('READ_MARK', client, queryKey, { conversation: conversation! }, (answer) => (isPending(answer) ? NOT_YET : markOf(answer))),
     enabled: isAvailable && Boolean(conversation),
     refetchOnMount: 'always',
     staleTime: 0,
   });
-  return { mark: read.isError ? null : read.data };
+  return { mark: read.isError ? null : read.data === NOT_YET ? undefined : read.data };
 }
 
 /** The person's mark moved to the newest event they had on screen (`READ_MARK_MOVE`); the answer is the mark that stands. */

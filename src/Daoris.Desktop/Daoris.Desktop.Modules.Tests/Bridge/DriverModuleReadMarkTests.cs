@@ -19,6 +19,9 @@ public sealed class DriverModuleReadMarkTests : DriverModuleBridge
         await AnswerAsync(module, "READ_MARK_MOVE",
             new { conversation = "s1", part = "s2", seq = 40, at = "2026-11-19T10:04:00Z", steps = 2 });
         var back = await AnswerAsync(module, "READ_MARK_MOVE", new { conversation = "s1", part = "s2", seq = 12, at = "2026-11-19T10:01:00Z" });
+        // Told by event: the read answers what is held until the move's declared change (which the pipeline publishes) is told.
+        Assert.Equal(StateScopes.ReadMarks, DriverModule.Declared(new Shenora.Core.Ipc.IpcRequest { Id = "x", Module = DriverModule.Name, Type = "READ_MARK_MOVE" })!.Scopes);
+        StatePublisher.Publish(Bus, StateScopes.ReadMarks);
         var read = await AnswerAsync(module, "READ_MARK", new { conversation = "s1" });
 
         Assert.Equal(40, back.GetProperty("mark").GetProperty("seq").GetInt64());

@@ -92,6 +92,9 @@ public enum StateScopes
     /// <summary>A checkout's index, which the Changes tab reads: moved by a person's stage, unstage or Undo.</summary>
     Checkouts = 1 << 24,
     Files = 1 << 25,
+
+    /// <summary>Where the person left each conversation: moved by a read mark's move, which the conversation's page reads once as it opens.</summary>
+    ReadMarks = 1 << 26,
 }
 
 /// <summary>
