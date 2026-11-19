@@ -84,10 +84,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
         Assert.Equal("https://portal.example.com/settings", question.GetProperty("site").GetString());
     }
 
-    /// <summary>
-    /// 🔴 A conversation's sign-in question (its file marked <c>conversation</c>) reads whatever the conversation's state, since a conversation
-    /// has no park to bind it to; a conversation's file not so marked, and another kind of record's, read none unless parked.
-    /// </summary>
+    /// <summary>A conversation's marked sign-in question reads whatever its state; an unmarked one or another kind of record's reads only parked.</summary>
     [Theory]
     [InlineData("chat", "working", true, true)]
     [InlineData("chat", "completed", true, true)]

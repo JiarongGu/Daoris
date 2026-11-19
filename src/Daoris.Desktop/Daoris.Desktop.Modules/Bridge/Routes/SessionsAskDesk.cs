@@ -193,8 +193,6 @@ internal sealed class SessionsAskDesk(DriverContext context)
     {
         var id = press.Id;
         var record = _loop.Service is { } service ? await service.RecordAsync(id, cancellationToken).ConfigureAwait(false) : null;
-        // A conversation has no park: its sign-in question (its file marked so) stands whatever its state, until a word of the person's
-        // answers it, so the dock draws it between turns too.
         var conversation = record is { Kind: "chat" };
         if (record is null || (!conversation && record is not ({ Parked: true } or { State: SessionStates.AwaitingStep })))
         {

@@ -180,6 +180,9 @@ public sealed class QuestionFiles(string home)
         return File.Exists(path) ? Delete(path) : QuestionSettle.None;
     }
 
+    /// <summary>The session's question gone where it is a conversation's own (marked so): a conversation has no run opening to clear it.</summary>
+    public QuestionSettle ClearConversation(string session) => Read(session) is { Conversation: true } ? Clear(session) : QuestionSettle.None;
+
     /// <summary>The file gone, a refusal tried again briefly; <see cref="QuestionSettle.Stayed"/> where the disk would still not let it go.</summary>
     private static QuestionSettle Delete(string path)
     {
