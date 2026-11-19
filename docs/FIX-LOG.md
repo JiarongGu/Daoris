@@ -14536,3 +14536,24 @@ installed window is not yet seen.
 - **Fix:** the `settings` usage names `settings drain <minutes>`; `question_ask`'s words are cut to what an agent needs (2,4xx
   characters), the listing 51,392.
 - **Verify:** the driver's command and text tests (838 passed); the service's listing, description and question tests (84 passed).
+
+## 2026-11-20 — The workflow editor's composing tests sit on the unit timeout (WorkflowEditor.test.tsx)
+
+- **Seen:** SESSIONVIEW1g's merge: `src/workflow/edit/WorkflowEditor.test.tsx` "failed again alone" in reached, "Test timed out
+  in 10000ms" on the keyboard and pointer composing cases (10,189 and 10,361 ms) and the removing cases after them; 14 of 14
+  pass on a quiet machine.
+- **Cause:** each composing case types a whole release workflow through the chart, about 10 s on an idle machine, against
+  the suite's 10 s `testTimeout` (`vite.config.ts`): any load fails it; no change of the branch's reaches it.
+- **Fix:** the composing and removing groups carry a 30 s timeout of their own; the editor itself goes with the window
+  redesign's workflow rows.
+- **Verify:** `npx vitest run src/workflow/edit/WorkflowEditor.test.tsx`: 14 passed.
+
+## 2026-11-20 — The session groups route sent a step's node, kind and mark only (SESSIONVIEW1g, GroupsStateSliceTests)
+
+- **Seen:** SESSIONVIEW1g's merge: `GroupsStateSliceTests` red, "the page reads `steps.role`, which is neither pushed nor the
+  pull's" for `role`, `attempt`, `since`, `code`, `earlier` and an earlier attempt's fields.
+- **Cause:** SESSIONVIEW1g added each step's role, attempt, start, code and earlier attempts to the passage the head's track and
+  the step rows read, and not to the window's route (`SessionsGroupsWires`) or the pushed slice (`GroupsStateSlice`), so the
+  window would have drawn the track without them; the slice's census caught it at the merge.
+- **Fix:** the route projects the new fields and the slice pushes them (`steps`, `earlier`); the census's fixture carries them.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter "FullyQualifiedName~GroupsStateSliceTests"`: 18 passed.
