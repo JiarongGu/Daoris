@@ -45,9 +45,9 @@ public static class AccountIdForm
     }
 
     /// <summary>
-    /// Whether a legacy id was the person's word, which the account keeps as its name where it has none: anything but a counter
+    /// Whether a legacy id is the person's word, which the account keeps as its name where it has none: anything but a counter
     /// (<c>account-</c> and digits), which nobody chose.
     /// </summary>
-    public static bool WasAWord(string legacy) =>
+    public static bool IsAWord(string legacy) =>
         !(legacy.StartsWith("account-", StringComparison.OrdinalIgnoreCase) && legacy.Length > 8 && legacy.AsSpan(8).IndexOfAnyExcept("0123456789") < 0);
 }

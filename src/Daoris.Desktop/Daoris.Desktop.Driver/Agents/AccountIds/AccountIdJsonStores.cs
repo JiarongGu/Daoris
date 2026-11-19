@@ -4,8 +4,8 @@ using static Daoris.Driver.AccountIdJson;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>accounts.json</c>: each moving id's entry under its new id, and an id that was the person's word kept as the account's name where
-/// it has none (<see cref="AccountIdForm.WasAWord"/>). An entry named like an account that is none (a lock's) is a stray, dropped.
+/// <c>accounts.json</c>: each moving id's entry under its new id, and an id that is the person's word kept as the account's name where
+/// it has none (<see cref="AccountIdForm.IsAWord"/>). An entry named like an account that is none (a lock's) is a stray, dropped.
 /// </summary>
 internal sealed class AccountIdNamesStore : IAccountIdStore
 {
@@ -17,7 +17,7 @@ internal sealed class AccountIdNamesStore : IAccountIdStore
             {
                 var held = AccountFileNodes.Child(root, rename.Agent);
                 var key = held is null ? null : AccountFileNodes.Key(held, rename.From);
-                var word = AccountIdForm.WasAWord(rename.From) && Nameable(held, rename.From);
+                var word = AccountIdForm.IsAWord(rename.From) && Nameable(held, rename.From);
                 if (key is null && !word) continue;
 
                 held ??= AccountFileNodes.Made(root, rename.Agent);
@@ -28,7 +28,7 @@ internal sealed class AccountIdNamesStore : IAccountIdStore
             }
 
             return found;
-        }, make: renames.Any(rename => AccountIdForm.WasAWord(rename.From)));
+        }, make: renames.Any(rename => AccountIdForm.IsAWord(rename.From)));
 
     /// <summary>Each entry named like an account that is none, by agent, in the file's order.</summary>
     public static IReadOnlyList<AccountIdStray> Strays(string home)
@@ -80,7 +80,7 @@ internal sealed class AccountIdKeyedStore(Func<string, string> path) : IAccountI
     internal static IEnumerable<AccountIdReference> Keyed(JsonObject root, AccountIdRename rename, string place, string under)
     {
         var found = new List<AccountIdReference>();
-        foreach (var agent in Agents(root, rename.Agent))
+        foreach (var agent in AgentKeys(root, rename.Agent))
         {
             var held = under.Length == 0 ? root[agent] as JsonObject : AccountFileNodes.Child(root[agent] as JsonObject, under);
             if (held is null || AccountFileNodes.Key(held, rename.From) is not { } key) continue;

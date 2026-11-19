@@ -375,7 +375,7 @@ public static class AccountNames
     {
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (Child(root, agent) is not { } held) return names;
-        // An entry named like a lock's folder is no account's (an earlier build listed such a folder as one, and its name was kept).
+        // An entry named like a lock's folder is no account's (such a folder holds no sign-in, so no name is kept for it).
         foreach (var (id, node) in held)
         {
             if (!HarnessAccountFolders.NotAnAccount(id) && node is JsonObject entry && Name(entry) is { } name) names.TryAdd(id, name);

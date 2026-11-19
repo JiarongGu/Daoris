@@ -163,7 +163,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 **Accounts**
 
 26. An account is made by signing in into a fresh folder named by a new id, `acct-` and eight hex characters (`AccountIdForm`);
-    `agent account add <agent> <account>` still makes a folder under the word given. An id an earlier build named by a counter (`account-N`) or a word moves once to that form, to
+    `agent account add <agent> <name>` and the bridge's `profile-add` make one the same way (`AccountAdd`), the word given its
+    name, never its id; one already so named is the answer. An id an earlier build named by a counter (`account-N`) or a word moves once to that form, to
     an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
     orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
     `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):

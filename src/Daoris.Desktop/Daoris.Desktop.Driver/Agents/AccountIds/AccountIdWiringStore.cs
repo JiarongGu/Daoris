@@ -36,7 +36,7 @@ internal sealed class AccountIdWiringStore : IAccountIdStore
     private static void Value(JsonObject? agents, AccountIdRename rename, string where, Action<AccountIdRename, string> said)
     {
         if (agents is null) return;
-        foreach (var agent in Agents(agents, rename.Agent).Where(agent => Names(agents[agent], rename.From)))
+        foreach (var agent in AgentKeys(agents, rename.Agent).Where(agent => Names(agents[agent], rename.From)))
         {
             agents[agent] = rename.To;
             said(rename, $"{where}.{agent}");
@@ -47,7 +47,7 @@ internal sealed class AccountIdWiringStore : IAccountIdStore
     private static void Orders(JsonObject? agents, AccountIdRename rename, string where, Action<AccountIdRename, string> said)
     {
         if (agents is null) return;
-        foreach (var agent in Agents(agents, rename.Agent)) List(agents[agent] as JsonArray, rename, $"{where}.{agent}", said);
+        foreach (var agent in AgentKeys(agents, rename.Agent)) List(agents[agent] as JsonArray, rename, $"{where}.{agent}", said);
     }
 
     private static void List(JsonArray? order, AccountIdRename rename, string where, Action<AccountIdRename, string> said)
@@ -64,7 +64,7 @@ internal sealed class AccountIdWiringStore : IAccountIdStore
     private static void Keep(JsonObject? agents, AccountIdRename rename, string where, Action<AccountIdRename, string> said)
     {
         if (agents is null) return;
-        foreach (var agent in Agents(agents, rename.Agent))
+        foreach (var agent in AgentKeys(agents, rename.Agent))
         {
             if (agents[agent] is JsonObject use && Names(use["keep"], rename.From))
             {
@@ -78,7 +78,7 @@ internal sealed class AccountIdWiringStore : IAccountIdStore
     private static void Pooled(JsonObject? agents, AccountIdRename rename, Action<AccountIdRename, string> said)
     {
         if (agents is null) return;
-        foreach (var agent in Agents(agents, rename.Agent))
+        foreach (var agent in AgentKeys(agents, rename.Agent))
         {
             if (agents[agent] is not JsonArray receipts) continue;
             for (var at = 0; at < receipts.Count; at++)

@@ -34,14 +34,14 @@ internal interface IAccountIdStore
 /// <summary>
 /// The one-time move of every account id that is not the hash form (<see cref="AccountIdForm"/>) to the id
 /// <see cref="AccountIdForm.Moved"/> derives, with every reference it has, and of each entry in <c>accounts.json</c> named like an account
-/// that is none. Not a second reader of an older id (D323): once moved, nothing reads the old one, and a second move finds nothing.
+/// that is none. Not a second reader of an older id: once moved, nothing reads the old one, and a second move finds nothing.
 /// </summary>
 /// <remarks>
 /// <para><b>The folder first</b>: an id whose folder does not move (a file held open in it) keeps every reference, so a home never
 /// names an account by an id it does not have. Then each store, in <see cref="Stores"/>' order, every rename at once.</para>
 /// <para><b>Plan and apply are one walk</b>: the plan is the apply with nothing written, so the two cannot disagree. The verb,
 /// <c>daoris agent ids</c> (<see cref="AccountIdsCommand"/>), applies only while nothing of Daoris runs on the home.</para>
-/// <para>A record that says what happened keeps the id it was written with: a move's row, a hand-over's file, a session's events
+/// <para>A record that says what happened keeps the id it names: a move's row, a hand-over's file, a session's events
 /// and the machine log. The probe locks under <c>run/</c> are a process's, and go with it.</para>
 /// </remarks>
 public static class AccountIdMoves
@@ -69,7 +69,7 @@ public static class AccountIdMoves
     /// The move done: each id's folder, then every reference; what it did, each id that did not move saying why. Planned first, so a store
     /// that does not read stops it before anything moves.
     /// </summary>
-    /// <exception cref="DriverException">A store does not read; nothing was changed.</exception>
+    /// <exception cref="DriverException">A store does not read; nothing changes.</exception>
     public static AccountIdPlan Apply(string home, string? knowledgeDb = null) =>
         Walk(home, knowledgeDb, write: false).Nothing ? new AccountIdPlan([], []) : Walk(home, knowledgeDb, write: true);
 

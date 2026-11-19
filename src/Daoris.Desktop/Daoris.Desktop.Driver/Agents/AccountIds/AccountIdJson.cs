@@ -16,7 +16,7 @@ internal static class AccountIdJson
         renames.Where(rename => Same(rename.From, id)).ToList() is [var only] ? only : null;
 
     /// <summary>Each key of <paramref name="held"/> that names <paramref name="agent"/>, as written.</summary>
-    public static IEnumerable<string> Agents(JsonObject held, string agent) =>
+    public static IEnumerable<string> AgentKeys(JsonObject held, string agent) =>
         [.. held.Select(pair => pair.Key).Where(key => Same(key, agent))];
 
     /// <summary>The key <paramref name="from"/> renamed <paramref name="to"/> where it stood, every other key kept in its place.</summary>
@@ -32,7 +32,7 @@ internal static class AccountIdJson
         node is JsonValue value && value.TryGetValue<string>(out var text) && Same(text, id);
 
     /// <summary>
-    /// A JSON file walked: its root handed to <paramref name="edit"/>, and written back where anything was found and the walk writes, under
+    /// A JSON file walked: its root handed to <paramref name="edit"/>, and written back where anything is found and the walk writes, under
     /// the file's <see cref="KeepLock"/>. A missing file holds nothing; one that does not read stops the move before anything changes.
     /// </summary>
     public static IReadOnlyList<AccountIdReference> File(

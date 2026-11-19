@@ -119,8 +119,8 @@ public sealed class AccountIdMovesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 After the move the home reads the same accounts, names, order, sessions and usage, each under its hash id; an id that was the
-    /// person's word (<c>Gmail</c>) is the account's name where it had none, and a counter (<c>account-3</c>) never is.
+    /// 🔴 After the move the home reads the same accounts, names, order, sessions and usage, each under its hash id; an id that is the
+    /// person's word (<c>Gmail</c>) becomes the account's name where it has none, and a counter (<c>account-3</c>) never is.
     /// </summary>
     [Fact]
     public void The_apply_keeps_the_same_accounts_sessions_usage_and_order_under_hash_ids()

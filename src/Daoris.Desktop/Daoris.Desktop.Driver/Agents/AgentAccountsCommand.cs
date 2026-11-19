@@ -140,26 +140,30 @@ internal static class AgentAccountsCommand
         }
     }
 
-    /// <summary><c>profile add &lt;agent&gt; &lt;profile&gt;</c>: a folder, and nothing else; one that is there is an answer.</summary>
+    /// <summary>
+    /// <c>profile add &lt;agent&gt; &lt;name&gt;</c>: an account folder under a drawn id, the word given as its name; one already
+    /// so named is an answer.
+    /// </summary>
     private static AgentPress Add(AccountVerbContext at)
     {
         var owner = at.Owner();
-        var profile = at.Bare(3, "<agent> <profile>");
-        var where = Folder(at.Home, owner, profile);
-        var existed = Directory.Exists(where);
+        var profile = at.Bare(3, "<agent> <name>");
+        var existed = AccountNames.Resolve(HarnessSettings.Profiles(at.Home, owner), AccountNames.Of(at.Home, owner), profile) is not null;
+        var id = "";
         return new AgentPress(at.Verb, AgentRoutes.Harness, at.Isolated,
             new JsonObject { ["action"] = "profile-add", ["door"] = owner, ["profile"] = profile },
             _ =>
             {
-                Directory.CreateDirectory(where);
+                id = AccountAdd.Make(at.Home, owner, profile);
                 return Done();
             },
             _ => null,
             _ =>
             {
+                var where = Folder(at.Home, owner, id);
                 at.Say(existed
-                    ? $"{Prefix}: `{owner}` profile `{profile}` already exists — {where}"
-                    : $"{Prefix}: `{owner}` profile `{profile}` — {where}");
+                    ? $"{Prefix}: `{owner}` account `{profile}` already exists — {where}"
+                    : $"{Prefix}: `{owner}` account `{profile}` — {where}");
                 at.Say($"  It is empty until you log into it: `daoris agent login {owner} --account {ShellWord.Of(profile, ShellWord.Account)}`.");
                 return 0;
             });

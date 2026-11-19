@@ -7,11 +7,11 @@ namespace Daoris.Driver;
 public static class AccountAdd
 {
     /// <summary>
-    /// The account <paramref name="name"/> names, made where none does: one already called so, by its name or its id, is the answer, as
-    /// asking for one that is there always was. The name is judged before anything is made (<see cref="AccountNames.Problem"/>).
+    /// The account <paramref name="name"/> names, made where none does: one already called so, by its name or its id, is the answer, for
+    /// asking for one that is there changes nothing. The name is judged before anything is made (<see cref="AccountNames.Problem"/>).
     /// </summary>
     /// <returns>The account's id.</returns>
-    /// <exception cref="AccountNameException">The name is refused; nothing was made.</exception>
+    /// <exception cref="AccountNameException">The name is refused; nothing is made.</exception>
     public static string Make(string home, string agent, string? name)
     {
         var accounts = HarnessSettings.Profiles(home, agent);
