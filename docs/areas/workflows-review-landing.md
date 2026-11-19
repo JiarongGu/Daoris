@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
-| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), the pass that journals and settles by them (`StepActs`), and testing a quest's parts together (`JointChecks`, `JointReturns`) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), a repository's values moved into its delivery knowledge (`ValuesMoves`), the pass that journals and settles by them (`StepActs`), and testing a quest's parts together (`JointChecks`, `JointReturns`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -51,7 +51,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    `WorkflowValuesKey.Apply` (the terminal twin is routed to `WorkflowConsole` from the tree, as `take`, `hand` and `give-back` are), which
    refuses a value that is no JSON or a change with no reason and records the reason beside the values; values are read by node id, so
    `workflow apply` says each declared entry its new version holds no node for and, for each new node of the same plugin that takes
-   none, prints the `workflow values …` line that carries it, never writing one itself (`WorkflowApplyNotes`)
+   none, prints the `workflow values …` line that carries it, never writing one itself (`WorkflowApplyNotes`), except values whose
+   node the new version replaced by a step naming a delivery knowledge entry, which it says move into that entry (rule 3e)
    (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
    or `target-changed` failure listed, never by editing the file: on the run's step failed so, the window's form (`ReleaseStepDoors`)
    asks the plugin's `discover-releases`, the holder picks a definition (with its pipeline and trigger branches), a stage and an action
@@ -108,7 +109,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    browser sees (`SignInAnswers`) or their words, is its next turn through the say door, its retry's receipt settling the step with no
    one relaying it. The long loop: a step its receipts settle whose act reached only after a receipt that did not (failed, or waiting on
    another role) proposes what it came to for the knowledge entry it names (`StepLessons`, `workflows/acts/proposed.json`), carried
-   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. The shipped
+   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. A
+   repository's values the newest version of its workflow reads no more move the same way (`ValuesMoves`, D325 point 5): where that version
+   holds a step naming an entry (of the dropped node's role, else the one entry it names), the pass at the look's deadline proposes the
+   entry each value, whatever door saved the version, carried by every hand-off of a step naming it until the entry in the repository's
+   checkout holds each value as a word of its own; then each node's values are cleared from `workflowValues` with that reason, save a
+   node's that a run not ended is bound to a version holding (its fixed release steps) and a node's set anew since. The approval node's
+   values, which the actor form still reads, never move: they are the reader D325 point 7 keeps. The shipped
    `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
    `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
    after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its
