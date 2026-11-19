@@ -86,7 +86,7 @@ Wide, 1600 px, Sessions in front, Ask Daoris open, after a 47 min absence:
 │ Company│                      │                                                    │                              │
 │ ⚙      │                      │                                                    │                              │
 ├────────┴──────────────────────┴────────────────────────────────────────────────────┴──────────────────────────────┤
-│ ● Live  ⇅ Synced 2 s ago   Accounts: 1 at its limit   Week $37 of $60   Browser · driven by api-server   1.8.3 ✓ │
+│ ● Live  ⇅ Synced 2 s ago   Accounts: 1 at its limit   Key $2.30 of $20  Browser · driven by api-server   1.8.3 ✓ │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -105,7 +105,7 @@ Narrow, 900 px, the same moment, the side bar closed; the main area has replaced
 │  ⚿▲ │                                                                                    │
 │  ⚙  │                                                                                    │
 ├─────┴────────────────────────────────────────────────────────────────────────────────────┤
-│ ● Live   1 at its limit   $37 of $60                                          1.8.3   +2 │
+│ ● Live   1 at its limit   $2.30 of $20                                        1.8.3   +2 │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -237,7 +237,7 @@ The frame counts an attention row only when its kind is one of these, or when no
 | Go-ahead | 放行 | an act the repository's declaration keeps the owner's: a production write, a push outside, deleting the owner's data, trusting a folder |
 | Release | 发布 | a release to a stage the owner keeps, or a set-up shown for the owner's look |
 | Sign-in | 登录 | an account or a remote is signed out and work needs it |
-| Money | 费用 | the week's spend nears its budget, or a prepaid balance runs out |
+| Money | 费用 | an account paid per use nears the budget you set for its week or month, or its prepaid balance runs out (a subscription carries no money budget, §13.6) |
 | Failed | 失败 | a step failed after its retries and after another agent tried |
 | Confirm it was you | 确认是你 | a terminal's press asks to act as the owner (D156's door) |
 
@@ -246,7 +246,7 @@ kinds as the owner's or the agents' with its doctrine reason, and fails a new ki
 `signed-out`, `git-held` and an `account-wait` that only a sign-in clears are Sign-in; `confirmation` is Confirm it was you;
 `go-ahead`, `git-ask`, `trust` and `space` are Go-aheads where the declaration keeps the act the owner's; `step`, `set-up` and
 `integration` are Releases where the owner holds the step's role; `departure`, `intake`, `plan-question`, `design-question`
-and `unanswerable` are Questions; `policy-hold` is Money where the hold is a budget; `left` and `parked-quest` are Failed once
+and `unanswerable` are Questions; `policy-hold` is Money where the hold is a per-use account's budget; `left` and `parked-quest` are Failed once
 the agents gave up; `memory` beyond the leave the owner set is a Go-ahead. The rest (`parked`, `helper-ended`, `answer`,
 `request-declined`, `proposal`, `rule`, `helper`, `hand-over`, `permission`, `quiet`, `unclosed`, `work`, `opinion`, `review`,
 `steward-stopped`, `second-check`) are the agents': the supervisor's, the steward's or the reviewer's. `proposal` (an ask's
@@ -299,7 +299,7 @@ while a course is still open.
 - The desktop keeps one presence record for the machine: the last input in any main window, the absences, and the *caught-up*
   mark. Away begins after 30 minutes with no input in any main window, or when every main window is minimised or closed.
 - Back after **2 h or more**: the main window in front goes to `/overview/waits/<first>`, and Overview shows the full away banner
-  ("You were away 6 h 12 m (09:10–15:22) · ◆ 3 · ✓ 7 · ▲ 1 fixed without you · $14.20", *Back to where you were*, *Caught
+  ("You were away 6 h 12 m (09:10–15:22) · ◆ 3 · ✓ 7 · ▲ 1 fixed without you", *Back to where you were*, *Caught
   up*). Back after **30 min to 2 h**: the place stays and the away line opens under the title strip.
 - *Caught up* (C, or the button) moves the mark to now in every window. A second absence before it adds to the first.
 - The mark is what Overview's *Since you left* reads, and what a place with no read mark of its own uses for its "new since"
@@ -499,7 +499,7 @@ through `Timestamp`, `Money` and `locales/format.ts`. `className` places a compo
 
 | Layer | Component | What it is | Row |
 |---|---|---|---|
-| primitive | `Text`, `Heading`, `AuthoredText`, `Icon` (one object-icon table), `Divider` (rule, step rule, dashed new-since), `Timestamp`, `Money` (exact, about), `KeyHint`, `Tag`, `Fold` (a titled section that opens in place, a summary when closed) | type, words, marks of time and money | UIDS8 |
+| primitive | `Text`, `Heading`, `AuthoredText`, `Icon` (one object-icon table), `Divider` (rule, step rule, dashed new-since), `Timestamp`, `Money` (an amount, with its period where it has one), `KeyHint`, `Tag`, `Fold` (a titled section that opens in place, a summary when closed) | type, words, marks of time and money | UIDS8 |
 | primitive | `StatusMark` (the nine marks, with a word and an optional count), `Badge` (amber counts only waits) | state | UIDS9 |
 | primitive | `Button` (primary, yes, danger, secondary, quiet; sm, md; busy keeps its label; `disabledReason`; `hold` with its consequence line; `keyHint`), `IconButton`, `TextField` (text, search, inline reply, time), `TextArea` (plain, composer with an attachments slot; Ctrl+Enter sends, never while composing), `SelectField`, `CheckField`, `ChoiceRow`, `Segmented` | controls | UIDS10 |
 | primitive | `Menu`, `ContextMenu`, `Tip`, `Popover`, `Peek` (an entity's hover card), `Tabs` (a select at narrow), `Sheet` (composer 640, form 480, full under 1024), `PaletteFrame`, `Toast` (ok, error, undo with its countdown) | overlays, in one layer order | UIDS11 |
@@ -541,7 +541,7 @@ The plans' names and aliases map onto the library so:
 | ListHead, ListDetail, StatusNavRow | `PaneHeader`, `SplitView`, `ListRow` (two lines) |
 | StepPath, Track, the step rail | `StepTrack` (down, with bodies, serves Get started) |
 | DecidedLine, DigestLine | `DigestLine` |
-| TokenLine | `CostLine` (tokens and money, §13.6) |
+| TokenLine | `CostLine` (use against a plan's windows, tokens, and money where it is real, §13.6) |
 | DeskBand | `OverviewBand` |
 | AttachmentChips, Composer | `TextArea` (composer, attachments slot) |
 | PaletteGroups, QuickPanel | `CommandPalette` over `PaletteFrame` and `Combobox` |
@@ -574,7 +574,7 @@ left* above *Moving now* on the right, one below):
 │     │ │[Approve release ▮ Y] [Hold N]  │ │ Your conversations                  │    Reverse…                       │
 │     │ │ Not mine · Later · Reply · Open│ │  ● engine      you opened it    2 h │ Cleared without you  1            │
 │     │ ╰────────────────────────────────╯ │                                     │  – Codex · personal signed back in│
-│     │ ▸ ◆ Sign in: Claude · work  40 m   │ Pending 2 ▸   Ended today 23 ▸      │ Used  $14.20 · 2.4 M tokens ▸     │
+│     │ ▸ ◆ Sign in: Claude · work  40 m   │ Pending 2 ▸   Ended today 23 ▸      │ Used  Claude 61% wk · key $2.30 ▸ │
 │ ⚙   │ ▸ ◆ CSV or XLSX first?       2 h   │                                     │ Install  updated to 1.8.3 · 12:00 │
 │     │ With the agents 6 ▸     Answered 4▸│                                     │                                   │
 └─────┴────────────────────────────────────┴─────────────────────────────────────┴───────────────────────────────────┘
@@ -600,7 +600,7 @@ repository and model name stay as written):
 │     │ 你离开之后 · 09:10 起                                                按需求 ▾    │
 │     │ ✓ 设置页暗色模式 — 已合入 2 个仓库 · 11:02 · ✓ 检查 31/31                        │
 │     │ ▲ api-server e2e 偶发失败 — 第 2 次尝试通过 · 10:40 ↗                            │
-│     │ 已代你决定 2 项 ▸    已自行解除 1 项 ▸    用量 $14.20 ▸                          │
+│     │ 已代你决定 2 项 ▸    已自行解除 1 项 ▸    用量 本周 61% ▸                        │
 │     │ 进行中  9 个会话                                                    按需求 ▾     │
 │     │ ▸ 公共 API 限流          ● ○ ◌  api-server 检查 · e2e 9/14            41 分      │
 │ ⚙   │ ▸ 账单修复               ● ▲    config 检查失败 · 第 2 次，共 3 次     3 分      │
@@ -616,7 +616,8 @@ repository and model name stay as written):
   repository, step or whom it waits on, the model that ran, its time in state; a teammate's tagged *on a teammate's machine*,
   with no press; narrow, a group folds to its marks and its most urgent row. Foot *Pending n ▸*, *Ended today n ▸*.
 - **Since you left** (after *Caught up*: *Today*): *Landed* (and released), *Failed, then fixed without you*, *Decided without
-  you* (with *Reverse…*), *Cleared without you*, *Used* (money and tokens by the model that ran, "as each agent reported"),
+  you* (with *Reverse…*), *Cleared without you*, *Used* (each subscription's share of its windows and the tokens by the model that ran, "as each agent reported";
+  money only for work on per-use accounts),
   *Install*; grouped by ask; a section past five lines ends *+n more ▸*; more than a day away is grouped by day. Composed in the
   driver from records already kept (`OverviewSince`), never by a model.
 - **States**: first run, one sentence and *Get started* (*Set up Daoris: n steps left · Continue*); quiet, "Nothing waits on
@@ -665,11 +666,11 @@ Wide, the list open, the facts rail at 68rem or more of main width:
 │ Ended today  23 ▸     │   ⇢ handed “show remaining quota” to web-app ↗               │ WITH                         │
 │                       │ ── 2 Review · Codex · gpt-5.1 · 10:31–10:52 ✓ ────────────── │ ⇢ web-app · quota ↗          │
 │                       │   ⚖ second opinion, Codex · gpt-5.1, on burst size: agreed   │ ↗ knowledge helper · 2 asks  │
-│                       │ ✗ $ npm test · exit 1 · 2 failed ▸                           │ MODELS, TOKENS AND COST      │
+│                       │ ✗ $ npm test · exit 1 · 2 failed ▸                           │ MODELS AND USE               │
 │                       │ ── 3 Check · since 15:18 ● ───────────────────────── ↓ 3 new │ Claude · opus-4.1 · 6 turns  │
-│                       │ RUNNING 2  ● Turn 7 · editing bucket.ts · 1 m 10 s           │   1.3 M in · 88 k out · $4.10│
+│                       │ RUNNING 2  ● Turn 7 · editing bucket.ts · 1 m 10 s           │   1.3 M in · 88 k out · 4% wk│
 │                       │            ▶ Check: e2e · 9/14 · 4 m     Follow · Open · Stop│ Codex · gpt-5.1 · review     │
-│                       │ WAITING ON YOU 1  ◆ Approve release 2.4 to beta? (the card)  │   190 k in · about $0.60     │
+│                       │ WAITING ON YOU 1  ◆ Approve release 2.4 to beta? (the card)  │   190 k in · 1% of the week  │
 │                       │ ╭ Message the agent… it reads it after the current step. ──╮ │ as each agent reported 15:20 │
 │                       │ ╰ ⊕  Claude · opus-4.1 · high · home        [Send Ctrl ⏎]  ──╯ │ Details ▸                    │
 └───────────────────────┴──────────────────────────────────────────────────────────────┴──────────────────────────────┘
@@ -687,8 +688,9 @@ to *Running 2 ▸*; the dock shows one card whole and the rest one line; the rai
   lines on `sunken`; ◇ *Daoris* lines; steps as labelled rules; the dashed *Since you left* rule with its span; *↓ n new*.
   D320's never-folded rows stay unfolded.
 - **The facts rail** (state, never events): *Changes* (files ±, commits on the branch, the pull request, checks, *Review the
-  changes ▸*), *With* (one line per relation, a jump to its first row and a door), *Models, tokens and cost* (per model that
-  ran; "asked X, ran Y" where they differ), *Details ▸*. A file or *Review the changes* opens the panel's **Changes focus**
+  changes ▸*), *With* (one line per relation, a jump to its first row and a door), *Models and use* (per model that ran:
+  tokens, the share of its account's windows, money only where the account is paid per use; "asked X, ran Y" where they
+  differ), *Details ▸*. A file or *Review the changes* opens the panel's **Changes focus**
   (the review frame, diff, patch, handbacks and gates) with a breadcrumb and Esc, as a child opens; the side bar's Outputs view
   goes (D339).
 - **The foot**: the live band (*RUNNING n*, each live thing with its time and last line, *Follow · Open · Stop*); the dock (every
@@ -725,7 +727,7 @@ Two columns from 64rem of main width, one below with the waits first:
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ ◆ Export reports to CSV                                      Products · since Mon 10:02 · $6.10 so far        ⋯ │
+│ ◆ Export reports to CSV                              Products · since Mon 10:02 · 9% of the week so far        ⋯ │
 │ “Owners need to export any report as CSV, with the same columns as the screen. Big ones too (1M rows)…” more ▸ │
 │ ▣ report-screen.png  ▤ columns.md      planned by supervisor · Claude · opus-4.1 · revision 2 ▸              │
 ├────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────┤
@@ -745,7 +747,8 @@ Two columns from 64rem of main width, one below with the waits first:
 └────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────┘
 ```
 
-- **Head**: the mark, the short title, workspace, age, cost so far; the owner's words untouched, the rest behind *more ▸*;
+- **Head**: the mark, the short title, workspace, age, its cost so far (its sessions' share of each subscription's windows,
+  and money for work on per-use accounts; an ask carries no budget, D343); the owner's words untouched, the rest behind *more ▸*;
   attachments as chips; *planned by <role> · <maker · model>* and *revision n ▸*.
 - **Quests**: one `QuestTrackRow` per part of the plan, each with its own `StepTrack` (repositories follow different
   workflows), the current step in words, the holder's `AgentChip`, its `EdgeLine`s ("started after …" past, "waits on …"
@@ -866,7 +869,7 @@ Machine-wide (D197: one set of accounts serves every workspace). Its list: **Acc
 
 ```text
 ┌──────────────────────┬──────────────────────────────────────────────────────────────────────┬──────────────────────────────┐
-│ COMPANY          + ⋯ │ ACCOUNTS  ◆ 1 signed out holds work · ‖ 1 at its limit · 4 ready · week $37 of $60  ↻ Read all│
+│ COMPANY          + ⋯ │ ACCOUNTS  ◆ 1 signed out holds work · ‖ 1 at its limit · 4 ready · key $2.30 of $20       ↻ Read all│
 │ ▌ Accounts        ▲  ├──────────────────────────────────────────────────────────────────────┼──────────────────────────────┤
 │   Claude Code  3     │ ┃◆ Sign in to work@example · Claude Code     holds 2 builds · 40 m   │ WHICH MODEL ACTUALLY RAN 24 h│
 │   Codex        1     │ ┃  Signed out at 14:40, not by Daoris; nothing else can run them now.│ 15:18 engine · Build         │
@@ -877,10 +880,10 @@ Machine-wide (D197: one set of accounts serves every workspace). Its list: **Acc
 │   What stays yours   │ home@example  ‖ at its limit to 14:23  5-h ▓▓▓▓▓▓▓▓▓▓ 100% [Try now]│ HOW ACCOUNTS ARE USED        │
 │ Connectors      ▲ 1  │ spare@example ● ready              5-h ▓▓░░░░░░░░ 18%          ⋯     │  Claude Code: most of them   │
 │   github.com     ●   │ CODEX   OpenAI · 0.160.0                                  Open ›     │  sessions at once: 6 [Change]│
-│   Azure DevOps   ●   │ me@example    ‖ cooling to 22:00   week ▓▓▓▓▓▓▓▓▓░ 88%  [Try now] ⋯  │ WHAT IT COSTS     this week  │
-│ Plugins              │ DEEPSEEK   key ····4f2a                                   Open ›     │  Claude Code about $28.10    │
-│   In-app browser ●   │ prepaid       ● ready   balance $12.40 of $20 · read 21:05       ⋯   │  DeepSeek $2.30 · $12.40 left│
-│   + Add              │ + Add an account   + Add an API key                                  │  week $37.20 of $60 Change › │
+│   Azure DevOps   ●   │ me@example    ‖ cooling to 22:00   week ▓▓▓▓▓▓▓▓▓░ 88%  [Try now] ⋯  │ SPEND AND BUDGETS            │
+│ Plugins              │ DEEPSEEK   key ····4f2a                                   Open ›     │  Claude Code: plan's windows │
+│   In-app browser ●   │ prepaid       ● ready   balance $12.40 of $20 · read 21:05       ⋯   │  DeepSeek key $2.30 in Nov   │
+│   + Add              │ + Add an account   + Add an API key                                  │  budget $20 a month Change › │
 └──────────────────────┴──────────────────────────────────────────────────────────────────────┴──────────────────────────────┘
 ```
 
@@ -924,13 +927,20 @@ tools) and Daoris's own plugins offered, with what each needs and what installin
 
 ### 13.6 Money
 
-The owner's direction: money is shown, against a weekly budget the owner sets (D343). Spend per agent, account and model:
-measured where the maker states money (a prepaid balance, a key's spend), elsewhere "about" from the usage ledger's turns times a
-dated, sourced price table per model and token kind, with the plan's share of its windows beside it; a missing reading is
-*unknown*, never 0. The weekly budget is set on Accounts (*Change ›*). A Money wait arises as the week's spend nears it: *Yes*
-raises it to a sum the card proposes, *No* holds new starts until the reset while running work goes on, and the card says how much
-of the spend is estimated. The same figures (`CostLine`) appear in the status strip ("Week $37 of $60"), Overview's *Used*, the
-session's *Models, tokens and cost* and an ask's *so far*.
+The owner's direction (2026-11-20): budgets follow how an account is paid, and money is shown only where it is real (D343).
+
+- **A subscription** (every account today) carries no money budget. Its use is shown against its plan's own windows, the session
+  and weekly limits the accounts already report, as a share and a reset (`Meter` limit cells). Its price appears only if the owner
+  enters it, as the plan's price and period, never spread over the work as an estimate.
+- **An account paid per use** (an API key) carries a budget the owner sets on its row in *Spend and budgets*, by the week or by
+  the month (the owner's choice of period), beside its measured spend and its prepaid balance (`Meter` budget bar). As the
+  period's spend nears the budget a Money wait arises on that account: *Yes* raises the budget to a sum the card proposes, *No*
+  holds new starts on that account until the period resets while running work goes on. A prepaid balance running out raises the
+  same kind.
+- A missing reading is *unknown*, never 0.
+- **An ask carries no budget.** It shows its cost so far: its sessions' share of each subscription's windows, with their tokens
+  by model, and money for the work on per-use accounts. The same figures (`CostLine`) appear in Overview's *Used*, a session's
+  *Models and use* and an ask's head; the status strip shows spend only while a per-use account has a budget (§15.2).
 
 ## 14. Settings
 
@@ -980,8 +990,8 @@ buttons. The menu bar, the layout toggles, the bell and the review chip go.
 ### 15.2 The status strip
 
 Facts the owner can trust, through a registry (`work/frame/statusItems.ts`) places add to: ● Live or ◐ *As of* (the driver's
-presence worded as freshness), *Synced n s ago*, *Accounts: 1 signed out · 1 at its limit* (Company), *Week $37 of $60*
-(Company), *Browser · driven by <session>* (the browser door's chips move here), the install's version and update state, *Setup: n
+presence worded as freshness), *Synced n s ago*, *Accounts: 1 signed out · 1 at its limit* (Company), and, only while an
+account paid per use has a budget, the one nearest its budget with its period (*Key $2.30 of $20 · Nov*, Company), *Browser · driven by <session>* (the browser door's chips move here), the install's version and update state, *Setup: n
 of 2* while Get started is open, ▲ when the disk is under its floor. Narrow, the rest fold to *+n*. The recall tier moves to where
 a search's results show (the palette, Knowledge).
 
@@ -1144,7 +1154,7 @@ is its baseline).
 | D340 | Every owner act is defined once and any actor can be given it; irreversible acts are one held press, reversible ones a 5 s Undo | D325 point 1 and APPROVEACT1 (extends), D284 §5's *Settings → Rules* home, platform UX's ask-once rule |
 | D341 | An ask becomes quests without a press | the ask page's "a proposal is a person's to accept" |
 | D342 | The workflow step editor goes; a change arrives as a before-and-after card | D223, D221 (amends) |
-| D343 | Money is shown, with a weekly budget the owner sets | D179's rejection of money, the glossary's *usage* (reverses) |
+| D343 | Budgets follow how an account is paid: a subscription is shown against its plan's windows, a per-use account carries a weekly or monthly budget; money only where it is real; an ask carries no budget | D179's rejection of money, the glossary's *usage* (amends) |
 | D344 | Daoris's releases are GitHub releases its installs read; an update installs when idle and is never the owner's question; the first release waits on the owner's go | D139 (amends) |
 
 Decisions the rows record when they build (each named in its row): the addresses by id and a link carrying no scope (UISH3), the
@@ -1208,9 +1218,12 @@ Where the plans disagreed, and what was decided:
 13. **The machine's setup.** Its access mode, git access and rules go to *What stays yours*; its default workflow to the
     Workspaces root's Workflow tab; its programs and dials to Settings › This machine.
 14. **The update banner** retires (UISH11); the status strip's item and Install and updates say one sentence from one key.
-15. **Money.** The owner's answer turns UISE7's and UISE19's tokens into money and tokens; UIRP28 adds money wherever tokens
-    show. The weekly budget is the one budget; UIWF14's per-ask budget is not built (§21).
-16. **The status strip's money** is the week against the budget ("Week $37 of $60"), the budget's own period, not "Today".
+15. **Money.** The plans differed (UISE: tokens until the owner chose; UIRP and UIWF: money with a weekly budget, and a budget
+    per ask). The owner's answer settles it: budgets follow how an account is paid (§13.6). UISE7's and UISE19's lines show each
+    subscription's share of its windows with the tokens, and UIRP28 adds money only for per-use accounts and entered prices; no
+    price table estimates subscription work; UIWF14 shows an ask's cost and builds no budget.
+16. **The status strip's spend** appears only while a per-use account has a budget, showing the one nearest it with its period
+    (UISH's "Today $14.20" and UIRP's "Week $37 of $60" both go).
 17. **The repository's first tab** is *Summary* (概要), so *Overview* names one thing.
 18. **Keys.** Ctrl+N a new ask; a new conversation keeps Sessions' + and gains Ctrl+Shift+N.
 
@@ -1225,8 +1238,10 @@ SESSIONVIEW1i; `UIWF:ask-page` UIWF2; `UIWF·ask composer` UIWF6; `UIRP:account-
 `UISH[Places]` UISH2; `UIST:notifications` UIST13; UIST's Disk space UIST6. New rows: UISH24 (the acts), UIRP29 (an act given
 to an agent), UIST14 (releases from the public repository). Cut: UISH1, UISH16, UISE8, UISE21, UIST9.
 
-The owner's answers (2026-11-19) and the steward's three: an ask becomes quests without a press (D341); the workflow step
-editor goes (D342); money is shown with a weekly budget (D343); Daoris publishes its own releases, the first on the owner's go
+The owner's answers (2026-11-19, and the budgets on 2026-11-20) and the steward's three: an ask becomes quests without a press
+(D341); the workflow step editor goes (D342); budgets follow how an account is paid: a subscription against its plan's windows
+with no money budget, an account paid per use with a weekly or monthly budget, money only where it is real, and no budget on an
+ask (D343); Daoris publishes its own releases, the first on the owner's go
 (D344); the Map and Knowledge move into Workspaces, six places on the rail (D332); an irreversible act is one held press,
 reversible acts get a 5-second Undo, every owner act is an act any actor can be given (D340); the home keeps the name Overview;
 the wide home draws its three bands as columns from 75rem, stacked below; Company is the place for accounts, roles, connectors
@@ -1234,10 +1249,5 @@ and plugins.
 
 ## 21. For the owner
 
-One question, new from the reconciling, and yours because budgets are:
-
-- **Should an ask carry a budget of its own, beside the weekly budget?** What it is: the work plan proposed that an ask could
-  hold its next start past a sum you set for it; your direction named one weekly budget. Yes: New ask's *More ▸* and the ask's ⋯
-  take a sum, and a Money wait arises for that ask before its next start would pass it (UIWF14 grows a driver half). No (the
-  default, built unless you say otherwise): the weekly budget is the only budget, and an ask shows what it has cost so far.
-  Where to look: §13.6 here and UIWF14 in `TASKS.md`.
+None open. The one question the reconciling raised (should an ask carry a budget of its own) was answered on 2026-11-20 with
+the wider rule of §13.6, recorded as D343: budgets follow how an account is paid, and an ask carries none.
