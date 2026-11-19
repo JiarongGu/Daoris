@@ -4,14 +4,14 @@
  * and line; the first assertion or error lines, kept short; and whether it fails on main too, which the caller checks by
  * running only that test's selection, or the gate, on main's tree (`mark`).
  *
- * The tests are read from the gate's trx where it wrote one (`readTrx`), else from its log: vitest's `FAIL <file> > <title>`
- * blocks, `node --test`'s `✖ failing tests` list, `dotnet test`'s `Failed <test>` lines, or the first error line with the
- * `file:line` or `file(line,col)` it names.
+ * The tests are read from the gate's trx (`readTrx`), else from its log: vitest's `FAIL` blocks, `node --test`'s `✖` list, `dotnet test`'s
+ * `Failed` lines, a `not ok` or `✖` line, or the first error line (never a pass line or a warning) with the place it names.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BLOCKING } from './reach.ts';
-import { failingTestLine, notAFailure, noneFailed } from '../test-failures.mjs';
+// @ts-expect-error — untyped workspace tooling, read through the seam its own tests use
+import * as untyped from '../test-failures.mjs';
 
 /**
  * Whether a failure of `gate` starts nothing more, so every red is found in one round: under `--keep-going` (`true`) none does;
@@ -32,6 +32,7 @@ export const BRIEF_FILE = 'brief.md';
 export const BRIEF_FAILURES = 12;
 export const BRIEF_LINES = 4;
 const WIDTH = 160;
+const { failingTestLine, notAFailure, noneFailed } = untyped as { failingTestLine: (line: string) => boolean; notAFailure: (line: string) => boolean; noneFailed: (exit?: number | null) => string };
 
 // eslint-disable-next-line no-control-regex
 const plain = (text: string): string => text.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/\r\n?/g, '\n');
