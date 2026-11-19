@@ -166,7 +166,6 @@ public sealed class SessionChildrenReplayTests : IDisposable
         Assert.Null(lifetimes.Read(new WireReading.StreamEnded("task/t1", SessionStream.SessionEnded)));
     }
 
-    /// <summary>A task the person stopped keeps who stopped it on the end its door says; one its agent ended keeps no one.</summary>
     [Fact]
     public void A_task_the_person_stopped_keeps_who_on_its_end()
     {

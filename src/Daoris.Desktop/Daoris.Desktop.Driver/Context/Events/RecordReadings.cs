@@ -7,8 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// An event the record cannot keep costs a console line, never the run: the conversation enriches a run, it does not run it.
-/// A task's end the person asked for keeps them as who stopped it (<see cref="SessionProcesses.PersonStopped"/>, handed as
-/// <c>stops</c>).
 /// </remarks>
 internal sealed class RecordReadings(
     string sessionId, ISessionOutput? output, ISessionEvents? events, ChildRecords? children = null, SessionProcesses? stops = null) : IReadingSink

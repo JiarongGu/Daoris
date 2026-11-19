@@ -28,7 +28,7 @@ const PANEL_STEP = 48;
  * people not to trust the control.
  *
  * **The session's raw console, never its streams**: what the session runs beside itself is the live band's above the dock, which
- * puts a task's console in the conversation's focus (SESSIONVIEW1d).
+ * puts a task's console in the conversation's focus.
  *
  * **A region, not the console's alone**: it holds whichever views stand in the panel, the
  * console by default, as VS Code's panel does; with more than one, each is a tab, and the list at

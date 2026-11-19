@@ -68,10 +68,7 @@ export type SessionEvent = {
   /** A tool call's id: its updates carry the same one. */
   id?: string | null;
   text?: string | null;
-  /**
-   * For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. For a `task`'s
-   * end: `person` where the person stopped it.
-   */
+  /** For `user`: `person`, or `target` for the prompt the driver composed and every word that is not the person's. */
   origin?: string | null;
   /**
    * For `user`: `daoris` on Daoris's own words to the session, a reopen told or a step's go-on. Its origin is

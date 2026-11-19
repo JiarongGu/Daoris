@@ -307,7 +307,6 @@ export function useAttendedWaits({
   // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
   const waitPanel = useWaitPanelHeight();
   const [tail, setTail] = useState<TailState | null>(null);
-  // What runs now, told by the conversation (`onBeside`), for the live band above the dock.
   const [beside, setBeside] = useState<BandTold | null>(null);
   const awayFromTop = useAwayFromTop(centre, attended?.id);
   // *To the top*, above the waiting panel: the record's head, where every wait stands with its

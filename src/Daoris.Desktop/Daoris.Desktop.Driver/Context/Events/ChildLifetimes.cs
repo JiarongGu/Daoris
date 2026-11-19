@@ -12,10 +12,7 @@ namespace Daoris.Driver;
 /// <c>inferred</c> and <see cref="ChildEnds.Lost"/>, and an end its door says after it (the native door's close, a task's last update) is
 /// kept after it, so the later end under the same id is how it ended.</para>
 ///
-/// <para>One per run, as its sink is: a child outlives no process.</para>
-///
-/// <para><b>Who stopped a task.</b> A task's end the person asked for (<see cref="SessionProcesses.PersonStopped"/>, read through
-/// <c>personStopped</c>) keeps <c>person</c> as its origin, so its row says they stopped it.</para>
+/// <para>One per run, as its sink is: a child outlives no process. A task's end the person asked for keeps <c>person</c> as its origin.</para>
 /// </remarks>
 internal sealed class ChildLifetimes(Func<string, bool>? personStopped = null)
 {

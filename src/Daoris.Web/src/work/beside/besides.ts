@@ -11,16 +11,12 @@ export type ChildRead = { events: readonly SessionEvent[] | null; loaded: boolea
 export type BesideReader = {
   /** A subagent's own record (`SESSION_CHILD_HISTORY`). */
   Child: ComponentType<{ child: string; running?: boolean; children: (read: ChildRead) => ReactNode }>;
-  /**
-   * A background task's last lines on its console, where its reader keeps them, and the page's moment its last line came (null
-   * where none has); absent, its end's row draws none.
-   */
+  /** A background task's last lines on its console and when the page heard its last; absent, its end's row draws none. */
   Tail?: ComponentType<{ task: string; children: (lines: readonly string[], heard: number | null) => ReactNode }>;
   /** A background task's whole console, drawn in the panel's focus. */
   Stream?: ComponentType<{ task: string }>;
 };
 
-/** What the panel's focus holds: a subagent, by the way to it from the session, or a background task's console. */
 export type BesideFocus = { child: readonly string[] } | { task: string };
 
 /** The record's starts and ends of each subagent and background task: what a subagent's own timeline is joined with. */
@@ -41,10 +37,7 @@ export function besideOf(was: Beside | undefined, event: SessionEvent): Beside {
   };
 }
 
-/**
- * How a subagent or task stands, as its catalogue key: running until its end, an end only its session's close implies said as that,
- * a stop the person made said as theirs.
- */
+/** How a subagent or task stands, as its catalogue key: running until its end, an end only its session's close implies said as that. */
 export function standing(beside: Beside): string {
   if (!beside.end) return 'work.beside.end.running';
   if (beside.by === 'inferred') return 'work.beside.end.withSession';

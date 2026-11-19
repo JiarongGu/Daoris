@@ -46,7 +46,6 @@ export function TaskFocus({ task, home, onBack }: { task: string; home: BesideHo
   );
 }
 
-/** The way from the session to what is in focus, each step a press back to it: 0 is the session itself. */
 function Crumbs({ steps, onBack }: { steps: readonly string[]; onBack: (to: number) => void }) {
   const { t } = useTranslation();
   const crumb = 'border-0 bg-transparent p-0 text-small text-ink-soft underline decoration-dotted underline-offset-2 hover:text-ink';
