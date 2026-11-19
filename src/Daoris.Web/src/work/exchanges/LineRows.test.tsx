@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, within } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import type { SessionEvent } from '../conversation/conversationTypes';

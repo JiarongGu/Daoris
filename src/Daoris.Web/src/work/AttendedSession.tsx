@@ -1,7 +1,6 @@
 import { type ComponentProps, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../data/api';
-import { ChannelPanel } from '../asks/ChannelSection';
 import { answeredPark, Button, EmptyState, shownState } from '../design/ui';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
@@ -21,11 +20,9 @@ import type { SessionProcess } from './head/process';
 import type { DetailRow } from './head/DetailsFold';
 import { FinishedRecord } from './head/FinishedRecord';
 import type { SessionRecord } from './head/sessionRecord';
-import type { Relations } from './head/relations';
 import type { HelperWaits } from './waits/HelperAsks';
 import { SessionHead } from './head/SessionHead';
 import type { HeadLink } from './head/headRows';
-import { SessionRelations } from './head/SessionRelations';
 import { RelatedSessions, type RelatedOwn, type RelatedRow } from './head/RelatedSessions';
 import { TogetherDoor } from './head/TogetherDoor';
 import { SessionMemory } from './head/SessionMemory';
@@ -61,9 +58,9 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, ask, opening, brief, taking, lastTurn, onResolve, onAnswerAsk, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
+  chain = [], onSession, onQuest, onReview, related, relatedOwn, onRelated, together, memory, timeline = 'dock', branch, ownBranch, onDiscardBranch, discardingBranch,
   headed = false, trace, ownSignIn = false, nameOf,
-  continues, helps, heavy, process, parts, channel, helpers,
+  continues, helps, heavy, process, parts, helpers,
   gitAccess, supervision, milestone, record, onOpenBranch, pieces, waitingOn, terminalHold, supervisorCourse,
   placeHold, state,
 }: {
@@ -137,8 +134,6 @@ export function AttendedSession({
   headed?: boolean;
   /** Open its review — the move beside work it left that no branch of the person's holds. */
   onReview?: () => void;
-  /** Who it worked with beyond its chain: the session that asked, and what it asked of others. */
-  relations?: Relations;
   /** The sessions beside it in its repository whose work meets its own, each a door to its head through `onSession`'s id. */
   related?: RelatedRow[];
   /** Set where the session's own tree is not read here: said once by the related line. */
@@ -148,11 +143,6 @@ export function AttendedSession({
   together?: ComponentProps<typeof TogetherDoor>;
   /** Its memory changes and the person's decision on them. */
   memory?: ComponentProps<typeof SessionMemory>;
-  /**
-   * Its ask's channel kept to its line of work: as the shell answers it, the person's post and the
-   * doors a line and the whole channel open. Absent for a conversation, an intake, a line rooted in a quest alone and a browser.
-   */
-  channel?: ComponentProps<typeof ChannelPanel>;
   /** Open a quest's record — a stop on the chain, or one it asked. Absent where there is nowhere to open it. */
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judges it — the head's. */
@@ -265,15 +255,12 @@ export function AttendedSession({
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
-      {/* Who it worked with, folded to a line and opened in place; keyed by the record so another one starts folded.
-          🔴 Each fold keyed here names its kind beside the record's id: keyed by the id alone, this one and the
-          milestone's would take each other's fibers, and each draw of a running session would leave a copy of this line in the page. */}
-      {relations && <SessionRelations key={`relations:${session.id}`} relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Who it worked with and its channel's messages are rows of its conversation, by their actors (D320).
+          🔴 Each fold keyed here names its kind beside the record's id: keyed by the id alone, two folds would take each other's
+          fibers, and each draw of a running session would leave a copy of a line in the page. */}
       {((related && related.length > 0) || relatedOwn) && <RelatedSessions repository={session.repository} related={related ?? []} own={relatedOwn} onSession={onRelated} />}
       {together && <TogetherDoor {...together} />}
       {memory && <SessionMemory {...memory} />}
-      {/* Its ask's channel kept to this line of work, folded to a line. */}
-      {channel && <ChannelPanel {...channel} />}
       {/* Where its work stands: the end, the result, the clean-up and the recovery, read from the driver, folded
           to its line, opened in place; keyed by the record so another one starts folded. */}
       {milestone && <WorkMilestone key={`milestone:${session.id}`} unit={milestone} />}

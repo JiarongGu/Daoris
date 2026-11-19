@@ -79,49 +79,27 @@ describe('the attended session', () => {
   });
 
   /**
-   * Who it worked with is one line, opened in place, and another record starts folded (the relations are the session's
-   * own, unlike the parts', which belong to the line of work), as the milestone's fold does.
+   * The milestone is keyed by the session's id under the record's one parent: each draw of a running driven session must not mount
+   * a fresh fold and leave the last one in the page, and moving to another session must not leave the old one behind. Who it worked
+   * with is no fold of the article: its rows are its conversation's (D320).
    */
-  it('folds who it worked with to a line, and another record starts folded again', async () => {
-    const userEvent = (await import('@testing-library/user-event')).default;
-    vi.useRealTimers();
-    const relations = { askedBy: { id: 'z9y8x7w6', session: null }, resumedAfter: null, asked: [] };
-    const { rerender } = render(<AttendedSession session={session()} relations={relations} />);
-    expect(screen.getByRole('region', { name: 'Who it worked with' })).toHaveTextContent('asked by z9y8x7w6');
-    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Show who it worked with' }));
-    expect(screen.getByText(/session z9y8x7w6, whose record this machine does not hold/)).toBeInTheDocument();
-
-    rerender(<AttendedSession session={session({ id: 's9f8e7d6' })} relations={relations} />);
-    expect(screen.queryByText(/whose record this machine does not hold/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Show who it worked with' })).toBeInTheDocument();
-  });
-
-  /**
-   * Who it worked with and the milestone are both keyed by the session's id under the record's one parent: each draw of a
-   * running driven session must not mount a fresh fold and leave the last one in the page, and moving to another session must not leave the old ones behind.
-   */
-  it('keeps one line of who it worked with, however often a running session with a milestone is drawn again', async () => {
+  it('keeps one milestone line, however often a running session is drawn again, and no fold of who it worked with', async () => {
     vi.useRealTimers();
     const { SHARED_UNITS } = await import('../projects/git/landingFixtures');
-    const relations = { askedBy: { id: 'z9y8x7w6', session: null }, resumedAfter: null, asked: [] };
     const running = (n: number, id = 's1a2b3c4') => (
       <AttendedSession
         session={session({ id, kind: 'driven', quest: 'q1', updated: `2026-09-21T11:${String(n).padStart(2, '0')}:00Z` })}
-        relations={relations}
         milestone={SHARED_UNITS[1]!}
       />
     );
     const { rerender } = render(running(0));
     for (let n = 1; n <= 10; n += 1) rerender(running(n));
-    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
     expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
 
     rerender(running(11, 's9f8e7d6'));
     rerender(running(12, 's9f8e7d6'));
-    expect(screen.getAllByRole('region', { name: 'Who it worked with' })).toHaveLength(1);
     expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Who it worked with' })).toBeNull();
   });
 
   it('offers a designed nothing when the person has not chosen a session', () => {

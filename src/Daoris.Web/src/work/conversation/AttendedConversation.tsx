@@ -18,6 +18,7 @@ import { lineMembersBefore } from '../lineState';
 import { ReviewCards } from '../review/card/ReviewCards';
 import { SessionConversation } from './SessionConversation';
 import { stepsNow } from '../catchup/digest';
+import { useLineRows } from '../exchanges/useLineRows';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
 
@@ -28,8 +29,10 @@ import type { useWords } from './useWords';
  */
 export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
-  channel, onOpenOutputs,
+  channel, onOpenOutputs, along,
 }: {
+  /** What its line asked of others and was asked, and its channel's messages: rows between its turns (`useLineRows`). */
+  along: Omit<Parameters<typeof useLineRows>[0], 'session' | 'quest' | 'quests' | 'sessions' | 'helperAsks' | 'channelAsk' | 'only' | 'opinion'>;
   t: TFunction;
   onOpenOutputs?: (run: string, attempt: number | null) => void;
   /** The home of the channel messages its turns took: who posted each, and the door that opens its channel's panel. */
@@ -54,6 +57,13 @@ export function AttendedConversation({
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
   const { waits, standing, setAnchored, helperWaits, goToWait, setTail, setBeside } = waitsState;
   const { setChatHeld } = headState;
+  const beneath = useLineRows({
+    ...along,
+    session: attended, quest: session.quest, quests: session.quests.data ?? [], sessions: sessions.data ?? [], helperAsks: helperWaits?.asks,
+    channelAsk: session.channelAsk ?? null,
+    only: attendedEntry ? { entry: attendedEntry.entry, repository: attendedEntry.repository } : null,
+    opinion: opinionAsked(waits?.landing) ?? null,
+  });
   if (!attended || !here) return null;
 
   const beganOf = (id: string) => {
@@ -79,6 +89,8 @@ export function AttendedConversation({
           <SessionConversation
             session={attended.id}
             began={beganOf(attended.id)}
+            // Its line's requests where they were asked and came back, and its channel's messages, between the turns they fell between.
+            beneath={beneath}
             adapter={attended.door}
             chat={attended.kind === 'chat'}
             tree={attended.tree}
