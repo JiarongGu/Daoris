@@ -21,7 +21,7 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         if (_running.TryGetValue(invocation, out var held)) held.Processes.Stop(held.Session);
     }
 
-    public async Task RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, CancellationToken ct)
+    public async Task<StepSessionEnd> RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, string? movedOff, CancellationToken ct)
     {
         var driver = driverOf();
         var context = driver.Context;
@@ -29,7 +29,7 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         if (choice is not { Chosen: true, Selection: { Allowed: true } selection, Reviewer: { } agent })
         {
             context.Log?.Info("step.unstaffed", ("invocation", ask.Invocation), ("why", choice.Sentence));
-            return;
+            return StepSessionEnd.Held(choice);
         }
 
         AgentDoor adapter;
@@ -40,21 +40,29 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         catch (DriverException error)
         {
             context.Log?.Info("step.unstaffed", ("invocation", ask.Invocation), ("why", error.Message));
-            return;
+            return StepSessionEnd.None;
+        }
+
+        var owner = context.Adapters.OwnerOfAgent(agent).Value;
+        if (movedOff is not null && string.Equals(selection.Profile, movedOff, StringComparison.OrdinalIgnoreCase))
+        {
+            context.Log?.Info("step.unstaffed", ("invocation", ask.Invocation), ("why", "the walk gave the account that was refused for its sign-in"));
+            return StepSessionEnd.NoAccount(owner, [movedOff]);
         }
 
         var opened = await context.Service.StepSessions.OpenAsync(ask, agent, selection.Profile, selection.Version, ct).ConfigureAwait(false);
         if (!opened.Opened)
         {
             context.Log?.Info("step.unopened", ("invocation", ask.Invocation), ("why", opened.Message));
-            return;
+            return StepSessionEnd.None;
         }
 
         var sessionId = opened.Session!;
         _running[ask.Invocation] = (sessionId, context.Processes);
         try
         {
-            await TurnAsync(driver, ask, tools(sessionId), adapter, selection, choice, agent, sessionId, ct).ConfigureAwait(false);
+            if (movedOff is not null) RotatedOpening.SayMovedOff(context.Events, sessionId, AccountNames.Said(AccountNames.Of(context.Home, owner), movedOff));
+            return await TurnAsync(driver, ask, tools(sessionId), adapter, selection, choice, agent, sessionId, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -81,10 +89,11 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
             context.Harnesses, OpinionRule.None, [], context.Config, ask.Workspace, ct, actor: ParticipantWork.Step, order: order, catalogue: () => catalogue);
     }
 
-    private static async Task TurnAsync(
+    private static async Task<StepSessionEnd> TurnAsync(
         Driver driver, StepAgentAsk ask, ServerEntry tools, AgentDoor adapter, HarnessSelection selection, ReviewerChoice choice, string agent,
         string sessionId, CancellationToken ct)
     {
+        var end = StepSessionEnd.None;
         var context = driver.Context;
         var (service, home) = (context.Service, context.Home);
         context.Processes.MarkOpening(sessionId);
@@ -129,7 +138,13 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
                         : exitCode is null ? SessionConclusion.Of("failed", Observation.TimedOut(Minutes))
                         : StepConclusion.Of(ask, StepAnswer.Read(home, ask.Invocation), turnFailed);
                     conclusion = driver.AccountRefused(conclusion, adapter, selection, ended);
+                    var beforeSignIn = conclusion;
                     conclusion = driver.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
+                    if (!ReferenceEquals(beforeSignIn, conclusion) && selection.Profile is { } refusedOn)
+                    {
+                        end = StepSessionEnd.Refused(context.Adapters.OwnerOfAgent(agent).Value, refusedOn);
+                    }
+
                     (conclusion, var limited) = driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
                     await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: CancellationToken.None, limit: limited, parts: conclusion.Parts)
                         .ConfigureAwait(false);
@@ -155,5 +170,7 @@ internal sealed class StepSessionTurn(Func<Driver> driverOf) : IStepSessions
         {
             context.Output?.Close(sessionId);
         }
+
+        return end;
     }
 }

@@ -6,11 +6,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one pass of a start's walk found: a hold to answer with; an account to ask first, then pass again
-/// (<see cref="Owed"/> where the one fresh reading is what asks it); or the account chosen, at <see cref="At"/> of the
-/// states it read, counted as start <see cref="Number"/> where the start counts.
+/// What one pass of a start's walk found: a hold to answer with; an account to ask first, then pass again; or the account
+/// chosen, at <see cref="At"/> of the states it read, counted as start <see cref="Number"/> where the start counts.
 /// </summary>
-internal sealed record WalkPass(HarnessSelection? Held = null, string? Ask = null, bool Owed = false)
+internal sealed record WalkPass(HarnessSelection? Held = null, string? Ask = null)
 {
     public List<AccountState> States { get; init; } = [];
 
