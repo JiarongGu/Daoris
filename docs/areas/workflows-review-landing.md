@@ -17,7 +17,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 | Where | Its job |
 |---|---|
-| `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
+| `Defaults/workflows/`, `Workflows/` | The shipped graphs and presets, the saved files (`WorkflowStore`, whose list skips the home's own files kept beside them, `casts.json` and `quests.json`), the bind (`WorkflowRunStart`), the gate interface (`WorkflowProcesses`), the palette, chat and verification runs, `daoris workflow` |
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |

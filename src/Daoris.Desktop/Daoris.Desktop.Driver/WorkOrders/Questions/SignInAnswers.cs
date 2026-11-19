@@ -23,6 +23,7 @@ public static class SignInAnswers
         foreach (var question in sightings.Signed(waiting, pages))
         {
             var said = await say(question.Session, SignInSightings.Word(question), SignInSightings.Key(question), ct).ConfigureAwait(false);
+            if (said.Kept && question.Conversation) new QuestionFiles(home).Clear(question.Session);
             events.Add(said.Kept
                 ? $"session `{question.Session}`'s sign-in at {question.Site} was seen in Daoris's browser: it goes on."
                 : $"session `{question.Session}`'s sign-in at {question.Site} was seen in Daoris's browser, and its word was not kept: {said.Message}");

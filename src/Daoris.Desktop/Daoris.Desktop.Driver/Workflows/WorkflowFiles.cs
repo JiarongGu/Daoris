@@ -46,7 +46,7 @@ public sealed class WorkflowFiles(string home) : IWorkflowStore
         [
             .. Directory.GetFiles(folder, "*.json")
                 .Select(Path.GetFileNameWithoutExtension)
-                .Where(WorkflowNamed.IsId)
+                .Where(id => !WorkflowStore.IsOwnFile(id) && WorkflowNamed.IsId(id))
                 .Order(StringComparer.Ordinal)
                 .Select(id => Load(id!)!),
         ];
