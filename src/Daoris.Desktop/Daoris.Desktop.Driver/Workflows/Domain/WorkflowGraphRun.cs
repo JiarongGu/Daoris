@@ -114,10 +114,7 @@ public sealed record WorkflowGraphRun(string Run, IReadOnlyList<string> Entries,
     /// <summary>The quest it ended at, where its record keeps its end; null while it goes on.</summary>
     public string? Ended { get; init; }
 
-    /// <summary>
-    /// What the run's part of its ask's plan waits on before any of its steps is handed: each other part's receipt not reached yet
-    /// (<see cref="PartViews"/>); null where it waits on none.
-    /// </summary>
+    /// <summary>The other parts' receipts its part of its ask's plan waits on before any step is handed (<see cref="PartViews"/>); null where none.</summary>
     public IReadOnlyList<WorkflowRunPartReceipt>? PartWaits { get; init; }
 
     /// <summary>
@@ -160,7 +157,6 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
 
-    /// <summary>What the run's part waits on and its joint checks hold over (<see cref="PartViews"/>); none where the run is no part of a plan read.</summary>
     public RunPartsView Parts { get; init; } = RunPartsView.None;
 }
 

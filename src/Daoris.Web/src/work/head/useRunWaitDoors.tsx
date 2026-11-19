@@ -24,10 +24,7 @@ export function RunReleaseDoors({ scope, wait }: { scope: RunScope; wait: WaitAt
 
 export const actorWait = (wait: { why: string }) => wait.why === 'actor';
 
-/**
- * The dock's run waits of `session` with their doors; a plugin's actor wait's are its run's view's, read from the run `scope` names. While
- * the session awaits its step, its runs' reading too, whose ask's parts the dock names (what its part waits on, its joint checks).
- */
+/** The dock's run waits of `session` with their doors (an actor wait's its run's view's); its runs, whose parts the dock names, while it awaits its step. */
 export function useRunWaitDoors(session: string | null, { awaitingStep = false, onQuest }: { awaitingStep?: boolean; onQuest?: (id: string) => void } = {}) {
   const runs = useWorkflowRun(session ? { session } : null, { enabled: awaitingStep });
   const groups = useSessionGroups();

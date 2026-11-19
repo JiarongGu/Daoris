@@ -205,11 +205,7 @@ public sealed class QuestAcrossRepositoriesTests : NodeRunFixture
         Assert.Equal([new PartWait("app", "stage-ended")], part.Waits);
     }
 
-    /// <summary>
-    /// The run's one reading carries what the window draws of the parts: the configuration part's wait on the app's <c>stage-ended</c> until
-    /// it is reached, with the app's quest; the joint check holding the app's receipt and waiting for the configuration's; and, once its
-    /// failed test is journaled on the configuration part's step, the part it went back to with the test's words.
-    /// </summary>
+    /// <summary>The run's reading carries a part's wait, a joint check's parts held and waited for, and where its failure went back.</summary>
     [Fact]
     public void The_runs_reading_carries_a_parts_wait_and_what_its_joint_check_holds_waits_for_and_sent_back()
     {
@@ -247,7 +243,6 @@ public sealed class QuestAcrossRepositoriesTests : NodeRunFixture
         var sent = PartViews.Read(_home, Plan, RunId, [RunId], app, record);
         Assert.Equal(("config", ConfigRun, "t1 failed"), (sent.Joints["together"].Returned!.Part, sent.Joints["together"].Returned!.Quest, sent.Joints["together"].Returned!.Message));
 
-        // The run's view draws them from that reading: the part's wait on its graph, the joint check on its step.
         var facts = new WorkflowRunFacts(RunHome.Repository, new CurrentWorkflow([], [], "gph-0"))
         {
             Process = WorkflowProcess.Declared(DriverConfig.Empty, RunHome.Repository, "default"),
@@ -259,10 +254,7 @@ public sealed class QuestAcrossRepositoriesTests : NodeRunFixture
         Assert.Null(WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, RunId, app, record), "default", "a1").Graph!.PartWaits);
     }
 
-    /// <summary>
-    /// The look reads the runs bound here once for the asks they name: an open part's run in a repository with no checkout here gives its ask
-    /// beside the ask runs' branches, which the parts' reports are read for, and no second read of the run list is made.
-    /// </summary>
+    /// <summary>The look's one read of the runs gives every open run's ask, a part's run with no checkout here among them.</summary>
     [Fact]
     public async Task The_looks_one_read_of_the_runs_gives_every_open_runs_ask()
     {

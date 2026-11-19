@@ -178,7 +178,6 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   // though only an open gate is counted as a wait.
   const workLine = props.lands || props.discards ? { key: 'work', wait: { kind: props.lands ? 'accept' : 'discard' }, since: '' } as DockLine : null;
   const drawnLines = workLine && !lines.some((line) => (WORK_WAITS as ReadonlySet<string>).has(line.wait.kind) || line.wait.kind === 'discard') ? [...lines, workLine] : lines;
-  // What the session's run waits on of its ask's other parts stands below, uncounted: no press of the person's settles it.
   const parts = runWaits?.parts && partsOf(runWaits.parts.runs).length > 0 ? runWaits.parts : null;
   if (drawnLines.length === 0 && !parts) return null;
   const pageWaits = (of: readonly DockLine[]) => of.flatMap((line) => (line.wait.kind === 'step' ? [] : [line.wait]));

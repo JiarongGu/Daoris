@@ -47,7 +47,6 @@ public static class PartsReports
         return read;
     }
 
-    /// <summary>The report of <paramref name="ask"/>'s <paramref name="plan"/>, <paramref name="landed"/> the parts its train promoted.</summary>
     public static PartsReport Of(string ask, TrainPlan plan, IReadOnlySet<string> landed) =>
         new(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], landed)
         {

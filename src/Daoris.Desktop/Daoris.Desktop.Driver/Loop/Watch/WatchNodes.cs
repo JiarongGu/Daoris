@@ -341,7 +341,6 @@ internal sealed class WatchNodes
             .ToDictionary(group => group.Key, group => group.First().Root!, StringComparer.Ordinal);
         // Why the work's attribution is not read travels with the units, so a run's branch is never
         // handed to Current on a link the outage dropped.
-        // One read of the runs gives both the ask runs' branches and the asks a part's run reads its report for.
         var asks = await AskRunReads.ReadAsync(home, roots, DriverConfig.Load(DriverConfig.ResolvePath(home)), token).ConfigureAwait(false);
         return new NodeUnitsRead(units, roots)
         {
