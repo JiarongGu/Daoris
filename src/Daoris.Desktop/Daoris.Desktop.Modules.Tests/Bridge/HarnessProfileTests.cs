@@ -23,27 +23,32 @@ public sealed class HarnessProfileTests : Bridge
     private string ProfileAt(string harness, string profile) =>
         DaorisHome.Entry(Home, HomeEntry.AgentHomes,harness, profile);
 
+    /// <summary>A fixture's account under the id it names: a folder, as an account made before it is signed in to.</summary>
+    private string Made(string harness, string profile)
+    {
+        var folder = ProfileAt(harness, profile);
+        Directory.CreateDirectory(folder);
+        return folder;
+    }
+
+    /// <summary>
+    /// A new account is a folder under a hash id with the word given as its name, never as its id. The directory is not asserted
+    /// empty: refreshing the roster asks the harness its login state under that home, and the harness writes its own files there.
+    /// </summary>
     [Fact]
-    public async Task Adding_a_profile_makes_a_directory_and_nothing_else()
+    public async Task Adding_a_profile_makes_a_hash_id_folder_named_for_the_word_given()
     {
         await AnswerAsync(Module(), "HARNESS_ACTION",
             new { door = "claude-code", action = "profile-add", profile = "work" });
 
-        Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
-        // 🔴 And it is the SAME path the CLI verb makes. The two doors share no code — the driver
-        // links against no CLI and the CLI has no .NET — so the only thing keeping them one feature
-        // is that both compute this, and a test on each side saying so.
-        //
-        // The directory is not asserted empty, which is not Daoris's to
-        // claim: refreshing the roster asks the harness its login state under that home, and the
-        // harness writes its own files there. Asserting somebody else's program leaves no trace is
-        // a test that fails for being right.
-        Assert.Equal(
-            HarnessSettings.ProfileHome(Home, "claude-code", "work"),
-            ProfileAt("claude-code", "work"));
+        var made = Assert.Single(HarnessSettings.Profiles(Home, "claude-code"));
+        Assert.True(AccountIdForm.IsHash(made));
+        Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, "claude-code", made)));
+        Assert.Equal(made, AccountNames.Of(Home, "claude-code").Single(pair => pair.Value == "work").Key);
+        Assert.False(Directory.Exists(ProfileAt("claude-code", "work")));
     }
 
-    /// <summary>Asking for one that exists is an answer, not a failure — the CLI verb's own rule.</summary>
+    /// <summary>Asking for one that exists, by its name, is an answer, not a failure and not a second account.</summary>
     [Fact]
     public async Task Adding_the_same_profile_twice_is_an_answer()
     {
@@ -53,7 +58,7 @@ public sealed class HarnessProfileTests : Bridge
         await AnswerAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "profile-add", profile = "work" });
 
-        Assert.True(Directory.Exists(ProfileAt("claude-code", "work")));
+        Assert.Single(HarnessSettings.Profiles(Home, "claude-code"));
     }
 
     /// <summary>
@@ -64,9 +69,8 @@ public sealed class HarnessProfileTests : Bridge
     public async Task Choosing_a_default_is_refused_and_the_set_s_first_is_where_starts_begin()
     {
         var module = Module();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { door = "claude-code", action = "profile-add", profile = "work" });
-        var refused = await RefusalAsync(module, "HARNESS_ACTION",
+        Made("claude-code", "work");
+        var refused =await RefusalAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "profile-default", profile = "work" });
 
         Assert.StartsWith(Refusals.AccountsOneSet, refused);
@@ -82,9 +86,8 @@ public sealed class HarnessProfileTests : Bridge
     public async Task A_workspace_s_default_is_refused_and_every_workspace_begins_at_the_set_s_first()
     {
         var module = Module();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { door = "claude-code", action = "profile-add", profile = "work" });
-        var set = await RefusalAsync(module, "HARNESS_ACTION",
+        Made("claude-code", "work");
+        var set =await RefusalAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "profile-default", profile = "work", workspace = "aurora" });
         var cleared = await RefusalAsync(module, "HARNESS_ACTION",
             new { door = "claude-code", action = "profile-default", workspace = "aurora" });
@@ -138,7 +141,7 @@ public sealed class HarnessProfileTests : Bridge
         var module = ModuleWithStubHarness();
         foreach (var profile in new[] { "spare", "work" })
         {
-            await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile });
+            Made("stub", profile);
         }
 
         File.WriteAllText(Path.Combine(ProfileAt("stub", "work"), "credentials.json"), "someone@example.invalid");
@@ -431,8 +434,7 @@ public sealed class HarnessProfileTests : Bridge
     public async Task An_account_action_on_a_door_lands_on_the_owner_s_accounts()
     {
         var module = Module();
-        await AnswerAsync(module, "HARNESS_ACTION",
-            new { door = "claude-code-acp", action = "profile-add", profile = "work" });
+        Made("claude-code", "work");
         await AnswerAsync(module, "ACCOUNT_USE",
             new { action = "order", door = "claude-code-acp", accounts = new[] { "work" } });
         var keyed = await AnswerAsync(module, "HARNESS_ACTION",

@@ -2317,11 +2317,13 @@
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "daoris: `claude-code` account `work` — <root>/daoris/profiles/agents/claude-code/<id>",
         "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"work\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile add, one that exists",
@@ -2338,7 +2340,7 @@
       "before": {},
       "exit": 0,
       "out": [
-        "daoris: `claude-code` profile `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
+        "daoris: `claude-code` account `account-1` already exists — <root>/daoris/profiles/agents/claude-code/account-1",
         "  It is empty until you log into it: `daoris agent login claude-code --account account-1`."
       ],
       "err": [],
@@ -2357,11 +2359,13 @@
       "exit": 0,
       "out": [
         "daoris: `claude-code-acp` runs as `claude-code`'s accounts — this is one of them.",
-        "daoris: `claude-code` profile `work` — <root>/daoris/profiles/agents/claude-code/work",
+        "daoris: `claude-code` account `work` — <root>/daoris/profiles/agents/claude-code/<id>",
         "  It is empty until you log into it: `daoris agent login claude-code --account work`."
       ],
       "err": [],
-      "after": {}
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"work\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile add, no account",
@@ -2375,7 +2379,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `agent account add` needs <agent> <profile> — e.g. `daoris agent account add claude-code`"
+        "daoris: `agent account add` needs <agent> <name> — e.g. `daoris agent account add claude-code`"
       ],
       "after": {}
     },
@@ -2404,12 +2408,15 @@
       ],
       "folders": [],
       "before": {},
-      "exit": 2,
-      "out": [],
-      "err": [
-        "daoris: `../x` is not a usable profile name — letters, digits, dashes and dots. It becomes a directory Daoris owns the location of, so it may not point anywhere else."
+      "exit": 0,
+      "out": [
+        "daoris: `claude-code` account `../x` — <root>/daoris/profiles/agents/claude-code/<id>",
+        "  It is empty until you log into it: `daoris agent login claude-code --account \"../x\"`."
       ],
-      "after": {}
+      "err": [],
+      "after": {
+        "daoris/data/accounts.json": "{\n  \"claude-code\": {\n    \"<id>\": {\n      \"name\": \"../x\"\n    }\n  }\n}\n"
+      }
     },
     {
       "name": "profile remove, none of that name",
@@ -5164,7 +5171,7 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 a.rather.long.person@work.example unknown   (id account-1)",
+        "                 a.rather.long.person@work.example unknown  ",
         "                 account-2                         unknown  ",
         "                 order                             a.rather.long.person@work.example, then account-2, for every workspace",
         "                                                   use accounts: make the most of them",
@@ -5889,8 +5896,8 @@
         "                 2.1.0 (Claude Code)",
         "                 what it can do: conversation yes, resume yes, words at the next step no, steering not known, postures default · bypassPermissions, takes Daoris's rules yes, held requests no, servers on its wire no, confinement not known",
         "                 pinned 1.2.3 — managed: <root>/daoris/cache/toolchain/claude-code/1.2.3/node_modules/.bin/claude.cmd",
-        "                 person@example.invalid       in        Org A (id acct-0000000a)",
-        "                 person@example.invalid·Org-B in        (id acct-0000000b)",
+        "                 person@example.invalid       in        Org A",
+        "                 person@example.invalid·Org-B in       ",
         "                 acct-0000000c                in        other@example.invalid",
         "                 acct-0000000d                in        person@example.invalid · Org D",
         "                 order                        person@example.invalid, then person@example.invalid·Org-B, then acct-0000000c, then acct-0000000d, for every workspace",
@@ -6048,8 +6055,8 @@
         "                 `daoris agent install claude-code` installs it, with its own installer",
         "                 pinned 0.0.0-none — NOT INSTALLED, so the driver refuses to start a session on it",
         "                 `daoris agent pin claude-code 0.0.0-none` installs it",
-        "                 R&D              unknown   (id account-1)",
-        "                 O'Brien          unknown   (id account-2)",
+        "                 R&D              unknown  ",
+        "                 O'Brien          unknown  ",
         "                 order            R&D, then O'Brien, for every workspace",
         "                                  use accounts: make the most of them",
         "                                  kept for conversations: none",

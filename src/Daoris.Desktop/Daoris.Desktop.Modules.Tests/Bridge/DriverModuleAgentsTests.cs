@@ -347,9 +347,9 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
         await AnswerAsync(module, "ACCOUNT_USE", new { door = "stub", action = "order", accounts = new[] { "work" } });
         await AnswerAsync(module, "ACCOUNT_USE", new { door = "stub", action = "order", accounts = Array.Empty<string>() });
-        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile = "spare" });
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "spare"));
         await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-remove", profile = "work" });
-        await AnswerAsync(module, "HARNESS_ACTION", new { door = "stub", action = "profile-add", profile = "work" });
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "work"));
 
         Assert.Equal(["work"], File.ReadAllLines(asked));
         var stub = Stub(await AnswerAsync(module, "HARNESSES"));
