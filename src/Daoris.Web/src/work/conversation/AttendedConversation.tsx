@@ -22,6 +22,9 @@ import { toDockLine } from '../track/seek';
 import { StepActs } from '../track/StepActs';
 import { StepRows } from '../track/StepRows';
 import { stepsNow } from '../catchup/digest';
+import { useLineRows } from '../exchanges/useLineRows';
+import { LineRows } from '../exchanges/LineRows';
+import { rowsWithin as lineRowsWithin } from '../exchanges/rows';
 import type { useAttendedBox } from './useAttendedBox';
 import type { useWords } from './useWords';
 
@@ -32,8 +35,9 @@ import type { useWords } from './useWords';
  */
 export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
-  channel, onOpenOutputs,
+  channel, onOpenOutputs, along,
 }: {
+  along: Omit<Parameters<typeof useLineRows>[0], 'session' | 'quest' | 'quests' | 'sessions' | 'helperAsks' | 'channelAsk' | 'only' | 'opinion'>;
   t: TFunction;
   onOpenOutputs?: (run: string, attempt: number | null) => void;
   /** The home of the channel messages its turns took: who posted each, and the door that opens its channel's panel. */
@@ -58,13 +62,20 @@ export function AttendedConversation({
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
   const { waits, standing, setAnchored, helperWaits, goToWait, setTail, setBeside } = waitsState;
   const { setChatHeld } = headState;
+  const lines = useLineRows({
+    ...along,
+    session: attended, quest: session.quest, quests: session.quests.data ?? [], sessions: sessions.data ?? [], helperAsks: helperWaits?.asks,
+    channelAsk: session.channelAsk ?? null,
+    only: attendedEntry ? { entry: attendedEntry.entry, repository: attendedEntry.repository } : null,
+    opinion: opinionAsked(waits?.landing) ?? null,
+  });
   if (!attended || !here) return null;
 
   const passage = grouping?.passage?.steps.length ? grouping.passage : null;
   const stepRows = passage ? stepRowsOf(passage) : [];
   const docked = (grouping?.waits ?? []).map((wait) => dockKeyOf(wait.run, wait.node));
   const atStep = passage?.steps.find((step) => markOf(step.mark) === 'current');
-  const beneath = stepRows.length > 0 ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
+  const stepBeneath = stepRows.length > 0 ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
     <StepRows
       rows={rowsWithin(stepRows, first ? undefined : ask.at, until)}
       docked={docked}
@@ -73,6 +84,15 @@ export function AttendedConversation({
         ? <StepActs session={attended.id} node={row.node} />
         : null)}
     />
+  ) : undefined;
+  const lineBeneath = lines ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
+    <LineRows rows={lineRowsWithin(lines.rows, first ? undefined : ask.at, until)} {...lines.home} />
+  ) : undefined;
+  const beneath = stepBeneath || lineBeneath ? (ask: { at?: string }, until: string | undefined, first: boolean) => (
+    <>
+      {stepBeneath?.(ask, until, first)}
+      {lineBeneath?.(ask, until, first)}
+    </>
   ) : undefined;
 
   const beganOf = (id: string) => {

@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../locales/i18n';
 import type { Channel, ChannelItem } from '../work/channel';
-import { ChannelPanel, ChannelSection } from './ChannelSection';
+import { ChannelSection } from './ChannelSection';
 
 // An ask's Channel and a session's panel of it: messages and Daoris's
 // coded lines in the reader's language, an open question marked, the person's composer with To and Reply to, the unread count
@@ -273,69 +273,6 @@ describe('what is unread', () => {
     render(<ChannelSection channel={CHANNEL({ unread: 2, mark: at(5) })} onPost={() => {}} onRead={() => {}} />);
 
     expect(screen.getByText('2 条未读')).toBeInTheDocument();
-  });
-});
-
-describe('a session’s panel', () => {
-  afterEach(async () => { await i18n.changeLanguage('en'); });
-
-  const ONLY = { entry: 'ask:a1/db', repository: 'db' };
-
-  it('is folded to its title and a count, and opens to the channel kept to its line of work', async () => {
-    render(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} />);
-
-    const toggle = screen.getByRole('button', { name: /Channel/ });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveTextContent('Channel · 4');
-    expect(screen.queryByRole('list', { name: 'Channel' })).toBeNull();
-
-    await userEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    const rows = within(list()).getAllByRole('listitem').map((item) => item.textContent ?? '');
-    expect(rows.some((text) => text.includes('Which column holds the figure?'))).toBe(true);
-    expect(rows.some((text) => text.includes('Noted.'))).toBe(false);
-    expect(rows.some((text) => text.includes('#q2 done by api'))).toBe(false);
-  });
-
-  /** The person's mark is the ask's page's to move: a panel reads a part of the channel, and counts nothing unread. */
-  it('starts To on its repository, and counts nothing unread', async () => {
-    const onPost = vi.fn((_post, answered) => answered.done());
-    render(<ChannelPanel channel={CHANNEL({ unread: 3, mark: at(1) })} only={ONLY} onPost={onPost} />);
-    await userEvent.click(screen.getByRole('button', { name: /Channel/ }));
-
-    expect(screen.getByRole('combobox', { name: 'To' })).toHaveTextContent('db');
-    await userEvent.type(screen.getByRole('textbox', { name: 'Write to the channel' }), 'On it.');
-    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-    expect(onPost).toHaveBeenCalledWith({ text: 'On it.', to: 'db', re: null }, expect.anything());
-    expect(screen.queryByText('3 unread')).toBeNull();
-    expect(screen.queryByText('new')).toBeNull();
-  });
-
-  it('says there is nothing for its repository yet, and opens the ask’s whole channel', async () => {
-    const onOpenAsk = vi.fn();
-    render(<ChannelPanel channel={CHANNEL({ items: [] })} only={ONLY} onPost={() => {}} onOpenAsk={onOpenAsk} />);
-    await userEvent.click(screen.getByRole('button', { name: /Channel/ }));
-
-    expect(screen.getByText('Nothing for db on the channel yet.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Open the whole channel' }));
-    expect(onOpenAsk).toHaveBeenCalledOnce();
-  });
-
-  /** The at-work view's *All messages* asks the panel open by a number, and a number seen is not opened again. */
-  it('opens when asked open from elsewhere, once for each new number', async () => {
-    const { rerender } = render(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={0} />);
-    const toggle = screen.getByRole('button', { name: /Channel/ });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-
-    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={1} />);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-
-    await userEvent.click(toggle);
-    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={1} />);
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    rerender(<ChannelPanel channel={CHANNEL()} only={ONLY} onPost={() => {}} opened={2} />);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
   });
 });
 

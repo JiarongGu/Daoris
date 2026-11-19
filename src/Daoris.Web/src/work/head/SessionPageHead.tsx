@@ -3,11 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { Session } from '../../data/api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey, Tip } from '../../design/ui';
 import { useWidth } from '../../design/useWidth';
-import { AccessChip, startedFull } from './AccessFact';
-import { choiceChip } from '../actors';
-import { ChoiceChip } from './ChoiceChip';
+import { HeadChips, wearsChips } from '../session/HeadChips';
 import type { SupervisionChip } from './lineSupervision';
-import { cn } from '../../lib/cn';
 import { ACT_LOOK, actMenu, headerActs, type SessionActId } from '../acts';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { PageHead } from '../frame/ViewMain';
@@ -138,7 +135,7 @@ export function SessionPageHead({
         // Started under full access, by its record's pauses: the warning chip, last on the line, so the
         // line is cut before it rather than cutting it. Any other start wears nothing.
         // The choice its actor ran where it is not the first, before the access chip.
-        fact={line || next || chip || choiceChip(t, session) !== null || startedFull(session)
+        fact={line || next || wearsChips(t, session, chip)
           ? (
             <span className="inline-flex items-center gap-1.5">
               {line && (
@@ -160,15 +157,7 @@ export function SessionPageHead({
                   </button>
                 </Tip>
               )}
-              {chip && (
-                <Tip content={t('work.supervision.chipTip', { at: chip.at, n: chip.n })}>
-                  <span data-supervision-chip={chip.held ? 'held' : 'near'} className={cn('text-small', chip.held ? 'font-medium text-ink' : 'text-ink-faint')}>
-                    {chip.text}
-                  </span>
-                </Tip>
-              )}
-              <ChoiceChip session={session} narrow={narrow} />
-              {startedFull(session) && <AccessChip />}
+              <HeadChips session={session} supervision={chip} narrow={narrow} />
             </span>
           )
           : undefined}

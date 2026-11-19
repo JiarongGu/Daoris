@@ -60,7 +60,7 @@ const FAILED: PanelFacts = {
   head: { ...HEAD, state: 'failed', since: at(15, 2), doing: 'e2e: 2 of 14 failed' },
   track: { ...TRACK, chips: TRACK.chips.map((chip) => (chip.node === 'check' ? { ...chip, mark: 'failed', attempt: 3 } : chip)) },
   story: [...STORY, {
-    kind: 'step', key: 'step:r1/check/end/3', at: Date.parse(at(15, 2)), node: 'check', edge: 'end', mark: 'failed', attempt: 3,
+    kind: 'step', key: 'step:r1/check/end/3', at: Date.parse(at(15, 2)), run: 'r1', node: 'check', edge: 'end', mark: 'failed', attempt: 3,
   }],
   waits: [{
     id: 'w3', title: 'The check failed three times: try again on another model?', kind: 'failed', since: at(15, 2),

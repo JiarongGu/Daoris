@@ -1,6 +1,6 @@
 import type { Block, Turn } from '../conversation/conversationTypes';
 import type { ExchangeCard, Exchanges } from '../conversation/exchanges';
-import type { ChannelItem } from '../channel';
+import type { LineRow } from '../exchanges/rows';
 import { type CallKind, callsByKind, failedCall, filesChanged } from '../catchup/turnFold';
 import { type Mark, type Passage, type StepRow, stepRowsOf } from '../track/passage';
 
@@ -16,37 +16,42 @@ export type StoryItem =
   | { kind: 'agent'; key: string; at: number; text: string }
   | { kind: 'note'; key: string; at: number; text: string }
   | { kind: 'tools'; key: string; at: number; calls: { kind: CallKind; count: number }[]; failed: number; files: number; blocks: Block[] }
-  | { kind: 'step'; key: string; at: number; node: string; edge: 'start' | 'end'; mark: Mark | 'ended'; attempt: number | null }
+  | { kind: 'step'; key: string; at: number; run: string; node: string; edge: 'start' | 'end'; mark: Mark | 'ended'; attempt: number | null }
   | { kind: 'helper'; key: string; at: number; question: string; agent: string | null; state: string | null; helper: string | null;
       answer?: { text: string; at: number } }
   | { kind: 'opinion'; key: string; at: number; text: string; reviewer: string | null; model: string | null }
-  | { kind: 'channel'; key: string; at: number; who: StoryWho; text: string };
+  /** One of its line's requests, quests or channel messages (`lineRowsOf`): an untimed one under the last line. */
+  | { kind: 'line'; key: string; at: number; row: LineRow };
 
 /** Who gave a second opinion, where the page holds its row: the reviewer's maker and the model that ran. */
 export type OpinionBy = { reviewer: string | null; model: string | null };
 
-/** What the story is read from: the conversation's turns, the run's step rows, the helpers asked, the line's channel. */
+/**
+ * What the story is read from: the conversation's turns, the run's step rows, the helpers its agent asked, and its line's rows (each
+ * request each way, each quest it published, the session that published its own, the question it resumed after, its channel's
+ * messages).
+ */
 export type StoryLine = {
   turns: readonly Turn[];
   steps: readonly StepRow[];
   exchanges: readonly ExchangeCard[];
-  channel: readonly ChannelItem[];
+  rows: readonly LineRow[];
   /** The opinion a turn's words carry, by its id; absent, the line names no reviewer. */
   opinionOf?: (id: string) => OpinionBy | null;
 };
 
 /**
  * The story's sources as the page already reads them: the conversation's settled turns, its run's passage (`SESSION_GROUPS`), the
- * exchanges its helpers' asks join (`exchangesOf`) and its line's channel, kept to its line of work by the caller.
+ * exchanges its helpers' asks join (`exchangesOf`) and its line's rows (`useLineRows`).
  */
-export function storyLineOf({ turns, passage, exchanges, channel, opinionOf }: {
+export function storyLineOf({ turns, passage, exchanges, rows = [], opinionOf }: {
   turns: readonly Turn[];
   passage: Passage | null | undefined;
   exchanges: Exchanges;
-  channel: readonly ChannelItem[];
+  rows?: readonly LineRow[];
   opinionOf?: StoryLine['opinionOf'];
 }): StoryLine {
-  return { turns, steps: passage ? stepRowsOf(passage) : [], exchanges: Object.values(exchanges.cards), channel, opinionOf };
+  return { turns, steps: passage ? stepRowsOf(passage) : [], exchanges: Object.values(exchanges.cards), rows, opinionOf };
 }
 
 const time = (iso: string | null | undefined): number => {
@@ -112,27 +117,25 @@ function turnLines(turn: Turn, cards: ReadonlyMap<string, ExchangeCard>, answere
 
 /** Of lines at one moment: a step's end, then the next step's start, then what happened inside it. */
 const RANK: Readonly<Record<StoryItem['kind'], number>> = {
-  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, helper: 1, channel: 1,
+  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, helper: 1, line: 1,
 };
 
 /**
  * **The story**: one stream of every line of the session's work in the order it happened. The conversation's turns (the person's
  * words, the agent's, each burst of activity folded to one line that counts its calls), each step's start and end as a rule, each
- * helper asked with its answer joined (its answer's turn never drawn twice), each second opinion handed as a turn, and each message
- * on its line's channel. Read from the records alone, with no model.
+ * helper its agent asked with its answer joined (its answer's turn never drawn twice), each second opinion handed as a turn, and
+ * each of its line's rows at its moment: a request asked and come back, a quest filed and closed, the session that published its
+ * quest (first), the question it resumed after, and each message on its channel. Read from the records alone, with no model.
  */
-export function storyOf({ turns, steps, exchanges, channel, opinionOf }: StoryLine): StoryItem[] {
+export function storyOf({ turns, steps, exchanges, rows, opinionOf }: StoryLine): StoryItem[] {
   const cards = new Map(exchanges.map((card) => [card.call, card]));
   const answered = new Set(exchanges.flatMap((card) => (card.answer ? [card.answer.key] : [])));
   const lines: StoryItem[] = [
     ...steps.map((row): StoryItem => ({
-      kind: 'step', key: `step:${row.key}`, at: row.at, node: row.node, edge: row.edge, mark: row.mark, attempt: row.attempt,
+      kind: 'step', key: `step:${row.key}`, at: row.at, run: row.run, node: row.node, edge: row.edge, mark: row.mark, attempt: row.attempt,
     })),
     ...turns.flatMap((turn) => turnLines(turn, cards, answered, opinionOf)),
-    ...channel.filter((item) => item.kind === 'message' && item.text).map((item, index): StoryItem => ({
-      kind: 'channel', key: `channel:${item.id ?? index}`, at: time(item.at), who: item.person ? 'you' : item.repository ?? item.agent ?? 'agent',
-      text: item.text ?? '',
-    })),
+    ...rows.map((row): StoryItem => ({ kind: 'line', key: `line:${row.key}`, at: row.at ?? Number.POSITIVE_INFINITY, row })),
   ];
   const order = (item: StoryItem) => (item.kind === 'step' ? (item.edge === 'end' ? 0 : 1) : 2);
   return lines

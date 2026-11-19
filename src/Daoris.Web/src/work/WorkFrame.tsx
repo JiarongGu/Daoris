@@ -49,8 +49,9 @@ import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
 import { AttendedPane } from './head/AttendedPane';
-import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
+import { toExchangeRow } from './exchanges/seek';
+import { toDockLine } from './track/seek';
 import { useSeekPart } from './conversation/useSeekPart';
 
 /**
@@ -274,7 +275,6 @@ export function WorkFrame({
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
     else if (intent === 'workflow') setFlowchartOpen(true);
-    else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
 
@@ -370,11 +370,9 @@ export function WorkFrame({
   });
   const { pageMenu } = headState;
 
-  // The head's *Waiting on* opens At work at the request it names.
-  const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, work, views, boxState, onReviewRun, attend, runNodeWord,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
     flowchartOpen,
@@ -414,7 +412,11 @@ export function WorkFrame({
                 roster={roster}
                 refusal={refusal}
                 openPreview={openPreview}
-                channel={attendedEntry && channelAsk && record.channel.available ? record.channel.channel?.items ?? [] : []}
+                // Its line's requests, quests and channel messages as rows of its story; one waiting on the person leads to its card.
+                along={{
+                  atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
+                  nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
+                }}
                 diff={diff.data}
                 prelude={(
                   <AttendedPane
@@ -435,7 +437,7 @@ export function WorkFrame({
                     heavy={heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
                     partRows={partRows}
                     onShowPart={(id) => { attend(id); seek(); }}
-                    openAtWork={atWorkSeek.open}
+                    openAtWork={toExchangeRow}
                     attend={attend}
                     onOpenQuest={onOpenQuest}
                     onAnswerAsk={onAnswerAsk}
@@ -444,7 +446,12 @@ export function WorkFrame({
                 )}
                 band={here ? (
                   <>
-                    <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />
+                    <SessionBand
+                      key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify}
+                      // A helper or a reviewer at work for its line, a line each, its session a press away.
+                      exchanges={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.exchanges : undefined}
+                      onOpenSession={attend} nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
+                    />
                     {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
                   </>
                 ) : undefined}

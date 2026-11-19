@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { Markdown } from '../conversation/Markdown';
+import { LineRow, type LineRowHome } from '../exchanges/LineRows';
+import { rowMark } from '../track/passage';
 import type { StoryItem, StoryWho } from './story';
 
 /** The session's agent as its lines name it: its maker and the model that ran, null where the record named none. */
@@ -36,7 +38,7 @@ function StepRule({ item }: { item: Of<'step'> }) {
   ].filter(Boolean).join(' · ');
   const glyph = item.edge === 'start' ? '●' : item.mark === 'passed' ? '✓' : item.mark === 'failed' ? '▲' : '–';
   return (
-    <div data-part="step" className="flex items-center gap-2 py-1 text-small text-ink-soft">
+    <div data-part="step" data-step-row={rowMark(item.run, item.node)} className="flex items-center gap-2 py-1 text-small text-ink-soft">
       <span className="h-px w-4 bg-line-strong" aria-hidden="true" />
       <span className={cn('font-semibold', item.mark === 'failed' ? 'text-ink-danger' : item.mark === 'passed' ? 'text-ink-done' : 'text-ink')}>
         <span aria-hidden="true">{glyph} </span>{said}
@@ -80,7 +82,7 @@ function ToolsFold({ item }: { item: Of<'tools'> }) {
   );
 }
 
-function Line({ item, actor }: { item: StoryItem; actor: StoryActor }) {
+function Line({ item, actor, home }: { item: StoryItem; actor: StoryActor; home?: LineRowHome }) {
   const { t } = useTranslation();
   const who = useWho();
   const agent = `${actor.maker} · ${actor.model ?? t('work.session.head.notReported')}`;
@@ -134,27 +136,28 @@ function Line({ item, actor }: { item: StoryItem; actor: StoryActor }) {
           <Markdown text={item.text} />
         </div>
       );
-    case 'channel':
-      return (
-        <div data-part="channel" className="grid gap-0.5">
-          <Actor><span aria-hidden="true">⇢ </span>{`${t('work.session.story.channel')} · ${who(item.who)}`}</Actor>
-          <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
-        </div>
-      );
+    case 'line':
+      return <div data-part="line"><LineRow row={item.row} {...(home ?? READ_ONLY)} /></div>;
     default:
       return null;
   }
 }
 
+/** A line's rows where no host reaches their presses: read, with nothing in the dock. */
+const READ_ONLY: LineRowHome = { attended: '', docked: [], onToDock: () => {} };
+
 /**
  * **The story**: the session's one stream, each line its kind's part in the order it happened (`storyOf`). Steps are labelled rules;
  * the person's words stand on the sunken ground; the agent's name its maker and the model that ran; each burst of activity is one
- * line that opens to each call; a helper's question and answer sit indented; a second opinion and a channel message are a line each.
+ * line that opens to each call; a helper's question and answer sit indented; a second opinion is a line; each of its line's rows
+ * (a request, a quest, a channel message) is its `LineRow`, with its presses where the host hands them (`home`).
  * The person's read mark is a dashed rule before the first line after it.
  */
-export function StoryStream({ story, actor, readMark, since: digest, loading = false }: {
+export function StoryStream({ story, actor, readMark, since: digest, loading = false, home }: {
   story: readonly StoryItem[];
   actor: StoryActor;
+  /** What a line's rows press: its dock, its sessions, its quests, its channel; absent, they are read only. */
+  home?: LineRowHome;
   /** When the person last read this session (ms); absent, no mark is drawn. */
   readMark?: number | null;
   /** What happened since the mark (*Since you left*), drawn under it. */
@@ -185,7 +188,7 @@ export function StoryStream({ story, actor, readMark, since: digest, loading = f
           )}
           {index === since && digest && <li data-part="digest" className="min-w-0">{digest}</li>}
           <li data-block={item.key} className="min-w-0">
-            <Line item={item} actor={actor} />
+            <Line item={item} actor={actor} home={home} />
           </li>
         </Fragment>
       ))}

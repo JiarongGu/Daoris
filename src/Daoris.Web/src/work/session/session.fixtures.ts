@@ -1,6 +1,8 @@
 import type { Turn } from '../conversation/conversationTypes';
 import type { ExchangeCard } from '../conversation/exchanges';
 import type { ChannelItem } from '../channel';
+import type { AtWorkExchange } from '../atWork/types';
+import { lineRowsOf } from '../exchanges/rows';
 import type { StepRow, Track } from '../track/passage';
 import type { StoryLine } from './story';
 import type { ChangesFacts } from './ChangesRail';
@@ -62,9 +64,18 @@ const CHANNEL: ChannelItem[] = [
   { kind: 'message', id: 'm1', at: at(9, 25), repository: 'web-app', agent: 'claude-code', text: 'Can the limits header carry the remaining quota?' },
 ];
 
-/** The line the order test reads: two turns and a helper's answer, a step's start, end and the next one's start, a channel message. */
+/** A piece of the line's work asked of a partner during the review, not yet taken up. */
+export const PIECE: AtWorkExchange = {
+  id: 'piece:p1', part: 's1', expects: 'piece', to: 'gemini', delivery: 'kept', outcome: 'asked', holds: true, at: at(9, 32),
+};
+
+/**
+ * The line the order test reads: two turns and a helper's answer, a step's start, end and the next one's start, a channel message and
+ * a piece asked of a partner, each of the last two a row of its line.
+ */
 export const LINE: StoryLine = {
-  turns: TURNS, steps: STEPS, exchanges: EXCHANGES, channel: CHANNEL, opinionOf: () => ({ reviewer: 'Codex', model: 'gpt-5.1' }),
+  turns: TURNS, steps: STEPS, exchanges: EXCHANGES, rows: lineRowsOf({ messages: CHANNEL, exchanges: [PIECE] }),
+  opinionOf: () => ({ reviewer: 'Codex', model: 'gpt-5.1' }),
 };
 
 export const TRACK: Track = {

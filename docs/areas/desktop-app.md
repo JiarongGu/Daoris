@@ -150,7 +150,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     overlay opens above a full side bar. (from D118)
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
-26. The side bar and panel hold movable views: *Notifications*, Timeline, Review, Workflow, At work and Ask Daoris on
+26. The side bar and panel hold movable views: *Notifications*, Timeline, Review and Ask Daoris on
     the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body always holds its
     scrollbar's width (`DOCK_BODY`), since a chart placed by the pane's width otherwise flips as a scrollbar comes and goes.
     (from D118, D196, D96)
@@ -246,7 +246,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     named; where the dock and the reader disagree the page logs `wait.disagreed`, and `DOCK_CENSUS` holds the reader's reason for
     each docked kind. A teammate's session draws its waits as one line with no press. Above the dock stands the live band
     (`work/band/`), a session running here only: one line for the agent's act while a turn runs and for each subagent and background
-    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), each
+    task whose start the record keeps and no end (`child` and `task` events, told by the conversation, never a second source), and for
+    each request its line waits on that a session took up, a helper or a reviewer at work for it (`AtWorkExchange`, its *Open* that
+    session), each
     with its time ticking from its start on the page's clock, its last line (a subagent's last act from its own record, a task's
     last console line), *no output 6 m* past the quiet threshold, *Follow* (its last three lines), *Open* (the conversation's
     focus: a subagent's timeline, a task's whole console, a breadcrumb back) and *Stop* only on a task its streams mark `canStop`,
@@ -457,8 +459,9 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline and At work as side bar views; each row removes the place whose job it
-  moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar; ACTORFLOW1e's
+  the head and the conversation, and keeps the Timeline as a side bar view; each row removes the place whose job it
+  moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar, SESSIONVIEW1h
+  took the At work view off it (an ask's page keeps its own section); ACTORFLOW1e's
   part rows (`workflow/parts/`) are not among the step rows yet.
   SESSIONVIEW1c built the read mark, *Since you left* and the folds (rule 38). SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
   session's raw console alone; a task's whole console is read in the conversation's focus. SESSIONVIEW1f moved the subagents into the conversation: a subagent
@@ -474,11 +477,20 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), budgets that follow how an
   account is paid (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
   row rewrites the rule it makes false.
-- **SESSIONUI1**: the session panel rebuilt from the fresh design rather than adjusted row by row. Its parts stand in
-  `work/session/`, drawn in every state in their stories and not yet mounted: the head (the state from the reader's line, where
-  and who with the model that ran, `headFactsOf`), the track, one story of turns, steps, helpers, second opinions and channel
-  messages in time order with each burst of activity folded (`storyOf`), the wait card, the composer and the Changes rail from
-  68rem, folded below 40rem (`panelLayout.ts`). Rules 37 and 38 stay true until the panel replaces the page's head, conversation,
-  dock and composer in `WorkFrame`, and their components and tests go with that change.
+- **SESSIONUI1**: the session panel rebuilt from the fresh design rather than adjusted row by row (`work/session/`), an attended
+  session's page in `WorkFrame` (`AttendedSessionPanel`): the head (the state from the reader's line, where and who with the model
+  that ran, `headFactsOf`, ending in the supervisor's count, a later choice and *Full access*, `HeadChips`), the run's one track
+  (`RunTrack`, a chip's press bringing its step's first rule in the story, `toStepRows`), one story of turns, steps, helpers,
+  second opinions and its line's rows in time order with each burst of activity folded (`storyOf`), the live band, the dock of
+  wait cards (`SessionDock`, `dockCardsOf`), the composer and the Changes rail from 68rem, folded below 40rem (`panelLayout.ts`).
+  Rules 37 and 38 still name parts the panel replaced (`WaitStrip`, the old head and box), which go with their tests.
+- SESSIONVIEW1h moved the line's exchanges and its channel into the session's story (`work/exchanges/`): a helper, a piece, a
+  quest, a hand-over or an opinion is a row (`LineRow`) where it was asked and one where it came back, at its moment among the
+  turns (one whose read keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's
+  findings beside the work it judged; one waiting on the person leads to its card in the dock (`dockKeyOfExchange`, `toDockLine`)
+  with no press of its own; a quest the session published, the session that published its own and the answered question it
+  resumed after are rows too; each channel message of its line is a row naming its sender, answered in place and sent on to its
+  session. The head's *Waiting on* line scrolls the story to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it
+  worked with* and *Channel* folds and the side bar's At work view are gone.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

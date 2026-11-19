@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import { panelLayoutOf } from './panelLayout';
 import { SessionPanel, type PanelFacts } from './SessionPanel';
@@ -26,20 +27,20 @@ describe('panelLayoutOf', () => {
 
 describe('SessionPanel', () => {
   it('draws the head, the track, the story, the band, the dock and the composer in that order, the rail beside', () => {
-    const { container } = render(<SessionPanel facts={FACTS} band={<p>Nothing running</p>} width={1280} />);
+    const { container } = render(<SessionPanel facts={FACTS} band={<p>Nothing running</p>} width={1280} />, { wrapper: Tooltip.Provider });
     expect(regions(container)).toEqual(['head', 'track', 'story', 'rail', 'band', 'dock', 'composer']);
     expect(within(container.querySelector('[data-region="rail"]')!).getByText('src/limits/bucket.ts')).toBeTruthy();
   });
 
   it('names the actor, the model that ran and the state in its head', () => {
-    const { container } = render(<SessionPanel facts={{ ...FACTS, head: { ...HEAD, asked: 'sonnet-4.5' } }} width={1280} />);
+    const { container } = render(<SessionPanel facts={{ ...FACTS, head: { ...HEAD, asked: 'sonnet-4.5' } }} width={1280} />, { wrapper: Tooltip.Provider });
     const head = container.querySelector<HTMLElement>('[data-region="head"]')!;
     expect(within(head).getByText('Working')).toBeTruthy();
     expect(within(head).getByText(/Builder · Claude · asked sonnet-4.5, ran opus-4.1 · home/)).toBeTruthy();
   });
 
   it('folds at a narrow width: no rail, the changes one fact in the head, one card whole and the rest a line', () => {
-    const { container } = render(<SessionPanel facts={FACTS} width={400} />);
+    const { container } = render(<SessionPanel facts={FACTS} width={400} />, { wrapper: Tooltip.Provider });
     expect(regions(container)).not.toContain('rail');
     expect(within(container.querySelector<HTMLElement>('[data-region="head"]')!).getByText(/5 files \+248 −37/)).toBeTruthy();
     const dock = container.querySelector('[data-region="dock"]')!;

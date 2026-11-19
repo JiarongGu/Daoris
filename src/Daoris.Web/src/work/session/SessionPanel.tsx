@@ -6,7 +6,8 @@ import { useFollowTail } from '../conversation/followTail';
 import type { Track } from '../track/passage';
 import { ChangesRail, type ChangesFacts, changesFact } from './ChangesRail';
 import { PanelComposer, type Reads } from './PanelComposer';
-import { type HeadFacts, PanelHead, PanelTrack, useModelWords } from './PanelHead';
+import { RunTrack } from '../track/RunTrack';
+import { type HeadFacts, PanelHead, useModelWords } from './PanelHead';
 import { panelLayoutOf } from './panelLayout';
 import type { StoryItem } from './story';
 import { StoryStream } from './StoryStream';
@@ -28,7 +29,10 @@ export type PanelFacts = {
   readMark?: number | null;
   onAnswer: (wait: string, answer: WaitAnswer) => void;
   onSend: (words: string) => void;
+  /** A track chip's press: the step's first rule in the story (`toStepRows`). */
   onStep?: (node: string) => void;
+  /** The track's *Flowchart*: the run's view. */
+  onFlowchart?: () => void;
   onReview?: () => void;
   onFile?: (path: string) => void;
 };
@@ -72,9 +76,11 @@ export function Dock({ waits, now, narrow, onAnswer, children }: {
  * the composer. Below 40rem the rail goes and the head carries the changes as one fact. With no session it says so; loading, it
  * draws its skeleton in the real layout.
  */
-export function SessionPanel({ facts, band, acts, track, asking, dock, composer, story, reading, loading = false, width: given }: {
+export function SessionPanel({ facts, band, acts, chips, track, asking, dock, composer, story, reading, loading = false, width: given }: {
   facts: PanelFacts | null;
-  /** The host's track (`RunTrack`, with its holders and *Flowchart*), in place of the chips of `facts.track`. */
+  /** The head's chips (`HeadChips`), the host's: they read the record, which the facts do not carry. */
+  chips?: ReactNode;
+  /** The host's track (`RunTrack` with its holders read from its run), in place of the one drawn from `facts.track`. */
   track?: ReactNode;
   /** What asks under the head: a stop's, a delete's, a rename's, a hand-over's or a pause's ask, the host's. */
   asking?: ReactNode;
@@ -138,8 +144,19 @@ export function SessionPanel({ facts, band, acts, track, asking, dock, composer,
     >
       {loading ? (
         <div data-region="head" className="grid gap-1.5 border-b border-line pb-2"><SkeletonRows rows={2} /></div>
-      ) : <PanelHead head={head} now={facts.now} acts={acts} changes={fact} />}
-      {!loading && (track ?? (facts.track && <PanelTrack track={facts.track} onStep={facts.onStep} />))}
+      ) : <PanelHead head={head} now={facts.now} acts={acts} changes={fact} chips={chips} />}
+      {!loading && (track || facts.track) && (
+        <div data-region="track" className="shrink-0">
+          {track ?? (facts.track && (
+            <RunTrack
+              track={facts.track}
+              holderOf={() => t('workflow.wait.holder.person')}
+              onChip={(node) => facts.onStep?.(node)}
+              onFlowchart={() => facts.onFlowchart?.()}
+            />
+          ))}
+        </div>
+      )}
       {asking && <div data-region="asking" className="shrink-0">{asking}</div>}
       <div className="flex min-h-0 min-w-0 flex-1 gap-4">
         <div className="relative flex min-h-0 min-w-0 flex-1">

@@ -3,7 +3,8 @@ import type { TFunction } from 'i18next';
 import { type useSessionDiff, usePostChannel, type withCall } from '../../bridge/shell';
 import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
-import { channelRefusal, type ChannelItem } from '../channel';
+import { channelRefusal } from '../channel';
+import { useLineRows } from '../exchanges/useLineRows';
 import { FileOpener, type FileOpen } from '../review/preview';
 import type { Roster } from '../start/agentRoster';
 import type { useAttendedBox } from '../conversation/useAttendedBox';
@@ -19,6 +20,7 @@ import type { useAttendedWaits } from '../waits/useAttendedWaits';
 import type { StateLine } from '../head/stateLine';
 import { stepsNow } from '../catchup/digest';
 import type { ChangesFacts } from './ChangesRail';
+import { HeadChips } from './HeadChips';
 import { headFactsOf } from './headFacts';
 import type { Reads } from './PanelComposer';
 import { PanelComposer } from './PanelComposer';
@@ -52,14 +54,15 @@ export function changesOf(diff: ReturnType<typeof useSessionDiff>['data']): Chan
 
 /**
  * **The attended session's panel**: the session panel (`SessionPanel`) composed from what the page already holds. The head from the
- * driver's reader's state line (`headFactsOf`) with the acts and the ask under it; the run's track; the story from the session's
- * reading (`useSessionReading`: turns, steps, helpers asked, its line's channel, with its find bar, earlier pages, anchors, *Since
- * you left* and the focus); the live band; the dock (`SessionDock`, the host's); the composer sending through the session's own
+ * driver's reader's state line (`headFactsOf`) with the acts, the chips (`HeadChips`) and the ask under it; the run's track; the
+ * story from the session's reading (`useSessionReading`: turns, steps, helpers asked, with its find bar, earlier pages, anchors,
+ * *Since you left* and the focus) and its line's rows (`useLineRows`: requests each way, quests, channel messages, each at its
+ * moment); the live band; the dock (`SessionDock`, the host's); the composer sending through the session's own
  * path (a chat's turn, a parked intake's ask, else the words the session goes on with); and the Changes rail from the session's
  * diff. Only where the session ran here: a teammate's record came without its transcript.
  */
 export function AttendedSessionPanel({
-  t, notify, session, boxState, words, boxWords, waitsState, headState, grouping, roster, refusal, openPreview, channel, band, dock,
+  t, notify, session, boxState, words, boxWords, waitsState, headState, grouping, roster, refusal, openPreview, along, band, dock,
   prelude, diff,
 }: {
   t: TFunction;
@@ -74,21 +77,29 @@ export function AttendedSessionPanel({
   roster: Roster;
   refusal: Refusal | null;
   openPreview: (open: FileOpen) => void;
-  /** Its line's channel messages, kept to its line of work. */
-  channel: readonly ChannelItem[];
+  /** What its line's rows read beside the session (who is at work on it, its channel, the dock's keys) and what they press. */
+  along: Omit<Parameters<typeof useLineRows>[0], 'session' | 'quest' | 'quests' | 'sessions' | 'helperAsks' | 'channelAsk' | 'only' | 'opinion'>;
   band?: ReactNode;
   dock?: ReactNode;
   /** What the page says of the session above its story: its record's folds (`AttendedPane`). */
   prelude?: ReactNode;
   diff: ReturnType<typeof useSessionDiff>['data'];
 }) {
-  const { attended, live, here } = session;
+  const { attended, live, here, attendedEntry } = session;
   const { talking, chatTurns, turns, box, setDraft, onUsage, onWaiting } = boxState;
   const { waits, standing, setAnchored, helperWaits, goToWait, setTail, setBeside } = waitsState;
   const { setChatHeld, panelHead } = headState;
   const scroller = useRef<HTMLDivElement>(null);
   const postChannel = usePostChannel();
   const modelWords = useModelWords();
+  // Its line's requests each way, its quests and its channel's messages, each a row the story places at its moment.
+  const lines = useLineRows({
+    ...along,
+    session: attended, quest: session.quest, quests: session.quests.data ?? [], sessions: session.sessions.data ?? [],
+    helperAsks: helperWaits?.asks, channelAsk: session.channelAsk ?? null,
+    only: attendedEntry ? { entry: attendedEntry.entry, repository: attendedEntry.repository } : null,
+    opinion: opinionAsked(waits?.landing) ?? null,
+  });
   const reading = useSessionReading({
     session: attended?.id ?? '',
     adapter: attended?.door,
@@ -117,7 +128,7 @@ export function AttendedSessionPanel({
 
   const passage = grouping?.passage?.steps.length ? grouping.passage : null;
   // A teammate's record came without its transcript, which stays on their machine: its story is its run's steps alone.
-  const story = storyOf(storyLineOf({ turns: here ? reading.turns : [], passage, exchanges: reading.exchanges, channel: here ? channel : [] }));
+  const story = storyOf(storyLineOf({ turns: here ? reading.turns : [], passage, exchanges: reading.exchanges, rows: lines?.rows }));
   const line: StateLine = panelHead.line ?? { kind: 'unread', since: null, cause: null } as unknown as StateLine;
   const maker = roster.find((row) => row.door === attended.door)?.product || attended.door;
   const head = headFactsOf({ session: attended, line, title: panelHead.title, maker });
@@ -141,19 +152,16 @@ export function AttendedSessionPanel({
     else boxWords.onSay(text);
   };
   const takes = box.kind !== 'none' && box.kind !== 'line';
-  const toStep = (node: string) => {
-    const rule = story.find((item) => item.kind === 'step' && item.node === node);
-    if (rule) scroller.current?.querySelector(`[data-block="${rule.key}"]`)?.scrollIntoView({ block: 'center' });
-  };
   return (
     <FileOpener.Provider value={openPreview}>
       <SessionPanel
         facts={{
           id: attended.id, head, track: null, story, waits: [], changes: changesOf(diff), now: Date.now(),
-          reads: readsOf(box, Boolean(turns.taking)), onAnswer: () => {}, onSend, onStep: toStep,
+          reads: readsOf(box, Boolean(turns.taking)), onAnswer: () => {}, onSend,
           onFile: (path) => openPreview({ path }),
         }}
         acts={panelHead.acts}
+        chips={<HeadChips session={attended} supervision={panelHead.chip} />}
         track={panelHead.track || undefined}
         asking={panelHead.asking || undefined}
         band={band}
@@ -162,6 +170,7 @@ export function AttendedSessionPanel({
         story={(
           <SessionStory
             session={attended.id} reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller} prelude={prelude}
+            rowHome={lines?.home}
           />
         )}
         composer={(

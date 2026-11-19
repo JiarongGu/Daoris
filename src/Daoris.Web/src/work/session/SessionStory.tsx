@@ -7,6 +7,7 @@ import { pathTo } from '../beside/besides';
 import { SinceYouLeft } from '../catchup/SinceYouLeft';
 import { BESIDE_READER, BesideReading, ReadingFind } from '../conversation/SessionConversation';
 import type { useSessionReading } from '../conversation/useSessionReading';
+import type { LineRowHome } from '../exchanges/LineRows';
 import { type StoryItem, storyOf } from './story';
 import { type StoryActor, StoryStream } from './StoryStream';
 
@@ -24,10 +25,12 @@ export function lineOfBlock(story: readonly StoryItem[], block: string): string 
  * into view, the pages before loaded first; the read mark opens it under *Since you left*; and a subagent or a task the live band
  * opens takes the story's place with a way back.
  */
-export function SessionStory({ session, reading, story, actor, scroller, prelude }: {
+export function SessionStory({ session, reading, story, actor, scroller, prelude, rowHome }: {
   session: string;
   /** What the page says of the session above its story. */
   prelude?: ReactNode;
+  /** What its line's rows press. */
+  rowHome?: LineRowHome;
   reading: Reading;
   story: readonly StoryItem[];
   actor: StoryActor;
@@ -52,7 +55,7 @@ export function SessionStory({ session, reading, story, actor, scroller, prelude
   const home: BesideHome = {
     reader: BESIDE_READER, lifetimes, nested: false, onShow: show,
     onFocus: (child) => setFocus({ child: pathTo(lifetimes, child) }),
-    draw: (shown) => <StoryStream story={storyOf({ turns: shown, steps: [], exchanges: [], channel: [] })} actor={actor} />,
+    draw: (shown) => <StoryStream story={storyOf({ turns: shown, steps: [], exchanges: [], rows: [] })} actor={actor} />,
   };
   if (path || task) {
     return (
@@ -81,6 +84,7 @@ export function SessionStory({ session, reading, story, actor, scroller, prelude
       <StoryStream
         story={story}
         actor={actor}
+        home={rowHome}
         loading={!loaded}
         readMark={Number.isFinite(read) ? read : null}
         since={caught.digest && caught.read
