@@ -209,7 +209,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     and of the head offer *Rename…* (its ask under the head) and *Pin* or *Unpin* (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by the part
     pressed), and *Delete…* says how many parts of its line it takes. *Started from*, on *Details*' folded line cut with an ellipsis, names as
     presses the quest, the ask, the session a hand-over or go-on continues, a conversation's repository or Ask Daoris's room
-    (`work/head/startedFrom.tsx`). *Details* adds *Started with*, the requirement it began with, whole (the quest's
+    (`work/head/startedFrom.tsx`). Under a head whose session its run's passage is drawn on stands the workflow's track (`work/track/`):
+    each step a chip with its mark, the standing one with its attempt and, where the dock holds it, "waiting on `<role>`: `<holder>`"
+    (D304), how far it came, and *Flowchart*, which opens the run's view in a drawer, the side bar holding no Workflow view; a chip's
+    press leads to its rows, each attempt's start and end a row between the turns it fell between, read from the same passage, the
+    standing step's act rows (`StepActRows`) under its start and a failed step's row leading to its press in the dock, never offering
+    one of its own. *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start
     was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162) A rail row is the
     session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`) in one status line that never grows its height:
@@ -451,8 +456,10 @@ one at a time, its verdict the session's next word. Off Windows there are no job
 - **SESSIONVIEW1c–j** (D320; SESSIONVIEW1b built the state line and the one dock, rule 38): a session's whole surface becomes one
   panel (`docs/2026-11-18-session-view-design.md`): a fixed head with the state line and the workflow's track, one timeline of every
   actor's rows, and at the foot a live band of what runs now above the dock. Today a session's page still stacks its folds between
-  the head and the conversation, and keeps Timeline, Workflow and At work as dock views; each row removes the place whose job it
-  moves. SESSIONVIEW1c built the read mark, *Since you left* and the folds (rule 38). SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
+  the head and the conversation, and keeps Timeline and At work as side bar views; each row removes the place whose job it
+  moves. SESSIONVIEW1g built the track and the steps as rows (rule 37) and took the Workflow view off the side bar; ACTORFLOW1e's
+  part rows (`workflow/parts/`) are not among the step rows yet.
+  SESSIONVIEW1c built the read mark, *Since you left* and the folds (rule 38). SESSIONVIEW1d built the live band (rule 38) and took each subagent's and task's tab off the bottom panel, which holds the
   session's raw console alone; a task's whole console is read in the conversation's focus. SESSIONVIEW1f moved the subagents into the conversation: a subagent
   is a row under the call that spawned it (its name, its task words on hover, how it stands, its calls, how long it ran, its closing
   words) that opens in place to its own turns one level in, read through `SESSION_CHILD_HISTORY`; one inside an opened subagent

@@ -32,7 +32,7 @@ import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
 import { sessionOrigin, sessionTitle } from './identity';
 import { RightDock } from './frame/RightDock';
-import { SESSION_ACTIVE, type Notify } from '../design/ui';
+import { Drawer, SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
 import { useNewStart } from './start/useNewStart';
 import { StartPane } from './start/StartPane';
@@ -49,7 +49,6 @@ import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
-import { opensRun } from './rail/runWaitFact';
 import { AttendedPane } from './head/AttendedPane';
 import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
@@ -261,6 +260,7 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
+  const [flowchartOpen, setFlowchartOpen] = useState(false);
   // The run `outputs/<run>` opened, at the attempt an Accept card named, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null; attempt: number | null } | null>(null);
   const onReviewRun = (run: string, attempt: number | null = null) => {
@@ -277,7 +277,7 @@ export function WorkFrame({
     else if (memoryOf) setMemorySeek((was) => ({ session: memoryOf, n: (was?.n ?? 0) + 1 }));
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
-    else if (intent === 'workflow') openView('workflow');
+    else if (intent === 'workflow') setFlowchartOpen(true);
     else if (intent === 'atWork') openView('atWork');
   }
   if (!intent && taken) setTaken(null);
@@ -373,6 +373,7 @@ export function WorkFrame({
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
     heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
+    steps: runWaitDoors.steps, onFlowchart: () => setFlowchartOpen(true),
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
@@ -383,15 +384,11 @@ export function WorkFrame({
     session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
+    flowchartOpen,
   });
-  const { surface, previewSurface, consoleView, withWhose } = regions;
-  // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
-  const attendRow = (id: string) => {
-    attend(id);
-    if (opensRun(groups.data, id)) openView('workflow');
-  };
+  const { surface, previewSurface, consoleView, withWhose, flowchart } = regions;
   const spec = useSessionsList({
-    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend: attendRow, newConversationPressed,
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
   const { partBox, seek } = useSeekPart();
@@ -585,6 +582,7 @@ export function WorkFrame({
           {dock === 'preview' ? previewSurface : dock ? surface(dock, 'right') : null}
         </RightDock>
       )}
+      {flowchart && <Drawer title={t('work.track.flowchartTitle')} onClose={() => setFlowchartOpen(false)}>{flowchart}</Drawer>}
     </div>
   );
 }

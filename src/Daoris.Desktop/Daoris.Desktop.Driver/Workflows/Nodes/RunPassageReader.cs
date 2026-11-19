@@ -21,12 +21,30 @@ public static class RunPassageReader
         foreach (var run in runs.Where(run => run.Line is null && run.Ended is null).OrderBy(run => run.Run, StringComparer.Ordinal))
         {
             if (run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
-            List<PassageStep> steps = [.. graph.Nodes.Where(node => !node.Synthetic)
-                .Select(node => new PassageStep(node.Id, node.Kind, MarkOf(WorkPerformer.StatusOf(kept, node.Id).State)))];
+            List<PassageStep> steps = [.. graph.Nodes.Where(node => !node.Synthetic).Select(node => StepOf(node, kept))];
             passages.Add(new RunPassage(run.Run, run.Binding.Workflow, run.Binding.Version, steps));
         }
 
         return passages;
+    }
+
+    /// <summary>A node as its passage says it, so a session's track and its step rows read one answer.</summary>
+    private static PassageStep StepOf(NodeDeclaration node, NodeRecord kept)
+    {
+        var status = WorkPerformer.StatusOf(kept, node.Id);
+        var mark = MarkOf(status.State);
+        List<PassageAttempt> earlier = [.. kept.Attempts
+            .Where(attempt => string.Equals(attempt.Node, node.Id, StringComparison.Ordinal) && attempt.Attempt < status.Attempt)
+            .OrderBy(attempt => attempt.Attempt)
+            .Select(attempt => new PassageAttempt(attempt.Attempt, attempt.RecordedAt, attempt.Outcome, attempt.Code))];
+        return new PassageStep(node.Id, node.Kind, mark)
+        {
+            Role = StepRoles.Of(node),
+            Attempt = status.Attempt > 0 ? status.Attempt : null,
+            Since = status.Since,
+            Code = mark == Failed ? status.Code : null,
+            Earlier = earlier.Count > 0 ? earlier : null,
+        };
     }
 
     /// <summary>The runs bound in <paramref name="home"/>, read from its files now.</summary>

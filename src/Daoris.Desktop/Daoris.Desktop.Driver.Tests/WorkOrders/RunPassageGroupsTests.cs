@@ -61,6 +61,46 @@ public sealed class RunPassageGroupsTests
             passage.GetProperty("steps")[1].GetProperty("node").GetString(), passage.GetProperty("steps")[1].GetProperty("mark").GetString()));
     }
 
+    private static NodeAttempt Tried(string node, int number, string outcome, string? code) =>
+        new(node, number, "pull-request", new WorkPerformCall("run:q1", "pull-request/merge", 1, $"i{number}", $"k{number}", "r1", [], T0), AttemptStates.Settled)
+        {
+            RecordedAt = T0.AddMinutes(number), Outcome = outcome, Code = code,
+        };
+
+    [Fact]
+    public void A_step_s_passage_names_its_role_its_newest_attempt_its_start_what_failed_and_the_attempts_before_it()
+    {
+        var graph = new NodeGraph(
+        [
+            new NodeDeclaration("merge", "pull-request/merge", 1, NodeReach.Performed),
+            new NodeDeclaration("release", "pull-request/release", 1, NodeReach.Performed) { Role = StepRoles.ReleaseManager },
+        ], [], ["merge"], "release");
+        var binding = new WorkflowRunBinding("q1", "engine", "pull-request-release", "docs", WorkflowLevels.Repository, T0) { Version = 2, Digest = "gph-0123456789abcdef0123456789abcdef" };
+        var run = new GraphRun(binding, new DecodedVersion(2, binding.Digest, graph, binding.Digest, null), null);
+        var record = new NodeRecord("run:q1")
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["merge"] = new("run:q1", "merge", NodeStates.Failed) { Attempt = 2, Tries = 2, Code = "conflict", Since = T0.AddMinutes(2) },
+            },
+            Attempts = [Tried("merge", 1, WorkStates.Failed, "checks"), Tried("merge", 2, WorkStates.Failed, "conflict")],
+        };
+
+        var passage = Assert.Single(RunPassageReader.Of([run], _ => record));
+        var merge = passage.Steps[0];
+        Assert.Equal((RunPassageReader.Failed, StepRoles.Default("pull-request/merge"), 2, T0.AddMinutes(2), "conflict"), (merge.Mark, merge.Role, merge.Attempt, merge.Since, merge.Code));
+        var earlier = Assert.Single(merge.Earlier!);
+        Assert.Equal((1, T0.AddMinutes(1), WorkStates.Failed, "checks"), (earlier.Attempt, earlier.At, earlier.Outcome, earlier.Code));
+        var release = passage.Steps[1];
+        Assert.Equal((RunPassageReader.Next, StepRoles.ReleaseManager, null, null), (release.Mark, release.Role, release.Attempt, release.Earlier));
+
+        using var written = JsonDocument.Parse(SessionsJson.Json(SessionGroups.Read(Look(Record("s2", "awaiting-step", "q1", 5)) with { Passages = [passage] })));
+        var step = written.RootElement.GetProperty("sessions")[0].GetProperty("passage").GetProperty("steps")[0];
+        Assert.Equal((StepRoles.Default("pull-request/merge"), 2, "conflict", 1, "checks"), (step.GetProperty("role").GetString(), step.GetProperty("attempt").GetInt32(),
+            step.GetProperty("code").GetString(), step.GetProperty("earlier")[0].GetProperty("attempt").GetInt32(), step.GetProperty("earlier")[0].GetProperty("code").GetString()));
+        Assert.Equal(T0.AddMinutes(2), step.GetProperty("since").GetDateTimeOffset());
+    }
+
     [Theory]
     [InlineData(NodeStates.Reached, RunPassageReader.Passed)]
     [InlineData(NodeStates.Skipped, RunPassageReader.Passed)]

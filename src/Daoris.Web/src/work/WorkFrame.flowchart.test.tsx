@@ -5,9 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The session's side bar has a view of its own, *Workflow*, beside the timeline and the
-// review: the attended session's run, asked of the driver only while the view shows, with *this session* on its own step. The Work
-// frame as a page over a mocked bridge, as the rest of its suite runs.
+// The attended session's run opens from its head's track, the side bar holding no Workflow view of its own: the run's flowchart in a
+// drawer, asked of the driver only while it is open, with *this session* on its own step. The Work frame as a page over a mocked
+// bridge, as the rest of its suite runs.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -36,7 +36,18 @@ let RUN = answerOf(WORKING);
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const asked = () => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === 'WORKFLOW_RUN');
 
-describe("the session's Workflow view", () => {
+const GROUPED = {
+  session: 's1', group: 'working', shown: 'working', archived: false, teammate: false,
+  passage: { run: 'q1', workflow: 'release', version: 1, steps: [{ node: 'write', kind: 'work', mark: 'current', attempt: 1, since: '2026-10-09T09:00:00Z' }] },
+};
+
+async function openChart() {
+  const track = await screen.findByRole('navigation', { name: 'Its workflow: release' });
+  await userEvent.click(within(track).getByRole('button', { name: 'Flowchart' }));
+  return screen.findByRole('dialog', { name: 'Its run’s flowchart' });
+}
+
+describe("the session's run, opened from its track", () => {
   beforeEach(() => {
     RUN = answerOf(WORKING);
     // The side bar open, as a viewer who opened it once keeps it.
@@ -51,6 +62,7 @@ describe("the session's Workflow view", () => {
     }));
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module === 'DAORIS.DRIVER' && type === 'WORKFLOW_RUN') return RUN;
+      if (type === 'SESSION_GROUPS') return { sessions: [GROUPED] };
       return { drivable: ['engine'], holds: [], trees: [], running: ['s1'] };
     });
   });
@@ -60,7 +72,7 @@ describe("the session's Workflow view", () => {
     window.localStorage.clear();
   });
 
-  it('stands beside the timeline and the review, and asks the driver only once it is shown', async () => {
+  it('is no view of the side bar, and opens from the track, asked of the driver only once open', async () => {
     render(
       <QueryClientProvider client={client()}>
         <Tooltip.Provider><WorkFrame selected="s1" onSelect={vi.fn()} notify={() => {}} /></Tooltip.Provider>
@@ -71,14 +83,14 @@ describe("the session's Workflow view", () => {
     // The session's record, which the side bar follows, is pushed in as the window holds it: the tabs are pressed once it is here.
     await screen.findByRole('heading', { level: 1, name: 'Fix the header' });
     const tabs = within(side).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
-    expect(tabs.slice(0, 3)).toEqual(['Timeline', 'Outputs', 'Workflow']);
+    expect(tabs).not.toContain('Workflow');
     expect(asked()).toHaveLength(0);
 
-    await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
+    const chart = await openChart();
 
-    expect(await within(side).findByText('At The work · working')).toBeInTheDocument();
+    expect(await within(chart).findByText('At The work · working')).toBeInTheDocument();
     expect(asked()[0]?.[2]).toEqual(expect.objectContaining({ payload: { session: 's1' } }));
-    const work = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'work')!;
+    const work = within(chart).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'work')!;
     expect(work).toHaveTextContent('this session');
     expect(work).toHaveTextContent('Being worked on by claude-code.');
   });
@@ -89,7 +101,7 @@ describe("the session's Workflow view", () => {
         id: step.step.kind === 'work' ? 'write' : step.step.kind === 'look' ? 'inspect' : step.step.id } })) });
     const previous = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, ...args: unknown[]) => {
-      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 's1', group: 'review', shown: 'completed',
+      if (type === 'SESSION_GROUPS') return { sessions: [{ ...GROUPED, group: 'review', shown: 'completed',
         lands: { branch: 'daoris/s1', tree: 's1', commits: 1, uncommitted: 0 } }] };
       if (type === 'LANDING') return { session: 's1', form: 'merge', target: 'main',
         review: { state: 'not-shown', environment: 'local', says: 'Waits for your look.' } };
@@ -98,8 +110,7 @@ describe("the session's Workflow view", () => {
     render(<QueryClientProvider client={client()}><Tooltip.Provider>
       <WorkFrame selected="s1" onSelect={vi.fn()} notify={() => {}} />
     </Tooltip.Provider></QueryClientProvider>);
-    const side = await screen.findByRole('complementary', { name: 'right side bar' });
-    await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
+    const side = await openChart();
     await within(side).findByText('Release workflow v1');
     const rows = within(side).getAllByRole('listitem');
     expect(rows.find((row) => row.getAttribute('data-step') === 'write')).toHaveTextContent('this session');
@@ -128,10 +139,10 @@ describe("the session's Workflow view", () => {
     expect(within(side).getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
     act(() => ask('workflow'));
 
-    await waitFor(() => expect(within(side).getByRole('tab', { name: 'Workflow' })).toHaveAttribute('aria-selected', 'true'));
-    expect(await within(side).findByText((_, element) => element?.matches('p') === true
+    const chart = await screen.findByRole('dialog', { name: 'Its run’s flowchart' });
+    expect(await within(chart).findByText((_, element) => element?.matches('p') === true
       && element.textContent === 'At Your look in dev · waiting on tester: you')).toBeInTheDocument();
-    const look = within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
+    const look = within(chart).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'look')!;
     expect(look).toHaveAttribute('aria-current', 'step');
   });
 
@@ -146,8 +157,7 @@ describe("the session's Workflow view", () => {
     render(<QueryClientProvider client={client()}><Tooltip.Provider>
       <WorkFrame selected="s1" onSelect={vi.fn()} notify={() => {}} />
     </Tooltip.Provider></QueryClientProvider>);
-    const side = await screen.findByRole('complementary', { name: 'right side bar' });
-    await userEvent.click(within(side).getByRole('tab', { name: 'Workflow' }));
+    const side = await openChart();
     const release = await waitFor(() => within(side).getAllByRole('listitem').find((item) => item.getAttribute('data-step') === 'release')!);
 
     await userEvent.click(within(release).getByRole('button', { name: 'Not needed this run…' }));

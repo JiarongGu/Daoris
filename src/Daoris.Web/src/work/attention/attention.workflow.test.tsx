@@ -38,20 +38,20 @@ describe("a row's door into its run", () => {
     const onOpen = vi.fn();
     render(<ul><AttentionRow item={row({ kind: 'departure', id: 'q3' })} onOpen={onOpen} onRun={onRun} /></ul>);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Workflow' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Flowchart' }));
     expect(onRun).toHaveBeenCalledOnce();
     expect(onOpen).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Workflow' })).toHaveAttribute('title', 'Open where this work stands in its workflow');
+    expect(screen.getByRole('button', { name: 'Flowchart' })).toHaveAttribute('title', 'Open where this work stands in its workflow');
   });
 
   it('draws no such door where none is handed', () => {
     render(<ul><AttentionRow item={row({ kind: 'departure', id: 'q3' })} onOpen={vi.fn()} /></ul>);
-    expect(screen.queryByRole('button', { name: 'Workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Flowchart' })).toBeNull();
   });
 
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<ul><AttentionRow item={row({ kind: 'parked', id: 's1' })} onRun={vi.fn()} /></ul>);
-    expect(screen.getByRole('button', { name: '工作流' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '流程图' })).toBeInTheDocument();
   });
 });
