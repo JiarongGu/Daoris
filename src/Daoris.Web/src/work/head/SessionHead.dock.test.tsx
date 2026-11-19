@@ -99,6 +99,46 @@ describe('the dock, at a park waiting on the person’s sign-in', () => {
   });
 });
 
+describe('the dock, at a conversation waiting on the person’s sign-in', () => {
+  const chat = session({ kind: 'chat', quest: null, state: 'working', note: undefined });
+
+  it('carries Open the sign-in… with the site and Signed in, which sends those words, and no finish or decline', async () => {
+    const opened: string[] = [];
+    const onAnswerSession = vi.fn(() => Promise.resolve(null));
+    render(
+      <LinkOpener.Provider value={(address) => opened.push(address)}>
+        <WaitStrip session={chat} question={SIGN_IN} onAnswerSession={onAnswerSession} onResolve={vi.fn()} answerBelow />
+      </LinkOpener.Provider>,
+    );
+
+    const docked = dockOf({ session: chat, question: SIGN_IN, onAnswerSession });
+    const said = stateLineSaid(i18n.t, stateLineOf({ session: chat, grouping: null, docked }));
+    expect(`${said.word} · ${said.rest.split(' · ').at(-1)}`).toBe('Waiting on you · Sign in');
+    expect(screen.getByText(SIGN_IN.question)).toBeInTheDocument();
+    const line = screen.getByRole('group', { name: 'Sign in at portal.example.com' });
+    await userEvent.click(within(line).getByRole('link', { name: 'Open the sign-in…' }));
+    expect(opened).toEqual(['https://portal.example.com/settings']);
+    expect(screen.queryByRole('button', { name: /^Finish/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Decline/ })).toBeNull();
+    await userEvent.click(within(line).getByRole('button', { name: 'Signed in' }));
+    expect(onAnswerSession).toHaveBeenCalledWith('Signed in');
+  });
+
+  it('says the sentence a refusal of the answer comes in, beside the press', async () => {
+    const onAnswerSession = vi.fn(() => Promise.resolve('It is not taking words just now.'));
+    render(<WaitStrip session={chat} question={SIGN_IN} onAnswerSession={onAnswerSession} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Signed in' }));
+
+    expect(await screen.findByText('It is not taking words just now.')).toBeInTheDocument();
+  });
+
+  it('draws nothing for a question that names no site, which is the conversation’s own reply', () => {
+    const { container } = render(<WaitStrip session={chat} question={{ ...SIGN_IN, site: null }} onAnswerSession={vi.fn()} />);
+    expect(container.querySelector('[data-wait="question"]')).toBeNull();
+  });
+});
+
 describe('the dock, at a release step waiting on its approver', () => {
   beforeEach(() => { invoke.mockReset(); });
 
