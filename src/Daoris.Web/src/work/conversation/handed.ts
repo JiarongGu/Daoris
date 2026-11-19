@@ -20,7 +20,6 @@ export const HANDED_CUTS: Readonly<Record<string, readonly CutValue[]>> = {
   'words-older': ['n', 'limit', 'from', 'to'],
   'words-long': ['n', 'limit'],
   'words-unread': [],
-  'words-not-kept': ['from'],
   'go-aheads-bound': ['n', 'limit'],
   'acts-long': ['n', 'limit'],
   'standing-long': ['n', 'limit'],

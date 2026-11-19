@@ -98,7 +98,6 @@ export const CUT: InstructionAccount = counted([
           said: "3 older words, said from 2026-10-01 03:26 UTC to 2026-10-01 05:26 UTC, left out past its bound of 8,000 characters; the ask's record keeps every one",
         },
         { code: 'words-long', count: 1, limit: 2000, said: '1 word cut at 2,000 characters' },
-        { code: 'words-not-kept', from: '2026-10-01T02:21:00+00:00', said: 'words said before 2026-10-01 02:21 UTC were not kept on the ask' },
       ],
     },
     {

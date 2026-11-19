@@ -51,10 +51,9 @@ internal sealed class TreeContext
     internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     /// <summary>
-    /// Both places of <see cref="HomeEntry.Trees"/>, the new first: a layout move never moves a tree, so the trees
-    /// opened before the layout moved stay at the old place while new ones open at the new, and each is one this home opened.
+    /// The place of <see cref="HomeEntry.Trees"/>, as a list for the readers that walk each root: each tree under it is one this home opened.
     /// </summary>
-    internal IReadOnlyList<string> TreesRoots => DaorisHome.Places(Home, HomeEntry.Trees);
+    internal IReadOnlyList<string> TreesRoots => [DaorisHome.Entry(Home, HomeEntry.Trees)];
 
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
     internal bool Holds(string path) => RootOf(path) is not null;
@@ -75,8 +74,7 @@ internal sealed class TreeContext
     /// is at either place, else where a new one opens.
     /// </summary>
     internal string TreeAt(string workspace, string repository, string name) =>
-        DaorisHome.Places(Home, HomeEntry.Trees, workspace, repository, name).FirstOrDefault(Directory.Exists)
-        ?? Path.Combine(TreesRoot, workspace, repository, name);
+        Path.Combine(TreesRoot, workspace, repository, name);
 
     /// <summary>The person's choices, from the file the loop and the planner read: this home's <c>driver.json</c>.</summary>
     internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Home));

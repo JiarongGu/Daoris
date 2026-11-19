@@ -284,7 +284,6 @@ public static class AskDoorViews
                 ? null
                 : [.. ask.Words.Where(word => word.Kind is { Length: > 0 } && word.Text is not null && word.At != default)
                     .Select(word => new AskWordView(word.Kind, word.Text, word.At, word.Session, word.Quest))],
-            WordsKeptFrom = ask.WordsKeptFrom,
             GoAheads = ask.GoAheads is null ? null : [.. ask.GoAheads.Select(GoAhead).OfType<GoAheadView>()],
             ReviewChoices = [.. (ask.ReviewChoices ?? []).Where(chosen => chosen.Choice is { Length: > 0 } && chosen.At != default)
                 .Select(chosen => new AskReviewChoiceView(chosen.Choice, chosen.At, chosen.Words))],

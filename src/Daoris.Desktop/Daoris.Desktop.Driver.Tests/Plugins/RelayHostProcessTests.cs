@@ -128,9 +128,9 @@ public sealed class RelayHostProcessTests : IDisposable
         Assert.False(File.Exists(HomeLease.PathIn(letting)), "the lease outlived the verb");
     }
 
-    /// <summary>An unwritable lease and a <c>bin</c> entry at both its places are each the relay-stopped line with its code, exit 2, and nothing of an exception's message.</summary>
+    /// <summary>An unwritable lease is the relay-stopped line with its code, exit 2, and nothing of an exception's message.</summary>
     [Fact]
-    public async Task Where_with_an_unwritable_lease_or_a_bin_entry_at_both_places_says_only_the_stopped_line()
+    public async Task Where_with_an_unwritable_lease_says_only_the_stopped_line()
     {
         if (!OperatingSystem.IsWindows()) return;
         var blocked = Path.Combine(_root, "blocked");
@@ -138,21 +138,10 @@ public sealed class RelayHostProcessTests : IDisposable
         Directory.CreateDirectory(HomeLease.PathIn(blocked));
         File.WriteAllText(Path.Combine(HomeLease.PathIn(blocked), "held"), "a directory stands where the lease file goes");
 
-        var twice = Path.Combine(_root, "twice");
-        Directory.CreateDirectory(twice);
-        File.WriteAllText(Path.Combine(twice, DaorisHome.InstallMarker), "");
-        foreach (var place in DaorisHome.Places(twice, HomeEntry.Bin))
-        {
-            Directory.CreateDirectory(place);
-            File.WriteAllText(Path.Combine(place, "entry.txt"), "x");
-        }
-
-        var results = await Task.WhenAll(EndedAsync(Where(blocked)), EndedAsync(Where(twice)));
+        var results = await Task.WhenAll(EndedAsync(Where(blocked)));
 
         Assert.Equal(2, results[0].Code);
         Assert.Equal([RelaySaid.Stopped("lease")], results[0].Err);
-        Assert.Equal(2, results[1].Code);
-        Assert.Equal([RelaySaid.Stopped("home")], results[1].Err);
         Assert.All(results, each => Assert.Empty(each.Out));
         foreach (var result in results) AssertNames(result.Err, _root, "Exception", " at ");
     }

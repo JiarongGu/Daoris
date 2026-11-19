@@ -183,9 +183,6 @@ public static class HandedCuts
     /// <summary>The words cannot be read for this start.</summary>
     public const string WordsUnread = "words-unread";
 
-    /// <summary>Words said before Daoris kept them on the ask, which nothing back-fills.</summary>
-    public const string WordsNotKept = "words-not-kept";
-
     /// <summary>Go-aheads past the instruction's bound on them.</summary>
     public const string GoAheadsBound = "go-aheads-bound";
 
@@ -235,7 +232,6 @@ public static class HandedCuts
         [WordsOlder] = ["n", "limit", "from", "to"],
         [WordsLong] = ["n", "limit"],
         [WordsUnread] = [],
-        [WordsNotKept] = ["from"],
         [GoAheadsBound] = ["n", "limit"],
         [ActsLong] = ["n", "limit"],
         [StandingLong] = ["n", "limit"],

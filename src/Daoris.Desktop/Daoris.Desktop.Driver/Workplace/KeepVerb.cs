@@ -110,7 +110,7 @@ public sealed class KeepVerb : ChoiceVerb
             // A size is at most half the Daoris folder's volume, read here so the refusal comes before the window is asked.
             var volume = world.FloorVolume is { } read
                 ? read()
-                : world.Instance.Home is { } home ? SpaceVolumes.Read(DaorisHome.FolderOf(home).Folder)?.Total : null;
+                : world.Instance.Home is { } home ? SpaceVolumes.Read(DaorisHome.FolderOf(home))?.Total : null;
             return set with { Volume = volume };
         }
         catch (DriverException refused)

@@ -39,9 +39,9 @@ public static class RelayCommand
             error.WriteLine(RelaySaid.Stopped(stop.Code));
             return 2;
         }
-        catch (Exception failure) when (failure is HomeLeaseException or HomeEntryTwiceException)
+        catch (HomeLeaseException)
         {
-            error.WriteLine(RelaySaid.Stopped(failure is HomeLeaseException ? "lease" : "home"));
+            error.WriteLine(RelaySaid.Stopped("lease"));
             return 2;
         }
         catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)

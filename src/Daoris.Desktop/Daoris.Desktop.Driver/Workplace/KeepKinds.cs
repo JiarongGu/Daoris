@@ -88,11 +88,6 @@ public static class KeepKinds
         DefaultGb = 10,
     };
 
-    /// <summary>The salvage folder: each migration's copies, its undo; one whose newest file is thirty days old goes daily (<see cref="SalvageKeeping"/>), and the person's press takes one early.</summary>
-    public static KeepKind Salvage { get; } = new(
-        "salvage", [HomeEntry.Salvage.Name], "nothing: a folder is the only copy of what its migration changed",
-        TimeSpan.FromDays(30), MinDays: 30, MaxDays: 30, MaySetWhole: false, Remover: "the folder's removal, never through a link");
-
     /// <summary>The most Daoris may use, in GB, by default: what it holds in all (the allowance over the whole).</summary>
     public const int DefaultAllowanceGb = 48;
 
@@ -191,8 +186,6 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
     /// <summary>How long a store entry not placed or sealed is kept: the table's thirty days, which no choice moves.</summary>
     public TimeSpan DepsDays => KeepKinds.Deps.Days;
 
-    public TimeSpan SalvageDays => KeepKinds.Salvage.Days;
-
     /// <summary>The policy the person's <paramref name="choices"/> make over the table's defaults.</summary>
     public static KeepPolicy From(KeepChoices choices) =>
         new(new SetAsidePolicy(choices.SetAsideDays is { } days ? TimeSpan.FromDays(days) : KeepKinds.SetAside.Days, choices.SetAsideWhole))
@@ -217,7 +210,7 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
         {
             return From(DriverConfig.Load(DriverConfig.ResolvePath(home)).Keep);
         }
-        catch (Exception error) when (error is DriverConfigUnreadableException or HomeEntryTwiceException)
+        catch (DriverConfigUnreadableException)
         {
             return Unread;
         }

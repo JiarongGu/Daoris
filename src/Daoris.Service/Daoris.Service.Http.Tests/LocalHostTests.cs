@@ -522,7 +522,6 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
             Assert.True(word.GetProperty("at").GetDateTimeOffset() >= words[0].GetProperty("at").GetDateTimeOffset());
         }
 
-        Assert.False(read.Json.TryGetProperty("wordsKeptFrom", out _));
         var listed = (await host.GetAsync("/api/asks?includeClosed=true")).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == ask);
         Assert.Equal(3, listed.GetProperty("words").GetArrayLength());

@@ -96,8 +96,8 @@ internal static class SessionLocks
         CancellationToken ct)
     {
         // Asked before any git, so a repository with nothing under its trees costs nothing.
-        if (!DaorisHome.Places(context.Home, HomeEntry.Trees, workspace, repository)
-                .Any(trees => Directory.Exists(trees) && Directory.EnumerateDirectories(trees).Any())) return [];
+        var trees = DaorisHome.Entry(context.Home, HomeEntry.Trees, workspace, repository);
+        if (!Directory.Exists(trees) || !Directory.EnumerateDirectories(trees).Any()) return [];
         if (await LockedAsync(context, root, workspace, repository, ct).ConfigureAwait(false) is not { Count: > 0 } first) return [];
         if (await BusyAsync(inUse, ct).ConfigureAwait(false) is not { } before || first.All(entry => before.Contains(Normal(entry.Path)))) return [];
 

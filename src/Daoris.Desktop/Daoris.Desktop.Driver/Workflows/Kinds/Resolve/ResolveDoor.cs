@@ -212,5 +212,5 @@ public sealed class ResolveDoor(
 
     /// <summary>The work's session tree where one stands here; null where none does.</summary>
     private string? TreeOf(RebaseWork work) =>
-        DaorisHome.Places(home, HomeEntry.Trees, work.Workspace, work.Repository, Path.GetFileName(work.Branch)).FirstOrDefault(Directory.Exists);
+        DaorisHome.Entry(home, HomeEntry.Trees, work.Workspace, work.Repository, Path.GetFileName(work.Branch)) is var tree && Directory.Exists(tree) ? tree : null;
 }

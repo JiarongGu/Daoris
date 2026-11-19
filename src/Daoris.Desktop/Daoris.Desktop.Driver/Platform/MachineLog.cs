@@ -77,10 +77,9 @@ public sealed class MachineLog : IDisposable
         {
             _folder = _home is null ? null : DaorisHome.Entry(_home, HomeEntry.Logs);
         }
-        catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Resolving a log's folder can fail before the write's guard. Logging stays optional and ambiguous
-            // entries are refused, so write and prune neither place rather than choosing one.
+            // Resolving a log's folder can fail before the write's guard. Logging stays optional, so write and prune nothing.
             _folder = null;
         }
         _source = source;
@@ -183,14 +182,7 @@ public sealed class MachineLog : IDisposable
     /// <summary>Whether the home's log folder holds a file older than <paramref name="days"/> at <paramref name="now"/>: a prune would take one.</summary>
     public static bool HoldsOlder(string home, DateTimeOffset now, int days)
     {
-        try
-        {
-            return Due(DaorisHome.Entry(home, HomeEntry.Logs), now, days).Count > 0;
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return false;
-        }
+        return Due(DaorisHome.Entry(home, HomeEntry.Logs), now, days).Count > 0;
     }
 
     /// <summary>

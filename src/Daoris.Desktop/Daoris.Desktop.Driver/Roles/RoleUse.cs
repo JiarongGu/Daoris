@@ -36,7 +36,7 @@ public static class RoleUse
         {
             folder = DaorisHome.Entry(home, HomeEntry.Logs);
         }
-        catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return new(0, []);
         }

@@ -56,30 +56,12 @@ public sealed class WorkplaceHelpBoundaryTests : IDisposable
         Assert.Equal("help-" + string.Concat(Enumerable.Repeat("_21", 10)) + "_2-8c8dbc4bf02965b8", HelpRoom.FolderOf(new string('!', 17)));
     }
 
-    [Theory]
-    [InlineData("new")]
-    [InlineData("old")]
-    [InlineData("conflict")]
-    public void Named_rooms_stay_beside_the_actual_default_placement_and_conflicts_propagate(string placement)
+    [Fact]
+    public void Named_rooms_stay_beside_the_default_room()
     {
-        var places = DaorisHome.Places(_home, HomeEntry.HelpRoom);
-        var next = places[0];
-        var old = places[1];
-        foreach (var room in placement == "conflict" ? new[] { next, old } : [placement == "old" ? old : next])
-        {
-            Directory.CreateDirectory(room);
-            File.WriteAllText(Path.Combine(room, "CLAUDE.md"), "kept");
-        }
-        if (placement == "conflict")
-        {
-            Assert.Throws<HomeEntryTwiceException>(() => HelpRoom.PathOf(_home));
-            Assert.Throws<HomeEntryTwiceException>(() => HelpRoom.PathOf(_home, "alpha"));
-            Assert.Throws<HomeEntryTwiceException>(() => KnowledgeRoomPaths.PathOf(_home, "alpha"));
-            Assert.Throws<HomeEntryTwiceException>(() => ToolHomeLeftovers.Origins(_home,
-                "[{\"id\":\"s1\",\"state\":\"completed\",\"profile\":\"work\",\"repository\":\"daoris:help\",\"workspace\":\"alpha\"}]"));
-            return;
-        }
-        var expected = placement == "old" ? old : next;
+        var expected = DaorisHome.Entry(_home, HomeEntry.HelpRoom);
+        Directory.CreateDirectory(expected);
+        File.WriteAllText(Path.Combine(expected, "CLAUDE.md"), "kept");
         Assert.Equal(expected, HelpRoom.PathOf(_home));
         Assert.Equal(Path.Combine(Path.GetDirectoryName(expected)!, "help-alpha"), HelpRoom.PathOf(_home, "alpha"));
         Assert.Equal(HelpRoom.PathOf(_home, "alpha"), KnowledgeRoomPaths.PathOf(_home, "alpha"));

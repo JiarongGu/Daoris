@@ -172,8 +172,7 @@ public static class InstallHome
 
     /// <summary>
     /// The window's memory, the UI kit's data area, for a kit rooted at <paramref name="root"/>:
-    /// where that root is an install, its home's <see cref="HomeEntry.Window"/>, <c>profiles/window/</c> once moved and the
-    /// install's <c>data/</c> while its <c>chromium/</c> or <c>config/</c> is still there; elsewhere null, the kit's own.
+    /// where that root is an install, its home's <see cref="HomeEntry.Window"/>, <c>profiles/window/</c>; elsewhere null, the kit's own.
     /// </summary>
     public static string? WindowMemory(string root) =>
         File.Exists(Path.Combine(root, Marker)) ? DaorisHome.Entry(root, HomeEntry.Window) : null;

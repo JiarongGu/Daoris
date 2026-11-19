@@ -66,7 +66,7 @@ public static class SpaceLimits
 
             asked.AddRange(taken.SelectMany(each => each.Together ?? [each.Asked]));
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException or DriverException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
             // What does not read is not counted, and the unknown keeps.
             uncounted = true;

@@ -26,7 +26,7 @@ public static class PluginOffers
 
     /// <summary>The offers in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>): its <c>app/plugin-offers/</c>.</summary>
     public static string BesideHome(string home) =>
-        Path.Combine([DaorisHome.FolderOf(PluginFolders.WholePath(home)).Folder, .. Layout]);
+        Path.Combine([DaorisHome.FolderOf(PluginFolders.WholePath(home)), .. Layout]);
 
     /// <summary>The offers beside a running application, whose folder is the install's <c>app/</c>.</summary>
     public static string BesideApplication(string baseDirectory) =>
