@@ -168,11 +168,11 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
-    /// A session's limit-move box and its agent's hand-over ask and state are in the inventory, so a
-    /// delete takes all three. They go under the name <c>hand-over</c>, in the inventory's order; another session's stay.
+    /// A session's hand-over ask and its state are in the inventory, so a delete takes both. They go under the name
+    /// <c>hand-over</c>, in the inventory's order; another session's stay.
     /// </summary>
     [Fact]
-    public async Task A_delete_takes_a_limit_moves_box_and_a_hand_over_asks_two_files_too()
+    public async Task A_delete_takes_a_hand_over_asks_two_files_too()
     {
         foreach (var id in new[] { "c1", "c2" })
         {
