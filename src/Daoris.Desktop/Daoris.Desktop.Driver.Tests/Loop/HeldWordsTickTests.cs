@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// conversation; where it stays unusable past the bound they go on in a new session on a ready account, in its tree.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
 public sealed class HeldWordsTickTests : IDisposable
 {
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
