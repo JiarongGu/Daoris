@@ -274,9 +274,7 @@ public sealed class ReadSharePlatformTests : IDisposable
     public void A_new_place_holds_its_entry_while_its_move_into_place_still_holds_it()
     {
         if (!OperatingSystem.IsWindows()) return;
-        var places = DaorisHome.Places(_home, HomeEntry.DriverConfig);
-        File.WriteAllText(places[1], "torn");
-        var next = Folded(places[0]);
+        var next = Folded(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
         AtomicFile.WriteText(next, "{\n  \"pollSeconds\": 45\n}\n");
 
         using (MoveHold.Take(next))

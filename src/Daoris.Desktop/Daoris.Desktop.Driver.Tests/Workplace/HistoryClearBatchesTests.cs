@@ -57,6 +57,6 @@ public sealed class HistoryClearBatchesTests : IDisposable
         Assert.Equal(ids.Length, service.Pressed.Count);
         Assert.All(service.Presses, size => Assert.True(size <= Bound, $"a press named {size} units"));
         Assert.All(ids, id => Assert.False(File.Exists(Path.Combine(sessions, $"s{id}.log"))));
-        Assert.All(ids, id => Assert.All(DaorisHome.Places(_home, HomeEntry.QuestFiles, id), place => Assert.False(Directory.Exists(place))));
+        Assert.All(ids, id => Assert.False(Directory.Exists(DaorisHome.Entry(_home, HomeEntry.QuestFiles, id))));
     }
 }

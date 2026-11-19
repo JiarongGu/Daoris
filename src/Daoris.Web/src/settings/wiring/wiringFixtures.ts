@@ -11,7 +11,7 @@ const MEASURED = '2026-10-16T10:42:00Z';
 /** One top folder, measured by default. */
 export const folder = (id: WiringFolder['id'], extra: Partial<WiringFolder> = {}): WiringFolder => ({
   id, path: `${HOME}/${id === 'app' ? 'app' : id}`, pathWhy: null, present: true, bytes: 2_400_000, bytesWhy: null,
-  measured: MEASURED, old: [], ...extra,
+  measured: MEASURED, ...extra,
 });
 
 /** One settings file or record, there and reading by default. */
@@ -44,10 +44,7 @@ export const WIRED: SystemWiring = {
     folder('update', { present: false, bytes: null, bytesWhy: 'absent', measured: null }),
     folder('data', { bytes: 18_500 }),
     folder('profiles', { bytes: 52_000_000 }),
-    folder('work', {
-      bytes: 1_200_000_000,
-      old: [{ entry: 'trees', path: `${HOME}/trees`, bytes: 4_096, why: 'resumes' }],
-    }),
+    folder('work', { bytes: 1_200_000_000 }),
     folder('cache'),
     folder('run', { bytes: 812 }),
     folder('logs', { bytes: 96_000 }),
@@ -235,11 +232,6 @@ export const SPACE: SystemSpace = {
       entries: ['deps'], bytes: 2.4 * GB,
       rule: { kind: 'days', days: 30, whole: null, default: true, whose: null, gb: 10 },
       next: { at: '2026-11-20T06:00:00.000+00:00', count: 2, bytes: 0.4 * GB },
-    }),
-    spaceKind('salvage', {
-      entries: ['salvage'], bytes: 0.2 * GB,
-      rule: { kind: 'days', days: 30, whole: null, default: true, whose: null },
-      next: { at: '2026-11-30T06:00:00.000+00:00', count: 1, bytes: 0.2 * GB },
     }),
     spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser', gb: 2 },
       settable: true, bounds: { min: 0, max: 0, whole: false, never: false, gb: { min: 1, max: 1_048_576 }, sizeOnly: true } }),

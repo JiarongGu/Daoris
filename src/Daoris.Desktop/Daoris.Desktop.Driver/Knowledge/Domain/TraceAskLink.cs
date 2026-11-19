@@ -38,9 +38,6 @@ public sealed record TraceAskLink(string Id)
     /// <summary>The person's words, oldest first, verbatim; null where the service answers none.</summary>
     public IReadOnlyList<AskWordView>? Words { get; init; }
 
-    /// <summary>For an ask from before its words were kept: from when they are.</summary>
-    public DateTimeOffset? WordsKeptFrom { get; init; }
-
     /// <summary>Its go-aheads, oldest first; null where the service answers none.</summary>
     public IReadOnlyList<TraceGoAhead>? GoAheads { get; init; }
 }

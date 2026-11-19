@@ -276,11 +276,6 @@ internal static class InstructionAccounting
             });
         }
 
-        if (words.KeptFrom is { } from)
-        {
-            cuts.Add(new HandedCut(HandedCuts.WordsNotKept, $"words said before {When(from)} were not kept on the ask") { From = from });
-        }
-
         return new HandedSection(
             HandedSections.Words, HandedSources.Ask, $"the person's words: {size}, {shown.Count} of {said.Count} from ask #{words.Ask}")
         {

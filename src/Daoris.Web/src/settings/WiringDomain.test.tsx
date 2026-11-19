@@ -121,13 +121,11 @@ describe('Settings → Disk space: the folders', () => {
     await vi.waitFor(() => expect(asked()).toBe(2));
   });
 
-  it('puts an entry still at its old place under its folder, with why, and what is not Daoris\'s with its size', async () => {
+  it('lists what is not Daoris\'s with its size', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
     const folders = within(await screen.findByRole('region', { name: 'Folders' }));
 
-    expect(folders.getByText('trees')).toBeTruthy();
-    expect(folders.getByText('stays: a conversation may resume in it')).toBeTruthy();
     expect(folders.getByText('Not Daoris\'s, or an earlier build\'s')).toBeTruthy();
     expect(folders.getByText('webview2')).toBeTruthy();
     expect(folders.getByText('left by an earlier build')).toBeTruthy();

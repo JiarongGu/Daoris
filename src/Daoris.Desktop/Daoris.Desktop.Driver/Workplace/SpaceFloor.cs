@@ -280,17 +280,8 @@ public static class SpaceFloor
         var unread = new List<string>();
         foreach (var entry in Entries)
         {
-            string? path;
-            try
-            {
-                path = entry == "folder" ? DaorisHome.FolderOf(home).Folder : DaorisHome.Entry(home, HomeEntry.Named(entry)!);
-            }
-            catch (HomeEntryTwiceException)
-            {
-                path = null;
-            }
-
-            if (path is null || volume(path) is not { } read)
+            var path = entry == "folder" ? DaorisHome.FolderOf(home) : DaorisHome.Entry(home, HomeEntry.Named(entry)!);
+            if (volume(path) is not { } read)
             {
                 unread.Add(entry);
                 continue;

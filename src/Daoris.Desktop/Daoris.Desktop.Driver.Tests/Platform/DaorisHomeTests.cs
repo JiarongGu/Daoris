@@ -107,63 +107,28 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// 🔴 An entry is read and written at its new
-    /// place if that holds what the entry is, else at its old place if that is there, else at its new place; where both hold it,
-    /// neither is chosen, and the refusal names both. What a place holds: a file that is not empty and, for JSON, parses; a folder
-    /// that is not empty; or, for an entry whose place is known by the names it holds, one of those names. So an empty or
-    /// half-made new place never shadows a populated old one, and an old one that does not read is still read where it is, for
-    /// its reader to say so. A row is an entry's new and old place, its names, what is on the disk (a file holds <c>{}</c> for
-    /// JSON and a letter otherwise, what follows <c>=</c> where one is written; a trailing <c>/</c> is an empty folder), what is
-    /// asked, and where that is (empty: the home itself), or <c>refused</c>. A <c>*</c> is an item, filled from what is asked one
-    /// part each; what is asked beyond the items is joined under the item found, and asked short of them is the folder holding
-    /// them, never refused since both places hold items by design. The CLI's <c>home.test.ts</c> holds these rows and the
-    /// service's to its own, cell for cell.
+    /// 🔴 An entry is at its place under the Daoris folder, whatever is on the disk. A row is an entry's place, its names, what is
+    /// asked and where that is (empty: the home itself). A <c>*</c> is an item, filled from what is asked one part each; what is
+    /// asked beyond the items is joined under the item, and asked short of them is the folder holding them. The CLI's
+    /// <c>home.test.ts</c> holds these rows and the service's to its own, cell for cell.
     /// </summary>
     [Theory]
-    [InlineData("a.json", "a.json", "", "", "", "a.json")]
-    [InlineData("a.json", "a.json", "", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "data/a.json", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json", "", "refused")]
-    [InlineData("data/a.json", "a.json", "", "a.json,data/a.json=torn", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json=torn,data/a.json", "", "data/a.json")]
-    [InlineData("data/a.json", "a.json", "", "a.json=torn", "", "a.json")]
-    [InlineData("data/k.db", "k.db", "", "k.db,data/k.db=", "", "k.db")]
-    [InlineData("data/s", "s", "", "s/x.log", "x.log", "s/x.log")]
-    [InlineData("data/s", "s", "", "s/x.log", "y.log", "s/y.log")]
-    [InlineData("data/s", "s", "", "s/x.log,data/s/", "y.log", "s/y.log")]
-    [InlineData("data/s", "s", "", "s/x.log,data/s/z.log", "", "refused")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one", "t/a/one")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/two", "work/t/a/two")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/one/HEAD", "a/one", "refused")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a/one/notes.md", "t/a/one/notes.md")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD", "a", "t/a")]
-    [InlineData("work/t/*/*", "t/*/*", "", "t/a/one/HEAD,work/t/a/two/HEAD", "a", "work/t/a")]
-    [InlineData("work/f/*", "s/*/files", "", "s/one/files/a.png", "one/b.png", "s/one/files/b.png")]
-    [InlineData("work/f/*", "s/*/files", "", "", "one", "work/f/one")]
-    [InlineData("run/s/*.pid", "s/*.pid", "", "s/one.pid", "one", "s/one.pid")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/proposals/p.json", "", "work/rooms/help")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md", "", "help")]
-    [InlineData("work/rooms/help", "help", "CLAUDE.md", "help/CLAUDE.md,work/rooms/help/notes.md", "", "help")]
-    [InlineData("profiles/window", "", "chromium|config", "config/window-state.json", "", "")]
-    [InlineData("profiles/window", "", "chromium|config", "", "", "profiles/window")]
-    public void An_entry_is_where_it_is(string next, string old, string holds, string present, string asked, string expected)
+    [InlineData("data/a.json", "", "", "data/a.json")]
+    [InlineData("data/s", "", "x.log", "data/s/x.log")]
+    [InlineData("work/t/*/*", "", "a/one", "work/t/a/one")]
+    [InlineData("work/t/*/*", "", "a/one/notes.md", "work/t/a/one/notes.md")]
+    [InlineData("work/t/*/*", "", "a", "work/t/a")]
+    [InlineData("work/t/*/*", "", "", "work/t")]
+    [InlineData("work/f/*", "", "one/b.png", "work/f/one/b.png")]
+    [InlineData("run/s/*.pid", "", "one", "run/s/one.pid")]
+    [InlineData("work/rooms/help", "CLAUDE.md", "", "work/rooms/help")]
+    public void An_entry_is_where_it_is(string next, string holds, string asked, string expected)
     {
         var home = Scratch();
         try
         {
-            Lay(home, present);
-            var entry = new HomeEntry("probe", HomeCategory.Data, next, old, holds.Split('|', StringSplitOptions.RemoveEmptyEntries));
+            var entry = new HomeEntry("probe", HomeCategory.Data, next, holds.Split('|', StringSplitOptions.RemoveEmptyEntries));
             var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (expected == "refused")
-            {
-                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
-                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
-                Assert.Equal(string.Format(DaorisHome.Twice, "probe", refusal.New, refusal.Old), refusal.Message);
-                return;
-            }
-
             Assert.Equal(
                 Path.Combine([home, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)]),
                 DaorisHome.Entry(home, entry, asking));
@@ -175,70 +140,33 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
-    /// A list of an entry's items reads both places (the design §6.2): the new place first, then the old, once each, asked
-    /// without the disk. The CLI's <c>home.test.ts</c> holds these rows and the service's to its own, cell for cell.
-    /// </summary>
-    [Theory]
-    [InlineData("a.json", "a.json", "", "a.json")]
-    [InlineData("data/a.json", "a.json", "", "data/a.json|a.json")]
-    [InlineData("work/t/*/*", "t/*/*", "", "work/t|t")]
-    [InlineData("work/t/*/*", "t/*/*", "a", "work/t/a|t/a")]
-    [InlineData("work/f/*", "s/*/files", "one", "work/f/one|s/one/files")]
-    [InlineData("run/s/*.pid", "s/*.pid", "", "run/s|s")]
-    public void A_list_reads_both_places(string next, string old, string asked, string expected)
-    {
-        var home = Path.Combine(AppContext.BaseDirectory, "places");
-        var entry = new HomeEntry("probe", HomeCategory.Data, next, old);
-        Assert.Equal(
-            expected.Split('|').Select(place => Path.Combine([home, .. place.Split('/')])),
-            DaorisHome.Places(home, entry, asked.Split('/', StringSplitOptions.RemoveEmptyEntries)));
-    }
-
-    /// <summary>
-    /// 🔴 A home names its Daoris folder, and the old home its entries were under before the new
-    /// places. An install's folder (it holds <c>INSTALLED.md</c>) and its <c>data/</c> name the same install, whose old home is that
-    /// <c>data/</c>; any other home is its own Daoris folder and its own old home, a home named <c>data</c> with no install above it
-    /// among them. A row is the shape on the disk (<c>install</c>, the marker at the root, or <c>root</c>), the home as named (empty:
-    /// the root itself, or <c>data</c>), what is on the disk under the root (as <see cref="An_entry_is_where_it_is"/> lays it), the
-    /// entry by name, what is asked, and where that is under the root, or <c>refused</c>. The CLI's <c>home.test.ts</c> holds these
+    /// 🔴 A home names its Daoris folder. An install's folder (it holds <c>INSTALLED.md</c>) and its <c>data/</c> name the same
+    /// install; any other home is its own Daoris folder, a home named <c>data</c> with no install above it among them. A row is
+    /// the shape on the disk (<c>install</c>, the marker at the root, or <c>root</c>), the home as named (empty: the root itself,
+    /// or <c>data</c>), the entry by name, what is asked, and where that is under the root. The CLI's <c>home.test.ts</c> holds these
     /// rows and the service's to its own, cell for cell.
     /// </summary>
     [Theory]
-    [InlineData("install", "data", "", "driver", "", "data/driver.json")]
-    [InlineData("install", "", "", "driver", "", "data/driver.json")]
-    [InlineData("install", "data", "", "keys", "", "profiles/keys.json")]
-    [InlineData("install", "data", "data/keys.json", "keys", "", "data/keys.json")]
-    [InlineData("install", "", "data/keys.json", "keys", "", "data/keys.json")]
-    [InlineData("install", "data", "data/keys.json,profiles/keys.json", "keys", "", "refused")]
-    [InlineData("install", "data", "data/logs/desktop.log", "logs", "", "data/logs")]
-    [InlineData("install", "data", "", "logs", "", "logs")]
-    [InlineData("install", "data", "data/chromium/", "window", "", "data")]
-    [InlineData("install", "data", "", "window", "", "profiles/window")]
-    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/work", "data/harnesses/claude-code/work")]
-    [InlineData("install", "data", "data/harnesses/claude-code/work/x", "agent-homes", "claude-code/new", "profiles/agents/claude-code/new")]
-    [InlineData("install", "data", "", "home-lease", "", "run/home.lease")]
-    [InlineData("root", "", "", "driver", "", "data/driver.json")]
-    [InlineData("root", "", "driver.json", "driver", "", "driver.json")]
-    [InlineData("root", "", "", "running", "", "run/running.json")]
-    [InlineData("root", "", "", "logs", "", "logs")]
-    [InlineData("root", "data", "", "driver", "", "data/data/driver.json")]
-    public void A_home_names_its_folder(string shape, string homeAs, string present, string name, string asked, string expected)
+    [InlineData("install", "data", "driver", "", "data/driver.json")]
+    [InlineData("install", "", "driver", "", "data/driver.json")]
+    [InlineData("install", "data", "keys", "", "profiles/keys.json")]
+    [InlineData("install", "data", "logs", "", "logs")]
+    [InlineData("install", "data", "window", "", "profiles/window")]
+    [InlineData("install", "data", "agent-homes", "claude-code/new", "profiles/agents/claude-code/new")]
+    [InlineData("install", "data", "home-lease", "", "run/home.lease")]
+    [InlineData("root", "", "driver", "", "data/driver.json")]
+    [InlineData("root", "", "running", "", "run/running.json")]
+    [InlineData("root", "", "logs", "", "logs")]
+    [InlineData("root", "data", "driver", "", "data/data/driver.json")]
+    public void A_home_names_its_folder(string shape, string homeAs, string name, string asked, string expected)
     {
         var root = Scratch();
         try
         {
             if (shape == "install") File.WriteAllText(Path.Combine(root, DaorisHome.InstallMarker), "# Daoris — installed desktop\n");
-            Lay(root, present);
             var home = homeAs.Length == 0 ? root : Path.Combine(root, homeAs);
             var entry = HomeEntry.Named(name)!;
             var asking = asked.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (expected == "refused")
-            {
-                var refusal = Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, entry, asking));
-                Assert.Equal(DaorisHome.Places(home, entry, asking), [refusal.New, refusal.Old]);
-                return;
-            }
-
             Assert.Equal(
                 Path.GetFullPath(Path.Combine([root, .. expected.Split('/', StringSplitOptions.RemoveEmptyEntries)])),
                 Path.GetFullPath(DaorisHome.Entry(home, entry, asking)));
@@ -251,20 +179,17 @@ public sealed class DaorisHomeTests
 
     /// <summary>
     /// The home a file of it is in (<c>DriverConfig.HomeOf</c>, <c>HarnessSettings.HomeOf</c>, the in-app browser's
-    /// profile): the Daoris folder where the file is at the entry's new place, spelled as an install's <c>data/</c> where that folder
-    /// is an install, as every install's home is; else the old home it is under. A row is the shape, the file under
+    /// profile): the Daoris folder where the file is at the entry's place, spelled as an install's <c>data/</c> where that folder
+    /// is an install, as every install's home is. A row is the shape, the file under
     /// the root, the entry, and the home under the root (empty: the root itself). The CLI's <c>home.test.ts</c> holds these rows.
     /// </summary>
     [Theory]
     [InlineData("install", "data/driver.json", "driver", "data")]
     [InlineData("install", "data/harnesses.json", "harnesses", "data")]
     [InlineData("root", "data/driver.json", "driver", "")]
-    [InlineData("root", "driver.json", "driver", "")]
     [InlineData("install", "profiles/browser/engine", "browser-engine", "data")]
-    [InlineData("install", "data/browser/engine", "browser-engine", "data")]
     [InlineData("root", "profiles/browser/engine", "browser-engine", "")]
-    [InlineData("root", "browser/engine", "browser-engine", "")]
-    public void A_home_is_found_from_its_entry_at_either_place(string shape, string file, string name, string expected)
+    public void A_home_is_found_from_its_entry(string shape, string file, string name, string expected)
     {
         var root = Scratch();
         try
@@ -332,7 +257,7 @@ public sealed class DaorisHomeTests
     public void The_keeping_record_is_a_data_file_after_the_usage_history()
     {
         Assert.Same(HomeEntry.Keeping, HomeEntry.Named("keeping"));
-        Assert.Equal((HomeCategory.Data, "data/keeping.json", "keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New, HomeEntry.Keeping.Old));
+        Assert.Equal((HomeCategory.Data, "data/keeping.json"), (HomeEntry.Keeping.Category, HomeEntry.Keeping.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.UsageHistory) + 1, table.IndexOf(HomeEntry.Keeping));
     }
@@ -345,52 +270,36 @@ public sealed class DaorisHomeTests
     public void The_notices_record_is_a_data_file_after_the_keeping_record()
     {
         Assert.Same(HomeEntry.Notices, HomeEntry.Named("notices"));
-        Assert.Equal((HomeCategory.Data, "data/notices.json", "notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New, HomeEntry.Notices.Old));
+        Assert.Equal((HomeCategory.Data, "data/notices.json"), (HomeEntry.Notices.Category, HomeEntry.Notices.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.Keeping) + 1, table.IndexOf(HomeEntry.Notices));
     }
 
     /// <summary>
-    /// The standing confirmation, a data file of its own, after the git
-    /// identities, as the three twins hold it; new since the layout, so its old place is its new one.
+    /// What each agent last offered, a data file of its own after the git identities, as the three twins hold it.
     /// </summary>
     [Fact]
-    public void The_standing_confirmation_is_a_data_file_after_the_git_identities()
-    {
-        Assert.Same(HomeEntry.StandingConfirmation, HomeEntry.Named("standing-confirmation"));
-        Assert.Equal(
-            (HomeCategory.Data, "data/standing-confirmation.json", "data/standing-confirmation.json"),
-            (HomeEntry.StandingConfirmation.Category, HomeEntry.StandingConfirmation.New, HomeEntry.StandingConfirmation.Old));
-        var table = HomeEntry.Table.ToList();
-        Assert.Equal(table.IndexOf(HomeEntry.GitIdentities) + 1, table.IndexOf(HomeEntry.StandingConfirmation));
-    }
-
-    /// <summary>
-    /// What each agent last offered, a data file of its own after the standing confirmation, as the three twins
-    /// hold it; new since the layout, so its old place is its new one.
-    /// </summary>
-    [Fact]
-    public void The_agent_offers_are_a_data_file_after_the_standing_confirmation()
+    public void The_agent_offers_are_a_data_file_after_the_git_identities()
     {
         Assert.Same(HomeEntry.AgentOffers, HomeEntry.Named("agent-offers"));
         Assert.Equal(
-            (HomeCategory.Data, "data/agent-offers.json", "data/agent-offers.json"),
-            (HomeEntry.AgentOffers.Category, HomeEntry.AgentOffers.New, HomeEntry.AgentOffers.Old));
+            (HomeCategory.Data, "data/agent-offers.json"),
+            (HomeEntry.AgentOffers.Category, HomeEntry.AgentOffers.New));
         var table = HomeEntry.Table.ToList();
-        Assert.Equal(table.IndexOf(HomeEntry.StandingConfirmation) + 1, table.IndexOf(HomeEntry.AgentOffers));
+        Assert.Equal(table.IndexOf(HomeEntry.GitIdentities) + 1, table.IndexOf(HomeEntry.AgentOffers));
     }
 
     /// <summary>
     /// The desktop's own store, a data file of its own after the knowledge index, as the
-    /// three twins hold it; new since the layout, so its old place is its new one.
+    /// three twins hold it.
     /// </summary>
     [Fact]
     public void The_desktop_store_is_a_data_file_after_the_knowledge_index()
     {
         Assert.Same(HomeEntry.DesktopDb, HomeEntry.Named("desktop-db"));
         Assert.Equal(
-            (HomeCategory.Data, "data/desktop.db", "data/desktop.db"),
-            (HomeEntry.DesktopDb.Category, HomeEntry.DesktopDb.New, HomeEntry.DesktopDb.Old));
+            (HomeCategory.Data, "data/desktop.db"),
+            (HomeEntry.DesktopDb.Category, HomeEntry.DesktopDb.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.Knowledge) + 1, table.IndexOf(HomeEntry.DesktopDb));
     }
@@ -405,8 +314,8 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.PipeWaiting, HomeEntry.Named("pipe-waiting"));
         Assert.Equal(
-            (HomeCategory.Data, "data/pipe-waiting", "data/pipe-waiting"),
-            (HomeEntry.PipeWaiting.Category, HomeEntry.PipeWaiting.New, HomeEntry.PipeWaiting.Old));
+            (HomeCategory.Data, "data/pipe-waiting"),
+            (HomeEntry.PipeWaiting.Category, HomeEntry.PipeWaiting.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.AgentOffers) + 1, table.IndexOf(HomeEntry.PipeWaiting));
     }
@@ -420,8 +329,8 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.PlaceReceipts, HomeEntry.Named("place-receipts"));
         Assert.Equal(
-            (HomeCategory.Data, "data/place-receipts", "data/place-receipts"),
-            (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New, HomeEntry.PlaceReceipts.Old));
+            (HomeCategory.Data, "data/place-receipts"),
+            (HomeEntry.PlaceReceipts.Category, HomeEntry.PlaceReceipts.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.ActFiles) + 1, table.IndexOf(HomeEntry.PlaceReceipts));
     }
@@ -432,8 +341,8 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.StewardDesk, HomeEntry.Named("steward-desk"));
         Assert.Equal(
-            (HomeCategory.Data, "data/steward-desk.json", "data/steward-desk.json"),
-            (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New, HomeEntry.StewardDesk.Old));
+            (HomeCategory.Data, "data/steward-desk.json"),
+            (HomeEntry.StewardDesk.Category, HomeEntry.StewardDesk.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.PlaceReceipts) + 1, table.IndexOf(HomeEntry.StewardDesk));
     }
@@ -444,22 +353,10 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.LastBuild, HomeEntry.Named("last-build"));
         Assert.Equal(
-            (HomeCategory.Data, "data/last-build.json", "data/last-build.json"),
-            (HomeEntry.LastBuild.Category, HomeEntry.LastBuild.New, HomeEntry.LastBuild.Old));
+            (HomeCategory.Data, "data/last-build.json"),
+            (HomeEntry.LastBuild.Category, HomeEntry.LastBuild.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.StewardDesk) + 1, table.IndexOf(HomeEntry.LastBuild));
-    }
-
-    /// <summary>The migration's record and its copies are data, after the last build, as the three twins hold them.</summary>
-    [Fact]
-    public void NOCOMPAT1_the_migration_record_and_salvage_are_data_after_the_last_build()
-    {
-        Assert.Equal(
-            (HomeCategory.Data, "data/migration.json", HomeCategory.Data, "data/salvage"),
-            (HomeEntry.Migration.Category, HomeEntry.Migration.New, HomeEntry.Salvage.Category, HomeEntry.Salvage.New));
-        var table = HomeEntry.Table.ToList();
-        Assert.Equal(table.IndexOf(HomeEntry.LastBuild) + 1, table.IndexOf(HomeEntry.Migration));
-        Assert.Equal(table.IndexOf(HomeEntry.Migration) + 1, table.IndexOf(HomeEntry.Salvage));
     }
 
     /// <summary>
@@ -472,8 +369,8 @@ public sealed class DaorisHomeTests
     {
         Assert.Same(HomeEntry.PipeSent, HomeEntry.Named("pipe-sent"));
         Assert.Equal(
-            (HomeCategory.Profiles, "profiles/pipe-sent", "profiles/pipe-sent"),
-            (HomeEntry.PipeSent.Category, HomeEntry.PipeSent.New, HomeEntry.PipeSent.Old));
+            (HomeCategory.Profiles, "profiles/pipe-sent"),
+            (HomeEntry.PipeSent.Category, HomeEntry.PipeSent.New));
         var table = HomeEntry.Table.ToList();
         Assert.Equal(table.IndexOf(HomeEntry.Window) + 1, table.IndexOf(HomeEntry.PipeSent));
     }
@@ -488,7 +385,7 @@ public sealed class DaorisHomeTests
         Assert.Same(HomeEntry.ConfiguredAccess, HomeEntry.Named("configured-access"));
         Assert.Equal(HomeCategory.Data, HomeEntry.ConfiguredAccess.Category);
         Assert.Equal("data/configured-access.json", HomeEntry.ConfiguredAccess.New);
-        Assert.DoesNotMatch("^help", HomeEntry.ConfiguredAccess.Old);
+        Assert.DoesNotMatch("^data/help", HomeEntry.ConfiguredAccess.New);
     }
 
     /// <summary>A file asked of the environment's home is the entry, or nothing with no home.</summary>
@@ -501,26 +398,6 @@ public sealed class DaorisHomeTests
         Assert.Null(DaorisHome.File(Env(), HomeEntry.DriverConfig));
         var error = Assert.Throws<DriverException>(() => DaorisHome.Require(Env(), HomeEntry.Harnesses));
         Assert.Contains("harnesses.json", error.Message);
-    }
-
-    /// <summary>A row's disk: a file holds <c>{}</c> for JSON and a letter otherwise, what follows <c>=</c> where one is written; a trailing <c>/</c> is an empty folder.</summary>
-    private static void Lay(string root, string present)
-    {
-        foreach (var item in present.Split(',', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var (file, text) = item.IndexOf('=') is var at and >= 0
-                ? (item[..at], item[(at + 1)..])
-                : (item, item.EndsWith(".json", StringComparison.Ordinal) ? "{}" : "x");
-            var path = Path.Combine([root, .. file.Split('/', StringSplitOptions.RemoveEmptyEntries)]);
-            if (file.EndsWith('/'))
-            {
-                Directory.CreateDirectory(path);
-                continue;
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path, text);
-        }
     }
 
     private static string Scratch()

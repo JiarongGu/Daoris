@@ -16,7 +16,7 @@ public sealed class HomePurgeEdgeTests : IDisposable
 
     private string Home => Path.Combine(_root, "plain home");
 
-    private string Folder => DaorisHome.FolderOf(Home).Folder;
+    private string Folder => DaorisHome.FolderOf(Home);
 
     private string Knowledge => DaorisHome.Entry(Home, HomeEntry.Knowledge);
 
@@ -182,7 +182,7 @@ public sealed class HomePurgeEdgeTests : IDisposable
 
     /// <summary>
     /// 🔴 What a restart settles stays: the place receipts, and the branches and landings of trees that are kept; what belongs with
-    /// the pipe's waiting presses goes with it; and in the older layout the requests and pid markers stay out of the moved sessions folder.
+    /// the pipe's waiting presses goes with it; and the requests and pid markers, run state, stay while the sessions folder moves.
     /// </summary>
     [Fact]
     public void What_a_restart_settles_stays_and_the_sent_presses_go_with_the_waiting_ones()
@@ -192,12 +192,12 @@ public sealed class HomePurgeEdgeTests : IDisposable
         {
             DaorisHome.Entry(Home, HomeEntry.PlaceReceipts, "digest.json"), DaorisHome.Entry(Home, HomeEntry.Landings),
             DaorisHome.Entry(Home, HomeEntry.SessionBranches),
-            Path.Combine(Folder, "sessions", "requests", "r-1.json"), Path.Combine(Folder, "sessions", "s-1.pid"),
+            DaorisHome.Entry(Home, HomeEntry.Requests, "r-1.json"), Path.Combine(Folder, "run", "sessions", "s-1.pid"),
         };
         foreach (var path in kept) Write(path, "{}");
         Write(DaorisHome.Entry(Home, HomeEntry.PipeSent, "p-1.json"), "{}");
         Write(DaorisHome.Entry(Home, HomeEntry.PipeWaiting, "p-2.json"), "{}");
-        Write(Path.Combine(Folder, "sessions", "s-3", "events.jsonl"), "{}\n");
+        Write(DaorisHome.Entry(Home, HomeEntry.Sessions, "s-3", "events.jsonl"), "{}\n");
 
         Assert.Equal(0, Run("purge", "--history", "--yes").Code);
 
@@ -206,8 +206,8 @@ public sealed class HomePurgeEdgeTests : IDisposable
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.PipeSent, "p-1.json")));
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.PipeWaiting, "p-2.json")));
         Assert.True(File.Exists(Path.Combine(purged, "profiles", "pipe-sent", "p-1.json")));
-        Assert.True(File.Exists(Path.Combine(purged, "sessions", "s-3", "events.jsonl")));
-        Assert.False(Directory.Exists(Path.Combine(Folder, "sessions", "s-3")));
+        Assert.True(File.Exists(Path.Combine(purged, "data", "sessions", "s-3", "events.jsonl")));
+        Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions, "s-3")));
     }
 
     private (int Code, string Said) Run(params string[] args)

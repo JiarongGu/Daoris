@@ -1017,7 +1017,7 @@ const QUESTS = [
   }),
   // Asked by a repository, filed before the period and still worked in it: a failure, an interrupted stop, a third run.
   quest('q-strikes', 'engine', 'game', 'Taken', '2026-09-20T08:00:00', '2026-09-21T08:00:00'),
-  // Declined by its session; its ask keeps the person's words only from after publication.
+  // Declined by its session; its ask holds no word on it.
   quest('q-declined', 'ask #a2', 'game', 'Declined', '2026-09-29T09:00:00', '2026-09-29T09:45:00'),
   // Done with a departure still held for the person's yes; its ask is not on the host; a teammate's record stood down.
   quest('q-held', 'ask #gone', 'engine', 'Done', '2026-09-29T11:00:00', '2026-09-29T13:00:00', {
@@ -1072,7 +1072,7 @@ const ASKS = [
   },
   {
     id: 'a2', workspace: 'work', sentence: 'ASKED-WORDS', state: 'Done', tier: 'intake', quests: ['q-declined'],
-    words: [word('asked', '2026-09-29T08:50:00', null, null, 'ASKED-WORDS')], wordsKeptFrom: '2026-09-29T12:00:00+00:00',
+    words: [word('asked', '2026-09-29T08:50:00', null, null, 'ASKED-WORDS')],
   },
 ];
 
@@ -1186,8 +1186,7 @@ test('answers are the person\'s words on this quest from its ask, and where no a
   assert.deepEqual(words('q-quiet'), [0, 0]);
   assert.deepEqual(words('q-strikes'), [null, null]);
   assert.match(why('q-strikes'), /asked by a repository/);
-  assert.deepEqual(words('q-declined'), [null, null]);
-  assert.match(why('q-declined'), /from 2026-09-29 12:00 UTC, after the quest was published/);
+  assert.deepEqual(words('q-declined'), [0, 0]);
   assert.deepEqual(words('q-held'), [null, null]);
   assert.match(why('q-held'), /ask #gone is not on the host/);
 });

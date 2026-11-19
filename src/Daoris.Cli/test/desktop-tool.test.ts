@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createServer, type Server } from 'node:net';
 import { readText, listFiles } from '../src/platform/fsx.ts';
-import { homeEntry, homePlaces } from '../src/platform/home.ts';
+import { homeEntry } from '../src/platform/home.ts';
 import { desktopFile } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
@@ -290,17 +290,14 @@ test('the report of an application that ended says so, and does not claim a wind
 
 test('the engine log is under the root the run gave the application', () => {
   const sep = (path: string) => path.replaceAll('\\', '/');
-  // An install's is in the window's memory, the home's `window` entry: its `data/` while an older build's engine
-  // profile is still there, `profiles/window/` once moved and for a new install.
+  // An install's is in the window's memory, the home's `window` entry: `profiles/window/`.
   const fx = makeFixture('desktop-engine-log');
   try {
     fx.write('INSTALLED.md', '# Daoris — installed desktop\n');
     const exe = join(fx.root, 'app', 'Daoris.Desktop.exe');
-    const windowNow = homePlaces(fx.root, 'window')[0]!;
+    const windowNow = homeEntry(fx.root, 'window');
     assert.equal(sep(windowNow).slice(sep(fx.root).length), '/profiles/window');
     assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(windowNow, 'chromium', 'cef.log'));
-    fx.write('data/chromium/Default/Preferences', '{}');
-    assert.equal(engineLogOf({ install: fx.root, real: true, exe }), join(fx.root, 'data', 'chromium', 'cef.log'));
   } finally {
     fx.cleanup();
   }

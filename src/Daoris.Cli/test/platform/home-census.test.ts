@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
-import { HOME_ENTRIES, INSTALL_DATA, INSTALL_MARKER, homePlaces } from '../../src/platform/home.ts';
+import { HOME_ENTRIES, INSTALL_DATA, INSTALL_MARKER, homeEntry } from '../../src/platform/home.ts';
 import { DESKTOP } from '../_csharp.ts';
 import { makeFixture } from '../_fixture.ts';
 
@@ -157,7 +157,7 @@ const TEST_ROOT = /^(?:fx\.root|at|root|DataHome)$/;
  * the part after it, it names the entry whose new place begins so. The logs are both their category and their entry.
  */
 const CATEGORY_FOLDERS: ReadonlySet<string> = new Set(
-  HOME_ENTRIES.map((entry) => entry.category as string).filter((category) => !HOME_ENTRIES.some((entry) => entry.old === category)));
+  HOME_ENTRIES.map((entry) => entry.category as string).filter((category) => !HOME_ENTRIES.some((entry) => entry.new === category)));
 
 /** A place's first part, or its first two where the first is a category's folder; none where a part is an item's. */
 function head(place: string): string | null {
@@ -166,9 +166,12 @@ function head(place: string): string | null {
   return taken.length === 0 || taken.some((part) => part.includes('*')) ? null : taken.join('/');
 }
 
-/** The head of every place the table holds, and the names a place is known by: what a test's join may not name. */
+/**
+ * The head of every place the table holds, with and without its category's folder (a reader that joined `sessions` by hand is
+ * as wrong as one that joined `data/sessions`), and the names a place is known by: what a test's join may not name.
+ */
 const NAMED = new Set(HOME_ENTRIES.flatMap((entry) => [
-  ...[entry.new, entry.old].map(head).filter((part): part is string => part !== null),
+  ...[entry.new, entry.new.replace(/^(?:data|profiles|cache|run)\//, '')].map(head).filter((part): part is string => part !== null),
   ...entry.holds,
 ]));
 
@@ -268,18 +271,18 @@ test('no code joins a home path by hand: each asks its twin for the entry by nam
 
 test('the connector locator’s own copy of `data` and `bin` is held to the table (HOMELAYOUT2b, HOMELAYOUT3)', async () => {
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
-  const { INSTALL_HOME, homeBins } = await import('../../../../tools/knowledge-server.mjs') as {
-    INSTALL_HOME: string; homeBins: (home: string, executable: string) => string[];
+  const { INSTALL_HOME, homeBin } = await import('../../../../tools/knowledge-server.mjs') as {
+    INSTALL_HOME: string; homeBin: (home: string, executable: string) => string | null;
   };
   assert.equal(INSTALL_HOME, INSTALL_DATA, 'the install’s home folder is the table’s `data`');
   const executable = process.platform === 'win32' ? 'daoris-knowledge.exe' : 'daoris-knowledge';
-  // The locator’s `bin` candidates are the places the table gives the entry, new then old, for a scratch home, an install’s
+  // The locator’s `bin` is the place the table gives the entry, for a scratch home, an install’s
   // `data/` and the install itself; the table changes, and this fails until the copy follows it.
   const fx = makeFixture('census-connector-bins');
   try {
     fx.write(join('install', INSTALL_MARKER), '# Daoris — installed desktop\n');
     for (const home of [join(fx.root, 'scratch'), join(fx.root, 'install', INSTALL_DATA), join(fx.root, 'install')]) {
-      assert.deepEqual(homeBins(home, executable).map((path) => resolve(path)), homePlaces(home, 'bin', executable).map((path) => resolve(path)), home);
+      assert.equal(resolve(homeBin(home, executable)!), resolve(homeEntry(home, 'bin', executable)), home);
     }
   } finally {
     fx.cleanup();
@@ -298,7 +301,7 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.deepEqual(read('var a = Path.Combine([home, .. LocationsFolder, name]);'), ['Path.Combine(home, LocationsFolder, name)']);
   assert.deepEqual(read("const a = path.join(root, 'driver.json');", false), []);
 
-  assert.ok(namesEntry(['"sessions"']) && namesEntry(['"help/proposals"']) && namesEntry(['MachineLog.Folder']) && namesEntry(['COOLING_FILE']));
+  assert.ok(namesEntry(['"sessions"']) && namesEntry(['"proposals"']) && namesEntry(['MachineLog.Folder']) && namesEntry(['COOLING_FILE']));
   assert.ok(['fx.root', 'at', 'root', 'DataHome'].every((name) => TEST_ROOT.test(name)) && !TEST_ROOT.test('repoRoot'));
   assert.ok(namesEntry(["'harnesses.json'"]) && namesEntry(['TOOLS_FOLDER']));
   assert.ok(!namesEntry(['"engine"']) && !namesEntry(['"agent.log"']) && !namesEntry(['name']));

@@ -5,7 +5,6 @@ public interface IAgentAskWords
 {
     string Ask { get; }
     IReadOnlyList<AskWordView>? Said { get; }
-    DateTimeOffset? KeptFrom { get; }
     IReadOnlyList<GoAheadView>? GoAheads { get; }
 }
 

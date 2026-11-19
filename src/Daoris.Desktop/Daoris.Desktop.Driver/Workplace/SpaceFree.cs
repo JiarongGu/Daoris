@@ -14,13 +14,13 @@ namespace Daoris.Driver;
 /// <para><b>Each kind's one removal</b>: the set-aside folders through the purge and the slim (<see cref="SetAsideKeeping"/>),
 /// one before its date whole with its manifest; the downloads through their clearing (<see cref="DownloadClearing.ClearAsync"/>); the
 /// log's days through its prune (<see cref="MachineLog.Remove"/>); the browser's caches through the shell's host
-/// (<see cref="BrowserCacheClearing"/>); a migration's salvage folder, an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
+/// (<see cref="BrowserCacheClearing"/>); an earlier build's two folders and a failed update's by their exact paths, moved aside first.</para>
 /// <para><b>One run at a time</b>: every run holds the home's run lock (<see cref="KeepingRun"/>), taken by <see cref="SpaceRuns"/>.</para>
 /// </remarks>
 public static class SpaceFree
 {
     /// <summary>The kinds a run removes, in the order it removes them.</summary>
-    public static IReadOnlyList<string> Kinds { get; } = ["set-aside", "downloads", "logs", "salvage", "browser-cache", "left-over", "update-failed"];
+    public static IReadOnlyList<string> Kinds { get; } = ["set-aside", "downloads", "logs", "browser-cache", "left-over", "update-failed"];
 
     /// <summary>The card's kind a run's kind is counted under, for the sizes counted again at its end.</summary>
     public static string CardKind(string kind) => kind == "update-failed" ? "rest" : kind;
@@ -54,7 +54,7 @@ public static class SpaceFree
         {
             await new SessionTrees(world.Home).RecordSetAsideAsync(roots, world.PostRecord, world.Now, ct, only).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             // The run reads the folders as they stand.
         }
@@ -89,7 +89,7 @@ public static class SpaceFree
                 else if (folder.Past && folder.Own) units.Add(unit with { Early = true, Why = "kept" });
             }
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             unread["set-aside"] = "unreadable";
         }
@@ -122,15 +122,8 @@ public static class SpaceFree
         }
 
         // The machine log's days past the person's days, which the look's daily prune takes: what is left until the next.
-        try
-        {
-            var logs = DaorisHome.Entry(home, HomeEntry.Logs);
-            foreach (var name in MachineLog.Due(logs, now, LogDays(policy))) units.Add(new SpaceUnit("logs", name, false, Length(Path.Combine(logs, name))) { Why = "past" });
-        }
-        catch (HomeEntryTwiceException)
-        {
-            unread["logs"] = "twice";
-        }
+        var logs = DaorisHome.Entry(home, HomeEntry.Logs);
+        foreach (var name in MachineLog.Due(logs, now, LogDays(policy))) units.Add(new SpaceUnit("logs", name, false, Length(Path.Combine(logs, name))) { Why = "past" });
 
         // The browser's caches, each of the table's paths that is there; whether the browser runs is judged at the press.
         foreach (var (kind, id, path) in EarlyPaths(home))
@@ -227,7 +220,7 @@ public static class SpaceFree
             return new SessionTrees(world.Home).ListSetAside(world.Policy(world.Home), world.Now())
                 .ToDictionary(folder => folder.Id, folder => (ListedClass.Of(folder), folder.Ref), StringComparer.Ordinal);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return new(StringComparer.Ordinal);
         }
@@ -345,16 +338,7 @@ public static class SpaceFree
 
     private static void Logs(SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally)
     {
-        string folder;
-        try
-        {
-            folder = DaorisHome.Entry(world.Home, HomeEntry.Logs);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            foreach (var unit in units) tally.Keep(SetAsideKept.Unread, unit.Early);
-            return;
-        }
+        var folder = DaorisHome.Entry(world.Home, HomeEntry.Logs);
 
         // Judged again at the person's days as they are now: a day the list named that a longer rule keeps since is changed, and stays.
         var days = LogDays(world.Policy(world.Home));
@@ -428,11 +412,11 @@ public static class SpaceFree
     private static string? KeptPath(string home, string kind, string path)
     {
         if (!Directory.Exists(path)) return SpaceKept.Gone;
-        if (Linked(DaorisHome.FolderOf(home).Folder, path) || Linked(home, path)) return SetAsideKept.Linked;
+        if (Linked(DaorisHome.FolderOf(home), path) || Linked(home, path)) return SetAsideKept.Linked;
         if (kind == "left-over" && NamedByThisBuild(home, path)) return SpaceKept.Named;
         if (kind == "update-failed")
         {
-            var install = DaorisHome.FolderOf(home).Folder;
+            var install = DaorisHome.FolderOf(home);
             if (StagedBuild.UnderWay(install)) return SpaceKept.Updating;
             if (StagedBuild.RunningFrom(path).Count > 0) return SpaceKept.InUse;
         }
@@ -443,27 +427,13 @@ public static class SpaceFree
     /// <summary>The paths the early groups name by their exact place: the browser's caches, an earlier build's two folders, a failed update's.</summary>
     private static IEnumerable<(string Kind, string Id, string Path)> EarlyPaths(string home)
     {
-        string? engine;
-        try
-        {
-            engine = DaorisHome.Entry(home, HomeEntry.BrowserEngine);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            engine = null;
-        }
-
-        if (engine is not null)
-        {
-            foreach (var path in SpaceKinds.BrowserCaches) yield return ("browser-cache", path, Path.Combine([engine, .. path.Split('/')]));
-        }
-
-        foreach (var migration in SalvageKeeping.Folders(home)) yield return ("salvage", migration.Name, migration.Path);
+        var engine = DaorisHome.Entry(home, HomeEntry.BrowserEngine);
+        foreach (var path in SpaceKinds.BrowserCaches) yield return ("browser-cache", path, Path.Combine([engine, .. path.Split('/')]));
 
         // The card's places for what an earlier build left, in the table's order: the one place each exact path is named.
         var left = SpaceKinds.Places(home, "left-over").Places;
         for (var at = 0; at < SpaceKinds.EarlierBuild.Count; at++) yield return ("left-over", SpaceKinds.EarlierBuild[at], left[at]);
-        var folder = DaorisHome.FolderOf(home).Folder;
+        var folder = DaorisHome.FolderOf(home);
         if (File.Exists(Path.Combine(folder, DaorisHome.InstallMarker)))
         {
             yield return ("update-failed", $"{StagedBuild.Folder}/{StagedBuild.Failed}", Path.Combine(folder, StagedBuild.Folder, StagedBuild.Failed));
@@ -477,21 +447,8 @@ public static class SpaceFree
         var same = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         foreach (var entry in HomeEntry.Table)
         {
-            IReadOnlyList<string> places;
-            try
-            {
-                places = DaorisHome.Places(home, entry);
-            }
-            catch (Exception error) when (error is HomeEntryTwiceException or ArgumentException)
-            {
-                return true;
-            }
-
-            foreach (var place in places)
-            {
-                var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(place));
-                if (string.Equals(full, top, same) || full.StartsWith(top + Path.DirectorySeparatorChar, same)) return true;
-            }
+            var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(DaorisHome.Entry(home, entry)));
+            if (string.Equals(full, top, same) || full.StartsWith(top + Path.DirectorySeparatorChar, same)) return true;
         }
 
         return false;

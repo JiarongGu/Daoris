@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import {
-  daorisHome, HOME_ENTRIES, HOME_ID_FILE, HOME_TWICE, homeEntry, HomeEntryTwice, homeFile, homeId, homeOf, homePlaces,
+  daorisHome, HOME_ENTRIES, HOME_ID_FILE, homeEntry, homeFile, homeId, homeOf,
   HOME_VARIABLE, INSTALL_DATA, INSTALL_MARKER, installOf, requireHomeFile, THIS_INSTALL, type HomeEntry, type HomeEntryName,
 } from '../../src/platform/home.ts';
 import { DESKTOP, driverFile, driverRows, driverTestFile, type Cell } from '../_csharp.ts';
@@ -101,87 +101,47 @@ test('requiring an entry with no home is a refusal that names the variable and t
 });
 
 /**
- * 🔴 An entry is read and written at its new
- * place if that holds what the entry is, else at its old place if that is there, else at its new place; where both hold it,
- * neither is chosen and the refusal names both. The rows are the driver's `An_entry_is_where_it_is`, whose summary says each
- * column, and the service's holds the same rows: each is held to these, cell for cell.
+ * 🔴 An entry is at its place under the Daoris folder, whatever is on the disk. The rows are the driver's
+ * `An_entry_is_where_it_is`, whose summary says each column, and the service's holds the same rows: each is held to these, cell
+ * for cell.
  */
 const ENTRY_ROWS: readonly (readonly string[])[] = [
-  ['a.json', 'a.json', '', '', '', 'a.json'],
-  ['a.json', 'a.json', '', 'a.json', '', 'a.json'],
-  ['data/a.json', 'a.json', '', '', '', 'data/a.json'],
-  ['data/a.json', 'a.json', '', 'a.json', '', 'a.json'],
-  ['data/a.json', 'a.json', '', 'data/a.json', '', 'data/a.json'],
-  ['data/a.json', 'a.json', '', 'a.json,data/a.json', '', 'refused'],
-  ['data/a.json', 'a.json', '', 'a.json,data/a.json=torn', '', 'a.json'],
-  ['data/a.json', 'a.json', '', 'a.json=torn,data/a.json', '', 'data/a.json'],
-  ['data/a.json', 'a.json', '', 'a.json=torn', '', 'a.json'],
-  ['data/k.db', 'k.db', '', 'k.db,data/k.db=', '', 'k.db'],
-  ['data/s', 's', '', 's/x.log', 'x.log', 's/x.log'],
-  ['data/s', 's', '', 's/x.log', 'y.log', 's/y.log'],
-  ['data/s', 's', '', 's/x.log,data/s/', 'y.log', 's/y.log'],
-  ['data/s', 's', '', 's/x.log,data/s/z.log', '', 'refused'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD', 'a/one', 't/a/one'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD', 'a/two', 'work/t/a/two'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD,work/t/a/one/HEAD', 'a/one', 'refused'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD', 'a/one/notes.md', 't/a/one/notes.md'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD', 'a', 't/a'],
-  ['work/t/*/*', 't/*/*', '', 't/a/one/HEAD,work/t/a/two/HEAD', 'a', 'work/t/a'],
-  ['work/f/*', 's/*/files', '', 's/one/files/a.png', 'one/b.png', 's/one/files/b.png'],
-  ['work/f/*', 's/*/files', '', '', 'one', 'work/f/one'],
-  ['run/s/*.pid', 's/*.pid', '', 's/one.pid', 'one', 's/one.pid'],
-  ['work/rooms/help', 'help', 'CLAUDE.md', 'help/proposals/p.json', '', 'work/rooms/help'],
-  ['work/rooms/help', 'help', 'CLAUDE.md', 'help/CLAUDE.md', '', 'help'],
-  ['work/rooms/help', 'help', 'CLAUDE.md', 'help/CLAUDE.md,work/rooms/help/notes.md', '', 'help'],
-  ['profiles/window', '', 'chromium|config', 'config/window-state.json', '', ''],
-  ['profiles/window', '', 'chromium|config', '', '', 'profiles/window'],
-];
-
-/** A list of an entry's items reads both places: the driver's `A_list_reads_both_places`, and the service's. */
-const PLACES_ROWS: readonly (readonly string[])[] = [
-  ['a.json', 'a.json', '', 'a.json'],
-  ['data/a.json', 'a.json', '', 'data/a.json|a.json'],
-  ['work/t/*/*', 't/*/*', '', 'work/t|t'],
-  ['work/t/*/*', 't/*/*', 'a', 'work/t/a|t/a'],
-  ['work/f/*', 's/*/files', 'one', 'work/f/one|s/one/files'],
-  ['run/s/*.pid', 's/*.pid', '', 'run/s|s'],
+  ['data/a.json', '', '', 'data/a.json'],
+  ['data/s', '', 'x.log', 'data/s/x.log'],
+  ['work/t/*/*', '', 'a/one', 'work/t/a/one'],
+  ['work/t/*/*', '', 'a/one/notes.md', 'work/t/a/one/notes.md'],
+  ['work/t/*/*', '', 'a', 'work/t/a'],
+  ['work/t/*/*', '', '', 'work/t'],
+  ['work/f/*', '', 'one/b.png', 'work/f/one/b.png'],
+  ['run/s/*.pid', '', 'one', 'run/s/one.pid'],
+  ['work/rooms/help', 'CLAUDE.md', '', 'work/rooms/help'],
 ];
 
 /**
- * 🔴 A home names its Daoris folder and the old home. The driver's `A_home_names_its_folder`, whose
+ * 🔴 A home names its Daoris folder. The driver's `A_home_names_its_folder`, whose
  * summary says each column, and the service's hold the same rows: each is held to these, cell for cell.
  */
 const FOLDER_ROWS: readonly (readonly string[])[] = [
-  ['install', 'data', '', 'driver', '', 'data/driver.json'],
-  ['install', '', '', 'driver', '', 'data/driver.json'],
-  ['install', 'data', '', 'keys', '', 'profiles/keys.json'],
-  ['install', 'data', 'data/keys.json', 'keys', '', 'data/keys.json'],
-  ['install', '', 'data/keys.json', 'keys', '', 'data/keys.json'],
-  ['install', 'data', 'data/keys.json,profiles/keys.json', 'keys', '', 'refused'],
-  ['install', 'data', 'data/logs/desktop.log', 'logs', '', 'data/logs'],
-  ['install', 'data', '', 'logs', '', 'logs'],
-  ['install', 'data', 'data/chromium/', 'window', '', 'data'],
-  ['install', 'data', '', 'window', '', 'profiles/window'],
-  ['install', 'data', 'data/harnesses/claude-code/work/x', 'agent-homes', 'claude-code/work', 'data/harnesses/claude-code/work'],
-  ['install', 'data', 'data/harnesses/claude-code/work/x', 'agent-homes', 'claude-code/new', 'profiles/agents/claude-code/new'],
-  ['install', 'data', '', 'home-lease', '', 'run/home.lease'],
-  ['root', '', '', 'driver', '', 'data/driver.json'],
-  ['root', '', 'driver.json', 'driver', '', 'driver.json'],
-  ['root', '', '', 'running', '', 'run/running.json'],
-  ['root', '', '', 'logs', '', 'logs'],
-  ['root', 'data', '', 'driver', '', 'data/data/driver.json'],
+  ['install', 'data', 'driver', '', 'data/driver.json'],
+  ['install', '', 'driver', '', 'data/driver.json'],
+  ['install', 'data', 'keys', '', 'profiles/keys.json'],
+  ['install', 'data', 'logs', '', 'logs'],
+  ['install', 'data', 'window', '', 'profiles/window'],
+  ['install', 'data', 'agent-homes', 'claude-code/new', 'profiles/agents/claude-code/new'],
+  ['install', 'data', 'home-lease', '', 'run/home.lease'],
+  ['root', '', 'driver', '', 'data/driver.json'],
+  ['root', '', 'running', '', 'run/running.json'],
+  ['root', '', 'logs', '', 'logs'],
+  ['root', 'data', 'driver', '', 'data/data/driver.json'],
 ];
 
-/** The home a file of it is in: the driver's `A_home_is_found_from_its_entry_at_either_place`, and the service's. */
+/** The home a file of it is in: the driver's `A_home_is_found_from_its_entry`, and the service's. */
 const HOME_OF_ROWS: readonly (readonly string[])[] = [
   ['install', 'data/driver.json', 'driver', 'data'],
   ['install', 'data/harnesses.json', 'harnesses', 'data'],
   ['root', 'data/driver.json', 'driver', ''],
-  ['root', 'driver.json', 'driver', ''],
   ['install', 'profiles/browser/engine', 'browser-engine', 'data'],
-  ['install', 'data/browser/engine', 'browser-engine', 'data'],
   ['root', 'profiles/browser/engine', 'browser-engine', ''],
-  ['root', 'browser/engine', 'browser-engine', ''],
 ];
 
 /** The service's copy of a file, found by its name under the service's projects, the build's output aside. */
@@ -209,9 +169,8 @@ const asStrings = (rows: Cell[][]): string[][] => rows.map((row) => row.map(Stri
 test('the driver’s and the service’s rows of an entry’s place are these, cell for cell (HOMELAYOUT2)', () => {
   for (const [owner, source] of [['the driver’s tests', DRIVER_TESTS()], ['the service’s tests', SERVICE_TESTS()]] as const) {
     assert.deepEqual(asStrings(driverRows(source, 'An_entry_is_where_it_is', {}, owner)), ENTRY_ROWS, owner);
-    assert.deepEqual(asStrings(driverRows(source, 'A_list_reads_both_places', {}, owner)), PLACES_ROWS, owner);
     assert.deepEqual(asStrings(driverRows(source, 'A_home_names_its_folder', {}, owner)), FOLDER_ROWS, owner);
-    assert.deepEqual(asStrings(driverRows(source, 'A_home_is_found_from_its_entry_at_either_place', {}, owner)), HOME_OF_ROWS, owner);
+    assert.deepEqual(asStrings(driverRows(source, 'A_home_is_found_from_its_entry', {}, owner)), HOME_OF_ROWS, owner);
   }
 });
 
@@ -225,19 +184,12 @@ function shaped(name: string, shape: string): ReturnType<typeof makeFixture> {
 const under = (root: string, place: string): string => resolve(join(root, ...place.split('/').filter(Boolean)));
 
 test('a home names its folder: an install by its folder or its data/, any other home itself (HOMELAYOUT3)', () => {
-  for (const [shape, homeAs, present, name, asked, expected] of FOLDER_ROWS) {
+  for (const [shape, homeAs, name, asked, expected] of FOLDER_ROWS) {
     const fx = shaped('home-folder', shape!);
     try {
-      lay(fx.root, present!);
       const home = homeAs ? join(fx.root, homeAs) : fx.root;
       const asking = asked!.split('/').filter(Boolean);
-      const why = `${shape} ${homeAs} ${present} ${name} ${asked}`;
-      if (expected === 'refused') {
-        const error = captureError(() => homeEntry(home, name as HomeEntryName, ...asking));
-        assert.ok(error instanceof HomeEntryTwice, why);
-        assert.deepEqual([(error as HomeEntryTwice).next, (error as HomeEntryTwice).old], homePlaces(home, name as HomeEntryName, ...asking), why);
-        continue;
-      }
+      const why = `${shape} ${homeAs} ${name} ${asked}`;
       assert.equal(resolve(homeEntry(home, name as HomeEntryName, ...asking)), under(fx.root, expected!), why);
     } finally {
       fx.cleanup();
@@ -245,7 +197,7 @@ test('a home names its folder: an install by its folder or its data/, any other 
   }
 });
 
-test('a home is found from its entry at either place, an install’s spelled as its data/ (HOMELAYOUT3)', () => {
+test('a home is found from its entry, an install’s spelled as its data/ (HOMELAYOUT3)', () => {
   for (const [shape, file, name, expected] of HOME_OF_ROWS) {
     const fx = shaped('home-of', shape!);
     try {
@@ -256,87 +208,43 @@ test('a home is found from its entry at either place, an install’s spelled as 
   }
 });
 
-/** A row's disk, laid out as the C# rows lay it: `{}` for JSON and a letter otherwise, what follows `=`, a trailing `/` a folder. */
-function lay(root: string, present: string): void {
-  for (const item of present.split(',').filter(Boolean)) {
-    const at = item.indexOf('=');
-    const file = at >= 0 ? item.slice(0, at) : item;
-    const text = at >= 0 ? item.slice(at + 1) : file.endsWith('.json') ? '{}' : 'x';
-    const path = join(root, ...file.split('/').filter(Boolean));
-    if (file.endsWith('/')) {
-      mkdirSync(path, { recursive: true });
-      continue;
-    }
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, text);
-  }
-}
+const probe = (next: string, holds: string): HomeEntry =>
+  ({ name: 'probe', category: 'data', new: next, holds: holds.split('|').filter(Boolean) });
 
-const probe = (next: string, old: string, holds: string): HomeEntry =>
-  ({ name: 'probe', category: 'data', new: next, old, holds: holds.split('|').filter(Boolean) });
-
-test('an entry is where it is: its new place where that holds it, else its old place where that is there, else new', () => {
-  for (const [next, old, holds, present, asked, expected] of ENTRY_ROWS) {
+test('an entry is where it is: its place under the Daoris folder, whatever is on the disk', () => {
+  for (const [next, holds, asked, expected] of ENTRY_ROWS) {
     const fx = makeFixture('home-entry');
     try {
-      lay(fx.root, present!);
-      const entry = probe(next!, old!, holds!);
       const asking = asked!.split('/').filter(Boolean);
-      if (expected === 'refused') {
-        const error = captureError(() => homeEntry(fx.root, entry, ...asking));
-        assert.ok(error instanceof HomeEntryTwice, `${present}: refused`);
-        const twice = error as HomeEntryTwice;
-        assert.deepEqual([twice.next, twice.old], homePlaces(fx.root, entry, ...asking));
-        assert.equal(twice.message, HOME_TWICE.replace('{0}', 'probe').replace('{1}', twice.next).replace('{2}', twice.old));
-        continue;
-      }
-      assert.equal(homeEntry(fx.root, entry, ...asking), join(fx.root, ...expected!.split('/').filter(Boolean)), `${next} ${old} ${present} ${asked}`);
+      assert.equal(homeEntry(fx.root, probe(next!, holds!), ...asking), join(fx.root, ...expected!.split('/').filter(Boolean)), `${next} ${asked}`);
     } finally {
       fx.cleanup();
     }
   }
 });
 
-test('a list of an entry’s items reads both places, new first, once each, without the disk', () => {
-  const home = join('D:', 'somewhere', 'data');
-  for (const [next, old, asked, expected] of PLACES_ROWS) {
-    assert.deepEqual(
-      homePlaces(home, probe(next!, old!, ''), ...asked!.split('/').filter(Boolean)),
-      expected!.split('|').map((place) => join(home, ...place.split('/'))));
-  }
-});
-
-/** A C# twin's table: each `new("name", HomeCategory.X, "new", "old", "holds"…)` row of its `HomeEntry`, in order. */
+/** A C# twin's table: each `new("name", HomeCategory.X, "place", "holds"…)` row of its `HomeEntry`, in order. */
 function csharpTable(source: string): string[][] {
-  return [...source.matchAll(/= new\("([^"]*)", HomeCategory\.(\w+), "([^"]*)", "([^"]*)"((?:, "[^"]*")*)\);/g)]
-    .map((row) => [row[1]!, row[2]!.toLowerCase(), row[3]!, row[4]!, [...row[5]!.matchAll(/"([^"]*)"/g)].map((hold) => hold[1]).join('|')]);
-}
-
-/** A C# twin's refusal for an entry in two places, its `Twice` constant's literals joined. */
-function csharpTwice(source: string): string {
-  const at = source.indexOf('public const string Twice =');
-  const end = source.indexOf(';', at);
-  return [...source.slice(at, end).matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((part) => part[1]).join('');
+  return [...source.matchAll(/= new\("([^"]*)", HomeCategory\.(\w+), "([^"]*)"((?:, "[^"]*")*)\);/g)]
+    .map((row) => [row[1]!, row[2]!.toLowerCase(), row[3]!, [...row[4]!.matchAll(/"([^"]*)"/g)].map((hold) => hold[1]).join('|')]);
 }
 
 /**
  * 🔴 The three home twins hold the same table, cell for cell and in order:
- * each entry's name, category, new place, old place and the names that make a place there.
+ * each entry's name, category, place and the names that make a place there.
  */
 test('the driver’s and the service’s tables are this one, cell for cell (HOMELAYOUT2)', () => {
-  const ours = HOME_ENTRIES.map((entry) => [entry.name, entry.category, entry.new, entry.old, entry.holds.join('|')]);
+  const ours = HOME_ENTRIES.map((entry) => [entry.name, entry.category, entry.new, entry.holds.join('|')]);
   assert.deepEqual(csharpTable(readFileSync(driverFile('DaorisHome.cs'), 'utf8')), ours, 'the driver’s');
   assert.deepEqual(csharpTable(readFileSync(serviceFile('DaorisHome.cs'), 'utf8')), ours, 'the service’s');
-  assert.equal(csharpTwice(readFileSync(driverFile('DaorisHome.cs'), 'utf8')), HOME_TWICE, 'the driver’s refusal');
-  assert.equal(csharpTwice(readFileSync(serviceFile('DaorisHome.cs'), 'utf8')), HOME_TWICE, 'the service’s refusal');
 });
 
 /** The volume's clock is read from a mark the driver touches in the home's run folder, never in a tree or its git directory. */
 test('the clock mark is a row of the run folder in all three tables (REPOCONFIG1a1)', () => {
-  const mark = ['clock-mark', 'run', 'run/clock.mark', 'run/clock.mark', ''];
+  const mark = ['clock-mark', 'run', 'run/clock.mark', ''];
   const ours = HOME_ENTRIES.find((entry) => entry.name === 'clock-mark');
   assert.ok(ours, 'the CLI’s');
-  assert.deepEqual([ours.name, ours.category, ours.new, ours.old, ours.holds.join('|')], mark);
+  assert.deepEqual([ours.name, ours.category, ours.new, ours.holds.join('|')], mark);
   for (const [owner, file] of [['the driver’s', driverFile('DaorisHome.cs')], ['the service’s', serviceFile('DaorisHome.cs')]] as const) {
     assert.deepEqual(csharpTable(readFileSync(file, 'utf8')).find((row) => row[0] === 'clock-mark'), mark, owner);
   }
@@ -346,16 +254,14 @@ test('the clock mark is a row of the run folder in all three tables (REPOCONFIG1
 test('the table names a named workspace’s help room beside the default one (HOMEROOMS1)', () => {
   const room = HOME_ENTRIES.find((entry) => entry.name === 'help-rooms');
   assert.ok(room);
-  assert.deepEqual([room.category, room.new, room.old, [...room.holds]], ['work', 'work/rooms/help-*', 'help-*', ['CLAUDE.md']]);
+  assert.deepEqual([room.category, room.new, [...room.holds]], ['work', 'work/rooms/help-*', ['CLAUDE.md']]);
 });
 
-test('each entry is named once, its places are relative, and an item’s parts are the same in both places', () => {
+test('each entry is named once and its place is relative', () => {
   assert.equal(new Set(HOME_ENTRIES.map((entry) => entry.name)).size, HOME_ENTRIES.length);
   for (const entry of HOME_ENTRIES) {
-    for (const place of [entry.new, entry.old]) {
-      assert.ok(!place.startsWith('/') && !place.split('/').includes('..') && !place.includes('\\'), `${entry.name}: ${place}`);
-    }
-    assert.equal(entry.new.split('*').length, entry.old.split('*').length, `${entry.name}: the same items in both places`);
+    const place = entry.new;
+    assert.ok(!place.startsWith('/') && !place.split('/').includes('..') && !place.includes('\\'), `${entry.name}: ${place}`);
   }
 });
 

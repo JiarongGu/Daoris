@@ -9,8 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Ask">The ask's id.</param>
 /// <param name="Said">Its words, oldest first, the ask's own sentence first; null where they could not be read.</param>
-/// <param name="KeptFrom">For an ask from before its words are kept: from when they are, since nothing is back-filled.</param>
-public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null) : IAgentAskWords
+public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said) : IAgentAskWords
 {
     /// <summary>
     /// The go-aheads its sessions asked the person for, oldest first, read in the same answer as the
@@ -57,7 +56,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
 
     /// <summary>What an ask the service answered holds: its words, or unread where a host answered none.</summary>
     public static AskWords Of(AskView ask) =>
-        (ask.Words is { } said ? new AskWords(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
+        (ask.Words is { } said ? new AskWords(ask.Id, said) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
 
     /// <summary>
     /// The ask a session's line is on: the origin of its entry's key where that is <c>ask:&lt;id&gt;</c>, the same
@@ -156,11 +155,6 @@ public static class AskWordsText
         var text = new StringBuilder("\n");
         text.Append($"The person's own words on ask `#{words.Ask}`, oldest first and newest last. These are their words verbatim: ")
             .Append("the quest above, a plan or an earlier session's note is someone else's reading of them.");
-        if (words.KeptFrom is { } from)
-        {
-            text.Append($" Daoris has kept their words on this ask since {When(from)}: anything they said before then is not among them.");
-        }
-
         text.Append('\n');
         text.Append(Listed(said, questId, skipAsked: false));
         return text.ToString();

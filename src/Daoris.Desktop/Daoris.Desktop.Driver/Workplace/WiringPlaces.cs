@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The places of the home's table as the folder a walk reads sees them: each entry's new place is under the Daoris folder and its
-/// old one under the old home (<see cref="DaorisHome.FolderOf"/>), so a walk of the home (an install's <c>data/</c>, or a plain
+/// The places of the home's table as the folder a walk reads sees them: each entry's place is under the Daoris folder
+/// (<see cref="DaorisHome.FolderOf"/>), so a walk of the home (an install's <c>data/</c>, or a plain
 /// home) matches each place by its parts below that home. A database's journal, write-ahead log, shared memory and wake file are
 /// the database's.
 /// </summary>
@@ -19,33 +19,22 @@ public static class WiringPlaces
     /// <summary>Whether a name at the top of <paramref name="home"/> is held by an entry of the table: a name that is not is left over.</summary>
     public static bool Held(string home, string name) => Of(home).Any(pattern => pattern.Parts[0].IsMatch(name));
 
-    /// <summary>Every place of every entry of the table that lies in <paramref name="home"/>, new and old.</summary>
+    /// <summary>Every place of every entry of the table that lies in <paramref name="home"/>.</summary>
     public static IReadOnlyList<Pattern> Of(string home) => Cache.GetOrAdd(Path.GetFullPath(home), full => [.. Build(full)]);
 
     private static IEnumerable<Pattern> Build(string home)
     {
-        var (folder, oldHome) = DaorisHome.FolderOf(home);
+        var folder = DaorisHome.FolderOf(home);
         foreach (var entry in HomeEntry.Table)
         {
-            // An entry whose old place repeats its new has none older: the place under the old home is one nothing writes.
-            var places = entry.Old == entry.New
-                ? new[] { (entry.New, folder) }
-                : new[] { (entry.New, folder), (entry.Old, oldHome) };
-            foreach (var (place, under) in places)
+            foreach (var parts in Below(home, folder, entry.New))
             {
-                var names = place.Length == 0 ? entry.Holds : [place];
-                foreach (var each in names)
+                yield return Of(entry.Name, parts);
+                if (parts.Length > 0 && parts[^1].EndsWith(".db", StringComparison.Ordinal))
                 {
-                    foreach (var parts in Below(home, under, each))
+                    foreach (var beside in new[] { "-wal", "-shm", "-journal", ".wake" })
                     {
-                        yield return Of(entry.Name, parts);
-                        if (parts.Length > 0 && parts[^1].EndsWith(".db", StringComparison.Ordinal))
-                        {
-                            foreach (var beside in new[] { "-wal", "-shm", "-journal", ".wake" })
-                            {
-                                yield return Of(entry.Name, [.. parts[..^1], parts[^1] + beside]);
-                            }
-                        }
+                        yield return Of(entry.Name, [.. parts[..^1], parts[^1] + beside]);
                     }
                 }
             }

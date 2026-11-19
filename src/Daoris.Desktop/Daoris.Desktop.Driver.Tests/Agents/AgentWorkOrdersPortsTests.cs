@@ -42,7 +42,7 @@ public sealed class AgentWorkOrdersPortsTests
             new(AskWordView.Added, new string('x', AskWordsText.WordLimit + 20), At.AddMinutes(1)),
             new(AskWordView.Answered, "exact answer", At.AddMinutes(2), "s1", "q1"),
         };
-        var original = new AskWords("a1", said, At) { GoAheads = [] };
+        var original = new AskWords("a1", said) { GoAheads = [] };
         IAgentAskWords stand = new Words(said);
         Assert.Equal(AskWordsText.Beneath(original, "q1"), AgentWorkWords.Current.AskWords(stand, "q1"));
         Assert.Contains("20 more characters", AgentWorkWords.Current.AskWords(stand, "q1"));
@@ -165,7 +165,6 @@ public sealed class AgentWorkOrdersPortsTests
     private sealed record Words(IReadOnlyList<AskWordView>? Said) : IAgentAskWords
     {
         public string Ask => "a1";
-        public DateTimeOffset? KeptFrom => At;
         public IReadOnlyList<GoAheadView>? GoAheads => [];
     }
     private sealed class Renderer : IAgentWorkWords

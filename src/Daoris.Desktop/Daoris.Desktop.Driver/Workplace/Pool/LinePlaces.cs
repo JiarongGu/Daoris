@@ -66,15 +66,10 @@ public sealed class LinePlaces(string home)
             return ("", "");
         }
 
-        foreach (var root in DaorisHome.Places(home, HomeEntry.Trees))
-        {
-            var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)) + Path.DirectorySeparatorChar;
-            if (!full.StartsWith(top, StringComparison.OrdinalIgnoreCase)) continue;
-            var parts = full[top.Length..].Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            return parts.Length >= 3 ? (parts[0], parts[1]) : ("", "");
-        }
-
-        return ("", "");
+        var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(DaorisHome.Entry(home, HomeEntry.Trees))) + Path.DirectorySeparatorChar;
+        if (!full.StartsWith(top, StringComparison.OrdinalIgnoreCase)) return ("", "");
+        var parts = full[top.Length..].Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return parts.Length >= 3 ? (parts[0], parts[1]) : ("", "");
     }
 
     private static LineWhere Disk(string tree) => new(tree, Directory.Exists(tree) ? LineStand.Stands : LineStand.Gone, null);

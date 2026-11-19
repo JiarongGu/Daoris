@@ -196,7 +196,7 @@ public sealed class InstructionAccountTests
             new AskWordView(AskWordView.Added, new string('p', 1_500), Asked.AddHours(2)),
             .. Enumerable.Range(0, 4).Select(i => new AskWordView(AskWordView.Added, new string('n', 1_900), Asked.AddHours(3 + i))),
             new AskWordView(AskWordView.Added, new string('l', 2_500), Asked.AddHours(8)),
-        ], KeptFrom: Asked.AddMinutes(-5));
+        ]);
         var section = Section(TargetPrompt.Composed(TargetPromptGoldenTests.Bare with { Asker = "ask #a1", Words = words }).Account, "words");
 
         // The sentence, then the newest that fit 8,000: the 2,500 counts as 2,000, and three of the four 1,900s.
@@ -209,7 +209,6 @@ public sealed class InstructionAccountTests
             older.Said);
         var cutLong = Cut(section, "words-long");
         Assert.Equal((1, AskWordsText.WordLimit), (cutLong.Count, cutLong.Limit));
-        Assert.Equal(Asked.AddMinutes(-5), Cut(section, "words-not-kept").From);
     }
 
     [Fact]

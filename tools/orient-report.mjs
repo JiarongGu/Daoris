@@ -66,7 +66,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, join, posix, resolve } from 'node:path';
 import { isMain } from './fsx.mjs';
 // Every home place is asked of the home layout, never joined here.
-import { homeEntry, homePlaces } from '../src/Daoris.Cli/src/platform/home.ts';
+import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { readLogs } from './usage-report.mjs';
 
 const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
@@ -355,8 +355,8 @@ export function placeOf(path, home) {
   if (!ABSOLUTE.test(at)) return { tree: null, rel: at, inside: !(at === '..' || at.startsWith('../')) };
   const top = home ? topOf(home) : null;
   const lower = at.toLowerCase();
-  // The home's trees, by both its places: one under `work/`, one at its top.
-  for (const place of top ? homePlaces(top, 'trees') : []) {
+  // The home's trees, under `work/`.
+  for (const place of top ? [homeEntry(top, 'trees')] : []) {
     const trees = `${slash(place).replace(/\/+$/, '').toLowerCase()}/`;
     const parts = lower.startsWith(trees) ? at.slice(trees.length).split('/') : [];
     if (parts.length >= 3 && parts.slice(0, 3).every((part) => part && part !== '.' && part !== '..')) {

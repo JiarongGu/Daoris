@@ -188,16 +188,6 @@ public sealed class AskWordsHandedTests
         Assert.DoesNotContain("could not be read", before);
     }
 
-    [Fact]
-    public void An_ask_from_before_its_words_were_kept_says_from_when_they_are()
-    {
-        var prompt = TargetPrompt.Compose(Target(new AskWords("a1", [Word("asked", Sentence, 0)], new DateTimeOffset(2026, 10, 2, 11, 30, 0, TimeSpan.Zero))));
-
-        Assert.Contains(
-            "Daoris has kept their words on this ask since 2026-10-02 11:30 UTC: anything they said before then is not among them.",
-            prompt.ReplaceLineEndings(" "));
-    }
-
     // ——— When the words could not be read, the instruction is today's and says so.
 
     [Fact]
@@ -230,8 +220,8 @@ public sealed class AskWordsHandedTests
     [Fact]
     public void A_carry_on_whose_answer_is_not_among_the_words_still_quotes_it()
     {
-        // Kept before any words, so the ask holds only its sentence.
-        var words = new AskWords("a1", [Word("asked", Sentence, 0)], DateTimeOffset.Parse("2026-10-02T11:30:00Z"));
+        // The ask holds only its sentence.
+        var words = new AskWords("a1", [Word("asked", Sentence, 0)]);
 
         var prompt = TargetPrompt.Compose(Target(words) with { CutOff = "It stopped to ask which report.", PersonSaid = Answer });
 
@@ -296,7 +286,6 @@ public sealed class AskWordsHandedTests
         Assert.Equal([null, "s1", "s3"], words.Said!.Select(word => word.Session));
         Assert.Equal([null, "q1", "q2"], words.Said!.Select(word => word.Quest));
         Assert.Equal(new DateTimeOffset(2026, 10, 1, 8, 14, 0, TimeSpan.Zero), words.Said![2].At);
-        Assert.Null(words.KeptFrom);
     }
 
     [Theory]
@@ -368,11 +357,11 @@ public sealed class AskWordsHandedTests
     }
 
     [Fact]
-    public void A_word_that_is_not_one_is_passed_over_and_an_older_ask_says_from_when()
+    public void A_word_that_is_not_one_is_passed_over()
     {
         var ask = AskDoorViews.ReadAskJson(
             """
-            {"id":"a1","workspace":"work","sentence":"s","state":"Published","tier":"intake","wordsKeptFrom":"2026-10-02T11:30:00+00:00",
+            {"id":"a1","workspace":"work","sentence":"s","state":"Published","tier":"intake",
              "words":[{"kind":"asked","text":"s","at":"2026-10-01T02:26:00+00:00"},
                       {"kind":"answered","at":"2026-10-01T03:00:00+00:00"},
                       {"kind":"answered","text":"no time"},
@@ -380,7 +369,6 @@ public sealed class AskWordsHandedTests
             """);
 
         Assert.Equal(["s", "kept"], ask.Words!.Select(word => word.Text));
-        Assert.Equal(new DateTimeOffset(2026, 10, 2, 11, 30, 0, TimeSpan.Zero), ask.WordsKeptFrom);
         Assert.Null(AskDoorViews.ReadAskJson("""{"id":"a1","workspace":"w","sentence":"s","state":"Open","tier":"named"}""").Words);
     }
 

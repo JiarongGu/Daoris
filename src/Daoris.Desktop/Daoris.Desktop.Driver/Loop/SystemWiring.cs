@@ -19,8 +19,8 @@ namespace Daoris.Driver;
 /// key's prefix at most, an address loses what may carry a credential, a notice is cut, and a last sweep takes every secret
 /// the reader saw out of every string. No file's contents are answered, only whether it reads.</para>
 ///
-/// <para><b>The layout as it runs</b>: each entry of the layout table where it is found, its old
-/// place said with why it stays; the planned folders are named with whether they are there, never as installed fact.</para>
+/// <para><b>The layout as it runs</b>: each entry of the layout table where it runs;
+/// the planned folders are named with whether they are there, never as installed fact.</para>
 ///
 /// <para><b>Nothing slow on the opening path</b>: no git, no program started, no download, and no folder walked. Sizes are the
 /// last measure <see cref="WiringSizes"/> kept, or <c>null</c> until one is asked.</para>
@@ -34,15 +34,6 @@ public static class SystemWiring
 
     /// <summary>The command an install's <c>app/bin/</c> carries (<c>desktop-publish</c>'s <c>CLI_LAUNCHERS</c>).</summary>
     public static IReadOnlyList<string> Launchers { get; } = ["daoris.exe"];
-
-    /// <summary>Why an entry stays at its old place: what names it by path, or that it moves at a start after an update.</summary>
-    private static string Stays(HomeEntry entry) => entry.Name switch
-    {
-        "agent-homes" or "trees" or "help-room" or "help-rooms" or "intake" => "resumes",
-        "session-files" or "quest-files" or "ask-files" => "kept",
-        "bin" => "mcp",
-        _ => "not-moved",
-    };
 
     /// <summary>Read every wire, in the route's shape.</summary>
     public static JsonObject Read(WiringWorld world)
@@ -153,15 +144,6 @@ public static class SystemWiring
         return folder;
     }
 
-    /// <summary>
-    /// Each entry's place as it runs: each of its places that is there, new before old; an entry known by the
-    /// names it holds, where it holds one, as <c>DaorisHome</c> reads it.
-    /// </summary>
-    private static IReadOnlyList<string> Found(string home, HomeEntry entry) =>
-        [.. DaorisHome.Places(home, entry).Where(place => entry.Holds.Length > 0
-            ? entry.Holds.Any(name => Path.Exists(Path.Combine(place, name)))
-            : Path.Exists(place))];
-
     private static JsonArray Folders(WiringWorld world, string? install, SizeReading? reading)
     {
         var rows = new JsonArray();
@@ -178,25 +160,10 @@ public static class SystemWiring
             // that holds nothing yet is no folder the person has.
             row["present"] = path is not null && Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any();
 
-            var old = new JsonArray();
             long? bytes = reading is null || path is null && category is null ? null : reading.Folders.GetValueOrDefault(id);
-            if (category is { } kind && world.Home is { } home)
+            if (category is { } kind && world.Home is not null && reading is not null)
             {
-                foreach (var entry in HomeEntry.Table.Where(entry => entry.Category == kind))
-                {
-                    if (reading is not null) bytes += reading.Entries.GetValueOrDefault(entry.Name);
-                    foreach (var place in Found(home, entry))
-                    {
-                        if (path is not null && Under(place, path)) continue;
-                        old.Add(new JsonObject
-                        {
-                            ["entry"] = entry.Name,
-                            ["path"] = place,
-                            ["bytes"] = reading is null ? null : reading.Entries.GetValueOrDefault(entry.Name),
-                            ["why"] = Stays(entry),
-                        });
-                    }
-                }
+                foreach (var entry in HomeEntry.Table.Where(entry => entry.Category == kind)) bytes += reading.Entries.GetValueOrDefault(entry.Name);
             }
 
             Fact(row, "bytes", bytes, path is null && category is null ? "development" : world.Home is { } h && world.Sizes.Measuring(h) ? "measuring" : "not-measured");
@@ -208,7 +175,6 @@ public static class SystemWiring
             }
 
             row["measured"] = reading is null ? null : Moments.Write(reading.Measured);
-            row["old"] = old;
             rows.Add(row);
         }
 
