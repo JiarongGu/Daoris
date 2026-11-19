@@ -12,6 +12,8 @@ public sealed class DriverModuleConversationSignInTests : DriverModuleBridge
          {"id":"c2","repository":"engine","state":"completed","kind":"chat","created":"2026-10-03T09:00:00Z","from":"c1"}]
         """;
 
+    private static readonly DateTimeOffset Earlier = DateTimeOffset.Parse("2026-11-19T09:05:00Z"), Later = DateTimeOffset.Parse("2099-01-01T00:00:00Z");
+
     private string FileOf(string session) => DaorisHome.Entry(Home, HomeEntry.Sessions, session + QuestionFiles.Suffix);
 
     private void Asked(string session, string id, bool conversation, DateTimeOffset at)
@@ -35,7 +37,7 @@ public sealed class DriverModuleConversationSignInTests : DriverModuleBridge
     [InlineData("Signed in", null, false, true, true)]
     public async Task A_word_kept_for_a_conversation_clears_its_sign_in_question(string text, string? question, bool conversation, bool kept, bool stands)
     {
-        Asked("c1", "a1b2c3d4", conversation, DateTimeOffset.UtcNow.AddMinutes(-5));
+        Asked("c1", "a1b2c3d4", conversation, Earlier);
         var module = await UpAsync(new Door { Kept = kept });
 
         var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text, question });
@@ -48,8 +50,8 @@ public sealed class DriverModuleConversationSignInTests : DriverModuleBridge
     [Fact]
     public async Task A_sign_in_question_asked_while_the_word_is_kept_stands()
     {
-        Asked("c1", "a1b2c3d4", true, DateTimeOffset.UtcNow.AddMinutes(-5));
-        var module = await UpAsync(new Door { OnSay = _ => Asked("c1", "newer-one", true, DateTimeOffset.UtcNow.AddSeconds(1)) });
+        Asked("c1", "a1b2c3d4", true, Earlier);
+        var module = await UpAsync(new Door { OnSay = _ => Asked("c1", "newer-one", true, Later) });
 
         var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "c1", text = "Signed in" });
 
@@ -61,7 +63,7 @@ public sealed class DriverModuleConversationSignInTests : DriverModuleBridge
     [Fact]
     public async Task A_word_forwarded_to_the_line_head_clears_the_recipients_question_and_not_the_first_parts()
     {
-        var asked = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var asked = Earlier;
         Asked("c1", "first-part", true, asked);
         Asked("c2", "recipient", true, asked);
         var module = await UpAsync(new Door { Head = "c2" });
