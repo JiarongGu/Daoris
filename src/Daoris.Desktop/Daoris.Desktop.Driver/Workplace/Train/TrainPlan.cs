@@ -10,6 +10,9 @@ public sealed record TrainPlanPart(string Id, IReadOnlySet<string> After, IReadO
     /// <summary>The quest the plan published for the part; null where it has none yet.</summary>
     public string? Quest { get; init; }
     public string? Repository { get; init; }
+
+    /// <summary>The other parts' receipts it starts on (an <c>after</c> edge naming a <c>receipt</c>): never a landing's wait.</summary>
+    public IReadOnlyList<PartWait> Waits { get; init; } = [];
 }
 
 /// <summary>
@@ -27,12 +30,16 @@ public sealed record TrainPlan(string Ask, int Revision, IReadOnlyList<TrainPlan
         var parts = own.Parts.Select(part => new TrainPlanPart(
             part.Id,
             Named(own.Edges, part.Id, "after"),
-            Named(own.Edges, part.Id, "orders")) { Quest = part.Quest, Repository = part.Repository }).ToList();
+            Named(own.Edges, part.Id, "orders"))
+        {
+            Quest = part.Quest, Repository = part.Repository,
+            Waits = [.. own.Edges.Where(edge => edge.Part == part.Id && edge.Receipt is { Length: > 0 }).Select(edge => new PartWait(edge.On, edge.Receipt!))],
+        }).ToList();
         return new TrainPlan(answer.Ask, own.Revision, parts) { Integration = own.Integration };
     }
 
     private static HashSet<string> Named(IReadOnlyList<AskPlanEdgeResponse> edges, string part, string kind) =>
-        [.. edges.Where(edge => edge.Part == part && edge.Kind == kind).Select(edge => edge.On)];
+        [.. edges.Where(edge => edge.Part == part && edge.Kind == kind && edge.Receipt is null).Select(edge => edge.On)];
 
     /// <summary>Whether every part of the revision has landed: none is left to wait for.</summary>
     public bool Delivered(IReadOnlySet<string> landed) => Parts.All(part => landed.Contains(part.Id));

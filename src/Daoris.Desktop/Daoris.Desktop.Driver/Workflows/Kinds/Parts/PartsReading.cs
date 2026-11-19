@@ -7,6 +7,11 @@ public sealed record PartsReport(string Ask, int Revision, IReadOnlyList<string>
 {
     public IReadOnlyDictionary<string, string> Repositories { get; init; } = new Dictionary<string, string>();
 
+    public IReadOnlyDictionary<string, string> Quests { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>What each part waits on before it starts (<see cref="PartReceipts"/>), and the quest the plan gives each, whose run is the part's.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<PartWait>> Waits { get; init; } = new Dictionary<string, IReadOnlyList<PartWait>>();
+
     /// <summary>One repository's delivery waits for its parts, and for any the plan gives to none, which land nowhere yet.</summary>
     public PartsReport For(string repository) =>
         this with
@@ -39,6 +44,8 @@ public static class PartsReports
             read[ask] = new PartsReport(ask, plan.Revision, [.. plan.Parts.Select(part => part.Id)], parts.Landed(ask))
             {
                 Repositories = plan.Parts.Where(part => part.Repository is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Repository!, StringComparer.Ordinal),
+                Quests = plan.Parts.Where(part => part.Quest is { Length: > 0 }).ToDictionary(part => part.Id, part => part.Quest!, StringComparer.Ordinal),
+                Waits = plan.Parts.Where(part => part.Waits.Count > 0).ToDictionary(part => part.Id, part => part.Waits, StringComparer.Ordinal),
             };
         }
 

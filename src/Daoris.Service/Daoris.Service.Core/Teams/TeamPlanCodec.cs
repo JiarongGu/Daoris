@@ -44,7 +44,7 @@ internal static class TeamPlanCodec
             Parts = [.. JsonFields.Items(root, "parts").Select(ReadPart)],
             Edges = [.. JsonFields.Items(root, "edges").Select(edge => new TeamEdge(
                 JsonFields.Text(edge, "part") ?? "", JsonFields.Text(edge, "on") ?? "", JsonFields.Text(edge, "kind") ?? TeamEdge.After,
-                JsonFields.Text(edge, "milestone"), JsonFields.Text(edge, "why") ?? ""))],
+                JsonFields.Text(edge, "milestone"), JsonFields.Text(edge, "why") ?? "") { Receipt = JsonFields.Text(edge, "receipt") })],
             Flags = [.. JsonFields.Items(root, "flags").Select(flag => new TeamFlag(
                 JsonFields.Text(flag, "kind") ?? "", JsonFields.Text(flag, "part"), JsonFields.Text(flag, "text") ?? ""))],
         });
@@ -125,6 +125,7 @@ internal static class TeamPlanCodec
         writer.WriteString("on", edge.On);
         writer.WriteString("kind", edge.Kind);
         if (edge.Milestone is { } milestone) writer.WriteString("milestone", milestone);
+        if (edge.Receipt is { } receipt) writer.WriteString("receipt", receipt);
         writer.WriteString("why", edge.Why);
         writer.WriteEndObject();
     }

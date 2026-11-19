@@ -10,14 +10,10 @@ public sealed class GoAheadTools(IntakeScope? intake = null, SessionLedger? ledg
 {
     [McpServerTool(Name = "go_ahead_ask")]
     [Description(
-        "Ask the person for a go-ahead on an act outside this repository that is theirs to allow: a write to a system "
-        + "(production above all), a release, a push, a sign-in, or a run against a system's data. It is held once per act: "
-        + "an act already asked in the same words joins the first, and you are told its answer. Then say in your last message "
-        + "that the work waits on it, by its number, commit what you have, and end your turn with the quest still taken.")]
+        "Ask the person's go-ahead on an act outside this repository that is theirs to allow (a write to production above all). "
+        + "An act asked in the same words joins the first. Then say the work waits on it, by its number, commit, and end your turn.")]
     public async Task<string> AskGoAheadAsync(
-        [Description(
-            "write (a change to an outside system), release (deploying or publishing), push (sending commits, or opening a "
-            + "pull request), sign-in (credentials to a system), or run (something against a system's data).")]
+        [Description("write, release, push (commits or a pull request), sign-in, or run (against a system's data).")]
         string kind,
         [Description("Where it lands: the environment or system, such as production.")]
         string on,

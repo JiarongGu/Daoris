@@ -44,8 +44,11 @@ public sealed record AskPlanQuestionResponse(string Key, string Kind, string Tex
 public sealed record AskPlanPartResponse(
     string Id, string Repository, string? Quest, string Outcome, IReadOnlyList<string> Lanes, IReadOnlyList<string> Claims);
 
-/// <summary>An order between two parts: <c>Kind</c> is <c>after</c> (a build dependency) or <c>orders</c> (a landing order only).</summary>
-public sealed record AskPlanEdgeResponse(string Part, string On, string Kind, string Why);
+/// <summary>An order between two parts: <c>Kind</c> is <c>after</c> (a build dependency, or with <c>Receipt</c> a start on the other's receipt) or <c>orders</c> (a landing order only).</summary>
+public sealed record AskPlanEdgeResponse(string Part, string On, string Kind, string Why)
+{
+    public string? Receipt { get; init; }
+}
 
 /// <summary>What the plan's judge found, a sentence the supervisor reads: <c>Kind</c> names it.</summary>
 public sealed record AskPlanFlagResponse(string Kind, string? Part, string Text);

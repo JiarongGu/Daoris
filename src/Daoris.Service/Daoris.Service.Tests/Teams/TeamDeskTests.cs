@@ -138,6 +138,22 @@ public sealed class TeamDeskTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_after_edge_waits_on_another_parts_receipt_and_no_other_edge_names_one()
+    {
+        var waits = new TeamEdge("config", "app", TeamEdge.After, null, "the configuration is written once the app's stage ended") { Receipt = "stage-ended" };
+        var saved = await _desk.SaveAsync(Save([Part("app", "src/app/**"), Part("config", "src/config/**")], [waits]), Now);
+
+        Assert.Equal(TeamRefusal.None, saved.Refusal);
+        var (plans, rows) = await _desk.ReadAsync(_ask.Id);
+        Assert.Equal("stage-ended", Assert.Single(plans.Single().Edges).Receipt);
+        Assert.Contains("`config` after `app`'s `stage-ended` receipt", TeamPlanReading.Of(_ask.Id, plans, rows, new Dictionary<string, string>(), [], []), StringComparison.Ordinal);
+        foreach (var wrong in new[] { waits with { Kind = TeamEdge.Orders }, waits with { Milestone = "landed" }, waits with { Receipt = "Stage Ended" } })
+        {
+            Assert.NotEqual(TeamRefusal.None, (await _desk.SaveAsync(Save([Part("app"), Part("config")], [wrong], expect: 1), Now.AddMinutes(1))).Refusal);
+        }
+    }
+
+    [Fact]
     public async Task Two_parallel_parts_claiming_one_path_are_ordered_and_it_is_said()
     {
         var saved = await _desk.SaveAsync(Save([Part("one", "src/shared/**"), Part("two", "src/shared/util.ts"), Part("three", "src/other/**")]), Now);
