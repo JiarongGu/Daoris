@@ -2,31 +2,35 @@ namespace Daoris.Driver;
 
 /// <summary>What ending one run-owned tree came to: whether it is gone, and the words either way.</summary>
 /// <param name="Said">The removal's own sentence; for a tree that stays, the reason the record keeps (<see cref="GrownBranch.Kept"/>).</param>
-public sealed record TreeReleased(string Repository, string Branch, bool Gone, string Said);
+public sealed record TreeReleased(string Repository, string Branch, bool Gone, string Said, long Freed = 0, bool ByDays = false);
 
 /// <summary>
 /// The one act that ends a workflow run's trees: the clean-up's own removal (<see cref="SessionTrees.RemoveBranchAsync"/>), unforced, so a
 /// tree whose work is uncommitted or on no branch of the person's stays, and its reason is written on its branch's record where the tree
 /// list reads it. The run's <c>release</c> step takes it for the branches its run owns, and the sweep (<see cref="SweepAsync"/>) for the
-/// branches whose part the run's tidy ended and those of runs that ended or whose record is gone; a tree no run owns is neither's.
+/// branches whose part the run's tidy ended and those of runs that ended or whose record is gone; past <see cref="Unused"/> days a tree no session is in goes too, its branch standing, unless it holds uncommitted work.
 /// </summary>
 /// <param name="home">The Daoris home whose session branches and run records are read.</param>
-public sealed class TreeReleases(string home)
+/// <param name="clock">The time unused trees are read against; the root hands it, and with none no tree is taken for its days.</param>
+public sealed class TreeReleases(string home, Func<DateTimeOffset>? clock = null)
 {
+    /// <summary>How long a tree no run owns and no session is in stands unused before the sweep takes it: two weeks.</summary>
+    public static readonly TimeSpan Unused = TimeSpan.FromDays(14);
+
     /// <summary>
     /// <paramref name="branch"/>'s tree and branch ended behind the proof; where either stays, why is kept on its record, and where it goes the
-    /// reason is dropped.
+    /// reason is dropped. <paramref name="treeOnly"/> ends the tree alone, its branch standing.
     /// </summary>
-    public async Task<TreeReleased> ReleaseAsync(string root, string repository, string branch, CancellationToken ct = default)
+    public async Task<TreeReleased> ReleaseAsync(string root, string repository, string branch, CancellationToken ct = default, bool treeOnly = false)
     {
-        var removal = await new SessionTrees(home).RemoveBranchAsync(root, repository, branch, force: false, ct).ConfigureAwait(false);
+        var removal = await new SessionTrees(home).RemoveBranchAsync(root, repository, branch, force: false, ct, treeOnly: treeOnly).ConfigureAwait(false);
         var grown = new SessionBranches(home);
         // One line, since a list and a step's words carry it; the removal's refusal names the commits it would lose on lines of their own.
         var said = string.Join(' ', removal.Message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         // A branch the record still stands for is read after the removal: a removed one is a trace, which keeps no reason.
         if (removal.Removed) grown.Keep(repository, branch, null);
         else if (grown.Of(repository, branch) is not null) grown.Keep(repository, branch, said);
-        return new TreeReleased(repository, branch, removal.Removed, said);
+        return new TreeReleased(repository, branch, removal.Removed, said, removal.Freed, treeOnly);
     }
 
     /// <summary>
@@ -37,15 +41,17 @@ public sealed class TreeReleases(string home)
     public async Task<IReadOnlyList<TreeReleased>> SweepAsync(
         string root, string repository, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null, CancellationToken ct = default)
     {
-        var ownedHere = new SessionBranches(home).All()
-            .Where(entry => entry.Run is not null && string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        if (ownedHere.Count == 0) return [];
+        var here = new SessionBranches(home).All()
+            .Where(entry => string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)).ToList();
+        var ownedHere = here.Where(entry => entry.Run is not null).ToList();
+        // Trees no run owns are judged by their days, and only where the sessions in the repository's trees are known.
+        var unowned = inUse is null || clock is null ? [] : here.Where(entry => entry.Run is null).ToList();
+        if (ownedHere.Count == 0 && unowned.Count == 0) return [];
         var runs = WorkplaceRunTrees.Current;
         var landings = new LandedBranches(home).Entries();
         var due = ownedHere.Where(entry => (entry.Held is not null && entry.GoneAt is null) || TidiedParts.Ended(landings, entry) || runs.Due(home, entry.Run!)).ToList();
 
-        if (due.Count == 0) return [];
+        if (due.Count == 0 && unowned.Count == 0) return [];
         IReadOnlySet<string> busy = new HashSet<string>();
         if (inUse is not null)
         {
@@ -64,10 +70,22 @@ public sealed class TreeReleases(string home)
         if (hold is null) return [];
         var trees = await TreeWorktrees.WorktreesAsync(root, ct).ConfigureAwait(false);
         var done = new List<TreeReleased>();
+        var now = clock?.Invoke() ?? DateTimeOffset.MinValue;
         foreach (var owned in due)
         {
             if (trees.GetValueOrDefault(owned.Branch) is { } tree && busy.Any(path => TreeGit.SamePath(path, tree))) continue;
-            done.Add(await ReleaseAsync(root, repository, owned.Branch, ct).ConfigureAwait(false));
+            var released = await ReleaseAsync(root, repository, owned.Branch, ct).ConfigureAwait(false);
+            if (!released.Gone && inUse is not null && clock is not null && trees.GetValueOrDefault(owned.Branch) is { } kept
+                && now - await TreeUse.LastAtAsync(kept, ct).ConfigureAwait(false) > Unused)
+                released = await ReleaseAsync(root, repository, owned.Branch, ct, treeOnly: true).ConfigureAwait(false);
+            done.Add(released);
+        }
+
+        foreach (var each in unowned)
+        {
+            if (trees.GetValueOrDefault(each.Branch) is not { } tree || busy.Any(path => TreeGit.SamePath(path, tree))) continue;
+            if (now - await TreeUse.LastAtAsync(tree, ct).ConfigureAwait(false) <= Unused) continue;
+            done.Add(await ReleaseAsync(root, repository, each.Branch, ct, treeOnly: true).ConfigureAwait(false));
         }
 
         return done;
