@@ -108,6 +108,21 @@ public sealed class HomePurgeEdgeTests : IDisposable
         Assert.True(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions)));
     }
 
+    /// <summary>🔴 The lease the host took for this very verb, before its door ran, is the purge's own and refuses nothing.</summary>
+    [Fact]
+    public void The_lease_the_host_took_for_the_purge_is_its_own()
+    {
+        Seed();
+        using var host = HomeLease.ForVerb(Home, "daoris home purge", out _);
+        Assert.NotNull(host);
+
+        var (code, said) = Run("purge", "--history", "--yes");
+
+        Assert.Equal(0, code);
+        Assert.Contains("the configuration stays", said);
+        Assert.Equal(0, Rows(Knowledge, "sessions"));
+    }
+
     /// <summary>🔴 A session whose process still runs holds the home, though no lease says so: its connector writes the store.</summary>
     [Fact]
     public void A_running_session_refuses_the_purge()

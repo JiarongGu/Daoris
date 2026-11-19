@@ -14483,3 +14483,18 @@ installed window is not yet seen.
 - **Fix:** the slice pushes `requirements`; the census's last answered field and its fixture name it.
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter "FullyQualifiedName~AsksStateSliceTests"`: 11
   passed.
+
+## 2026-11-19 — `daoris home purge --history --yes` refused on its own lease (CLEANSTART1)
+
+- **Seen:** on the installed f954387020, with Daoris closed, the purge refused every time: "held by a terminal's `daoris home
+  purge` (pid N, since now)", N its own process.
+- **Cause:** the host takes the home's lease for a mutating verb before the verb's door runs (`HomeLease.ForVerb`,
+  `daoris home purge`); the purge's door then judged that lease another holder (`Running`, its own `TryAcquire`). Its tests call
+  the door in-process, where no host lease is taken (92aff33a07, 37aaa25f3c).
+- **Fix:** a verb lease held by this process naming `home purge` is the purge's own (`OwnLease`): `Running` passes it and the door
+  takes no second lease.
+- **Verify:** `HomePurgeEdgeTests.The_lease_the_host_took_for_the_purge_is_its_own` red before, green after; the 19 `HomePurge`
+  tests; the fixed build purged the install's home (31 paths, 2.44 GB; 21,493 rows of 55 tables), its configuration kept.
+- **Also:** a store another process held stopped the purge only after 30 s, not the 1.5 s its `busy_timeout` meant, because the
+  SQLite client retries a busy command until its own command timeout; the write-lock take carries a 2 s command timeout
+  (`A_store_another_process_holds_stops_the_purge_before_anything_changes` 32 s → 4 s).

@@ -120,7 +120,7 @@ public static class HomePurge
                 Execute(connection, "PRAGMA foreign_keys = OFF");
                 try
                 {
-                    Execute(connection, "BEGIN IMMEDIATE");
+                    Execute(connection, "BEGIN IMMEDIATE", timeoutSeconds: 2);
                 }
                 catch (DbException)
                 {
@@ -278,10 +278,11 @@ public static class HomePurge
         }
     }
 
-    private static void Execute(DbConnection connection, string sql)
+    private static void Execute(DbConnection connection, string sql, int? timeoutSeconds = null)
     {
         using var command = connection.CreateCommand();
         command.CommandText = sql;
+        if (timeoutSeconds is { } seconds) command.CommandTimeout = seconds;
         command.ExecuteNonQuery();
     }
 
