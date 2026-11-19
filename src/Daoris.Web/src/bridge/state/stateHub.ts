@@ -69,7 +69,6 @@ const scopes = new Map<string, (sessions: string[] | null) => QueryKey[]>([
   // A checkout's index moved by a person's stage, unstage or Undo, which the Changes tab reads again.
   ['checkouts', () => [['git', 'changes']]],
   ['files', () => [['files']]],
-  // Where the person left each conversation, which its page reads as it opens.
   ['readMarks', () => [['read-mark']]],
 ]);
 
