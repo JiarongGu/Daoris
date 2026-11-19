@@ -365,6 +365,7 @@ import {
   scopedSet, scopedTier, settleContained, sightingOf, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 import { Refusal, parseArgs, USAGE } from './merge/args.ts';
+import { startBackground } from './merge/background.ts';
 import { count, pad, classCount } from './merge/format.ts';
 import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
 import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
@@ -3364,22 +3365,8 @@ export function rescueGateLogs(tree, home) {
 const UNDER_LOAD = 'under load: a full set beside the merges shares the machine with their gates, so a Process half\'s timing tests run '
   + 'loaded; its failures are still re-run alone once its lane is quiet, and a pass alone still reads FLAKE (GATEORDER1, FLAKE1)';
 
-/**
- * A full set beside the merges is a guest on the machine. It lowers its own process to below
- * normal: on Windows a process created by a below-normal one starts in that class, so every gate's shell, npm, dotnet,
- * test host and git runs below normal with no race, and the run ends with the process, so nothing is restored. Below
- * normal, not idle: idle starves behind a busy machine and a Process half's timing tests would flake. I/O priority is
- * left out (Node has no API for it, and whether children inherit background mode is unsettled).
- * Returns what went wrong, or null.
- */
-export function lowerPriority(setPriority = osSetPriority) {
-  try {
-    setPriority(0, osConstants.priority.PRIORITY_BELOW_NORMAL);
-    return null;
-  } catch (error) {
-    return error.message;
-  }
-}
+/** A full set beside the merges is a guest on the machine: a background run (`merge/background.ts`). */
+export { lowerPriority } from './merge/background.ts';
 
 /**
  * The gates beside get build servers of their own: none reused after the run (`MSBUILDDISABLENODEREUSE`), no MSBuild
@@ -3388,9 +3375,9 @@ export function lowerPriority(setPriority = osSetPriority) {
  */
 export const BESIDE_ENVIRONMENT = Object.freeze({ MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
 
-/** The start of a run beside, once its lock is taken and before anything is built: lower the priority, set the environment. */
+/** The start of a run beside, once its lock is taken and before anything is built: a background run, its build servers its own. */
 export function startBesideRun({ setPriority = osSetPriority, env = process.env, say = console.log } = {}) {
-  const failed = lowerPriority(setPriority);
+  const failed = startBackground({ setPriority, env });
   if (failed) say(`the run could not lower its priority (${failed}); it goes on at the priority it has`);
   Object.assign(env, BESIDE_ENVIRONMENT);
   raiser = failed ? null : raiseTo(setPriority, say);

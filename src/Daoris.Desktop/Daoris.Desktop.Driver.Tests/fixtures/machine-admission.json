@@ -1,5 +1,5 @@
 {
-  "_about": "The machine's heavy-run admission (HEAVYQUEUE1), one table both twins read: the merge tool's tools/machine-admission.mjs (tools/machine-admission.test.mjs) and the driver's MachineAdmission.cs (MachineAdmissionTests). An entry is { id, since (seconds after `now`, negative: before), beatAgo (seconds, default 5), dead (its process is gone) }; `judge` answers whether the entry `id` is admitted over the entries that still count, and how many waits are ahead of it. `whole` (INTEGRATE1b) is the merge tool's whole take, N ordinary entries `ids` with one `since`: `judge` as above for the session `id`, and `lost` (its places no longer held), `others` (live holds not its own: the tool's doubt) and `full` (the machine is at its capacity).",
+  "_about": "The machine's heavy-run admission (HEAVYQUEUE1), one table both twins read: the merge tool's tools/machine-admission.mjs (tools/machine-admission.test.mjs) and the driver's MachineAdmission.cs (MachineAdmissionTests). An entry is { id, since (seconds after `now`, negative: before), beatAgo (seconds, default 5), dead (its process is gone), background (MERGENOKILL1: a background run's, else a blocking one's) }; `judge` answers whether the entry `id` is admitted over the entries that still count, and how many waits go before it: a blocking run's are the blocking runs asked before it; a background run's are every blocking wait and the background runs asked before it, and it is admitted only with none of them, no background hold and a free place. `whole` (INTEGRATE1b) is the merge tool's whole take, N ordinary entries `ids` with one `since`: `judge` as above for the session `id`, and `lost` (its places no longer held), `others` (live holds not its own: the tool's doubt) and `full` (the machine is at its capacity).",
   "now": "2026-10-28T10:00:00.000Z",
   "capacity": [
     { "name": "22 processors: three", "cpus": 22, "slots": null, "expect": 3 },
@@ -74,6 +74,41 @@
       "name": "a run not yet among the waits is last in line",
       "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "b", "since": -2 }],
       "id": "z", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    },
+    {
+      "name": "a background run takes a free place when no blocking run waits",
+      "capacity": 3, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "bg", "since": -1, "background": true }],
+      "id": "bg", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "a background run waits while a blocking run waits, a free place notwithstanding, and asked later",
+      "capacity": 3, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "bg", "since": -60, "background": true }, { "id": "a", "since": -1 }],
+      "id": "bg", "expect": { "admitted": false, "ahead": 1, "holds": 1 }
+    },
+    {
+      "name": "a blocking run is never behind a background one asked before it",
+      "capacity": 2, "holds": [{ "id": "h1", "since": -300 }], "waits": [{ "id": "bg", "since": -60, "background": true }, { "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "background runs hold one place at most between them",
+      "capacity": 3, "holds": [{ "id": "b1", "since": -300, "background": true }], "waits": [{ "id": "bg", "since": -1, "background": true }],
+      "id": "bg", "expect": { "admitted": false, "ahead": 0, "holds": 1 }
+    },
+    {
+      "name": "a background hold whose process is gone holds no place",
+      "capacity": 3, "holds": [{ "id": "b1", "since": -300, "background": true, "dead": true }], "waits": [{ "id": "bg", "since": -1, "background": true }],
+      "id": "bg", "expect": { "admitted": true, "ahead": 0, "holds": 0 }
+    },
+    {
+      "name": "background runs wait in the order they asked",
+      "capacity": 3, "holds": [], "waits": [{ "id": "b2", "since": -9, "background": true }, { "id": "bg", "since": -1, "background": true }],
+      "id": "bg", "expect": { "admitted": false, "ahead": 1, "holds": 0 }
+    },
+    {
+      "name": "a blocking run takes the places a background hold leaves",
+      "capacity": 2, "holds": [{ "id": "b1", "since": -300, "background": true }], "waits": [{ "id": "a", "since": -1 }],
+      "id": "a", "expect": { "admitted": true, "ahead": 0, "holds": 1 }
     }
   ],
   "whole": [

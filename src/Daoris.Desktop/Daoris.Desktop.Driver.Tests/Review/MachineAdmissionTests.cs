@@ -46,7 +46,10 @@ public sealed class MachineAdmissionTests : IDisposable
     private static AdmissionEntry Entry(JsonElement row) => new(
         row.TryGetProperty("id", out var id) ? id.GetString()! : "x", "session", row.TryGetProperty("dead", out var dead) && dead.GetBoolean() ? 0 : 4242, "a test run",
         Now.AddSeconds(row.TryGetProperty("since", out var since) ? since.GetInt32() : -10),
-        Now.AddSeconds(-(row.TryGetProperty("beatAgo", out var beat) ? beat.GetInt32() : 5)), null, null, null);
+        Now.AddSeconds(-(row.TryGetProperty("beatAgo", out var beat) ? beat.GetInt32() : 5)), null, null, null)
+    {
+        Background = row.TryGetProperty("background", out var background) && background.GetBoolean(),
+    };
 
     private static bool Alive(int pid) => pid != 0;
 
@@ -288,5 +291,21 @@ public sealed class MachineAdmissionTests : IDisposable
         Assert.Equal(
             ["id", "kind", "pid", "what", "since", "beat", "session", "repository", "tree"], written.EnumerateObject().Select(property => property.Name));
         Assert.Empty(document.RootElement.GetProperty("waits").EnumerateArray());
+    }
+
+    /// <summary>A background run's entry the merge tool wrote keeps its kind through the driver's rewrite, and a blocking one writes none.</summary>
+    [Fact]
+    public void A_background_entry_keeps_its_kind_through_the_driver_s_write()
+    {
+        var background = new AdmissionEntry("2-bb", "session", 2, "reached checks", Now, Now, null, null, null) { Background = true };
+        var blocking = background with { Id = "3-cc", Background = false };
+
+        using var document = JsonDocument.Parse(MachineAdmission.Serialize([background], [blocking]));
+
+        var read = MachineAdmission.Entry(document.RootElement.GetProperty("holds")[0]);
+        Assert.True(read!.Background);
+        Assert.True(document.RootElement.GetProperty("holds")[0].GetProperty("background").GetBoolean());
+        Assert.False(document.RootElement.GetProperty("waits")[0].TryGetProperty("background", out _));
+        Assert.False(MachineAdmission.Entry(document.RootElement.GetProperty("waits")[0])!.Background);
     }
 }

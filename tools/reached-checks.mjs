@@ -92,6 +92,7 @@ export function builderAdmission(admission = createAdmission({ kind: 'session' }
       held.add(hold);
       return { release: () => { held.delete(hold); hold.release(); } };
     },
+    pause: (options) => admission.pause?.(options),
   };
 }
 

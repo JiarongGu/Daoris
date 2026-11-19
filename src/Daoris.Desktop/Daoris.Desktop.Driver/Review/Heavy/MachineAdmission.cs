@@ -17,7 +17,14 @@ namespace Daoris.Driver;
 /// <param name="Since">When the run began to ask (a wait's) or took its place (a hold's: it keeps the time it began to ask).</param>
 /// <param name="Beat">When its writer last said it lives; an entry that has not beat for <see cref="MachineAdmission.StaleAfter"/> counts for nothing.</param>
 public sealed record AdmissionEntry(
-    string Id, string Kind, int Pid, string What, DateTimeOffset Since, DateTimeOffset Beat, string? Session, string? Repository, string? Tree);
+    string Id, string Kind, int Pid, string What, DateTimeOffset Since, DateTimeOffset Beat, string? Session, string? Repository, string? Tree)
+{
+    /// <summary>
+    /// A background run's (<c>background: true</c>, MERGENOKILL1): the heavy tier, the CI beside, which yield to the blocking runs
+    /// (<see cref="MachineAdmission.Judge"/>). The driver asks only blocking places and keeps the merge tool's background ones as written.
+    /// </summary>
+    public bool Background { get; init; }
+}
 
 /// <summary>The admission as it stands: its capacity, the runs holding a place and the runs waiting, each only while it counts.</summary>
 public sealed record AdmissionLook(int Capacity, IReadOnlyList<AdmissionEntry> Holds, IReadOnlyList<AdmissionEntry> Waits);
@@ -107,13 +114,20 @@ public static class MachineAdmission
 
     /// <summary>
     /// Whether the run <paramref name="id"/> is admitted (<c>judge</c>) over a state with only live entries, <paramref name="waits"/> in the
-    /// order they began to ask: when the holds plus the waits before it are fewer than <paramref name="capacity"/>. A run not among the waits
-    /// is last in line.
+    /// order they began to ask. A blocking run is when the holds plus the blocking waits before it are fewer than <paramref name="capacity"/>;
+    /// a background run when nothing goes before it (no blocking wait, no background wait asked before it), no background run holds a place
+    /// and one is free. A run not among the waits is a blocking one, last in line.
     /// </summary>
     public static (bool Admitted, int Ahead) Judge(IReadOnlyList<AdmissionEntry> holds, IReadOnlyList<AdmissionEntry> waits, string id, int capacity)
     {
         var at = waits.ToList().FindIndex(entry => entry.Id == id);
-        var ahead = at < 0 ? waits.Count : at;
+        if (at >= 0 && waits[at].Background)
+        {
+            var before = waits.Where((entry, index) => !entry.Background || index < at).Count();
+            return (before == 0 && !holds.Any(entry => entry.Background) && holds.Count < capacity, before);
+        }
+
+        var ahead = (at < 0 ? waits : waits.Take(at)).Count(entry => !entry.Background);
         return (holds.Count + ahead < capacity, ahead);
     }
 
@@ -265,7 +279,10 @@ public static class MachineAdmission
             return null;
         }
 
-        return new AdmissionEntry(id, kind, process, what.GetString()!, since, beat, Text("session"), Text("repository"), Text("tree"));
+        return new AdmissionEntry(id, kind, process, what.GetString()!, since, beat, Text("session"), Text("repository"), Text("tree"))
+        {
+            Background = raw.TryGetProperty("background", out var background) && background.ValueKind == JsonValueKind.True,
+        };
     }
 
     /// <summary>The state with the entries that do not count taken out; the waits in the order they began to ask, then by id.</summary>
@@ -319,6 +336,7 @@ public static class MachineAdmission
         if (entry.Session is { } session) writer.WriteString("session", session);
         if (entry.Repository is { } repository) writer.WriteString("repository", repository);
         if (entry.Tree is { } tree) writer.WriteString("tree", tree);
+        if (entry.Background) writer.WriteBoolean("background", true);
         writer.WriteEndObject();
     }
 

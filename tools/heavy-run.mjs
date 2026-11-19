@@ -16,7 +16,8 @@
  * runs the union once, from the oldest base, on its own commit. Each says the handover on a `heavy tier:` line of its log and in its
  * record (`handedTo`, `handed`; `took`, `from`). So two tiers never run their git halves at once, and a run waiting for the tree, or
  * (in its reached run) for the machine's admission, past `WAIT_BOUND_MS` says so; one waiting for the tree past `WAIT_DEADLINE_MS`
- * gives up, its range carried by the next tier.
+ * gives up, its range carried by the next tier. It is a background run (`merge/background.ts`, MERGENOKILL1): below normal priority,
+ * its places in the admission yield to a merge's gates, and it starts no group while one waits.
  * Exit codes: 0 green · 1 red, superseded or an error · 2 a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -25,6 +26,7 @@ import { dirname, join, resolve } from 'node:path';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { readFindings, writeFindings, fileSighting } from './ci-background.mjs';
 import { processAlive } from './machine-admission.mjs';
+import { startBackground } from './merge/background.ts';
 import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, settleHeavy } from './merge/heavy-after.ts';
 import { readHalt } from './merge/heavy-halt.ts';
 import {
@@ -208,6 +210,9 @@ async function main(argv) {
     return 2;
   }
   const home = resolve(process.cwd());
+  // A background run: below normal, its reached run's places yield to a merge's gates (MERGENOKILL1).
+  const lowered = startBackground();
+  if (lowered) console.log(`${HEAVY_PREFIX} it could not lower its priority (${lowered}); it runs at the priority it has, its places still background ones`);
   const input = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };
   const settled = await runTier(input, {
     checkout: home,

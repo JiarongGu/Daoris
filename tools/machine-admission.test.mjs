@@ -26,7 +26,9 @@ const newHome = () => {
 
 const at = (seconds) => new Date(NOW + seconds * 1000).toISOString();
 /** A table row's entry; a `dead` one has pid 0, which the table's `alive` reads as a process that is gone. */
-const entry = (row) => ({ id: row.id ?? 'x', kind: 'session', pid: row.dead ? 0 : 4242, what: 'a test run', since: at(row.since ?? -10), beat: at(-(row.beatAgo ?? 5)) });
+const entry = (row) => ({
+  id: row.id ?? 'x', kind: 'session', pid: row.dead ? 0 : 4242, what: 'a test run', since: at(row.since ?? -10), beat: at(-(row.beatAgo ?? 5)), ...(row.background ? { background: true } : {}),
+});
 const seam = { alive: (pid) => pid !== 0, now: NOW };
 
 describe('the table both twins read (machine-admission.json)', () => {
@@ -77,6 +79,72 @@ function admission(home, extra = {}) {
   });
   return { ...made, said };
 }
+
+/**
+ * MERGENOKILL1: a background run (the heavy tier, the CI beside) yields to a blocking one (a merge's gate). Its place waits while a
+ * blocking run waits, and `pause` holds a group that takes no place until none waits. The planted wait is this process's, so it lives.
+ */
+describe('a background run yields to a blocking one', () => {
+  // The planted gate's process is a seam's: it lives until the test lets it end.
+  const GATE_PID = 999_999;
+  const planted = (home) => {
+    mkdirSync(dirname(admissionFile(home)), { recursive: true });
+    const now = new Date().toISOString();
+    writeAtomic(admissionFile(home), `${JSON.stringify({ schema: 1, holds: [], waits: [{ id: 'gate-1', kind: 'queue', pid: GATE_PID, what: 'reached gate', since: now, beat: now }] })}\n`);
+    const gate = { lives: true };
+    return { gate, alive: (pid) => (pid === GATE_PID ? gate.lives : pid === process.pid) };
+  };
+
+  test('a planted background group yields to a merge gate waiting, and starts once none waits', async () => {
+    const home = newHome();
+    const { gate, alive } = planted(home);
+    const background = admission(home, { kind: 'session', capacity: 3, alive, env: { DAORIS_ADMISSION_BACKGROUND: '1' } });
+    let started = false;
+    const waiting = background.take({ what: 'reached checks, driver (12 classes)' }).then((hold) => { started = true; return hold; });
+    await new Promise((done) => { setTimeout(done, 60); });
+    assert.equal(started, false, 'three free places, but a blocking run waits');
+    assert.deepEqual(readState(admissionFile(home)).waits.map((each) => [each.id === 'gate-1', each.background === true]), [[true, false], [false, true]]);
+    gate.lives = false;
+    const hold = await waiting;
+    assert.ok(hold && started, 'with no blocking run waiting it takes a place');
+    assert.deepEqual(readState(admissionFile(home)).holds.map((each) => each.background), [true]);
+    hold.release();
+  });
+
+  test('a blocking run is admitted past a background run asked before it, which then holds one place at most', async () => {
+    const home = newHome();
+    const background = admission(home, { capacity: 3, env: { DAORIS_ADMISSION_BACKGROUND: '1' } });
+    const first = await background.take({ what: 'heavy tier, git half' });
+    let second = null;
+    const asking = background.take({ what: 'heavy tier, rehearsals' }).then((hold) => { second = hold; return hold; });
+    await new Promise((done) => { setTimeout(done, 40); });
+    assert.equal(second, null, 'a second background place waits though two are free');
+    const gate = await admission(home, { capacity: 3 }).take({ what: 'reached gate' });
+    assert.ok(gate, 'the blocking run is admitted at once');
+    first.release();
+    assert.ok(await asking);
+    second.release();
+    gate.release();
+  });
+
+  test('pause holds a background group that takes no place while a blocking run waits, says why once, and a blocking run never pauses', async () => {
+    const home = newHome();
+    const { gate, alive } = planted(home);
+    const background = admission(home, { capacity: 3, alive, env: { DAORIS_ADMISSION_BACKGROUND: '1' } });
+    let resumed = false;
+    const paused = background.pause({ what: 'reached checks, tools (3 classes)' }).then(() => { resumed = true; });
+    await new Promise((done) => { setTimeout(done, 40); });
+    assert.equal(resumed, false);
+    assert.match(background.said.join('\n'), /a background run starts no group while a blocking run waits: .*reached gate/);
+    await admission(home, { capacity: 3, alive }).pause({ what: 'a blocking group' });
+    let ended = false;
+    await background.pause({ what: 'a halted group', halted: () => { ended = true; return true; } });
+    assert.equal(ended, true, 'a halt ends the pause');
+    gate.lives = false;
+    await paused;
+    assert.equal(background.said.filter((line) => /starts no group/.test(line)).length, 1, 'said once, as the pause began');
+  });
+});
 
 describe('two holders', () => {
   test('the second waits, saying what for, and starts when the first ends', async () => {
