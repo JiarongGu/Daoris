@@ -235,7 +235,6 @@ public sealed class QuestionBox(string? home)
             ? $"Session `{asker.Id}` is not running a turn, so it has no turn to end on a question."
         : null;
 
-    /// <summary>A conversation proper: a chat that is no helper, reviewer, intake or Ask Daoris's own, whose person reads its words as they come.</summary>
     private static bool IsConversation(Session asker) =>
         asker.Kind == SessionKind.Chat && asker.Opinion is null && asker.Serves is null && asker.Ask is null && asker.HelpMode is null
         && !string.Equals(asker.Repository, SessionLedger.HelpRepository, StringComparison.Ordinal);
@@ -324,7 +323,6 @@ public sealed record QuestionKept(
 
     public string? Role { get; init; }
 
-    /// <summary>Asked by a conversation (a sign-in only): there is no park to bind it to, so its sign-in is said to the conversation and the file goes.</summary>
     public bool Conversation { get; init; }
 }
 

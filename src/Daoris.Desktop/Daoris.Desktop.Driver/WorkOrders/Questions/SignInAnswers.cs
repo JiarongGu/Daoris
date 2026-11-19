@@ -23,7 +23,6 @@ public static class SignInAnswers
         foreach (var question in sightings.Signed(waiting, pages))
         {
             var said = await say(question.Session, SignInSightings.Word(question), SignInSightings.Key(question), ct).ConfigureAwait(false);
-            // A conversation has no park whose next run clears its question: once its word is kept, the question goes.
             if (said.Kept && question.Conversation) new QuestionFiles(home).Clear(question.Session);
             events.Add(said.Kept
                 ? $"session `{question.Session}`'s sign-in at {question.Site} was seen in Daoris's browser: it goes on."

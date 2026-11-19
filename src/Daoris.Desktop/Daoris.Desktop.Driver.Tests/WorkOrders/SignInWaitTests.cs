@@ -149,10 +149,7 @@ public sealed class SignInWaitTests : IDisposable
     public void A_sign_in_address_is_one_whose_host_or_path_names_a_sign_in(string address, bool signIn) =>
         Assert.Equal(signIn, SignInSightings.SignInAddress(address));
 
-    /// <summary>
-    /// 🔴 A conversation's sign-in question (its file marked as a conversation's) is answered as a park's is: the browser's sign-in
-    /// is said to the conversation once, as its next turn, and its question goes, so no later look says it again.
-    /// </summary>
+    /// <summary>🔴 A conversation's sign-in is said to it once and its question goes.</summary>
     [Fact]
     public async Task A_conversations_sign_in_is_said_to_it_once_and_its_question_goes()
     {

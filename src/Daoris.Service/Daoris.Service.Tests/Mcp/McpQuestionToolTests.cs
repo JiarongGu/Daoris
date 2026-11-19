@@ -212,8 +212,9 @@ public sealed class McpQuestionToolTests : McpToolsFixture
     public async Task A_conversation_asks_a_sign_in_with_its_site_and_no_other_question()
     {
         var (connector, _, store) = await ConnectorAsync();
-        var chat = (await store.CreateAsync(null, "Owner", "claude-code", DateTimeOffset.UtcNow, kind: SessionKind.Chat)).Id;
-        var help = (await store.CreateAsync(null, SessionLedger.HelpRepository, "claude-code", DateTimeOffset.UtcNow, kind: SessionKind.Chat)).Id;
+        var at = new DateTimeOffset(2026, 11, 19, 9, 0, 0, TimeSpan.Zero);
+        var chat = (await store.CreateAsync(null, "Owner", "claude-code", at, kind: SessionKind.Chat)).Id;
+        var help = (await store.CreateAsync(null, SessionLedger.HelpRepository, "claude-code", at, kind: SessionKind.Chat)).Id;
         const string Expired = "The ops identity expired at the portal's sign-in: sign in so I can go on.";
 
         Assert.Contains("is a conversation", await connector(chat).AskAsync("Which one?"));
