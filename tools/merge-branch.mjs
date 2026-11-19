@@ -2726,8 +2726,6 @@ async function rerunGates(root, options) {
     keepGoing: state.keepGoing || options.keepGoing || 'blocking',
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
-    // A gate run again judges the whole merge's timing records, as its last ratchet does.
-    ...(state.ratchetSince ? { since: state.ratchetSince } : {}),
     kind: 'merge',
     changed: mergeChanged(root, state.full),
     onResult: (result) => {
