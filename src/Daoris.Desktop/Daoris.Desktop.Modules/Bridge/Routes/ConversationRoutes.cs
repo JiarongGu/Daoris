@@ -215,7 +215,6 @@ public sealed class ConversationRoutes(DriverContext context)
         // The owner's answer to a question a supervisor's decision is on supersedes it at
         // once; the service's one owner-word operation took its released word back in the same step.
         if (said.Sent && asking is not null) await _loop.Supervisor.SupersedeAsync(id, asking, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
-        // Any word kept for a conversation answers its sign-in question; no run opens to clear the file.
         if (said.Sent) new QuestionFiles(_loop.Home).ClearConversation(id);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued`.
         // `now`: the press is carried out; false where it is not asked, or the door could do neither, `why` saying so.

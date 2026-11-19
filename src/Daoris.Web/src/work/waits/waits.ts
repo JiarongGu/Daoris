@@ -157,7 +157,6 @@ export function waitsOf(facts: WaitFacts): Wait[] {
   const waiting = (parked && !answeredPark(session)) || requested;
   const intake = isIntake(session);
   if (waiting && intake && facts.onAnswerAsk && session.ask) waits.push({ kind: 'intake', ask: session.ask });
-  // A conversation has no park: its sign-in question is a wait whatever its state.
   const signing = session.kind === 'chat' && !intake && Boolean(facts.question?.site) && Boolean(facts.onAnswerSession);
   if ((waiting && !intake && (facts.answerBelow || facts.onResolve || facts.onAnswerSession)) || signing) {
     waits.push({ kind: 'question', below: Boolean(facts.answerBelow), ...(facts.question?.site ? { signIn: true as const } : {}) });

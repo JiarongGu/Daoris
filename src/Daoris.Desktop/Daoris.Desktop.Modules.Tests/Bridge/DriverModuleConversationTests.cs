@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// person's messages and files, finishing, stopping a turn, and its queue. The rows where a real process
 /// holds the session are <see cref="DriverModuleConversationProcessTests"/>'s.
 /// </summary>
-public sealed partial class DriverModuleConversationTests : DriverModuleBridge
+public sealed class DriverModuleConversationTests : DriverModuleBridge
 {
     /// <summary>
     /// Before the loop's service answers, words to a session nothing here runs have nowhere to be

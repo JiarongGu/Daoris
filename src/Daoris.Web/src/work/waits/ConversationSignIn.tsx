@@ -21,7 +21,7 @@ export function ConversationSignIn({ question, site, pending = false, onAnswer, 
   /** The page whose sign-in it waits on, as the question names it. */
   site: string;
   pending?: boolean;
-  /** The answer *Signed in* sends, settling with the sentence a refusal is said in, or nothing where it was kept. */
+  /** The answer *Signed in* sends, settling with the sentence a refusal is said in, or nothing once it is kept. */
   onAnswer?: (answer: string) => Promise<string | null> | void;
   /** The way to the message that asked, in the conversation, where it holds it: *In the conversation*. */
   onConversation?: () => void;
