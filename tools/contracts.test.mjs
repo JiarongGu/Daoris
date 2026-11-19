@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LOCK, OUTPUTS, OWN_OUTPUT, sourceHash, staleness, writeContracts } from './contracts.mjs';
@@ -144,25 +144,27 @@ const LOCAL_PACKS = [
 ];
 
 test('LYNTAILOCAL1: the generator restores against the local sibling packs the desktop imports, its Lyntai and its Shenora', () => {
-  const fixtures = join(REPO, '_fixtures', 'contracts-local');
-  const written = LOCAL_PACKS.map((pack) => join(REPO, 'local', pack.props));
-  const had = written.map((file) => (existsSync(file) ? readFileSync(file) : null));
+  const scratch = mkdtempSync(join(REPO, '_fixtures', 'contracts-local-'));
+  const folder = join(scratch, 'tools', 'contracts');
   const evaluate = () => {
-    const run = spawnSync('dotnet', ['msbuild', join(REPO, 'tools', 'contracts', 'ContractsGen.csproj'), '-getProperty:RestoreAdditionalProjectSources',
+    const run = spawnSync('dotnet', ['msbuild', join(folder, 'Evaluate.proj'), '-getProperty:RestoreAdditionalProjectSources',
       ...LOCAL_PACKS.map((pack) => `-getProperty:${pack.version}`)], { encoding: 'utf8', windowsHide: true });
     assert.equal(run.status, 0, run.stdout + run.stderr);
     return JSON.parse(run.stdout).Properties;
   };
   try {
-    mkdirSync(join(REPO, 'local'), { recursive: true });
-    LOCAL_PACKS.forEach((pack, at) => writeFileSync(written[at], `<Project><PropertyGroup><${pack.version}>${pack.stand}</${pack.version}>`
-      + `<RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);${join(fixtures, pack.feed).replaceAll('\\', '/')}</RestoreAdditionalProjectSources></PropertyGroup></Project>`));
+    mkdirSync(folder, { recursive: true });
+    mkdirSync(join(scratch, 'local'), { recursive: true });
+    copyFileSync(join(REPO, 'tools', 'contracts', 'Directory.Packages.props'), join(folder, 'Directory.Packages.props'));
+    writeFileSync(join(folder, 'Evaluate.proj'), '<Project><Import Project="Directory.Packages.props" /></Project>\n');
+    LOCAL_PACKS.forEach((pack) => writeFileSync(join(scratch, 'local', pack.props), `<Project><PropertyGroup><${pack.version}>${pack.stand}</${pack.version}>`
+      + `<RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);${join(scratch, 'contracts-local', pack.feed).replaceAll('\\', '/')}</RestoreAdditionalProjectSources></PropertyGroup></Project>`));
     const seen = evaluate();
     for (const pack of LOCAL_PACKS) {
       assert.equal(seen[pack.version], pack.stand, `${pack.version} is the local pack's`);
       assert.ok(String(seen.RestoreAdditionalProjectSources).includes(`contracts-local/${pack.feed}`), `${pack.feed} is a restore source`);
     }
   } finally {
-    written.forEach((file, at) => (had[at] === null ? rmSync(file, { force: true }) : writeFileSync(file, had[at])));
+    rmSync(scratch, { recursive: true, force: true });
   }
 });
