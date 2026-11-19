@@ -407,8 +407,9 @@ the command palette. The menu bar across the top holds Workspace, Edit, View, Go
 VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and
 Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
-attended session. Eight views stand in the two regions and move between them:
-Notifications, the timeline, Outputs, the workflow, At work and the console of the session attended on Sessions, Ask Daoris, and the
+attended session. A session's run is read in the track under its head, whose Flowchart opens the run's whole view.
+Seven views stand in the two regions and move between them:
+Notifications, the timeline, Outputs, At work and the console of the session attended on Sessions, Ask Daoris, and the
 terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the
 console, which starts where the attended session works. A session's console takes no typing; the
 terminal is the person's, never a session's. At work lists the session's parts and its subagents, each with

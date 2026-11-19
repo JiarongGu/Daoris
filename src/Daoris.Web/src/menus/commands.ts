@@ -422,11 +422,6 @@ export const COMMANDS: readonly CommandSpec[] = [
     keywords: 'timeline history chain 时间线', run: (doors) => doors.frame('timeline'),
   },
   {
-    // Where the attended session's work stands in its workflow.
-    id: 'view.workflow', menu: 'view', group: 'views', label: 'work.views.workflow', icon: 'workflow', shell: true,
-    keywords: 'workflow run steps where stands pull request 工作流 进展', run: (doors) => doors.frame('workflow'),
-  },
-  {
     id: 'view.console', menu: 'view', group: 'views', label: 'work.views.console', icon: 'frameWork', keys: ['Ctrl+Shift+U'], shell: true,
     keywords: 'console output log 控制台', run: (doors) => doors.frame('console'),
   },

@@ -92,6 +92,7 @@ const CENSUS = [
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/ContentProofLossTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/TreeBaseWordsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/FileAnalysisTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/OpeningShapeProcessTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/RuleFileFormTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitDoorsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitHoldsProcessTests.cs',

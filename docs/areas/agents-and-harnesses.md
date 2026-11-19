@@ -372,6 +372,9 @@ An older word the code departs from, then what reads right.
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §13): budgets follow how an account is paid, a subscription shown
+  against its plan's windows and a per-use account carrying a weekly or monthly budget, with money only where it is real (D343,
+  UIRP28), and the model that ran is named wherever a session is (UISE1, UIRP6). Today the rules below stand.
 - **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t, after
   every door has moved; j, each protocol door reading its own agent's extensions, after 1e. All Daoris's own.
 - **AGENTLYNTAI1**: the owner's, d's acceptance and installed proof and s-ii's spend (the three tools a headless turn cannot answer).

@@ -1,0 +1,20 @@
+{
+  "work.track.label": "Its workflow: {{workflow}}",
+  "work.track.chip": "{{node}}: {{state}}",
+  "work.track.chipAttempt": "{{node}}, attempt {{attempt}}: {{state}}",
+  "work.track.attempt": "attempt {{attempt}}",
+  "work.track.state.passed": "passed",
+  "work.track.state.current": "now",
+  "work.track.state.next": "to come",
+  "work.track.state.failed": "failed",
+  "work.track.waitingOn": "waiting on {{role}}: {{holder}}",
+  "work.track.flowchart": "Flowchart",
+  "work.track.flowchartTitle": "Its run’s flowchart",
+  "work.track.rows": "Its workflow's steps",
+  "work.track.row.start": "{{node}} started",
+  "work.track.row.passed": "{{node}} passed",
+  "work.track.row.failed": "{{node}} failed",
+  "work.track.row.ended": "{{node}} ended",
+  "work.track.row.attempt": "attempt {{attempt}}",
+  "work.track.row.toDock": "To its press"
+}

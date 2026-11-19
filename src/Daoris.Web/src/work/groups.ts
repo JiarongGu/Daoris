@@ -34,7 +34,18 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['needs-you', 'working',
 export type SessionGrouping = {
   session: string;
   group: SessionGroupName;
-  passage?: { run: string; workflow: string; version?: number | null; steps: { node: string; kind: string; mark: string }[] } | null;
+  /**
+   * Its run's passage (`RunPassageReader`), on the run's newest session: each step in its graph's order with its mark, the role that
+   * takes it, its newest attempt's number, start and failure, and the attempts before it. The head's track and the timeline's step rows
+   * read it alone (`work/track/passage.ts`).
+   */
+  passage?: {
+    run: string; workflow: string; version?: number | null;
+    steps: {
+      node: string; kind: string; mark: string; role?: string | null; attempt?: number | null; since?: string | null; code?: string | null;
+      earlier?: { attempt: number; at: string; outcome?: string | null; code?: string | null }[] | null;
+    }[];
+  } | null;
   state?: SessionStateName;
   reason?: string;
   shown: string;

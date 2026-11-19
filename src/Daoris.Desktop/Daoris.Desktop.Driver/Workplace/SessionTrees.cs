@@ -329,7 +329,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <inheritdoc cref="TreeTidies.RemoveBranchAsync"/>
     public Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default,
-        ServiceClient? service = null) => Tidies.RemoveBranchAsync(root, repository, branch, force, ct, service);
+        ServiceClient? service = null, bool treeOnly = false) => Tidies.RemoveBranchAsync(root, repository, branch, force, ct, service, treeOnly);
 
     /// <inheritdoc cref="TreeSweeps.SweepPlanAsync"/>
     public Task<IReadOnlyList<SweepItem>> SweepPlanAsync(

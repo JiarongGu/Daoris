@@ -74,7 +74,13 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
-17a. Nothing Daoris writes is kept forever unnoticed. A tree's files record and install logs go with the tree (the tidy's set-aside,
+17a. Nothing Daoris writes is kept forever unnoticed. The bounds that keep `work/` from growing without end are two. The dependency store
+    (`work/deps`, the Disk space card's `deps` kind) evicts a copy not placed in a tree for 30 days, then the least recently placed past 10 GB,
+    in the Keeping pass once a day; a copy is the tree's own once placed, so none is in use. A session tree no run owns, that no session runs
+    or waits in and that nothing has used for 14 days (`TreeReleases.Unused`: the later of the tree's top folder's write time and its HEAD's last move in
+    git's reflog) is removed by the look's tidy with its branch standing and holding every commit; uncommitted work,
+    a live run's tree and an open session's tree keep it. Each such removal and each eviction is said in the machine log (`tree.ended`,
+    `deps.evicted`) with the bytes freed. A tree's files record and install logs go with the tree (the tidy's set-aside,
     a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
     sweep (`DeadMarkers`); each store limits its log to 32 MB and the knowledge store truncates it and returns its free pages at
     open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
@@ -295,4 +301,7 @@ drains, swaps, rolls back and refuses.
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §14): an update is never the owner's question, the window says its
+  state in one place and the banner goes (D344, UISH11, UIST5, UIST12); the first release's go and the running app's own look
+  for a release are UIST14's, after RELEASEFEED1 (D329). Today the rules below stand.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

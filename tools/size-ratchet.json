@@ -92,7 +92,7 @@
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 61585,
   "src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx": 61501,
   "src/Daoris.Web/src/work/WorkFrame.landed.test.tsx": 81271,
-  "src/Daoris.Web/src/work/WorkFrame.test.tsx": 92009,
+  "src/Daoris.Web/src/work/WorkFrame.test.tsx": 91990,
   "src/Daoris.Web/src/work/WorkFrame.words.test.tsx": 49901,
   "src/Daoris.Web/src/work/attention/AttentionBand.test.tsx": 54788,
   "src/Daoris.Web/src/work/attention/AttentionRow.test.tsx": 46233,
@@ -107,7 +107,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54623,
   "tools/deployment-rehearsal.mjs": 106226,
   "tools/family-rehearsal.mjs": 368023,
-  "tools/merge-branch.mjs": 392655,
+  "tools/merge-branch.mjs": 392448,
   "tools/merge-queue.mjs": 65185,
   "tools/rehearsal-kit.mjs": 56329,
   "tools/rehearsal-kit.test.mjs": 45819
