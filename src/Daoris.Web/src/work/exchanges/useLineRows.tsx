@@ -13,7 +13,7 @@ import { LineRows } from './LineRows';
 import { lineRowsOf, rowsWithin } from './rows';
 
 /**
- * The organism of a line's rows: what the attended session's line asked and was asked (`AtWorkA.exchanges`), the quests its session
+ * The organism of a line's rows: the requests of the attended session's line, each way (`AtWorkA.exchanges`), the quests its session
  * published and the one that published its own (`relationsOf`), its ask's channel kept to its line of work or, on no ask held here,
  * its own channel, and the presses each row makes; answered as the `beneath` its conversation draws between its turns.
  */

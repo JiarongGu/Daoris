@@ -255,7 +255,7 @@ export function AttendedSession({
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
-      {/* Who it worked with and its channel's messages are rows of its conversation, by their actors (D320).
+      {/* Who it worked with and its channel's messages are rows of its conversation, by their actors, so the one timeline reads them.
           🔴 Each fold keyed here names its kind beside the record's id: keyed by the id alone, two folds would take each other's
           fibers, and each draw of a running session would leave a copy of a line in the page. */}
       {((related && related.length > 0) || relatedOwn) && <RelatedSessions repository={session.repository} related={related ?? []} own={relatedOwn} onSession={onRelated} />}

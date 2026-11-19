@@ -3,9 +3,9 @@ import type { AtWorkExchange } from '../atWork/types';
 import { type ChannelItem, repliesTo } from '../channel';
 
 /**
- * **A line's exchanges and channel messages as rows** of its session's one timeline (D320): a request where it was asked and where
- * it came back, its actor named; a quest its session published, where it was filed and where it closed; the session that published
- * its own quest, at the start; and each message of its channel where it was said. A row's moment places it between the turns it
+ * **A line's exchanges and channel messages as rows** of its session's one timeline: a request at its asking and at its coming
+ * back, its actor named; a quest its session published, at its filing and at its close; the session that published its own quest,
+ * at the start; and each message of its channel at its moment. A row's moment places it between the turns it
  * fell between (`rowsWithin`); a request whose read keeps no moment (an opinion, a quest waited on) stands under the last turn.
  */
 export type LineRow =
@@ -28,7 +28,7 @@ export const cameBack = (exchange: AtWorkExchange): boolean => Boolean(exchange.
 /**
  * The rows of a line: its exchanges (less those drawn elsewhere: `carded`, an agent's helper ask drawn as its card at its call), the
  * quests its session published (`asked`, whose `quest:` exchange is the same request), the session that published its own quest, and
- * its channel's messages; oldest first, an untimed row after every timed one in the order it was read.
+ * its channel's messages; oldest first, an untimed row after every timed one in the read's order.
  */
 export function lineRowsOf({ exchanges = [], carded, asked = [], askedBy = null, messages = [] }: {
   exchanges?: readonly AtWorkExchange[];

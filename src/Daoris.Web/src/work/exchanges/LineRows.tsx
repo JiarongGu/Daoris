@@ -33,10 +33,10 @@ const outcomeOf = (t: TFunction, word: string): string =>
   t(`work.atWork.outcome.${word}`, { defaultValue: t('work.atWork.outcome.other', { word }) });
 
 /**
- * **A line's exchanges and channel messages as rows** between its turns (D320): a request where it was asked and where it came back,
+ * **A line's exchanges and channel messages as rows** between its turns: a request at its asking and at its coming back,
  * its actor named, with the session that took it up a press away (a piece opens its own session); an opinion's verdict beside what
  * it judged; a request that waits on the person leads to its line in the dock and offers no press of its own; a quest its session
- * published, where it was filed and where it closed; and each channel message naming its sender, answered in place and sent on to
+ * published, at its filing and at its close; and each channel message naming its sender, answered in place and sent on to
  * its session where it may be.
  *
  * Presentational: the rows (`lineRowsOf`, `rowsWithin`), the dock's keys and the presses arrive as props; its one state is which
@@ -60,7 +60,7 @@ export function LineRows({ rows, attended, docked, onToDock, onOpenSession, onOp
       row.side === 'asked' ? t('work.exchange.asked', { who }) : t('work.exchange.back', { who, outcome: outcomeOf(t, exchange.outcome) }),
       ...verdict,
     ].filter(Boolean).join(' · ');
-    // Its taker's session a press away on its newest row: where it came back, else where it was asked.
+    // Its taker's session a press away on its newest row: its coming back, else its asking.
     const opens = !waitsOnYou && exchange.session && onOpenSession && (row.side === 'back' || !cameBack(exchange));
     return (
       <li key={row.key} data-exchange-row={exchange.id} data-side={row.side} className="m-0 flex min-w-0 items-center gap-2 text-small text-ink-soft">
