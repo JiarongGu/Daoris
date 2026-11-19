@@ -66,7 +66,6 @@ public static class HomePurgeCommand
 
         if (Running(home) is { } why) return Refused(why, output);
 
-        // The host already holds the home for this verb when it runs as a terminal command; a test calling the door in-process does not.
         HomeLease? lease = null;
         if (!OwnLease(home))
         {
