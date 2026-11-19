@@ -180,7 +180,8 @@ public sealed class QuestionFiles(string home)
         return File.Exists(path) ? Delete(path) : QuestionSettle.None;
     }
 
-    public QuestionSettle ClearConversation(string session) => Read(session) is { Conversation: true } ? Clear(session) : QuestionSettle.None;
+    public QuestionSettle ClearConversation(string session, DateTimeOffset askedBy) =>
+        Read(session) is { Conversation: true } asked && asked.At <= askedBy ? Clear(session) : QuestionSettle.None;
 
     /// <summary>The file gone, a refusal tried again briefly; <see cref="QuestionSettle.Stayed"/> where the disk would still not let it go.</summary>
     private static QuestionSettle Delete(string path)
