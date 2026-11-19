@@ -19,6 +19,7 @@ import * as graph from '../src/workflow/GraphFlow.stories';
 import * as runView from '../src/workflow/WorkflowRunFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
 import * as waitPanel from '../src/work/waits/WaitPanel.stories';
+import * as sessionPanel from '../src/work/session/SessionPanel.stories';
 import * as roles from '../src/agents/roles/StructureCanvas.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
 import * as setUpReview from '../src/agents/setup/PlaceReview.stories';
@@ -67,6 +68,7 @@ const books: Record<string, Record<string, ComponentType>> = {
   zoom: composeStories(zoom) as unknown as Record<string, ComponentType>,
   // The waiting panel: its edge dragged and kept, and the conversation's presses above it, never under it.
   waitPanel: composeStories(waitPanel) as unknown as Record<string, ComponentType>,
+  sessionPanel: composeStories(sessionPanel) as unknown as Record<string, ComponentType>,
   // The roles' diagram: across at 80rem with its detail beside, its list at 39 and 25rem.
   roles: composeStories(roles) as unknown as Record<string, ComponentType>,
   // A place's page: the head and the three section lines within the first 400 px at the three widths.

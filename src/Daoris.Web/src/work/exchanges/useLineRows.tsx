@@ -12,13 +12,12 @@ import type { HelperAskRow } from '../waits/HelperAsks';
 import type { LineRowHome } from './LineRows';
 import { type LineRow, lineRowsOf } from './rows';
 
-/** A line's rows, oldest first, and what each row's presses reach. */
 export type LineRowsRead = { rows: LineRow[]; home: LineRowHome };
 
 /**
- * The organism of a line's rows: the requests of the attended session's line, each way (`AtWorkA.exchanges`), the quests its session
- * published and the one that published its own (`relationsOf`), its ask's channel kept to its line of work or, on no ask held here,
- * its own channel, and the presses each row makes; the session panel's story places each row by its moment among the turns.
+ * The organism of a line's rows, oldest first: the requests of the attended session's line, each way (`AtWorkA.exchanges`), the
+ * quests its session published and the one that published its own (`relationsOf`), its ask's channel kept to its line of work or,
+ * on no ask held here, its own channel, and what each row's presses reach.
  */
 export function useLineRows({
   session, quest, quests, sessions, atWork, helperAsks, channelAsk, only, record, docked, opinion, onToDock, onOpenSession, onOpenQuest, nameOf,

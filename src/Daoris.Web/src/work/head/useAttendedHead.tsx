@@ -295,8 +295,6 @@ export function useAttendedHead({
       onFlowchart={() => onFlowchart?.()}
     />
   );
-  // What asks under the head: a stop's, a delete's, a rename's, a hand-over's, a helper's or a pause's ask, a limit's wait, or the
-  // hand-over its account's limit offers.
   const asking = attended && attendedFacts && (stopAsking === attended.id && live && asked ? (
         <StopAsk
           // Keyed by the session: an ask open on one session, with its wait or its refusal, is never another's.
@@ -389,8 +387,6 @@ export function useAttendedHead({
           onDismiss={() => setOfferDismissed((was) => new Set(was).add(attended.id))}
         />
       ) : null);
-  // The session panel's head: its state from the driver's reader, its acts (the one split the page's right-click offers whole),
-  // the ask under it, the line it heads and its facts, each said where the panel draws them.
   const panelHead = attended && attendedFacts && attendedShown && headFactsOf ? {
     line: stateLine,
     said: stateLine ? stateLineSaid(t, stateLine) : null,
@@ -402,7 +398,6 @@ export function useAttendedHead({
     asking,
     lineOf: attendedLine ? { said: lineWords(t, attendedLine), onOpen: attend && (() => attend(attendedLine.by)) } : null,
     facts: sessionFacts(t, headFactsOf),
-    // The line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
     factsTip: sessionFactsTip(t, headFactsOf),
     chip: supervisionChip(t, supervision),
     track,

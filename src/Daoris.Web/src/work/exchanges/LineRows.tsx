@@ -32,7 +32,6 @@ const PRESS = 'shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small te
 const outcomeOf = (t: TFunction, word: string): string =>
   t(`work.atWork.outcome.${word}`, { defaultValue: t('work.atWork.outcome.other', { word }) });
 
-/** What one row's presses reach: everything of `LineRowsProps` but the rows. */
 export type LineRowHome = Omit<LineRowsProps, 'rows'>;
 
 /**
@@ -133,7 +132,6 @@ export function LineRow({ row, attended, docked, onToDock, onOpenSession, onOpen
   }
 }
 
-/** **A line's rows** as one list, each `LineRow` in the order given. */
 export function LineRows({ rows, ...home }: LineRowsProps) {
   const { t } = useTranslation();
   if (rows.length === 0) return null;

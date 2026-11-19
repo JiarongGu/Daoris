@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 
-// The session panel mounted in the Work frame (SESSIONUI1): an attended session is drawn by `work/session/`'s panel alone.
+// The session panel mounted in the Work frame: an attended session is drawn by `work/session/`'s panel alone.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import i18n from '../locales/i18n';

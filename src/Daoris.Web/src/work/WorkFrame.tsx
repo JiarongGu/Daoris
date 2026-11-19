@@ -79,11 +79,6 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
  * tree path are machine-local, and a frame whose centre is a stream has nothing honest to
  * show a browser. `App` gates on the same "is a shell here" answer every control uses.
  *
- * **The centre is the record, then the conversation**: the head and the session's
- * conversation scroll together, and the conversation follows its tail. The right dock holds the
- * timeline and the review; the console is the panel below, the
- * conversation's raw view.
- *
  * **Every view hands it a `ViewLayout`**: its list pane where it has one, and its main area. It
  * draws the list for every view that hands one, and Sessions' rail is one such list, built here because
  * the attended session is this frame's to hold.
@@ -196,7 +191,6 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
-  // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
   const frame = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
   const { root, width, listed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock } = frame;
@@ -235,9 +229,6 @@ export function WorkFrame({
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
 
-  // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is:
-  // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
-  // so the palette's ask never landed. The parent is told from an effect, not during this render.
   const views = useDockViews({
     attended, elsewhere, here, ask, notifications, terminal, placed, closed: frame.closed, collapsed, dockClosed, closeDock, askFocus,
     notificationsShow, notificationsToggle,
@@ -385,7 +376,6 @@ export function WorkFrame({
   const { seek } = useSeekPart();
 
   return (
-    // Positioned, so a dock filling the frame lies over exactly this and nothing more.
     // 🔴 `min-w-0`: a flex item is otherwise no narrower than its content, and every view but
     // Sessions is drawn in here, so a long title that should truncate would widen the frame past the
     // window (a browser draws the view outside the frame).
@@ -412,7 +402,6 @@ export function WorkFrame({
                 roster={roster}
                 refusal={refusal}
                 openPreview={openPreview}
-                // Its line's requests, quests and channel messages as rows of its story; one waiting on the person leads to its card.
                 along={{
                   atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
                   nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
@@ -448,7 +437,6 @@ export function WorkFrame({
                   <>
                     <SessionBand
                       key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify}
-                      // A helper or a reviewer at work for its line, a line each, its session a press away.
                       exchanges={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.exchanges : undefined}
                       onOpenSession={attend} nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
                     />
@@ -476,9 +464,6 @@ export function WorkFrame({
         <ViewMain
           ref={centre}
           gutters="session"
-          // A remembered session is found in the list, so while the list first loads it is on its way, never
-          // the composer. With nothing attended the main area is *New conversation*: no notice is
-          // handed, so the state's body is the composer.
           state={selected && sessions.isPending ? 'loading' : 'none'}
         >
           {/* *New conversation*, the main area while nothing is attended. */}
