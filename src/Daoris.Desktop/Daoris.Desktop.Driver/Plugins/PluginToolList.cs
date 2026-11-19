@@ -37,8 +37,7 @@ public sealed record PluginToolCommand(PluginEntry Plugin, PluginCommandDeclared
 /// <summary>
 /// The tools a session at a place is handed: each command marked <c>tool</c> and asking nothing of the person, of each installed plugin
 /// that is on, not refused and speaks, where its <c>commands</c> and <c>tools</c> are both on at that place (<see cref="PluginSwitches"/>);
-/// a role's act (<see cref="PluginCommandDeclared.Role"/>) only where the place casts that role to an agent, never where the person holds
-/// it, a destination's mark included. Read again at each list and call, so a switch or a cast moved holds at its next call.
+/// a role's act (<see cref="PluginCommandDeclared.Role"/>) only where the place casts that role to an agent. Read again at each list and call.
 /// </summary>
 public static class PluginToolList
 {
