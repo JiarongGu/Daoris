@@ -100,6 +100,24 @@ public sealed class HomeStraysTests : IDisposable
     }
 
     [Fact]
+    public void The_walk_yields_each_path_with_its_size_and_entry_and_the_door_prints_each_entrys_total()
+    {
+        Put("data/plugins/one/a.bin", 100);
+        Put("data/plugins/two/b.bin", 50);
+        Put("data/driver.json", 7);
+        Put("data/old/x.bin", 9);
+
+        var walked = HomeStrays.Read(_home, new WiringBudget(1000, TimeSpan.FromSeconds(5)), sizeEntries: true).Walked;
+
+        Assert.Equal(150L, walked.Where(path => path.Entry == "plugins").Sum(path => path.Bytes));
+        Assert.Equal(7L, Assert.Single(walked, path => path.Entry == "driver").Bytes);
+        Assert.Equal(("data/old", 9L), (walked.Single(path => path.Entry is null).Path, walked.Single(path => path.Entry is null).Bytes));
+        HomePurgeCommand.Run([], _home, () => default, null, null, out var said);
+        Assert.Contains("plugins", said);
+        Assert.Contains("driver", said);
+    }
+
+    [Fact]
     public void A_home_with_none_says_so()
     {
         Put("data/driver.json", 1);

@@ -6,10 +6,13 @@ namespace Daoris.Driver;
 public sealed record HomeStray(string Path, long Bytes);
 
 /// <summary>What <see cref="HomeStrays.Read"/> found: each stray, and why the sizes are short where a walk stopped early.</summary>
-public sealed record HomeStrayReading(IReadOnlyList<HomeStray> Paths, string? Partial)
+public sealed record HomeStrayReading(IReadOnlyList<HomeStray> Paths, string? Partial, IReadOnlyList<HomeWalked> Walked)
 {
     public long Bytes => Paths.Sum(path => path.Bytes);
 }
+
+/// <summary>A path the walk met: where it is, its bytes, and the entry it falls under (null: none, a stray).</summary>
+public sealed record HomeWalked(string Path, long Bytes, string? Entry);
 
 /// <summary>
 /// The home's files that no entry of the table names: a place a build dropped from the table while an install still holds
@@ -61,32 +64,39 @@ public static class HomeStrays
 
     private static readonly Dictionary<string, (DateTimeOffset At, HomeStrayReading Reading)> Kept = new(StringComparer.OrdinalIgnoreCase);
 
-    public static HomeStrayReading Read(string home, WiringBudget budget)
+    /// <summary>
+    /// The walk once: every place an entry covers and every stray, each with the entry it falls under. With <paramref name="sizeEntries"/>
+    /// the covered places are sized too (<see cref="HomeStrayReading.Walked"/>), so a reader of sizes per entry does not walk again.
+    /// </summary>
+    public static HomeStrayReading Read(string home, WiringBudget budget, bool sizeEntries = false)
     {
         var folder = DaorisHome.FolderOf(home);
-        var strays = new List<string>();
+        var met = new List<(string Path, string? Entry)>();
         if (Directory.Exists(folder))
         {
-            var patterns = HomeEntry.Table.Select(entry => entry.New.Split('/', StringSplitOptions.RemoveEmptyEntries)).ToList();
-            Walk(folder, 0, patterns, strays, string.Empty);
+            var patterns = HomeEntry.Table.Select(entry => (Entry: entry.Name, Parts: entry.New.Split('/', StringSplitOptions.RemoveEmptyEntries))).ToList();
+            Walk(folder, 0, patterns, met, string.Empty);
         }
 
         var sizes = new List<HomeStray>();
+        var walked = new List<HomeWalked>();
         string? partial = null;
         var left = budget;
-        foreach (var relative in strays.Order(StringComparer.Ordinal))
+        foreach (var (relative, entry) in met.OrderBy(each => each.Path, StringComparer.Ordinal))
         {
+            if (entry is not null && !sizeEntries) continue;
             var place = System.IO.Path.Combine([folder, .. relative.Split('/')]);
             var measure = WiringSizes.MeasurePlaces([place], [], left, CancellationToken.None);
-            sizes.Add(new HomeStray(relative, measure.Bytes));
+            if (entry is null) sizes.Add(new HomeStray(relative, measure.Bytes));
+            walked.Add(new HomeWalked(relative, measure.Bytes, entry));
             partial ??= measure.Partial;
             left = left with { Files = Math.Max(1, left.Files - measure.Files) };
         }
 
-        return new(sizes, partial);
+        return new(sizes, partial, walked);
     }
 
-    private static void Walk(string folder, int depth, List<string[]> patterns, List<string> strays, string at)
+    private static void Walk(string folder, int depth, List<(string Entry, string[] Parts)> patterns, List<(string Path, string? Entry)> strays, string at)
     {
         IEnumerable<string> children;
         try
@@ -103,15 +113,21 @@ public static class HomeStrays
             var name = System.IO.Path.GetFileName(child);
             var relative = at.Length == 0 ? name : at + "/" + name;
             if (depth == 0 && IsInstalls(name)) continue;
-            var matching = patterns.Where(parts => parts.Length > depth && Matches(parts[depth], name)).ToList();
+            var matching = patterns.Where(row => row.Parts.Length > depth && Matches(row.Parts[depth], name)).ToList();
             if (matching.Count == 0)
             {
-                strays.Add(relative);
+                strays.Add((relative, null));
             }
-            else if (matching.All(parts => parts.Length > depth + 1) && Directory.Exists(child)
-                && !new DirectoryInfo(child).Attributes.HasFlag(FileAttributes.ReparsePoint))
+            else if (matching.All(row => row.Parts.Length > depth + 1))
             {
-                Walk(child, depth + 1, matching, strays, relative);
+                if (Directory.Exists(child) && !new DirectoryInfo(child).Attributes.HasFlag(FileAttributes.ReparsePoint))
+                {
+                    Walk(child, depth + 1, matching, strays, relative);
+                }
+            }
+            else
+            {
+                strays.Add((relative, matching.First(row => row.Parts.Length == depth + 1).Entry));
             }
         }
     }

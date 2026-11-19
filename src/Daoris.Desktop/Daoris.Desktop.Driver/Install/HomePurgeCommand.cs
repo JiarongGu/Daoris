@@ -147,7 +147,11 @@ public static class HomePurgeCommand
     /// <summary>The section <i>Not in the table</i>: each path no entry names, with its size, or that there is none.</summary>
     private static void Strays(string home, StringBuilder output)
     {
-        var strays = HomeStrays.Read(home);
+        var strays = HomeStrays.Read(home, WiringBudget.Default, sizeEntries: true);
+        var totals = strays.Walked.Where(path => path.Entry is not null).GroupBy(path => path.Entry!)
+            .Select(group => (Entry: group.Key, Bytes: group.Sum(path => path.Bytes))).OrderByDescending(total => total.Bytes).ToList();
+        output.AppendLine($"Entries: {totals.Count} of the table hold something{(strays.Partial is null ? "" : " (counted in part)")}:");
+        foreach (var (entry, bytes) in totals) output.AppendLine($"  {entry}  {Size(bytes)}");
         if (strays.Paths.Count == 0)
         {
             output.AppendLine("Not in the table: nothing. Every path under the home is an entry's.");
