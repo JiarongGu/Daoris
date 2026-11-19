@@ -14,45 +14,29 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
 {
     [McpServerTool(Name = "question_ask")]
     [Description(
-        "Ask the role that can what you cannot decide or do yourself (a choice the ticket leaves open, a sign-in, an approval, an act "
-        + "outside this repository) before you end your turn waiting on it with your quest still taken. With no `role` it asks the line "
-        + "above you: it shows in this session's conversation, each answer you offer a press with what you will do on it; a supervisor here "
-        + "may answer it unless you mark it `owner`. Offer answers you would act on and recommend one where you have a reason. Name `role` "
-        + "where another can: `credentials-keeper` for a sign-in (with its `site`), `helper` for another agent's reading of your work, "
-        + "`approver` or `owner` for an act; and for an act the person allows, the act (`act`, `on`). The answer is your next turn. One "
-        + "question at a time: asking again replaces it. Then say in your last message that the work waits, commit what you have, and end your turn.")]
+        "Ask the role that can what you cannot decide or do yourself. With no `role` it asks the line above you here: offer answers "
+        + "you would act on, each a press, and recommend one. For an act the person allows, name its `act` and `on`. The answer is your "
+        + "next turn; asking again replaces it. Then say the work waits, commit, and end your turn.")]
     public async Task<string> AskAsync(
-        [Description("What you need, at most 1000 characters: the question, not your report; for an act, why the work needs it and exactly what you would do.")]
+        [Description("What you need, at most 1000 characters; for an act, why and exactly what you would do.")]
         string question,
-        [Description("At most six answers, each a label (the words on its press) and what you will do on it; none for an answer only in the person's words.")]
+        [Description("At most six answers: each a label and what you will do on it.")]
         QuestionChoiceInput[]? choices = null,
-        [Description("The answer you recommend, by number from 1; give the reason as `why`.")]
+        [Description("The answer you recommend, from 1; its reason as `why`.")]
         int? recommend = null,
-        [Description("By when the work needs the answer, at most 200 characters.")]
+        [Description("By when.")]
         string? by = null,
-        [Description("Why you recommend it, at most 300 characters. Only with `recommend`.")]
+        [Description("Why you recommend it.")]
         string? why = null,
-        [Description(
-            "Only where it is the owner's alone, never a supervisor's to answer: `direction` (what to build, a target), `money` (spending, a "
-            + "budget, a paid account beyond the work's runs), `sign-in` (a credential or account), `release` (one the owner marked "
-            + "theirs), `history` (a rewrite), `data` (deleting the owner's data), `publish` (to people outside beyond what the "
-            + "repository declares). Otherwise leave it out.")]
+        [Description("Only where it is the owner's alone, never a supervisor's: `direction`, `money`, `sign-in`, `release`, `history`, `data` or `publish`.")]
         string? owner = null,
-        [Description(
-            "Only where the work needs the person to sign in at a site you reach through Daoris's browser (an identity expired, a "
-            + "sign-in page asks for a password): the page's address, at most 500 characters. Say in `question` which identity and "
-            + "why; offer no answers. The person gets *Open the sign-in…* and *Signed in*, and a sign-in Daoris's browser sees there "
-            + "answers it. Never type a password yourself.")]
+        [Description("For a sign-in in Daoris's browser: the page's address; say which identity, offer no answers, never type a password.")]
         string? site = null,
-        [Description(
-            "The role that can, where it is not the line above you: `credentials-keeper` (a sign-in), `helper` (another agent reads your "
-            + "work once and answers), `approver`, `owner`, or another role's id. A role of another repository travels as a quest.")]
+        [Description("The role that can, if not the line above: `credentials-keeper` (a sign-in), `helper`, `approver`, `owner` or a role's id; another repository's goes as a quest.")]
         string? role = null,
-        [Description(
-            "For an act the person allows, its kind then what it touches, in a few words: `write the dashboard configuration`, "
-            + "`release stage 403 of the reporting app`; the kind is write, release, push, sign-in or run, and the same words join an act already asked.")]
+        [Description("For an act the person allows: its kind (write, release, push, sign-in, run) and what it touches, e.g. `write the dashboard configuration`.")]
         string? act = null,
-        [Description("For an act: where it lands, the environment or system, such as production.")]
+        [Description("For an act: where it lands, e.g. production.")]
         string? on = null,
         CancellationToken ct = default)
     {
