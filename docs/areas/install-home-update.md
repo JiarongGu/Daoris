@@ -22,7 +22,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `src/Daoris.Desktop/Daoris.Desktop.Launcher/` | The root `Daoris.exe`: taskbar id, starts `app/Daoris.Desktop.exe`, runs a staged swap while nothing runs from `app/` |
 | `Mod/Update/` | The application's half: the install found and the home set (`InstallHome`), the update watched, drained, checked and said (`InstallUpdater`, `UpdateModule`, `UpdateLauncher`) |
 | `Drv/Platform/` | The home seam (`DaorisHome`, its `HomeEntry` table), the home a program names once at its entry (`ProgramHome`, never the variable a process inherited; `ProcessHomeCensusTests` lists each read left), the lease and the id (`HomeLease`, `HomeIdentity`); twinned cell for cell by the service's `Platform/DaorisHome.cs` and the CLI's `platform/home.ts` |
-| `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), the drain's bound (`DrainSetting`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
+| `Drv/Install/` | The staged build and its swap, confirm and roll back (`StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeLastBuild`, compiled into the launcher), the person's word (`InstallUpdate`), `daoris update`, the start's confirmation, the refusals (`UpdateRefusal`, `GoingBackRefusals`), the tools (`Tools`, `ToolInstall`, `ToolResources`, `daoris tool`) |
 | `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
 | `Drv/Store/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
@@ -162,7 +162,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
     every press waits. A drain holds new work for the machine's `drain` setting at most (`drainMinutes` in `driver.json`, 10
     minutes by default, 1 to 120, at Settings → Agents and sessions, by `daoris settings drain <minutes>` or `SET_DRAIN`), which
-    `InstallUpdater` reads at each look (`DrainSetting`). Past it the drain defers (`deferred`, said once as `update.deferred`): the
+    `InstallUpdater` reads at each look (`Drv/Settings/DrainSetting`). Past it the drain defers (`deferred`, said once as `update.deferred`): the
     loop's starts and the presses go on, the mode stays *when idle*, and the build installs at the first look that reads the work
     idle, or at the person's word; a newer build drains anew. The banner says until when a drain holds new work, and of a deferred
     build that it waits, on what and since when, with *Update now* and *Not now*. (from D139, D327)
