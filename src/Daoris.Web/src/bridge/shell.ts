@@ -35,6 +35,7 @@ export * from './pluginCommand';
 export * from './pluginSwitch';
 export * from './repositories/registry';
 export * from './sessions/quests';
+export * from './sessions/readMark';
 export * from './repositories/remotes';
 export * from './agents/rules';
 export * from './sessions/sessions';

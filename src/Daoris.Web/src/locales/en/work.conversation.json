@@ -23,8 +23,6 @@
   "work.conversation.show": "Show all",
   "work.conversation.hide": "Fold",
   "work.conversation.thought": "thought",
-  "work.conversation.tools": "{{count}} tool call",
-  "work.conversation.tools_other": "{{count}} tool calls",
   "work.conversation.worked": "what it did",
   "work.conversation.working": "working…",
   "work.conversation.firstAnswer": "waiting for its first answer since {{time}} ({{elapsed}})",
