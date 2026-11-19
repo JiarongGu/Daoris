@@ -227,6 +227,32 @@ public sealed class WorkflowNamedTests
         }
     }
 
+    /// <summary>The home's own files kept beside the workflows (the casts, the quests' read) are no workflow: the list names two and no unreadable one.</summary>
+    [Fact]
+    public void The_homes_own_files_beside_the_workflows_are_not_listed()
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-workflow-own-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var folder = DaorisHome.Entry(home, HomeEntry.Workflows);
+            Directory.CreateDirectory(folder);
+            const string one = """{"id":"alpha","name":"Alpha","versions":[{"version":1,"at":"2026-10-09T09:12:00Z","door":"terminal","steps":[{"id":"work","kind":"work"},{"id":"landing","kind":"landing","form":"merge","accept":"you"}]}]}""";
+            File.WriteAllText(Path.Combine(folder, "alpha.json"), one);
+            File.WriteAllText(Path.Combine(folder, "beta.json"), one.Replace("alpha", "beta").Replace("Alpha", "Beta"));
+            File.WriteAllText(PlaceCastFiles.PathOf(home), "{}");
+            File.WriteAllText(QuestReads.PathOf(home), "{}");
+
+            var listed = WorkflowStore.List(home);
+
+            Assert.Equal(new[] { "alpha", "beta" }, listed.Select(each => each.Id));
+            Assert.All(listed, each => Assert.Null(each.Read.Problem));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
+    }
+
     private static IReadOnlyList<NamedStep> Read(string steps)
     {
         var (read, problem) = WorkflowNamed.ReadSteps(JsonDocument.Parse(steps).RootElement, 1);

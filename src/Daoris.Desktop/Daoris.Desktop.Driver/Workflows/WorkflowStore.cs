@@ -22,6 +22,17 @@ public static class WorkflowStore
     /// <summary>The folder of a home's workflows.</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows);
 
+    /// <summary>
+    /// The home's own files kept beside the workflows, by name: no workflow, so no list or reader of the saved workflows takes one.
+    /// Named here, from where each is written.
+    /// </summary>
+    public static IReadOnlyList<string> OwnFiles { get; } =
+        [Path.GetFileName(PlaceCastFiles.PathOf("x")), Path.GetFileName(QuestReads.PathOf("x"))];
+
+    /// <summary>Whether a file's name (with or without its extension) is one the home keeps for itself beside the workflows.</summary>
+    public static bool IsOwnFile(string? name) =>
+        name is not null && OwnFiles.Contains(name.EndsWith(".json", StringComparison.Ordinal) ? name : name + ".json", StringComparer.Ordinal);
+
     /// <summary>A workflow's file: its id, which <see cref="WorkflowNamed.IsId"/> has passed, so it names no path.</summary>
     public static string PathOf(string home, string id) =>
         WorkflowNamed.IsId(id) ? Path.Combine(FolderOf(home), id + ".json") : throw new DriverException(WorkflowNamed.IdProblem(id)!);
