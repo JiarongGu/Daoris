@@ -144,8 +144,6 @@ const LOCAL_PACKS = [
 ];
 
 test('LYNTAILOCAL1: the generator restores against the local sibling packs the desktop imports, its Lyntai and its Shenora', () => {
-  // The generator's own props file, copied under a scratch tree of this test's with the local props beside it where it looks
-  // (`../../local/`), and evaluated there: the tree's own `local/` is read-only in a Daoris session's tree, and a test never writes it.
   const scratch = mkdtempSync(join(REPO, '_fixtures', 'contracts-local-'));
   const folder = join(scratch, 'tools', 'contracts');
   const evaluate = () => {
