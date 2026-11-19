@@ -8,6 +8,12 @@ import { fileURLToPath } from 'node:url';
 
 export const FIXTURE_HOME = join(fileURLToPath(new URL('../..', import.meta.url)), '_fixtures', 'tool-tests');
 
+/** `FIXTURE_HOME`, made: the folder a test that names its own scratch with `mkdtempSync` puts it in, never the system's temporary one. */
+export function scratchRoot(): string {
+  mkdirSync(FIXTURE_HOME, { recursive: true });
+  return FIXTURE_HOME;
+}
+
 /** A new empty folder named for what uses it, and the call that removes it. */
 export function fixtureFolder(name: string): { dir: string; remove: () => void } {
   mkdirSync(FIXTURE_HOME, { recursive: true });

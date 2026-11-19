@@ -4,7 +4,7 @@ import { after } from 'node:test';
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,7 @@ export const STEP = 'daoris-azure-devops/pull-request';
 export const RELEASE = 'daoris-azure-devops/release';
 export const tip = 'b'.repeat(40);
 
-const scratch = mkdtempSync(join(tmpdir(), 'azure-pr-'));
+const scratch = mkdtempSync(join(scratchRoot(), 'azure-pr-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
 const GIT = '/acme/Proj/_apis/git/repositories/app';

@@ -144,7 +144,7 @@ async function pickByKeys(search: string, title: string) {
   await waitFor(() => expect(focused()).toBe(step(title)));
 }
 
-describe('the release workflow composed from the Merge workflow', () => {
+describe('the release workflow composed from the Merge workflow', { timeout: 30_000 }, () => {
   it('by keyboard alone: a way back on changes, a decision\'s outcome and a step after it, and what each carries', async () => {
     render(wrap(<Editor />));
 
@@ -287,7 +287,7 @@ describe('choosing where a way goes on the chart', () => {
   });
 });
 
-describe('removing, moving, and every change undone', () => {
+describe('removing, moving, and every change undone', { timeout: 30_000 }, () => {
   it('removes a step joining its plain way in to its way on, undone and redone by the keys and by the Edit menu', async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));

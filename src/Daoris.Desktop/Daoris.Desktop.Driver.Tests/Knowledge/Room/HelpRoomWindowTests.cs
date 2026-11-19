@@ -19,7 +19,7 @@ public sealed class HelpRoomWindowTests
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "Notifications, the timeline, Outputs, the workflow, At work and the console", "Every view sits in one frame",
+            "the right side bar", "the panel", "Notifications, the timeline, Outputs, At work and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
             // The person's own terminal, and that it is theirs rather than a session's.
@@ -53,23 +53,23 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// The session's *Workflow* view is among the views that stand in the
-    /// two regions and move between them, beside the timeline and Outputs; asked where
-    /// a piece of work stands, the helper names the view the window has, and the room's doors say what it draws.
+    /// Seven views stand in the two regions and move between them, none a session's workflow: asked where a piece of work stands,
+    /// the helper names the track under the session's head, whose *Flowchart* opens its run's whole view.
     /// </summary>
     [Fact]
-    public void The_room_names_the_sessions_workflow_view_among_the_views_that_move()
+    public void The_room_names_the_views_that_move_and_the_track_a_session_s_run_is_read_in()
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Eight views stand in the two regions and move between them:", window);
-        Assert.Contains("the timeline, Outputs, the workflow, At work and the console of the session attended on Sessions", window);
-        Assert.DoesNotContain("Five views", window);
-        Assert.DoesNotContain("Seven views", window);
+        Assert.Contains("Seven views stand in the two regions and move between them:", window);
+        Assert.Contains("the timeline, Outputs, At work and the console of the session attended on Sessions", window);
+        Assert.Contains("A session's run is read in the track under its head", window);
+        Assert.DoesNotContain("Eight views", window);
+        Assert.DoesNotContain("the workflow, At work", window);
     }
 
     /// <summary>
-    /// *At work* is among the views, after the workflow; asked who works on a session, the
+    /// *At work* is among the views, after Outputs; asked who works on a session, the
     /// helper names it, and that it reads Daoris's records, never the conversation's text.
     /// </summary>
     [Fact]
@@ -92,7 +92,7 @@ public sealed class HelpRoomWindowTests
     {
         var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("Notifications, the timeline, Outputs, the workflow, At work and the console", window);
+        Assert.Contains("Notifications, the timeline, Outputs, At work and the console", window);
         Assert.Contains("The bell on the title bar shows it", window);
         Assert.Contains("What needs you", window);
         Assert.Contains("Overview leads with a summary", window);

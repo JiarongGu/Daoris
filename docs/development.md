@@ -57,12 +57,14 @@ backups and evidence still needed by the task.
 
 Agent worktrees and what they leave go by the merge tool's prune, which every merge runs and
 `node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's *The prune*. A
-merged worktree with no change and nothing under `local/` but logs, scratch and the copies the worktree setup made is removed, the agent
+merged worktree with no change and nothing under `local/` but logs, scratch, a quick run's base tree (`local/quick-base-tree`, which a killed run leaves) and the copies the worktree setup made is removed, the agent
 harness's lock lifted when no running process names its folder and nothing in it was written for two
 hours (a worker's shell shows on no command line). A folder under `.claude/worktrees/`
 that `git worktree list` does not list and that holds no `.git` is a half-removed worktree, removed
 without following a reparse point. A process holding either is named with its pid, never stopped.
-Other registered worktrees use their owning lifecycle tool.
+Other registered worktrees use their owning lifecycle tool. Every prune also reports each builder worktree whose branch main does not
+hold (an agent that ended without landing), oldest first with its last commit, which the steward lands or removes and the prune never
+touches, and removes the main checkout's `_fixtures/` entries by the rule below.
 
 A worktree with no commit of its own counts as merged. So the prune removes it, gitignored
 `local/scratch/` with it, even while a worker still uses it, and the agent harness removes a worker's
@@ -70,13 +72,14 @@ isolated worktree when it ends without a tracked change. A docs-only or read-onl
 is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
 `local/scratch/`, or commits it early; otherwise it is lost with the worktree.
 
-No test or tool leaves a folder in the system's temporary folder: a node test makes its scratch with `scratchFolder` (removed when
+No test or tool leaves a folder in the system's temporary folder (the plugin examples' tests too: `scratchRoot()` of the same file): a node test makes its scratch with `scratchFolder` (removed when
 its process ends) or `fixtureFolder` and names a path under `FIXTURE_HOME` (`tools/merge/fixture-home.ts`, in `_fixtures/tool-tests/`),
 a C# test roots at `TestHomes`. `src/Daoris.Cli/tool-test/temp-folder-census.test.ts` fails, naming file and line, for a
-`tmpdir()` in the node tests and tools or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
+`tmpdir()` or `env.TEMP` in any node source of the repository (`inNodeScope`: all but `node_modules` and `_fixtures`) or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
 list is `KEPT` there; the C# list is `TestHomesCensusTests`'s, read by it), and a declared file removes what it makes.
 
-A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs` (a plan; `--apply` removes, `--root <checkout>`
+A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs`, which every prune applies to the main checkout
+(`sweepFixtures`) and which run alone is a plan (`--apply` removes, `--root <checkout>`
 names another tree, `--hours <n>` the window): an entry it or anything directly in it was written in the last 24 hours stays, as
 do the caches a run keeps (`pinned-mingit`, `rehearsal-builds`, `seeds`) and every link, which is never followed; the rest is
 what a killed host, a failed rehearsal or a retired probe left, and goes. The tool refuses a folder git does not ignore and a

@@ -257,6 +257,7 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
+                NodeKinds.Opinion when step.Wait is { Code: OpinionStepWaits.Answer } answer => OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
@@ -280,6 +281,7 @@ public static class WorkflowRunWords
             WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
                 "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate => $"Failed: the gate `{gate}` failed; its words went to the work.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Opinion && OpinionStepWaits.EndedSaid(step.Code) is { } ended => ended,
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
@@ -351,12 +353,13 @@ public static class WorkflowRunWords
                 : run.ChatRun is { } chat ? $"chat run {chat}"
                 : run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
             var workflow = run.Process?.Named == true ? $"{run.Process.Name} workflow"
+                : run.NotStarted ? "Not started yet"
                 : run.Problem is not null ? "Workflow unread" : $"Current workflow, version {run.Current.Version}";
             said.Append($"{run.Repository} · {workflow} · {quests}");
             if (run.Ask is { } ask) said.Append($" · ask #{ask}");
             said.Append('\n');
             foreach (var asked in run.Line is { } judged ? LineRunWords.Under(judged) : []) said.Append($"  {asked}\n");
-            if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
+            if (run.Problem is { } problem) said.Append(run.NotStarted ? $"  {char.ToUpperInvariant(problem[0])}{problem[1..]}\n" : $"  Cannot read this run: {problem}\n");
             if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
             if (run.Graph is { } graph)
             {

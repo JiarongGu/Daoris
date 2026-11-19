@@ -41,7 +41,9 @@ import { STATE_TONE, type StateLine } from './stateLine';
  */
 export function SessionPageHead({
   session, title, shown, state = null, line = null, facts = [], factsTip, acts, primary = null, busy = false, onAct, asking, next, chip = null,
+  track,
 }: {
+  track?: ReactNode;
   /**
    * Its state line (`stateLineOf`): the reader's group on its pill, then its age and cause, the oldest wait's name a press to its
    * line in the dock. The page always hands it; `shown` stands only where nothing reads the reader (a story).
@@ -206,6 +208,7 @@ export function SessionPageHead({
         )}
       />
 
+      {track}
       {asking}
     </div>
   );

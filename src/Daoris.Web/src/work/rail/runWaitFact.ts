@@ -16,8 +16,3 @@ export function runWaitFact(grouping: SessionGrouping): { line: string; values?:
     tip: 'work.rail.runWaitsTip',
   };
 }
-
-/** Whether the driver placed the row of `session` by its run's waits: the list opens it on its run's view, where the step is acted on. */
-export function opensRun(groups: readonly SessionGrouping[] | undefined, session: string): boolean {
-  return (groups ?? []).some((row) => row.session === session && (row.waits?.length ?? 0) > 0);
-}

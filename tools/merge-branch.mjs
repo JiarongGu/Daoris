@@ -200,38 +200,36 @@
  *
  * ## The prune
  *
- * Every subagent leaves a branch and a worktree, and so does every integration. So each merge starts by removing
- * the merged ones, after its refusals and before `git merge` (a refusal still touches nothing), and a
- * batch's last `--continue` does it again. `--prune [--plan]` runs it alone; its plan changes nothing.
+ * Every subagent and integration leaves a branch and a worktree. Each merge starts by removing the merged ones,
+ * after its refusals and before `git merge`, and a batch's last `--continue` does it again. `--prune [--plan]` runs it
+ * alone; its plan changes nothing.
  *
  * A candidate is a local branch merged into main, but main, the branch the main checkout has out, the one
  * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
- * when that worktree has no modified or staged tracked file, has no untracked file (`git worktree remove`
- * refuses those without `--force`, and one may be work), and holds nothing under its gitignored `local/`
- * but logs, scratch and the setup's copies (`disposableLocal`), and anything else there is named.
+ * when that worktree has no modified or staged tracked file, no untracked file (one may be work),
+ * and holds nothing under its gitignored `local/`
+ * but logs, scratch, a quick run's base tree and the setup's copies (`disposableLocal`), and anything else there is named.
  *
  * A locked worktree is in use, never looked into or unlocked, but for the agent harness's own lock,
- * `claude agent <id> (pid N)`: the harness holds it for its session's whole life, not only
- * while the agent runs. That lock is lifted
- * (`git worktree unlock`, and locked again if the removal is refused) when, besides the rules above, the
- * branch is not at main's tip, as a just-dispatched agent's is before its first commit, and no running
- * process is inside: none whose executable path or command line names the folder, read once per prune
- * (one CIM query on Windows, `ps` elsewhere) and only when a harness-locked worktree or a folder below
- * needs it. It also stays locked unless it has been idle: nothing in it written for
- * `HARNESS_IDLE_MINUTES` (two hours), or for `ENDED_IDLE_MINUTES` where its agent has ended (the worktree made a commit of its
- * own, which its merged branch holds, so main's tip is no sign of a fresh dispatch), read by `newestWrite` from the folder's top-level entries, their children but build
- * output, and the git folder's HEAD, index and HEAD log, never a full walk. A process's command line does not show a shell's
- * working folder, the lock is held for the agent's whole run, and the branch guard fails once main moves past a fresh
- * branch, so a worker that had not yet committed would lose its tree; the plan says "written N minutes ago, a worker
- * may be in it". Removal is `git worktree remove`, never forced: ignored build output does not stop it, and
- * whatever does is work to keep. Then `git branch -d`, never `-D`, and one `git worktree prune` at the
- * end. What git refuses is kept and says why.
+ * `claude agent <id> (pid N)`, held for its session's whole life. That lock is lifted (`git worktree unlock`, and
+ * locked again if the removal is refused) when, besides the rules above, the branch is not at main's tip, as a
+ * just-dispatched agent's is before its first commit, no running process is inside (one whose executable path or command
+ * line names the folder, read once per prune: one CIM query on Windows, `ps` elsewhere) and it has been idle: nothing
+ * written for `HARNESS_IDLE_MINUTES` (two hours), or `ENDED_IDLE_MINUTES` where its agent has ended (it made a commit of its
+ * own, so main's tip is no sign of a fresh dispatch), read by `newestWrite` from the top-level entries, their children but
+ * build output, and the git folder's HEAD, index and HEAD log (a shell's folder is on no command line). Removal
+ * is `git worktree remove`, never forced, then `git branch -d`, never `-D`, and one `git worktree prune`. What git refuses
+ * is kept and says why.
+ *
+ * Every prune ends by reporting each builder worktree whose branch main does not hold, oldest first with its last commit
+ * (`prune-report.ts`; the steward lands or removes it, the prune never does), and by removing the main checkout's
+ * `_fixtures/` entries untouched for a day (`sweepFixtures`, `tools/fixtures-keep.mjs`).
  *
  * A folder directly under the main checkout's `.claude/worktrees/` that git does not list and that holds
  * no `.git` is what a `git worktree remove` left when it could not finish. It is removed, looked at again just before: a
- * link (a reparse point) is never followed, and a link inside it is removed as a link. One a running process is inside
- * is kept, naming each pid and command line; a process is never stopped here. What cannot be removed is named, and the
- * next prune tries again. Any other folder git does not list is never touched. The prune never stops a merge.
+ * link is never followed, and one inside it is removed as a link. One a running process is inside is kept, naming each
+ * pid and command line, and no process is stopped here. What cannot be removed is named, and the next prune tries again.
+ * Any other folder git does not list is never touched. The prune never stops a merge.
  *
  * ## Flakes
  *
@@ -408,6 +406,8 @@ import { measureAfterLanding } from './merge/landing-measure.ts';
 import { landMerge, notReadyLines, readiness } from './merge/land-merge.ts';
 import { madeCommit } from './merge/ended-agent.ts';
 import { disposableLocal, folderVerdict, harnessLock, listed, newestWrite, processSaid, pruneVerdict } from './merge/prune-verdict.ts';
+import { lastCommitOf, scratchLine, unmergedLines, unmergedWorktrees } from './merge/prune-report.ts';
+import { sweepFixtures } from './fixtures-keep.mjs';
 
 export { ENDED_IDLE_MINUTES, HARNESS_IDLE_MINUTES, disposableLocal, folderVerdict, harnessLock, newestWrite, pruneVerdict } from './merge/prune-verdict.ts';
 import { CHECKOUT_LOCK, holdingCheckout } from './merge/checkout-lock.ts';
@@ -1300,11 +1300,10 @@ export function memoryGate({
  * one merged already is refused by name at its turn, and a deleted one would read as a misspelling. Each
  * comes with the worktree that has it out, if any; a held one says why it is held.
  *
- * A Daoris session's tree and branch are Daoris's, never this tool's: an install driving this repository makes
- * each session a worktree under its own home and a branch at main's tip, which reads as merged until its first commit, and
- * a prune took one mid-session. So a branch Daoris names, `daoris/` for a session and `quest/` for this repository's
- * landings, is held with its worktree; Daoris's own housekeeping removes them. A tree's place is no sign: the agent harness's
- * trees may stand beside the checkout too.
+ * A Daoris session's tree and branch are Daoris's, never this tool's: a session's branch sits at main's tip, which reads
+ * as merged until its first commit, and a prune took one mid-session. So a branch Daoris names, `daoris/` for a session
+ * and `quest/` for this repository's landings, is held with its worktree; Daoris's own housekeeping removes them. A
+ * tree's place is no sign: the agent harness's trees may stand beside the checkout too.
  */
 export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
   const mainCheckout = worktrees[0]?.branch ?? '';
@@ -1482,9 +1481,8 @@ function strayFolders(mainCheckout, worktrees) {
 
 /**
  * The prune's plan, changing nothing: every candidate with its verdict, every folder under `.claude/worktrees/`
- * git does not list with its own, and the branch the checkout this runs in has out, since `git branch -d`
- * asks whether a branch is merged into that one. The processes are read once, and only when a
- * harness-locked worktree or a folder is to be looked into.
+ * git does not list with its own, the unmerged builder worktrees, and the branch this checkout has out, since
+ * `git branch -d` asks whether a branch is merged into that one. The processes are read once, and only when needed.
  */
 export function planPrune(root, { hold = [], atMerge = false } = {}) {
   const refs = lines(git(root, ['for-each-ref', `--merged=refs/heads/${MAIN}`, '--format=%(objectname) %(refname)', 'refs/heads/']).out)
@@ -1522,7 +1520,7 @@ export function planPrune(root, { hold = [], atMerge = false } = {}) {
   });
   const gate = gateTreeFacts(worktrees[0]?.path ?? root, worktrees, inside);
   const gateTree = gate && { ...gate, ...gateTreeVerdict(gate, { atMerge }) };
-  return { current, entries, folders, gateTree };
+  return { current, entries, folders, gateTree, unmerged: unmergedWorktrees(worktrees, merged, lastCommitOf) };
 }
 
 /**
@@ -1710,19 +1708,22 @@ function folderLine(root, folder, applied) {
 }
 
 /** The plan's lines, changing nothing: each branch, then each folder. */
-function printPrunePlan(root, { entries, folders, gateTree }, atMerge = false) {
+function printPrunePlan(root, { entries, folders, gateTree, unmerged }, atMerge = false) {
   console.log(pruneHeader(entries, { plan: true, atMerge, folders }));
   for (const entry of entries) console.log(pruneLine(root, entry, false));
   for (const folder of folders) console.log(folderLine(root, folder, false));
   if (gateTree) console.log(gateTreeLine(gateTree, false));
+  for (const line of unmergedLines(unmerged)) console.log(line);
 }
 
 /** The plan applied, a line for each branch and folder as it ends, and the gate tree's last. */
-function applyPrunePlan(root, { entries, folders, gateTree }) {
+function applyPrunePlan(root, { entries, folders, gateTree, unmerged }) {
   console.log(pruneHeader(entries, { folders }));
   applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
   removeFolders(root, folders, (folder) => console.log(folderLine(root, folder, true)));
   if (gateTree) console.log(gateTreeLine(gateTree.remove ? removeGateTree(gateTree.home, gateTree) : gateTree, true));
+  for (const line of unmergedLines(unmerged)) console.log(line);
+  console.log(scratchLine(() => sweepFixtures(root)));
 }
 
 /** The prune a merge runs at its start and a batch at its end. It never stops the merge. */
@@ -2726,8 +2727,6 @@ async function rerunGates(root, options) {
     keepGoing: state.keepGoing || options.keepGoing || 'blocking',
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
-    // A gate run again judges the whole merge's timing records, as its last ratchet does.
-    ...(state.ratchetSince ? { since: state.ratchetSince } : {}),
     kind: 'merge',
     changed: mergeChanged(root, state.full),
     onResult: (result) => {

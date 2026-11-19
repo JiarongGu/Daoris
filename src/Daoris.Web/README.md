@@ -20,7 +20,8 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
 time (D55, `docs/archive/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
-The session's Workflow view names its bound saved version, or Current for live declarations, and the route that
+A session's run is its head's track (`work/track/`), its steps rows between its turns; the track's *Flowchart* opens the
+run's view, which names its bound saved version, or Current for live declarations, and the route that
 chose it (FABRIC-PIPELINE1a). Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
 show workflow holds before Accept, preserving the driver's explanation and available terminal doors. A chat in a tree of its
 own draws its chat run there (CHATFLOW1c): its work, its landing for the tip its tree stands at, and its checks marked not yet

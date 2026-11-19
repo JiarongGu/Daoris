@@ -40,6 +40,11 @@ import type { HeadLink } from './headRows';
 import type { AskOrigin } from './startedFrom';
 import { RenameAsk } from './RenameAsk';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
+import type { StepWaitRow } from '../attention/attentionPushed';
+import { stepHolder } from '../attention/taskRead';
+import { RunTrack } from '../track/RunTrack';
+import { trackOf } from '../track/passage';
+import { toStepRows } from '../track/seek';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useHeadAsks } from './useHeadAsks';
 
@@ -53,7 +58,10 @@ export function useAttendedHead({
   t, language, attended, here, live, quest, grouping, registry, roster, sheets, accounts, nameOf, actions, doors, asks, actors, wiring,
   entryAsks, channelAsk, attendedEntry, openings, sessions, quests, branch, partnerPieces, agentRoster, waiting, following, withIt,
   atWorkHeld, heavyPart, heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision, groupings, attend,
+  steps = [], onFlowchart,
 }: {
+  steps?: readonly StepWaitRow[];
+  onFlowchart?: () => void;
   docked: readonly DockLine[];
   groupings?: readonly SessionGrouping[];
   attend?: (id: string) => void;
@@ -274,11 +282,24 @@ export function useAttendedHead({
     const [session = '', group = '', reason = '', docked = ''] = disagrees.split('|');
     logEvent('wait.disagreed', { session, group, reason, docked });
   }, [disagrees]);
+  const passage = grouping?.passage?.steps.length ? grouping.passage : null;
+  const track = passage && (
+    <RunTrack
+      track={trackOf(passage, grouping?.waits ?? [])}
+      holderOf={(chip) => {
+        const row = steps.find((each) => each.run === passage.run && each.node === chip.node);
+        return row ? stepHolder(row) : t('workflow.wait.holder.person');
+      }}
+      onChip={(node) => toStepRows(passage.run, node)}
+      onFlowchart={() => onFlowchart?.()}
+    />
+  );
   const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
     <SessionPageHead
       session={attended}
       title={attendedTitle}
       shown={attendedShown}
+      track={track}
       state={stateLine ? {
         line: stateLine,
         said: stateLineSaid(t, stateLine),

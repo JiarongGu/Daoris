@@ -131,8 +131,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 19. The record opens before the spawn, naming the quest, repository, door, tree, access setup and the actor's choice. The tree,
     profile and waiting words are machine-local and never travel. A throw or cancel between the open and the hand ends the record,
     failed (stopped where the driver is closing), and lets its tree lock go. Each run stage, each step of the files stage
-    (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`) and
-    the hand's own preparation are timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
+    (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`, the
+    run's `files` stage handing its steps to the stage) and the hand's own preparation, its plugins' servers apart as `hand.servers`, are
+    timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
 20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)
@@ -140,7 +141,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     every other end of a tree, removes the tree, its branch and its record. The `files` run stage, after `open` and before `hand`
     (and the same step at a conversation's open and a go-on), is the one way a tree gets its dependencies: in an unworked tree it
     keeps, places from the store (`work/deps/<key>`, copied, never linked) or installs each effective `dependency` rule in order,
-    under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script). Its keys
+    under its key's lock and the machine's admission (`npm ci --ignore-scripts` where the lockfile marks no install script; a package
+    whose `os` leaves this system out, fsevents' shape, runs none here, `NpmPlatform`, so the repository's own `prepare`, which writes
+    beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys
     run each `toolchain` read once per stage for each environment, every dependency that names it sharing the output
     (`ToolchainReads`), since run per `package.json` folder the npm signature's three reads were most of a large web repository's
     `files.read`. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
@@ -424,7 +427,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     leaves a tree a session still runs or waits in and one a start holds the repository for, and ends the rest by the clean-up's
     own unforced proof, so a tree with uncommitted work or commits no branch of the person's holds stays and its reason is kept
     on its record (`GrownBranch.Kept`). `daoris tree list` names each tree's owner run and that reason; a
-    tree no run owns is the look's tidy's and the person's. (D228)
+    tree no run owns is the look's tidy's and the person's, and the same sweep takes it, with its branch standing, once no session runs or
+    waits in it, nothing has used it for 14 days (`TreeReleases.Unused`, `TreeUse.LastAtAsync`), whether no run owns it or its ended run's proof keeps it, and it holds no uncommitted work; where the
+    sessions in the repository's trees cannot be read it takes none. The report and the machine log say each tree ended and the bytes it
+    freed (`tree.ended`). (D228)
 
 ### Departments and rooms
 
@@ -487,7 +493,7 @@ are roots that wire and grow by a one-line door at most.
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
-| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests` |
+| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a bench under `OPENING_SHAPE_BENCH=1`: a second opening of a repository of this one's shape, its tree and files stages timed) |
 | rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
 | a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |

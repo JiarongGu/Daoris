@@ -219,6 +219,8 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
+            var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(status, run.Opinion) : null;
+            if (answers is not null && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
@@ -234,8 +236,8 @@ public static class WorkflowGraphRuns
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Role = waits?.Role ?? StepRoles.Of(node),
-                Holder = waits?.Holder,
+                Role = waits?.Role ?? (answers is null ? StepRoles.Of(node) : StepRoles.Design),
+                Holder = waits?.Holder ?? (answers is null ? null : new StepHolder(StepHolders.Agent, answers.Values.GetValueOrDefault("session"))),
                 HeldBy = tenure?.Holder,
                 Epoch = tenure?.Epoch,
                 Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
@@ -252,7 +254,7 @@ public static class WorkflowGraphRuns
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
                 Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder)
-                    : facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
+                    : answers ?? facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -362,6 +364,8 @@ public static class WorkflowGraphRuns
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
         : node.Kind == NodeKinds.Land && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
+        : node.Kind == NodeKinds.Opinion && status.Holds == OpinionGateStates.WithSession ? null
+        : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Failed ? OpinionStepWaits.EndedSaid(status.Code)
         : status.State == NodeStates.Active ? status.Holds
         : null;
 

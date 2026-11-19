@@ -323,7 +323,13 @@ public sealed class BranchTidying(string home)
                 // A run's tree ended with its run over, or kept for its reason, said once while it lasts.
                 foreach (var each in pass.Released)
                 {
-                    if (each.Gone) lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: ended `{each.Branch}`'s tree, its run being over: {each.Said}"));
+                    var why = each.ByDays ? $"unused for {TreeReleases.Unused.TotalDays:0} days" : "its run being over";
+                    if (each.Gone)
+                    {
+                        lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: ended `{each.Branch}`'s tree, {why}, freeing {Size(each.Freed)}: {each.Said}"));
+                        log?.Info("tree.ended", ("repository", pass.Repository), ("branch", each.Branch), ("by", each.ByDays ? "days" : "run"), ("freed", each.Freed));
+                    }
+                    else if (each.ByDays) continue;
                     else if (First(met, pass.Repository, each.Branch, each.Said))
                         lines.Add(Look.Progress("tidy", $"tidy  {pass.Repository}: `{each.Branch}`'s tree stays though its run is over: {Clause(each.Said)}."));
                 }

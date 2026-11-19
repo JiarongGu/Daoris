@@ -60,7 +60,15 @@ public static class SessionsGroupsWires
         Calling = row.Calling is { } call ? new { call.Title, call.Since, call.Waiting, call.Told } : null,
         Waits = row.Waits?.Select(wait => new { wait.Run, wait.Node, wait.Why, wait.Role, wait.Since }).ToArray(),
         Passage = row.Passage is { } passage
-            ? new { passage.Run, passage.Workflow, passage.Version, Steps = passage.Steps.Select(step => new { step.Node, step.Kind, step.Mark }).ToArray() }
+            ? new
+            {
+                passage.Run, passage.Workflow, passage.Version,
+                Steps = passage.Steps.Select(step => new
+                {
+                    step.Node, step.Kind, step.Mark, step.Role, step.Attempt, step.Since, step.Code,
+                    Earlier = step.Earlier?.Select(each => new { each.Attempt, each.At, each.Outcome, each.Code }).ToArray(),
+                }).ToArray(),
+            }
             : null,
         Line = row.Line is { } line ? new { line.State, line.Group, line.Reason, line.By, line.Role } : null,
     };

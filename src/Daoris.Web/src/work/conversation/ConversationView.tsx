@@ -89,8 +89,8 @@ export function ConversationView({
   };
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
-  /** What the host draws under a turn's answer, from its words until the next turn's (Ask Daoris's receipt). */
-  beneath?: (ask: Ask, until: string | undefined) => ReactNode;
+  /** What the host draws under a turn's answer, from its words (`first`: from the start) until the next turn's: a receipt, step rows. */
+  beneath?: (ask: Ask, until: string | undefined, first: boolean) => ReactNode;
   /** The requests its agent made, each drawn as its card at its call, its answer folded in; none, every call is a tool card. */
   exchanges?: Exchanges;
   /**
@@ -242,7 +242,9 @@ export function ConversationView({
               reveal={reveal}
               callMark={index === turns.length - 1 ? callMark : undefined}
               divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
-              beneath={turn.ask && beneath ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at) : undefined}
+              beneath={turn.ask && beneath
+                ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at, !turns.slice(0, index).some((earlier) => earlier.ask))
+                : undefined}
             />
             </Fragment>
           ))}
