@@ -118,7 +118,11 @@ public static class HomeStrays
 
     private static bool IsInstalls(string name) =>
         string.Equals(name, DaorisHome.InstallApp, PathCase) || string.Equals(name, DaorisHome.InstallMarker, PathCase)
-        || string.Equals(name, Purged, PathCase);
+        || string.Equals(name, Purged, PathCase) || string.Equals(name, StagedBuild.Folder, PathCase)
+        || string.Equals(name, StagedBuild.Launcher, PathCase);
+
+    /// <summary>What a database keeps beside its file while open: part of the entry, as <c>WiringPlaces</c> counts it.</summary>
+    private static readonly string[] Beside = ["-wal", "-shm", "-journal", ".wake"];
 
     private static StringComparison PathCase =>
         OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -127,5 +131,5 @@ public static class HomeStrays
         part.Contains('*')
             ? Regex.IsMatch(name, "^" + Regex.Escape(part).Replace("\\*", ".*", StringComparison.Ordinal) + "$",
                 OperatingSystem.IsWindows() ? RegexOptions.IgnoreCase : RegexOptions.None)
-            : string.Equals(part, name, PathCase);
+            : string.Equals(part, name, PathCase) || Beside.Any(suffix => string.Equals(part + suffix, name, PathCase));
 }

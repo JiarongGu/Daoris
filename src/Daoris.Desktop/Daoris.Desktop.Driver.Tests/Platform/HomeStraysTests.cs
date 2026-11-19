@@ -50,6 +50,10 @@ public sealed class HomeStraysTests : IDisposable
     {
         Put("INSTALLED.md", 1);
         Put("app/Daoris.exe", 1);
+        Put("Daoris.exe", 1);
+        Put("update/staged/x", 1);
+        Put("data/desktop.db-wal", 1);
+        Put("data/desktop.db.wake", 1);
         Put("data/stray.txt", 5);
 
         var stray = Assert.Single(HomeStrays.Read(_home).Paths);
