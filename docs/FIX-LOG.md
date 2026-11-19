@@ -14472,3 +14472,14 @@ installed window is not yet seen.
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter "FullyQualifiedName~PluginInterfacesTests"`: 41
   passed. Left: a plugin manifest's change does not reach the driver classes that read it (`[Reaches]` takes only folders the
   test project compiles against); REACHPLUGIN1.
+
+## 2026-11-19 — An ask's requirements never reached the window (AsksStateSliceTests)
+
+- **Seen:** a builder's reached checks found `AsksStateSliceTests.Every_field_the_page_reads_is_pushed_and_every_field_the_
+  service_answers_is_classed` red on main ("planQuestions" expected last, "requirements" found).
+- **Cause:** ASKREQS2 (492d4e2a3c) added `requirements` to the service's `AskResponse` and the page's ask, not to the desktop's
+  asks slice (`AsksStateSlice.Fields`), so the window never received it and the ask's *What you required* section stayed empty
+  outside the page's tests; the slice's census caught it, and no merge since reached the modules class.
+- **Fix:** the slice pushes `requirements`; the census's last answered field and its fixture name it.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter "FullyQualifiedName~AsksStateSliceTests"`: 11
+  passed.

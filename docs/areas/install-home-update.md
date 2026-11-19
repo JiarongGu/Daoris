@@ -127,6 +127,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 31. Both service hosts publish self-contained, single-file and untrimmed, with native libraries inside the file. (from D43)
 32. The HTTP host and the knowledge connector an install carries under `app/` run first. Then the home's `bin` entry
     (`cache/bin/`, or an older home's `bin/`), where `publish:service --install` lands them. Then the workspace build. (from D43, D60, D63, D93)
+    The connector is no process of the application's: each session's harness starts its own, located at every start and resume, and
+    the shutdown before a swap ends each session's process tree, so the first turn after a swap reaches the new build's connector.
+    That turn's model sees the tools the new build serves because Claude Code's doors turn its record of them off (D326).
 
 **Publishing**
 

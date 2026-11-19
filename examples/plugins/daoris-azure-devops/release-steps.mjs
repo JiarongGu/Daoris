@@ -4,7 +4,7 @@
 // where its action says so, keyed by its effect and read again before it is made, so a retry or a restart between intent and effect finds
 // what the first made. A wait says the role it waits on, with its page, until the step's deadline: no fixed give-up. A refused key or
 // sign-in waits on the credentials keeper with the page that fixes it, never failing the step. No step approves by itself:
-// an approval is its approver's (`approve-release` is the person's press alone, never an agent's tool).
+// an approval is the approver role's act (`approve-release`: the person's press, or the holding agent's tool where the place casts it so).
 import { createHash } from 'node:crypto';
 import { Refusal, TRANSIENT, call, choose, fit, fromBranch, idOf, located, project, releases, withoutHeads } from './azure.mjs';
 import { SUCCESS, aliasOf, changedWords, declared, undeclared, unresolved } from './target.mjs';

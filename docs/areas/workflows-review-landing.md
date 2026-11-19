@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
-| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), and the pass that journals and settles by them (`StepActs`) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), and the pass that journals and settles by them (`StepActs`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -64,9 +64,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    refused `target-changed` before anything is made or started; a definition released by no trigger is the declaration's choice. The
    approval's card, on the step in the run's view, in the session page's dock and in its *What needs you* row, names the release, its
    definition, the build and its source branch (APPROVEHERE1, APPROVEPRESS1, APPROVEPRESS2): where the plugin declares
-   `approve-release` as no agent's tool, *Approve* and *Reject* on the card run it through the window's plugin command door under the
-   holder's own sign-in; otherwise *Open* takes the holder to the system's page in Daoris's browser, and the step settles on the approval
-   observed. No release step approves, whatever its action.
+   `approve-release` and the person holds the approver role (the step's holder, never the command's `tool` flag), *Approve* and *Reject*
+   on the card run it through the window's plugin command door under their own sign-in; otherwise *Open* takes the person to the system's
+   page in Daoris's browser, and the step settles on the approval observed. No release step approves, whatever its action; where the place
+   casts the approver to an agent the approval is that agent's tool (rule 3e, APPROVEACT1).
 3d. The release is the run's own steps where a version names them (RELEASESTEPS1): the plugin's `release-target`, `release-create`,
    `release-start`, `release-approve` and `release-watch`, one per fact. Each act reads its fact first, whoever made it, so a fact made
    while the step was only ready settles it at once, credited to the identity Azure DevOps names (`outside: <name>`, or Daoris), kept as
@@ -80,7 +81,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    (`build <n> / CD`) and under `observe` for its holder's, to the step's deadline, never making one. Start starts only where the action
    says, once (a start Azure DevOps shows late is waited for, and a refused start that reads started is taken), else waits on the
    deployer; every step reads the kit's stand-down signal before each write and in each wait, so nothing is made after its attempt
-   stands down; approve never approves (the approver's own press is the plugin's `approve-release`, declared as no agent's tool); a key or
+   stands down; approve never approves (the approval is the approver role's act, the plugin's `approve-release`, rule 3e); a key or
    sign-in refused waits on the credentials keeper with its token page until the deadline, never failing for access (ACCESSSTEP1); at the
    deadline the driver climbs the reporting line instead of taking the `timeout` (`AccessWaits`, in the settle path): sign-ins are an
    owner-class kind, so the wait passes every level to the owner role and the attempt is held there (`access-climbed`) with the token
@@ -93,7 +94,21 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    the pass at the look's deadline journals it once on the run (`workflows/acts/<key>.json`) against the agent-held step waiting whose receipts take its fact,
    with its attempt and epoch, where the round came after the step waited (`StepActs`, before the hand-off in `HandStepsAsync`); a round no
    such step takes is journaled nowhere. Once the newest receipt of each mapped fact is reached the pass settles the step done at the
-   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The shipped
+   settle door as its holder, "by its receipts" with them as evidence, and `step_settle` refuses such a step (`by-receipt`). The approval
+   is the approver role's act (APPROVEACT1): a plugin's step waiting on its own role's act whose `receipts` map it (`release-approve`,
+   `{"approval":"approved"}`) is handed, where an agent holds the role, to the working session like a task (`AgentSettles.Handed`, its
+   plugin's words and page in the hand-off, *Take* alone the person's press), its act `approve-release` reaching only a session at a place
+   that casts the approver to an agent (plugins rule 29a), and its reached receipt, the plugin's own reading after the act, is applied as
+   the attempt's reached outcome credited as the receipt says; a destination the place marks keeps the approver the person's, so nothing
+   is handed and no agent's receipt settles it. The run's
+   view draws one row per act journaled on the step's attempt under it (`StepActViews`, the step's `journal`): the fact, its state, its
+   words, credit and page, and "waiting on `<role>`: <holder>" where a receipt waits on another role. A holder that cannot take an act
+   asks the role that can through `question_ask` (the hand-off says so); the request a run's working session asked as it ended its turn
+   awaiting its step is kept for its answer (`QuestionFiles.Settle`) and drawn in its dock, and the answer, the person's sign-in Daoris's
+   browser sees (`SignInAnswers`) or their words, is its next turn through the say door, its retry's receipt settling the step with no
+   one relaying it. The long loop: a step its receipts settle whose act reached only after a receipt that did not (failed, or waiting on
+   another role) proposes what it came to for the knowledge entry it names (`StepLessons`, `workflows/acts/proposed.json`), carried
+   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. The shipped
    `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
    `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
    after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its
@@ -640,11 +655,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step
-    the run's agent holds and the person may *Take* reads as the agent's on every surface (`heldByAgent`, `takeFirst`): its node's part says
-    "agent alone", by an agent, never the *you* its kind declares (`whoSaid`), its card and the head's carry *Take* alone and none of the
-    step's own presses (Done, a skip, a stop: `NodeWord` draws none until a take), and where the session's dock holds a question, sign-in
-    or go-ahead its agent asked, the head's card says the agent waits on the person for it with a link to that line. The person's held
-    step keeps its presses. (AGENTSTEPCARD1) That an
+    the run's agent holds reads as the agent's on every surface (`heldByAgent`): its node's part says "agent alone", by an agent, never
+    the *you* its kind declares (`whoSaid`), and where the session's dock holds a question, sign-in or go-ahead its agent asked, the head's
+    card says the agent waits on the person for it with a link to that line. Its presses are the driver's alone: a step handed to the agent
+    holding its role (`AgentSettles.Handed`) offers *Take* alone, no act of its own (Done, a skip, a stop), in the run's reading as in its
+    *What needs you* row (`StepHoldActs.Handed`), and the window draws what it is sent, withholding nothing itself; the person's held
+    step keeps its presses. (AGENTSTEPCARD1, AGENTSTEPCARD2) That an
     agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record

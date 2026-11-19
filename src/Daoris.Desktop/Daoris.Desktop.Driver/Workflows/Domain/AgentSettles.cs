@@ -23,6 +23,11 @@ public static class AgentSettles
         status.State == NodeStates.Active && node.Kind == NodeKinds.Task && NodeKit.Of(node.Kind) is IWaitsOnRole waits
         && waits.Waits(node, status) == PersonWaits.Task;
 
+    /// <summary>Whether the step is handed to the agent holding its own role, settled by its tool or its acts' receipts: the person's one press is <i>Take</i>.</summary>
+    public static bool Handed(NodeDeclaration node, NodeStatus status, RoleWait wait) =>
+        wait.Holder.Kind != StepHolders.Person && wait.Role == StepRoles.Of(node)
+        && (Tool(node, status) || (wait.Why == PersonWaits.Actor && StepReceipts.Mapped(node).Count > 0));
+
     /// <summary>Whether <paramref name="node"/> settles only by its own role's press where it stands: an Accept or an approval.</summary>
     public static bool Pressed(NodeDeclaration node) =>
         NodeKit.Of(node.Kind) is IWaitsOnRole waits

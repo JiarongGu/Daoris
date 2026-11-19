@@ -72,6 +72,7 @@ if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var wa
 }
 
 Daoris.Driver.Host.InstanceHost.Wait = pressWait;
+PluginRoleHolders.Reading = CastReading.AgentHolds;
 
 // The one tree routes the words once, into the words the commands below read.
 var typed = verbArgs;

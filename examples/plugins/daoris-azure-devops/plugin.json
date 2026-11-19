@@ -3,8 +3,8 @@
   "formerly": ["azure-devops-pull-request"],
   "apiVersion": 1,
   "name": "Azure DevOps",
-  "version": "4.7.0",
-  "changes": "The release manager's acts are its own tools: create-release and start-stage make their fact once, read first, and release-status reads the stage to its approval and its end, each answering a receipt Daoris journals on the step the agent holds. The release steps stay for runs bound to them; approve-release stays no agent's tool, and given a release id Azure DevOps does not answer it says the release was not found.",
+  "version": "4.8.0",
+  "changes": "The approval is the approver role's act: approve-release reads the stage's approval first, whoever gave it, and answers a receipt (fact approved) Daoris journals on the approval step, settling it; it is handed to an agent as its tool only where the place casts the approver to an agent, never at a destination the place marks, and the person holding the approver presses it on the card.",
   "description": "Daoris's work on Azure DevOps through its REST API, with the personal access token its own login keeps: pull-request opens a pull request from the branch Daoris pushed, sets auto-complete where asked, and reads its state and merge commit; release follows the merged commit's build and release to their end.",
   "hooks": {
     "command": ["node", "${plugin}/plugin.mjs"],
@@ -87,8 +87,8 @@
           { "name": "stage", "type": "text", "title": { "en": "Stage's id", "zh": "阶段编号" }, "required": true }
         ] },
       { "name": "approve-release", "title": { "en": "Approve or reject a release stage", "zh": "批准或拒绝发布阶段" },
-        "about": { "en": "The approver's own press: approves or rejects the pending approval of a release's stage through the approver's own sign-in. No agent is handed it.", "zh": "审批人自己的操作：通过审批人自己的登录批准或拒绝某个发布阶段的待审批项。不会交给任何代理。" },
-        "writes": true,
+        "about": { "en": "The approver's act: approves or rejects the pending approval of a release's stage, or reads it given already, whoever gave it. The person holding the approver presses it on the approval card under their own sign-in; an agent is handed it as its tool only where the place casts the approver to an agent, never at a destination the place marks. Its data is the receipt Daoris journals on the approval step (fact approved).", "zh": "审批人的动作：批准或拒绝某个发布阶段的待审批项，若已有人批准则直接读取，无论由谁批准。由担任审批人的人在审批卡片上以自己的登录操作；仅当该位置把审批人指派给代理时，才作为工具交给该代理，被标记的目标从不交给代理。数据为 Daoris 记入审批步骤的回执（事实 approved）。" },
+        "tool": true, "writes": true, "role": "approver",
         "args": [
           { "name": "origin", "type": "text", "title": { "en": "Origin's address", "zh": "origin 地址" }, "required": true },
           { "name": "release", "type": "text", "title": { "en": "Release's id", "zh": "发布编号" }, "required": true },

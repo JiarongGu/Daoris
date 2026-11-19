@@ -7,7 +7,7 @@ import type { Mock } from 'vitest';
 /** The origin address of the run's repository (`GRAPH_RUN_APPROVAL`'s `portal`). */
 export const ORIGIN = 'https://dev.azure.com/acme/Proj/_git/portal';
 
-/** Azure DevOps's plugin as `PLUGINS` lists it: its `approve-release` the approver's own press, or, with `tool`, handed to agents. */
+/** Azure DevOps's plugin as `PLUGINS` lists it: its `approve-release` the approver's act, with `tool` also an agent's tool where it holds the role. */
 export const azurePlugin = (tool: boolean) => ({
   id: 'daoris-azure-devops', name: 'Azure DevOps', version: '4.6.0', description: 'Pull requests and releases on Azure DevOps.',
   enabled: true, problem: null, harnesses: [], points: ['work/perform'], running: true,
@@ -15,7 +15,7 @@ export const azurePlugin = (tool: boolean) => ({
   interfaces: {
     commands: [{
       name: 'approve-release', title: 'Approve or reject a release stage', about: 'The approver’s own press, through their own sign-in.', writes: true,
-      ...(tool ? { tool: true } : {}),
+      ...(tool ? { tool: true, role: 'approver' } : {}),
     }],
     storage: null, views: [], refused: [], unknown: [],
   },

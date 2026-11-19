@@ -77,6 +77,8 @@ export interface RunStep {
    * published and the helpers they asked. None where there are none, and from a shell before it.
    */
   requests?: RunRequest[] | null;
+  /** The acts journaled on the step's attempt while its holder acts, one row each; none where none is. */
+  journal?: RunActRow[] | null;
   /**
    * The unit's integration state as the integration record says it, on the `integrate`
    * node only; none from a shell before it, or where nothing is asked.
@@ -89,6 +91,21 @@ export interface RunStep {
   heldBy?: string | null;
   epoch?: number | null;
   holds?: string[] | null;
+}
+
+/**
+ * One act journaled on a step (`WorkflowRunAct`): the fact its receipt names, its state (`reached`, `waiting`, `failed`), its words, credit
+ * and page, and the role it waits on with that role's holder as the place casts it.
+ */
+export interface RunActRow {
+  fact: string;
+  state: string;
+  message?: string | null;
+  url?: string | null;
+  by?: string | null;
+  at?: string | null;
+  waitsOn?: string | null;
+  holder?: string | null;
 }
 
 /** A graph run's node's wait (`WorkflowRunWait`): one of its kind's `waits`, worded as `workflow.wait.<kind>.<code>` with its facts. */
@@ -352,8 +369,6 @@ export const holdsIt = (holder: RunHolder | null | undefined): boolean => holder
 
 /** Whether an agent holds a waiting step: it reads as the agent's, whatever its kind declares of the person's part. */
 export const heldByAgent = (step: Pick<RunStep, 'state' | 'holder'>): boolean => step.state === 'waiting' && step.holder?.kind === 'agent';
-
-export const takeFirst = (step: Pick<RunStep, 'state' | 'holder' | 'holds'>): boolean => heldByAgent(step) && (step.holds?.includes('take') ?? false);
 
 /** The step a run stands at, or null where it finished. */
 export const standsAt = (run: WorkflowRun): RunStep | null => run.steps.find((step) => step.step.id === run.at) ?? null;

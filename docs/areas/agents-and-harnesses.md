@@ -96,6 +96,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     call naming an element reference from before the restart (`target`, `ref`) gets a fresh snapshot. The keeper lists and calls only the tools the server's plugin declares (its reads and
     writes), answering a call to another without reaching the server, and ends a call past two minutes, said in the conversation
     and cancelled at the server; every mode alike, full access included.
+    Every start and resume hands its servers again, so a resume's harness starts a fresh connector of the installed build. Claude Code
+    otherwise sends a conversation the system prompt and tools it recorded at its first request, at every resume until a compaction: a
+    tool name added reaches it, an existing tool's new parameters and changed rules or memory never. Both its doors turn that record off
+    (`ClaudeCodeSpawn.FreshPrompt`, `--system-prompt-snapshot off` ahead of `-p`; the protocol door's preset with `snapshot: false`), so
+    every request carries what its servers serve now. (D326)
 14. Plugin skills are `SkillSource` values laid out by the door's provider (`ISkillLayout`; Claude Code copies them per session
     under the home's spawn folder; a provider stating none is handed none) and handed by the harness's session-only door
     (`--plugin-dir`, or `_meta` beside the rules). A harness that loads no tree skills (Codex) is told their folders. (D170, D230)

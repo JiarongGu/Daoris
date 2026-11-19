@@ -22,6 +22,8 @@ public sealed record PluginCommandDeclared(string Name, AuthoredText About, bool
     public bool Writes { get; init; }
 
     public AuthoredText? Confirm { get; init; }
+
+    public string? Role { get; init; }
 }
 
 /// <summary>

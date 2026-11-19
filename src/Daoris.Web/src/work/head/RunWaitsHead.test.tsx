@@ -58,8 +58,8 @@ describe('RunWaitsHead', () => {
 
   it('reads an agent-held task step as the agent’s with Take alone, and none of the person’s presses', () => {
     const row: StepWaitRow = {
-      run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer', holder: 'agent', holderName: 'builder-1', presses: ['done', 'skip', 'stop'],
-      epoch: 2, holds: ['take', 'hand'],
+      run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer', holder: 'agent', holderName: 'builder-1', presses: [],
+      epoch: 2, holds: ['take'],
     };
     render(
       <RunWaitsHead waits={[{ run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer' }]} steps={[row]} onWord={vi.fn()}
@@ -67,8 +67,18 @@ describe('RunWaitsHead', () => {
     );
 
     const line = screen.getByRole('group', { name: 'config-change: waiting on config-changer: builder-1' });
-    expect(within(line).getByRole('button', { name: 'hold take hand' })).toBeInTheDocument();
+    expect(within(line).getByRole('button', { name: 'hold take' })).toBeInTheDocument();
     for (const name of ['Done…', 'Not needed this run…', 'End this work…']) expect(within(line).queryByRole('button', { name })).toBeNull();
+  });
+
+  it('draws the presses the driver sends on an agent-held step, withholding none itself', () => {
+    const row: StepWaitRow = {
+      run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer', holder: 'agent', holderName: 'builder-1', presses: ['skip'], epoch: 2, holds: ['take'],
+    };
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'config-change', why: 'actor', role: 'config-changer' }]} steps={[row]} onWord={vi.fn()} />);
+
+    const line = screen.getByRole('group', { name: 'config-change: waiting on config-changer: builder-1' });
+    expect(within(line).getByRole('button', { name: 'Not needed this run…' })).toBeInTheDocument();
   });
 
   it('says what the agent is blocked on the person for, linking that wait in the dock, never offering the task’s presses', async () => {

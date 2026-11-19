@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A step cast to the role's agent handed to the run's working session: when a run's step waits on a task its holder's tool settles
-/// (<see cref="AgentSettles.Tool"/>) and an agent holds it, the run's newest session of this machine is told it as its next turn through the
+/// A step cast to the role's agent handed to the run's working session: when a run's step waits on a task its holder's tool settles, or on
+/// its role's act whose receipts settle it (<see cref="AgentSettles.Handed"/>), and an agent holds it, the run's newest session of this machine is told it as its next turn through the
 /// say door, once per attempt and epoch, so a record awaiting the run's step wakes with it and an ended one goes on with it. The words say what
 /// the step is, its outcomes, the evidence its settle gives and the tool that settles it (<see cref="StepSettles.Tool"/>).
 /// </summary>
@@ -35,7 +35,7 @@ public static class StepHandOffs
     {
         if (say is null || records.Read(governed.Unit.Id) is not { Ended: null } kept) return;
         var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk)
-            .Where(step => step.Holder == StepHolders.Agent && step.Why == PersonWaits.Task && step.Presses.Count == 0).ToList();
+            .Where(step => step.Handed).ToList();
         if (steps.Count == 0) return;
         var executors = (IReadOnlyList<string>)[.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []];
         var read = sessions is null ? null : await sessions(ct).ConfigureAwait(false);
@@ -46,15 +46,18 @@ public static class StepHandOffs
             var attempt = WorkPerformer.StatusOf(kept, node.Id).Attempt;
             var key = KeyOf(governed.Run, node.Id, attempt, step.Epoch);
             if (told?.Contains(key) == true) continue;
-            var answer = await say(session, Words(governed.Run, node, step, attempt), key, ct).ConfigureAwait(false);
+            var entry = StepReceipts.Knowledge(node);
+            var lessons = entry is null ? [] : StepLessons.Open(records.Home, scope.Run.Binding.Repository, entry, governed.Run);
+            var answer = await say(session, Words(governed.Run, node, step, attempt, entry is null ? "" : StepLessons.Words(entry, lessons)), key, ct).ConfigureAwait(false);
             if (!answer.Kept) continue;
+            StepLessons.Carry(records.Home, lessons, governed.Run);
             told?.Add(key);
             said.Add($"step {node.Id} of #{governed.Run} handed to session {session}");
         }
     }
 
-    /// <summary>The step's words as its session reads them: what it is, its outcomes, its evidence, and the one tool that settles it.</summary>
-    public static string Words(string run, NodeDeclaration node, HeldStep step, int attempt)
+    /// <summary>The step's words as its session reads them: what it is, its outcomes, its evidence, the tool that settles it, and <see cref="StepLessons.Words"/>.</summary>
+    public static string Words(string run, NodeDeclaration node, HeldStep step, int attempt, string lessons = "")
     {
         var decision = TaskDecisions.Is(node);
         var outcomes = decision ? $" Answer with one outcome: {string.Join(", ", node.Outcomes.Select(each => $"`{each}`"))}." : " Settle it done when it is done.";
@@ -65,9 +68,11 @@ public static class StepHandOffs
         var settles = StepReceipts.Mapped(node).Count > 0
             ? $"{StepReceipts.Words(node)} "
             : $"{evidence} Do it, then settle it with `{StepSettles.Tool}` (run `{run}`, node `{node.Id}`{(step.Epoch is { } e ? $", epoch {e}" : "")}), with your words. ";
-        return $"Daoris hands you step `{node.Id}` of run #{run} (attempt {attempt}{epoch}), waiting on `{step.Role}`, which your agent holds."
-               + $"{(StepReceipts.Mapped(node).Count > 0 ? "" : outcomes)}{StepReceipts.KnowledgeWords(node)}{settles}"
-               + "Where you cannot (no access, a refusal, a yes you need), ask up your line (`question_ask`, or `go_ahead_ask` for an act that is the "
-               + "person's to allow) and say so in your last message. Then end your turn: the next step, or why the settle was refused, is your next turn.";
+        var waits = step is { Why: PersonWaits.Actor, Words.Length: > 0 } ? $" Its plugin says: {step.Words}{(step.Url is { } url ? $" ({url})" : "")}" : "";
+        return $"Daoris hands you step `{node.Id}` of run #{run} (attempt {attempt}{epoch}), waiting on `{step.Role}`, which your agent holds.{waits}"
+               + $"{(StepReceipts.Mapped(node).Count > 0 ? "" : outcomes)}{StepReceipts.KnowledgeWords(node)}{lessons}{settles}"
+               + "Where you cannot (a sign-in, an approval, a yes, a change another's to make), ask the role that can through `question_ask`, naming "
+               + $"it (`role`: `{StepRoles.CredentialsKeeper}` for a sign-in, with its `site`) and, for an act, the act (`act`), and say so in your last "
+               + "message. Then end your turn: the answer, the next step, or why the settle was refused, is your next turn.";
     }
 }

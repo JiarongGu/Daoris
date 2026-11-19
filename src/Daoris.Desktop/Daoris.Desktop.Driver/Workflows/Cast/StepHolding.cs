@@ -29,6 +29,8 @@ public static class StepHoldActs
             CastActs.GiveBack => tenure is { Why: not TenureWhy.Cast },
             _ => true,
         })];
+
+    public static IReadOnlyList<string> Handed(StepTenure? tenure) => tenure?.Why == TenureWhy.Marked ? [] : [CastActs.Take];
 }
 
 /// <summary>
