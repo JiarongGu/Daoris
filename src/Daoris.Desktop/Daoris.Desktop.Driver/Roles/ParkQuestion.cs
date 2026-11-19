@@ -9,10 +9,11 @@ namespace Daoris.Driver;
 /// that answer (null with none recommended), and the agent's mark that the question is the owner's alone
 /// (null for none), read as written, a mark this build does not know included: the supervisor answers no marked question. And the
 /// site whose sign-in it waits on, a web page's address (null for none): the person's sign-in there, or Daoris's browser seeing it, settles it.
+/// And the role the request asks (D325's one door: <c>credentials-keeper</c>, <c>approver</c>, <c>owner</c>), a role's id, or null for the line above.
 /// </summary>
 public sealed record ParkQuestion(
     string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
-    string? Why = null, string? Owner = null, string? Site = null);
+    string? Why = null, string? Owner = null, string? Site = null, string? Role = null);
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>
 public sealed record ParkQuestionChoice(string Label, string Does);
@@ -66,6 +67,7 @@ internal static class ParkQuestions
         var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
         // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
-        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")));
+        var role = Text(root, "role") is { } asked && StepRoles.Shape.IsMatch(asked) ? asked : null;
+        return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner, SiteOf(Text(root, "site")), role);
     }
 }
