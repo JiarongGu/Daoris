@@ -61,11 +61,10 @@ const EVERYONE = '*';
  * refusals surfaced verbatim — the service's sentence is the contract, so it is never translated or rephrased here.
  */
 export function useQuestsView({
-  active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, onOpenRun, onOpenAtWork, opening, onOpened, asking, onAsked,
+  active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, onOpenRun, opening, onOpened, asking, onAsked,
   group = null, onGroupBrought,
 }: {
   /** A line of work of an ask folded to a count opens its own *At work* view. Absent where Sessions is not, a browser. */
-  onOpenAtWork?: (session: string) => void;
   /**
    * The door into a run: its session attended, the side bar on its *Workflow*. Absent where
    * Sessions is not, a browser, which reads no run.
@@ -237,7 +236,6 @@ export function useQuestsView({
     notify,
     onAttend,
     onOpenRun,
-    onOpenAtWork,
     composing: askComposing,
     onComposingChange: setAskComposing,
   });

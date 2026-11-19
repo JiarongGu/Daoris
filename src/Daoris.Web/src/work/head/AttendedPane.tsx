@@ -17,7 +17,6 @@ import type { HandOverRoster } from '../start/HandOverAsk';
 import type { useAttendedHead } from './useAttendedHead';
 import type { useAttendedRecord } from './useAttendedRecord';
 import type { useAttendedSession } from './useAttendedSession';
-import { relationsOf } from './relations';
 import { SessionPlaceHold } from './SessionPlaceHold';
 import { SessionSupervisorCourse } from './SessionSupervisorCourse';
 import { SessionTerminalHold } from './SessionTerminalHold';
@@ -55,10 +54,10 @@ export function AttendedPane({
   onAnswerAsk?: (ask: string) => void;
   onOpenBranch?: (repository: string, branch: string) => void;
 }) {
-  const { attended, entries, quest, openings, attendedEntry, channelAsk, sessions, quests, here, live } = session;
+  const { attended, entries, quest, openings, attendedEntry, sessions, quests, here, live } = session;
   const {
-    related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, channel, channelOpened,
-    postChannel, forwardChannel, branch, discardBranch, told, tracing, setTracing, trace, milestone, supervision,
+    related, relatedOwn, together, bringTogether, togetherAct, memoryRows, decideMemory, sessionRecord, branch, discardBranch, told,
+    tracing, setTracing, trace, milestone, supervision,
   } = record;
   const { ownBranch, landEntry, entryOffered } = work;
   const { waits, pieceSection } = waitsState;
@@ -104,25 +103,7 @@ export function AttendedPane({
       nameOf={nameOf}
       // Its entry's parts: every act on this page stays the part shown's, and the strip picks it.
       parts={attendedParts ? { entry: attendedParts, attended: attended.id, rows: partRows, onShow: onShowPart } : undefined}
-      // Its ask's channel, kept to this line of work: a post is the person's words, and a refusal is the service's code.
-      channel={attendedEntry && channelAsk && channel.available && (channel.loading || channel.channel) ? {
-        channel: channel.channel,
-        only: { entry: attendedEntry.entry, repository: attendedEntry.repository },
-        onPost: (post, answered) => postChannel.mutate({ ask: channelAsk, post }, {
-          onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
-          onError: (error) => answered.refused(sentence(error)),
-        }),
-        // *Send to its session*, the person's own press, as on the ask's page.
-        onForward: (message, repository, answered) => forwardChannel.mutate({ ask: channelAsk, message, repository }, {
-          onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
-          onError: (error) => answered.refused(sentence(error)),
-        }),
-        onOpenQuest,
-        onOpenAsk: onAnswerAsk ? () => onAnswerAsk(channelAsk) : undefined,
-        opened: channelOpened,
-      } : undefined}
       chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
-      relations={relationsOf(attended, quest, quests.data ?? [], sessions.data ?? [])}
       related={related}
       relatedOwn={relatedOwn}
       onRelated={attend}

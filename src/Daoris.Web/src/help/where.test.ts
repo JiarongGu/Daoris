@@ -167,7 +167,7 @@ describe('where the person is', () => {
     const crowded = prefaceOf({
       view: 'sessions', workspace: 'aurora', draft,
       session: { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'x'.repeat(2000) },
-      layout: { right: ['timeline', 'outputs', 'ask', 'console'], panel: ['terminal', 'atWork'], rightShown: true, panelShown: true },
+      layout: { right: ['timeline', 'outputs', 'ask', 'console'], panel: ['terminal'], rightShown: true, panelShown: true },
     });
     expect(crowded.slice(0, 1200)).toContain('the draft is told beside their words');
   });

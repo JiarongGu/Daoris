@@ -46,6 +46,7 @@ const ORGANISMS = new Set<string>([
   './work/conversation/SessionConversation.tsx',
   './work/catchup/useCatchUp.ts',
   './work/band/SessionBand.tsx',
+  './work/exchanges/useLineRows.tsx',
   './work/track/StepActs.tsx',
   // The earlier parts of a line: each is the conversation's organism in its earlier mode, so this holds none of its own.
   './work/conversation/EarlierParts.tsx',

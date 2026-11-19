@@ -11,14 +11,13 @@ import { type UseMutationResult, type UseQueryResult } from '@tanstack/react-que
 import { type SyncNowReport } from '../../bridge/driver';
 import { type StatusResponse } from '../../data/generated/service';
 
-export function useWorkViews({ lists, view, notify, attached, openInWork, openRun, openAtWork, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked }: {
+export function useWorkViews({ lists, view, notify, attached, openInWork, openRun, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked }: {
   lists: ListPanes;
   view: View;
   notify: Notify;
   attached: boolean;
   openInWork: (session: string) => void;
   openRun: (session: string) => void;
-  openAtWork: (session: string) => void;
   opening: { from?: string | undefined; to?: string | undefined; } | null;
   setOpening: React.Dispatch<React.SetStateAction<{ from?: string | undefined; to?: string | undefined; } | null>>;
   asking: boolean;
@@ -60,7 +59,6 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     notify,
     onAttend: attached ? openInWork : undefined,
     onOpenRun: attached ? openRun : undefined,
-    onOpenAtWork: attached ? openAtWork : undefined,
     opening,
     onOpened: () => setOpening(null),
     asking,
