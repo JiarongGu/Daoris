@@ -18,7 +18,7 @@ public enum HeldLift
 
 /// <summary>
 /// Words a record could not go on with because its own account could not carry them (a <see cref="GoOnMarks"/> mark, why
-/// <c>account</c>), read again at each look (HELDWORDS1, D348). An account is a fact that moves by itself (a sign-in made again, an
+/// <c>account</c>), read again at each look. An account is a fact that moves by itself (a sign-in made again, an
 /// account folder back after an update, a cool-off ended), so such a mark never holds its words for good the way a closed quest's or
 /// another client's does. Pure: the account's hold, the person's choice and the time are handed in.
 /// </summary>
@@ -45,8 +45,8 @@ public static class HeldAccountWords
         if (choice is not null && choice.At >= mark.At) return HeldLift.Chosen;
         if (Usable(own)) return now - mark.At >= Retry ? HeldLift.Own : HeldLift.Stays;
 
-        // Only words a new session is handed are carried: another agent's findings alone went to the person when they were held, and
-        // nothing would go on with them in a new session, so they stay where the person was told of them.
+        // Only words a new session is handed are carried: another agent's findings alone go to the person as they are held, and no new
+        // session would take them, so they stay with the person.
         return PastBound(mark, now) && record.Waiting.Any(word => DaorisWords.NewPartCarries(word) || HelperAnswersCarried.Is(word))
             ? HeldLift.Elsewhere
             : HeldLift.Stays;

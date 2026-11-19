@@ -276,7 +276,6 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     public Task<ResumeChoice> ResumeAsync(string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false, LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null, bool picked = false)
         => Selecting.ResumeAsync(adapter, config, workspace, account, kind, newSession, line, ct, limited, model, picked);
 
-    /// <inheritdoc cref="RosterSelection.OwnHold"/>
     public NextHold OwnHold(string adapter, string? account, StartKind kind = StartKind.Driven) => Selecting.OwnHold(adapter, account, kind);
 
     /// <inheritdoc cref="RosterSelection.CarriedOnAsync"/>

@@ -105,7 +105,7 @@ public static class GoOnNew
         var next = WordsNever.ContinuedIn(json, id);
         var prior = ServiceClient.ReadRecord(json, id);
         var judged = WordsNever.Judge(record, last, next);
-        // Words the record could not go on with, every one of them marked (HELDWORDS1): the mark's reason, which the course reads.
+        // Words the record could not go on with, every one of them marked: the mark's reason, which the course reads.
         var held = prior is not null && new GoOnMarks(home).Read(id) is { } mark && GoOnMarks.Judged(prior, mark) ? mark.Why : null;
 
         // The facts, read lazily as the door's refusals were: a driven record's quest is read only where nothing before it refused, and the

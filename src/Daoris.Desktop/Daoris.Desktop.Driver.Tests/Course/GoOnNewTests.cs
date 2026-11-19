@@ -80,10 +80,7 @@ public sealed class GoOnNewTests : IDisposable
         Assert.True((await AskAsync(room, "s1")).Sent);
     }
 
-    /// <summary>
-    /// 🔴 A session awaiting its step holds words it could not go on with (marked, why <c>account</c>): they do not reach it
-    /// there, so the hand-over takes it, its account not cooling, and keeps the choice. Unmarked, its words reach it there.
-    /// </summary>
+    /// <summary>🔴 Words held on a session awaiting its step do not reach it there, so the door takes it; unheld, they do.</summary>
     [Fact]
     public async Task A_session_awaiting_its_step_with_words_it_cannot_go_on_with_may_go_on_in_a_new_session()
     {

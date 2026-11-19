@@ -255,7 +255,7 @@ internal sealed class RosterSelection(HarnessRoster roster)
     }
 
     /// <summary>
-    /// What holds a record's own account from carrying words held for it, as the look reads it (HELDWORDS1, D348): the resume's own
+    /// What holds a record's own account from carrying words held for it, as the look reads it: the resume's own
     /// judgement before any probe (<see cref="OwnOf"/>), its agent's last reading of a sign-in gone read as signed out. Nothing is
     /// probed, spawned or counted; an unknown sign-in is ready, as a start treats it, and an agent this build does not drive is missing.
     /// </summary>

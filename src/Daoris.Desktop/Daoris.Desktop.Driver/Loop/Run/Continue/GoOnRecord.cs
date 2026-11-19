@@ -45,7 +45,6 @@ internal sealed class GoOnRecord(IRunWiring wiring) : IRunStage
             && start.GoesOn
             && !state.Tree.Resuming)
         {
-            // The mark its words were held by, read before the go-on takes it away as it takes them up (HeldAccountWords).
             var held = context.Marks.Read(park.Session);
             // Where its own account could not carry the words, the walk's pick did, and the reason says why.
             (var continued, fellBack, answerKept) = await wiring.GoOns.ContinueAsync(
@@ -94,11 +93,10 @@ internal sealed class GoOnRecord(IRunWiring wiring) : IRunStage
             if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
-                // A closed quest's session whose own conversation is proven lost, or whose own account cools while another of the line's
-                // is ready, or whose words its own account held past the bound (HeldAccountWords), goes on by itself as a conversation in
-                // its tree through the shell's chat runner, handed the brief and the person's words. Anything else, and a host with no
-                // runner, waits for the person.
-                var heldPast = fellBack.Code == ContinueWhy.Account && HeldAccountWords.PastBound(held, DateTimeOffset.UtcNow);
+                // A closed quest's session whose own conversation is proven lost, whose own account cools while another is ready, or whose
+                // words it held past the bound (read before the go-on took the mark), goes on as a conversation in its tree through the
+                // shell's chat runner, handed the brief and the person's words. Anything else, and a host with no runner, waits.
+                var heldPast = fellBack.Code == ContinueWhy.Account && HeldAccountWords.PastBound(held, wiring.RetryClock.GetUtcNow());
                 if (!fellBack.Never && !fellBack.Holds && (fellBack.Lost || switched || heldPast) && context.GoesOnLost is { } goesOn
                     && await wiring.GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
                 {
