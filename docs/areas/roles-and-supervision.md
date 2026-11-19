@@ -138,8 +138,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 34. A write is refused where any place's effective set has no tries rule, a move with no moves rule, or failures on one choice
     acting at or past failures, and where two rules on one count at a place would apply to one line (`ladder`); a rule naming a
     role beside the every-role rule stands. A place's set is written whole at the revision read. (D229, D232)
-35. One seed serves a fresh home's first start: answers alone at 2, failures at 3, tries at 5 and moves 3 a day before the next
-    asks, for every role. Where the machine holds nothing, or the store
+35. One seed serves every home whose machine's rules were never written, at a start, whether or not its `driver.json` came first
+    (`HomeSeed`, with *Second check*'s first choices beside it): answers alone at 2, failures at 3, tries at 5 and moves 3 a day before
+    the next asks, for every role. Where the machine holds nothing, or the store
     does not read, the seeded rules decide, and a write is judged against them too. (D229, D232)
 36. Every executor reads the effective rules, one rule per count; a count no rule watches acts on nothing. A line's role and place
     are resolved once (`RuledLine`): the role its start was bound to while the catalogue holds it, else the role taking its work

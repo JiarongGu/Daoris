@@ -62,6 +62,26 @@ public sealed class HomeDefaultTests : IDisposable
         Assert.Null(WorkflowPorts.Store(_home).Load("merge-after-accept"));
     }
 
+    /// <summary>
+    /// A home whose <c>driver.json</c> came before its first start (a terminal's verb wrote it) gets no workflow's seed, and still gets the
+    /// supervisor's rules and <i>Second check</i>'s first choices, once: the rules' record says it is done.
+    /// </summary>
+    [Fact]
+    public void A_home_whose_file_came_first_still_gets_its_rules_and_second_check_once()
+    {
+        var path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{}\n");
+
+        Assert.False(HomeSeed.Once(path, _home));
+
+        Assert.True(new SupervisorRuleStore(_home, () => StoreSettled.Yes).Seeded());
+        var staffing = new RoleStaffing(_home, () => StoreSettled.Yes);
+        Assert.Equal(SecondCheck.Choices, staffing.Read()!.Actors[SecondCheck.Role]);
+        Assert.False(HomeSeed.Once(path, _home));
+        Assert.Equal(1, staffing.Policy(SecondCheck.Role).Revision);
+    }
+
     [Fact]
     public void The_new_keys_are_kept_by_a_save_that_changes_something_else()
     {
