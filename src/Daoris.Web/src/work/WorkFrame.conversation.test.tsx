@@ -245,8 +245,7 @@ describe('starting and holding a conversation', () => {
     });
 
     const { onSelect } = show(null);
-    await userEvent.say(await promptBox(), 'what is this repository for?');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(await promptBox(), 'what is this repository for?{Enter}');
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
     expect(starts()).toEqual([
@@ -296,8 +295,7 @@ describe('starting and holding a conversation', () => {
       : DRIVER_STATE));
     const { onSelect, notify } = held(null);
     const box = await promptBox();
-    await userEvent.say(box, 'Keep these words');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(box, 'Keep these words{Enter}');
 
     // Where Start is pressed, not a corner toast cut mid-sentence.
     expect(await within(screen.getByRole('main')).findByRole('alert'))
@@ -320,8 +318,7 @@ describe('starting and holding a conversation', () => {
       return DRIVER_STATE;
     });
     const { onSelect } = held(null);
-    await userEvent.say(await promptBox(), 'what is this repository for?');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(await promptBox(), 'what is this repository for?{Enter}');
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c0ffee11'));
     expect(await screen.findByLabelText('Message')).toHaveValue('what is this repository for?');
@@ -441,8 +438,7 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
 
     const box = await screen.findByLabelText('Message');
-    await userEvent.say(box, 'and the line?');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(box, 'and the line?{Enter}');
     expect(await screen.findByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
 
     await act(async () => { stop(); });
@@ -473,8 +469,7 @@ describe('starting and holding a conversation', () => {
     });
     show('c0ffee11');
 
-    await userEvent.say(await screen.findByLabelText('Message'), 'are you there?');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(await screen.findByLabelText('Message'), 'are you there?{Enter}');
 
     expect(await screen.findByText('The conversation ended before this reached it. It is back in the box.')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('are you there?'));

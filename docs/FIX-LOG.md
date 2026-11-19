@@ -14,10 +14,11 @@ repository.
   variable. A session's machine is busy, and a git start there takes 1 to 5 s (`GitLaunch.Count`: 0.5 to 3 s to create the process, 0.5 to
   3 s to run `symbolic-ref`) against 0.3 s from a quiet shell. `ContextPortsTests`' review case put its tree under the checkout's scratch,
   a plain folder, so the brief's `git log` and `git status` answered for the whole checkout around it (8 s alone, 24 s loaded);
-  `PlaceHandTests`' push-address case made its repository by three starts (5 s, 21 s loaded); the web conversation cases typed 30 keys,
+  `PlaceHandTests`' push-address case made its repository by three test starts and read it by a fourth (5 s, 21 s loaded); the web conversation cases typed 30 keys,
   each re-rendering the whole frame (9.3 s of the 10 s bound alone on a quiet machine, six timeouts in a session).
   `TreePoolSharesGitTests` is 35 product starts a case, 29 to 146 s in a session; its slow start is not `status --ignored`.
-- **Fix:** `EmptyCheckout` writes a checkout as files (no start) for the two driver tests; `userEvent.say` (a click and one paste) for
+- **Fix:** `ContextPortsTests`' case answers the product's git starts with none (`ProcessStarts.Within`), its subject being the gates read, not git; `PlaceHandTests`' copies the plain seed
+  (`init` is no start of the test's); `userEvent.say` (a click and one paste) for
   the long phrases of `WorkFrame.conversation` and `WorkFrame.test` (slowest case 9.3 s to 2.3 s); `PoolGitFixture.CreateAsync(ignored:)` makes
   the pool tests' extra ignore lines in the seed, two starts a case fewer. The pool's own repeated starts are TREEPOOLSTARTS1.
 - **Verification:** `ContextPortsTests`, `PlaceHandTests`, `TreePoolSharesGitTests` and the three web files, run from a session's shell.

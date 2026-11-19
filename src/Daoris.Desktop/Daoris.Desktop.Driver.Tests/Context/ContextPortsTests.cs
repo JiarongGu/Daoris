@@ -192,14 +192,13 @@ public sealed class ContextPortsTests : IDisposable
         {
             var stand = new Review();
             ContextReview.Current = stand;
-            // A checkout of its own, written as files: the home is under the checkout's scratch, and a plain folder there would have the
-            // brief's git reads (the head, the status) answer for the whole checkout around it, a status that takes seconds in a
-            // session's big tree and tens of them beside other builds.
-            var tree = EmptyCheckout.Make(Path.Combine(_home, "tree"));
+            var tree = Path.Combine(_home, "tree");
+            Directory.CreateDirectory(tree);
             var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
             events.Append("c0nv0001", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Go.", At = At });
             var records = new JsonArray(new JsonObject { ["id"] = "c0nv0001", ["tree"] = tree, ["state"] = "ended", ["repository"] = "atlas" }).ToJsonString();
             using var service = QuestStandIn.Client(_ => (HttpStatusCode.OK, records));
+            using var noGit = ProcessStarts.Within(_ => null);
 
             // No file at the stand-in's name: the file is not read, the mapping is, once, for the record's repository.
             await ContextBriefs.ComposeAsync(service, events, _home, "c0nv0001", HandOverWhy.Press, conversation: true, config: DriverConfig.Empty);

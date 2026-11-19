@@ -1408,8 +1408,7 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
-    await userEvent.say(screen.getByLabelText('Message'), 'Neither yet.');
-    await userEvent.keyboard('{Enter}');
+    await userEvent.say(screen.getByLabelText('Message'), 'Neither yet.{Enter}');
     await waitFor(() => expect(inputs()).toEqual([
       { id: 'g0ah3ad0', text: '1,200', question: 'q5t10n00' },
       { id: 'g0ah3ad0', text: 'Neither yet.' },
