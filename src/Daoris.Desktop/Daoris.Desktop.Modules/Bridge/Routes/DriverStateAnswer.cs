@@ -57,8 +57,7 @@ internal static class DriverStateAnswer
             CoolOff = (int)config.CoolOff.TotalMinutes,
             // How long a session may be quiet before Daoris looks in, in minutes: the file's, or the default.
             Quiet = (int)QuietSetting.Of(config).TotalMinutes,
-            // How long a staged build's drain may hold new work, in minutes: the file's, or the default.
-            Drain = (int)DrainSetting.Of(config).TotalMinutes,
+            Drain =(int)DrainSetting.Of(config).TotalMinutes,
             // The bounds of a folder's manifest read: the file's, or the defaults.
             ManifestFiles = config.Manifest.Bounds.Files,
             ManifestMinutes = (int)config.Manifest.Bounds.Time.TotalMinutes,

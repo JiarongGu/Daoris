@@ -12,7 +12,6 @@ export type UpdateOutcome = {
 
 /** Where an install's update stands, as the shell's `InstallUpdater` answers it: no path of this machine's. */
 export type UpdateState = {
-  /** `deferred` is a drain past its bound: new work starts again, and the build installs once nothing runs. */
   state: 'none' | 'waiting' | 'draining' | 'deferred' | 'applying' | 'refused';
   staged: { id: string; version: string; commit?: string | null; at?: string | null } | null;
   mode: UpdateMode | null;
@@ -30,9 +29,8 @@ export type UpdateState = {
    * is under way. The banner reads `outcome`, never this.
    */
   last: UpdateOutcome | null;
-  /** When the drain began: what a held Confirm's card says it waits since. Null with no drain; absent where the answer has none. */
+  /** When the drain began, and when it stops holding new work (`drain`, then `deferred`). Null with no drain; absent where unanswered. */
   since?: string | null;
-  /** When the drain stops holding new work, by the machine's `drain` setting: while it drains, and once deferred. */
   until?: string | null;
 };
 

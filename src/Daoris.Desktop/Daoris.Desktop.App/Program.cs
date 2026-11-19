@@ -214,8 +214,7 @@ internal static class Program
             bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>())
         {
             ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
-            // The machine's `drain` setting, read at each look of a drain: past it the drain defers and work starts again.
-            Bound = () => Daoris.Driver.DrainSetting.At(sp.GetRequiredService<DriverLoop>().ConfigPath),
+            Bound =() => Daoris.Driver.DrainSetting.At(sp.GetRequiredService<DriverLoop>().ConfigPath),
         });
         builder.Services.AddIpcModule<UpdateModule>();
         // The tray's reload of every open window's page: the windows are resolved as it is pressed, since they are

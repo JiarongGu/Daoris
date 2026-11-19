@@ -103,7 +103,10 @@ public sealed class UpdateDrainBoundTests : Bridge
         Assert.Equal("idle", Logged("update.applying").Single()["by"]!.GetValue<string>());
     }
 
-    /// <summary>Work that began after a deferred look read none is read again under the hold, and the build stays deferred.</summary>
+    /// <summary>
+    /// Work that began after a deferred look read none is read again under the hold, the loop's starts held for that read too, and the
+    /// build stays deferred.
+    /// </summary>
     [Fact]
     public async Task Work_begun_as_a_deferred_build_meets_idle_keeps_it_deferred_not_draining()
     {
@@ -112,10 +115,16 @@ public sealed class UpdateDrainBoundTests : Bridge
         _now = Now.AddMinutes(10);
         await updater.LookAsync();
         var answers = new Queue<UpdateWork>([new UpdateWork(0, 0), new UpdateWork(1, 0)]);
-        _reads = () => answers.Count > 0 ? answers.Dequeue() : new UpdateWork(1, 0);
+        var held = new List<bool>();
+        _reads = () =>
+        {
+            held.Add(updater.Draining);
+            return answers.Count > 0 ? answers.Dequeue() : new UpdateWork(1, 0);
+        };
 
         var state = await updater.LookAsync();
 
+        Assert.Equal([false, true], held);
         Assert.Equal(UpdateStates.Deferred, state.State);
         Assert.False(updater.Draining);
         Assert.Equal(0, _closed);

@@ -41,10 +41,7 @@ public sealed record UpdateState(
     /// <summary>The plugin steps in flight the drain waits on (<see cref="UpdateWork.Steps"/>), while it drains and as it applies.</summary>
     public int Steps { get; init; }
 
-    /// <summary>
-    /// When the drain stops holding new work: <paramref name="Since"/> and the machine's bound (<see cref="DrainSetting"/>), while it
-    /// drains and once it has deferred. Null with no drain.
-    /// </summary>
+    /// <summary>When the drain stops holding new work, by the machine's bound (<see cref="DrainSetting"/>); null with no drain.</summary>
     public DateTimeOffset? Until { get; init; }
 }
 
@@ -60,10 +57,7 @@ public static class UpdateStates
     /// <summary>Staged and installed when idle: nothing new starts, and what runs is counted down.</summary>
     public const string Draining = "draining";
 
-    /// <summary>
-    /// Staged and installed when idle, its drain past its bound (<see cref="DrainSetting"/>): new work starts again, and the build
-    /// installs at the first look that finds nothing running.
-    /// </summary>
+    /// <summary>Staged, its drain past its bound: new work starts again, and it installs at the first look nothing runs.</summary>
     public const string Deferred = "deferred";
 
     /// <summary>Checked, the launcher started, and the application closing for it.</summary>
@@ -121,7 +115,6 @@ public sealed class InstallUpdater(
     private string? _seen;
     private string? _drainedFor;
     private DateTimeOffset? _drainSince;
-    // Whether this drain's deferral was said: once a drain, again for a newer build's.
     private bool _deferred;
     private bool _applying;
     private Task? _loop;
@@ -129,10 +122,7 @@ public sealed class InstallUpdater(
     /// <summary>How often the loop looks when nothing pokes it.</summary>
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
-    /// <summary>
-    /// How long a drain may hold new work, read at each look of a drain: the machine's <c>drain</c> setting (<see cref="DrainSetting"/>).
-    /// Past it the drain defers itself (<see cref="UpdateStates.Deferred"/>), and the loop's starts are held no longer.
-    /// </summary>
+    /// <summary>How long a drain may hold new work, read at each of its looks: the machine's <c>drain</c> (<see cref="DrainSetting"/>).</summary>
     public Func<TimeSpan> Bound { get; init; } = () => TimeSpan.FromMinutes(DrainSetting.Default);
 
     /// <summary>The version this application runs, which a staged build below goes back from (<see cref="InstallRollback"/>).</summary>
@@ -147,13 +137,13 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// Whether the loop's starts are held for the update: the driver watch asks at every look. True while it drains and while
-    /// it applies, which <see cref="Applying"/> tells apart; false once the drain has deferred past its bound.
+    /// it applies, which <see cref="Applying"/> tells apart; once deferred, only while a look holds the presses to check it.
     /// </summary>
     public bool Draining
     {
         get
         {
-            lock (_gate) return _state.State is UpdateStates.Draining or UpdateStates.Applying;
+            lock (_gate) return _applying || _state.State is UpdateStates.Draining or UpdateStates.Applying;
         }
     }
 
@@ -313,10 +303,7 @@ public sealed class InstallUpdater(
             : Publish(Drains(staged, mode, now));
     }
 
-    /// <summary>
-    /// The drain as this look finds it, by the bound read now: holding new work until <see cref="UpdateState.Until"/>, deferred from
-    /// then on, its deferral said once in the machine log.
-    /// </summary>
+    /// <summary>The drain by the bound read now: holding new work until its <see cref="UpdateState.Until"/>, deferred from then on.</summary>
     private UpdateState Drains(UpdateBuild? staged, string mode, UpdateWork now)
     {
         var bound = Bound();
@@ -331,7 +318,7 @@ public sealed class InstallUpdater(
 
         if (said)
         {
-            log.Info("update.deferred", ("build", staged?.Id), ("waitedSeconds", (long)bound.TotalSeconds),
+            log.Info("update.deferred", ("build", staged?.Id), ("waitedSeconds", (long)(Now - since!.Value).TotalSeconds),
                 ("driven", now.Driven), ("turns", now.Turns), ("steps", now.Steps));
         }
 
@@ -379,8 +366,7 @@ public sealed class InstallUpdater(
 
     /// <summary>
     /// How often the loop looks while nothing is staged or draining: the reconciliation behind the watch of the staged
-    /// folder and the request, which wake it at once. A drain, and a deferred one, looks every <see cref="Pace"/>, since it waits on
-    /// sessions no file says ended.
+    /// folder and the request, which wake it at once. A drain, deferred or not, looks every <see cref="Pace"/>: no file says a session ended.
     /// </summary>
     public TimeSpan Idle { get; init; } = TimeSpan.FromSeconds(30);
 
