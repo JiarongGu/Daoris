@@ -23,8 +23,8 @@ public sealed class UxTrail(string home)
     /// <summary>The longest string an entry keeps.</summary>
     public const int Longest = 120;
 
-    /// <summary>What an entry may be: the window's start, a page opened, a press, a step waiting on the person, the window hidden or shown.</summary>
-    public static readonly IReadOnlySet<string> Kinds = new HashSet<string>(StringComparer.Ordinal) { "start", "page", "press", "wait", "hidden", "shown" };
+    /// <summary>What an entry may be: the window's start, a page opened, a press, a row waiting on the person, a row whose question changed, a row that cleared, the window hidden or shown.</summary>
+    public static readonly IReadOnlySet<string> Kinds = new HashSet<string>(StringComparer.Ordinal) { "start", "page", "press", "wait", "changed", "cleared", "hidden", "shown" };
 
     private const string OnFile = "on";
     private static readonly Lock Gate = new();

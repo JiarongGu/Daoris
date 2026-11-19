@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { recordTrail, type TrailEntry } from './uxTrail';
+import { recordTrail, trailOfRows, type TrailEntry } from './uxTrail';
 
 // The UX trail's recorder:the pages the person opens and the presses they make, each press named by its button's words and
 // the What needs you row it is in; never a field's value or typing.
@@ -37,5 +37,31 @@ describe('recordTrail', () => {
       { kind: 'start', at: 'now', page: '/overview' },
       { kind: 'page', at: 'now', page: '/sessions', from: '/overview' },
     ]);
+  });
+});
+
+describe('trailOfRows', () => {
+  const row = (id: string, extra: Record<string, unknown> = {}) => ({ kind: 'go-ahead', id, since: '2026-11-16T09:00:00Z', ...extra }) as never;
+
+  it('records a row that begins to wait, one whose question changed, and one that cleared', () => {
+    const first = trailOfRows(new Map(), [row('a'), row('b')], 'now');
+    expect(first.entries).toEqual([
+      { kind: 'wait', at: 'now', row: 'go-ahead:a', since: '2026-11-16T09:00:00Z' },
+      { kind: 'wait', at: 'now', row: 'go-ahead:b', since: '2026-11-16T09:00:00Z' },
+    ]);
+
+    const next = trailOfRows(first.known, [row('a', { stale: { since: null } }), row('b', { since: '2026-11-16T10:00:00Z' }), row('c')], 'later');
+    expect(next.entries).toEqual([
+      { kind: 'changed', at: 'later', row: 'go-ahead:a' },
+      { kind: 'changed', at: 'later', row: 'go-ahead:b' },
+      { kind: 'wait', at: 'later', row: 'go-ahead:c', since: '2026-11-16T09:00:00Z' },
+    ]);
+
+    const last = trailOfRows(next.known, [row('c')], 'end');
+    expect(last.entries).toEqual([
+      { kind: 'cleared', at: 'end', row: 'go-ahead:a' },
+      { kind: 'cleared', at: 'end', row: 'go-ahead:b' },
+    ]);
+    expect(trailOfRows(last.known, [row('c')], 'same').entries).toEqual([]);
   });
 });

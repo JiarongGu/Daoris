@@ -14557,3 +14557,16 @@ installed window is not yet seen.
   window would have drawn the track without them; the slice's census caught it at the merge.
 - **Fix:** the route projects the new fields and the slice pushes them (`steps`, `earlier`); the census's fixture carries them.
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter "FullyQualifiedName~GroupsStateSliceTests"`: 18 passed.
+
+## 2026-11-20 — Three of the install's agent accounts vanished after an update (NOCOMPAT2)
+
+- **Seen:** after the install took 56515d428c, `daoris agent list` showed one Claude account of four, and three runs' authors,
+  handed their second opinions, reopened with `why: account` and could not resume.
+- **Cause:** NOCOMPAT2 (1f5aa03e71) removed the home table's old-place reader (D323) while the install still kept three
+  accounts' homes at the old place `data/harnesses/claude-code/<id>`; the table names only `profiles/agents/<harness>/<id>`,
+  where the newest account already lived, so the others were no longer read. No check named files left in a place no entry
+  names.
+- **Fix:** on the install, the three folders were moved to `profiles/agents/claude-code/<id>` (a rename; nothing read or
+  copied); HOMEORPHAN1 makes the home name every file in a place no entry names, and a removal of an old reader refuses while
+  the install holds files there.
+- **Verify:** `daoris agent list` lists all four accounts, two signed in.

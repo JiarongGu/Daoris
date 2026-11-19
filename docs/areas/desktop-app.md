@@ -134,9 +134,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     holds is one (`Step`): its click attends the session its run placed, whose head carries the step's presses.
     The person's UX trail (UXTRAIL1) is off by default and turned on by Settings → Agents and sessions' row. While on, a main window
     records the pages opened, each press by its control's words and its *What needs you* row (`data-attention-row`), and each row as it
-    begins to wait; never typing or a field's value. `UX_TRAIL`, a window's route alone, keeps them on this desktop in the home's entry
-    `ux-trail` (`data/ux-trail/`), one file a day of at most 2 MB, in the fields `UxTrailEntry` names. `node tools/ux-trail.mjs <folder>` prints the time
-    from each wait to its press, with the pages between.
+    begins to wait, whose question changed (its wait began again or a go-ahead went stale) or that cleared; never typing or a field's value. `UX_TRAIL`, a window's route alone, keeps them on this desktop in the home's entry
+    `ux-trail` (`data/ux-trail/`), one file a day of at most 2 MB, in the fields `UxTrailEntry` names. `node tools/ux-trail.mjs <folder> [--from day] [--to day]` prints the window
+    redesign trial's five measures for those days (design §17) and the time from each wait to its press, with the pages between.
 21. A render that throws is caught by `PageBoundary`. It offers a reload of the page alone and logs `page.error` with
     the view's name and a five-frame stack. (from D217)
 
