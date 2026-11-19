@@ -52,6 +52,7 @@ group.
 | `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `push`, `stash drop`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
 | `files` | What Daoris's trees do with each path git does not manage in a repository, by which rule |
 | `history` | What this machine keeps of finished work, and a workspace's `clear` |
+| `home` | `purge --history`: a home's history moved into `purged/<UTC stamp>/` for a clean start, its configuration kept; `--plan` lists, `--yes` does it once Daoris is closed |
 | `integrate` | A repository's integration as the window's Integration view draws it |
 | `logs` | The machine log, every source merged by time |
 | `notices` | What came to you: the presses waiting for your confirmation, what needs you, unread messages |

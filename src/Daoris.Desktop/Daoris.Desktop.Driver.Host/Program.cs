@@ -564,6 +564,17 @@ try
         return PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve());
     }
 
+    // A home's history purged once, its configuration kept: listed, or done while nothing of Daoris runs on the home.
+    if (args is ["home", .. var homeArgs])
+    {
+        var exit = HomePurgeCommand.Run(
+            homeArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable),
+            Environment.GetEnvironmentVariable(WiringVariables.KnowledgeDb)?.Trim(), out var homeSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(homeSaid);
+        return exit;
+    }
+
     // An install's update from a terminal: the window's banner is the other door to the same request.
     // Needs no service: the request is a file under the home, and the staged build a folder beside its install.
     if (args is ["update", .. var updateArgs])
