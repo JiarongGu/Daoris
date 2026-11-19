@@ -23,8 +23,8 @@ export function RecordRows({ rows, viewed, body }: { rows: ReviewRow[]; viewed: 
   return (
     <section aria-label={t('work.outputs.changes')}>
       <header className="flex flex-wrap items-baseline gap-x-2 border-b border-line px-3 py-1.5">
-        <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.files', { count: rows.length })}</span>
-        {done > 0 && <span className="text-meta tabular-nums text-ink-faint">{t('work.outputs.viewedCount', { done, total: rows.length })}</span>}
+        <span className="text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.files', { count: rows.length })}</span>
+        {done > 0 && <span className="text-caption tabular-nums text-ink-faint">{t('work.outputs.viewedCount', { done, total: rows.length })}</span>}
       </header>
       <ul className="m-0 list-none p-0">
         {rows.map((row) => {
@@ -42,20 +42,20 @@ export function RecordRows({ rows, viewed, body }: { rows: ReviewRow[]; viewed: 
                 >
                   {body && <Icon name={open[row.path] ? 'chevronDown' : 'chevronRight'} size={12} />}
                   <PathText path={row.path} className="min-w-0 truncate text-small" />
-                  <span className="shrink-0 text-meta text-ink-faint">{t(`work.outputs.change.${row.change}`, { defaultValue: row.change })}</span>
+                  <span className="shrink-0 text-caption text-ink-faint">{t(`work.outputs.change.${row.change}`, { defaultValue: row.change })}</span>
                 </button>
-                <span className="font-mono text-meta text-ink-faint">
+                <span className="font-mono text-caption text-ink-faint">
                   {t('work.outputs.versions', { before: short(row.before, t('work.outputs.versionNone')), after: short(row.after, t('work.outputs.versionNone')) })}
                 </span>
                 <CheckField
-                  className="text-meta"
+                  className="text-caption"
                   label={t('work.outputs.viewed')}
                   checked={seen}
                   onChange={(next) => viewed.mark(row.path, content, next)}
                 />
               </div>
               {row.marks.length > 0 && (
-                <p className="m-0 px-3 pb-1 text-meta text-warn">
+                <p className="m-0 px-3 pb-1 text-caption text-warn">
                   {row.marks.map((mark) => t(`work.outputs.mark.${mark}`, { defaultValue: mark })).join(' · ')}
                 </p>
               )}
@@ -84,7 +84,7 @@ export function PlanOperations({ system, operations }: { system: string; operati
               <span className="text-ink-soft">{t(`work.outputs.op.${operation.op}`, { defaultValue: operation.op })}</span>
               <span className="min-w-0 font-mono text-ink">{operation.resource}</span>
               {(operation.before != null || operation.after != null) && (
-                <span className="col-start-2 font-mono text-meta text-ink-faint">
+                <span className="col-start-2 font-mono text-caption text-ink-faint">
                   {operation.before ?? '∅'} → {operation.after ?? '∅'}
                 </span>
               )}

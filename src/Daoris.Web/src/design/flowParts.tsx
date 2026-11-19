@@ -11,7 +11,7 @@ export const rem = (value: number) => `${value}rem`;
 
 /** How each kind of mark's chip is drawn: the border's style as well as its word, so no kind is told by hue alone. */
 export const CHIP: Record<FlowMark['kind'], string> = {
-  refused: 'border-st-declined text-ink-danger',
+  refused: 'border-fail text-fail-ink',
   new: 'border-accent text-ink',
   remove: 'border-dashed border-line-strong text-ink-soft',
   changed: 'border-dotted border-accent text-ink',
@@ -26,7 +26,7 @@ export function MarkChip({ mark, data, className, style }: {
       aria-hidden
       data-flow-mark-kind={mark.kind}
       {...data}
-      className={cn('whitespace-nowrap rounded-control border bg-raised px-1.5 text-meta leading-tight', CHIP[mark.kind], className)}
+      className={cn('whitespace-nowrap rounded-control border bg-raised px-1.5 text-caption leading-tight', CHIP[mark.kind], className)}
       style={style}
     >
       {mark.kind === 'refused' ? '⚠ ' : ''}{mark.word}
@@ -77,7 +77,7 @@ export function describe(
   return sentences.length === 0 ? '' : sentences.reduce((first, second) => t('flow.join', { first, second }));
 }
 
-export const STACK_PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline';
+export const STACK_PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft underline-offset-2 hover:text-ink hover:underline';
 
 /**
  * The flow as drawn with its stacks: each stack not opened is one node in its first

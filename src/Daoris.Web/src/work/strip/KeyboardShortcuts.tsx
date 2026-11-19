@@ -30,7 +30,7 @@ export function KeyboardShortcuts({ groups, browser = false, onClose }: {
                 <dt className="min-w-0 truncate text-ink">{row.label}</dt>
                 <dd className="m-0 flex flex-wrap justify-end gap-1">
                   {row.keys.map((key) => (
-                    <kbd key={key} className="rounded border border-line px-1 font-mono text-meta text-ink-soft">{key}</kbd>
+                    <kbd key={key} className="rounded border border-line px-1 font-mono text-caption text-ink-soft">{key}</kbd>
                   ))}
                 </dd>
               </div>

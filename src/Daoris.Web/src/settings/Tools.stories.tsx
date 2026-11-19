@@ -29,7 +29,7 @@ export const Downloading: Story = {
   args: {
     tool: { ...PWSH, running: { action: 'download', version: '7.4.6' } },
     choice: { ...choiceOf(PWSH), way: 'managed' },
-    console: <pre className="m-0 font-mono text-meta text-ink-soft">  downloading https://github.com/PowerShell/PowerShell/releases/… (11.8 MB)</pre>,
+    console: <pre className="m-0 font-mono text-caption text-ink-soft">  downloading https://github.com/PowerShell/PowerShell/releases/… (11.8 MB)</pre>,
   },
 };
 

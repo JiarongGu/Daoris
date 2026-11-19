@@ -67,9 +67,9 @@ export function RepositoryPicker({ repositories, busy = {}, recent = [], value, 
         content: (
           <>
             <span className="min-w-0 truncate">{row.name}</span>
-            {row.recent && <>{' '}<span className="shrink-0 text-meta text-ink-faint">{row.workspace}</span></>}
-            {busy[row.name] && <>{' '}<span className="shrink-0 text-meta text-ink-open">{t('work.start.busyMark')}</span></>}
-            {!row.checkout && <>{' '}<span className="ml-auto shrink-0 text-meta">{t('work.start.noCheckout')}</span></>}
+            {row.recent && <>{' '}<span className="shrink-0 text-caption text-ink-faint">{row.workspace}</span></>}
+            {busy[row.name] && <>{' '}<span className="shrink-0 text-caption text-ink-open">{t('work.start.busyMark')}</span></>}
+            {!row.checkout && <>{' '}<span className="ml-auto shrink-0 text-caption">{t('work.start.noCheckout')}</span></>}
           </>
         ),
       })),

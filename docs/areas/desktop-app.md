@@ -270,10 +270,17 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The design language**
 
-41. Warm paper, thin ink, one bronze accent. The accent marks what is interactive and is never a status. The status
-    palette is computed and validated in both themes, and a status is never shown by colour alone. (from D41)
-42. One dense scale of seven named type steps, with a 13 px body. Every size is a step and every colour a declared
-    token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport. (from D56, D41, D185)
+41. Components name roles, never colours, and only `tokens.css` holds a value. Warm paper in the neutrals; one blue
+    accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
+    a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
+    aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
+    its role's `-ink`. `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
+    themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
+    and a second run changes nothing. (from D330, D41)
+42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,
+    mono 13, none under 12 px, each line height a variable that `:lang(zh)` sets taller. Every size is a step and every
+    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport.
+    (from D330, D56, D185)
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that
@@ -295,7 +302,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     offered at every width, standing below 36rem where nothing else fits. No feature moves nodes or saves positions. The
     maps keep the viewer's view; one kept under a changed graph says the selection is gone. (from D224)
 48. A placed world is HTML that CSS lays out and the canvas measures. A positioned world arrives with coordinates: past
-    400 nodes only those near the view, the focused and the selected mount, and below 4 px of `text-meta` the rest are dots.
+    400 nodes only those near the view, the focused and the selected mount, and below 4 px of `text-caption` the rest are dots.
     One engine, Daoris's own, serves every feature, chosen by measurement over React Flow. A pan or zoom step draws again only
     what it changed (each card and edge a memoized unit, `WorldNode.tsx`; the toolbar by `useStableActs`), and
     `measured/large.spec.ts` holds 100 and 1,000 nodes to their budget. (from D224)

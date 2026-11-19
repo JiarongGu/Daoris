@@ -128,12 +128,12 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
       className="grid grid-cols-[minmax(0,10rem)_4.5rem_4.5rem_minmax(0,1fr)] items-baseline gap-x-3 border-b border-line py-1.5 text-small"
     >
       <span className="truncate tabular-nums text-ink-faint">{stamp(line.time)}</span>
-      <span className="truncate font-mono text-meta text-ink-soft">{line.source}</span>
+      <span className="truncate font-mono text-caption text-ink-soft">{line.source}</span>
       <span className={cn(
-        'truncate text-meta',
+        'truncate text-caption',
         // A failure wears an outcome's hue, as a failed tool call does, in the danger ink a red word wears;
         // the rest stay quiet.
-        line.level === 'error' ? 'font-medium text-ink-danger' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
+        line.level === 'error' ? 'font-medium text-fail-ink' : line.level === 'warn' ? 'font-medium text-ink' : 'text-ink-faint',
       )}
       >
         {level}
@@ -141,7 +141,7 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
       <span className="min-w-0">
         <span className="font-mono text-small text-ink">{line.event}</span>
         {parts.length > 0 && (
-          <span className="mt-0.5 block font-mono text-meta text-ink-soft [overflow-wrap:anywhere]">
+          <span className="mt-0.5 block font-mono text-caption text-ink-soft [overflow-wrap:anywhere]">
             {parts.map((part, index) => (
               <Fragment key={part.key}>
                 {index > 0 && ' '}
@@ -152,7 +152,7 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
                     aria-expanded={open.has(part.key)}
                     aria-controls={`${id}-${part.key}`}
                     onClick={() => toggle(part.key)}
-                    className="ml-1.5 inline-flex cursor-pointer items-baseline gap-0.5 border-0 bg-transparent p-0 font-sans text-meta text-accent hover:underline"
+                    className="ml-1.5 inline-flex cursor-pointer items-baseline gap-0.5 border-0 bg-transparent p-0 font-sans text-caption text-accent-ink hover:underline"
                   >
                     <Icon name={open.has(part.key) ? 'chevronDown' : 'chevronRight'} size={12} className="self-center" />
                     {t('settings.logs.more', { count: part.more, shown: figure(part.more) })}

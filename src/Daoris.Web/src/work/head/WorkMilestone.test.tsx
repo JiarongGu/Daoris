@@ -417,7 +417,7 @@ describe('a closure graph’s end', () => {
     const en = screen.getByRole('region', { name: 'Where this work stands' });
     expect(en).toHaveTextContent('Partially closed: #q6 is no longer done, since its take was lost to another machine, which holds its work now.');
     expect(en).toHaveTextContent('Its closing step “close” waits again, and would close #q6 over that take once it is submitted: stop it to leave the quest to whoever took it.');
-    expect(within(en).getByText('partially closed')).toHaveClass('text-ink-danger');
+    expect(within(en).getByText('partially closed')).toHaveClass('text-fail-ink');
     unmount();
 
     await i18n.changeLanguage('zh');
@@ -452,7 +452,7 @@ describe('a closure graph’s end', () => {
     render(<WorkMilestone defaultOpen unit={unit({ ends: [graphEnd({ nodeState: 'stopped', words: [] })] })} />);
     const region = screen.getByRole('region', { name: 'Where this work stands' });
     expect(region).toHaveTextContent('Its closing step “close” is stopped.');
-    expect(within(region).getByText('partially closed')).not.toHaveClass('text-ink-danger');
+    expect(within(region).getByText('partially closed')).not.toHaveClass('text-fail-ink');
     expect(attentionActs(endedRow(graphEnd({ nodeState: 'stopped', words: [] })))).toEqual([]);
   });
 
@@ -513,11 +513,11 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
 
   it('marks an end reached, a result kept, a clean-up completed and a recovery kept each in done’s hue, and a recovery with nothing kept not at all', () => {
     const { rerender } = render(<WorkMilestone defaultOpen unit={unit({ recovery: [kept] })} />);
-    for (const label of ['End', 'Result', 'Clean-up', 'Recovery']) expect(markOf(label), label).toHaveClass('bg-st-done');
+    for (const label of ['End', 'Result', 'Clean-up', 'Recovery']) expect(markOf(label), label).toHaveClass('bg-ok');
 
     // A clean-up completed with nothing kept for recovery is ordinary: no fact is done because another is (R4).
     rerender(<WorkMilestone defaultOpen unit={unit()} />);
-    expect(markOf('Clean-up')).toHaveClass('bg-st-done');
+    expect(markOf('Clean-up')).toHaveClass('bg-ok');
     expect(screen.getByText('Recovery').parentElement).toHaveTextContent('Nothing kept for recovery');
     expect(markOf('Recovery')).toBeNull();
   });
@@ -532,8 +532,8 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     expect(markOf('Recovery')).toBeNull();
 
     rerender(<WorkMilestone defaultOpen unit={unit({ cleanup: pending(blocked, waiting) })} />);
-    expect(markOf('Clean-up')).toHaveClass('bg-st-declined');
-    expect(markOf('End')).toHaveClass('bg-st-done');
+    expect(markOf('Clean-up')).toHaveClass('bg-fail');
+    expect(markOf('End')).toHaveClass('bg-ok');
   });
 
   it('keeps an unknown end, a dropped one and a handed one each in its own word and mark, never reached', () => {
@@ -553,13 +553,13 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     expect(dropped.mark).toContain('bg-ink-faint');
     expect(handed.text).toContain('Not reached: its work was handed off');
     expect(handed.mark).toContain('bg-ink-soft');
-    for (const one of [unknown, dropped, handed]) expect(one.mark).not.toContain('bg-st-done');
+    for (const one of [unknown, dropped, handed]) expect(one.mark).not.toContain('bg-ok');
   });
 
   it('keeps a held attempt as its own row under the facts, its mark the danger hue until the person has worded it', () => {
     const attempt = { unit: 'u1', node: 'deploy', attempt: 2, plugin: 'acme.deploy', step: 'acme.deploy/deploy', nodeState: 'unknown', why: 'unknown', at: '2026-10-17T09:00:00Z', said: 'asked' };
     const { rerender } = render(<WorkMilestone defaultOpen unit={unit({ held: [attempt] })} />);
-    expect(markOf('Held for you')).toHaveClass('bg-st-declined');
+    expect(markOf('Held for you')).toHaveClass('bg-fail');
     expect(screen.getByText('Held for you').parentElement).toHaveTextContent('deploy, attempt 2');
     // Under the four facts, which stay together: the end, the result, the clean-up and the recovery.
     const labels = [...screen.getByRole('region').querySelectorAll('dt')].map((term) => term.textContent);
@@ -575,8 +575,8 @@ describe('where a piece of work stands: four facts, folded to their line', () =>
     const fold = screen.getByRole('button', { name: /Where this work stands/ });
     expect(fold).toHaveAttribute('aria-expanded', 'false');
     expect(fold).toHaveTextContent('Ended · clean-up pending · blocked · held for you');
-    expect(within(fold).getByText('blocked')).toHaveClass('text-ink-danger');
-    expect(within(fold).getByText('held for you')).toHaveClass('text-ink-danger');
+    expect(within(fold).getByText('blocked')).toHaveClass('text-fail-ink');
+    expect(within(fold).getByText('held for you')).toHaveClass('text-fail-ink');
     unmount();
     // A clean-up that only waits, and nothing held, say neither.
     render(<MilestoneLine unit={unit({ cleanup: pending(waiting) })} />);

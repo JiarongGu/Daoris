@@ -356,7 +356,7 @@ export function StructureCanvas({ diagram, selected, onSelect }: { diagram: Diag
                       aria-hidden
                       data-flow-label={path.id}
                       data-shown={placed?.shown ? '' : undefined}
-                      className="pointer-events-none absolute whitespace-nowrap rounded-control bg-page px-1 text-meta leading-tight text-ink-soft"
+                      className="pointer-events-none absolute whitespace-nowrap rounded-control bg-page px-1 text-caption leading-tight text-ink-soft"
                       style={{ left: placed ? placed.x - placed.w / 2 : 0, top: placed ? placed.y - placed.h / 2 : 0, visibility: placed?.shown ? 'visible' : 'hidden' }}
                     >
                       {text}

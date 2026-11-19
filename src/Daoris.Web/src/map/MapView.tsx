@@ -139,7 +139,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
                 detail={inPlace && module !== null ? detail : undefined}
               />
               <ChoiceLine choice={codeChoice(t, answer.dependencies, module)} hint={alone} />
-              <p className="m-0 mt-2 text-meta text-ink-faint">{t('code.legend')}</p>
+              <p className="m-0 mt-2 text-caption text-ink-faint">{t('code.legend')}</p>
             </Card>
             {!(inPlace && module !== null) && <Card>{detail}</Card>}
           </div>
@@ -243,7 +243,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           {/* The key, in words: each line's meaning is its shape as well as its hue — and the
               number in a node, which the key names too. A kind out of
               sight leaves the key with its lines. */}
-          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-meta text-ink-faint">
+          <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-caption text-ink-faint">
             <li>{t('map.legend.open')}</li>
             {shownLines.has('quests') && <li>{t('map.legend.quests')}</li>}
             {shownLines.has('quests') && <li>{t('map.legend.closed')}</li>}

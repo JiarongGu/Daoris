@@ -176,7 +176,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
         <Button disabled={saving || kind.rule.default} onClick={() => send({ kind: id, default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }
@@ -266,7 +266,7 @@ function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep:
         <Button disabled={saving || floor?.from === 'default'} onClick={() => send({ kind: 'floor', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }
@@ -324,7 +324,7 @@ function AllowanceEditor({ allowance, volume, onKeep, onClose }: {
         <Button disabled={saving || allowance.default} onClick={() => send({ kind: 'allowance', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }

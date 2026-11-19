@@ -232,7 +232,7 @@ export function RightDock({
                 }}
                 className={cn(
                   // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
-                  'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
+                  'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--duration-quick)',
                   shown === id ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
                 )}
               >
@@ -247,7 +247,7 @@ export function RightDock({
           {preview && (
             <div
               className={cn(
-                'flex shrink-0 items-center border-b-2 transition-colors duration-(--speed)',
+                'flex shrink-0 items-center border-b-2 transition-colors duration-(--duration-quick)',
                 shown === 'preview' ? 'max-w-52 border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
               )}
             >

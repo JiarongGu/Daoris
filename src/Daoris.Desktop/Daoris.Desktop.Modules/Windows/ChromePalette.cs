@@ -33,33 +33,33 @@ public sealed record ChromePalette(
     Color ClosePressed,
     Color CloseGlyphHot)
 {
-    /// <summary>Warm paper: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c>.</summary>
+    /// <summary>Warm paper: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c> (D330's role set).</summary>
     public static readonly ChromePalette Light = new(
-        Page: Rgb("#faf9f6"),
+        Page: Rgb("#f7f6f2"),
         Surface: Rgb("#ffffff"),
-        Line: Rgb("#e3e0d8"),
+        Line: Rgb("#d5d3cb"),
         Ink: Rgb("#1a1a18"),
-        // A hovered caption button lifts to the line colour, pressed to line-strong — the same two
-        // steps every other quiet control on the page uses.
-        Hover: Rgb("#e3e0d8"),
-        Pressed: Rgb("#cfcabe"),
+        // A hovered caption button wears `--hover`, the field every quiet control on the page lifts to
+        // under the pointer, and pressed the card edge, `--line`, one step further.
+        Hover: Rgb("#ecebe5"),
+        Pressed: Rgb("#d5d3cb"),
         // Close goes red on hover, which is platform convention and not ours to reinvent. The hue is
-        // the validated `--st-declined`, so even the OS gesture speaks the palette.
-        CloseHover: Rgb("#9e2f24"),
-        ClosePressed: Rgb("#7e251c"),
-        CloseGlyphHot: Rgb("#faf9f6"));
+        // `--fail` and its glyph `--on-fail`, so even the OS gesture speaks the palette.
+        CloseHover: Rgb("#d1322a"),
+        ClosePressed: Rgb("#a8201a"),
+        CloseGlyphHot: Rgb("#ffffff"));
 
     /// <summary>The dark set — its own validated values, never a filter over the light one.</summary>
     public static readonly ChromePalette Dark = new(
-        Page: Rgb("#16161a"),
-        Surface: Rgb("#1e1e23"),
-        Line: Rgb("#2e2e34"),
-        Ink: Rgb("#e8e6df"),
-        Hover: Rgb("#2e2e34"),
-        Pressed: Rgb("#3d3d45"),
-        CloseHover: Rgb("#c74534"),
-        ClosePressed: Rgb("#a3372a"),
-        CloseGlyphHot: Rgb("#faf9f6"));
+        Page: Rgb("#131312"),
+        Surface: Rgb("#1b1b19"),
+        Line: Rgb("#3a3936"),
+        Ink: Rgb("#ecebe6"),
+        Hover: Rgb("#2a2a27"),
+        Pressed: Rgb("#3a3936"),
+        CloseHover: Rgb("#ee5a50"),
+        ClosePressed: Rgb("#d1322a"),
+        CloseGlyphHot: Rgb("#111110"));
 
     /// <summary>The set for a theme, by the one flag the page sends over <c>SET_THEME</c>.</summary>
     public static ChromePalette For(bool dark) => dark ? Dark : Light;
@@ -68,9 +68,9 @@ public sealed record ChromePalette(
     public bool IsDark => ReferenceEquals(this, Dark);
 
     /// <summary>
-    /// The five tokens this palette copies, by the name <c>tokens.css</c> gives them — the map the
-    /// drift test walks. The caption-button colours are not here: they are this window's own
-    /// arrangement of the same values, not a copy of anything.
+    /// The tokens this palette copies, by the name <c>tokens.css</c> gives them — the map the
+    /// drift test walks. The pressed colours are not here: they are this window's own arrangement
+    /// of the same values, not a copy of anything.
     /// </summary>
     public IReadOnlyDictionary<string, Color> Tokens => new Dictionary<string, Color>
     {
@@ -78,7 +78,9 @@ public sealed record ChromePalette(
         ["--raised"] = Surface,
         ["--line"] = Line,
         ["--ink"] = Ink,
-        ["--st-declined"] = CloseHover,
+        ["--hover"] = Hover,
+        ["--fail"] = CloseHover,
+        ["--on-fail"] = CloseGlyphHot,
     };
 
     private static Color Rgb(string hex) => Color.FromArgb(

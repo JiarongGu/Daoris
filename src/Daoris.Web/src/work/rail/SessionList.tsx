@@ -292,7 +292,7 @@ export function SessionList({
           derived title already names what it is for. Newest first, the rest a press away. */}
       {!live && rest.length > 0 && (
         <section aria-label={t('work.rail.ended')} className="mt-2 border-t border-line pt-2">
-          <h3 className="px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint">{t('work.rail.ended')}</h3>
+          <h3 className="px-3 py-1 text-caption font-semibold uppercase tracking-wide text-ink-faint">{t('work.rail.ended')}</h3>
           <ul className="m-0 list-none p-0">{ended(rest, false)}</ul>
         </section>
       )}

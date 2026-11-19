@@ -38,7 +38,7 @@ export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
   const hint = (name: string) => {
     const key = `workflow.edit.option.${kind}.${name}.hint`;
     const said = [i18n.exists(key) ? t(key) : '', notes[name] ?? ''].filter(Boolean);
-    return said.map((words) => <p key={words} className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">{words}</p>);
+    return said.map((words) => <p key={words} className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]">{words}</p>);
   };
 
   return (
@@ -53,7 +53,7 @@ export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
           const offered = named && !lines.includes(named) ? [...lines, named] : lines;
           return (
             <div key={field.name} className="grid min-w-0 gap-1">
-              <span id={id} className="text-meta text-ink-soft">{label}</span>
+              <span id={id} className="text-caption text-ink-soft">{label}</span>
               <SelectField
                 ariaLabel={label}
                 value={named || NONE}
@@ -69,7 +69,7 @@ export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
           case 'choice':
             return (
               <div key={field.name} className="grid min-w-0 gap-1">
-                <span id={id} className="text-meta text-ink-soft">{label}</span>
+                <span id={id} className="text-caption text-ink-soft">{label}</span>
                 <SelectField
                   ariaLabel={label}
                   value={typeof value === 'string' && value ? value : NONE}
@@ -92,7 +92,7 @@ export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
           case 'names':
             return (
               <div key={field.name} className="grid min-w-0 gap-1">
-                <label htmlFor={id} className="text-meta text-ink-soft">{t('workflow.edit.option.names', { name: label })}</label>
+                <label htmlFor={id} className="text-caption text-ink-soft">{t('workflow.edit.option.names', { name: label })}</label>
                 {/* Read once typed, so a comma being typed is not taken away from under the caret. */}
                 <input
                   id={id}
@@ -106,7 +106,7 @@ export function StepOptions({ node, fields, lines = [], notes = {}, onSet }: {
           default:
             return (
               <div key={field.name} className="grid min-w-0 gap-1">
-                <label htmlFor={id} className="text-meta text-ink-soft">{label}</label>
+                <label htmlFor={id} className="text-caption text-ink-soft">{label}</label>
                 <input
                   id={id}
                   className={fieldClass}

@@ -15,7 +15,7 @@ const minutes = (count: number) => new Date(Date.now() - count * 60_000).toISOSt
 /** A bar to sit in, and the tooltip provider the application mounts once — a `Tip` outside one throws. */
 const Bar = ({ children }: { children: ReactNode }) => (
   <Tooltip.Provider>
-    <div className="flex h-6 items-stretch border-t border-line bg-raised text-meta text-ink-soft">{children}</div>
+    <div className="flex h-6 items-stretch border-t border-line bg-raised text-caption text-ink-soft">{children}</div>
   </Tooltip.Provider>
 );
 

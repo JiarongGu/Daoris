@@ -78,7 +78,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           // deployed application the drawer's × sat exactly beneath the window's ✕, neither
           // dimmed nor reachable. Held by `tokens.test.ts` for every panel, as the scrim is.
           className={cn(
-            'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
+            'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
             // Never over the activity bar (3rem): the frame is three bars, and an overlay sits between
             // them. The toasts
             // stand this width in from the right while it is open (`Toasts`), and `ui.test.tsx` holds the two
@@ -88,7 +88,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
             <div>
-              <Dialog.Title className="text-title font-[650] leading-[1.35]">{title}</Dialog.Title>
+              <Dialog.Title className="text-heading font-[650] leading-[1.35]">{title}</Dialog.Title>
               {meta && (
                 <div className="mt-1.5 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
                   {meta}
@@ -161,7 +161,7 @@ export function QuickPanel({ open, onClose, title, header, wide = false, fill = 
           }}
           className={cn(
             'fixed left-1/2 top-[12vh] z-20 flex -translate-x-1/2 flex-col overflow-hidden rounded-overlay border border-line bg-overlay',
-            'shadow-[0_12px_48px_rgb(15_12_8/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
+            'shadow-[0_12px_48px_rgb(15_12_8/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
             fill ? 'h-[min(34rem,72vh)]' : 'max-h-[60vh]',
             wide ? 'w-[min(42rem,92vw)]' : 'w-[min(34rem,92vw)]',
           )}

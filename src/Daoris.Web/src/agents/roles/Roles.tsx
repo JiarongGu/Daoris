@@ -474,7 +474,7 @@ export function RolesCard({
   const elsewhere = shownLines.filter(placedElsewhere);
   const group = (title: string, list: readonly Line[]) => list.length > 0 && (
     <section aria-label={title} className="mt-2">
-      <p className="m-0 mb-1 text-meta font-medium text-ink-faint">{title}</p>
+      <p className="m-0 mb-1 text-caption font-medium text-ink-faint">{title}</p>
       {rowsOf(list)}
     </section>
   );

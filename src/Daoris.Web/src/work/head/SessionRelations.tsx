@@ -11,9 +11,9 @@ import type { Relations } from './relations';
 const SAYS = 280;
 
 /** The press that opens or folds the relations, in the ink of the chain's and the parts' own presses. */
-const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent hover:underline';
+const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink hover:underline';
 
-const DOOR ='min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
+const DOOR ='min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent';
 
 /**
  * Who a session worked with: the session that asked for its
@@ -71,8 +71,8 @@ export function SessionRelations({ relations, onQuest, onSession, defaultOpen = 
       <dl className="m-0 grid gap-2.5">
         {askedBy && (
           <div className="grid gap-0.5">
-            <dt className="text-meta text-ink-faint">{t('work.relations.askedBy')}</dt>
-            <dd className="m-0 font-mono text-meta text-ink-soft">
+            <dt className="text-caption text-ink-faint">{t('work.relations.askedBy')}</dt>
+            <dd className="m-0 font-mono text-caption text-ink-soft">
               {askedBy.session && onSession
                 ? (
                   <button type="button" onClick={() => onSession(askedBy.session!)} className={DOOR}>
@@ -89,11 +89,11 @@ export function SessionRelations({ relations, onQuest, onSession, defaultOpen = 
 
         {resumedAfter && (
           <div className="grid gap-0.5">
-            <dt className="text-meta text-ink-faint">{t('work.relations.resumed', { id: resumedAfter.id })}</dt>
+            <dt className="text-caption text-ink-faint">{t('work.relations.resumed', { id: resumedAfter.id })}</dt>
             <dd className="m-0 grid gap-0.5">
               <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2">
                 {title(resumedAfter)}
-                <span className="text-meta text-accent">→ {resumedAfter.to}</span>
+                <span className="text-caption text-accent-ink">→ {resumedAfter.to}</span>
               </p>
               <Answer quest={resumedAfter} />
             </dd>
@@ -102,14 +102,14 @@ export function SessionRelations({ relations, onQuest, onSession, defaultOpen = 
 
         {asked.length > 0 && (
           <div className="grid gap-1">
-            <dt className="text-meta text-ink-faint">{t('work.relations.asked', { count: asked.length })}</dt>
+            <dt className="text-caption text-ink-faint">{t('work.relations.asked', { count: asked.length })}</dt>
             {asked.map(({ quest, question }) => (
               <dd key={quest.id} className="m-0 grid gap-0.5">
                 <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   <QuestStatus quest={quest} />
-                  <span className="text-meta text-accent">→ {quest.to}</span>
+                  <span className="text-caption text-accent-ink">→ {quest.to}</span>
                   {title(quest)}
-                  {question && <span className="text-meta text-ink-faint">{t('work.relations.question')}</span>}
+                  {question && <span className="text-caption text-ink-faint">{t('work.relations.question')}</span>}
                 </p>
                 <Answer quest={quest} />
               </dd>
@@ -126,7 +126,7 @@ export function SessionRelations({ relations, onQuest, onSession, defaultOpen = 
 function Answer({ quest }: { quest: Quest }) {
   const { t } = useTranslation();
   if (quest.status !== 'Done' && quest.status !== 'Declined') {
-    return <p className="m-0 text-meta text-ink-faint">{t('work.relations.waiting')}</p>;
+    return <p className="m-0 text-caption text-ink-faint">{t('work.relations.waiting')}</p>;
   }
   // A coded note is worded in the reader's language beside the label, one run (QUESTCLOSE1b2).
   if (quest.noteParts?.length) {

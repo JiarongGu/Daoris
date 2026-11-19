@@ -62,7 +62,7 @@ export type IntegrationTabProps = {
 
 const short = (tip: string) => tip.slice(0, 7);
 
-const PRESS = 'border border-line px-2 py-0 text-meta';
+const PRESS = 'border border-line px-2 py-0 text-caption';
 
 /**
  * **A repository's Integration tab**: the queue in its order, each line's standing candidate with
@@ -88,9 +88,9 @@ export function IntegrationTab({
   return (
     <div className="grid min-w-0 gap-5">
       <section className="grid min-w-0 gap-1.5">
-        <h2 className="m-0 text-title font-semibold text-ink">{t('integration.view.title')}</h2>
+        <h2 className="m-0 text-heading font-semibold text-ink">{t('integration.view.title')}</h2>
         <Prose className="text-small"><Inline text={t('integration.view.body', { repository })} /></Prose>
-        <p className="m-0 text-meta text-ink-faint"><Inline text={t('integration.view.twin', { repository })} /></p>
+        <p className="m-0 text-caption text-ink-faint"><Inline text={t('integration.view.twin', { repository })} /></p>
         {onRecheck && <div><Button variant="ghost" className="border border-line px-2.5 py-0.5 text-small" onClick={onRecheck}>{t('integration.view.recheck')}</Button></div>}
       </section>
 
@@ -103,14 +103,14 @@ export function IntegrationTab({
               <li key={each.unit} className="grid min-w-0 gap-0.5">
                 <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                   <span className="font-mono text-ink [overflow-wrap:anywhere]">{each.branch}</span>
-                  <span className="font-mono text-meta text-ink-faint">{short(each.tip)}</span>
+                  <span className="font-mono text-caption text-ink-faint">{short(each.tip)}</span>
                   {onRequest && (
                     <Button variant="ghost" className={PRESS} aria-label={t('integration.view.requestNamed', { branch: each.branch })} onClick={() => onRequest(each.branch)}>
                       {t('integration.view.request')}
                     </Button>
                   )}
                 </span>
-                <Prose className="text-meta text-ink-soft">{each.said}</Prose>
+                <Prose className="text-caption text-ink-soft">{each.said}</Prose>
               </li>
             ))}
           </ul>
@@ -173,11 +173,11 @@ function Requests({ rows, label, numbered = false, onDrop, onOrder }: {
       {rows.map((row, at) => (
         <li key={row.request} className="grid min-w-0 gap-0.5">
           <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-            {numbered && <span className="tabular-nums text-meta text-ink-faint">{t('integration.view.place', { place: at + 1 })}</span>}
+            {numbered && <span className="tabular-nums text-caption text-ink-faint">{t('integration.view.place', { place: at + 1 })}</span>}
             <span className="font-mono text-ink [overflow-wrap:anywhere]">{row.branch}</span>
-            <span className="font-mono text-meta text-ink-faint">{short(row.tip)}</span>
-            <span className="text-meta text-ink-faint">{t('integration.view.into', { line: row.line })}</span>
-            {row.ordered && <span className="text-meta text-ink-soft">{t(`integration.view.ordered.${row.ordered}`)}</span>}
+            <span className="font-mono text-caption text-ink-faint">{short(row.tip)}</span>
+            <span className="text-caption text-ink-faint">{t('integration.view.into', { line: row.line })}</span>
+            {row.ordered && <span className="text-caption text-ink-soft">{t(`integration.view.ordered.${row.ordered}`)}</span>}
             {onOrder && at > 0 && (
               <Button variant="ghost" className={PRESS} aria-label={t('integration.view.firstNamed', { branch: row.branch })} onClick={() => onOrder(row.request, 'first')}>
                 {t('integration.view.first')}
@@ -194,7 +194,7 @@ function Requests({ rows, label, numbered = false, onDrop, onOrder }: {
               </Button>
             )}
           </span>
-          {row.said && <Prose className="text-meta text-ink-soft">{row.said}</Prose>}
+          {row.said && <Prose className="text-caption text-ink-soft">{row.said}</Prose>}
         </li>
       ))}
     </ul>
@@ -206,7 +206,7 @@ function Candidate({ candidate, onDecide }: { candidate: IntegrationCandidateRow
   const title = t('integration.view.candidate', { line: candidate.line });
   return (
     <PageSection title={title}>
-      <ol aria-label={t('integration.view.steps')} className="m-0 mb-2 flex list-none flex-wrap gap-1.5 p-0 text-meta">
+      <ol aria-label={t('integration.view.steps')} className="m-0 mb-2 flex list-none flex-wrap gap-1.5 p-0 text-caption">
         {candidate.steps.map((step) => (
           <li key={step.step} data-step-state={step.state} className="rounded-full border border-line-strong px-2 py-px text-ink-soft">
             {t(`integration.view.step.${step.step}`)} · {t(`integration.view.state.${step.state}`, { defaultValue: step.state })}
@@ -217,7 +217,7 @@ function Candidate({ candidate, onDecide }: { candidate: IntegrationCandidateRow
         {candidate.members.map((member) => (
           <li key={member.request} className="grid min-w-0 gap-0.5">
             <span><span className="font-mono">{member.branch}</span> · {t(`integration.view.member.${member.state}`, { defaultValue: member.state })}</span>
-            {member.said && <Prose className="text-meta text-ink-soft">{member.said}</Prose>}
+            {member.said && <Prose className="text-caption text-ink-soft">{member.said}</Prose>}
           </li>
         ))}
       </ul>

@@ -183,14 +183,14 @@ export function RoundCard({ plugin, pluginName, command, given, place, send, onE
 
       {opened && (
         <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-small">
-          <ExternalLink system href={opened} className="text-accent underline-offset-2 hover:underline">{t('plugin.round.open')}</ExternalLink>
+          <ExternalLink system href={opened} className="text-accent-ink underline-offset-2 hover:underline">{t('plugin.round.open')}</ExternalLink>
           <span className="text-ink-faint">{hostOf(opened)}</span>
         </span>
       )}
       {last?.code && stage === 'asking' && (
         <span className="flex flex-wrap items-center gap-3">
           <span className="sr-only">{t('plugin.round.code')}</span>
-          <code className="font-mono text-title tracking-wider text-ink">{last.code}</code>
+          <code className="font-mono text-heading tracking-wider text-ink">{last.code}</code>
           <Button variant="ghost" onClick={() => { void navigator.clipboard?.writeText(last.code!); setCopied(true); }}>
             {t(copied ? 'plugin.round.copied' : 'plugin.round.copy')}
           </Button>
@@ -211,7 +211,7 @@ export function RoundCard({ plugin, pluginName, command, given, place, send, onE
               className={FIELD}
             />
           </label>
-          {last.ask.masked && <span className="text-meta text-ink-faint">{t('plugin.round.masked')}</span>}
+          {last.ask.masked && <span className="text-caption text-ink-faint">{t('plugin.round.masked')}</span>}
           <span className="flex flex-wrap gap-2">
             <Button type="submit" variant="primary">{t('plugin.round.goOn')}</Button>
             <Button variant="ghost" onClick={cancel}>{t('plugin.round.cancel')}</Button>

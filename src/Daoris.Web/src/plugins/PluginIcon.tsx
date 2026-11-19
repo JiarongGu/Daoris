@@ -4,9 +4,9 @@ import { iconSource, type IdentHue, monogram } from './icon';
 
 /** Each size the icon is drawn at: the list's strip, a row of the catalogue, a page's header. */
 const SIZE = {
-  strip: 'size-5 rounded-control text-meta',
-  row: 'size-8 rounded-control text-title',
-  page: 'size-12 rounded-card text-view',
+  strip: 'size-5 rounded-control text-caption',
+  row: 'size-8 rounded-control text-heading',
+  page: 'size-12 rounded-card text-display',
 } as const;
 
 /** A monogram's hue: its glyph in the hue, on a 15% field of it (the field `icon.test.ts` computes the contrast on). */

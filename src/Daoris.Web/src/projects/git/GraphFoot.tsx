@@ -65,7 +65,7 @@ export function GraphFoot({ shown, loadingMore, error, paging }: {
   const { t } = useTranslation();
   return (
     <div ref={paging.foot} className="grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 pt-1">
-      <p className="m-0 text-meta text-ink-faint">{t('projects.git.history.listed', { count: shown })}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('projects.git.history.listed', { count: shown })}</p>
       {error && <Refused sentence={error} />}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Button className="px-2.5 text-small" onClick={paging.more}>{t('projects.git.history.more')}</Button>

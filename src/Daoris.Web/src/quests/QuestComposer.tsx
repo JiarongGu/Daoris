@@ -67,7 +67,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
   const { t } = useTranslation();
   const carry = useCarry(draft, (next) => onChange({ ...draft, ...next }), true);
   const options = receivers.map((name) => ({ value: name, label: name }));
-  const meta = <span className="font-mono text-meta text-ink-faint">{t('quests.compose.meta')}</span>;
+  const meta = <span className="font-mono text-caption text-ink-faint">{t('quests.compose.meta')}</span>;
 
   if (nobody) {
     return (
@@ -145,10 +145,10 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
             placeholder={t('quests.field.shortPlaceholder')}
             aria-invalid={characters(draft.short ?? '') > SHORT_TITLE_MAX || undefined}
             onChange={(e) => onChange({ ...draft, short: e.target.value })}
-            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-st-declined"
+            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-fail"
           />
           {characters(draft.short ?? '') > SHORT_TITLE_MAX && (
-            <span className="text-small text-ink-danger">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
+            <span className="text-small text-fail-ink">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
           )}
         </label>
         {caution && (

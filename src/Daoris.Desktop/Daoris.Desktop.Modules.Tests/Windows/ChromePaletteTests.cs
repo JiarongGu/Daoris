@@ -95,6 +95,26 @@ public sealed class ChromePaletteTests
     }
 
     /// <summary>
+    /// The close glyph is a label on a solid fill, so it reads at 4.5:1 on the red in both themes, as every label on a
+    /// fill does in the page (D330). The dark red is light, so its glyph is dark.
+    /// </summary>
+    [Fact]
+    public void TheCloseGlyphReadsOnItsRed()
+    {
+        static double Luminance(Color c) => new[] { c.R, c.G, c.B }
+            .Select(v => v / 255.0)
+            .Select(v => v <= 0.04045 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4))
+            .Zip(new[] { 0.2126, 0.7152, 0.0722 }, (v, w) => v * w)
+            .Sum();
+        foreach (var palette in new[] { ChromePalette.Light, ChromePalette.Dark })
+        {
+            var (a, b) = (Luminance(palette.CloseGlyphHot), Luminance(palette.CloseHover));
+            var ratio = (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+            Assert.True(ratio >= 4.5, $"the close glyph reads {ratio:F2}:1 on its red ({(palette.IsDark ? "dark" : "light")})");
+        }
+    }
+
+    /// <summary>
     /// The seam rule: the caption cluster is cut out of the WebView2, so the colour behind it has to
     /// be the app strip's own background — `--raised`, which is what the strip uses.
     /// </summary>

@@ -787,7 +787,7 @@ describe('an account’s row', () => {
     expect(acts.gitTryAgain).toHaveBeenCalledWith(held);
 
     rerender(<AttentionRow item={{ ...held, git: { ...git, class: 'host-changed' } }} acts={acts} />);
-    expect(screen.getByText('git held')).toHaveClass('text-ink-danger');
+    expect(screen.getByText('git held')).toHaveClass('text-fail-ink');
 
     rerender(<AttentionRow item={held} />);
     expect(screen.queryByRole('button')).toBeNull();

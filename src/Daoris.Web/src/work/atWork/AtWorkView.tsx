@@ -86,7 +86,7 @@ export function AtWorkView({ held, error, onOpen, onOpenQuest, considered, onRet
       {stale !== null && (
         <p role="status" className="m-0 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
           {t('work.atWork.stale', { why: stale })}
-          {onRetry && <button type="button" className="text-accent underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
+          {onRetry && <button type="button" className="text-accent-ink underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
         </p>
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
@@ -108,7 +108,7 @@ export function Failed({ why, onRetry }: { why: string; onRetry?: () => void }) 
   return (
     <p role="alert" className="m-0 flex flex-wrap items-baseline gap-2 p-3 text-small text-ink-soft">
       {t('work.atWork.failed', { why })}
-      {onRetry && <button type="button" className="text-accent underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
+      {onRetry && <button type="button" className="text-accent-ink underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
     </p>
   );
 }
@@ -140,7 +140,7 @@ export function WaitingOnLine({ answer, nameOf, onOpen }: {
   return (
     <p data-waiting-on className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink">
       <span className="min-w-0 wrap-anywhere">{line}</span>
-      {onOpen && <button type="button" className="text-accent underline" onClick={() => onOpen(first.id)}>{t('work.atWork.openAtWork')}</button>}
+      {onOpen && <button type="button" className="text-accent-ink underline" onClick={() => onOpen(first.id)}>{t('work.atWork.openAtWork')}</button>}
     </p>
   );
 }
@@ -173,7 +173,7 @@ function Coworkers({ answer, nameOf, onOpen, sought }: {
               <span className="text-ink-soft">{exchangeState(t, exchange)}</span>
               {exchange.part !== answer.attended && <span className="text-ink-faint">{t('work.atWork.coworker.earlierPart')}</span>}
               {exchange.session && onOpen && (
-                <button type="button" className="text-accent underline" onClick={() => onOpen(exchange.session!)}>{t('work.atWork.open')}</button>
+                <button type="button" className="text-accent-ink underline" onClick={() => onOpen(exchange.session!)}>{t('work.atWork.open')}</button>
               )}
             </li>
           ))}
@@ -204,8 +204,8 @@ export function Word({ item }: { item: ChannelItem }) {
   return (
     <li className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small text-ink-soft" title={first}>
       <span className="font-semibold text-ink">{whoOf(t, item)}</span>
-      {item.part && <span className="text-meta text-ink-faint">{t('asks.channel.toPart', { part: item.part })}</span>}
-      <span className="text-meta text-ink-faint">{ago(item.at)}</span>
+      {item.part && <span className="text-caption text-ink-faint">{t('asks.channel.toPart', { part: item.part })}</span>}
+      <span className="text-caption text-ink-faint">{ago(item.at)}</span>
       <span className="line-clamp-2 min-w-0 flex-1 basis-40 [overflow-wrap:anywhere]">{first}</span>
     </li>
   );
@@ -226,7 +226,7 @@ function ChannelWords({ channel, parts }: { channel: AtWorkChannel; parts: reado
       {loose.length > 0 && <ol className="m-0 grid list-none gap-1 p-0">{loose.map((item) => <Word key={item.id ?? item.at} item={item} />)}</ol>}
       {channel.onOpen && (
         <div>
-          <button type="button" className="text-small text-accent underline underline-offset-2" onClick={channel.onOpen}>
+          <button type="button" className="text-small text-accent-ink underline underline-offset-2" onClick={channel.onOpen}>
             {t('work.atWork.channel.all')}
           </button>
         </div>
@@ -262,13 +262,13 @@ function Parts({ answer, onOpen, channel }: { answer: AtWorkA; onOpen?: (session
                   part.key === answer.attended ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
                 )}
               >
-                {part.number !== undefined && <span className="font-mono text-meta text-ink-faint">{part.number}</span>}
-                {part.agent && <span className="font-mono text-meta text-ink-faint">{part.agent}</span>}
+                {part.number !== undefined && <span className="font-mono text-caption text-ink-faint">{part.number}</span>}
+                {part.agent && <span className="font-mono text-caption text-ink-faint">{part.agent}</span>}
                 {part.state && <Dot tone={part.state === 'working' ? 'live' : 'ended'} label={t(partStateKey(part.state))} />}
                 {part.waits && part.key !== answer.attended && <Dot tone="idle" label={waitLine(t, part.waits)} className="whitespace-normal" />}
                 <PartChildren t={t} part={part} />
                 {(joined || part.alongside) && (
-                  <span className="basis-full text-meta text-ink-faint">
+                  <span className="basis-full text-caption text-ink-faint">
                     {[joined, part.alongside ? t('work.atWork.part.alongside') : null].filter(Boolean).join(' · ')}
                   </span>
                 )}
@@ -282,19 +282,19 @@ function Parts({ answer, onOpen, channel }: { answer: AtWorkA; onOpen?: (session
           );
         })}
       </ol>
-      {(answer.earlier ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.earlier', { count: answer.earlier })}</p>}
-      {more > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.part.more', { count: more })}</p>}
+      {(answer.earlier ?? 0) > 0 && <p className="m-0 text-caption text-ink-faint">{t('work.atWork.part.earlier', { count: answer.earlier })}</p>}
+      {more > 0 && <p className="m-0 text-caption text-ink-faint">{t('work.atWork.part.more', { count: more })}</p>}
     </section>
   );
 }
 
 function PartChildren({ t, part }: { t: TFunction; part: AtWorkPart }) {
   const { children } = part;
-  if (children.elsewhere) return <span className="text-meta text-ink-faint">{t('work.atWork.elsewhere')}</span>;
-  if (children.unreadable) return <span className="text-meta text-ink-faint">{t('work.atWork.unreadable')}</span>;
+  if (children.elsewhere) return <span className="text-caption text-ink-faint">{t('work.atWork.elsewhere')}</span>;
+  if (children.unreadable) return <span className="text-caption text-ink-faint">{t('work.atWork.unreadable')}</span>;
   if (!children.count) return null;
   return (
-    <span className="text-meta text-ink-faint">
+    <span className="text-caption text-ink-faint">
       {t('work.atWork.part.children', { count: children.count, working: children.working ?? 0 })}
     </span>
   );
@@ -338,18 +338,18 @@ export function QuestRows({ quests, more, considered, onOpenQuest, sought }: {
               onClick={() => onOpenQuest?.(quest.id)}
               className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
             >
-              <span className="font-mono text-meta text-ink-faint">#{quest.id}</span>
+              <span className="font-mono text-caption text-ink-faint">#{quest.id}</span>
               <span className="min-w-0 text-ink [overflow-wrap:anywhere]">{quest.title}</span>
-              {quest.of && <span className="text-meta text-ink-faint">{t('work.atWork.quest.of', { repository: quest.of })}</span>}
+              {quest.of && <span className="text-caption text-ink-faint">{t('work.atWork.quest.of', { repository: quest.of })}</span>}
               {quest.lanes?.length ? (
-                <span className="text-meta text-ink-faint">{t('work.atWork.quest.lanes', { lanes: quest.lanes.join(', '), count: quest.lanes.length })}</span>
+                <span className="text-caption text-ink-faint">{t('work.atWork.quest.lanes', { lanes: quest.lanes.join(', '), count: quest.lanes.length })}</span>
               ) : null}
               <QuestTaker t={t} quest={quest} considered={considered} />
             </button>
           </li>
         ))}
       </ol>
-      {more > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.quest.more', { count: more })}</p>}
+      {more > 0 && <p className="m-0 text-caption text-ink-faint">{t('work.atWork.quest.more', { count: more })}</p>}
     </section>
   );
 }
@@ -359,7 +359,7 @@ function QuestTaker({ t, quest, considered }: { t: TFunction; quest: AtWorkQuest
   const { taker } = quest;
   const sitting = taker?.untaken ? sittingBecause(considered, quest.id) : null;
   return (
-    <span className="flex basis-full flex-wrap items-baseline gap-x-2 gap-y-0.5 text-meta text-ink-faint">
+    <span className="flex basis-full flex-wrap items-baseline gap-x-2 gap-y-0.5 text-caption text-ink-faint">
       {taker?.session !== undefined && (
         <>
           {taker.agent && <span className="font-mono">{taker.agent}</span>}
@@ -409,7 +409,7 @@ function Hint({ answer }: { answer: AtWorkA }) {
   return (
     <p data-hint={answer.hint} className="m-0 text-small text-ink-soft">
       <Inline text={t(HINT_KEY[answer.hint])} />{' '}
-      <ExternalLink href={LANES_GUIDE} className="text-accent underline underline-offset-2">{t('work.atWork.hint.guide')}</ExternalLink>
+      <ExternalLink href={LANES_GUIDE} className="text-accent-ink underline underline-offset-2">{t('work.atWork.hint.guide')}</ExternalLink>
     </p>
   );
 }

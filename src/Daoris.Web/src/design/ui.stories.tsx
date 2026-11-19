@@ -52,12 +52,12 @@ function DangerWords() {
     <div className="grid gap-2">
       {surfaces.map(([surface, name]) => (
         <div key={name} className={`flex flex-wrap items-center gap-3 rounded-card border border-line p-3 ${surface}`}>
-          <span className="w-14 font-mono text-meta text-ink-faint">{name}</span>
+          <span className="w-14 font-mono text-caption text-ink-faint">{name}</span>
           <Button variant="danger">Remove plugin</Button>
           <Pill tone="declined">Declined</Pill>
           <Dot tone="failed" label="failed" />
-          <span className="font-mono text-meta text-ink-danger">−12</span>
-          <p className="m-0 text-small text-ink-danger">The driver stopped: sessions will not start until it runs again.</p>
+          <span className="font-mono text-caption text-fail-ink">−12</span>
+          <p className="m-0 text-small text-fail-ink">The driver stopped: sessions will not start until it runs again.</p>
         </div>
       ))}
     </div>
@@ -80,16 +80,16 @@ function StatusWords() {
     <div className="grid gap-2">
       {surfaces.map(([surface, name]) => (
         <div key={name} className={`flex flex-wrap items-center gap-3 rounded-card border border-line p-3 ${surface}`}>
-          <span className="w-14 font-mono text-meta text-ink-faint">{name}</span>
+          <span className="w-14 font-mono text-caption text-ink-faint">{name}</span>
           <Pill tone="open">Open</Pill>
           <Pill tone="taken">Taken</Pill>
           <Pill tone="done">Done</Pill>
           <Dot tone="parked" label="waiting on you" />
-          <span className="font-mono text-meta">
-            <span className="text-ink-done">A</span> <span className="text-ink-taken">M</span>{' '}
-            <span className="text-ink-open">R</span> <span className="text-ink-done">+12</span>
+          <span className="font-mono text-caption">
+            <span className="text-ok-ink">A</span> <span className="text-live-ink">M</span>{' '}
+            <span className="text-ink-open">R</span> <span className="text-ok-ink">+12</span>
           </span>
-          <p className="m-0 text-small text-ink-done">Every step passed.</p>
+          <p className="m-0 text-small text-ok-ink">Every step passed.</p>
         </div>
       ))}
     </div>
@@ -219,9 +219,9 @@ function FormGridsCards() {
         <p className="m-0 mb-2 text-small text-ink-soft">A list of rows: the heavy gates, their columns aligned, stacked below 40rem with each field named.</p>
         <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
           <FormRow head>
-            <span className="text-meta text-ink-faint">Name</span>
-            <span className="text-meta text-ink-faint">Command</span>
-            <span className="text-meta text-ink-faint">Folder</span>
+            <span className="text-caption text-ink-faint">Name</span>
+            <span className="text-caption text-ink-faint">Command</span>
+            <span className="text-caption text-ink-faint">Folder</span>
             <span />
           </FormRow>
           {GATES.map((gate, at) => (
@@ -273,7 +273,7 @@ export const CodeSpans: StoryObj = {
             label="A word wider than its line"
             hint="`C:/somewhere/a-very-long-folder-name-that-will-not-fit/beside-anything-at-all/plugins`"
           />
-          <p className="m-0 mt-2 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
+          <p className="m-0 mt-2 flex flex-wrap items-baseline gap-1.5 text-caption text-ink-faint">
             <span>At a terminal:</span>
             <CodeText text="daoris agent settings claude-code --account work model <model> effort <effort>" />
           </p>
@@ -395,7 +395,7 @@ export const DrawerDetail: StoryObj = {
     <Drawer
       title="Expose a streaming budget on the chunk API"
       onClose={() => {}}
-      meta={<><Pill tone="open">Open</Pill><span className="font-mono text-meta text-ink-faint">#7a82cc</span></>}
+      meta={<><Pill tone="open">Open</Pill><span className="font-mono text-caption text-ink-faint">#7a82cc</span></>}
       footer={
         <div className="flex flex-wrap gap-2">
           <Button>take</Button>

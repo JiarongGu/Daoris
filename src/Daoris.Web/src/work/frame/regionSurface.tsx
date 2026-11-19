@@ -105,7 +105,7 @@ export function useRegionSurfaces({
   // the screen names — so each says whose it is, with the way back to it.
   const whose = (flush: boolean) => (elsewhere && following ? (
     // Flush in the panel, whose body carries its own gutter; inset in the side bar, as its views are.
-    <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-meta text-ink-faint', flush ? 'mb-2' : 'px-3')}>
+    <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-caption text-ink-faint', flush ? 'mb-2' : 'px-3')}>
       <span className="min-w-0 truncate">
         {t('work.frame.attending', { title: sessionTitle(following, quest, openings[following.id]) })}
       </span>
@@ -113,7 +113,7 @@ export function useRegionSurfaces({
         <button
           type="button"
           onClick={onOpenSessions}
-          className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+          className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-caption text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
         >
           {t('work.frame.open')}
         </button>

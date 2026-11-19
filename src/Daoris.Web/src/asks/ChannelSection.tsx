@@ -23,7 +23,7 @@ const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);
 export type ChannelForward = (message: string, repository: string, answered: ChannelAnswered) => void;
 
 /** A door, in the accent, as the page's other doors are. */
-const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
+const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent-ink underline-offset-2 hover:underline';
 
 /** Who wrote a message: the person, or a session by its repository and agent (the agent's adapter, never a model), else a session. */
 export const whoOf = (t: TFunction, item: ChannelItem) => {
@@ -261,7 +261,7 @@ function AddressedRow({ item }: { item: ChannelItem }) {
   const state = item.receipt ?? null;
   return (
     <li data-addressed={item.id ?? ''} className={cn('grid gap-1 rounded-control border border-line px-3 py-2', item.person ? 'border-l-[3px] border-l-accent bg-raised' : 'bg-page')}>
-      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-meta text-ink-faint">
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-caption text-ink-faint">
         <span className="text-small font-semibold text-ink">{whoOf(t, item)}</span>
         <span>{t('asks.channel.toPart', { part: item.part ?? '' })}</span>
         <span>{ago(item.at)}</span>
@@ -287,7 +287,7 @@ function LineRow({ item, isNew, onOpenQuest }: { item: ChannelItem; isNew: boole
       {onOpenQuest && item.quest
         ? <button type="button" onClick={() => onOpenQuest(item.quest!)} className={cn(DOOR, 'min-w-0 wrap-anywhere text-small')}>{words}</button>
         : <span className="min-w-0 wrap-anywhere">{words}</span>}
-      <span className="text-meta text-ink-faint">{ago(item.at)}</span>
+      <span className="text-caption text-ink-faint">{ago(item.at)}</span>
       {isNew && <Pill tone="neutral">{t('asks.channel.new')}</Pill>}
     </li>
   );
@@ -316,7 +316,7 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
         item.person ? 'border-l-[3px] border-l-accent bg-raised' : 'bg-page',
       )}
     >
-      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-meta text-ink-faint">
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-caption text-ink-faint">
         <span className="text-small font-semibold text-ink">{whoOf(t, item)}</span>
         <span>{toWords}</span>
         <span>{ago(item.at)}</span>

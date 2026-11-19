@@ -64,7 +64,7 @@ export function CommandCenter({ scope, detail, shortcut, onOpen, label }: {
 
       {/* The shortcut goes first of all, since the pill still opens the palette without it. */}
       {shortcut && (
-        <kbd className="ml-auto shrink-0 rounded border border-line px-1 font-mono text-meta text-ink-faint @max-[12rem]:hidden">
+        <kbd className="ml-auto shrink-0 rounded border border-line px-1 font-mono text-caption text-ink-faint @max-[12rem]:hidden">
           {shortcut}
         </kbd>
       )}

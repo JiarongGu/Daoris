@@ -30,7 +30,7 @@ export function FilesKept({ look, onPress }: { look: FilesLook; onPress?: (press
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <Pill>{t(`files.view.kind.${each.kind}`)}</Pill>
                   <span id={`${id}-${index}`} className="min-w-0 flex-1 font-mono [overflow-wrap:anywhere]">{each.path}</span>
-                  <span className="text-meta text-ink-faint">{each.scope === 'machine' ? t('files.view.scope.machine') : each.scope}</span>
+                  <span className="text-caption text-ink-faint">{each.scope === 'machine' ? t('files.view.scope.machine') : each.scope}</span>
                 </div>
                 <div role={onPress ? 'radiogroup' : undefined} aria-labelledby={onPress ? `${id}-${index}` : undefined} className="grid min-w-0 gap-1.5">
                   {[true, false].map((whole) => {

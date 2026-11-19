@@ -100,7 +100,7 @@ export function Lands({ session, lands, landing, onReview, onReviewRun, onSayReb
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="text-ink-faint">{t('work.head.itsWork')}</span>
         <span className="text-ink-open">{t('work.head.landed.not', { count: lands.commits })}</span>
-        <PathText path={lands.branch} className="min-w-0 text-meta text-ink-faint" />
+        <PathText path={lands.branch} className="min-w-0 text-caption text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: lands.tree })}</span>
         {door && (
           <Button variant={door === onReviewRun ? 'primary' : 'default'} className="px-2 py-0.5 text-small" onClick={door}>{t('work.head.review')}</Button>
@@ -173,7 +173,7 @@ export function Discards({ discards, onReview, onDiscard, ask, busy = false }: {
     <>
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="min-w-0 text-ink-soft"><Inline text={discards.says} /></span>
-        <PathText path={discards.branch} className="min-w-0 text-meta text-ink-faint" />
+        <PathText path={discards.branch} className="min-w-0 text-caption text-ink-faint" />
         <span className="text-ink-faint">{t('work.head.inTree', { tree: discards.tree })}</span>
         {discardable && !asking && (
           <HeldDiscardButton className="px-2 py-0.5 text-small" disabled={busy} onAsk={() => setAsking(true)} />

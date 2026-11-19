@@ -46,7 +46,7 @@ export function WorkflowLine({ runs, onOpen }: {
                   title={t('workflow.run.viewNamed')}
                   className={cn(
                     'cursor-pointer border-0 bg-transparent p-0 text-small underline decoration-line-strong underline-offset-2',
-                    'hover:text-accent hover:decoration-accent',
+                    'hover:text-accent-ink hover:decoration-accent',
                     tone,
                   )}
                 >

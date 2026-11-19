@@ -538,7 +538,7 @@ export function App() {
       {about && (
         <Drawer title={t('menu.about')} onClose={() => setAbout(false)}>
           <div className="flex items-baseline gap-2">
-            <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
+            <strong className="font-sans text-display font-semibold tracking-[-0.01em]">Daoris</strong>
             <span className="text-small text-ink-faint">道衍</span>
           </div>
           <Prose className="mt-2">{t('about.what')}</Prose>
@@ -547,7 +547,7 @@ export function App() {
                 the tier and no canon version, and inventing a field to fill a row is how a card
                 starts lying. */}
             <dt className="text-ink-faint">{t('about.index')}</dt>
-            <dd className="m-0 font-mono text-meta">{status.data?.tier ?? '—'}</dd>
+            <dd className="m-0 font-mono text-caption">{status.data?.tier ?? '—'}</dd>
             <dt className="text-ink-faint">{t('about.surface')}</dt>
             <dd className="m-0">{attached ? t('about.shell') : t('about.browser')}</dd>
           </dl>

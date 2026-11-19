@@ -18,7 +18,7 @@ export function FocusDivider({ mark }: { mark: FocusMark }) {
   const said = t(mark.widened ? 'help.focus.divider.widened' : 'help.focus.divider.changed', { from: placeWords(t, mark.from), to: placeWords(t, mark.to) });
   const time = mark.at ? new Date(mark.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : null;
   return (
-    <div role="separator" aria-label={time ? `${said} · ${time}` : said} className="flex items-center gap-2 text-meta text-ink-faint">
+    <div role="separator" aria-label={time ? `${said} · ${time}` : said} className="flex items-center gap-2 text-caption text-ink-faint">
       <span aria-hidden className="h-px flex-1 bg-line" />
       <span className="min-w-0 max-w-[85%] text-center wrap-anywhere">{said}{time && <> · {time}</>}</span>
       <span aria-hidden className="h-px flex-1 bg-line" />

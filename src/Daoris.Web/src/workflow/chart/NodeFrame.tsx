@@ -63,7 +63,7 @@ export function NodeFrame({ context, shape = 'box', data, press, selected = fals
         shape === 'pill' ? 'rounded-full px-3 py-1.5' : 'rounded-card px-3 py-2',
         // Every state keeps the one-pixel border, so none moves a box: the second pixel of a refusal or of the current
         // step is an inset ring, which takes no room.
-        refused.length > 0 ? 'border border-st-declined ring-1 ring-inset ring-st-declined'
+        refused.length > 0 ? 'border border-fail ring-1 ring-inset ring-fail'
           : node.current ? 'border border-ink-soft ring-1 ring-inset ring-ink-soft'
             : faint ? 'border border-dashed border-line-strong' : 'border border-line',
         press && 'cursor-pointer',
@@ -88,7 +88,7 @@ export function NodeFeet({ node, feet, onFollow }: { node: string; feet: NodeFoo
           type="button"
           tabIndex={-1}
           onClick={() => onFollow(node, foot.to)}
-          className="cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
+          className="cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
         >
           <span aria-hidden className="mr-1">{foot.back ? '↺' : '→'}</span>{foot.text}
         </button>

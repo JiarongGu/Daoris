@@ -77,7 +77,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
   if (pending) {
     body = (
       <div className="px-3 py-2">
-        <p role="status" className="m-0 text-meta text-ink-faint">{t('work.preview.reading')}</p>
+        <p role="status" className="m-0 text-caption text-ink-faint">{t('work.preview.reading')}</p>
         <SkeletonRows rows={4} />
       </div>
     );
@@ -97,7 +97,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
     body = <p className="m-0 px-3 py-4 text-small text-ink-faint">{t('work.preview.empty')}</p>;
   } else {
     body = (
-      <table className="w-full border-collapse font-mono text-meta leading-[1.5]">
+      <table className="w-full border-collapse font-mono text-caption leading-[1.5]">
         <tbody>
           {rows.map((_, index) => {
             const line = index + 1;
@@ -107,9 +107,9 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
                 key={line}
                 ref={lines && line === lines.from ? first : undefined}
                 data-marked={mark}
-                className={cn(mark && 'bg-accent/10')}
+                className={cn(mark && 'bg-accent-soft')}
               >
-                <td className={cn(NUMBER, mark ? 'border-l-accent text-accent' : 'border-l-transparent text-ink-faint')}>{line}</td>
+                <td className={cn(NUMBER, mark ? 'border-l-accent text-accent-ink' : 'border-l-transparent text-ink-faint')}>{line}</td>
                 <td className="whitespace-pre px-2 align-top text-ink-soft">
                   {/* The highlighter's own escaped markup — never the file's text as markup. */}
                   <code className="hljs" dangerouslySetInnerHTML={{ __html: html[index] ?? '' }} />
@@ -146,8 +146,8 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
       {(measure || named || patch) && (
         // Wraps rather than squeezing: at the side bar's floor the switch goes under what it follows.
         <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-line px-3 py-1">
-          {measure && <span className="text-meta tabular-nums text-ink-faint">{measure}</span>}
-          {named && shown === 'file' && <span className="text-meta text-accent">{named}</span>}
+          {measure && <span className="text-caption tabular-nums text-ink-faint">{measure}</span>}
+          {named && shown === 'file' && <span className="text-caption text-accent-ink">{named}</span>}
           {patch && file && !file.binary && (
             <span className="ml-auto">
               <Segmented
@@ -166,7 +166,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
 
       {/* Once a landing has tidied the tree away, the file is the landed branch's copy, said in words. */}
       {file?.branch && !pending && !refusal && (
-        <p className="m-0 shrink-0 border-b border-line px-3 py-1 text-meta text-ink-faint [overflow-wrap:anywhere]">
+        <p className="m-0 shrink-0 border-b border-line px-3 py-1 text-caption text-ink-faint [overflow-wrap:anywhere]">
           <Inline text={t('work.preview.fromBranch', { branch: file.branch })} />
         </p>
       )}
@@ -175,7 +175,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
 
       {/* The bound is stated, never hidden — and where the rest is: the disk, or the landed branch. */}
       {file?.truncated && !file.binary && shown === 'file' && (
-        <p className="m-0 shrink-0 border-t border-line px-3 py-2 text-meta text-ink-faint">
+        <p className="m-0 shrink-0 border-t border-line px-3 py-2 text-caption text-ink-faint">
           {t(file.branch ? 'work.preview.truncatedBranch' : 'work.preview.truncated', { size: size(file.size), count: rows.length })}
         </p>
       )}

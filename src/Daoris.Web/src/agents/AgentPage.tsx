@@ -511,7 +511,7 @@ export function AgentPage({
             <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
             <Button variant="ghost" disabled={busy} onClick={() => askReplace(null)}>{t('common.cancel')}</Button>
             {refusalOf('key', account.name) && <Refused sentence={refusalOf('key', account.name)!} />}
-            <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+            <span className="basis-full text-caption text-ink-faint">{t('harness.profile.keyHint')}</span>
           </form>
         )}
         {signingIn === account.name && signInPanel}
@@ -540,7 +540,7 @@ export function AgentPage({
       <AccountsFold adding={adding} goingBack={goingBack} signInNewPanel={signInNewPanel} added={added} back={back} busy={busy} now={now} setGoingBack={setGoingBack} acts={acts} tool={tool} t={t} addedKey={addedKey} addedWho={addedWho} offeredName={offeredName} addedFallback={addedFallback} refusalOf={refusalOf} answered={answered} latest={latest} use={use} product={product} readingNow={readingNow} reading={reading} pooled={pooled} labelOf={labelOf} nextSaid={nextSaid} accountRow={accountRow} ownLabel={ownLabel} firstPress={signsIn ? t('harness.login.forDaoris') : takesKey ? t('harness.profile.addKey') : null} termsOpen={termsOpen} setTermsOpen={setTermsOpen} keying={keying} addKey={addKey} keyDraft={keyDraft} setKeyDraft={setKeyDraft} askKey={askKey} machine={machine} open={open} toggle={toggle} choices={choices} />
       <AgentDoors t={t} tool={tool} adapter={adapter} open={open} toggle={toggle} onOpenPlugin={onOpenPlugin} busy={busy} acts={acts} pinOpen={pinOpen} setPinOpen={setPinOpen} pinning={pinning} setPinning={setPinning} doorRunning={doorRunning} doorConsole={doorConsole} />
       <AgentMore rulesShown={rulesShown} t={t} rules={rules} open={open} toggle={toggle} busy={busy} acts={acts} settingsShown={settingsShown} tool={tool} labelOf={labelOf} tuning={tuning} askSettings={askSettings} lead={lead} settingsBusy={settingsBusy} answered={answered} setTuning={setTuning} refusalOf={refusalOf} sessions={sessions} usage={usage} ownLabel={ownLabel} usedBy={usedBy} product={product} />
-      <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
+      <p className="m-0 mt-8 border-t border-line pt-3 text-caption text-ink-faint">
         {/* An agent Daoris has no installer for is installed with its maker's own tooling, so no `daoris agent install`. */}
         <Inline text={t(
           tool.present ? (keyOnly ? 'agents.page.terminalKey' : 'agents.page.terminal')

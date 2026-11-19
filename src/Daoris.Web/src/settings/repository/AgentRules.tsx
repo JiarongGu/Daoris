@@ -193,7 +193,7 @@ export function AgentRules({
                       {t('settings.rules.proposals.decline')}
                     </Button>
                   </div>
-                  <p className="m-0 mt-1 text-meta text-ink-faint">
+                  <p className="m-0 mt-1 text-caption text-ink-faint">
                     {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
                   </p>
                   {/* The session's own reason, verbatim: content, never translated. */}
@@ -224,7 +224,7 @@ export function AgentRules({
                         <Pill tone={SETTLED_TONE[proposal.state]}>{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>
                         <span className="min-w-0 flex-1 font-mono text-body wrap-anywhere">{proposalChange(proposal)}</span>
                       </div>
-                      <p className="m-0 mt-0.5 text-meta text-ink-faint">
+                      <p className="m-0 mt-0.5 text-caption text-ink-faint">
                         {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
                         {' · '}
                         {proposal.settledBy === 'the supervisor'
@@ -273,7 +273,7 @@ export function AgentRules({
                   <span>
                     <Inline text={t(`settings.rules.defaultWhy.${shipped.id}`, { why: shipped.why, defaultValue: shipped.why })} />
                   </span>
-                  <span className="flex flex-wrap gap-x-2 font-mono text-meta">
+                  <span className="flex flex-wrap gap-x-2 font-mono text-caption">
                     {shipped.hook
                       ? <span>{t('settings.rules.hook', { tools: shipped.hook })}</span>
                       : shipped.rules.map((one) => <span key={one}>{one}</span>)}
