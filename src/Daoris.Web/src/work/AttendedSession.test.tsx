@@ -81,7 +81,7 @@ describe('the attended session', () => {
   /**
    * The milestone is keyed by the session's id under the record's one parent: each draw of a running driven session must not mount
    * a fresh fold and leave the last one in the page, and moving to another session must not leave the old one behind. Who it worked
-   * with is no fold of the article: its rows are its conversation's (D320).
+   * with is no fold of the article: its rows are its conversation's.
    */
   it('keeps one milestone line, however often a running session is drawn again, and no fold of who it worked with', async () => {
     vi.useRealTimers();

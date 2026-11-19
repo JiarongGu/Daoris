@@ -31,7 +31,6 @@ export function AttendedConversation({
   t, session, boxState, words, waitsState, headState, grouping, coolsUntil, roster, rootOf, openPreview, centre, partRows, partBox, attend,
   channel, onOpenOutputs, along,
 }: {
-  /** What its line asked of others and was asked, and its channel's messages: rows between its turns (`useLineRows`). */
   along: Omit<Parameters<typeof useLineRows>[0], 'session' | 'quest' | 'quests' | 'sessions' | 'helperAsks' | 'channelAsk' | 'only' | 'opinion'>;
   t: TFunction;
   onOpenOutputs?: (run: string, attempt: number | null) => void;
@@ -89,7 +88,6 @@ export function AttendedConversation({
           <SessionConversation
             session={attended.id}
             began={beganOf(attended.id)}
-            // Its line's requests where they were asked and came back, and its channel's messages, between the turns they fell between.
             beneath={beneath}
             adapter={attended.door}
             chat={attended.kind === 'chat'}

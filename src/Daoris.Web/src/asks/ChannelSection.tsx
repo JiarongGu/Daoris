@@ -43,7 +43,7 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
 /**
  * **An ask's channel**: where its sessions and the person talk,
  * messages and Daoris's own lines in time order, newest at the foot, and the person's composer under them. The ask's page
- * draws all of it; a session's timeline draws each message of its line of work as a row where it was said (`work/exchanges/`).
+ * draws all of it; a session's timeline draws each message of its line of work as a row at its moment (`work/exchanges/`).
  *
  * @remarks
  * **A molecule**: the channel arrives as the shell answered it, and a post leaves as a call with how it ended; nothing is asked
@@ -294,7 +294,7 @@ function LineRow({ item, isNew, onOpenQuest }: { item: ChannelItem; isNew: boole
 }
 
 /** One message as written, with who, to whom, when, what it answers, what it reached, and a press to answer it. */
-/** One message of a channel, as the ask's page lists it and a session's timeline draws it where it was said. */
+/** One message of a channel, as the ask's page lists it and a session's timeline draws it at its moment. */
 export function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward }: {
   item: ChannelItem;
   anchor: string;

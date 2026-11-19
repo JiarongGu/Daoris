@@ -5,7 +5,7 @@ export type ChannelPoster = { repository: string | null; agent: string | null; o
 
 /**
  * A channel message's home, seen from the conversation that took it: the message is drawn whole as its row in the
- * session's timeline, where it was said, and the turn that took it carries a sender chip that names its poster and brings that row.
+ * session's timeline, at its moment, and the turn that took it carries a sender chip that names its poster and brings that row.
  */
 export type ChannelHome = {
   /** The poster of a message, by its id, where the page holds the channel; undefined where it holds no such message. */

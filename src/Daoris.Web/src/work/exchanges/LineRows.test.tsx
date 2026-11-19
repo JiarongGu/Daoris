@@ -47,7 +47,7 @@ describe("a line's helper, second opinion and channel message in its one timelin
     expect(message.textContent).toContain('db · claude');
     expect(message.textContent).toContain('The schema moved');
 
-    // The helper was asked in the first turn; its answer, the message and the opinion came in the second.
+    // The helper's asking falls in the first turn; its answer, the message and the opinion in the second.
     const [first, second] = [...document.querySelectorAll('[data-exchange-row], [data-channel-row]')].reduce<Element[][]>((turns, row) => {
       const turn = row.closest('ol')!.parentElement!;
       const index = turns.findIndex((each) => each[0]!.closest('ol')!.parentElement === turn);

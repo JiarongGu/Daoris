@@ -22,13 +22,11 @@ const NONE: readonly AtWorkExchange[] = [];
  * A molecule: what runs, the readers of each one's own record and console, and the presses out. The organism above holds the bridge.
  */
 export function LiveBand({ lifetimes, act, reader, stoppable, onStop, onOpen, short = false, exchanges = NONE, onOpenSession, nameOf }: {
-  /** The agent's name as the person calls it. */
   nameOf?: (agent: string) => string;
   /** The record's starts and ends of what the session runs beside itself. */
   lifetimes: readonly SessionEvent[];
-  /** The line's requests (`AtWorkExchange`): each it waits on that a session took up is a line, a helper or a reviewer at work for it. */
+  /** The line's requests: each it waits on that a session took up is a line, a helper or a reviewer at work for it, opened by its session. */
   exchanges?: readonly AtWorkExchange[];
-  /** Open the session at work on a request. */
   onOpenSession?: (session: string) => void;
   /** The agent's act while a turn runs; null between turns. */
   act: BandAct | null;

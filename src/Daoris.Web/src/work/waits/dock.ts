@@ -63,19 +63,14 @@ const keyOf = (wait: DockWait): string => {
   }
 };
 
-/**
- * The dock's line an exchange of the line stands in while it waits on the person, by the exchanges' id: an agent's helper ask and
- * its hand-over ask are docked by their own kinds, so a request's row in the timeline leads there and offers no press of its own.
- * Null for a request no person's word settles.
- */
+/** The dock line an exchange (`helper:<ask>`, `hand-over:<id>`) stands in while it waits on the person; null where none does. */
 export function dockKeyOfExchange(id: string): string | null {
   const split = id.indexOf(':');
-  const source = id.slice(0, split);
   const of = id.slice(split + 1);
   if (split < 0 || !of) return null;
+  const source = id.slice(0, split);
   if (source === 'helper') return keyOf({ kind: 'helper', id: of });
-  if (source === 'hand-over') return keyOf({ kind: 'handOver', id: of });
-  return null;
+  return source === 'hand-over' ? keyOf({ kind: 'handOver', id: of }) : null;
 }
 
 /** Since when a wait waits, where its own row says; else null, and the session's last move stands for it. */
