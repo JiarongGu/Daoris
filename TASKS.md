@@ -93,6 +93,9 @@ Gap patterns (the owner, 2026-11-16: a discrepancy found is a pattern; each row 
 
 ## Install, home and update
 
+- [ ] **HOMEORPHAN1 — the home names every file in a place no entry names, and an old reader cannot go while the install holds files there** (driver, cli; 2026-11-20): NOCOMPAT2 (1f5aa03e71) removed the old-place reader while the install kept three accounts' homes at `data/harnesses/claude-code/<id>`, and they vanished from Daoris until the steward moved them (FIX-LOG 2026-11-20). At start and in `daoris home`, list the paths under the home that no `DaorisHome` entry names, with their size, in the machine log and the window's Disk space; a change that drops a place from the table carries a one-time move of what the install holds there (or refuses until it is moved). Sweep the install now for other such files. Proof: a fixture home with a file at a dropped place is named; the dropped place's move runs once.
+- [ ] **ACCOUNTID1 — every agent account's id is a hash, never a counter or a label** (driver, cli, web; the owner, 2026-11-20): newer accounts get `acct-<8 hex>`, but the install still has `account-1`, `account-3` and `Gmail`, and a stray `account-3.lock` entry in `accounts.json` named like an account. Rename the old ids once to the hash form with every reference they have (the accounts file's keys, `profiles/agents/<harness>/<id>`, sessions' account fields, usage history, `cooling.json`, the pick order, role and cast bindings, git identities), drop the stray lock entry, and make a new account's id always the hash form; the window and the terminal show an account's name (its sign-in), never its id. Proof: a fixture home with the three legacy ids reads the same accounts, sessions and usage after the rename under hash ids; no screen or line shows an id.
+
 
 ## Driving
 
