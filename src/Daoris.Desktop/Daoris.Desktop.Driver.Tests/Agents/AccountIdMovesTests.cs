@@ -207,6 +207,40 @@ public sealed class AccountIdMovesTests : IDisposable
         Assert.DoesNotContain("account-3.lock", AccountIdMoves.Plan(Home).Moves.Select(move => move.Rename.From));
     }
 
+    /// <summary>🔴 <c>home account-ids --plan</c> says each move with the account's name and every reference, and changes nothing.</summary>
+    [Fact]
+    public void The_verb_plans_each_move_with_its_name_and_changes_nothing()
+    {
+        var before = Snapshot();
+
+        var exit = AccountIdsCommand.Run(["--plan"], Home, null, null, out var said);
+
+        Assert.Equal(0, exit);
+        var to = AccountIdMoves.Plan(Home).Moves.ToDictionary(move => move.Rename.From, move => move.Rename.To);
+        Assert.Contains($"  claude-code  account-1 → {to["account-1"]}  (someone@example.com)", said);
+        Assert.Contains($"  claude-code  account-3 → {to["account-3"]}\n", said.ReplaceLineEndings("\n"));
+        Assert.Contains("    data/harnesses.json  rotation.claude-code[1]", said);
+        Assert.Contains("  drop  accounts.json  claude-code.account-3.lock: no account's", said);
+        Assert.StartsWith("home: 3 account ids with 22 references and 1 stray entry would move. Nothing was changed.", said);
+        Assert.Equal(before, Snapshot());
+    }
+
+    /// <summary>🔴 <c>--yes</c> moves once and says so; run again, it finds nothing; from a session's terminal it moves nothing.</summary>
+    [Fact]
+    public void The_verb_moves_once_and_never_from_a_session_terminal()
+    {
+        var before = Snapshot();
+        Assert.Equal(1, AccountIdsCommand.Run(["--yes"], Home, "session-1", null, out var refused));
+        Assert.Contains("this one is a session's", refused);
+        Assert.Equal(before, Snapshot());
+
+        Assert.Equal(0, AccountIdsCommand.Run(["--yes"], Home, null, null, out var moved));
+        Assert.StartsWith("home: 3 account ids with 22 references and 1 stray entry moved.", moved);
+        Assert.Equal(0, AccountIdsCommand.Run(["--yes"], Home, null, null, out var again));
+        Assert.Equal("home: every account id is the hash form already. Nothing was changed.", again.Trim());
+        Assert.Equal(2, AccountIdsCommand.Run([], Home, null, null, out _));
+    }
+
     private void Write(HomeEntry entry, string json) => File.WriteAllText(DaorisHome.Entry(Home, entry), json);
 
     private JsonObject Read(HomeEntry entry) => JsonNode.Parse(File.ReadAllText(DaorisHome.Entry(Home, entry)))!.AsObject();

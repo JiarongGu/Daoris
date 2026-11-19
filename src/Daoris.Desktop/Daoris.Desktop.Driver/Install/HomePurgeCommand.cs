@@ -16,7 +16,8 @@ namespace Daoris.Driver;
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes: 0 listed, purged or nothing to purge · 1 refused,
 /// or a purge stopped, said with what moved · 2 a word it does not answer.</para>
 /// </remarks>
-[CommandGroup("home", "purge")]
+// The group's other verb, `account-ids`, is AccountIdsCommand's, which the host hands its words before these.
+[CommandGroup("home", "purge", "account-ids")]
 public static class HomePurgeCommand
 {
     public const string Usage =
@@ -64,10 +65,10 @@ public static class HomePurgeCommand
             return 1;
         }
 
-        if (Running(home) is { } why) return Refused(why, output);
+        if (HomeAtRest.Running(home, Verb) is { } why) return Refused(why, output);
 
         HomeLease? lease = null;
-        if (!OwnLease(home))
+        if (!HomeAtRest.OwnLease(home, Verb))
         {
             lease = HomeLease.TryAcquire(home, LeaseKind.Verb, out var holder, "home purge --history");
             if (lease is null) return Refused($"{home} is held by {holder?.Named ?? "another process"}.", output);
@@ -75,11 +76,7 @@ public static class HomePurgeCommand
 
         using var held = lease;
 
-        var sessions = LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), CancellationToken.None).GetAwaiter().GetResult();
-        if (sessions.Problem is not null || sessions.Sessions.Count > 0)
-        {
-            return Refused(sessions.Problem ?? $"a session still runs on {home}: its connector writes the store.", output);
-        }
+        if (HomeAtRest.Sessions(home) is { } running) return Refused(running, output);
 
         var plan = HomePurge.Plan(home, knowledgeDb);
         if (plan.Nothing)
@@ -115,18 +112,8 @@ public static class HomePurgeCommand
         return 1;
     }
 
-    /// <summary>Whether the home's lease is this verb's own, which the host took for it before the door ran.</summary>
-    private static bool OwnLease(string home) =>
-        HomeLease.HeldHere(home) && HomeLease.HeldBy(home) is { Kind: LeaseKind.Verb, What: { } what } && what.Contains("home purge", StringComparison.Ordinal);
-
-    /// <summary>What holds the home now, in a sentence, or null where nothing of Daoris runs on it.</summary>
-    private static string? Running(string home)
-    {
-        if (HomeLease.HeldBy(home) is { } holder && !OwnLease(home)) return $"{home} is held by {holder.Named}.";
-        return RunningAddress.Read(home) is { } entry && RunningService.Lives(entry.Pid, entry.Started)
-            ? $"Daoris's service runs on {home} (process {entry.Pid.ToString(CultureInfo.InvariantCulture)})."
-            : null;
-    }
+    /// <summary>The words the lease names this verb by.</summary>
+    private const string Verb = "home purge";
 
     private static void Listed(PurgePlan plan, StringBuilder output)
     {

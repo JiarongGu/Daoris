@@ -245,7 +245,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     service its address file (`run/running.json`) names still living, or a session whose process marker is alive. It names the
     holder and says to close Daoris, and moves nothing. It takes the lease for its act, so nothing starts on the home meanwhile. From a
     session's terminal (`DAORIS_SESSION_ID`) only `--plan` answers: a purge ends every session's record, so it is the person's. A
-    service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it. (from D322)
+    service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it.
+    `daoris home account-ids --yes`, the one-time move of agent account ids to the hash form, refuses alike, from one unit
+    (`HomeAtRest`). (from D322, D347)
 54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
     of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)

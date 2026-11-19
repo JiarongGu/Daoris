@@ -162,8 +162,15 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 
 **Accounts**
 
-26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters; an `account-N`
-    keeps its name as its id); removing it deletes the folder. An API key is an account too: kept in `keys.json`, sealed by the
+26. An account is made by signing in into a fresh folder named by a new id, `acct-` and eight hex characters (`AccountIdForm`);
+    `agent account add <agent> <account>` still makes a folder under the word given. An id an earlier build named by a counter (`account-N`) or a word moves once to that form, to
+    an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
+    orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
+    `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):
+    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A word id stays
+    the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
+    account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
+    a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the
     machine's seal the root hands (`SecretSeal`; the machine adapter's `KeySeal`, DPAPI for the Windows user; an unsealed key is
     sealed at the file's next write), handed only to a start's process in
     the tool's variable, shown by its last four characters. An agent held by a key alone (dsh) reads an account by its key: none

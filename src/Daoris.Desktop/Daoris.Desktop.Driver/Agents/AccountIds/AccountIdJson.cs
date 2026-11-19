@@ -48,5 +48,5 @@ internal static class AccountIdJson
     }
 
     /// <summary>A count said with its noun, plural past one.</summary>
-    public static string Counted(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
+    public static string Counted(int count, string noun, string? plural = null) => count == 1 ? $"1 {noun}" : $"{count} {plural ?? noun + "s"}";
 }
