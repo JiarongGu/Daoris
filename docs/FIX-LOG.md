@@ -118,7 +118,9 @@ repository.
   APPROVEPRESS2's web `app/notifications.test.tsx`, and builders' runs `app/sessionEnd`, `AttentionBand` and ten `*PortsTests`;
   SESSIONVIEW1d's `Driver.Tests.LookAccountTests` again, and SIGNINWAIT2's once more (a third sighting: it is a candidate for its
   own row if it flakes again); NOCOMPAT2's `LookAccountTests` a fourth time (its row is LOOKFLAKE1) and web `app/pageRoot.test.tsx`.
-- **Cause:** none found; load-shaped by the alone passes.
+- **Cause:** none found; load-shaped by the alone passes. `LookAccountTests`' many-runs case (LOOKFLAKE1): its warm look
+  is a few tens of milliseconds made of stages each under `LookStages.Floor`, which the line leaves out, so "stages say half the
+  look" held only on an idle machine; the case now says the cold look whole and the warm one by its ratio to the cold.
 
 ## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)
 
