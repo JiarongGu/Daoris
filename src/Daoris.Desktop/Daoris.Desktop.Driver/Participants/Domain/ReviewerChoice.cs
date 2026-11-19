@@ -123,6 +123,8 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
     /// <summary>The cool-off that holds it, when that is why.</summary>
     public CoolingEntry? Cooling { get; init; }
 
+    public SignedOutAccounts? SignedOut { get; init; }
+
     /// <summary>The actor's entry for the agent that is tried, with its model; null where a caller named none.</summary>
     public ActorEffective? Entry { get; init; }
 }
@@ -488,6 +490,6 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             { NotReady: AccountReadiness.SignedOut } or { SignedOut: not null } => ReviewerHeld.SignedOut,
             _ => ReviewerHeld.Refused,
         };
-        return (null, new ReviewerTried(name, label, held, selection.Refusal!) { Cooling = selection.Cooling });
+        return (null, new ReviewerTried(name, label, held, selection.Refusal!) { Cooling = selection.Cooling, SignedOut = selection.SignedOut });
     }
 }

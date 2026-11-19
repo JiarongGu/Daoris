@@ -455,7 +455,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     no quest at the run's checkout holding no tree, lease or cap, read-only, with only its plugin's `daoris-plugins` server and
     `step_answer`, refusing the person's words (*Workflow step* in Sessions). `step_answer` keeps one answer, `reached` with a
     declared decision, evidence and outputs, or `failed` with a code, applied as the plugin's completion; a session ending
-    unanswered fails it `no-answer`. A step with no goal stays on `work/perform`. (D274)
+    unanswered fails it `no-answer`. A session its agent refused for its account's sign-in goes on once under the walk's next account
+    with no press; where no account could take the step, it fails `sign-in`, naming the accounts and the sign-in to make (agents rule
+    40). A step with no goal stays on `work/perform`. (D274, D328)
 32. A merge runs through the integration transport under the legacy policy (no gates, one at a time, a merge commit): the person's
     press at the `press` door, settled *merged on the person's press*; an automatic `land`'s delivery at its `landing` door,
     settled *merged by its workflow's landing, with no press*. (D215)

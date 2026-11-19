@@ -190,8 +190,10 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model names
     that family (`opus` in `claude-opus-4-5`) or runs at account default, and passes one naming another (`held.cooling-model`);
     every reader that knows a line's model reads it so (`CoolingOf` over `AccountCooling.Holding`). A refused account is passed
-    until a person acts, a signed-out one until a sign-in or an hour after its last reading. With no account ready the start
-    waits, saying the soonest way out. (D125, D130, D205)
+    until a person acts, a signed-out one until a sign-in marks it or an hour after its last reading, when its status is asked again.
+    A refusal of its sign-in is such a reading, whatever its status would say within that hour, since Claude Code's status reads its
+    own store, which a sign-in revoked at its server leaves. With no account ready the start waits, saying the soonest way out.
+    (D125, D130, D205, D328)
 31. A running conversation moves at its turn's end to another account of the same agent with room (10 points under its curve on
     every window), never mid-turn, and not again within 30 minutes. Where none has room, the `handOver` rule decides another
     agent. (D165, D163)
@@ -257,8 +259,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     protocol-door run takes that retry (`TransientRetries.For`, `ChatRetry`), checked by its kind's own authority
     (`TransientOwners`); a pass with minutes of its own waits none past them and fails with its kind's code (`helper.transient`
     and its kin), never *timed out*. (D210, D229)
-40. Access goes to the person: the account is marked refused or signed out, with no retry. A fatal error fails with its reason
-    and is a strike. (D210)
+40. Access goes to the person: the account is marked refused or signed out, and its card asks for its sign-in. A driven start, or
+    a plugin step's session, its agent refused for its account's sign-in goes on once under the walk's next account, by Daoris itself
+    (`ClaimedStart`, `StepAgents`), the new record saying it moved; a walk that gives the refused account again runs nothing. With no
+    account left the start waits naming each account and its sign-in, and the step fails `sign-in`, its message naming the accounts
+    and the sign-in to make (`StepSignIns`), never a bare `no-answer`. A fatal error fails with its reason and is a strike. (D210, D328)
 
 **Toolchain and models**
 

@@ -104,15 +104,6 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// <inheritdoc cref="RosterCooling.SignedOut"/>
     public void SignedOut(string adapter, string? profile) => Cooling.SignedOut(adapter, profile);
 
-    // The accounts a refusal of a signed-in reading owes one fresh reading, by owner and account: taken by the next walk
-    // that reaches the account, then spent. Any other reading of the account settles it (`Keep`).
-    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _owed = new(StringComparer.OrdinalIgnoreCase);
-
-    // The signed-in readings a fresh reading made, by owner and account, with the time each is kept: a refusal of one
-    // owes none.
-    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _fresh =
-        new(StringComparer.OrdinalIgnoreCase);
-
     /// <inheritdoc cref="RosterCooling.WindowsOf"/>
     public WindowWords? WindowsOf(string adapter) => Cooling.WindowsOf(adapter);
 
