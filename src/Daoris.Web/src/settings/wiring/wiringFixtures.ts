@@ -310,6 +310,8 @@ export const SPACE_LOW: SystemSpace = {
 export const SPACE_ALLOWANCE: SystemSpace = { ...SPACE, allowance: { gb: 48, default: true, bytes: 11.2 * GB, partial: false } };
 
 /** The allowance set to 10 GB and held over: what Daoris may let go would not bring it within. */
+/** Files under the Daoris folder at places no entry of the home's table names (HOMEORPHAN1). */
+export const SPACE_STRAYS: SystemSpace = { ...SPACE, strays: { paths: [{ path: 'data/harnesses', bytes: 3 * GB }, { path: 'data/old.json', bytes: 2048 }], partial: false } };
 export const SPACE_ALLOWANCE_OVER: SystemSpace = { ...SPACE, allowance: { gb: 10, default: false, bytes: 11.2 * GB, partial: false } };
 
 /** The floor turned off: Daoris frees nothing early, and says so. */

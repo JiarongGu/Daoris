@@ -198,6 +198,8 @@ export type SystemSpace = {
   kinds: SpaceKind[];
   /** Absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
+  /** The paths under the Daoris folder that no entry of the home's table names, with their bytes; `partial` where a size was counted in part. Absent where the shell names none. */
+  strays?: { paths: { path: string; bytes: number }[]; partial: boolean };
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };

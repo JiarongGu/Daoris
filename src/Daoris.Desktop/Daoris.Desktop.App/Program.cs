@@ -358,6 +358,8 @@ internal static class Program
         {
             log.Info("app.started", ("version", version), ("installed", inInstallApp));
             var loop = app.Services.GetRequiredService<DriverLoop>();
+            // The paths under the home no entry of its table names, said once (HOMEORPHAN1), off the start's thread.
+            _ = Task.Run(() => HomeStrays.Say(loop.Home, log));
             // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build, and
             // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
             var updater = app.Services.GetRequiredService<InstallUpdater>();
