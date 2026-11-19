@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// `daoris update --fetch`, an install's update reading Daoris's own releases (<see cref="DaorisReleases"/>): the newest published
 /// release, when it is newer than the install's build, fetched and held to its checksum, unpacked beside the install in a staging of
-/// its own, and held there to the build's own manifest (<see cref="StagedBuild.CheckAt"/>) and to the release's version. Only a build that
+/// its own, and held there to the build's own manifest (<see cref="StagedBuild.Check"/>) and to the release's version. Only a build that
 /// passed is moved into <c>update/staged/</c>, whole, where the application, which watches that folder, can meet it, and a build another
 /// publisher staged meanwhile is kept, never removed. It installs nothing: what is staged is the application's to install when idle, or
 /// at the person's word, as any staged build is.
@@ -58,8 +58,8 @@ public static class UpdateFetch
                 DaorisReleases.Channel, where, version, write, ct, fetch?.Transport, fetch?.Platform, null, process).ConfigureAwait(false);
 
             var unpacked = Path.Combine(staged.Staging, "package");
-            var manifest = StagedBuild.ReadAt(unpacked, out var problem);
-            problem ??= manifest is null ? new("manifest", "the package carries no build.json.") : StagedBuild.CheckAt(install, unpacked);
+            var manifest = StagedBuild.Read(install, out var problem, unpacked);
+            problem ??= manifest is null ? new("manifest", "the package carries no build.json.") : StagedBuild.Check(install, unpacked);
             if (problem is null && manifest?.Version != version)
             {
                 problem = new("version", $"the package says it is Daoris {manifest?.Version ?? "of no version"}, and the release is {version}.");

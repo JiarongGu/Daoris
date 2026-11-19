@@ -216,7 +216,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     (a draft, a prerelease and an incomplete release are passed over), refuses one that is not one exact `X.Y.Z` or is no newer than the build in the install's
     own `app/` (not the program asking), and fetches the package: the checksum file must list it, the asset's own digest must agree where the API states
     one, the download is held to the hash and unpacked into a staging beside `update/staged/` (`ToolArchives`' zip, which refuses a link, an escaping name and an
-    encrypted entry), and `StagedBuild.CheckAt` and the manifest's version, which must be the release's, hold the build there. Only a build that passed is
+    encrypted entry), and `StagedBuild.Check` of a folder and the manifest's version, which must be the release's, hold the build there. Only a build that passed is
     moved into `update/staged/`, so the application never meets one that fails; a build staged meanwhile is kept, and nothing this fetch did not publish is removed. It
     stages and installs nothing: the application installs by the one path of rules 37 to 46. It refuses while a swap is under way or a build is staged,
     from a session's terminal (rule 35's), and on a machine that is not `win-x64`. (from D329)

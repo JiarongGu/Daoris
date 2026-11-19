@@ -235,13 +235,10 @@ public static class StagedBuild
     public static bool IsStaged(string install) => File.Exists(Path.Combine(StagedOf(install), Manifest));
 
     /// <summary>The staged build's manifest, or null when none is staged or it does not read; <paramref name="problem"/> says which.</summary>
-    public static StagedManifest? Read(string install, out StagedProblem? problem) => ReadAt(StagedOf(install), out problem);
-
-    /// <summary>The manifest of the build in <paramref name="folder"/>, as <see cref="Read"/> reads the staged one.</summary>
-    public static StagedManifest? ReadAt(string folder, out StagedProblem? problem)
+    public static StagedManifest? Read(string install, out StagedProblem? problem, string? folder = null)
     {
         problem = null;
-        var path = Path.Combine(folder, Manifest);
+        var path = Path.Combine(folder ?? StagedOf(install), Manifest);
         if (!File.Exists(path)) return null;
 
         try
@@ -299,18 +296,13 @@ public static class StagedBuild
     /// is there with its size and SHA-256, nothing is there it does not name, it carries <see cref="Required"/>,
     /// and the host when the install carries one. Null when it may be installed, or when nothing is staged.
     /// </summary>
-    public static StagedProblem? Check(string install) => CheckAt(install, StagedOf(install));
-
-    /// <summary>
-    /// The build in <paramref name="staged"/> checked as it would be where <see cref="Check"/> reads it, for <paramref name="install"/>:
-    /// a build a fetch has unpacked beside the install and not yet moved into place.
-    /// </summary>
-    public static StagedProblem? CheckAt(string install, string staged)
+    public static StagedProblem? Check(string install, string? folder = null)
     {
-        var manifest = ReadAt(staged, out var problem);
+        var manifest = Read(install, out var problem, folder);
         if (problem is not null) return problem;
         if (manifest is null) return null;
 
+        var staged = folder ?? StagedOf(install);
         var named = new HashSet<string>(StringComparer.FromComparison(PathCase));
         foreach (var file in manifest.Files)
         {
