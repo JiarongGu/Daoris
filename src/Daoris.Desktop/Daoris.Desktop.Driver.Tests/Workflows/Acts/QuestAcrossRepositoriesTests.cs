@@ -205,6 +205,79 @@ public sealed class QuestAcrossRepositoriesTests : NodeRunFixture
         Assert.Equal([new PartWait("app", "stage-ended")], part.Waits);
     }
 
+    /// <summary>
+    /// The run's one reading carries what the window draws of the parts: the configuration part's wait on the app's <c>stage-ended</c> until
+    /// it is reached, with the app's quest; the joint check holding the app's receipt and waiting for the configuration's; and, once its
+    /// failed test is journaled on the configuration part's step, the part it went back to with the test's words.
+    /// </summary>
+    [Fact]
+    public void The_runs_reading_carries_a_parts_wait_and_what_its_joint_check_holds_waits_for_and_sent_back()
+    {
+        var (app, config) = (NodeGraphs.Read(App).Graph!, NodeGraphs.Read(Config).Graph!);
+        var appUnit = RunUnits.IdOf(RunId);
+        var record = new NodeRecord(appUnit)
+        {
+            Statuses = new Dictionary<string, NodeStatus> { ["together"] = new(appUnit, "together", NodeStates.Active) { Attempt = 1 } },
+        };
+        StepActRow Row(string id, string session, string fact, string state, string node, string? part = null)
+        {
+            _now = _now.AddMinutes(1);
+            return new(id, session, "tool", fact, state, $"{id} {state}", null, null, null, _now) { Node = node, Attempt = 1, Part = part };
+        }
+
+        StepActFiles.Keep(_home, appUnit, [Row("a1", AppWork, "stage-ended", "waiting", "release")]);
+        var waiting = PartViews.Read(_home, Plan, ConfigRun, [ConfigRun], config, null);
+        Assert.Equal([("app", "stage-ended", RunId, "waiting")], waiting.Waits.Select(wait => (wait.Part, wait.Fact, wait.Quest, wait.State)));
+        Assert.Empty(waiting.Joints);
+
+        StepActFiles.Keep(_home, appUnit, [.. StepActFiles.Journal(_home, appUnit), Row("a2", AppWork, "stage-ended", "reached", "release")]);
+        Assert.Empty(PartViews.Read(_home, Plan, ConfigRun, [ConfigRun], config, null).Waits);
+        var holding = PartViews.Read(_home, Plan, RunId, [RunId], app, record);
+        Assert.Empty(holding.Waits);
+        var joint = holding.Joints["together"];
+        Assert.Equal([("app", "stage-ended", RunId, "reached"), ("config", "config-written", ConfigRun, null)],
+            joint.Parts.Select(part => (part.Part, part.Fact, part.Quest, part.State)));
+        Assert.Null(joint.Returned);
+
+        StepActFiles.Keep(_home, ConfigUnit, [Row("c1", ConfigWork, "config-written", "reached", "configure")]);
+        var failed = Row("t1", AppWork, "joint-tested", "failed", "together", part: "config");
+        StepActFiles.Keep(_home, appUnit, [.. StepActFiles.Journal(_home, appUnit), failed]);
+        Assert.Null(PartViews.Read(_home, Plan, RunId, [RunId], app, record).Joints["together"].Returned);
+        StepActFiles.Keep(_home, ConfigUnit, [.. StepActFiles.Journal(_home, ConfigUnit), failed with { Id = JointChecks.Returned + failed.Id, Session = ConfigWork, Node = "configure" }]);
+        var sent = PartViews.Read(_home, Plan, RunId, [RunId], app, record);
+        Assert.Equal(("config", ConfigRun, "t1 failed"), (sent.Joints["together"].Returned!.Part, sent.Joints["together"].Returned!.Quest, sent.Joints["together"].Returned!.Message));
+
+        // The run's view draws them from that reading: the part's wait on its graph, the joint check on its step.
+        var facts = new WorkflowRunFacts(RunHome.Repository, new CurrentWorkflow([], [], "gph-0"))
+        {
+            Process = WorkflowProcess.Declared(DriverConfig.Empty, RunHome.Repository, "default"),
+        };
+        var drawn = WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, RunId, app, record) { Parts = sent with { Waits = waiting.Waits } }, "default", "a1");
+        Assert.Equal(waiting.Waits, drawn.Graph!.PartWaits);
+        Assert.Same(sent.Joints["together"], drawn.Steps.Single(step => step.Step.Id == "together").Joint);
+        Assert.All(drawn.Steps.Where(step => step.Step.Id != "together"), step => Assert.Null(step.Joint));
+        Assert.Null(WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, RunId, app, record), "default", "a1").Graph!.PartWaits);
+    }
+
+    /// <summary>
+    /// The look reads the runs bound here once for the asks they name: an open part's run in a repository with no checkout here gives its ask
+    /// beside the ask runs' branches, which the parts' reports are read for, and no second read of the run list is made.
+    /// </summary>
+    [Fact]
+    public async Task The_looks_one_read_of_the_runs_gives_every_open_runs_ask()
+    {
+        BoundTo(App, ask: "a1");
+        Assert.True(new WorkflowRunFiles(_home).Bind(new WorkflowRunBinding(ConfigRun, Settings, "default", "config", WorkflowLevels.Repository, _now)
+        {
+            Version = 1, Digest = RunHome.SaveGraph(_home, Config, "config"), Ask = "a2",
+        }));
+
+        var read = await AskRunReads.ReadAsync(_home, new Dictionary<string, string>(), DriverConfig.Empty, CancellationToken.None);
+
+        Assert.Equal(["a1", "a2"], read.Asks.Order(StringComparer.Ordinal));
+        Assert.Empty(read.Branches);
+    }
+
     /// <summary>A check passes only on a test taken after every part's newest receipt: a part acting again sends it back to its tester.</summary>
     [Fact]
     public void A_joint_check_passes_only_on_a_test_newer_than_every_parts_receipt()
