@@ -79,7 +79,7 @@ public sealed class PluginToolsServerTests : IDisposable
 
         // The person holds the approver where no cast names one: the act is no tool of the session's.
         Assert.DoesNotContain("acme-deploy_approve", Listed());
-        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", DateTimeOffset.UtcNow);
+        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.Approver, CastHolders.Agent, "the release path", new DateTimeOffset(2026, 11, 19, 9, 0, 0, TimeSpan.Zero));
         Assert.Contains("acme-deploy_approve", Listed());
 
         // A destination the place marks keeps the approval the owner role's: not listed, and a call is refused before any process starts.

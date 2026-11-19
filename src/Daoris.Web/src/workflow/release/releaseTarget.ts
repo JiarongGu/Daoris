@@ -58,7 +58,7 @@ export const APPROVE_COMMAND = 'approve-release';
 
 /**
  * Whether the card may approve here: the plugin declares its approval command and the person holds the approver role. Where an agent
- * holds it, the command is that agent's tool, so the card opens the system's page instead (APPROVEACT1, D325).
+ * holds it, the command is that agent's tool, so the card opens the system's page instead.
  */
 export const canApproveHere = (commands: { name: string; tool: boolean }[], holder: RunHolder | null | undefined): boolean =>
   holdsIt(holder) && commands.some((command) => command.name === APPROVE_COMMAND);

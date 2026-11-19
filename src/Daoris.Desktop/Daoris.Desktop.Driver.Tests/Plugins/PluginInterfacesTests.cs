@@ -172,7 +172,7 @@ public sealed class PluginInterfacesTests : IDisposable
             manifest.Interfaces.Commands.Select(command => command.Name));
         Assert.True(manifest.Interfaces.Commands[0].Interactive);
         Assert.All(manifest.Interfaces.Commands.Skip(3), command => Assert.True(command.Tool && !command.Interactive && command.Args.Count > 0));
-        // The approval alone is a role's act, handed only where the place casts the approver to an agent (APPROVEACT1, D325).
+        // The approval alone is a role's act, handed only where the place casts the approver to an agent.
         Assert.Equal(
             example == "daoris-azure-devops" ? ["approve-release"] : [],
             manifest.Interfaces.Commands.Where(command => command.Role == StepRoles.Approver).Select(command => command.Name));

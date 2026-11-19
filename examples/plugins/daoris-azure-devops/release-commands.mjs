@@ -21,7 +21,7 @@ async function discovered(args) {
 
 export const APPROVE = 'approve-release';
 
-/** The approver's act's fact, which its receipt names and the approval step its holder's act settles maps (D325). */
+/** The approver's act's fact, which its receipt names and the approval step its holder's act settles maps. */
 export const APPROVED = 'approved';
 
 /** A round of the approval with its receipt as its data: reached where the stage's approval reads given, else failed with its code. */

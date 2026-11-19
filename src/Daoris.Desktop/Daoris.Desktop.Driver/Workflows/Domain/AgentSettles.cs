@@ -25,7 +25,7 @@ public static class AgentSettles
 
     /// <summary>
     /// Whether the step <paramref name="node"/> standing at <paramref name="wait"/> is handed to the agent holding its own role, its working
-    /// session settling it by its tool, or by its acts' receipts where its plugin waits on that role's act (an approval, D325): the person's
+    /// session settling it by its tool, or by its acts' receipts where its plugin waits on that role's act (an approval): the person's
     /// one press is <i>Take</i> (<see cref="StepHoldActs.Handed"/>), in its row and the run's reading alike.
     /// </summary>
     public static bool Handed(NodeDeclaration node, NodeStatus status, RoleWait wait) =>

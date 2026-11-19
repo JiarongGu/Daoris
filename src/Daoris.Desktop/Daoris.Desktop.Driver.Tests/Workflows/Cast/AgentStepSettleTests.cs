@@ -220,7 +220,7 @@ public sealed class AgentStepSettleTests : NodeRunFixture
         var run = WorkflowGraphRuns.Derive(new WorkflowGraphRunFacts(facts, RunId, bound.Version.Graph!, Files.Read(RunUnit)) { Holding = new Dictionary<string, StepTenure> { ["config-needed"] = held } }, "default");
         var step = run.Steps.Single(each => each.Step.Id == "config-needed");
 
-        // The person's one press on a step the agent holds is Take, in the run's reading as in its row: none of the step's own (D318 point 5).
+        // The person's one press on a step the agent holds is Take, in the run's reading as in its row: none of the step's own.
         Assert.Equal((WorkflowRunStates.Waiting, StepHolders.Agent), (step.State, step.Holder?.Kind));
         Assert.Null(step.Acts);
         Assert.Equal([CastActs.Take], step.Holds);

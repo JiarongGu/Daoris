@@ -7,7 +7,7 @@ import { APPROVAL_PAGE, APPROVAL_WORDS } from '../runFixtures';
 
 // The approval card: where the person holds the approver and the plugin can approve, *Approve* / *Reject* on the card under their own
 // sign-in, the card naming the target, the build and its source branch; otherwise *Open* in Daoris's browser. Where an agent holds the
-// approver, the plugin's command is its tool and the card offers no press (APPROVEACT1, D325).
+// approver, the plugin's command is its tool and the card offers no press.
 
 const WORDS = 'Waiting on the approver: approve Production of Release-90, Portal (#42), carrying cccccccc from `main`; asked of Release Approvers.';
 const URL = 'https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90&_a=release-pipeline-progress';
