@@ -2,6 +2,7 @@ import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import { Markdown } from '../conversation/Markdown';
 import type { StoryItem, StoryWho } from './story';
 
 /** The session's agent as its lines name it: its maker and the model that ran, null where the record named none. */
@@ -98,9 +99,9 @@ function Line({ item, actor }: { item: StoryItem; actor: StoryActor }) {
       );
     case 'agent':
       return (
-        <div data-part="agent" className="grid gap-0.5">
+        <div data-part="agent" className="grid min-w-0 gap-0.5">
           <Actor>{agent}</Actor>
-          <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
+          <Markdown text={item.text} />
         </div>
       );
     case 'note':
@@ -130,7 +131,7 @@ function Line({ item, actor }: { item: StoryItem; actor: StoryActor }) {
             <span aria-hidden="true">⚖ </span>
             {[t('work.session.story.opinion'), item.reviewer, item.model].filter(Boolean).join(' · ')}
           </Actor>
-          <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
+          <Markdown text={item.text} />
         </div>
       );
     case 'channel':

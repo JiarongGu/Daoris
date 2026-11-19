@@ -1,8 +1,8 @@
 import type { Block, Turn } from '../conversation/conversationTypes';
-import type { ExchangeCard } from '../conversation/exchanges';
+import type { ExchangeCard, Exchanges } from '../conversation/exchanges';
 import type { ChannelItem } from '../channel';
 import { type CallKind, callsByKind, failedCall, filesChanged } from '../catchup/turnFold';
-import type { Mark, StepRow } from '../track/passage';
+import { type Mark, type Passage, type StepRow, stepRowsOf } from '../track/passage';
 
 /**
  * Who said a line of the story: the person (`you`), Daoris itself, the supervisor on the person's behalf, the session's agent, or
@@ -34,6 +34,20 @@ export type StoryLine = {
   /** The opinion a turn's words carry, by its id; absent, the line names no reviewer. */
   opinionOf?: (id: string) => OpinionBy | null;
 };
+
+/**
+ * The story's sources as the page already reads them: the conversation's settled turns, its run's passage (`SESSION_GROUPS`), the
+ * exchanges its helpers' asks join (`exchangesOf`) and its line's channel, kept to its line of work by the caller.
+ */
+export function storyLineOf({ turns, passage, exchanges, channel, opinionOf }: {
+  turns: readonly Turn[];
+  passage: Passage | null | undefined;
+  exchanges: Exchanges;
+  channel: readonly ChannelItem[];
+  opinionOf?: StoryLine['opinionOf'];
+}): StoryLine {
+  return { turns, steps: passage ? stepRowsOf(passage) : [], exchanges: Object.values(exchanges.cards), channel, opinionOf };
+}
 
 const time = (iso: string | null | undefined): number => {
   const parsed = iso ? Date.parse(iso) : Number.NaN;
