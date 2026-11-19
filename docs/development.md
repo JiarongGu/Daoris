@@ -177,7 +177,7 @@ the other, whose filter leaves it out. The git library's classes run once more o
 (`src/Daoris.Desktop/git.pinned.process.runsettings`, which names those classes and sets `DAORIS_PINNED_GIT_LEG`). A git test copies its
 repositories from a seed (`GitSeed`, PROC1h; the plain one is `GitSeed.PlainAsync`) unless it reads the first commit's id or
 time, and removes its scratch with `GitSeed.Remove`: git writes its objects read-only, which `Directory.Delete` refuses on
-Windows (PROCSPEED1). A test whose subject is not git leaves the product's git starts to the process seam (`ProcessStarts.Within(_ => null)`) rather than let a plain scratch folder under the checkout have git answer for the whole checkout around it, and a test that needs a place's remote copies the plain seed of the name most classes share (`PlainAsync(root, "engine")`), never an `init` of its own (SESSIONTESTENV2). A seed's repositories start no maintenance git behind a commit, a fetch or a push
+Windows (PROCSPEED1). A test whose subject is not git leaves the product's git starts to the process seam (`ProcessStarts.Within(_ => null)`) rather than let a plain scratch folder under the checkout have git answer for the whole checkout around it (SESSIONTESTENV2). A seed's repositories start no maintenance git behind a commit, a fetch or a push
 (`GitSeed.NoMaintenanceAsync`), and a platform's moves on a bare origin are git's plumbing in the origin, never a clone that
 pushes (`LandedFixture.SquashOnPlatformAsync`, `CommitOnOriginAsync`): on this machine a git start costs about half a second,
 and the git half is its starts (PROCSPEED1b). A real-process test that shows a loop or a shell doing nothing more waits on

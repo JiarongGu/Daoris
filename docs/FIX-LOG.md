@@ -24,7 +24,7 @@ repository.
 - **Fix:** `TreePoolSharesGitTests` carries the four traits its siblings do; `PoolGitFixture.CreateAsync(ignored:)` makes its extra ignore lines in the
   seed, two starts a case fewer; `ContextPortsTests`' review case answers the product's git starts with none (`ProcessStarts.Within`), its subject
   being the gates read, and under the checkout's scratch a plain folder had the brief's `git status` answer for the whole checkout (8 s alone to under 1 s);
-  `PlaceHandTests`' push-address case copies the plain seed (an `init` fewer); `userEvent.say` (a click and one paste) for the long phrases of
+  `PlaceHandTests` is as it was (a bystander of the aborted host, and no seed saves its three starts: only it asks for that shape); `userEvent.say` (a click and one paste) for the long phrases of
   `WorkFrame.conversation` and `WorkFrame.test` (slowest case 9.3 s to 2.3 s). Not fixed: the web files' first render under a build's load
   (`WorkFrame.reviewchat`, `.words`, and the `findBy` of `.conversation` that wait on it), and the pool cases' own repeated starts, TREEPOOLSTARTS1.
 - **Verification:** the three web files, `ContextPortsTests`, `PlaceHandTests` and `GitCeilingCensusTests`, run from a session's shell; the pool class as a
