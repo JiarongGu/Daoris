@@ -16,6 +16,8 @@
 
   "localInputs": ["local/lyntai-local.props", "local/shenora-local.props"],
 
+  "generated": [{ "paths": "tools/size-ratchet.json", "run": "node tools/size-ratchet.mjs --shrink" }],
+
   "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "gates": [

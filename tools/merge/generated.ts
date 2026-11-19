@@ -29,8 +29,8 @@ export function readFolders(root: string, refuse: (message: string, code?: numbe
   });
 }
 
-/** Whether a path is one a merge writes rather than merges, by the folders `generated` names. */
-export const inFolders = (path: string, folders: Folder[]): boolean => folders.some(({ folder }) => path.startsWith(`${folder}/`));
+/** Whether a path is one a merge writes rather than merges, by the folders (or single files) `generated` names. */
+export const inFolders = (path: string, folders: Folder[]): boolean => folders.some(({ folder }) => path === folder || path.startsWith(`${folder}/`));
 
 /** Each folder written from the tree as it stands and staged; one line each. A command that fails refuses the merge's gates. */
 export function writeFolders(root: string, { env, stage, refuse, say }: {
