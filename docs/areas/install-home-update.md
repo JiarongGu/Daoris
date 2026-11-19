@@ -295,4 +295,7 @@ drains, swaps, rolls back and refuses.
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §14): an update is never the owner's question, the window says its
+  state in one place and the banner goes (D344, UISH11, UIST5, UIST12); the first release's go and the running app's own look
+  for a release are UIST14's, after RELEASEFEED1 (D329). Today the rules below stand.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.

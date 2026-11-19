@@ -1,6 +1,6 @@
 # The window, redesigned (UISH, UISE, UIWF, UIRP, UIST, UIDS)
 
-Status: decided, 2026-11-20 (D329 to D344). The owner asked on 2026-11-19 for every screen of the window to be planned anew,
+Status: decided, 2026-11-20 (D330 to D345). The owner asked on 2026-11-19 for every screen of the window to be planned anew,
 with a design system and a component library, and for every UI and UX row to be set up from it. Sources: the purpose brief
 (§1); two fresh designs written from it alone (one by Opus; Daoris's own brainstorm `uiux-window`, passes g1 by Claude and g2
 by Codex, with its synthesis s1); an inventory of every screen as it stands at `ed15806428` with 396 shots; six plans, one per
@@ -70,24 +70,24 @@ the top), the sheet (right; 640 px for composers, 480 px for forms), the shortcu
 Wide, 1600 px, Sessions in front, Ask Daoris open, after a 47 min absence:
 
 ```text
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 道 ▾ ▦ All workspaces ▾  [ ⌕ Search, go to or run a command…  Ctrl K ]  ◆ 3 waiting on you  [+ Ask Ctrl N]  ?  ─□✕│
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ While you were away (47 m): ◆ 1 new · ✓ 2 finished · ▲ 1 failed, fixed without you    Overview ▸  Caught up C  ✕ │
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 道 ▾ ▦ All workspaces ▾ [ ⌕ Search, go to or run a command…  Ctrl K ] ◆ 3 waiting on you [+ Ask]  ? Ask Daoris ─□✕│
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ While you were away (47 m): ◆ 1 new · ✓ 2 finished · ▲ 1 failed, fixed without you    Overview ▸  Caught up C   ✕ │
 ├────────┬──────────────────────┬────────────────────────────────────────────────────┬──────────────────────────────┤
-│▌ ≡     │ SESSIONS  9      ⌕ + │ Products › Sessions › CSV export · api-server  ⧉ ←→⋯│ ASK DAORIS  Claude · sonnet ✕│
-│Sessions│ ▸ Waiting on you  1  │                                                    │ You: why did the e2e stop?   │
-│ ◎      │ ◆ CSV or XLSX first? │   the session panel (§10): 1600 − 72 − 300 − 400   │ Daoris: it hit its 3rd retry;│
-│Overview│ ▸ Moving  7          │   = 828 px with the side bar open                  │ the supervisor moved it.     │
-│ ◇ Asks │▌● CSV export         │                                                    │ Look: run #418 ↗             │
-│ ▦ Work-│ ● Rate limits        │                                                    │                              │
-│  spaces│ ○ Export button      │                                                    │ [ Ask about this screen… ]   │
-│ ⚿ ▲    │ ▸ Ended today  4     │                                                    │                              │
-│ Company│                      │                                                    │                              │
-│ ⚙      │                      │                                                    │                              │
+│ ◎      │ SESSIONS  9      ⌕ + │ Products › Sessions › CSV export · api-server ⧉ ←→⋯│ ASK DAORIS  Claude · sonnet ✕│
+│Overview│ by ask ▾   ⌕ filter  │                                                    │ You: why did the e2e stop?   │
+│ ◇ Asks │ Export reports  ◆    │   the session panel (§10): 1600 − 72 − 300 − 400   │ Daoris: it hit its 3rd retry;│
+│▌ ≡     │  ◆ infra       3 h   │   = 828 px with the side bar open                  │ the supervisor moved it.     │
+│Sessions│ Rate-limit the API ● │                                                    │ Look: run #418 ↗             │
+│ ▦ Work-│▌● api-server   41 m  │                                                    │                              │
+│  spaces│  ○ web-app      1 h  │                                                    │ [ Ask about this screen… ]   │
+│ ⚿ ▲    │ Your conversations   │                                                    │                              │
+│ Company│  ● engine       2 h  │                                                    │                              │
+│ ⚙      │ Ended today  4 ▸     │                                                    │                              │
 ├────────┴──────────────────────┴────────────────────────────────────────────────────┴──────────────────────────────┤
-│ ● Live  ⇅ Synced 2 s ago   Accounts: 1 at its limit   Key $2.30 of $20  Browser · driven by api-server   1.8.3 ✓ │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+│ ● Live  ⇅ Synced 2 s ago   Accounts: 1 at its limit   Key $2.30/$20 Nov  Browser · driven by api-server   1.8.3 ✓ │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 Narrow, 900 px, the same moment, the side bar closed; the main area has replaced the list:
@@ -119,7 +119,8 @@ Narrow, 900 px, the same moment, the side bar closed; the main area has replaced
 
 - Layout follows room, never the viewport: the list stands beside the main area only while the main area keeps its 560 px
   floor (`work/frame/layout.ts`); a region lays itself out by its own container width.
-- The window's least width becomes 720 px (today 960, `MainForm.cs`).
+- The window's least width becomes 720 px (today 960, `MainForm.cs`); a torn-off window's is 520 px (§15.11). Tests and stories
+  use only these widths: 1600, 1280, 1024, 900 and 720, and 520 for a torn-off window.
 - Story widths, read from `design/regions.ts` (UIDS13) by Storybook's `withRegion`: the main area at the wide reference with a
   list, 1228 px; at the narrow reference, 852 px; at the least width, 672 px; the side bar 400 px; a list 300 px. The window
   stories draw at 1600, 1280, 1024, 900 and 720.
@@ -193,7 +194,7 @@ also answers `daoris://<path>` by bringing the main window forward. Ids, never n
 | `/workspaces/<workspace>[/<tab>]`, `/workspaces/<workspace>/repositories/<repository>[/<tab>[/<entry>]]` | a workspace's page; a repository's page at a tab |
 | `/company/accounts[/<agent>[/<account>]]`, `/company/roles/(working|appointed|yours)[/<role>]`, `/company/connectors/<id>`, `/company/plugins/<id>` | Company's pages |
 | `/settings/<domain>[/<sub>][#<row>]` | a Settings domain at a row |
-| `/ask-daoris/<conversation>` | the side bar open on that conversation |
+| `/sessions/<session>` for an Ask Daoris conversation | its one address: a conversation is a session (§15.4); the side bar shows the current one, and a link opens it in the session panel |
 
 - **Back and Forward** (Alt+← / Alt+→, the mouse's side buttons, the breadcrumb's ← →) walk the window's history and give
   back the scroll and the chosen row.
@@ -206,7 +207,8 @@ also answers `daoris://<path>` by bringing the main window forward. Ids, never n
 ### 4.4 Moving
 
 - **Keys**: Ctrl+1–5 and Ctrl+, the places; Ctrl+K the palette; Ctrl+N a new ask; Ctrl+Shift+N a new conversation; ? or Ctrl+/
-  the shortcut sheet; on Overview and in a dock J/K, Y/N, 1–4, R, M, L, Enter; C *Caught up*. A single-letter key never fires
+  the shortcut sheet; on Overview and in a dock J/K, Y/N, 1–4, R, M, L, Enter (a key whose act cannot be taken back is held 800 ms,
+  §5.3); C *Caught up*. A single-letter key never fires
   while a field has focus or an input method composes. Every key is in `menus/commands.ts` and printed on its button
   (`KeyHint`).
 - **The palette** finds objects and goes there: groups *Waiting on you*, *Go to* (asks, quests, sessions, workspaces,
@@ -234,11 +236,10 @@ The frame counts an attention row only when its kind is one of these, or when no
 | Kind | 中文 | Arises when |
 |---|---|---|
 | Question | 问题 | a direction or target only the owner can settle (an ask's words, a requirement, a plan question) |
-| Go-ahead | 放行 | an act the repository's declaration keeps the owner's: a production write, a push outside, deleting the owner's data, trusting a folder |
+| Go-ahead | 放行 | an act the repository's declaration keeps the owner's: a production write, a push outside, deleting the owner's data, trusting a folder where the declaration does not decide it |
 | Release | 发布 | a release to a stage the owner keeps, or a set-up shown for the owner's look |
 | Sign-in | 登录 | an account or a remote is signed out and work needs it |
 | Money | 费用 | an account paid per use nears the budget you set for its week or month, or its prepaid balance runs out (a subscription carries no money budget, §13.6) |
-| Failed | 失败 | a step failed after its retries and after another agent tried |
 | Confirm it was you | 确认是你 | a terminal's press asks to act as the owner (D156's door) |
 
 One census in the driver, `AttentionOwnership` (a unit of its own in `Modules/Loop/`), classes each of today's 36 attention
@@ -246,8 +247,11 @@ kinds as the owner's or the agents' with its doctrine reason, and fails a new ki
 `signed-out`, `git-held` and an `account-wait` that only a sign-in clears are Sign-in; `confirmation` is Confirm it was you;
 `go-ahead`, `git-ask`, `trust` and `space` are Go-aheads where the declaration keeps the act the owner's; `step`, `set-up` and
 `integration` are Releases where the owner holds the step's role; `departure`, `intake`, `plan-question`, `design-question`
-and `unanswerable` are Questions; `policy-hold` is Money where the hold is a per-use account's budget; `left` and `parked-quest` are Failed once
-the agents gave up; `memory` beyond the leave the owner set is a Go-ahead. The rest (`parked`, `helper-ended`, `answer`,
+and `unanswerable` are Questions; `policy-hold` is Money where the hold is a per-use account's budget; `left` and `parked-quest`, once the agents
+gave up, are *gave up* lines in *Since you left* (§5.4), never waits; `memory` beyond the leave the owner set is a Go-ahead.
+Each conditional kind names its other side: a go-ahead, git ask, trust or deletion the declaration does not keep goes to its
+approver role; a `step`, `set-up` or `integration` the owner does not hold goes to that step's role (an acceptor's step to the
+acceptor); a `policy-hold` that is no budget goes to the supervisor. The rest (`parked`, `helper-ended`, `answer`,
 `request-declined`, `proposal`, `rule`, `helper`, `hand-over`, `permission`, `quiet`, `unclosed`, `work`, `opinion`, `review`,
 `steward-stopped`, `second-check`) are the agents': the supervisor's, the steward's or the reviewer's. `proposal` (an ask's
 split into quests) is the agents' (D341). `permission`, `answer`, `review`, `set-up` and `rule` stay the owner's only where a
@@ -279,8 +283,11 @@ pinned on an account's row or a repository's page. One wait has one id; answered
   said by its asker" and is counted (`CARD_FIELDS`, UISE2).
 - Its layouts: whole, one line, pinned. Its states: arriving, focused, in grace (*Undo*), answered (its outcome line, 10
   minutes, then *Answered today*), queued offline, not sent (it changed), cleared (moot), deferred.
-- *Not mine* (M) is offered only on a kind the owner may hand over, never a sign-in or deleting their data; it writes the
-  setting that marked the kind the owner's, at its one home, and says where to take it back. *Later* (L): 1 h, this evening,
+- *Not mine* (M) is offered only on a kind the owner may hand over, never a sign-in, deleting their data or Confirm it was you;
+  it writes the act's holder in the one record *Give this act to…* edits (§6, §13.4), under the same rules, and says where to
+  take it back.
+- Keys answer as buttons do (amending D152 §3, which kept keys off acts that end or remove): a key whose act can be taken back
+  runs with its 5-second *Undo*; a key whose act cannot is held 800 ms, as its button is. *Later* (L): 1 h, this evening,
   tomorrow 09:00, when I'm back; it replaces *Set aside*, and a deferred wait leaves the count and returns marked "back from
   later".
 - Waits with one cause merge into one card that "holds n" and lists them (one signed-out account holding four starts). Order:
@@ -292,7 +299,9 @@ pinned on an account's row or a repository's page. One wait has one id; answered
 Rows the agents take show on Overview under *With the agents* (交给智能体), uncounted and without amber: who answers each and
 how it went. A role's answers and the supervisor's courses since the owner left are *Decided without you*, each with its role,
 maker, model and one line of why, and *Reverse…* (which opens New ask with "Reverse: <the decision>" written in) or *Overrule*
-while a course is still open.
+while a course is still open. Work the agents could not finish (a step failed after its retries and another agent's try) is a
+*Gave up* line in *Since you left*, with what was tried and *Try again* or *Ask about it*, uncounted and without amber (doctrine
+rule 1: reported as gave up, never asked); it reaches the owner as a wait only where a direction question names it.
 
 ### 5.5 Away and back
 
@@ -317,7 +326,7 @@ Notifications, §14). A notification opens `/overview/waits/<id>` in the main wi
 | *What needs you* | Overview's *Waiting on you* (owner kinds) and *With the agents* (the agents') |
 | A terminal's press (`person/Confirmations.tsx`) | a *Confirm it was you* wait (D156's door unchanged: no answer without the person key) |
 | *Messages* | unread marks where they belong and a *Since you left* line (`messagesRead` stays) |
-| *Done and failed* | Failed waits and *Since you left* lines |
+| *Done and failed* | *Since you left* lines; a step the agents gave up on reads *Gave up* with what was tried (§5.4) |
 | The steward's, Ask Daoris's and the terminal's lines | *Since you left* lines with their acts |
 | *Set aside* | *Later* |
 | `daoris notices` | `daoris waits` (`--all`), the same rows as JSON |
@@ -329,16 +338,18 @@ outside effect its holder's tool, and APPROVEACT1 made a release approval the ap
 place casts the approver to an agent and the owner's card where it does not. This extends that to every act the window lets the
 owner perform.
 
-- **An act is defined once**, as a kind of FOUNDATION1's one Act contract (`docs/2026-11-14-foundation-design.md` point 2:
-  registered with its handler, journaled, closed by its receipt); the owner's acts are its first kinds (`OwnerActs`, a unit of its
-  own in the driver's modules), built in that shape so FOUNDATION1 extends them and never adds a second registry. Each has its id; its verb and its effect sentence
+- **An act is defined once** (`OwnerActs`, a unit of its own in the driver's modules), over the doors that exist: D325's role
+  act handed to its holder as a tool and settled by its receipt, APPROVEACT1's `approve-release`, the window's routes and the
+  `daoris` verbs. FOUNDATION1's one Act contract (`docs/2026-11-14-foundation-design.md` point 2), when it is built, adopts these
+  definitions as its first kinds rather than adding a second registry. Each has its id; its verb and its effect sentence
   (catalogue keys); whether it can be undone (`grace`: the press is held 5 s before it is sent, with *Undo*) or not (`hold`: a
   held press, 800 ms, its consequence on the control); what it needs (a role, a sign-in, a place's declaration, a budget);
   the role that holds it at each place (the place's cast, D304, D318; the owner by default for the closed list); and its
   doors: the window route, the `daoris` verb (rule 34) and, where an agent may hold it, the tool its holder's session is
   handed.
 - **The acts**, first: answer a question; give or refuse a go-ahead; approve or hold a release; sign in an account or a remote;
-  raise a budget or hold work at it; delete the owner's data (history, files, a branch, a kept entry); confirm it was you;
+  raise a budget or hold work at it; delete the owner's data (history, files, a branch, a kept entry); rewrite history;
+  confirm it was you;
   reverse a decision made without the owner; keep or drop a workflow change to the owner's part; accept a check or a landing
   the owner keeps. A census fails a press that performs an owner act without a definition, and a definition with no door.
 - **The window is the human's door.** `WaitCard`'s presses and `Button`'s held press take an act, and read from its definition
@@ -347,7 +358,12 @@ owner perform.
 - **An agent actor is configured to hold an act** on Company › Roles › *What stays yours* (§13.4): the act is given to an
   appointed role at a place, and that role's holder performs it through its tool (D325's tool door, journaled with its
   receipt, settled by its receipt), as APPROVEACT1's `approve-release` does. Sign-ins and deleting the owner's data can be
-  given only where the agent holds the credential or the owner's leave; the definition says what it needs.
+  given only where the agent holds the credential or the owner's leave; the definition says what it needs. A wait card's
+  *Not mine* writes the same record. Where an act belongs to a step, it is handed only to the session holding that step
+  (ACTORFLOW1's open item, which UIRP29 builds on).
+- **Person-only acts.** *Confirm it was you* (D156's door) is the person's alone and is never given: its point is that Daoris
+  cannot tell the person from an agent there. The census marks it so, *What stays yours* shows it without *Give this act to…*,
+  and a request to give it is refused.
 - **What goes:** the press-then-confirm dialog and `InlineConfirm` (a second question for an act); arrival toasts; acts that
   only a window press can perform.
 
@@ -443,14 +459,14 @@ its word from the `design` catalogue or a more specific word from the caller:
 | Mark | Meaning | Token | Word (en / zh) |
 |---|---|---|---|
 | ● | moving | `live` | Moving / 进行中 |
-| ◆ | waits on you | `you` | Waits on you / 待你决定 |
+| ◆ | waiting on you | `you` | Waiting on you / 等你处理 |
 | ○ | waits on another session, helper or connector | `ink-soft` | Waiting on … / 等待… |
 | ◌ | queued | `ink-faint` | Queued / 排队中 |
 | ▲ | failed (↻ n/m while retrying) | `fail` | Failed / 失败 |
 | ✓ | finished with an outcome | `ok` | Landed · Released · Passed / 已合入 · 已发布 · 已通过 |
 | – | ended without one (stopped, declined, superseded) | `ink-faint` | Stopped / 已停止 |
 | ◐ | stale, shown as of a time | `ink-faint` | As of 14:58 / 截至 14:58 |
-| ‖ | held (paused by you, or waiting for a window) | `ink-soft` | Held / 已暂停 |
+| ‖ | paused (by you, or waiting for a window) | `ink-soft` | Paused / 已暂停 |
 
 A group shows its most urgent: ◆ > ▲ > ● > ○ > ◌ > ‖ > ✓ > –, with ◐ drawn beside the others.
 
@@ -484,7 +500,7 @@ here), `composites/` (built from primitives, still presentational), `patterns/` 
 A domain's composite (`SessionRow`, `QuestTrackRow`) lives in its screen's folder and is built from the library (D231).
 
 **Radix stays the one headless layer** and gains popover, hover card and tabs; the library owns the combobox, the tree and the
-list keys; React Aria Components is rejected, Base UI is the named exit (D329).
+list keys; React Aria Components is rejected, Base UI is the named exit (D345).
 
 ### 8.2 Conventions
 
@@ -589,7 +605,7 @@ repository and model name stay as written):
 │ ◇   │ 等你处理  3                                                        + 1 稍后 ▾    │
 │ ≡●  │ ╭──────────────────────────────────────────────────────────────────────────────╮ │
 │ ▦   │ │◆ 将 2.4 发布到 beta？                                  卡住 2 项 · 3 小时    │ │
-│ ⚿   │ │  发布经理 · infra · 需求：Export reports to CSV                              │ │
+│ ⚿   │ │  发布负责人 · infra · 需求：Export reports to CSV                          │ │
 │     │ │  同意  立即部署到 beta；24 小时内一键可回滚。                                │ │
 │     │ │  暂缓  停在 stage；其他工作照常进行。                                        │ │
 │     │ │  依据  ✓ 检查 46/46（13:40）· ✓ Codex · gpt-5.1 已评审                       │ │
@@ -615,7 +631,7 @@ repository and model name stay as written):
   *Your conversations* for those the owner opened; a group head with its most urgent mark and workspace; a row with its mark,
   repository, step or whom it waits on, the model that ran, its time in state; a teammate's tagged *on a teammate's machine*,
   with no press; narrow, a group folds to its marks and its most urgent row. Foot *Pending n ▸*, *Ended today n ▸*.
-- **Since you left** (after *Caught up*: *Today*): *Landed* (and released), *Failed, then fixed without you*, *Decided without
+- **Since you left** (after *Caught up*: *Today*): *Landed* (and released), *Failed, then fixed without you*, *Gave up* (§5.4), *Decided without
   you* (with *Reverse…*), *Cleared without you*, *Used* (each subscription's share of its windows and the tokens by the model that ran, "as each agent reported";
   money only for work on per-use accounts),
   *Install*; grouped by ask; a section past five lines ends *+n more ▸*; more than a day away is grouped by day. Composed in the
@@ -717,7 +733,7 @@ as before and after (D342).
 
 ### 11.1 The Asks list
 
-Groups *Waits on you*, *Moving*, *Not from an ask* (quests no ask holds: a teammate's, one a session sent), folded *Teammates'
+Groups *Waiting on you*, *Moving*, *Not from an ask* (quests no ask holds: a teammate's, one a session sent), folded *Teammates'
 asks*, *Paused by you*, *Finished, last 7 days*. An `AskRow` reads its mark, title, each quest's mark (`QuestMarks`), requirements
 met, workspace and time; at *All workspaces* a row carries its workspace. The Quests place, its list and its composer go.
 
@@ -816,7 +832,7 @@ page until one is chosen, then the head carries breadcrumb selects (*[ products 
 
 ```text
 ┌─────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────────┐
-│ WORKSPACES      + ⋯ │ engine   ● 2 moving · ◆ 1 waits on you          products › engine  [ Hold ] [ Set up… ] [ ⋯ ]│
+│ WORKSPACES      + ⋯ │ engine   ● 2 moving · ◆ 1 waiting on you        products › engine  [ Hold ] [ Set up… ] [ ⋯ ]│
 │ ▾ products  ● 3 ◆ 1 │ The runtime half of the example family: simulation, rendering, assets.  (its declaration)    │
 │ ▌ engine    ● 2 ◆ 1 │ [ Summary ]  Branches  Checkout  Knowledge ◆1  Workflow  Code  Setup                         │
 │   game      ● 1     ├──────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -910,9 +926,9 @@ which agent and model or by the owner, where, and what each decided in the last 
 ### 13.4 What stays yours
 
 The line between what the agents decide and what the owner keeps, drawn in one place: the closed list (§5.2); **every act** of
-§6 with who holds it at each place, *Give this act to…* an appointed role (its holder then performs it through its tool) and
+§6 with who holds it at each place (*Confirm it was you* shown as the person's alone, never given), *Give this act to…* an appointed role (its holder then performs it through its tool) and
 *Take it back*; what agents may do unasked on this machine (the machine's access mode and git access, moved from Settings'
-Driver); the rules switched on and every *always* given, with *Take back* (D284 §5's list, which Settings' *Limits you set* would
+Driver); the rules switched on and every *always* given, with *Take back* (D284 point 6's list in the access design §5, which Settings' *Limits you set* would
 have repeated); each place that sets its own, with a door to its Setup tab.
 
 ### 13.5 Connectors and plugins
@@ -929,15 +945,18 @@ tools) and Daoris's own plugins offered, with what each needs and what installin
 
 The owner's direction (2026-11-20): budgets follow how an account is paid, and money is shown only where it is real (D343).
 
-- **A subscription** (every account today) carries no money budget. Its use is shown against its plan's own windows, the session
+- **A subscription** carries no money budget. Its use is shown against its plan's own windows, the session
   and weekly limits the accounts already report, as a share and a reset (`Meter` limit cells). Its price appears only if the owner
   enters it, as the plan's price and period, never spread over the work as an estimate.
 - **An account paid per use** (an API key) carries a budget the owner sets on its row in *Spend and budgets*, by the week or by
-  the month (the owner's choice of period), beside its measured spend and its prepaid balance (`Meter` budget bar). As the
-  period's spend nears the budget a Money wait arises on that account: *Yes* raises the budget to a sum the card proposes, *No*
-  holds new starts on that account until the period resets while running work goes on. A prepaid balance running out raises the
-  same kind.
+  the month (the owner's choice of period), beside its measured spend and its prepaid balance (`Meter` budget bar). When the
+  period's spend reaches 80% of the budget a Money wait arises on that account: *Yes* raises the budget by half, rounded up to a
+  whole unit of its currency; *No* holds new starts on that account until the period resets while running work goes on. The 80%
+  and the half are Daoris's defaults, shown as such (`KnownBy` default) on the account's row and settable there. A prepaid
+  balance running out raises the same kind.
 - A missing reading is *unknown*, never 0.
+- *Budget* on the window is this, an account's spend for its period; the glossary's *daily budget* (a role choice's starts or
+  tokens in a day) keeps its own row, and UIRP28 adds *budget* beside it.
 - **An ask carries no budget.** It shows its cost so far: its sessions' share of each subscription's windows, with their tokens
   by model, and money for the work on per-use accounts. The same figures (`CostLine`) appear in Overview's *Used*, a session's
   *Models and use* and an ask's head; the status strip shows spend only while a per-use account has a budget (§15.2).
@@ -972,12 +991,13 @@ a local branch, never a push unless declared), never overwriting an owner's choi
 doors to change them. The finish opens New ask; *Later* replaces *Don't open at start*. The window opens on it while a required
 step is open; the status strip says *Setup: n of 2*.
 
-**Install and updates** (D344): updates install themselves when the work is idle, with no word from the owner; the page and the
-status strip's item say, in one sentence from one key per state, staged, holding new work (how many sessions are finishing and
+**Install and updates** (D344): updates already install themselves when the work is idle, with no word from the owner
+(install-home-update rule 37); what changes is that the page and the status strip's item say, in one sentence from one key per state, staged, holding new work (how many sessions are finishing and
 until when), installing, installed, rolled back or refused; *Install now* stays; a history of the last ten installs (version, from,
-time, outcome, sessions cut, why). The install finds Daoris's new releases on its public repository's GitHub releases by itself.
-A rolled-back or refused install is a *Since you left* line, and a Failed wait only when it is refused again after the agents'
-retry. The update banner goes.
+time, outcome, sessions cut, why). Where releases come from is RELEASEFEED1's (D329: Daoris's own releases from its public
+repository); what it leaves to the window is UIST14's: the first release waits on the owner's go as a Release wait, and the
+running app looks for a release by itself and says when it last looked. A rolled-back or refused install is a *Since you left*
+line, and refused again after the agents' retry a *Gave up* line, never a wait. The update banner goes.
 
 ## 15. System surfaces
 
@@ -1049,7 +1069,7 @@ moves to *Details*.
   `sessionWidths`, `NOT_IN_A_MAIN_AREA`, the `chinese` decorator, `InTheme` and the 117 local `dark` decorators; a check fails a
   story that pins a global or frames itself. A one-off codemod deletes the 1,482 pure variant exports, renames a variant with its
   own content by its state, and carries floor widths (about 1,980 of 3,462 stories remain).
-- **Order**: `Window/*` (the assembled window over a fixture: waits on you, a session open, first run, offline and stale),
+- **Order**: `Window/*` (the assembled window over a fixture: waiting on you, a session open, first run, offline and stale),
   `Screens/<place>/<screen>` (`screenStory({ place, route, fixture })` draws the shell around a screen), `Library/Tokens/*` and
   `Library/Status marks` (generated from `tokens.css`, each pair with its computed ratio, held equal to `tokens.test.ts`'s
   reading), `Library/Primitives|Composites|Patterns/*`, then today's books until their rows move them.
@@ -1124,7 +1144,7 @@ and the window must keep working while it changes.
 - Radix stops shipping fixes: Base UI, inside `design/primitives/`.
 
 **The trial**, written before it runs. *Where:* Overview with its `WaitCard` queue, after wave 3. *Baseline*, recorded on the
-current window over the week before UISE2 starts: the time from a return after 2 h or more to the last waiting item answered;
+current window over the week before UISE2 starts by UISE23 (the UX trail switched on, read by `tools/ux-trail.mjs`): the time from a return after 2 h or more to the last waiting item answered;
 screens opened per answer; items that reached the owner outside the owner kinds; answers given on a question that had already
 changed; amber the owner saw that did not need them. *Kept if:* at least nine waits in ten are answered from Overview or a dock
 without opening another screen; the time from return to the last answer is below the baseline; no answer runs twice and none
@@ -1140,22 +1160,22 @@ is its baseline).
 
 | Decision | What it decides | Amends or supersedes |
 |---|---|---|
-| D329 | Radix stays the one headless layer, gaining popover, hover card and tabs; the library owns combobox, tree and list keys; React Aria Components rejected | D42's libraries (amends) |
-| D330 | The token role set: blue accent, amber the owner's alone, red only for failed, text at 4.5:1 and marks at 3:1, one type scale for Latin and Han with 14 px body, one density with zoom | D41's bronze accent, D56's 13 px body |
+| D330 | The token role set: blue accent, amber the owner's alone, red only for failed, text at 4.5:1 and marks at 3:1, one type scale for Latin and Han with 14 px body, one density with zoom; a column may keep the 72ch measure and a region lay out columns by its width | D41's bronze accent, D56's 13 px body, D141 and desktop-app rule 27 (amends) |
 | D331 | The catalogue's globals instead of variant stories; tracked, tagged picture baselines on Windows | — |
 | D332 | Six places: Overview, Asks, Sessions, Workspaces, Company, Settings; the Map and Knowledge in Workspaces; Overview keeps its name and 总览 | D150 §2's nine places (supersedes), D67's Map place (amends), D30 (convergence's place) |
 | D333 | The title strip: no menu bar, one app menu, the scope named once, the waits pill and + Ask | D152's menus, D75's double naming (supersedes) |
-| D334 | No movable views: the side bar is Ask Daoris's, the panel the terminal's; a closed list hides | D118 (supersedes), desktop-app rule 25's strip |
+| D334 | No movable views: the side bar is Ask Daoris's, the panel the terminal's; a plugin's side view is a section of its page; a closed list hides | D118 (supersedes), desktop-app rule 25's strip, D274's plugin side tabs (amends) |
 | D335 | Notifications retire; each part has a home; the computer announces only counted waits | D196 (supersedes) |
-| D336 | Only the owner's kinds wait on the owner, counted as one number, each answered on one card in place; the rest is with the agents | D196 §5, D40's landing (amends) |
+| D336 | Only the owner's kinds wait on the owner, counted as one number, each answered on one card in place, a key held for what cannot be undone; work the agents gave up on is a line, not a wait; the rest is with the agents | D196 §5, D40's landing, D152 §3 and rule 29 (amends) |
 | D337 | A failure stops only its region | D217 (amends) |
 | D338 | Get started is a path the owner finishes alone, and Daoris takes the other setup choices once | D97 (amends) |
-| D339 | The session panel's facts rail and its Changes focus | D320 §9 and its rejection of a right rail (amends) |
-| D340 | Every owner act is defined once and any actor can be given it; irreversible acts are one held press, reversible ones a 5 s Undo | D325 point 1 and APPROVEACT1 (extends), D284 §5's *Settings → Rules* home, platform UX's ask-once rule |
-| D341 | An ask becomes quests without a press | the ask page's "a proposal is a person's to accept" |
+| D339 | The session panel's facts rail and its Changes focus | D320 §9 and its rejection of a right rail, D141 for the panel (amends) |
+| D340 | Every owner act is defined once over the doors that exist and any actor can be given it, but Confirm it was you; irreversible acts are one held press or held key, reversible ones a 5 s Undo | D325 point 1 and APPROVEACT1 (extends), D284 point 6's rules list (the access design §5), D152 §3 and rule 29, platform UX's ask-once rule |
+| D341 | An ask becomes quests without a press: per-part Publish, the kind's Apply and Take go | a rule kept only in code comments (`AskPage.tsx`, `AskPublishing.cs`): a proposal is a person's to accept |
 | D342 | The workflow step editor goes; a change arrives as a before-and-after card | D223, D221 (amends) |
-| D343 | Budgets follow how an account is paid: a subscription is shown against its plan's windows, a per-use account carries a weekly or monthly budget; money only where it is real; an ask carries no budget | D179's rejection of money, the glossary's *usage* (amends) |
-| D344 | Daoris's releases are GitHub releases its installs read; an update installs when idle and is never the owner's question; the first release waits on the owner's go | D139 (amends) |
+| D343 | Budgets follow how an account is paid: a subscription is shown against its plan's windows, a per-use account carries a weekly or monthly budget; money only where it is real; an ask carries no budget | D179's rejection of money, D57's counts never priced, the glossary's *usage* (amends) |
+| D344 | An update installs when idle and is never the owner's question; the window says it in one place; the release source is RELEASEFEED1's (D329) | D139's banner (amends) |
+| D345 | Radix stays the one headless layer, gaining popover, hover card and tabs; the library owns combobox, tree and list keys; React Aria Components rejected | D42's libraries (amends) |
 
 Decisions the rows record when they build (each named in its row): the addresses by id and a link carrying no scope (UISH3), the
 tier's move from the status strip (UISH5), the away thresholds and the machine-wide mark (UISH8), doctrine changes asked by quest
@@ -1168,7 +1188,7 @@ own folders (a one-line registration in a shared table, `domains.ts`, `ui.tsx`, 
 
 | Wave | Rows | Batches that run together |
 |---|---|---|
-| 0 The design system's foundation | UIDS1–UIDS7 | UIDS1 alone (its codemod renames classes across `src/`); UIDS2 ∥ UIDS3; UIDS4; UIDS5; UIDS6 ∥ UIDS7 |
+| 0 The design system's foundation | UIDS1–UIDS7, UISE23 | UISE23 first and beside the rest (a week of the trial's baseline, recorded before UISE2); UIDS1 alone (its codemod, a re-runnable tool, renames classes across `src/`); UIDS2 ∥ UIDS3; UIDS4; UIDS5; UIDS6 ∥ UIDS7 |
 | 1 The library and the acts | UIDS8–UIDS17, UISH24 | UIDS8; UIDS9 ∥ UIDS10; UIDS11; UIDS12 ∥ UIDS13 ∥ UIDS15; UIDS14 ∥ UIDS17; UIDS16; UISH24 |
 | 2 The frame | UISH2–10, 14, 15, 17, 18 | UISH2 alone; UISH3 ∥ UISH4 ∥ UISH5 ∥ UISH17 ∥ UISH18; UISH6 ∥ UISH7 ∥ UISH9 ∥ UISH10; UISH8 ∥ UISH14; UISH15 |
 | 3 Overview and the waits | UISE1–7, 9–12, UISH12 | UISE1 ∥ UISE2; UISE12 ∥ UISE11 ∥ UISE9; UISE3; UISE4 ∥ UISE5 ∥ UISE10; UISE6 ∥ UISH12; UISE7 |
@@ -1182,10 +1202,13 @@ own folders (a one-line registration in a shared table, `domains.ts`, `ui.tsx`, 
 Between UISH2 and a place's own rows, a place shows today's content under its new name (Company mounts today's Agents and
 Plugins; Workspaces today's Repositories, Map and Knowledge; Asks today's Quests view), so the window works at every step.
 Rows in flight that these name: SESSIONVIEW1d2, 1f2, 1g, 1h, 1i (the panel), CHATUX1 (the composer), ACTORFLOW1 (acts and
-receipts), FOUNDATION1 (its one Act contract, whose first kinds UISH24 builds), ACCESS1 rows c, d and n (rules and access), USAGEMODEL1 and APIKEYACCT1 (usage and
-balances), SIGNINWAIT3 (a conversation's sign-in in its dock). Rows the redesign supersedes, to close when the named row lands:
-FLOWCHART2 (UIWF10), AGENTSPLACE1 (UIRP1), MAPUX1 (UIWF12), CANVAS1g (UIWF8 keeps the read-only drawing), SETTINGSUX1
-(UIST11), UIREVIEW1 (its findings are these rows).
+receipts; its open item, a role's act handed only to the session holding the step, under UIRP29), FOUNDATION1 (its one Act
+contract adopts UISH24's definitions), RELEASEFEED1 (D329, Daoris's own releases; UIST14 takes what it leaves), ACCESS1 rows c,
+d and n (rules and access), USAGEMODEL1 and APIKEYACCT1 (usage and balances), SIGNINWAIT3 (a conversation's sign-in in its
+dock). UIDS1's and UIDS3's codemods are re-runnable tools, run again over any of these web rows that land after them. Rows the
+redesign supersedes, marked so in `TASKS.md`: FLOWCHART2 (UIWF10), AGENTSPLACE1 (UIRP1), MAPUX1 (UIWF12), CANVAS1g (UIWF8 keeps
+the read-only drawing), SETTINGSUX1 (UIST11), SETUPUX1x (UIRP9), UIREVIEW1 (its findings are these rows), PLUGINEXT1 f and g
+(re-scoped to sections of a plugin's page, D334).
 
 ## 20. The reconciliation
 
@@ -1236,7 +1259,7 @@ Placeholders replaced: `UIDS:you-token` UIDS1; `UIDS:StatusMark`, `UIDS:Badge`, 
 SESSIONVIEW1i; `UIWF:ask-page` UIWF2; `UIWF·ask composer` UIWF6; `UIRP:account-health` UIRP4; `UIRP:spend`,
 `UIRP[CostPerSession]` UIRP28; `UIRP[RepositoryTabs]` UIRP5; `UIRP[WorkspacePage]` UIRP10; `UISH[Breadcrumb]` UISH3;
 `UISH[Places]` UISH2; `UIST:notifications` UIST13; UIST's Disk space UIST6. New rows: UISH24 (the acts), UIRP29 (an act given
-to an agent), UIST14 (releases from the public repository). Cut: UISH1, UISH16, UISE8, UISE21, UIST9.
+to an agent), UIST14 (what RELEASEFEED1 leaves to the window), UISE23 (the trial's baseline). Cut: UISH1, UISH16, UISE8, UISE21, UIST9.
 
 The owner's answers (2026-11-19, and the budgets on 2026-11-20) and the steward's three: an ask becomes quests without a press
 (D341); the workflow step editor goes (D342); budgets follow how an account is paid: a subscription against its plan's windows
