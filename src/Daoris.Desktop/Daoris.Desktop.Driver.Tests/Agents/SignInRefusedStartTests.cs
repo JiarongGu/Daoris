@@ -221,7 +221,7 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(("account-1", true), (selection.Profile, selection.Allowed));
     }
 
-    // ——— Within its reading's hour (D328): a refusal reads its account signed out, passed until a sign-in marks it or the hour is over,
+    // ——— Within its reading's hour: a refusal reads its account signed out, passed until a sign-in marks it or the hour is over,
     // whatever the agent's status says between: Claude Code's status reads its own store, which a sign-in revoked at its server leaves.
 
     /// <summary>
@@ -305,7 +305,7 @@ public sealed class SignInRefusedStartTests : IDisposable
     /// <summary>
     /// The refused start's own conclusion reads its account signed out (the one reader, <see cref="RefusedAccounts.SignInRefused"/>), and
     /// so does a conversation's refused turn, which reads its refusal by the same reader: the next start passes each and asks neither,
-    /// though each was last read signed in.
+    /// though each last read signed in.
     /// </summary>
     [Fact]
     public async Task A_refused_start_and_a_conversation_s_refused_turn_each_hold_their_account_and_the_next_start_asks_neither()

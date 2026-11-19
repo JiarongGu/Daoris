@@ -123,7 +123,6 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
     /// <summary>The cool-off that holds it, when that is why.</summary>
     public CoolingEntry? Cooling { get; init; }
 
-    /// <summary>The accounts the account walk passed not signed in, when that is why; a step's session names them (<see cref="StepSessionEnd.Held"/>).</summary>
     public SignedOutAccounts? SignedOut { get; init; }
 
     /// <summary>The actor's entry for the agent that is tried, with its model; null where a caller named none.</summary>

@@ -15,7 +15,6 @@ public static class StepAnswer
     /// <summary>The code a step fails with whose session ended unanswered.</summary>
     public const string NoAnswer = "no-answer";
 
-    /// <summary>The code a step fails with that no account could take for its sign-in (<see cref="StepSignIns"/>).</summary>
     public const string SignIn = "sign-in";
 
     public static string Folder(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "agent-steps");
@@ -93,11 +92,7 @@ public static class StepAnswer
         return null;
     }
 
-    /// <summary>
-    /// The failure kept for a session that ended without answering: <see cref="SignIn"/> with <paramref name="signIn"/>'s words where no
-    /// account could take the step for its sign-in (<see cref="StepSignIns"/>), else <see cref="NoAnswer"/>; nothing where an answer is kept
-    /// already.
-    /// </summary>
+    /// <summary>The failure kept for a session that ended without answering, <see cref="SignIn"/> with its words where given; nothing where an answer is kept already.</summary>
     public static void Unanswered(string home, string invocation, string? signIn = null)
     {
         if (File.Exists(AnswerPath(home, invocation))) return;

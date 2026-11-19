@@ -66,7 +66,7 @@ internal sealed class RosterCooling(HarnessRoster roster)
     /// <para>Cleared as a reading signed out is: a sign-in or a key through either door marks the account, and the next start
     /// asks it again (<see cref="AskAgain"/>); a sign-in on the screen reads it as it ends; a press reads it; and the hour's
     /// backstop. A reading not written costs the next start one more refusal, never this one's record.</para>
-    /// <para>🔴 <b>The refusal outranks the agent's status for its hour</b> (D328), whatever the account last read: Claude Code's
+    /// <para>🔴 <b>The refusal outranks the agent's status for its hour</b>, whatever the account last read: Claude Code's
     /// status reads its own store, which a sign-in revoked at its server leaves in place, so a question asked before the mark or
     /// the hour would read signed in and spend the next start, a step's one move among them, on the same refusal.</para>
     /// </remarks>

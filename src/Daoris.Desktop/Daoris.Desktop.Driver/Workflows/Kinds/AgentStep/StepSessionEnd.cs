@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// out. <see cref="None"/> for every other end, which the step's answer alone says.
 /// </summary>
 /// <param name="Agent">Whose accounts: the owner a door runs as, which <c>daoris agent login</c> takes; null for <see cref="None"/>.</param>
-/// <param name="RefusedOn">The account the session ran on and its agent refused for its sign-in; null where it was not.</param>
+/// <param name="RefusedOn">The account the session ran on, where its agent refused it for its sign-in; else null.</param>
 /// <param name="SignedOut">The accounts the walk passed not signed in where none could take the step, in the order it tried them.</param>
 public sealed record StepSessionEnd(string? Agent, string? RefusedOn, IReadOnlyList<string> SignedOut)
 {

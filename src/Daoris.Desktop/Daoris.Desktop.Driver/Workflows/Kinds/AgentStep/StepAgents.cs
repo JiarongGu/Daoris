@@ -2,10 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The port a plugin step declaring a <c>goal</c> is sent to: its ask kept, its session started on the door runner (<see cref="IStepSessions"/>)
-/// with the plugin's <c>daoris-plugins</c> server for this step alone, its answer read as the plugin's. A session its agent refused for its
-/// account's sign-in goes on once under the walk's next account, with no person's press; where no account could take the step for its
-/// sign-in, the step fails <see cref="StepAnswer.SignIn"/>, naming the accounts and the sign-in to make (<see cref="StepSignIns"/>). Any
-/// other session that ends unanswered or fails, or an ask a restart left with no session here, fails it <see cref="StepAnswer.NoAnswer"/>.
+/// with the plugin's <c>daoris-plugins</c> server for this step alone, its answer read as the plugin's. A session refused for its account's
+/// sign-in goes on once on the walk's next account; with none left the step fails <see cref="StepAnswer.SignIn"/> (<see cref="StepSignIns"/>).
+/// Any other unanswered end, or an ask a restart left with no session here, fails it <see cref="StepAnswer.NoAnswer"/>.
 /// </summary>
 /// <param name="askOf">The ask of an attempt, composed from its run's record; null where the run names nothing to work from.</param>
 /// <param name="program">The desktop's program the step's server runs as; null where none is found, and nothing is sent.</param>
@@ -37,8 +36,6 @@ public sealed class StepAgents(
             try
             {
                 ends.Add(await sessions.RunAsync(ask, Tools, null, CancellationToken.None).ConfigureAwait(false));
-                // A session its agent refused for its account's sign-in goes on once under the next account the walk gives, by Daoris
-                // itself: the refusal read the account signed out, so the walk passes it.
                 if (ends[0].RefusedOn is { } refused && !Answered(invocation))
                 {
                     ends.Add(await sessions.RunAsync(ask, Tools, refused, CancellationToken.None).ConfigureAwait(false));
@@ -52,7 +49,6 @@ public sealed class StepAgents(
         }, _ => true);
     }
 
-    /// <summary>The step's sign-in words where its sessions' ends name one, by the names the person gave the agent's accounts.</summary>
     private string? SignInWords(IReadOnlyList<StepSessionEnd> ends) =>
         ends.Select(end => end.Agent).OfType<string>().FirstOrDefault() is { } agent ? StepSignIns.Words(ends, AccountNames.Of(home, agent)) : null;
 

@@ -32,15 +32,11 @@ public sealed class StepAgentPerformTests : IDisposable
 
     public void Dispose() => GitSeed.Discard(_home);
 
-    /// <summary>
-    /// The loop's sessions as the port sees them: each run ends as <see cref="Ends"/> says in turn, else as one that ran; one that ran
-    /// answers as <see cref="Answer"/> says, or not at all.
-    /// </summary>
+    /// <summary>The loop's sessions as the port sees them: each ends as <see cref="Ends"/> says, else ran and answers as <see cref="Answer"/> says.</summary>
     private sealed class Sessions(string home) : IStepSessions
     {
         public List<(StepAgentAsk Ask, ServerEntry Tools)> Ran { get; } = [];
 
-        /// <summary>The account each run was handed as refused before it, in the order run.</summary>
         public List<string?> MovedOff { get; } = [];
 
         public Queue<StepSessionEnd> Ends { get; } = new();
@@ -157,8 +153,7 @@ public sealed class StepAgentPerformTests : IDisposable
         Assert.Equal((NodeStates.Failed, StepAnswer.NoAnswer), (Status().State, Status().Code));
     }
 
-    // ——— A sign-in (ACCOUNTREVOKED1): a session its agent refused for its account's sign-in goes on once under the walk's next account,
-    // by Daoris itself; where none is left the step fails `sign-in`, naming the accounts and the sign-in to make, never a bare `no-answer`.
+    // ——— Refused for its sign-in: once more on the walk's next account, else `sign-in` naming the accounts and the sign-in to make.
 
     private async Task<StepEnded> PerformedAsync()
     {
@@ -170,7 +165,6 @@ public sealed class StepAgentPerformTests : IDisposable
         return new StepEnded(Status(), StepAnswer.Read(_home, Attempt().Call.Invocation)!.Outcome!.Evidence!.Message!);
     }
 
-    /// <summary>The step's status after its answer is reconciled, and its answer's message, which the run's step shows.</summary>
     private sealed record StepEnded(NodeStatus Status, string Message);
 
     [Fact]
@@ -232,10 +226,7 @@ public sealed class StepAgentPerformTests : IDisposable
             done.Message);
     }
 
-    /// <summary>
-    /// The loop's side: a staffing walk held because every agent it may use has no account signed in ends the session with no account,
-    /// naming the accounts the walk passed; held for anything else, it ends as any session does.
-    /// </summary>
+    /// <summary>The loop's side: a walk held for its sign-ins ends with no account, naming those passed; held for anything else, with nothing.</summary>
     [Fact]
     public void A_walk_held_for_its_sign_ins_ends_with_no_account_naming_the_accounts_it_passed()
     {
