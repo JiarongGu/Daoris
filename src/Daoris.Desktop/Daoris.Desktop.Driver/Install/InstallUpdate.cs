@@ -31,7 +31,8 @@ public static class InstallUpdate
     /// </summary>
     public const string HoldReason =
         "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris "
-        + "starts again — Not now, or `daoris update --cancel`, lets work start meanwhile.";
+        + "starts again, or until the drain's bound passes (`daoris settings drain`) — Not now, or `daoris update --cancel`, "
+        + "lets work start meanwhile.";
 
     /// <summary>
     /// The look's line for a start the drain held that is not a quest's: <paramref name="family"/> and what is held, then the

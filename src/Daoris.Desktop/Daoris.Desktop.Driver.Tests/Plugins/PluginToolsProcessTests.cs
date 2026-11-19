@@ -13,7 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
-public sealed class PluginToolsProcessTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class PluginToolsProcessTests: IDisposable
 {
     private const string Plugin = "daoris-azure-devops";
 

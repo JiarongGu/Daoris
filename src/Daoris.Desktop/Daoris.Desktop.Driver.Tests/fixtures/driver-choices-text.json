@@ -337,6 +337,7 @@
         "  cooloff    60 minutes an account cools when its agent names no time for its limit  (the default — `daoris settings cooloff <minutes>` changes it)",
         "  quiet      10 minutes before Daoris looks in on a session  (the default — `daoris settings quiet <minutes>` changes it)",
         "  cap        2 concurrent session(s)  (the default — `daoris settings cap <n>` changes it)",
+        "  drain      10 minutes a staged build holds new work at most, then installs once nothing runs  (the default — `daoris settings drain <minutes>` changes it)",
         "  manifest   250000 files and 5 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (the default — `daoris settings manifest files|minutes|copy <n>` changes each)",
         "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris settings keep set-aside …` changes it)",
         "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris settings keep downloads …` changes it)",
@@ -356,7 +357,7 @@
       "argv": [
         "settings"
       ],
-      "before": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
+      "before": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"drainMinutes\": 20,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
       "exit": 0,
       "out": [
         "daoris: <config>",
@@ -364,6 +365,7 @@
         "  cooloff    45 minutes an account cools when its agent names no time for its limit  (set — `daoris settings cooloff <minutes>` changes it)",
         "  quiet      15 minutes before Daoris looks in on a session  (set — `daoris settings quiet <minutes>` changes it)",
         "  cap        3 concurrent session(s)  (set — `daoris settings cap <n>` changes it)",
+        "  drain      20 minutes a staged build holds new work at most, then installs once nothing runs  (set — `daoris settings drain <minutes>` changes it)",
         "  manifest   5000 files and 2 minutes before a folder is too large to follow, 2 GB before it is too large to copy  (set — `daoris settings manifest files|minutes|copy <n>` changes each)",
         "  set-aside  a tree's folder moved aside is kept 14 days; its package folders go an hour after the move  (the default — `daoris settings keep set-aside …` changes it)",
         "  downloads  a downloaded version nothing uses goes 7 days into its unused stretch  (the default — `daoris settings keep downloads …` changes it)",
@@ -375,7 +377,7 @@
         "  terminal   act  (a terminal's press runs at once as yours, listed in Notifications — `daoris settings terminal ask` asks again)"
       ],
       "err": [],
-      "after": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
+      "after": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"drainMinutes\": 20,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
       "changed": "`daoris settings` with no verb says each machine setting and the verb that changes it, where it said its usage."
     },
     {
@@ -601,6 +603,35 @@
       "out": [],
       "err": [
         "daoris: `driver quiet` needs a whole number of minutes from 5 to 120 — e.g. `daoris settings quiet 15`."
+      ],
+      "after": null
+    },
+    {
+      "name": "drain",
+      "argv": [
+        "drain",
+        "20"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a staged build holds new work for 20 minutes at most; then work starts again, and it installs once nothing runs.",
+        "  Written to <config> — read at the update's next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"drainMinutes\": 20\n}\n"
+    },
+    {
+      "name": "drain 0",
+      "argv": [
+        "drain",
+        "0"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: how long an update's drain may hold new work is a whole number of minutes from 1 to 120 — e.g. `daoris settings drain 10`."
       ],
       "after": null
     },

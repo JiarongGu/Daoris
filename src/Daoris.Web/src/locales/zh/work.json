@@ -404,7 +404,7 @@
   "work.act.resumeQuest": "恢复委托",
   "work.sitting.Paused": "已随需求 `#{{pause}}` 暂缓；恢复后会继续——`daoris ask resume {{pause}}`。",
   "work.sitting.Paused_quest": "随委托 `#{{pause}}` 暂缓；恢复后会继续——`daoris quest resume {{pause}}`。",
-  "work.sitting.forUpdate": "有一个更新在等本机的会话结束：安装完成并重新启动之前，不会开始新的工作。「暂不更新」或 `daoris update --cancel` 可让工作先继续。",
+  "work.sitting.forUpdate": "有一个更新在等本机的会话结束：安装完成并重新启动之前，或等待时限（`daoris settings drain`）到达之前，不会开始新的工作。「暂不更新」或 `daoris update --cancel` 可让工作先继续。",
   "work.sitting.TakenElsewhere": "委托 `#{{quest}}` 已在 {{machine}} 上由会话 `{{session}}` 接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_another": "委托 `#{{quest}}` 已在另一台机器上接下：这次接下属于对方，所以本机不会接续会话 `{{last}}`。",
   "work.sitting.TakenElsewhere_reopened": "委托 `#{{quest}}` 的接下因你重新打开了它所基于的工作而失效：这次接下不属于本机，所以不会接续会话 `{{last}}`。",

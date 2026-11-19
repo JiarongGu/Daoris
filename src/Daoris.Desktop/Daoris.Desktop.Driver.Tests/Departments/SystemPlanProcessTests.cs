@@ -10,7 +10,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
-public sealed class SystemPlanProcessTests : IDisposable
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class SystemPlanProcessTests: IDisposable
 {
     private const string Unit = "run:r1";
     private static readonly NodeDeclaration Apply = new(NodeKinds.Apply, NodeKinds.Apply, 1, NodeReach.Performed);

@@ -6,7 +6,7 @@ Daoris ships as an install: a folder with one program to run, `Daoris.exe`, the 
 category folders beside it. The install's `data/` is the Daoris home. Every machine-local path is derived from `DAORIS_HOME`
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
 Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
-in `update/staged/` beside a running one. The application drains its work, closes, and the launcher swaps `app/`, confirms the
+in `update/staged/` beside a running one. The application drains its work, holding new work for a bound at most, closes, and the launcher swaps `app/`, confirms the
 new build, or rolls back. A release that changes a stored shape converts nothing: the home's history is purged, and nothing
 reads an older shape (rule 51). The build's own plugins (`app/plugin-offers/`) that are installed older update
 at that start, before any hook runs (plugins area, rule 18a).
@@ -163,7 +163,12 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 38. While it drains, the loop starts nothing new but still looks: endings are reported, plugins told, sync runs. A press that
     starts a process or changes a repository through git waits for the restart; one that starts no process goes on: a stop, a
     take-back, an answer, a word to a session, a workflow step's act, the drained look holding any quest it releases. Once applying,
-    every press waits. (from D139)
+    every press waits. A drain holds new work for the machine's `drain` setting at most (`drainMinutes` in `driver.json`, 10
+    minutes by default, 1 to 120, at Settings → Agents and sessions, by `daoris settings drain <minutes>` or `SET_DRAIN`), which
+    `InstallUpdater` reads at each look (`Drv/Settings/DrainSetting`). Past it the drain defers (`deferred`, said once as `update.deferred`): the
+    loop's starts and the presses go on, the mode stays *when idle*, and the build installs at the first look that reads the work
+    idle, or at the person's word; a newer build drains anew. The banner says until when a drain holds new work, and of a deferred
+    build that it waits, on what and since when, with *Update now* and *Not now*. (from D139, D327)
 39. Idle is no driven session running, no conversation's turn in flight and no run's plugin step in flight: an attempt a plugin
     performs that is recorded, sent or unknown on a run that goes on, which the runtime governs at a node its graph declares while
     its plugin's process is up, and whose step waits on no role's act (`PluginStepsInFlight`), so a release or a deploy is never

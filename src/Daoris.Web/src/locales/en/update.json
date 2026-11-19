@@ -2,6 +2,8 @@
   "update.label": "Update",
   "update.waiting": "Daoris {{version}} is ready to install.",
   "update.draining": "Daoris {{version}} installs when the work running now ends; nothing new starts meanwhile.",
+  "update.until": "New work waits until {{time}} at the latest.",
+  "update.deferred": "Daoris {{version}} has waited to install since {{since}}; new work starts again, and it installs once nothing runs.",
   "update.running": "{{count}} session still running.",
   "update.running_other": "{{count}} sessions still running.",
   "update.steps": "{{count}} plugin step still under way.",

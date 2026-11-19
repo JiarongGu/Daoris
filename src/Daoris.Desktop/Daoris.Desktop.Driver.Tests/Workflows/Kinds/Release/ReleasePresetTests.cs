@@ -8,7 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// needed, *Change live config* where it is, and *Check release* after either. A run through the preset's after-release steps with "not
 /// needed" passes the config step on the record naming both holders, and the check goes on. Seen failing first.
 /// </summary>
-public sealed class ReleasePresetTests : NodeRunFixture
+[Reaches("examples/plugins", Why = "it reads the example plugins as shipped (REACHPLUGIN1)")]
+public sealed class ReleasePresetTests: NodeRunFixture
 {
     private const string Preset = "pull-request-release";
 
