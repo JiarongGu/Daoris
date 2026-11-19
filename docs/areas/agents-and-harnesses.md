@@ -199,7 +199,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     agent. (D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home; a start on another
     agent is on another account. A resume judges that account as the walk does: a whole window with its reset ahead cools it
-    until then, unless the person picked it. (D131, D137, D206)
+    until then, unless the person picked it. (D131, D137, D206) The look reads that judgement without a probe for words held for
+    the account (`HarnessRoster.OwnHold`, one code with the resume's): present, in the set, not kept, cooling or refused, and its
+    last reading not signed out; an unknown sign-in is usable, as a start treats it. (D348)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150) An
     agent that declares its stored sign-in (`IStoredSignIn`, Claude Code's `.credentials.json`) is read for its shape alone,
     whether each token is there and when the access token expires, never a value. A start that has counted its account renews
