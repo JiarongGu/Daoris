@@ -79,11 +79,10 @@ describe('the session panel in the Work frame', () => {
     await waitFor(() => expect(within(story).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       expect.stringContaining('read it'), expect.stringContaining('said 1'), expect.stringContaining('said 2'),
     ]));
-    expect(within(region).getByRole('textbox', { name: i18n.t('work.session.composer.label') })).toBeInTheDocument();
-    // The old page's dock, its waiting panel's handle and its box are gone.
+    // The composer is the panel's, at its foot; the old page's dock and its waiting panel's handle are gone.
+    expect(within(region.querySelector('[data-region="composer"]') as HTMLElement).getByRole('textbox', { name: 'Message' })).toBeInTheDocument();
     expect(document.querySelector('[data-dock]')).toBeNull();
     expect(document.querySelector('[data-wait-panel]')).toBeNull();
-    expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
   it('sends the composer\'s words through the session\'s own path', async () => {
@@ -96,9 +95,8 @@ describe('the session panel in the Work frame', () => {
     });
     show('c0ffee11');
 
-    const box = await within(await panel()).findByRole('textbox', { name: i18n.t('work.session.composer.label') });
-    await userEvent.type(box, 'look at the budget');
-    await userEvent.click(within(await panel()).getByRole('button', { name: new RegExp(i18n.t('work.session.composer.send')) }));
+    const box = await within(await panel()).findByRole('textbox', { name: 'Message' });
+    await userEvent.type(box, 'look at the budget{Enter}');
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.objectContaining({
       payload: expect.objectContaining({ id: 'c0ffee11', text: 'look at the budget' }),

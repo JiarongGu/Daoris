@@ -1,7 +1,15 @@
 import { type ReactNode, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import { type useSessionDiff, usePostChannel, type withCall } from '../../bridge/shell';
-import type { Notify } from '../../design/ui';
+import { type Notify, SESSION_ACTIVE } from '../../design/ui';
+import { type EarlierPart, EarlierParts } from '../conversation/EarlierParts';
+import { type Said, SaidDoors } from '../conversation/saidDoors';
+import type { useHeadAsks } from '../head/useHeadAsks';
+import { beganLine } from '../head/partsLife';
+import type { PartRows } from '../head/partRows';
+import { lineMembersBefore } from '../lineState';
+import type { coolingFor } from '../say';
+import { AttendedComposer } from './AttendedComposer';
 import { sentence } from '../../locales/format';
 import { channelRefusal } from '../channel';
 import { useLineRows } from '../exchanges/useLineRows';
@@ -63,8 +71,15 @@ export function changesOf(diff: ReturnType<typeof useSessionDiff>['data']): Chan
  */
 export function AttendedSessionPanel({
   t, notify, session, boxState, words, boxWords, waitsState, headState, grouping, roster, refusal, openPreview, along, band, dock,
-  prelude, diff,
+  prelude, diff, asks, rootOf, attend, coolsUntil, partRows,
 }: {
+  asks: ReturnType<typeof useHeadAsks>;
+  rootOf: (repository: string) => string | null | undefined;
+  attend: (id: string) => void;
+  /** When the account a parked or ended driven record ran on cools until, which holds the words it goes on with. */
+  coolsUntil: ReturnType<typeof coolingFor>;
+  /** How each part of its line began, for *Earlier* and the parts' boundary lines. */
+  partRows: PartRows;
   t: TFunction;
   notify: Notify;
   session: ReturnType<typeof useAttendedSession>;
@@ -132,7 +147,6 @@ export function AttendedSessionPanel({
   const line: StateLine = panelHead.line ?? { kind: 'unread', since: null, cause: null } as unknown as StateLine;
   const maker = roster.find((row) => row.door === attended.door)?.product || attended.door;
   const head = headFactsOf({ session: attended, line, title: panelHead.title, maker });
-  const refused = refusal?.session === attended.id ? refusal.text : null;
   const onAskWord = (text: string) => {
     const ask = attended.ask;
     if (!ask) return;
@@ -151,41 +165,73 @@ export function AttendedSessionPanel({
     else if (box.kind === 'ask') onAskWord(text);
     else boxWords.onSay(text);
   };
-  const takes = box.kind !== 'none' && box.kind !== 'line';
+  const beganOf = (id: string) => {
+    const part = attendedEntry?.parts.find((each) => each.session === id);
+    return attendedEntry && part && part.began !== 'opened' ? beganLine(t, part, attendedEntry.parts, partRows) : undefined;
+  };
+  // The line's parts before the one it heads, by its membership (each record's `line`), and how each began.
+  const earlier: EarlierPart[] = here ? lineMembersBefore(session.sessions.data, attended.id).flatMap((id) => {
+    const row = (session.sessions.data ?? []).find((each) => each.id === id);
+    return row ? [{ id, adapter: row.door, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }] : [];
+  }) : [];
+  const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
+  const doors: Said = {
+    chat: attended.kind === 'chat',
+    onSession: attend,
+    // Words that cannot go on here: one press starts a conversation with them, or the same session goes on handed Daoris's brief.
+    onStartFrom: rootOf(attended.repository) ? onStartFrom : undefined,
+    onGoOnBrief: rootOf(attended.repository) ? onGoOnBrief : undefined,
+    onSayAgain,
+    cooling: coolsUntil && attended.kind !== 'chat' ? {
+      until: coolsUntil, quest: attended.quest, onGoOnNew, pending: goOnNew.isPending,
+      answer: newSession?.session === attended.id ? newSession.answer : null,
+    } : undefined,
+    reasons: {
+      from: attended.door, to: session.harnesses.data?.adapter, door: session.harnesses.data?.adapter, agent: maker,
+    },
+  };
   return (
     <FileOpener.Provider value={openPreview}>
-      <SessionPanel
-        facts={{
-          id: attended.id, head, track: null, story, waits: [], changes: changesOf(diff), now: Date.now(),
-          reads: readsOf(box, Boolean(turns.taking)), onAnswer: () => {}, onSend,
-          onFile: (path) => openPreview({ path }),
-        }}
-        acts={panelHead.acts}
-        chips={<HeadChips session={attended} supervision={panelHead.chip} />}
-        track={panelHead.track || undefined}
-        asking={panelHead.asking || undefined}
-        band={band}
-        dock={dock}
-        reading={{ scroller, atTail: !reading.away, toTail: reading.toTail }}
-        story={(
-          <SessionStory
-            session={attended.id} reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller} prelude={prelude}
-            rowHome={lines?.home}
-          />
-        )}
-        composer={(
-          <div className="grid gap-1">
-            <PanelComposer
-              key={attended.id}
-              reads={readsOf(box, Boolean(turns.taking))}
-              chip={`${maker} · ${modelWords(head)}`}
-              onSend={onSend}
-              disabled={!takes}
+      <SaidDoors.Provider value={doors}>
+        <SessionPanel
+          facts={{
+            id: attended.id, head, track: null, story, waits: [], changes: changesOf(diff), now: Date.now(),
+            reads: readsOf(box, Boolean(turns.taking)), onAnswer: () => {}, onSend,
+            onFile: (path) => openPreview({ path }),
+          }}
+          acts={panelHead.acts}
+          chips={<HeadChips session={attended} supervision={panelHead.chip} />}
+          track={panelHead.track || undefined}
+          asking={panelHead.asking || undefined}
+          band={band}
+          dock={dock}
+          reading={{ scroller, atTail: !reading.away, toTail: reading.toTail }}
+          story={(
+            <SessionStory
+              session={attended.id} reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller}
+              rowHome={lines?.home}
+              prelude={(
+                <>
+                  {prelude}
+                  {/* The parts it continues, above it and read-only; keyed by the part, so attending another starts the count again. */}
+                  {earlier.length > 0 && (
+                    <EarlierParts key={`${attended.id}:${session.openedAt ?? ''}`} line={earlier} at={session.openedAt} scroller={scroller} />
+                  )}
+                </>
+              )}
             />
-            {refused && <p role="alert" className="m-0 text-small text-ink-danger">{refused}</p>}
-          </div>
-        )}
-      />
+          )}
+          composer={box.kind === 'none' ? null : (
+            <PanelComposer reads={readsOf(box, Boolean(turns.taking))} chip={`${maker} · ${modelWords(head)}`}>
+              <AttendedComposer
+                t={t} notify={notify} session={session} boxState={boxState} words={words} boxWords={boxWords} asks={asks}
+                waitsState={waitsState} headState={headState} refusal={refusal} roster={roster} rootOf={rootOf} attend={attend}
+                onAskWord={onAskWord} askSending={postChannel.isPending}
+              />
+            </PanelComposer>
+          )}
+        />
+      </SaidDoors.Provider>
     </FileOpener.Provider>
   );
 }

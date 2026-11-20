@@ -2,6 +2,7 @@ import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next';
 import { EmptyState, SkeletonRows } from '../../design/ui';
 import { useRootRem, useWidth } from '../../design/useWidth';
+import { Composer } from '../conversation/Composer';
 import { useFollowTail } from '../conversation/followTail';
 import type { Track } from '../track/passage';
 import { ChangesRail, type ChangesFacts, changesFact } from './ChangesRail';
@@ -90,7 +91,7 @@ export function SessionPanel({ facts, band, acts, chips, track, asking, dock, co
   acts?: ReactNode;
   /** The host's dock (`SessionDock`), in place of the cards of `facts.waits`: the page's, which reads its waits itself. */
   dock?: ReactNode;
-  /** The composer's foot where the host has more to say than the composer: a line where nothing takes words. */
+  /** The host's composer (`PanelComposer` over the box the session is offered); null where the session takes no words. */
   composer?: ReactNode;
   /** The host's drawing of the story, in place of the stream over `facts.story`: the page's, with its way through the record. */
   story?: ReactNode;
@@ -188,16 +189,23 @@ export function SessionPanel({ facts, band, acts, chips, track, asking, dock, co
       </div>
       {band && <div data-region="band" className="shrink-0">{band}</div>}
       {dock ?? (facts.waits.length > 0 && <Dock waits={facts.waits} now={facts.now} narrow={layout.narrow} onAnswer={facts.onAnswer} />)}
-      <div data-region="composer" className="shrink-0">
-        {composer ?? (
-          <PanelComposer
-            reads={facts.reads}
-            chip={`${head.maker} · ${modelWords(head)}`}
-            onSend={facts.onSend}
-            disabled={loading}
-          />
-        )}
-      </div>
+      {composer !== null && (
+        <div data-region="composer" className="shrink-0">
+          {composer ?? (
+            <PanelComposer reads={facts.reads} chip={`${head.maker} · ${modelWords(head)}`}>
+              <Composer
+                key={facts.id}
+                live={!loading}
+                endings={false}
+                attachments={false}
+                placeholder={t('work.session.composer.placeholder')}
+                onSend={(words) => facts.onSend(words.trim())}
+                onFinish={() => {}}
+              />
+            </PanelComposer>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -12,9 +12,12 @@ export type StoryWho = 'you' | 'daoris' | 'supervisor' | 'agent' | string;
 
 /** One line of the session's story, in the order it happened (`at`, ms). */
 export type StoryItem =
-  | { kind: 'owner'; key: string; at: number; who: StoryWho; text: string; held: boolean }
+  | { kind: 'owner'; key: string; at: number; who: StoryWho; text: string; held: boolean; reaches?: Block['reaches'] }
   | { kind: 'agent'; key: string; at: number; text: string }
-  | { kind: 'note'; key: string; at: number; text: string }
+  /** A driver's note, its block kept for the doors it offers (*Say it again*, *Start a conversation*, the session it went to). */
+  | { kind: 'note'; key: string; at: number; text: string; block: Block }
+  /** Words a cooling account holds at a turn's end, with *Go on in a new session*. */
+  | { kind: 'waiting'; key: string; at: number; turn: Turn }
   | { kind: 'tools'; key: string; at: number; calls: { kind: CallKind; count: number }[]; failed: number; files: number; blocks: Block[] }
   | { kind: 'step'; key: string; at: number; run: string; node: string; edge: 'start' | 'end'; mark: Mark | 'ended'; attempt: number | null }
   | { kind: 'helper'; key: string; at: number; question: string; agent: string | null; state: string | null; helper: string | null;
@@ -107,17 +110,22 @@ function turnLines(turn: Turn, cards: ReadonlyMap<string, ExchangeCard>, answere
       close();
       if (block.kind === 'message' && block.text) lines.push({ kind: 'agent', key: `said:${block.key}`, at: time(block.at), text: block.text });
       else if (block.kind === 'held' && block.text) {
-        lines.push({ kind: 'owner', key: `held:${block.key}`, at: time(block.at), who: 'you', text: block.text, held: !block.settled });
-      } else if (block.kind === 'note' && block.text) lines.push({ kind: 'note', key: `note:${block.key}`, at: time(block.at), text: block.text });
+        lines.push({
+          kind: 'owner', key: `held:${block.key}`, at: time(block.at), who: 'you', text: block.text, held: !block.settled, reaches: block.reaches,
+        });
+      } else if (block.kind === 'note' && (block.text || block.code)) {
+        lines.push({ kind: 'note', key: `note:${block.key}`, at: time(block.at), text: block.text ?? '', block });
+      }
     }
   }
   close();
+  if (turn.waiting) lines.push({ kind: 'waiting', key: `waiting:${turn.key}`, at: lines[lines.length - 1]?.at ?? time(ask?.at), turn });
   return lines;
 }
 
 /** Of lines at one moment: a step's end, then the next step's start, then what happened inside it. */
 const RANK: Readonly<Record<StoryItem['kind'], number>> = {
-  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, helper: 1, line: 1,
+  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, helper: 1, line: 1, waiting: 1,
 };
 
 /**

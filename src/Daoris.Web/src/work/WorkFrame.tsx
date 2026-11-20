@@ -19,6 +19,7 @@ import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
 import { SessionDock } from './session/SessionDock';
 import { AttendedSessionPanel } from './session/AttendedSessionPanel';
+import { coolingFor } from './say';
 import { SessionBand } from './band/SessionBand';
 import { dockOf } from './waits/dock';
 import { useRunWaitDoors } from './head/useRunWaitDoors';
@@ -287,6 +288,10 @@ export function WorkFrame({
   const agentRoster = agentRosterOf(t, roster, accounts.data);
   // What the session's work changed, for the panel's Changes rail: the review's own read of its tree.
   const diff = useSessionDiff(attended && here ? attended.id : null, attended ? { updated: attended.updated, live } : null);
+  // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose own account cools.
+  const between = attended && here && attended.kind !== 'chat'
+    && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
+  const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
 
   const asks = useHeadAsks({ selected, chosen, attend, setDocked, closeDock, terminal, terminals, openView });
   const { setArchivingEnded, doors } = asks;
@@ -407,6 +412,11 @@ export function WorkFrame({
                   nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
                 }}
                 diff={diff.data}
+                asks={asks}
+                rootOf={rootOf}
+                attend={attend}
+                coolsUntil={coolsUntil}
+                partRows={partRows}
                 prelude={(
                   <AttendedPane
                     t={t}

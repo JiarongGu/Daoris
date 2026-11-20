@@ -4,7 +4,9 @@ import { SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { Markdown } from '../conversation/Markdown';
 import { LineRow, type LineRowHome } from '../exchanges/LineRows';
+import { NewSessionDoor } from '../conversation/NoteLines';
 import { rowMark } from '../track/passage';
+import { HeldWhen, SaidNote } from './SaidLines';
 import type { StoryItem, StoryWho } from './story';
 
 /** The session's agent as its lines name it: its maker and the model that ran, null where the record named none. */
@@ -96,7 +98,7 @@ function Line({ item, actor, home }: { item: StoryItem; actor: StoryActor; home?
         <div data-part="owner" className="grid gap-0.5 rounded-control bg-sunken px-2.5 py-1.5">
           <Actor tone="accent">{who(item.who)}</Actor>
           <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
-          {item.held && <span className="text-meta text-ink-faint">{t('work.session.story.held')}</span>}
+          {item.held && <HeldWhen reaches={item.reaches} />}
         </div>
       );
     case 'agent':
@@ -108,10 +110,13 @@ function Line({ item, actor, home }: { item: StoryItem; actor: StoryActor; home?
       );
     case 'note':
       return (
-        <p data-part="note" className="m-0 text-small text-ink-soft">
-          <span aria-hidden="true">◇ </span><Actor>{t('work.session.story.daoris')}</Actor> {item.text}
-        </p>
+        <div data-part="note" className="flex min-w-0 items-baseline gap-1 text-small text-ink-soft">
+          <span aria-hidden="true">◇</span><Actor>{t('work.session.story.daoris')}</Actor>
+          <div className="min-w-0 flex-1"><SaidNote block={item.block} /></div>
+        </div>
       );
+    case 'waiting':
+      return <div data-part="waiting"><NewSessionDoor turn={item.turn} /></div>;
     case 'helper':
       return (
         <div data-part="helper" className="grid gap-0.5 pl-4">
