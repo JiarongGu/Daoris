@@ -125,7 +125,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (in the page's red, *9+* past nine) and
+19. Each main window wears its own workspace's waiting count on its taskbar button (white on the light theme's red in either theme, *9+* past nine) and
     in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
     subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
     main window is forgotten there, its flash going to the first. (from D196, D108)
@@ -285,7 +285,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
     a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
     aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
-    its role's `-ink`. `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
+    its role's `-ink`; a glyph wears the inks and never the accent, beside a link's blue words too, every story's render held
+    to it (`glyphInk.test.tsx`). `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
     themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
     and a second run changes nothing. (from D330, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,

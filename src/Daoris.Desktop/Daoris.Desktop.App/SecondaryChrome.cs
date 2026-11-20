@@ -56,7 +56,7 @@ internal sealed class SecondaryChrome : IReloadableWindow
             var palette = ChromePalette.For(startsDark());
             form.CaptionButtonColors = MainForm.CaptionColors(palette);
             // For another main window, its own workspace's count on its own button, which the kit's overlay puts back each time Explorer makes it.
-            _badge = new TaskbarOverlay(form).Wear(palette);
+            _badge = new TaskbarOverlay(form).Wear();
         }
 
         // A person on System who switches their OS theme before the page is up still gets a matching title bar.
@@ -143,7 +143,6 @@ internal sealed class SecondaryChrome : IReloadableWindow
         {
             // Frameless: the kit's theme reaches its caption, and the buttons are this window's to paint, as the main one's are.
             _form.CaptionButtonColors = MainForm.CaptionColors(palette);
-            _badge?.Wear(palette);
             return;
         }
 
