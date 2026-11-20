@@ -16,7 +16,7 @@ type MenuHighlight = 'raised' | 'accent';
 const MenuHighlightContext = createContext<MenuHighlight>('raised');
 
 /** A row's shape: one density for every menu, the highlight by the menu's look, a disabled row a fact rather than an act. */
-const MENU_ROW = 'flex items-center gap-2 rounded-control px-2 py-1.5 text-small outline-none data-[disabled]:cursor-default data-[disabled]:text-ink-faint';
+const MENU_ROW = 'flex items-center gap-2 rounded-control px-2 py-1.5 text-small outline-none data-[disabled]:cursor-default data-[disabled]:text-ink-disabled';
 const MENU_LOOK: Record<MenuHighlight, string> = {
   raised: 'cursor-pointer text-ink-soft data-[highlighted]:bg-raised data-[highlighted]:text-ink',
   accent: 'cursor-default text-ink data-[highlighted]:bg-accent-soft',

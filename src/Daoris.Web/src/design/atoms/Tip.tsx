@@ -146,7 +146,7 @@ export function Tip({ content, children, side = 'bottom' }: {
           // workspace scope moved into the app strip and its tooltip landed on top of its own
           // options list. The rule belongs here rather than at that one call site.
           className={cn(
-            'pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]',
+            'pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_17_20/0.12)]',
             held && FRAME_HELD,
           )}
         >

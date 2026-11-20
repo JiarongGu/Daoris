@@ -198,7 +198,7 @@ export function ListPane({
           onKeyDown={onOverKey}
           className={cn(
             'absolute inset-y-0 left-full z-30 flex flex-col border-r border-line bg-page outline-none',
-            'shadow-[6px_0_24px_rgb(15_12_8/0.12)]',
+            'shadow-[6px_0_24px_rgb(15_17_20/0.12)]',
           )}
           style={{ width: layout.width }}
         >

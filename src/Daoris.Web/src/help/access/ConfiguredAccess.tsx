@@ -104,7 +104,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         // A checkout is named by its repository, as written: authored, never translated.
         label={spec.served ? operation : t(`help.grants.op.${spec.id}.${operation}`)}
         // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what is chosen.
-        className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
+        className={cn('text-small', (!held || later) && 'cursor-not-allowed')}
       />
     );
     if (later) {

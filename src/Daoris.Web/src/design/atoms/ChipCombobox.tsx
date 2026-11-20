@@ -8,6 +8,7 @@ export const CHIP = cn(
   'cursor-pointer transition-colors duration-(--duration-quick) hover:bg-accent-soft hover:text-ink',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
   'aria-expanded:bg-accent-soft aria-expanded:text-ink',
+  'disabled:cursor-default disabled:text-ink-disabled disabled:hover:bg-raised disabled:hover:text-ink-disabled',
 );
 
 /** One row: `id` is its own among the rows, `value` what the active row follows and a choice hands back; one may stand twice. */
