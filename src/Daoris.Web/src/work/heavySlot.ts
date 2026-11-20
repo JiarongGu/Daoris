@@ -32,9 +32,9 @@ export type AdmissionRun = { kind: 'queue' | 'session'; session?: string | null;
  */
 export type HeavyAdmission = { capacity: number; holds: AdmissionRun[]; waits: AdmissionRun[] };
 
-/** A repository's slot as `HEAVY_SLOT` answers it: no holder is no heavy run now; `refusal` where it could not be read. */
+/** A repository's slots as `HEAVY_SLOT` answers it, the first taken first: no holder is no heavy run now; `refusal` where it could not be read. */
 export type HeavySlot = {
-  repository: string; holder?: HeavyHolder | null; waiters: HeavyWaiter[]; refusal?: string | null; admission?: HeavyAdmission;
+  repository: string; holders: HeavyHolder[]; waiters: HeavyWaiter[]; refusal?: string | null; admission?: HeavyAdmission;
 };
 
 /** A session's part in its repository's slot: the run holding it at a gate, failed at one, or waiting behind another. */
@@ -59,10 +59,16 @@ export function readHeavySlot(raw: unknown): HeavySlot | null {
     .map(record)
     .filter((row): row is Record<string, unknown> => row !== null && text(row.since) !== null)
     .map((row) => ({ session: text(row.session), since: row.since as string }));
-  const held = record(answer.holder);
+  const holders = (Array.isArray(answer.holders) ? answer.holders : []).map(readHolder).filter((one): one is HeavyHolder => one !== null);
+  const admission = readAdmission(answer.admission);
+  return { repository, holders, waiters, refusal: text(answer.refusal), ...(admission ? { admission } : {}) };
+}
+
+function readHolder(raw: unknown): HeavyHolder | null {
+  const held = record(raw);
   const now = record(held?.now);
   const failed = record(held?.failed);
-  const holder: HeavyHolder | null = held && text(held.since) ? {
+  return held && text(held.since) ? {
     session: text(held.session),
     run: text(held.run),
     gates: Array.isArray(held.gates) ? held.gates.filter((gate): gate is string => typeof gate === 'string') : [],
@@ -72,8 +78,6 @@ export function readHeavySlot(raw: unknown): HeavySlot | null {
       : null,
     failed: failed && text(failed.gate) && typeof failed.exit === 'number' ? { gate: failed.gate as string, exit: failed.exit } : null,
   } : null;
-  const admission = readAdmission(answer.admission);
-  return { repository, holder, waiters, refusal: text(answer.refusal), ...(admission ? { admission } : {}) };
 }
 
 function readRuns(raw: unknown): AdmissionRun[] {
@@ -99,14 +103,18 @@ export function heavyPartOf(slot: HeavySlot | null | undefined, session: string)
   if (!slot) return null;
   const asking = slot.admission?.waits.find((run) => run.session === session);
   if (asking && slot.admission) return { kind: 'admission', holds: slot.admission.holds.length, capacity: slot.admission.capacity, since: asking.since };
-  const { holder } = slot;
-  if (holder?.session === session) {
+  const holder = heldBy(slot, session);
+  if (holder) {
     if (holder.failed) return { kind: 'failed', gate: holder.failed.gate };
     const gate = holder.now?.gate ?? holder.gates[0];
     if (!gate) return null;
     return { kind: 'running', n: (holder.now?.at ?? 0) + 1, total: Math.max(holder.gates.length, 1), gate, since: holder.now?.since ?? holder.since };
   }
   const waiting = slot.waiters.find((waiter) => waiter.session === session);
-  // Behind the holder's session; a holder with none, or a slot taken by a run that has not said what it runs yet, names no session.
-  return waiting ? { kind: 'waiting', behind: holder?.session ?? null, since: waiting.since } : null;
+  // Behind the first holder's session; a holder with none, or a slot taken by a run that has not said what it runs yet, names no session.
+  return waiting ? { kind: 'waiting', behind: slot.holders[0]?.session ?? null, since: waiting.since } : null;
 }
+
+/** The slot `session`'s own run holds, or null where it holds none. */
+export const heldBy = (slot: HeavySlot, session: string): HeavyHolder | null =>
+  slot.holders.find((holder) => holder.session === session) ?? null;

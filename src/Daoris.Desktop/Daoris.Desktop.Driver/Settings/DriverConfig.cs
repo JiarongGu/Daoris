@@ -38,6 +38,9 @@ public sealed record DriverConfig(
     /// <summary>How long a run's step may stand vacant before it gives up, in hours (<see cref="VacancySetting"/>); null is the default.</summary>
     public int? VacancyHours { get; init; }
 
+    /// <summary>How many checks the machine runs at once (<see cref="ChecksSetting"/>); null is <c>auto</c>, by its memory.</summary>
+    public int? Checks { get; init; }
+
     public ManifestSetting Manifest { get; init; } = ManifestSetting.Unset;
 
     public bool Draining { get; init; }

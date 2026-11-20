@@ -5,6 +5,7 @@ import type { StarterDoor } from '../help/starters';
 import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from '../plugins/catalog';
 import { PluginSettings } from './plugins/PluginSettings';
+import { ChecksSetting } from './machine/ChecksSetting';
 import { CopyBoundSetting } from './machine/CopyBoundSetting';
 import { ManifestBoundsSetting } from './machine/ManifestBoundsSetting';
 import { UxTrailSetting, type UxTrailShown } from './machine/UxTrailSetting';
@@ -26,6 +27,7 @@ export type DriverFacts = {
   /** Minutes a session may be quiet before Daoris looks in; absent where the answer lacks it. */
   quiet?: number | null;
   drain?: number | null;
+  checks?: number | null;
   /** How many sessions Daoris starts at once here, and the tier of a terminal's presses; absent where the answer lacks it. */
   cap?: number | null;
   terminal?: TerminalTier | null;
@@ -47,11 +49,11 @@ export type DriverFacts = {
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
-export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onDrain, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
+export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onDrain, onChecks, onManifest, onCap, onTerminal, onAccess, onGitAccess, uxTrail }: {
   facts: DriverFacts;
-  /** The settings held in minutes as the driver's list declares them, which the domain reads from the list. */
-  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared };
-  busy: { access: boolean; gitAccess?: boolean };
+  /** The settings held in minutes, and the checks' bounds, as the driver's list declares them, which the domain reads from the list. */
+  minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared; checks?: MinutesDeclared };
+  busy: { access: boolean; gitAccess?: boolean; checks?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
@@ -59,6 +61,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
   onQuiet?: (minutes: number) => void;
   onDrain?: (minutes: number) => void;
+  onChecks?: (checks: number | null) => void;
   /** One bound of the manifest setting the person typed and left, the copy's in megabytes: whole, and not the one held. */
   onManifest?: (bound: { files: number } | { minutes: number } | { copy: number }) => void;
   /** A cap the person typed and left: whole, one or more, and not the one held. */
@@ -160,6 +163,9 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           )}
 
           {facts.terminal && onTerminal && <TerminalTierSetting held={facts.terminal} changes={facts.terminalChanges} onSet={onTerminal} />}
+
+          {/* How many checks the machine runs at once: auto by its memory, or a pinned number. Null is auto; absent is no answer. */}
+          {facts.checks !== undefined && minutes.checks && onChecks && <ChecksSetting setting={minutes.checks} held={facts.checks} onSet={onChecks} busy={busy.checks} />}
 
           {facts.pluginsFolder && (
             <SettingRow

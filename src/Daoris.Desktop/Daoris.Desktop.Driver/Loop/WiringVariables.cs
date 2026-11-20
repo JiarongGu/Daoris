@@ -145,6 +145,7 @@ public static class WiringVariables
         ["DAORIS_HANDED"] = "set by `daoris` on the one start that hands a command between the CLI and the desktop program (ONEWAY1ai-i): which handed it, read and removed at the other's entry so a word is never handed back",
         ["DAORIS_WEB_WORKERS"] = "the web tests' worker count",
         ["DAORIS_MEASURED_PORT"] = "the web's measured check's port, where a checkout's own is not wanted",
+        ["DAORIS_E2E_PORT"] = "the web gate's host port, where a checkout's own is not wanted",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",
         ["DAORIS_STUB_CONFIG_DIR"] = "the stub agent's tests' folder",
         ["DAORIS_STUB_COMPACT_AT"] = "the stub agent's compaction a carried conversation's process is spawned with",        ["DAORIS_OWN_TOOLS"] = "a constant's name, not a variable",

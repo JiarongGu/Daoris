@@ -257,11 +257,25 @@ public sealed class HeavyRunCommandTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Equal(
-            "run-heavy: `engine`'s heavy-run slot is held by its verification run v-0123456789abcdef, which runs the repository's heavy gates on "
-            + "its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the checks your "
-            + "change reaches, filtered, instead.",
+            "run-heavy: `engine`'s heavy-run slots are held by the verification run v-0123456789abcdef: the verification runs the repository's heavy "
+            + "gates on its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the checks "
+            + "your change reaches, filtered, instead.",
             Assert.Single(said.Lines));
         Assert.Empty(HeavySlot.Look(_fixture.Home, key).Waiters);
+    }
+
+    /// <summary>🔴 A session's run not admitted for memory beside its verification says memory is why, and does not wait.</summary>
+    [Fact]
+    public void A_session_s_run_not_admitted_for_memory_says_memory_is_why()
+    {
+        var memory = new CheckWait(CheckWait.Memory, new Dictionary<string, string> { ["free"] = "3.0", ["need"] = "16", ["starting"] = "1" });
+
+        Assert.Equal(
+            "this session's run is not admitted now (it would wait for memory: 3.0 GB free, a check needs 16 GB with 1 still starting), and the "
+            + "verification run v-1 holds one of `engine`'s heavy-run slots: the verification runs the repository's heavy gates on its line, so this "
+            + "session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the checks your change reaches, filtered, instead.",
+            HeavyRun.NotAdmitted(memory, "engine", "v-1"));
+        Assert.StartsWith("`engine`'s heavy-run slots are held by session s-2's heavy run:", HeavyRun.NotAdmitted(CheckWait.OfRepository("engine", "session s-2's heavy run"), "engine", "v-1"));
     }
 
     /// <summary>A person's run behind a verification waits as today, saying behind which run, and they may stop it.</summary>
@@ -459,6 +473,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     private HeavyRunWorld World(string directory, params (string Name, string Value)[] variables) =>
         new(_fixture.Home, directory, name => variables.FirstOrDefault(variable => variable.Name == name).Value)
         {
+            Checks = () => new CheckRules(1, 4, 1, () => null),
             Admission = new AdmissionWaiting(
                 TimeSpan.FromMilliseconds(10), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, _ => true),
         };

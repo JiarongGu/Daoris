@@ -212,7 +212,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         Assert.Equal(("queue", "driver gate"), (queue.GetProperty("kind").GetString(), queue.GetProperty("what").GetString()));
         var asking = Assert.Single(machine.GetProperty("waits").EnumerateArray());
         Assert.Equal(("session", "s-12", "dotnet test --filter Foo"), (asking.GetProperty("kind").GetString(), asking.GetProperty("session").GetString(), asking.GetProperty("what").GetString()));
-        var holder = answer.GetProperty("holder");
+        var holder = Assert.Single(answer.GetProperty("holders").EnumerateArray());
         Assert.Equal("s-12", holder.GetProperty("session").GetString());
         Assert.Equal(["build", "web"], holder.GetProperty("gates").EnumerateArray().Select(gate => gate.GetString()));
         Assert.Equal("web", holder.GetProperty("now").GetProperty("gate").GetString());
@@ -223,7 +223,7 @@ public sealed class DriverModuleHeavyGatesTests : DriverModuleBridge
         Assert.Equal(since + TimeSpan.FromMinutes(5), waiter.GetProperty("since").GetDateTimeOffset());
 
         var absent = await AnswerAsync(module, "HEAVY_SLOT", new { repository = "ghost" });
-        Assert.True(!absent.TryGetProperty("holder", out var none) || none.ValueKind == JsonValueKind.Null);
+        Assert.True(!absent.TryGetProperty("holders", out var none) || none.ValueKind == JsonValueKind.Null);
         Assert.NotNull(absent.GetProperty("refusal").GetString());
     }
 
