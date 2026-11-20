@@ -174,7 +174,7 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     reference kept; the next `--yes` moves it once nothing holds it (`HeldFiles`, where Windows can tell; a move the system refuses
     is left the same way). The browser's native-messaging manifest (`com.anthropic.claude_code_browser_extension`, one per browser,
     outside every account folder, found in the registry on Windows and the browsers' folders elsewhere) has its `path` moved with
-    the account, every other key kept; one naming no moving folder is left (`AccountIdNativeHostStore`). A word id stays
+    the account, every other key kept; one naming no moving folder is left, and one that cannot be written is said with the path to set, never stopping the move (`AccountIdNativeHostStore`). A word id stays
     the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
     account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
     a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the

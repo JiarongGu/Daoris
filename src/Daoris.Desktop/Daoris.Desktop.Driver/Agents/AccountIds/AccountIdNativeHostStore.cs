@@ -73,8 +73,8 @@ internal sealed class AccountIdNativeHostStore : IAccountIdStore
                 if (Under(text, old) is not { } within) continue;
 
                 var path = Path.Combine(moved, within);
-                found.Add(new AccountIdReference(rename, at.Place(manifest), "path"));
-                if (write) Write(manifest, root, path);
+                var refused = write ? Write(manifest, root, path) : null;
+                found.Add(new AccountIdReference(rename, at.Place(manifest), refused is null ? "path" : "path: " + refused));
                 break;
             }
         }
@@ -95,16 +95,18 @@ internal sealed class AccountIdNativeHostStore : IAccountIdStore
         }
     }
 
-    private static void Write(string manifest, JsonObject root, string path)
+    /// <summary>The manifest's path set; null where written, else what to set by hand: the folders have moved by now, so no refusal stops the move.</summary>
+    private static string? Write(string manifest, JsonObject root, string path)
     {
         root["path"] = path;
         try
         {
             JsonFile.Write(manifest, root);
+            return null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            throw new DriverException($"{manifest} did not write ({error.Message.TrimEnd('.')}): the account's folder moved, so set its path to {path}.");
+            return $"not written ({error.Message.TrimEnd('.')}); set its path to {path}";
         }
     }
 

@@ -338,6 +338,44 @@ public sealed class AccountIdMovesTests : IDisposable
         Assert.True(AccountIdMoves.Plan(Home, null, [ours, other]).Nothing);
     }
 
+    /// <summary>🔴 A manifest that cannot be replaced never stops the move between stores: every reference moves and the manifest says what to set.</summary>
+    [Fact]
+    public void A_manifest_that_cannot_be_written_leaves_every_other_reference_moved_and_says_its_path()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var old = HarnessSettings.ProfileHome(Home, Agent, "account-1");
+        Directory.CreateDirectory(Path.Combine(old, "chrome"));
+        var hosts = Path.Combine(_root, "ChromeNativeHost");
+        Directory.CreateDirectory(hosts);
+        var ours = Path.Combine(hosts, "com.anthropic.claude_code_browser_extension.json");
+        File.WriteAllText(ours, new JsonObject { ["path"] = Path.Combine(old, "chrome", "chrome-native-host.bat") }.ToJsonString());
+
+        AccountIdPlan done;
+        using (new FileStream(ours, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            done = AccountIdMoves.Apply(Home, null, [ours]);
+        }
+
+        var one = done.Moves.Single(move => move.Rename.From == "account-1");
+        Assert.Null(one.Failed);
+        Assert.Contains(one.References, each => each.Where.StartsWith("path", StringComparison.Ordinal) && each.Where.Contains("not written"));
+        Assert.Contains(one.References, each => each.Place.StartsWith("data/knowledge.db", StringComparison.Ordinal));
+        Assert.Equal([("s1", one.Rename.To), ("s2", done.Moves.Single(move => move.Rename.From == "Gmail").Rename.To), ("s3", "account-1"), ("s4", "")],
+            Rows(Knowledge, "SELECT id, coalesce(profile, '') FROM sessions ORDER BY id"));
+        Assert.True(AccountIdMoves.Plan(Home, null, [ours]).Nothing);
+    }
+
+    /// <summary>A refused rename says the processes found holding the folder afterwards, as the first scan does.</summary>
+    [Fact]
+    public void A_refused_rename_names_the_holders_found_after_it()
+    {
+        var said = AccountIdMoves.RefusedWords(new IOException("Access to the path is denied."), [new FileHolder(42, "chrome")]);
+
+        Assert.Contains("chrome (pid 42)", said);
+        Assert.Contains("Access to the path is denied", said);
+        Assert.DoesNotContain("held by", AccountIdMoves.RefusedWords(new IOException("denied."), []));
+    }
+
     private void Write(HomeEntry entry, string json) => File.WriteAllText(DaorisHome.Entry(Home, entry), json);
 
     private JsonObject Read(HomeEntry entry) => Read(DaorisHome.Entry(Home, entry));

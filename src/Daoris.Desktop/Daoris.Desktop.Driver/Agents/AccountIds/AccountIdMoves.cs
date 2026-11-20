@@ -129,8 +129,9 @@ public static class AccountIdMoves
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                failed[rename] = $"its folder did not move ({error.Message.TrimEnd('.')}), so nothing of it changed";
-                if (HeldBy(from) is { Count: > 0 } now) holders[rename] = now;
+                var now = HeldBy(from);
+                if (now.Count > 0) holders[rename] = now;
+                failed[rename] = RefusedWords(error, now);
             }
         }
 
@@ -146,6 +147,10 @@ public static class AccountIdMoves
             ],
             strays);
     }
+
+    /// <summary>The words for a refused rename, with the processes found holding the folder after it.</summary>
+    internal static string RefusedWords(Exception error, IReadOnlyList<FileHolder> holders) =>
+        $"its folder did not move ({error.Message.TrimEnd('.')}){(holders.Count > 0 ? $"; held by {string.Join(", ", holders.Select(holder => holder.Said))}" : "")}, so nothing of it changed";
 
     /// <summary>The processes holding <paramref name="folder"/> or a file in it, each once; none where the system cannot tell (<see cref="HeldFiles"/>).</summary>
     private static IReadOnlyList<FileHolder> HeldBy(string folder) =>
