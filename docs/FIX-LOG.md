@@ -14586,6 +14586,8 @@ installed window is not yet seen.
   Daoris still asked after it, so the next look settles it as the person's and starts a new attempt; a not-known check says it holds
   nothing as passed, in the page's words, and its terminal line names `daoris workflow again <run> <node>` beside the stop; `not-cause`
   is said for a person. A check its executor finds no result and no job of is sent once more as the same attempt, then held `lost`
-  with its newest log's last 20 lines (`LostChecks`), never a red round; held, it holds no slot.
+  with its newest log's last 20 lines on the attempt's own `tail` (`LostChecks`), never a red round; held, it holds no slot. Only a
+  loss nothing explains counts: the executor's own close (an ordinary update) leaves a `closed` mark and is sent again uncounted, and a
+  send's `began` mark tells one cut off while queued from one that ran. A held check's *Run again* stops its old invocation.
 - **Verify:** the filtered driver classes below, each new test seen failing first; on the install, `daoris workflow again
   8e9340198a4c check` once this build is there (the steward's).

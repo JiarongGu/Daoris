@@ -102,7 +102,6 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
 
         Assert.True(worded.Done, worded.Refused);
         await runtime.PassAsync(Look("{}"), CancellationToken.None);
-        if (checks.Sent.Count < 2) await runtime.PassAsync(Look("{}"), CancellationToken.None);
         Assert.Equal(2, checks.Sent.Count);
         Assert.Equal((NodeStates.Active, 2), (Files.Read(unit)!.Statuses["verify"].State, Files.Read(unit)!.Statuses["verify"].Attempt));
         Assert.Equal(AttemptStates.Settled, Files.Read(unit)!.Attempts[0].State);

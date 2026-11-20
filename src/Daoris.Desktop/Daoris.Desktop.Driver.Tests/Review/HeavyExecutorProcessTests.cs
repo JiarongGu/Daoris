@@ -365,6 +365,8 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         await before.DisposeAsync();
 
         Assert.False(File.Exists(VerifyFiles.ResultOf(Home, "v-0000000000000001", "i-a")), "a check cut off writes no result");
+        Assert.True(File.Exists(AttemptMarks.Began(Home, "v-0000000000000001", "i-a", 0)), "its send said it began");
+        Assert.True(File.Exists(AttemptMarks.Closed(Home, "v-0000000000000001", "i-a", 0)), "the executor's own close said why it ended");
         Assert.False(Alive(child), "what its gate left was ended with it");
         Assert.Null(VerifySlot.Look(Home).Holder);
         var after = Executor();

@@ -285,7 +285,16 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// <summary>Every word on a held, failed or in-flight attempt applied; each attempt a done outside stood down has its plugin told.</summary>
     public IReadOnlyList<WorkPerformed> Resolve(Func<string, string, NodeDeclaration?> declared)
     {
+        // A held check's Run again settles its attempt and leaves its node ready, which StandDown skips: its old invocation is told to stop here.
+        var again = records.All().Records.SelectMany(record => record.Attempts
+            .Where(attempt => OnPort(attempt) && attempt is { State: AttemptStates.Held, Resolution: HeldResolutions.Again })
+            .Select(attempt => (record.Unit, attempt))).ToList();
         var done = Person.Resolve(declared);
+        foreach (var (unit, attempt) in again)
+        {
+            if (done.Any(each => each is { What: PerformedWhat.Resolved, Code: HeldResolutions.Again } && each.Unit == unit && each.Node == attempt.Node)) PortOf(attempt.Plugin)?.Stop(attempt.Call.Invocation);
+        }
+
         foreach (var unit in done.Where(each => each is { What: PerformedWhat.Resolved, Code: HeldResolutions.DoneOutside }).GroupBy(each => each.Unit))
         {
             StandDown(unit.Key, [.. unit.Select(each => each.Node)]);

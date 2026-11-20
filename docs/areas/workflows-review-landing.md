@@ -319,9 +319,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     A check that came back unknown with the code `unrun` (Daoris could not run it) settles with no verdict and is asked again as a new
     attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person.
     A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
-    same attempt under its key (again each time where it was still queued, its folder never made); lost again once it began, it is held for
-    the person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt, never run a third time by itself and never a
-    red round. A held check holds no slot: the machine's verification and heavy-run
+    same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
+    that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
+    that closed, is sent again each time and counts for nothing; the second send lost with a start mark and no close mark is held for the
+    person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
+    the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
+    never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
     slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead

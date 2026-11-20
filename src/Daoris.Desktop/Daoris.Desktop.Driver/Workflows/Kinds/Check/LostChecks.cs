@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A check whose verification's process is gone when Daoris asks after it: no result and no job of it left (a restart, an update, a crash
-/// cut it off). It is run once more under its key, as the same attempt; lost again, it is held for the person with the tail of its newest
+/// cut it off; an update or a stop of driving that closed its executor says so in its folder and is no loss to count). It is run once more under its key, as the same attempt; lost again with nothing to explain it, it is held for the person with the tail of its newest
 /// log, never sent a third time by itself and never taken as a red of the work. Held, it holds no slot: the machine's verification and
 /// heavy-run slots are its process's, gone with it, and the run's <c>again</c> asks it anew (<see cref="UnknownChecks"/>).
 /// </summary>
@@ -27,26 +27,36 @@ public static class LostChecks
     internal static (NodeRecord? Next, WorkPerformed Result) Settle(
         NodeRecord record, NodeAttempt attempt, NodeDeclaration node, NodeStatus status, int generation, DateTimeOffset now, string home)
     {
-        // Cut off while still queued for its slots, it left no folder: sent again, as often as that happens.
-        if (attempt.Deliveries < Sends || !Began(home, record.Unit, attempt.Call.Invocation))
+        // Cut off while still queued, or by the executor's own close, or on a first loss nothing explains: sent again. Only losses nothing
+        // explains count, so an update or a stop of driving during a long check never holds it.
+        if (Unexplained(home, record.Unit, attempt) < Sends)
         {
             return (WorkPerformer.Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Active, NodeCause.Daoris)), "redeliver", now),
                 new WorkPerformed(record.Unit, node.Id, PerformedWhat.Redelivered));
         }
 
-        return WorkPerformer.Hold(record, attempt with { Generation = generation, Note = Tail(home, record.Unit, attempt.Call.Invocation) }, Code);
+        return WorkPerformer.Hold(record, attempt with { Generation = generation, Tail = Tail(home, record.Unit, attempt.Call.Invocation) }, Code);
     }
 
-    /// <summary>Whether the attempt began to run: its executor makes its folder first, once both slots are held.</summary>
-    private static bool Began(string home, string unit, string invocation)
+    /// <summary>
+    /// The sends of the attempt that began and were lost with nothing to say why, this one counted: 0 where the current send never began (its
+    /// own start mark is absent, though the folder stands from an earlier send) or where the executor's close ended it. A send's marks are
+    /// numbered by the delivery the attempt counts for it (<see cref="NodeAttempt.Deliveries"/> once its receipt is kept).
+    /// </summary>
+    private static int Unexplained(string home, string unit, NodeAttempt attempt)
     {
         try
         {
-            return Directory.Exists(VerifyFiles.AttemptFolder(home, CheckExecution.RunOf(unit), invocation));
+            var run = CheckExecution.RunOf(unit);
+            var invocation = attempt.Call.Invocation;
+            bool Began(int send) => File.Exists(AttemptMarks.Began(home, run, invocation, send));
+            bool Closed(int send) => File.Exists(AttemptMarks.Closed(home, run, invocation, send));
+            if (!Began(attempt.Deliveries) || Closed(attempt.Deliveries)) return 0;
+            return Enumerable.Range(1, attempt.Deliveries).Count(send => Began(send) && !Closed(send));
         }
         catch (DriverException)
         {
-            return false;
+            return 0;
         }
     }
 
@@ -60,11 +70,25 @@ public static class LostChecks
             var newest = new DirectoryInfo(folder).EnumerateFiles("*.log").OrderByDescending(file => file.LastWriteTimeUtc).ThenByDescending(file => file.Name, StringComparer.Ordinal).FirstOrDefault();
             if (newest is null) return null;
             using var stream = new FileStream(newest.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            if (stream.Length > TailChars * 4L) stream.Seek(-TailChars * 4L, SeekOrigin.End);
+            var cut = stream.Length > TailChars * 4L;
+            if (cut) stream.Seek(-TailChars * 4L, SeekOrigin.End);
             using var reader = new StreamReader(stream);
-            var lines = reader.ReadToEnd().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
-            var tail = string.Join('\n', lines.TakeLast(TailLines));
-            return tail.Length == 0 ? null : tail.Length > TailChars ? tail[^TailChars..] : tail;
+            var text = reader.ReadToEnd().ReplaceLineEndings("\n");
+            if (cut)
+            {
+                // The read started anywhere: inside a line, inside a character. The broken character goes, and the first line it broke.
+                text = text.TrimStart('�');
+                if (text.IndexOf('\n') is var first and >= 0) text = text[(first + 1)..];
+            }
+
+            var tail = string.Join('\n', text.TrimEnd('\n').Split('\n').TakeLast(TailLines));
+            if (tail.Length > TailChars)
+            {
+                tail = tail[^TailChars..];
+                if (char.IsLowSurrogate(tail[0])) tail = tail[1..];
+            }
+
+            return tail.Length == 0 ? null : tail;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

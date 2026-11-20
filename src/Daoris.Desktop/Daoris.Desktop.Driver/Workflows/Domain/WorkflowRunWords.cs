@@ -434,6 +434,13 @@ public static class WorkflowRunWords
             if (graph.NotTaken.Contains(step.Step.Id, StringComparer.Ordinal)) yield return "Not taken: the outcomes reached leave no route to it.";
         }
 
+        // A check held for its lost process: the last of its log, as the terminal's own lines.
+        if (step.Node == NodeKinds.Check && step.Held?.Tail is { Length: > 0 } tail)
+        {
+            yield return "Its log ends:";
+            foreach (var line in tail.ReplaceLineEndings("\n").Split('\n').TakeLast(LostChecks.TailLines)) yield return $"  {line}";
+        }
+
         var kind = step.Step.Kind;
         // The person's words a step keeps, shown as written: a skip's and a not yet's, and a graph run's node's skip, refusal or stop.
         if (kind == WorkflowKinds.Look && step.Node is null && step.Detail is WorkflowRunDetails.Skip or WorkflowRunDetails.NotYet && step.Words is { Length: > 0 } words)
