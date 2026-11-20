@@ -15,6 +15,7 @@ import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
 import { DiffPane } from './review/DiffPane';
+import { BRANCH_OUTPUTS } from './review/run/runReviewFixtures';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
@@ -978,6 +979,28 @@ describe('acting on what a session landed', () => {
     await userEvent.click(door);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1', session: null, attempt: 0 }) }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
+  });
+
+  /**
+   * A session whose run waits on its Accept draws the run's Accept card under its story, bound to the attempt and revision it draws,
+   * and the dock's *To the Accept card* leads there; its *Accept* is one press.
+   */
+  it('draws the Accept card under the story of a session awaiting its Accept, and accepts in one press', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'awaiting-step' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'RUN_REVIEW') return BRANCH_OUTPUTS;
+      if (type === 'WORKFLOW_NODE') return { run: 'q41', node: 'review', act: 'accept', done: true };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4', vi.fn());
+    const region = await panel();
+    const card = await within(region).findByRole('group', { name: 'Your Accept · budget-notes' });
+    expect(region.querySelector('[data-region="story"]')!.contains(card)).toBe(true);
+    await userEvent.click(within(card).getByRole('button', { name: 'Accept' }));
+    await vi.waitFor(() => expect(invoke.mock.calls.filter((call) => call[1] === 'WORKFLOW_NODE').map((call) => JSON.stringify(call[2])))
+      .toEqual([expect.stringMatching(/"run":"q41".*"act":"accept"|"act":"accept".*"run":"q41"/)]));
   });
 
   /**

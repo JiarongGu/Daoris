@@ -34,6 +34,10 @@ describe('PanelComposer', () => {
     expect(screen.getByText('Claude · opus-4.1')).toBeTruthy();
     rerender(<PanelComposer reads="back" chip="Claude · opus-4.1"><span /></PanelComposer>);
     expect(screen.getByText('It reads your words when the session goes on.')).toBeTruthy();
+    rerender(<PanelComposer reads="now" chip="Claude · opus-4.1"><span /></PanelComposer>);
+    expect(screen.getByText('It reads your words now.')).toBeTruthy();
+    rerender(<PanelComposer reads="finished" chip="Claude · opus-4.1"><span /></PanelComposer>);
+    expect(screen.getByText('The session has ended: your words start it again.')).toBeTruthy();
   });
 
   it('sends the words with Enter, files beside them, and finishes the conversation', () => {

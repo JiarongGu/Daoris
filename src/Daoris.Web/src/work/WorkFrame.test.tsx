@@ -1150,6 +1150,9 @@ describe('a park\'s go-aheads', () => {
     expect(region.querySelector('[data-region="story"]')!.contains(ask)).toBe(false);
     expect(region.querySelector('[data-region="composer"]')!.contains(ask)).toBe(true);
     expect(ask.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    // The box holds every press of what the park asks, and the dock none of its go-aheads: one go-ahead, one press.
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+    expect(ask.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
 
     const second = within(ask).getAllByRole('listitem')[1]!;
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
@@ -1273,10 +1276,10 @@ describe('a park\'s question', () => {
     expect(within(ask).getByText('It says it needs your answer by: before Friday\'s release')).toBeInTheDocument();
     expect(within(ask).getByText(/^Meanwhile its quest #q4sk00 stays taken/)).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUESTION', { payload: { id: 'g0ah3ad0' } });
-    // The dock's card says the question, its answers each a press.
+    // The dock's card says the question; its answers are the box's presses alone, so one answer is never sent twice.
     const card = within(await panel()).getByRole('article', { name: 'its question' });
-    expect(within(card).getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
-    expect(within(card).getByRole('button', { name: '1,200' })).toBeInTheDocument();
+    expect(within(card).getAllByText('Which quarterly target should the dashboard tile show?')[0]).toBeInTheDocument();
+    expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
     expect(within(card).queryByText(/I need go-aheads 1 and 2/)).toBeNull();
   });
 
@@ -1335,11 +1338,14 @@ describe('a park\'s question', () => {
     ]));
   });
 
-  it('answers the question from its card in the dock in one press, naming the question, once', async () => {
+  it('answers the question from the box, naming the question, once, with no second press in the dock', async () => {
     const notify = vi.fn();
     show('g0ah3ad0', notify);
     const card = await within(await panel()).findByRole('article', { name: 'its question' });
-    await userEvent.click(await within(card).findByRole('button', { name: '1,350' }));
+    expect(within(card).queryByRole('button', { name: '1,350' })).toBeNull();
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await userEvent.click(await within(ask).findByRole('radio', { name: /^1,350/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,350', question: 'q5t10n00' }]));
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered “1,350”: the same session goes on with it at the driver's next look."));
@@ -1369,15 +1375,13 @@ describe('a park\'s question', () => {
     expect(inputs()).toHaveLength(2);
   });
 
-  it('refuses an answer pressed in its card in the dock while the go-aheads are open, saying why and sending nothing', async () => {
+  it('offers no answer or go-ahead in its dock card while the box holds them, so nothing is pressed twice', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
-    const notify = vi.fn();
-    show('g0ah3ad0', notify);
+    show('g0ah3ad0', vi.fn());
     await within(await screen.findByRole('region', { name: 'It asks you' })).findByText('write on production');
     const card = await within(await panel()).findByRole('article', { name: 'its question' });
-    await userEvent.click(await within(card).findByRole('button', { name: '1,200' }));
-
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Answer its go-aheads above first: then this answer sends it on with them.', 'error'));
+    expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
     expect(inputs()).toEqual([]);
   });
 
@@ -1564,6 +1568,7 @@ describe('a session\'s rule proposal', () => {
     await userEvent.click(await within(card).findByRole('button', { name: 'In the conversation' }));
     await waitFor(() => expect(block.className).toContain('outline-accent'));
     await userEvent.click(mark);
-    await waitFor(() => expect(within(card).getByRole('listitem')).toHaveFocus());
+    // Its card in the dock takes the focus, found by its key.
+    await waitFor(() => expect(card).toHaveFocus());
   });
 });

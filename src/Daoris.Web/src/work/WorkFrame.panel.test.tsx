@@ -104,7 +104,7 @@ describe('the session panel in the Work frame', () => {
     expect(box).toHaveValue('');
   });
 
-  it('draws each wait as its card and answers a press through the dock\'s reader', async () => {
+  it('leaves a park\'s go-ahead to the box that answers the park, one press for one go-ahead, through the same door', async () => {
     SESSIONS = [PARKED_ASKING];
     ASKS = [ASK_WITH_GO_AHEAD];
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GO_AHEAD'
@@ -112,9 +112,11 @@ describe('the session panel in the Work frame', () => {
       : DRIVER_STATE));
     show('g0ah3ad0');
 
-    const card = await within(await panel()).findByRole('article', { name: /dashboard configuration/ });
-    expect(card).toHaveTextContent('The tile reads its target from it.');
-    await userEvent.click(within(card).getByRole('button', { name: i18n.t('asks.goAhead.approve') }));
+    const box = await screen.findByRole('region', { name: 'It asks you' });
+    const item = await within(box).findByText(/dashboard configuration/);
+    expect(within(await panel()).queryByRole('article', { name: /dashboard configuration/ })).toBeNull();
+    expect(screen.getAllByRole('button', { name: i18n.t('asks.goAhead.approve') })).toHaveLength(1);
+    await userEvent.click(within(item.closest('li')!).getByRole('button', { name: i18n.t('asks.goAhead.approve') }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', expect.objectContaining({
       payload: expect.objectContaining({ number: 1, approved: true }),

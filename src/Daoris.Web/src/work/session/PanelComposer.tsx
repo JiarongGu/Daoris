@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * When the agent reads the person's words: now (between turns), after the current step (while it works), when the session goes on
- * (parked or held), or never again in this session (finished: the words go on with the work).
+ * (parked or held), or, the session ended, as the words start it again.
  */
 export type Reads = 'now' | 'next' | 'back' | 'finished';
 
@@ -11,7 +11,7 @@ const READS_LINE: Readonly<Record<Reads, string>> = {
   now: 'work.session.composer.readsNow',
   next: 'work.session.composer.readsNext',
   back: 'work.session.composer.readsWhenBack',
-  finished: 'work.session.composer.readsWhenBack',
+  finished: 'work.session.composer.readsFinished',
 };
 
 /**

@@ -24,7 +24,7 @@ import { SessionBand } from './band/SessionBand';
 import { dockOf } from './waits/dock';
 import { useRunWaitDoors } from './head/useRunWaitDoors';
 import { namer } from '../settings/accounts/namer';
-import { useSessionDiff } from '../bridge/shell';
+import { modelRan } from './session/headFacts';
 import { type FrameIntent, memoryOfIntent, outputsOfIntent } from '../menus/commands';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
@@ -286,8 +286,6 @@ export function WorkFrame({
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
   const agentRoster = agentRosterOf(t, roster, accounts.data);
-  // What the session's work changed, for the panel's Changes rail: the review's own read of its tree.
-  const diff = useSessionDiff(attended && here ? attended.id : null, attended ? { updated: attended.updated, live } : null);
   // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose own account cools.
   const between = attended && here && attended.kind !== 'chat'
     && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
@@ -347,7 +345,7 @@ export function WorkFrame({
   const { workAsk } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-    boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
+    boxWords, openView, work, talking, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
@@ -411,7 +409,8 @@ export function WorkFrame({
                   atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
                   nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
                 }}
-                diff={diff.data}
+                branch={branch?.branch ?? null}
+                onOpenOutputs={onReviewRun}
                 asks={asks}
                 rootOf={rootOf}
                 attend={attend}
@@ -464,6 +463,12 @@ export function WorkFrame({
                     seek={seekAt('foot')}
                     runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
                     quest={quest}
+                    // Who asks, as the head names the session's agent: its repository, its maker and the model that ran.
+                    asker={{
+                      role: attended.repository,
+                      agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
+                      model: modelRan(attended).model,
+                    }}
                     onRefused={(said) => notify(said, 'error')}
                   />
                 ) : undefined}

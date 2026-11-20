@@ -11,5 +11,6 @@ export function toStepRows(run: string, node: string): void {
 export function toDockLine(key: string): void {
   const line = [...document.querySelectorAll<HTMLElement>('[data-region="dock"] [data-wait]')].find((each) => each.dataset.wait === key);
   line?.scrollIntoView?.({ block: 'nearest' });
-  line?.querySelector<HTMLElement>('button')?.focus();
+  const answer = line?.querySelector<HTMLElement>('[data-answer] button:not(:disabled), [data-presses] button:not(:disabled)');
+  (answer ?? (line?.tagName === 'BUTTON' || line?.tabIndex === -1 ? line : line?.querySelector<HTMLElement>('button')))?.focus();
 }

@@ -28,20 +28,19 @@ import type { RuleAsk } from './ProposedRules';
 import { useRuleAnswer } from './ruleAnswer';
 import type { WaitProps } from './waitProps';
 import { waitsOf } from './waits';
-import { useWaitsOnScreen } from './waitsOnScreen';
 import { useTeam } from '../team/useTeam';
 import { leadsPieces, takesPartner } from '../identity';
 
 /**
  * What waits on the attended session's person: its helpers, pieces, hand-over, tool calls, answers
- * alone, git go-aheads and proposed rules, gathered into one object for the head and the strip at the foot alike; and where
- * each stands on the screen, the way to it, and the conversation's presses above the waiting panel.
+ * alone, git go-aheads and proposed rules, gathered into one object for the panel's dock and the composer's park box; and the
+ * events that raised them, the way to each, and what the story tells of its tail and of what runs beside it.
  */
 export function useAttendedWaits({
   t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-  boxWords, openView, work, talking, centre, onChangeRule, pieceAsking = null, setPieceAsking,
+  boxWords, openView, work, talking, onChangeRule, pieceAsking = null, setPieceAsking,
 }: {
-  /** The door to the place whose supervisor rule held an answer: *Change the rule…* on the head and the strip; absent, it is not drawn. */
+  /** The door to the place whose supervisor rule held an answer: *Change the rule…* on its dock card; absent, it is not drawn. */
   onChangeRule?: (place: string) => void;
   /** The session whose Pieces section has its ask open, the head's ⋯'s and the section's one state; absent, the section holds it. */
   pieceAsking?: string | null;
@@ -67,7 +66,6 @@ export function useAttendedWaits({
   openView: (view: ViewId) => void;
   work: ReturnType<typeof useSessionLanding>;
   talking: boolean;
-  centre: Parameters<typeof useWaitsOnScreen>[0];
 }) {
   const { resolve, parkGoAhead, personDone, onResolve, answerFromCard, choiceFromCard, parkPicked, onParkPick, onGoAhead } = boxWords;
   const {
@@ -152,7 +150,7 @@ export function useAttendedWaits({
   } : null;
   // The tool calls the attended session holds for the person's answer under asking: the driver's own
   // list, this machine's record alone, asked every few seconds while it runs (the routes publish nothing), and the answer's one
-  // owner, so the head and the foot press the same. A refusal of the answer is said where it is pressed, in the catalogue's words.
+  // owner, so every place presses the same. A refusal of the answer is said where it is pressed, in the catalogue's words.
   const permissionWaits = usePermissionWaits(Boolean(attended && here && (attended.state === 'working' || attended.state === 'starting')));
   const answerPermission = useAnswerPermission();
   const heldPermissions: PermissionWaits | null = attended && here && permissionWaits.data ? {
@@ -164,7 +162,7 @@ export function useAttendedWaits({
     busy: answerPermission.isPending,
   } : null;
   // The answers the answers-alone bound holds for the person: read off this
-  // machine's marks under the sessions' key, and the answer's one owner, so the head and the foot press the same. Its answer said where
+  // machine's marks under the sessions' key, and the answer's one owner, so every place presses the same. Its answer said where
   // the press is made; a refusal in the catalogue's words.
   const answerWaits = useAnswerWaits();
   const answerAlone = useAnswerAlone();
@@ -185,8 +183,8 @@ export function useAttendedWaits({
     busy: answerAlone.isPending,
     onChangeRule,
   } : null;
-  // The git go-aheads its git door holds: the rows What needs you is pushed, so the head, the foot and the
-  // band read one judgement and press one door; its answer said where it is pressed, a refusal in the driver's words.
+  // The git go-aheads its git door holds: the rows What needs you is pushed, so the dock and the band read one
+  // judgement and press one door; its answer said where it is pressed, a refusal in the driver's words.
   const attention = useAttention();
   const gitAnswer = useGitAnswer();
   const heldGitAsks: GitAskWaits | null = attended && here && attention.state === 'known' ? {
@@ -211,8 +209,8 @@ export function useAttendedWaits({
     busy: tighten.isPending,
   } : null;
 
-  // What waits on the person, handed to the head and to the strip at the foot alike: one object, so
-  // a press in either place is the same press with the same pending, and its answer, the record read again, settles both.
+  // What waits on the person, handed to the dock and the park box alike: one object, so a press in
+  // either place is the same press with the same pending, and its answer, the record read again, settles both.
   const waits: WaitProps | null = attended ? {
     session: attended,
     resolving: resolve.isPending || parkGoAhead.isPending || personDone.isPending,
@@ -220,7 +218,7 @@ export function useAttendedWaits({
     // Its card's answer: through the box's say door, the one door that answers a park.
     onAnswerSession: here ? answerFromCard : undefined,
     onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
-    // The head's card's rows are the frame's selection too, so a row chosen there is chosen below.
+    // The dock card's rows are the frame's selection too, so a row chosen there is chosen below.
     answerPick: here && answering && question ? { selected: parkPicked, onSelect: onParkPick } : undefined,
     onAnswerAsk: here ? onAnswerAsk : undefined,
     // The go-aheads it asked, answerable only where this machine can answer the park.
@@ -228,7 +226,7 @@ export function useAttendedWaits({
     goAheadsOn: parkAsk,
     onGoAhead: here ? onGoAhead : undefined,
     // Its question, and whether the box below is the park's answer box, which carries every press of what it asks: then
-    // the strip draws none of the park's waits, and the head lists them with no press. A parked chat's composer draws none of it.
+    // the dock draws none of the park's go-aheads or answers. A parked chat's composer draws none of it.
     question,
     parkBox: answering,
     // The rules it proposed: settled through the band's own door, then, on an *Allow*, the session told so as its
@@ -244,15 +242,15 @@ export function useAttendedWaits({
       heard: !intake && box.kind !== 'line',
     },
     // The helpers it asked for, with the yes and the no: an agent's ask the look holds waiting on the person's word is
-    // one of its waits, at the head and at the foot alike.
+    // one of its waits, its dock card's.
     helpers: helperWaits,
-    // Its agent's own ask to hand it over: one of its waits while the look holds it on the person's word, the strip's.
+    // Its agent's own ask to hand it over: one of its waits while the look holds it on the person's word.
     handOver: handOverWait,
-    // The tool calls it holds for the person's answer: one of its waits, at the head and at the foot alike.
+    // The tool calls it holds for the person's answer: one of its waits.
     permissions: heldPermissions,
-    // A third answer alone the bound holds for the person: one of its waits, at the head and at the foot alike.
+    // A third answer alone the bound holds for the person: one of its waits.
     answers: heldAnswers,
-    // A git go-ahead its git door holds: one of its waits, at the head and at the foot alike.
+    // A git go-ahead its git door holds: one of its waits.
     gitAsks: heldGitAsks,
     // What each running session holds of git access, with the press that tightens it.
     gitAccess: heldGitAccess,
@@ -273,20 +271,16 @@ export function useAttendedWaits({
     workBusy: landsNow || discardsNow,
   } : null;
 
-  // The waits that stand where the strip draws them, and the events that raised them, which the
-  // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
-  // leads to its line where it is on screen.
+  // The waits that stand in the dock, and the events that raised them, which the story's reading
+  // finds and tells; a raising line's *To the wait* and the head's oldest wait lead to its card.
   const answerBelow = answering || (talking && box.kind === 'chat');
   const standing = attended && here && waits ? waitsOf({ ...waits, answerBelow }) : [];
   // Where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
   const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
   const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
-  // One wait in one place on the screen: while the head's waits are wholly on screen the
-  // strip stands aside, and a raising block's *To the wait* leads to the head's line instead of the strip's.
-  const waitsOnScreen = useWaitsOnScreen(centre);
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'foot' | 'box' } | null>(null);
-  // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
+  // Spent once the person attends another: the dock drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
   // To its line in the dock, the one place a wait is pressed; a park's go-aheads to the box that answers them, which is always drawn.
   const goToWait = (anchor: AnchorWait) => {
@@ -306,7 +300,7 @@ export function useAttendedWaits({
   const [beside, setBeside] = useState<BandTold | null>(null);
 
   return {
-    partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, waitsOnScreen, goToWait, seekAt,
+    partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, goToWait, seekAt,
     ruleAsk, tail, setTail, beside, setBeside,
   };
 }

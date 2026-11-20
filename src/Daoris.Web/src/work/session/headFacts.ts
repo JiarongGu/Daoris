@@ -18,7 +18,7 @@ export function modelRan(session: Pick<Session, 'ran' | 'asked'>): { model: stri
 const ENDED_BY_YOU: ReadonlySet<string> = new Set(['stopped']);
 
 const STATE_OF: Readonly<Record<StateKind, PanelState>> = {
-  'needs-you': 'waiting', step: 'waitsOn', working: 'live', pending: 'idle', held: 'idle', failed: 'failed', done: 'finished', unread: 'loading',
+  'needs-you': 'waiting', step: 'waitsOn', working: 'live', pending: 'idle', held: 'held', failed: 'failed', done: 'finished', unread: 'loading',
 };
 
 /**

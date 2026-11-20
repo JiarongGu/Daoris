@@ -1,8 +1,14 @@
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
-import { type useSessionDiff, usePostChannel, type withCall } from '../../bridge/shell';
+import { useSessionDiff, usePostChannel, type withCall } from '../../bridge/shell';
 import { type Notify, SESSION_ACTIVE } from '../../design/ui';
+import { BESIDE_READER, BesideReading } from '../beside/BesideReading';
+import { ChannelHomes } from '../conversation/AskView';
+import { channelHomeOf } from '../conversation/channelHome';
 import { type EarlierPart, EarlierParts } from '../conversation/EarlierParts';
+import { toChannelRow } from '../exchanges/seek';
+import { ReviewCards } from '../review/card/ReviewCards';
+import { dockName } from '../waits/dock';
 import { type Said, SaidDoors } from '../conversation/saidDoors';
 import type { useHeadAsks } from '../head/useHeadAsks';
 import { beganLine } from '../head/partsLife';
@@ -32,6 +38,7 @@ import { StoryTree } from './FoldedCalls';
 import { HeadChips } from './HeadChips';
 import { HeadLineOf, PartBegan } from './LineMarks';
 import { beginsByMove } from '../conversation/conversation';
+import type { Turn } from '../conversation/conversationTypes';
 import { headFactsOf } from './headFacts';
 import type { Reads } from './PanelComposer';
 import { PanelComposer } from './PanelComposer';
@@ -42,6 +49,8 @@ import { useModelWords } from './PanelHead';
 
 type Box = ReturnType<typeof useAttendedBox>['box'];
 
+const NO_TURNS: readonly Turn[] = [];
+
 /** When the agent reads the person's words, by the box the session is offered. */
 export function readsOf(box: Box, taking: boolean): Reads {
   switch (box.kind) {
@@ -50,6 +59,20 @@ export function readsOf(box: Box, taking: boolean): Reads {
     case 'say': return box.mode === 'goOn' ? 'finished' : 'back';
     default: return 'back';
   }
+}
+
+/** How often a running session's changes are read again while they are shown: at most once in this many ms, and at its turn's end. */
+export const CHANGES_EVERY = 15_000;
+
+/**
+ * The record's moment the Changes rail reads the session's diff at: every move of a session that does not run, and a running one's
+ * at most once each `CHANGES_EVERY`, so a turn's stream of events runs git a few times rather than once an event.
+ */
+function useChangesMoment(session: string, updated: string, live: boolean): string {
+  const [kept, setKept] = useState({ session, updated });
+  const due = kept.session !== session || !live || Date.parse(updated) - Date.parse(kept.updated) >= CHANGES_EVERY;
+  if (due && (kept.session !== session || kept.updated !== updated)) setKept({ session, updated });
+  return due ? updated : kept.updated;
 }
 
 /** The Changes rail's facts from the session's diff (`SESSION_DIFF`), as the review reads it; none until it is read. */
@@ -69,13 +92,18 @@ export function changesOf(diff: ReturnType<typeof useSessionDiff>['data']): Chan
  * story from the session's reading (`useSessionReading`: turns, steps, helpers asked, with its find bar, earlier pages, anchors,
  * *Since you left* and the focus) and its line's rows (`useLineRows`: requests each way, quests, channel messages, each at its
  * moment); the live band; the dock (`SessionDock`, the host's); the composer sending through the session's own
- * path (a chat's turn, a parked intake's ask, else the words the session goes on with); and the Changes rail from the session's
- * diff. Only where the session ran here: a teammate's record came without its transcript.
+ * path (a chat's turn, a parked intake's ask, else the words the session goes on with); under the story its Accept cards
+ * (`ReviewCards`); and the Changes rail from the session's diff, read only while the rail or its narrow fact is shown, for a session
+ * with a tree of its own. Only where the session ran here: a teammate's record came without its transcript.
  */
 export function AttendedSessionPanel({
   t, notify, session, boxState, words, boxWords, waitsState, headState, grouping, roster, refusal, openPreview, along, band, dock,
-  prelude, diff, asks, rootOf, attend, coolsUntil, partRows,
+  prelude, asks, rootOf, attend, coolsUntil, partRows, branch = null, onOpenOutputs,
 }: {
+  /** The branch its tree left, by its name, for the head's where. */
+  branch?: string | null;
+  /** An Accept card's *Open outputs*: the run's outputs at its attempt. */
+  onOpenOutputs?: (run: string, attempt: number | null) => void;
   asks: ReturnType<typeof useHeadAsks>;
   rootOf: (repository: string) => string | null | undefined;
   attend: (id: string) => void;
@@ -101,7 +129,6 @@ export function AttendedSessionPanel({
   dock?: ReactNode;
   /** What the page says of the session above its story: its record's folds (`AttendedPane`). */
   prelude?: ReactNode;
-  diff: ReturnType<typeof useSessionDiff>['data'];
 }) {
   const { attended, live, here, attendedEntry } = session;
   const { talking, chatTurns, turns, box, setDraft, onUsage, onWaiting } = boxState;
@@ -143,14 +170,34 @@ export function AttendedSessionPanel({
     onWaiting,
     onLimitWait: (id, held) => setChatHeld((was) => (held ? { session: id, held } : was?.session === id ? null : was)),
   });
-  if (!attended || !panelHead) return null;
-
+  // Its changes, read only while the rail or its narrow fact is shown and only for a tree of its own: a chat with none has no diff.
+  const [changesShown, setChangesShown] = useState(false);
+  const moment = useChangesMoment(attended?.id ?? '', attended?.updated ?? '', live);
+  const diff = useSessionDiff(
+    changesShown && here && attended?.tree ? attended.id : null, attended ? { updated: moment, live } : null,
+  );
   const passage = grouping?.passage?.steps.length ? grouping.passage : null;
   // A teammate's record came without its transcript, which stays on their machine: its story is its run's steps alone.
-  const story = storyOf(storyLineOf({ turns: here ? reading.turns : [], passage, exchanges: reading.exchanges, rows: lines?.rows }));
+  const storyTurns = here ? reading.turns : NO_TURNS;
+  const story = useMemo(
+    () => storyOf(storyLineOf({ turns: storyTurns, passage, exchanges: reading.exchanges, rows: lines?.rows })),
+    [storyTurns, passage, reading.exchanges, lines?.rows],
+  );
+  if (!attended || !panelHead) return null;
+
   const line: StateLine = panelHead.line ?? { kind: 'unread', since: null, cause: null } as unknown as StateLine;
   const maker = roster.find((row) => row.door === attended.door)?.product || attended.door;
-  const head = headFactsOf({ session: attended, line, title: panelHead.title, maker });
+  const facts = headFactsOf({ session: attended, line, title: panelHead.title, maker, branch });
+  // A wait on the person names the oldest, and leads to it in the dock; what it does now, else.
+  const oldest = line.wait ? dockName(t, line.wait.wait) : null;
+  const head = {
+    ...facts,
+    doing: oldest ? (line.more > 0 ? t('work.head.state.more', { name: oldest, n: line.more }) : oldest) : facts.doing,
+    wraps: Boolean(attended.quest || attended.ask),
+  };
+  const channel = attendedEntry && session.channelAsk && along.record.channel.available
+    ? channelHomeOf(along.record.channel.channel, along.nameOf ?? ((agent) => agent), toChannelRow)
+    : undefined;
   const onAskWord = (text: string) => {
     const ask = attended.ask;
     if (!ask) return;
@@ -200,10 +247,15 @@ export function AttendedSessionPanel({
       <SaidDoors.Provider value={doors}>
         <SessionPanel
           facts={{
-            id: attended.id, head, track: null, story, waits: [], changes: changesOf(diff), now: Date.now(),
+            id: attended.id, head, track: null, story, waits: [], changes: changesOf(diff.data), now: Date.now(),
             reads: readsOf(box, Boolean(turns.taking)), onAnswer: () => {}, onSend,
             onFile: (path) => openPreview({ path }),
+            onReview: waits?.onReview,
           }}
+          onChangesShown={setChangesShown}
+          onWait={panelHead.onWait}
+          // Its facts line, less the repository the where line names.
+          headFacts={{ said: panelHead.facts.filter((fact) => fact !== attended.repository), tip: panelHead.factsTip }}
           acts={panelHead.acts}
           chips={(
             <>
@@ -217,9 +269,10 @@ export function AttendedSessionPanel({
           dock={dock}
           reading={{ scroller, atTail: !reading.away, toTail: reading.toTail }}
           story={(
-            <SessionStory
-              session={attended.id} reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller}
-              rowHome={lines?.home} onToWait={toWait}
+            <BesideReading session={attended.id}><ChannelHomes.Provider value={channel ?? {}}><SessionStory
+              reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller}
+              rowHome={lines?.home} onToWait={toWait} reader={BESIDE_READER}
+              after={here ? <ReviewCards session={attended.id} onOpenOutputs={onOpenOutputs} /> : undefined}
               prelude={(
                 <>
                   {prelude}
@@ -230,7 +283,7 @@ export function AttendedSessionPanel({
                   {began && <PartBegan words={began} />}
                 </>
               )}
-            />
+            /></ChannelHomes.Provider></BesideReading>
           )}
           composer={box.kind === 'none' ? null : (
             <PanelComposer reads={readsOf(box, Boolean(turns.taking))} chip={`${maker} · ${modelWords(head)}`}>

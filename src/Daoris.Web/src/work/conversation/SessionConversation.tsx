@@ -1,15 +1,12 @@
-import { type ComponentProps, createContext, type ReactNode, type RefObject, useContext, useEffect, useState } from 'react';
+import { type ComponentProps, type ReactNode, type RefObject, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/cn';
-import { searchable } from '../../lib/searchable';
-import { useChildHistory, useSessionConsole } from '../../bridge/shell';
-import type { BesideReader, ChildRead } from '../beside/besides';
+import { BESIDE_READER, BesideReading } from '../beside/BesideReading';
 import type { BandTold } from '../band/bandRows';
-import { SessionConsole } from '../console/SessionConsole';
 import { Icon } from '../../design/ui';
 import type { AnchorAsks } from '../waits/anchors';
 import { beginsByMove, type RunningCall, type Usage } from './conversation';
-import { ConversationFind } from './ConversationFind';
+import { ReadingFind } from './ConversationFind';
 import { type CallMark, ConversationView } from './ConversationView';
 import type { Cooling } from './saidDoors';
 import type { ChannelHome } from './channelHome';
@@ -22,43 +19,6 @@ import { SinceYouLeft } from '../catchup/SinceYouLeft';
 import { type AnchorState, type TailState, useSessionReading } from './useSessionReading';
 
 export type { AnchorState, TailState } from './useSessionReading';
-
-/** A long run's way through, as its reading offers it: the jumps, the search and its hits. */
-export function ReadingFind({ find }: { find: NonNullable<ReturnType<typeof useSessionReading>['find']> }) {
-  const { settled, hits, ...presses } = find;
-  return <ConversationFind {...presses} hits={searchable(settled) ? hits : undefined} />;
-}
-
-/** The session whose subagents' and tasks' rows the reader below reads for. */
-const ReadingSession = createContext('');
-
-/** A subagent's own record, read through the driver for the row that names it. */
-function ChildReader({ child, running = false, children }: { child: string; running?: boolean; children: (read: ChildRead) => ReactNode }) {
-  return children(useChildHistory(useContext(ReadingSession), child, running));
-}
-
-/** A background task's last lines, from its own console stream (`<session>/task/<id>`), and when the page heard its last. */
-function TaskTail({ task, children }: { task: string; children: (lines: readonly string[], heard: number | null) => ReactNode }) {
-  const tail = useSessionConsole(`${useContext(ReadingSession)}/task/${task}`);
-  const last = tail.lines[tail.lines.length - 1]?.sequence ?? 0;
-  const [heard, setHeard] = useState<number | null>(null);
-  useEffect(() => { if (last > 0) setHeard(Date.now()); }, [last]);
-  return children(tail.lines.slice(-3).map((line) => line.text), heard);
-}
-
-/** A background task's whole console, in the panel's focus. */
-function TaskStream({ task }: { task: string }) {
-  const { t } = useTranslation();
-  return <SessionConsole id={`${useContext(ReadingSession)}/task/${task}`} quiet={t('work.panel.streamSilent')} />;
-}
-
-/** How the rows and the live band read what a session runs beside itself, under `BesideReading`. */
-export const BESIDE_READER: BesideReader = { Child: ChildReader, Tail: TaskTail, Stream: TaskStream };
-
-/** The session whose subagents and tasks `BESIDE_READER` reads, for a host outside the conversation: the live band. */
-export function BesideReading({ session, children }: { session: string; children: ReactNode }) {
-  return <ReadingSession.Provider value={session}>{children}</ReadingSession.Provider>;
-}
 
 /**
  * The two scroll presses' one look: a 28 px square with its arrow alone, its name its label and its tooltip. Their words once
@@ -77,20 +37,6 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
   return (
     <button type="button" onClick={onPress} aria-label={name} title={name} className={cn(SCROLL_PRESS, className)}>
       <Icon name="toBottom" size={14} />
-    </button>
-  );
-}
-
-/**
- * *To the top* as a press of its own: the record's head, where every wait stands with its reading. Drawn beside
- * *Back to bottom* above the waiting panel, as the strip's *To the top* is, so neither is ever under the panel.
- */
-export function ToTheTop({ onPress, className }: { onPress: () => void; className?: string }) {
-  const { t } = useTranslation();
-  const name = t('work.wait.top');
-  return (
-    <button type="button" onClick={onPress} aria-label={name} title={name} className={cn(SCROLL_PRESS, className)}>
-      <Icon name="toTop" size={14} />
     </button>
   );
 }
@@ -216,7 +162,7 @@ export function SessionConversation({
   }, [reveal, scroller]);
 
   return (
-    <ReadingSession.Provider value={session}>
+    <BesideReading session={session}>
       <ConversationView
         beside={{ reader: BESIDE_READER, lifetimes, focus, onFocus: setFocus }}
         atMark={caught.digest && caught.read
@@ -256,6 +202,6 @@ export function SessionConversation({
       {away && own && !onTail && (
         <BackToBottom onPress={() => toTail(true)} className="sticky bottom-2 ml-auto bg-overlay shadow-sm" />
       )}
-    </ReadingSession.Provider>
+    </BesideReading>
   );
 }

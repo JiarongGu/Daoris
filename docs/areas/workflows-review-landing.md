@@ -722,11 +722,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and *After the Accept*; a newer revision is a banner naming the outputs that moved, never swapped in. A folder's file is drawn at
     the record's hash, or from the place only while it still hashes so, else refused `moved`; a Markdown file opens on its changes,
     rendered one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are
-    the **Accept card**'s alone (`ReviewCard`), under the session's conversation, bound to the attempt and revision it draws: a newer
+    the **Accept card**'s alone (`ReviewCard`), under the session panel's story (`ReviewCards`), bound to the attempt and revision it draws: a newer
     revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
-    tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
-    open the outputs by run (their presses read *Open outputs*, 打开产出), and the head's *To the Accept card* leads to the newest card
-    drawn in the conversation (`seekReviewCard`), offered, as the head's *next: Accept…* is, only once the run's review has begun and
+    tree's discard and draw no Accept; the dock's work card and an entry's part draw an outputs door, *What needs you* and the run view
+    open the outputs by run (their presses read *Open outputs*, 打开产出), and the work card's *To the Accept card* leads to the newest card
+    drawn under the story (`seekReviewCard`), offered, as its *next: Accept…* is, only once the run's review has begun and
     its card is drawn (`landingStands`, the landing's `accept` with its attempt); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is

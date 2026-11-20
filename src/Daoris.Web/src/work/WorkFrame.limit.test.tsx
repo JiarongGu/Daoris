@@ -148,6 +148,7 @@ describe('a closed quest’s session held for an account’s reset', () => {
 
     const header = await head();
     await waitFor(() => expect(header).toHaveTextContent('every account is cooling.'));
+    expect(within(header).getByText('Held')).toBeInTheDocument();
     expect(header).not.toHaveTextContent('Finished');
     // The rail's row beside it says the wait's word, and still the time and the account on its line.
     expect(screen.getAllByText('waiting for a limit to reset')).toHaveLength(1);
@@ -156,6 +157,7 @@ describe('a closed quest’s session held for an account’s reset', () => {
 
     await i18n.changeLanguage('zh');
     await waitFor(() => expect(screen.getAllByText('正在等待额度重置')).toHaveLength(1));
+    expect(within(await head()).getByText('被挂起')).toBeInTheDocument();
     expect(await head()).not.toHaveTextContent('已完成');
   });
 

@@ -17,6 +17,7 @@ import { AnswerAlone, answerFor } from '../waits/AnswerAlone';
 import { GitAsk, gitAsksFor } from '../waits/GitAsk';
 import { ProposedRules, type RuleAsk } from '../waits/ProposedRules';
 import { rulesAsked, WORK_WAITS } from '../waits/waits';
+import { waitObligations } from '../waits/waitObligations';
 import type { RunWaitDoors, WaitProps } from '../waits/waitProps';
 import type { WaitAnswer, WaitCardFacts } from './WaitCard';
 
@@ -26,8 +27,13 @@ const ASKED: ReadonlySet<DockWait['kind']> = new Set(['question', 'intake', 'goA
 /** Who asks, for every card's *From*: the session's agent, its maker and the model that ran. */
 export type Asker = { role: string; agent: string; model: string | null };
 
-/** What the dock draws: each wait as its card, the answer to a card's press, and what its run waits on that no press settles. */
-export type DockCards = { cards: WaitCardFacts[]; onAnswer: (id: string, answer: WaitAnswer) => void; foot: ReactNode };
+/**
+ * What the dock draws: each wait as its card, the answer to a card's press (settled once the answer is), what its run waits on that
+ * no press settles, and its count: the obligations its waits are (`waitObligations`), so one wait is counted once as the bell counts it.
+ */
+export type DockCards = {
+  cards: WaitCardFacts[]; onAnswer: (id: string, answer: WaitAnswer) => Promise<void>; foot: ReactNode; count: number;
+};
 
 /**
  * **The dock's cards**: every wait the person settles, read by the dock's one reader (`dockOf`: `waitsOf`'s kinds and its run's
@@ -59,17 +65,25 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
     const foot = waits.length > 0
       ? <p className="m-0 text-small text-ink-soft">{t('work.wait.teammate', { names: waits.map((wait) => dockName(t, wait)).join(' · ') })}</p>
       : null;
-    return { cards: [], onAnswer: () => {}, foot };
+    return { cards: [], onAnswer: async () => {}, foot, count: 0 };
   }
   const facts = { ...props, answerBelow };
-  // Every go-ahead a park asked is its card's here: the composer below takes words alone.
-  const lines = dockOf(facts, runWaits?.waits ?? []);
+  // A park's go-aheads are its card's here, unless the composer's park box draws them with every press: then they are its alone,
+  // so no two presses answer one go-ahead.
+  const all = dockOf(facts, runWaits?.waits ?? []);
+  const lines = props.parkBox ? all.filter((line) => line.wait.kind !== 'goAhead') : all;
+  const waitsOfLines = (of: readonly DockLine[]) => of.flatMap((line) => (line.wait.kind === 'step' ? [] : [line.wait]));
+  const count = waitObligations(facts, waitsOfLines(lines), waitsOfLines(all)).length
+    + lines.filter((line) => line.wait.kind === 'step').length;
   // The work's line stands whenever its tree offers work, held or not: its holds, its set-up and its door are pressed here too.
   const workLine = props.lands || props.discards ? { key: 'work', wait: { kind: props.lands ? 'accept' : 'discard' }, since: session.updated } as DockLine : null;
   const drawn = workLine && !lines.some((line) => (WORK_WAITS as ReadonlySet<string>).has(line.wait.kind) || line.wait.kind === 'discard') ? [...lines, workLine] : lines;
   const blockedOn = lines.flatMap((line) => (ASKED.has(line.wait.kind) ? [{ key: line.key, name: dockName(t, line.wait) }] : []));
-  const answered: Answered = { done: () => {}, refused };
-  const answers = new Map<string, (answer: WaitAnswer) => void>();
+  const answers = new Map<string, (answer: WaitAnswer) => Promise<void>>();
+  // A press's answer, settled once its door says it is done or refused.
+  const settled = (send: (answered: Answered) => void) => new Promise<void>((settle) => {
+    send({ done: () => settle(), refused: (said) => { refused(said); settle(); } });
+  });
   const card = (line: DockLine, fields: Partial<WaitCardFacts>): WaitCardFacts => ({
     id: line.key, title: dockName(t, line.wait), kind: line.wait.kind, since: line.since, what: '', look: [], known: [],
     from: { ...asker, at: line.since }, ...fields,
@@ -82,7 +96,9 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
       case 'goAhead': {
         const goAhead = (props.goAheads ?? []).find((each) => each.number === wait.number);
         if (!goAhead) return [];
-        answers.set(line.key, (answer) => props.onGoAhead?.(wait.number, answer === 'yes', undefined, answered));
+        answers.set(line.key, (answer) => (props.onGoAhead
+          ? settled((answered) => props.onGoAhead!(wait.number, answer === 'yes', undefined, answered))
+          : Promise.resolve()));
         return [card(line, {
           title: `${t('asks.goAhead.act', { kind: goAhead.kind, on: goAhead.on })} · ${goAhead.act}`,
           what: goAhead.asked.map((asked) => asked.why).filter(Boolean).join('\n'),
@@ -92,7 +108,7 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
         })];
       }
       case 'intake':
-        answers.set(line.key, () => props.onAnswerAsk?.(wait.ask));
+        answers.set(line.key, async () => { props.onAnswerAsk?.(wait.ask); });
         return [card(line, {
           what: t('work.wait.intake'),
           yes: { label: t('work.intake.answer', { ask: wait.ask }), effect: t('work.session.wait.intakeYes') },
@@ -106,14 +122,21 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
             presses: <ConversationSignIn key={session.id} question={question} site={question.site} pending={props.resolving} onAnswer={props.onAnswerSession} />,
           })];
         }
-        if (question && question.choices.length > 0 && props.onAnswerChoice) {
-          answers.set(line.key, (answer) => {
+        // A structured question's answers are the card's presses, its park's *Finish…* and *Decline…* beside them; where the
+        // composer's park box draws the answers, they are the box's alone.
+        if (question && question.choices.length > 0 && props.onAnswerChoice && !props.parkBox) {
+          answers.set(line.key, async (answer) => {
             const choice = typeof answer === 'object' ? question.choices[answer.option] : undefined;
-            if (choice) void Promise.resolve(props.onAnswerChoice?.(choice.label, '')).then((why) => { if (why) refused(why); });
+            if (!choice) return;
+            const why = await props.onAnswerChoice?.(choice.label, '');
+            if (why) refused(why);
           });
           return [card(line, {
             what: question.question, options: question.choices.map((choice) => ({ label: choice.label, effect: choice.does })),
             look: inConversation(toEvent?.question),
+            presses: props.onResolve ? (
+              <AwaitingPerson key={session.id} parts={session.noteParts} pending={props.resolving} onResolve={props.onResolve} below />
+            ) : undefined,
           })];
         }
         const parked = Boolean(props.onResolve || props.onAnswerSession);
@@ -200,7 +223,8 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
   const parts = runWaits?.parts && partsOf(runWaits.parts.runs).length > 0 ? runWaits.parts : null;
   return {
     cards,
-    onAnswer: (id, answer) => answers.get(id)?.(answer),
+    onAnswer: (id, answer) => answers.get(id)?.(answer) ?? Promise.resolve(),
     foot: parts ? <RunParts runs={parts.runs} onQuest={parts.onQuest} /> : null,
+    count,
   };
 }

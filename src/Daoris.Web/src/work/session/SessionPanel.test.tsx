@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import { panelLayoutOf } from './panelLayout';
@@ -47,6 +47,36 @@ describe('SessionPanel', () => {
     expect(within(dock as HTMLElement).getAllByRole('article')).toHaveLength(1);
     expect(within(dock as HTMLElement).getByRole('button', { name: /Which header name/ })).toBeTruthy();
     expect(within(dock as HTMLElement).getByText('Waiting on you 2')).toBeTruthy();
+  });
+
+  it('names the oldest wait in its head as a press to the dock, its facts line under, and Held for a held session', () => {
+    const onWait = vi.fn();
+    const facts = { said: ['attempt 2', 'continues from Codex · its account was near its limit'], tip: 'whole' };
+    const { container, rerender } = render(
+      <SessionPanel facts={{ ...FACTS, head: { ...HEAD, state: 'waiting', doing: 'Approve release to beta' } }} onWait={onWait} headFacts={facts} width={1280} />,
+      { wrapper: Tooltip.Provider },
+    );
+    const head = container.querySelector<HTMLElement>('[data-region="head"]')!;
+    fireEvent.click(within(head).getByRole('button', { name: 'Approve release to beta' }));
+    expect(onWait).toHaveBeenCalledTimes(1);
+    expect(head.querySelector('[data-head-facts]')?.textContent).toBe('attempt 2 · continues from Codex · its account was near its limit');
+    rerender(<SessionPanel facts={{ ...FACTS, head: { ...HEAD, state: 'held' } }} width={1280} />);
+    expect(within(container.querySelector<HTMLElement>('[data-region="head"]')!).getByText('Held')).toBeTruthy();
+  });
+
+  it('counts nothing new on an ended session opened at its top, and puts the focus in the story on the way back', () => {
+    const story = storyOf(LINE);
+    const toTail = vi.fn();
+    const scroller = { current: null as HTMLDivElement | null };
+    const ended = { ...FACTS, id: 's2', head: { ...HEAD, state: 'finished' as const }, story };
+    const { container } = render(
+      <SessionPanel facts={ended} reading={{ scroller, atTail: false, toTail }} width={1280} />, { wrapper: Tooltip.Provider },
+    );
+    const back = screen.getByRole('button', { name: /^↓/ });
+    expect(back.textContent).toBe('↓ Back to bottom');
+    fireEvent.click(back);
+    expect(toTail).toHaveBeenCalledWith(true);
+    expect(document.activeElement).toBe(container.querySelector('[data-region="story"]'));
   });
 
   it('says so with no session, and draws a skeleton while one loads', () => {

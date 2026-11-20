@@ -203,8 +203,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **A session's page**
 
-37. A session's head is its panel's (`work/session/PanelHead.tsx`): the state from the reader's line, the title on one line, where
-    and who with the model that ran (`headFactsOf`) and its chips (`HeadChips`); a quest's or an ask's title takes two. The acts
+37. A session's head is its panel's (`work/session/PanelHead.tsx`): the state from the reader's line (a wait on the person names the
+    oldest, a press to its dock card), the title on one line, where and who with the model that ran (`headFactsOf`) and its chips
+    (`HeadChips`), and under them the facts its state makes matter (`sessionFacts`); a quest's or an ask's title takes two. The acts
     hold still (`HeadActs`); the id moves to ⋯ and *Details*; a stop's, a delete's, a rename's or a hand-over's ask stands under
     the head (`EndAsks`, `RenameAsk`). A conversation's name is its title above its ask's and its first words, and its pin
     marks its row: each session's row of `SESSION_GROUPS` carries its conversation's `name` and `pinned` (`conversation_facts`), the ⋯ of a row

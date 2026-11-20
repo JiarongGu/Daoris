@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLink } from '../../design/links';
 import { Button } from '../../design/ui';
@@ -32,7 +32,7 @@ export type WaitCardFacts = {
   meanwhile?: string | null;
   /**
    * Where its answer takes more than a press (a landing's gates, a step's *Try again*, a sign-in, a park's *Finish…*): its own
-   * presses, drawn in place of the effects' rows and the yes and no.
+   * presses, drawn in place of the yes and no, and beside a question's options.
    */
   presses?: ReactNode;
 };
@@ -58,15 +58,22 @@ function Unsaid() {
  * **The wait card**: every wait the session holds on the person, drawn one way (design §5.3). Whole, it says what it is, what each
  * press does, where to look, how it is known, who asked and on which model, and answers with one press; folded to a line (`line`), it
  * names itself, how much it holds and its age, and opens on a press. A field its asker left out reads "not said by its asker".
+ * While a press's answer is on its way, its presses wait, so a second press never sends a second answer.
  */
 export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
   wait: WaitCardFacts;
   now: number;
-  onAnswer: (answer: WaitAnswer) => void;
+  onAnswer: (answer: WaitAnswer) => void | Promise<unknown>;
   layout?: 'whole' | 'line';
   onOpen?: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const [pending, setPending] = useState<string | null>(null);
+  const busy = pending === wait.id;
+  const answer = (given: WaitAnswer) => {
+    setPending(wait.id);
+    void Promise.resolve(onAnswer(given)).finally(() => setPending((was) => (was === wait.id ? null : was)));
+  };
   const age = phaseTime(now - Date.parse(wait.since));
   const facts = [wait.holds ? t('work.session.wait.holds', { count: wait.holds }) : null, age].filter(Boolean).join(' · ');
   if (layout === 'line') {
@@ -98,11 +105,11 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
       </header>
       <p className="m-0 whitespace-pre-line text-body text-ink">{wait.what}</p>
       <dl className="m-0 grid gap-1">
-        {wait.presses ? null : options.length > 0
+        {options.length > 0
           ? options.map((option, index) => (
             <Row key={option.label} label={`${index + 1}`}>{option.effect}</Row>
           ))
-          : (
+          : wait.presses ? null : (
             <>
               <Row label={t('work.session.wait.yes')}>{wait.yes?.effect ?? <Unsaid />}</Row>
               <Row label={t('work.session.wait.no')}>{wait.no?.effect ?? <Unsaid />}</Row>
@@ -134,18 +141,18 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
         </Row>
         {wait.meanwhile && <Row label={t('work.session.wait.meanwhile')}>{wait.meanwhile}</Row>}
       </dl>
-      {wait.presses && <div className="grid min-w-0 gap-2">{wait.presses}</div>}
-      <div className="flex flex-wrap items-center gap-2">
-        {wait.presses ? null : options.length > 0
+      {wait.presses && <div data-presses className="grid min-w-0 gap-2">{wait.presses}</div>}
+      <div data-answer className="flex flex-wrap items-center gap-2">
+        {options.length > 0
           ? options.map((option, index) => (
-            <Button key={option.label} variant={index === 0 ? 'primary' : 'default'} onClick={() => onAnswer({ option: index })}>
+            <Button key={option.label} variant={index === 0 ? 'primary' : 'default'} disabled={busy} onClick={() => answer({ option: index })}>
               {option.label}
             </Button>
           ))
-          : (
+          : wait.presses ? null : (
             <>
-              {wait.yes && <Button variant="primary" onClick={() => onAnswer('yes')}>{wait.yes.label}</Button>}
-              {wait.no && <Button onClick={() => onAnswer('no')}>{wait.no.label}</Button>}
+              {wait.yes && <Button variant="primary" disabled={busy} onClick={() => answer('yes')}>{wait.yes.label}</Button>}
+              {wait.no && <Button disabled={busy} onClick={() => answer('no')}>{wait.no.label}</Button>}
             </>
           )}
         {onOpen && <Button variant="ghost" className={cn('ml-auto')} onClick={onOpen}>{t('work.session.wait.open')}</Button>}

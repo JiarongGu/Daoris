@@ -19,10 +19,13 @@ describe('WaitCard', () => {
     ]) expect(within(card).getAllByText(new RegExp(said.replace(/[.*+?^${}()|[\]\\#]/g, '\\$&'))).length).toBeGreaterThan(0);
   });
 
-  it('answers yes and no with one press each', () => {
+  it('answers yes and no with one press each, and holds its presses while an answer is on its way', async () => {
     const onAnswer = vi.fn();
     render(<WaitCard wait={RELEASE_WAIT} now={NOW} onAnswer={onAnswer} />);
     fireEvent.click(screen.getByRole('button', { name: 'Approve release to beta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hold' }));
+    expect(onAnswer.mock.calls).toEqual([['yes']]);
+    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Hold' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Hold' }));
     expect(onAnswer.mock.calls).toEqual([['yes'], ['no']]);
   });

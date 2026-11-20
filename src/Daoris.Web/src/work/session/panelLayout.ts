@@ -1,3 +1,5 @@
+import { createContext } from 'react';
+
 /**
  * The session panel's own thresholds, by its own width (the frame contract, design §3.2): its facts rail stands beside the story
  * from 68rem, where the story keeps 72 characters beside an 18rem rail; below 40rem the head folds, carrying the changes as one
@@ -7,6 +9,9 @@ export const RAIL_FROM_REM = 68;
 export const NARROW_BELOW_REM = 40;
 
 export type PanelLayout = { rail: boolean; narrow: boolean };
+
+/** Whether the panel a host's dock stands in is narrow, so its dock draws one card whole and the rest a line each. */
+export const PanelNarrow = createContext(false);
 
 /** The panel's layout at `width` px with a root em of `rem` px; unmeasured, the middle layout: no rail and no fold. */
 export function panelLayoutOf(width: number | undefined, rem: number): PanelLayout {

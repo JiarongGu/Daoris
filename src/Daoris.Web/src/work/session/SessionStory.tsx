@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../design/ui';
 import { type BesideHome, BesideHomes } from '../beside/BesideRows';
 import { ChildFocus, TaskFocus } from '../beside/ChildFocus';
-import { pathTo } from '../beside/besides';
+import { type BesideReader, pathTo } from '../beside/besides';
 import { SinceYouLeft } from '../catchup/SinceYouLeft';
-import { BESIDE_READER, BesideReading, ReadingFind } from '../conversation/SessionConversation';
+import { ReadingFind } from '../conversation/ConversationFind';
 import type { useSessionReading } from '../conversation/useSessionReading';
 import type { LineRowHome } from '../exchanges/LineRows';
 import type { Wait } from '../waits/waits';
@@ -19,13 +19,17 @@ type Reading = ReturnType<typeof useSessionReading>;
  * **The story as the page reads it**: the session's one stream (`StoryStream`) over its reading (`useSessionReading`), with every way
  * through it the conversation offers. A long run has the find bar (its first failure, its last words, a search stepping through
  * its hits); a record that began before the page holds *Earlier* above it; a jump, a hit or a wait's raising event brings its line
- * into view, the pages before loaded first; the read mark opens it under *Since you left*; and a subagent or a task the live band
- * opens takes the story's place with a way back.
+ * into view, the pages before loaded first; the read mark opens it under *Since you left*; a subagent's or a task's line opens
+ * what it started through `reader` (the host's, under its `BesideReading`), and one the live band opens takes the story's place
+ * with a way back.
  */
-export function SessionStory({ session, reading, story, actor, scroller, prelude, rowHome, onToWait }: {
-  session: string;
+export function SessionStory({ reading, story, actor, scroller, prelude, after, rowHome, onToWait, reader }: {
   /** What the page says of the session above its story. */
   prelude?: ReactNode;
+  /** What stands under the story: the session's Accept cards, the host's. */
+  after?: ReactNode;
+  /** How a subagent's and a task's lines read what they started; absent, they say what the record holds and open nothing. */
+  reader?: BesideReader;
   /** A raising line's *To the wait*: to the wait's line, where it is answered. */
   onToWait?: (wait: Wait) => void;
   /** What its line's rows press. */
@@ -52,23 +56,21 @@ export function SessionStory({ session, reading, story, actor, scroller, prelude
   const path = focus && 'child' in focus && named('child', focus.child[focus.child.length - 1]) ? focus.child : null;
   const task = focus && 'task' in focus && named('task', focus.task) ? focus.task : null;
   const home: BesideHome = {
-    reader: BESIDE_READER, lifetimes, nested: false, onShow: show,
+    reader, lifetimes, nested: false, onShow: show,
     onFocus: (child) => setFocus({ child: pathTo(lifetimes, child) }),
     draw: (shown) => <StoryStream story={storyOf({ turns: shown, steps: [], exchanges: [], rows: [] })} actor={actor} />,
   };
   if (path || task) {
     return (
-      <BesideReading session={session}>
-        <BesideHomes.Provider value={home}>
-          {path && <ChildFocus path={path} home={home} onBack={(to) => setFocus(to === 0 ? null : { child: path.slice(0, to) })} />}
-          {task && <TaskFocus task={task} home={home} onBack={() => setFocus(null)} />}
-        </BesideHomes.Provider>
-      </BesideReading>
+      <BesideHomes.Provider value={home}>
+        {path && <ChildFocus path={path} home={home} onBack={(to) => setFocus(to === 0 ? null : { child: path.slice(0, to) })} />}
+        {task && <TaskFocus task={task} home={home} onBack={() => setFocus(null)} />}
+      </BesideHomes.Provider>
     );
   }
   const read = caught.read ? Date.parse(caught.read) : Number.NaN;
   return (
-    <div className="grid min-w-0 gap-2">
+    <BesideHomes.Provider value={home}><div className="grid min-w-0 gap-2">
       {prelude}
       {find && (
         <div className="sticky top-0 z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5">
@@ -91,6 +93,7 @@ export function SessionStory({ session, reading, story, actor, scroller, prelude
           ? <SinceYouLeft digest={caught.digest} read={caught.read} now={now} onJump={show} />
           : undefined}
       />
-    </div>
+      {after}
+    </div></BesideHomes.Provider>
   );
 }

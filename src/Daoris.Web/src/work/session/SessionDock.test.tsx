@@ -46,6 +46,53 @@ const HELD = {
 };
 const SIGN: StepWaitRow = { run: 'q7', node: 'sign', why: 'approval', role: 'approver', holder: 'person', presses: ['approve', 'reject', 'skip'] };
 
+describe('SessionDock, its presses and its seek', () => {
+  it('focuses the card a seek leads to, a go-ahead\'s or a rule\'s by its key', () => {
+    const props = { session: session({ note: 'needs a person' }), onResolve: vi.fn(), goAheads: ASKED, onGoAhead: vi.fn(), rules: { proposals: [RULE], onAnswer: vi.fn() } };
+    const { container, rerender } = render(<SessionDock {...props} seek={{ wait: 'goAhead:2', n: 1 }} />);
+    expect(document.activeElement).toBe(card(container, 'goAhead:2'));
+    rerender(<SessionDock {...props} seek={{ wait: 'rule:r1', n: 2 }} />);
+    expect(document.activeElement).toBe(card(container, 'rule:r1'));
+  });
+
+  it('holds a card\'s presses while its answer is on its way, so a second press sends nothing', async () => {
+    const onGoAhead = vi.fn();
+    const { container } = render(<SessionDock session={session({ note: 'needs a person' })} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={onGoAhead} />);
+    const approve = within(card(container, 'goAhead:1')).getByRole('button', { name: 'Approve' });
+    fireEvent.click(approve);
+    expect(approve).toBeDisabled();
+    fireEvent.click(within(card(container, 'goAhead:1')).getByRole('button', { name: 'Refuse' }));
+    expect(onGoAhead).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(approve).toBeDisabled());
+    // Refused, the presses come back.
+    (onGoAhead.mock.calls[0]![3] as { refused: (said: string) => void }).refused('moved on');
+    await vi.waitFor(() => expect(approve).toBeEnabled());
+  });
+
+  it('leaves a park\'s go-aheads to the park box where it draws them, and counts the park on its go-ahead once', () => {
+    const goAheads = [{ ...ASKED[0]!, state: 'approved' as const }, ASKED[1]!];
+    const { container } = render(
+      <SessionDock session={session({ note: 'needs a person' })} onResolve={vi.fn()} goAheads={goAheads} goAheadsOn="a1" onGoAhead={vi.fn()} parkBox answerBelow />,
+    );
+    expect(order(container)).toEqual(['question']);
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(container.querySelector('[data-dock-count]')?.textContent).toBe('Waiting on you 1');
+  });
+
+  it('draws a structured question\'s answers beside its park\'s Finish… and Decline…', () => {
+    const question = { id: 'qq', question: 'Which branch?', choices: [{ label: 'main', does: 'lands on main' }, { label: 'release', does: 'lands on release' }] };
+    render(
+      <SessionDock
+        session={session({ note: 'needs a person' })} onResolve={vi.fn()} question={question as never} onAnswerChoice={vi.fn(async () => null)}
+        onAnswerSession={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'main' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Finish/ })).toBeInTheDocument();
+  });
+});
+
 describe('SessionDock, a park', () => {
   it('starts each parked session\'s decline empty: a reason written for one never carries to another', () => {
     const { rerender } = render(<SessionDock session={session({ note: 'needs a person' })} onResolve={vi.fn()} />);
