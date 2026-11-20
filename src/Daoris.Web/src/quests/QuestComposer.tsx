@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { QuestStep } from '../data/api';
 import { type Carry, CarryFields, NO_CARRY, useCarry } from '../compose/carry';
-import { Button, Drawer, EmptyState, Icon, Inline, SelectField } from '../design/ui';
+import { Button, Drawer, EmptyState, Icon, Inline, Note, SelectField } from '../design/ui';
 
 /**
  * A quest being written. `links` is the text as typed — read into addresses at publish — and `files` are the
@@ -153,9 +153,9 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
         </label>
         {caution && (
           /* The same caution the service gives an agent, before the person relies on it. */
-          <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <Note tone="caution" className="bg-raised px-3.5 py-2 text-body">
             <Inline text={t('quests.compose.caution', { repository: caution })} />
-          </p>
+          </Note>
         )}
         <label className="grid gap-1 text-small text-ink-soft">
           {t('quests.compose.bodyLabel')}

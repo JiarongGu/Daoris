@@ -97,7 +97,7 @@ export function StewardLine({ standing, busy = false, onReverse }: {
   const waiting = acts.filter((each) => each.act === 'stop' && each.waiting && stewardReverse(each) === 'retry');
   const said = held ? t('notifications.steward.line', { count: acts.length }) : t('notifications.steward.lineOff', { count: acts.length });
   return (
-    <section data-steward-line="" aria-label={t('notifications.steward.label')} className="grid gap-2 rounded-control border border-line border-l-[3px] border-l-warn bg-sunken px-3 py-2">
+    <section data-steward-line="" aria-label={t('notifications.steward.label')} className="grid gap-2 rounded-control border border-line bg-sunken px-3 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="m-0 min-w-0 text-small text-ink-soft">{said}</p>
         {acts.length > 0 && (

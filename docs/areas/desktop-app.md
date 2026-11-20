@@ -125,10 +125,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (white on the light theme's red in either theme, *9+* past nine) and
-    in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
-    subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
-    main window is forgotten there, its flash going to the first. (from D196, D108)
+19. Each main window wears its own workspace's waiting count on its taskbar button (dark ink on the owner's amber in either
+    theme, since what it counts waits on the owner and red is a failure's alone; *9+* past nine) and in its title, and the
+    install's identity Daoris chooses. A notification's click brings forward the window that holds its subject. A press
+    waiting unshown flashes the button of the main window last in front while none is in front; a closed main window is
+    forgotten there, its flash going to the first. (from D196, D108, D351)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
     hands it in its language, with the English catalogue as fallback. (from D196, D142) A run's step waiting on a role the person
     holds is one (`Step`): its click attends the session its run placed, whose head carries the step's presses.
@@ -283,18 +284,22 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The design language**
 
-41. Components name roles, never colours, and only `tokens.css` holds a value. Warm paper in the neutrals; one blue
-    accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
+41. Components name roles, never colours, and only `tokens.css` holds a value. Near-neutral greys with a faint cool lean,
+    so amber and red are the only warm things; one blue accent for what can be pressed or moves (`live` is its second name,
+    on the same field, which selected text wears too); amber (`you`) marks only what waits on the owner,
     a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
-    aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
+    aliases until UIDS18); a crimson red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A
+    disabled control is told by its label in `ink-disabled` in the atoms' neutral frame, never by an opacity. A word wears
     its role's `-ink`; a glyph wears the inks and never the accent, beside a link's blue words too, every story's render held
     to it (`glyphInk.test.tsx`). `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
     themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
-    and a second run changes nothing. (from D330, D41)
+    and a second run changes nothing. (from D330, D351, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,
     mono 13, none under 12 px, each line height a variable that `:lang(zh)` sets taller. Every size is a step and every
-    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport.
-    (from D330, D56, D185)
+    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport. A card
+    pads 12 by 16 and wears no left edge (`Card`, `cardFrame`); cards stack 16 apart and queue 8 apart. A border is 1 or 2 px
+    (the focus ring, a selected row's rail), and 3 only as `Card`'s `edge`, a wait's or a failure's (`design/edges.test.ts`);
+    a note says its tone in words. (from D330, D56, D185)
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that

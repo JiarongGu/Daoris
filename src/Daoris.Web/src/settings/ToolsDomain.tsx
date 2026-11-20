@@ -6,7 +6,7 @@ import {
   type GitTarget, useToolDelete, useToolDownload, useToolGit, useToolLocation, useToolPick, useTools, useToolsEnded,
   useToolsLook, useToolStop, useToolUse,
 } from '../bridge/shell';
-import { failure, Inline, type Notify, Prose, useErrorNotify } from '../design/ui';
+import { failure, Inline, type Notify, Note, Prose, useErrorNotify } from '../design/ui';
 import { DomainLoading } from './DomainLoading';
 import {
   choiceOf, endSaid, type ToolChoice, ToolCard, ToolLocations, type ToolLookShown, type ToolShown, type ToolUse,
@@ -94,9 +94,9 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
 
       {/* The file both doors edit does not read: every tool is refused until it is fixed, in the driver's own words. */}
       {state.problem && (
-        <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="fail" className="mt-3 bg-raised px-3.5 py-2 text-body">
           <Inline text={t('settings.tools.fileProblem', { problem: state.problem })} />
-        </p>
+        </Note>
       )}
 
       {state.tools.map((tool) => {

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
+import { cardFrame } from '../../design/ui';
 import { HandedAccount } from './HandedAccount';
 import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 
@@ -17,7 +18,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 function Card({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-card border border-line border-l-[3px] border-l-accent bg-raised px-3 py-2">
+    <div className={cardFrame()}>
       <span className="text-caption text-ink-faint">{t('work.conversation.target')}</span>
       <p className="m-0 mt-0.5 line-clamp-2 whitespace-pre-wrap text-body text-ink">
         {'You are the agent for `reports`, working inside its own repository and nowhere else.\n\nYour target is quest `#abc123`, asked by `ask #a1b2c3`:'}

@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLink } from '../../design/links';
-import { Button } from '../../design/ui';
+import { Button, cardFrame } from '../../design/ui';
 import { clockOf, phaseTime } from '../../locales/format';
 import { cn } from '../../lib/cn';
 
@@ -96,7 +96,7 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
       aria-label={wait.title}
       data-wait={wait.id}
       tabIndex={-1}
-      className="grid gap-2 rounded-card border border-line border-l-4 border-l-you bg-raised px-3 py-2.5 outline-none focus:outline-2 focus:outline-offset-2 focus:outline-accent/60"
+      className={cn('grid gap-2', cardFrame('wait'), 'outline-none focus:outline-2 focus:outline-offset-2 focus:outline-accent/60')}
     >
       <header className="flex min-w-0 items-baseline gap-2">
         <span aria-hidden="true" className="text-you-ink">◆</span>

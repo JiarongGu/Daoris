@@ -5,7 +5,7 @@ using Daoris.Desktop;
 namespace Daoris.Desktop.Tests;
 
 /// <summary>
-/// The native chrome copies five of the page's colour tokens, because Windows cannot read a
+/// The native chrome copies seven of the page's colour tokens, because Windows cannot read a
 /// stylesheet. This is what stops the copy drifting.
 /// </summary>
 /// <remarks>
@@ -109,19 +109,23 @@ public sealed class ChromePaletteTests
     }
 
     /// <summary>
-    /// 🔴 The taskbar's count is white on red in either theme: on the close button's dark-theme colours it read as a black
-    /// <c>9+</c> on the taskbar, which is the OS's and not the page's (FIX-LOG 2026-11-20).
+    /// 🔴 The taskbar's count is what waits on the owner, so it wears the owner's amber with its dark ink in either theme:
+    /// one fixed pair, because the taskbar is the OS's and not the page's (a theme-following count once read as a black
+    /// <c>9+</c> on a red, FIX-LOG 2026-11-20), and never the failure's red.
     /// </summary>
     [Fact]
-    public void TheTaskbarCountIsWhiteOnRedInEitherTheme()
+    public void TheTaskbarCountIsTheOwnersAmberInEitherTheme()
     {
         var light = Declarations(TokensCss(), dark: false);
-        Assert.Equal(light["--fail"].ToArgb(), ChromePalette.CountFill.ToArgb());
-        Assert.Equal(light["--on-fail"].ToArgb(), ChromePalette.CountInk.ToArgb());
-        Assert.Equal(Color.White.ToArgb(), ChromePalette.CountInk.ToArgb());
-        Assert.True(Contrast(ChromePalette.CountInk, ChromePalette.CountFill) >= 4.5,
-            $"the count reads {Contrast(ChromePalette.CountInk, ChromePalette.CountFill):F2}:1 on its red");
-        Assert.NotEqual(ChromePalette.Dark.CloseGlyphHot.ToArgb(), ChromePalette.CountInk.ToArgb());
+        var dark = Declarations(TokensCss(), dark: true);
+        Assert.Equal(dark["--you"].ToArgb(), ChromePalette.CountFill.ToArgb());
+        Assert.Equal(dark["--on-you"].ToArgb(), ChromePalette.CountInk.ToArgb());
+        Assert.True(Contrast(ChromePalette.CountInk, ChromePalette.CountFill) >= 7,
+            $"the count reads {Contrast(ChromePalette.CountInk, ChromePalette.CountFill):F2}:1 on its amber");
+        foreach (var red in new[] { light["--fail"], dark["--fail"] })
+        {
+            Assert.NotEqual(red.ToArgb(), ChromePalette.CountFill.ToArgb());
+        }
     }
 
     private static double Contrast(Color first, Color second)

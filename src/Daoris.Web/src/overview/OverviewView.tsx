@@ -84,7 +84,8 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
         onNotifications={onNotifications}
       />
 
-      <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
+      {/* Cards 16 px apart, the tiles among them and the row of tiles from the cards below (§7.3). */}
+      <div className="mb-4 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-4">
         <Tile
           label={t('overview.tiles.adopted.label')}
           value={adopted.length}
@@ -118,7 +119,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
       {/* Two cards side by side by the main area's own width, never the viewport's: the side bar
           and a list narrow the main area while the window stays as wide. 56rem is where a
           1024 px window's main area splits. */}
-      <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
+      <div className="grid items-start gap-4 @4xl/main:grid-cols-2">
         <Card>
           <CardHeader
             title={t('overview.outstanding.title')}

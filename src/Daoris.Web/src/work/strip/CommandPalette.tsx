@@ -102,11 +102,11 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
         aria-autocomplete="list"
         aria-controls="palette-list"
         aria-activedescendant={rows[chosen] ? `palette-${rows[chosen].id}` : undefined}
-        className="shrink-0 border-b border-line bg-transparent px-3.5 py-2.5 text-body text-ink outline-none placeholder:text-ink-faint"
+        className="shrink-0 border-b border-line bg-transparent p-3 text-body text-ink outline-none placeholder:text-ink-faint"
       />
 
       {hits.length === 0 && (
-        <p className="m-0 px-3.5 pb-1 pt-4 text-small text-ink-faint">
+        <p className="m-0 px-3 pb-1 pt-4 text-small text-ink-faint">
           {t('palette.nothing', { typed: question })}
         </p>
       )}
@@ -132,7 +132,7 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
                 onMouseMove={() => setActive(index)}
                 onClick={() => run(command)}
                 className={cn(
-                  'flex w-full items-center gap-2.5 rounded-control px-2.5 py-1.5 text-left text-body',
+                  'flex w-full items-center gap-2.5 rounded-control px-2 py-1.5 text-left text-body',
                   index === chosen ? 'bg-accent-soft text-ink' : 'text-ink-soft',
                 )}
               >

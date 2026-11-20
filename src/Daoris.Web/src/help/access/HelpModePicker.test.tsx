@@ -124,12 +124,16 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
 
     await pick('full');
     const asks = screen.getByRole('group', { name: i18n.t('help.mode.confirm.label') });
-    expect(asks.className).toContain('border-l-warn');
+    expect(asks.className).not.toMatch(/\bborder-l-/);
     const enable = within(asks).getByRole('button', { name: i18n.t('help.mode.confirm.enable') });
-    expect(enable.className).toContain('border-warn');
+    expect(enable.querySelector('svg')).not.toBeNull();
+    expect(enable.className).not.toMatch(/\bborder-warn\b/);
     await userEvent.click(enable);
 
-    expect(within(asks).getByRole('alert')).toHaveTextContent('The driver could not write its settings.');
+    const refusal = within(asks).getByRole('alert');
+    expect(refusal).toHaveTextContent('The driver could not write its settings.');
+    expect(refusal).toHaveClass('text-fail-ink');
+    expect(refusal.querySelector('svg')).not.toBeNull();
     expect(enable).toBeEnabled();
     // Never mind puts it down and gives the focus back to the chip.
     await userEvent.click(within(asks).getByRole('button', { name: i18n.t('common.cancel') }));

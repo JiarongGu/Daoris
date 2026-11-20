@@ -2,7 +2,7 @@ import { useContext, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Button, Inline, Pill } from '../../design/ui';
+import { Button, cardFrame, type CardEdge, Inline, Pill } from '../../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../InlineConfirm';
 import {
   findingPlace, findingsOf, type OpinionDetail, type OpinionFinding, type OpinionGate as Gate, type OpinionPress,
@@ -34,9 +34,9 @@ const ACT: Record<OpinionPress, keyof OpinionGateActs> = {
   sendBack: 'sendBack',
 };
 
-/** The border a tone wears, beside its pill's word: never the hue alone. */
-const RAIL: Record<ReturnType<typeof opinionTone>, string> = {
-  open: 'border-l-st-open', taken: 'border-l-live', done: 'border-l-ok', neutral: 'border-l-line-strong',
+/** The card's edge a tone wears, beside its pill's word: a wait's while it waits on the person, and none otherwise (§7.4). */
+const EDGE: Record<ReturnType<typeof opinionTone>, CardEdge | undefined> = {
+  open: 'wait', taken: undefined, done: undefined, neutral: undefined,
 };
 
 /**
@@ -116,7 +116,7 @@ export function OpinionGate({
   return (
     <section
       aria-labelledby={headingId}
-      className={cn('grid min-w-0 gap-2 rounded-card border border-line border-l-[3px] bg-raised px-3 py-2.5', RAIL[tone], className)}
+      className={cn('grid min-w-0 gap-2', cardFrame(EDGE[tone]), className)}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {/* Status leads: the state, then what it is and who reads it. */}
