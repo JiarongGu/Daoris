@@ -65,13 +65,13 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
   const after = (block: Pick<Block, 'key' | 'at'>) => isAfter(mark, part, timeOf(block));
   const rows = turns.map((turn) => ({ turn, rows: [...(turn.ask ? [{ ...turn.ask, kind: 'ask' as const }] : []), ...turn.items].filter(after) }));
   const first = rows.find((each) => each.rows.length > 0);
-  if (!first) return null;
+  if (!first && !lifetimes.some((event) => (event.kind === 'child' || event.kind === 'task') && isAfter(mark, part, event))) return null;
 
   const lines: DigestLine[] = [];
   const blocks = rows.flatMap((each) => each.rows.filter((row): row is Block => row.kind !== 'ask'));
   // A part's boundary, or a task's end after the turn that started it, is no turn; nor are words waiting at a session's foot.
   const turned = rows.filter((each) => !each.turn.waiting && each.rows.some((row) => row.kind !== 'note' && row.kind !== 'beside'));
-  if (turned.length > 0) lines.push({ kind: 'turns', count: turned.length, to: first.rows[0]!.key });
+  if (first && turned.length > 0) lines.push({ kind: 'turns', count: turned.length, to: first.rows[0]!.key });
 
   const edits = blocks.filter((block) => block.kind === 'tool' && callKind(block) === 'edit' && block.status !== 'failed');
   const files = filesChanged(edits);
@@ -111,5 +111,7 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
   const words = [...blocks].reverse().find((block) => block.kind === 'message' && block.text?.trim());
   if (words) lines.push({ kind: 'words', text: quoted(words.text!), to: words.key });
 
-  return { turn: first.turn.key, lines };
+  const jump = lines.flatMap((each) => ('to' in each && each.to ? [each.to] : []))[0];
+  const anchor = first?.turn ?? turns.find((turn) => turn.items.some((block) => block.key === jump)) ?? turns.at(-1);
+  return anchor ? { turn: anchor.key, lines } : null;
 }

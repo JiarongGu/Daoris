@@ -91,6 +91,14 @@ describe('the digest at the read mark', () => {
     expect(children).toEqual({ kind: 'children', started: 1, ended: 2, failed: 0, nested: 1, to: 'e2' });
   });
 
+  it('counts a subagent another started and ended after the mark even where no row of the session follows it', () => {
+    const events = DRIVEN.filter((event) => event.seq <= 7);
+    const mark: ReadMark = { ...DRIVEN_MARK, seq: 5, at: events.find((event) => event.seq === 5)!.at };
+    const read = digest(events, 's-driven', mark)!;
+
+    expect(line(read.lines, 'children')).toEqual({ kind: 'children', started: 1, ended: 1, failed: 0, nested: 1, to: 'e2' });
+  });
+
   it('counts the whole of a newer part when the mark is in the part before it, from the part boundary on', () => {
     const read = digest(MOVED, 's-moved', MOVED_MARK)!;
     const record = fromRecord(MOVED, 's-moved', MOVED_MARK);
