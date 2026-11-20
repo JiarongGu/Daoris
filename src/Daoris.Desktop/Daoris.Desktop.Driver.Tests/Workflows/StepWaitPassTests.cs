@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests.Workflows;
 
 /// <summary>
-/// A <c>quest.holds</c> holding a done nothing checked (its ask gave its quest no requirement) waits on the person's pass with their words:
-/// a wait of its own, on the acceptor, with the run's skip as its press, so <i>What needs you</i> rows it and the session's page draws it.
+/// A <c>quest.holds</c> holding a done nothing checked (its ask gave its quest no requirement) waits on its holder's pass with their words:
+/// a wait of its own, on the step's role, with the run's skip as its press, so <i>What needs you</i> rows it and the session's page draws it.
 /// Seen failing first: the step stood active with its reason and read as no wait at all, so neither place offered the pass, and the owner
 /// passed it from the terminal (<c>workflow skip &lt;run&gt; holds "…"</c>).
 /// </summary>
@@ -14,8 +14,9 @@ public sealed class StepWaitPassTests
     private const string Unit = "run:q7";
     private static readonly DateTimeOffset Now = new(2026, 11, 18, 9, 0, 0, TimeSpan.Zero);
 
-    private const string Unchecked = "its done is unchecked: ask #a1 gave its quest no requirement, so nothing compared the done with what you "
-                                     + "asked; read its handback (quest #q7's done note) and pass this step with your words where it does what you asked";
+    private const string Unchecked = "its done is unchecked: ask #a1 gave its quest no requirement, so nothing compared the done with what was "
+                                     + "asked; whoever holds the step's role (`ask-reader` where it names none) reads its handback (quest #q7's done note) and "
+                                     + "passes this step with their words where it does what was asked";
 
     private static readonly NodeDeclaration Holds = new("holds", NodeKinds.QuestHolds, 1, NodeReach.Observed);
 
@@ -35,7 +36,7 @@ public sealed class StepWaitPassTests
         var wait = StepWaiting.Read(record, Holds, WorkPerformer.StatusOf(record, "holds"));
         var row = HeldSteps.Step(Run, "engine", "aurora", Run, Holds, record);
 
-        Assert.Equal((PersonWaits.Pass, "acceptor", StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
+        Assert.Equal((PersonWaits.Pass, StepRoles.AskReader, StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
         Assert.NotNull(row);
         Assert.Equal((PersonWaits.Pass, StepHolders.Person), (row.Why, row.Holder));
         Assert.Contains(NodeWordActs.Skip, row.Presses);

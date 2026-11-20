@@ -146,7 +146,7 @@ public sealed partial class NotificationsReadTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The terminal's groups are the page's: every kind of <c>ATTENTION_GROUP</c> (<c>work/attention/attention.ts</c>) in the same group,
+    /// The terminal's groups are the page's: every kind of <c>ATTENTION_GROUP</c> (<c>work/attention/attentionGroups.ts</c>) in the same group,
     /// and none more, read from the page's source.
     /// </summary>
     [Fact]
@@ -155,7 +155,7 @@ public sealed partial class NotificationsReadTests : DriverModuleBridge
         var at = new DirectoryInfo(AppContext.BaseDirectory);
         while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
         Assert.NotNull(at);
-        var source = File.ReadAllText(Path.Combine(at.FullName, "src", "Daoris.Web", "src", "work", "attention", "attention.ts"));
+        var source = File.ReadAllText(Path.Combine(at.FullName, "src", "Daoris.Web", "src", "work", "attention", "attentionGroups.ts"));
         var block = GroupTable().Match(source);
         Assert.True(block.Success, "the page declares no ATTENTION_GROUP");
         var page = KindGroup().Matches(Comments().Replace(block.Groups["body"].Value, ""))

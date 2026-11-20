@@ -205,6 +205,7 @@
   "workflow.run.graph.said.activeRun": "Under way.",
   "workflow.run.graph.said.reached": "Reached on {{on}}.",
   "workflow.run.graph.said.reachedRun": "Reached.",
+  "workflow.run.graph.said.holdsNoReader": "No one is set to read this done against its ask, so it goes on.",
   "workflow.run.graph.said.skippedByYou": "Passed over for this work, by you.",
   "workflow.run.graph.said.skippedByRecord": "Passed over for this work by its record.",
   "workflow.run.graph.said.failed": "Failed: `{{code}}`.",

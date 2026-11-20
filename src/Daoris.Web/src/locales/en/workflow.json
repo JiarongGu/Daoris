@@ -262,6 +262,7 @@
   "workflow.role.opinion": "Second opinion",
   "workflow.role.tester": "Tester",
   "workflow.role.acceptor": "Acceptor",
+  "workflow.role.ask-reader": "Ask reader",
   "workflow.role.approver": "Approver",
   "workflow.role.release-manager": "Release manager",
   "workflow.role.operations": "Operations",

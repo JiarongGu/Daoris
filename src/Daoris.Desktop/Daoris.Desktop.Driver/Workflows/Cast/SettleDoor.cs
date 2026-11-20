@@ -9,6 +9,9 @@ namespace Daoris.Driver;
 /// <param name="Epoch">The epoch of the tenure its channel read; null names none, and is judged against the holder now.</param>
 public sealed record SettleBy(string Who, int? Epoch = null)
 {
+    /// <summary>The working session whose own press the word is, whatever holder it speaks as; null for every other channel.</summary>
+    public string? Session { get; init; }
+
     /// <summary>
     /// The owner role, the top of every line: its end of the work (a stop) and its answer to a decision, which confirms or overrules the
     /// proposal of the decision's holder. Held by the person, so the person's channels speak it for these two acts.
@@ -46,9 +49,10 @@ public sealed record SettleBy(string Who, int? Epoch = null)
     /// agent's, and an appointed role's act an agent's. A channel that keeps no name a holder takes speaks the unnamed <c>agent</c>. A stop or a
     /// decision from an agent is its holder's word, never the owner role's.
     /// </summary>
-    public static SettleBy? OfChannel(string by, bool appointed, int? epoch, string? agent = null) =>
-        appointed ? new(CastHolders.Agent, epoch)
-        : by == TerminalTierBy.Session ? new(agent is { } name && CastHolders.Is(CastHolders.AgentNamed(name)) ? CastHolders.AgentNamed(name) : CastHolders.Agent, epoch)
+    public static SettleBy? OfChannel(string by, bool appointed, int? epoch, string? agent = null, string? session = null) =>
+        appointed ? new(CastHolders.Agent, epoch) { Session = session }
+        : by == TerminalTierBy.Session
+            ? new(agent is { } name && CastHolders.Is(CastHolders.AgentNamed(name)) ? CastHolders.AgentNamed(name) : CastHolders.Agent, epoch) { Session = session }
         : by == TerminalTierBy.AskDaoris ? new(AskDaoris, epoch)
         : null;
 }

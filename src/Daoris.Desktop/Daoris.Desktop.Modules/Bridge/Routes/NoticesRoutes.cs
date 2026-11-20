@@ -126,7 +126,8 @@ public sealed class NoticesRoutes(DriverLoop loop)
         foreach (var (_, node) in Partition(attention, AttentionStateSlice.Rows) ?? [])
         {
             if (node is not JsonObject row || Json.Text(row, "kind") is not { } kind || kind == "confirmation") continue;
-            var group = NoticesRead.Group(kind, row["stands"]?.GetValueKind() == JsonValueKind.True, row["stale"] is JsonObject);
+            var group = NoticesRead.Group(
+                kind, row["stands"]?.GetValueKind() == JsonValueKind.True, row["stale"] is JsonObject, Json.Text(row, "class") == AttentionOwnership.AgentsClass);
             var subject = Json.Text(row, "session") ?? Json.Text(row, "quest") ?? Json.Text(row, "ask") ?? Json.Text(row, "id") ?? "";
             var says = (row["note"] is JsonObject note ? Json.Text(note, "note") : null) ?? Json.Text(row, "detail") ?? Json.Text(row, "title");
             needs.Add(new(group, kind, subject, Json.Text(row, "workspace"), Moment(Json.Text(row, "since")), FirstLine(says)));

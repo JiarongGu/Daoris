@@ -84,6 +84,11 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runSaid(zh, stepOf(handed))).toBe('在 `daoris/q2-work` 的 `11111111` 上观察中。');
   });
 
+  it('says an unchecked done no one is set to read goes on by itself, in Chinese too', () => {
+    const goesOn = TABLE.rows.find((row) => row.node === 'quest.holds' && row.code === 'no-reader')!;
+    expect(runSaid(i18n.getFixedT('zh'), stepOf(goesOn))).toBe('没有人负责按需求核对这次完成，所以它自行继续。');
+  });
+
   // Each code a read that names no run answers, in the en catalogue's words, which the driver's
   // `WorkflowNoRun.Said` says on the terminal; and each has its zh words.
   it.each(TABLE.none.map((row) => [row.code, row] as const))('words the no-run code %s in the table’s words', (_code, row) => {

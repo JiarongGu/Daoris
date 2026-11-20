@@ -148,6 +148,8 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
+    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run);
+
     /// <inheritdoc cref="LeftSteps.With"/>
     public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);
 

@@ -55,7 +55,7 @@ function foldedHere(): Set<NotificationsGroup> {
  * presses no hook itself.
  */
 export function NotificationsView({
-  presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
+  presses, needs, withAgents = 0, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
   messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing, onOpenPlan, update, onSayUpdate,
 }: {
   /** The install's update and the person's word on it: a Confirm held by a drain says what it waits on, and offers *Install later*. */
@@ -64,8 +64,9 @@ export function NotificationsView({
   /** The steward's line (`NotificationsStanding`), at the head of the presses' group. */
   standing?: ReactNode;
   presses: Confirmation[];
-  /** How many rows *What needs you* holds but the presses' own; null while not judged, which draws the band's own skeleton. */
+  /** How many of the owner's rows *What needs you* holds but the presses' own (null while not judged); `withAgents` the agents', uncounted. */
   needs: number | null;
+  withAgents?: number;
   /** The sessions working now, which the line says when nothing needs the person. */
   working: number;
   /** *What needs you*'s rows, as the band draws them in the view, with no card of its own. */
@@ -152,12 +153,12 @@ export function NotificationsView({
             <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} onOpenPlan={onOpenPlan} update={update} onSayUpdate={onSayUpdate} />
           </Group>
         )}
-        {needs !== 0 && (
-          <Group id="needs" title={t('work.attention.title')} count={needs} folded={folded.has('needs')} onFold={fold}>
+        {nothing && <NothingNeedsYou working={working} />}
+        {(needs !== 0 || withAgents > 0) && (
+          <Group id="needs" title={t('work.attention.title')} count={needs === 0 ? null : needs} folded={folded.has('needs')} onFold={fold}>
             {attention}
           </Group>
         )}
-        {nothing && <NothingNeedsYou working={working} />}
         {nothing && said.items === 0 && unread === 0 && <p className="m-0 text-small text-ink-faint">{t('notifications.nothingUnread')}</p>}
         {said.items > 0 && (
           <Group
@@ -195,7 +196,7 @@ const groupAnchor = (group: NotificationsGroup) => `notifications-${group}`;
 function Group({ id, title, count, folded, onFold, warn = false, unread, children }: {
   id: NotificationsGroup;
   title: string;
-  /** How many it holds; null while not known. */
+  /** How many it holds; null while not known, and for *What needs you* holding none of the owner's. */
   count: number | null;
   folded: boolean;
   onFold: (group: NotificationsGroup) => void;
