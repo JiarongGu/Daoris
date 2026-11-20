@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { clockOf } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Chip, Icon } from '../../design/ui';
+import { cardFrame, Chip, Icon } from '../../design/ui';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import type { Ask, Receipts } from './conversation';
 import type { Author } from './sender';
@@ -25,7 +25,7 @@ export const AUTHOR_KEYS = {
 export const ChannelHomes = createContext<ChannelHome>(NO_CHANNEL_HOME);
 
 /** Another session's claim, named by its poster where the page holds the channel's message, else as a claim in Daoris's words. */
-const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
+export const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
   // An agent outside Daoris is its own, named as outside, never as the person or a session.
   if (poster?.outside) {
     const who = [poster.repository, poster.agent].filter(Boolean).join(' · ');
@@ -77,10 +77,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
   return (
     <div
       data-word={ask.key}
-      className={cn(
-        'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
-        findings || marked ? 'border-l-line-strong' : 'border-l-accent',
-      )}
+      className={cardFrame()}
     >
       <SenderChip label={label} at={ask.at}>
         {home && <ChannelDoor message={home} onOpen={onOpen!} />}

@@ -6,7 +6,7 @@ import { size } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 import type { Account } from '../../agents/tools';
-import { Button, Icon, Inline, Menu, Tip } from '../../design/ui';
+import { Button, Icon, Inline, Menu, Note, Tip } from '../../design/ui';
 import { type AgentChoice, AgentChip } from './AgentChip';
 import { CHIP } from '../../design/atoms/ChipCombobox';
 import type { Place } from '../../help/focus';
@@ -429,9 +429,9 @@ export function NewConversation({
       {/* The driver's own sentence, whole, where Start is pressed: it names what to do, and a paraphrase of an
           instruction is a different instruction. */}
       {refusal && (
-        <p role="alert" className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+        <Note tone="fail" role="alert" className="whitespace-pre-wrap">
           <Inline text={refusal} />
-        </p>
+        </Note>
       )}
     </form>
   );

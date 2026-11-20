@@ -15,7 +15,7 @@
  * whose meaning needs 64px is not a mark. Solid field, straight arms, one centre: the shape is
  * legible before any of its detail is.
  *
- * The field takes `currentColor`, so a caller places it in the accent and both themes follow; the
+ * The field takes `currentColor`, so a caller places it in the ink, as every glyph, and both themes follow; the
  * figure is knocked out in the page's own colour rather than painted, which is what makes it a seal
  * rather than a badge.
  */

@@ -135,10 +135,10 @@ describe('RunWaitsHead', () => {
 
   it('offers the pass of an unchecked done at holds with your words', async () => {
     const onWord = vi.fn().mockResolvedValue({ run: 'q7', node: 'holds', act: 'skip', done: true });
-    const row: StepWaitRow = { run: 'q7', node: 'holds', why: 'pass', role: 'acceptor', holder: 'person', presses: ['skip', 'stop'] };
-    render(<RunWaitsHead waits={[{ run: 'q7', node: 'holds', why: 'pass', role: 'acceptor' }]} steps={[row]} onWord={onWord} />);
+    const row: StepWaitRow = { run: 'q7', node: 'holds', why: 'pass', role: 'ask-reader', holder: 'person', presses: ['skip', 'stop'] };
+    render(<RunWaitsHead waits={[{ run: 'q7', node: 'holds', why: 'pass', role: 'ask-reader' }]} steps={[row]} onWord={onWord} />);
 
-    const line = screen.getByRole('group', { name: 'holds: waiting on acceptor: you' });
+    const line = screen.getByRole('group', { name: 'holds: waiting on ask-reader: you' });
     await userEvent.click(within(line).getByRole('button', { name: 'Not needed this run…' }));
     await userEvent.type(within(line).getByRole('textbox'), 'It does what I asked.');
     await userEvent.click(within(line).getByRole('button', { name: 'Not needed this run' }));

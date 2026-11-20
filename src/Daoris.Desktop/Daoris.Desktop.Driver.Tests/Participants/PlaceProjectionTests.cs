@@ -133,6 +133,18 @@ public sealed class PlaceProjectionTests
         Assert.Equal(new PlaceValue(HelperRules.Resolve(DriverConfig.Empty, "site", "borealis").Rule.Mode, "default"), bare.Helpers);
     }
 
+    [Fact]
+    public void The_access_chip_says_declarations_where_only_permissions_are_unrestricted()
+    {
+        static PlaceValues At(DriverConfig config) => PlaceProjection.ValuesAt(config, "engine", "aurora", PlaceSource.RepositoryLevel);
+        var only = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] });
+        var full = DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Full = true });
+
+        Assert.Equal("declarations", At(only).Access.Value);
+        Assert.Equal("full", At(full).Access.Value);
+        Assert.Equal("today", At(DriverConfig.Empty).Access.Value);
+    }
+
     /// <summary>Each work names its role and where it sits, as the catalogue the start reads says.</summary>
     [Fact]
     public void Each_work_names_its_role_and_scope_as_the_catalogue_says()

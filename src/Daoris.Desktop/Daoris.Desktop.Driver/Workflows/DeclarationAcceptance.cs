@@ -8,21 +8,53 @@ namespace Daoris.Driver;
 public static class DeclarationAcceptance
 {
     /// <summary>
-    /// What full access accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in the file at
-    /// <paramref name="configPath"/>, and the sentence that says it (what changed against the blob accepted before); null where it is
-    /// accepted meanwhile, or where its checkout is gone.
+    /// What full access (<see cref="DeclarationMode"/>) accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in
+    /// the file at <paramref name="configPath"/>, and the one line telling the person what changed and the mode that took it; null where it
+    /// is accepted meanwhile, the repository left full access, or its checkout is gone. Both are judged again on the file as its writer
+    /// reads it under its lock (<see cref="DriverConfigDisk.Edit"/>), so a choice another writer made meanwhile is never written over.
     /// </summary>
     internal static async Task<string?> AcceptByModeAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
     {
-        var config = DriverConfig.Load(configPath);
         if (owed.Root is not { } root) return null;
-        var before = IntegrationAcceptance.Of(config, owed.Repository)
-            ?? (WorkflowSelection.ResolveLanded(config, owed.Repository, owed.Workspace).Gates);
+        var before = Before(DriverConfig.Load(configPath), owed);
         var was = before is { } blob ? await IntegrationAcceptance.TextAsync(root, blob, ct).ConfigureAwait(false) : null;
         var now = await IntegrationAcceptance.TextAsync(root, owed.Blob, ct).ConfigureAwait(false);
-        Accept(home, config, owed.Repository, owed.Workspace, owed.Blob).Save(configPath);
-        return $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line)}";
+        var accepted = false;
+        DriverConfigDisk.Edit(configPath, current =>
+        {
+            if (DeclarationMode.Waits(current, owed.Repository, owed.Workspace) || Before(current, owed) != before) return current;
+            accepted = true;
+            return Accept(home, current, owed.Repository, owed.Workspace, owed.Blob);
+        });
+        return accepted
+            ? $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line).TrimEnd('.')} ({DeclarationMode.Said(DeclarationMode.Full)})."
+            : null;
     }
+
+    /// <summary>
+    /// A change that alters no command (<see cref="IntegrationOwed.Kept"/>) accepted and said with what it set aside; null where its judged
+    /// acceptance no longer stands, judged on the file as its writer reads it under its lock, so a withdrawal another writer made
+    /// meanwhile is never undone.
+    /// </summary>
+    internal static Task<string?> AcceptKeptAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (owed.Against is not { } against || Before(DriverConfig.Load(configPath), owed) != against) return Task.FromResult<string?>(null);
+        var accepted = false;
+        DriverConfigDisk.Edit(configPath, current =>
+        {
+            if (Before(current, owed) != against) return current;
+            accepted = true;
+            return Accept(home, current, owed.Repository, owed.Workspace, owed.Blob);
+        });
+        if (!accepted) return Task.FromResult<string?>(null);
+        var kept = DeclarationSetAside.Said(owed.SetAside) is { Length: > 0 } parts ? $", only {parts}" : "";
+        return Task.FromResult<string?>($"{owed.Repository}'s daoris.gates.json on {owed.Line} changed no command{kept}, so it stays accepted as it landed.");
+    }
+
+    /// <summary>The blob <paramref name="owed"/> is judged against under <paramref name="config"/>: the integration's acceptance, else the landed route's gates.</summary>
+    private static string? Before(DriverConfig config, DeclarationOwed owed) =>
+        IntegrationAcceptance.Of(config, owed.Repository) ?? WorkflowSelection.ResolveLanded(config, owed.Repository, owed.Workspace).Gates;
 
     /// <summary>The one withdrawal: <paramref name="repository"/>'s acceptance dropped for every purpose, as <see cref="Accept"/> kept it.</summary>
     public static DriverConfig Withdraw(string home, DriverConfig config, string repository, string? workspace)

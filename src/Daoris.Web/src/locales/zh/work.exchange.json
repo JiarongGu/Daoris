@@ -1,5 +1,4 @@
 {
-  "work.exchange.rows": "与他人",
   "work.exchange.asked": "已请求{{who}}",
   "work.exchange.back": "{{who}}：{{outcome}}",
   "work.exchange.findings_one": "{{count}} 条发现",

@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `App/` | The composition (`Program`), the frameless main window and the framed secondary windows on the kit's `ChromiumWindowHost`, the notifier, the taskbar's wear, the browser's host and process |
 | `Modules/Bridge/` | `DAORIS.DRIVER`, one route class per domain in `Routes/` with its bodies and wire shapes in types beside it, `PersonRoutes` |
 | `Modules/Platform/` | `StatePublisher`, `StateSlices`, the instance pipe and its `Pipe*` parts, `LogModule` |
-| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers, the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
+| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers and the census of whose each of its rows is (`AttentionOwnership`) and of who is appointed to take the agents' (`AttentionTakers`), the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
 | `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
@@ -125,10 +125,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (in the page's red, *9+* past nine) and
-    in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
-    subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
-    main window is forgotten there, its flash going to the first. (from D196, D108)
+19. Each main window wears the count of what waits on the owner, every workspace's rows the census classes the owner's (rule 32), on
+    its taskbar button (dark ink on the owner's amber in either theme, since what it counts waits on the owner and red is a
+    failure's alone; *9+* past nine) and in its title, as its page tells it, and the install's identity Daoris chooses. A
+    notification's click brings forward the window that holds its subject. A press waiting unshown flashes the button of
+    the main window last in front while none is in front; a closed main window is forgotten there, its flash going to the
+    first. (from D196, D108, D351)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
     hands it in its language, with the English catalogue as fallback. (from D196, D142) A run's step waiting on a role the person
     holds is one (`Step`): its click attends the session its run placed, whose head carries the step's presses.
@@ -184,12 +186,24 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
     `daoris notices` lists, and `daoris notices --show <subject>` prints what the window shows for a memory row's session or sweep
     (`NoticesShown`, `MemoryWaitShown`), read from the running Daoris and deciding nothing; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
-    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    (D283), a changed one saying the checks its commands added, removed and changed and that work not changing them itself is checked
+    under the ones accepted (D350); only restricted access owes one, so its row begins *Restricted: waits for you*, and a full-access
+    repository's change is said in the look's one line instead (D353). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
     the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
     Memory section, its head carrying a role's held answer there with *Overrule*. Overview keeps one summary line per group.
-    (from D150, D181, D196, D297)
+    Each pushed row carries whose it is, judged by one census in the modules (`AttentionOwnership`, D336), which gives every kind
+    the judge makes the owner's kind of wait (question, go-ahead, release, sign-in, money, confirm it was you), and a kind with an
+    agents' side the role that takes it and what tells a row's side; its test reads every source of the modules that makes rows and
+    fails a kind made with no class. An agents' kind is counted as the owner's until a role is appointed to take it: it is the
+    agents' only where the roles as they stand at the judgement appoint one (`AttentionTakers`: the decisions' admission answers a
+    supervisor of the kind's act at the row's place, or a holder holds the steward); else it is the owner's, counted, and its row
+    says *no role takes this yet* (尚无角色接手). A policy hold that names money and a start an account holds for anything but a
+    cool-off or a reading are the owner's whoever is appointed. The bell, the taskbar and the title, a place's number,
+    *Notifications*' count, Overview's lines, a held call's or a step's toast and `daoris notices` count the owner's rows alone
+    (`ownersListed`); the agents' are listed last under *With the agents* (交给智能体), on the plain line's edge, and Overview's
+    line for them is neutral. (from D150, D181, D196, D297, D336)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits
@@ -203,8 +217,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **A session's page**
 
-37. A head shows the state, the title and two facts; a session's title takes one line, a quest's or an ask's two. The acts
-    hold still; the id moves to ⋯ and *Details*. A conversation's name is its title above its ask's and its first words, and its pin
+37. A session's head is its panel's (`work/session/PanelHead.tsx`): the state from the reader's line (a wait on the person names the
+    oldest, a press to its dock card), the title on one line, where and who with the model that ran (`headFactsOf`) and its chips
+    (`HeadChips`), and under them the facts its state makes matter (`sessionFacts`); a quest's or an ask's title takes two. The acts
+    hold still (`HeadActs`); the id moves to ⋯ and *Details*; a stop's, a delete's, a rename's or a hand-over's ask stands under
+    the head (`EndAsks`, `RenameAsk`). A conversation's name is its title above its ask's and its first words, and its pin
     marks its row: each session's row of `SESSION_GROUPS` carries its conversation's `name` and `pinned` (`conversation_facts`), the ⋯ of a row
     and of the head offer *Rename…* (its ask under the head) and *Pin* or *Unpin* (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by the part
     pressed), and *Delete…* says how many parts of its line it takes. *Started from*, on *Details*' folded line cut with an ellipsis, names as
@@ -212,9 +229,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`work/head/startedFrom.tsx`). Under a head whose session its run's passage is drawn on stands the workflow's track (`work/track/`):
     each step a chip with its mark, the standing one with its attempt and, where the dock holds it, "waiting on `<role>`: `<holder>`"
     (D304), how far it came, and *Flowchart*, which opens the run's view in a drawer, the side bar holding no Workflow view; a chip's
-    press leads to its rows, each attempt's start and end a row between the turns it fell between, read from the same passage, the
-    standing step's act rows (`StepActRows`) under its start and a failed step's row leading to its press in the dock, never offering
-    one of its own. *Details* adds *Started with*, the requirement it began with, whole (the quest's
+    press brings its step's first rule in the story (`toStepRows`), each attempt's start and end a rule at its moment among the
+    turns, read from the same passage. *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start
     was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162) A rail row is the
     session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`) in one status line that never grows its height:
@@ -225,9 +241,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person's name for it and what its record spent on that record's last turn, one to a line. An ask's at-work view counts its quests by
     where they stand: landed (Done), waiting on you, in checks or opinion (`awaiting-step`), being worked, not started
     (`work/atWork/askStanding.ts`), a declined quest in none. (D293)
-38. Every wait the person settles stands in one dock above the composer (`work/waits/WaitStrip.tsx`), its only place on the
-    session's page: `waitsOf`'s kinds and each step of its run held for the person or left failed (`SESSION_GROUPS`' `waits`, with
-    *What needs you*'s presses), oldest first under a count, never folded, each with its own press and its way to where it arose
+38. Every wait the person settles stands as a card in the panel's one dock above the composer (`work/session/SessionDock.tsx`,
+    `dockCardsOf`, `WaitCard`), its only place on the session's page: `waitsOf`'s kinds and each step of its run held for the person
+    or left failed (`SESSION_GROUPS`' `waits`, with *What needs you*'s presses), oldest first under a count, the dock at most 40% of
+    the panel and scrolling inside, narrow one card whole and the rest a line each, each with its own press and its way to where it arose
     (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A release step waiting on its approver carries
     the approval card its run's view draws (`ReleaseStepDoors` through `RunReleaseDoors`, the session's run read on the line of a
     plugin's actor wait, since the row names no step kind), and so does its *What needs you* row (the run its work quest, else its run's id, names):
@@ -259,10 +276,16 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     `READ_MARK_MOVE`). Opened with anything after it, the attended part sits at the mark under *Since you left*, computed from the
     record and the run with no model: turns, files changed, commands and which failed, subagents and tasks started and ended, steps
     passed since the mark, what waits on the person and the helpers asked and answered, and the agent's last words quoted as its own,
-    each line a jump to its first row; otherwise at its tail. Each ended turn folds to one line (its calls by kind, how many failed,
-    files changed, duration), and under it stays what never folds: its closing words, the person's words, a failure or a stop, an act
-    outside (a push, a pull request, a release), a call standing alone, a part's boundary and a block a wait was raised at; a turn
-    that goes on folds the work between the agent's words into runs counted by kind. (from D168, D185, D320)
+    each line a jump to its first row; otherwise at its tail. The story (`work/session/story.ts`, `StoryStream`) is one stream in time
+    order: the person's words, the agent's named by its maker and the model that ran, each burst of activity one line counting its
+    calls that opens to each, a step's start and end a rule, a helper's question with its answer, a second opinion, its line's rows,
+    and a driver's note with its doors (*Say it again*, *Start a conversation*, *Go on with Daoris's brief*, the session the words
+    went to; `SaidLines.tsx`); held words say when they reach it, a cooling account's reset with *Go on in a new session* under
+    them; the line's earlier parts stand above it (`EarlierParts`). At the panel's foot the composer (`PanelComposer`) is the
+    session's box (`AttendedComposer`): a chat's `Composer` (files, `@` from its tree, the words waiting with their edit, removal
+    and level, *Stop turn* and the keeping stop, *Finish*, the context ring and the model's options; Enter sends) or the box the
+    session is offered (`SessionBox`), over one line naming the agent and the model and when the agent reads the words.
+    (from D168, D185, D320)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it
     landed on once its tree is gone (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -272,17 +295,22 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The design language**
 
-41. Components name roles, never colours, and only `tokens.css` holds a value. Warm paper in the neutrals; one blue
-    accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
+41. Components name roles, never colours, and only `tokens.css` holds a value. Near-neutral greys with a faint cool lean,
+    so amber and red are the only warm things; one blue accent for what can be pressed or moves (`live` is its second name,
+    on the same field, which selected text wears too); amber (`you`) marks only what waits on the owner,
     a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
-    aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
-    its role's `-ink`. `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
+    aliases until UIDS18); a crimson red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A
+    disabled control is told by its label in `ink-disabled` in the atoms' neutral frame, never by an opacity. A word wears
+    its role's `-ink`; a glyph wears the inks and never the accent, beside a link's blue words too, every story's render held
+    to it (`glyphInk.test.tsx`). `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
     themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
-    and a second run changes nothing. (from D330, D41)
+    and a second run changes nothing. (from D330, D351, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,
     mono 13, none under 12 px, each line height a variable that `:lang(zh)` sets taller. Every size is a step and every
-    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport.
-    (from D330, D56, D185)
+    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport. A card
+    pads 12 by 16 and wears no left edge (`Card`, `cardFrame`); cards stack 16 apart and queue 8 apart. A border is 1 or 2 px
+    (the focus ring, a selected row's rail), and 3 only as `Card`'s `edge`, a wait's or a failure's (`design/edges.test.ts`);
+    a note says its tone in words. (from D330, D56, D185)
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that
@@ -484,13 +512,19 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), budgets that follow how an
   account is paid (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
   row rewrites the rule it makes false.
-- SESSIONVIEW1h moved the line's exchanges and its channel into the conversation (`work/exchanges/`): a helper, a piece, a quest, a
-  hand-over or an opinion is a row where it was asked and one where it came back, between the turns it fell between (one whose read
-  keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's findings beside the work
-  it judged; one waiting on the person leads to its dock line (`dockKeyOfExchange`) with no press of its own; a quest the session
-  published, the session that published its own and the answered question it resumed after are rows too; each channel message of
-  its line is a row naming its sender, answered in place and sent on to its session. The head's *Waiting on* line scrolls the
-  timeline to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it worked with* and *Channel* folds and the side
-  bar's At work view are gone.
+- **SESSIONUI1**: the session panel rebuilt from the fresh design rather than adjusted row by row (`work/session/`), an attended
+  session's page in `WorkFrame` (`AttendedSessionPanel`): the head (the state from the reader's line, where and who with the model
+  that ran, `headFactsOf`, ending in the supervisor's count, a later choice and *Full access*, `HeadChips`), the run's one track
+  (`RunTrack`, a chip's press bringing its step's first rule in the story, `toStepRows`), one story of turns, steps, helpers,
+  second opinions and its line's rows in time order with each burst of activity folded (`storyOf`), the live band, the dock of
+  wait cards (`SessionDock`, `dockCardsOf`), the composer and the Changes rail from 68rem, folded below 40rem (`panelLayout.ts`).
+- SESSIONVIEW1h moved the line's exchanges and its channel into the session's story (`work/exchanges/`): a helper, a piece, a
+  quest, a hand-over or an opinion is a row (`LineRow`) where it was asked and one where it came back, at its moment among the
+  turns (one whose read keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's
+  findings beside the work it judged; one waiting on the person leads to its card in the dock (`dockKeyOfExchange`, `toDockLine`)
+  with no press of its own; a quest the session published, the session that published its own and the answered question it
+  resumed after are rows too; each channel message of its line is a row naming its sender, answered in place and sent on to its
+  session. The head's *Waiting on* line scrolls the story to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it
+  worked with* and *Channel* folds and the side bar's At work view are gone.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

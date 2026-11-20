@@ -276,18 +276,180 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal(HeavyExecutor.BusyTries + 1, File.ReadAllLines(At("runner-calls.log")).Length);
     }
 
+    private static async Task<(string Commit, string Blob)> CommitOnAsync(string checkout, string branch, string? from, params (string Path, string Text)[] files)
+    {
+        await GitFixture.GitAsync(checkout, from is null ? ["checkout", "-q", branch] : ["checkout", "-q", "-b", branch, from]);
+        foreach (var (path, text) in files) await File.WriteAllTextAsync(Path.Combine(checkout, path), text);
+        await GitFixture.GitAsync(checkout, "add", "-A");
+        await GitFixture.GitAsync(checkout, "commit", "-q", "-m", $"on {branch}");
+        var commit = (await GitFixture.GitAsync(checkout, "rev-parse", "HEAD")).Trim();
+        var blob = (await GitFixture.GitAsync(checkout, "rev-parse", "HEAD:daoris.gates.json")).Trim();
+        await GitFixture.GitAsync(checkout, "checkout", "-q", "main");
+        return (commit, blob);
+    }
+
     [Fact]
-    public async Task A_changed_declaration_is_held_unknown_and_runs_nothing()
+    public async Task A_branch_that_predates_or_follows_the_line_s_declaration_change_is_checked_under_the_accepted_one()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var work = await CommitOnAsync(engine.Checkout, "work", "main", ("work.txt", "the work"));
+        var line = await CommitOnAsync(engine.Checkout, "main", null,
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        Assert.NotEqual(engine.Blob, line.Blob);
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = work.Commit });
+        var before = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(before.Verdict == VerifyVerdicts.Reached, before.Why);
+        Assert.Equal(engine.Blob, before.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+
+        await GitFixture.GitAsync(engine.Checkout, "checkout", "-q", "work");
+        await GitFixture.GitAsync(engine.Checkout, "merge", "-q", "--no-edit", "main");
+        var merged = (await GitFixture.GitAsync(engine.Checkout, "rev-parse", "HEAD")).Trim();
+        await GitFixture.GitAsync(engine.Checkout, "checkout", "-q", "main");
+
+        await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Commit = merged });
+        var after = await SettledAsync("v-0000000000000002", "i-b");
+
+        Assert.True(after.Verdict == VerifyVerdicts.Reached, after.Why);
+        Assert.Equal(engine.Blob, after.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a"), ("start", "a"), ("end", "a")], Intervals());
+    }
+
+    /// <summary>Where a work left its line is read on the local branch the acceptance look reads, never origin's.</summary>
+    [Fact]
+    public async Task A_work_branched_after_an_unpushed_declaration_change_on_the_local_line_is_not_held()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        await GitFixture.GitAsync(engine.Checkout, "update-ref", "refs/remotes/origin/main", engine.Commit);
+        await GitFixture.GitAsync(engine.Checkout, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main");
+        var line = await CommitOnAsync(engine.Checkout, "main", null,
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        var work = await CommitOnAsync(engine.Checkout, "work", "main", ("work.txt", "the work"));
+        Assert.Equal(line.Blob, work.Blob);
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = work.Commit });
+        var result = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal(engine.Blob, result.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+    }
+
+    [Fact]
+    public async Task A_work_that_changes_its_declaration_s_commands_holds_said_and_one_that_changes_a_pattern_runs_under_the_accepted()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        var pattern = await CommitOnAsync(engine.Checkout, "pattern", "main", ("daoris.gates.json", JsonSerializer.Serialize(new
+        {
+            gates = new object[] { new { name = "unit", run = Node(At("gate.mjs"), "a", _folder, "exit-0"), heavy = true, clock = false, paths = new[] { "src/" } } },
+        })));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit });
+        var held = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.Equal((VerifyVerdicts.Unknown, VerifyResult.Changed), (held.Verdict, held.Code));
+        Assert.Equal((commands.Blob, engine.Blob), (held.Declaration, held.Accepted));
+        Assert.Contains("this work's own change to daoris.gates.json", held.Why);
+        Assert.Contains("changed `unit`", held.Why);
+        Assert.Contains("(restricted: waits for you)", held.Why);
+        Assert.Contains("once the change lands, accept it on its repository's Setup page", held.Why);
+        Assert.Contains("It happened", held.Why);
+        Assert.False(File.Exists(At("intervals.log")), "nothing ran");
+
+        await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Commit = pattern.Commit });
+        var kept = await SettledAsync("v-0000000000000002", "i-b");
+
+        Assert.True(kept.Verdict == VerifyVerdicts.Reached, kept.Why);
+        Assert.Equal(engine.Blob, kept.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+    }
+
+    [Fact]
+    public async Task Under_full_access_a_work_whose_own_change_alters_a_command_runs_its_own_declaration_with_no_hold()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit });
+        var ran = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Null(ran.Code);
+        Assert.Equal(commands.Blob, ran.Declaration);
+        Assert.Equal([("start", "b"), ("end", "b")], Intervals());
+    }
+
+    /// <summary>The send's own workspace decides the mode, so a verification tree outside a registered checkout reads a workspace-level setting as the line does.</summary>
+    [Fact]
+    public async Task A_workspace_level_unrestricted_runs_the_work_s_own_declaration_through_the_check_path()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        DriverConfig.Empty.WithAccess(new AccessEdit { Workspace = "aurora", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit, Workspace = "aurora" });
+        var ran = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Equal([("start", "b"), ("end", "b")], Intervals());
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(Home, "engine", "aurora"));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(Home, "engine", "borealis"));
+    }
+
+    /// <summary>A driver.json that does not read never loosens: the mode is restricted and a changed command is held.</summary>
+    [Fact]
+    public async Task A_driver_file_that_does_not_read_is_restricted_and_holds_a_changed_command()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        File.WriteAllText(DriverConfig.ResolvePath(Home), "{ this does not read");
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(Home, "engine", "aurora"));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit, Workspace = "aurora" });
+        var held = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.Equal((VerifyVerdicts.Unknown, VerifyResult.Changed), (held.Verdict, held.Code));
+        Assert.False(File.Exists(At("intervals.log")), "nothing ran");
+    }
+
+    /// <summary>Nothing accepted yet: restricted access waits for the person, full access runs the work's own declaration, said in a line.</summary>
+    [Fact]
+    public async Task With_nothing_accepted_restricted_waits_and_full_access_runs_the_work_s_own_declaration()
     {
         var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
         var executor = Executor();
 
-        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Accepted = new string('1', 40) });
-        var result = await SettledAsync("v-0000000000000001", "i-a");
-
-        Assert.Equal(VerifyVerdicts.Unknown, result.Verdict);
-        Assert.Equal(VerifyResult.Changed, result.Code);
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Accepted = null });
+        var waits = await SettledAsync("v-0000000000000001", "i-a");
+        Assert.Equal(VerifyVerdicts.Unknown, waits.Verdict);
+        Assert.Contains("nothing runs until the person accepts", waits.Why);
         Assert.False(File.Exists(At("intervals.log")), "nothing ran");
+
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Accepted = null });
+        var ran = await SettledAsync("v-0000000000000002", "i-b");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Contains("nothing was accepted yet, so the work's own declaration ran (full access: taken without asking)", ran.Why);
+        Assert.Equal(engine.Blob, ran.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
     }
 
     [Fact]
@@ -349,6 +511,34 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         await executor.SendAsync(Send("v-0000000000000001", "i-a", engine));
         Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
         Assert.Equal(VerifyAnswers.Result, (await executor.ReconcileAsync("v-0000000000000001", "i-a")).State);
+    }
+
+    [Fact]
+    public async Task A_check_cut_off_mid_run_holds_nothing_after_a_restart_is_run_again_and_another_starts_beside_it()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "go"), true, false)));
+        var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)));
+
+        var before = Executor();
+        await before.SendAsync(Send("v-0000000000000001", "i-a", engine));
+        await Poll.Until(() => File.Exists(At("beat-a.txt")) && File.Exists(At("child-a.txt")));
+        var child = int.Parse(File.ReadAllText(At("child-a.txt")));
+        _executors.Remove(before);
+        await before.DisposeAsync();
+
+        Assert.False(File.Exists(VerifyFiles.ResultOf(Home, "v-0000000000000001", "i-a")), "a check cut off writes no result");
+        Assert.True(File.Exists(AttemptMarks.Began(Home, "v-0000000000000001", "i-a", 0)), "its send said it began");
+        Assert.True(File.Exists(AttemptMarks.Closed(Home, "v-0000000000000001", "i-a", 0)), "the executor's own close said why it ended");
+        Assert.False(Alive(child), "what its gate left was ended with it");
+        Assert.Null(VerifySlot.Look(Home).Holder);
+        var after = Executor();
+        Assert.Equal(VerifyAnswers.NotStarted, (await after.ReconcileAsync("v-0000000000000001", "i-a")).State);
+
+        await after.SendAsync(Send("v-0000000000000002", "i-b", game, "game"));
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000002", "i-b")).Verdict);
+        await File.WriteAllTextAsync(At("go-a"), "");
+        await after.SendAsync(Send("v-0000000000000001", "i-a", engine));
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
     }
 
     [Fact]

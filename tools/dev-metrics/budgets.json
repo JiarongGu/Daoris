@@ -9,6 +9,6 @@
   "personQueue": { "unseenAgeMs": 3600000 },
   "cost": { "policy": "trend per actor, role, model, quest and ask; no numeric ceiling" },
   "leftovers": { "completedCaseItems": 0 },
-  "development": { "gateMs": 300000, "mergeWallMs": 600000, "firstPassPercent": 80, "fullSetWallMs": 1800000, "gatesOverBudget": 0 },
+  "development": { "gateMs": 300000, "firstPassPercent": 80, "fullSetWallMs": 1800000, "gatesOverBudget": 0 },
   "browser": { "openMs": 2000 }
 }

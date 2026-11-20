@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -8,7 +8,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 
 import i18n from '../locales/i18n';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
-import { DRIVEN, DRIVER_STATE, Hub, QUESTS, REGISTRY, ROSTER, userEvent } from '../test/workFrameKit';
+import { DRIVEN, DRIVER_STATE, Hub, QUESTS, REGISTRY, ROSTER } from '../test/workFrameKit';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [];
@@ -58,6 +58,8 @@ function show() {
   );
 }
 
+const panel = () => screen.findByRole('region', { name: i18n.t('work.session.label') });
+
 describe('a session’s head says where the work stands and what comes next', () => {
   beforeEach(() => vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input)))));
   afterEach(async () => {
@@ -68,24 +70,29 @@ describe('a session’s head says where the work stands and what comes next', ()
   });
 
   for (const [language, now, wait] of [['en', 'Waiting on you', /its work to accept/], ['zh', '等你处理', /待采纳的工作/]] as const) {
-    it(`reads ${now} and a press to the wait's line in the dock in ${language}`, async () => {
+    it(`reads ${now} in the head and the wait as its card in the dock in ${language}`, async () => {
       await i18n.changeLanguage(language);
       SESSIONS = [ENDED];
       driver('review');
       show();
-      const door = await screen.findByRole('button', { name: wait });
-      const line = door.closest('[data-state-line]')!;
-      expect(line).toHaveTextContent(now);
-      await userEvent.click(door);
+      const region = await panel();
+      const dock = await waitFor(() => {
+        const found = region.querySelector<HTMLElement>('[data-region="dock"]');
+        if (!found) throw new Error('no dock yet');
+        return found;
+      });
+      expect(await within(dock).findByRole('article', { name: wait })).toBeInTheDocument();
+      expect(region.querySelector('[data-region="head"]')).toHaveTextContent(now);
     });
   }
 
-  it('reads working and no door where nothing waits', async () => {
+  it('reads working in the head and draws no dock where nothing waits', async () => {
     SESSIONS = [{ ...ENDED, state: 'working', note: undefined }];
     driver('working');
     show();
-    expect(await within(screen.getByRole('main')).findByText(/engine · working/, { selector: 'span.truncate' })).toBeInTheDocument();
-    expect(await screen.findByText('Working')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Waiting on you' })).toBeNull();
+    const region = await panel();
+    await waitFor(() => expect(region.querySelector('[data-region="head"]')).toHaveTextContent('Working'));
+    expect(region.querySelector('[data-region="dock"]')).toBeNull();
+    expect(region.querySelector('[data-wait]')).toBeNull();
   });
 });

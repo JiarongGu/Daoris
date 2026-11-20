@@ -10,13 +10,23 @@ public static class RunChecks
         if (!SafeNames.IsPlainId(id) || WorkflowRunBindings.Read(home, id) is not { } binding) return null;
         var root = GitFolders.Read(home).FirstOrDefault(checkout => string.Equals(checkout.Repository, binding.Repository, StringComparison.OrdinalIgnoreCase)).Root;
         if (root is null) return null;
-        var accepted = IntegrationAcceptance.Of(DriverConfig.Load(DriverConfig.ResolvePath(home)), binding.Repository);
+        var accepted = AcceptanceOf(home, binding.Repository);
         return new VerifySend(binding.Run, attempt.Call.Invocation, binding.Repository, root, attempt.Call.SubjectRevision, accepted)
         {
+            Workspace = binding.Workspace,
             Gates = CheckNode.GatesOf(node),
             Reached = CheckNode.ReachedChoice(node),
             Bound = WorkPerformer.Timeout(node),
             AsMerged = true,
         };
     }
+
+    public static ChecksStanding? StandingOf(string home, string unit)
+    {
+        var id = CheckExecution.RunOf(unit);
+        if (!SafeNames.IsPlainId(id) || WorkflowRunBindings.Read(home, id) is not { } binding) return null;
+        return new ChecksStanding(AcceptanceOf(home, binding.Repository), DeclarationMode.Of(home, binding.Repository, binding.Workspace) == DeclarationMode.Restricted);
+    }
+
+    private static string? AcceptanceOf(string home, string repository) => IntegrationAcceptance.Of(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);
 }

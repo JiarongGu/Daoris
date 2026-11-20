@@ -33,33 +33,38 @@ public sealed record ChromePalette(
     Color ClosePressed,
     Color CloseGlyphHot)
 {
-    /// <summary>Warm paper: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c>, from the page's role set.</summary>
+    /// <summary>The near-neutral greys: <c>--page</c>, <c>--raised</c>, <c>--line</c>, <c>--ink</c>, from the page's role set.</summary>
     public static readonly ChromePalette Light = new(
-        Page: Rgb("#f7f6f2"),
+        Page: Rgb("#f6f7f8"),
         Surface: Rgb("#ffffff"),
-        Line: Rgb("#d5d3cb"),
-        Ink: Rgb("#1a1a18"),
-        // A hovered caption button wears `--hover`, the field every quiet control on the page lifts to
-        // under the pointer, and pressed the card edge, `--line`, one step further.
-        Hover: Rgb("#ecebe5"),
-        Pressed: Rgb("#d5d3cb"),
+        Line: Rgb("#d1d3d8"),
+        Ink: Rgb("#17191c"),
+        // A hovered caption button wears `--hover`, as every quiet control does, and pressed the card edge, `--line`.
+        Hover: Rgb("#e9eaed"),
+        Pressed: Rgb("#d1d3d8"),
         // Close goes red on hover, which is platform convention and not ours to reinvent. The hue is
-        // `--fail` and its glyph `--on-fail`, so even the OS gesture speaks the palette.
-        CloseHover: Rgb("#d1322a"),
-        ClosePressed: Rgb("#a8201a"),
+        // `--fail` and its glyph `--on-fail`, so even the OS gesture speaks the palette; pressed is `--fail-ink`.
+        CloseHover: Rgb("#cf2d3f"),
+        ClosePressed: Rgb("#a81d2f"),
         CloseGlyphHot: Rgb("#ffffff"));
 
     /// <summary>The dark set — its own validated values, never a filter over the light one.</summary>
     public static readonly ChromePalette Dark = new(
-        Page: Rgb("#131312"),
-        Surface: Rgb("#1b1b19"),
-        Line: Rgb("#3a3936"),
-        Ink: Rgb("#ecebe6"),
-        Hover: Rgb("#2a2a27"),
-        Pressed: Rgb("#3a3936"),
-        CloseHover: Rgb("#ee5a50"),
-        ClosePressed: Rgb("#d1322a"),
-        CloseGlyphHot: Rgb("#111110"));
+        Page: Rgb("#111316"),
+        Surface: Rgb("#191b1f"),
+        Line: Rgb("#383b42"),
+        Ink: Rgb("#eaecef"),
+        Hover: Rgb("#292c32"),
+        Pressed: Rgb("#383b42"),
+        CloseHover: Rgb("#f05c6c"),
+        ClosePressed: Rgb("#cf2d3f"),
+        CloseGlyphHot: Rgb("#0e1014"));
+
+    /// <summary>The taskbar count's fill, the owner's amber (dark <c>--you</c>) in either theme: it counts what waits on the owner.</summary>
+    public static Color CountFill { get; } = Rgb("#f0b03a");
+
+    /// <summary>The taskbar count's label, the dark ink on amber (the dark theme's <c>--on-you</c>), about 10:1, in either theme.</summary>
+    public static Color CountInk { get; } = Rgb("#0e1014");
 
     /// <summary>The set for a theme, by the one flag the page sends over <c>SET_THEME</c>.</summary>
     public static ChromePalette For(bool dark) => dark ? Dark : Light;

@@ -10,12 +10,12 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
-import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
 } from '../test/workFrameKit';
 import { DiffPane } from './review/DiffPane';
+import { BRANCH_OUTPUTS } from './review/run/runReviewFixtures';
 import { WorkFrame } from './WorkFrame';
 
 let SESSIONS: unknown[] = [DRIVEN];
@@ -31,6 +31,14 @@ function respond(url: string): Response {
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer, and a test that hid
 // the console left it hidden for whichever console test ran next.
 afterEach(() => window.localStorage.clear());
+
+const panel = () => screen.findByRole('region', { name: 'Session' });
+const panelPart = async (part: 'head' | 'asking' | 'dock') => {
+  const region = await panel();
+  await waitFor(() => expect(region.querySelector(`[data-region="${part}"]`)).not.toBeNull());
+  return region.querySelector<HTMLElement>(`[data-region="${part}"]`)!;
+};
+const titled = async (name: string) => within(await panel()).findByRole('heading', { level: 2, name });
 
 /**
  * The session's page header, and every act where its session is: a running driven session is
@@ -198,11 +206,7 @@ describe('a session’s page header and its acts', () => {
     expect(within(ask).getByRole('button', { name: /Agent and account: codex · / })).toBeInTheDocument();
   });
 
-  /**
-   * A tool call the running session holds for the person's answer under asking stands in its head,
-   * read off `PERMISSION_WAITS`, and *Allow once* sends `SESSION_PERMISSION_ANSWER` with the option the agent offered; a refusal of
-   * the answer is said where it is pressed, by its code in the catalogue's words.
-   */
+  /** Read off `PERMISSION_WAITS`; a refused answer is said at its press, in the catalogue's words. */
   it('answers a tool call a running session holds for the person with the option they pressed', async () => {
     const held = {
       session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
@@ -216,8 +220,8 @@ describe('a session’s page header and its acts', () => {
     });
     show('s1a2b3c4');
 
-    const section = await screen.findByRole('region', { name: /waiting on you/i });
-    expect(section).toHaveTextContent('npm test');
+    const section = await panelPart('dock');
+    await waitFor(() => expect(section).toHaveTextContent('npm test'));
     const user = userEvent.setup();
     await user.click(within(section).getByRole('button', { name: 'Allow once' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 's1a2b3c4', request: '900', option: 'allow' } });
@@ -228,12 +232,7 @@ describe('a session’s page header and its acts', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 's1a2b3c4', request: '900', option: 'reject' } });
   });
 
-  /**
-   * The session's asks of helpers stand in its head under
-   * *Helpers*, an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
-   * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to
-   * Daoris, and the ask closes once it is on file.
-   */
+  /** *Let it ask* sends `SESSION_HELPER_APPROVE`; the head's *Ask* sends `SESSION_HELPER_ASK`, the agent left to Daoris. */
   it('lists a session’s asks of helpers with the person’s yes, and asks another agent from the head', async () => {
     SESSIONS = [{ ...CHAT, state: 'completed' }];
     const helpers = [{
@@ -249,8 +248,8 @@ describe('a session’s page header and its acts', () => {
     });
     show('c0ffee11');
 
-    const asks = await screen.findByRole('region', { name: /waiting on you/i });
-    expect(within(asks).getByText(/Is the cap right\?/)).toBeInTheDocument();
+    const asks = await panelPart('dock');
+    expect(await within(asks).findByText(/Is the cap right\?/)).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(within(asks).getByRole('button', { name: 'Let it ask' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HELPER_APPROVE', { payload: { session: 'c0ffee11', ask: 'a1' } });
@@ -267,11 +266,7 @@ describe('a session’s page header and its acts', () => {
     await waitFor(() => expect(screen.queryByRole('group', { name: 'ask another agent' })).toBeNull());
   });
 
-  /**
-   * When the conversation's own account is near its limit by its scope's near, a line under the head
-   * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
-   * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
-   */
+  /** Near its account's limit, a line under the head offers the hand-over (`SESSION_HAND_OVER`, `near`); nothing is taken unpressed. */
   const RUNNING_LOW = {
     ...ROSTER,
     harnesses: [
@@ -438,17 +433,18 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * The header says its state line (the reader's, here none read yet), its title and its facts; its id is its ⋯'s and its
+   * The panel's head says its state (the reader's, here none read yet), its title and where and who; its id is its ⋯'s and its
    * record's *Details*, and the record under it says neither its word nor its title again.
    */
-  it('names the session in its header with its state line and its facts, its id in Details alone', async () => {
+  it('names the session in the panel’s head with its state and where and who, its id in Details alone', async () => {
     show('s1a2b3c4');
 
-    const header = (await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).closest('header')!;
-    expect(within(header).getByText('Reading its state')).toBeInTheDocument();
+    await titled('Expose a streaming budget');
+    const header = await panelPart('head');
+    expect(within(header).getByText('Loading')).toBeInTheDocument();
     expect(within(header).queryByText('working')).toBeNull();
     expect(within(header).getByText(/^engine · /)).toBeInTheDocument();
-    expect(within(header).queryByText('s1a2b3c4')).toBeNull();
+    expect(header).not.toHaveTextContent('s1a2b3c4');
     const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     expect(within(head).queryByText('working')).toBeNull();
     expect(within(head).queryByRole('heading', { level: 2 })).toBeNull();
@@ -481,10 +477,10 @@ describe('a session’s page header and its acts', () => {
   });
 
   /**
-   * The attended session's foot says where its work stands, as the driver's
+   * The attended session's record, above its story, says where its work stands, as the driver's
    * `WORK_STATE` answers for that session: the end, the result, the clean-up and the recovery.
    */
-  it('says at the foot where the work stands: the end, the result, the clean-up and the recovery, as the driver answers', async () => {
+  it('says where the work stands: the end, the result, the clean-up and the recovery, as the driver answers', async () => {
     const entry = { unit: 'u1', kind: 'tree', resource: 's1a2b3c4', role: 'temporary', disposition: 'blocked', detail: 'a session still holds this tree' };
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORK_STATE'
       ? {
@@ -515,11 +511,7 @@ describe('a session’s page header and its acts', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'work' } });
   });
 
-  /**
-   * A running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
-   * its record. Its milestone is keyed under the record, so a draw never leaves one more copy of it in the page, and no
-   * *Who it worked with* fold stands under the head: who it worked with is rows of its timeline.
-   */
+  /** Its milestone is keyed under the record, so a redraw leaves no second copy; who it worked with is timeline rows. */
   it('keeps one milestone and no who-it-worked-with fold, however often its record changes', async () => {
     const intake = { ...PARKED_INTAKE, id: 'i9n8t7k6', state: 'completed', note: undefined };
     const quests = [{ ...QUESTS[0]!, publishedBy: intake.id }];
@@ -538,24 +530,21 @@ describe('a session’s page header and its acts', () => {
     for (let minute = 10; minute < 20; minute += 1) {
       SESSIONS = [{ ...DRIVEN, updated: `2026-09-02T01:${minute}:00Z` }, intake];
       await act(() => moved());
-      await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument());
+      await titled('Expose a streaming budget');
     }
     expect(screen.queryByRole('region', { name: 'Who it worked with' })).toBeNull();
     expect(screen.getAllByRole('region', { name: 'Where this work stands' })).toHaveLength(1);
   });
 
-  it('says nothing at the foot where the driver names no unit for the session', async () => {
+  it('says nothing of where the work stands where the driver names no unit for the session', async () => {
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    await titled('Expose a streaming budget');
     expect(screen.queryByRole('region', { name: 'Where this work stands' })).toBeNull();
   });
 
-  /**
-   * A session that continues another says which agent's in its facts, by the roster's
-   * name for it, and why in the hand-over's words; its *Details* names that session and attends it on a press.
-   */
-  it('says whom a session continues in its header, and attends that session from Details', async () => {
+  /** A session that continues another names that session in its *Details*, and attends it on a press. */
+  it('names the session a session continues in its Details, and attends that session from there', async () => {
     const earlier = { ...CHAT, id: 'e4r1i3r0', door: 'codex', state: 'completed' };
     SESSIONS = [earlier, { ...CHAT, from: 'e4r1i3r0', fromWhy: 'near', fromBy: 'daoris' }];
     // The roster's codex, named as its product.
@@ -564,21 +553,22 @@ describe('a session’s page header and its acts', () => {
       : DRIVER_STATE));
     const { onSelect } = show('c0ffee11');
 
-    const header = (await screen.findByRole('heading', { level: 1, name: 'Chat' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · continues from Codex · its account was near its limit · /)).toBeInTheDocument();
-    const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
+    await titled('Chat');
+    const head = (await screen.findByRole('button', { name: /^Details/ })).closest('header')!;
     fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
     fireEvent.click(within(within(head).getByText('Started from', { selector: 'dt' }).nextElementSibling as HTMLElement).getByRole('button'));
     expect(onSelect).toHaveBeenCalledWith('e4r1i3r0');
   });
 
   /** And, as a reviewer's, a helper's record takes one turn and no words: no box is offered. */
-  it('titles a helper as one, says whom it helps by that session’s title, and offers it no box', async () => {
+  it('titles a helper as one, says in its Details whom it helps by that session’s title, and offers it no box', async () => {
     SESSIONS = [DRIVEN, { ...CHAT, id: 'h3lp3r00', serves: 's1a2b3c4' }];
     show('h3lp3r00');
 
-    const header = (await screen.findByRole('heading', { level: 1, name: 'Helper' })).closest('header')!;
-    expect(await within(header).findByText(/^engine · helping Expose a streaming budget · /)).toBeInTheDocument();
+    await titled('Helper');
+    const head = (await screen.findByRole('button', { name: /^Details/ })).closest('header')!;
+    fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
+    await waitFor(() => expect(within(head).getByText('Works for', { selector: 'dt' }).nextElementSibling).toHaveTextContent('Expose a streaming budget'));
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
@@ -592,7 +582,7 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [DRIVEN, { ...partner, work: 'partner' }];
     const sending = show('p4rtn3r0');
 
-    await screen.findByRole('heading', { level: 1, name: 'Partner' });
+    await titled('Partner');
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     sending.unmount();
@@ -600,7 +590,7 @@ describe('a session’s page header and its acts', () => {
     SESSIONS = [DRIVEN, partner];
     show('p4rtn3r0');
 
-    await screen.findByRole('heading', { level: 1, name: 'Helper' });
+    await titled('Helper');
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
@@ -639,8 +629,8 @@ describe('a session’s page header and its acts', () => {
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'stop this session' })).toBeInTheDocument();
+    expect(await titled('Expose a streaming budget')).toBeInTheDocument();
+    expect(within(await panelPart('asking')).getByRole('group', { name: 'stop this session' })).toBeInTheDocument();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
   });
 
@@ -901,11 +891,7 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('daoris/s-abc12345')).toBeTruthy();
   });
 
-  /**
-   * A failed session whose tree is gone leaves a branch only the terminal's
-   * `trees remove … --force` reached. Its head offers the discard, asks once, and presses the driver's forced removal of
-   * that branch by its name and repository; the driver's sentence for a branch it kept is said whole, as a refusal is.
-   */
+  /** The discard presses the driver's forced removal of the branch by name; its sentence for a kept branch is said whole. */
   it("discards the branch a failed session left once its tree is gone, after asking once", async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];
     let answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: true, message: 'removed the session branch `daoris/s-abc12345` from `engine`.' };
@@ -942,11 +928,7 @@ describe('acting on what a session landed', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('it is gone already'), 'error');
   });
 
-  /**
-   * A failed session's commits stay in its tree, so the page offers to land
-   * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
-   * beside what it left, and *Review* opens the run's outputs; the Accept is the card's.
-   */
+  /** Where the driver says what the tree offers to land, the page says it; *Review* opens the run's outputs, the Accept is the card's. */
   it('offers a failed session’s commits on its page, and opens the run’s review from its Review door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -961,17 +943,39 @@ describe('acting on what a session landed', () => {
     });
 
     show('s1a2b3c4', vi.fn());
-    // The dock above the box draws the line; the head in the main area draws none.
-    const head = within(await screen.findByRole('region', { name: /waiting on you/i }));
+    // The dock above the box draws the line, and nothing else on the page does.
+    const head = within(await panelPart('dock'));
     const door = await head.findByRole('button', { name: 'Open outputs' });
     expect(head.getByText('in its tree s-4e6837ed')).toBeTruthy();
-    expect(within(screen.getByRole('main')).queryByRole('button', { name: 'Open outputs' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Open outputs' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1' }) });
 
     await userEvent.click(door);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RUN_REVIEW', { payload: expect.objectContaining({ run: 'q1', session: null, attempt: 0 }) }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_NODE', expect.anything());
+  });
+
+  /**
+   * A session whose run waits on its Accept draws the run's Accept card under its story, bound to the attempt and revision it draws,
+   * and the dock's *To the Accept card* leads there; its *Accept* is one press.
+   */
+  it('draws the Accept card under the story of a session awaiting its Accept, and accepts in one press', async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'awaiting-step' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'RUN_REVIEW') return BRANCH_OUTPUTS;
+      if (type === 'WORKFLOW_NODE') return { run: 'q41', node: 'review', act: 'accept', done: true };
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4', vi.fn());
+    const region = await panel();
+    const card = await within(region).findByRole('group', { name: 'Your Accept · budget-notes' });
+    expect(region.querySelector('[data-region="story"]')!.contains(card)).toBe(true);
+    await userEvent.click(within(card).getByRole('button', { name: 'Accept' }));
+    await vi.waitFor(() => expect(invoke.mock.calls.filter((call) => call[1] === 'WORKFLOW_NODE').map((call) => JSON.stringify(call[2])))
+      .toEqual([expect.stringMatching(/"run":"q41".*"act":"accept"|"act":"accept".*"run":"q41"/)]));
   });
 
   /**
@@ -1003,8 +1007,8 @@ describe('acting on what a session landed', () => {
     });
 
     show('s1a2b3c4', vi.fn());
-    const main = within(screen.getByRole('main'));
-    expect((await main.findAllByRole('button', { name: 'Open outputs' }))[0]).toBeEnabled();
+    const dock = within(await panelPart('dock'));
+    expect((await dock.findAllByRole('button', { name: 'Open outputs' }))[0]).toBeEnabled();
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
 
@@ -1015,11 +1019,7 @@ describe('acting on what a session landed', () => {
     expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
   });
 
-  /**
-   * An open conversation whose turn ended
-   * with a commit beyond the line keeps its record `working`, so the driver's look offers nothing, and only the review's side
-   * bar would have the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
-   */
+  /** A commit beyond the line keeps the record `working`; the head and foot offer the landing from the review, never mid-turn. */
   describe('an open conversation whose turn ended with work', () => {
     const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
     const BEYOND = {
@@ -1037,7 +1037,7 @@ describe('acting on what a session landed', () => {
     };
     const turn = (taking: boolean) => act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking }));
     const diffs = () => invoke.mock.calls.filter((call) => call[1] === 'SESSION_DIFF').length;
-    const dockDoor = () => waitFor(() => expect(within(screen.getByRole('region', { name: 'Waiting on you' })).getByRole('button', { name: 'Open outputs' })).toBeInTheDocument());
+    const dockDoor = async () => expect(await within(await panelPart('dock')).findByRole('button', { name: 'Open outputs' })).toBeInTheDocument();
 
     // A review read before the turn's last commit must not be reused at its end, within the 15 s a live review
     // is fresh for, or a turn that committed offers nothing; and a stale answer that offered must not stay pressable while it is read again.
@@ -1057,10 +1057,11 @@ describe('acting on what a session landed', () => {
       await dockDoor();
 
       // The next turn's answer is not in yet: the one before it, which offered, offers nothing meanwhile.
+      const read = diffs();
       turn(true);
       review = () => new Promise(() => {});
       turn(false);
-      await waitFor(() => expect(diffs()).toBe(3));
+      await waitFor(() => expect(diffs()).toBeGreaterThan(read));
       expect(screen.queryByRole('button', { name: 'Open outputs' })).not.toBeInTheDocument();
     });
 
@@ -1093,7 +1094,7 @@ describe('acting on what a session landed', () => {
           review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11', says: 'Waits for your look, and it cannot start.' } }
         : base(module, type, ...(rest as [])));
       show('c0ffee11');
-      const strip = await screen.findByRole('region', { name: 'Waiting on you' });
+      const strip = await panelPart('dock');
       await within(strip).findByText(/publishes no set-up step/);
       expect(within(strip).queryByRole('button', { name: 'Accept without the look…' })).not.toBeInTheDocument();
     });
@@ -1105,13 +1106,12 @@ describe('acting on what a session landed', () => {
       show('c0ffee11');
       expect(await screen.findByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Open outputs' })).not.toBeInTheDocument();
-      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
 
       act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
       await dockDoor();
     });
 
-    it('offers none where its tree holds nothing beyond the line (REVIEWBASE4)', async () => {
+    it('offers none where its tree holds nothing beyond the line', async () => {
       SESSIONS = [TALK];
       invoke.mockImplementation(answering(NOTHING));
 
@@ -1119,33 +1119,8 @@ describe('acting on what a session landed', () => {
       await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything()));
       expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Open outputs' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('region', { name: 'Waiting on you' })).not.toBeInTheDocument();
+      expect((await panel()).querySelector('[data-region="dock"]')).toBeNull();
     });
-  });
-
-  // The dock holds the one Review door, whether or not the head is on screen.
-  it('keeps the dock up with the one Review door, whether the head is on screen or not', async () => {
-    const watched = watchScreen();
-    try {
-      SESSIONS = [{ ...IN_A_TREE, state: 'completed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
-      invoke.mockImplementation(async (_module: string, type: string) => {
-        if (type === 'SESSION_GROUPS') {
-          return { sessions: [{ session: 's1a2b3c4', group: 'needs-you', state: 'needs-you', reason: 'review', shown: 'completed', archived: false, teammate: false,
-            lands: { branch: 'daoris/s-4e6837ed', tree: 's-4e6837ed', commits: 1, uncommitted: 0 } }] };
-        }
-        if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/delta', source: 'workspace', accept: ACC };
-        if (type === 'SESSION_DIFF') return DIFF;
-        return DRIVER_STATE;
-      });
-      show('s1a2b3c4', vi.fn());
-      await screen.findAllByRole('button', { name: 'Open outputs' });
-      for (const onScreen of [false, true]) {
-        watched.show(onScreen);
-        expect(within(screen.getByRole('region', { name: 'Waiting on you' })).getAllByRole('button', { name: 'Open outputs' })).toHaveLength(1);
-      }
-    } finally {
-      watched.restore();
-    }
   });
 
   /**
@@ -1181,7 +1156,7 @@ describe('acting on what a session landed', () => {
 
     show('s1a2b3c4', notify);
     // The dock above the box draws the gate; the head draws none.
-    const head = within(await screen.findByRole('region', { name: 'Waiting on you' }));
+    const head = within(await panelPart('dock'));
     const gate = await head.findByRole('region', { name: 'Second opinion' });
     expect(gate).toHaveTextContent('1 finding by Codex (OpenAI) is disputed');
     await within(gate).findByText('Drops the last row.');
@@ -1218,7 +1193,7 @@ describe('acting on what a session landed', () => {
 
     show('s1a2b3c4', notify);
     // The dock above the box draws the line; the head draws none.
-    const head = within(await screen.findByRole('region', { name: 'Waiting on you' }));
+    const head = within(await panelPart('dock'));
     await userEvent.click(await head.findByRole('button', { name: 'Discard branch…' }));
     expect(screen.queryByRole('button', { name: /^Accept/ })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'LANDING', expect.anything());

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { moment } from '../../locales/format';
-import { Button, Icon, Inline, Pill, Segmented, SelectField, SettingList, SettingRow, Tip } from '../../design/ui';
+import { Button, Icon, Inline, Note, Pill, Segmented, SelectField, SettingList, SettingRow, Tip } from '../../design/ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, coolingLine, heldLine,
   moved, nextLine, nothingSaid, offeredLine, saidLine, switchOf,
@@ -217,9 +217,9 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
         </ol>
         {/* A hand-edited file read with the order winning: a kept account the order does not hold, or held alone. */}
         {scope.problem && scope.problem.kind !== 'default' && (
-          <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
+          <Note tone="fail" className="mt-1.5 bg-page/60 px-3 py-1.5">
             {t(`harness.use.problem.${scope.problem.kind}`, { account: labelOf(scope.problem.account) })}
-          </p>
+          </Note>
         )}
         {scope.unknown.length > 0 && (
           <p className="m-0 mt-1 text-caption text-ink-faint">{t('harness.use.unknown', { settings: scope.unknown.join(', ') })}</p>

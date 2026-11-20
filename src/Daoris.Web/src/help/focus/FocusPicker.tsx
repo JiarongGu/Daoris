@@ -52,7 +52,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
   if (repositories === undefined) {
     return (
       <div className="grid min-w-0 gap-0.5">
-        <button type="button" disabled aria-label={words.label} className={cn(CHIP, 'cursor-default opacity-70')}>…</button>
+        <button type="button" disabled aria-label={words.label} className={cn(CHIP, 'cursor-default')}>…</button>
         <p role="status" className="m-0 text-caption text-ink-faint">{t('help.scope.reading')}</p>
       </div>
     );
@@ -70,7 +70,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
     return (
       <>
         <span className="flex w-3 shrink-0 self-center">
-          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-accent-ink" />}
+          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-ink" />}
         </span>
         <span className="flex w-3 shrink-0 self-center text-ink-faint">
           {row.place.kind === 'workspace' && !row.nested && <Icon name={row.open ? 'chevronDown' : 'chevronRight'} size={11} />}

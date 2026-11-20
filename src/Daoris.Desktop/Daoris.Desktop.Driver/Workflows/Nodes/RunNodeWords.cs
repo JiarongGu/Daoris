@@ -119,6 +119,17 @@ public static class RunNodeWords
     /// </summary>
     public const string Promoted = "promoted";
 
+    /// <summary>The session that did the work never passes its own done, whatever holder it speaks as.</summary>
+    public const string OwnDone = "own-done";
+
+
+    private static string? OwnDoneOf(NodeDeclaration node, NodeStatus status, string act, SettleBy speaker, IReadOnlyCollection<string>? workers) =>
+        act != NodeWordActs.Skip || speaker.Session is not { } session
+        || !(status.State == NodeStates.Active && NodeKit.Of(node.Kind) is IWaitsOnRole waits && waits.Waits(node, status) == PersonWaits.Pass) ? null
+        : workers is null ? $"session {session} speaks for a working session, and the run's working sessions are not read yet"
+        : workers.Contains(session, StringComparer.Ordinal) ? $"session {session} is one of the run's working sessions"
+        : null;
+
     /// <summary>
     /// Keep the person's <paramref name="act"/> on <paramref name="node"/> of <paramref name="run"/>, with their <paramref name="words"/>, on the
     /// run's record for the next pass: judged first on the run's graph and record by the one table, so a skip with no words, a node the person may
@@ -135,7 +146,7 @@ public static class RunNodeWords
     public static NodeWorded Word(
         NodeRecordFiles records, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null, IReadOnlySet<string>? promoted = null,
         NodeWordBy? by = null, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, string? holder = null, int? epoch = null,
-        SettleBy? settle = null)
+        SettleBy? settle = null, IReadOnlyCollection<string>? workers = null)
     {
         run = run.Trim().TrimStart('#');
         words = string.IsNullOrWhiteSpace(words) ? null : words.Trim();
@@ -167,6 +178,7 @@ public static class RunNodeWords
             // A step not reached (an early Accept on the way to its review) has no attempt standing: the tenure at its last attempt is an ended one's.
             var holding = status.State is NodeStates.Blocked or NodeStates.Ready ? null : hold.Current(node, status.Attempt);
             var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
+            if (OwnDoneOf(declared, status, act, speaker, workers) is { } own) return (null, Refuse(OwnDone) with { Detail = own, State = status.State });
             // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
             var takes = StepHolding.TakesOnPress(holding, speaker);
             if (!takes && SettleDoor.Admit(holding, speaker, hold.Unread) is { } refusal)
@@ -208,6 +220,13 @@ public static class RunNodeWords
                 }
             }
 
+            // A check not known is asked again on its attempt, as its held Run again: the table moves no unknown on the person's word.
+            if (act == NodeWordActs.Again && UnknownChecks.Takes(declared, status))
+            {
+                var (again, notAgain) = UnknownChecks.Again(record, status, now);
+                return again is null ? (null, Refuse(notAgain!) with { State = status.State }) : Kept(word, _ => again, new NodeWorded(run, node, act, null));
+            }
+
             if (act == NodeWordActs.Again && PluginFailureHeld.Of(record, declared, status) is { Words.Count: > 0 }) return (null, Refuse(HeldAgain) with { State = status.State });
             if (act == NodeWordActs.DoneOutside)
             {
@@ -240,7 +259,7 @@ public static class RunNodeWords
     public static async Task<NodeWorded> WordAsync(
         NodeRecordFiles records, IIntegrationDoor door, string run, string node, string act, string? words, Func<DateTimeOffset>? clock = null,
         CancellationToken ct = default, int? attempt = null, string? revision = null, string? part = null, string? outcome = null, int? epoch = null,
-        SettleBy? settle = null)
+        SettleBy? settle = null, IReadOnlyCollection<string>? workers = null)
     {
         IReadOnlySet<string>? promoted = null;
         if (act == NodeWordActs.Stop && new GraphRuns(records).Find(run.Trim().TrimStart('#')) is { } bound && records.Read(bound.Unit) is { } record)
@@ -248,7 +267,8 @@ public static class RunNodeWords
             promoted = await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false);
         }
 
-        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome, epoch: epoch, settle: settle);
+        return Word(records, run, node, act, words, clock, promoted, attempt: attempt, revision: revision, part: part, outcome: outcome, epoch: epoch, settle: settle,
+            workers: workers);
     }
 
     /// <summary>
@@ -453,6 +473,9 @@ public static class RunNodeWords
         (SettleDoor.NotHolder, _) or (StepTenureFiles.EndedEpoch, _) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}, so only its holder settles it: take it first (`daoris workflow take {done.Run} {done.Node}`) to act on it.",
         (SettleDoor.Marked, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}: only the owner role settles it.",
+        (OwnDone, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} holds the run's own done, and the session that did the work never passes it: {done.Detail}; "
+            + $"whoever holds `{StepRoles.AskReader}` reads it against its ask.",
         (StepTenureFiles.Unread, _) => $"workflow: `{done.Node}` on run {done.Run} was not settled: {done.Detail}, so only your own word is taken until they are mended.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",
@@ -464,6 +487,9 @@ public static class RunNodeWords
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to pass over.",
         (NodeRefusal.NotInTable, NodeWordActs.Again) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, not failed, so there is nothing to try again.",
         (NodeRefusal.NotInTable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to stop.",
+        (NodeRefusal.NotCause, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, and only Daoris moves it from there, not your {done.Act}: "
+            + "`daoris workflow run` says what it waits for and what you may say of it.",
         (var code, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} was not kept ({code}).",
     };
 

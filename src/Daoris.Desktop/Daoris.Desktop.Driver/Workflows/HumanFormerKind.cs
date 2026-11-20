@@ -30,10 +30,15 @@ public static class HumanFormerKind
     public static IReadOnlyList<string> Census(string home) =>
     [
         .. new WorkflowFiles(home).List()
-            .Where(found => found.File?["versions"] is JsonArray)
-            .SelectMany(found => found.File!["versions"]!.AsArray().OfType<JsonObject>()
-                .Where(version => version["graph"]?["nodes"] is JsonArray nodes
+            .SelectMany(found => found.File is JsonObject { } file && file["versions"] is JsonArray versions ? versions.OfType<JsonObject>()
+                .Where(version => version["graph"] is JsonObject { } graph && graph["nodes"] is JsonArray nodes
                     && nodes.OfType<JsonObject>().Any(node => node["kind"] is JsonValue kind && kind.TryGetValue<string>(out var named) && named == Former))
-                .Select(version => $"{found.Id} v{version["version"]}")),
+                .Select(version => $"{found.Id} v{version["version"]}") : []),
     ];
+
+    /// <summary>The census as <c>daoris workflow list</c> says it, read-only; null where no version spells the former kind.</summary>
+    public static string? Said(string home) => Census(home) is { Count: > 0 } found
+        ? $"daoris: saved versions still spelling the former `{Former}` kind, each read as a `{NodeKinds.Task}` until none does: "
+            + string.Join(", ", found.Select(each => $"`{each}`")) + "."
+        : null;
 }

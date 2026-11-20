@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, Inline, MonoWell, SelectField } from '../design/ui';
+import { Button, CheckField, Inline, MonoWell, Note, SelectField } from '../design/ui';
 import { ExternalLink, webAddress } from '../design/links';
 import { authoredText } from '../locales/authored';
 import { sentence } from '../locales/format';
@@ -238,7 +238,7 @@ export function RoundCard({ plugin, pluginName, command, given, place, send, onE
       )}
       {stage === 'cancelled' && <p className="m-0 text-small text-ink-soft" role="status">{t('plugin.round.cancelled')}</p>}
       {stage === 'refused' && refusal && (
-        <p className="m-0 border-l-[3px] border-warn pl-3 text-small text-ink-soft" role="status"><Inline text={refusal} /></p>
+        <Note tone="fail" role="status"><Inline text={refusal} /></Note>
       )}
 
       {(stage === 'ended' || stage === 'cancelled' || stage === 'refused') && (

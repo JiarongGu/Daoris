@@ -5,7 +5,7 @@ using Daoris.Desktop;
 namespace Daoris.Desktop.Tests;
 
 /// <summary>
-/// The native chrome copies five of the page's colour tokens, because Windows cannot read a
+/// The native chrome copies seven of the page's colour tokens, because Windows cannot read a
 /// stylesheet. This is what stops the copy drifting.
 /// </summary>
 /// <remarks>
@@ -101,17 +101,42 @@ public sealed class ChromePaletteTests
     [Fact]
     public void TheCloseGlyphReadsOnItsRed()
     {
+        foreach (var palette in new[] { ChromePalette.Light, ChromePalette.Dark })
+        {
+            var ratio = Contrast(palette.CloseGlyphHot, palette.CloseHover);
+            Assert.True(ratio >= 4.5, $"the close glyph reads {ratio:F2}:1 on its red ({(palette.IsDark ? "dark" : "light")})");
+        }
+    }
+
+    /// <summary>
+    /// 🔴 The taskbar's count is what waits on the owner, so it wears the owner's amber with its dark ink in either theme:
+    /// one fixed pair, because the taskbar is the OS's and not the page's (a theme-following count once read as a black
+    /// <c>9+</c> on a red, FIX-LOG 2026-11-20), and never the failure's red.
+    /// </summary>
+    [Fact]
+    public void TheTaskbarCountIsTheOwnersAmberInEitherTheme()
+    {
+        var light = Declarations(TokensCss(), dark: false);
+        var dark = Declarations(TokensCss(), dark: true);
+        Assert.Equal(dark["--you"].ToArgb(), ChromePalette.CountFill.ToArgb());
+        Assert.Equal(dark["--on-you"].ToArgb(), ChromePalette.CountInk.ToArgb());
+        Assert.True(Contrast(ChromePalette.CountInk, ChromePalette.CountFill) >= 7,
+            $"the count reads {Contrast(ChromePalette.CountInk, ChromePalette.CountFill):F2}:1 on its amber");
+        foreach (var red in new[] { light["--fail"], dark["--fail"] })
+        {
+            Assert.NotEqual(red.ToArgb(), ChromePalette.CountFill.ToArgb());
+        }
+    }
+
+    private static double Contrast(Color first, Color second)
+    {
         static double Luminance(Color c) => new[] { c.R, c.G, c.B }
             .Select(v => v / 255.0)
             .Select(v => v <= 0.04045 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4))
             .Zip(new[] { 0.2126, 0.7152, 0.0722 }, (v, w) => v * w)
             .Sum();
-        foreach (var palette in new[] { ChromePalette.Light, ChromePalette.Dark })
-        {
-            var (a, b) = (Luminance(palette.CloseGlyphHot), Luminance(palette.CloseHover));
-            var ratio = (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
-            Assert.True(ratio >= 4.5, $"the close glyph reads {ratio:F2}:1 on its red ({(palette.IsDark ? "dark" : "light")})");
-        }
+        var (a, b) = (Luminance(first), Luminance(second));
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
 
     /// <summary>

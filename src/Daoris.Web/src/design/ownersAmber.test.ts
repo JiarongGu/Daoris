@@ -11,7 +11,13 @@ import ALIAS_SITES from './amberAliases.json';
  * same amber as aliases until each site is split into `you` or neutral by its screen's row; `amberAliases.json` counts them
  * per file, a list that may only shrink and goes with the aliases.
  */
-const OWNERS_WAITS: Record<string, string> = {};
+const OWNERS_WAITS: Record<string, string> = {
+  './design/atoms/Card.tsx': "the card atom's wait edge, the one a card that waits on the owner wears (`Card`'s `edge`)",
+  './design/atoms/Note.tsx': "the note's `you` tone: a line saying what waits on the owner, in the waiting ink",
+  './work/session/WaitCard.tsx': "a wait card in the session's dock: its ◆ and its edge",
+  './work/session/SessionPanel.tsx': "the dock's count of what waits on the owner",
+  './work/session/PanelHead.tsx': "the head's press to the oldest wait on the owner",
+};
 
 const UTILITY = String.raw`(?:text|bg|border(?:-[xytrblse])?|fill|stroke|ring|outline|decoration|divide|caret|accent|shadow|placeholder|from|via|to)`;
 const OPACITY = String.raw`(?:\/(?:\d+|\[[^\]\s]+\]))?`;

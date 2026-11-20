@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// None of these is in flight: a settled attempt; a held one, which waits on the person's word rather than its plugin; Daoris's own
-/// kinds (a check, a close, a request), which a restart asks after or sends again itself; an ended run's, which nothing moves any more;
+/// kinds (a check, a close, a request), which a restart asks after, or sends again itself (once more where an executor's own close cut it off, and held for the person only where its process vanishes with nothing to explain it); an ended run's, which nothing moves any more;
 /// one on a record the runtime does not govern or at a node its graph does not declare (a retired repository, a version that no longer
 /// reads), and one whose plugin's process is down, neither of which the runtime asks after; and one whose step waits on a role's act
 /// outside its plugin (its progress names the role, an approver, a deployer, whoever holds it), which its plugin's watch resumes after a

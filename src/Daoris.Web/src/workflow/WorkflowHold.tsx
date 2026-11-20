@@ -6,7 +6,7 @@ import type { WorkflowGateState } from './gate';
 export function WorkflowHold({ gate }: { gate: WorkflowGateState }) {
   const { t } = useTranslation();
   return (
-    <section aria-label={t('workflow.gate.title')} className="border-l-[3px] border-st-open pl-2 text-small text-ink-soft">
+    <section aria-label={t('workflow.gate.title')} className="text-small text-ink-soft">
       <p className="m-0 font-medium">{t('workflow.gate.title')}</p>
       <p className="m-0"><Inline text={gate.says} /></p>
     </section>

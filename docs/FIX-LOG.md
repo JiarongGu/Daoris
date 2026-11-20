@@ -14598,3 +14598,102 @@ installed window is not yet seen.
   30 s; the ratchet test's synthetic paths sit under `src/D.Tests/`, as its other cases' do.
 - **Verify:** `TreePoolSharesGitTests` alone (5 passed, 4 m 16 s); `node --test tools/time-ratchet.test.mjs` and the STRUCT1
   test (passed); the merge's `reached` rerun.
+## 2026-11-20 — A run's check held not known had no door but its stop (CHECKUNKNOWN1)
+
+- **Seen:** on the install, run 8e9340198a4c stood 11 hours at its `check`, read *not known* with "Daoris asks after it before it
+  starts anything new", and `daoris workflow again 8e9340198a4c check` was refused "was not kept (not-cause)", leaving only
+  `workflow stop`, which ends the run. Its record held attempt 3 `held`, code `changed` (the gates at the commit were not the accepted
+  ones), as two other runs' checks did from the same evening; nothing asked after them, and the run's line named no door for them.
+- **Cause:** the run's `again` is the table's `failed → ready` by the person (cc53305ee5, LEFTSTEP1), and the table holds no person's
+  move from `unknown`, so it refused every not-known check `not-cause`; a held check's *Run again* lived only on the held door
+  (`daoris work held … again`). The graph run's sentence for every unknown node (1d429e554f) said Daoris asks after it, which nothing
+  does for a held attempt, and its terminal line offered only the stop. Beside it, a check whose process a restart cut off was sent
+  again at every start, unbounded.
+- **Fix:** the run's `again` on a not-known check is kept as its current attempt's *Run again* (`UnknownChecks`), held with it where
+  Daoris still asked after it, so the next look settles it as the person's and starts a new attempt; a not-known check says it holds
+  nothing as passed, in the page's words, and its terminal line names `daoris workflow again <run> <node>` beside the stop; `not-cause`
+  is said for a person. A check its executor finds no result and no job of is sent once more as the same attempt, then held `lost`
+  with its newest log's last 20 lines on the attempt's own `tail` (`LostChecks`), never a red round; held, it holds no slot. Only a
+  loss nothing explains counts: the executor's own close (an ordinary update) leaves a `closed` mark and is sent again uncounted, and a
+  send's `began` mark tells one cut off while queued from one that ran. A held check's *Run again* stops its old invocation.
+- **Verify:** the filtered driver classes below, each new test seen failing first; on the install, `daoris workflow again
+  8e9340198a4c check` once this build is there (the steward's).
+
+## 2026-11-20 — Each change of the line's gates held every run in flight, and accepting it freed none (GATEACCEPT1)
+
+- **Seen:** on the install, every change of this repository's `daoris.gates.json` on main held every Daoris run in flight at its
+  `check` as *not known: gates changed* (four on 2026-11-20, one for 14 hours) until each merged main; the owner accepted main's
+  newest blob and that freed none, while the Setup page said "Everything goes on under the ones you accepted until you accept these".
+- **Cause:** the heavy executor compared the blob of `daoris.gates.json` at the work's commit with the accepted blob and held
+  `changed` on any difference (`VerifyExecution`, since `82eace1825`, FABRIC-PIPELINE1d part 1), so a work that merely carried an
+  older or newer line's declaration held, whatever it changed itself; an acceptance moved the blob it compared against, never to the
+  work's, and nothing asked a held check again.
+- **Fix:** a check runs under the accepted declaration's text and holds only where the work's own change, against its merge base with
+  the line, alters a command (`CheckDeclaration`, D350); one rule says what alters a command (`DeclarationCommands`: equal once members
+  named with `_`, each check's `paths`, `timeoutMinutes`, `timeoutWhy`, `memoryGb`, and `tests`, `tiers`, `docs` are set aside); a landed
+  change that alters none keeps the acceptance as it lands, said (`IntegrationOwed.Kept`); a changed one's row names its checks added,
+  removed and changed; a held result keeps the acceptance it held under, and a check held `changed` is worded *Run again* once that
+  moves (`ChangedChecks`); the window's words say what happens, en and zh.
+- **Verify:** `HeavyExecutorProcessTests` (a branch predating and one following the line's change checked as accepted; a work's own
+  command change held, said; a pattern change run), `CheckPerformTests` (an acceptance reruns the held check), `IntegrationOwedGitTests`
+  (a pattern-only change kept, a command change owed with its difference), `DeclarationCommandsTests`, each seen failing first; the
+  page's `attention.test.ts`. On the install once this build is there (the steward's): a run held `changed` reruns at the next look.
+## 2026-11-20 — Each look judged every owed opinion again, though nothing it read had moved (OPINIONLOOK1)
+
+- **Seen:** the owner: "Daoris has been slow". The install's machine log of 2026-11-19/20: `look.slow` for stage `opinions`
+  2,327 times on quest #ba5c8968fdf5, 531 on #82406c797e18, 334 on #4f86d13167d5, then 322, 218, 207 (#8e9340198a4c), 127;
+  looks minutes apart said `~opinions=48089x5@#8e9340198a4c ~opinions.queue=54960`, `~opinions=18347x6`, `~opinions=9065x7`,
+  `~opinions=6059x7`: every look judged 5–7 owed opinions at 5–10 s each beside it, with seconds queued for git's places, on
+  runs whose reviewer had finished and runs unchanged for hours.
+- **Cause:** since owed opinions were judged beside the look (PARALLEL1g, 8c4bd52e70), each look began one judgment per owed
+  opinion whatever had moved, and each judgment read the whole quest list for itself (a `ServiceReviewWorld` per judgment), the
+  ask, its opinions and its tree's work. The tree's work is kept while the tree and every counted ref of its repository stand
+  (LOOKOPINIONS1), so on a repository whose branches move all day (each agent's commit on its own branch) the tree was walked
+  again (`log`, `status`) at nearly every look, behind the tidy for the repository's places. Nothing kept what a judgment had
+  read, so nothing could say it need not run.
+- **Fix:** `OpinionJudgments` reads, for each judgment, a stamp of what it reads, made without git and without a service read of
+  its own: the due itself (a press replaces it in place); the chain's quests and the working line's, reviewers' and rechecks'
+  records from the look's one read; the tree's link, `HEAD` and branch commit from git's files; the gate, deliveries, run binding
+  and node record by a hash of what they hold, the landings, rule and cool-off files by write time and length; and the drain.
+  The stamp is kept with the judgment's fact on the watch's running sessions (`LookFacts`): the first build kept it on
+  `OpinionGateLook`, which the watch builds again with each look's driver, so no stamp outlived its look on the install, and the
+  bench, reusing one driver, did not show it. A look judges an owed opinion again only where that stamp moved, five minutes after
+  its last judgment, past its gate's reset or a reading pass's minutes (a moment already past bounds nothing); a judgment whose
+  gate or review read `unread` keeps none, and a pass begun for it, or a pass's or a delivery's end, lets the stamp go, a
+  judgment that read before that keeping none. `OpinionLookWorld` reads the quests, the records and each ask once a look for every judgment of it.
+- **Measured** (`OpinionJudgmentsTests`: six owed landing opinions settled on their own trees among a thousand closed quests,
+  the host in process, a driver of its own each look over one set of running sessions, as the watch builds them). Before: every
+  look judged all six; the first took 5.6 s with 14 git starts and read the quest list 6 times; each later look made 6
+  judgments, 6 quest-list reads, 6 ask reads and 6 opinion reads (190–280 ms in process; on the install each judgment waited on
+  the service, and on git after any ref moved). The first build, its stamps on the look's own parts: each later look still made
+  6 judgments and 6 opinion reads (91–314 ms). After: the first look took 3.2–5.0 s with 14 git starts and read the quest list
+  and the ask once; a look over nothing moved makes 0 judgments, 0 git starts and no ask or opinion read, and reads the quest and
+  record lists once each (25–33 ms); a commit in one tree judges that one alone (2 git starts); a quest reopened, a node blocked
+  or a delivery written judges that one alone with no git (28–48 ms); a drain begun or lifted judges every one (94–98 ms); under
+  a neighbour's load the same counts held at 16–20 s, 28–53 ms, 71–184 ms and 295–626 ms. A
+  recheck's reviewer ending, a due replaced, a reading pass's minutes passing, a gate read unread, and a pass begun that ended
+  writing nothing each judge that one again at the next look, and each is judged again five minutes after its last judgment
+  (the judges' clock moved by hand, `MovedClock`, which the watch's running sessions hand them).
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings
+  --filter "FullyQualifiedName~OpinionJudgmentsTests"` (red first on the base: 6 judgments and 6 quest-list reads a look; on the
+  first build, 6 judgments a look, and each input test red with its own fix taken out),
+  `--filter "FullyQualifiedName~OpinionJudgmentsStandTests|FullyQualifiedName~OpinionLookTests"`.
+
+## 2026-11-20 — Icons turned blue and the taskbar's count turned black after the role set landed (UIDS1)
+
+- **Seen:** on the installed window after UIDS1 (main 2d5ced6d6c): the chosen place's glyph on the activity bar, the strip's mark,
+  and the icons inside links and doors (a link's icon, *Open ›*'s chevron, an external link's arrow, Focus's check) were blue; and,
+  with the page dark, the taskbar button's waiting count read as a black *9+* on light red.
+- **Cause:** UIDS1's codemod (`tools/token-codemod.mjs`, a200e343f1, its word-boundary fix cd9a1d3397) moved every `text-accent`
+  to `text-accent-ink`. Under the old palette that was the bronze accent; under the role set it is the links' blue, and a glyph
+  draws in `currentColor`, so every icon inside such a word or control took the blue. The same commit copied `--fail`/`--on-fail`
+  into `ChromePalette`'s close colours by theme, and the taskbar count (`TaskbarWear`) borrowed them: the dark set's label on its
+  light red is `#111110`, where the old one was `#faf9f6` in both themes.
+- **Fix:** glyphs wear the inks (the window design §7.1): the chosen place `ink` on its accent field and rail, the mark `ink`,
+  icons beside a link's or door's blue words `ink-soft`, the plan's entry under way `ink`. The taskbar count wears
+  `ChromePalette.CountFill`/`CountInk`, the light theme's `--fail` and white, whatever the page's theme; the close button keeps
+  its per-theme colours. `design/glyphInk.test.tsx` and every story's render (`test/composeStories.ts`) fail a glyph whose
+  nearest colour, its own or a container's, is the accent's or `live`'s; `ChromePaletteTests` holds the count white on red.
+- **Verify:** the census failed 152 story renders before the fix and none after; `ChromePaletteTests` (new test red, then
+  green); the window built from the branch, shot before and after in both themes (overview, Settings, the notifications panel)
+  and the taskbar's count captured.

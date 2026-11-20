@@ -36,6 +36,7 @@ public static class DriverChoicesCommand
                daoris settings [notify|cap|cooloff|quiet|drain|manifest|terminal|keep]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · drain <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
+               daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)
                daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why "…"]
                daoris quest retry <quest> [--at <n> | --session <id>]
                daoris place line <repository>|--workspace <name> [<branch>|--clear] [--commit merge|rebase|squash] [--batch <1 to 8>]

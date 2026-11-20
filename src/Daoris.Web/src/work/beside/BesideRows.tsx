@@ -65,9 +65,9 @@ function ChildLine({ beside, read, home }: { beside: Beside; read: ChildRead; ho
         aria-expanded={opens && !home?.nested ? open : undefined}
         title={beside.task ?? undefined}
         onClick={() => (home?.nested ? home.onFocus(beside.id) : setOpen(!open))}
-        className="flex min-w-0 items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-left text-small text-ink-soft hover:text-ink disabled:cursor-default"
+        className="flex min-w-0 group items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-left text-small text-ink-soft hover:text-ink disabled:cursor-default"
       >
-        <Icon name={open && !home?.nested ? 'chevronDown' : 'chevronRight'} size={13} className="shrink-0 text-ink-faint" />
+        <Icon name={open && !home?.nested ? 'chevronDown' : 'chevronRight'} size={13} className="shrink-0 text-ink-faint group-disabled:invisible" />
         <Icon name="atWork" size={14} className="shrink-0 text-ink-faint" />
         <span className="min-w-0 truncate">{said}</span>
       </button>

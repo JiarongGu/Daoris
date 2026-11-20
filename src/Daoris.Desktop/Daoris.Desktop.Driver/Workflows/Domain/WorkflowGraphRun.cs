@@ -244,7 +244,8 @@ public static class WorkflowGraphRuns
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Journal = StepActViews.Of(facts.Acts, node.Id, status.Attempt, facts.Cast),
                 Joint = facts.Parts.Joints.GetValueOrDefault(node.Id),
-                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
+                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By
+                    : status.Code ?? checkHeld?.Code ?? UncheckedDones.CodeOf(node, status),
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,
                 Acts = acts.Count > 0 && !toAgent ? acts : null,
@@ -338,7 +339,7 @@ public static class WorkflowGraphRuns
     private static (WorkflowRunHeld Held, string? Code)? CheckHeld(NodeRecord? record, string node)
     {
         if (record?.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.Plugin == NodeKinds.Check) is not { } attempt) return null;
-        if (attempt.State == AttemptStates.Held) return (new WorkflowRunHeld(record.Unit, attempt.Attempt, HeldResolutions.Of(attempt)) { Resolution = attempt.Resolution }, attempt.Code);
+        if (attempt.State == AttemptStates.Held) return (new WorkflowRunHeld(record.Unit, attempt.Attempt, HeldResolutions.Of(attempt)) { Resolution = attempt.Resolution, Tail = attempt.Tail }, attempt.Code);
         return attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Stop }
             ? (new WorkflowRunHeld(record.Unit, attempt.Attempt, []) { Resolution = attempt.Resolution }, attempt.Code)
             : null;

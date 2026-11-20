@@ -8,4 +8,7 @@ public sealed record WorkflowRunHeld(string Unit, int Attempt, IReadOnlyList<str
 {
     /// <summary>The person's word kept on it: <c>stop</c>, shown as <i>Not now</i>, or <c>again</c> until it is applied.</summary>
     public string? Resolution { get; init; }
+
+    /// <summary>The last lines of the log of a check whose process is lost and which is held for that (<see cref="LostChecks"/>); null otherwise.</summary>
+    public string? Tail { get; init; }
 }

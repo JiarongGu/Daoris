@@ -120,7 +120,7 @@ export function GitRemotes({ remotes, identities, acts }: { remotes: GitRemoteSh
               <p key={why} className="m-0 text-small text-ink-faint"><Inline text={t('settings.git.remotes.passed', { why })} /></p>
             ))}
             {changing === remote.name && (
-              <div className="grid gap-1.5 border-l-[3px] border-line pl-2.5">
+              <div className="grid gap-1.5">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <SelectField
                     ariaLabel={t('settings.git.remotes.choose', { remote: remote.name })}

@@ -14,9 +14,9 @@ import { attentionGroup, type AttentionGroup, GROUP_ORDER, needsListed } from '.
 type Line = { id: 'presses' | AttentionGroup | 'messages' | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
 
 /**
- * Overview's summary of what needs the person: a line per group with its count
- * and its oldest wait (the presses waiting for confirmation, *Holding work*, *Waiting for your word*, *Ready for you*), each a door
- * that shows *Notifications* at its group. Overview lists no row: every one, with its words and acts, is in *Notifications*.
+ * Overview's summary of what needs the person: a line per group with its count and its oldest wait (the presses waiting for
+ * confirmation, *Holding work*, *Waiting for your word*, *Ready for you*, *With the agents* in a neutral figure, as no owner's count),
+ * each a door that shows *Notifications* at its group. Overview lists no row: every one, with its words and acts, is in *Notifications*.
  *
  * @remarks
  * **Counted by group, never the bell's total** (§4): the presses by the confirmation channel, each once, and the rows by
@@ -106,9 +106,9 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
           <>
             <span className="min-w-0 text-body text-ink">{line.label}</span>
             {/* A wait's figure wears open's ink, the bell's, a press's the warning hue; Messages' and Done and failed's count items and
-                notices, which wait on nobody, so theirs is neutral. */}
+                notices, which wait on nobody, and *With the agents*' rows the agents take, so theirs is neutral. */}
             <span className={cn('font-mono text-caption tabular-nums', line.id === 'presses' ? 'text-warn'
-              : line.id === 'messages' || line.id === 'done' ? 'text-ink-soft' : 'text-ink-open')}
+              : line.id === 'messages' || line.id === 'done' || line.id === 'agents' ? 'text-ink-soft' : 'text-ink-open')}
             >
               {line.count}
             </span>

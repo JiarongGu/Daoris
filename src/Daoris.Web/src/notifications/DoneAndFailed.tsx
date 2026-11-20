@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Notice } from '../bridge/notices';
-import { Button } from '../design/ui';
+import { Button, cardEdge } from '../design/ui';
 import { cn } from '../lib/cn';
 import { elapsed } from '../locales/format';
 import { useShownOnce } from '../person/Confirmations';
@@ -127,7 +127,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
     onOpen(notice);
   } : null;
   return (
-    <li ref={row} data-notice={notice.id} className="grid gap-1 rounded-sm border border-line bg-raised px-2.5 py-2">
+    <li ref={row} data-notice={notice.id} className={cn('grid gap-1 rounded-sm border border-line bg-raised px-2.5 py-2', failed && cardEdge('failed'))}>
       <p className={cn('m-0 flex items-baseline gap-1.5 text-body', notice.read ? 'text-ink-soft' : 'text-ink')}>
         {!notice.read && (
           <span role="img" aria-label={t('notifications.done.unread')} className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />

@@ -154,7 +154,7 @@ function LogLine({ line, level }: { line: LogRow; level: string }) {
                     onClick={() => toggle(part.key)}
                     className="ml-1.5 inline-flex cursor-pointer items-baseline gap-0.5 border-0 bg-transparent p-0 font-sans text-caption text-accent-ink hover:underline"
                   >
-                    <Icon name={open.has(part.key) ? 'chevronDown' : 'chevronRight'} size={12} className="self-center" />
+                    <Icon name={open.has(part.key) ? 'chevronDown' : 'chevronRight'} size={12} className="self-center text-ink-soft" />
                     {t('settings.logs.more', { count: part.more, shown: figure(part.more) })}
                   </button>
                 )}

@@ -30,7 +30,7 @@ public sealed class ParticipantsWorkBoundaryTests : IDisposable
     [Fact]
     public void An_opinion_judged_is_kept_by_its_due_in_any_case_and_moves_the_plan_only_when_its_sits_or_its_act_do()
     {
-        var facts = new LookFacts();
+        var facts = new LookFacts(new Daoris.Testing.MovedClock());
         Assert.Null(facts.Opinion("due-1"));
 
         var first = Found(Sits("q1"));
@@ -45,7 +45,7 @@ public sealed class ParticipantsWorkBoundaryTests : IDisposable
     [Fact]
     public void A_pass_found_owed_is_taken_once_and_what_else_the_judgment_found_stays()
     {
-        var facts = new LookFacts();
+        var facts = new LookFacts(new Daoris.Testing.MovedClock());
         var act = Owed();
         facts.KeepOpinion("due-1", Found(Sits("q1"), act));
 
@@ -60,7 +60,7 @@ public sealed class ParticipantsWorkBoundaryTests : IDisposable
     [Fact]
     public void Only_the_opinions_still_owed_are_kept()
     {
-        var facts = new LookFacts();
+        var facts = new LookFacts(new Daoris.Testing.MovedClock());
         facts.KeepOpinion("due-1", Found(Sits("q1")));
         facts.KeepOpinion("due-2", Found(Sits("q2")));
 

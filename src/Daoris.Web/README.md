@@ -199,8 +199,7 @@ still up, and writes one `page.error` line, `where` `render` (`bridge/logs/log.t
 frames of React's component stack by name alone (`stackTop`), never a frame's location (D217). A failure outside a render is still
 `installPageErrors`'s, `where` `window` or `promise`, the message alone. **An effect sets state only on a change**: React 19.2 counts a
 commit that leaves an update waiting toward its update-depth limit (#185), and a value set again unchanged just after its holder
-drew is such an update, so a stream of events that each did so stops the page (`followTail.ts` and `waitsOnScreen.ts` hold the last
-value set); `app/sessionEnd.test.tsx` holds a streamed line to no nested commit.
+drew is such an update, so a stream of events that each did so stops the page (`followTail.ts` holds the last value set); `app/sessionEnd.test.tsx` holds a streamed line to no nested commit.
 
 ## Where things are in `src/` (STRUCT5c, D166)
 
@@ -259,8 +258,9 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   which reads the driver's reader and the dock, never the record's state word (`stateLine.ts`; a detached session's window says the
   same line), and which draws no wait's card; its timeline, trace and milestone), `conversation/` (the conversation, its composer and box), `review/` (a session's
   review: the diff, the patch, the landing, the file preview), `gates/` (a landing's review and second-opinion gates),
-  `waits/` (what waits on the person, and its answers: `WaitStrip` is the dock above the composer, the one place a wait of the
-  session's page is pressed, `dock.ts` holding what it draws, oldest first, and a census of the reader's reason for each kind),
+  `waits/` (what waits on the person, and its answers: the session panel's dock above the composer, `session/SessionDock.tsx`, is
+  the one place a wait of the session's page is pressed, `dock.ts` holding what it draws, oldest first, and a census of the reader's
+  reason for each kind, `waitObligations.ts` its count),
   `attention/` (*What needs you*), `start/` (starting a
   conversation, a hand-over or a helper), `console/` (a session's console and streams, the monitor, a detached
   session), `terminals/` (the person's terminals), `history/` (clearing finished work), `pausing/` (pausing and
@@ -316,8 +316,10 @@ It includes, too, a third answer in a row with nobody between, which the answers
 in `bridge/sessions/sessions.ts`, `ANSWER_WAITS`, COWORK1e, D188 point 4), answered with *Go on with this answer* or *Not now* on the
 dock above the composer and on its row (`useAnswerAlone`, `SESSION_ANSWER_ALONE`, which publishes the sessions and the driver).
 A place of the activity bar counts only what waits on the person there (BADGEUX1, the UI/UX design §3.10): the bell's rows whose
-door opens it (`placeCounts` and `placeOf` in `work/attention/attention.ts`, a unit of work by its own door), so each place's
-number is the bell's for the same rows. Work under way is a mark, never a number: Sessions' while the driver's sessions run and
+door opens it (`placeCounts` and `placeOf` in `work/attention/attentionCounts.ts`, a unit of work by its own door), so each place's
+number is the bell's for the same rows. The bell and the places count the owner's rows alone (`ownersListed`, each row's `class` as
+the driver's census `AttentionOwnership` judged it, UISH6a); the agents' are listed under *With the agents*, counted nowhere, a row
+being the agents' only while a role is appointed to take it, and the owner's, counted and said as *no role takes this yet* (`untaken`), until one is. Work under way is a mark, never a number: Sessions' while the driver's sessions run and
 are not parked on the person (`useAttention`'s `running`, the `working` partition less the `sessions` partition's parks), Quests'
 while a quest is taken. The status bar says the cap's count, the `working` partition (SESSBADGE1, D76's note).
 
@@ -404,9 +406,9 @@ folded is still over UX7's 200 px, so `head.spec.ts` keeps the budget as an expe
 what remains.
 
 The budget binds a typical record (HEADFIT1b): the page head, the record's head and *Details*, the chain's line and the trace's line,
-drawn as the `Typical*` stories beside the every-block ones. The record's blocks are 8 px apart, and so are the pinned page head and
-the conversation from them (`SessionPageHead`'s margin, `AttendedSession`'s grid, the conversation's top in `WorkFrame` and
-`DetachedSession`, and the stories' stand-in): one rhythm, which the measured check holds. Two blocks hold one line at every width:
+drawn as the `Typical*` stories beside the every-block ones. The record's blocks are 8 px apart, and so are the panel's head and
+the story from them (`PanelHead`'s border, `SessionStory`'s grid, the conversation's top in `DetachedSession`, and the stories'
+stand-in): one rhythm, which the measured check holds. Two blocks hold one line at every width:
 the session's page head keeps its acts beside its title (`PageHead`'s `actsBeside`; at 640 px of the main area or less *Stop…* is
 its square, named and tipped by its words), and `ChainLine` truncates its stops, whole in their tip, before it wraps its press. The
 typical record keeps 200 px at every width, unmarked; the every-block head is a ratchet. D185's HEADFIT1b notes have the heights.

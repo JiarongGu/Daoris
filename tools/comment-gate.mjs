@@ -41,9 +41,10 @@ const HISTORY = /\b(?:was|used to|formerly|previously)\b/gi;
 /**
  * The comments of `src`, one entry per line that carries one: `{ line, text, whole, ranges }`, `text` the comment's words on that
  * line, `whole` true where nothing else is on the line and `ranges` the `[from, to)` columns it spans there; `jsx` reads element text as no comment. */
-export function comments(src, { jsx = false } = {}) {
+export function comments(raw, { jsx = false } = {}) {
   const found = [];
-  const lines = src.split(/\r?\n/);
+  const src = raw.replace(/\r\n?/g, '\n');
+  const lines = src.split('\n');
   const starts = [];
   let at = 0;
   for (const l of lines) {

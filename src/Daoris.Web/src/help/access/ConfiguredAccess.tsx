@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpGrantState } from './wired';
-import { Button, CheckField, Icon, Inline, Pill } from '../../design/ui';
+import { Button, CheckField, Icon, Inline, Note, Pill } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { GRANTS, grantState, type GrantSpec } from './grants';
 
@@ -104,7 +104,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         // A checkout is named by its repository, as written: authored, never translated.
         label={spec.served ? operation : t(`help.grants.op.${spec.id}.${operation}`)}
         // A box the agent cannot be held to reads as disabled, its sentence too, while it keeps what is chosen.
-        className={cn('text-small', (!held || later) && 'cursor-not-allowed opacity-60')}
+        className={cn('text-small', (!held || later) && 'cursor-not-allowed')}
       />
     );
     if (later) {
@@ -139,7 +139,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
             onClick={() => onManage(spec.id, choice?.plugin ?? null)}
           >
             {t(`help.grants.door.${spec.door}`)}
-            <Icon name="chevronRight" size={12} />
+            <Icon name="chevronRight" size={12} className="text-ink-soft" />
           </Button>
         )}
         {spec.door && !spec.onPlugin && (
@@ -152,7 +152,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
             onClick={() => setOpen((was) => !was)}
           >
             {t(`help.grants.door.${spec.door}`)}
-            <Icon name="chevronDown" size={12} className={cn('transition-transform duration-(--duration-quick)', open && 'rotate-180')} />
+            <Icon name="chevronDown" size={12} className={cn('text-ink-soft transition-transform duration-(--duration-quick)', open && 'rotate-180')} />
           </Button>
         )}
       </div>
@@ -165,7 +165,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         </p>
       )}
       {spec.id === 'browser' && (
-        <p className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink">{t('help.grants.signedIn')}</p>
+        <Note tone="caution">{t('help.grants.signedIn')}</Note>
       )}
       {spec.onPlugin && (
         <>
