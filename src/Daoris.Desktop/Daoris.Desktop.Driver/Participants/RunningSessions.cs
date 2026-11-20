@@ -118,8 +118,22 @@ public sealed class RunningSessions
         lock (_gate) return _opinions.Contains(key);
     }
 
+    public RunningSessions()
+        : this(TimeProvider.System)
+    {
+    }
+
+    /// <param name="clock">The clock the watch's pace waits on and the facts' stamps age on, the machine's unless a test moves it.</param>
+    internal RunningSessions(TimeProvider clock)
+    {
+        _clock = clock;
+        Facts = new(clock);
+    }
+
+    private readonly TimeProvider _clock;
+
     /// <summary>The facts the judges beside the looks keep for the plan, shared across the looks as the runs are.</summary>
-    internal LookFacts Facts { get; } = new();
+    internal LookFacts Facts { get; }
 
     // A judgment beside the looks moved a fact the plan reads since the last look took it.
     private bool _factsMoved;
@@ -584,7 +598,7 @@ public sealed class RunningSessions
     internal async Task NextAsync(TimeSpan pace, CancellationToken ct, bool endings = true)
     {
         using var waiting = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var paced = Task.Delay(pace, waiting.Token);
+        var paced = Task.Delay(pace, _clock, waiting.Token);
         await (endings ? Task.WhenAny(EndedAsync(waiting.Token), paced) : Task.WhenAny(paced)).ConfigureAwait(false);
         // The one still waiting ends here, rather than hold a timer or a wait for the rest of the pace.
         await waiting.CancelAsync().ConfigureAwait(false);

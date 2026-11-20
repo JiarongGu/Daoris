@@ -29,11 +29,11 @@ internal static class TaskbarWear
         }.Wear(form);
     }
 
-    /// <summary>Draw the count in the palette's red, the page's theme's (<c>SET_THEME</c>): the close button's, as the platform's count is.</summary>
-    public static TaskbarOverlay Wear(this TaskbarOverlay overlay, ChromePalette palette)
+    /// <summary>Draw the count white on red, as the platform's count is, whatever the page's theme: the taskbar is the OS's.</summary>
+    public static TaskbarOverlay Wear(this TaskbarOverlay overlay)
     {
-        overlay.Fill = palette.CloseHover;
-        overlay.Ink = palette.CloseGlyphHot;
+        overlay.Fill = ChromePalette.CountFill;
+        overlay.Ink = ChromePalette.CountInk;
         return overlay;
     }
 
