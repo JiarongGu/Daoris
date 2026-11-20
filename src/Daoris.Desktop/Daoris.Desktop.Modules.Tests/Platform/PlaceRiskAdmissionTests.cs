@@ -49,4 +49,19 @@ public sealed class PlaceRiskAdmissionTests : IDisposable
         Assert.True(PipeOwnerOnly.Governs(new IpcRequest { Module = DriverModule.Name, Type = "SET_PLACE_RISK" }));
         Assert.False(PipeOwnerOnly.Governs(new IpcRequest { Module = DriverModule.Name, Type = "SET_GROWTH" }));
     }
+
+    [Fact]
+    public void A_cast_and_a_step_handed_to_an_agent_are_the_owner_s_presses()
+    {
+        static IpcRequest Press(string type, string payload) =>
+            new() { Module = DriverModule.Name, Type = type, Payload = System.Text.Json.JsonDocument.Parse(payload).RootElement };
+
+        Assert.True(PipeOwnerOnly.Governs(Press("SET_PLACE_CAST", """{"role":"ask-reader","holder":"agent:claude"}""")));
+        Assert.True(PipeOwnerOnly.Governs(Press("SET_PLACE_CAST", """{"role":"ask-reader"}""")));
+        Assert.True(PipeOwnerOnly.Governs(Press("WORKFLOW_HOLD", """{"run":"q7","node":"holds","act":"hand","holder":"agent:claude"}""")));
+        Assert.True(PipeOwnerOnly.Governs(Press("WORKFLOW_HOLD", """{"Run":"q7","Node":"holds","Act":"hand","Holder":"agent"}""")));
+        Assert.False(PipeOwnerOnly.Governs(Press("WORKFLOW_HOLD", """{"run":"q7","node":"holds","act":"hand","holder":"person"}""")));
+        Assert.False(PipeOwnerOnly.Governs(Press("WORKFLOW_HOLD", """{"run":"q7","node":"holds","act":"take"}""")));
+        Assert.False(PipeOwnerOnly.Governs(Press("WORKFLOW_HOLD", """{"run":"q7","node":"holds","act":"give-back"}""")));
+    }
 }

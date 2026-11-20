@@ -36,7 +36,13 @@ internal static class QuestHoldsReading
         if (BranchOnLine.Observe(reading) is { } onLine) return onLine;
         var (unit, node) = (reading.Unit, reading.Node);
         if (unit.Kind != WorkUnitKind.Quest) return HoldReading.Seen(reading, null, "its door judges the quest's holds where it lands");
-        return Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence)) is { } why
+        var why = Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence));
+        if (UncheckedDones.Says(why) && UncheckedDones.Unread(node, reading.Git?.Cast))
+        {
+            return HoldReading.Reached(reading, WorkRecord.Quests, reading.Binding.SubjectRevision, UncheckedDones.GoesOn) with { Words = UncheckedDones.GoesOn };
+        }
+
+        return why is not null
             ? HoldReading.Seen(reading, null, why)
             : HoldReading.Reached(reading, WorkRecord.Quests, reading.Binding.SubjectRevision, "nothing of its quest's own holds it");
     }

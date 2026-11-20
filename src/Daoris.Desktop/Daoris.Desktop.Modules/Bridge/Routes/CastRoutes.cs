@@ -78,7 +78,8 @@ public sealed class CastRoutes(DriverContext context)
     /// the epoch it names: null for the person's own (the window, a card they confirmed, their terminal), an agent's for a working session's own
     /// press (its start's, <see cref="PipeDoor.WorkerAgent"/>), Ask Daoris's and an appointed role's. Never read from the payload.
     /// </summary>
-    public static SettleBy? SpeakerOf(long? epoch) => SettleBy.OfChannel(PipeDoor.By.By, PipeDoor.Role is not null, EpochOf(epoch), PipeDoor.WorkerAgent);
+    public static SettleBy? SpeakerOf(long? epoch) =>
+        SettleBy.OfChannel(PipeDoor.By.By, PipeDoor.Role is not null, EpochOf(epoch), PipeDoor.WorkerAgent, PipeDoor.Worker);
 
     private object View(string? workspace, string? repository)
     {
