@@ -14,8 +14,9 @@ import { stepsLine, type Step } from './reached-steps.ts';
 
 // test-map: strings name paths as data — the gates file is the declaration this unit reads, and the reasons name commands
 
-/** The rule as read: the budget, the paths whose change is code-wide, the share of a reach that is, and the findings file. */
-export type Verification = { budgetMs: number; widePaths: readonly string[]; reachShare: number; overruns: string };
+/** The rule as read: the budget, the paths whose change is code-wide, the share of a reach that is, the runs a reason by their kind, and the findings file. */
+export type Verification = { budgetMs: number; widePaths: readonly string[]; reachShare: number; runs: readonly RunKind[]; overruns: string };
+export type RunKind = 'after-landing' | 'release';
 
 export type ReasonKind = 'wide-path' | 'reach-share' | 'after-landing' | 'release';
 /** Why a run is full, as the summary says it and the record keeps it. */
@@ -33,7 +34,7 @@ export const GATES_FILE = 'daoris.gates.json';
 const DEFAULT_OVERRUNS = 'local/verify-overruns.jsonl';
 
 /** The runs that are a full run's reason by their kind, not by a diff. */
-export const RUN_REASONS: Readonly<Record<'after-landing' | 'release', FullReason>> = Object.freeze({
+export const RUN_REASONS: Readonly<Record<RunKind, FullReason>> = Object.freeze({
   'after-landing': { kind: 'after-landing', said: 'the run after a landing (--ci, --full --beside)' },
   release: { kind: 'release', said: 'a release (--full on the checkout, --ci --stage)' },
 });
@@ -42,7 +43,7 @@ const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filt
 
 /** The rule a gates file's text declares, or null where it declares none (or no budget): nothing applies then. */
 export function verificationOf(gatesText: string): Verification | null {
-  let parsed: { verification?: { budgetMinutes?: unknown; overruns?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown } } };
+  let parsed: { verification?: { budgetMinutes?: unknown; overruns?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } } };
   try {
     parsed = JSON.parse(gatesText);
   } catch {
@@ -56,6 +57,7 @@ export function verificationOf(gatesText: string): Verification | null {
     budgetMs: Math.round(minutes * 60_000),
     widePaths: Object.freeze(strings(declared.fullRunReasons?.widePaths)),
     reachShare: typeof share === 'number' && share > 0 && share <= 1 ? share : 1,
+    runs: Object.freeze(strings(declared.fullRunReasons?.runs).filter((run): run is RunKind => run in RUN_REASONS)),
     overruns: typeof declared.overruns === 'string' && declared.overruns ? declared.overruns : DEFAULT_OVERRUNS,
   };
 }
@@ -108,10 +110,12 @@ const listed = (paths: readonly string[], most = 6): string => (paths.length <= 
 export function fullRefusal(rule: Verification, changed: readonly string[], reach: Reach): string | null {
   if (fullReason(rule, changed, reach)) return null;
   const bears = changed.length === 1 ? 'bears' : 'bear';
+  const accepted = [
+    `a declared wide path (${listed(rule.widePaths)})`, `a reach of ${percent(rule.reachShare)}% or more of the ${reach.what}`, ...rule.runs.map((run) => RUN_REASONS[run].said),
+  ];
   return [
     `--full needs a reason the change bears (D349), and its ${count(changed.length, 'path')} ${bears} none: it reaches ${reach.reached} of ${reach.of} ${reach.what}.`,
-    `The reasons it accepts: a declared wide path (${listed(rule.widePaths)}), a reach of ${percent(rule.reachShare)}% or more of the ${reach.what},`,
-    `${RUN_REASONS['after-landing'].said} or ${RUN_REASONS.release.said}.`,
+    `The reasons it accepts: ${accepted.slice(0, -1).join(', ')} or ${accepted.at(-1)}.`,
     'Merge without --full: its verification runs scoped to its reach, the heavy tier after the landing.',
   ].join(' ');
 }

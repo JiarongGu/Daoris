@@ -74,8 +74,13 @@ test('--full is refused with no reason the change bears, naming the reasons it a
   assert.match(refused, /Merge without --full: its verification runs scoped to its reach/);
   assert.equal(fullRefusal(RULE, ['package-lock.json'], { reached: 6, of: 25, what: 'gates' }), null, 'a lockfile is a declared wide path');
   assert.equal(fullRefusal(RULE, ['a.ts'], { reached: 20, of: 25, what: 'gates' }), null, 'a reach over the share');
-  // The runs that are a reason by their kind.
+  // The runs that are a reason by their kind, named only where the rule declares them.
   assert.deepEqual(Object.keys(RUN_REASONS), ['after-landing', 'release']);
+  const releaseOnly = verificationOf(JSON.stringify({ verification: { budgetMinutes: 10, fullRunReasons: { widePaths: ['a.json'], runs: ['release'] } } }))!;
+  assert.deepEqual(releaseOnly.runs, ['release']);
+  const said = fullRefusal(releaseOnly, ['b.ts'], { reached: 1, of: 10, what: 'gates' })!;
+  assert.doesNotMatch(said, /the run after a landing/);
+  assert.match(said, /of the gates or a release \(--full on the checkout, --ci --stage\)\. Merge without --full/);
 });
 
 test('a planted overrun is said with where its time went, per gate and the reached run\'s steps, and filed as a finding', () => {
