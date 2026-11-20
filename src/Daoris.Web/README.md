@@ -318,7 +318,8 @@ dock above the composer and on its row (`useAnswerAlone`, `SESSION_ANSWER_ALONE`
 A place of the activity bar counts only what waits on the person there (BADGEUX1, the UI/UX design §3.10): the bell's rows whose
 door opens it (`placeCounts` and `placeOf` in `work/attention/attentionCounts.ts`, a unit of work by its own door), so each place's
 number is the bell's for the same rows. The bell and the places count the owner's rows alone (`ownersListed`, each row's `class` as
-the driver's census `AttentionOwnership` judged it, UISH6a); the agents' are listed under *With the agents*, counted nowhere. Work under way is a mark, never a number: Sessions' while the driver's sessions run and
+the driver's census `AttentionOwnership` judged it, UISH6a); the agents' are listed under *With the agents*, counted nowhere, a row
+being the agents' only while a role is appointed to take it, and the owner's, counted and said as *no role takes this yet* (`untaken`), until one is. Work under way is a mark, never a number: Sessions' while the driver's sessions run and
 are not parked on the person (`useAttention`'s `running`, the `working` partition less the `sessions` partition's parks), Quests'
 while a quest is taken. The status bar says the cap's count, the `working` partition (SESSBADGE1, D76's note).
 

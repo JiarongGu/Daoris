@@ -1,0 +1,36 @@
+{
+  "parked:s1a2b3c4": {
+    "kind": "parked",
+    "id": "s1a2b3c4",
+    "since": "2026-09-21T10:00:00Z",
+    "workspace": "default",
+    "where": "engine",
+    "note": {},
+    "class": "agents"
+  },
+  "parked-quest:q2": {
+    "kind": "parked-quest",
+    "id": "q2",
+    "since": "2026-09-14T10:00:00Z",
+    "where": "engine",
+    "sitting": {
+      "quest": "q2",
+      "repository": "engine",
+      "verdict": "Exhausted",
+      "reason": "three sessions failed",
+      "since": "2026-09-14T10:00:00Z"
+    },
+    "class": "owner",
+    "waitKind": "question",
+    "untaken": true
+  },
+  "unanswerable:7a82cc": {
+    "kind": "unanswerable",
+    "id": "7a82cc",
+    "since": "2026-09-14T09:00:00Z",
+    "workspace": "default",
+    "where": "nowhere",
+    "class": "owner",
+    "waitKind": "question"
+  }
+}

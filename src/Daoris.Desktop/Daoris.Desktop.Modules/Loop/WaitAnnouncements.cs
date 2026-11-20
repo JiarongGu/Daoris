@@ -41,14 +41,15 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
     private readonly Lock _gate = new();
     private HashSet<string> _seen = new(StringComparer.Ordinal);
 
-    /// <summary>One judgement of the attention slice: each held call's row not seen at the last is said, while the switch is on.</summary>
+    /// <summary>One judgement: each held call's or step's row of the owner's not seen at the last is said, while the switch is on.</summary>
     public void Judged(IReadOnlyList<SliceJudged> judged)
     {
         if (judged.FirstOrDefault(each => each.Partition == AttentionStateSlice.Rows)?.Data is not JsonObject rows) return;
         var held = rows
             .Select(each => each.Value as JsonObject)
             .OfType<JsonObject>()
-            .Where(row => Json.Text(row, "kind") is RowKind or StepRowKind && Json.Text(row, "id") is not null)
+            .Where(row => Json.Text(row, "kind") is RowKind or StepRowKind && Json.Text(row, "id") is not null
+                && Json.Text(row, "class") != AttentionOwnership.AgentsClass)
             .ToList();
 
         static string Key(JsonObject row) => $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";

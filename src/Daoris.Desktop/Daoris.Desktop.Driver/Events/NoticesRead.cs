@@ -51,9 +51,11 @@ public static class NoticesRead
     /// <summary>The verb's usage line.</summary>
     public const string Usage = $"usage: daoris notices [--json] [--show <subject> | {NoticesAside.Form}]";
 
-    /// <summary>The groups of <i>What needs you</i> in the order the view shows them, with their words.</summary>
+    /// <summary>The groups of <i>What needs you</i> in the order the view shows them, with their words; the agents' last, never counted as yours.</summary>
     public static IReadOnlyList<(string Group, string Words)> Groups { get; } =
-        [("holding", "Holding work"), ("word", "Waiting for your word"), ("ready", "Ready for you")];
+        [("holding", "Holding work"), ("word", "Waiting for your word"), ("ready", "Ready for you"), (WithTheAgents, "With the agents")];
+
+    public const string WithTheAgents = "agents";
 
     /// <summary>
     /// Each kind's group, the page's <c>ATTENTION_GROUP</c> (<c>work/attention/attentionGroups.ts</c>), held to it by a test; a kind neither
@@ -69,12 +71,13 @@ public static class NoticesRead
     };
 
     /// <summary>
-    /// A row's group, the page's <c>attentionGroup</c>: its kind's, but a hand-over ask whose session stands still on it and an integration's
-    /// wait that holds its line or its unit's flow and a held git remote a session waits on, which hold work, and a
-    /// stale go-ahead, which waits for the person's word.
+    /// A row's group, the page's <c>attentionGroup</c>: the agents' for a row of their class, so the terminal counts the owner's alone as
+    /// the bell does; else its kind's, but a hand-over ask whose session stands still on it, an integration's wait that holds its line or its
+    /// unit's flow and a held git remote a session waits on hold work, and a stale go-ahead waits for the person's word.
     /// </summary>
-    public static string Group(string kind, bool stands, bool stale) =>
-        kind is "hand-over" or "integration" or "git-held" && stands ? "holding"
+    public static string Group(string kind, bool stands, bool stale, bool agents = false) =>
+        agents ? WithTheAgents
+        : kind is "hand-over" or "integration" or "git-held" && stands ? "holding"
         : kind == "go-ahead" && stale ? "word"
         : KindGroups.GetValueOrDefault(kind, "word");
 
@@ -156,7 +159,7 @@ public static class NoticesRead
 
         if (look.Needs is { Count: > 0 } needs)
         {
-            lines.Add($"What needs you ({needs.Count})");
+            lines.Add($"What needs you ({needs.Count(need => need.Group != WithTheAgents)})");
             foreach (var (group, words) in Groups)
             {
                 var held = needs.Where(need => need.Group == group).ToList();

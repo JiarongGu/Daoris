@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `App/` | The composition (`Program`), the frameless main window and the framed secondary windows on the kit's `ChromiumWindowHost`, the notifier, the taskbar's wear, the browser's host and process |
 | `Modules/Bridge/` | `DAORIS.DRIVER`, one route class per domain in `Routes/` with its bodies and wire shapes in types beside it, `PersonRoutes` |
 | `Modules/Platform/` | `StatePublisher`, `StateSlices`, the instance pipe and its `Pipe*` parts, `LogModule` |
-| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers and the census of whose each of its rows is (`AttentionOwnership`), the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
+| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers and the census of whose each of its rows is (`AttentionOwnership`) and of who is appointed to take the agents' (`AttentionTakers`), the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
 | `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
@@ -190,12 +190,17 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
     Memory section, its head carrying a role's held answer there with *Overrule*. Overview keeps one summary line per group.
-    Each pushed row carries whose it is, judged by one census in the modules (`AttentionOwnership`, D336), which classes every kind
-    the judge makes as the owner's, with its kind of wait (question, go-ahead, release, sign-in, money, confirm it was you), or the
-    agents', with the role that takes it, a conditional kind naming both sides and what tells a row's, and whose test fails a kind
-    made with no class: the bell, the taskbar and the title, a place's number, *Notifications*' count and Overview's lines count the
-    owner's rows alone (`ownersListed`); the agents' are listed last under *With the agents* (交给智能体), on the plain line's edge,
-    and Overview's line for them is neutral. (from D150, D181, D196, D297, D336)
+    Each pushed row carries whose it is, judged by one census in the modules (`AttentionOwnership`, D336), which gives every kind
+    the judge makes the owner's kind of wait (question, go-ahead, release, sign-in, money, confirm it was you), and a kind with an
+    agents' side the role that takes it and what tells a row's side; its test reads every source of the modules that makes rows and
+    fails a kind made with no class. An agents' kind is counted as the owner's until a role is appointed to take it: it is the
+    agents' only where the roles as they stand at the judgement appoint one (`AttentionTakers`: the decisions' admission answers a
+    supervisor of the kind's act at the row's place, or a holder holds the steward); else it is the owner's, counted, and its row
+    says *no role takes this yet* (尚无角色接手). A policy hold that names money and a start an account holds for anything but a
+    cool-off or a reading are the owner's whoever is appointed. The bell, the taskbar and the title, a place's number,
+    *Notifications*' count, Overview's lines, a held call's or a step's toast and `daoris notices` count the owner's rows alone
+    (`ownersListed`); the agents' are listed last under *With the agents* (交给智能体), on the plain line's edge, and Overview's
+    line for them is neutral. (from D150, D181, D196, D297, D336)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits

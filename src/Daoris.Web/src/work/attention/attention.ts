@@ -178,7 +178,11 @@ function departureWhy(departed: PushedAttention['departed']): string | null {
  */
 export function attentionWorded(row: PushedAttention, names: AttentionNames = {}, now: Date = new Date()): Attention {
   const worded = wordedRow(row, names, now);
-  return row.class ? { ...worded, class: row.class } : worded;
+  return {
+    ...worded,
+    ...(row.class ? { class: row.class } : {}),
+    ...(row.untaken ? { untaken: true } : {}),
+  };
 }
 
 function wordedRow(row: PushedAttention, names: AttentionNames, now: Date): Attention {

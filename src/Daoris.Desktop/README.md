@@ -864,7 +864,8 @@ window that holds it; and how each agent's accounts are used the twelfth (`Accou
 reading, woken by the roster's scope, a harness action's end, a session's end and a running count the records slice moved
 (`StateSlice.Pushed`), so a tick and a focus read `ACCOUNTS` in no window and a probe's result moves every window by one push; and
 who needs the person the thirteenth (`AttentionStateSlice`, PUSH1d4), *What needs you*'s rows, each carrying whose it is by one census
-(`AttentionOwnership`: `class` and the owner's `waitKind`, D336), of which the bell and each place of the activity bar count the
+(`AttentionOwnership`: `class`, the owner's `waitKind`, and `untaken` on an agents' kind no role is appointed to take, which is the
+owner's until one is, D336), of which the bell and each place of the activity bar count the
 owner's (BADGEUX1, UISH6a), the sessions parked on the person, and the sessions the driver runs (`working`, the cap's own count by
 `ActiveSessions.HoldsSlot`, which the status bar counts, SESSBADGE1, and, less the parks, Sessions' running mark reads) judged in .NET (`NeedsAPerson`, `AccountAttention`) from the other slices' snapshots, the registry the machine's facts hold and what the
 driver's look kept, read from memory once every input slice has judged, woken by their pushes (the sessions' only where what the judge

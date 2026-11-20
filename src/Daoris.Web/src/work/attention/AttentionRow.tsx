@@ -95,6 +95,8 @@ export type Attention = {
   kind: AttentionKind;
   /** Whose it is, as .NET's census classed it: an agents' row is listed under *With the agents*, its edge without amber. */
   class?: AttentionClass;
+  /** An agents' kind counted as the owner's since no role is appointed to take it: its status line says so. */
+  untaken?: boolean;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
   /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
@@ -512,6 +514,13 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
             <>
               <span aria-hidden className="text-ink-faint">·</span>
               <span className="font-mono text-caption text-ink-faint">{when}</span>
+            </>
+          )}
+          {/* An agents' kind no role is appointed to take: the owner's until one is, said so rather than left to nobody. */}
+          {item.untaken && (
+            <>
+              <span aria-hidden className="text-ink-faint">·</span>
+              <span className="text-caption text-ink-soft">{t('work.attention.untaken')}</span>
             </>
           )}
         </p>

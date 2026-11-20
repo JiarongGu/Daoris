@@ -42,6 +42,7 @@ export type PushedAttention = {
   /** Whose it is, and the owner's kind of wait; a row no census reached says none, and is counted rather than hidden. */
   class?: AttentionClass;
   waitKind?: OwnerWaitKind;
+  untaken?: boolean;
   /**
    * The obligation it is, by its exchange's id where that is not its kind and id: a go-ahead's `go-ahead:<ask>/<n>`, which
    * the park of each session that asked it waits on too. `obligationOf` reads it.
