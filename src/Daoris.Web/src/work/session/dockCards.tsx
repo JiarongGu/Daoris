@@ -102,23 +102,24 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
         const question = props.question;
         if (session.kind === 'chat' && question?.site) {
           return [card(line, {
-            what: question.question, look: inConversation(toEvent?.question),
+            what: '', look: inConversation(toEvent?.question),
             presses: <ConversationSignIn key={session.id} question={question} site={question.site} pending={props.resolving} onAnswer={props.onAnswerSession} />,
           })];
         }
         if (question && question.choices.length > 0 && props.onAnswerChoice) {
           answers.set(line.key, (answer) => {
             const choice = typeof answer === 'object' ? question.choices[answer.option] : undefined;
-            if (choice) void props.onAnswerChoice?.(choice.label, '');
+            if (choice) void Promise.resolve(props.onAnswerChoice?.(choice.label, '')).then((why) => { if (why) refused(why); });
           });
           return [card(line, {
             what: question.question, options: question.choices.map((choice) => ({ label: choice.label, effect: choice.does })),
             look: inConversation(toEvent?.question),
           })];
         }
+        const parked = Boolean(props.onResolve || props.onAnswerSession);
         return [card(line, {
-          what: question?.question ?? session.note ?? '', look: inConversation(toEvent?.question),
-          presses: props.onResolve || props.onAnswerSession ? (
+          what: parked ? '' : question?.question ?? session.note ?? '', look: inConversation(toEvent?.question),
+          presses: parked ? (
             <AwaitingPerson
               key={session.id}
               parts={session.noteParts}
@@ -190,7 +191,7 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
           presses: (
             <Lands
               session={session} lands={props.lands} landing={props.landing} onReview={props.onReview} onReviewRun={props.onReviewRun}
-              onSayRebase={props.onSayRebase} review={props.review} behind={props.behind} opinion={props.opinion} toEvent={toEvent}
+              onSayRebase={props.onSayRebase} review={props.review} behind={props.behind} opinion={props.opinion} toEvent={{ opinion: toEvent?.opinion }}
             />
           ),
         })];
