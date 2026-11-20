@@ -171,7 +171,7 @@ export function AppStrip({
             appearance, and it is not spent on saying the name of the thing you are already
             looking at. */}
         <div className="pointer-events-none flex items-center pl-3.5">
-          <Mark size={18} className="text-accent-ink" />
+          <Mark size={18} className="text-ink" />
         </div>
 
         {/* The application's menus (VS Code's menu bar). There is no mode switch beside them:
@@ -274,7 +274,7 @@ export function ActivityBar<T extends string>({
         className={cn(
           'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--duration-quick)',
           active === tab
-            ? 'bg-accent-soft text-accent-ink'
+            ? 'bg-accent-soft text-ink'
             : 'text-ink-faint hover:bg-raised hover:text-ink',
         )}
       >

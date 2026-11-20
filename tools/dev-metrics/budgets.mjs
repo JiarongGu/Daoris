@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { missing } from './records.mjs';
+import { readVerifyBudget } from '../merge/verification.ts';
 
 export const BUDGET_FILE = 'tools/dev-metrics/budgets.json';
 export const budgets = JSON.parse(readFileSync(new URL('./budgets.json', import.meta.url), 'utf8'));
+const verification = readVerifyBudget(fileURLToPath(new URL('../..', import.meta.url)));
 
 export function judge(report, logs, mergeRecords) {
   const checks = [];
@@ -40,7 +43,7 @@ export function judge(report, logs, mergeRecords) {
   if (!report.askDaoris.replies.length) check('askDaoris.firstReplyMs', missing('Ask Daoris person word and first assistant reply events in range'), budgets.askDaoris.firstReplyMs, 'ms');
   for (const [kind, value] of Object.entries(report.leftovers)) check(`leftovers.${kind}`, report.scope.completed === true ? value : missing('completed case receipt before leftovers are judged'), budgets.leftovers.completedCaseItems, 'items');
   for (const row of mergeRecords) {
-    check('development.mergeWallMs', row.wallMs ?? missing('merge-record wallMs'), budgets.development.mergeWallMs, 'ms', { branch: row.branch });
+    if (verification) check('verification.budgetMs', row.wallMs ?? missing('merge-record wallMs'), verification.budgetMs, 'ms', { branch: row.branch });
     for (const gate of row.gates ?? []) check('development.gateMs', gate.ms ?? missing('merge-record gate ms'), budgets.development.gateMs, 'ms', { branch: row.branch, gate: gate.name });
     check('development.gatesOverBudget', row.gates?.length ? row.gates.filter(g => g.ms > budgets.development.gateMs).length : missing('merge-record gate duration rows'), budgets.development.gatesOverBudget, 'gates', { branch: row.branch });
   }

@@ -125,7 +125,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (in the page's red, *9+* past nine) and
+19. Each main window wears its own workspace's waiting count on its taskbar button (white on the light theme's red in either theme, *9+* past nine) and
     in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
     subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
     main window is forgotten there, its flash going to the first. (from D196, D108)
@@ -184,7 +184,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
     `daoris notices` lists, and `daoris notices --show <subject>` prints what the window shows for a memory row's session or sweep
     (`NoticesShown`, `MemoryWaitShown`), read from the running Daoris and deciding nothing; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
-    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    (D283), a changed one saying the checks its commands added, removed and changed and that work not changing them itself is checked
+    under the ones accepted (D350). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
     the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
@@ -285,7 +286,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
     a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
     aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
-    its role's `-ink`. `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
+    its role's `-ink`; a glyph wears the inks and never the accent, beside a link's blue words too, every story's render held
+    to it (`glyphInk.test.tsx`). `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
     themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
     and a second run changes nothing. (from D330, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,

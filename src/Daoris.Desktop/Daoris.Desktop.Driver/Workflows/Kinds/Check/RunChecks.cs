@@ -10,7 +10,7 @@ public static class RunChecks
         if (!SafeNames.IsPlainId(id) || WorkflowRunBindings.Read(home, id) is not { } binding) return null;
         var root = GitFolders.Read(home).FirstOrDefault(checkout => string.Equals(checkout.Repository, binding.Repository, StringComparison.OrdinalIgnoreCase)).Root;
         if (root is null) return null;
-        var accepted = IntegrationAcceptance.Of(DriverConfig.Load(DriverConfig.ResolvePath(home)), binding.Repository);
+        var accepted = AcceptanceOf(home, binding.Repository);
         return new VerifySend(binding.Run, attempt.Call.Invocation, binding.Repository, root, attempt.Call.SubjectRevision, accepted)
         {
             Gates = CheckNode.GatesOf(node),
@@ -19,4 +19,12 @@ public static class RunChecks
             AsMerged = true,
         };
     }
+
+    public static string? AcceptedOf(string home, string unit)
+    {
+        var id = CheckExecution.RunOf(unit);
+        return SafeNames.IsPlainId(id) && WorkflowRunBindings.Read(home, id) is { } binding ? AcceptanceOf(home, binding.Repository) : null;
+    }
+
+    private static string? AcceptanceOf(string home, string repository) => IntegrationAcceptance.Of(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);
 }

@@ -104,6 +104,23 @@ set before a hand-back: the index and the page's generated types written, then e
 (`npm run verify:checks`, with the universal gates on the built-in patterns, and the layers' census's source counts) but the time
 ratchet, so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as handed back.
 
+This workspace verifies a task in under ten minutes (D349: its own rule, not the product's and not canon; `daoris.gates.json`'s
+`verifyBudget`, `.claude/knowledge/verification-budget.md`). One task's verification, a builder's checks, a run's check or a
+merge's gates for one branch, is scoped to what its paths reach: the light gates on its paths and the reached classes before the
+landing, the heavy tier after it in the background. A full run needs a reason the tools check against the change: a declared wide
+path (the list the lane table's every-gate rule reads, its one source, apart from the budget), a reach of half or more of what
+the run could leave out (the gates the lane table can skip at a merge, not those every merge runs or no rule names; the census's
+classes in `reached-checks`), the run after a landing, or a release. The merge, `--plan`, `--preview` and `reached-checks` say
+the scope first, by what runs (`verification: scoped to its reach: …`, naming a full run's reason the change bears and does not
+take, or `verification: full: daoris.gates.json is a declared wide path`); `<branch> --full` is refused where the batch's changes
+bear no reason, judged as one batch by the merge and `--plan` alike, and `--continue --full` during an open merge is judged on
+what that merge changes, a fix made in it included; the refusal names the reasons it accepts, and `--full` on the checkout is a
+release's run by its kind. A merge past the budget says so in its summary with each gate's time and the reached run's steps,
+files a line in `local/verify-overruns.jsonl` for the steward (or says it could not), and keeps `verification` (budget, wall
+time, the scope its change calls for, a full run's reason, and what ran) in its merge record; `tools/merge/verification.ts`
+holds the rule until a supervisor actor does (WORKSPACERULES1). A repository whose gates file sets no `verifyBudget` has no such
+rule.
+
 The `cli` gate, `npm run verify:checks`, is `tools/verify-checks.mjs`: the steps of `tools/verify-checks/steps.mjs`, the index's
 writer first and alone, the rest side by side (quick runs the same list through the same runner). Each step declares what it
 reads, and `node tools/test-map.mjs --check` holds each declaration to what the step's code reads (its imports, the paths its
