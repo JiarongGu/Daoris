@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `App/` | The composition (`Program`), the frameless main window and the framed secondary windows on the kit's `ChromiumWindowHost`, the notifier, the taskbar's wear, the browser's host and process |
 | `Modules/Bridge/` | `DAORIS.DRIVER`, one route class per domain in `Routes/` with its bodies and wire shapes in types beside it, `PersonRoutes` |
 | `Modules/Platform/` | `StatePublisher`, `StateSlices`, the instance pipe and its `Pipe*` parts, `LogModule` |
-| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers, the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
+| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers and the census of whose each of its rows is (`AttentionOwnership`), the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
 | `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
@@ -125,8 +125,9 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (white on the light theme's red in either theme, *9+* past nine) and
-    in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
+19. Each main window wears the count of what waits on the owner, every workspace's rows the census classes the owner's (rule 32), on
+    its taskbar button (white on the light theme's red in either theme, *9+* past nine) and in its title, as its page tells it, and the
+    install's identity Daoris chooses. A notification's click brings forward the window that holds its
     subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
     main window is forgotten there, its flash going to the first. (from D196, D108)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
@@ -189,7 +190,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
     Memory section, its head carrying a role's held answer there with *Overrule*. Overview keeps one summary line per group.
-    (from D150, D181, D196, D297)
+    Each pushed row carries whose it is, judged by one census in the modules (`AttentionOwnership`, D336), which classes every kind
+    the judge makes as the owner's, with its kind of wait (question, go-ahead, release, sign-in, money, confirm it was you), or the
+    agents', with the role that takes it, a conditional kind naming both sides and what tells a row's, and whose test fails a kind
+    made with no class: the bell, the taskbar and the title, a place's number, *Notifications*' count and Overview's lines count the
+    owner's rows alone (`ownersListed`); the agents' are listed last under *With the agents* (交给智能体), on the plain line's edge,
+    and Overview's line for them is neutral. (from D150, D181, D196, D297, D336)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits

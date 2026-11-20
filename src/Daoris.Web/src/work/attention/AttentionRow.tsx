@@ -16,7 +16,9 @@ import {
   ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers, type DeclinedRequest, type StepWaitRow, type GitAskWait, type GitHeld, type IntegrationWait, type MemoryWait,
   type QuietWait,
   type StaleSince,
+  theAgents,
 } from './attention';
+import type { AttentionClass } from './attentionPushed';
 import { Note } from '../Note';
 import type { Answered } from '../InlineConfirm';
 import type { TaskAct } from '../../workflow/task/TaskPress';
@@ -91,6 +93,8 @@ export type Attention = {
   /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for a `go-ahead`, its ask and its number, since one ask holds several. */
   id: string;
   kind: AttentionKind;
+  /** Whose it is, as .NET's census classed it: an agents' row is listed under *With the agents*, its edge without amber. */
+  class?: AttentionClass;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
   /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
@@ -475,7 +479,8 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
       // The row's key, by which the UX trail names a press made in it (`uxTrail.ts`).
       data-attention-row={`${item.kind}:${item.id}`}
       className={cn(
-        'grid gap-x-4 gap-y-1.5 border-l-[3px] border-l-st-open px-3 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
+        'grid gap-x-4 gap-y-1.5 border-l-[3px] px-3 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
+        theAgents(item) ? 'border-l-line' : 'border-l-st-open',
         doorOnly && offered.length === 0 && 'grid-cols-[minmax(0,1fr)_auto] items-center',
       )}
     >

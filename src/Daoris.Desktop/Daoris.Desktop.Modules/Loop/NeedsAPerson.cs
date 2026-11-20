@@ -162,7 +162,8 @@ public static class NeedsAPerson
             if (AskDaoris(record) || Text(placed, "repository") == HelpRoom.Repository) continue;
             if (Text(record, "quest") is { } quest && facts.StoppedQuests.Contains(quest)) continue;
             if (Text(placed, "reason") == SessionReason.Left && LeftByEndedRuns(placed)) continue;
-            var row = Row(Text(placed, "reason") == SessionReason.Left ? "left" : "review", Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
+            var (id, since, scope) = (Text(placed, "session"), Text(record, "updated"), record is null ? null : Scope(record));
+            var row = Text(placed, "reason") == SessionReason.Left ? Row("left", id, since, scope) : Row("review", id, since, scope);
             row["where"] = Text(record, "repository") ?? "";
             row["placed"] = placed.DeepClone();
             rows.Add(row);

@@ -156,7 +156,7 @@ export function App() {
     return true;
   };
   const { scope, workspaces, holdings, onRefresh, scopeNamed } = useScopeAndRefresh({ t, refresh, notify });
-  const { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed } = useShellFigures({ repositories, driver, attached, attention, presses, t, outstanding, scope, workspaces, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, notify });
+  const { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, agentsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed } = useShellFigures({ repositories, driver, attached, attention, presses, t, outstanding, scope, workspaces, askRecords, serviceRead, notificationsOpen, showNotifications, running, remotes, notify });
   const { open, openSettings, apply, chooseSettings } = useOpener({ machineRegistry, chooseKnowledgeMode, agentsModes, lists, view, knowledgeMode, setSettingsAnchor, setSettingsGitHost, setAgentPart, setListGroup, setDrawerWorkspace, composes, setCompose, setAddRequested, setImportRequested, chooseProjectTab, setBranchAsked, chooseWorkspaceTab, setWorkspaceSection, setMapCode, closings, setTab, circle });
   const { plugins, agents } = useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open });
   const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout, palette });
@@ -391,6 +391,7 @@ export function App() {
                 <NotificationsView
                   presses={presses}
                   needs={attention.state === 'known' ? needsRows : null}
+                  withAgents={agentsRows}
                   working={working}
                   attention={<AttentionBand inView doors={attentionDoors} notify={notify} onSessions={() => open('sessions')} onRun={openRun} />}
                   onAnswer={(waiting, confirm) => answerConfirmation.mutateAsync({ waiting, confirm })}

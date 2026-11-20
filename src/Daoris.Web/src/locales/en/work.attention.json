@@ -4,6 +4,8 @@
   "work.attention.group.holding": "Holding work",
   "work.attention.group.word": "Waiting for your word",
   "work.attention.group.ready": "Ready for you",
+  "work.attention.group.agents": "With the agents",
+  "work.attention.agentsNote": "The agents' own to settle: listed here, never counted as yours.",
   "work.attention.parked": "parked at a checkpoint",
   "work.attention.parked-quest": "parked after failed sessions",
   "work.attention.steward-stopped": "Stopped by the steward",

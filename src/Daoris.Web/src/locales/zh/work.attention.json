@@ -4,6 +4,8 @@
   "work.attention.group.holding": "阻塞工作",
   "work.attention.group.word": "等你发话",
   "work.attention.group.ready": "待你审阅",
+  "work.attention.group.agents": "交给智能体",
+  "work.attention.agentsNote": "由智能体自行处理：列在这里，从不计入你的待办。",
   "work.attention.parked": "在检查点挂起",
   "work.attention.parked-quest": "会话失败后挂起",
   "work.attention.steward-stopped": "管家已停止",
