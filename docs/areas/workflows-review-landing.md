@@ -818,6 +818,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **The window redesign** (`docs/2026-11-19-window-design.md` §11): an ask's split is the supervisor's, made without a press
   (D341, UIWF2, UIWF6), and the workflow step editor goes for a before-and-after card (D342, UIWF8, UIWF10). Today the rules
   below stand; each row rewrites the one it makes false.
+- **RISKGATE1** (D354): every hold, approval and acceptance read from one risk policy by one judge (an act's class at its place:
+  `none` passes, `role` waits on a role, never the author, `owner` on the owner), first in shadow, then one hold per change deleting
+  its hard-coded holder; only `policy.change` is fixed at the owner. Today the holds below stand; each row rewrites the one it moves.
+- **GATESPLIT1** (D355): the declaration split into what travels (a `daoris/` folder, one file per gate, accepted per unit by a
+  digest under D354's `command.change`), the machine's values in the home, learned from green wall times, and one resolved reading
+  for every reader. Today `daoris.gates.json` and its acceptance stand as rule 4 says (D350).
 - **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
   line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
   for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and
