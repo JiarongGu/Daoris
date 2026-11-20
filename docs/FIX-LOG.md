@@ -14598,3 +14598,23 @@ installed window is not yet seen.
   30 s; the ratchet test's synthetic paths sit under `src/D.Tests/`, as its other cases' do.
 - **Verify:** `TreePoolSharesGitTests` alone (5 passed, 4 m 16 s); `node --test tools/time-ratchet.test.mjs` and the STRUCT1
   test (passed); the merge's `reached` rerun.
+## 2026-11-20 — A run's check held not known had no door but its stop (CHECKUNKNOWN1)
+
+- **Seen:** on the install, run 8e9340198a4c stood 11 hours at its `check`, read *not known* with "Daoris asks after it before it
+  starts anything new", and `daoris workflow again 8e9340198a4c check` was refused "was not kept (not-cause)", leaving only
+  `workflow stop`, which ends the run. Its record held attempt 3 `held`, code `changed` (the gates at the commit were not the accepted
+  ones), as two other runs' checks did from the same evening; nothing asked after them, and the run's line named no door for them.
+- **Cause:** the run's `again` is the table's `failed → ready` by the person (cc53305ee5, LEFTSTEP1), and the table holds no person's
+  move from `unknown`, so it refused every not-known check `not-cause`; a held check's *Run again* lived only on the held door
+  (`daoris work held … again`). The graph run's sentence for every unknown node (1d429e554f) said Daoris asks after it, which nothing
+  does for a held attempt, and its terminal line offered only the stop. Beside it, a check whose process a restart cut off was sent
+  again at every start, unbounded.
+- **Fix:** the run's `again` on a not-known check is kept as its current attempt's *Run again* (`UnknownChecks`), held with it where
+  Daoris still asked after it, so the next look settles it as the person's and starts a new attempt; a not-known check says it holds
+  nothing as passed, in the page's words, and its terminal line names `daoris workflow again <run> <node>` beside the stop; `not-cause`
+  is said for a person. A check its executor finds no result and no job of is sent once more as the same attempt, then held `lost`
+  with its newest log's last 20 lines on the attempt's own `tail` (`LostChecks`), never a red round; held, it holds no slot. Only a
+  loss nothing explains counts: the executor's own close (an ordinary update) leaves a `closed` mark and is sent again uncounted, and a
+  send's `began` mark tells one cut off while queued from one that ran. A held check's *Run again* stops its old invocation.
+- **Verify:** the filtered driver classes below, each new test seen failing first; on the install, `daoris workflow again
+  8e9340198a4c check` once this build is there (the steward's).

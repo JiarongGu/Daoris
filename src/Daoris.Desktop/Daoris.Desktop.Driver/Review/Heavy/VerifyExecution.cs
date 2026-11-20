@@ -27,6 +27,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
     {
         Directory.CreateDirectory(_folder);
+        AttemptMarks.Write(AttemptMarks.Began(home, send.Run, send.Invocation, send.Delivery), send.Delivery, world.Clock.GetUtcNow());
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
         // The declaration is read as git objects at the commit, the blob the person accepted, never a tree's file.
         var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);

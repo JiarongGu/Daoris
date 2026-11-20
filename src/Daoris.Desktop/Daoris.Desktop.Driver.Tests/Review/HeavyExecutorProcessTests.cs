@@ -352,6 +352,34 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_check_cut_off_mid_run_holds_nothing_after_a_restart_is_run_again_and_another_starts_beside_it()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "go"), true, false)));
+        var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)));
+
+        var before = Executor();
+        await before.SendAsync(Send("v-0000000000000001", "i-a", engine));
+        await Poll.Until(() => File.Exists(At("beat-a.txt")) && File.Exists(At("child-a.txt")));
+        var child = int.Parse(File.ReadAllText(At("child-a.txt")));
+        _executors.Remove(before);
+        await before.DisposeAsync();
+
+        Assert.False(File.Exists(VerifyFiles.ResultOf(Home, "v-0000000000000001", "i-a")), "a check cut off writes no result");
+        Assert.True(File.Exists(AttemptMarks.Began(Home, "v-0000000000000001", "i-a", 0)), "its send said it began");
+        Assert.True(File.Exists(AttemptMarks.Closed(Home, "v-0000000000000001", "i-a", 0)), "the executor's own close said why it ended");
+        Assert.False(Alive(child), "what its gate left was ended with it");
+        Assert.Null(VerifySlot.Look(Home).Holder);
+        var after = Executor();
+        Assert.Equal(VerifyAnswers.NotStarted, (await after.ReconcileAsync("v-0000000000000001", "i-a")).State);
+
+        await after.SendAsync(Send("v-0000000000000002", "i-b", game, "game"));
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000002", "i-b")).Verdict);
+        await File.WriteAllTextAsync(At("go-a"), "");
+        await after.SendAsync(Send("v-0000000000000001", "i-a", engine));
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
+    }
+
+    [Fact]
     public async Task The_job_s_first_process_runs_below_normal_and_a_clock_gate_at_normal()
     {
         if (!OperatingSystem.IsWindows()) return; // the priority class is Windows'

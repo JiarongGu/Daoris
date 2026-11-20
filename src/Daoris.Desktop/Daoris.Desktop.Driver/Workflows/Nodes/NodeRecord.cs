@@ -51,6 +51,9 @@ public sealed record NodeAttempt(string Node, int Attempt, string Plugin, WorkPe
     /// <summary>What settled or held it: <c>reached</c>, <c>failed</c>, <c>not-started</c>, or <c>unknown</c>.</summary>
     public string? Outcome { get; init; }
 
+    /// <summary>The last lines of a check's newest log, kept with it where its process is lost and the check held (<see cref="LostChecks"/>); never the person's <see cref="Note"/>.</summary>
+    public string? Tail { get; init; }
+
     /// <summary>A failure's code, or why its outcome is held (a refusal's code).</summary>
     public string? Code { get; init; }
 
