@@ -5,7 +5,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// Every step a pass reached by the risk policy (<see cref="NodeSource.Policy"/>) is journaled once as a <c>risk.judged</c> release, its rule and
 /// revision with it, since the pass reaches it inside its rounds where the shadow never sees it wait. A run whose passed step held a person's
-/// tenure (a wait opened before the policy decided it) is told so in one line, once.
+/// tenure (a wait opened before the policy decided it) is told so in one line, once. Only a pass line counts as journaled: the shadow keys
+/// a step's open and release alike, so a wait it saw open, then released by the pass, still gets its own pass line.
 /// </summary>
 internal static class PolicyPasses
 {
@@ -16,7 +17,7 @@ internal static class PolicyPasses
     public static void Look(NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig config, DateTimeOffset now, List<string> said)
     {
         var policy = RiskPolicy.Of(config);
-        var seen = Journaled.GetOrAdd(records.Home, home => [.. RiskJournal.Read(home).Select(line => line.Key)]);
+        var seen = Journaled.GetOrAdd(records.Home, home => [.. RiskJournal.Read(home).Where(line => line.Today == Today).Select(line => line.Key)]);
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         foreach (var each in governed)
         {
