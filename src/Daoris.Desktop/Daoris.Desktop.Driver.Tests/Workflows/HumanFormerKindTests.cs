@@ -45,6 +45,30 @@ public sealed class HumanFormerKindTests : IDisposable
     }
 
     [Fact]
+    public async Task Workflow_list_names_each_saved_version_still_spelling_the_former_kind_and_no_line_once_none_does()
+    {
+        RunHome.SaveGraph(_home, Saved);
+
+        Assert.Contains("daoris: saved versions still spelling the former `human` kind, each read as a `task` until none does: `docs v1`.", await ListAsync());
+
+        RunHome.SaveGraph(_home, Saved.Replace("\"human\"", "\"task\"", StringComparison.Ordinal));
+        Assert.DoesNotContain(await ListAsync(), line => line.Contains("`human`", StringComparison.Ordinal));
+    }
+
+    private async Task<IReadOnlyList<string>> ListAsync()
+    {
+        var output = new StringWriter();
+        var world = new DriverChoicesWorld
+        {
+            Verbs = DriverChoiceVerbs.All,
+            Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = output, Error = new StringWriter(), Verb = "daoris" },
+            ConfigPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig),
+        };
+        Assert.Equal(0, await DriverChoicesCommand.RunAsync(["workflow", "list"], world, CancellationToken.None));
+        return output.ToString().Split('\n').Select(line => line.TrimEnd('\r')).ToList();
+    }
+
+    [Fact]
     public void A_save_naming_the_former_kind_writes_nothing()
     {
         var add = new WorkflowVersionAdded("docs", "Docs", "terminal", "2026-11-17T09:00:00Z", null, JsonNode.Parse(Saved));

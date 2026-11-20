@@ -36,4 +36,10 @@ public static class HumanFormerKind
                     && nodes.OfType<JsonObject>().Any(node => node["kind"] is JsonValue kind && kind.TryGetValue<string>(out var named) && named == Former))
                 .Select(version => $"{found.Id} v{version["version"]}")),
     ];
+
+    /// <summary>The census as <c>daoris workflow list</c> says it, read-only; null where no version spells the former kind.</summary>
+    public static string? Said(string home) => Census(home) is { Count: > 0 } found
+        ? $"daoris: saved versions still spelling the former `{Former}` kind, each read as a `{NodeKinds.Task}` until none does: "
+            + string.Join(", ", found.Select(each => $"`{each}`")) + "."
+        : null;
 }

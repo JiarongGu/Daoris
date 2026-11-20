@@ -639,7 +639,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     other and is a quest to that repository's own session, driving rule 53). `place --workspace … --adoption` paces a workspace's adoption by `atOnce`. (D227, D276)
 44. No migration converts a workflow record: a saved version is read as it was written, a graph. A saved version is configuration
     a purge keeps, so its former `human` step reads as a `task` (`HumanFormerKind`) until no saved version on the install spells
-    `human` (NOCOMPAT2). (D232, D323)
+    `human` (NOCOMPAT3); `daoris workflow list` names each version that still does, read-only. (D232, D323)
 45. There is no landing rule: nothing reads or writes `landings` or `workspaceLandings`. Every door that lands,
     plans, names a branch or says how work lands reads the run's bound `land`; ungoverned work lands as the declared merge, held by
     its gate. A line's integration reads its policy, and `LINES` and `SESSION_PROCESS` answer no landing. (D228, D232)
