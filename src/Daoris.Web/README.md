@@ -464,6 +464,8 @@ an `act` warning passes `--reporter=default` (FRAMEACT1, `docs/development.md`).
 the day (a moment said by its time alone when it is today's) stamps that moment on the day the test runs, or fakes the
 clock, never a fixed date that reads as another day's after midnight (FIX-LOG, 2026-10-30).
 
+Each `work/WorkFrame.*.test.tsx` suite passes alone, one test alone and in a shuffled order (`npx vitest run <file> --sequence.shuffle.tests --sequence.seed=<n>`; WFTESTISO1): a test mounts the frame and reads what it shows from nothing an earlier test left, and one that presses a side bar tab goes through the kit's `openTab`, which waits for the attended session's page first, since the side bar keeps its tab per followed session and a press before the record arrives is kept under none and lost (the first test of a fresh run to press one failed on it, the rest passed on the warmed load).
+
 The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `LandingCode.cs` and
 `WorkplaceFacts.cs` in Knowledge hold their moved vocabulary. The Sweep twin still reads `Landing.cs`. MOD9e's rule in
 `tools/merge-branch.mjs` and its source-read census keep changes to each declaration routed to the page's unit gate.
