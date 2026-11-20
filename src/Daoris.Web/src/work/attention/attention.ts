@@ -20,7 +20,7 @@ import { acceptRunOf } from './attentionRun';
 import { workCutFor } from './attentionCounts';
 import { attentionGroup, GROUP_ORDER } from './attentionGroups';
 import { planQuestionDetail } from './planQuestionDetail';
-import { declarationChangedWhy } from './declarationWords';
+import { declarationOwedWhy } from './declarationWords';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
 export { ATTENTION_GROUP, type AttentionGroup, attentionGroup, attentionGroups, GROUP_ORDER } from './attentionGroups';
@@ -419,12 +419,7 @@ function wordedRow(row: PushedAttention, names: AttentionNames, now: Date): Atte
           ? i18n.t('work.attention.integrationSupersededWhy', { commit: short(wait.commit), subject: wait.subject ?? '', line: wait.line ?? '' })
           : wait?.wait === 'card'
             ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) })
-            // A declaration never accepted runs nothing; one changed since checks work under the last accepted blob, said with its commands.
-            : wait?.wait === 'declaration'
-              ? wait.state === 'changed'
-                ? declarationChangedWhy(wait.line ?? '', wait.change)
-                : i18n.t('work.attention.integrationDeclarationUnacceptedWhy', { line: wait.line ?? '', tip: short(wait.tip) })
-              : null;
+            : wait?.wait === 'declaration' ? declarationOwedWhy(wait) : null;
       return { ...base, title, detail, stands: row.stands === true, ...(wait ? { integration: wait } : {}) };
     }
     // Its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.

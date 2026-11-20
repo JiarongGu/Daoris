@@ -837,11 +837,64 @@
       "exit": 0,
       "out": [
         "daoris: this machine: low (default).",
-        "  No record is written yet: Daoris writes it at its next start."
+        "  No record is written yet: Daoris writes it at its next start.",
+        "  Each act here under restricted access, by the risk policy (revision seed):",
+        "    work.done        none",
+        "    work.accept      none",
+        "    task.approve     none",
+        "    work.recover     none",
+        "    line.land        none",
+        "    remote.push      none",
+        "    release.start    none",
+        "    publish.outside  none",
+        "    spend.money      none",
+        "    direction.set    none",
+        "    check.narrow     none, said in one line",
+        "    reach.widen      role, by `approver`",
+        "    command.change   owner",
+        "    history.rewrite  owner",
+        "    data.delete      owner",
+        "    policy.change    owner, fixed"
       ],
       "err": [],
       "after": null,
-      "changed": "PLACERISK1: a place's risk and the owner's marks are one record of their own, new with this verb; with nothing to set it says what stands."
+      "changed": "RISKGATE1a: with nothing to set it says what stands, and each act's class there by the risk policy (D354), read only; setting a row is RISKGATE1j."
+    },
+    {
+      "name": "risk why, a run's verdicts",
+      "argv": [
+        "risk",
+        "why",
+        "q7"
+      ],
+      "before": null,
+      "files": {
+        "data/workflows/risk/judged.jsonl": "{\"event\":\"risk.judged\",\"at\":\"2026-11-20T09:00:00+00:00\",\"stage\":\"open\",\"key\":\"step:q7/review#1:accept\",\"hold\":\"accept\",\"kind\":\"work.accept\",\"qualifier\":null,\"actor\":\"person\",\"workspace\":\"work\",\"repository\":\"app\",\"mode\":\"restricted\",\"run\":\"q7\",\"step\":\"review\",\"subject\":\"run q7, step review, attempt 1\",\"outcome\":\"pass\",\"class\":\"none\",\"by\":null,\"source\":\"seed\",\"revision\":\"seed\",\"reason\":\"no risk declared: it passes, recorded (the seed)\",\"today\":\"Waiting on `acceptor`: you.\",\"todayHeld\":true,\"agrees\":false}\n{\"event\":\"risk.judged\",\"at\":\"2026-11-20T09:00:00+00:00\",\"stage\":\"open\",\"key\":\"step:q9/review#1:accept\",\"hold\":\"accept\",\"kind\":\"work.accept\",\"qualifier\":null,\"actor\":\"person\",\"workspace\":\"work\",\"repository\":\"app\",\"mode\":\"restricted\",\"run\":\"q9\",\"step\":\"review\",\"subject\":\"run q9, step review, attempt 1\",\"outcome\":\"pass\",\"class\":\"none\",\"by\":null,\"source\":\"seed\",\"revision\":\"seed\",\"reason\":\"no risk declared: it passes, recorded (the seed)\",\"today\":\"Waiting on `acceptor`: you.\",\"todayHeld\":true,\"agrees\":false}\n"
+      },
+      "exit": 0,
+      "out": [
+        "daoris: the risk verdicts journaled for the run `q7`:",
+        "  2026-11-20 09:00Z open review work.accept: pass (none; seed, revision seed) — today: Waiting on `acceptor`: you. — differs from today"
+      ],
+      "err": [],
+      "after": null,
+      "changed": "RISKGATE1a: why a run's holds stood, each verdict the judge journaled in shadow beside today's gate (D354 point 8), new with this verb."
+    },
+    {
+      "name": "risk why, a run with none",
+      "argv": [
+        "risk",
+        "why",
+        "q8"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: no verdict is journaled for the run `q8`."
+      ],
+      "err": [],
+      "after": null,
+      "changed": "RISKGATE1a: why a run's holds stood says so where the journal holds none for it."
     },
     {
       "name": "line",

@@ -112,4 +112,23 @@ public sealed class DeclarationCommandsTests
         Assert.True(DeclarationCommands.Keeps("{ not json", "{ not json"));
         Assert.True(DeclarationCommands.Keeps(Accepted, Accepted));
     }
+
+    [Fact]
+    public void A_command_change_waits_for_the_owner_under_restricted_access_and_is_taken_under_full_access()
+    {
+        static AccessEdit Permissions(string value) => new() { Repository = "engine", Set = [new(AccessRules.Permissions, value)] };
+        var machine = DriverConfig.Empty.WithAccess(new AccessEdit { Machine = true, Full = true });
+
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(DriverConfig.Empty, "engine", null));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(DriverConfig.Empty.WithAccess(Permissions(AccessRules.Auto)), "engine", null));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(machine.WithAccess(Permissions(AccessRules.Asking)), "engine", null));
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(DriverConfig.Empty.WithAccess(Permissions(AccessRules.Unrestricted)), "engine", null));
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(machine, "engine", "aurora"));
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "Engine", Full = true }), "engine", null));
+
+        Assert.True(DeclarationMode.Waits(DriverConfig.Empty, "engine", null));
+        Assert.False(DeclarationMode.Waits(machine, "engine", null));
+        Assert.Equal("full access: taken without asking", DeclarationMode.Said(DeclarationMode.Full));
+        Assert.Equal("restricted: waits for you", DeclarationMode.Said(DeclarationMode.Restricted));
+    }
 }

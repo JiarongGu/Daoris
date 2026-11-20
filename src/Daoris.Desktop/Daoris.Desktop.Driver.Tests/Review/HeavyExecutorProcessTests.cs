@@ -432,6 +432,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal((commands.Blob, engine.Blob), (held.Declaration, held.Accepted));
         Assert.Contains("this work's own change to daoris.gates.json", held.Why);
         Assert.Contains("changed `unit`", held.Why);
+        Assert.Contains("(restricted: waits for you)", held.Why);
         Assert.Contains("once the change lands, accept it on its repository's Setup page", held.Why);
         Assert.Contains("It happened", held.Why);
         Assert.False(File.Exists(At("intervals.log")), "nothing ran");
@@ -441,6 +442,87 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
 
         Assert.True(kept.Verdict == VerifyVerdicts.Reached, kept.Why);
         Assert.Equal(engine.Blob, kept.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+    }
+
+    [Fact]
+    public async Task Under_full_access_a_work_whose_own_change_alters_a_command_runs_its_own_declaration_with_no_hold()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit });
+        var ran = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Null(ran.Code);
+        Assert.Equal(commands.Blob, ran.Declaration);
+        Assert.Equal([("start", "b"), ("end", "b")], Intervals());
+    }
+
+    /// <summary>The send's own workspace decides the mode, so a verification tree outside a registered checkout reads a workspace-level setting as the line does.</summary>
+    [Fact]
+    public async Task A_workspace_level_unrestricted_runs_the_work_s_own_declaration_through_the_check_path()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        DriverConfig.Empty.WithAccess(new AccessEdit { Workspace = "aurora", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit, Workspace = "aurora" });
+        var ran = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Equal([("start", "b"), ("end", "b")], Intervals());
+        Assert.Equal(DeclarationMode.Full, DeclarationMode.Of(Home, "engine", "aurora"));
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(Home, "engine", "borealis"));
+    }
+
+    /// <summary>A driver.json that does not read never loosens: the mode is restricted and a changed command is held.</summary>
+    [Fact]
+    public async Task A_driver_file_that_does_not_read_is_restricted_and_holds_a_changed_command()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        File.WriteAllText(DriverConfig.ResolvePath(Home), "{ this does not read");
+        Assert.Equal(DeclarationMode.Restricted, DeclarationMode.Of(Home, "engine", "aurora"));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit, Workspace = "aurora" });
+        var held = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.Equal((VerifyVerdicts.Unknown, VerifyResult.Changed), (held.Verdict, held.Code));
+        Assert.False(File.Exists(At("intervals.log")), "nothing ran");
+    }
+
+    /// <summary>Nothing accepted yet: restricted access waits for the person, full access runs the work's own declaration, said in a line.</summary>
+    [Fact]
+    public async Task With_nothing_accepted_restricted_waits_and_full_access_runs_the_work_s_own_declaration()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Accepted = null });
+        var waits = await SettledAsync("v-0000000000000001", "i-a");
+        Assert.Equal(VerifyVerdicts.Unknown, waits.Verdict);
+        Assert.Contains("nothing runs until the person accepts", waits.Why);
+        Assert.False(File.Exists(At("intervals.log")), "nothing ran");
+
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Accepted = null });
+        var ran = await SettledAsync("v-0000000000000002", "i-b");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Contains("nothing was accepted yet, so the work's own declaration ran (full access: taken without asking)", ran.Why);
+        Assert.Equal(engine.Blob, ran.Declaration);
         Assert.Equal([("start", "a"), ("end", "a")], Intervals());
     }
 

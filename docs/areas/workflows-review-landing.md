@@ -158,9 +158,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    release step's plugin's to resolve. `daoris repository deployables <repository>` says it, writing nothing. (D290)
 4. The landed route (`landed`) resolves on its own, names only a verification pipeline and keeps the accepted
    `daoris.gates.json`'s blob id; a changed route applies to the next run. (D192) The line's `daoris.gates.json` is accepted once for
-   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates): as it lands in a full-access
-   repository (the look says the checks changed in one sentence), by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
-   --accept|--withdraw [--plan]`) in restricted mode, shown as checks added, removed and changed by name with their commands
+   every purpose it serves (`DeclarationAcceptance`: the integration's blob and the landed route's gates). Whether it waits for the
+   person is the repository's access mode alone (`DeclarationMode`, asked by the check, the line's acceptance, the held checks' rerun
+   and the window): full where its permission prompts resolve `unrestricted`, at whichever level, restricted otherwise. In full access
+   it is accepted as it lands (the look says the checks changed in one sentence ending `(full access: taken without asking)`, and
+   *What needs you* holds no row); in restricted access by one press (`INTEGRATION_GATES`, or `daoris integrate <repository>
+   --accept|--withdraw [--plan]`), Setup saying the mode that decided, shown as checks added, removed and changed by name with their commands
    (`DeclarationChange`), the row ending at the press; its row in *What needs you* names the checks added, removed and changed and
    opens that press on Setup. A landed change that adds or alters no command keeps the acceptance as it lands, said in one sentence
    naming what it set aside (`IntegrationOwed.Kept`): two declarations run the same where they are equal once their inert parts are set
@@ -168,15 +171,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    leading `_` at the top or directly inside a check; each check's `paths`, `timeoutMinutes`, `timeoutWhy` and `memoryGb`; the top-level
    `tests`, `tiers` and `docs`), and a check's name, command, folder, hand-back or flags, a check added, removed or moved, and any other
    part wait for the person; the change shown names command changes alone. A change the look cannot judge waits and is said once, and
-   never ends the look. A check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
+   never ends the look. In full access a check runs the work's own declaration as its commit carries it, a command change of its own
+   included, as the work's agents run any command in their own sessions anyway, also before any acceptance (said in one line); its result
+   names that blob and nothing holds. The workspace its mode resolves through is the work's bound one. A driver file that does not
+   read is restricted. In
+   restricted access a check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
    work whose declaration runs only what the accepted one runs, or whose own change against where it left the line (the merge base with
    the local branch of the line the look reads) alters no command, is checked as accepted, so a declaration change on the line holds no
-   run; only a work whose own change alters a command, or one whose line or merge base git cannot name, holds `changed`, saying which
-   and what the person can do (land the change and accept it, or answer the check *It happened*). Daoris starts only the commands the
-   person accepted; they run the work's own code. Once the acceptance moves, each check so held is run again by itself (`ChangedChecks`,
-   its held attempt's *Run again*). The set-up review
+   run; only a work whose own change alters a command, or one whose line or merge base git cannot name, holds `changed`, saying which,
+   that restricted access decided, and what the person can do (land the change and accept it, or answer the check *It happened*).
+   Daoris starts only the commands the person accepted; they run the work's own code. Once the acceptance moves, or the repository takes
+   full access, each check so held is run again by itself (`ChangedChecks`, its held attempt's *Run again*). The set-up review
    offers the same one acceptance, a single tick per repository saying the checks changed (`daoris place … --apply --accept
-   <repository>`), never one tick per purpose. (D283, D350)
+   <repository>`), never one tick per purpose. (D283, D350, D353)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A
    choice is refused (`place-kind`), nothing written, where a department it reaches cannot run one of its steps by its place's
    kind: the git kinds (`land`, `push`, `monitor`, `tidy`, `integrate`, `line`, `content.holds`, `rebase`, `resolve`, `merge`, a
@@ -821,6 +828,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 - **The window redesign** (`docs/2026-11-19-window-design.md` §11): an ask's split is the supervisor's, made without a press
   (D341, UIWF2, UIWF6), and the workflow step editor goes for a before-and-after card (D342, UIWF8, UIWF10). Today the rules
   below stand; each row rewrites the one it makes false.
+- **RISKGATE1** (D354): every hold, approval and acceptance read from one risk policy by one judge (an act's class at its place:
+  `none` passes, `role` waits on a role, never the author, `owner` on the owner), then one hold per change deleting its hard-coded
+  holder; only `policy.change` is fixed at the owner. The judge runs in shadow (roles-and-supervision rule 49b): each run step's hold
+  (an unchecked done, an Accept, an approval, a go-ahead, a recovery wait) and each declaration owed acceptance journals one
+  `risk.judged` line at its open and its release beside what today's gate did, deciding nothing. Today the holds below stand; each
+  row rewrites the one it moves.
+- **GATESPLIT1** (D355): the declaration split into what travels (a `daoris/` folder, one file per gate, accepted per unit by a
+  digest under D354's `command.change`), the machine's values in the home, learned from green wall times, and one resolved reading
+  for every reader. Today `daoris.gates.json` and its acceptance stand as rule 4 says (D350).
 - **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
   line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
   for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and
