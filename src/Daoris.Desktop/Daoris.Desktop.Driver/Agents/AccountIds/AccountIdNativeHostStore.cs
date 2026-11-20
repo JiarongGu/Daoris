@@ -32,10 +32,10 @@ internal static class NativeHostManifests
             }
             else
             {
-                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 var roots = OperatingSystem.IsMacOS()
-                    ? Browsers.Select(browser => Path.Combine(home, "Library", "Application Support", browser == "Microsoft/Edge" ? "Microsoft Edge" : browser))
-                    : Browsers.Select(browser => Path.Combine(home, ".config", browser switch
+                    ? Browsers.Select(browser => Path.Combine(user, "Library", "Application Support", browser == "Microsoft/Edge" ? "Microsoft Edge" : browser))
+                    : Browsers.Select(browser => Path.Combine(user, ".config", browser switch
                     {
                         "Google/Chrome" => "google-chrome",
                         "Microsoft/Edge" => "microsoft-edge",
