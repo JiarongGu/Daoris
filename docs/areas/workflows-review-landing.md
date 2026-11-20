@@ -819,8 +819,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
   (D341, UIWF2, UIWF6), and the workflow step editor goes for a before-and-after card (D342, UIWF8, UIWF10). Today the rules
   below stand; each row rewrites the one it makes false.
 - **RISKGATE1** (D354): every hold, approval and acceptance read from one risk policy by one judge (an act's class at its place:
-  `none` passes, `role` waits on a role, never the author, `owner` on the owner), first in shadow, then one hold per change deleting
-  its hard-coded holder; only `policy.change` is fixed at the owner. Today the holds below stand; each row rewrites the one it moves.
+  `none` passes, `role` waits on a role, never the author, `owner` on the owner), then one hold per change deleting its hard-coded
+  holder; only `policy.change` is fixed at the owner. The judge runs in shadow (roles-and-supervision rule 49b): each run step's hold
+  (an unchecked done, an Accept, an approval, a go-ahead, a recovery wait) and each declaration owed acceptance journals one
+  `risk.judged` line at its open and its release beside what today's gate did, deciding nothing. Today the holds below stand; each
+  row rewrites the one it moves.
 - **GATESPLIT1** (D355): the declaration split into what travels (a `daoris/` folder, one file per gate, accepted per unit by a
   digest under D354's `command.change`), the machine's values in the home, learned from green wall times, and one resolved reading
   for every reader. Today `daoris.gates.json` and its acceptance stand as rule 4 says (D350).
