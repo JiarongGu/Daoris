@@ -579,7 +579,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
               >
                 {/* An account's row opens its agent's page, and says whose (*Claude Code ›*). */}
                 {AT_AN_AGENT.has(item.kind) && item.account ? item.account.product : t('work.attention.door.open')}
-                <Icon name="chevronRight" size={13} />
+                <Icon name="chevronRight" size={13} className="text-ink-soft" />
               </button>
             ))}
         </div>

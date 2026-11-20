@@ -5,6 +5,7 @@ import { composeStories, setProjectAnnotations } from '@storybook/react-vite';
 import preview from '../../.storybook/preview';
 import '../locales/i18n';
 import { rooted } from './sources';
+import { glyphsInAccent } from './census/glyphs';
 
 // 🔴 Storybook's project annotations, so `composeStories` renders a story the way Storybook does.
 //
@@ -67,8 +68,11 @@ export async function everyStoryOf(
       for (const [name, Story] of Object.entries(composed)) {
         it(`${path.replace(/^\.\/|\.stories\.tsx$/g, '')} · ${name} renders`, () => {
           localStorage.removeItem(LANGUAGE_KEY);
-          expect(() => render(createElement(Story))).not.toThrow();
+          let drawn: HTMLElement | undefined;
+          expect(() => { drawn = render(createElement(Story)).baseElement; }).not.toThrow();
           expect(localStorage.getItem(LANGUAGE_KEY), 'a story remembered a language').toBeNull();
+          // Its glyphs wear the inks, never the accent (`design/glyphInk.test.tsx`): read over the page, portals included.
+          expect(glyphsInAccent(drawn!), 'a glyph wears the accent').toEqual([]);
         });
       }
     }

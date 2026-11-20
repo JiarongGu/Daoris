@@ -667,7 +667,7 @@ export function AskPage({
                   href={link}
                   className="inline-flex max-w-full items-center gap-1.5 text-body text-accent-ink underline-offset-2 hover:underline"
                 >
-                  <Icon name="link" size={12} />
+                  <Icon name="link" size={12} className="text-ink-soft" />
                   <span className="truncate">{link}</span>
                 </ExternalLink>
               </li>

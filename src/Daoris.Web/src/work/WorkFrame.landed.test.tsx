@@ -206,11 +206,7 @@ describe('a session’s page header and its acts', () => {
     expect(within(ask).getByRole('button', { name: /Agent and account: codex · / })).toBeInTheDocument();
   });
 
-  /**
-   * A tool call the running session holds for the person's answer stands in its dock,
-   * read off `PERMISSION_WAITS`, and *Allow once* sends `SESSION_PERMISSION_ANSWER` with the option the agent offered; a refusal of
-   * the answer is said where it is pressed, by its code in the catalogue's words.
-   */
+  /** Read off `PERMISSION_WAITS`; a refused answer is said at its press, in the catalogue's words. */
   it('answers a tool call a running session holds for the person with the option they pressed', async () => {
     const held = {
       session: 's1a2b3c4', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-10-20T09:00:00Z',
@@ -236,12 +232,7 @@ describe('a session’s page header and its acts', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_PERMISSION_ANSWER', { payload: { session: 's1a2b3c4', request: '900', option: 'reject' } });
   });
 
-  /**
-   * The session's asks of helpers stand in its dock,
-   * an agent's that waits on the person with *Let it ask*, which sends `SESSION_HELPER_APPROVE`; *Ask another agent…*
-   * folds into the head's ⋯ and asks under the head, its *Ask* sending `SESSION_HELPER_ASK` with the question, the agent left to
-   * Daoris, and the ask closes once it is on file.
-   */
+  /** *Let it ask* sends `SESSION_HELPER_APPROVE`; the head's *Ask* sends `SESSION_HELPER_ASK`, the agent left to Daoris. */
   it('lists a session’s asks of helpers with the person’s yes, and asks another agent from the head', async () => {
     SESSIONS = [{ ...CHAT, state: 'completed' }];
     const helpers = [{
@@ -275,11 +266,7 @@ describe('a session’s page header and its acts', () => {
     await waitFor(() => expect(screen.queryByRole('group', { name: 'ask another agent' })).toBeNull());
   });
 
-  /**
-   * When the conversation's own account is near its limit by its scope's near, a line under the head
-   * offers *Go on with codex (team)* and *Choose…*; the press asks `SESSION_HAND_OVER` with the reason `near` as Daoris's, *Choose…*
-   * opens the ask with that choice made, and *Not now* puts it down for the run. Nothing is taken without the press.
-   */
+  /** Near its account's limit, a line under the head offers the hand-over (`SESSION_HAND_OVER`, `near`); nothing is taken unpressed. */
   const RUNNING_LOW = {
     ...ROSTER,
     harnesses: [
@@ -524,11 +511,7 @@ describe('a session’s page header and its acts', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'work' } });
   });
 
-  /**
-   * A running driven session on a quest an ask's intake published, with its milestone, is drawn again at every change of
-   * its record. Its milestone is keyed under the record, so a draw never leaves one more copy of it in the page, and no
-   * *Who it worked with* fold stands under the head: who it worked with is rows of its timeline.
-   */
+  /** Its milestone is keyed under the record, so a redraw leaves no second copy; who it worked with is timeline rows. */
   it('keeps one milestone and no who-it-worked-with fold, however often its record changes', async () => {
     const intake = { ...PARKED_INTAKE, id: 'i9n8t7k6', state: 'completed', note: undefined };
     const quests = [{ ...QUESTS[0]!, publishedBy: intake.id }];
@@ -908,11 +891,7 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('daoris/s-abc12345')).toBeTruthy();
   });
 
-  /**
-   * A failed session whose tree is gone leaves a branch only the terminal's
-   * `trees remove … --force` reached. Its head offers the discard, asks once, and presses the driver's forced removal of
-   * that branch by its name and repository; the driver's sentence for a branch it kept is said whole, as a refusal is.
-   */
+  /** The discard presses the driver's forced removal of the branch by name; its sentence for a kept branch is said whole. */
   it("discards the branch a failed session left once its tree is gone, after asking once", async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];
     let answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: true, message: 'removed the session branch `daoris/s-abc12345` from `engine`.' };
@@ -949,11 +928,7 @@ describe('acting on what a session landed', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('it is gone already'), 'error');
   });
 
-  /**
-   * A failed session's commits stay in its tree, so the page offers to land
-   * them. Where the driver's reader says what its tree offers to land, its page says the commits, the branch and the tree
-   * beside what it left, and *Review* opens the run's outputs; the Accept is the card's.
-   */
+  /** Where the driver says what the tree offers to land, the page says it; *Review* opens the run's outputs, the Accept is the card's. */
   it('offers a failed session’s commits on its page, and opens the run’s review from its Review door', async () => {
     SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-4e6837ed' }];
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -1044,11 +1019,7 @@ describe('acting on what a session landed', () => {
     expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
   });
 
-  /**
-   * An open conversation whose turn ended
-   * with a commit beyond the line keeps its record `working`, so the driver's look offers nothing, and only the review's side
-   * bar would have the press. Once its turn ends, the head and the foot offer it from the review's own answer; never while a turn runs.
-   */
+  /** A commit beyond the line keeps the record `working`; the head and foot offer the landing from the review, never mid-turn. */
   describe('an open conversation whose turn ended with work', () => {
     const TALK = { ...CHAT, tree: 'C:/somewhere/.daoris/trees/default/engine/s-c0ffee11' };
     const BEYOND = {
