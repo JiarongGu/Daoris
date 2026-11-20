@@ -6,7 +6,7 @@ import type { AtWorkA } from '../atWork/types';
 import { LEAD_WAITING_ON_HELPER } from '../atWork/atWork.fixtures';
 import { lineRowsOf } from './rows';
 import { HELPER } from './rows.fixtures';
-import { LineRows } from './LineRows';
+import { LineRow } from './LineRows';
 import { toExchangeRow } from './seek';
 
 afterEach(cleanup);
@@ -19,7 +19,7 @@ describe("the head's waiting-on door into the timeline", () => {
     const first = answer.exchanges!.find((exchange) => exchange.holds)!;
     const scrolled = vi.fn();
     Element.prototype.scrollIntoView = scrolled;
-    render(<LineRows rows={lineRowsOf({ exchanges: [{ ...HELPER, id: first.id }] })} attended="s1" docked={[]} onToDock={vi.fn()} />);
+    render(<>{lineRowsOf({ exchanges: [{ ...HELPER, id: first.id }] }).map((row) => <LineRow key={row.key} row={row} attended="s1" docked={[]} onToDock={vi.fn()} />)}</>);
     const head = render(<WaitingOnLine answer={answer} onOpen={toExchangeRow} />);
     fireEvent.click(head.getByRole('button', { name: 'Show its row' }));
 

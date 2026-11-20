@@ -91,8 +91,11 @@ function show(selected: string) {
 }
 
 const main = () => document.querySelector<HTMLElement>('main[data-region="main"]')!;
-const partOf = (id: string) => main().querySelector<HTMLElement>(`[data-part="${id}"]:not([data-attended])`);
-const drawn = () => [...main().querySelectorAll('[data-part]:not([data-attended])')].map((each) => each.getAttribute('data-part'));
+const region = (name: string) => main().querySelector<HTMLElement>(`[data-region="${name}"]`)!;
+const earlierParts = () => [...main().querySelectorAll<HTMLElement>('[data-part]')].filter((each) => !each.closest('[data-block]'));
+const partOf = (id: string) => earlierParts().find((each) => each.getAttribute('data-part') === id) ?? null;
+const drawn = () => earlierParts().map((each) => each.getAttribute('data-part'));
+const attendedStory = () => within(screen.getByRole('list', { name: i18n.t('work.session.story.label') }));
 const strip = () => within(screen.getByRole('navigation', { name: 'Parts' }));
 
 /** Whether `first` is drawn before `second` in the page's order. */
@@ -101,10 +104,10 @@ const before = (first: Node, second: Node) => Boolean(first.compareDocumentPosit
 /** A region jsdom lays nothing out for: it is taller than it shows, as a long conversation is. */
 function tall() {
   vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (this: HTMLElement) {
-    return this.matches('main[data-region="main"]') ? 6000 : 0;
+    return this.matches('[data-region="story"]') ? 6000 : 0;
   });
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
-    return this.matches('main[data-region="main"]') ? 600 : 0;
+    return this.matches('[data-region="story"]') ? 600 : 0;
   });
 }
 
@@ -226,10 +229,10 @@ describe('a session’s page draws its line as one conversation', () => {
     // The ring under the composer reads the attended part’s one usage, never the earlier part’s 99%.
     expect(await screen.findByRole('meter', { name: 'context' })).toHaveTextContent('3%');
     // A live line follows the attended part’s tail; no earlier part has opened the region at its own head.
-    await waitFor(() => expect(main().scrollTop).toBe(6000));
+    await waitFor(() => expect(region('story').scrollTop).toBe(6000));
     expect(set.mock.calls.map(([top]) => top)).not.toContain(0);
     // One tail: the press the frame draws for the way back is the attended part’s, and is not offered at the tail.
-    expect(screen.queryByRole('button', { name: 'Back to bottom' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^↓/ })).toBeNull();
   });
 
   it('opens an ended line at the attended record’s head, the nearest earlier part beneath it', async () => {
@@ -242,12 +245,12 @@ describe('a session’s page draws its line as one conversation', () => {
 
     await screen.findByText('The attended part.');
     await screen.findByText('The earlier part.');
-    expect(main().scrollTop).toBe(0);
+    expect(region('story').scrollTop).toBe(0);
     // The page’s order: the attended record’s head first, then the earlier part, then the attended part.
     expect(before(screen.getByRole('navigation', { name: 'Parts' }), partOf('c0000001')!)).toBe(true);
     expect(before(partOf('c0000001')!, screen.getByText('The attended part.'))).toBe(true);
     // The way to the bottom stands beside it, since the region is taller than it shows.
-    expect(await screen.findByRole('button', { name: 'Back to bottom' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^↓/ })).toBeInTheDocument();
   });
 
   it('opens the line\'s session at an earlier part pressed, every part still drawn, and at its newest when that is', async () => {
@@ -269,8 +272,7 @@ describe('a session’s page draws its line as one conversation', () => {
     // Part 2 opened: the line's one session, opened at it, the newest part still the one it heads.
     await waitFor(() => expect(main().querySelector('[data-opened]')?.getAttribute('data-part')).toBe('c0000002'));
     expect(drawn()).toEqual(['c0000001', 'c0000002']);
-    expect(screen.getByText('Third part words.')).toBeInTheDocument();
-    expect(main().querySelector('[data-attended]')?.getAttribute('data-part')).toBe('c0000003');
+    expect(attendedStory().getByText('Third part words.')).toBeInTheDocument();
 
     await userEvent.click(strip().getAllByRole('button')[2]!);
     await waitFor(() => expect(drawn()).toEqual(['c0000001', 'c0000002']));
@@ -346,9 +348,9 @@ describe('a session’s page draws its line as one conversation', () => {
     show('c0000001');
     await screen.findByText('Second part words.');
 
-    expect(main().querySelector('[data-attended]')?.getAttribute('data-part')).toBe('c0000002');
+    expect(attendedStory().getByText('Second part words.')).toBeInTheDocument();
     expect(main().querySelector('[data-opened]')?.getAttribute('data-part')).toBe('c0000001');
-    expect(main().querySelector('header')?.textContent).toMatch(/working/i);
+    await waitFor(() => expect(region('head').textContent).toMatch(/working/i));
   });
 
   it('says a session whose helper works is working, naming the helper with a door to it', async () => {
@@ -357,10 +359,10 @@ describe('a session’s page draws its line as one conversation', () => {
     const { onSelect } = show('c0000001');
     await screen.findByText('Asked a helper.');
 
-    await waitFor(() => expect(main().querySelector('[data-line-state]')).not.toBeNull());
-    const lineState = main().querySelector<HTMLElement>('[data-line-state]')!;
+    await waitFor(() => expect(region('head').querySelector('[data-line-state]')).not.toBeNull());
+    const lineState = region('head').querySelector<HTMLElement>('[data-line-state]')!;
     expect(lineState.textContent).toMatch(/its helper/);
-    expect(main().querySelector('header')?.textContent).toMatch(/working/i);
+    expect(region('head').textContent).toMatch(/working/i);
     await userEvent.click(within(lineState).getByRole('button', { name: 'Open' }));
     expect(onSelect).toHaveBeenLastCalledWith('h0000001');
   });

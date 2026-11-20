@@ -11,7 +11,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // hold the rest, and what they share is in `test/workFrameBridge.ts` and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
-import { watchScreen } from '../test/onScreen';
+import i18n from '../locales/i18n';
 import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
   CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, QUESTS, REGISTRY, carried, focus, going, show, userEvent,
@@ -27,6 +27,9 @@ function respond(url: string): Response {
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
   throw new Error(`unstubbed request: ${url}`);
 }
+
+const panel = () => screen.findByRole('region', { name: i18n.t('work.session.label') });
+const headOf = async () => (await panel()).querySelector<HTMLElement>('[data-region="head"]')!;
 
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
 // and a test that hid the console left it hidden for whichever console test ran next: four failed
@@ -128,10 +131,11 @@ describe('the Work frame', () => {
       : DRIVER_STATE));
     show(DRIVEN.id);
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Streaming budget' })).toBeInTheDocument();
+    const head = await headOf();
+    expect(await within(head).findByRole('heading', { name: 'Streaming budget' })).toBeInTheDocument();
     const list = await screen.findByRole('complementary', { name: 'Sessions' });
     expect(await within(list).findByText('Streaming budget')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeNull();
+    expect(within(head).queryByRole('heading', { name: /Expose a streaming budget/ })).toBeNull();
   });
 
   /**
@@ -750,11 +754,9 @@ describe('the Work frame', () => {
   it('is the rail and the attended session, bound by one selection', async () => {
     show('s1a2b3c4');
 
-    // The rail's row and the header's title are one derived identity; *Started from* names the quest once more.
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
-    await vi.waitFor(() =>
-      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(3));
-    expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
+    expect(await within(await headOf()).findByRole('heading', { name: 'Expose a streaming budget' })).toBeInTheDocument();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    expect(await within(list).findByText('Expose a streaming budget')).toBeInTheDocument();
   });
 
   /**
@@ -769,8 +771,8 @@ describe('the Work frame', () => {
       (type === 'SESSION_OPENINGS' ? { openings: { c0ffee11: 'Cap the hydration per frame' } } : DRIVER_STATE));
     const { onSelect } = show('c0ffee11');
 
-    await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame' });
-    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(2));
+    expect(await within(await headOf()).findByRole('heading', { name: 'Cap the hydration per frame' })).toBeInTheDocument();
+    expect(await within(await screen.findByRole('complementary', { name: 'Sessions' })).findByText('Cap the hydration per frame')).toBeInTheDocument();
 
     const user = userEvent.setup();
     focus(screen.getByRole('button', { name: 'more for Cap the hydration per frame' }));
@@ -918,9 +920,8 @@ describe('the Work frame', () => {
 
     show('s1a2b3c4');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' }))
-      .toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /^Details/ })).toBeInTheDocument();
+    expect(await within(await headOf()).findByRole('heading', { name: 'Expose a streaming budget' })).toBeInTheDocument();
+    expect(await within(await panel()).findByRole('button', { name: /^Details/ })).toBeInTheDocument();
   });
 
   /** The panel is a region a person owns: it grows, it shrinks, and only they close it. */
@@ -1012,11 +1013,7 @@ describe('a park\'s go-aheads', () => {
   /** The box's go-ahead lines, where the box answers the park: each with its own *Approve* and *Refuse*. */
   const boxLines = async () => within(await screen.findByRole('region', { name: 'It asks you' })).getAllByRole('listitem');
 
-  /**
-   * The park's box carries every press of what it asks, so the person answers in one place: the
-   * head lists the go-aheads with none, and the strip draws none of them.
-   */
-  it('shows the go-aheads the park asked in its box, each with Approve and Refuse, the head listing them, and not another session\'s', async () => {
+  it('shows the go-aheads the park asked in its box, each with Approve and Refuse, and not another session\'s', async () => {
     show('g0ah3ad0');
 
     const items = await boxLines();
@@ -1024,15 +1021,13 @@ describe('a park\'s go-aheads', () => {
       expect.stringContaining('dashboard configuration'),
       expect.stringContaining('comparison report'),
     ]);
-    expect(screen.getByRole('region', { name: 'It asks you' })).not.toHaveTextContent('the release branch');
     for (const item of items) {
       expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
       expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
     }
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
+    expect(await panel()).not.toHaveTextContent('the release branch');
     // The park's own card and box stay: with no question recorded, it is answered in words.
-    expect(screen.getByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
+    expect(within((await panel()).querySelector<HTMLElement>('[data-region="dock"]')!).getAllByText(/I need go-aheads 1 and 2/)[0]).toBeInTheDocument();
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
   });
 
@@ -1133,35 +1128,29 @@ describe('a park\'s go-aheads', () => {
   it('shows nothing new for a park whose ask holds none of its own, and none where no ask asked its quest', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[2]] }];
     const { unmount, client } = show('g0ah3ad0');
-    expect(await screen.findByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
+    expect((await screen.findAllByText(/I need go-aheads 1 and 2/))[0]).toBeInTheDocument();
     await waitFor(() => expect(pushedOf(client).data('asks')).toEqual([expect.objectContaining({ id: 'a5k001' })]));
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(await panel()).not.toHaveTextContent('the release branch');
     unmount();
 
     vi.mocked(fetch).mockClear();
     SESSIONS = [PARKED];
     show('p4rk3d00');
-    expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect((await screen.findAllByText(/I recommend the second/))[0]).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
-  /**
-   * The person reads the conversation's foot, where the park's question
-   * is, so what it asks stands there, in the box below the conversation's scroll, with every press of it; the strip, which counted
-   * its question and drew its go-aheads beside the box's own field, draws none of the park's waits, whether or not the head's are on
-   * screen, and the head lists the go-aheads with no press.
-   */
-  it('answers a go-ahead in the box at the foot through the same door, no strip beside it, whether or not the head is on screen', async () => {
+  /** The person reads the story's foot, where the park's question is, so what it asks stands there, in the composer below the story's scroll. */
+  it('answers a go-ahead in the box at the foot, below the story\'s scroll, through the same door', async () => {
     const notify = vi.fn();
     show('g0ah3ad0', notify);
     const ask = await screen.findByRole('region', { name: 'It asks you' });
-    // Outside the conversation's scroll, above the box's field.
-    expect(screen.getByRole('main').contains(ask)).toBe(false);
+    const region = await panel();
+    expect(region.querySelector('[data-region="story"]')!.contains(ask)).toBe(false);
+    expect(region.querySelector('[data-region="composer"]')!.contains(ask)).toBe(true);
     expect(ask.compareDocumentPosition(screen.getByLabelText('Message'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    // The head draws none and the dock none the box answers: the box holds every press.
-    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
-    expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
+    // The box holds every press of what the park asks, and the dock none of its go-aheads: one go-ahead, one press.
     expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(2);
     expect(ask.contains(screen.getAllByRole('button', { name: 'Approve' })[0]!)).toBe(true);
 
@@ -1175,9 +1164,8 @@ describe('a park\'s go-aheads', () => {
   });
 
   /**
-   * Each wait leads to the event in the conversation that raised it, from the head and from the strip,
-   * and the event leads back to its wait at the foot. A go-ahead's call is joined on its input, never its title; one whose call
-   * the conversation does not hold has no such press.
+   * Each wait leads to the line of the story that raised it, from the box and from the dock, and the line leads back to its
+   * wait. A go-ahead's call is joined on its input, never its title; one whose call the story does not hold has no such press.
    */
   it('goes between each wait, the event that raised it and back', async () => {
     const asked = '2026-09-02T00:30:00Z';
@@ -1201,25 +1189,26 @@ describe('a park\'s go-aheads', () => {
     });
     const view = show('g0ah3ad0');
     const ask = await screen.findByRole('region', { name: 'It asks you' });
-    const call = await screen.findByText('ask for a go-ahead');
+    const region = await panel();
+    const story = await within(region).findByRole('list', { name: i18n.t('work.session.story.label') });
+    const call = await waitFor(() => story.querySelector<HTMLElement>('[data-part="tools"]')!.closest<HTMLElement>('[data-block]')!);
 
     // From the box: go-ahead 1's call, outlined; go-ahead 2 asked by no call this conversation holds has no such press.
     const [first, second] = within(ask).getAllByRole('listitem');
+    await userEvent.click(await within(first!).findByRole('button', { name: 'In the conversation' }));
     expect(within(second!).queryByRole('button', { name: 'In the conversation' })).toBeNull();
-    await userEvent.click(within(first!).getByRole('button', { name: 'In the conversation' }));
-    await waitFor(() => expect(call.closest('[data-block]')!.className).toContain('outline-accent'));
+    await waitFor(() => expect(call.className).toContain('outline-accent'));
 
-    // From the head: the park's card, to its last words.
-    const card = screen.getByText('This one is waiting on you').closest('section')!;
-    await userEvent.click(within(card).getByRole('button', { name: 'In the conversation' }));
-    const words = screen.getAllByText('I need go-aheads 1 and 2 before I can finish.')
-      .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
+    // From the dock: the park's card, to its last words.
+    const card = within(region.querySelector<HTMLElement>('[data-region="dock"]')!).getByRole('article', { name: 'its question' });
+    await userEvent.click(within(card).getAllByRole('button', { name: 'In the conversation' })[0]!);
+    const words = within(story).getByText('I need go-aheads 1 and 2 before I can finish.').closest<HTMLElement>('[data-block]')!;
     await waitFor(() => expect(words.className).toContain('outline-accent'));
 
     // And back: the call's mark names what waits from it, and *To the wait* leads to its line in the box.
-    const block = call.closest<HTMLElement>('[data-block]')!;
-    await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
+    await userEvent.click(within(call).getByRole('button', { name: 'To the wait: go-ahead #1' }));
     await waitFor(() => expect(within(ask).getAllByRole('listitem')[0]).toHaveFocus());
+    expect(within(ask).getAllByRole('listitem')[0]!.className).toContain('outline-accent');
 
     // Away and back, the press is spent: the box drawn again takes no focus and outlines nothing.
     const attend = (selected: string) => view.rerender(
@@ -1234,38 +1223,6 @@ describe('a park\'s go-aheads', () => {
     const again = await screen.findByRole('region', { name: 'It asks you' });
     expect(within(again).getAllByRole('listitem')[0]).not.toHaveFocus();
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
-  });
-
-  // The box that answers a park is always drawn, so *To the wait* leads to its line there, the head on screen or not.
-  it('leads a raising block\'s *To the wait* to the box\'s line while the head is on screen', async () => {
-    const watched = watchScreen();
-    try {
-      const asked = '2026-09-02T00:30:00Z';
-      invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_HISTORY' ? {
-        session: 'g0ah3ad0', earlier: false, latest: 4, events: [
-          { seq: 1, at: asked, kind: 'user', origin: 'target', text: 'Your target is the quest…' },
-          {
-            seq: 2, at: asked, kind: 'tool', id: 'g1', title: 'ask for a go-ahead', status: 'completed',
-            input: JSON.stringify({ kind: 'write', on: 'production', act: 'dashboard configuration', why: 'The tile reads its target from it.' }),
-          },
-          { seq: 3, at: asked, kind: 'message', id: 'm2', text: 'I need go-aheads 1 and 2 before I can finish.' },
-          { seq: 4, at: asked, kind: 'turn', stopReason: 'end_turn' },
-        ],
-      } : DRIVER_STATE));
-      show('g0ah3ad0');
-      const call = await screen.findByText('ask for a go-ahead');
-      expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
-
-      const block = call.closest<HTMLElement>('[data-block]')!;
-      await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
-      const line = within(screen.getByRole('region', { name: 'It asks you' })).getAllByRole('listitem')[0]!;
-      await waitFor(() => expect(line).toHaveFocus());
-      expect(line.className).toContain('outline-accent');
-      // No strip stands for the park's waits: the box holds them.
-      expect(screen.queryByRole('region', { name: /waiting on you$/ })).toBeNull();
-    } finally {
-      watched.restore();
-    }
   });
 });
 
@@ -1308,7 +1265,7 @@ describe('a park\'s question', () => {
     window.localStorage.removeItem('daoris.drafts');
   });
 
-  it('shows its question in the box with its answers as rows to select, and in the head\'s card in place of its last message', async () => {
+  it('shows its question in the box with its answers as rows to select, and in its card in the dock in place of its last message', async () => {
     show('g0ah3ad0');
 
     const ask = await screen.findByRole('region', { name: 'It asks you' });
@@ -1319,11 +1276,10 @@ describe('a park\'s question', () => {
     expect(within(ask).getByText('It says it needs your answer by: before Friday\'s release')).toBeInTheDocument();
     expect(within(ask).getByText(/^Meanwhile its quest #q4sk00 stays taken/)).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUESTION', { payload: { id: 'g0ah3ad0' } });
-    // The head's card says the question, with no press of its own: the box below holds them.
-    const card = screen.getByText('This one is waiting on you').closest('section')!;
-    expect(within(card).getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
+    // The dock's card says the question; its answers are the box's presses alone, so one answer is never sent twice.
+    const card = within(await panel()).getByRole('article', { name: 'its question' });
+    expect(within(card).getAllByText('Which quarterly target should the dashboard tile show?')[0]).toBeInTheDocument();
     expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
-    expect(within(card).queryByRole('radio')).toBeNull();
     expect(within(card).queryByText(/I need go-aheads 1 and 2/)).toBeNull();
   });
 
@@ -1382,34 +1338,17 @@ describe('a park\'s question', () => {
     ]));
   });
 
-  /** The head's card selects a row once its answer is opened, and its one *Send* combines it with its words. */
-  it('answers the question from the head\'s card, its *Send* combining the selected answer with the card\'s words, once', async () => {
-    show('g0ah3ad0');
-    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
-    await within(card).findByText('Which quarterly target should the dashboard tile show?');
+  it('answers the question from the box, naming the question, once, with no second press in the dock', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const card = await within(await panel()).findByRole('article', { name: 'its question' });
+    expect(within(card).queryByRole('button', { name: '1,350' })).toBeNull();
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await userEvent.click(await within(ask).findByRole('radio', { name: /^1,350/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
-    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
-    await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
-    // The frame's one selection: chosen in the head, chosen in the box below.
-    expect(within(screen.getByRole('region', { name: 'It asks you' })).getByRole('radio', { name: /^1,200/ })).toBeChecked();
-    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'tile only');
-    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
-
-    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,200\n\ntile only', question: 'q5t10n00' }]));
-    await waitFor(() => expect(within(screen.getByRole('region', { name: 'It asks you' })).getByRole('radio', { name: /^1,200/ }))
-      .not.toBeChecked());
-  });
-
-  it('sends the head card\'s words alone where no answer is selected, naming no question', async () => {
-    show('g0ah3ad0');
-    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
-    await within(card).findByText('Which quarterly target should the dashboard tile show?');
-
-    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
-    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'Hold the tile.');
-    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
-
-    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: 'Hold the tile.' }]));
+    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,350', question: 'q5t10n00' }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered “1,350”: the same session goes on with it at the driver's next look."));
   });
 
   it('says a refusal in the box, keeping the words and the selection, and a question that changed, keeping the words', async () => {
@@ -1436,26 +1375,13 @@ describe('a park\'s question', () => {
     expect(inputs()).toHaveLength(2);
   });
 
-  it('refuses in the head\'s card while the go-aheads are open, a selected answer and words alone alike, keeping both', async () => {
+  it('offers no answer or go-ahead in its dock card while the box holds them, so nothing is pressed twice', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
-    show('g0ah3ad0');
-    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
-    await within(card).findByText('Which quarterly target should the dashboard tile show?');
+    show('g0ah3ad0', vi.fn());
     await within(await screen.findByRole('region', { name: 'It asks you' })).findByText('write on production');
-
-    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
-    const words = within(card).getByLabelText('your answer — the same session goes on with these words');
-    await userEvent.type(words, 'tile only');
-    await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
-    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
-    expect(await within(card).findByRole('status')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
-    expect(words).toHaveValue('tile only');
-    expect(within(card).getByRole('radio', { name: /^1,200/ })).toBeChecked();
-
-    await userEvent.click(within(card).getByRole('button', { name: 'Clear choice' }));
-    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
-    expect(within(card).getByRole('status')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
-    expect(words).toHaveValue('tile only');
+    const card = await within(await panel()).findByRole('article', { name: 'its question' });
+    expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
     expect(inputs()).toEqual([]);
   });
 
@@ -1522,7 +1448,7 @@ describe('a park\'s question', () => {
 /**
  * A driven session's waiting `permission_propose` is not left on the Agents page and the band while the person keeps
  * asking it in its conversation. Its own waiting proposals are a
- * wait where they talk to it, in the head and at the foot; *Allow* settles it through the band's own door, then tells the
+ * wait where they talk to it, its card in the dock; *Allow* settles it through the band's own door, then tells the
  * session it is allowed, so its next turn, composed with the rule, goes on. A session that takes no words is said so instead.
  */
 describe('a session\'s rule proposal', () => {
@@ -1573,19 +1499,21 @@ describe('a session\'s rule proposal', () => {
   });
 
   const said = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+  const ruleCard = async () => within(await panel()).findByRole('article', { name: 'a rule it proposed' });
 
   it('stands in the dock, not the head, and not another session\'s', async () => {
     show('r3st1ng0');
-    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-    expect(within(strip).getByRole('listitem')).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
-    expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull();
+    const card = await ruleCard();
+    expect(card.closest('[data-region="dock"]')).not.toBeNull();
+    expect(within(card).getByRole('listitem')).toHaveTextContent('allow Bash(git branch -D:*) for repository engine');
+    expect(await headOf()).not.toHaveTextContent(/Bash\(git branch/);
     expect(screen.queryByText(/Bash\(git push:\*\)/)).toBeNull();
   });
 
   it('allows it after asking once, then tells the session it is allowed, so its next turn goes on', async () => {
     const notify = vi.fn();
     show('r3st1ng0', notify);
-    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+    const item = within(await ruleCard()).getByRole('listitem');
 
     await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', expect.anything());
@@ -1604,14 +1532,13 @@ describe('a session\'s rule proposal', () => {
     expect(notify).toHaveBeenCalledWith('Allowed: allow Bash(git branch -D:*) for repository engine. Sessions started from now on are handed it.');
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Session r3st1ng0 is told the rule is allowed, and goes on.', 'ok'));
     // Settled, it waits no more.
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('article', { name: 'a rule it proposed' })).toBeNull());
   });
 
   it('declines it in one press, telling the session nothing', async () => {
     const notify = vi.fn();
     show('r3st1ng0', notify);
-    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-    await userEvent.click(within(strip).getByRole('button', { name: 'Decline' }));
+    await userEvent.click(within(await ruleCard()).getByRole('button', { name: 'Decline' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: false } }));
     expect(notify).toHaveBeenCalledWith('Declined: allow Bash(git branch -D:*) for repository engine. The rules are as they were.');
@@ -1621,26 +1548,27 @@ describe('a session\'s rule proposal', () => {
   it('says on the card where the session takes no words, and allows it without telling it', async () => {
     reach = { sent: false, why: 'stood-down' };
     show('r3st1ng0');
-    const item = within(await screen.findByRole('region', { name: 'Waiting on you' })).getByRole('listitem');
+    const item = within(await ruleCard()).getByRole('listitem');
     await waitFor(() => expect(item).toHaveTextContent('It takes no words now, so it is not told'));
 
     await userEvent.click(within(item).getByRole('button', { name: 'Allow…' }));
     await userEvent.click(within(item).getByRole('button', { name: 'Allow' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000007', accept: true } }));
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Rules it proposed' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('article', { name: 'a rule it proposed' })).toBeNull());
     expect(said()).toEqual([]);
   });
 
   it('leads between the proposal and the call that raised it', async () => {
     show('r3st1ng0');
-    const strip = await screen.findByRole('region', { name: 'Waiting on you' });
-    const call = await screen.findByText('permission_propose');
-    const block = call.closest<HTMLElement>('[data-block]')!;
+    const card = await ruleCard();
+    const story = await within(await panel()).findByRole('list', { name: i18n.t('work.session.story.label') });
+    const block = await waitFor(() => story.querySelector<HTMLElement>('[data-part="tools"]')!.closest<HTMLElement>('[data-block]')!);
     const mark = await within(block).findByRole('button', { name: 'To the wait: a rule it proposed' });
 
-    await userEvent.click(within(within(strip).getByRole('listitem')).getByRole('button', { name: 'In the conversation' }));
+    await userEvent.click(await within(card).findByRole('button', { name: 'In the conversation' }));
     await waitFor(() => expect(block.className).toContain('outline-accent'));
     await userEvent.click(mark);
-    await waitFor(() => expect(within(strip).getByRole('listitem')).toHaveFocus());
+    // Its card in the dock takes the focus, found by its key.
+    await waitFor(() => expect(card).toHaveFocus());
   });
 });

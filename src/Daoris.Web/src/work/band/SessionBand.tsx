@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSessionStreams, useStopTask } from '../../bridge/shell';
 import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
-import { BESIDE_READER, BesideReading } from '../conversation/SessionConversation';
+import { BESIDE_READER, BesideReading } from '../beside/BesideReading';
 import type { BandTold } from './bandRows';
 import { LiveBand } from './LiveBand';
 

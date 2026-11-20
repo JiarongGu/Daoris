@@ -35,7 +35,7 @@ afterEach(() => window.localStorage.clear());
  * `layout.ts`'s, asserted there; this is the frame doing what they say, and remembering what the person
  * chose.
  */
-describe('the frame\'s geometry (FRAME6)', () => {
+describe('the frame\'s geometry', () => {
   const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockShare', 'daoris.dockClosed'];
   const widen = (width: number) => act(() => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
@@ -139,7 +139,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveFocus();
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
-    fireEvent.pointerDown(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' }));
+    fireEvent.pointerDown(await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' }));
     expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
   });
