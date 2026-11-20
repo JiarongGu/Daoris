@@ -27,7 +27,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
     /// a removal with a tree checks it again under the repository's start lock.
     /// </remarks>
     internal async Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default,
-        ServiceClient? service = null)
+        ServiceClient? service = null, bool treeOnly = false)
     {
         if (!branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal))
         {
@@ -68,7 +68,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
         if (worktrees.GetValueOrDefault(branch) is { } tree)
         {
             return context.Holds(tree)
-                ? await removals.RemoveAsync(tree, force, ct, service).ConfigureAwait(false)
+                ? await removals.RemoveAsync(tree, force, ct, service, treeOnly: treeOnly).ConfigureAwait(false)
                 : new(false, $"`{branch}` is checked out at {tree}, which is not a session tree — Daoris removes nothing there.");
         }
 

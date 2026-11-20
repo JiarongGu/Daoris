@@ -72,11 +72,11 @@ export function Count({ x, y, open, count, live = null }: { x: number; y: number
       {live && (
         <circle
           cx={x} cy={y} r={16} fill="none" strokeDasharray="3 3"
-          className={cn('stroke-2', live === 'parked' ? 'stroke-st-open' : 'stroke-st-taken')}
+          className={cn('stroke-2', live === 'parked' ? 'stroke-st-open' : 'stroke-live')}
         />
       )}
       <circle cx={x} cy={y} r={11} className={cn('fill-page stroke-[1.5]', open ? 'stroke-accent' : 'stroke-line-strong')} />
-      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
+      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-caption tabular-nums">
         {count}
       </text>
     </>
@@ -162,7 +162,7 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
             key={line.id}
             {...context.line(line.id)}
             aria-label={name}
-            className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
+            className={cn('cursor-pointer outline-none transition-opacity duration-(--duration-quick) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
             style={{ pointerEvents: 'auto' }}
           >
             <path d={line.d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />

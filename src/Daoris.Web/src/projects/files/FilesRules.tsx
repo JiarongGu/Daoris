@@ -28,7 +28,7 @@ export function FilesRules({ look, onPress }: { look: FilesLook; onPress?: (pres
                 <li key={`${rule.scope}:${rule.kind}:${rule.paths.join(',')}`} className="flex min-w-0 flex-wrap items-center gap-2 border-t border-line pt-1 first:border-t-0 first:pt-0">
                   <Pill>{t(`files.view.kind.${rule.kind}`)}</Pill>
                   <span className="min-w-0 flex-1 font-mono [overflow-wrap:anywhere]">{rule.paths.join(', ')}</span>
-                  <span className="text-meta text-ink-faint">
+                  <span className="text-caption text-ink-faint">
                     {rule.scope === 'machine' ? t('files.view.scope.machine') : t('files.view.scope.repository')}
                     {rule.copy != null ? ` · ${t(rule.copy ? 'files.view.copies' : 'files.view.noCopies')}` : ''}
                   </span>

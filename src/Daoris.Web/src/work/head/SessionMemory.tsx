@@ -83,7 +83,7 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
             </span>
             {row.change.text && <span className="[overflow-wrap:anywhere]">{row.change.text}</span>}
             {ENDS.includes(row.change.kind) && (
-              <span className="text-meta text-ink-faint">
+              <span className="text-caption text-ink-faint">
                 {t('work.memory.by', { session: row.by?.session ?? t('work.memory.recheck'), door: row.by?.door ?? '?', models: row.models ?? t('work.memory.unknown') })}
               </span>
             )}
@@ -107,7 +107,7 @@ export function SessionMemory({ rows, ended, busy = false, said, onDecide, onKee
           <Button variant="ghost" className="px-2 py-0.5 text-small" disabled={busy} onClick={() => onKeep(false)}>{t('work.memory.drop')}</Button>
         </span>
       )}
-      {said && <span role="status" className="text-meta">{said}</span>}
+      {said && <span role="status" className="text-caption">{said}</span>}
     </section>
   );
 }

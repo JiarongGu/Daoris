@@ -80,7 +80,7 @@ export function QuestionCard({ question, selected = null, onSelect }: {
               {left.reasons.map((reason, index) => (
                 <li key={index} className="grid gap-0.5">
                   <span className="break-words text-small text-ink">{reason.says}</span>
-                  <span className="break-words text-meta text-ink-faint">{t('work.park.source', { source: reason.source })}</span>
+                  <span className="break-words text-caption text-ink-faint">{t('work.park.source', { source: reason.source })}</span>
                 </li>
               ))}
             </ul>
@@ -136,7 +136,7 @@ export function QuestionCard({ question, selected = null, onSelect }: {
       )}
       {choosing && selected !== null && (
         <span>
-          <Button variant="ghost" onClick={clear} className="h-6 px-1.5 text-meta">{t('work.park.clear')}</Button>
+          <Button variant="ghost" onClick={clear} className="h-6 px-1.5 text-caption">{t('work.park.clear')}</Button>
         </span>
       )}
       {question.by && <p className="m-0 break-words text-small text-ink-faint">{t('work.park.by', { by: question.by })}</p>}

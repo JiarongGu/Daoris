@@ -147,7 +147,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
                   >
                     <QuestStatus quest={quest} />
                     <span title={quest.title} className="font-medium">{questName(quest)}</span>
-                    <span className="ml-auto font-mono text-meta text-ink-faint">
+                    <span className="ml-auto font-mono text-caption text-ink-faint">
                       {quest.from} → {quest.to} · {quest.status === 'Open'
                         ? t('overview.outstanding.filed', { ago: ago(quest.filed) })
                         : quest.status === 'Taken' && quest.submission

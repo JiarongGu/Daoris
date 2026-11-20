@@ -47,6 +47,36 @@ test('a log names its failing tests with their file and line, or its first error
   assert.deepEqual(placeIn('   at X.Y() in C:/r/src/A/ATests.cs:line 42'), { file: 'C:/r/src/A/ATests.cs', line: 42 });
 });
 
+const PASS_LINES = ['✔ reports an error (2.1ms)', 'src/A/A.cs(3,5): warning CS8602: a possible null error', '    0 Error(s)', 'ℹ fail 0'];
+
+test('a log whose first error-like line is a pass line, a count or a warning names its failing test, or says none failed', () => {
+  const spec = failuresInLog([...PASS_LINES, '✖ breaks the page (1.5ms)', '  AssertionError: x'].join('\n'));
+  assert.equal(spec.length, 1);
+  assert.match(spec[0]!.lines[0]!, /^✖ breaks the page/);
+  const tap = failuresInLog(['ok 1 - names an error case', 'not ok 2 - breaks the page', '  ---', "  error: 'x'"].join('\n'));
+  assert.equal(tap[0]!.lines[0], 'not ok 2 - breaks the page');
+  const none = failuresInLog(PASS_LINES.join('\n'), 143);
+  assert.equal(none[0]!.test, null);
+  assert.equal(none[0]!.lines[0], 'ended without a failing test, exit 143');
+  assert.equal(failuresInLog(PASS_LINES.join('\n'))[0]!.lines[0], 'ended without a failing test');
+  const build = failuresInLog([...PASS_LINES, 'src/B/B.cs(9,1): error CS1002: ; expected'].join('\n'));
+  assert.deepEqual(build.map((each) => [each.test, each.file, each.line]), [[null, 'src/B/B.cs', 9]]);
+});
+
+test('a log whose cross or not ok names no test, or whose count line is an error, is read as the failure it is', () => {
+  const lint = failuresInLog(['src/a.ts', '  3:5  error  no-unused-vars', '', '✖ 1 problem (1 error, 0 warnings)'].join('\n'));
+  assert.match(lint[0]!.lines[0]!, /no-unused-vars/);
+  const todo = failuresInLog(['not ok 1 - later # TODO not done', 'not ok 2 - breaks the page'].join('\n'));
+  assert.equal(todo[0]!.test, 'breaks the page');
+  const spec = failuresInLog(['✖ failing tests:', '✖ breaks the page (1.5ms)', '  AssertionError: x'].join('\n'));
+  assert.equal(spec[0]!.test, 'breaks the page');
+  const filter = failuresInLog(['    0 Error(s)', 'Error: 0 tests matched the filter'].join('\n'));
+  assert.equal(filter[0]!.lines[0], 'Error: 0 tests matched the filter');
+  assert.equal(failuresInLog('✖ reports no errors (2ms)')[0]!.test, 'reports no errors');
+  const reached = failuresInLog(['✖ flaky thing (1ms)', 'reached: RED: suite/unit failed again alone'].join('\n'));
+  assert.equal(reached[0]!.lines[0], 'reached: RED: suite/unit failed again alone');
+});
+
 test('a planted failure in two gates gives one brief with both, each marked by its run on main', async () => {
   const { dir, remove } = fixtureFolder('red-brief');
   try {

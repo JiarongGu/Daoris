@@ -71,7 +71,7 @@ function PluginSettingRow({ plugin, onOpen }: { plugin: PluginShown; onOpen: (id
             const state = approval(server);
             return (
               <li key={server.name} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small text-ink-soft">
-                <code className="font-mono text-meta text-ink">{server.name}</code>
+                <code className="font-mono text-caption text-ink">{server.name}</code>
                 <span>{t(`settings.plugins.server.${state}`)}</span>
                 {state === 'approved' && accepted.length > 0 && (
                   <span>{t('plugin.help.writesAccepted', { tools: accepted.join(', ') })}</span>

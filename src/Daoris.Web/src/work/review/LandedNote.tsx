@@ -71,7 +71,7 @@ export function LandedNote({ landed, source = 'tree' }: {
         {landed.landedAt && (
           <>
             {' '}
-            <time dateTime={landed.landedAt} className="text-meta tabular-nums text-ink-faint">{stamp(landed.landedAt)}</time>
+            <time dateTime={landed.landedAt} className="text-caption tabular-nums text-ink-faint">{stamp(landed.landedAt)}</time>
           </>
         )}
       </p>
@@ -79,7 +79,7 @@ export function LandedNote({ landed, source = 'tree' }: {
       {sentences.length > 0 && <p className="m-0 text-small text-ink-soft"><Inline text={sentences.join(' ')} /></p>}
       {landed.pushed && landed.pullRequest && (
         <p className="m-0 text-small">
-          <ExternalLink href={landed.pullRequest} className="text-accent underline underline-offset-2">
+          <ExternalLink href={landed.pullRequest} className="text-accent-ink underline underline-offset-2">
             {t('work.review.pullRequest')}
           </ExternalLink>
         </p>

@@ -8,13 +8,16 @@
  * fixture, is the table both carry, case for case:
  *
  *   { "schema": 1, "holds": [Entry], "waits": [Entry] }
- *   Entry: { id, kind: "queue" | "session", pid, what, since, beat, session?, repository?, tree? }
+ *   Entry: { id, kind: "queue" | "session", pid, what, since, beat, session?, repository?, tree?, background? }
  *
  * `holds` are the runs that may start or run now; `waits` are the runs asking, in the order they began to ask. An entry counts only
  * while its process runs (`pid`) AND it beat within `STALE_MS` (its writer rewrites `beat` every `BEAT_MS`), so a holder that dies
  * however it dies stops counting at once where its process is gone, and after two minutes where a reused process id says otherwise;
  * nothing is released by a timeout while the holder lives and beats. A run is admitted when the live holds, plus the live waits
  * ahead of it, are fewer than the capacity: first come, first served, a queue gate and a session's run alike.
+ *
+ * A run is blocking, or background (`background: true`, the heavy tier and the CI beside, `BACKGROUND` in their environment):
+ * see `judge` and `pause`. A writer that keeps no `background` makes the entry blocking.
  *
  * The file is changed under `admission.json.lock`, the keeping write's lock (`keeplock.ts`, the driver's `KeepLock.cs`: put in place
  * with no overwrite, `{ pid, since }`, stale when its process is gone or it is a minute old); a change takes milliseconds, and the
@@ -32,6 +35,7 @@ import { availableParallelism } from 'node:os';
 import { homeEntry } from '../src/Daoris.Cli/src/platform/home.ts';
 import { withKeepLock } from '../src/Daoris.Cli/src/platform/keeplock.ts';
 import { writeAtomic } from './fsx.mjs';
+import { BACKGROUND } from './merge/background.ts';
 
 /** How long an entry that has not beat still counts, and how often a live one beats (the twin's `StaleAfter` and `BeatEvery`). */
 export const STALE_MS = 120_000;
@@ -43,6 +47,7 @@ export const SAY_MS = 60_000;
 export const INSIDE = 'DAORIS_ADMISSION_HOLD';
 /** The variable that sets the capacity on a machine; else `capacityOf`. */
 export const CAPACITY = 'DAORIS_ADMISSION_SLOTS';
+export { BACKGROUND };
 
 /**
  * How many heavy runs the machine admits at once (the twin's `CapacityOf`): `DAORIS_ADMISSION_SLOTS` where it is a whole number
@@ -86,6 +91,7 @@ function entryOf(raw) {
   for (const [name, value] of [['session', raw.session], ['repository', raw.repository], ['tree', raw.tree]]) {
     if (text(value)) entry[name] = value;
   }
+  if (raw.background === true) entry.background = true;
   return entry;
 }
 
@@ -152,12 +158,17 @@ export function pruned(state, seam = {}) {
 }
 
 /**
- * Whether the run `id` is admitted (the twin's `Judge`), over a pruned state: `{ admitted, ahead, holds }`. It is when the holds, plus
- * the waits before it, are fewer than `capacity`. A run not among the waits is last in line.
+ * Whether the run `id` is admitted (the twin's `Judge`), over a pruned state: `{ admitted, ahead, holds }`. A blocking run is when the
+ * holds, plus the blocking waits before it, are fewer than `capacity`; a background one when no blocking run waits, no background run
+ * asked before it or holds a place, and a place is free. A run not among the waits is a blocking one, last in line.
  */
 export function judge({ holds, waits }, id, capacity) {
   const at = waits.findIndex((entry) => entry.id === id);
-  const ahead = at < 0 ? waits.length : at;
+  if (at >= 0 && waits[at].background) {
+    const ahead = waits.filter((entry, i) => !entry.background || i < at).length;
+    return { admitted: ahead === 0 && !holds.some((entry) => entry.background) && holds.length < capacity, ahead, holds };
+  }
+  const ahead = (at < 0 ? waits : waits.slice(0, at)).filter((entry) => !entry.background).length;
   return { admitted: holds.length + ahead < capacity, ahead, holds };
 }
 
@@ -194,6 +205,7 @@ export function createAdmission({
     say(`  admission: the home's locks cannot be placed (${error?.message ?? error}); the heavy gates run without waiting for the machine`);
   }
   const size = () => capacity ?? capacityOf(undefined, env);
+  const background = env[BACKGROUND] === '1';
   const stamp = () => new Date(now()).toISOString();
   const seam = () => ({ alive, now: now() });
   const change = (fn) => withKeepLock(file, () => {
@@ -211,6 +223,7 @@ export function createAdmission({
     const id = `${process.pid}-${randomBytes(4).toString('hex')}`;
     const entry = { id, kind, pid: process.pid, what: String(what ?? 'a heavy run'), since: stamp(), beat: stamp() };
     for (const [name, value] of [['session', session], ['repository', repository], ['tree', tree]]) if (value) entry[name] = value;
+    if (background) entry.background = true;
     try {
       change((state) => ({ holds: state.holds, waits: [...state.waits, entry] }));
     } catch (error) {
@@ -467,7 +480,24 @@ export function createAdmission({
     return { held: true, ids, capacity: n, beat, end };
   }
 
-  return { take, takeWhole, file, capacity: size };
+  /** A background run's group that takes no place, held while a blocking run waits (said once) until `halted()`; a blocking run never waits. */
+  async function pause({ what = 'a group', halted = () => false } = {}) {
+    let said = false;
+    while (file && background) {
+      let blocking;
+      try {
+        blocking = pruned(readState(file), seam()).waits.filter((entry) => !entry.background);
+      } catch {
+        return;
+      }
+      if (!blocking.length || halted()) return;
+      if (!said) say(`  admission: a background run starts no group while a blocking run waits: ${what} waits for ${blocking.map(whoOf).join('; ')}`);
+      said = true;
+      await sleep(pollMs);
+    }
+  }
+
+  return { take, takeWhole, pause, file, capacity: size };
 }
 
 /** What `--queue` says of the machine's admission: its places held, whose and for how long, and how many ask. */

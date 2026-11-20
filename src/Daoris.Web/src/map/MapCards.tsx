@@ -16,7 +16,7 @@ function SessionRing({ there, inset, radius }: { there: 'parked' | 'working'; in
   return (
     <span
       aria-hidden="true" data-session={there}
-      className={cn('pointer-events-none absolute border-2 border-dashed', inset, radius, there === 'parked' ? 'border-st-open' : 'border-st-taken')}
+      className={cn('pointer-events-none absolute border-2 border-dashed', inset, radius, there === 'parked' ? 'border-st-open' : 'border-live')}
     />
   );
 }
@@ -47,7 +47,7 @@ export function RingNode({ node, x, y, state, words, back = false }: {
           <span className="pointer-events-none absolute whitespace-nowrap text-small font-semibold text-ink" style={{ left, top: top - 12, transform: `translateX(${shift})` }}>{node.id}</span>
           {there && (
             <span
-              className={cn('pointer-events-none absolute whitespace-nowrap text-meta', there === 'parked' ? 'text-ink-open' : 'text-ink-soft')}
+              className={cn('pointer-events-none absolute whitespace-nowrap text-caption', there === 'parked' ? 'text-ink-open' : 'text-ink-soft')}
               style={{ left, top: top + label.next - 11, transform: `translateX(${shift})` }}
             >
               {words[there]}{howMany(node.sessions)}
@@ -81,7 +81,7 @@ export function LayerCard({ node, state, words, back = false }: { node: MapNode;
           <span className="min-w-0 flex-1">
             <span className="block truncate text-small font-semibold text-ink">{node.id}</span>
             {tier === 'full' && there && (
-              <span className={cn('block truncate text-meta', there === 'parked' ? 'text-ink-open' : 'text-ink-soft')}>{words[there]}{howMany(node.sessions)}</span>
+              <span className={cn('block truncate text-caption', there === 'parked' ? 'text-ink-open' : 'text-ink-soft')}>{words[there]}{howMany(node.sessions)}</span>
             )}
           </span>
           <span className={cn('font-mono text-small tabular-nums', node.open > 0 ? 'text-ink' : 'text-ink-faint')}>{node.open}</span>

@@ -82,8 +82,8 @@ function DeletedRow({ row, acts }: { row: GitDeletedRef; acts: Pick<RefActs, 'un
     <li className="grid min-w-0 gap-0.5 border-b border-line py-1.5 last:border-b-0">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
         <span className="min-w-0 [overflow-wrap:anywhere]"><Inline text={row.name} /></span>
-        <span className="text-meta text-ink-faint">{t(`projects.git.deleted.kind.${row.kind}`)}</span>
-        <time dateTime={row.at} title={stamp(row.at)} className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(row.at)}</time>
+        <span className="text-caption text-ink-faint">{t(`projects.git.deleted.kind.${row.kind}`)}</span>
+        <time dateTime={row.at} title={stamp(row.at)} className="shrink-0 text-caption text-ink-faint tabular-nums">{ago(row.at)}</time>
       </div>
       <p className="m-0 text-small text-ink-soft">
         {t('projects.git.deleted.meta', { id: row.commit.slice(0, 12), who: who(t, row.press) })}

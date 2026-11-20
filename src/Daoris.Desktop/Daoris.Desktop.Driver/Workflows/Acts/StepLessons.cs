@@ -12,12 +12,22 @@ public sealed record StepLesson(string Repository, string Entry, string Run, str
 {
     /// <summary>The run whose hand-off carried it to its holder, or null while none has.</summary>
     public string? Carried { get; init; }
+
+    /// <summary>The values a repository held for steps its workflow's new version holds no more, moved into the entry; null for a run's lesson.</summary>
+    public MovedValues? Moved { get; init; }
+
+    /// <summary>When the entry, in the repository's checkout, first held each moved value; null while it does not.</summary>
+    public DateTimeOffset? Landed { get; init; }
 }
+
+/// <summary>A repository's values for the nodes of <paramref name="Workflow"/> its version <paramref name="Version"/> holds no more: by node, each option's JSON.</summary>
+public sealed record MovedValues(string Workflow, int Version, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Values);
 
 /// <summary>
 /// The long loop's proposals, <c>workflows/acts/proposed.json</c>, written by the pass alone: proposed as a step its receipts settle settles
 /// (<see cref="StepActs"/>), and carried once by the next hand-off of a step naming the same entry in the same repository
-/// (<see cref="StepHandOffs"/>), whose holder, the repository's own agent, amends the entry with what still holds. A proposal, never the
+/// (<see cref="StepHandOffs"/>), whose holder, the repository's own agent, amends the entry with what still holds. A repository's values
+/// moved into the entry (<see cref="ValuesMoves"/>) are carried by every such hand-off until the entry holds them. A proposal, never the
 /// procedure: the procedure stays the entry, and the repository's own change decides it.
 /// </summary>
 public static class StepLessons
@@ -56,9 +66,13 @@ public static class StepLessons
         return true;
     }
 
-    /// <summary>The proposals for <paramref name="entry"/> of <paramref name="repository"/> no hand-off carried yet, from a run other than <paramref name="run"/>.</summary>
+    /// <summary>
+    /// The proposals for <paramref name="entry"/> of <paramref name="repository"/> from a run other than <paramref name="run"/>: a run's no
+    /// hand-off carried yet, and moved values the entry does not hold yet.
+    /// </summary>
     public static IReadOnlyList<StepLesson> Open(string home, string repository, string entry, string run) =>
-        [.. Read(home).Where(each => each.Carried is null && each.Repository == repository && each.Entry == entry && each.Run != run)];
+        [.. Read(home).Where(each => (each.Moved is null ? each.Carried is null : each.Landed is null)
+            && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase) && each.Entry == entry && each.Run != run)];
 
     /// <summary>Marks <paramref name="lessons"/> carried by <paramref name="run"/>'s hand-off.</summary>
     public static void Carry(string home, IReadOnlyList<StepLesson> lessons, string run)
@@ -72,8 +86,8 @@ public static class StepLessons
     /// <summary>The hand-off's words for the proposals it carries; none where it carries none.</summary>
     public static string Words(string entry, IReadOnlyList<StepLesson> lessons) => lessons.Count == 0
         ? ""
-        : $" Proposed for `{entry}` by earlier runs and not in it yet: {string.Join(" ", lessons.Select(each => $"run #{each.Run}'s `{each.Node}`: {each.Words}"))} "
-          + $"Amend the entry with what still holds (`.claude/knowledge/{entry}.md`, in your repository's own change), so later runs read it there.";
+        : $" Proposed for `{entry}` and not in it yet: {string.Join(" ", lessons.Select(each => each.Moved is null ? $"run #{each.Run}'s `{each.Node}`: {each.Words}" : each.Words))} "
+          + $"Write into the entry what still holds (`.claude/knowledge/{entry}.md`, in your repository's own change), so later runs read it there.";
 
     /// <summary>The proposals kept, oldest first; none where the file is missing or does not read.</summary>
     public static IReadOnlyList<StepLesson> Read(string home)
@@ -95,10 +109,49 @@ public static class StepLessons
     private static StepLesson? RowOf(JsonElement row) =>
         row.ValueKind == JsonValueKind.Object && Text(row, "repository") is { } repository && Text(row, "entry") is { } entry && Text(row, "run") is { } run
         && Text(row, "node") is { } node && Text(row, "words") is { } words && Moments.Read(Text(row, "at")) is { } at
-            ? new StepLesson(repository, entry, run, node, words, at) { Carried = Text(row, "carried") }
+            ? new StepLesson(repository, entry, run, node, words, at) { Carried = Text(row, "carried"), Moved = MovedOf(row), Landed = Moments.Read(Text(row, "landed")) }
             : null;
 
-    private static void Write(string home, IReadOnlyList<StepLesson> rows) => JsonFile.Write(PathOf(home), writer =>
+    /// <summary>A row's moved values: its workflow, version and each node's options as JSON; null where it moves none or they do not read.</summary>
+    private static MovedValues? MovedOf(JsonElement row)
+    {
+        if (!row.TryGetProperty("moved", out var moved) || moved.ValueKind != JsonValueKind.Object || Text(moved, "workflow") is not { } workflow
+            || !moved.TryGetProperty("version", out var version) || !version.TryGetInt32(out var number)
+            || !moved.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return new MovedValues(workflow, number, values.EnumerateObject().Where(node => node.Value.ValueKind == JsonValueKind.Object).ToDictionary(
+            node => node.Name,
+            node => (IReadOnlyDictionary<string, string>)node.Value.EnumerateObject().ToDictionary(option => option.Name, option => option.Value.GetRawText(), StringComparer.Ordinal),
+            StringComparer.Ordinal));
+    }
+
+    private static void WriteMoved(Utf8JsonWriter writer, MovedValues moved)
+    {
+        writer.WriteStartObject("moved");
+        writer.WriteString("workflow", moved.Workflow);
+        writer.WriteNumber("version", moved.Version);
+        writer.WriteStartObject("values");
+        foreach (var (node, options) in moved.Values.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(node);
+            foreach (var (name, json) in options.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            {
+                writer.WritePropertyName(name);
+                writer.WriteRawValue(json);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+    }
+
+    /// <summary>The proposals written whole, the newest <see cref="Kept"/>: by the pass alone.</summary>
+    internal static void Write(string home, IReadOnlyList<StepLesson> rows) => JsonFile.Write(PathOf(home), writer =>
     {
         writer.WriteStartObject();
         writer.WriteStartArray("proposed");
@@ -111,6 +164,8 @@ public static class StepLessons
             writer.WriteString("node", row.Node);
             writer.WriteString("words", row.Words);
             if (row.Carried is not null) writer.WriteString("carried", row.Carried);
+            if (row.Moved is not null) WriteMoved(writer, row.Moved);
+            if (row.Landed is { } landed) writer.WriteString("landed", Moments.Write(landed));
             writer.WriteString("at", Moments.Write(row.At));
             writer.WriteEndObject();
         }

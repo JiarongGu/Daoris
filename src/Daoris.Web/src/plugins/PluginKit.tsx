@@ -112,7 +112,7 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
               spellCheck={false}
               className={FIELD}
             />
-            <span className="basis-full pl-30 text-meta text-ink-faint"><Inline text={t('plugin.kit.idFamily')} /></span>
+            <span className="basis-full pl-30 text-caption text-ink-faint"><Inline text={t('plugin.kit.idFamily')} /></span>
           </label>
           <div className="flex flex-wrap items-start gap-2 text-small text-ink-soft">
             <span className="w-28 shrink-0 pt-0.5">{t('plugin.kit.points')}</span>
@@ -142,7 +142,7 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
             <Button variant="ghost" disabled={busy} onClick={() => void pick(setFolder)}>{t('plugin.kit.choose')}</Button>
             <Button type="submit" disabled={busy || !ready}>{t('plugin.kit.new')}</Button>
           </div>
-          <p className="m-0 text-meta text-ink-faint">{t('plugin.kit.folderHint')}</p>
+          <p className="m-0 text-caption text-ink-faint">{t('plugin.kit.folderHint')}</p>
         </form>
       </fieldset>
 
@@ -166,13 +166,13 @@ export function PluginKitCard({ points, busy, made, trial, onPick, onMake, onTry
           <Button variant="ghost" disabled={busy} onClick={() => void pick(setTryFolder)}>{t('plugin.kit.choose')}</Button>
           <Button type="submit" disabled={busy || !tryFolder.trim()} aria-busy={busy || undefined}>{t('plugin.kit.try')}</Button>
         </form>
-        <p className="m-0 mt-1.5 text-meta text-ink-faint">
+        <p className="m-0 mt-1.5 text-caption text-ink-faint">
           <Inline text={t(busy ? 'plugin.kit.working' : 'plugin.kit.tryHint')} />
         </p>
       </fieldset>
 
       {trial && <div className="mt-3"><TrialReport trial={trial} /></div>}
-      <p className="m-0 mt-3 text-meta text-ink-faint"><Inline text={t('plugin.kit.terminal')} /></p>
+      <p className="m-0 mt-3 text-caption text-ink-faint"><Inline text={t('plugin.kit.terminal')} /></p>
     </Card>
   );
 }
@@ -190,12 +190,12 @@ export function TrialReport({ trial }: { trial: PluginTrialResult }) {
         {trial.steps.map((step, index) => (
           <li key={`${step.name}-${index}`} className="grid grid-cols-[auto_8.5rem_minmax(0,1fr)] items-baseline gap-2 text-small">
             <Pill tone={step.ok ? 'done' : 'declined'}>{t(step.ok ? 'plugin.kit.ok' : 'plugin.kit.failed')}</Pill>
-            <code className="truncate font-mono text-meta text-ink-soft">{step.name}</code>
+            <code className="truncate font-mono text-caption text-ink-soft">{step.name}</code>
             <span className="min-w-0 break-words text-ink-soft"><Inline text={step.sentence} /></span>
           </li>
         ))}
       </ul>
-      <p className={`m-0 mt-2 text-small font-medium ${trial.passed ? 'text-ink-done' : 'text-warn'}`}>
+      <p className={`m-0 mt-2 text-small font-medium ${trial.passed ? 'text-ok-ink' : 'text-warn'}`}>
         <Inline text={trial.summary} />
       </p>
       {trial.said.length > 0 && (

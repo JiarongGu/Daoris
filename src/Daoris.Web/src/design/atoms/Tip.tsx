@@ -33,7 +33,7 @@ export function CountBadge({ count, tone = 'open' }: {
         // came to 16.45px — wider than the 16px height by the padding alone. At 2px a side one digit
         // sits inside the circle, and two grow it into a pill as they should.
         'absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border bg-page px-0.5',
-        'font-mono text-meta leading-none tabular-nums',
+        'font-mono text-caption leading-none tabular-nums',
         tone === 'warn' ? 'border-warn text-warn' : 'border-st-open text-ink-open',
       )}
     >

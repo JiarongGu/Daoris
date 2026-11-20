@@ -12,7 +12,7 @@ function SizeItem({ label, keys, disabled, onSelect }: { label: string; keys?: s
   return (
     <Menu.Item tick={false} disabled={disabled} onSelect={onSelect}>
       <span className="flex-1 truncate">{label}</span>
-      {keys && <kbd className="font-mono text-meta text-ink-faint">{keys}</kbd>}
+      {keys && <kbd className="font-mono text-caption text-ink-faint">{keys}</kbd>}
     </Menu.Item>
   );
 }
@@ -71,8 +71,8 @@ export const CanvasToolbar = memo(function CanvasToolbar({ tools, k, bounds, fit
               type="button"
               aria-label={t('canvas.size', { percent })}
               className={cn(
-                'h-7 min-w-12 shrink-0 rounded-control px-2 font-mono text-meta tabular-nums text-ink-soft',
-                'transition-colors duration-(--speed) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
+                'h-7 min-w-12 shrink-0 rounded-control px-2 font-mono text-caption tabular-nums text-ink-soft',
+                'transition-colors duration-(--duration-quick) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
               )}
             >

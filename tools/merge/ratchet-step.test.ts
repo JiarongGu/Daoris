@@ -20,13 +20,33 @@ test('the ratchet\'s breaches, each with its cause, ride on its result and stay 
   assert.equal(ratchetStep(() => ({ status: 0, output: 'clean\n' }), 0, () => 0).breaches, undefined);
 });
 
-test('a rerun judges the records since the merge began, not only since its own start', async () => {
+test('a rerun that ran gates judges only the records since its own start, not a first run the merge killed for load', async () => {
+  const asked: number[] = [];
+  const ratchet = (since: number) => { asked.push(since); return { status: 0, output: 'clean\n' }; };
+  await withFinalRatchet(async () => [{}], ratchet, () => 5000, 1000);
+  await withFinalRatchet(async () => [{}], ratchet, () => 5000, null);
+  assert.deepEqual(asked, [5000, 5000]);
+});
+
+test('a rerun of the ratchet alone judges the records since the merge began, which an earlier run measured again', async () => {
   const asked: number[] = [];
   const ratchet = (since: number) => { asked.push(since); return { status: 0, output: 'clean\n' }; };
   await withFinalRatchet(async () => [], ratchet, () => 5000, 1000);
-  await withFinalRatchet(async () => [], ratchet, () => 5000, null);
   await withFinalRatchet(async () => [], ratchet, () => 5000, 9000);
-  assert.deepEqual(asked, [1000, 5000, 5000]);
+  assert.deepEqual(asked, [1000, 5000]);
+});
+
+test('slow timings written before a rerun pass it when its own are within budget, and an over-budget one of its own still fails', async () => {
+  const records = [{ at: 2000, ms: 45_000 }, { at: 6000, ms: 100 }];
+  const judge = (since: number) => {
+    const over = records.filter((record) => record.at >= since && record.ms > 30_000);
+    return over.length ? { status: 1, output: `time-ratchet: over budget ${over[0]?.ms}\n` } : { status: 0, output: 'clean\n' };
+  };
+  const clock = () => 5000;
+  const gates = async () => [ratchetStep(() => ({ status: 0, output: 'clean\n' }), 0, clock)];
+  assert.equal((await withFinalRatchet(gates, judge, clock, 1000)).at(-1)?.verdict, 'PASS');
+  records.push({ at: 6500, ms: 40_000 });
+  assert.equal((await withFinalRatchet(gates, judge, clock, 1000)).at(-1)?.verdict, 'FAIL');
 });
 
 test('a repository with no time ratchet has nothing to judge: the last check passes and says so', () => {

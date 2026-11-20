@@ -53,4 +53,18 @@ public sealed class UxTrailTests : IDisposable
         Assert.False(trail.On);
         Assert.Equal(0, trail.Append(Entries("""[{"kind":"page","page":"/agents"}]"""), Now));
     }
+
+    [Fact]
+    public void On_it_keeps_a_row_whose_question_changed_and_a_row_that_cleared()
+    {
+        var trail = new UxTrail(_home);
+        trail.Set(true);
+
+        var kept = trail.Append(Entries("""
+            [{"kind":"changed","row":"go-ahead:a2","at":"2026-11-16T09:50:00Z"},
+             {"kind":"cleared","row":"go-ahead:a2","at":"2026-11-16T09:51:00Z"}]
+            """), Now);
+
+        Assert.Equal(2, kept);
+    }
 }

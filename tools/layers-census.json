@@ -835,7 +835,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitCeilingCensusTests.cs": 3,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitFixture.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/GitStartTally.cs": 1,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/GitGlobalFileGitTests.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/BackgroundWaitJudgementTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/GitPlaceExitTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Platform/ProcessStartsCensusTests.cs": 6,

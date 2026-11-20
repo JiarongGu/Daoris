@@ -13,7 +13,7 @@ const FULL = (SIZE / 2) * 0.68;
 const LEAST = 110;
 /** Neighbouring nodes' centres are never closer than this, so two rings and a gap stay apart. */
 const SPACING = 2 * RADIUS + 30;
-/** The sizes a name and its second line are drawn at: `text-small` and `text-meta`. */
+/** The sizes a name and its second line are drawn at: `text-small` and `text-caption`. */
 const NAME_PX = 12;
 const WORD_PX = 11;
 /** The asks' disc: smaller than a repository's, since it is a source and holds no count of its own. */

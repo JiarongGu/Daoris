@@ -31,7 +31,7 @@ export function RequirementItem({ number, requirement, answer, waiting = false }
   const departed = !met && answer?.departed?.trim() ? answer.departed : null;
   return (
     <li className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-2.5">
-      <span className="pt-0.5 font-mono text-meta text-ink-faint">{number}</span>
+      <span className="pt-0.5 font-mono text-caption text-ink-faint">{number}</span>
       <div className="min-w-0">
         <Quoted words={requirement.quote} />
         <dl className="m-0 mt-1.5 grid grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 text-small">

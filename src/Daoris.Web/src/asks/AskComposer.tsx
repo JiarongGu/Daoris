@@ -84,7 +84,7 @@ export function AskComposer({
   const circle = fixed ?? draft.circle;
   const ready = askReady(draft, circle, busy);
   const used = characters(draft.short ?? '');
-  const meta = <span className="text-meta text-ink-faint">{t('asks.compose.meta')}</span>;
+  const meta = <span className="text-caption text-ink-faint">{t('asks.compose.meta')}</span>;
 
   // 🔴 A machine with no repository holds no circle. The form offered an empty choice of one, and a
   // sentence written in full could never be sent: seen on the installed window. So it says so instead.
@@ -148,7 +148,7 @@ export function AskComposer({
         <label className="grid gap-1 text-small text-ink-soft">
           <span className="flex items-baseline justify-between gap-2">
             {t('quests.field.short')}
-            <span className={used > SHORT_TITLE_MAX ? 'font-mono text-meta text-ink-danger' : 'font-mono text-meta text-ink-faint'}>
+            <span className={used > SHORT_TITLE_MAX ? 'font-mono text-caption text-fail-ink' : 'font-mono text-caption text-ink-faint'}>
               {t('asks.compose.shortCount', { used, max: SHORT_TITLE_MAX })}
             </span>
           </span>
@@ -158,10 +158,10 @@ export function AskComposer({
             placeholder={t('quests.field.shortPlaceholder')}
             aria-invalid={used > SHORT_TITLE_MAX || undefined}
             onChange={(e) => onChange({ ...draft, short: e.target.value })}
-            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-st-declined"
+            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-fail"
           />
           {used > SHORT_TITLE_MAX && (
-            <span className="text-small text-ink-danger">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
+            <span className="text-small text-fail-ink">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
           )}
         </label>
         <label className="grid gap-1 text-small text-ink-soft">
@@ -210,7 +210,7 @@ export function AskComposer({
           onRemove={carry.remove}
         />
         {/* The terminal's way to the review choice, at the foot with the rest of the form's asides. */}
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
+        <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
       </form>
     </Drawer>
   );

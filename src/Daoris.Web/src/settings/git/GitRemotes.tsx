@@ -41,7 +41,7 @@ function Serving({ remote, onSetUp }: { remote: GitRemoteShown; onSetUp?: (host:
   if (remote.serves === 'none') {
     return (
       <span className="flex min-w-0 flex-wrap items-center gap-2">
-        <span className="text-small text-ink-danger">{t('settings.git.none')}</span>
+        <span className="text-small text-fail-ink">{t('settings.git.none')}</span>
         {remote.host && onSetUp && <Button variant="ghost" onClick={() => onSetUp(remote.host!)}>{t('settings.git.setOneUp')}</Button>}
       </span>
     );

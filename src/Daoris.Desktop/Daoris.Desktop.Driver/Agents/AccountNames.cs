@@ -45,9 +45,8 @@ public sealed record AccountTarget(string? Account, string? Missing);
 
 /// <summary>
 /// An account's name and its stable id: <c>accounts.json</c> under the home holds the name the
-/// person gave each account, by agent (the accounts' owner) and id. <b>The id is the folder's name</b>, so an
-/// <c>account-N</c> keeps its name as its id, and a new account takes a fresh one
-/// (<see cref="NewId"/>). Everything else is keyed by the id: the wiring's defaults and lists, <c>reads.json</c>,
+/// person gave each account, by agent (the accounts' owner) and id. <b>The id is the folder's name</b>, the hash form
+/// (<see cref="AccountIdForm"/>) a new account draws (<see cref="NewId"/>). Everything else is keyed by the id: the wiring's defaults and lists, <c>reads.json</c>,
 /// <c>cooling.json</c>, <c>windows.json</c>, <c>keys.json</c>, the probe locks, session records and the usage ledger, so a
 /// rename touches this file alone and every one of them keeps working.
 /// </summary>
@@ -66,9 +65,6 @@ public static class AccountNames
 
     /// <summary>The longest name: one a row and a command line both hold.</summary>
     public const int Longest = 64;
-
-    /// <summary>What a fresh id begins with, so a log line or a record says it is an account's.</summary>
-    public const string IdPrefix = "acct-";
 
     private const string NameKey = "name";
 
@@ -309,9 +305,9 @@ public static class AccountNames
     }
 
     /// <summary>
-    /// A new account's id: <see cref="IdPrefix"/> and eight lowercase hex characters, drawn again while an account of
-    /// the agent already has it. Never reused, unlike the first free <c>account-N</c>, so a reading, a cool-off
-    /// or a usage total kept under one id never lands on another account. The person reads its name, never this.
+    /// A new account's id, the one way one is made (<see cref="AccountIdForm"/>): drawn again while an account of the agent already
+    /// has it. Never reused, so a reading, a cool-off or a usage total kept under one id never lands on another account. The person
+    /// reads its name, never this.
     /// </summary>
     /// <param name="draw">Eight hex characters; the system's random source unless a test holds its own.</param>
     public static string NewId(string home, string agent, Func<string>? draw = null)
@@ -319,7 +315,7 @@ public static class AccountNames
         var taken = HarnessSettings.Profiles(home, agent).ToHashSet(StringComparer.OrdinalIgnoreCase);
         while (true)
         {
-            var id = IdPrefix + (draw?.Invoke() ?? RandomNumberGenerator.GetHexString(8, lowercase: true));
+            var id = AccountIdForm.Drawn(draw);
             if (!taken.Contains(id)) return id;
         }
     }
@@ -379,9 +375,10 @@ public static class AccountNames
     {
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (Child(root, agent) is not { } held) return names;
+        // An entry named like a lock's folder is no account's (such a folder holds no sign-in, so no name is kept for it).
         foreach (var (id, node) in held)
         {
-            if (node is JsonObject entry && Name(entry) is { } name) names.TryAdd(id, name);
+            if (!HarnessAccountFolders.NotAnAccount(id) && node is JsonObject entry && Name(entry) is { } name) names.TryAdd(id, name);
         }
 
         return names;

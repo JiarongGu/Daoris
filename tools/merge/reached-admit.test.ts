@@ -74,6 +74,30 @@ test('a heavy group waits while the capacity is full and runs when it is freed; 
   }
 });
 
+test('a background run starts no light group while a blocking run waits, and starts it once none waits', async () => {
+  const { dir, remove } = fixtureFolder('reached-admit');
+  try {
+    let gateLives = true;
+    const admission = createAdmission({
+      daorisHome: dir, kind: 'session', capacity: 3, say: () => undefined, pollMs: 5, beatMs: 1_000_000, env: { DAORIS_ADMISSION_BACKGROUND: '1' },
+      alive: (pid: number) => (pid === 999_999 ? gateLives : true),
+    });
+    const file = admissionFile(dir) as string;
+    mkdirSync(dirname(file), { recursive: true });
+    const now = new Date().toISOString();
+    writeFileSync(file, JSON.stringify({ schema: 1, holds: [], waits: [{ id: 'gate-1', kind: 'queue', pid: 999_999, what: 'reached gate', since: now, beat: now }] }));
+    let ran = false;
+    const light = inPlace(group('driver', 1), { admission, processSuites: NONE }, async () => { ran = true; });
+    await wait(40);
+    assert.equal(ran, false, 'the light group waits while the merge gate asks');
+    gateLives = false;
+    await light;
+    assert.equal(ran, true);
+  } finally {
+    remove();
+  }
+});
+
 test('a place is let go when the group throws, and a plan runs its heavy group in the place', async () => {
   const f = fixture();
   try {

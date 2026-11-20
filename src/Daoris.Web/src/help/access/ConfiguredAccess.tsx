@@ -111,7 +111,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
       return (
         <span key={operation} className="flex min-w-0 flex-wrap items-center gap-x-2">
           {field}
-          <span className="text-meta text-ink-faint">{t('help.grants.notBuilt')}</span>
+          <span className="text-caption text-ink-faint">{t('help.grants.notBuilt')}</span>
         </span>
       );
     }
@@ -119,7 +119,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
     return spec.id === 'acts' ? (
       <div key={operation} className="grid min-w-0 gap-0.5">
         {field}
-        <p className="m-0 pl-6 text-meta text-ink-faint"><Inline text={t(`help.grants.cover.acts.${operation}`)} /></p>
+        <p className="m-0 pl-6 text-caption text-ink-faint"><Inline text={t(`help.grants.cover.acts.${operation}`)} /></p>
       </div>
     ) : field;
   };
@@ -134,7 +134,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
           // Its record is the plugin's, changed on that plugin's tab alone, so the door goes there and opens nothing here.
           <Button
             variant="ghost"
-            className="ml-auto text-small text-accent"
+            className="ml-auto text-small text-accent-ink"
             aria-label={t('help.grants.doorFor', { door: t(`help.grants.door.${spec.door}`), grant: name })}
             onClick={() => onManage(spec.id, choice?.plugin ?? null)}
           >
@@ -145,19 +145,19 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         {spec.door && !spec.onPlugin && (
           <Button
             variant="ghost"
-            className="ml-auto text-small text-accent"
+            className="ml-auto text-small text-accent-ink"
             aria-expanded={open}
             aria-controls={panel}
             aria-label={t('help.grants.doorFor', { door: t(`help.grants.door.${spec.door}`), grant: name })}
             onClick={() => setOpen((was) => !was)}
           >
             {t(`help.grants.door.${spec.door}`)}
-            <Icon name="chevronDown" size={12} className={cn('transition-transform duration-(--speed)', open && 'rotate-180')} />
+            <Icon name="chevronDown" size={12} className={cn('transition-transform duration-(--duration-quick)', open && 'rotate-180')} />
           </Button>
         )}
       </div>
       <p className="m-0 text-small text-ink-soft"><Inline text={t(`help.grants.reach.${spec.id}`)} /></p>
-      {!spec.later && <p className="m-0 text-meta text-ink-faint">{t(`help.grants.default.${spec.byDefault}`)}</p>}
+      {!spec.later && <p className="m-0 text-caption text-ink-faint">{t(`help.grants.default.${spec.byDefault}`)}</p>}
       {why && (
         <p className="m-0 flex gap-1.5 text-small text-ink-soft">
           <Icon name="info" size={13} className="mt-0.5 text-ink-faint" />
@@ -170,7 +170,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
       {spec.onPlugin && (
         <>
           <p className="m-0 text-small text-ink-soft">{t(choice?.plugin ? 'help.grants.onPlugin' : 'help.grants.noPlugin')}</p>
-          <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
+          <p className="m-0 text-caption text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
         </>
       )}
       {open && (operations.length > 0 || spec.served) && (
@@ -178,7 +178,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
           {operations.length > 0
             ? <div className="grid min-w-0 gap-1.5">{operations.map(box)}</div>
             : <p className="m-0 text-small text-ink-soft"><Inline text={t('help.grants.none.checkouts')} /></p>}
-          <p className="m-0 text-meta text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
+          <p className="m-0 text-caption text-ink-faint"><Inline text={t(`help.grants.never.${spec.id}`)} /></p>
         </div>
       )}
     </li>

@@ -1,8 +1,22 @@
 namespace Daoris.Driver;
 
-/// <summary>One step of a run's bound graph version as its session's row draws it: passed, current, to come, or failed.</summary>
+/// <summary>A step of a run's graph version as its session's track and rows draw it: its mark, role, newest attempt, start and failure.</summary>
 /// <param name="Mark">One of the run passage reader's marks: <c>passed</c>, <c>current</c>, <c>next</c> or <c>failed</c>.</param>
-public sealed record PassageStep(string Node, string Kind, string Mark);
+public sealed record PassageStep(string Node, string Kind, string Mark)
+{
+    public string? Role { get; init; }
+
+    public int? Attempt { get; init; }
+
+    public DateTimeOffset? Since { get; init; }
+
+    public string? Code { get; init; }
+
+    public IReadOnlyList<PassageAttempt>? Earlier { get; init; }
+}
+
+/// <summary>A dispatched attempt of a step before its newest, as its record keeps it: its send's moment, its plugin's outcome and code.</summary>
+public sealed record PassageAttempt(int Attempt, DateTimeOffset At, string? Outcome, string? Code);
 
 /// <summary>A run's passage through its bound workflow version: its steps in the graph's order, each with its mark.</summary>
 public sealed record RunPassage(string Run, string Workflow, int? Version, IReadOnlyList<PassageStep> Steps);

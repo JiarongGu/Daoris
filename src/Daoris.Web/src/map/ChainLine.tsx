@@ -10,7 +10,7 @@ import type { ChainStep } from './chain';
 
 /** A quest's status, in the words and the ink its pill's word wears (never hue alone). */
 const WORD: Record<Quest['status'], string> = {
-  Open: 'text-ink-open', Taken: 'text-ink-taken', Done: 'text-ink-done', Declined: 'text-ink-danger',
+  Open: 'text-ink-open', Taken: 'text-live-ink', Done: 'text-ok-ink', Declined: 'text-fail-ink',
 };
 
 /**
@@ -40,7 +40,7 @@ export function ChainLine({ chain, onQuest, onExpand }: {
   return (
     <nav aria-label={t('chain.title')} className="flex min-w-0 items-center gap-x-1.5 text-small">
       <span className="min-w-0 flex-1 truncate" title={whole}>
-        <span className="text-meta text-ink-faint">{t('chain.title')}</span>
+        <span className="text-caption text-ink-faint">{t('chain.title')}</span>
         {chain.map((step, index) => (
           <Fragment key={step.kind === 'quest' ? step.quest.id : `${step.kind}-${index}`}>
             {index > 0 && <span aria-hidden className="ml-1.5 text-ink-faint">›</span>}
@@ -66,8 +66,8 @@ function stepText(step: ChainStep, t: TFunction): string {
 function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => void }) {
   const { t } = useTranslation();
 
-  if (step.kind === 'ask') return <span className="font-mono text-meta text-ink-soft">{t('chain.ask', { id: step.id })}</span>;
-  if (step.kind === 'unseen') return <span className="font-mono text-meta text-ink-faint">#{step.id}</span>;
+  if (step.kind === 'ask') return <span className="font-mono text-caption text-ink-soft">{t('chain.ask', { id: step.id })}</span>;
+  if (step.kind === 'unseen') return <span className="font-mono text-caption text-ink-faint">#{step.id}</span>;
   if (step.kind === 'pending') {
     return <span className="inline-block max-w-64 truncate align-bottom text-ink-faint" title={step.step.title}>{t('chain.next', { to: step.step.to })}</span>;
   }
@@ -77,8 +77,8 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
   // its source reopened says so after its status.
   const status = (
     <>
-      <span className={cn('ml-1.5 text-meta', WORD[quest.status])}>{t(`status.${shownStatus(quest)}`)}</span>
-      {quest.hold === 'source-reopened' && <span className="ml-1.5 text-meta text-ink-open">{t('quests.card.reopened')}</span>}
+      <span className={cn('ml-1.5 text-caption', WORD[quest.status])}>{t(`status.${shownStatus(quest)}`)}</span>
+      {quest.hold === 'source-reopened' && <span className="ml-1.5 text-caption text-ink-open">{t('quests.card.reopened')}</span>}
     </>
   );
   if (current) {
@@ -92,7 +92,7 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
             type="button"
             onClick={() => onQuest(quest)}
             title={quest.title}
-            className="inline-block max-w-64 cursor-pointer truncate border-0 align-bottom bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+            className="inline-block max-w-64 cursor-pointer truncate border-0 align-bottom bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
           >
             {questName(quest)}
           </button>

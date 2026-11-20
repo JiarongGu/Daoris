@@ -39,7 +39,7 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
         return [
           // The agents not installed, a group of their own under the installed, named once at its head.
           at === absentFrom && (
-            <li key="absent" role="presentation" className="pb-0.5 pl-[calc(0.625rem+3px)] pr-2.5 pt-2.5 text-meta font-medium uppercase tracking-[0.04em] text-ink-faint">
+            <li key="absent" role="presentation" className="pb-0.5 pl-[calc(0.625rem+3px)] pr-2.5 pt-2.5 text-caption font-medium uppercase tracking-[0.04em] text-ink-faint">
               {t('agents.list.absent')}
             </li>
           ),
@@ -48,7 +48,7 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
               <RowDoor chosen={chosen === row.name} onPress={() => onChoose(row.name)}>
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span className={cn('min-w-0 truncate text-body font-medium', row.installed ? 'text-ink' : 'text-ink-soft')}>{row.product}</span>
-                  {row.maker && <span className="shrink-0 truncate text-meta text-ink-faint">{row.maker}</span>}
+                  {row.maker && <span className="shrink-0 truncate text-caption text-ink-faint">{row.maker}</span>}
                   {row.waiting > 0 && (
                     <span className="ml-auto shrink-0">
                       <DotMark tone="parked" />
@@ -118,7 +118,7 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
       aria-current={chosen || undefined}
       onClick={onPress}
       className={cn(
-        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed)',
+        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft/50',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
       )}

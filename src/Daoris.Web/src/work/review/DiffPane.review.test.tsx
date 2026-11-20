@@ -98,7 +98,7 @@ describe('the review’s forced discard', () => {
     // Said once: the ask holds the sentence, and the foot does not repeat it.
     expect(screen.getAllByText(NAMES)).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
-    expect(within(ask).getByRole('button', { name: 'Discard anyway' }).className).toContain('text-ink-danger');
+    expect(within(ask).getByRole('button', { name: 'Discard anyway' }).className).toContain('text-fail-ink');
     expect(discards()).toEqual([{ id: 's1a2b3c4' }]);
   });
 

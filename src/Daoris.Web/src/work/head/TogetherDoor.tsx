@@ -24,7 +24,7 @@ const PHASES = ['asked', 'replaying', 'checking', 'ready', 'landing', 'uncertain
 
 const BEFORE_LANDING = ['asked', 'replaying', 'checking', 'ready'];
 
-const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-meta underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
+const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-caption underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent';
 
 /**
  * *Bring them together…* on a head's Session step: the sessions beside it ticked and asked into it, then the
@@ -47,7 +47,7 @@ export function TogetherDoor({ candidates, operation, busy = false, said, onBrin
   const [ticked, setTicked] = useState<string[]>([]);
   const door = (id: string) => (onSession
     ? <button type="button" aria-label={t('work.related.door', { id })} onClick={() => onSession(id)} className={DOOR}>{id}</button>
-    : <span className="font-mono text-meta">{id}</span>);
+    : <span className="font-mono text-caption">{id}</span>);
   const phase = (code: string) => (PHASES.includes(code) ? t(`work.together.phase.${code}`) : code);
   const note = said ? <span role="status" className="text-ink-faint">{said}</span> : null;
 
@@ -106,7 +106,7 @@ export function TogetherDoor({ candidates, operation, busy = false, said, onBrin
       <ul className="m-0 grid list-none gap-0.5 p-0">
         {candidates.map((id) => (
           <li key={id} className="m-0">
-            <CheckField checked={ticked.includes(id)} onChange={(on) => tick(id, on)} label={id} className="font-mono text-meta" />
+            <CheckField checked={ticked.includes(id)} onChange={(on) => tick(id, on)} label={id} className="font-mono text-caption" />
           </li>
         ))}
       </ul>

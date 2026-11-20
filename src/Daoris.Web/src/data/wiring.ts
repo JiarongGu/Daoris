@@ -198,6 +198,7 @@ export type SystemSpace = {
   kinds: SpaceKind[];
   /** Absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
+  strays?: { paths: { path: string; bytes: number }[]; partial: boolean };
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };

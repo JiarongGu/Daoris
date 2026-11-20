@@ -225,7 +225,7 @@ function KeyProbe({ theme }: { theme: 'light' | 'dark' }) {
             <tr key={`${combo}-${id}`}>
               <td className="pr-4 font-mono">{combo}</td>
               <td className="pr-4 text-ink-soft">{id}</td>
-              <td className={reached.has(combo) ? 'text-accent' : 'text-ink-faint'}>{reached.has(combo) ? 'reached' : '—'}</td>
+              <td className={reached.has(combo) ? 'text-accent-ink' : 'text-ink-faint'}>{reached.has(combo) ? 'reached' : '—'}</td>
             </tr>
           ))}
         </tbody>

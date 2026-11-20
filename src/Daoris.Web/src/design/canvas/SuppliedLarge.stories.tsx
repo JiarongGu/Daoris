@@ -8,7 +8,7 @@ import { SuppliedCanvas, type SuppliedWorld } from './SuppliedCanvas';
 import { lineDrawn } from './suppliedCull';
 
 // A large supplied world: the maps' canvas at 2,000 and 5,000 cards, culled past 400 and
-// drawn as dots below 4 px of `text-meta`, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. Opened fitted, the
+// drawn as dots below 4 px of `text-caption`, at the main area's 80, 39 and 25rem, in English and 中文 and both themes. Opened fitted, the
 // world is a field of dots on the canvas2D layer with the Tab stop and the selected still cards; opened at 100%, only the cards near
 // the view are mounted. Keyboard: the arrows walk to a card that is not mounted, which is mounted and focused, and the view follows.
 
@@ -40,7 +40,7 @@ function Field({ count, opening }: { count: number; opening: number }) {
       nodeLabel={(id) => id} titleOf={(id) => id}
       renderNode={(id, state) => (
         <span className={cn('flex h-full w-full items-center rounded-card border bg-raised px-2', state.selected ? 'border-[3px] border-accent' : 'border-line-strong')}>
-          {state.tier === 'full' && <span className="truncate font-mono text-meta text-ink">{id}</span>}
+          {state.tier === 'full' && <span className="truncate font-mono text-caption text-ink">{id}</span>}
         </span>
       )}
       renderEdges={(context) => world.lines.filter((line) => lineDrawn(context.culled, line.from, line.to)).map((line) => {

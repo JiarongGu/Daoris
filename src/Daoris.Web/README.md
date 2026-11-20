@@ -20,7 +20,8 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
 time (D55, `docs/archive/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
-The session's Workflow view names its bound saved version, or Current for live declarations, and the route that
+A session's run is its head's track (`work/track/`), its steps rows between its turns; the track's *Flowchart* opens the
+run's view, which names its bound saved version, or Current for live declarations, and the route that
 chose it (FABRIC-PIPELINE1a). Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
 show workflow holds before Accept, preserving the driver's explanation and available terminal doors. A chat in a tree of its
 own draws its chat run there (CHATFLOW1c): its work, its landing for the tip its tree stands at, and its checks marked not yet
@@ -127,7 +128,7 @@ for until it is drawn, else on the page's heading: `src/lib/returnFocus.ts` (UX6
 
 | Layer | Choice |
 |---|---|
-| Styling | **Tailwind v4** — the validated tokens are the theme (`src/tokens.css`), utilities live beside the markup |
+| Styling | **Tailwind v4** — the role tokens are the theme (`src/tokens.css`, D330: roles, never colours; contrast held by `design/roles.test.ts`), utilities live beside the markup; a branch that predates the roles runs `node tools/token-codemod.mjs` after merging main |
 | Primitives | **Radix UI** — dialog (the drawer), toast, select, dropdown menu, tooltip, checkbox: behaviour without a look; the terminal is **xterm.js** |
 | Icons | **lucide-react**, tree-shaken |
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation; a driver press's is the driver's `STATE_CHANGED`, asked again at one place in every window (`bridge/state/stateHub.ts`, D169), so a hook asks nothing again itself and a test that presses a declared route mounts the hub over a mocked shell that publishes what the route declares (`test/publishing.ts`); a press under way is read by every view through `useUnderWay(route, session)`, never one component's `isPending`, and the hub reads the driver's list as it mounts, so a window opened mid-press says it too (STATEHUB1c2); Ask Daoris's open *What it has* is asked again on the `help` scope, so a receipt recorded meanwhile shows (HELPWIREDLIVE1) |

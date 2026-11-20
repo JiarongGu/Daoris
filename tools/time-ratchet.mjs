@@ -18,7 +18,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain, writeAtomic } from './fsx.mjs';
-import { judgeByReach, loadWorld, unitsOf } from './time-reach.mjs';
+import { judgeByOwner, loadWorld, unitsOf } from './time-reach.mjs';
+import { mainFile, mainRecord, onMainOf, readMain, recordRun } from './time-main.mjs';
 import { ALONE_HOLDS, foreignTrees, heldNow, isLoaded, readMarks } from './time-load.mjs';
 import { ratchetBreaches, sayBreach, sourceReader } from './time-why.mjs';
 
@@ -119,7 +120,7 @@ export function readRecords(dir, root, { since = null } = {}) {
   });
 }
 
-/** Each test over its limit in `dir`'s records taken alone (key -> { ms, limit }), every key, and `loaded`: over only under load. */
+/** Each test over its limit in `dir`'s records taken alone (key -> { ms, limit }), every key, `loaded`: over only under load, and `times`: each alone test's ms. */
 export function scanRecords(dir, root, { since = null } = {}) {
   const latest = new Map();
   const seen = new Set();
@@ -143,7 +144,7 @@ export function scanRecords(dir, root, { since = null } = {}) {
   const over = {};
   for (const [key, { ms, limit }] of latest) if (ms > limit) over[key] = { ms, limit };
   const loaded = Object.fromEntries([...underLoad].filter(([key]) => !seen.has(key)));
-  return { over, seen, loaded };
+  return { over, seen, loaded, times: Object.fromEntries([...latest].map(([key, { ms }]) => [key, ms])) };
 }
 
 /** The entry of `list` that covers `key`: its own, else the longest entry that starts it. */
@@ -282,13 +283,13 @@ async function main() {
     const scan = () => scanRecords(dir, root, { since });
     const { scanned: settled, unmeasured } = await settleLoaded({ scan, free: () => heldNow() + foreignTrees(root) <= ALONE_HOLDS, measure: (units) => measureAlone(root, units), world: () => loadWorld(root) });
     for (const key of unmeasured) console.log(`time-ratchet: unmeasured, under load: ${key} was timed only while other heavy runs were under way, so it is not judged for time; it is measured again alone when the machine is free`);
-    const judged = changed ? await judgeByReach({ scan, changed, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
+    const main = changed ? readMain(mainFile(root)) : {};
+    const onMain = onMainOf(root);
+    const mainMs = (key) => mainRecord(main, key, onMain);
+    const judged = changed ? await judgeByOwner({ scan, changed, mainMs, world: () => loadWorld(root), measure: (units) => measureAlone(root, units) }) : null;
     const { over: all, seen } = judged ? { over: {}, seen: judged.seen } : scan();
     const found = judged ? judged.mine : all;
-    const others = judged ? judged.others : {};
-    for (const [key, { ms, limit }] of Object.entries(others)) {
-      console.log(`time-ratchet: slow, not this merge's: ${key} took ${ms} ms, over its ${limit} ms limit, and no path the merge changes reaches it`);
-    }
+    const inherited = judged ? judged.inherited : {};
     if (process.argv.includes('--write')) {
       const next = tighten(found, list, seen);
       writeAtomic(listFile, JSON.stringify(next, null, 2) + '\n');
@@ -306,11 +307,16 @@ async function main() {
     for (const line of reasonLines(found, list)) console.log(`time-ratchet: over budget: ${line}`);
     const loaded = Object.fromEntries(unmeasured.map((key) => [key, settled.loaded[key]]));
     const records = () => new Map(readRecords(dir, root, { since }).flatMap(({ file, tests }) => tests.map(({ key }) => [key, file])));
-    const breaches = ratchetBreaches({ found, others, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root) });
+    const breaches = ratchetBreaches({ found, inherited, loaded, listedAt: (key) => list[entryFor(list, key)]?.ms, records, source: sourceReader(root) });
+    for (const each of breaches.filter((breach) => breach.inherited)) {
+      console.log(`time-ratchet: inherited from main, a known red that fails nothing: ${each.name} took ${each.ms} ms, over its ${each.limit} ms limit; cause ${each.cause}, owned by ${each.fix}`);
+    }
     for (const breach of breaches) console.log(sayBreach(breach));
+    if (changed) recordRun(root, { times: scan().times, changed });
     for (const p of problems) console.error(`time-ratchet: ${p}`);
     if (problems.length) return 1;
-    console.log(`time-ratchet: clean (${Object.keys(found).length} tests over their limits, all listed and none slower${Object.keys(others).length ? `; ${Object.keys(others).length} slow but not this merge's` : ''})`);
+    const count = Object.keys(inherited).length;
+    console.log(`time-ratchet: clean (${Object.keys(found).length} tests of the merge's over their limits, all listed and none slower${count ? `; ${count} inherited from main, each with its cause and row` : ''})`);
     return 0;
   } catch (e) {
     console.error(`time-ratchet: ${e.message}`);

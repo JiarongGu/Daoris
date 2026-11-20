@@ -77,7 +77,13 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 17. Back up `data/` (and `work/` for work in progress). `profiles/` is as private as the machine. `cache/` is fetched again,
     `run/` may be cleared while Daoris is closed, and logs keep 30 days or fewer. A category is cleaned by Daoris's own acts,
     never by deleting a folder while it runs. A workspace's history clear sends its units to the service in presses of at most `HistoryDoors.PressUnits`, so each answers within the client's bound and one `daoris history clear --workspace <w> --yes` clears a history of any length. (from D172, D195)
-17a. Nothing Daoris writes is kept forever unnoticed. A tree's files record and install logs go with the tree (the tidy's set-aside,
+17a. Nothing Daoris writes is kept forever unnoticed. The bounds that keep `work/` from growing without end are two. The dependency store
+    (`work/deps`, the Disk space card's `deps` kind) evicts a copy not placed in a tree for 30 days, then the least recently placed past 10 GB,
+    in the Keeping pass once a day; a copy is the tree's own once placed, so none is in use. A session tree no run owns, that no session runs
+    or waits in and that nothing has used for 14 days (`TreeReleases.Unused`: the later of the tree's top folder's write time and its HEAD's last move in
+    git's reflog) is removed by the look's tidy with its branch standing and holding every commit; uncommitted work,
+    a live run's tree and an open session's tree keep it. Each such removal and each eviction is said in the machine log (`tree.ended`,
+    `deps.evicted`) with the bytes freed. A tree's files record and install logs go with the tree (the tidy's set-aside,
     a removal, the press, a failed open); a session's `.pid` marker whose process and session are gone is removed by the orphan
     sweep (`DeadMarkers`); each store limits its log to 32 MB and the knowledge store truncates it and returns its free pages at
     open (`StoreCompaction`). The tidy's Keeping pass also runs, once a day, the plugins' output prune (a file under `plugins/.data/<id>/output` not written in 14
@@ -253,10 +259,21 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     service its address file (`run/running.json`) names still living, or a session whose process marker is alive. It names the
     holder and says to close Daoris, and moves nothing. It takes the lease for its act, so nothing starts on the home meanwhile. From a
     session's terminal (`DAORIS_SESSION_ID`) only `--plan` answers: a purge ends every session's record, so it is the person's. A
-    service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it. (from D322)
+    service a person starts by hand that left no address file is not seen; the store's write lock is what then stops it.
+    `daoris home account-ids --yes`, the one-time move of agent account ids to the hash form, refuses alike, from one unit
+    (`HomeAtRest`). (from D322, D347)
 54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
     of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
+55. The home names every path in it. `HomeStrays` walks the Daoris folder down the folders an entry's place passes through, bounded and
+    never into a junction, and names each path no `HomeEntry` matches (an entry's pattern covers its children; the install's `app/`,
+    marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), `daoris home` lists them
+    under *Not in the table* after each entry's total size, and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
+    entry it falls under, none for a stray, for any reader of sizes per entry; Disk space shows them (`strays` of `SYSTEM_SPACE`, kept five minutes). A reader of an older place is
+    not kept for the files an install holds there (51): the table's place that goes is moved in `home-places.json`
+    (`test/fixtures`) from `places` to `dropped` with its declared one-time move, and `home-census.test.ts` refuses a place gone with no
+    move, and a place in the table not recorded. The move is run by the steward on the install, never by a build at a start.
+    (from HOMEORPHAN1, FIX-LOG 2026-11-20)
 
 | Kind | History (moved or emptied) | Configuration (stays) |
 |---|---|---|
@@ -311,5 +328,8 @@ drains, swaps, rolls back and refuses.
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §14): an update is never the owner's question, the window says its
+  state in one place and the banner goes (D344, UISH11, UIST5, UIST12); the first release's go and the running app's own look
+  for a release are UIST14's, after RELEASEFEED1 (D329). Today the rules below stand.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.
 - The running application looking for a newer Daoris release by itself (RELEASEFEED1's left): today a person runs `daoris update --fetch`.

@@ -1,9 +1,9 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
-import { sessionWidths, storyWidths } from '../design/storyWidths';
+import { storyWidths } from '../design/storyWidths';
 import type { Channel, ChannelItem } from '../work/channel';
-import { ChannelPanel, ChannelSection } from './ChannelSection';
+import { ChannelSection } from './ChannelSection';
 
 // An ask's channel: the owner's ask over an app and its database repository, where the two sessions
 // and the person talk. Molecules, so each state is reached by passing a channel: no driver, no service. English and 中文, since
@@ -111,13 +111,3 @@ export const Receipts: Story = {
   },
 };
 export const ReceiptsChinese: Story = { ...Receipts, decorators: [chinese] };
-
-/**
- * A session's panel: the database repository's line of work, folded to its title; opened, it is kept to what concerns it.
- * Drawn in a session's page, with its gutters.
- */
-export const Panel: StoryObj<typeof ChannelPanel> = {
-  render: () => <ChannelPanel channel={CHANNEL} only={{ entry: 'ask:c98a7e/db', repository: 'db' }} onPost={() => {}} onOpenAsk={() => {}} />,
-  decorators: [sessionWidths.half],
-};
-export const PanelChinese: StoryObj<typeof ChannelPanel> = { ...Panel, decorators: [sessionWidths.half, chinese] };

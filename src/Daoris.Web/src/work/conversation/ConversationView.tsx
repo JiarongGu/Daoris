@@ -89,8 +89,8 @@ export function ConversationView({
   };
   /** A line the host draws above the person's words, by the id the record gives them (Ask Daoris's change of focus). */
   dividers?: Readonly<Record<string, ReactNode>>;
-  /** What the host draws under a turn's answer, from its words until the next turn's (Ask Daoris's receipt). */
-  beneath?: (ask: Ask, until: string | undefined) => ReactNode;
+  /** What the host draws under a turn's answer, from its words (`first`: from the start) until the next turn's: a receipt, step rows. */
+  beneath?: (ask: Ask, until: string | undefined, first: boolean) => ReactNode;
   /** The requests its agent made, each drawn as its card at its call, its answer folded in; none, every call is a tool card. */
   exchanges?: Exchanges;
   /**
@@ -242,7 +242,9 @@ export function ConversationView({
               reveal={reveal}
               callMark={index === turns.length - 1 ? callMark : undefined}
               divider={turn.ask?.id ? dividers?.[turn.ask.id] : undefined}
-              beneath={turn.ask && beneath ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at) : undefined}
+              beneath={turn.ask && beneath
+                ? beneath(turn.ask, turns.slice(index + 1).find((later) => later.ask)?.ask?.at, !turns.slice(0, index).some((earlier) => earlier.ask))
+                : undefined}
             />
             </Fragment>
           ))}
@@ -260,7 +262,7 @@ function BeganLine({ words }: { words: string }) {
   const { t } = useTranslation();
   return (
     <p className="m-0 text-small text-ink-soft wrap-anywhere">
-      <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
+      <span className="mr-1.5 text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
       {words}
     </p>
   );
@@ -352,12 +354,12 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal, callMark, divide
       {running && (calling || callMark?.waiting) && <CallingLine call={calling} mark={callMark} />}
       {/* The session ended inside this turn: said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
-      {turn.cut && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.cut')}</p>}
+      {turn.cut && <p className="m-0 text-caption text-ink-faint">{t('work.conversation.cut')}</p>}
       {/* Stopped, in the passive: a driven session's timeout cancels a turn too, and the
           page cannot know whose stop it is. Never the wire's word, and never a failure's tone. */}
-      {turn.ended === 'cancelled' && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.stopped')}</p>}
+      {turn.ended === 'cancelled' && <p className="m-0 text-caption text-ink-faint">{t('work.conversation.stopped')}</p>}
       {turn.ended && turn.ended !== 'end_turn' && turn.ended !== 'cancelled' && (
-        <p className="m-0 text-meta text-ink-faint">{t('work.conversation.ended', { reason: turn.ended })}</p>
+        <p className="m-0 text-caption text-ink-faint">{t('work.conversation.ended', { reason: turn.ended })}</p>
       )}
       {turn.ended && <TurnMeter turn={turn} />}
       {/* The work this turn did waits on the person: said at its end, where a jump to it lands. */}
@@ -376,7 +378,7 @@ function CallingLine({ call, mark }: { call: RunningCall | null; mark?: CallMark
   if (mark?.waiting) {
     const title = mark.title || call?.title;
     return (
-      <p role="status" className="m-0 text-meta text-ink-faint">
+      <p role="status" className="m-0 text-caption text-ink-faint">
         {title
           ? t('work.conversation.callWaits', { title, elapsed: elapsed(mark.since, at) })
           : t('work.conversation.callWaitsUnnamed', { elapsed: elapsed(mark.since, at) })}
@@ -385,7 +387,7 @@ function CallingLine({ call, mark }: { call: RunningCall | null; mark?: CallMark
   }
   if (!call) return null;
   return (
-    <p role="status" className="m-0 text-meta text-ink-faint">
+    <p role="status" className="m-0 text-caption text-ink-faint">
       {t('work.conversation.calling', { title: call.title, elapsed: elapsed(call.since, at) })}
     </p>
   );
@@ -399,7 +401,7 @@ function FirstAnswer({ since }: { since: string }) {
   const { t, i18n } = useTranslation();
   const now = useNow(10_000);
   return (
-    <p role="status" className="m-0 text-meta text-ink-faint">
+    <p role="status" className="m-0 text-caption text-ink-faint">
       {t('work.conversation.firstAnswer', {
         time: moment(since, i18n.language), elapsed: elapsed(since, new Date(now).toISOString()),
       })}
@@ -444,7 +446,7 @@ function TurnMeter({ turn }: { turn: Turn }) {
 
   return (
     <Tip content={said} side="top">
-      <span tabIndex={0} className="justify-self-start text-meta text-ink-faint">{line.join(' · ')}</span>
+      <span tabIndex={0} className="justify-self-start text-caption text-ink-faint">{line.join(' · ')}</span>
     </Tip>
   );
 }
@@ -485,7 +487,7 @@ function HeldAsk({ block }: { block: Block }) {
     // Dashed while it waits; words taken already (`now`) are drawn solid, as a turn's ask is.
     <div className={cn('rounded-card border px-3 py-2', block.reaches === 'now' ? 'border-line-strong' : 'border-dashed border-line-strong')}>
       <span className="flex items-center gap-2">
-        <span className="text-meta text-ink-faint">{t(block.from ? AUTHOR_KEYS[block.from] : 'work.conversation.you')}</span>
+        <span className="text-caption text-ink-faint">{t(block.from ? AUTHOR_KEYS[block.from] : 'work.conversation.you')}</span>
         {/* The level named only where it is not quiet: the person's own words sent now. A word in a
             neutral chip, never a hue, and never a wait's. */}
         {block.level === 'now' && <Chip>{t('work.level.now')}</Chip>}
@@ -494,7 +496,7 @@ function HeldAsk({ block }: { block: Block }) {
         ? <ChoiceWords choice={block.choice} text={block.text ?? ''} className="text-ink-soft" />
         : block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />
-      {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}
+      {when && <p className="m-0 mt-1 text-caption text-ink-faint">{when}</p>}
     </div>
   );
 }
@@ -579,7 +581,7 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
         <Icon name={shown ? 'chevronDown' : 'chevronRight'} size={13} />
         {said}
         {failed > 0 && (
-          <span className="text-ink-danger">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
+          <span className="text-fail-ink">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
         )}
       </button>
       {raised.length > 0 && <WaitMark waits={raised} onPress={() => onToWait!(raised[0]!)} />}

@@ -72,7 +72,7 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       )}
 
       <Body className="mt-6">{t('plugin.offer.note')}</Body>
-      <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
+      <p className="m-0 mt-8 border-t border-line pt-3 text-caption text-ink-faint">
         <Inline text={t('plugin.offer.terminal', { id: offer.id })} />
       </p>
     </ViewMain>

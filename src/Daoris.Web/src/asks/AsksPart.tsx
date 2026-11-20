@@ -79,7 +79,7 @@ export type AsksPart = {
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
 export function useAsksPart({
-  active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, onOpenAtWork, composing, onComposingChange,
+  active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, composing, onComposingChange,
 }: {
   /**
    * The door into a run: its session attended, the side bar on its *Workflow*. Absent where
@@ -87,7 +87,6 @@ export function useAsksPart({
    */
   onOpenRun?: (session: string) => void;
   /** A line of work folded to a count opens its own *At work* view. Absent in a browser. */
-  onOpenAtWork?: (session: string) => void;
   /** Quests is in front: only then is an error said. */
   active: boolean;
   /** Closed and done asks are listed too, as closed quests are. */
@@ -354,7 +353,7 @@ export function useAsksPart({
             ? {
               held: atWork.data,
               error: atWork.error ? sentence(atWork.error) : null,
-              onOpenEntry: onOpenAtWork ?? onAttend,
+              onOpenEntry: onAttend,
               onRetry: () => { void atWork.refetch(); },
               words: channel.channel ? lastMessages(channel.channel) : undefined,
             }

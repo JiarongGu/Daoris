@@ -16,7 +16,7 @@ export type { Driving } from './setup/RepositorySetup';
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
-      <dt className="text-meta text-ink-faint">{label}</dt>
+      <dt className="text-caption text-ink-faint">{label}</dt>
       <dd className="m-0 flex min-w-0 flex-wrap items-baseline gap-1.5">{children}</dd>
     </>
   );

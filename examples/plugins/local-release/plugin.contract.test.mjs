@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +38,7 @@ const attempt = (n, revision = 'r1') => ({
 
 /** A folder of the test's own: the plugin's data, the home it is told, and the stand-in world, removed after. */
 function scratch(t, world = {}) {
-  const at = mkdtempSync(join(tmpdir(), 'daoris-contract-'));
+  const at = mkdtempSync(join(scratchRoot(), 'daoris-contract-'));
   const place = { at, data: join(at, 'data'), home: join(at, 'home'), world: join(at, 'world.json') };
   mkdirSync(place.data);
   mkdirSync(place.home);

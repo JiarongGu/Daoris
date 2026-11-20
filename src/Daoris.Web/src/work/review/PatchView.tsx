@@ -29,14 +29,14 @@ export function PatchView({ patch, path, layout }: { patch: string; path: string
   // A patch with no hunks is a rename or a mode change: what git said is the whole of it.
   if (parsed.hunks.length === 0) {
     return (
-      <div className="px-3 py-2 font-mono text-meta leading-[1.5] text-ink-faint">
+      <div className="px-3 py-2 font-mono text-caption leading-[1.5] text-ink-faint">
         {parsed.preamble.map((line, index) => <div key={index}>{line}</div>)}
       </div>
     );
   }
 
   return (
-    <div className="font-mono text-meta leading-[1.5]">
+    <div className="font-mono text-caption leading-[1.5]">
       {parsed.hunks.map((hunk, index) => (
         <section key={index}>
           <div className="border-y border-line bg-page px-3 py-0.5 text-ink-faint">{hunk.header}</div>
@@ -48,8 +48,8 @@ export function PatchView({ patch, path, layout }: { patch: string; path: string
 }
 
 const TONE = {
-  add: { row: 'bg-st-done/10', sign: 'text-ink-done', mark: '+' },
-  del: { row: 'bg-st-declined/10', sign: 'text-ink-danger', mark: '−' },
+  add: { row: 'bg-ok-soft', sign: 'text-ok-ink', mark: '+' },
+  del: { row: 'bg-fail-soft', sign: 'text-fail-ink', mark: '−' },
   same: { row: '', sign: 'text-ink-faint', mark: ' ' },
 } as const;
 

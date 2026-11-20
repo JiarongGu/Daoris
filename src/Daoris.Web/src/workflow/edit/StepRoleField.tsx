@@ -54,7 +54,7 @@ export function StepRoleField({ id, node, palette, roleTakes, roles, place = nul
   const label = t('workflow.role.label');
   return (
     <div className="grid min-w-0 gap-1">
-      <span className="text-meta text-ink-soft">{label}</span>
+      <span className="text-caption text-ink-soft">{label}</span>
       <SelectField
         ariaLabel={label}
         value={named ?? KIND}
@@ -65,7 +65,7 @@ export function StepRoleField({ id, node, palette, roleTakes, roles, place = nul
           ...(named && !offered.includes(named) ? [{ value: named, label: named }] : []),
         ]}
       />
-      <p className="m-0 text-meta text-ink-faint">{t('workflow.role.hint')}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('workflow.role.hint')}</p>
     </div>
   );
 }

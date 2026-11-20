@@ -138,7 +138,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
             <>
               <span>{t('work.milestone.cleanup.pending')}</span>
               {waits.map((entry, index) => (
-                <span key={`${entry.kind}-${entry.resource}-${index}`} className={entry.disposition === 'blocked' ? 'text-ink-danger' : undefined}>
+                <span key={`${entry.kind}-${entry.resource}-${index}`} className={entry.disposition === 'blocked' ? 'text-fail-ink' : undefined}>
                   {t(entry.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: what(t, entry), detail: entryDetail(t, entry) })}
                 </span>
               ))}
@@ -165,7 +165,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
       {(unit.held?.length ?? 0) > 0 && (
         <Row label={t('work.milestone.held.label')} tone={unworded ? 'failed' : 'waits'}>
           {unit.held!.map((held) => (
-            <span key={`${held.node}-${held.attempt}`} className={held.resolution ? undefined : 'text-ink-danger'}>{heldSentence(t, held)}</span>
+            <span key={`${held.node}-${held.attempt}`} className={held.resolution ? undefined : 'text-fail-ink'}>{heldSentence(t, held)}</span>
           ))}
         </Row>
       )}
@@ -174,7 +174,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
       {(unit.ends?.length ?? 0) > 0 && (
         <Row label={t('work.milestone.closed.label')} tone={unit.ends!.some(endOffersStop) ? 'failed' : 'ended'}>
           {unit.ends!.flatMap((end, index) => endSentences(t, end).map((said, part) => (
-            <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'text-ink-danger' : undefined}>{said}</span>
+            <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'text-fail-ink' : undefined}>{said}</span>
           )))}
         </Row>
       )}
@@ -195,15 +195,15 @@ export function MilestoneLine({ unit, className }: { unit: MilestoneUnit; classN
     t(`work.milestone.line.${({ ended: 'ended', handed: 'handed', unknown: 'unknown', dropped: 'dropped' } as Record<string, string>)[unit.end.state] ?? 'notEnded'}`),
     t(unit.cleanup.state === 'completed' ? 'work.milestone.line.cleanupCompleted' : 'work.milestone.line.cleanupPending'),
     unit.cleanup.waits.some((entry) => entry.disposition === 'blocked')
-      ? <span className="text-ink-danger">{t('work.milestone.line.blocked')}</span> : null,
+      ? <span className="text-fail-ink">{t('work.milestone.line.blocked')}</span> : null,
     until ? t('work.milestone.line.recoveryUntil', { when: moment(until) })
       : unit.recovery.length > 0 ? t('work.milestone.line.recovery') : null,
     (unit.held?.length ?? 0) > 0
-      ? <span className={unit.held!.some((held) => !held.resolution) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.held')}</span> : null,
+      ? <span className={unit.held!.some((held) => !held.resolution) ? 'text-fail-ink' : undefined}>{t('work.milestone.line.held')}</span> : null,
     // A closure graph's end said on the line too, a stop offered in the danger ink.
     (unit.ends ?? []).some((end) => end.kind === 'overridden') ? t('work.milestone.line.overridden') : null,
     (unit.ends ?? []).some((end) => end.kind === 'partially-closed')
-      ? <span className={unit.ends!.some(endOffersStop) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.partial')}</span> : null,
+      ? <span className={unit.ends!.some(endOffersStop) ? 'text-fail-ink' : undefined}>{t('work.milestone.line.partial')}</span> : null,
     // A word of the person's on its close taken back, which no held row says once its node moved off.
     (unit.ends ?? []).some((end) => end.kind === 'word-taken-back') ? t('work.milestone.line.takenBack') : null,
   ].filter(Boolean);

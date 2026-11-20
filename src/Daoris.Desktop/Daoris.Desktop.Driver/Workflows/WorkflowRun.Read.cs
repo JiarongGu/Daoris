@@ -247,9 +247,15 @@ public static class WorkflowRunReader
             return await GraphRunAsync(chain, repository, part, mine, sessions, workspace, current, process, graph, run, reads).ConfigureAwait(false);
         }
 
+        // An open quest has no run bound yet: its start will bind what its repository chooses for it, which is read here, never "no workflow".
+        var waits = process is { Binding: null, Unread: null } && part.Count > 0 && part.All(WorkflowNotStarted.Waits)
+            ? WorkflowNotStarted.Said(WorkflowSelection.Resolve(sources.Config, repository, sources.WorkspaceOf(repository),
+                WorkflowRunBindings.TaskOf(part[0], chain)))
+            : null;
         return new WorkflowRun(repository, workspace, current, [.. part.Select(quest => quest.Id)], [])
         {
-            Process = process, Problem = process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded,
+            Process = process, Problem = waits ?? process.Problem ?? process.Unread ?? WorkflowProcess.NoWorkflow(repository), Coded = process.Coded,
+            NotStarted = waits is not null,
             Session = mine.MaxBy(session => session.Created ?? DateTimeOffset.MinValue)?.Id,
         };
     }
@@ -307,6 +313,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, bound, graph, record)
             {
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
+                Slots = CheckSlotWaits.Read(sources.Home, graph, record),
                 Needs = RunNeeds.Of(sources.Home, record), Holding = StepTenureFiles.HoldingOf(sources.Home, bound, record),
                 Cast = CastReading.Home(sources.Home, workspace, repository), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
             },
@@ -351,6 +358,7 @@ public static class WorkflowRunReader
             new WorkflowGraphRunFacts(facts, run, graph, record)
             {
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
+                Slots = CheckSlotWaits.Read(reads.Sources.Home, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
                 Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository),
                 Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),

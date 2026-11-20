@@ -47,7 +47,7 @@ export function CarriedCount({ links, files }: { links: number; files: number })
     files > 0 && t('quests.card.files', { count: files }),
   ].filter(Boolean).join(' · ');
   return (
-    <span aria-label={label} title={label} className="flex shrink-0 items-center gap-1 font-mono text-meta text-ink-faint">
+    <span aria-label={label} title={label} className="flex shrink-0 items-center gap-1 font-mono text-caption text-ink-faint">
       {links > 0 && <><Icon name="link" size={12} />{links}</>}
       {files > 0 && <><Icon name="attach" size={12} />{files}</>}
     </span>
@@ -163,7 +163,7 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
         {filesLabel}
         <div
           className={cn(
-            'flex flex-wrap items-center gap-2.5 rounded-control border border-dashed px-3 py-2.5 transition-colors duration-(--speed)',
+            'flex flex-wrap items-center gap-2.5 rounded-control border border-dashed px-3 py-2.5 transition-colors duration-(--duration-quick)',
             dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
           )}
         >
@@ -175,7 +175,7 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
           {chooser.input}
         </div>
         {leftOff && (
-          <p role="status" className="m-0 text-body text-ink-danger">
+          <p role="status" className="m-0 text-body text-fail-ink">
             {t(`carry.${leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
           </p>
         )}
@@ -185,7 +185,7 @@ export function CarryFields({ carry, filesLabel, leftOff, dragging, busy = false
               <li key={`${index}:${file.name}`} className="flex min-w-0 items-center gap-2 text-body text-ink">
                 <Icon name="attach" size={12} className="text-ink-faint" />
                 <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.size)}</span>
+                <span className="shrink-0 font-mono text-caption text-ink-faint">{size(file.size)}</span>
                 <Button
                   type="button" variant="ghost" disabled={busy}
                   aria-label={t('carry.remove', { name: file.name })}

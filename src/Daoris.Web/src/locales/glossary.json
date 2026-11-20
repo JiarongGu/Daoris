@@ -54,7 +54,7 @@
         "work.panel.title",
         "work.preview.tab",
         "work.outputs.title",
-        "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal", "work.views.workflow"
+        "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal"
       ]
     },
     "section": {
@@ -481,7 +481,7 @@
     { "door": "overview.repositories.button", "opens": "nav.projects" },
     { "door": "workflow.door.setup", "opens": "projects.tab.setup" },
     { "door": "workflow.door.workspaceSetup", "opens": "projects.tab.setup" },
-    { "door": "workflow.run.door.view", "opens": "work.views.workflow" }
+    { "door": "workflow.run.door.view", "opens": "work.track.flowchart" }
   ],
 
   "distinct": {

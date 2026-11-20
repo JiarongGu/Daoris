@@ -193,7 +193,7 @@ describe('the monitor window', () => {
   it('titles itself on the one heading step a view has', async () => {
     show();
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Monitor window' })).toHaveClass('text-view');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Monitor window' })).toHaveClass('text-display');
   });
 
   /** What needs a person comes first — the rail's rule, which matters more across a desk. */

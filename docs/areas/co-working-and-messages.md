@@ -9,7 +9,7 @@ What moves is one of three acts: say, request or hand over. One read composes a 
 A session may ask a helper (reads, answers once), the person may ask a partner (writes one piece in its own clone), and the landing rule asks a reviewer (a second opinion).
 Work for another repository is a quest; a lead or a chat is told one routing line about its own lanes.
 Brainstorms and meetings are bounded operations any caller starts, the person or an agent; they talk and change nothing.
-*At work* and the head's *Waiting on* draw the exchanges; *What needs you* lists each obligation once; the steward desk takes requests for the steward as claims.
+*At work* and the head's *Waiting on* draw the exchanges, and a session's timeline draws each as rows by its actor beside its channel's messages; *What needs you* lists each obligation once; the steward desk takes requests for the steward as claims.
 Who said a word is read from its marks and its door, never from its text.
 
 ## Its parts
@@ -73,7 +73,8 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
    teammate's ask, held on another machine, is posted to from here by the person and by a session here on its quest: the message
    is kept as this machine's own, at its level, and travels to the holder, where a teammate's person's message is a claim named
    as theirs that reopens nothing, never the holder's person's words. (from D167, D225)
-10. A line on no ask posts on its own channel, on its entry's origin, which the person reads and posts on from *At work* (their
+10. A line on no ask posts on its own channel, on its entry's origin, which the person reads and posts on from *At work* and answers
+    at its messages' rows in the session's timeline (their
     words, to everyone on it or one repository, taken by a part at its look as theirs; a teammate's ask's line posts on that ask's
     channel). A part here on a teammate's ask is handed the mirrored messages at its look, claimed and acknowledged by its entry as
     on an ask held here. A helper and a reviewer have no channel: they neither post nor read. (from D225, D163, D155)
@@ -127,7 +128,8 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
 21. `Exchanges.Of` is the one read of a line's requests, over helpers, pieces, questions, hand-overs, quests, opinions and
     go-aheads, walked back along `from`. It keeps delivery apart from outcome, and says a source it could not read. (from D225)
 22. A helper's answer, a partner's and an opinion's findings reach the line's head through one door, kept once under
-    `<case>:<id>`. An answered park takes each beside the person's answer. (from D225, D203)
+    `<case>:<id>`. An answered park takes each beside the person's answer; a head awaiting its run's step runs nothing and takes each as
+    an ended record does, so a step waiting on its answer (a second opinion's) never waits on it in turn (OPINIONWAKE1). (from D225, D203)
 23. A solicited answer may extend or reopen its asker's run once per ask. Go-ons by answers alone are counted durably, one
     admission per line; the person's or Daoris's word resets the count. (from D188, D225)
 24. The count is a fact, not a limit. The line's answers-alone rule decides, seeded as *hold after 2 in a row* at the machine's
@@ -231,8 +233,11 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     and its door opens *At work* at the first request the line names, that row outlined and focused. (from D203, D225)
 46. A message is drawn whole once, at its home. Each word's turn is headed by its sender chip: who, by the one rule, and when it
     was taken. An agent's helper ask is one card at its call, and the answer folds into it; a helper's answer no card holds is
-    that agent's block, under the question it answers. A channel message's home is the channel: the turn that took it names its
-    poster and opens the channel, its words folded where the door is. (from D225)
+    that agent's block, under the question it answers. Every other request of the line is a row of its session's timeline where it
+    was asked and one where it came back, its actor named, the session that took it up a press away, a reviewer's findings beside
+    the work it judged; one waiting on the person leads to its dock line and offers no press of its own (`work/exchanges/`, D320).
+    A channel message's home is its row in the session's timeline, where it was said, naming its sender, answered in place and
+    sent on to its session; the turn that took it names its poster and brings that row. (from D225, D320)
 47. *What needs you* has one row per obligation, keyed by its exchange's id or its kind and id. A park on one decision is that
     row, never a second. Rows are judged once in .NET and pushed. A session's foot counts its waits by the same keys
     (`Web/work/waits/waitObligations.ts`), so one wait is counted once on the foot, the bell, the places and *Notifications*; an

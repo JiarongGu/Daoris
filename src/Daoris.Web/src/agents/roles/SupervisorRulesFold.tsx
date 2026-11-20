@@ -92,10 +92,10 @@ export function SupervisorRulesFold({ place, placeName, read, roles, busy, refus
       {!first && (
         <FormGrid columns={COLUMNS} floor="40rem">
           <FormRow head>
-            <span className="text-meta text-ink-faint">{t('settings.supervisor.field.when')}</span>
-            <span className="text-meta text-ink-faint">{t('settings.supervisor.field.reaches')}</span>
-            <span className="text-meta text-ink-faint">{t('settings.supervisor.field.then')}</span>
-            <span className="text-meta text-ink-faint">{t('settings.supervisor.field.for')}</span>
+            <span className="text-caption text-ink-faint">{t('settings.supervisor.field.when')}</span>
+            <span className="text-caption text-ink-faint">{t('settings.supervisor.field.reaches')}</span>
+            <span className="text-caption text-ink-faint">{t('settings.supervisor.field.then')}</span>
+            <span className="text-caption text-ink-faint">{t('settings.supervisor.field.for')}</span>
             <span />
           </FormRow>
           {draft.rows.map((row, index) => {

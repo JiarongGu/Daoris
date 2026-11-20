@@ -73,9 +73,9 @@ export function AttentionList({
       {!bare && (
         <header className="flex items-baseline justify-between gap-4 px-[1.15rem] pb-1">
           <Tip content={t('work.attention.hint')}>
-            <h2 className="m-0 text-title font-semibold">{t('work.attention.title')}</h2>
+            <h2 className="m-0 text-heading font-semibold">{t('work.attention.title')}</h2>
           </Tip>
-          <span className="font-mono text-meta tabular-nums text-ink-open">{items.length}</span>
+          <span className="font-mono text-caption tabular-nums text-ink-open">{items.length}</span>
         </header>
       )}
       {attentionGroups(items).map(({ group, items: rows }) => {
@@ -109,7 +109,7 @@ export function AttentionList({
               <p className="m-0 px-[1.15rem] pt-1 text-small">
                 {onSessions
                   ? (
-                    <button type="button" onClick={onSessions} className="text-accent underline-offset-2 hover:underline">
+                    <button type="button" onClick={onSessions} className="text-accent-ink underline-offset-2 hover:underline">
                       {t('work.attention.more', { count: more })}
                     </button>
                   )
@@ -156,7 +156,7 @@ export function AttentionRegion({ children, resyncing = false, bare = false }: {
   const { t } = useTranslation();
   if (bare) {
     return (
-      <div aria-busy={resyncing || undefined} className={cn(resyncing && 'opacity-60 transition-opacity duration-(--speed)')}>
+      <div aria-busy={resyncing || undefined} className={cn(resyncing && 'opacity-60 transition-opacity duration-(--duration-quick)')}>
         {children}
       </div>
     );
@@ -165,7 +165,7 @@ export function AttentionRegion({ children, resyncing = false, bare = false }: {
     <section
       aria-label={t('work.attention.title')}
       aria-busy={resyncing || undefined}
-      className={cn('mb-5', resyncing && 'opacity-60 transition-opacity duration-(--speed)')}
+      className={cn('mb-5', resyncing && 'opacity-60 transition-opacity duration-(--duration-quick)')}
     >
       {children}
     </section>

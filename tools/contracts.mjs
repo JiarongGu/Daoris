@@ -47,7 +47,7 @@ const SOURCE_FILE = /\.(?:cs|csproj)$/;
 const SKIPPED = new Set(['bin', 'obj']);
 
 /** Whether a repository path is a declaring source: under a source folder, or a kind's or a provider's declaring file by its name. */
-const declares = (file) => !file.split('/').some((part) => SKIPPED.has(part))
+export const declares = (file) => !file.split('/').some((part) => SKIPPED.has(part))
   && (SOURCES.some((folder) => file.startsWith(folder)) && SOURCE_FILE.test(file) || file.startsWith(KINDS_FOLDER) && KIND_FILE.test(file)
     || PROVIDER_FILE.test(file));
 const STAMP = /^\/\/ contracts: ([0-9a-f]{64})\r?$/;

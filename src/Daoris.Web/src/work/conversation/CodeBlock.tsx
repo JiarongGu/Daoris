@@ -76,10 +76,10 @@ export function CodeBlock({ code, language }: { code: string; language?: string 
     }
   };
 
-  const control = 'inline-flex min-h-7 cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink';
+  const control = 'inline-flex min-h-7 cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink';
   return (
     <figure ref={figure} className="@container/code my-2.5 overflow-hidden rounded-control border border-line bg-raised">
-      <figcaption className="flex items-center justify-between gap-2 border-b border-line px-3 font-mono text-meta text-ink-faint">
+      <figcaption className="flex items-center justify-between gap-2 border-b border-line px-3 font-mono text-caption text-ink-faint">
         <span className="min-w-0 truncate">{language || t('work.code.plain')}</span>
         <span className="flex shrink-0 items-center gap-3">
           <button

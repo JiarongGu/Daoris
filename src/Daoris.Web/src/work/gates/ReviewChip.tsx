@@ -23,8 +23,8 @@ export type ReviewShown = {
 
 /** A chip's frame, the driving chip's beside it: a bordered token a size down from the strip's text. */
 const CHIP = cn(
-  'flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-control border border-line px-2 text-meta text-ink-soft',
-  'cursor-pointer bg-transparent transition-colors duration-(--speed)',
+  'flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-control border border-line px-2 text-caption text-ink-soft',
+  'cursor-pointer bg-transparent transition-colors duration-(--duration-quick)',
   'hover:bg-accent-soft hover:text-ink focus-visible:bg-accent-soft focus-visible:outline-none',
   'focus-visible:ring-1 focus-visible:ring-accent',
 );
@@ -80,7 +80,7 @@ export function ReviewChip({ reviews = [], onShowAgain, onReviewed, onNotYet }: 
         {reviews.map((review, index) => (
           <div key={review.quest}>
             {index > 0 && <Menu.Separator />}
-            <div className="flex flex-col gap-0.5 px-2 py-1.5 text-meta">
+            <div className="flex flex-col gap-0.5 px-2 py-1.5 text-caption">
               <span className="truncate text-ink">{review.title}</span>
               {review.shows && <span className="line-clamp-3 text-ink-soft">{review.shows}</span>}
               <span className={review.served ? 'text-ink-soft' : 'text-warn'}>

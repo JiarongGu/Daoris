@@ -10,10 +10,10 @@ const PILL_TONE: Record<string, string> = {
   neutral: 'border-line text-ink-soft bg-raised',
   // Each word is its hue's ink on its own soft field: open's and done's hues read 2.8 to 3.4:1 there in light.
   open: 'border-st-open text-ink-open bg-st-open/10',
-  taken: 'border-st-taken text-ink-taken bg-st-taken/10',
-  done: 'border-st-done text-ink-done bg-st-done/10',
+  taken: 'border-live text-live-ink bg-live-soft',
+  done: 'border-ok text-ok-ink bg-ok-soft',
   // Declined's word is the danger ink on its own soft field, which the hue itself read at 3.2:1 in dark.
-  declined: 'border-st-declined text-ink-danger bg-st-declined/10',
+  declined: 'border-fail text-fail-ink bg-fail-soft',
 };
 
 /**
@@ -219,7 +219,7 @@ export function Pill({ tone = 'neutral', title, children }: {
     <span
       title={title}
       className={cn(
-        'whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-meta',
+        'whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-caption',
         PILL_TONE[tone],
       )}
     >
@@ -232,7 +232,7 @@ export function Chip({ accent, children }: { accent?: boolean; children: ReactNo
   return (
     <span className={cn(
       'inline-block rounded-full border px-2.5 py-px text-small leading-[1.45]',
-      accent ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-raised text-ink-soft',
+      accent ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-raised text-ink-soft',
     )}
     >
       {children}

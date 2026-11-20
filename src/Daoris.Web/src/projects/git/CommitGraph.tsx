@@ -95,7 +95,7 @@ export function CommitGraph({ label, commits, tips = NO_TIPS }: {
               {/* The author is a column of its own, and gives way first,
                   by the main area's width, never the window's. */}
               <span className="hidden w-32 shrink-0 truncate text-small text-ink-soft @xl/main:inline">{commit.author}</span>
-              {at && <span className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(at)}</span>}
+              {at && <span className="shrink-0 text-caption text-ink-faint tabular-nums">{ago(at)}</span>}
             </li>
           );
         })}

@@ -74,7 +74,7 @@ export function LandedLines({ landed, page, repository, onVerify }: {
           />
         </InlineConfirm>
       )}
-      <p className="m-0 text-meta text-ink-faint">{t('workflow.start.landed.notRun')}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('workflow.start.landed.notRun')}</p>
     </div>
   );
 }

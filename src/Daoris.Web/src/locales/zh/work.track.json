@@ -1,0 +1,20 @@
+{
+  "work.track.label": "它的工作流：{{workflow}}",
+  "work.track.chip": "{{node}}：{{state}}",
+  "work.track.chipAttempt": "{{node}}，第 {{attempt}} 次尝试：{{state}}",
+  "work.track.attempt": "第 {{attempt}} 次",
+  "work.track.state.passed": "已通过",
+  "work.track.state.current": "进行中",
+  "work.track.state.next": "未开始",
+  "work.track.state.failed": "失败",
+  "work.track.waitingOn": "等待 {{role}}：{{holder}}",
+  "work.track.flowchart": "流程图",
+  "work.track.flowchartTitle": "它这次运行的流程图",
+  "work.track.rows": "它的工作流步骤",
+  "work.track.row.start": "{{node}} 已开始",
+  "work.track.row.passed": "{{node}} 已通过",
+  "work.track.row.failed": "{{node}} 失败",
+  "work.track.row.ended": "{{node}} 已结束",
+  "work.track.row.attempt": "第 {{attempt}} 次尝试",
+  "work.track.row.toDock": "去处理"
+}

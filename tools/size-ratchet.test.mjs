@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BUDGET, checkSizes, scanSizes, sizeOf } from './size-ratchet.mjs';
+import { BUDGET, checkSizes, lowered, scanSizes, settleStaged, sizeOf } from './size-ratchet.mjs';
 
 const big = 'x'.repeat(BUDGET + 10);
 
@@ -25,4 +25,21 @@ test('CODESHAPE1: a listed file may not grow, a new one may not pass the budget,
   assert.match(checkSizes({ 'b.cs': 50000 }, {})[0], /over the \d+-byte budget/);
   assert.match(checkSizes({ 'a.cs': 49000 }, { 'a.cs': 50000 })[0], /shrank/);
   assert.match(checkSizes({}, { 'a.cs': 50000 })[0], /under the budget now or gone/);
+});
+
+test('a merge lowers the list to the tree: a shrunk entry is cut, one under the budget or gone leaves, a grown or new file is left to fail', () => {
+  const list = { 'a.cs': 50000, 'b.cs': 50000, 'c.cs': 50000, 'd.cs': 50000 };
+  const found = { 'a.cs': 49000, 'b.cs': 50000, 'd.cs': 50500, 'e.cs': 60000 };
+  assert.deepEqual(lowered(list, found), { 'a.cs': 49000, 'b.cs': 50000, 'd.cs': 50000 });
+});
+
+test('a commit settles the staged files against the list: shrinks are written, growth and a new file over the budget are refused, naming the file', () => {
+  const list = { 'a.cs': 50000, 'b.cs': 50000, 'c.cs': 50000 };
+  const sizes = { 'a.cs': 49000, 'b.cs': 100, 'c.cs': null, 'd.cs': 10 };
+  assert.deepEqual(settleStaged(sizes, list, list), { list: { 'a.cs': 49000 }, problems: [] });
+  const refused = settleStaged({ 'a.cs': 50001, 'e.cs': BUDGET + 1 }, list, list);
+  assert.deepEqual(refused.list, list);
+  assert.match(refused.problems[0], /^a\.cs grew from 50000 to 50001/);
+  assert.match(refused.problems[1], /^e\.cs is \d+ bytes, over the \d+-byte budget/);
+  assert.match(settleStaged({ 'a.cs': 50200 }, { 'a.cs': 50200 }, { 'a.cs': 50000 }).problems[0], /grew from 50000 to 50200/);
 });

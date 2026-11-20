@@ -101,7 +101,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
         if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
-        if (depsDue) lines.AddRange(KeepDeps(run, met));
+        if (depsDue) lines.AddRange(KeepDeps(run, log, met));
         if (pluginOutputDue) lines.AddRange(KeepPluginOutput(tidy.PluginOutput!));
         if (Sizes is not null && (setAside || Downloaded())) lines.AddRange(await KeepLimitsAsync(service, run, log, ct).ConfigureAwait(false));
 
@@ -367,7 +367,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>The dependency store's daily eviction, holding the home's run; what went said, and <c>last.deps</c> written where one went.</summary>
-    private IReadOnlyList<string> KeepDeps(KeepingRun run, HashSet<string> met)
+    private IReadOnlyList<string> KeepDeps(KeepingRun run, MachineLog? log, HashSet<string> met)
     {
         var lines = new List<string>();
         var read = KeepingRecord.Read(home);
@@ -375,7 +375,8 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         var (removed, bytes) = Deps.Keep(home, policy);
         if (removed == 0) return lines;
         lines.Add(Look.Of(LookClass.Progress, "tidy", $"tidy  removed {removed} dependency store entr{(removed == 1 ? "y" : "ies")} not placed in {(int)policy.DepsDays.TotalDays} days or over its limit ({Size(bytes)})."));
-        if (KeepingRecord.WriteLast(home, read, KeepKinds.Deps.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
+        log?.Info("deps.evicted", ("entries", removed), ("freed", bytes));
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.Deps.Id,new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
         {
             lock (_gate)
             {

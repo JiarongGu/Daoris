@@ -71,17 +71,17 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
               {question.quest ? (
                 <button
                   type="button"
-                  className="cursor-pointer border-0 bg-transparent p-0 text-left text-body text-accent underline-offset-2 hover:underline"
+                  className="cursor-pointer border-0 bg-transparent p-0 text-left text-body text-accent-ink underline-offset-2 hover:underline"
                   onClick={() => onOpenQuest(question.id)}
                 >
-                  <span className="font-mono text-meta">#{question.id}</span> {question.quest.title}
+                  <span className="font-mono text-caption">#{question.id}</span> {question.quest.title}
                 </button>
               ) : (
-                <span className="font-mono text-meta">#{question.id}</span>
+                <span className="font-mono text-caption">#{question.id}</span>
               )}
               {question.quest && (
                 <>
-                  <span className="text-meta text-ink-faint">→ {question.quest.to}</span>
+                  <span className="text-caption text-ink-faint">→ {question.quest.to}</span>
                   <Pill tone={QUEST_TONE[question.quest.status]}>{t(`status.${question.quest.status}`)}</Pill>
                 </>
               )}
@@ -177,7 +177,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
              of one, in the same words; a stop offered wears the danger ink, and its press is What needs you's. */
           <Fact name={t('work.milestone.closed.label')}>
             {ends.flatMap((end, index) => endSentences(t, end).map((said, part) => (
-              <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'block text-ink-danger' : 'block'}>{said}</span>
+              <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'block text-fail-ink' : 'block'}>{said}</span>
             )))}
           </Fact>
         )}

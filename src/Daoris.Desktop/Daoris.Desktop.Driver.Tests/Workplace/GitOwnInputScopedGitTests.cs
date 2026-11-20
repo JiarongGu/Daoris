@@ -6,6 +6,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A repository's URL-scoped header, cookie file or certificate wins by git's urlmatch over Daoris's empty reset of the unscoped
 /// key, so it is found the way git finds it, with a real git and a repository-local setting.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class GitOwnInputScopedGitTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-own-scoped-" + Guid.NewGuid().ToString("N")[..8]);

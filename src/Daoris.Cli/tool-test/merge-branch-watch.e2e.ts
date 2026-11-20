@@ -39,7 +39,7 @@ test('the gates beside get their own build servers: none reused, none borrowed, 
   assert.deepEqual({ ...tool.BESIDE_ENVIRONMENT }, { MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
   const env: Record<string, string | undefined> = { KEEP: 'x' };
   tool.startBesideRun({ setPriority: () => {}, env, say: () => {} });
-  assert.deepEqual(env, { KEEP: 'x', MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
+  assert.deepEqual(env, { KEEP: 'x', DAORIS_ADMISSION_BACKGROUND: '1', MSBUILDDISABLENODEREUSE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', UseSharedCompilation: 'false' });
 });
 
 

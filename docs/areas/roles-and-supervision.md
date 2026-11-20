@@ -444,6 +444,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §5, §6, §13.4): the agents' attention kinds go to the appointed
+  supervisor and only the owner's kinds wait on the owner (D336, UISH6, UISE9), and every owner act is defined once and can be
+  given to an appointed role, but *Confirm it was you* (D340, UISH24, UIRP17, UIRP29). Today the rules below stand.
 - **THROUGH1** (D277): Ask Daoris carries the person's words on an ask (`--require`, `--through`), never pressing a run's step.
 - **CONVO1b** (D280): Ask Daoris's reach set by its access mode alone, the card's *Always* the grant of a named family shown before
   the yes, five fences in both modes each held by its owner on each path and said where only the room and the second check hold

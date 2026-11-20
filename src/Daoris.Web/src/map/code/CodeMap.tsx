@@ -57,7 +57,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
             key={line.id}
             {...context.line(line.id)}
             aria-label={lineName(line)}
-            className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
+            className={cn('cursor-pointer outline-none transition-opacity duration-(--duration-quick) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
             style={{ pointerEvents: 'auto' }}
           >
             <path d={line.d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
@@ -70,7 +70,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
             {line.aggregated && counted(line) && (
               <>
                 <circle cx={line.mid.x} cy={line.mid.y} r={13} className={cn('fill-page stroke-[1.5]', lit ? 'stroke-accent' : 'stroke-line-strong')} />
-                <text x={line.mid.x} y={line.mid.y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
+                <text x={line.mid.x} y={line.mid.y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-caption tabular-nums">
                   {t('code.times', { count: line.count })}
                 </text>
               </>
@@ -79,7 +79,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
             {!line.aggregated && !dotted && lit && line.kinds[0] && (
               <text
                 x={line.mid.x + 6} y={line.mid.y} dominantBaseline="central"
-                className="fill-ink-soft text-meta" style={{ paintOrder: 'stroke', stroke: 'var(--color-page)', strokeWidth: 3 }}
+                className="fill-ink-soft text-caption" style={{ paintOrder: 'stroke', stroke: 'var(--color-page)', strokeWidth: 3 }}
               >
                 {line.kinds[0]}
               </text>
@@ -266,7 +266,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
           <button
             type="button" data-code-fold={group.id} aria-label={t('code.foldFolder', { name: nameOf(group.id) })}
             onClick={() => foldAt(group.id)}
-            className="shrink-0 rounded-control px-1.5 text-meta text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            className="shrink-0 rounded-control px-1.5 text-caption text-ink-soft hover:bg-raised hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           >
             {t('code.fold')}
           </button>
@@ -298,7 +298,7 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
     return (
       <div className="grid gap-2">
         <p className="m-0 text-body text-ink-soft">{t('code.detail.hint')}</p>
-        <p className="m-0 text-meta text-ink-faint">
+        <p className="m-0 text-caption text-ink-faint">
           {fed
             ? t('code.fed', {
               file, commit: fed.shortCommit, branch: fed.branch, when: ago(fed.committedAt),
@@ -321,11 +321,11 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
             <button
               type="button"
               onClick={() => onSelect(edge[end])}
-              className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+              className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
             >
               {edge[end]}
             </button>
-            {edge.kind && <span className="shrink-0 text-meta text-ink-faint">{edge.kind}</span>}
+            {edge.kind && <span className="shrink-0 text-caption text-ink-faint">{edge.kind}</span>}
           </li>
         ))}
       </ul>
@@ -335,15 +335,15 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
     <div className="grid gap-3">
       <header className="grid gap-1">
         <span className="font-mono text-body font-semibold text-ink wrap-anywhere">{module.id}</span>
-        <PathText path={module.path} className="text-meta text-ink-faint" />
+        <PathText path={module.path} className="text-caption text-ink-faint" />
       </header>
       {module.summary && <p className="m-0 text-small text-ink-soft">{module.summary}</p>}
       <section>
-        <p className="m-0 mb-1 text-meta text-ink-faint">{t('code.detail.dependsOn')}</p>
+        <p className="m-0 mb-1 text-caption text-ink-faint">{t('code.detail.dependsOn')}</p>
         {list(out, 'to')}
       </section>
       <section>
-        <p className="m-0 mb-1 text-meta text-ink-faint">{t('code.detail.usedBy')}</p>
+        <p className="m-0 mb-1 text-caption text-ink-faint">{t('code.detail.usedBy')}</p>
         {list(into, 'from')}
       </section>
     </div>

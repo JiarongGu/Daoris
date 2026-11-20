@@ -134,12 +134,12 @@ export function RoleEditor({
       {now.hold && ordered(now.hold) && <p className="m-0 text-small text-ink-soft">{t('agents.setup.roles.hold.agentChoices')}</p>}
       {walks && <FormGrid columns={columns} floor="40rem">
         <FormRow head>
-          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.agent')}</span>
-          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.model')}</span>
-          <span className="text-meta text-ink-faint">{t('settings.ai.role.field.effort')}</span>
-          {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.weight')}</span>}
-          {policy && rule === 'weight' && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.aim')}</span>}
-          {policy && <span className="text-meta text-ink-faint">{t('settings.ai.policy.field.limits')}</span>}
+          <span className="text-caption text-ink-faint">{t('settings.ai.role.field.agent')}</span>
+          <span className="text-caption text-ink-faint">{t('settings.ai.role.field.model')}</span>
+          <span className="text-caption text-ink-faint">{t('settings.ai.role.field.effort')}</span>
+          {policy && rule === 'weight' && <span className="text-caption text-ink-faint">{t('settings.ai.policy.field.weight')}</span>}
+          {policy && rule === 'weight' && <span className="text-caption text-ink-faint">{t('settings.ai.policy.field.aim')}</span>}
+          {policy && <span className="text-caption text-ink-faint">{t('settings.ai.policy.field.limits')}</span>}
           <span />
         </FormRow>
         {now.drafts.map((draft, index) => {
@@ -231,7 +231,7 @@ export function RoleEditor({
           {next.by === 'first' ? t('settings.ai.policy.nextPlain', { choice: next.choice }) : t('settings.ai.policy.next', { choice: next.choice, said: next.said })}
         </p>
       )}
-      {policy && <p className="m-0 text-meta text-ink-faint">{t('settings.ai.policy.older')}</p>}
+      {policy && <p className="m-0 text-caption text-ink-faint">{t('settings.ai.policy.older')}</p>}
       <details open={now.isNew} className="grid gap-2">
         <summary className="cursor-pointer text-small font-medium text-ink-soft">{t('settings.ai.roles.editRole')}</summary>
         <p className="m-0 mb-2 text-small text-ink-soft">{placed}</p>
