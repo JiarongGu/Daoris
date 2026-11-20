@@ -124,7 +124,8 @@ It runs within its bound, 25 minutes unless `--bound <minutes>` says otherwise: 
 admission says so as it starts to wait, with who holds the places, and again each minute; the preflight says each minute what
 runs and what waits; at the bound it ends what it started, starts nothing more, and says which gates passed, which failed, which
 it stopped and which never started, and why. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test or first
-error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in the
+error, its file and line, the first error lines, and whether main fails it too (a log's failing test is its first `not ok` or `✖` line, and its
+error never a pass line, a count of none or a warning; a log with none says the run ended without a failing test, with its exit), from that selection run on main's tip in the
 worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
@@ -659,7 +660,8 @@ watch say what is overdue. `MERGE_BRANCH_CI_NIGHT_HOUR` sets the hour, and `off`
 
 Each failure a run finds is filed as **known red** in `local/ci-findings.json`. A Process half's failure is filed by test,
 from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
-message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
+message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step: its first `not ok` or `✖` line, else its first error line (a build's the set of its compiler
+errors), else that the run ended without a failing test, with its exit. A failure
 whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
 it, but only on a commit on main's first-parent line from where it was last seen failing. A pass the run kept instead of
 running clears it under the same rules: the kept verdict stands exactly on the run's tree, passed, and is of the same gate; a
