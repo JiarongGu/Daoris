@@ -87,7 +87,7 @@ internal sealed class AccountIdNativeHostStore : IAccountIdStore
     {
         try
         {
-            return JsonNode.Parse(File.ReadAllText(manifest)) as JsonObject;
+            return JsonNode.Parse(AtomicFile.ReadText(manifest)) as JsonObject;
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
