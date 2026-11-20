@@ -44,8 +44,11 @@ export function layersCounts(root) {
 export function layersShrink(root) {
   const file = join(root, LIST_FILE);
   if (!existsSync(file)) return [];
-  const names = (args) => (gitOrNull(root, ['--no-optional-locks', ...args]) ?? '').split(String.fromCharCode(0)).filter(Boolean);
-  const apart = [...names(['diff', '--name-only', '-z', '--no-renames']), ...names(['ls-files', '-z', '--others', '--exclude-standard'])];
+  const names = (out) => (out ?? '').split(String.fromCharCode(0)).filter(Boolean);
+  const apart = [
+    ...names(gitOrNull(root, ['--no-optional-locks', 'diff', '--name-only', '-z', '--no-renames'])),
+    ...names(gitOrNull(root, ['--no-optional-locks', 'ls-files', '-z', '--others', '--exclude-standard'])),
+  ];
   if (apart.some((path) => CODE.test(path) || path === LIST_FILE.split(String.fromCharCode(92)).join('/') || path.endsWith('daoris.lanes.json'))) return [];
   return shrinkFile(file, treeAt(root), EMPTY);
 }
