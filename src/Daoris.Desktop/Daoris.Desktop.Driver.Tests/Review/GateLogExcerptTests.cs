@@ -9,11 +9,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class GateLogExcerptTests
 {
-    private const string Path = "data/workflows/lines/q/attempts/i-1/gate-01-cli.log";
+    private static readonly string Home = System.IO.Path.Combine(TestHomes.Root, "gate-log-excerpt");
 
-    private static readonly string Home = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "excerpt-home");
+    private static readonly string Log = System.IO.Path.Combine(VerifyFiles.AttemptFolder(Home, "q", "i-1"), "gate-01-cli.log");
 
-    private static readonly string Log = System.IO.Path.Combine(Home, "data", "workflows", "lines", "q", "attempts", "i-1", "gate-01-cli.log");
+    private static readonly string Path = System.IO.Path.GetRelativePath(Home, Log).Replace('\\', '/');
 
     // Assembled at run time: the sensitive gate scans this file, and a literal token shape in it would be refused as one.
     private static string Token() => string.Concat("ghp", "_", new string('a', 30), "0123");
@@ -49,7 +49,7 @@ public sealed class GateLogExcerptTests
     public void The_logs_path_is_said_relative_to_the_home_and_a_path_outside_it_by_its_file_name()
     {
         var inside = GateLogExcerpt.Told("a line", Log, Home)!;
-        var outside = GateLogExcerpt.Told("a line", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "elsewhere", "gate-01-cli.log"), Home)!;
+        var outside = GateLogExcerpt.Told("a line", System.IO.Path.Combine(TestHomes.Root, "elsewhere", "gate-01-cli.log"), Home)!;
 
         Assert.StartsWith($"its log, {Path}, says:", inside);
         Assert.DoesNotContain(Home, inside);
