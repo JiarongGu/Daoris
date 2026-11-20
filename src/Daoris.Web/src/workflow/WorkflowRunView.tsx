@@ -279,7 +279,7 @@ function DoorPress({ door }: { door: Door }) {
     return (
       <ExternalLink href={door.href} className="inline-flex items-center gap-1 px-1.5 text-small text-accent-ink">
         {t('workflow.run.door.pullRequest')}
-        <Icon name="external" size={12} />
+        <Icon name="external" size={12} className="text-ink-soft" />
       </ExternalLink>
     );
   }

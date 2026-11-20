@@ -180,7 +180,7 @@ function Link({ url, acts, hint = true }: { url: string; acts: SignInActs; hint?
         system
         className="inline-flex max-w-full items-center gap-1 truncate font-mono text-small text-accent-ink underline-offset-2 hover:underline"
       >
-        <Icon name="external" size={12} />
+        <Icon name="external" size={12} className="text-ink-soft" />
         <span className="truncate">{url}</span>
       </ExternalLink>
       <Button variant="ghost" onClick={() => acts.onCopy('link', url)}>
