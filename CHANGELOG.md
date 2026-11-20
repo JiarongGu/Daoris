@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Every published build carries its own version: each publish (or stage) takes the next one above anything its install has carried, staged, tried or run (0.0.2, 0.0.3, …), where every build said 0.0.1. The window's System page, the machine log, `daoris --version` and the staged build's manifest name it, and `daoris update` says the installed build's version and commit before what is staged.
+
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood
   at, what that policy would have said beside what happened. The policy decides nothing yet: it is recorded beside today's holds so

@@ -56,6 +56,32 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.Contains("when idle", said);
     }
 
+    /// <summary>The status says the installed build's version, which each publish takes anew.</summary>
+    [Theory]
+    [InlineData("0.0.7+1930be1", "update: Daoris 0.0.7 (1930be1) is the installed build.")]
+    [InlineData("0.0.7", "update: Daoris 0.0.7 is the installed build.")]
+    [InlineData("0.0.1+dev", "update: Daoris 0.0.1 is the installed build, a development build.")]
+    [InlineData(null, "update: the installed build does not say its version.")]
+    public void The_installed_build_is_said_by_its_version_and_commit(string? running, string said)
+    {
+        Assert.Equal(said, UpdateCommand.Installed(running));
+    }
+
+    [Fact]
+    public void The_status_says_the_installed_build_before_what_is_staged_or_that_nothing_is()
+    {
+        var installed = UpdateCommand.Installed(UpdateRefusal.Running);
+
+        var (_, nothing) = Run();
+        Assert.StartsWith(installed, nothing);
+        Assert.Contains("nothing is staged", nothing);
+
+        Stage("b1", "0.0.9");
+        var (_, staged) = Run();
+        Assert.StartsWith(installed, staged);
+        Assert.Contains("Daoris 0.0.9 (abc1234) is staged", staged);
+    }
+
     [Theory]
     [InlineData("--when-idle", "when-idle")]
     [InlineData("--now", "now")]

@@ -119,8 +119,23 @@ public static class UpdateCommand
         return 0;
     }
 
+    /// <summary>The installed build in a sentence: its version and commit, or that it is a development build.</summary>
+    public static string Installed(string? running)
+    {
+        if (HomeLastBuild.Numbered(running) is not { } version) return "update: the installed build does not say its version.";
+        var plus = running!.IndexOf('+', StringComparison.Ordinal);
+        var commit = plus < 0 ? null : running[(plus + 1)..];
+        return commit switch
+        {
+            null or "" => $"update: Daoris {version} is the installed build.",
+            "dev" => $"update: Daoris {version} is the installed build, a development build.",
+            _ => $"update: Daoris {version} ({commit}) is the installed build.",
+        };
+    }
+
     private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
     {
+        output.AppendLine(Installed(UpdateRefusal.Running));
         if (!StagedBuild.IsStaged(install))
         {
             output.AppendLine($"update: nothing is staged beside {install}.");
