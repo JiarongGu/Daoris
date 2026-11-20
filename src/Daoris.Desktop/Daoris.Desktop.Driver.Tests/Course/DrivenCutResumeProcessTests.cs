@@ -52,6 +52,49 @@ public sealed class DrivenCutResumeProcessTests : IAsyncLifetime
         Assert.Equal(1, (await new ServiceClient(_h.Service.Url, null).StrikesAsync())["q1"]);
     }
 
+    /// <summary>The driver host ended outright mid-turn leaves a record working with nothing running it: the next start's sweep ends it, and it is carried on.</summary>
+    [Fact]
+    public async Task A_host_killed_mid_turn_is_carried_on_at_the_next_start_with_Daoris_s_restart_word()
+    {
+        await KillHostAsync();
+        Assert.Equal("working", _h.Service.State("s1"));
+
+        _h.ComeUp(markers: true);
+        await _h.SettleAsync(ready: () => _h.Service.Status("q1") == "Done");
+        await _h.StopAsync();
+
+        Assert.True((_h.Service.SessionCount, _h.Service.State("s1")) == (1, "completed"), _h.Seen());
+        Assert.Equal("conv-s1", Assert.Single(_h.Heard(), line => line["method"]!.GetValue<string>() == "session/resume")["conversation"]!.GetValue<string>());
+        Assert.Equal(1, _h.Carried("s1", ShellClose.Words));
+        var (_, key) = Assert.Single(_h.Service.DaorisSaid);
+        Assert.StartsWith("restart/s1/", key);
+        var turns = JsonNode.Parse(_h.Service.Record("s1"))!["turns"]!.AsArray();
+        Assert.Equal(("stopped", true), (turns[0]!["end"]!["state"]!.GetValue<string>(), turns[0]!["end"]!["interrupted"]!.GetValue<bool>()));
+    }
+
+    /// <summary>The first run in a process of its own, <c>daoris-driver drive --once</c>, ended outright mid-turn with its agent: no stop, no close.</summary>
+    private async Task KillHostAsync()
+    {
+        _h.SaveConfig();
+        var info = new System.Diagnostics.ProcessStartInfo("dotnet") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = _h.Home };
+        info.ArgumentList.Add(HostBuild.Dll());
+        info.ArgumentList.Add("drive");
+        info.ArgumentList.Add("--once");
+        foreach (var name in info.Environment.Keys.Where(key => key.StartsWith("DAORIS_", StringComparison.OrdinalIgnoreCase)).ToList()) info.Environment.Remove(name);
+        info.Environment[DaorisHome.Variable] = _h.Home;
+        info.Environment[ServiceClient.UrlVariable] = _h.Service.Url;
+        using var host = System.Diagnostics.Process.Start(info)!;
+        try
+        {
+            await Poll.Until(() => _h.Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt") && _h.Service.Status("q1") == "Taken", _h.Seen);
+        }
+        finally
+        {
+            host.Kill(entireProcessTree: true);
+            await host.WaitForExitAsync();
+        }
+    }
+
     /// <summary>The person's stop of a record nothing runs is never carried on, though the sweep's end of the same record is.</summary>
     [Fact]
     public async Task A_stop_the_person_asked_is_never_carried_on_where_a_cut_the_system_made_is()

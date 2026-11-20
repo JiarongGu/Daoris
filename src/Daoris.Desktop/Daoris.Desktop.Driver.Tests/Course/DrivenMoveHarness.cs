@@ -157,6 +157,8 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         Assert.True(Service.State("s1") == "stopped", Service.Record("s1"));
     }
 
+    public void SaveConfig() => Config().Save(ConfigPath);
+
     /// <summary>
     /// The carry-on of <c>s1</c>, run by a loop of run <see cref="Killed"/> stopped for good at <paramref name="cut"/>; none runs the look to its
     /// end. Returns once the boundary is reached.
@@ -296,13 +298,13 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// The real watch's first look and the looks after it, over the one home: the sweep of the dead loop's records, the take-up of its move, the
     /// look's starts. It runs until <see cref="StopAsync"/>.
     /// </summary>
-    public void ComeUp()
+    public void ComeUp(bool markers = false)
     {
         Config().Save(ConfigPath);
         var adapters = ProviderRegistry.Built();
         _closing = new CancellationTokenSource();
         var watch = new DriverWatch(
-            new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(), sync: null,
+            new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(markers ? DaorisHome.Entry(Home, HomeEntry.Sessions) : null), sync: null,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
         _watch = watch;
         var closing = _closing.Token;
