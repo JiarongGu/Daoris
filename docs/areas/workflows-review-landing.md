@@ -416,13 +416,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once, as its next
     turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
     `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
-    `OpinionStepWaits`), never *working*. A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
+    `OpinionStepWaits`), never *working*. Answers the session gives after its answers were read (a turn a restart cut off is read as it
+    ends, before it answered, and the line goes on and answers) are read again before any recheck is asked, once the answering turn
+    has ended (a chat run's read by its turn state, as its hand is), the gate standing with the session until then; an answer counts as
+    new where its word differs, or a fix's commit does, as the reading keeps them, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under
+    `commits-since`, each with its count, held by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
-    recheck goes the same way: its first reviewer held by a cool-off, the rule's next ready holder reads it, and one a cap ended is gated
+    recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the
+    rule's next ready holder reads it, another maker's first, its `opinion.asked` line naming the reviewer and label that took it; and one a cap ended is gated
     cooling and asked again by the next look's delivery. Under a saved graph the
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the

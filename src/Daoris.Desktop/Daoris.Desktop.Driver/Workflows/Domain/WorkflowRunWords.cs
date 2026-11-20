@@ -257,7 +257,7 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
-                NodeKinds.Opinion when step.Wait is { Code: OpinionStepWaits.Answer } answer => OpinionStepWaits.Said(answer),
+                NodeKinds.Opinion when step.Wait is { } answer && OpinionStepWaits.Codes.Contains(answer.Code) => OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."

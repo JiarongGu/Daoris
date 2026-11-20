@@ -38,6 +38,14 @@ public sealed record OpinionReading(string Session, string? Tip, DateTimeOffset 
     /// <summary>Whether any finding counts as fixed: what a recheck reads.</summary>
     public bool AnyFixed => Findings.Any(finding => finding.Counts == OpinionViews.Fixed);
 
+    /// <summary>Whether the host holds an answer this read with none, or with another word or commit: a turn a restart cut off is read
+    /// before it answers, and the line that goes on answers after it.</summary>
+    public bool Behind(OpinionView opinion) => (opinion.Findings ?? []).Any(finding =>
+        opinion.AnswerTo(finding.Number) is { } answer
+        && Findings.FirstOrDefault(row => row.Finding == finding.Number) is var row
+        && (row is null || row.Said != answer.Said
+            || (answer.Said == OpinionViews.Fixed && !string.Equals(row.Commit, answer.Commit, StringComparison.OrdinalIgnoreCase))));
+
     /// <summary>
     /// <c>person-steered</c>: a chat's answering turn took a word of the
     /// person's at a step, so their work lies inside the boundary this reading froze. No recheck is asked for it; its answers go to the person.
