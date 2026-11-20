@@ -236,7 +236,7 @@
   "workflow.start.landed.title": "Landed work",
   "workflow.start.landed.accepted": "Its gates run unasked as you accepted them, from {{branch}}.",
   "workflow.start.landed.acceptedNone": "{{branch}} holds no `daoris.gates.json`: its checks find no declaration until one lands and you accept it.",
-  "workflow.start.landed.changed": "The gates changed since you accepted them: nothing runs until you accept them again, under Gates on its Setup page.",
+  "workflow.start.landed.changed": "The gates' commands changed since you accepted them: work is checked under the ones you accepted, and their new commands run once you accept them, under Gates on its Setup page.",
   "workflow.start.landed.unaccepted": "Its gates are not accepted yet: nothing runs until you accept them, under Gates on its Setup page.",
   "workflow.start.landed.unread": "Where its gates stand could not be read here.",
   "workflow.start.landed.perRepository": "Its gates are accepted repository by repository, under Gates on each repository's Setup page.",
