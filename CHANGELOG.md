@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A second opinion no longer stalls at its landing after a restart. Findings a restart cut off before the working session answered
+  them are read again once it answers, so a fix it commits gets its one recheck; a recheck whose first reviewer cannot run goes to
+  the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no
+  other agent read) says so on its step, with the count, instead of reading as working.
+
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood
   at, what that policy would have said beside what happened. The policy decides nothing yet: it is recorded beside today's holds so

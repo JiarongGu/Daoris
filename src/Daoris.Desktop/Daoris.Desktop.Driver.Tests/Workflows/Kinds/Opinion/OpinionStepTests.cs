@@ -71,6 +71,28 @@ public sealed class OpinionStepTests
         Assert.Null(reading.Steps.Single(each => each.Step.Id == "opinion").Wait);
     }
 
+    /// <summary>🔴 A gate holding the work for the person (a dispute, commits nobody read) is their wait with its count, said in the
+    /// run's view and the terminal's words, never a silent <i>working</i>.</summary>
+    [Theory]
+    [InlineData(OpinionGateStates.Disputed, OpinionStepWaits.Disputed, "Waits on your answer to 2 disputed findings of the second opinion")]
+    [InlineData(OpinionGateStates.CommitsSince, OpinionStepWaits.CommitsSince, "Waits on your answer to 2 commits no other agent read")]
+    public void An_opinion_whose_gate_holds_for_your_answer_says_so_and_never_working(string state, string code, string said)
+    {
+        var gate = new OpinionGateState(state, "engine")
+        {
+            Session = "s1", Tip = Tip, Disputes = new OpinionDisputes([1], [2]), Since = 2,
+        };
+
+        var run = Derive(Opinion(NodeStates.Active, state), gate);
+
+        var step = run.Steps.Single(each => each.Step.Id == "opinion");
+        Assert.Equal(WorkflowRunStates.Waiting, step.State);
+        Assert.Equal((code, "2", "s1"), (step.Wait?.Code, step.Wait?.Values.GetValueOrDefault("count"), step.Wait?.Values.GetValueOrDefault("session")));
+        Assert.Equal(StepHolders.Person, step.Holder?.Kind);
+        Assert.Contains(said, WorkflowRunWords.Say([run], null));
+        Assert.Contains(code, NodeKit.Of(NodeKinds.Opinion) is BuiltInNode built ? built.Waits : []);
+    }
+
     /// <summary>
     /// 🔴 A pass whose reviewer's session ended without giving an opinion, or whose minutes ran out first, fails the step with that said, its
     /// code kept; a gate with nobody free to read it is no failed pass and stands as before.

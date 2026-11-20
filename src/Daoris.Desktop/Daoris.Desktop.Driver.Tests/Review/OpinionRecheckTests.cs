@@ -276,6 +276,67 @@ public sealed class OpinionRecheckTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 A restart cuts off the turn that took the findings, so its answers are read as it ends with none given, and no recheck is
+    /// due. The line goes on and answers: the fix committed, the finding answered fixed. The next delivery reads the
+    /// answers again, the fix counts, and the one recheck is asked; read and asked once, a later look asks nothing more.
+    /// </summary>
+    [Fact]
+    public async Task Answers_given_after_a_cut_off_turn_was_read_are_read_again_and_the_recheck_asked()
+    {
+        var (host, git, tip, fix, head) = Answered("must");
+        var driver = Driver(host, git);
+        await driver.DeliverAsync("op1", AskedAt(tip));
+        host.Take("s1");
+        var cut = await driver.DeliverAsync("op1", AskedAt(tip));
+        Assert.Equal(OpinionRechecks.NoFix, new OpinionDeliveries(_home).Read("op1").RecheckWhy);
+        Assert.Equal([1], cut.Disputes!.First);
+
+        host.Answer("op1", 1, "fixed", commit: fix);
+        var delivered = await driver.DeliverAsync("op1", AskedAt(tip));
+        await driver.DeliverAsync("op1", AskedAt(tip));
+
+        var (ask, choice) = Assert.Single(_passes);
+        Assert.Equal((tip, head, "codex-acp"), (ask.Base, ask.Tip, choice.Reviewer));
+        Assert.Equal((OpinionViews.Fixed, fix), (delivered.Reading!.Findings[0].Counts, delivered.Reading.Findings[0].Fix));
+        var kept = new OpinionDeliveries(_home).Read("op1");
+        Assert.Equal(("op2", (string?)null), (kept.Recheck, kept.RecheckWhy));
+        Assert.Empty(delivered.Disputes!.First);
+    }
+
+    /// <summary>
+    /// 🔴 The first reviewer cannot read the recheck (here it is not installed, so no cool-off holds it): the rule's next
+    /// ready holder reads it, chosen by its own label: another maker's where one is ready, else, as here, the same agent fresh.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_its_first_reviewer_cannot_read_goes_to_the_rules_next_ready_holder_saying_which()
+    {
+        var (host, git, tip, fix, _) = Answered("must");
+        var client = host.Client();
+        var (adapters, roster) = Machine("codex-acp");
+        var driver = new Daoris.Driver.Driver(client, DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
+        {
+            OpinionGit = git.Read,
+            Passes = (ask, choice, _) =>
+            {
+                _passes.Add((ask, choice));
+                if (!choice.Chosen) return Task.FromResult(OpinionPassRun.Unavailable(choice));
+                host.Opinion("op2", "s1", weights: [], pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base, adapter: choice.Reviewer!);
+                return Task.FromResult(new OpinionPassRun("completed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "completed" });
+            },
+        };
+        var rule = AskedAt(tip) with { Rule = Rule with { Reviewers = ["codex-acp", "claude-code-acp"] } };
+        await driver.DeliverAsync("op1", rule);
+        host.Take("s1");
+        host.Answer("op1", 1, "fixed", commit: fix);
+
+        await driver.DeliverAsync("op1", rule);
+
+        var (_, choice) = Assert.Single(_passes);
+        Assert.Equal((true, "claude-code-acp", ReviewerLabels.SameAgent), (choice.Chosen, choice.Reviewer, choice.Label));
+        Assert.Equal("op2", new OpinionDeliveries(_home).Read("op1").Recheck);
+    }
+
+    /// <summary>
     /// A recheck its reviewer's account cap ended read nothing: the next look asks it again of the rule's next holder that is ready,
     /// said once (<c>opinion.handed-on</c>), the limited one kept as a failed record; asked, no later look asks another.
     /// </summary>

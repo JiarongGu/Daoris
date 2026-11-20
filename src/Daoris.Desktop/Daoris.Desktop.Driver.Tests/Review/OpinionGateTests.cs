@@ -344,6 +344,25 @@ public sealed class OpinionGateTests
         Assert.Equal(ContinueWhy.StoodDown, gate.ToPerson);
     }
 
+    /// <summary>🔴 Answers given after a cut-off turn's reading put the gate back with the session; the same answers keep the dispute.</summary>
+    [Fact]
+    public async Task Answers_given_after_the_reading_put_the_gate_back_with_the_working_session()
+    {
+        var world = new World();
+        world.Opinions["o1"] = Opinion(weights: [OpinionViews.Must]) with { Answers = [new OpinionAnswerView(1, OpinionViews.Fixed) { Commit = "2222222" }] };
+        var unanswered = new OpinionReading("s1", Read, Answered,
+            [new OpinionAnswerRead(1, OpinionViews.Must, OpinionViews.Unresolved) { Why = OpinionAnswerWhy.NotAnswered }]);
+        world.Delivered["o1"] = new OpinionDelivered(null, null, unanswered) { RecheckWhy = OpinionRechecks.NoFix };
+
+        var behind = await JudgeAsync(Facts(Rule(), Fixed) with { Asks = [AskOf("o1")] }, world);
+
+        Assert.Equal((OpinionGateStates.WithSession, false), (behind.State, behind.LetsGo));
+
+        world.Opinions["o1"] = world.Opinions["o1"] with { Answers = [new OpinionAnswerView(1, OpinionViews.Rejected)] };
+        world.Delivered["o1"] = new OpinionDelivered(null, null, Answers(Read, (OpinionViews.Must, OpinionViews.Rejected))) { RecheckWhy = OpinionRechecks.NoFix };
+        Assert.Equal(OpinionGateStates.Disputed, (await JudgeAsync(Facts(Rule()) with { Asks = [AskOf("o1")] }, world)).State);
+    }
+
     [Fact]
     public async Task Commits_after_what_was_read_hold_once_the_cap_is_spent_and_a_dispute_says_them_too()
     {
