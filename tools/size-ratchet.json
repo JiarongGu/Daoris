@@ -102,7 +102,7 @@
   "src/Daoris.Web/src/work/noteLines.test.ts": 105583,
   "src/Daoris.Web/src/work/rail/SessionRail.test.tsx": 56950,
   "src/Daoris.Web/src/work/rail/SessionRow.test.tsx": 47165,
-  "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54619,
+  "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54537,
   "tools/deployment-rehearsal.mjs": 106226,
   "tools/family-rehearsal.mjs": 368023,
   "tools/merge-branch.mjs": 391881,

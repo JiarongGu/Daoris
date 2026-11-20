@@ -8,15 +8,20 @@ namespace Daoris.Driver;
 /// <param name="Text">The accepted declaration's text; null where the accepted blob is <c>none</c> (the line held none).</param>
 internal sealed record CheckDeclaration(string? Text, string? Held = null, string? Work = null, string? Problem = null)
 {
+    /// <summary>What a held check's person can do, said at the end of each hold.</summary>
+    private const string Doors = "once the change lands, accept it on its repository's Setup page and the check runs again by itself, or answer the held check with It happened";
+
     /// <summary>
     /// The declaration a check of <paramref name="commit"/> in <paramref name="checkout"/> runs under, <paramref name="accepted"/> being the
-    /// blob the person accepted. The work's declaration is read at its commit and where it left its line (the merge base with the line's
-    /// tip here): the check runs under the accepted one where the work's runs nothing the accepted does not, or where the work's own change
-    /// (its declaration against the one it left) alters no command (<see cref="DeclarationCommands.Keeps"/>), so a branch that predates a
-    /// declaration change on the line, or merged it since, is checked as accepted. Only a work whose own change alters a command holds,
-    /// since a work never runs a command the person did not accept; a line git cannot name, or no merge base, counts as its own change.
+    /// blob the person accepted. The work's declaration is read at its commit and where it left its line (the merge base with the local
+    /// branch of the line <paramref name="lineOf"/> names, the line the acceptance look reads): the check runs under the accepted one where the work's
+    /// runs nothing the accepted does not, or where the work's own change (its declaration against the one it left) alters no command
+    /// (<see cref="DeclarationCommands.Keeps"/>), so a branch that predates a declaration change on the line, or merged it since, is checked
+    /// as accepted. Only a work whose own change alters a command holds: Daoris starts only the commands the person accepted (they run the
+    /// work's own code). A line git cannot name, or no merge base, counts as its own change and is said apart.
     /// </summary>
-    internal static async Task<CheckDeclaration> OfAsync(string checkout, string commit, string accepted, CancellationToken ct)
+    internal static async Task<CheckDeclaration> OfAsync(
+        string checkout, string commit, string accepted, Func<CancellationToken, Task<string?>> lineOf, CancellationToken ct)
     {
         if (await IntegrationAcceptance.BlobAtAsync(checkout, commit, ct).ConfigureAwait(false) is not { } work)
         {
@@ -33,22 +38,52 @@ internal sealed record CheckDeclaration(string? Text, string? Held = null, strin
         var mine = await IntegrationAcceptance.TextAsync(checkout, work, ct).ConfigureAwait(false);
         if (DeclarationCommands.Keeps(text, mine)) return new(text);
 
-        var left = await LeftAsync(checkout, commit, ct).ConfigureAwait(false);
+        // The line is asked only here, where the work's own change is what decides.
+        var line = await lineOf(ct).ConfigureAwait(false);
+        var left = line is null ? null : await LeftAsync(checkout, line, commit, ct).ConfigureAwait(false);
         var before = left is null ? null : await IntegrationAcceptance.BlobAtAsync(checkout, left, ct).ConfigureAwait(false);
-        var was = before is null ? null : await IntegrationAcceptance.TextAsync(checkout, before, ct).ConfigureAwait(false);
-        if (before is not null && (before == work || DeclarationCommands.Keeps(was, mine))) return new(text);
+        if (before is null)
+        {
+            return new(text, Work: work, Held:
+                $"Daoris could not tell where this work left its line ({(line is null ? "no line is set and git names none" : $"`{line}` and it share no commit here")}), "
+                + $"so its change to daoris.gates.json cannot be told from the line's, and Daoris starts only the commands you accepted: {Doors}");
+        }
 
-        var said = before is null ? "" : DeclarationChange.Between(was, mine).Said();
+        var was = await IntegrationAcceptance.TextAsync(checkout, before, ct).ConfigureAwait(false);
+        if (before == work || DeclarationCommands.Keeps(was, mine)) return new(text);
+
+        var said = DeclarationChange.Between(was, mine).Said();
         return new(text, Work: work, Held:
             $"this work's own change to daoris.gates.json alters the commands it runs{(said.Length > 0 ? $" ({said})" : "")}, "
-            + "so its check waits until you accept that change: a work never runs a command you did not accept");
+            + $"and Daoris starts only the commands you accepted, so its check waits: {Doors}");
     }
 
-    /// <summary>Where <paramref name="commit"/> left its line: the merge base with the line's tip here; null where git names no line or base.</summary>
-    private static async Task<string?> LeftAsync(string checkout, string commit, CancellationToken ct)
+    /// <summary>
+    /// The line a check of <paramref name="repository"/> in <paramref name="checkout"/> judges its work against: the one the acceptance look
+    /// reads (<see cref="CanonicalLine.ResolveAsync(string, string, string?, DriverConfig, CancellationToken)"/>); null where the choices do
+    /// not read or no line is set and git names none.
+    /// </summary>
+    internal static async Task<string?> LineAsync(string home, string repository, string checkout, CancellationToken ct)
     {
-        if (await HandbackReading.LineAsync(checkout, ct).ConfigureAwait(false) is not { } line) return null;
-        var (code, stdout, _) = await WorkingTree.GitAsync(checkout, ["merge-base", line, commit], ct).ConfigureAwait(false);
+        DriverConfig config;
+        try
+        {
+            config = DriverConfig.Load(DriverConfig.ResolvePath(home));
+        }
+        catch (DriverConfigUnreadableException)
+        {
+            return null;
+        }
+
+        var workspace = GitFolders.RepositoryOf(home, checkout).Workspace;
+        return (await CanonicalLine.ResolveAsync(checkout, repository, workspace, config, ct).ConfigureAwait(false)).Branch;
+    }
+
+    /// <summary>Where <paramref name="commit"/> left <paramref name="line"/>: the merge base with its local branch here; null where git names none.</summary>
+    private static async Task<string?> LeftAsync(string checkout, string line, string commit, CancellationToken ct)
+    {
+        if (!BranchName.IsValid(line)) return null;
+        var (code, stdout, _) = await WorkingTree.GitAsync(checkout, ["merge-base", $"refs/heads/{line}", commit], ct).ConfigureAwait(false);
         return code == 0 && stdout.Trim() is { Length: > 0 } based ? based : null;
     }
 }

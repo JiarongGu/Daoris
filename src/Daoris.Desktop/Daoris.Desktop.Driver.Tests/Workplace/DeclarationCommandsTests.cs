@@ -30,9 +30,45 @@ public sealed class DeclarationCommandsTests
     [InlineData("\"the checks\"", "\"the checks, said again\"")]
     [InlineData("\"tools/*.test.mjs\"", "\"tools/**/*.test.mjs\"")]
     [InlineData("\"name\": \"a\", \"gate\": \"tools\"", "\"name\": \"b\", \"gate\": \"tools\"")]
+    [InlineData("\"memoryGb\": 4", "\"memoryGb\": 4, \"_why\": \"the build's peak\"")]
     public void A_change_of_patterns_words_timeouts_or_test_sets_keeps_the_acceptance(string from, string to)
     {
         Assert.True(DeclarationCommands.Keeps(Accepted, Edited(from, to)));
+    }
+
+    /// <summary>A text the strict reader refuses (a member written twice, a comment, a trailing comma) is no declaration: it waits for the person and never throws.</summary>
+    [Theory]
+    [InlineData("\"run\": \"npm test\"", "\"run\": \"npm test\", \"run\": \"npm test --all\"")]
+    [InlineData("\"_why\": \"the checks\",", "\"_why\": \"the checks\", // said again\n")]
+    [InlineData("\"cwd\": \"tools\" }", "\"cwd\": \"tools\", }")]
+    public void A_text_the_strict_reader_refuses_waits_for_the_person_and_never_throws(string from, string to)
+    {
+        var now = Edited(from, to);
+        Assert.NotEqual(Accepted, now);
+        Assert.False(DeclarationCommands.Keeps(Accepted, now));
+        Assert.True(DeclarationCommands.Keeps(now, now));
+    }
+
+    /// <summary>Words are set aside only at the top and directly inside a check: a member named with <c>_</c> deeper, inside a part that grants, waits.</summary>
+    [Fact]
+    public void A_change_inside_a_nested_part_waits_whatever_its_name()
+    {
+        Assert.False(DeclarationCommands.Keeps(Accepted, Edited("\"by\": \"rows\"", "\"by\": \"rows\", \"_by\": \"daoris\"")));
+    }
+
+    /// <summary>What a keep set aside, by check and part, so the keep can say it in plain words.</summary>
+    [Fact]
+    public void A_keep_names_the_parts_it_set_aside()
+    {
+        var now = Edited("\"src/\"", "\"src/\", \"tests/\"").Replace("\"memoryGb\": 4", "\"memoryGb\": 6", StringComparison.Ordinal)
+            .Replace("\"the checks\"", "\"the checks, said again\"", StringComparison.Ordinal).Replace("\"tools/*.test.mjs\"", "\"tools/**\"", StringComparison.Ordinal);
+
+        Assert.Equal(
+            [new DeclarationSetAside(null, DeclarationSetAside.Words), new DeclarationSetAside(null, DeclarationSetAside.Tests),
+             new DeclarationSetAside("unit", DeclarationSetAside.Paths), new DeclarationSetAside("unit", DeclarationSetAside.Memory)],
+            DeclarationCommands.SetAside(Accepted, now));
+        Assert.Equal("the words, the test sets, the paths of `unit` and the memory of `unit`", DeclarationSetAside.Said(DeclarationCommands.SetAside(Accepted, now)));
+        Assert.Empty(DeclarationCommands.SetAside(Accepted, Accepted));
     }
 
     [Theory]

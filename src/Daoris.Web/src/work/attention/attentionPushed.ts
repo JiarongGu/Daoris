@@ -167,8 +167,8 @@ export type IntegrationWait = {
 /** One check of a declaration's change: its name and command, and the command it ran before where that changed. Content, shown as written. */
 export type DeclaredCheck = { name: string; run: string; was?: string | null };
 
-/** What a line's declaration changed against the one accepted (`DeclarationChange.Wire`), a changed declaration wait's `change`. */
-export type DeclarationCommandsChange = { added: DeclaredCheck[]; removed: DeclaredCheck[]; changed: DeclaredCheck[]; other: string[] };
+/** What a line's declaration's commands changed against the one accepted (`DeclarationChange.Wire`), `unread` where it does not read strictly. */
+export type DeclarationCommandsChange = { added: DeclaredCheck[]; removed: DeclaredCheck[]; changed: DeclaredCheck[]; other: string[]; unread?: boolean };
 
 /**
  * A run held at a request the receiver declined: the `work.requests` node the person's *Pass over…* is said on, the

@@ -20,6 +20,14 @@ describe("a changed declaration's row, worded", () => {
       + 'Any work that does not change them itself is checked under the ones you accepted; read the change on Setup and accept it.');
   });
 
+  it('names several other parts in the plural, and says a text that does not read strictly as such', () => {
+    expect(declarationChangedWhy('trunk', { added: [], removed: [], changed: [], other: ['generated', 'unasked'] })).toContain(
+      'changed its `generated`, `unasked` parts.');
+    expect(declarationChangedWhy('trunk', { added: [], removed: [], changed: [], other: [], unread: true })).toBe(
+      '`daoris.gates.json` on trunk changed and does not read as strict JSON (a member written twice, a comment or a trailing comma), '
+      + 'so what it changes cannot be said; work is checked under the checks you accepted. Read it on Setup.');
+  });
+
   it('says it in 中文', async () => {
     await i18n.changeLanguage('zh');
     expect(declarationChangedWhy('trunk', change)).toBe('trunk 上 `daoris.gates.json` 里的命令自你采纳后已改动：新增 `e2e`；移除 `lint`；改动 `unit`、`tools`；'

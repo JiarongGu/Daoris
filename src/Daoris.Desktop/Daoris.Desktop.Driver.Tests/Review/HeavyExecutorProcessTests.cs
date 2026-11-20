@@ -318,6 +318,27 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal([("start", "a"), ("end", "a"), ("start", "a"), ("end", "a")], Intervals());
     }
 
+    /// <summary>Where a work left its line is read on the local branch the acceptance look reads, never origin's.</summary>
+    [Fact]
+    public async Task A_work_branched_after_an_unpushed_declaration_change_on_the_local_line_is_not_held()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        await GitFixture.GitAsync(engine.Checkout, "update-ref", "refs/remotes/origin/main", engine.Commit);
+        await GitFixture.GitAsync(engine.Checkout, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main");
+        var line = await CommitOnAsync(engine.Checkout, "main", null,
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        var work = await CommitOnAsync(engine.Checkout, "work", "main", ("work.txt", "the work"));
+        Assert.Equal(line.Blob, work.Blob);
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = work.Commit });
+        var result = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal(engine.Blob, result.Declaration);
+        Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+    }
+
     [Fact]
     public async Task A_work_that_changes_its_declaration_s_commands_holds_said_and_one_that_changes_a_pattern_runs_under_the_accepted()
     {
@@ -337,7 +358,8 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal((commands.Blob, engine.Blob), (held.Declaration, held.Accepted));
         Assert.Contains("this work's own change to daoris.gates.json", held.Why);
         Assert.Contains("changed `unit`", held.Why);
-        Assert.Contains("until you accept", held.Why);
+        Assert.Contains("once the change lands, accept it on its repository's Setup page", held.Why);
+        Assert.Contains("It happened", held.Why);
         Assert.False(File.Exists(At("intervals.log")), "nothing ran");
 
         await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Commit = pattern.Commit });

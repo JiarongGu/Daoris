@@ -142,7 +142,7 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var kept = Assert.Single(owed.Kept(Choices(first)));
         var said = await DeclarationAcceptance.AcceptKeptAsync(_home, configPath, kept, CancellationToken.None);
 
-        Assert.Equal("engine's daoris.gates.json on main changed no command (changed `build`), so it stays accepted as it landed.", said);
+        Assert.Equal("engine's daoris.gates.json on main changed no command, only the paths of `build`, so it stays accepted as it landed.", said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
         Assert.Null(await DeclarationAcceptance.AcceptKeptAsync(_home, configPath, kept, CancellationToken.None));
 
@@ -153,6 +153,63 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         var row = Assert.Single(owed.Under(Choices(second)));
         Assert.Equal((IntegrationAcceptance.Changed, third), (row.State, row.Blob));
         Assert.Equal([new DeclaredCheck("build", "dotnet build -c Release", "dotnet build")], row.Change!.Changed);
+    }
+
+    private const string Build = """{ "gates": [ { "name": "build", "run": "dotnet build" } ], "integration": { "by": "daoris" } }""";
+
+    /// <summary>
+    /// A line's declaration with a member written twice, or a <c>run</c> that is not a string, never ends the look: it waits for the
+    /// person as a change, and a full-access line accepts it as it lands, said, with nothing thrown.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "gates": [ { "name": "build", "run": "dotnet build", "run": "dotnet build -c Release" } ], "integration": { "by": "daoris" } }""")]
+    [InlineData("""{ "gates": [ { "name": "build", "run": 2 } ], "integration": { "by": "daoris" } }""")]
+    public async Task A_declaration_with_a_member_written_twice_or_a_run_not_a_string_waits_for_the_person_and_the_look_goes_on(string landed)
+    {
+        var first = await CommitAsync(Build);
+        var second = await CommitAsync(landed);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+
+        Assert.Empty(owed.Kept(Choices(first)));
+        var row = Assert.Single(owed.Under(Choices(first)));
+        Assert.Equal((IntegrationAcceptance.Changed, second), (row.State, row.Blob));
+
+        var full = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Full = true });
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        full.Save(configPath);
+        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, Assert.Single(owed.ByMode(full)), CancellationToken.None);
+
+        Assert.StartsWith("engine's ", said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+    }
+
+    /// <summary>
+    /// A keep judged against an acceptance another writer withdraws before the keep takes the file's lock writes nothing: the check
+    /// is made on the file as the writer reads it under its lock, so a withdrawn acceptance never comes back.
+    /// </summary>
+    [Fact]
+    public async Task A_keep_never_brings_back_an_acceptance_withdrawn_while_it_waited_for_the_lock()
+    {
+        var first = await CommitAsync(Build);
+        await CommitAsync("""{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] } ], "integration": { "by": "daoris" } }""");
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Choices(first).Save(configPath);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+        var kept = Assert.Single(owed.Kept(Choices(first)));
+
+        Task<string?> keeping;
+        using (KeepLock.Take(Path.GetFullPath(configPath)))
+        {
+            keeping = Task.Run(() => DeclarationAcceptance.AcceptKeptAsync(_home, configPath, kept, CancellationToken.None));
+            await Task.Delay(TimeSpan.FromMilliseconds(400));
+            AtomicFile.WriteText(configPath, DeclarationAcceptance.Withdraw(_home, DriverConfig.Load(configPath), "engine", "aurora").ToJson());
+        }
+
+        Assert.Null(await keeping.WaitAsync(Poll.Patience));
+        Assert.Null(IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
     }
 
     /// <summary>The acceptance ends the row at once, from the choices as they stand, with no look and no git.</summary>

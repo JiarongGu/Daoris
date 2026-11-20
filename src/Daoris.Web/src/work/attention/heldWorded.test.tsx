@@ -39,7 +39,7 @@ describe('a held verification on What needs you', () => {
 
   it('says an unknown by why, and that it holds its line until the person runs it again or says not now', () => {
     const item = worded(held());
-    expect(item.title).toBe('The verification of engine is not known: its own gates change waits for you');
+    expect(item.title).toBe('The verification of engine is not known: its own change to the checks waits for you');
     expect(item.detail).toContain('It judged 2222222 on main, what landed since 1111111, and holds its line');
     expect(worded(held({ verification: verification({ base: null, why: 'bound' }) })).detail).toContain('2222222 on main, its first verification');
   });

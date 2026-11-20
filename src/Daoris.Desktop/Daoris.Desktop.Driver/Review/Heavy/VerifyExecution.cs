@@ -29,7 +29,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         Directory.CreateDirectory(_folder);
         AttemptMarks.Write(AttemptMarks.Began(home, send.Run, send.Invocation, send.Delivery), send.Delivery, world.Clock.GetUtcNow());
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
-        var under = await CheckDeclaration.OfAsync(send.Checkout, send.Commit, send.Accepted, ct).ConfigureAwait(false);
+        var under = await CheckDeclaration.OfAsync(
+            send.Checkout, send.Commit, send.Accepted, each => CheckDeclaration.LineAsync(home, send.Repository, send.Checkout, each), ct).ConfigureAwait(false);
         if (under.Problem is { } problem) return (Unknown(problem), false);
         if (under.Held is { } held) return (Unknown(held) with { Code = VerifyResult.Changed, Declaration = under.Work, Accepted = send.Accepted }, false);
         var text = under.Text;

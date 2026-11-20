@@ -704,20 +704,17 @@ describe("a check's verdict on the run's view", () => {
     const cases: [ReturnType<typeof checkRun>, string, string][] = [
       [checkRun('done', 'reached'), 'verified', '已验证'],
       [checkRun('failed', 'failed', { code: 'gate-failed', gate: 'build' }), 'failed: build', '失败：build'],
-      [checkRun('not-known', 'unknown', { code: 'changed' }), 'not known: its own gates change waits for you', '未知：它自己对检查项的改动等你采纳'],
+      [checkRun('not-known', 'unknown', { code: 'changed' }), 'not known: its own change to the checks waits for you', '未知：它自己对检查项的改动等你采纳'],
       [checkRun('working', 'ready'), 'waiting for its turn', '正在等待轮到它'],
       [checkRun('not-known', 'unknown', { held: { unit: 'run:q1', attempt: 1, words: [], resolution: 'stop' } }), 'not now', '暂不处理'],
     ];
-    for (const [run, en] of cases) {
-      const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
-      expect(words('gates')).toContain(en);
-      unmount();
-    }
-    await i18n.changeLanguage('zh');
-    for (const [run, , zh] of cases) {
-      const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
-      expect(words('gates')).toContain(zh);
-      unmount();
+    for (const language of ['en', 'zh']) {
+      await i18n.changeLanguage(language);
+      for (const [run, en, zh] of cases) {
+        const { unmount } = render(<WorkflowRunView answer={answerOf(run)} />);
+        expect(words('gates')).toContain(language === 'en' ? en : zh);
+        unmount();
+      }
     }
   });
 

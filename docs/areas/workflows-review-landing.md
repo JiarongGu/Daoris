@@ -161,14 +161,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    --accept|--withdraw [--plan]`) in restricted mode, shown as checks added, removed and changed by name with their commands
    (`DeclarationChange`), the row ending at the press; its row in *What needs you* names the checks added, removed and changed and
    opens that press on Setup. A landed change that adds or alters no command keeps the acceptance as it lands, said in one sentence
-   (`IntegrationOwed.Kept`): two declarations run the same where they are equal once their inert parts are set aside
-   (`DeclarationCommands`: every member named with a leading `_`; each check's `paths`, `timeoutMinutes`, `timeoutWhy` and `memoryGb`; the
-   top-level `tests`, `tiers` and `docs`), and a check's name, command, folder, hand-back or flags, a check added, removed or moved, and
-   any other part wait for the person. A check runs under the accepted declaration, read from its blob, never the work's file
-   (`CheckDeclaration`): a work whose declaration runs only what the accepted one runs, or whose own change against where it left the
-   line (the merge base) alters no command, is checked as accepted, so a declaration change on the line holds no run; only a work whose
-   own change alters a command holds `changed`, saying so, since a work never runs a command the person did not accept. Once the
-   acceptance moves, each check so held is run again by itself (`ChangedChecks`, its held attempt's *Run again*). The set-up review
+   naming what it set aside (`IntegrationOwed.Kept`): two declarations run the same where they are equal once their inert parts are set
+   aside (`DeclarationCommands`, read strictly, so a member written twice, a comment or a trailing comma waits: every member named with a
+   leading `_` at the top or directly inside a check; each check's `paths`, `timeoutMinutes`, `timeoutWhy` and `memoryGb`; the top-level
+   `tests`, `tiers` and `docs`), and a check's name, command, folder, hand-back or flags, a check added, removed or moved, and any other
+   part wait for the person; the change shown names command changes alone. A change the look cannot judge waits and is said once, and
+   never ends the look. A check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
+   work whose declaration runs only what the accepted one runs, or whose own change against where it left the line (the merge base with
+   the local branch of the line the look reads) alters no command, is checked as accepted, so a declaration change on the line holds no
+   run; only a work whose own change alters a command, or one whose line or merge base git cannot name, holds `changed`, saying which
+   and what the person can do (land the change and accept it, or answer the check *It happened*). Daoris starts only the commands the
+   person accepted; they run the work's own code. Once the acceptance moves, each check so held is run again by itself (`ChangedChecks`,
+   its held attempt's *Run again*). The set-up review
    offers the same one acceptance, a single tick per repository saying the checks changed (`daoris place … --apply --accept
    <repository>`), never one tick per purpose. (D283, D350)
 5. Saving (`WORKFLOW_SAVE`) and choosing (`WORKFLOW_USE`) are two presses; *Set up…* alone does both, in one receipt-kept Apply. A
