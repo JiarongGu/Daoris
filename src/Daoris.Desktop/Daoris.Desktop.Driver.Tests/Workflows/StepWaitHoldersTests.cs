@@ -132,8 +132,8 @@ public sealed class StepWaitHoldersTests
             var wait = new RoleWait(PersonWaits.Actor, StepRoles.ReleaseManager, new StepHolder(StepHolders.Agent, "bob"), Now);
 
             Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (_, _) => false)));
-            Assert.False(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (holder, at) => holder == "agent:bob" && at == "engine")));
-            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (holder, at) => holder == "agent:alice")));
+            Assert.False(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (agent, at) => agent == "bob" && at == "engine")));
+            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (agent, _) => agent == "alice")));
         }
         finally
         {

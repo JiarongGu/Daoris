@@ -1,5 +1,18 @@
 namespace Daoris.Driver;
 
+/// <summary>A step the pass judged vacant: its attempt, since when it is vacant, and whether it is announced and its refused stop said.</summary>
+public sealed record StepVacancy(string Node, int Attempt, DateTimeOffset Since, bool Told, bool Refused);
+
+/// <summary>Where the pass keeps each run's vacancies, and every reader reads them: <see cref="StepVacancyFiles"/> on the machine.</summary>
+public interface IStepVacancyStore
+{
+    /// <summary>The vacancies kept for <paramref name="unit"/>'s run; none where none are kept or they do not read.</summary>
+    IReadOnlyList<StepVacancy> Of(string unit);
+
+    /// <summary><paramref name="vacancies"/> kept as the whole set of <paramref name="unit"/>'s run; an empty set keeps nothing.</summary>
+    void Keep(string unit, IReadOnlyList<StepVacancy> vacancies);
+}
+
 /// <summary>
 /// A vacancy: a run's step waiting on a role an agent holds, that no agent's session serves with a tool that answers it. Never hidden and
 /// never the owner's: judged by the pass alone, which keeps it (<see cref="StepVacancyFiles"/>) from the moment it became vacant, so every
@@ -38,19 +51,20 @@ public static class StepVacancies
     /// <summary>
     /// Each run's vacancies judged now and kept: one first seen is kept from now and announced; one announced and past its bound is stopped as
     /// Daoris's own, so its run ends as gave up; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts
-    /// again if it becomes one. <paramref name="live"/> says whether a live session of a cast agent serves the place; null reads the cast alone.
+    /// again if it becomes one. <paramref name="live"/> says whether a live session of a cast agent serves the place (<see cref="CastReading.Serves"/>);
+    /// null reads the cast alone.
     /// </summary>
     internal static void Look(
-        NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig? config, DateTimeOffset now, List<string> said, Func<string, string?, bool>? live = null)
+        NodeRecordFiles records, IStepVacancyStore vacancies, IEnumerable<GovernedUnit> governed, DriverConfig? config, DateTimeOffset now, List<string> said,
+        Func<string?, string?, bool>? live = null)
     {
         var bound = VacancySetting.Of(config);
         var casts = new PlaceCastFiles(records.Home).Book();
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
-        var files = new StepVacancyFiles(records.Home);
         foreach (var each in governed)
         {
             if (each.Scope is null || records.Read(each.Unit.Id) is not { } record) continue;
-            var kept = files.Of(each.Unit.Id);
+            var kept = vacancies.Of(each.Unit.Id);
             var next = new List<StepVacancy>();
             var (workspace, repository) = (each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
             var holding = tenures.Holding(each.Unit.Id, record.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
@@ -89,7 +103,7 @@ public static class StepVacancies
                 next.Add(vacancy);
             }
 
-            if (!next.SequenceEqual(kept)) files.Keep(each.Unit.Id, next);
+            if (!next.SequenceEqual(kept)) vacancies.Keep(each.Unit.Id, next);
         }
     }
 

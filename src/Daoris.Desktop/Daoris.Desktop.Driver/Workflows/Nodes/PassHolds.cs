@@ -8,11 +8,11 @@ internal static class PassHolds
 {
     public static void Look(
         RiskShadow? risk, NodeRecordFiles records, IReadOnlyCollection<GovernedUnit> governed, DriverConfig config, DateTimeOffset now, bool leased, List<string> said,
-        Func<string, string?, bool>? live = null)
+        Func<string?, string?, bool>? live = null)
     {
         if (risk is not null) RiskStepHolds.Shadow(risk, governed, records, config);
         if (!leased) return;
         PolicyPasses.Look(records, governed, config, now, said);
-        StepVacancies.Look(records, governed, config, now, said, live);
+        StepVacancies.Look(records, new StepVacancyFiles(records.Home), governed, config, now, said, live);
     }
 }

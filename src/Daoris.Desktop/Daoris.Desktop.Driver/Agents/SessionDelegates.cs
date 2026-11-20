@@ -46,9 +46,10 @@ public sealed class SessionDelegates
     /// <summary>The agent <paramref name="session"/>'s last start ran (<see cref="ProviderRegistry.AgentNameOf"/>), its press's speaker; null where it named none.</summary>
     public string? AgentOf(string session) => _agents.GetValueOrDefault(session);
 
-    public bool Serving(string holder, string? repository) =>
+    /// <summary>Whether a session holding a key serves <paramref name="repository"/> running <paramref name="agent"/>; a null agent is any agent.</summary>
+    public bool Serving(string? agent, string? repository) =>
         _held.Keys.Any(session => _places.GetValueOrDefault(session) is { } place && string.Equals(place.Repository, repository, StringComparison.OrdinalIgnoreCase)
-            && (holder == CastHolders.Agent || (_agents.GetValueOrDefault(session) is { } agent && CastHolders.AgentNamed(agent) == holder)));
+            && (agent is null || string.Equals(_agents.GetValueOrDefault(session), agent, StringComparison.Ordinal)));
 
     /// <summary>The hashes held for <paramref name="session"/>: none where it runs nothing here, or its keys were forgotten.</summary>
     public IReadOnlyList<byte[]> Of(string session) =>

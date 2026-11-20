@@ -128,7 +128,7 @@ public sealed class NodeRuntime(
 
     public RiskShadow? Risk { get; set; }
 
-    public Func<string, string?, bool>? Serving { get; set; }
+    public Func<string?, string?, bool>? Serving { get; set; }
 
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null where unread.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }

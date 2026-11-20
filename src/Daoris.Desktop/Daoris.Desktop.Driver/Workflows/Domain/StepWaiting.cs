@@ -190,11 +190,11 @@ public sealed record HeldStep(
 /// </summary>
 public static class HeldSteps
 {
-    /// <param name="vacancies">The vacancies the pass kept (<see cref="StepVacancyFiles"/>); null reads none.</param>
+    /// <param name="vacancies">Where the pass keeps the vacancies (<see cref="IStepVacancyStore"/>); null reads none.</param>
     /// <param name="bound">How long a vacancy stands before Daoris gives it up (<see cref="VacancySetting"/>).</param>
     public static IReadOnlyList<HeldStep> Of(
         IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null,
-        StepVacancyFiles? vacancies = null, TimeSpan? bound = null)
+        IStepVacancyStore? vacancies = null, TimeSpan? bound = null)
     {
         var steps = new List<HeldStep>();
         foreach (var each in governed)

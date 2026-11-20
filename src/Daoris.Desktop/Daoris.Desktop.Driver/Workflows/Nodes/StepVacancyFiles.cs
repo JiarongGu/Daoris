@@ -4,14 +4,11 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A step the pass judged vacant: its attempt, since when it is vacant, and whether it is announced and its refused stop said.</summary>
-public sealed record StepVacancy(string Node, int Attempt, DateTimeOffset Since, bool Told, bool Refused);
-
 /// <summary>
 /// The run's vacancies as the pass judged them (<see cref="StepVacancies"/>), <c>workflows/vacancies/&lt;key&gt;.json</c>: written by the pass
 /// that holds the lease, read by every row, view and list that says a step is vacant. A file that does not read holds none.
 /// </summary>
-public sealed class StepVacancyFiles(string home)
+public sealed class StepVacancyFiles(string home) : IStepVacancyStore
 {
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "vacancies");
 
