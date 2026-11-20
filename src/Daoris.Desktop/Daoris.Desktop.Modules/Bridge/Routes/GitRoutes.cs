@@ -29,7 +29,8 @@ public sealed class GitRoutes(DriverContext context)
     {
         var named = read.Repository;
         var service = _loop.Service ?? throw NotReady();
-        var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), named, read.Workspace);
+        var registry = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false)).Where(row => PlaceKind.Of(row.Kind) != PlaceKind.Folder);
+        var rows = LinesRoutes.Checkouts(registry, named, read.Workspace);
 
         IReadOnlyList<SessionRecord>? sessions = null;
         var unread = false;
@@ -92,9 +93,11 @@ public sealed class GitRoutes(DriverContext context)
         var repository = read.Repository ?? throw new DriverException("a Git read names its repository.");
         var service = _loop.Service ?? throw NotReady();
         var rows = LinesRoutes.Checkouts(await service.RegistryAsync(cancellationToken).ConfigureAwait(false), repository, read.Workspace);
-        if (rows.FirstOrDefault(row => Directory.Exists(row.Root)).Root is not { } root)
+        if (rows.FirstOrDefault(row => Directory.Exists(row.Root) && PlaceKind.At(row.Root!) == PlaceKind.Git).Root is not { } root)
         {
-            throw Refusals.Because(Refusals.GitNoCheckout, $"{repository} has no checkout on this machine, so there is no branch to name.");
+            throw Refusals.Because(Refusals.GitNoCheckout, rows.Any(row => Directory.Exists(row.Root))
+                ? $"{repository} is a folder with no git of its own, so there is no branch to name."
+                : $"{repository} has no checkout on this machine, so there is no branch to name.");
         }
 
         try
