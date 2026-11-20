@@ -241,9 +241,108 @@ public sealed class AccountIdMovesTests : IDisposable
         Assert.Equal(2, AccountIdsCommand.Run([], Home, null, null, out _));
     }
 
+    /// <summary>🔴 A process holding an account's folder is named by the plan and the apply leaves that account whole; the next apply moves it.</summary>
+    [Fact]
+    public void A_folder_a_process_holds_is_named_in_the_plan_and_left_whole_by_the_apply()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var held = Path.Combine(HarnessSettings.ProfileHome(Home, Agent, "account-1"), ".credentials.json");
+        var me = $"{System.Diagnostics.Process.GetCurrentProcess().ProcessName} (pid {Environment.ProcessId})";
+
+        AccountIdPlan plan;
+        using (new FileStream(held, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            plan = AccountIdMoves.Plan(Home);
+            Assert.Equal(1, AccountIdsCommand.Run(["--yes"], Home, null, null, out var said));
+            Assert.Contains($"held by {me}", said);
+            Assert.Contains("the next `daoris home account-ids --yes` moves it", said);
+            Assert.True(Directory.Exists(HarnessSettings.ProfileHome(Home, Agent, "account-1")));
+            Assert.Contains("account-1", HarnessSettings.Profiles(Home, Agent));
+        }
+
+        var one = plan.Moves.Single(move => move.Rename.From == "account-1");
+        Assert.Equal(Environment.ProcessId, Assert.Single(one.HeldBy!).Pid);
+        Assert.Contains($"held by {me}", one.Failed);
+        Assert.Empty(one.References);
+        Assert.All(plan.Moves.Where(move => move != one), move => Assert.Null(move.Failed));
+        Assert.Equal("account-1", HarnessSettings.Load(DaorisHome.Entry(Home, HomeEntry.Harnesses)).Defaults[Agent]);
+        Assert.Contains("account-1", AccountNames.Of(Home, Agent).Keys);
+        Assert.Equal("account-1", new SessionUsage(Home).Sessions.Single(entry => entry.Session == "s1").Profile);
+        Assert.DoesNotContain("Gmail", HarnessSettings.Profiles(Home, Agent));
+        Assert.DoesNotContain("account-3", HarnessSettings.Profiles(Home, Agent));
+
+        var done = AccountIdMoves.Apply(Home);
+
+        Assert.Equal(one.Rename.To, Assert.Single(done.Moves).Rename.To);
+        Assert.Null(done.Moves[0].Failed);
+        Assert.DoesNotContain("account-1", HarnessSettings.Profiles(Home, Agent));
+        Assert.Equal(one.Rename.To, HarnessSettings.Load(DaorisHome.Entry(Home, HomeEntry.Harnesses)).Defaults[Agent]);
+        Assert.True(AccountIdMoves.Plan(Home).Nothing);
+    }
+
+    [Fact]
+    public void The_plan_says_a_held_account_would_be_left_and_names_the_holder()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var held = Path.Combine(HarnessSettings.ProfileHome(Home, Agent, "account-1"), ".credentials.json");
+        string said;
+        using (new FileStream(held, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Assert.Equal(0, AccountIdsCommand.Run(["--plan"], Home, null, null, out said));
+        }
+
+        Assert.Contains($"(pid {Environment.ProcessId})", said);
+        Assert.Contains("not moved: held by ", said);
+        Assert.Contains("the next `daoris home account-ids --yes` moves it once they end", said);
+        Assert.StartsWith("home: 3 account ids with ", said);
+    }
+
+    /// <summary>🔴 The native host's manifest follows its moved account to the new folder, every other key kept; another is left as it is.</summary>
+    [Fact]
+    public void The_native_host_manifest_follows_its_account_to_the_moved_folder()
+    {
+        var old = HarnessSettings.ProfileHome(Home, Agent, "account-1");
+        Directory.CreateDirectory(Path.Combine(old, "chrome"));
+        File.WriteAllText(Path.Combine(old, "chrome", "chrome-native-host.bat"), "@echo off\n");
+        var hosts = Path.Combine(_root, "ChromeNativeHost");
+        Directory.CreateDirectory(hosts);
+        var ours = Path.Combine(hosts, "com.anthropic.claude_code_browser_extension.json");
+        var other = Path.Combine(hosts, "com.example.other.json");
+        var elsewhere = Path.Combine(_root, "elsewhere", "chrome-native-host.bat");
+        File.WriteAllText(ours, new JsonObject
+        {
+            ["name"] = "com.anthropic.claude_code_browser_extension",
+            ["path"] = Path.Combine(old, "chrome", "chrome-native-host.bat"),
+            ["type"] = "stdio",
+            ["allowed_origins"] = new JsonArray("chrome-extension://abc/"),
+        }.ToJsonString());
+        File.WriteAllText(other, new JsonObject { ["path"] = elsewhere }.ToJsonString());
+        var before = File.ReadAllText(other);
+
+        var plan = AccountIdMoves.Plan(Home, null, [ours, other]);
+
+        var references = plan.Moves.Single(move => move.Rename.From == "account-1").References;
+        Assert.Contains(references, each => each.Place == ours.Replace('\\', '/') && each.Where == "path");
+        Assert.Equal(Path.Combine(old, "chrome", "chrome-native-host.bat"), Read(ours)["path"]!.GetValue<string>());
+
+        var done = AccountIdMoves.Apply(Home, null, [ours, other]);
+
+        var to = done.Moves.Single(move => move.Rename.From == "account-1").Rename.To;
+        var manifest = Read(ours);
+        var moved = Path.Combine(HarnessSettings.ProfileHome(Home, Agent, to), "chrome", "chrome-native-host.bat");
+        Assert.Equal(moved, manifest["path"]!.GetValue<string>());
+        Assert.True(File.Exists(moved));
+        Assert.Equal("stdio", manifest["type"]!.GetValue<string>());
+        Assert.Equal("chrome-extension://abc/", manifest["allowed_origins"]![0]!.GetValue<string>());
+        Assert.Equal(before, File.ReadAllText(other));
+        Assert.True(AccountIdMoves.Plan(Home, null, [ours, other]).Nothing);
+    }
+
     private void Write(HomeEntry entry, string json) => File.WriteAllText(DaorisHome.Entry(Home, entry), json);
 
-    private JsonObject Read(HomeEntry entry) => JsonNode.Parse(File.ReadAllText(DaorisHome.Entry(Home, entry)))!.AsObject();
+    private JsonObject Read(HomeEntry entry) => Read(DaorisHome.Entry(Home, entry));
+
+    private static JsonObject Read(string path) => JsonNode.Parse(File.ReadAllText(path))!.AsObject();
 
     private static void Store(string path, string schema, string rows)
     {

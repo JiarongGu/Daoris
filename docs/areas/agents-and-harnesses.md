@@ -168,7 +168,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
     orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
     `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):
-    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A word id stays
+    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A folder a process
+    holds (a browser's native host, which the harness registers inside the account's own folder, `chrome/chrome-native-host.bat`,
+    or a session's working folder) is named in both by process name and id, never stopped, and its account is left whole, every
+    reference kept; the next `--yes` moves it once nothing holds it (`HeldFiles`, where Windows can tell; a move the system refuses
+    is left the same way). The browser's native-messaging manifest (`com.anthropic.claude_code_browser_extension`, one per browser,
+    outside every account folder, found in the registry on Windows and the browsers' folders elsewhere) has its `path` moved with
+    the account, every other key kept; one naming no moving folder is left (`AccountIdNativeHostStore`). A word id stays
     the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
     account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
     a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the
