@@ -1,8 +1,24 @@
+using static Daoris.Driver.DriverBrainstorms;
+
 namespace Daoris.Driver;
 
-/// <summary>A brainstorm's one pass, and a meeting's turn run as one.</summary>
-internal sealed partial class DriverBrainstorms
+/// <summary>A brainstorm's one pass, and a meeting's turn run as one, on its owner's slots, clock and turns.</summary>
+internal sealed class BrainstormPasses(DriverBrainstorms owner, LoopContext context, Driver driver)
 {
+    private readonly LoopContext _context = context;
+
+    private readonly Driver _driver = driver;
+
+    private TimeProvider Clock => owner.Clock;
+
+    private TimeSpan Tick => owner.Tick;
+
+    private bool TrySlot() => owner.TrySlot();
+
+    private void FreeSlot() => owner.FreeSlot();
+
+    private Task<BrainstormTurnRun> TurnAsync(BrainstormTurn turn, CancellationToken ct) => owner.TurnAsync(turn, ct);
+
     /// <summary>
     /// One pass: a slot under the cap, waited for until <paramref name="until"/>; then its turn in a fresh
     /// room within its own minutes from its slot, cut at <paramref name="until"/>; its answer validated by <paramref name="check"/>,

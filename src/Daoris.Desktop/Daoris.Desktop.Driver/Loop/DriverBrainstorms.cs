@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// and a restart ends what ran as <c>interrupted</c>; nothing runs again by itself.</para>
 /// </remarks>
 /// <param name="driver">The driver whose run machinery a turn goes through: the spawn's preparation, the rules handed and the hold.</param>
-internal sealed partial class DriverBrainstorms(LoopContext context, Driver driver)
+internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 {
     private readonly LoopContext _context = context;
 
@@ -66,7 +66,7 @@ internal sealed partial class DriverBrainstorms(LoopContext context, Driver driv
     internal TimeProvider Clock => _context.BrainstormClock;
 
     /// <summary>How often a waiting pass asks for a slot again, and a running brainstorm looks for the person's stop.</summary>
-    private TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));
+    internal TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));
 
     private static string Claim(string id) => $"brainstorm:{id}";
 
@@ -358,7 +358,7 @@ internal sealed partial class DriverBrainstorms(LoopContext context, Driver driv
             var laid = BrainstormRoomPacket.Lay(packet);
             var plan = Generators(request, rule, workspace);
             var generators = plan.Select(each => each.Allowed
-                ? PassAsync<BrainstormAnswer>(
+                ? Passes.PassAsync<BrainstormAnswer>(
                     id, each.Pass, each.Agent, BrainstormPassRecord.Generate, laid, DesignPasses.Generator(request, digest, minutes.Pass), null,
                     text =>
                     {
@@ -403,7 +403,7 @@ internal sealed partial class DriverBrainstorms(LoopContext context, Driver driv
                 var synthesizer = answered[0].By.Adapter;
                 // The synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
                 var generated = plan.First(each => each.Pass == answered[0].By.Pass).Entry;
-                var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
+                var (record, synthesis) = await Passes.PassAsync<BrainstormSynthesized>(
                     id, "s1", synthesizer, BrainstormPassRecord.Synthesize, laid, DesignPasses.Synthesizer(request, digest),
                     BrainstormSyntheses.Anonymous(handed),
                     text =>
@@ -485,7 +485,7 @@ internal sealed partial class DriverBrainstorms(LoopContext context, Driver driv
     }
 
     /// <summary>A slot under the machine's cap, taken by a pass as a reviewer's is; false where the cap is full.</summary>
-    private bool TrySlot()
+    internal bool TrySlot()
     {
         lock (_slots)
         {
@@ -495,12 +495,14 @@ internal sealed partial class DriverBrainstorms(LoopContext context, Driver driv
         }
     }
 
-    private void FreeSlot()
+    internal void FreeSlot()
     {
         lock (_slots) _holding--;
     }
 
     private BrainstormTurnRunner Turns => new(this, _context, _driver);
+
+    internal BrainstormPasses Passes => new(this, _context, _driver);
 
     /// <summary>A voice's start plan.</summary>
     internal static StartPlan Voice(BrainstormTurn turn, DriverConfig config, HarnessRoster roster) => BrainstormTurnRunner.Voice(turn, config, roster);
