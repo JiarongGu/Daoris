@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { RenameAsk } from './RenameAsk';
-import { DeleteAsk } from './SessionPageHead';
+import { DeleteAsk } from './EndAsks';
 
 // The two asks under the header that speak of a conversation's whole line: its name, and what a delete takes with it.
 

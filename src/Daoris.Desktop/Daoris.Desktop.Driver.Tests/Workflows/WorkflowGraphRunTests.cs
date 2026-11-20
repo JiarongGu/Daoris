@@ -161,6 +161,38 @@ public sealed class WorkflowGraphRunTests
         Assert.Null(Step(Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("claimed", NodeStates.Reached, "quest:q1", "m"))), "claimed").Held);
     }
 
+    [Fact]
+    public void A_check_held_not_known_says_so_and_names_its_again_beside_its_stop()
+    {
+        var held = Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("gates", NodeStates.Unknown, Self, Tip)) with
+        {
+            Attempts = [CheckAttempt(AttemptStates.Held, WorkStates.Unknown, "changed")],
+        });
+
+        var said = WorkflowRunWords.Say([held], null);
+
+        Assert.Contains("Its outcome could not be established, so nothing is taken as passed. Run it again, or leave it for now.", said);
+        Assert.DoesNotContain("asks after it", said);
+        Assert.Contains("`daoris workflow again q1 gates` runs it again as a new attempt; `daoris workflow stop q1 gates` stops it.", said);
+    }
+
+    [Fact]
+    public void A_check_held_for_its_lost_process_shows_the_end_of_its_log_on_its_row_and_in_the_terminal_bounded()
+    {
+        var tail = string.Join('\n', Enumerable.Range(1, 30).Select(line => $"log {line}"));
+        var held = Derive(Records(Quest("q1")), ClaimedThenCheck, Record(Status("gates", NodeStates.Unknown, Self, Tip)) with
+        {
+            Attempts = [CheckAttempt(AttemptStates.Held, WorkStates.Unknown, LostChecks.Code) with { Tail = tail }],
+        });
+
+        Assert.Equal(tail, Step(held, "gates").Held!.Tail);
+        var said = WorkflowRunWords.Say([held], null);
+        Assert.Contains("Its log ends:", said);
+        Assert.Contains("  log 30\n", said + "\n");
+        Assert.Contains("  log 11\n", said);
+        Assert.DoesNotContain("  log 10\n", said + "\n");
+    }
+
     /// <summary>A refused step carries the command its plugin named as the fix, or, naming none it declares, the words that say so.</summary>
     [Fact]
     public void A_refused_steps_needs_is_drawn_on_its_step_or_said_where_ignored()

@@ -138,6 +138,16 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.Contains("say why", RunNodeWords.Said(worded), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_word_the_table_holds_for_another_cause_is_said_for_a_person()
+    {
+        var said = RunNodeWords.Said(new NodeWorded("r1", "check", NodeWordActs.Again, NodeRefusal.NotCause) { State = NodeStates.Blocked });
+
+        Assert.DoesNotContain("not-cause", said, StringComparison.Ordinal);
+        Assert.Contains("`check` on run r1 is blocked now", said, StringComparison.Ordinal);
+        Assert.Contains("`daoris workflow run`", said, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// The person's stop of the go-ahead, words or none: the next pass stops it, nothing of the graph moves again, and the run ends on its
     /// record, said (§3's end).

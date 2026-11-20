@@ -290,7 +290,7 @@ function Held({ id, reveal, children }: { id: string; reveal?: string; children?
       className={cn('min-w-0 scroll-mt-12', reveal === id && 'rounded-control outline-2 outline-offset-4 outline-accent/60')}
     >
       {children}
-      {raised && raised.length > 0 && <WaitMark waits={raised} onPress={() => onToWait!(raised[0]!)} />}
+      {raised && raised.length > 0 && <WaitMark waits={raised} onPress={onToWait!} />}
     </div>
   );
 }
@@ -584,7 +584,7 @@ function RunView({ items, open: startsOpen, tree, reveal }: {
           <span className="text-fail-ink">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
         )}
       </button>
-      {raised.length > 0 && <WaitMark waits={raised} onPress={() => onToWait!(raised[0]!)} />}
+      {raised.length > 0 && <WaitMark waits={raised} onPress={onToWait!} />}
       {shown && items.map((item) => (
         <Held key={item.key} id={item.key} reveal={reveal}><BlockView block={item} tree={tree} /></Held>
       ))}

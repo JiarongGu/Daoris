@@ -203,8 +203,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **A session's page**
 
-37. A head shows the state, the title and two facts; a session's title takes one line, a quest's or an ask's two. The acts
-    hold still; the id moves to ⋯ and *Details*. A conversation's name is its title above its ask's and its first words, and its pin
+37. A session's head is its panel's (`work/session/PanelHead.tsx`): the state from the reader's line (a wait on the person names the
+    oldest, a press to its dock card), the title on one line, where and who with the model that ran (`headFactsOf`) and its chips
+    (`HeadChips`), and under them the facts its state makes matter (`sessionFacts`); a quest's or an ask's title takes two. The acts
+    hold still (`HeadActs`); the id moves to ⋯ and *Details*; a stop's, a delete's, a rename's or a hand-over's ask stands under
+    the head (`EndAsks`, `RenameAsk`). A conversation's name is its title above its ask's and its first words, and its pin
     marks its row: each session's row of `SESSION_GROUPS` carries its conversation's `name` and `pinned` (`conversation_facts`), the ⋯ of a row
     and of the head offer *Rename…* (its ask under the head) and *Pin* or *Unpin* (`CONVERSATION_RENAME`, `CONVERSATION_PIN`, by the part
     pressed), and *Delete…* says how many parts of its line it takes. *Started from*, on *Details*' folded line cut with an ellipsis, names as
@@ -212,9 +215,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     (`work/head/startedFrom.tsx`). Under a head whose session its run's passage is drawn on stands the workflow's track (`work/track/`):
     each step a chip with its mark, the standing one with its attempt and, where the dock holds it, "waiting on `<role>`: `<holder>`"
     (D304), how far it came, and *Flowchart*, which opens the run's view in a drawer, the side bar holding no Workflow view; a chip's
-    press leads to its rows, each attempt's start and end a row between the turns it fell between, read from the same passage, the
-    standing step's act rows (`StepActRows`) under its start and a failed step's row leading to its press in the dock, never offering
-    one of its own. *Details* adds *Started with*, the requirement it began with, whole (the quest's
+    press brings its step's first rule in the story (`toStepRows`), each attempt's start and end a rule at its moment among the
+    turns, read from the same passage. *Details* adds *Started with*, the requirement it began with, whole (the quest's
     requirements, else its words, else the ask's, else a conversation's first message), beside the *Handed brief* its start
     was given. A rail row of a line holding several quests names its own session's quest. (from D152, D162) A rail row is the
     session as work (`work/rail/SessionWork.tsx`, its words `workFacts.ts`) in one status line that never grows its height:
@@ -225,9 +227,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     person's name for it and what its record spent on that record's last turn, one to a line. An ask's at-work view counts its quests by
     where they stand: landed (Done), waiting on you, in checks or opinion (`awaiting-step`), being worked, not started
     (`work/atWork/askStanding.ts`), a declined quest in none. (D293)
-38. Every wait the person settles stands in one dock above the composer (`work/waits/WaitStrip.tsx`), its only place on the
-    session's page: `waitsOf`'s kinds and each step of its run held for the person or left failed (`SESSION_GROUPS`' `waits`, with
-    *What needs you*'s presses), oldest first under a count, never folded, each with its own press and its way to where it arose
+38. Every wait the person settles stands as a card in the panel's one dock above the composer (`work/session/SessionDock.tsx`,
+    `dockCardsOf`, `WaitCard`), its only place on the session's page: `waitsOf`'s kinds and each step of its run held for the person
+    or left failed (`SESSION_GROUPS`' `waits`, with *What needs you*'s presses), oldest first under a count, the dock at most 40% of
+    the panel and scrolling inside, narrow one card whole and the rest a line each, each with its own press and its way to where it arose
     (`work/waits/dock.ts`); its tree's work to land stands there too, held or not. A release step waiting on its approver carries
     the approval card its run's view draws (`ReleaseStepDoors` through `RunReleaseDoors`, the session's run read on the line of a
     plugin's actor wait, since the row names no step kind), and so does its *What needs you* row (the run its work quest, else its run's id, names):
@@ -259,10 +262,16 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     `READ_MARK_MOVE`). Opened with anything after it, the attended part sits at the mark under *Since you left*, computed from the
     record and the run with no model: turns, files changed, commands and which failed, subagents and tasks started and ended, steps
     passed since the mark, what waits on the person and the helpers asked and answered, and the agent's last words quoted as its own,
-    each line a jump to its first row; otherwise at its tail. Each ended turn folds to one line (its calls by kind, how many failed,
-    files changed, duration), and under it stays what never folds: its closing words, the person's words, a failure or a stop, an act
-    outside (a push, a pull request, a release), a call standing alone, a part's boundary and a block a wait was raised at; a turn
-    that goes on folds the work between the agent's words into runs counted by kind. (from D168, D185, D320)
+    each line a jump to its first row; otherwise at its tail. The story (`work/session/story.ts`, `StoryStream`) is one stream in time
+    order: the person's words, the agent's named by its maker and the model that ran, each burst of activity one line counting its
+    calls that opens to each, a step's start and end a rule, a helper's question with its answer, a second opinion, its line's rows,
+    and a driver's note with its doors (*Say it again*, *Start a conversation*, *Go on with Daoris's brief*, the session the words
+    went to; `SaidLines.tsx`); held words say when they reach it, a cooling account's reset with *Go on in a new session* under
+    them; the line's earlier parts stand above it (`EarlierParts`). At the panel's foot the composer (`PanelComposer`) is the
+    session's box (`AttendedComposer`): a chat's `Composer` (files, `@` from its tree, the words waiting with their edit, removal
+    and level, *Stop turn* and the keeping stop, *Finish*, the context ring and the model's options; Enter sends) or the box the
+    session is offered (`SessionBox`), over one line naming the agent and the model and when the agent reads the words.
+    (from D168, D185, D320)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree, or from the branch it
     landed on once its tree is gone (`SESSION_FILE`). It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -484,13 +493,19 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   act defined once for any actor (D340), an ask split without a press (D341), the workflow editor gone (D342), budgets that follow how an
   account is paid (D343) and releases read from the public repository (D344). Today the window is as the rules above say; each
   row rewrites the rule it makes false.
-- SESSIONVIEW1h moved the line's exchanges and its channel into the conversation (`work/exchanges/`): a helper, a piece, a quest, a
-  hand-over or an opinion is a row where it was asked and one where it came back, between the turns it fell between (one whose read
-  keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's findings beside the work
-  it judged; one waiting on the person leads to its dock line (`dockKeyOfExchange`) with no press of its own; a quest the session
-  published, the session that published its own and the answered question it resumed after are rows too; each channel message of
-  its line is a row naming its sender, answered in place and sent on to its session. The head's *Waiting on* line scrolls the
-  timeline to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it worked with* and *Channel* folds and the side
-  bar's At work view are gone.
+- **SESSIONUI1**: the session panel rebuilt from the fresh design rather than adjusted row by row (`work/session/`), an attended
+  session's page in `WorkFrame` (`AttendedSessionPanel`): the head (the state from the reader's line, where and who with the model
+  that ran, `headFactsOf`, ending in the supervisor's count, a later choice and *Full access*, `HeadChips`), the run's one track
+  (`RunTrack`, a chip's press bringing its step's first rule in the story, `toStepRows`), one story of turns, steps, helpers,
+  second opinions and its line's rows in time order with each burst of activity folded (`storyOf`), the live band, the dock of
+  wait cards (`SessionDock`, `dockCardsOf`), the composer and the Changes rail from 68rem, folded below 40rem (`panelLayout.ts`).
+- SESSIONVIEW1h moved the line's exchanges and its channel into the session's story (`work/exchanges/`): a helper, a piece, a
+  quest, a hand-over or an opinion is a row (`LineRow`) where it was asked and one where it came back, at its moment among the
+  turns (one whose read keeps no moment under the last), its actor named, the session that took it up a press away, a reviewer's
+  findings beside the work it judged; one waiting on the person leads to its card in the dock (`dockKeyOfExchange`, `toDockLine`)
+  with no press of its own; a quest the session published, the session that published its own and the answered question it
+  resumed after are rows too; each channel message of its line is a row naming its sender, answered in place and sent on to its
+  session. The head's *Waiting on* line scrolls the story to its exchange's row (`work/exchanges/seek.ts`). The article's *Who it
+  worked with* and *Channel* folds and the side bar's At work view are gone.
 - Decided, with no row: PERSONDOOR2, the boundary between the person and their agents that D156 §7 names, and the machine key
   moved off a session's connector.

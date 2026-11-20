@@ -26,7 +26,7 @@ import { ORIGIN, sentTo, wireRelease } from '../../test/doubles/releaseShell';
 import { show } from '../../test/shellHarness';
 import { answerOf, GRAPH_RUN_PROD_APPROVAL, PROD_APPROVAL_PAGE, PROD_APPROVAL_WORDS } from '../../workflow/runFixtures';
 import { WAITING_PART } from '../../workflow/parts/partFixtures';
-import { WaitStrip } from '../waits/WaitStrip';
+import { SessionDock } from '../session/SessionDock';
 import { useRunWaitDoors } from './useRunWaitDoors';
 
 // The session page's dock at the work workspace's run waiting on its production stage's approval, read as the page reads it: the
@@ -44,7 +44,7 @@ const ROW = {
 };
 
 function Dock() {
-  return <WaitStrip session={SESSION} runWaits={useRunWaitDoors(SESSION.id)} />;
+  return <SessionDock session={SESSION} runWaits={useRunWaitDoors(SESSION.id)} />;
 }
 
 function draw() {
@@ -80,14 +80,14 @@ describe('the dock of a part’s session awaiting its step', () => {
 
   function Waiting({ awaitingStep }: { awaitingStep: boolean }) {
     const session = { ...SESSION, quest: 'q9', repository: 'settings', state: awaitingStep ? 'awaiting-step' as const : 'working' as const };
-    return <WaitStrip session={session} runWaits={useRunWaitDoors(session.id, { awaitingStep, onQuest: vi.fn() })} />;
+    return <SessionDock session={session} runWaits={useRunWaitDoors(session.id, { awaitingStep, onQuest: vi.fn() })} />;
   }
 
   it('reads the session’s run once it awaits its step and names what its part waits on', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'WORKFLOW_RUN' ? answerOf(WAITING_PART) : {}));
     show(<Waiting awaitingStep />, new QueryClient({ defaultOptions: { queries: { retry: false } } }));
 
-    expect(await screen.findByRole('region', { name: 'What its run waits on' })).toHaveTextContent(/waits on app’s stage-ended/);
+    await waitFor(() => expect(document.querySelector('[data-region="dock"]')).toHaveTextContent(/waits on app’s stage-ended/));
     expect(sentTo(invoke, 'WORKFLOW_RUN')).toEqual([{ session: 's1' }]);
   });
 
@@ -96,6 +96,6 @@ describe('the dock of a part’s session awaiting its step', () => {
     show(<Waiting awaitingStep={false} />, new QueryClient({ defaultOptions: { queries: { retry: false } } }));
 
     expect(sentTo(invoke, 'WORKFLOW_RUN')).toEqual([]);
-    expect(screen.queryByRole('region')).toBeNull();
+    expect(document.querySelector('[data-region="dock"]')).toBeNull();
   });
 });
