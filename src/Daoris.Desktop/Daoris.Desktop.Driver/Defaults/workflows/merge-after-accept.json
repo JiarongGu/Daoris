@@ -2,10 +2,10 @@
   "id": "merge-after-accept",
   "order": 1,
   "name": "Merge workflow",
-  "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line.",
+  "for": "For a repository whose work merges once it is accepted: once the work's requests are answered its Accept follows the risk policy (it passes where nothing gates it), and it merges into the line.",
   "delivery": {
     "name": "Merge after you accept",
-    "for": "For a repository whose work you accept: once the work's requests are answered you review it, and it merges into the line."
+    "for": "For a repository whose work merges once it is accepted: once the work's requests are answered its Accept follows the risk policy (it passes where nothing gates it), and it merges into the line."
   },
   "setUp": true,
   "graph": {

@@ -30,6 +30,13 @@ public static class CastReading
         return role => ServedBy(cast.Value(role));
     }
 
+    /// <summary>Whether an agent session serves each role at the place as <paramref name="home"/>'s files say it now.</summary>
+    public static Func<string, bool> ServesAt(string home, string? workspace, string? repository)
+    {
+        var cast = Now(home, workspace, repository);
+        return role => ServedBy(cast(role));
+    }
+
     public static Func<string, bool> Serves(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository)
     {
         var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);

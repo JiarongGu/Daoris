@@ -45,8 +45,10 @@ public static class StepSettles
             var review = declared.Kind == NodeKinds.Review;
             var answer = outcome switch
             {
-                null or Accepted or "approved" => review ? NodeWordActs.Accept : NodeWordActs.Approve,
-                "changes" or "rejected" => review ? NodeWordActs.Changes : NodeWordActs.Reject,
+                Accepted when review => NodeWordActs.Accept,
+                "approved" when !review => NodeWordActs.Approve,
+                "changes" when review => NodeWordActs.Changes,
+                "rejected" when !review => NodeWordActs.Reject,
                 _ => null,
             };
             if (answer is null) return new(run, node, act, RunNodeWords.NotOutcome) { Detail = review ? "accepted, changes" : "approved, rejected" };

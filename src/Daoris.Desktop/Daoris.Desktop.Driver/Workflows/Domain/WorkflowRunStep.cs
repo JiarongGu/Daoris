@@ -82,6 +82,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>A standing step's tenure: its holder, the epoch its presses carry, and its acts (<see cref="StepHoldActs"/>); null where none.</summary>
     public string? HeldBy { get; init; }
 
+    /// <summary>Whether the step waits on a role an agent holds that no agent session serves (<see cref="StepVacancies"/>): vacant, never handed.</summary>
+    public bool Vacant { get; init; }
+
     public int? Epoch { get; init; }
 
     public IReadOnlyList<string>? Holds { get; init; }

@@ -24,6 +24,10 @@ public static class StepVacancies
         $"vacant: `{step.Role}` is its agent's{Named(step)}, and no agent session answers its {step.Why}; listed under Vacant for anyone to take, it gives up "
         + $"{VacancySetting.Said(bound)} after it began waiting";
 
+    /// <summary>What a run's view says of a step standing vacant: its role's agent holds it and no agent session answers it.</summary>
+    public static string RunSaid(RoleWait wait) =>
+        $"vacant: `{wait.Role}` is its agent's, and no agent session answers its {wait.Why}; it is listed under Vacant for anyone to take";
+
     public static string Tried(HeldStep step, TimeSpan bound) =>
         $"gave up: `{step.Role}` stood vacant past {VacancySetting.Said(bound)}. Tried: the place's cast (no cast names a holder whose session answers "
         + $"its {step.Why}), the role's agent{Named(step)} (no session of it answers it), and listing it under Vacant, where nobody took it";

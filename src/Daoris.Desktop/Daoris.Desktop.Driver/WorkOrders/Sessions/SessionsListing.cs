@@ -59,7 +59,7 @@ internal static class SessionsListing
 
         if (ask.Json)
         {
-            output.Add(times.Time("lines", () => SessionsJson.Json(rows, entries)));
+            output.Add(times.Time("lines", () => SessionsJson.Json(rows, entries, ask.Group is null ? VacantWaits(look, ask.Repository) : null)));
             return output;
         }
 
@@ -105,11 +105,13 @@ internal static class SessionsListing
         return output;
     }
 
+    /// <summary>The steps waiting on a role an agent holds that no agent session serves (<see cref="StepVacancies"/>), of <paramref name="repository"/> where one is named.</summary>
+    internal static IReadOnlyList<PersonWait> VacantWaits(SessionLook look, string? repository) =>
+        [.. look.RunWaits.Where(wait => wait.Vacant && (repository is null || string.Equals(wait.Repository, repository, StringComparison.OrdinalIgnoreCase)))];
+
     internal static IReadOnlyList<string> Vacant(SessionLook look, string? repository)
     {
-        var vacant = look.RunWaits
-            .Where(wait => wait.Vacant && (repository is null || string.Equals(wait.Repository, repository, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
+        var vacant = VacantWaits(look, repository);
         if (vacant.Count == 0) return [];
         return
         [

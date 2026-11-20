@@ -5,7 +5,7 @@
 A workflow says how a repository's work moves from an agent's done to the line. It is a saved graph of steps of fixed kinds:
 holds, a second opinion, the person's look, the person's Accept (`review`), one landing (`land`), and what follows it (a pushed
 branch, a pull request, integration, a release). Each place (this machine, a workspace, a repository) follows one saved workflow;
-a fresh home follows a shipped copy of *Merge after you accept*. A chain's work in one repository is a run, bound at its first
+a fresh home follows a shipped copy of *Merge after you accept*, whose Accept follows the risk policy and passes where nothing gates it. A chain's work in one repository is a run, bound at its first
 start to one version. The node runtime in the driver loop evaluates the run's graph and performs the `land` itself once the gates
 hold: a merge into the line, a branch for the person, a plugin's push and pull request, or the line's integration. Work no saved
 workflow governs is held, and nothing lands it.
@@ -387,7 +387,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     review is reached by the policy (`policy`, its words the verdict's rule and revision) and no one is asked; classed `role` it waits on
     its own role (`acceptor` where it names none) as the place casts it; classed `owner` the owner role holds it from its start, as a marked
     approver is. A `task`'s approval reads `task.approve`, or the act its `act` option names (an approval spending a destination,
-    `release.start/production`), alike, reached `approved` where it passes; one naming no role is still the owner role's. A graph with no `land` is work in place and refuses a
+    `release.start/production`), alike, reached `approved` where it passes; one naming no role is still the owner role's. An `act` that is no act of the census, spelled exactly (an unknown kind or a case mismatch, a qualifier on any kind but `release.start`, not a string) is refused at the graph's declaration (`RiskStepHolds.BadAct`) and judged `owner` at runtime, so it never fails open. A branch that committed nothing has nothing to accept: its review follows the policy like any other (it passes where the policy gates nothing). A tenure's class is judged again each pass where the step would release (`TenureRejudge`): a raise to `owner` while it waits moves it to the owner role, a lowering from `owner` hands it back to the holder the place casts, and a lowering to a pass reaches it by the policy. A graph with no `land` is work in place and refuses a
     landing's press. A flow with no `review` lands with no press, its authority judged again before the first effect. A run is over
     when no node can move, nothing is pending and no failure is kept for the person, its end `completed`, `failed` or `stopped`
     (with whose). Each review attempt reads the run's work into one record, written as it begins and never edited
@@ -740,7 +740,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     agent's session serves (a plugin's actor held by its role's agent by default, a go-ahead, a file's choice, an opinion's vacancy, an
     unchecked done's pass, and a role-classed Accept or approval, which no dispatcher hands to a session yet) is a vacancy (D354 point 4,
     `StepVacancies`): a `step` row marked `vacant`, never handed (so a release's approval is never handed to the run's maker), listed
-    under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session list`, never counted as
+    under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as handed to an agent), never counted as
     the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in the run's lines; the person's press
     still takes and settles it. Past its bound (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the
     step with what it tried, so its run ends there as gave up, never asked of the owner. At a place marked for production releases an
@@ -753,9 +753,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     pass of it is refused `own-work`. No worker answers its own gate (D354 point 5): at the settle door (`SettleDoor.Own`, asked by the
     node door and `step_settle` alike) a yes (an Accept, an approval, a pass, a decision's answer, a Done) to a step standing at a hold of
     the risk census (`RiskStepHolds.KindOf`) from a working session the run's makers hold (`NodeRuntime.Workers`: those serving its quests
-    and those that worked its branch, handed to the look as `ILookWiring.RunWorkers`) is refused `own-work`, read from the word's channel
+    and those that worked its branch, with every helper session a maker started and theirs in turn, read from the home's helper asks, ids compared without case; handed to the look as `ILookWiring.RunWorkers`) is refused `own-work`, read from the word's channel
     and its proved session, never its words, whatever holder it speaks as; while the makers are not read such a yes from a working session
-    is refused too, and a task's own Done, which is work and not a hold, stays its worker's.
+    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the next look takes it; a task's own Done, which is work and not a hold, stays its worker's. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the

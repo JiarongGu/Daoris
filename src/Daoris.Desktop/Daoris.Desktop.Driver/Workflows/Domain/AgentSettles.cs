@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 public static class AgentSettles
 {
-    /// <summary>A cast or a hand-over of an agent to a step no agent's channel settles.</summary>
+    /// <summary>A cast or a hand-over of the bare <c>agent</c> to the role that reads the dones, whose word any agent would speak: refused until one is named.</summary>
     public const string Refused = "agent-cannot-settle";
 
     /// <summary>
