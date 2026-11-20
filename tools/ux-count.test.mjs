@@ -194,7 +194,7 @@ test('a root names the part of the page counted, and one that matches nothing is
 });
 
 test('the window’s path gives the same answer: the same expression, through the client eval uses', { skip: noBrowser }, async () => {
-  const port = await freePort(9480);
+  const port = await freePort(9480 + Math.floor(Math.random() * 400));
   const debuggable = await chromium.launch({ args: [`--remote-debugging-port=${port}`] });
   try {
     const context = await debuggable.newContext({ viewport: { width: 1546, height: 1013 }, colorScheme: 'light' });

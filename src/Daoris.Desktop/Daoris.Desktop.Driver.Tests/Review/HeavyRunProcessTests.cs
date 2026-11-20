@@ -336,6 +336,7 @@ public sealed class HeavyRunProcessTests : IDisposable
         _fixture.Gates(_fixture.Checkout, ("hold", Hold("first"), true));
         _fixture.Gates(_fixture.Tree, ("hold", Hold("second"), true));
         var key = HeavySlot.KeyOf(_fixture.Checkout)!;
+        File.WriteAllText(DaorisHome.Entry(_fixture.Home, HomeEntry.DriverConfig), """{ "checks": 1 }""");
 
         var (firstHost, firstSaid) = Host(_fixture.Checkout);
         await Poll.Until(() => firstSaid.Text.Contains("begun first", StringComparison.Ordinal), () => firstSaid.Text);
@@ -396,7 +397,11 @@ public sealed class HeavyRunProcessTests : IDisposable
     }
 
     private HeavyRunWorld World(string directory) =>
-        new(_fixture.Home, directory, _ => null) { Waiting = new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow) };
+        new(_fixture.Home, directory, _ => null)
+        {
+            Waiting = new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow),
+            Checks = () => new CheckRules(1, 4, 1, () => null),
+        };
 
     private string Hold(string tag) => $"node \"{_fixture.At("hold.mjs")}\" {tag} \"{_fixture.Folder}\"";
 

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSetAccess, useSetCap, useSetCoolOff, useSetDrain, useSetGitAccess, useSetManifest, useSetNotify, useSetQuiet,
-  useSetTerminal,
+  useDriver, usePlugins, useSetAccess, useSetCap, useSetChecks, useSetCoolOff, useSetDrain, useSetGitAccess, useSetManifest, useSetNotify,
+  useSetQuiet, useSetTerminal,
 } from '../bridge/shell';
 import { terminalTierOf } from './machine/TerminalTierSetting';
 import { terminalActsOf } from '../person/terminalActs';
@@ -48,6 +48,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setCoolOff = useSetCoolOff();
   const setQuiet = useSetQuiet();
   const setDrain = useSetDrain();
+  const setChecks = useSetChecks();
   const setCap = useSetCap();
   const setManifest = useSetManifest();
   const setTerminal = useSetTerminal();
@@ -60,7 +61,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   return (
     <DriverCards
       uxTrail={{ on: trail.on, pending: trail.set.isPending, onChange: (on) => trail.set.mutate(on) }}
-      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest') }}
+      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks') }}
       facts={{
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
@@ -68,6 +69,8 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         coolOff: driver.data?.coolOff,
         quiet: driver.data?.quiet,
         drain: driver.data?.drain,
+        // Null is auto; a state answer lacking the field leaves it undefined, and the row absent.
+        checks: driver.data && 'checks' in driver.data ? driver.data.checks ?? null : undefined,
         manifestFiles: driver.data?.manifestFiles,
         manifestMinutes: driver.data?.manifestMinutes,
         manifestCopy: driver.data?.manifestCopy,
@@ -77,7 +80,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         machineAccess: driver.data?.machineAccess,
         machineGitAccess: driver.data?.machineGitAccess,
       }}
-      busy={{ access: setAccess.isPending, gitAccess: setGitAccess.isPending }}
+      busy={{ access: setAccess.isPending, gitAccess: setGitAccess.isPending, checks: setChecks.isPending }}
       // This machine's git access, as Settings → Git sets it.
       onGitAccess={(edit, answered) => setGitAccess.mutate({ machine: true, ...edit }, {
         onSuccess: () => answered?.done(),
@@ -98,6 +101,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onDrain={(value) => setDrain.mutate({ minutes: value }, {
         onSuccess: () => notify(t('settings.drain.set', { count: value })),
+        onError,
+      })}
+      onChecks={(value) => setChecks.mutate({ checks: value }, {
+        onSuccess: () => notify(value === null ? t('settings.checks.setAuto') : t('settings.checks.set', { count: value })),
         onError,
       })}
       onManifest={(bound) => setManifest.mutate(bound, {

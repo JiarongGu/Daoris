@@ -28,7 +28,7 @@ internal static class DriverChoicesList
             }
         }
 
-        foreach (var key in (string[])["quiet", "manifest", "cooloff", "notify", TerminalTiers.File]) MachineSettingsSaid.Say(key, choices, world);
+        foreach (var key in (string[])["quiet", "manifest", "cooloff", "notify", TerminalTiers.File, ChecksSetting.File]) MachineSettingsSaid.Say(key, choices, world);
 
         if (choices.Drivable.Count == 0)
         {

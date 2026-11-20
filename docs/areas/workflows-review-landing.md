@@ -619,9 +619,28 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
     A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
-    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
-    *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
-    check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    the declaration's `reached` runner over every tier. The machine runs as many heavy runs at once as its one admission admits
+    (`CheckAdmission`), judging every heavy run on it together from the records beside the slots: the checks' and gated integration
+    lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
+    once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
+    starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
+    number, never more than the machine's heavy-run admission holds; `auto`, the default, runs the first always and another while free
+    physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process
+    classes its change reaches), counted again for each run whose first gate has not ended (its record says so; a Daoris check's one
+    `reached` gate holds its build and its suites, so it counts twice for its whole run), up to a quarter of the processors within the
+    machine's heavy-run admission, whose places each step still takes; memory that cannot be read runs one. A repository's heavy-run
+    slots (`HeavySlot`, `locks/heavy/<key>.lock` then `<key>-n.lock`, each with its holder's record and its own dead-holder clean-up)
+    are as many as the admission's, so one repository's checks, its sessions' heavy runs and its integration's gated lines run side by
+    side, each check in its slot's verification tree (`lines/trees/<key>`, `<key>-n`; a tree past the slots there are now, left by a
+    larger `checks`, stays as it is, kept for when they grow again). A repository whose gates share what two trees cannot declares
+    `"heavySlots": <n>` in its `daoris.gates.json`, read from its checkout at each look: its heavy runs then run that many at once, 1
+    for one at a time, within the machine's admission (D349: the framework is Daoris's, the count the repository's). A check judged as
+    merged reads its line's tip once and merges from objects alone, so an integration landing beside it never shows it a half-moved
+    line. A session's `run-heavy` that is not admitted while its verification holds a slot of the repository says the true reason
+    (its repository's slots, memory or the machine's slots) and does not wait. A sent check the executor
+    has not started says why it waits on its step, never *Ready*: every slot running (`slot`, how many of how many), memory (`slot-memory`,
+    free and needed), every slot of its repository held (`slot-repository`), else its place in the queue (`slot-queued`), each with that place
+    (`CheckSlotWaits`, read from the slots' waiter files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other

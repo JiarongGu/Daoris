@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One heavy-run slot per repository, across its trees. Two driven sessions on one repository
-/// would each run their full build and suites at once; the slot makes the second wait. Files only, so it is the fast half's: the
+/// A repository's heavy-run slots, across its trees, as many as the machine's checks admit. Files only, so it is the fast half's: the
 /// processes a run holds are <see cref="HeavyRunProcessTests"/>'.
 /// </summary>
 public sealed class HeavySlotTests : IDisposable
@@ -193,14 +192,15 @@ public sealed class HeavySlotTests : IDisposable
         await Poll.Until(() => HeavySlot.Look(_fixture.Home, key, (_, _) => true).Waiters.Count == 1, () => "no waiter was recorded");
 
         var look = HeavySlot.Look(_fixture.Home, key, (_, _) => true);
-        Assert.Equal(("s-12", "web", 1), (look.Holder?.Session, look.Holder?.Now?.Gate, look.Holder?.Now?.At));
-        Assert.Equal(since + TimeSpan.FromMinutes(5), look.Holder?.Now?.Since);
+        var holder = Assert.Single(look.Holders);
+        Assert.Equal(("s-12", "web", 1), (holder.Session, holder.Now?.Gate, holder.Now?.At));
+        Assert.Equal(since + TimeSpan.FromMinutes(5), holder.Now?.Since);
         Assert.Equal(waiter, Assert.Single(look.Waiters));
 
         holding.Dispose();
         using var taken = await taking.WaitAsync(Poll.Patience);
         var after = HeavySlot.Look(_fixture.Home, key, (_, _) => true);
-        Assert.Null(after.Holder);
+        Assert.Empty(after.Holders);
         Assert.Empty(after.Waiters);
         Assert.Empty(Directory.EnumerateFiles(HeavySlot.WaitersOf(_fixture.Home, key)));
     }
@@ -226,7 +226,7 @@ public sealed class HeavySlotTests : IDisposable
         // A reused id is another process: alive only where the id and its start both match.
         var look = HeavySlot.Look(_fixture.Home, key, (pid, started) => pid == 6161 && started == 3);
 
-        Assert.Null(look.Holder);
+        Assert.Empty(look.Holders);
         Assert.Equal(6161, Assert.Single(look.Waiters).Pid);
         Assert.False(HeavySlot.Running(4242, 1));
         Assert.True(HeavySlot.Running(Environment.ProcessId, System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks));
@@ -264,5 +264,68 @@ public sealed class HeavySlotTests : IDisposable
         using var slot = await HeavySlot.TakeAsync(_fixture.Home, Key(_fixture.Checkout), "engine", said, CancellationToken.None).WaitAsync(Poll.Patience);
 
         Assert.Equal("", said.Text);
+    }
+
+    /// <summary>
+    /// 🔴 Slots as the checks admit: two takes of one repository each hold a slot of its own, with its own lock, record and tree name, a
+    /// third is refused, and each slot's taker reads the run before in that slot alone, so a dead holder's job is ended per slot.
+    /// </summary>
+    [Fact]
+    public void Two_slots_hold_two_runs_of_one_repository_each_with_its_own_record_and_a_third_is_refused()
+    {
+        var key = Key(_fixture.Checkout);
+        var since = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        Directory.CreateDirectory(Path.GetDirectoryName(HeavySlot.RecordOf(_fixture.Home, key, 1))!);
+        File.WriteAllText(HeavySlot.RecordOf(_fixture.Home, key, 1), HeavySlot.Serialize(new HeavyHolder(4242, 1, _fixture.Tree, ["build"], since, null, "dead-job")));
+
+        using var first = HeavySlot.TryTake(_fixture.Home, key, 2)!;
+        using var second = HeavySlot.TryTake(_fixture.Home, Key(_fixture.Tree), 2)!;
+        Assert.Null(HeavySlot.TryTake(_fixture.Home, key, 2));
+
+        Assert.Equal((key, $"{key}-2"), (first.Name, second.Name));
+        Assert.Null(first.Before);
+        Assert.Equal("dead-job", second.Before?.Job);
+        first.Keep(new HeavyHolder(4242, 1, _fixture.Checkout, ["build"], since, "s-1", null));
+        second.Keep(new HeavyHolder(5151, 2, _fixture.Tree, ["build"], since + TimeSpan.FromMinutes(1), "s-2", null));
+        Assert.Equal(["s-1", "s-2"], HeavySlot.Look(_fixture.Home, key, (_, _) => true).Holders.Select(holder => holder.Session));
+    }
+
+    /// <summary>
+    /// 🔴 With memory for two, a second run of one repository takes a slot beside the first at once, its record written as it takes it;
+    /// with memory for one it waits for memory and says so; a pinned one keeps one, the second waiting behind the first. The first is
+    /// still in its first gate, so its need counts again.
+    /// </summary>
+    [Theory]
+    [InlineData(null, 20L, null)]
+    [InlineData(null, 5L, "waits for memory: 5.0 GB free, a check needs 16 GB with 1 still starting, beside session s-1")]
+    [InlineData(1, 20L, "is held by session s-1")]
+    public async Task A_second_run_of_one_repository_is_admitted_by_the_checks_rule(int? checks, long freeGb, string? says)
+    {
+        var key = Key(_fixture.Checkout);
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        var started = self.StartTime.ToUniversalTime().Ticks;
+        var now = DateTimeOffset.Parse("2026-10-20T09:00:00Z");
+        using var holding = HeavySlot.TryTake(_fixture.Home, key)!;
+        holding.Keep(new HeavyHolder(Environment.ProcessId, started, _fixture.Checkout, ["build"], now - TimeSpan.FromMinutes(10), "s-1", null));
+        var rules = new CheckRules(checks, 16, 4, () => new MemoryReading(freeGb << 30, freeGb << 30));
+        var admit = new HeavyAdmit(() => rules, _fixture.Tree, () => new HeavyHolder(Environment.ProcessId, started, _fixture.Tree, ["build"], now, "s-2", null));
+        var said = new SaidWriter();
+
+        using var stop = new CancellationTokenSource();
+        var taking = HeavySlot.TakeAsync(
+            _fixture.Home, key, "engine", said, stop.Token, new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromMinutes(1), () => now), admit: admit);
+        if (says is null)
+        {
+            using var beside = await taking.WaitAsync(Poll.Patience);
+            Assert.Equal($"{key}-2", beside.Name);
+            Assert.Equal("", said.Text);
+            Assert.Equal(["s-1", "s-2"], HeavySlot.Look(_fixture.Home, key).Holders.Select(holder => holder.Session));
+            return;
+        }
+
+        await Poll.Until(() => said.Text.Contains("this run waits for it", StringComparison.Ordinal), () => said.Text);
+        Assert.Contains($"`engine`'s heavy-run slot {says}", said.Text);
+        stop.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => taking.WaitAsync(Poll.Patience));
     }
 }

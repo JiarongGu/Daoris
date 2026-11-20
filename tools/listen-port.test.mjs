@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { BAD_PORTS, listenFetchable } from './listen-port.mjs';
+import { E2E_BAND } from '../src/Daoris.Web/scripts/e2e-port.mjs';
 
 const answering = () => createServer((request, response) => response.writeHead(200).end('here'));
 
@@ -61,6 +62,11 @@ test('a server the system hands a fetchable port keeps it, and answers', async (
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test('the web gate\'s port band holds no port a browser refuses, so no checkout path hashes its suite onto one', () => {
+  const band = Array.from({ length: E2E_BAND.size }, (_, at) => E2E_BAND.from + at);
+  assert.deepEqual(band.filter((port) => BAD_PORTS.has(port)), []);
 });
 
 test('a listen that fails is the caller\'s error, not a retry', async () => {

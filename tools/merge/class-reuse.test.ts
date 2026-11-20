@@ -1,5 +1,6 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
+import { mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixtureFolder } from './fixture-home.ts';
 import { PassedClasses, classKey, splitByReuse, unitId, type KeyContext, type Unit } from './class-reuse.ts';
@@ -63,6 +64,22 @@ test('two runs saving beside each other keep each other\'s passes: a builder\'s 
     const read = new PassedClasses(file);
     assert.equal(read.has(unitId(a), 'k-a'), true);
     assert.equal(read.has(unitId(b), 'k-b'), true);
+  } finally {
+    remove();
+  }
+});
+
+test('a save that cannot land is said and never fails the run, and leaves no temporary file', () => {
+  const { dir: folder, remove } = fixtureFolder('class-reuse');
+  try {
+    const file = join(folder, 'store.json');
+    mkdirSync(join(file, 'held'), { recursive: true });
+    const store = new PassedClasses(file);
+    store.add(unitId(a), 'k-a', '2026-11-13T00:00:00Z');
+    const said: string[] = [];
+    assert.doesNotThrow(() => store.save((line) => said.push(line)));
+    assert.match(said.join('\n'), /could not save/);
+    assert.deepEqual(readdirSync(folder), ['store.json']);
   } finally {
     remove();
   }

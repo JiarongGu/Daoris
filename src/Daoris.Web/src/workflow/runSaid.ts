@@ -84,7 +84,7 @@ export function checkWord(t: TFunction, step: RunStep): string | null {
   }
 }
 
-const slotWait = (step: RunStep): boolean => step.wait?.code === 'slot' || step.wait?.code === 'slot-queued';
+const slotWait = (step: RunStep): boolean => step.wait?.code === 'slot' || step.wait?.code?.startsWith('slot-') === true;
 
 /** A step's status word: a check's verdict where it has one, a wait's *waiting on `<role>`: `<holder>`*, else its state's. */
 export const stepWord = (t: TFunction, step: RunStep): string => {

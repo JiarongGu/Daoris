@@ -17,7 +17,7 @@ const titleOf = (id: string) => ({ 's-fts': "Fix the FTS index's ranking", 's-ch
 
 const RUNNING: HeavySlot = {
   repository: 'engine',
-  holder: { session: 's-fts', gates: ['build', 'test:web', 'e2e'], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } },
+  holders: [{ session: 's-fts', gates: ['build', 'test:web', 'e2e'], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } }],
   waiters: [{ session: 's-chan', since: ago(3) }],
 };
 
@@ -35,18 +35,18 @@ describe('the slot as the driver answers it', () => {
   it('reads the holder at its gate and the waiters, and an absent answer or a shape it does not know as nothing', () => {
     const read = readHeavySlot({
       repository: 'engine',
-      holder: { session: 's-fts', gates: ['build', 'test:web', 7], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } },
+      holders: [{ session: 's-fts', gates: ['build', 'test:web', 7], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } }, { session: 's-x' }],
       // A waiter with no session is a run from a terminal; one with no time is no waiter.
       waiters: [{ since: ago(3) }, { session: 's-x' }],
     });
-    expect(read?.holder?.gates).toEqual(['build', 'test:web']);
-    expect(read?.holder?.now).toEqual({ gate: 'test:web', at: 1, since: ago(6) });
+    expect(read?.holders[0]?.gates).toEqual(['build', 'test:web']);
+    expect(read?.holders[0]?.now).toEqual({ gate: 'test:web', at: 1, since: ago(6) });
     expect(read?.waiters).toEqual([{ session: null, since: ago(3) }]);
 
     expect(readHeavySlot(undefined)).toBeNull();
     expect(readHeavySlot({ marks: true })).toBeNull();
     // The bridge leaves a null out: no holder is no heavy run now.
-    expect(readHeavySlot({ repository: 'engine', waiters: [] })).toEqual({ repository: 'engine', holder: null, waiters: [], refusal: null });
+    expect(readHeavySlot({ repository: 'engine', waiters: [] })).toEqual({ repository: 'engine', holders: [], waiters: [], refusal: null });
   });
 
   it('gives each session its part: the holder at its gate, a failed gate, a waiter behind the holder or a terminal, and none', () => {
@@ -55,15 +55,19 @@ describe('the slot as the driver answers it', () => {
     expect(heavyPartOf(RUNNING, 's-other')).toBeNull();
     expect(heavyPartOf(null, 's-fts')).toBeNull();
 
-    const failed = { ...RUNNING, holder: { ...RUNNING.holder!, failed: { gate: 'test:web', exit: 1 } } };
+    const failed = { ...RUNNING, holders: [{ ...RUNNING.holders[0], failed: { gate: 'test:web', exit: 1 } }] };
     expect(heavyPartOf(failed, 's-fts')).toEqual({ kind: 'failed', gate: 'test:web' });
 
-    const terminal = { ...RUNNING, holder: { ...RUNNING.holder!, session: null } };
+    const terminal = { ...RUNNING, holders: [{ ...RUNNING.holders[0], session: null }] };
     expect(heavyPartOf(terminal, 's-chan')).toEqual({ kind: 'waiting', behind: null, since: ago(3) });
 
     // Taken, and its first gate not started yet: at its first, from when it took the slot.
-    const taken = { ...RUNNING, holder: { ...RUNNING.holder!, now: null } };
+    const taken = { ...RUNNING, holders: [{ ...RUNNING.holders[0], now: null }] };
     expect(heavyPartOf(taken, 's-fts')).toEqual({ kind: 'running', n: 1, total: 3, gate: 'build', since: ago(9) });
+
+    const two = { ...RUNNING, holders: [...RUNNING.holders, { session: 's-two', gates: ['build'], since: ago(2) }] };
+    expect(heavyPartOf(two, 's-two')).toEqual({ kind: 'running', n: 1, total: 1, gate: 'build', since: ago(2) });
+    expect(heavyPartOf(two, 's-fts')).toEqual({ kind: 'running', n: 2, total: 3, gate: 'test:web', since: ago(6) });
   });
 });
 
@@ -93,7 +97,7 @@ describe('the machine admission (HEAVYQUEUE1)', () => {
       waits: [{ kind: 'session', session: 's-chan', what: 'dotnet test', since: ago(2) }],
     });
     expect(readHeavySlot({ repository: 'engine', waiters: [], admission: { capacity: 0, holds: [], waits: [] } })?.admission).toBeUndefined();
-    expect(readHeavySlot({ repository: 'engine', waiters: [] })).toEqual({ repository: 'engine', holder: null, waiters: [], refusal: null });
+    expect(readHeavySlot({ repository: 'engine', waiters: [] })).toEqual({ repository: 'engine', holders: [], waiters: [], refusal: null });
   });
 
   it('gives a session asking for a place the wait for the machine, whatever else it holds', () => {
@@ -146,8 +150,8 @@ describe('the line', () => {
 
   it('draws the holder\'s gates as phases: done, now, to come; a failed one with its exit', () => {
     const t = i18n.t.bind(i18n);
-    expect(heavyPhases(t, RUNNING.holder!).map((phase) => phase.state)).toEqual(['done', 'now', 'to-come']);
-    const failed = heavyPhases(t, { ...RUNNING.holder!, failed: { gate: 'test:web', exit: 3 } });
+    expect(heavyPhases(t, RUNNING.holders[0]).map((phase) => phase.state)).toEqual(['done', 'now', 'to-come']);
+    const failed = heavyPhases(t, { ...RUNNING.holders[0], failed: { gate: 'test:web', exit: 3 } });
     expect(failed[1]).toMatchObject({ state: 'failed', sentence: 'test:web failed with exit 3.' });
   });
 });
@@ -184,20 +188,20 @@ describe('where it is said', () => {
     expect(onOpen).toHaveBeenCalledWith('s-chan');
     cleanup();
 
-    render(<HeavySlotRow slot={{ repository: 'engine', waiters: [] }} titleOf={titleOf} />);
+    render(<HeavySlotRow slot={{ repository: 'engine', holders: [], waiters: [] }} titleOf={titleOf} />);
     expect(screen.getByText('No heavy run now')).toBeTruthy();
     cleanup();
 
     // Held by a run from a terminal: said, with no door.
-    render(<HeavySlotRow slot={{ ...RUNNING, holder: { ...RUNNING.holder!, session: null }, waiters: [] }} titleOf={titleOf} onOpen={onOpen} />);
+    render(<HeavySlotRow slot={{ ...RUNNING, holders: [{ ...RUNNING.holders[0], session: null }], waiters: [] }} titleOf={titleOf} onOpen={onOpen} />);
     expect(screen.getByText('a run from a terminal')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
   // The *Heavy run* row names the verification run while it holds the slot, in both languages.
   it('names the verification run holding the slot', async () => {
-    const read = readHeavySlot({ repository: 'engine', holder: { run: 'v-0123456789abcdef', gates: ['suite'], since: ago(2) }, waiters: [] });
-    expect(read?.holder?.run).toBe('v-0123456789abcdef');
+    const read = readHeavySlot({ repository: 'engine', holders: [{ run: 'v-0123456789abcdef', gates: ['suite'], since: ago(2) }], waiters: [] });
+    expect(read?.holders[0]?.run).toBe('v-0123456789abcdef');
     render(<HeavySlotRow slot={read!} titleOf={titleOf} />);
     expect(screen.getByText('verification run v-0123456789abcdef')).toBeTruthy();
     cleanup();

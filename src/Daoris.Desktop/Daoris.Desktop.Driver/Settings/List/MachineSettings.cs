@@ -46,6 +46,8 @@ public static class MachineSettings
         // Its kinds are the Disk space card's, worded there.
         new("keep", "keep", Card: null),
         new("terminal", "terminal", Card: Driver),
+        // How many checks run at once, or auto by memory; more than sixteen suites at once is no machine's.
+        new("checks", ChecksSetting.File, Driver, Least: 1, Most: 16),
     ];
 
     /// <summary>The setting of a key, or null where none is.</summary>
