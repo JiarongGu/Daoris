@@ -69,6 +69,7 @@ public sealed class SupervisedPlanRunTests : NodeRunFixture
         BoundTo(graph, ask: "a1");
         _units = [Quest(), Ask()];
         Plan("2");
+        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, StepRoles.Acceptor, CastHolders.Person, "mine", _now));
         var runtime = Applying();
         await RunPassAsync(runtime);
         Assert.Equal((NodeStates.Active, 1), (RunStatus("review").State, RunStatus("review").Attempt));

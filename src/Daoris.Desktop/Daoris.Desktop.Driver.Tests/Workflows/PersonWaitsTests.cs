@@ -73,8 +73,13 @@ public sealed class PersonWaitsTests : NodeRunFixture
             },
         });
 
+        Assert.Empty(PersonWaitReader.Read(_home));
+        YouHold(StepWaiting.RoleOf(PersonWaits.Choose));
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
+
+    private void YouHold(string role) =>
+        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, role, CastHolders.Person, "mine", _now));
 
     /// <summary>The shape of the work workspace's pull-request runs: the step failed `no-token` and is kept for the person, its run not ended.</summary>
     [Theory]
@@ -99,6 +104,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
             ],
         });
 
+        YouHold(StepWaiting.RoleOf(PersonWaits.Left));
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
 
@@ -135,6 +141,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
             ],
         });
 
+        YouHold(StepRoles.Approver);
         var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, (string?)wait.Role, wait.Since)).ToList();
 
         Assert.Equal(why is null ? [] : [(RunId, "release", why, actor, (DateTimeOffset?)said)], waits);
