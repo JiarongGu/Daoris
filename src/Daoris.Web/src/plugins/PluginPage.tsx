@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, CheckField, Inline, PathText, Pill, Prose } from '../design/ui';
+import { Button, CheckField, Inline, Note, PathText, Pill, Prose } from '../design/ui';
 import { type KitPoint, type PluginTrialResult, pointGloss, TrialReport } from './PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from './PluginUpdate';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
@@ -23,9 +23,9 @@ export { PageHead, PageSection };
  */
 export function Lead({ text }: { text: string }) {
   return (
-    <p className="m-0 mb-4 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+    <Note tone="fail" className="mb-4 bg-page/60 px-3.5 py-2 text-body">
       <Inline text={text} />
-    </p>
+    </Note>
   );
 }
 

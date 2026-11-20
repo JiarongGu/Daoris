@@ -91,7 +91,10 @@ describe("an offer's page", () => {
     render(<OfferPage offer={{ ...OFFER, problem: 'needs plugin API 2, and this build speaks 1.' }} kitPoints={KIT} onInstall={vi.fn()} />);
 
     expect(within(header()).queryByRole('button')).toBeNull();
-    expect(screen.getByText('needs plugin API 2, and this build speaks 1.').closest('p')!.className).toMatch(/\bborder-warn\b/);
+    const refusal = screen.getByText('needs plugin API 2, and this build speaks 1.').closest('p')!;
+    expect(refusal).toHaveClass('text-fail-ink');
+    expect(refusal.querySelector('svg')).not.toBeNull();
+    expect(refusal.className).not.toMatch(/\bborder-(?:l-|warn)/);
   });
 
   it('holds Install while an install is on its way', () => {

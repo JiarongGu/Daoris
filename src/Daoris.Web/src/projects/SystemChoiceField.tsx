@@ -40,7 +40,7 @@ export function SystemChoiceField({ offered, system, name, onSystem, onName }: {
         placeholder={system.split('/')[1] ?? ''}
         className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
       />
-      <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">{t('projects.manage.systemNote')}</p>
+      <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">{t('projects.manage.systemNote')}</p>
     </>
   );
 }

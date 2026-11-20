@@ -291,7 +291,7 @@ describe('the chosen themes', () => {
   });
 
   it('catches a chosen block that drifted from its system twin', () => {
-    const drifted = tokensCss.replace(/(:root\[data-theme="dark"\]\s*\{[^}]*--page:\s*)#131312/, '$1#000000');
+    const drifted = tokensCss.replace(/(:root\[data-theme="dark"\]\s*\{[^}]*--page:\s*)#111316/, '$1#000000');
     expect(drifted).not.toBe(tokensCss);
     expect(palettes(drifted)['chosen-dark']).not.toEqual(palettes(drifted)['system-dark']);
   });

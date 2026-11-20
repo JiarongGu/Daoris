@@ -38,7 +38,7 @@ export function MemberThread({ lead, ask, working, onBack, onAskAgain, onPass, b
   const went = ask ? wentOf(ask) : null;
   const answered = ask?.state === 'answered';
   return (
-    <section data-member-thread className="grid gap-1.5 rounded-control border-l-[3px] border-l-accent bg-accent-soft/30 px-3 py-2">
+    <section data-member-thread className="grid gap-1.5 rounded-control bg-accent-soft/30 px-3 py-2">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="min-w-0 text-small text-ink wrap-anywhere">{t('work.team.thread.for', { title: lead })}</span>
         <span className="text-caption text-ink-faint">{t('work.team.role.helper')} · {t('work.team.thread.confined')}</span>

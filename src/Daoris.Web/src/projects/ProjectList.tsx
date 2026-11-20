@@ -181,7 +181,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
                     <WorkspaceHead name={group.workspace} count={group.count} />
                   </ListRowDoor>
                 )
-                : <span className="block min-w-0 flex-1 border-l-[3px] border-l-transparent px-2.5 py-1.5"><WorkspaceHead name={group.workspace} count={group.count} /></span>}
+                : <span className="block min-w-0 flex-1 border-l-2 border-l-transparent px-2.5 py-1.5"><WorkspaceHead name={group.workspace} count={group.count} /></span>}
               <Button
                 variant="ghost"
                 aria-expanded={open}
@@ -205,7 +205,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
                     type="button"
                     aria-expanded={outsideShown}
                     onClick={() => setOutsideOpen((was) => ({ ...was, [group.workspace]: !outsideShown }))}
-                    className="flex w-full items-center gap-1 border-l-[3px] border-l-transparent px-2.5 pb-1 pt-2 text-left text-small font-semibold text-ink-soft hover:text-ink"
+                    className="flex w-full items-center gap-1 border-l-2 border-l-transparent px-2.5 pb-1 pt-2 text-left text-small font-semibold text-ink-soft hover:text-ink"
                   >
                     <span className="min-w-0 flex-1 truncate">{t('projects.group.outside', { count: group.outside.length })}</span>
                     <Icon name={outsideShown ? 'chevronDown' : 'chevronRight'} size={12} className="shrink-0 text-ink-faint" />

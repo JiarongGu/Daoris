@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button, Card, CheckField, FormGrid, FormRow, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
+  Button, Card, CheckField, FormGrid, FormRow, Icon, Inline, Note, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
@@ -166,9 +166,9 @@ export function AgentRules({
 
       {/* The driver's own sentence, verbatim: the defaults still hold when the file does not. */}
       {rules.problem && (
-        <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="fail" className="bg-page/60 px-3.5 py-2 text-body">
           {rules.problem}
-        </p>
+        </Note>
       )}
 
       {proposals.length > 0 && (
@@ -181,7 +181,7 @@ export function AgentRules({
                 <li
                   key={proposal.id}
                   aria-label={t('settings.rules.proposals.row', { id: proposal.id })}
-                  className="border-l-[3px] border-l-st-open py-2 pl-3"
+                  className="py-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone="open">{t(`settings.rules.proposals.state.${proposal.state}`)}</Pill>

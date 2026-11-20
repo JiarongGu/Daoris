@@ -172,7 +172,7 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
       aria-current={chosen || undefined}
       onClick={onPress}
       className={cn(
-        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
+        'block w-full min-w-0 border-l-2 px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft/50',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
       )}

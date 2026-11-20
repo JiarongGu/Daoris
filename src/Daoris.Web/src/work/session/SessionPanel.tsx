@@ -51,7 +51,7 @@ export function Dock({ waits, now, narrow, onAnswer, count = waits.length, child
   const [whole, setWhole] = useState<string | null>(null);
   const shown = whole && waits.some((wait) => wait.id === whole) ? whole : waits[0]?.id;
   return (
-    <div data-region="dock" className="grid max-h-[40%] min-h-0 shrink-0 content-start gap-1.5 overflow-y-auto py-1.5">
+    <div data-region="dock" className="grid max-h-[40%] min-h-0 shrink-0 content-start gap-2 overflow-y-auto py-2">
       {waits.length > 0 && count > 0 && (
         <p data-dock-count className="sticky top-0 m-0 bg-page text-caption font-semibold uppercase tracking-wide text-you-ink">
           {t('work.session.wait.count', { count })}

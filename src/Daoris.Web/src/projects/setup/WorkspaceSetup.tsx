@@ -16,7 +16,7 @@ import { LineField } from '../../settings/repository/Lines';
 import { type OpinionEdit, OpinionField, type OpinionRule, opinionRowSays, opinionSummary } from '../../settings/repository/Opinions';
 import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { shellWord } from '../../lib/shellWord';
-import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
+import { Button, FormField, FormGrid, FormRow, Icon, Inline, Note, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, SetupSection } from './SetupParts';
@@ -503,9 +503,9 @@ export function Wiring({ workspace, wiring, busy, startOpen }: {
         )
         : <p className="m-0 text-small text-ink-soft">{t('projects.workspace.says.local')}</p>}
       {wiring.fromEnvironment && (
-        <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
+        <Note tone="caution" className="mt-2 bg-raised px-3 py-1.5">
           <Inline text={t('settings.wiring.fromEnvironment')} />
-        </p>
+        </Note>
       )}
       {open && (
         <form

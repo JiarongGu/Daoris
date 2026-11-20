@@ -65,7 +65,7 @@ export function SpaceRunLine({ run }: { run: SpaceRun }) {
     const now = run.kinds.find((each) => each.state === 'running') ?? run.kinds.find((each) => each.state === 'waiting');
     const at = run.kinds.filter((each) => each.state === 'done').length + 1;
     return (
-      <p className="m-0 border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
+      <p className="m-0 bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
         <span aria-hidden className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent" />
         {t('settings.daoris.space.freeing.running', {
           kind: now ? kind(now.id) : '', at: Math.min(at, run.kinds.length), of: run.kinds.length, when: clockOf(run.started),
@@ -75,7 +75,7 @@ export function SpaceRunLine({ run }: { run: SpaceRun }) {
   }
   const ended = run.ended ? clockOf(run.ended) : '';
   return (
-    <div className="grid gap-0.5 border-l-[3px] border-line bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
+    <div className="grid gap-0.5 bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
       <p className="m-0">
         {run.outcome === 'stopped'
           ? t('settings.daoris.space.freeing.stopped', { when: ended, count: removed, size: size(bytes) })
@@ -130,7 +130,7 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
         </ul>
       )}
       {asking && (
-        <div className="grid gap-1.5 border-l-[3px] border-warn pl-3">
+        <div className="grid gap-1.5">
           <Prose className="text-small text-ink-soft">{t(`settings.daoris.space.freeing.say.${word}`)}</Prose>
           <div className="flex flex-wrap gap-2">
             <Button variant="danger" disabled={busy} onClick={() => { setAsking(false); onRemove(group.units); }}>

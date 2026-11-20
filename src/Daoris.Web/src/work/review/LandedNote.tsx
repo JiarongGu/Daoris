@@ -64,7 +64,7 @@ export function LandedNote({ landed, source = 'tree' }: {
     <section
       aria-label={t('work.review.landed.label')}
       // A branch name is one long word: it wraps anywhere rather than widening the side bar.
-      className="grid shrink-0 gap-1 border-b border-line border-l-[3px] border-l-accent px-3 py-2 [overflow-wrap:anywhere]"
+      className="grid shrink-0 gap-1 border-b border-line px-3 py-2 [overflow-wrap:anywhere]"
     >
       <p className="m-0 text-small text-ink">
         <Inline text={t('work.review.landed.on', { branch: landed.branch })} />

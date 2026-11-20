@@ -21,7 +21,7 @@ function Rows({ names = ROWS }: { names?: string[] }) {
           <button
             type="button"
             aria-current={index === 0 || undefined}
-            className="block w-full truncate border-l-[3px] border-l-transparent px-2.5 py-1.5 text-left text-body text-ink aria-[current]:border-l-accent aria-[current]:bg-accent-soft"
+            className="block w-full truncate border-l-2 border-l-transparent px-2.5 py-1.5 text-left text-body text-ink aria-[current]:border-l-accent aria-[current]:bg-accent-soft"
           >
             {name}
           </button>

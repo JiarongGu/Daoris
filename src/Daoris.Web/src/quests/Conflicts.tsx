@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Quest, QuestConflict, SubmissionRef } from '../data/api';
 import { ago } from '../locales/format';
-import { Button, Icon, SectionTitle } from '../design/ui';
+import { Button, cardFrame, Icon, SectionTitle } from '../design/ui';
 import { PageSection } from '../work/frame/ViewMain';
 
 /**
@@ -130,7 +130,7 @@ export function QuestConflicts({
   return (
     <section
       aria-label={t('quests.detail.conflicts')}
-      className={`${className ?? ''} rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5`}
+      className={`${className ?? ''} ${cardFrame('wait')}`}
     >
       <SectionTitle>{t('quests.detail.conflicts')}</SectionTitle>
       <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
