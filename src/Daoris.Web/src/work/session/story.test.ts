@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { Turn } from '../conversation/conversationTypes';
 import { lineRowsOf } from '../exchanges/rows';
+import type { Wait } from '../waits/waits';
 import { storyOf } from './story';
-import { LINE, PIECE } from './session.fixtures';
+import { storyWaitsOf } from './storyWaits';
+import { at, BESIDE_TURN, LINE, PIECE } from './session.fixtures';
 
 // A line of work with two turns, a step's start and end, a helper asked and answered, a second opinion handed as a turn, a channel
 // message and a piece asked of a partner: the story reads them in the order they happened, whatever source each came from.
@@ -40,6 +43,33 @@ describe('storyOf', () => {
   it('names the person\'s words as theirs', () => {
     const story = storyOf(LINE);
     expect(story.find((item) => item.kind === 'owner')).toMatchObject({ who: 'you', text: expect.stringContaining('Rate-limit') });
+  });
+
+  it('stands a call that started a subagent or a task, and the task\'s end, alone; thoughts and plans fold with the calls', () => {
+    const story = storyOf({ ...LINE, turns: [BESIDE_TURN], steps: [], exchanges: [], rows: [] });
+    expect(story.map((item) => item.key)).toEqual(['ask:t9', 'tools:c1', 'beside:c2', 'tools:c3', 'beside:c4', 'beside:c5']);
+    const folded = story.find((item) => item.key === 'tools:c1');
+    expect(folded?.kind === 'tools' && folded.blocks.map((block) => block.kind)).toEqual(['thought', 'plan']);
+  });
+
+  it('names words by their sender: an author by its mark, another session\'s claim on the channel, Daoris\'s target', () => {
+    const who = (ask: Partial<Turn['ask'] & object>) => storyOf({
+      turns: [{ key: 'w', ask: { key: 'w', text: 'Words', origin: 'target', at: at(9, 0), ...ask }, items: [] }], steps: [], exchanges: [], rows: [],
+    })[0];
+    expect(who({ from: 'partner' })).toMatchObject({ who: 'partner' });
+    expect(who({ channel: 'm1' })).toMatchObject({ who: 'claim', channel: 'm1' });
+    expect(who({})).toMatchObject({ who: 'daoris' });
+    expect(who({ origin: 'person' })).toMatchObject({ who: 'you' });
+  });
+
+  it('reads a wait raised at a turn\'s end onto the turn\'s last line, and each wait once a line', () => {
+    const story = storyOf(LINE);
+    const goAhead: Wait = { kind: 'goAhead', number: 2 };
+    const waits = storyWaitsOf(story, {
+      marks: { 'end-t1': [{ kind: 'accept' }], b1: [goAhead], b2: [{ ...goAhead }] }, revealed: 'end-t1', onToWait: () => {},
+    });
+    expect(waits?.marks).toEqual({ 'helper:h1': [{ kind: 'accept' }], 'tools:b1': [goAhead] });
+    expect(waits?.sought).toBe('helper:h1');
   });
 
   it('is empty for a line with nothing in it', () => {

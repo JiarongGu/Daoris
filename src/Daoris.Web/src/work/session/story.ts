@@ -1,30 +1,40 @@
-import type { Block, Turn } from '../conversation/conversationTypes';
+import { CHANNEL_CLAIM_OPENING } from '../channel';
+import type { Ask, Block, Turn } from '../conversation/conversationTypes';
+import type { Author } from '../conversation/sender';
 import type { ExchangeCard, Exchanges } from '../conversation/exchanges';
 import type { LineRow } from '../exchanges/rows';
 import { type CallKind, callsByKind, failedCall, filesChanged } from '../catchup/turnFold';
 import { type Mark, type Passage, type StepRow, stepRowsOf } from '../track/passage';
+import { turnEnd } from '../waits/anchors';
 
 /**
- * Who said a line of the story: the person (`you`), Daoris itself, the supervisor on the person's behalf, the session's agent, or
- * another session, named by its repository.
+ * Who said a line of the story: the person (`you`), an author by its mark (Daoris, the supervisor on the person's behalf, a helper's
+ * or a partner's answer, one not attributed), or another session's claim on the ask's channel (`claim`), named by its poster.
  */
-export type StoryWho = 'you' | 'daoris' | 'supervisor' | 'agent' | string;
+export type StoryWho = 'you' | Author | 'claim';
 
-/** One line of the session's story, in the order it happened (`at`, ms). */
-export type StoryItem =
-  | { kind: 'owner'; key: string; at: number; who: StoryWho; text: string; held: boolean; reaches?: Block['reaches'] }
+/**
+ * One line of the session's story, in the order it happened (`at`, ms). A turn's last line carries its end's key (`turnEnd`, `ends`),
+ * where the work it did waits.
+ */
+export type StoryItem = { ends?: string } & (
+  | { kind: 'owner'; key: string; at: number; who: StoryWho; text: string; held: boolean; reaches?: Block['reaches'];
+      /** The channel message these words carry, by its id: its sender chip names its poster and opens the channel. */
+      channel?: string }
   | { kind: 'agent'; key: string; at: number; text: string }
   /** A driver's note, its block kept for the doors it offers (*Say it again*, *Start a conversation*, the session it went to). */
   | { kind: 'note'; key: string; at: number; text: string; block: Block }
   /** Words a cooling account holds at a turn's end, with *Go on in a new session*. */
   | { kind: 'waiting'; key: string; at: number; turn: Turn }
   | { kind: 'tools'; key: string; at: number; calls: { kind: CallKind; count: number }[]; failed: number; files: number; blocks: Block[] }
+  /** A call that started a subagent or a background task, or the task's end: alone, never folded, since it opens what it started. */
+  | { kind: 'beside'; key: string; at: number; block: Block }
   | { kind: 'step'; key: string; at: number; run: string; node: string; edge: 'start' | 'end'; mark: Mark | 'ended'; attempt: number | null }
   | { kind: 'helper'; key: string; at: number; question: string; agent: string | null; state: string | null; helper: string | null;
       answer?: { text: string; at: number } }
   | { kind: 'opinion'; key: string; at: number; text: string; reviewer: string | null; model: string | null }
   /** One of its line's requests, quests or channel messages (`lineRowsOf`): an untimed one under the last line. */
-  | { kind: 'line'; key: string; at: number; row: LineRow };
+  | { kind: 'line'; key: string; at: number; row: LineRow });
 
 /** Who gave a second opinion, where the page holds its row: the reviewer's maker and the model that ran. */
 export type OpinionBy = { reviewer: string | null; model: string | null };
@@ -62,14 +72,20 @@ const time = (iso: string | null | undefined): number => {
   return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 };
 
-/** Blocks that fold into a burst's one line: the calls, the thinking, the plan, a task's end. */
-const FOLDS: ReadonlySet<Block['kind']> = new Set(['tool', 'thought', 'plan', 'raw', 'beside']);
+/** Blocks that fold into a burst's one line: the calls, the thinking, the plan. */
+const FOLDS: ReadonlySet<Block['kind']> = new Set(['tool', 'thought', 'plan', 'raw']);
 
-/** What a turn's words come from, as the story names it: the person, Daoris, the supervisor or another session. */
-function whoAsked(turn: Turn): StoryWho {
-  const from = turn.ask?.from;
-  if (!from) return turn.ask?.origin === 'target' ? 'daoris' : 'you';
-  return from === 'daoris' || from === 'supervisor' ? from : 'agent';
+/** A call that started a subagent or a task, or the task's end: a line of its own. */
+const standsAlone = (block: Block) => block.kind === 'beside' || (block.kind === 'tool' && Boolean(block.beside));
+
+/**
+ * What a turn's words come from, by the one sender rule the conversation's chip reads (`AskView`): the author its mark names, another
+ * session's claim on the ask's channel, the target Daoris composed, else the person.
+ */
+function whoAsked(ask: Ask): StoryWho {
+  if (ask.from) return ask.from;
+  if (ask.origin !== 'target') return 'you';
+  return ask.channel || (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING) ? 'claim' : 'daoris';
 }
 
 function burst(blocks: Block[]): StoryItem {
@@ -88,7 +104,10 @@ function turnLines(turn: Turn, cards: ReadonlyMap<string, ExchangeCard>, answere
       const by = opinionOf?.(ask.opinion) ?? null;
       lines.push({ kind: 'opinion', key: `opinion:${ask.key}`, at: time(ask.at), text: ask.text, reviewer: by?.reviewer ?? null, model: by?.model ?? null });
     } else {
-      lines.push({ kind: 'owner', key: `ask:${ask.key}`, at: time(ask.at), who: whoAsked(turn), text: ask.text, held: false });
+      lines.push({
+        kind: 'owner', key: `ask:${ask.key}`, at: time(ask.at), who: whoAsked(ask), text: ask.text, held: false,
+        ...(ask.channel ? { channel: ask.channel } : {}),
+      });
     }
   }
   let run: Block[] = [];
@@ -104,6 +123,9 @@ function turnLines(turn: Turn, cards: ReadonlyMap<string, ExchangeCard>, answere
         kind: 'helper', key: `helper:${card.ask}`, at: time(card.at), question: card.question, agent: card.agent, state: card.state,
         helper: card.helper, answer: card.answer ? { text: card.answer.text, at: time(card.answer.at) } : undefined,
       });
+    } else if (standsAlone(block)) {
+      close();
+      lines.push({ kind: 'beside', key: `beside:${block.key}`, at: time(block.at), block });
     } else if (FOLDS.has(block.kind)) {
       run.push(block);
     } else {
@@ -120,17 +142,20 @@ function turnLines(turn: Turn, cards: ReadonlyMap<string, ExchangeCard>, answere
   }
   close();
   if (turn.waiting) lines.push({ kind: 'waiting', key: `waiting:${turn.key}`, at: lines[lines.length - 1]?.at ?? time(ask?.at), turn });
+  const last = lines[lines.length - 1];
+  if (last) lines[lines.length - 1] = { ...last, ends: turnEnd(turn.key) };
   return lines;
 }
 
 /** Of lines at one moment: a step's end, then the next step's start, then what happened inside it. */
 const RANK: Readonly<Record<StoryItem['kind'], number>> = {
-  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, helper: 1, line: 1, waiting: 1,
+  step: 0, owner: 1, opinion: 1, agent: 1, note: 1, tools: 1, beside: 1, helper: 1, line: 1, waiting: 1,
 };
 
 /**
  * **The story**: one stream of every line of the session's work in the order it happened. The conversation's turns (the person's
- * words, the agent's, each burst of activity folded to one line that counts its calls), each step's start and end as a rule, each
+ * words, the agent's, each burst of activity folded to one line that counts its calls, a call that started a subagent or a task and
+ * the task's end each a line of its own), each step's start and end as a rule, each
  * helper its agent asked with its answer joined (its answer's turn never drawn twice), each second opinion handed as a turn, and
  * each of its line's rows at its moment: a request asked and come back, a quest filed and closed, the session that published its
  * quest (first), the question it resumed after, and each message on its channel. Read from the records alone, with no model.

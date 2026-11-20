@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import '../../locales/i18n';
+import { type BesideHome, BesideHomes } from '../beside/BesideRows';
+import { ChannelHomes } from '../conversation/AskView';
 import type { LineRowHome } from '../exchanges/LineRows';
 import { lineRowsOf } from '../exchanges/rows';
 import { CHANNEL_WORDS, HELPER, OPINION } from '../exchanges/rows.fixtures';
@@ -8,7 +10,7 @@ import { toDockLine, toStepRows } from '../track/seek';
 import { storyOf } from './story';
 import { StoryStream } from './StoryStream';
 import { WaitCard } from './WaitCard';
-import { LINE, RELEASE_WAIT, at } from './session.fixtures';
+import { BESIDE_TURN, LINE, RELEASE_WAIT, at } from './session.fixtures';
 
 // The story drawn: one stream, each line its kind's part in the order it happened, the activity folded to a line that opens to
 // each call, the read mark a rule before the first line after it.
@@ -56,6 +58,45 @@ describe('StoryStream', () => {
       delete (Element.prototype as Partial<Element>).scrollIntoView;
     }
     expect(seen).toEqual(['r1/review']);
+  });
+
+  it('draws a subagent and a task each on a line of its own that opens its record, and a fold its thoughts and plans', () => {
+    const story = storyOf({ turns: [BESIDE_TURN], steps: [], exchanges: [], rows: [] });
+    const onShow = vi.fn();
+    const home: BesideHome = {
+      reader: { Child: ({ children }) => children({ events: [], loaded: true }), Tail: () => null, Stream: () => null },
+      lifetimes: [], nested: false, onFocus: vi.fn(), onShow, draw: () => null,
+    };
+    const { container } = render(<BesideHomes.Provider value={home}><StoryStream story={story} actor={ACTOR} /></BesideHomes.Provider>);
+    expect(parts(container)).toEqual(['owner', 'tools', 'beside', 'tools', 'beside', 'beside']);
+    const child = container.querySelector<HTMLElement>('[data-beside-child="sub-1"]')!;
+    expect(child.textContent).toContain('limit survey');
+    fireEvent.click(within(child).getByRole('button'));
+    expect(container.querySelector('[data-child="sub-1"]')).not.toBeNull();
+    fireEvent.click(within(container.querySelector<HTMLElement>('[data-beside-start="task-1"]')!).getByRole('button'));
+    expect(onShow).toHaveBeenCalledWith('c5');
+    fireEvent.click(within(container.querySelector<HTMLElement>('[data-beside-end="task-1"]')!).getByRole('button'));
+    expect(onShow).toHaveBeenCalledWith('c4');
+    fireEvent.click(container.querySelector<HTMLElement>('[data-part="tools"] button')!);
+    expect(screen.getByText(/Each service keeps its own limiter/)).toBeTruthy();
+    expect(screen.getByText(/Survey the services/)).toBeTruthy();
+  });
+
+  it('heads another session’s claim with its poster and the door to its channel, never a raw word', () => {
+    const onOpen = vi.fn();
+    const story = storyOf({
+      turns: [{ key: 'w', ask: { key: 'w', text: 'Taking the quota header.', origin: 'target', at: at(9, 0), channel: 'm1' }, items: [] }],
+      steps: [], exchanges: [], rows: [],
+    });
+    const { container } = render(
+      <ChannelHomes.Provider value={{ posterOf: () => ({ repository: 'web-app', agent: 'Codex' }), onOpen }}>
+        <StoryStream story={story} actor={ACTOR} />
+      </ChannelHomes.Provider>,
+    );
+    const owner = container.querySelector<HTMLElement>('[data-part="owner"]')!;
+    expect(owner.textContent).toContain('A claim from web-app’s session (Codex), on the channel');
+    fireEvent.click(within(owner).getByRole('button', { name: 'Open the channel' }));
+    expect(onOpen).toHaveBeenCalledWith('m1');
   });
 
   it('says so when nothing has happened yet', () => {

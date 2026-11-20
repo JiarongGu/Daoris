@@ -1,12 +1,14 @@
-import { Fragment, type ReactNode, useState } from 'react';
+import { Fragment, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
+import { AUTHOR_KEYS, ChannelHomes, claimLabel } from '../conversation/AskView';
 import { Markdown } from '../conversation/Markdown';
+import { ChannelDoor } from '../conversation/SenderChip';
 import { LineRow, type LineRowHome } from '../exchanges/LineRows';
 import { NewSessionDoor } from '../conversation/NoteLines';
 import { rowMark } from '../track/passage';
-import { FoldedCalls } from './FoldedCalls';
+import { BesideCall, FoldedCalls } from './FoldedCalls';
 import { SOUGHT, WaitMark } from '../waits/WaitAnchor';
 import { HeldWhen, SaidNote } from './SaidLines';
 import type { StoryItem, StoryWho } from './story';
@@ -26,11 +28,30 @@ function Actor({ children, tone = 'soft' }: { children: ReactNode; tone?: 'soft'
   );
 }
 
+/** Who said a line, by the one sender rule (`AskView`): another session's claim named by its poster where the page holds it. */
 function useWho() {
   const { t } = useTranslation();
-  return (who: StoryWho) => (who === 'you' ? t('work.session.story.you')
+  const { posterOf } = useContext(ChannelHomes);
+  return (who: StoryWho, channel?: string) => (who === 'you' ? t('work.session.story.you')
     : who === 'daoris' ? t('work.session.story.daoris')
-      : who === 'supervisor' ? t('work.session.story.supervisor') : who);
+      : who === 'supervisor' ? t('work.session.story.supervisor')
+        : who === 'claim' ? claimLabel(t, channel ? posterOf?.(channel) : undefined) : t(AUTHOR_KEYS[who]));
+}
+
+/** The person's words, or words to the agent from another sender: who, the door to the channel a message came on, and the words. */
+function OwnerLine({ item }: { item: Of<'owner'> }) {
+  const who = useWho();
+  const { onOpen } = useContext(ChannelHomes);
+  return (
+    <div data-part="owner" className="grid gap-0.5 rounded-control bg-sunken px-2.5 py-1.5">
+      <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <Actor tone="accent">{who(item.who, item.channel)}</Actor>
+        {item.channel && onOpen && <ChannelDoor message={item.channel} onOpen={onOpen} />}
+      </span>
+      <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
+      {item.held && <HeldWhen reaches={item.reaches} />}
+    </div>
+  );
 }
 
 /** A step's rule: the step, its edge and what it came to, across the stream. */
@@ -81,21 +102,16 @@ function ToolsFold({ item }: { item: Of<'tools'> }) {
 
 function Line({ item, actor, home }: { item: StoryItem; actor: StoryActor; home?: LineRowHome }) {
   const { t } = useTranslation();
-  const who = useWho();
   const agent = `${actor.maker} · ${actor.model ?? t('work.session.head.notReported')}`;
   switch (item.kind) {
     case 'step':
       return <StepRule item={item} />;
     case 'tools':
       return <ToolsFold item={item} />;
+    case 'beside':
+      return <div data-part="beside" className="min-w-0"><BesideCall block={item.block} /></div>;
     case 'owner':
-      return (
-        <div data-part="owner" className="grid gap-0.5 rounded-control bg-sunken px-2.5 py-1.5">
-          <Actor tone="accent">{who(item.who)}</Actor>
-          <p className="m-0 whitespace-pre-line text-body text-ink">{item.text}</p>
-          {item.held && <HeldWhen reaches={item.reaches} />}
-        </div>
-      );
+      return <OwnerLine item={item} />;
     case 'agent':
       return (
         <div data-part="agent" className="grid min-w-0 gap-0.5">
@@ -191,7 +207,7 @@ export function StoryStream({ story, actor, readMark, since: digest, loading = f
           {index === since && digest && <li data-part="digest" className="min-w-0">{digest}</li>}
           <li data-block={item.key} className={cn('min-w-0', waits?.sought === item.key && SOUGHT)}>
             <Line item={item} actor={actor} home={home} />
-            {waits?.marks[item.key] && <WaitMark waits={waits.marks[item.key]!} onPress={() => waits?.onToWait(waits.marks[item.key]![0]!)} />}
+            {waits?.marks[item.key] && <WaitMark waits={waits.marks[item.key]!} onPress={waits.onToWait} />}
           </li>
         </Fragment>
       ))}

@@ -47,6 +47,32 @@ const TURNS: Turn[] = [
   },
 ];
 
+/**
+ * A turn that ran work beside itself: a thought and a plan, a call that started a subagent, a read, a call that started a background
+ * task, and that task's end, each leading to the other.
+ */
+export const BESIDE_TURN: Turn = {
+  key: 't9',
+  ask: { key: 't9', text: 'Check the limits across the services.', origin: 'person', at: at(10, 0) },
+  items: [
+    { key: 'c1', kind: 'thought', at: at(10, 0, 10), text: 'Each service keeps its own limiter.' },
+    { key: 'c1p', kind: 'plan', at: at(10, 0, 15), entries: [{ content: 'Survey the services', status: 'in_progress' }] },
+    {
+      key: 'c2', kind: 'tool', at: at(10, 1), title: 'Task', toolKind: 'other', status: 'completed',
+      beside: { kind: 'child', id: 'sub-1', name: 'limit survey', task: 'List every limiter', started: at(10, 1), ended: at(10, 4), end: 'ok' },
+    },
+    { key: 'c3', kind: 'tool', at: at(10, 5), title: 'Read src/limits/bucket.ts', toolKind: 'read', status: 'completed' },
+    {
+      key: 'c4', kind: 'tool', at: at(10, 6), title: 'npm run soak', toolKind: 'execute', status: 'completed',
+      beside: { kind: 'task', id: 'task-1', name: 'soak test', started: at(10, 6), endKey: 'c5' },
+    },
+    {
+      key: 'c5', kind: 'beside', at: at(10, 9),
+      beside: { kind: 'task', id: 'task-1', name: 'soak test', started: at(10, 6), ended: at(10, 9), end: 'ok', startKey: 'c4' },
+    },
+  ],
+};
+
 const STEPS: StepRow[] = [
   { key: 'r1/build/start/1', run: 'r1', node: 'build', edge: 'start', attempt: 1, mark: 'current', at: ms(at(9, 12)), order: 0 },
   { key: 'r1/build/end/1', run: 'r1', node: 'build', edge: 'end', attempt: 1, mark: 'passed', at: ms(at(9, 30)), order: 0 },
