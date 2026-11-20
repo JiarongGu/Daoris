@@ -279,7 +279,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private async Task<VerifyResult?> UnpreparedAsync(string tree, CancellationToken ct) =>
         await UnfinishedAsync(() => VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct)).ConfigureAwait(false);
 
-    /// <summary>The declared regeneration, run inside the check's place <paramref name="place"/>; the unprepared result where one does not finish.</summary>
     private async Task<VerifyResult?> UnregeneratedAsync(string tree, CheckPlace place, CancellationToken ct) =>
         await UnfinishedAsync(() => RegeneratedAsync(tree, place.Hold is not null, ct)).ConfigureAwait(false);
 
@@ -309,7 +308,6 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log) is { } told ? $"\n{told}" : "");
     }
 
-    /// <summary>The check's one place in the machine's admission, held through its regeneration and every gate it runs; null where the run ends before it.</summary>
     private async Task<CheckPlace?> PlaceAsync(string folder, CancellationToken ct)
     {
         if (ct.IsCancellationRequested) return null;
@@ -337,7 +335,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         public void Dispose() => Hold?.Dispose();
     }
 
-    /// <summary>One command in the job, composed from the driver's environment, inside the check's place; its exit, or null where the run is ended before it.</summary>
+    /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>
     private async Task<int?> StepAsync(
         AdmissionHold? hold, string run, string folder, IReadOnlyList<string> running, IReadOnlyDictionary<string, string> inputs, string log, bool clock, CancellationToken ct)
     {
