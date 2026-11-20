@@ -5,7 +5,7 @@ import type { TFunction, i18n as I18n } from 'i18next';
  * stands in only where a palette is not read, and each is worded as `workflow.role.<id>` in both catalogues.
  */
 export const STEP_ROLES = [
-  'design', 'opinion', 'tester', 'acceptor', 'asker', 'approver', 'release-manager', 'operations', 'config-changer', 'credentials-keeper', 'owner',
+  'design', 'opinion', 'tester', 'acceptor', 'ask-reader', 'approver', 'release-manager', 'operations', 'config-changer', 'credentials-keeper', 'owner',
 ] as const;
 
 const record = (value: unknown): Record<string, unknown> =>

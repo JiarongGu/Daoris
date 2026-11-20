@@ -65,14 +65,12 @@ public static class StepWaiting
     public static string RoleOf(string why) => why switch
     {
         PersonWaits.Accept => "acceptor",
-        PersonWaits.Pass => StepRoles.Asker,
         PersonWaits.Approval or PersonWaits.GoAhead => "approver",
         PersonWaits.Task or PersonWaits.Choose => "worker",
         PersonWaits.Held => "operations",
         _ => AppointedRoles.Supervisor,
     };
 
-    /// <summary>Whether a wait is on the step's own role: its own word (an Accept, an approval, a Done, a go-ahead) and an unchecked done's pass.</summary>
     public static bool OnOwnRole(string why) =>
         why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead or PersonWaits.Pass;
 

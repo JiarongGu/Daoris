@@ -15,7 +15,7 @@ public sealed class StepWaitPassTests
     private static readonly DateTimeOffset Now = new(2026, 11, 18, 9, 0, 0, TimeSpan.Zero);
 
     private const string Unchecked = "its done is unchecked: ask #a1 gave its quest no requirement, so nothing compared the done with what was "
-                                     + "asked; whoever holds the step's role (`asker` where it names none) reads its handback (quest #q7's done note) and "
+                                     + "asked; whoever holds the step's role (`ask-reader` where it names none) reads its handback (quest #q7's done note) and "
                                      + "passes this step with their words where it does what was asked";
 
     private static readonly NodeDeclaration Holds = new("holds", NodeKinds.QuestHolds, 1, NodeReach.Observed);
@@ -36,7 +36,7 @@ public sealed class StepWaitPassTests
         var wait = StepWaiting.Read(record, Holds, WorkPerformer.StatusOf(record, "holds"));
         var row = HeldSteps.Step(Run, "engine", "aurora", Run, Holds, record);
 
-        Assert.Equal((PersonWaits.Pass, StepRoles.Asker, StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
+        Assert.Equal((PersonWaits.Pass, StepRoles.AskReader, StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
         Assert.NotNull(row);
         Assert.Equal((PersonWaits.Pass, StepHolders.Person), (row.Why, row.Holder));
         Assert.Contains(NodeWordActs.Skip, row.Presses);

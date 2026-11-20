@@ -39,10 +39,17 @@ public static class AgentSettles
             .Append(StepRoles.Owner).Distinct(StringComparer.Ordinal)];
 
     /// <summary>Why <paramref name="role"/> is not cast to <paramref name="holder"/>, or null.</summary>
-    public static string? Cast(string role, string? holder) => IsAgent(holder) && Roles.Contains(role, StringComparer.Ordinal) ? Said(role) : null;
+    public static string? Cast(string role, string? holder) =>
+        IsAgent(holder) && Roles.Contains(role, StringComparer.Ordinal) ? Said(role) : Unnamed(role, holder);
 
     /// <summary>Why <paramref name="node"/> is not handed to <paramref name="holder"/>, or null.</summary>
-    public static string? Hand(NodeDeclaration node, string? holder) => IsAgent(holder) && Pressed(node) ? Said(StepRoles.Of(node)) : null;
+    public static string? Hand(NodeDeclaration node, string? holder) =>
+        IsAgent(holder) && Pressed(node) ? Said(StepRoles.Of(node)) : Unnamed(StepRoles.Of(node), holder);
+
+    /// <summary>The settle door admits every agent's word for the bare <c>agent</c>, the run's own worker's among them.</summary>
+    private static string? Unnamed(string role, string? holder) => role == StepRoles.AskReader && holder?.Trim() == CastHolders.Agent
+        ? $"no staffing names the agent of `{role}`, and any agent would speak as it: name the agent that reads the dones (`agent:<name>`)"
+        : null;
 
     /// <summary>A place's cast of <paramref name="role"/> as Settings and <c>daoris settings cast</c> make it: refused for an agent no channel settles for, else kept.</summary>
     public static string? CastAt(PlaceCastFiles casts, string place, string role, string? holder, string? why, DateTimeOffset now) =>

@@ -184,14 +184,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    There is no `handed` kind. (D190, D227, D232, D264, D273)
 9. The opinion, the look and the `review` come before every landing, wired straight into it, and no landing starts before a look
    has passed; the opinion need not precede the look (`ProtectedOrder`). Each hold (`quest.holds`, `content.holds`,
-   `work.requests`) is judged once, on every way to a landing. `quest.holds` never reaches on a done checked against nothing: an
-   ask's quest with no requirement waits *unchecked* (`pass`, a wait on the step's own role, the `asker` where it names none) until
-   that role's holder passes it with words: the attempt's tenure as the place casts the role (the person until a cast names another,
-   such as the steward or a supervisor's agent, who passes it through the node door as itself), the line standing in where the person
-   holds it, the owner where the step names `owner`; where the person holds it, its *What needs you* row and session page offer the
-   run's skip with words. The person's through words on its ask pass it (rule 23), or a version turns its `yes` off; it is never
-   compared with the ask's words instead (D352); a set-up quest is Daoris's own ask, whose press reads the repository it set up, so it
-   never waits so. It reads the run's branch first: where the line holds that branch's tip (any proof but
+   `work.requests`) is judged once, on every way to a landing. An ask's quest with no requirement has a done checked against
+   nothing, which waits only where the configuration names who reads it: where the step names no role and the place casts no
+   `ask-reader` and is not at high risk (read by the pass, `CastReading.Now`), it reaches, said once on the step ("no one is set to
+   read this done against its ask, so it goes on", code `no-reader`); else it waits *unchecked* (`pass`, on the step's role, the
+   `ask-reader` where it names none) until that role's holder passes it with words: the attempt's tenure as the place casts the role,
+   the line standing in where the person holds it, the owner where the step names `owner`; where the person holds it, its *What needs
+   you* row and session page offer the run's skip with words, and their Accept naming the unchecked hand-back takes it from an agent
+   holder in the same press (`pressed accept`). A pass from one of the run's working sessions (`NodeRuntime.Workers`), or from a working
+   session while those are not read, is refused `own-done`; the role is never cast or handed to the bare `agent`. The person's through
+   words on its ask pass it (rule 23), or a version turns its `yes` off; it is never compared with the ask's words instead (D352); a
+   set-up quest is Daoris's own ask, whose press reads the repository it set up, so it never waits so. It reads the run's branch first: where the line holds that branch's tip (any proof but
    *empty*), it reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, so the
    run ends landed without waiting on an earlier hold (`BranchOnLine`). (D157, D190, D247, D255, D277, D352)
 10. A `land` method brings a tail only for `integrate` (one `integrate`). A `push` stands after a `branch` landing, and a pull
@@ -687,7 +690,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`PersonWaits.All`: an active `review`, `task` or `go-ahead`, a `return` on `both-changed`, an attempt held `unknown`, a plugin step
     waiting on a role (`actor`, the role its plugin names), an `opinion` its gate holds for want of a reviewer (`vacant`, the hold
     `OpinionGateReading.Vacant` its record keeps), a step left failed (`left`: a failure kept with no word on it, read for a quest closed
-    done alone), a `quest.holds` holding an unchecked done (`pass`, on the step's role, `asker` by default; a done held for the yes is
+    done alone), a `quest.holds` holding an unchecked done (`pass`, on the step's role, `ask-reader` by default, only where a role or cast names it; a done held for the yes is
     its held row's)), the role it waits on and that role's holder. Each kind says what its active step waits for (`IWaitsOnRole`), so the
     reading names no kind and never asks who holds the role: a step's own word (an Accept, an approval, a task's Done or answer, a
     go-ahead) and an unchecked done's pass wait on the step's role (`StepRoles.Of`, `StepWaiting.OnOwnRole`), every other wait on its own (`StepWaiting.RoleOf`), a vacancy and a failure kept
@@ -703,7 +706,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     you* reads "waiting on `<role>`: <agent>" with *Take* its only press. Any other wait an agent holds that only a press settles (any but
     a plugin's actor and a go-ahead, `AgentSettles.Wait`) stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with
     *Take*, an Accept and an approval among them; an unchecked done's pass is the one its agent holder settles itself, through the node
-    door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads.
+    door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads and whose
+    pass of it is refused `own-done`.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the

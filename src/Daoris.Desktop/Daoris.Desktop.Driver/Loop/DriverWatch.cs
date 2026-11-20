@@ -59,6 +59,9 @@ public sealed class DriverWatch(
     /// <summary>The steps waiting on a role the person holds, as the evaluation runtime last governed them; none before a pass.</summary>
     public IReadOnlyList<HeldStep> HeldSteps => _doors.Nodes?.HeldSteps() ?? [];
 
+    /// <inheritdoc cref="NodeRuntime.Workers"/>
+    public IReadOnlyList<string>? RunWorkers(string run) => _doors.Nodes?.Workers(run);
+
     /// <summary>The runs' plugin steps in flight the evaluation runtime governs, their plugin up (<see cref="NodeRuntime.PluginStepsInFlight"/>); none before a pass.</summary>
     public int PluginStepsInFlight => _doors.Nodes?.PluginStepsInFlight() ?? 0;
 

@@ -262,7 +262,7 @@
   "workflow.role.opinion": "第二意见",
   "workflow.role.tester": "试用人",
   "workflow.role.acceptor": "采纳人",
-  "workflow.role.asker": "委托方",
+  "workflow.role.ask-reader": "需求核对人",
   "workflow.role.approver": "审批人",
   "workflow.role.release-manager": "发布负责人",
   "workflow.role.operations": "运维",

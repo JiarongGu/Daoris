@@ -205,6 +205,7 @@
   "workflow.run.graph.said.activeRun": "进展中。",
   "workflow.run.graph.said.reached": "已在 {{on}} 上达成。",
   "workflow.run.graph.said.reachedRun": "已达成。",
+  "workflow.run.graph.said.holdsNoReader": "没有人负责按需求核对这次完成，所以它自行继续。",
   "workflow.run.graph.said.skippedByYou": "你为这项工作跳过了它。",
   "workflow.run.graph.said.skippedByRecord": "它的记录为这项工作跳过了它。",
   "workflow.run.graph.said.failed": "失败：`{{code}}`。",
