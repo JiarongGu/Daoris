@@ -401,6 +401,16 @@ public sealed record NodeRepair(string Node, string Tip, string Turn, int Carrie
 }
 
 /// <summary>
+/// What came of telling the work what <paramref name="Node"/>'s attempt <paramref name="Attempt"/> sent back: the session the say door kept the
+/// words for, or why it kept them for none.
+/// </summary>
+public sealed record NodeTold(string Node, int Attempt, string? Session, string? Why, DateTimeOffset At)
+{
+    /// <summary>Whether it is a check's red past its rounds' bound, which takes no way back.</summary>
+    public bool Spent { get; init; }
+}
+
+/// <summary>
 /// A unit's node record: every node's status on the unit, the attempts
 /// dispatched for them, the trigger firings their starts consumed, and the history their moves cleared. One writer, the driver in the
 /// loop that holds the home's lease (<see cref="NodeRecordFiles"/>).
@@ -447,6 +457,14 @@ public sealed record NodeRecord(string Unit)
 
     /// <summary>The refs a run's own steps moved, in the order they moved them (<see cref="RunMoves"/>). Empty on every unit's record.</summary>
     public IReadOnlyList<RunMove> Moves { get; init; } = [];
+
+    /// <summary>Each telling of the work what a step sent back, the newest <see cref="ToldKept"/>. Empty on every unit's record.</summary>
+    public IReadOnlyList<NodeTold> Told { get; init; } = [];
+
+    public const int ToldKept = 20;
+
+    public NodeTold? ToldOf(string node, int attempt) =>
+        Told.LastOrDefault(told => string.Equals(told.Node, node, StringComparison.Ordinal) && told.Attempt == attempt);
 
     /// <summary>The attempt an invocation names, or null.</summary>
     public NodeAttempt? Invoked(string invocation) =>

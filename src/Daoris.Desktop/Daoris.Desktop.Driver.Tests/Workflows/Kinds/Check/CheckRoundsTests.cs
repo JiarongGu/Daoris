@@ -56,6 +56,30 @@ public sealed class CheckRoundsTests
             [Waiting("s1", "r", Asked.AddMinutes(1)), new SessionRecord("s3", "Daoris", "working")], "r", ["s1"], Asked));
     }
 
+    [Fact]
+    public void A_red_past_the_bound_is_owed_a_telling_once_though_no_way_back_takes_it()
+    {
+        var graph = NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson, onSave: true).Graph!;
+        var check = Assert.Single(graph.Nodes, node => node.Kind == NodeKinds.Check).Id;
+        var declared = graph.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal);
+        NodeAttempt Of(int attempt) => Red(attempt) with { Node = check };
+        NodeRecord Failed(int attempt, params NodeAttempt[] attempts) => new("run:r")
+        {
+            Attempts = attempts,
+            Statuses = new Dictionary<string, NodeStatus> { [check] = NodeLifecycle.Start("run:r", check) with { State = NodeStates.Failed, Attempt = attempt } },
+        };
+
+        Assert.Empty(CheckRounds.SpentOwed(Failed(2, Of(1), Of(2)), graph.Wires, declared));
+        var spent = Failed(3, Of(1), Of(2), Of(3));
+        Assert.Equal([(check, 3, 3)], CheckRounds.SpentOwed(spent, graph.Wires, declared));
+        var told = spent with { Told = [new NodeTold(check, 3, "s1", null, Asked) { Spent = true }] };
+        Assert.Empty(CheckRounds.SpentOwed(told, graph.Wires, declared));
+        Assert.Empty(CheckRounds.SpentOwed(Failed(3, Of(1), Of(2), Of(3) with { State = AttemptStates.Sent }), graph.Wires, declared));
+        Assert.Equal([(check, 4, 4)], CheckRounds.SpentOwed(told with { Attempts = [Of(1), Of(2), Of(3), Of(4)],
+            Statuses = new Dictionary<string, NodeStatus> { [check] = NodeLifecycle.Start("run:r", check) with { State = NodeStates.Failed, Attempt = 4 } } },
+            graph.Wires, declared));
+    }
+
     [Theory]
     [InlineData("merge-after-accept")]
     [InlineData("merge-automatic")]
