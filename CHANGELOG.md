@@ -6,6 +6,11 @@ with the version and date at release.
 ## Unreleased
 
 - A folder registered inside another repository is read as a folder everywhere: the clean-up no longer lists that repository's session branches as the folder's own or waits on you for each, and the folder's page draws Details, Files and Workflow alone, with no Branches, History, Changes or Integration tab.
+- `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
+  the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood
+  at, what that policy would have said beside what happened. The policy decides nothing yet: it is recorded beside today's holds so
+  where the two differ can be counted before any hold moves to it.
+
 - The window's colours suit its blue: the greys are near-neutral instead of warm, so the amber of what waits on you and the
   red of a failure are the only warm colours left; red is a crimson further from amber, green a little deeper, and a selected
   row, a live band and selected text share one blue field. A disabled button keeps its frame and greys its label instead of

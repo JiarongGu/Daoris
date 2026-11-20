@@ -302,7 +302,7 @@ public static class PlaceProjection
             opinion is null ? new(null, PlaceSource.Default) : new(opinion.Rule.IsNone ? "none" : string.Join(",", opinion.Rule.Reviewers), PlaceSource.At(opinion.Source, level)),
             new(handOver.Rule.Mode, PlaceSource.At(handOver.Source, level)),
             language is null ? new(null, PlaceSource.Default) : new(language.Code, PlaceSource.At(language.Source, level)),
-            new(access.Full ? "full" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"),
+            new(access.Full ? "full" : AccessRules.TakesDeclarations(access) ? "declarations" : access.Today ? "today" : "custom", sources is [var one] ? one : "mixed"),
             FollowsOf(flow.Workflow, workflows),
             lands,
             review is null ? new(null, PlaceSource.Default) : new(review.Rule is { IsNone: false, Required: true } ? "on" : "off", PlaceSource.At(review.Source, level)),

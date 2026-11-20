@@ -118,6 +118,7 @@ export interface WorkflowIntegration {
   declaration?: string | null;
   /** What the tip's declaration changed against the accepted one, only where it waits. */
   change?: DeclarationChange | null;
+  mode?: 'full' | 'restricted' | null;
 }
 
 /** The start node a Workflow tab draws first: its routes, the landed route, and the verification workflows saved here. */

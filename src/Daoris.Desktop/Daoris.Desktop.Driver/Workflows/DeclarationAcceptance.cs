@@ -8,10 +8,10 @@ namespace Daoris.Driver;
 public static class DeclarationAcceptance
 {
     /// <summary>
-    /// What full access accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in the file at
-    /// <paramref name="configPath"/>, and the sentence that says it (what changed against the blob accepted before); null where it is
-    /// accepted meanwhile, the repository left full access, or its checkout is gone. Both are judged again on the file as its writer reads
-    /// it under its lock (<see cref="DriverConfigDisk.Edit"/>), so a choice another writer made meanwhile is never written over.
+    /// What full access (<see cref="DeclarationMode"/>) accepts as the line's declaration lands: <paramref name="owed"/>'s blob accepted in
+    /// the file at <paramref name="configPath"/>, and the one line telling the person what changed and the mode that took it; null where it
+    /// is accepted meanwhile, the repository left full access, or its checkout is gone. Both are judged again on the file as its writer
+    /// reads it under its lock (<see cref="DriverConfigDisk.Edit"/>), so a choice another writer made meanwhile is never written over.
     /// </summary>
     internal static async Task<string?> AcceptByModeAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
     {
@@ -22,11 +22,13 @@ public static class DeclarationAcceptance
         var accepted = false;
         DriverConfigDisk.Edit(configPath, current =>
         {
-            if (!AccessRules.Resolve(current, owed.Repository, owed.Workspace).Full || Before(current, owed) != before) return current;
+            if (DeclarationMode.Waits(current, owed.Repository, owed.Workspace) || Before(current, owed) != before) return current;
             accepted = true;
             return Accept(home, current, owed.Repository, owed.Workspace, owed.Blob);
         });
-        return accepted ? $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line)}" : null;
+        return accepted
+            ? $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line).TrimEnd('.')} ({DeclarationMode.Said(DeclarationMode.Full)})."
+            : null;
     }
 
     /// <summary>

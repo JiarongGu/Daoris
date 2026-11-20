@@ -34,8 +34,8 @@ internal sealed record DeclarationJudged(DeclarationChange? Change, bool Keeps, 
 /// git. Each repository with a checkout here is read at its line's committed <c>daoris.gates.json</c> against the one acceptance
 /// (<see cref="IntegrationAcceptance.Of"/>, and the landed route's gates where that route verifies). A line that holds no declaration
 /// owes nothing, nor does one that declares no <c>integration</c> to a repository whose landed route verifies nothing. A repository in full
-/// access owns its line, so it accepts the declaration its line commits as it lands (<see cref="ByMode"/>) and is never owed; nor is a
-/// change that alters no command (<see cref="Kept"/>). A changed row carries its <see cref="DeclarationOwed.Change"/>.
+/// access (<see cref="DeclarationMode"/>) owns its line, so it accepts the declaration its line commits as it lands (<see cref="ByMode"/>)
+/// and is never owed; nor is a change that alters no command (<see cref="Kept"/>). A changed row carries its <see cref="DeclarationOwed.Change"/>.
 /// </summary>
 /// <remarks>
 /// The tip commit is read from git's own files (<see cref="TreeTips.Named"/>, no process), and git is asked only when it moved since the last
@@ -83,7 +83,7 @@ public sealed class IntegrationOwed
             {
                 Root = read.Root, Change = judged?.Change, Against = against, SetAside = judged?.SetAside ?? [],
             };
-            (AccessRules.Resolve(config, read.Repository, read.Workspace).Full ? byMode
+            (!DeclarationMode.Waits(config, read.Repository, read.Workspace) ? byMode
                 : state == IntegrationAcceptance.Changed && judged is { Keeps: true } ? kept
                 : owed).Add(row);
         }
