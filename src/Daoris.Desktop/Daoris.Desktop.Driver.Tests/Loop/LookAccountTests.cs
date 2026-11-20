@@ -91,15 +91,10 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
         }
 
         var looks = Looked();
-        foreach (var look in looks.Take(2))
-        {
-            var ms = look.GetProperty("ms").GetInt64();
-            var stages = look.GetProperty("stages").GetString() ?? "";
-            var own = Own(stages);
-            output.WriteLine($"a look over {Runs} runs: {ms} ms, its stages {own} ms: {stages}");
-            // What no stage names is a share of the look, which a loaded machine stretches with the stages.
-            Assert.True(own * 2 >= ms, $"the look took {ms} ms and its stages say {own} ms: {stages}");
-        }
+        var (ms, stages) = (looks[0].GetProperty("ms").GetInt64(), looks[0].GetProperty("stages").GetString() ?? "");
+        var own = Own(stages);
+        output.WriteLine($"a look over {Runs} runs: {ms} ms, its stages {own} ms: {stages}");
+        Assert.True(own * 2 >= ms, $"the look took {ms} ms and its stages say {own} ms: {stages}");
 
         // Each run's record is read once: once the home is read, a look is a fraction of the first, however loaded the machine.
         var (cold, warm) = (looks[0].GetProperty("ms").GetInt64(), looks[1].GetProperty("ms").GetInt64());

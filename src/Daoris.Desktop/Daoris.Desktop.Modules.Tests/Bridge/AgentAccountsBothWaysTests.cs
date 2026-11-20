@@ -80,10 +80,12 @@ public sealed class AgentAccountsBothWaysTests : DriverModuleBridge
         static string? Read(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
         var accounts = Directory.Exists(Agents)
             ? string.Join(", ", Directory.EnumerateFileSystemEntries(Agents, "*", SearchOption.AllDirectories)
-                .Select(path => Path.GetRelativePath(Agents, path).Replace('\\', '/')).Order(StringComparer.Ordinal))
+                .Select(path => Drawn(Path.GetRelativePath(Agents, path).Replace('\\', '/'))!).Order(StringComparer.Ordinal))
             : "";
-        return new(exit, output.ToString(), error.ToString(), Spelled(Read(Wiring)), Read(Names), Read(Cooling), accounts);
+        return new(exit, Drawn(output.ToString())!, error.ToString(), Spelled(Read(Wiring)), Drawn(Read(Names)), Read(Cooling), accounts);
     }
+
+    private static string? Drawn(string? text) => text is null ? null : Regex.Replace(text, "acct-[0-9a-f]{8}", "<id>");
 
     /// <summary>
     /// The wiring with each fold receipt's id spelled <c>&lt;id&gt;</c> and its moment <c>&lt;at&gt;</c>: both

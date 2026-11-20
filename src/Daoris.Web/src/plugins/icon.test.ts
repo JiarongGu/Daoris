@@ -150,7 +150,7 @@ describe('the identity hues', () => {
 
   it('stand at least ΔE 20 from every status hue, its ink and the accent, so a monogram never reads as a state', () => {
     // A state's word wears its hue's ink, and a monogram is a glyph beside such words, so the inks count too.
-    const states = ['--st-open', '--st-taken', '--st-done', '--st-declined', '--ink-open', '--ink-taken', '--ink-done', '--ink-danger'];
+    const states = ['--you', '--live', '--ok', '--fail', '--you-ink', '--live-ink', '--ok-ink', '--fail-ink'];
     for (const [theme, tokens] of Object.entries(THEMES)) {
       for (const hue of IDENT_HUES) {
         for (const status of [...states, '--accent']) {
@@ -162,8 +162,8 @@ describe('the identity hues', () => {
   });
 
   it('catches a hue too near a state — the check itself, with the done green as a hue', () => {
-    const ink = rgb(THEMES.light['--st-done']!);
-    expect(deltaE(ink, rgb(THEMES.light['--st-done']!))).toBeLessThan(20);
+    const ink = rgb(THEMES.light['--ok']!);
+    expect(deltaE(ink, rgb(THEMES.light['--ok']!))).toBeLessThan(20);
     expect(contrast(rgb('#c8c4bb'), over(rgb('#c8c4bb'), rgb(THEMES.light['--page']!), FIELD))).toBeLessThan(4.5);
   });
 });

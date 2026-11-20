@@ -91,7 +91,7 @@ function Line({ conflict, here, settled = false }: { conflict: QuestConflict; he
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <Icon name="conflict" size={12} className={settled ? 'text-ink-faint' : 'text-warn'} />
       {lineOf(t, conflict, here)}
-      <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
+      <span className="text-caption text-ink-faint">· {ago(conflict.at)}</span>
     </span>
   );
 }
@@ -143,7 +143,7 @@ export function QuestConflicts({
               {lostAgain && (
                 <span className="text-small text-ink-soft">
                   {t(lostAgain.reopened ? 'quests.conflict.lostAgainReopened' : 'quests.conflict.lostAgain')}
-                  <span className="text-meta text-ink-faint"> · {ago(lostAgain.at)}</span>
+                  <span className="text-caption text-ink-faint"> · {ago(lostAgain.at)}</span>
                 </span>
               )}
               {forward !== null && forward !== true && (
@@ -174,7 +174,7 @@ export function QuestConflicts({
             <Line conflict={conflict} here={here} />
             <span className="text-small text-ink-soft">
               {t('quests.conflict.unconfirmed')}
-              <span className="text-meta text-ink-faint"> · {ago(conflict.forward!.at)}</span>
+              <span className="text-caption text-ink-faint"> · {ago(conflict.forward!.at)}</span>
             </span>
           </li>
         ))}

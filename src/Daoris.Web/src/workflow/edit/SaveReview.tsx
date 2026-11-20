@@ -82,14 +82,14 @@ export function SaveReview({
       <h4 className="m-0 text-small font-semibold text-ink">{t('workflow.edit.save.title')}</h4>
       {!append ? (
         <div className="grid min-w-0 gap-1">
-          <label htmlFor={nameId} className="text-meta text-ink-soft">{t('workflow.edit.save.name')}</label>
+          <label htmlFor={nameId} className="text-caption text-ink-soft">{t('workflow.edit.save.name')}</label>
           <input
             id={nameId}
             className="min-h-[1.9rem] min-w-0 max-w-[32rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
             value={target.name}
             onChange={(event) => onName(event.target.value)}
           />
-          <details className="text-meta text-ink-faint">
+          <details className="text-caption text-ink-faint">
             <summary className="cursor-pointer">{t('workflow.edit.inspector.details')}</summary>
             <Inline text={t('workflow.edit.save.idSays', { id })} />
           </details>
@@ -103,7 +103,7 @@ export function SaveReview({
           <div ref={opener} className="flex min-w-0 flex-wrap items-center gap-2">
             <Button disabled={saving || empty || !holds} onClick={() => onReview(true)}>{t('workflow.edit.review.open')}</Button>
           </div>
-          {!empty && !holds && <p className="m-0 text-meta text-ink-soft">{t('workflow.edit.review.waits')}</p>}
+          {!empty && !holds && <p className="m-0 text-caption text-ink-soft">{t('workflow.edit.review.waits')}</p>}
         </div>
       )}
 

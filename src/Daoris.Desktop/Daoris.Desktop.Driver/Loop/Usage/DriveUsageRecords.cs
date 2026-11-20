@@ -89,10 +89,15 @@ internal static class DriveUsageRecords
               clear would take, and what it keeps and why.
           history clear --workspace <name> [--yes]
               list what clearing a workspace's finished history would take and keep; with --yes, clear it.
+          home
+              the paths under the home that no entry of the home's table names, with their sizes; changes nothing.
           home purge --history --plan | --yes
               a home's history (sessions, quests, asks, runs, notices and the records of work done) moved into
               purged/<UTC stamp>/ beside the install, its configuration kept; --plan lists every path and table it
               would take and changes nothing; --yes refuses while a desktop, a `drive` or the service holds the home.
+          home account-ids --plan | --yes
+              each agent account whose id is not the hash form moved once to its hash id with every reference to it;
+              --plan lists each move and changes nothing; --yes refuses while Daoris runs.
               Yours, from your own terminal: a session's only lists.
           integrate <repository> [--request <branch> | --drop <request> | --recheck | --decide <candidate> split|hand-back|land | --order <request> first|last]
               a repository's integration as the window's Integration view draws it: what waits to land, in what order, and what

@@ -79,10 +79,12 @@ export function checkWord(t: TFunction, step: RunStep): string | null {
     case 'unknown': return step.held?.resolution === 'stop' ? t('workflow.run.check.notNow') : t('workflow.run.check.notKnown', { why });
     case 'stopped': return t('workflow.run.check.notNow');
     case 'ready': return t('workflow.run.check.waiting', { what: t('workflow.run.check.turn') });
-    case 'active': return t('workflow.run.check.waiting', { what: t('workflow.run.check.gates') });
+    case 'active': return t('workflow.run.check.waiting', { what: t(slotWait(step) ? 'workflow.run.check.turn' : 'workflow.run.check.gates') });
     default: return null;
   }
 }
+
+const slotWait = (step: RunStep): boolean => step.wait?.code === 'slot' || step.wait?.code === 'slot-queued';
 
 /** A step's status word: a check's verdict where it has one, a wait's *waiting on `<role>`: `<holder>`*, else its state's. */
 export const stepWord = (t: TFunction, step: RunStep): string => {
@@ -103,8 +105,8 @@ function checkSaid(t: TFunction, step: RunStep): string | null {
       if (step.held?.resolution === 'again') return t('workflow.run.check.said.again');
       return t(step.held && step.held.words.length > 0 ? 'workflow.run.check.said.held' : 'workflow.run.check.said.unknown');
     case 'stopped': return t('workflow.run.check.said.notNow');
-    case 'ready':
-    case 'active': return t('workflow.run.check.said.waiting');
+    case 'ready': return t('workflow.run.check.said.waiting');
+    case 'active': return t(slotWait(step) ? 'workflow.run.check.said.waiting' : 'workflow.run.check.said.running');
     default: return null;
   }
 }

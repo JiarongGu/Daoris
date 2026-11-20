@@ -378,7 +378,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                 >
                   <Inline text={holds(branch)} />
                   {branch.kind === 'unlanded' && branch.detail && (
-                    <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
+                    <span className="mt-0.5 block whitespace-pre-line font-mono text-caption text-ink-faint">{branch.detail}</span>
                   )}
                   {/* Whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
                   {branch.landable && branch.session && (
@@ -438,7 +438,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                     >
                       <Inline text={shows(branch)} />
                       {beneath(branch) && (
-                        <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-meta text-ink-faint">{beneath(branch)}</span>
+                        <span className="mt-0.5 block whitespace-pre-line break-words font-mono text-caption text-ink-faint">{beneath(branch)}</span>
                       )}
                       {said && <span className="mt-0.5 block">{said}</span>}
                       {withdrawable && withdrawAsking !== key && (

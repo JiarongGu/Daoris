@@ -13,7 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -318,7 +318,7 @@ test('plugin.json names a hook command and the points it speaks on', () => {
 
 test('it answers the handshake, one frame at every point it declares, and leaves when told', async (t) => {
   const declared = Array.isArray(manifest.hooks?.points) ? manifest.hooks.points : [];
-  const scratch = mkdtempSync(join(tmpdir(), 'daoris-plugin-test-'));
+  const scratch = mkdtempSync(join(scratchRoot(), 'daoris-plugin-test-'));
   const data = join(scratch, 'data');
   const root = join(scratch, 'root');
   mkdirSync(data);

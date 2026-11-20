@@ -1,17 +1,7 @@
 import type { TFunction } from 'i18next';
-import type { AtWorkAsker, AtWorkExchange, AtWorkHint, AtWorkJoined, AtWorkPart, AtWorkWait } from './types';
+import type { AtWorkExchange, AtWorkWait } from './types';
 
-/** The hint's words, by the standing the driver's judge answered. */
-export const HINT_KEY: Record<AtWorkHint, string> = {
-  'not-driven': 'work.atWork.hint.notDriven',
-  'no-lanes': 'work.atWork.hint.noLanes',
-  'one-at-a-time': 'work.atWork.hint.oneAtATime',
-};
-
-/** The guide's lanes section, which the hint links to. */
-export const LANES_GUIDE = 'https://github.com/JiarongGu/Daoris/blob/main/docs/guide/README.md#lanes';
-
-/** A part's wait in the rail's words (the strip places it; the view words it alike): *waits on #q, asked of core*, *awaiting helper*. */
+/** A part's wait in the rail's words (the strip places it; a quest row words it alike): *waits on #q, asked of core*, *awaiting helper*. */
 export function waitLine(t: TFunction, wait: AtWorkWait): string {
   if (wait.helper) return t('work.shown.awaitingHelper');
   const quest = wait.quest ?? '';
@@ -72,51 +62,5 @@ export function waitingOnLine(t: TFunction, exchanges: readonly AtWorkExchange[]
   return t('work.atWork.waitingOn', { what: what.join('; ') });
 }
 
-/** How a part joined, by what its record and quest say, else the strip's own words; null for a part that simply opened. */
-export function joinedLine(t: TFunction, joined: AtWorkJoined): string | null {
-  const part = (n: number | undefined) => (n === undefined ? t('work.atWork.routed.anotherSession') : t('work.parts.number', { n }));
-  const quest = joined.quest ?? '';
-  if (joined.took) return t('work.atWork.routed.took', { quest });
-  if (joined.ask) return joined.began === 'asked' ? t('work.atWork.routed.askQuest', { quest }) : t('work.atWork.routed.ask', { ask: joined.ask });
-  if (joined.parent) return t('work.atWork.quest.nextStep', { quest: joined.parent });
-  if (joined.lanes?.length && joined.byPart !== undefined) {
-    return t('work.atWork.routed.lane', { lane: joined.lanes.join(', '), by: part(joined.byPart) });
-  }
-  if (joined.byPart !== undefined && joined.of) return t('work.atWork.routed.repository', { repository: joined.of, by: part(joined.byPart) });
-  const after = joined.after === undefined ? '' : t('work.parts.number', { n: joined.after });
-  switch (joined.began) {
-    case 'opened': return null;
-    case 'asked': return joined.askedBy ? t('work.parts.began.asked', { repository: joined.askedBy }) : t('work.parts.began.askedUnnamed');
-    case 'retried': return t('work.parts.began.retried', { after });
-    case 'resumed': return t('work.parts.began.resumed', { after });
-    case 'carried-on': return joined.after === undefined ? t('work.parts.began.carriedOnAlone') : t('work.parts.began.carriedOn', { after });
-    case 'handed-over': return t('work.parts.began.handedOver', { after });
-    case 'moved': return t('work.parts.began.moved', { after });
-    default: return t('work.parts.began.recorded', { began: joined.began });
-  }
-}
-
-/**
- * What asked the attended part's quest, in words: the publishing session by its place in the strip, the step before,
- * the ask, or the person.
- */
-export function askerLine(t: TFunction, asker: AtWorkAsker, parts: readonly AtWorkPart[]): string {
-  const { quest, by } = asker;
-  if (by.session !== undefined) {
-    const number = parts.find((part) => part.key === by.session)?.number;
-    return t('work.atWork.askedBy.session', {
-      quest, by: number === undefined ? t('work.atWork.askedBy.anotherSession') : t('work.parts.number', { n: number }),
-    });
-  }
-  if (by.step !== undefined) return t('work.atWork.askedBy.step', { quest, step: by.step });
-  if (by.ask !== undefined) return t('work.atWork.askedBy.ask', { quest, ask: by.ask });
-  return t('work.atWork.askedBy.person', { quest });
-}
-
 /** A part's state: its record's own, worded as a session's is, never the strip's shown word. */
 export const partStateKey = (state: string): string => `sessionState.${state}`;
-
-/** The record states a part can hold, the nine and `idle`. */
-export const PART_STATES = [
-  'queued', 'starting', 'working', 'awaiting-person', 'completed', 'declined', 'stood-down', 'failed', 'stopped', 'idle',
-] as const;

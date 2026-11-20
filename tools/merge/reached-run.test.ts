@@ -37,6 +37,22 @@ test('a clean run records each class it ran and says how many ran and were repla
   assert.deepEqual(parseOutcome(lines.join('\n')), outcome);
 }));
 
+test('a group\'s passes are kept in the store as the group ends, so a run ended before its last group (a check stood down, stopped or bound) replays them next time', () => withStore(async (store, root) => {
+  const file = join(root, 'store.json');
+  const plan: ReachedPlan = { groups: [{ runner: 'node', suite: 'tool-tests', units: [unit('a')] }, { runner: 'node', suite: 'tool-tests', units: [unit('b')] }], left: {}, reached: 2, replayed: {} };
+  let seen = false;
+  const exec: Exec = async (_command, args) => {
+    if (!args.some((arg) => arg.includes('b.test.ts'))) return 0;
+    for (let tries = 0; tries < 50 && !seen; tries += 1) {
+      seen = new PassedClasses(file).has(unitId(unit('a')), 'key-a');
+      if (!seen) await new Promise((done) => setTimeout(done, 20));
+    }
+    return 0;
+  };
+  await runPlan({ root, plan, keys: keysOf('a', 'b'), store, exec, say: () => undefined, mainRedOf: () => false });
+  assert.equal(seen, true, 'the first group\'s pass was on disk while the second group ran');
+}));
+
 test('each test project is built once before its classes, which run on that build; a project whose build failed has its classes red unrun; the outcome says what stands built and each step', () => withStore(async (store, root) => {
   const dotnetUnit = (project: string, name: string): ReachedUnit => ({ suite: 'driver', kind: 'dotnet', unit: `D.${name}`, name, file: `${project}/${name}.cs`, project });
   const plan: ReachedPlan = {

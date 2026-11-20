@@ -3,7 +3,7 @@ import { Pill, SESSION_TONE, type ShownState } from '../design/ui';
 import type { AskLine } from '../work/entries';
 
 /** A door into Sessions, in the accent, as the ask's other doors are. */
-const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
+const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent-ink underline-offset-2 hover:underline';
 
 /**
  * **An ask's sessions by entry**: one line per repository's line of work
@@ -23,7 +23,7 @@ export function AskLines({ lines, onAttend }: { lines: readonly AskLine[]; onAtt
           {onAttend
             ? <button type="button" onClick={() => onAttend(line.opens)} className={`${DOOR} min-w-0 wrap-anywhere text-body`}>{line.repository}</button>
             : <span className="min-w-0 wrap-anywhere text-body text-ink">{line.repository}</span>}
-          {line.parts > 1 && <span className="text-meta text-ink-faint">{t('work.rail.parts', { count: line.parts })}</span>}
+          {line.parts > 1 && <span className="text-caption text-ink-faint">{t('work.rail.parts', { count: line.parts })}</span>}
           {/* A word this page has none for is said as the driver wrote it, quiet. */}
           <Pill tone={SESSION_TONE[line.shown as ShownState] ?? 'neutral'}>{t(`sessionState.${line.shown}`, { defaultValue: line.shown })}</Pill>
         </li>

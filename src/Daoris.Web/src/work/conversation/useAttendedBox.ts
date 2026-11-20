@@ -44,8 +44,9 @@ export function useAttendedBox({ t, attended, here, intake, oneTurn, conversatio
   // driven session of this machine's still waiting on the person. Drawn in its box with its answers as presses, and in its head's card.
   const parkWaits = Boolean(attended && here && !intake && attended.kind !== 'chat'
     && (attended.state === 'awaiting-person' || attended.state === 'awaiting-step') && !answeredPark(attended));
-  const parkQuestion = useSessionQuestion(parkWaits ? attended!.id : null);
-  const question = parkWaits ? parkQuestion.data ?? null : null;
+  const signsIn = Boolean(attended && here && !intake && attended.kind === 'chat');
+  const parkQuestion = useSessionQuestion(parkWaits || signsIn ? attended!.id : null);
+  const question = parkWaits ? parkQuestion.data ?? null : signsIn && parkQuestion.data?.site ? parkQuestion.data : null;
   const talking = Boolean(attended && conversation && here && !oneTurn);
   // A driven session still working may be told something: its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.

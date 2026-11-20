@@ -1,116 +1,70 @@
 /**
- * Every tool test file is run by exactly one declared gate.
+ * Every test file is in a declared test set, every set holds one and is run by a declared gate, and no script names a test file.
  *
- *   node tools/tool-test-census.mjs     check every tool test file (exit 0 clean, 1 an orphan or a double, 2 tool error)
+ *   node tools/tool-test-census.mjs     check every test file and set (exit 0 clean, 1 a problem, 2 tool error)
  *
- * The files held are `tools/*.test.mjs`, every `*.test.ts` and `*.e2e.ts` under `src/Daoris.Cli/tool-test/`, and the merge tool's Vitest files
- * under `tools/merge/` (`*.test.ts`, `*.e2e.ts`), owned by a gate whose Vitest run names their project. A gate in
- * `daoris.gates.json` owns a file when its command, with each `npm run` and `npm test` followed into the package script it
- * names, lists the file's path or globs it (`node --test "tool-test/**\/*.ts"`). The verify script names its files one by
- * one, so a new test file that nobody adds stays unrun and nothing says so. This census names each file no gate runs, each run by two gates, and each listed file that is gone.
+ * The files held are those named as tests (`*.test.mjs`, `*.test.ts`, `*.test.tsx`, `*.e2e.ts`, `*.spec.ts`) under `tools/`, the
+ * CLI package and the page, wherever they sit; the sets are `daoris.gates.json`'s `tests` (`tools/test-sets.mjs`). A test file is
+ * placed by a set's pattern, so a new one is run with no list to edit; a script or a gate's command that names one would be a
+ * list again, and is refused. A set whose runner runs its own config (Vitest, Playwright) runs every file its patterns hold, so
+ * one that holds an earlier set's file would run it twice; a pick of another set (`of`) names files that set holds.
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, posix } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
-import { TOOL_PROJECTS } from './vitest.config.ts';
+import { declaredSets, filesBySet, listFiles, setOf } from './test-sets.mjs';
 
-const CLI = 'src/Daoris.Cli';
-const TOOL_TESTS = `${CLI}/tool-test`;
-const MERGE_TESTS = 'tools/merge';
+const TEST_FILE = /\.(?:test\.(?:mjs|ts|tsx)|e2e\.ts|spec\.ts)$/;
+const HELD = [{ files: ['tools/**', 'src/Daoris.Cli/**', 'src/Daoris.Web/**'] }];
+const SCRIPTS = ['package.json', 'src/Daoris.Cli/package.json', 'src/Daoris.Web/package.json'];
 
-const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
-
-/** The package scripts a command may name: the root's, and the CLI package's behind `-w daoris`. */
-function scriptsOf(root) {
-  return { root: readJson(join(root, 'package.json')).scripts ?? {}, cli: readJson(join(root, CLI, 'package.json')).scripts ?? {} };
-}
-
-/**
- * A command with each `npm run <script>` and `npm test` replaced by the script's own text, to a fixed depth. Each piece
- * carries the folder its relative paths are read from: the root, or the CLI package for a script run `-w daoris`.
- */
-export function expand(command, scripts, base = '', depth = 0) {
-  const pieces = [{ base, text: command }];
-  if (depth > 4) return pieces;
-  const found = /\bnpm\s+(?:run\s+([\w:-]+)|(test))((?:\s+-w\s+daoris)?)/g;
-  for (const m of command.matchAll(found)) {
-    const inCli = m[3] !== '';
-    const name = m[1] ?? m[2];
-    const script = (inCli ? scripts.cli : scripts.root)[name];
-    if (script !== undefined) pieces.push(...expand(script, scripts, inCli ? CLI : base, depth + 1));
+const readJson = (root, path) => {
+  try {
+    return JSON.parse(readFileSync(join(root, path), 'utf8'));
+  } catch {
+    return {};
   }
-  return pieces;
-}
+};
 
-const globPattern = (glob) => new RegExp(`^${glob
-  .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-  .replace(/\*\*\//g, '\u0000')
-  .replace(/\*/g, '[^/]*')
-  .replace(/\u0000/g, '(?:.*/)?')}$`);
+/** The test files a command names one by one: a word that is a test file's path, a glob not counted. */
+export const namedTests = (command) => command.split(/[\s"'&|;]+/).filter((word) => !word.includes('*') && TEST_FILE.test(word));
 
-function vitestProjects(text) {
-  const projects = [];
-  for (const run of text.split(/&&|\|\|/)) {
-    if (!/\bvitest\b/.test(run) || !/--config[ =]\S*tools\/vitest\.config\.ts\b/.test(run)) continue;
-    const named = [...run.matchAll(/--project[ =]([\w-]+)/g)].map((m) => m[1]);
-    projects.push(...(named.length ? named : Object.keys(TOOL_PROJECTS)));
-  }
-  return projects;
-}
-
-/** The repository-relative paths a command's pieces list (`tools/x.test.mjs`) or glob (`"tool-test/**\/*.ts"`). */
-export function coverage(pieces) {
-  const listed = new Set();
-  const globs = [];
-  for (const { base, text } of pieces) {
-    for (const name of vitestProjects(text)) globs.push(...(TOOL_PROJECTS[name]?.include ?? []).map(globPattern));
-    // A script run in the CLI package may name a root file through `..` (`../../tools/x.test.mjs`): read it as the root's.
-    const at = (path) => posix.normalize(base ? `${base}/${path}` : path);
-    for (const m of text.matchAll(/(?<![\w./-])((?:[\w.*-]+\/)+[\w.*-]+\.(?:mjs|ts))\b/g)) {
-      if (m[1].includes('*')) globs.push(globPattern(at(m[1])));
-      else listed.add(at(m[1]));
-    }
-  }
-  return { listed, globs };
-}
-
-/** Every tool test file, repository-relative. */
-export function toolTestFiles(root) {
-  const files = readdirSync(join(root, 'tools')).filter((n) => n.endsWith('.test.mjs')).map((n) => `tools/${n}`);
-  const walk = (dir, isTest) => {
-    for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
-      if (entry.isDirectory()) walk(`${dir}/${entry.name}`, isTest);
-      else if (isTest(entry.name)) files.push(`${dir}/${entry.name}`);
-    }
-  };
-  if (existsSync(join(root, TOOL_TESTS))) walk(TOOL_TESTS, (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts'));
-  if (existsSync(join(root, MERGE_TESTS))) walk(MERGE_TESTS, (name) => name.endsWith('.test.ts') || name.endsWith('.e2e.ts'));
-  return files.sort();
-}
-
-/** The census over the tree at `root`: `{ problems, count }`, one problem for each orphan, double or stale entry. */
+/** The census over the tree at `root`: `{ problems, count }`, one problem for each file no set holds and each set or script at fault. */
 export function checkToolTests(root) {
-  const scripts = scriptsOf(root);
-  const gates = readJson(join(root, 'daoris.gates.json')).gates ?? [];
-  const covers = gates.map((gate) => ({ name: gate.name, ...coverage(expand(gate.run, scripts)) }));
-  const files = toolTestFiles(root);
+  const declaration = readJson(root, 'daoris.gates.json');
+  const sets = declaredSets(root);
+  const gates = new Set((declaration.gates ?? []).map((gate) => gate.name));
+  const files = listFiles(root, [...HELD, ...sets]);
+  const tests = files.filter((file) => TEST_FILE.test(file));
+  const held = filesBySet(sets, files);
   const problems = [];
-  for (const file of files) {
-    const owners = covers.filter((c) => c.listed.has(file) || c.globs.some((g) => g.test(file))).map((c) => c.name);
-    if (owners.length === 0) problems.push(`${file}: no gate runs it (add it to the verify script's \`node --test\` list, or to a gate that globs it)`);
-    else if (owners.length > 1) problems.push(`${file}: run by ${owners.length} gates (${owners.join(', ')}); keep it in one`);
-  }
-  const known = new Set(files);
-  for (const c of covers) {
-    for (const path of c.listed) {
-      const ours = path.startsWith('tools/') || path.startsWith(`${TOOL_TESTS}/`);
-      if (ours && /\.test\.(mjs|ts)$/.test(path) && !known.has(path) && !existsSync(join(root, path))) {
-        problems.push(`${path}: listed by gate ${c.name} and not there`);
+  for (const file of tests) if (!setOf(sets, file)) problems.push(`${file}: no test set holds it (add a pattern to a set in daoris.gates.json's tests)`);
+  sets.forEach((set, at) => {
+    if (!gates.has(set.gate)) problems.push(`set ${set.name}: run by gate ${set.gate}, which daoris.gates.json does not declare`);
+    if (set.of) {
+      for (const file of set.files.filter((entry) => !/[*?{[]/.test(entry))) {
+        if (setOf(sets, files.includes(file) ? file : '')?.name !== set.of) problems.push(`set ${set.name}: picks ${file}, which set ${set.of} does not hold`);
+      }
+      return;
+    }
+    if (held.get(set.name).length === 0) problems.push(`set ${set.name}: holds no test file (no file matches its patterns, or an earlier set holds each)`);
+    if (set.runner === 'node') return;
+    for (const earlier of sets.slice(0, at).filter((each) => !each.of)) {
+      for (const file of held.get(earlier.name)) {
+        if (set.patterns.some((pattern) => pattern.test(file))) problems.push(`set ${set.name}: runs by its config, which also runs ${file} of set ${earlier.name}`);
       }
     }
+  });
+  for (const path of SCRIPTS) {
+    for (const [name, command] of Object.entries(readJson(root, path).scripts ?? {})) {
+      for (const file of namedTests(command)) problems.push(`${path}: script ${name} names ${file}; place a test file by a set's pattern in daoris.gates.json's tests`);
+    }
   }
-  return { problems, count: files.length };
+  for (const gate of declaration.gates ?? []) {
+    for (const file of namedTests(gate.run ?? '')) problems.push(`daoris.gates.json: gate ${gate.name} names ${file}; place a test file by a set's pattern in its tests`);
+  }
+  return { problems, count: tests.length };
 }
 
 function main() {
@@ -119,7 +73,7 @@ function main() {
     const { problems, count } = checkToolTests(root);
     for (const p of problems) console.error(`tool-test-census: ${p}`);
     if (problems.length) return 1;
-    console.log(`tool-test-census: clean (${count} tool test files, each in one gate)`);
+    console.log(`tool-test-census: clean (${count} test files, each in one declared set)`);
     return 0;
   } catch (e) {
     console.error(`tool-test-census: ${e.message}`);

@@ -15,7 +15,10 @@ const clock = (iso: string | null | undefined, language: string): string | null 
 
 /** A wait in words: `workflow.wait.<kind>.<code>` with its values, its since and until; one with no words is said as recorded. */
 export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en'): string {
-  const values: Record<string, string> = { ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '' };
+  const values: Record<string, string> = {
+    ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '',
+    ...(wait.values?.heldSince ? { heldSince: clock(wait.values.heldSince, language) ?? '' } : {}),
+  };
   // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
   if (wait.code === 'actor' || wait.code === 'progress') {
     const holder = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
@@ -32,7 +35,7 @@ export function StepWait({ step }: { step: RunStep }) {
   return (
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
       <Inline text={waitSaid(t, step.step.kind, step.wait, i18n.language)} />
-      {since && <span className="text-meta text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
+      {since && <span className="text-caption text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
       {step.wait.values?.url && <> · <ExternalLink href={step.wait.values.url}>{t('workflow.wait.open')}</ExternalLink></>}
     </p>
   );

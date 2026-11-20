@@ -111,7 +111,7 @@ export function ReviewCard({ answer, viewed, onWord, onOpenOutputs, onOverrule, 
       aria-label={t('work.reviewCard.label', { place: record.place })}
       className={cn('grid gap-2 rounded-card border border-line-strong bg-raised px-3 py-2.5', supersededBy && 'opacity-60')}
     >
-      <p className="m-0 flex flex-wrap items-baseline gap-x-3 text-meta text-ink-faint">
+      <p className="m-0 flex flex-wrap items-baseline gap-x-3 text-caption text-ink-faint">
         <span className="font-semibold text-ink-soft">{t('work.reviewCard.label', { place: record.place })}</span>
         <span className="font-mono">{t('work.reviewCard.revision', { attempt: record.attempt, revision: record.revision.slice(0, 7) })}</span>
         {answer.state === 'active' && answer.since && !supersededBy && <span>{t('work.reviewCard.since', { at: stamp(answer.since) })}</span>}
@@ -129,7 +129,7 @@ export function ReviewCard({ answer, viewed, onWord, onOpenOutputs, onOverrule, 
           <Button variant="ghost" className="min-h-0 px-2 py-0.5 text-small" onClick={() => onOpenOutputs?.(null)}>{t('work.reviewCard.readNewer')}</Button>
         </p>
       )}
-      {refused && <p className="m-0 text-small text-ink-danger">{refused}</p>}
+      {refused && <p className="m-0 text-small text-fail-ink">{refused}</p>}
       {!supersededBy && answer.ended && <p className="m-0 text-small text-ink-soft">{t('work.reviewCard.ended', { outcome: answer.ended })}</p>}
       {!supersededBy && !answer.ended && settled && (
         <p className="m-0 text-small text-ink-soft">

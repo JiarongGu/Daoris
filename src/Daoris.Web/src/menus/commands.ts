@@ -80,7 +80,7 @@ export type KeyBinding = { combo: string; reach: KeyReach };
 
 /** What the frame does with the session attended on Sessions, which only the frame can; `outputs/<run>` opens that run's outputs. */
 export type FrameIntent =
-  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'atWork' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
+  | 'start' | 'review' | 'answer' | 'timeline' | 'workflow' | 'console' | 'terminal' | 'newTerminal' | 'archiveEnded'
   | `outputs/${string}` | `memory/${string}`;
 
 export const outputsOfIntent = (intent: FrameIntent | null | undefined): string | null =>
@@ -420,11 +420,6 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     id: 'view.timeline', menu: 'view', group: 'views', label: 'work.review.timelineTab', icon: 'quests', shell: true,
     keywords: 'timeline history chain 时间线', run: (doors) => doors.frame('timeline'),
-  },
-  {
-    // Where the attended session's work stands in its workflow.
-    id: 'view.workflow', menu: 'view', group: 'views', label: 'work.views.workflow', icon: 'workflow', shell: true,
-    keywords: 'workflow run steps where stands pull request 工作流 进展', run: (doors) => doors.frame('workflow'),
   },
   {
     id: 'view.console', menu: 'view', group: 'views', label: 'work.views.console', icon: 'frameWork', keys: ['Ctrl+Shift+U'], shell: true,

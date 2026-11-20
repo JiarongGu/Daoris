@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import {
   breachLines, gateBreach, hangBreaches, hungUnderLoad, parseBreaches, separations, sourceReader, writeBreaches, type Breach, type LoadSeam, type Separation,
 } from '../time-why.mjs';
-import { stampLoad } from '../time-load.mjs';
+import { ALONE_HOLDS, stampLoad } from '../time-load.mjs';
 import { BuildLedger } from './build-once.ts';
 import type { ClassReplay } from './full-replay.ts';
 import type { LockInstalls } from './lock-install.ts';
@@ -17,7 +17,7 @@ import { buildRecord, type GateRecord, type MergeRecord } from './merge-record.t
 import { abnormalEnd, ownedAfter, stopOwned, type Proc } from './processes.ts';
 import { parseOutcome, type ClassOutcome } from './reached-classify.ts';
 import { parseSteps, type Step } from './reached-steps.ts';
-import { againNote, killNote, overBudgetNote, waitFree } from './timeout.ts';
+import { againNote, cappedNote, LOAD_CAP, overBudgetNote, ranOnNote, waitFree } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
 
@@ -128,9 +128,17 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   const stamps = TIMING_FOLDER.test(logged.run) && deps.load !== undefined;
   if (stamps) load.sampler = deps.load?.sample() ?? null;
   const watch = stamps || budget === null || !deps.load ? null : setTimeout(() => { load.sampler = deps.load?.sample() ?? null; }, budget / 2);
-  const timer = budget === null ? null : setTimeout(() => {
-    expired = 'over its budget';
+  const kill = (why: string) => {
+    expired = why;
     for (const pid of roots) deps.killTree(pid);
+  };
+  let ranOn: number | null = null;
+  let cap: ReturnType<typeof setTimeout> | null = null;
+  const timer = budget === null ? null : setTimeout(() => {
+    const seen = load.sampler?.peak() ?? null;
+    if (seen === null || seen <= ALONE_HOLDS) return kill('over its budget');
+    ranOn = seen;
+    cap = setTimeout(() => kill('over its cap'), budget * (LOAD_CAP - 1));
   }, budget);
   const startedAt = new Date(started).toISOString();
   let result: GateResult;
@@ -140,8 +148,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
     result = { gate, code: null, log: join(logs, `${gate.name}.log`), verdict: 'FAIL', note: '', ms: Date.now() - started, abnormal: true };
     result.note = `ended abnormally: ${error instanceof Error ? error.message : String(error)}; the run goes on with the next gate`;
   }
-  if (timer) clearTimeout(timer);
-  if (watch) clearTimeout(watch);
+  for (const each of [timer, cap, watch]) if (each) clearTimeout(each);
   const said = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
   if (!load.sampler && deps.load && HANG_SAID.test(said)) load.sampler = deps.load.sample();
   const peak = load.sampler ? load.sampler.peak() : null;
@@ -157,20 +164,23 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
   if (hungUnderLoad(breaches) && expired === null && !first) {
     Object.assign(result, { verdict: 'FAIL', again: true, cause: 'load', note: `${result.note}; killed by the hang bound under load (${peak} heavy runs at its peak): run again alone once every other gate has ended and the machine is free`.replace(/^; /, '') });
   }
+  const ranMs = Date.now() - started;
   if (expired !== null && budget !== null && !trees?.ended) {
-    const kill = gateBreach({ gate: gate.name, ms: Date.now() - started, budget, steps, peak, fails: true });
-    const loaded = kill.cause === 'load';
-    const again = loaded && !first;
-    const note = overBudgetNote(Date.now() - started, budget, deps.lastSlowest(gate.name), steps) + killNote({ loaded, peak, again, waited: first ? waited ?? { free: true } : null });
-    Object.assign(result, { verdict: 'FAIL', overBudget: true, again, note, ...(loaded ? { cause: 'load' } : {}) });
+    const breach = gateBreach({ gate: gate.name, ms: ranMs, budget, steps, peak, fails: true });
+    const note = overBudgetNote(ranMs, budget, deps.lastSlowest(gate.name), steps) + (ranOn !== null ? cappedNote(ranOn) : '');
+    Object.assign(result, { verdict: 'FAIL', overBudget: true, again: false, note, ...(breach.cause === 'load' ? { cause: 'load' } : {}) });
     result.slowest = deps.lastSlowest(gate.name);
-    breaches.push({ ...kill, fails: !again });
-  } else if (first) {
-    result.note = againNote(result.verdict, waited ?? { free: true, ms: 0 }, result.note, first.overBudget ? 'at its budget' : 'by its hang bound');
+    breaches.push(breach);
+  } else {
+    if (ranOn !== null && budget !== null) {
+      breaches.push(gateBreach({ gate: gate.name, ms: ranMs, budget, steps, peak: Math.max(peak ?? 0, ranOn), fails: false }));
+      result.note = [result.note, ranOnNote(ranMs, budget, ranOn)].filter(Boolean).join('; ');
+    }
+    if (first) result.note = againNote(result.verdict, waited ?? { free: true, ms: 0 }, result.note);
   }
   if (first) {
     const ran = result.overBudget ? 'killed again' : result.verdict === 'PASS' ? 'passed' : `ended ${result.verdict}`;
-    const carried = (first.breaches ?? []).map((each) => ((each.kind === 'gate' || each.kind === 'hang') && each.cause === 'load' ? { ...each, evidence: `${each.evidence}; run again alone: ${ran}` } : each));
+    const carried = (first.breaches ?? []).map((each) => (each.kind === 'hang' && each.cause === 'load' ? { ...each, evidence: `${each.evidence}; run again alone: ${ran}` } : each));
     breaches.unshift(...carried);
     result.ms = (first.ms ?? 0) + (result.ms ?? 0);
   }
@@ -204,7 +214,7 @@ export async function runOne(deps: FlowDeps, { where, gate, logs, beside, tree, 
 
 /** Why a gate's first result runs it again alone once every other gate has ended, said in the run's line. */
 export const againWhy = (first: GateResult): string => (first.nodes ? 'whose node tests failed' : first.timed ? 'whose timed specs failed'
-  : first.cause === 'load' ? (first.overBudget ? 'killed at its budget under load' : 'killed by its hang bound under load') : 'which died of memory');
+  : first.cause === 'load' ? 'killed by its hang bound under load' : 'which died of memory');
 
 /** The fields a gate's verdict adds to the store beside its tree: the key it carries, and the signatures of a failure. */
 export function verdictExtras(result: GateResult): { key?: VerdictKey; signatures?: string[]; replayedFrom?: string } {

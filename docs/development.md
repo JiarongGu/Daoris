@@ -57,12 +57,14 @@ backups and evidence still needed by the task.
 
 Agent worktrees and what they leave go by the merge tool's prune, which every merge runs and
 `node tools/merge-branch.mjs --prune [--plan]` runs alone; its rules are the tool header's *The prune*. A
-merged worktree with no change and nothing under `local/` but logs, scratch and the copies the worktree setup made is removed, the agent
+merged worktree with no change and nothing under `local/` but logs, scratch, a quick run's base tree (`local/quick-base-tree`, which a killed run leaves) and the copies the worktree setup made is removed, the agent
 harness's lock lifted when no running process names its folder and nothing in it was written for two
 hours (a worker's shell shows on no command line). A folder under `.claude/worktrees/`
 that `git worktree list` does not list and that holds no `.git` is a half-removed worktree, removed
 without following a reparse point. A process holding either is named with its pid, never stopped.
-Other registered worktrees use their owning lifecycle tool.
+Other registered worktrees use their owning lifecycle tool. Every prune also reports each builder worktree whose branch main does not
+hold (an agent that ended without landing), oldest first with its last commit, which the steward lands or removes and the prune never
+touches, and removes the main checkout's `_fixtures/` entries by the rule below.
 
 A worktree with no commit of its own counts as merged. So the prune removes it, gitignored
 `local/scratch/` with it, even while a worker still uses it, and the agent harness removes a worker's
@@ -70,13 +72,14 @@ isolated worktree when it ends without a tracked change. A docs-only or read-onl
 is scratch (a brief, a proposal, a read's answer) writes it under the main checkout's
 `local/scratch/`, or commits it early; otherwise it is lost with the worktree.
 
-No test or tool leaves a folder in the system's temporary folder: a node test makes its scratch with `scratchFolder` (removed when
+No test or tool leaves a folder in the system's temporary folder (the plugin examples' tests too: `scratchRoot()` of the same file): a node test makes its scratch with `scratchFolder` (removed when
 its process ends) or `fixtureFolder` and names a path under `FIXTURE_HOME` (`tools/merge/fixture-home.ts`, in `_fixtures/tool-tests/`),
 a C# test roots at `TestHomes`. `src/Daoris.Cli/tool-test/temp-folder-census.test.ts` fails, naming file and line, for a
-`tmpdir()` in the node tests and tools or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
+`tmpdir()` or `env.TEMP` in any node source of the repository (`inNodeScope`: all but `node_modules` and `_fixtures`) or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
 list is `KEPT` there; the C# list is `TestHomesCensusTests`'s, read by it), and a declared file removes what it makes.
 
-A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs` (a plan; `--apply` removes, `--root <checkout>`
+A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs`, which every prune applies to the main checkout
+(`sweepFixtures`) and which run alone is a plan (`--apply` removes, `--root <checkout>`
 names another tree, `--hours <n>` the window): an entry it or anything directly in it was written in the last 24 hours stays, as
 do the caches a run keeps (`pinned-mingit`, `rehearsal-builds`, `seeds`) and every link, which is never followed; the rest is
 what a killed host, a failed rehearsal or a retired probe left, and goes. The tool refuses a folder git does not ignore and a
@@ -93,7 +96,10 @@ same review path. Do not substitute another deletion API, wrapper or shell to ev
 exact steps are in `package.json`; the component gates are in `daoris.gates.json`. Run focused checks
 during the task. Before done, run `node tools/reached-checks.mjs --base main --tier fast` and
 `npm run verify:checks`, and fix what your change reddens: they are the commands `daoris.gates.json` marks `"handback"`, every brief
-names them, and a workflow's `check` step verifies them at your tip while you are open. `npm run quick` is a builder's
+names them, and a workflow's `check` step verifies them at your tip while you are open: the fast tier, saying the classes it replayed
+and the heavy-tier classes it leaves owed to the run after the landing, which runs them on main's new tip; the integration boundary's
+full set runs every tier. Each group's passes are kept as it ends, so a check asked again at a new commit, a merge of main included,
+replays every class whose inputs that commit left unchanged. `npm run quick` is a builder's
 set before a hand-back: the index and the page's generated types written, then every check of the merge's `cli` gate
 (`npm run verify:checks`, with the universal gates on the built-in patterns, and the layers' census's source counts) but the time
 ratchet, so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as handed back.
@@ -118,7 +124,8 @@ It runs within its bound, 25 minutes unless `--bound <minutes>` says otherwise: 
 admission says so as it starts to wait, with who holds the places, and again each minute; the preflight says each minute what
 runs and what waits; at the bound it ends what it started, starts nothing more, and says which gates passed, which failed, which
 it stopped and which never started, and why. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test or first
-error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in the
+error, its file and line, the first error lines, and whether main fails it too (a log's failing test is its first `not ok` or `✖` line, and its
+error never a pass line, a count of none or a warning; a log with none says the run ended without a failing test, with its exit), from that selection run on main's tip in the
 worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
@@ -130,16 +137,21 @@ the fix (UNITPURE1 for a unit test that is not pure, LAYERS1 f or COMPONENT1 for
 E2EFAST1, REACHCOST1 and CLIREACH1 for their gates). No test host records yet what each test started, opened or waited on, so a
 test's cause is its category (the Process trait, a Process or git half's record, an end-to-end spec) and its class's source, read
 by the layers census's counters; a gate's is its longest step clock. Three or more classes of one domain over by one cause name
-it a separation candidate. A gate killed at its budget while the load sampler saw more heavy runs than its own (the admission's
-places and other trees' test runs) is classed `load` and fails nothing yet: it runs again once, whole and alone, after every
-other gate has ended and once the machine is free (read every 15 s, for up to 10 min), and only a kill alone fails as the gate's
-time; the budget itself never stretches with the load. The hang bound is read the same way: a .NET gate whose blame
-collector killed a test while the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs
-again alone as above; a hang in that run again fails as the test's own. The bound is not raised under load: it is one fixed
-setting in `Directory.Build.props`, a longer one would make every real hang cost more, and a rerun costs only when a kill
-happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
+it a separation candidate. A gate past its budget while the load sampler saw more heavy runs than its own (the admission's
+places and other trees' test runs) is never killed for the load (MERGENOKILL1, D346): it runs on to its own end, its verdict
+its own, and its time is a `load` breach that fails nothing; only three times its budget ends it, as a runaway, and that
+fails. A gate past its budget alone is killed and fails as its time; the budget itself never stretches with the load. The hang
+bound is read differently, since its kill leaves the gate with no verdict: a .NET gate whose blame collector killed a test while
+the sampler saw other runs is classed `load` (its hang breach fails nothing), and the gate runs again once, whole and alone,
+after every other gate has ended and once the machine is free (read every 15 s, for up to 10 min); a hang in that run again
+fails as the test's own. The bound is not raised under load: it is one fixed setting in `Directory.Build.props`, a longer one
+would make every real hang cost more, and a rerun costs only when a kill happened. A gate that writes its own trx records into `_fixtures/test-timing` (the `censuses` gate, the service, devkit, driver
 and modules halves) is sampled from its start and its records are marked with the peak (`stampLoad`, as `reached` marks its
-own), so the time ratchet judges only timings taken alone.
+own), so the time ratchet judges only timings taken alone. At a merge the ratchet fails only on what the branch made slow
+(RATCHETOWN1, D346): a test over its limit whose file the merge adds or changes, or one over half slower than main's alone
+record of it (`local/time-main.json`, `tools/time-main.mjs`: each judging run keeps each test's alone times with the commit it
+ran on, and main's record is the slowest of the newest five whose commit is in main's history). Any other breach is inherited
+from main: a known red, said in the summary with its cause and row, failing nothing.
 
 | Change | Additional verification |
 |---|---|
@@ -202,12 +214,24 @@ desktop's carry `[Trait("Category","Census")]` and are the `censuses` gate; a CL
 `// reaches: <glob> — <why>` lines (the home census and the provider census name `tools/**`, the tree-base census every code
 file, the declarations test every `.d.mts` and script beside it), so `node tools/reached-checks.mjs --base main` (a builder's checks
 and the merge's `reached` gate) runs it for a diff that touches those paths. A declared path is one read from the test, so no
-suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). The
-`tools/*.test.mjs` files a gate lists one by one, the CLI's verify's (`cli-tests`) and the `layers` gate's, are units too
-(`tools/test-map/listed.mjs`), run from the root as their gate runs them. The scripts (`partials`, `read-shares`,
+suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). Every
+file of a declared test set (below) is a unit of the set's suite, run from the set's folder. The scripts (`partials`, `read-shares`,
 `optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, the layers' counts) are steps of `verify:checks`, which `npm
 run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line. Each of the six
 reds that landed on 2026-11-17 and 18 past a green merge is replayed in `tools/merge/missed-reds.test.ts` (MAINRED1).
+
+Which tests run is declared once, in `daoris.gates.json`'s `tests`: a list of sets, each a runner (`node`, `vitest`,
+`playwright`) and the patterns of its files (`tools/*.test.mjs`, `src/Daoris.Cli/tool-test/**/*.test.ts`), with the gate that
+runs it, the census's `suite` for its units, the folder its runner starts in and the runner's own `args`. A test file is in the
+first set whose pattern holds it, so a new file under a pattern is run by its gate, censused and reached with no list to edit;
+to scope a test apart, declare a narrower set before the wider one it carves from (`layers` before `tools`). A gate or script runs
+its sets with `node tools/test-sets.mjs run --gate <gate>` (a set by its name; `list` says each set's files, `reach <path>` the
+sets a changed path reaches); the tools' Vitest
+projects read their files from their sets; a change reaches a set's units by the census's reach of each (`tools/test-map.mjs`),
+a `bounded` set's only within its gate's `paths`; a pick (`of`) runs some of another set's files apart, as `web-rules` does.
+`node tools/tool-test-census.mjs`, a step of `verify:checks`, refuses a test file no set holds, a set that holds none or names
+an undeclared gate, a set run by its own config that would run an earlier set's file twice, and a script or gate command that
+names a test file. The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
@@ -304,7 +328,8 @@ slowest classes print by their own times beside the half's wall. Before a heavy 
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
 ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
 that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
-killed at its budget under load, once the machine is free (TIMEWHY1, *Choose the checks*). Add
+whose hang bound killed a test under load, once the machine is free; one past its budget under load runs on instead (D346,
+*Choose the checks*). Add
 `--one-at-a-time` on a loaded machine to run every gate in turn. `--full --beside` is a guest on the machine (CIPRIO1): it runs
 at below normal priority with build servers of its own (its Process lane at normal: FAMILYFAIL1c), a second is refused
 while one runs, and a run of main's tip ends the gates it is running, each with its whole tree, and starts no more once a
@@ -529,7 +554,11 @@ its own. The CI's watch gates every promoted tip, and the stage's rules are CISC
 heavy runs all take a place in before they start a heavy process, so a session's focused `dotnet test` beside a candidate no longer
 doubles the candidate's gate times into timeouts and unresolved flakes. It holds the runs that hold a place and the runs that ask,
 first come first served up to a capacity (one for each seven processors, two to six; `DAORIS_ADMISSION_SLOTS` sets it, 3 on 22
-processors). A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
+processors). A run is blocking (someone waits on it: a merge's gate, a check, a builder's run) or background (the heavy tier
+after a landing and the CI beside, marked `background` by `DAORIS_ADMISSION_BACKGROUND` in their environment,
+`tools/merge/background.ts`; MERGENOKILL1, D346): a blocking run waits only for the blocking runs asked before it, and a
+background run runs below normal priority, holds one place at most between all of them, takes it only while no blocking run
+waits, and starts no group, even one that takes no place, while one waits. A run waiting says in a sentence what it waits for (the holds, whose and for how long, and the runs asked before it)
 and looks again every two seconds; **it never times out and a gate's clock starts only once it has its place**, so a wait is no
 failure of the gate. An entry counts while its process runs and it has beaten within two minutes (its writer rewrites `beat` every
 twenty seconds), so a holder that dies, however it dies, releases at once, and nothing is released by a timeout while it lives.
@@ -643,7 +672,8 @@ watch say what is overdue. `MERGE_BRANCH_CI_NIGHT_HOUR` sets the hour, and `off`
 
 Each failure a run finds is filed as **known red** in `local/ci-findings.json`. A Process half's failure is filed by test,
 from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
-message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
+message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step: its first `not ok` or `✖` line, else its first error line (a build's the set of its compiler
+errors), else that the run ended without a failing test, with its exit. A failure
 whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
 it, but only on a commit on main's first-parent line from where it was last seen failing. A pass the run kept instead of
 running clears it under the same rules: the kept verdict stands exactly on the run's tree, passed, and is of the same gate; a
@@ -762,6 +792,8 @@ node tools/orient-index.mjs
 node tools/partials.mjs --write
 dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map
 ```
+
+`npm ci` and `node tools/worktree-setup.mjs` also install a `pre-commit` hook (`tools/index-hook.mjs` writes it, `tools/commit-checks.mjs` is what it runs) that does the bookkeeping the `cli` gate would otherwise answer at a merge, on the staged paths, in seconds: the comment gate on the staged sources; the size ratchet (a shrink is written to `tools/size-ratchet.json` and staged into the commit, growth past the size main's list gives a file is refused with the file named); `tools/contracts.mjs --if-stale` where a contract source is staged; and the layers' counts (`tools/layers-census/counts.mjs`'s checks, the slowest step, about as long as the gate's own) where a `.cs` or `.csproj` is staged. Only a refusal by one of these stops a commit; a step that cannot run says so and lets it go on. It prints what it ran and how long; `DAORIS_COMMIT_HOOK=0` skips it for one commit, a merge in progress and a detached head run nothing. The merge writes the size list's shrinks itself (`generated` in `daoris.gates.json`, `node tools/size-ratchet.mjs --shrink`), so a shrink never reddens it.
 
 `docs/index/` is ignored and never committed. `npm ci` installs `post-checkout` and `post-merge` hooks (`tools/index-hook.mjs`) that write it after git moves a branch's work tree, a new worktree included, and writes it where none stands; `DAORIS_INDEX_HOOK=0` skips them, and a detached checkout is skipped. The knowledge server writes the served checkout's again before a tool call once its `HEAD` has moved (`tools/index-fresh.mjs`). The same `npm ci` sets the `notes` merge driver (named in `.gitattributes`), which puts a blank line before a `**Note, ` line glued to the line above inside the merge of two branches' notes; a clone without the driver conflicts there rather than gluing.
 

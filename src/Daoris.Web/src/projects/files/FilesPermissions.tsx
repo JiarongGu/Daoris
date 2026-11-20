@@ -39,7 +39,7 @@ export function FilesPermissions({ look, onPress }: { look: FilesLook; onPress?:
                   <Pill tone={act.verdict === 'made' ? 'done' : act.verdict === 'held' ? 'open' : 'declined'}>{t(`files.view.verdict.${act.verdict}`)}</Pill>
                   {onPress && act.verdict === 'held' && (
                     <Button
-                      variant="ghost" className="border border-line px-2 py-0 text-meta" aria-label={t('files.view.allowNamed', { act: act.act })}
+                      variant="ghost" className="border border-line px-2 py-0 text-caption" aria-label={t('files.view.allowNamed', { act: act.act })}
                       onClick={() => onPress({ act: 'permit', change: 'add', list: 'allow', rule: act.act })}
                     >
                       {t('files.view.allow')}
@@ -58,7 +58,7 @@ export function FilesPermissions({ look, onPress }: { look: FilesLook; onPress?:
                 <li key={`${one.scope}:${one.list}:${one.rule}`} className="flex min-w-0 flex-wrap items-center gap-2 border-t border-line pt-1 first:border-t-0 first:pt-0">
                   <Pill tone={TONE[one.list]}>{t(`files.view.list.${one.list}`)}</Pill>
                   <span className="min-w-0 flex-1 font-mono [overflow-wrap:anywhere]">{one.rule}</span>
-                  <span className="text-meta text-ink-faint">
+                  <span className="text-caption text-ink-faint">
                     {one.scope === 'machine' ? t('files.view.scope.machine') : t('files.view.scope.repository')}
                     {one.list === 'allow' && one.by ? ` · ${t('files.view.givenBy', { by: one.by === 'person' ? t('files.view.maker.person') : t('files.view.maker.role', { role: one.by }) })}` : ''}
                   </span>

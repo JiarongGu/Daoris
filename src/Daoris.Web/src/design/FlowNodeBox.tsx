@@ -42,7 +42,7 @@ export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: 
         <p data-flow-mark className="m-0 mt-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
           <Icon name="stepFinished" size={12} className="mr-1 inline translate-y-px" />
           <span className="font-semibold">{node.mark.word}</span>
-          {node.mark.foot && <span className="block text-meta">{node.mark.foot}</span>}
+          {node.mark.foot && <span className="block text-caption">{node.mark.foot}</span>}
         </p>
       )}
       {feet.length > 0 && (
@@ -53,7 +53,7 @@ export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: 
               type="button"
               tabIndex={-1}
               onClick={() => onFollow(node.id, foot.to)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
+              className="cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
             >
               <span aria-hidden className="mr-1">{foot.back ? '↺' : '→'}</span>{foot.text}
             </button>

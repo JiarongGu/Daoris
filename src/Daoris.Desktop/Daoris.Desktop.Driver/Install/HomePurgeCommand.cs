@@ -16,12 +16,14 @@ namespace Daoris.Driver;
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes: 0 listed, purged or nothing to purge · 1 refused,
 /// or a purge stopped, said with what moved · 2 a word it does not answer.</para>
 /// </remarks>
-[CommandGroup("home", "purge")]
+// The group's other verb, `account-ids`, is AccountIdsCommand's, which the host hands its words before these.
+[CommandGroup("home", "purge", "account-ids")]
 public static class HomePurgeCommand
 {
     public const string Usage =
         "usage: daoris home purge --history --plan     what a purge would move out of the home, with sizes and counts\n"
-        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays";
+        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays\n"
+        + "       daoris home                            the paths no entry of the home's table names, with sizes (Not in the table)";
 
     /// <param name="args">The words after <c>home</c>.</param>
     /// <param name="home">The Daoris home.</param>
@@ -43,6 +45,12 @@ public static class HomePurgeCommand
     private static int Run(
         string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, string? knowledgeDb, StringBuilder output)
     {
+        if (args.Length == 0)
+        {
+            Strays(home, output);
+            return 0;
+        }
+
         if (args is not ["purge", .. var words] || !words.Contains("--history") || words.Any(word => word is not ("--history" or "--plan" or "--yes"))
             || words.Contains("--plan") == words.Contains("--yes"))
         {
@@ -64,10 +72,10 @@ public static class HomePurgeCommand
             return 1;
         }
 
-        if (Running(home) is { } why) return Refused(why, output);
+        if (HomeAtRest.Running(home, Verb) is { } why) return Refused(why, output);
 
         HomeLease? lease = null;
-        if (!OwnLease(home))
+        if (!HomeAtRest.OwnLease(home, Verb))
         {
             lease = HomeLease.TryAcquire(home, LeaseKind.Verb, out var holder, "home purge --history");
             if (lease is null) return Refused($"{home} is held by {holder?.Named ?? "another process"}.", output);
@@ -75,11 +83,7 @@ public static class HomePurgeCommand
 
         using var held = lease;
 
-        var sessions = LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), CancellationToken.None).GetAwaiter().GetResult();
-        if (sessions.Problem is not null || sessions.Sessions.Count > 0)
-        {
-            return Refused(sessions.Problem ?? $"a session still runs on {home}: its connector writes the store.", output);
-        }
+        if (HomeAtRest.Sessions(home) is { } running) return Refused(running, output);
 
         var plan = HomePurge.Plan(home, knowledgeDb);
         if (plan.Nothing)
@@ -115,18 +119,8 @@ public static class HomePurgeCommand
         return 1;
     }
 
-    /// <summary>Whether the home's lease is this verb's own, which the host took for it before the door ran.</summary>
-    private static bool OwnLease(string home) =>
-        HomeLease.HeldHere(home) && HomeLease.HeldBy(home) is { Kind: LeaseKind.Verb, What: { } what } && what.Contains("home purge", StringComparison.Ordinal);
-
-    /// <summary>What holds the home now, in a sentence, or null where nothing of Daoris runs on it.</summary>
-    private static string? Running(string home)
-    {
-        if (HomeLease.HeldBy(home) is { } holder && !OwnLease(home)) return $"{home} is held by {holder.Named}.";
-        return RunningAddress.Read(home) is { } entry && RunningService.Lives(entry.Pid, entry.Started)
-            ? $"Daoris's service runs on {home} (process {entry.Pid.ToString(CultureInfo.InvariantCulture)})."
-            : null;
-    }
+    /// <summary>The words the lease names this verb by.</summary>
+    private const string Verb = "home purge";
 
     private static void Listed(PurgePlan plan, StringBuilder output)
     {
@@ -135,6 +129,25 @@ public static class HomePurgeCommand
         foreach (var path in plan.Paths) output.AppendLine($"  move  {path.Relative}  {Size(path.Bytes)}, {path.Files} files");
         foreach (var table in plan.Tables) output.AppendLine($"  empty {table.Relative} {table.Table}  {table.Rows} rows");
         output.AppendLine("  `daoris home purge --history --yes` does it, once Daoris is closed.");
+    }
+
+    /// <summary>The section <i>Not in the table</i>: each path no entry names, with its size, or that there is none.</summary>
+    private static void Strays(string home, StringBuilder output)
+    {
+        var strays = HomeStrays.Read(home, WiringBudget.Default, sizeEntries: true);
+        var totals = strays.Walked.Where(path => path.Entry is not null).GroupBy(path => path.Entry!)
+            .Select(group => (Entry: group.Key, Bytes: group.Sum(path => path.Bytes))).OrderByDescending(total => total.Bytes).ToList();
+        output.AppendLine($"Entries: {totals.Count} of the table hold something{(strays.Partial is null ? "" : " (counted in part)")}:");
+        foreach (var (entry, bytes) in totals) output.AppendLine($"  {entry}  {Size(bytes)}");
+        if (strays.Paths.Count == 0)
+        {
+            output.AppendLine("Not in the table: nothing. Every path under the home is an entry's.");
+            return;
+        }
+
+        output.AppendLine(
+            $"Not in the table: {strays.Paths.Count} paths ({Size(strays.Bytes)}{(strays.Partial is null ? "" : ", counted in part")}) that no entry names, so no reader finds them:");
+        foreach (var stray in strays.Paths) output.AppendLine($"  {stray.Path}  {Size(stray.Bytes)}");
     }
 
     private static string Size(long bytes) => ByteSizes.Said(bytes);

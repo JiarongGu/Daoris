@@ -80,6 +80,21 @@ public sealed class GoOnNewTests : IDisposable
         Assert.True((await AskAsync(room, "s1")).Sent);
     }
 
+    /// <summary>🔴 Words held on a session awaiting its step do not reach it there, so the door takes it; unheld, they do.</summary>
+    [Fact]
+    public async Task A_session_awaiting_its_step_with_words_it_cannot_go_on_with_may_go_on_in_a_new_session()
+    {
+        var room = new Room([Record("s1", state: "awaiting-step", said: ["w1"])], [Quest("q1", "Taken")]);
+        var running = await GoOnNew.AskAsync(room.Client(), _home, (_, _, _) => null, "s1", T0.AddMinutes(30));
+        Assert.Equal((false, GoOnNew.Running), (running.Sent, running.Why));
+
+        new GoOnMarks(_home).Mark("s1", ["w1"], ContinueWhy.Of(ContinueWhy.Account), T0);
+        var answer = await GoOnNew.AskAsync(room.Client(), _home, (_, _, _) => null, "s1", T0.AddMinutes(30));
+
+        Assert.True(answer.Sent, answer.Message);
+        Assert.Equal(["w1"], new NewSessionChoices(_home).Read("s1")!.Said);
+    }
+
     public static TheoryData<string, string, string> Refusals => new()
     {
         { "nobody00", WordsNever.NotFound, "no session here is nobody00." },

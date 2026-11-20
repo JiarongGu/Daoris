@@ -11,6 +11,7 @@ import { partsOf, RunParts } from '../../workflow/parts/RunParts';
 import type { WorkflowRun } from '../../workflow/run';
 import { sessionOrigin } from '../identity';
 import { type AnswerPick, AwaitingPerson, type QuestClose, type Resolution } from './AwaitingPerson';
+import { ConversationSignIn } from './ConversationSignIn';
 import { type DockLine, dockName, dockOf, type DockWait, type StepWait } from './dock';
 import type { LineBehind } from '../review/diff';
 import type { DiscardOffer, LandOffer } from '../groups';
@@ -206,6 +207,22 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, seek, runWait
   const lineOf = ({ wait }: DockLine): ReactNode => {
     switch (wait.kind) {
       case 'question':
+        // A conversation's sign-in question: its presses and no park's moves (a conversation has none to finish or decline).
+        if (session.kind === 'chat' && props.question?.site) {
+          return (
+            <div data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
+              <ConversationSignIn
+                key={session.id}
+                question={props.question}
+                site={props.question.site}
+                pending={props.resolving}
+                onAnswer={props.onAnswerSession}
+                onConversation={toEvent?.question}
+              />
+            </div>
+          );
+        }
+
         return props.onResolve || props.onAnswerSession ? (
           <div data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
             {/* Keyed: a half-written decline reason belongs to the session it is written for. */}

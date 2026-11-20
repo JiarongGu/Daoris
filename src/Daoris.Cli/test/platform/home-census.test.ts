@@ -308,3 +308,35 @@ test('the census sees each way of joining a home, and never a join under an entr
   assert.ok(namesEntry(['"logs"']) && namesEntry(['"profiles"', '"agents"']));
   assert.ok(!namesEntry(["'data'"]) && !namesEntry(['"work"', '"engine"']) && !namesEntry(['"profiles"', 'adapter.Name']));
 });
+
+// The refusals for the table against `fixtures/home-places.json`, which says how a dropped place is declared.
+function placeRefusals(
+  table: readonly string[],
+  record: { places: readonly string[]; dropped: readonly { place: string; move?: string }[] },
+): string[] {
+  const refused: string[] = [];
+  const dropped = new Map(record.dropped.map((each) => [each.place, each.move?.trim() ?? '']));
+  for (const place of record.places) {
+    if (!table.includes(place) && !dropped.get(place)) refused.push(`${place} is gone from the table and has no declared move: move it to \`dropped\` with the step that takes an install's files there to their new place`);
+  }
+  for (const [place, move] of dropped) {
+    if (table.includes(place)) refused.push(`${place} is dropped and still in the table: one of them`);
+    else if (move.length === 0) refused.push(`${place} is dropped with no declared move`);
+  }
+  for (const place of table) {
+    if (!record.places.includes(place)) refused.push(`${place} is in the table and not recorded in fixtures/home-places.json`);
+  }
+  return refused;
+}
+
+test('a place dropped from the table carries a declared one-time move, or the census refuses', () => {
+  assert.deepEqual(placeRefusals(['a', 'b'], { places: ['a', 'b', 'c'], dropped: [] }).map((each) => each.split(' ')[0]), ['c']);
+  assert.match(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c' }] })[0] ?? '', /^c is dropped with no declared move/);
+  assert.match(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c', move: '  ' }] })[0] ?? '', /no declared move/);
+  assert.deepEqual(placeRefusals(['a'], { places: ['a', 'c'], dropped: [{ place: 'c', move: 'moved to a, once' }] }), []);
+  assert.deepEqual(placeRefusals(['a'], { places: ['a'], dropped: [{ place: 'c', move: 'moved to a, once' }] }), []);
+  assert.match(placeRefusals(['a', 'n'], { places: ['a'], dropped: [] })[0] ?? '', /^n is in the table and not recorded/);
+
+  const record = JSON.parse(readFileSync(new URL('../fixtures/home-places.json', import.meta.url), 'utf8')) as Parameters<typeof placeRefusals>[1];
+  assert.deepEqual(placeRefusals([...new Set(HOME_ENTRIES.map((entry) => entry.new))], record), []);
+});

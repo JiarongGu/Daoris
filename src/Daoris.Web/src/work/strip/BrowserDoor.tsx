@@ -48,10 +48,10 @@ export function BrowserDoor({ onOpen, drivers = [], onAttend }: {
 
 /** A chip's frame: a bordered token a size down from the strip's text, and a box to press where it opens something. */
 const CHIP = cn(
-  'flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-control border border-line px-2 text-meta text-ink-soft',
+  'flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-control border border-line px-2 text-caption text-ink-soft',
 );
 const PRESSABLE = cn(
-  'cursor-pointer bg-transparent transition-colors duration-(--speed)',
+  'cursor-pointer bg-transparent transition-colors duration-(--duration-quick)',
   'hover:bg-accent-soft hover:text-ink focus-visible:bg-accent-soft focus-visible:outline-none',
   'focus-visible:ring-1 focus-visible:ring-accent',
 );

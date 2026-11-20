@@ -119,7 +119,7 @@ function NotFetched({ lines }: { lines: LinePull[] }) {
           return (
             <li key={reason} className="mt-1 text-small">
               <span className="break-words text-ink-soft"><Inline text={reason} /></span>
-              <span className="text-meta text-ink-faint"> · {these.length}</span>
+              <span className="text-caption text-ink-faint"> · {these.length}</span>
               <span className="block text-ink-soft">{these.map(when).join(' · ')}</span>
             </li>
           );
@@ -315,7 +315,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
       )}
       {bringing && <p role="status" className="mt-2 text-small text-ink">{t('settings.sync.bringing')}</p>}
       {stopped && !busy && (
-        <p role="alert" className="mt-2 text-small text-ink-danger">
+        <p role="alert" className="mt-2 text-small text-fail-ink">
           {t(stopped === 'look' ? 'settings.sync.stopped.look' : 'settings.sync.stopped.press')}
         </p>
       )}
@@ -336,9 +336,9 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
                 word={t(pull.moves ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 <Inline text={pulls(pull)} />
                 {/* A short mark: the reason is said once, above the rows. */}
-                {pull.fetch && <span className="mt-0.5 block text-meta text-ink-faint">{t('settings.sync.line.notFetched')}</span>}
+                {pull.fetch && <span className="mt-0.5 block text-caption text-ink-faint">{t('settings.sync.line.notFetched')}</span>}
                 {pull.kind === 'unknown' && pull.detail && (
-                  <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{pull.detail}</span>
+                  <span className="mt-0.5 block break-words font-mono text-caption text-ink-faint">{pull.detail}</span>
                 )}
               </BranchRow>
             ))}
@@ -347,7 +347,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
                 word={t(branch.replays ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 {branch.landed && <Chip>{t('settings.sync.branch.landed')}</Chip>} <Inline text={replays(branch)} />
                 {branch.kind === 'unknown' && branch.detail && (
-                  <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{branch.detail}</span>
+                  <span className="mt-0.5 block break-words font-mono text-caption text-ink-faint">{branch.detail}</span>
                 )}
               </BranchRow>
             ))}

@@ -71,7 +71,7 @@ function ChildLine({ beside, read, home }: { beside: Beside; read: ChildRead; ho
         <Icon name="atWork" size={14} className="shrink-0 text-ink-faint" />
         <span className="min-w-0 truncate">{said}</span>
       </button>
-      {closing && <p className="m-0 ml-5 truncate text-meta text-ink-faint">{closing}</p>}
+      {closing && <p className="m-0 ml-5 truncate text-caption text-ink-faint">{closing}</p>}
       {open && home && !home.nested && <ChildInPlace beside={beside} read={read} home={home} />}
     </div>
   );
@@ -103,7 +103,7 @@ function TaskStart({ beside }: { beside: Beside }) {
       <Icon name="execute" size={14} className="shrink-0 text-ink-faint" />
       <span className="min-w-0 truncate">{[t('work.beside.task'), beside.name, t(standing(beside))].filter(Boolean).join(' · ')}</span>
       {beside.endKey && home?.onShow && (
-        <button type="button" onClick={() => home.onShow!(beside.endKey!)} className="border-0 bg-transparent p-0 text-meta text-accent underline">
+        <button type="button" onClick={() => home.onShow!(beside.endKey!)} className="border-0 bg-transparent p-0 text-caption text-accent-ink underline">
           {t('work.beside.toEnd')}
         </button>
       )}
@@ -128,7 +128,7 @@ export function TaskEnd({ block }: { block: Block }) {
           {[t('work.beside.task'), beside.name, t(standing(beside)), ran !== null && t('work.beside.ran', { span: span(ran) })].filter(Boolean).join(' · ')}
         </span>
         {beside.startKey && home?.onShow && (
-          <button type="button" onClick={() => home.onShow!(beside.startKey!)} className="border-0 bg-transparent p-0 text-meta text-accent underline">
+          <button type="button" onClick={() => home.onShow!(beside.startKey!)} className="border-0 bg-transparent p-0 text-caption text-accent-ink underline">
             {t('work.beside.toStart')}
           </button>
         )}
@@ -136,7 +136,7 @@ export function TaskEnd({ block }: { block: Block }) {
       {Tail && (
         <Tail task={beside.id}>
           {(lines) => (lines.length > 0
-            ? <pre className="m-0 ml-5 max-h-20 overflow-hidden whitespace-pre-wrap font-mono text-meta text-ink-faint">{lines.slice(-3).join('\n')}</pre>
+            ? <pre className="m-0 ml-5 max-h-20 overflow-hidden whitespace-pre-wrap font-mono text-caption text-ink-faint">{lines.slice(-3).join('\n')}</pre>
             : null)}
         </Tail>
       )}

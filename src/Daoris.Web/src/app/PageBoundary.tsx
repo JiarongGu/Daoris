@@ -41,8 +41,8 @@ export function PageStopped({ message, logged, onReload }: {
     <main aria-labelledby={HEADING} className="grid min-h-screen place-items-center bg-page px-6 py-10 text-ink">
       {/* A reading column centred in the window, as the start prompt's is: the screen has no pane to wrap at. */}
       <div className="flex w-full max-w-[34rem] flex-col items-start gap-3">
-        <span className="text-ink-danger"><Icon name="failure" size={26} /></span>
-        <h1 id={HEADING} className="text-view font-[650] tracking-[-0.01em]">{t('stopped.headline')}</h1>
+        <span className="text-fail-ink"><Icon name="failure" size={26} /></span>
+        <h1 id={HEADING} className="text-display font-[650] tracking-[-0.01em]">{t('stopped.headline')}</h1>
         {message && <p title={message} className="m-0 w-full truncate font-mono text-small text-ink-soft">{message}</p>}
         <Prose>{t('stopped.behind')}</Prose>
         {logged && <Prose><Inline text={t('stopped.logged')} /></Prose>}

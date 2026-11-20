@@ -44,7 +44,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
       <RadixSelect.Trigger
         aria-label={ariaLabel}
         className={bar
-          ? 'flex h-full items-center gap-1.5 px-2 text-meta text-ink transition-colors duration-[var(--speed)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
+          ? 'flex h-full items-center gap-1.5 px-2 text-caption text-ink transition-colors duration-[var(--duration-quick)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
           : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
       >
         {bar && <Layers size={glyphSize(12)} aria-hidden className="shrink-0 text-ink-soft" />}
@@ -84,7 +84,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
                 <Fragment key={`${run.group}:${at}`}>
                   {at > 0 && <RadixSelect.Separator className="my-1 h-px bg-line" />}
                   <RadixSelect.Group>
-                    <RadixSelect.Label className="px-2 pb-1 pt-1 text-meta text-ink-faint">{run.group}</RadixSelect.Label>
+                    <RadixSelect.Label className="px-2 pb-1 pt-1 text-caption text-ink-faint">{run.group}</RadixSelect.Label>
                     {items}
                   </RadixSelect.Group>
                 </Fragment>
@@ -158,7 +158,7 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
         checked={checked}
         disabled={disabled}
         onCheckedChange={(state) => onChange(state === true)}
-        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink"
+        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-on-accent"
       >
         <Checkbox.Indicator><Check size={glyphSize(12)} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
       </Checkbox.Root>
@@ -221,9 +221,9 @@ export function Segmented<T extends string>({ label, value, options, onChange, f
           tabIndex={value === option.value ? 0 : -1}
           onClick={() => onChange(option.value)}
           className={cn(
-            'inline-flex items-center rounded-[4px] px-2.5 py-1 text-small transition-colors duration-(--speed)',
+            'inline-flex items-center rounded-[4px] px-2.5 py-1 text-small transition-colors duration-(--duration-quick)',
             fill && 'min-w-0 flex-1 justify-center',
-            value === option.value ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
+            value === option.value ? 'bg-accent text-on-accent' : 'text-ink-soft hover:text-ink',
           )}
         >
           {option.label}

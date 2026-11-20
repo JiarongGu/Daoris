@@ -69,7 +69,7 @@ function PartRefusals({ refusals, doorFor }: { refusals: readonly PlaceRefusal[]
         return (
           <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
             <span>
-              {each.repository && <span className="mr-1.5 font-mono text-meta text-ink">{each.repository}</span>}
+              {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
               <Inline text={each.sentence} />
             </span>
             {go && doorOf(each.code) && (
@@ -159,7 +159,7 @@ function PlaceChoices({
     return (
       <span className="grid gap-0.5">
         <span className="text-small text-ink-soft">{t('agents.setup.set.whyLine', { reason: t(`agents.setup.set.why.${why.code}`, { defaultValue: why.said }) })}</span>
-        {why.said && <span className="text-meta text-ink-faint"><Inline text={why.said} /></span>}
+        {why.said && <span className="text-caption text-ink-faint"><Inline text={why.said} /></span>}
       </span>
     );
   };

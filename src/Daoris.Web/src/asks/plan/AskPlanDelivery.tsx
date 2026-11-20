@@ -20,7 +20,7 @@ export function AskPlanDelivery({ revision, onSettle }: { revision: AskPlanRevis
   return (
     <>
       {revision.releases.length > 0 && (
-        <ul className="m-0 grid list-none gap-1.5 p-0 text-meta text-ink-faint">
+        <ul className="m-0 grid list-none gap-1.5 p-0 text-caption text-ink-faint">
           {revision.releases.map((release) => (
             <Release key={`${release.deployable}-${release.source}-${release.on}`} release={release} onSettle={onSettle} />
           ))}
@@ -28,10 +28,10 @@ export function AskPlanDelivery({ revision, onSettle }: { revision: AskPlanRevis
       )}
       {revision.questions.length > 0 && (
         <section className="grid gap-1" aria-label={t('asks.plan.questions')}>
-          <p className="m-0 text-meta text-ink-faint">{t('asks.plan.questions')}</p>
+          <p className="m-0 text-caption text-ink-faint">{t('asks.plan.questions')}</p>
           <ul className="m-0 grid list-none gap-2 p-0">
             {revision.questions.map((question) => (
-              <li key={question.key} className="grid min-w-0 gap-0.5 text-meta">
+              <li key={question.key} className="grid min-w-0 gap-0.5 text-caption">
                 <span className="wrap-anywhere text-body text-ink">{question.text}</span>
                 {question.yes && <span className="text-ink-faint">{t('asks.plan.question.yes', { text: question.yes })}</span>}
                 {question.blocks && <span className="text-ink-faint">{t('asks.plan.question.blocks', { text: question.blocks })}</span>}
@@ -48,7 +48,7 @@ export function AskPlanDelivery({ revision, onSettle }: { revision: AskPlanRevis
         </section>
       )}
       {revision.answers.length > 0 && (
-        <ul className="m-0 grid list-none gap-1 p-0 text-meta text-ink-faint">
+        <ul className="m-0 grid list-none gap-1 p-0 text-caption text-ink-faint">
           {revision.answers.map((answer) => (
             <li key={answer.key} className="wrap-anywhere">{t('asks.plan.answered', { key: answer.key })}: <q className="whitespace-pre-wrap text-ink">{answer.words}</q></li>
           ))}

@@ -20,8 +20,8 @@ const MEASURE = 56;
 const MARK: Record<TimelineEvent['kind'], string> = {
   opened: 'border-line bg-raised',
   state: 'border-accent bg-accent-soft',
-  quest: 'border-st-taken bg-st-taken/20',
-  evidence: 'border-st-done bg-st-done/20',
+  quest: 'border-live bg-live-soft',
+  evidence: 'border-ok bg-ok-soft',
 };
 
 /**
@@ -66,7 +66,7 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
 
       <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small">
         <span className="text-ink">{label}</span>
-        <span className="font-mono text-meta text-ink-faint">{ago(event.at)}</span>
+        <span className="font-mono text-caption text-ink-faint">{ago(event.at)}</span>
       </p>
 
       {note && (
@@ -99,7 +99,7 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
             <ul className="m-0 mt-1 list-none p-0">
               {event.commits.map((commit) => (
                 <li key={commit.sha} className="flex gap-2 text-small">
-                  <code className="shrink-0 font-mono text-meta text-accent">{commit.sha}</code>
+                  <code className="shrink-0 font-mono text-caption text-accent-ink">{commit.sha}</code>
                   <span className="min-w-0 break-words text-ink-soft">{commit.subject}</span>
                 </li>
               ))}

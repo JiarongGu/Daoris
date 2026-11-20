@@ -50,7 +50,7 @@ export function TerminalTabs({ tabs, selected, onSelect, onClose, shells, onNew 
       onClick={choosing ? undefined : () => onNew(shells?.[0]?.shell)}
       className={cn(
         'flex h-6 w-6 shrink-0 items-center justify-center rounded-control text-ink-faint',
-        'transition-colors duration-(--speed) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
+        'transition-colors duration-(--duration-quick) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
       )}
     >
       <Icon name="plus" size={14} />
@@ -75,7 +75,7 @@ export function TerminalTabs({ tabs, selected, onSelect, onClose, shells, onNew 
               onClose(tab.id);
             }}
             className={cn(
-              'flex max-w-56 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+              'flex max-w-56 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-caption transition-colors duration-(--duration-quick)',
               tab.id === selected ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
             )}
           >
@@ -91,7 +91,7 @@ export function TerminalTabs({ tabs, selected, onSelect, onClose, shells, onNew 
             type="button"
             aria-label={t('work.terminal.close', { name: shown.name })}
             onClick={() => onClose(shown.id)}
-            className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent text-ink-faint transition-colors duration-(--speed) hover:bg-raised hover:text-ink"
+            className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent text-ink-faint transition-colors duration-(--duration-quick) hover:bg-raised hover:text-ink"
           >
             <Icon name="x" size={12} />
           </button>
@@ -109,7 +109,7 @@ export function TerminalTabs({ tabs, selected, onSelect, onClose, shells, onNew 
                   <Menu.Item key={shell.shell} onSelect={() => onNew(shell.shell)}>
                     <Icon name="terminal" size={13} className="shrink-0 opacity-70" />
                     <span className="truncate">{shell.name}</span>
-                    {shell.default && <span className="ml-auto pl-3 text-meta text-ink-faint">{t('work.terminal.default')}</span>}
+                    {shell.default && <span className="ml-auto pl-3 text-caption text-ink-faint">{t('work.terminal.default')}</span>}
                   </Menu.Item>
                 ))}
               </Menu.Content>

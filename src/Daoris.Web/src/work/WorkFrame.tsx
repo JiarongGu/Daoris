@@ -32,7 +32,7 @@ import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
 import { sessionOrigin, sessionTitle } from './identity';
 import { RightDock } from './frame/RightDock';
-import { SESSION_ACTIVE, type Notify } from '../design/ui';
+import { Drawer, SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
 import { useNewStart } from './start/useNewStart';
 import { StartPane } from './start/StartPane';
@@ -49,12 +49,12 @@ import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
-import { opensRun } from './rail/runWaitFact';
 import { AttendedPane } from './head/AttendedPane';
-import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
 import { AttendedConversation } from './conversation/AttendedConversation';
 import { channelHomeOf } from './conversation/channelHome';
+import { toChannelRow, toExchangeRow } from './exchanges/seek';
+import { toDockLine } from './track/seek';
 import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
@@ -261,6 +261,7 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
+  const [flowchartOpen, setFlowchartOpen] = useState(false);
   // The run `outputs/<run>` opened, at the attempt an Accept card named, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null; attempt: number | null } | null>(null);
   const onReviewRun = (run: string, attempt: number | null = null) => {
@@ -277,8 +278,7 @@ export function WorkFrame({
     else if (memoryOf) setMemorySeek((was) => ({ session: memoryOf, n: (was?.n ?? 0) + 1 }));
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
-    else if (intent === 'workflow') openView('workflow');
-    else if (intent === 'atWork') openView('atWork');
+    else if (intent === 'workflow') setFlowchartOpen(true);
   }
   if (!intent && taken) setTaken(null);
 
@@ -373,25 +373,20 @@ export function WorkFrame({
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
     heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
+    steps: runWaitDoors.steps, onFlowchart: () => setFlowchartOpen(true),
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
-  // The head's *Waiting on* opens At work at the request it names.
-  const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, work, views, boxState, onReviewRun, attend, runNodeWord,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
+    flowchartOpen,
   });
-  const { surface, previewSurface, consoleView, withWhose } = regions;
-  // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
-  const attendRow = (id: string) => {
-    attend(id);
-    if (opensRun(groups.data, id)) openView('workflow');
-  };
+  const { surface, previewSurface, consoleView, withWhose, flowchart } = regions;
   const spec = useSessionsList({
-    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend: attendRow, newConversationPressed,
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
   const { partBox, seek } = useSeekPart();
@@ -450,7 +445,7 @@ export function WorkFrame({
             heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
             partRows={partRows}
             onShowPart={(id) => { attend(id); seek(); }}
-            openAtWork={atWorkSeek.open}
+            openAtWork={toExchangeRow}
             attend={attend}
             onOpenQuest={onOpenQuest}
             onAnswerAsk={onAnswerAsk}
@@ -473,10 +468,14 @@ export function WorkFrame({
             partRows={partRows}
             partBox={partBox}
             attend={attend}
-            // The channel its panel reads names each message's poster, and a turn's door opens that panel.
+            // The channel its rows read names each message's poster, and a turn's door brings that message's row.
             channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
-              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
+              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, toChannelRow,
             ) : undefined}
+            along={{
+              atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
+              nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
+            }}
           />
         </ViewMain>
 
@@ -499,7 +498,14 @@ export function WorkFrame({
           {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
           {/* The live band: what runs now, above the dock, each line ticking with its last line and its presses. */}
-          {attended && here && <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />}
+          {attended && here && (
+            <SessionBand
+              key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify}
+              // A helper or a reviewer at work for its line, a line each, its session a press away.
+              exchanges={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.exchanges : undefined}
+              onOpenSession={attend} nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
+            />
+          )}
           {attended && waits && (
             <WaitStrip
               key={`strip:${attended.id}`}
@@ -585,6 +591,7 @@ export function WorkFrame({
           {dock === 'preview' ? previewSurface : dock ? surface(dock, 'right') : null}
         </RightDock>
       )}
+      {flowchart && <Drawer title={t('work.track.flowchartTitle')} onClose={() => setFlowchartOpen(false)}>{flowchart}</Drawer>}
     </div>
   );
 }

@@ -110,16 +110,16 @@ describe('the spatial grid and the cull', () => {
 });
 
 describe('the tiers and the budget', () => {
-  it('follows text-meta at 11 px × the window\'s zoom × k: 9 px is the full tier, 4 px a chip, below it a dot', () => {
+  it('follows text-caption at 12 px × the window\'s zoom × k: 9 px is the full tier, 4 px a chip, below it a dot', () => {
     expect(tierAt(1, 16)).toBe('full');
-    expect(tierAt(0.82, 16)).toBe('full');
-    expect(tierAt(0.8, 16)).toBe('chip');
-    expect(tierAt(0.37, 16)).toBe('chip');
-    expect(tierAt(0.36, 16)).toBe('dot');
+    expect(tierAt(0.75, 16)).toBe('full');
+    expect(tierAt(0.74, 16)).toBe('chip');
+    expect(tierAt(0.34, 16)).toBe('chip');
+    expect(tierAt(0.33, 16)).toBe('dot');
     // The window's 50%: the root is 8 px, so the same k reads at half the size.
     expect(tierAt(1, 8)).toBe('chip');
     expect(tierAt(0.74, 32)).toBe('full');
-    expect(tierAt(0.42, 32)).toBe('full');
+    expect(tierAt(0.38, 32)).toBe('full');
     expect(tierAt(0.4, 8)).toBe('dot');
   });
 

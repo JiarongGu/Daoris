@@ -19,11 +19,11 @@ const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), 
 const labels = (rows: { label: string }[]) => rows.map((row) => row.label);
 
 describe('the menus, row by row', () => {
-  it('holds 71 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
+  it('holds 70 items with the install\'s two workspaces, every place but Settings under Go (the design §6.2)', () => {
     const all = entries();
     const rows = MENUS.flatMap((menu) => menuRows(all, menu.id));
-    // The 66th, View's Workflow; the 67th, View's Notifications; the 68th to the 70th, View's zoom; the 71st, Help's Change focus.
-    expect(rows).toHaveLength(71);
+    // The 66th, View's Notifications; the 67th to the 69th, View's zoom; the 70th, Help's Change focus.
+    expect(rows).toHaveLength(70);
     expect(rows.filter((row) => row.shortcut)).toHaveLength(33);
   });
 
@@ -69,7 +69,7 @@ describe('the menus, row by row', () => {
     const language = view.find((row) => row.label === 'Language');
     expect(language?.sub?.map((row) => [row.label, Boolean(row.checked)])).toEqual([['English', true], ['中文', false]]);
     expect(labels(view)).toEqual([
-      'Commands', 'Quest list', 'Panel', 'Side bar', 'Reset view locations', 'Notifications', 'Timeline', 'Workflow', 'Console', 'Monitor window',
+      'Commands', 'Quest list', 'Panel', 'Side bar', 'Reset view locations', 'Notifications', 'Timeline', 'Console', 'Monitor window',
       "Daoris's browser", 'Theme', 'Language', 'Zoom in', 'Zoom out', 'Reset zoom', 'Refresh the index',
     ]);
   });

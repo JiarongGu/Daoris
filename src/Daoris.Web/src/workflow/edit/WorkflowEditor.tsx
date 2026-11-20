@@ -242,7 +242,7 @@ function Composing({
   return (
     <section ref={region} data-edit-history="" aria-labelledby={headId} onKeyDown={onKeyDown} className="grid min-w-0 gap-4">
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 id={headId} className="m-0 text-title font-semibold text-ink">{t('workflow.edit.title')}</h3>
+        <h3 id={headId} className="m-0 text-heading font-semibold text-ink">{t('workflow.edit.title')}</h3>
         <div className="flex flex-wrap gap-1.5">
           <Button variant="ghost" className="border border-line" onClick={() => openPicker(selected ? { after: selected } : { free: true })}>
             {t('workflow.edit.add.open')}

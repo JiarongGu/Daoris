@@ -8,6 +8,9 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     public WorkflowGateState? WorkflowGate { get; init; }
     public string? Problem { get; init; }
 
+    /// <summary>Whether the <see cref="Problem"/> is that the run has not started: its quest waits to be taken, nothing is unread (<see cref="WorkflowNotStarted"/>).</summary>
+    public bool NotStarted { get; init; }
+
     /// <summary>The <see cref="Problem"/> as a code and its values for the page to word; null where it is the driver's sentence only.</summary>
     public BindingProblem? Coded { get; init; }
 

@@ -165,7 +165,7 @@ function SettingsMain({ title, Domain, domain, anchor, onAnchored }: {
         // list is a strip, and why a card alone in its domain still carries no title of its own.
         header={(
           <header className="mb-5">
-            <h1 className="text-view font-[650] tracking-[-0.01em]">{title}</h1>
+            <h1 className="text-display font-[650] tracking-[-0.01em]">{title}</h1>
           </header>
         )}
       >

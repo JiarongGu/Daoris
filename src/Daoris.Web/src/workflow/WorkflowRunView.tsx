@@ -99,7 +99,7 @@ function Routes({ routes }: { routes: Route[] }) {
   const { t } = useTranslation();
   if (routes.length === 0) return null;
   return (
-    <ul aria-label={t('workflow.run.routes')} className="m-0 grid list-none gap-0.5 p-0 text-meta text-ink-soft">
+    <ul aria-label={t('workflow.run.routes')} className="m-0 grid list-none gap-0.5 p-0 text-caption text-ink-soft">
       {routes.map((route, index) => (
         <li key={route.outcome} className="m-0 grid min-w-0 grid-cols-[1.25ch_minmax(0,1fr)] gap-x-1.5">
           <span aria-hidden className="font-mono text-ink-faint">{index === routes.length - 1 ? '└' : '├'}</span>
@@ -126,10 +126,10 @@ function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step
     <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
       {pill && <Pill tone={notTaken ? 'neutral' : runTone(step.state, step.holder)}>{notTaken ? t('workflow.run.notTaken.state') : stepWord(t, step)}</Pill>}
       {here && (
-        <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">{t('workflow.run.thisSession')}</span>
+        <span className="rounded-full border border-line-strong px-2 py-px text-caption text-ink-soft">{t('workflow.run.thisSession')}</span>
       )}
-      {step.role && <span className="text-meta text-ink-soft">{t('workflow.run.role', { role: roleSaid(t, language, step.role) })}</span>}
-      {when && <span className="font-mono text-meta text-ink-faint">{when}</span>}
+      {step.role && <span className="text-caption text-ink-soft">{t('workflow.run.role', { role: roleSaid(t, language, step.role) })}</span>}
+      {when && <span className="font-mono text-caption text-ink-faint">{when}</span>}
       {children}
     </p>
   );
@@ -232,7 +232,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
       )}
       <StepWait step={step} />
       {step.through ? <StepThrough step={step} /> : quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
-      {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
+      {added && <p className="m-0 text-caption text-ink-faint">{added}</p>}
       {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
       {stepHold && step.holds && run.graph && <StepHold bridge={stepHold} run={run.graph.run} workspace={run.workspace} repository={run.repository} node={step.step.id} holds={step.holds} heldBy={step.heldBy} epoch={step.epoch} />}
@@ -241,7 +241,7 @@ function StepMark({ run, step, here, doors, control, releaseDoors, pill = true, 
       {/* A release step's target form where it failed for its target, and the approval card where it waits on its approver. */}
       {releaseDoors?.(run, step)}
       {control}
-      {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
+      {twin && <p className="m-0 text-caption text-ink-faint"><Inline text={twin} /></p>}
       {door && <div className="flex flex-wrap items-center gap-1.5"><DoorPress door={door} /></div>}
     </div>
   );
@@ -277,7 +277,7 @@ function DoorPress({ door }: { door: Door }) {
   const { t } = useTranslation();
   if ('href' in door) {
     return (
-      <ExternalLink href={door.href} className="inline-flex items-center gap-1 px-1.5 text-small text-accent">
+      <ExternalLink href={door.href} className="inline-flex items-center gap-1 px-1.5 text-small text-accent-ink">
         {t('workflow.run.door.pullRequest')}
         <Icon name="external" size={12} />
       </ExternalLink>
@@ -424,7 +424,7 @@ function Run({ run, here, doors, controls, releaseDoors, named, onNodeWord, onHe
     <div className="grid min-w-0 gap-3">
       <div className="grid min-w-0 gap-0.5">
         <Prose className="text-ink"><Inline text={placeSaid(t, run, named)} /></Prose>
-        <p className="m-0 text-meta text-ink-faint">{source && !run.problem ? t('workflow.run.headSource', { head, source }) : head}</p>
+        <p className="m-0 text-caption text-ink-faint">{source && !run.problem ? t('workflow.run.headSource', { head, source }) : head}</p>
       </div>
       {/* A graph run says what its record says, what its graph observes, that its branches are its graph's and that
           every landing door still holds it, before its nodes. */}

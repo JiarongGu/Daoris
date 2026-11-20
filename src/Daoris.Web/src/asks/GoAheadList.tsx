@@ -143,7 +143,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
       )}
     >
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-        <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
+        <span className="font-mono text-caption text-ink-faint">#{goAhead.number}</span>
         {/* Still asked, but nothing on the ask waits for it, so it is not said to wait on the person. */}
         {stale
           ? <Pill tone="neutral">{t('asks.goAhead.stale.pill')}</Pill>
@@ -158,7 +158,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
         </p>
       )}
       {first && <p className="m-0 text-small text-ink-soft">{first.why}</p>}
-      <p className="m-0 font-mono text-meta text-ink-faint">
+      <p className="m-0 font-mono text-caption text-ink-faint">
         {first && t('asks.goAhead.asked', { ago: ago(first.at) })}
         {more > 0 && ` · ${t('asks.goAhead.again', { count: more })}`}
         {goAhead.near != null && ` · ${t('asks.goAhead.near', { near: goAhead.near })}`}

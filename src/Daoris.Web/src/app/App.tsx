@@ -161,8 +161,8 @@ export function App() {
   const { plugins, agents } = useSideViews({ view, lists, notify, attached, askSetup, agentsModes, agentPart, setAgentPart, open });
   const { commandState, commandDoors, translate, copyText, offers, barMenus, onMenu, entries, setupCount } = useCommands({ tab, openSettings, running, attending, lists, attached, view, listed, listShown, closings, placements, holdings, scope, circle, wired, i18n, roster, knowledgeMode, refresh, zoom, open, setWorkIntent, setAsking, setOpening, onSyncNow, notify, t, setPalette, toggleRegion, showNotifications, openWindow, openBrowser, onRefresh, openHelp, changeFocus, askQuickly, setShortcuts, setAbout, palette });
   useShortcuts({ commandState, commandDoors, translate, openMenu, attached, setMnemonics, setOpenMenu });
-  const { openInWork, openRun, openReview, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
-  const { quests, projects, knowledge } = useWorkViews({ lists, view, notify, attached, openInWork, openRun, openAtWork, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked });
+  const { openInWork, openRun, openReview, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer } = useDoors({ lists, open, setWorkIntent, t, messages, view, attending, markNoticesRead, openHelp, apply, circle });
+  const { quests, projects, knowledge } = useWorkViews({ lists, view, notify, attached, openInWork, openRun, opening, setOpening, asking, setAsking, listGroup, setListGroup, projectTab, chooseProjectTab, workspaceTab, chooseWorkspaceTab, workspaceSection, open, onSyncNow, syncNow, addRequested, setAddRequested, setDrawerWorkspace, importRequested, setImportRequested, drawerWorkspace, openQuest, openAsk, branchAsked, setBranchAsked, knowledgeMode, status, searchAsked, setSearchAsked });
   // What Ask Daoris is handed wherever it stands: what is on the screen — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const itemList = { quests, projects, plugins, agents }[view as 'quests' | 'projects' | 'plugins' | 'agents']?.list;
@@ -538,7 +538,7 @@ export function App() {
       {about && (
         <Drawer title={t('menu.about')} onClose={() => setAbout(false)}>
           <div className="flex items-baseline gap-2">
-            <strong className="font-serif text-wordmark font-semibold tracking-[-0.01em]">Daoris</strong>
+            <strong className="font-sans text-display font-semibold tracking-[-0.01em]">Daoris</strong>
             <span className="text-small text-ink-faint">道衍</span>
           </div>
           <Prose className="mt-2">{t('about.what')}</Prose>
@@ -547,7 +547,7 @@ export function App() {
                 the tier and no canon version, and inventing a field to fill a row is how a card
                 starts lying. */}
             <dt className="text-ink-faint">{t('about.index')}</dt>
-            <dd className="m-0 font-mono text-meta">{status.data?.tier ?? '—'}</dd>
+            <dd className="m-0 font-mono text-caption">{status.data?.tier ?? '—'}</dd>
             <dt className="text-ink-faint">{t('about.surface')}</dt>
             <dd className="m-0">{attached ? t('about.shell') : t('about.browser')}</dd>
           </dl>

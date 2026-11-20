@@ -9,7 +9,7 @@
  * theme: in light, black is the ink and white the faint ink; in dark, black is the raised surface and
  * white the soft ink, so text a program writes in "white" stays readable on either page.
  *
- * Pure, so every theme is an argument: `read` is a token's value by name (`ink`, `st-done`).
+ * Pure, so every theme is an argument: `read` is a token's value by name (`ink`, `ok`).
  */
 export type TerminalTheme = {
   background?: string; foreground?: string; cursor?: string; cursorAccent?: string;
@@ -28,12 +28,12 @@ export function terminalTheme(read: (token: string) => string, dark: boolean): T
     return first && second ? mix(first, second) : undefined;
   };
 
-  const red = token('st-declined');
-  const green = token('st-done');
+  const red = token('fail');
+  const green = token('ok');
   const yellow = token('st-open');
-  const blue = token('st-taken');
-  const magenta = between('st-declined', 'st-taken');
-  const cyan = between('st-taken', 'st-done');
+  const blue = token('live');
+  const magenta = between('fail', 'live');
+  const cyan = between('live', 'ok');
 
   return {
     background: token('page'),

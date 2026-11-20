@@ -37,7 +37,7 @@ const meta: Meta<typeof ViewMain> = {
   // The frame's height, beside a stand-in list, as the main area sits on the window.
   decorators: [(Story) => (
     <div className="flex h-[26rem] w-[64rem] max-w-full border border-line bg-page">
-      <div className="w-[17.5rem] shrink-0 border-r border-line p-3 text-meta text-ink-faint">The list pane</div>
+      <div className="w-[17.5rem] shrink-0 border-r border-line p-3 text-caption text-ink-faint">The list pane</div>
       <Story />
     </div>
   )],

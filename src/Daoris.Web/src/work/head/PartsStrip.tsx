@@ -53,9 +53,9 @@ export function PartsHeading({ entry, attended }: Pick<PartsProps, 'entry' | 'at
     <div className="grid gap-0.5">
       <div className="flex items-baseline justify-between gap-2">
         <SectionTitle level={3}>{t('work.parts.title')}</SectionTitle>
-        <span className="text-meta text-ink-faint">{t('work.parts.of', { n: shown + 1, total: entry.parts.length })}</span>
+        <span className="text-caption text-ink-faint">{t('work.parts.of', { n: shown + 1, total: entry.parts.length })}</span>
       </div>
-      {head && <span className="text-meta text-ink-faint">{head}</span>}
+      {head && <span className="text-caption text-ink-faint">{head}</span>}
     </div>
   );
 }
@@ -84,21 +84,21 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
               onClick={() => onShow(part.session)}
               className={cn(
                 'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2.5 py-1 text-left text-small',
-                'transition-colors duration-(--speed) hover:bg-accent-soft/50',
+                'transition-colors duration-(--duration-quick) hover:bg-accent-soft/50',
                 here ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
               )}
             >
-              <span className="font-mono text-meta text-ink-faint">{index + 1}</span>
+              <span className="font-mono text-caption text-ink-faint">{index + 1}</span>
               {word
                 ? <Dot tone={SESSION_DOT[word]} label={t(shownKey(word))} />
-                : <span className="text-meta text-ink-faint">{part.shown}</span>}
+                : <span className="text-caption text-ink-faint">{part.shown}</span>}
               <span>{beganLine(t, part, parts, rows)}</span>
-              <span className="text-meta text-ink-faint">{ranLine(t, facts?.session)}</span>
-              {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
-              {beside.has(part.session) && <span className="text-meta text-ink-faint">{t('work.parts.besideHead')}</span>}
-              {place && <span className="text-meta text-ink-faint">{place}</span>}
-              {spent && <span className="text-meta text-ink-faint">{spent}</span>}
-              {facts && <span className="ml-auto shrink-0 text-meta text-ink-faint">{ago(facts.session.updated)}</span>}
+              <span className="text-caption text-ink-faint">{ranLine(t, facts?.session)}</span>
+              {part.quest && <span className="font-mono text-caption text-ink-faint">#{part.quest}</span>}
+              {beside.has(part.session) && <span className="text-caption text-ink-faint">{t('work.parts.besideHead')}</span>}
+              {place && <span className="text-caption text-ink-faint">{place}</span>}
+              {spent && <span className="text-caption text-ink-faint">{spent}</span>}
+              {facts && <span className="ml-auto shrink-0 text-caption text-ink-faint">{ago(facts.session.updated)}</span>}
             </button>
           </li>
         );

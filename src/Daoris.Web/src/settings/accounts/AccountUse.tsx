@@ -35,7 +35,7 @@ export function AccountFactsLines({ facts, label, busy, onTryNow, now }: {
   return (
     <span className="flex min-w-0 flex-col gap-0.5">
       {facts.cooling && <CoolingLine cooling={facts.cooling} label={label} busy={busy} onTryNow={onTryNow} now={now} />}
-      <span className="text-meta text-ink-faint [overflow-wrap:anywhere]">
+      <span className="text-caption text-ink-faint [overflow-wrap:anywhere]">
         {[
           typeof facts.running === 'number' ? t('harness.running', { count: facts.running }) : null,
           facts.offered && !facts.cooling ? offeredLine(facts.offered) : null,
@@ -75,7 +75,7 @@ export function CoolingLine({ cooling, label, busy, onTryNow, now }: {
 /** Each account's own plan and terms apply: said once, under the agent's accounts. */
 export function TermsLine() {
   const { t } = useTranslation();
-  return <p className="m-0 mt-2 text-meta text-ink-faint">{t('harness.terms')}</p>;
+  return <p className="m-0 mt-2 text-caption text-ink-faint">{t('harness.terms')}</p>;
 }
 
 /**
@@ -117,7 +117,7 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
       {held && <p className="m-0 mt-0.5 text-small text-ink-soft">{held}</p>}
       {/* Wherever the scope names an account, waiting included: a person who switched the tool's own sign-in expects the
           starts to follow it, and none of these does. */}
-      {scope.begins && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
+      {scope.begins && <p className="m-0 mt-0.5 text-caption text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
     </SettingRow>
   );
 }
@@ -222,7 +222,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
           </p>
         )}
         {scope.unknown.length > 0 && (
-          <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.use.unknown', { settings: scope.unknown.join(', ') })}</p>
+          <p className="m-0 mt-1 text-caption text-ink-faint">{t('harness.use.unknown', { settings: scope.unknown.join(', ') })}</p>
         )}
       </SettingRow>
 

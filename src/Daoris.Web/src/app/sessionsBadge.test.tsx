@@ -232,7 +232,7 @@ describe("A place's number", () => {
 
     await waitFor(() => expect(runs('Sessions')).toBe(true));
     expect(figure('Sessions')).toBeNull();
-    expect(sessionsButton().querySelector('[data-running]')!.className).toContain('bg-st-taken');
+    expect(sessionsButton().querySelector('[data-running]')!.className).toContain('bg-live');
     expect(sessionsButton()).toHaveAccessibleDescription('2 under way');
     // A taken quest is Quests' running work, with nothing there waiting.
     expect(runs('Quests')).toBe(true);

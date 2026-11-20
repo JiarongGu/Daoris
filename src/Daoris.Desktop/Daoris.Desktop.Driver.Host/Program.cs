@@ -565,6 +565,17 @@ try
         return PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve());
     }
 
+    // The home's agent account ids an earlier build named moved once to the hash form: listed, or done while nothing of Daoris runs on it.
+    if (args is ["home", "account-ids", .. var idArgs])
+    {
+        var exit = AccountIdsCommand.Run(
+            idArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence),
+            Environment.GetEnvironmentVariable(DriverChoicesCommand.SessionVariable),
+            Environment.GetEnvironmentVariable(WiringVariables.KnowledgeDb)?.Trim(), out var idsSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(idsSaid);
+        return exit;
+    }
+
     // A home's history purged once, its configuration kept: listed, or done while nothing of Daoris runs on the home.
     if (args is ["home", .. var homeArgs])
     {

@@ -36,7 +36,7 @@ export function WentLine({ block }: { block: Block }) {
           <button
             type="button"
             onClick={() => onSession(to)}
-            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
           >
             {to}
           </button>
@@ -174,7 +174,7 @@ export function NoteLine({ text, parts, under }: { text: string; parts?: readonl
   return (
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
-        <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
+        <span className="mr-1.5 text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
         {parts?.length ? <Note parts={parts} names={names} compact /> : <Inline text={text} />}
       </p>
       {long && (
@@ -182,7 +182,7 @@ export function NoteLine({ text, parts, under }: { text: string; parts?: readonl
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((was) => !was)}
-          className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+          className="border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
         >
           {open ? t('work.conversation.hide') : t('work.conversation.show')}
         </button>
@@ -194,7 +194,7 @@ export function NoteLine({ text, parts, under }: { text: string; parts?: readonl
             type="button"
             aria-expanded={unfolded}
             onClick={() => setUnfolded((was) => !was)}
-            className="ml-2 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+            className="ml-2 border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
           >
             {unfolded ? t('work.conversation.hide') : t('work.conversation.show')}
           </button>

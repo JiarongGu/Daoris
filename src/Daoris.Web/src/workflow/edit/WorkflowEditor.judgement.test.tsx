@@ -151,7 +151,7 @@ describe('a refusal where it is', () => {
     // its description and never as a line that would move the ranks below.
     const work = step('The work');
     expect(work).toHaveAttribute('data-refused', 'true');
-    expect(work.className).toContain('border-st-declined');
+    expect(work.className).toContain('border-fail');
     expect(work.className).not.toContain('border-2');
     expect(work.querySelector('[data-flow-refusal]')).toBeNull();
     expect(work.parentElement!.querySelector('[data-flow-mark-kind="refused"]')).toHaveTextContent('To put right');

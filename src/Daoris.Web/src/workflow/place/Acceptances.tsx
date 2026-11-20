@@ -45,7 +45,7 @@ export function Acceptances({ rows, ticked, onTick, disabled = false, title, fol
       {title && <p className="m-0 text-small font-medium text-ink [overflow-wrap:anywhere]">{title}</p>}
       {texts.map(([text, label]) => {
         const pre = (
-          <pre aria-label={label} className="m-0 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-meta text-ink">{text}</pre>
+          <pre aria-label={label} className="m-0 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-caption text-ink">{text}</pre>
         );
         return fold
           ? (

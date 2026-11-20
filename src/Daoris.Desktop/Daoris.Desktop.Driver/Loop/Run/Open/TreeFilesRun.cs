@@ -19,7 +19,7 @@ internal sealed class TreeFilesRun(IRunWiring wiring) : IRunStage
         state.Files = await TreeFilesStep.RunAsync(
             context.Home, root, tree, run.Quest.To,
             line => context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
-            ct).ConfigureAwait(false);
+            ct, steps: state.Steps).ConfigureAwait(false);
         return null;
     }
 }

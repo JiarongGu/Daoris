@@ -190,13 +190,10 @@ internal static class AgentListCommand
         var scope = settings.Set(owner);
         foreach (var profile in report.Profiles)
         {
-            List<string> marks = [.. Shown(profile.Name) != profile.Name ? [$"id {profile.Name}"] : Array.Empty<string>()];
-
-            // 🔴 A key account is never "in": the tool says so for any key, a wrong one included.
+            // 🔴 A key account is never "in": the tool says so for any key, a wrong one included. A named account's id is never said.
             lines.Add($"{Under}{Shown(profile.Name).PadRight(col)} {(profile.Key is not null ? "unchecked" : Word(profile.Login)),-9}"
                 + WhoWords(profile, Shown(profile.Name), report.Profiles)
-                + (profile.Key is { } handle ? $" API key {handle}" : "")
-                + (marks.Count > 0 ? $" ({string.Join(", ", marks)})" : ""));
+                + (profile.Key is { } handle ? $" API key {handle}" : ""));
 
             foreach (var cooled in AgentAccountLines.CoolingLinesOf(cooling, owner, profile.Name, now, zone))
             {

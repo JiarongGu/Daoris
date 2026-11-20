@@ -82,6 +82,16 @@ export function removeStale(root, entries, { remove = (path) => rmSync(path, { r
   return { removed, held };
 }
 
+/** The rule applied to `root`'s `_fixtures/` (the merge's prune runs it): throws where git does not ignore the folder, else returns `{ removed, held }`. */
+export function sweepFixtures(root, { now = Date.now(), hours = 24 } = {}) {
+  try {
+    execGit(['check-ignore', '-q', '_fixtures/'], { cwd: root });
+  } catch {
+    throw new Error(`fixtures-keep: git does not ignore ${join(root, '_fixtures')}, so nothing in it is taken for scratch`);
+  }
+  return removeStale(root, stale(root, { now, hours }));
+}
+
 function main(argv) {
   const apply = argv.includes('--apply');
   const flag = (name) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : undefined);

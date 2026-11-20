@@ -136,7 +136,7 @@ export function AskPanel({
               <li key={starter.id} className="rounded-control border border-line bg-raised px-3 py-2.5">
                 <p className="m-0 text-small text-ink">{t(`help.starter.${starter.id}`, starter.values)}</p>
                 {starter.command && (
-                  <p className="m-0 mt-1 text-meta text-ink-faint">
+                  <p className="m-0 mt-1 text-caption text-ink-faint">
                     <Inline text={t('help.command', { command: starter.command })} />
                   </p>
                 )}

@@ -110,7 +110,7 @@ export function SignIn({
       <header className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
         <span className="text-body font-semibold text-ink">{title}</span>
         {since !== null && !refused && (
-          <Elapsed from={since} to={failed ? failedAt ?? null : null} className="text-meta text-ink-faint" />
+          <Elapsed from={since} to={failed ? failedAt ?? null : null} className="text-caption text-ink-faint" />
         )}
         {!ended && (
           <Button
@@ -142,7 +142,7 @@ export function SignIn({
 
       {!refused && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-meta text-ink-faint">{t('signin.output')}</summary>
+          <summary className="cursor-pointer text-caption text-ink-faint">{t('signin.output')}</summary>
           <div className="mt-2">
             <MonoWell label={t('console.label')} live={live} dropped={dropped} text={texts.join('\n')} />
           </div>

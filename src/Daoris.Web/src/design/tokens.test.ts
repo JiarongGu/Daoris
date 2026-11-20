@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { TYPE_STEPS } from '../lib/cn';
 import { rooted } from '../test/sources';
+import { palettes } from '../test/census/palette';
 
 /**
  * **The type scale is a set of named steps, and a raw size is not one of them**.
@@ -62,7 +63,7 @@ export function undeclaredSteps(files: [path: string, source: string][], css: st
  * its theme lacks, so every one of those boxes had no background in either theme, with every check green. The
  * `text-` scan above already held the type steps; a `bg-` or `border-` colour had nothing.
  *
- * A `bg-` or `border-` class is read whole, its opacity aside (`bg-st-done/10` is `st-done`), and what is not a
+ * A `bg-` or `border-` class is read whole, its opacity aside (`bg-ok/40` is `ok`), and what is not a
  * colour is set aside by its shape: a background's attachment, clip, origin, repeat, size, position, image or
  * blend; a border's width, side, style or table layout. A side may carry a colour (`border-l-st-open`). A class
  * built from a variable (`bg-st-${state}`) and an arbitrary value (`bg-[…]`) are not names, so neither is read.
@@ -170,7 +171,7 @@ describe('the type scale', () => {
 
   it('declares the seven steps the class merge knows, and reads its colours', () => {
     expect(declaredSteps(tokensCss).sort()).toEqual([...TYPE_STEPS].sort());
-    expect(declaredColours(tokensCss)).toEqual(expect.arrayContaining(['ink', 'ink-faint', 'accent-ink', 'st-declined']));
+    expect(declaredColours(tokensCss)).toEqual(expect.arrayContaining(['ink', 'ink-faint', 'accent-ink', 'fail']));
   });
 
   it('catches a class that names no step — the check itself, in the shape the monitor\'s title took', () => {
@@ -180,7 +181,7 @@ describe('the type scale', () => {
     expect(wears('className="text-sm"')).toHaveLength(1);
     expect(wears('className="hover:text-xl"')).toHaveLength(1);
     // And what must keep passing: a step, a colour with and without its opacity, a layout.
-    expect(wears('className="text-view text-ink-soft hover:text-st-declined text-ink/70 text-pretty text-left"')).toEqual([]);
+    expect(wears('className="text-display text-ink-soft hover:text-fail text-ink/70 text-pretty text-left"')).toEqual([]);
     // Tailwind's colour keywords draw though its palette is cleared.
     expect(wears('className="text-current text-inherit text-transparent"')).toEqual([]);
     // A raw size is the other check's, and a word that merely contains the prefix is no class.
@@ -210,7 +211,7 @@ describe('the colours', () => {
 
   it('leaves what is a token, a built-in or no colour at all', () => {
     expect(wears([
-      'className="bg-raised bg-page/60 hover:bg-accent-soft data-[state=checked]:bg-accent bg-st-done/10 bg-scrim',
+      'className="bg-raised bg-page/60 hover:bg-accent-soft data-[state=checked]:bg-accent bg-ok-soft bg-scrim',
       'bg-transparent bg-inherit border-current border-transparent bg-ident-moss/15',
       'border border-0 border-2 border-x border-t border-b-0 border-l-[3px] border-l-st-open border-t-line',
       'border-dashed border-none border-collapse border-spacing-2 border-line-strong hover:enabled:border-accent',
@@ -273,19 +274,8 @@ describe('the scrim', () => {
  * twice — once for the OS's media query, once for `data-theme` — because a chosen theme has to
  * outrank the query and CSS has no way to say "this block, again, under another selector". Two
  * copies are two palettes the first time one is edited alone, and the edit would look right in
- * whichever the person happens to be using. So every value is held equal here.
+ * whichever the person happens to be using. So every value is held equal here (`palettes`, `test/census/palette.ts`).
  */
-export function palettes(css: string): Record<'system-light' | 'system-dark' | 'chosen-light' | 'chosen-dark', Record<string, string>> {
-  const tokens = (body: string) =>
-    Object.fromEntries([...body.matchAll(/(--[a-z-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)].map((m) => [m[1], m[2].toLowerCase()]));
-  const block = (pattern: RegExp) => tokens(pattern.exec(css)?.[1] ?? '');
-  return {
-    'system-light': block(/^:root\s*\{([^}]*)\}/m),
-    'system-dark': block(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{([^}]*)\}/),
-    'chosen-light': block(/:root\[data-theme="light"\]\s*\{([^}]*)\}/),
-    'chosen-dark': block(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/),
-  };
-}
 
 // From disk, not `?raw`: the CSS pipeline answers a raw import of a stylesheet with an empty string,
 // which is how the first version of this check came to hold nothing equal to nothing.
@@ -301,7 +291,7 @@ describe('the chosen themes', () => {
   });
 
   it('catches a chosen block that drifted from its system twin', () => {
-    const drifted = tokensCss.replace(/(:root\[data-theme="dark"\]\s*\{[^}]*--page:\s*)#16161a/, '$1#000000');
+    const drifted = tokensCss.replace(/(:root\[data-theme="dark"\]\s*\{[^}]*--page:\s*)#131312/, '$1#000000');
     expect(drifted).not.toBe(tokensCss);
     expect(palettes(drifted)['chosen-dark']).not.toEqual(palettes(drifted)['system-dark']);
   });
@@ -314,92 +304,17 @@ describe('the chosen themes', () => {
 });
 
 /**
- * **Every surface is readable in every ink, and the sunken one lies below the page**. The status and
- * identity hues were computed and the surfaces under the inks were not, until a fourth surface arrived for the box a
- * move asks once in. Body and secondary ink reach 4.5:1 on every surface; the faint ink, which carries meta and a
- * field's placeholder beside a label that says the same, reaches 3:1; each status hue's ink, which a word in that hue
- * wears, reaches 4.5:1. Computed from `tokens.css`, in both themes.
+ * 🔴 **A status word wears its role's ink, never the mark's colour**. The hues are drawn as marks, edges and fills; as
+ * words they fell under the 4.5:1 text floor (declined's red at 3.18:1 on an overlay, open's and done's at 2.8 to 3.8:1 in
+ * light), and the role set's marks still do on some surfaces (`fail` on `sunken`, `live` on `hover` in dark). Each
+ * role's `-ink` is the colour its word wears, which `roles.test.ts` holds at 4.5:1 everywhere; an alias of the owner's
+ * amber is read the same way while it stands.
  */
-const SURFACES = ['--page', '--sunken', '--raised', '--overlay'];
-const INK_FLOORS: [ink: string, floor: number][] = [
-  ['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3],
-  ['--ink-open', 4.5], ['--ink-taken', 4.5], ['--ink-done', 4.5], ['--ink-danger', 4.5],
-];
-
-/** Relative luminance of a `#rrggbb` colour (WCAG 2). */
-export function luminance(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map((at) => {
-    const c = parseInt(hex.slice(at, at + 2), 16) / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  }) as [number, number, number];
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/** The contrast ratio of two `#rrggbb` colours (WCAG 2), whichever is lighter. */
-export function contrast(a: string, b: string): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-  return (light + 0.05) / (dark + 0.05);
-}
-
-describe('the surfaces', () => {
-  const themes = () => {
-    const read = palettes(tokensCss);
-    return { light: read['system-light'], dark: read['system-dark'] };
-  };
-
-  it('reads every surface and ink in both themes', () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      for (const token of [...SURFACES, ...INK_FLOORS.map(([ink]) => ink)]) {
-        expect(tokens[token], `${theme} ${token}`).toMatch(/^#[0-9a-f]{6}$/);
-      }
-    }
-  });
-
-  it('catches an ink too faint for its surface, and a well above the page — the check itself', () => {
-    const { light } = themes();
-    // The faint ink on a field's strong line: the shape a "subtle" surface would take one step too far.
-    expect(contrast(light['--ink-faint']!, light['--line-strong']!)).toBeLessThan(3);
-    expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 5);
-    expect(luminance(light['--raised']!)).toBeGreaterThan(luminance(light['--page']!));
-  });
-
-  it('holds: every ink reaches its floor on every surface, in both themes', () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      for (const surface of SURFACES) {
-        for (const [ink, floor] of INK_FLOORS) {
-          const ratio = contrast(tokens[ink]!, tokens[surface]!);
-          expect(ratio, `${theme} ${ink} on ${surface}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(floor);
-        }
-      }
-    }
-  });
-
-  it('holds: the sunken surface lies below the page in both themes, so the well reads as one', () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      expect(luminance(tokens['--sunken']!), `${theme} --sunken against --page`).toBeLessThan(luminance(tokens['--page']!));
-    }
-  });
-});
-
-/**
- * 🔴 **A status word wears its hue's ink, never the fill's colour**. The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red
- * drawn as a danger button's label, a refusal's sentence or a declined pill's word measured 3.95:1 on the sunken box a
- * move asks once in, 3.18:1 on an overlay and 2.94:1 on its own soft field there. Open's and done's words read 2.8 to
- * 3.8:1 in light, and taken's 4.1:1 on its field over the sunken box; in dark the three read 4.1 to 4.4:1 on their
- * fields over an overlay. All under the 4.5:1 text floor. Each hue's ink is the colour its word wears, held to the text
- * floor on every surface and on its own soft field over each, in both themes; a fill, a border and a mark keep the hue.
- */
-const STATUS_INKS: [hue: string, fill: string, ink: string][] = [
-  ['open', '--st-open', '--ink-open'],
-  ['taken', '--st-taken', '--ink-taken'],
-  ['done', '--st-done', '--ink-done'],
-  ['declined', '--st-declined', '--ink-danger'],
-];
-
-const STATUS_AS_TEXT = /(?<![\w-])text-st-(?:open|taken|done|declined)(?![\w-])/g;
-const STATUS_AS_CSS_TEXT = /(?<![\w-])color\s*:\s*var\(--st-(?:open|taken|done|declined)\)/g;
+const HUES = '(?:live|you|fail|ok|st-open)';
+const STATUS_AS_TEXT = new RegExp(String.raw`(?<![\w-])text-${HUES}(?![\w-])`, 'g');
+const STATUS_AS_CSS_TEXT = new RegExp(String.raw`(?<![\w-])color\s*:\s*var\(--${HUES}\)`, 'g');
 /** An SVG word takes its colour from `fill`, as the map's *waiting on you* does; a shape's fill is a mark and is left. */
-const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|declined))(?![\w-])/g;
+const STATUS_AS_SVG_TEXT = new RegExp(String.raw`<text\b[^>]*?(?<![\w-])(fill-${HUES})(?![\w-])`, 'g');
 
 /**
  * Where a source may still draw a status hue through its colour, each hit with its reason and each allowed once, so a
@@ -410,7 +325,7 @@ const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|d
 const HUE_AS_COLOUR: Record<string, { hits: string[]; reason: string }> = {
   './work/frame/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
   './work/conversation/BlockLines.tsx': {
-    hits: ['text-st-done'], reason: "a mark: a finished plan entry's check, aria-hidden beside its words",
+    hits: ['text-ok'], reason: "a mark: a finished plan entry's check, aria-hidden beside its words",
   },
 };
 
@@ -437,117 +352,23 @@ export function statusAsText(files: [path: string, source: string][]): string[] 
   });
 }
 
-/** A colour laid over a surface at an opacity, as the browser composites `bg-st-declined/10`: per sRGB channel. */
-export function over(colour: string, surface: string, alpha: number): string {
-  const channel = (hex: string, at: number) => parseInt(hex.slice(at, at + 2), 16);
-  return `#${[1, 3, 5].map((at) => Math.round(alpha * channel(colour, at) + (1 - alpha) * channel(surface, at))
-    .toString(16).padStart(2, '0')).join('')}`;
-}
-
-/** A `#rrggbb` colour's OKLCH hue angle in degrees: what an ink keeps of its fill while its lightness moves. */
-export function hueAngle(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map((at) => {
-    const c = parseInt(hex.slice(at, at + 2), 16) / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  }) as [number, number, number];
-  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
-  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
-  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
-  const bAxis = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
-  return ((Math.atan2(bAxis, a) * 180) / Math.PI + 360) % 360;
-}
-
-/** The angle between two hues, the short way round. */
-const hueApart = (a: number, b: number) => Math.abs((((a - b) % 360) + 540) % 360 - 180);
-
 /** The stylesheets beside the sources, read from disk: a raw import of a stylesheet answers an empty string. */
 const stylesheets = Object.keys(rooted(import.meta.glob('/src/**/*.css')))
   .map((path) => [path, readFileSync(join(process.cwd(), 'src', path), 'utf8')] as [string, string]);
 
 describe('the status inks', () => {
-  const themes = () => {
-    const read = palettes(tokensCss);
-    return { light: read['system-light'], dark: read['system-dark'] };
-  };
-  const field = (tokens: Record<string, string>, fill: string, surface: string) => over(tokens[fill]!, tokens[surface]!, 0.1);
-
-  it("catches declined's fill drawn as words in dark — the check itself, in the measure the review took", () => {
-    const { dark } = themes();
-    const sunken = contrast(dark['--st-declined']!, dark['--sunken']!);
-    expect(sunken).toBeGreaterThan(3.9);
-    expect(sunken).toBeLessThan(4.5);
-    expect(contrast(dark['--st-declined']!, field(dark, '--st-declined', '--overlay'))).toBeLessThan(3);
-    expect(over('#000000', '#ffffff', 0.1)).toBe('#e6e6e6');
-  });
-
-  it("catches open's, taken's and done's fills drawn as words — the check itself, in the measures UXFIX5c took", () => {
-    const { light, dark } = themes();
-    // Light: open and done under the floor on every surface, taken on its own field over the sunken box.
-    for (const fill of ['--st-open', '--st-done']) {
-      for (const surface of SURFACES) expect(contrast(light[fill]!, light[surface]!), `light ${fill} on ${surface}`).toBeLessThan(3.8);
-    }
-    expect(contrast(light['--st-taken']!, field(light, '--st-taken', '--sunken'))).toBeLessThan(4.2);
-    // Dark: each on its own field over an overlay.
-    for (const fill of ['--st-open', '--st-taken', '--st-done']) {
-      const ratio = contrast(dark[fill]!, field(dark, fill, '--overlay'));
-      expect(ratio, `dark ${fill} on its field over --overlay`).toBeGreaterThan(4.1);
-      expect(ratio, `dark ${fill} on its field over --overlay`).toBeLessThan(4.5);
-    }
-  });
-
-  it("holds: each hue's ink reaches the text floor on that hue's soft field over every surface, in both themes", () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      for (const [hue, fill, ink] of STATUS_INKS) {
-        for (const surface of SURFACES) {
-          const ratio = contrast(tokens[ink]!, field(tokens, fill, surface));
-          expect(ratio, `${theme} ${ink} on ${hue}'s soft field over ${surface}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(4.5);
-        }
-      }
-    }
-  });
-
-  it('reads a hue the way OKLCH does — the angle itself, on colours whose angle is known', () => {
-    expect(hueAngle('#ff0000')).toBeCloseTo(29.23, 1);
-    expect(hueAngle('#0000ff')).toBeCloseTo(264.05, 1);
-    expect(hueApart(359, 1)).toBeCloseTo(2, 5);
-    // A hue moved by a quarter turn is caught: an ink that kept its lightness and lost its hue.
-    expect(hueApart(hueAngle('#2c9a62'), hueAngle('#2f6db3'))).toBeGreaterThan(90);
-  });
-
-  it("holds: each ink keeps its fill's hue within a degree, so only its lightness moved", () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      for (const [, fill, ink] of STATUS_INKS) {
-        const apart = hueApart(hueAngle(tokens[ink]!), hueAngle(tokens[fill]!));
-        expect(apart, `${theme} ${ink} against ${fill}: ${apart.toFixed(2)}°`).toBeLessThanOrEqual(1);
-      }
-    }
-  });
-
-  it('holds: an ink is its fill wherever the fill already reads, so nothing that passed was moved', () => {
-    for (const [theme, tokens] of Object.entries(themes())) {
-      for (const [, fill, ink] of STATUS_INKS) {
-        const reads = SURFACES.every((surface) =>
-          contrast(tokens[fill]!, tokens[surface]!) >= 4.5 && contrast(tokens[fill]!, field(tokens, fill, surface)) >= 4.5);
-        if (reads) expect(tokens[ink], `${theme} ${ink}: ${fill} already reads`).toBe(tokens[fill]);
-      }
-    }
-    // Declined's light red is the case that reads, and the one this holds today.
-    expect(themes().light['--ink-danger']).toBe(themes().light['--st-declined']);
-  });
-
   it("catches a status word in its fill's colour, behind a variant, in a stylesheet and on the map, and leaves a fill and a border", () => {
-    expect(statusAsText([['./work/Composer.tsx', '<p className="m-0 text-small text-st-declined">']]))
-      .toEqual(["./work/Composer.tsx draws a status word in its fill's colour: text-st-declined"]);
-    expect(statusAsText([['./ui.tsx', "'border-st-open text-st-open bg-st-open/10' 'text-st-taken' 'text-st-done'"]]))
+    expect(statusAsText([['./work/Composer.tsx', '<p className="m-0 text-small text-fail">']]))
+      .toEqual(["./work/Composer.tsx draws a status word in its fill's colour: text-fail"]);
+    expect(statusAsText([['./ui.tsx', "'border-st-open text-st-open bg-st-open/10' 'text-live' 'text-ok'"]]))
       .toHaveLength(3);
-    expect(statusAsText([['./ui.tsx', "'border-st-declined hover:text-st-declined text-st-declined/80'"]])).toHaveLength(2);
-    expect(statusAsText([['./work/code.css', '.hljs-string {\n  color: var(--st-done);\n}']])).toHaveLength(1);
+    expect(statusAsText([['./ui.tsx', "'border-fail hover:text-fail text-fail/80'"]])).toHaveLength(2);
+    expect(statusAsText([['./work/code.css', '.hljs-string {\n  color: var(--ok);\n}']])).toHaveLength(1);
     // The shape the map's word took: an SVG word wears `fill`, on one line and over several.
     expect(statusAsText([['./map/LayeredMap.tsx',
-      "<text x={left + 14} y={card.y + 14} className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}>"]]))
+      "<text x={left + 14} y={card.y + 14} className={cn('text-caption', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}>"]]))
       .toEqual(["./map/LayeredMap.tsx draws a status word in its fill's colour: fill-st-open"]);
-    expect(statusAsText([['./map/MapCanvas.tsx', "<text\n  x={x}\n  className={cn('text-meta', parked ? 'fill-st-open' : 'fill-ink-soft')}\n>"]]))
+    expect(statusAsText([['./map/MapCanvas.tsx', "<text\n  x={x}\n  className={cn('text-caption', parked ? 'fill-st-open' : 'fill-ink-soft')}\n>"]]))
       .toHaveLength(1);
     // A mark is allowed once in its file: a word beside it in the same hue still fails.
     expect(statusAsText([['./work/frame/frame.tsx', '<Icon name="plan" size={12} className="text-st-open" />']])).toEqual([]);
@@ -556,11 +377,11 @@ describe('the status inks', () => {
     // And what must keep passing: the inks themselves, a fill, a border, a mark's stroke or a shape's fill, and a word
     // that holds the prefix.
     expect(statusAsText([['./ui.tsx', [
-      "'border border-st-declined text-ink-danger hover:enabled:bg-st-declined/10 border-l-st-declined'",
-      "'text-ink-open text-ink-taken text-ink-done fill-ink-open bg-st-open stroke-st-taken border-l-st-open'",
-      '<circle className="fill-st-done" /> <rect className="fill-st-open" />',
-      "'bg-st-declined context-text-st-done' background-color: var(--st-open); border-color: var(--st-taken);",
-      '--color-st-done: var(--st-done);',
+      "'border border-fail text-fail-ink hover:enabled:bg-fail-soft border-l-fail'",
+      "'text-ink-open text-live-ink text-ok-ink fill-ink-open bg-st-open stroke-live border-l-st-open'",
+      '<circle className="fill-ok" /> <rect className="fill-st-open" />',
+      "'bg-fail context-text-st-done' background-color: var(--st-open); border-color: var(--live);",
+      '--color-st-done: var(--ok);',
     ].join(' ')]])).toEqual([]);
   });
 
@@ -574,7 +395,7 @@ describe('the status inks', () => {
 
   it('holds: no file is allowed a red word, so a new one cannot be waved through (UXFIX5b)', () => {
     for (const [path, { hits }] of Object.entries(HUE_AS_COLOUR)) {
-      expect(hits.filter((hit) => hit.endsWith('-declined') || hit.includes('--st-declined')), path).toEqual([]);
+      expect(hits.filter((hit) => hit.endsWith('-fail') || hit.includes('--fail')), path).toEqual([]);
     }
   });
 
@@ -845,7 +666,7 @@ describe('the regions', () => {
  * the chip a way wears.
  */
 const EDGE_DRAWING = ['./design/FlowCanvas.tsx', './workflow/chart/EdgeChip.tsx'];
-const STATUS_HUE_CLASS = /(?<![\w-])(?:stroke|fill|text|bg|border|ring|outline|decoration)-st-[a-z]+|var\(--st-[a-z]+\)/g;
+const STATUS_HUE_CLASS = new RegExp(String.raw`(?<![\w-])(?:stroke|fill|text|bg|border|ring|outline|decoration)-${HUES}(?:-soft)?(?![\w-])|var\(--${HUES}(?:-soft)?\)`, 'g');
 
 export function edgeHues(files: [path: string, source: string][]): string[] {
   return files.flatMap(([path, source]) => (source.match(STATUS_HUE_CLASS) ?? []).map((hit) => `${path} draws an edge in a status hue: ${hit}`));
@@ -853,8 +674,8 @@ export function edgeHues(files: [path: string, source: string][]): string[] {
 
 describe('an edge wears no status hue', () => {
   it('catches a path, a marker and a chip in one, and leaves the inks', () => {
-    expect(edgeHues([['./a.tsx', 'className="stroke-st-done"'], ['./b.tsx', 'fill="var(--st-declined)"'], ['./c.tsx', 'className="text-st-open"']])).toHaveLength(3);
-    expect(edgeHues([['./a.tsx', 'className="stroke-ink-faint stroke-ink-soft text-ink-danger fill-ink-faint"']])).toEqual([]);
+    expect(edgeHues([['./a.tsx', 'className="stroke-ok"'], ['./b.tsx', 'fill="var(--fail)"'], ['./c.tsx', 'className="text-st-open"']])).toHaveLength(3);
+    expect(edgeHues([['./a.tsx', 'className="stroke-ink-faint stroke-ink-soft text-fail-ink fill-ink-faint"']])).toEqual([]);
   });
 
   it('holds: what draws the canvas\'s edges and their chips uses the inks alone', () => {

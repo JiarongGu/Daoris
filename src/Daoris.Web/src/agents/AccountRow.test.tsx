@@ -55,7 +55,7 @@ describe('an account’s row (ACCTUX1)', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   afterEach(cleanup);
 
-  /** Measured by the review at 3.38:1 in light as `text-meta text-ink-faint`: the readings a person acts on, said faintest. */
+  /** Measured by the review at 3.38:1 in light as `text-caption text-ink-faint`: the readings a person acts on, said faintest. */
   it('sets what its agent last said at the row’s size, its shares in the ink and its times in the soft ink', () => {
     render(
       <ul>
@@ -70,7 +70,7 @@ describe('an account’s row (ACCTUX1)', () => {
     const share = screen.getByText('88% used');
     const line = share.closest('[data-usage]')!;
     expect(line.className).toContain('text-small');
-    expect(line.className).not.toMatch(/text-meta|text-ink-faint/);
+    expect(line.className).not.toMatch(/text-caption|text-ink-faint/);
     expect(share.className).toContain('text-ink');
     expect(share.className).not.toContain('text-ink-soft');
     expect(screen.getByText('resets 15:00').className).toContain('text-ink-soft');
