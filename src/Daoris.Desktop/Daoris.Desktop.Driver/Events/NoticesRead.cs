@@ -56,7 +56,7 @@ public static class NoticesRead
         [("holding", "Holding work"), ("word", "Waiting for your word"), ("ready", "Ready for you")];
 
     /// <summary>
-    /// Each kind's group, the page's <c>ATTENTION_GROUP</c> (<c>work/attention/attention.ts</c>), held to it by a test; a kind neither
+    /// Each kind's group, the page's <c>ATTENTION_GROUP</c> (<c>work/attention/attentionGroups.ts</c>), held to it by a test; a kind neither
     /// names waits for the person's word, as the page reads it.
     /// </summary>
     public static IReadOnlyDictionary<string, string> KindGroups { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
