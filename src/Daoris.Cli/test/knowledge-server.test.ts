@@ -168,7 +168,7 @@ test('a workspace session runs the workspace\'s build; a driven one the machine\
   // Driven: an explicit host, then the home's bin/, then the workspace's build.
   const explicit = fx.write('elsewhere/daoris-knowledge.exe', '');
   const home = join(fx.root, 'data');
-  fx.write('data/bin/daoris-knowledge.exe', '');
+  fx.write('data/cache/bin/daoris-knowledge.exe', '');
   assert.equal(tool.serverCommand('driven', { DAORIS_MCP_HOST: explicit, DAORIS_HOME: home }, located, 'win32')?.command, explicit);
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: home }, located, 'win32')?.command, homeEntry(home, 'bin', 'daoris-knowledge.exe'));
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: join(fx.root, 'empty') }, located, 'win32')?.command, 'dotnet');
@@ -187,7 +187,7 @@ test('a driven session on an install runs the connector the install carries, ahe
   const fx = makeFixture('knowledge-server-install');
   fx.write(`install/${tool.INSTALL_MARKER}`, '# Daoris — installed desktop\n');
   const home = join(fx.root, 'install', tool.INSTALL_HOME);
-  fx.write(`install/${tool.INSTALL_HOME}/bin/daoris-knowledge.exe`, '');
+  fx.write(`install/${tool.INSTALL_HOME}/cache/bin/daoris-knowledge.exe`, '');
   const own = fx.write(`install/${tool.INSTALL_CONNECTOR.join('/')}/daoris-knowledge.exe`, '');
 
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: home }, null, 'win32')?.command, own);
@@ -196,13 +196,13 @@ test('a driven session on an install runs the connector the install carries, ahe
     'the person’s word still comes first');
 
   // A home that is no install's `data/`: no marker above it, or another name, has no install connector to run.
-  fx.write('scratch/data/bin/daoris-knowledge.exe', '');
+  fx.write('scratch/data/cache/bin/daoris-knowledge.exe', '');
   fx.write(`scratch/${tool.INSTALL_CONNECTOR.join('/')}/daoris-knowledge.exe`, '');
   const scratch = join(fx.root, 'scratch', 'data');
-  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: scratch }, null, 'win32')?.command, join(scratch, 'bin', 'daoris-knowledge.exe'));
+  assert.equal(tool.serverCommand('driven', { DAORIS_HOME: scratch }, null, 'win32')?.command, join(scratch, 'cache', 'bin', 'daoris-knowledge.exe'));
   assert.equal(tool.installConnector(join(fx.root, 'install', 'elsewhere'), 'daoris-knowledge.exe'), null);
 
-  // A newer home keeps its copy in `cache/bin/` under its Daoris folder, which is found too.
+  // A home not named `data` keeps its copy in `cache/bin/` under its Daoris folder, which is found too.
   const fresh = join(fx.root, 'fresh');
   const cached = fx.write('fresh/cache/bin/daoris-knowledge.exe', '');
   assert.equal(tool.serverCommand('driven', { DAORIS_HOME: fresh }, null, 'win32')?.command, cached);

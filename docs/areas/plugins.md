@@ -266,7 +266,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     site's host settles the park with Daoris's word under one key, and the next look takes it up. *Signed in* is the person's
     answer, sent as those words. A conversation asks the same way (the one question `question_ask` takes from it; Ask Daoris's
     own conversation, helpers, reviewers and intakes none): its file is marked `conversation`, the sighting says the word to it as
-    its next turn, and the question goes once the word is kept, since a conversation has no run opening to clear it. (D324)
+    its next turn, and the question goes once the word is kept, since a conversation has no run opening to clear it. The same
+    goes for any word of the person's the door keeps for the conversation (`SESSION_INPUT`: *Signed in* or what they type), and
+    `SESSION_QUESTION` reads a conversation's marked question whatever its state, since it has no park. Its dock line is a
+    driven session's without the park's moves: the question, *Open the sign-in…* and *Signed in* (`ConversationSignIn`). (D324)
 
 ## Where a change goes
 

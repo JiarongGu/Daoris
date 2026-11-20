@@ -32,7 +32,6 @@ public static class SpaceKinds
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
         new("deps", "days", null, KeepKinds.Deps),
-        new("salvage", "days", null, KeepKinds.Salvage),
         new("browser-cache", "own", "browser", KeepKinds.BrowserCache),
         new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, KeepKinds.History),
@@ -60,13 +59,12 @@ public static class SpaceKinds
 
     /// <summary>
     /// Where <paramref name="id"/>'s kind lies under <paramref name="home"/>: its places, and what its walk passes over because another
-    /// kind holds it. <c>rest</c> is the Daoris folder less every other kind's places. Both places of an entry found holding it is thrown
-    /// (<see cref="HomeEntryTwiceException"/>), for the caller to say.
+    /// kind holds it. <c>rest</c> is the Daoris folder less every other kind's places.
     /// </summary>
     public static SpacePlaces Places(string home, string id)
     {
-        // The trees at every place of their entry, and the folders set aside under each, an older place's included.
-        var trees = DaorisHome.Places(home, HomeEntry.Trees);
+        // The trees' place, and the folders set aside under it.
+        var trees = new[] { DaorisHome.Entry(home, HomeEntry.Trees) };
         var setAside = trees.Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).ToList();
         var engine = DaorisHome.Entry(home, HomeEntry.BrowserEngine);
         var caches = BrowserCaches.Select(path => Path.Combine([engine, .. path.Split('/')])).ToList();
@@ -79,8 +77,6 @@ public static class SpaceKinds
                     [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name]);
             case "deps":
                 return new([DependencyStore.RootOf(home)], [], [HomeEntry.Deps.Name]);
-            case "salvage":
-                return new([DaorisHome.Entry(home, HomeEntry.Salvage)], [], [HomeEntry.Salvage.Name]);
             case "browser-cache":
                 return new(caches, [], [HomeEntry.BrowserEngine.Name]);
             case "logs":
@@ -96,25 +92,14 @@ public static class SpaceKinds
                 return new([.. EarlierBuild.Select(path => Path.Combine([home, .. path.Split('/')]))], [], []);
             case "rest":
                 var others = Table.Where(kind => kind.Id != "rest").SelectMany(kind => Places(home, kind.Id).Places).ToList();
-                return new([DaorisHome.FolderOf(home).Folder], others, []);
+                return new([DaorisHome.FolderOf(home)], others, []);
             default:
                 throw new ArgumentException($"no kind `{id}` on the card.", nameof(id));
         }
     }
 
-    /// <summary>
-    /// An entry's places: an entry kept per item, the folder holding its items in each of its places; the window's profile under an older
-    /// home, the names it holds there, never that home whole; else the one place <see cref="DaorisHome.Entry"/> finds.
-    /// </summary>
-    private static IEnumerable<string> Of(string home, HomeEntry entry)
-    {
-        if (entry.New.Contains('*', StringComparison.Ordinal)) return DaorisHome.Places(home, entry);
-        var place = DaorisHome.Entry(home, entry);
-        var (_, old) = DaorisHome.FolderOf(home);
-        return entry.Holds.Length > 0 && entry.Old.Length == 0 && SamePlace(place, old)
-            ? entry.Holds.Select(name => Path.Combine(place, name))
-            : [place];
-    }
+    /// <summary>An entry's place: the folder holding its items for an entry kept per item, else the one place <see cref="DaorisHome.Entry"/> finds.</summary>
+    private static IEnumerable<string> Of(string home, HomeEntry entry) => [DaorisHome.Entry(home, entry)];
 
     internal static bool SamePlace(string a, string b) =>
         string.Equals(
@@ -128,7 +113,7 @@ public static class SpaceKinds
 public sealed record KindReading(DateTimeOffset Measured, long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Folders);
 
 /// <summary>
-/// The card's sizes: a bounded walk per kind through <see cref="WiringSizes.MeasurePlaces"/>, never a
+/// The card's sizes: a bounded walk per kind through <see cref="PlacesWalk.Measure"/>, never a
 /// ledger and never the whole home on a look. Each kind has its own budget, so one large kind never starves the rest. Walks run in the
 /// background, one home's at a time and one kind after another; each kind's reading publishes as it ends, so the card fills in kind by
 /// kind. Kept for the process, as <see cref="WiringSizes.Shared"/> keeps the folders' measure.
@@ -224,17 +209,9 @@ public sealed class SpaceSizes
     /// <summary>Walk one kind now, on this thread, and keep its reading: the terminal's <c>--measure</c>, and what a background walk runs.</summary>
     public KindReading MeasureNow(string home, string kind, WiringBudget budget, CancellationToken cancellationToken)
     {
-        KindReading reading;
-        try
-        {
-            var places = SpaceKinds.Places(home, kind);
-            var measure = WiringSizes.MeasurePlaces(places.Places, places.Skip, budget, cancellationToken, groupDepth: kind == "set-aside" ? 3 : 0);
-            reading = new(DateTimeOffset.UtcNow, measure.Bytes, measure.Files, measure.Partial, measure.Groups);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            reading = new(DateTimeOffset.UtcNow, 0, 0, "twice", new Dictionary<string, long>());
-        }
+        var places = SpaceKinds.Places(home, kind);
+        var measure = PlacesWalk.Measure(places.Places, places.Skip, budget, cancellationToken, groupDepth: kind == "set-aside" ? 3 : 0);
+        var reading = new KindReading(DateTimeOffset.UtcNow, measure.Bytes, measure.Files, measure.Partial, measure.Groups);
 
         _readings[Key(home, kind)] = reading;
         return reading;
@@ -335,6 +312,9 @@ public sealed record SpaceWorld(string Home)
     /// <summary>The press's runs in this process, whose current or last is the answer's <c>run</c>.</summary>
     public SpaceRuns Runs { get; init; } = SpaceRuns.Shared;
 
+    /// <summary>The paths under the home no entry names; the walk's kept reading by default.</summary>
+    public Func<string, DateTimeOffset, HomeStrayReading> Strays { get; init; } = HomeStrays.Cached;
+
     /// <summary>The terminal's world: this home, its downloads' uses read from the files as the loop resolves them.</summary>
     public static SpaceWorld OfThisTerminal(string home) => new(home)
     {
@@ -367,7 +347,7 @@ public static class SystemSpace
         var policy = KeepPolicy.Of(home);
         var record = KeepingRecord.Read(home);
         var holder = KeepingRun.Holder(home, world.Lives);
-        var folder = DaorisHome.FolderOf(home).Folder;
+        var folder = DaorisHome.FolderOf(home);
         var volume = world.Volume(folder);
         // The folder's volume by its identity, so a kind whose entry lies on another says that volume on its row.
         var folderId = world.Reading(folder)?.Id;
@@ -392,6 +372,7 @@ public static class SystemSpace
             ["kinds"] = kinds,
             // The allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
             ["allowance"] = Allowance(world, policy),
+            ["strays"] = Strays(world.Strays(home, now)),
             // The press's run, under way or last ended in this process; none where this process ran none.
             ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null
@@ -399,6 +380,12 @@ public static class SystemSpace
                 : new JsonObject { ["pid"] = holder.Pid, ["since"] = Moments.Write(holder.Since), ["door"] = holder.Door, ["gone"] = holder.Gone },
         };
     }
+
+    private static JsonObject Strays(HomeStrayReading strays) => new()
+    {
+        ["paths"] = new JsonArray([.. strays.Paths.Select(stray => (JsonNode)new JsonObject { ["path"] = stray.Path, ["bytes"] = stray.Bytes })]),
+        ["partial"] = strays.Partial is not null,
+    };
 
     private static JsonObject Allowance(SpaceWorld world, KeepPolicy policy)
     {
@@ -456,15 +443,7 @@ public static class SystemSpace
     private static JsonObject? KindVolume(SpaceWorld world, SpaceKind kind, KeepPolicy policy, string? folderId, IReadOnlyDictionary<string, FloorStretch> stretches)
     {
         if (folderId is null || FloorEntry(kind.Id) is not { } entry) return null;
-        VolumeReading? read;
-        try
-        {
-            read = world.Reading(DaorisHome.Entry(world.Home, entry));
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return null;
-        }
+        var read = world.Reading(DaorisHome.Entry(world.Home, entry));
 
         if (read is null || string.Equals(read.Id, folderId, StringComparison.OrdinalIgnoreCase)) return null;
         return new JsonObject
@@ -481,15 +460,7 @@ public static class SystemSpace
     {
         var home = world.Home;
         var reading = world.Sizes.Of(home, kind.Id);
-        IReadOnlyList<string> entries;
-        try
-        {
-            entries = SpaceKinds.Places(home, kind.Id).Entries;
-        }
-        catch (HomeEntryTwiceException)
-        {
-            entries = [];
-        }
+        var entries = SpaceKinds.Places(home, kind.Id).Entries;
 
         var (next, nextWhy) = Next(world, kind, policy, record, reading, now);
         var last = kind.Keeps is { } keeps && record.Last.TryGetValue(keeps.Id, out var ran) ? ran : null;
@@ -553,9 +524,6 @@ public static class SystemSpace
                 rule["gb"] = policy.Limits.DepsGb;
                 rule["default"] = policy.Limits.DepsGb == KeepPolicy.Default.Limits.DepsGb;
                 break;
-            case "salvage":
-                rule["days"] = (int)policy.SalvageDays.TotalDays;
-                break;
             case "browser-cache":
                 rule["gb"] = policy.Limits.BrowserCacheGb;
                 rule["default"] = policy.Limits.BrowserCacheGb == KeepPolicy.Default.Limits.BrowserCacheGb;
@@ -605,11 +573,10 @@ public static class SystemSpace
                 "downloads" => DownloadsNext(world, policy, record, now),
                 "logs" => LogsNext(world.Home, policy),
                 "deps" => (DepsKeeping.Next(world.Home, policy), null),
-                "salvage" => (SalvageKeeping.Next(world.Home, policy), null),
                 _ => (null, null),
             };
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return (null, "unreadable");
         }
@@ -623,7 +590,7 @@ public static class SystemSpace
     internal static JsonObject? SetAsideWaiting(string home, KeepPolicy policy)
     {
         int awaiting = 0, unread = 0, unnamed = 0;
-        foreach (var root in DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists))
+        foreach (var root in new[] { Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), TreeSetAside.SetAsideFolder) }.Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
@@ -645,7 +612,7 @@ public static class SystemSpace
     /// <summary>The set-aside folders: each goes when its class says (the hour after its record, else its days), its bytes from the kind's last walk.</summary>
     internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading, DateTimeOffset? now = null)
     {
-        var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();
+        var roots = new[] { Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), TreeSetAside.SetAsideFolder) }.Where(Directory.Exists).ToList();
         if (roots.Count == 0) return (null, null);
         var goes = new List<(DateTimeOffset At, string Folder)>();
         // Every place of the trees entry, the folders set aside before the home's layout moved included.

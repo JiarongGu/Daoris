@@ -6,14 +6,14 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 const folder = dirname(fileURLToPath(import.meta.url));
 const TOKEN = 'throwaway-token-for-the-stand-in';
-const scratch = mkdtempSync(join(tmpdir(), 'github-pr-'));
+const scratch = mkdtempSync(join(scratchRoot(), 'github-pr-'));
 after(() => rmSync(scratch, { recursive: true, force: true }));
 
 /** GitHub's pull-request calls as the REST API answers them, admitting one token and counting what it is asked; else `status`, while set. */

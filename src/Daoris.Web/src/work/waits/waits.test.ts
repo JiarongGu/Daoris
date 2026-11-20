@@ -54,6 +54,22 @@ describe('the waits on the person', () => {
     expect(waitsOf({ session: { ...awaiting, said: said('Signed in') }, question: request, onAnswerSession: press })).toEqual([]);
   });
 
+  it('names a conversation\'s sign-in question whatever its state, since it has no park, and none without a site or a door to answer it', () => {
+    const chat = session({ kind: 'chat', quest: null, state: 'working' });
+    const request = {
+      id: 'q-keys', question: 'The production identity expired: sign in.', choices: [], recommend: null, why: null, by: null,
+      owner: 'sign-in', site: 'https://portal.example.com/settings', at: '2026-11-19T09:00:00Z',
+    };
+    expect(waitsOf({ session: chat, question: request, onAnswerSession: press })).toEqual([{ kind: 'question', below: false, signIn: true }]);
+    expect(waitsOf({ session: { ...chat, state: 'completed' }, question: request, onAnswerSession: press, answerBelow: true }))
+      .toEqual([{ kind: 'question', below: true, signIn: true }]);
+    expect(waitsOf({ session: chat, question: { ...request, site: null }, onAnswerSession: press })).toEqual([]);
+    expect(waitsOf({ session: chat, question: null, onAnswerSession: press })).toEqual([]);
+    expect(waitsOf({ session: chat, question: request })).toEqual([]);
+    // A conversation's own question that names no site is its reply's, never a wait; an intake is Ask Daoris's, whose question this is not.
+    expect(waitsOf({ session: { ...chat, ask: '0fda18', repository: 'ask #0fda18' }, question: request, onAnswerSession: press })).toEqual([]);
+  });
+
   it('names an intake\'s park by its ask, whose door answers it', () => {
     const intake = session({ state: 'awaiting-person', kind: 'chat', quest: null, ask: '0fda18', repository: 'ask #0fda18' });
     expect(waitsOf({ session: intake, onAnswerAsk: press, onResolve: press })).toEqual([{ kind: 'intake', ask: '0fda18' }]);

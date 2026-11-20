@@ -53,9 +53,9 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
                 <li key={link} className="min-w-0">
                   <ExternalLink
                     href={link}
-                    className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
+                    className="inline-flex max-w-full items-center gap-1.5 text-body text-accent-ink underline-offset-2 hover:underline"
                   >
-                    <Icon name="link" size={12} />
+                    <Icon name="link" size={12} className="text-ink-soft" />
                     <span className="truncate">{link}</span>
                   </ExternalLink>
                 </li>
@@ -75,11 +75,11 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
               {quest.attachments!.map((file) => (
                 <li key={file.sha256} className="min-w-0 text-body">
                   {fileKept(file) ? (
-                    <ExternalLink href={api.attachmentUrl(quest.id, file.sha256)} className="group inline-grid max-w-full gap-1.5 text-accent">
+                    <ExternalLink href={api.attachmentUrl(quest.id, file.sha256)} className="group inline-grid max-w-full gap-1.5 text-accent-ink">
                       <span className="inline-flex min-w-0 items-center gap-1.5">
-                        <Icon name="attach" size={12} />
+                        <Icon name="attach" size={12} className="text-ink-soft" />
                         <span className="truncate underline-offset-2 group-hover:underline">{file.name}</span>
-                        <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.bytes)}</span>
+                        <span className="shrink-0 font-mono text-caption text-ink-faint">{size(file.bytes)}</span>
                       </span>
                       {isImage(file.name) && (
                         <img
@@ -92,7 +92,7 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
                     <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ink-soft">
                       <Icon name="attach" size={12} />
                       <span className="truncate">{file.name}</span>
-                      <span className="font-mono text-meta text-ink-faint">{size(file.bytes)} · {t('quests.detail.fileElsewhere')}</span>
+                      <span className="font-mono text-caption text-ink-faint">{size(file.bytes)} · {t('quests.detail.fileElsewhere')}</span>
                     </span>
                   )}
                 </li>

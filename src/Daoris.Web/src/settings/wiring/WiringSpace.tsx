@@ -9,18 +9,18 @@ import { SpaceRunLine } from './WiringSpaceFree';
 
 /** Each kind's word in `settings.daoris.space.kind.*`, by its id. */
 const KIND_WORD: Record<string, string> = {
-  'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', salvage: 'salvage', 'browser-cache': 'browserCache', logs: 'logs', history: 'history',
+  'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', 'browser-cache': 'browserCache', logs: 'logs', history: 'history',
   trees: 'trees', 'sign-ins': 'signIns', 'left-over': 'leftOver', rest: 'rest',
 };
 
 /** What a kind's *next* counts, in `settings.daoris.space.what.*`. */
-const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', salvage: 'salvage', logs: 'logs' };
+const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', deps: 'deps', logs: 'logs' };
 
 /**
  * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (and the logs' daily prune and the
  * dependency store's daily eviction); history's only once the person set an age.
  */
-const RUNS = new Set(['set-aside', 'downloads', 'deps', 'salvage', 'logs']);
+const RUNS = new Set(['set-aside', 'downloads', 'deps', 'logs']);
 
 /** Whether a kind's rule is one of Daoris's runs: history's while an age is set. */
 const runs = (kind: SpaceKind) => RUNS.has(kind.id) || (kind.id === 'history' && kind.rule.kind === 'days');
@@ -40,7 +40,6 @@ function ruleOwnWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
-  if (rule.kind === 'days' && kind.id === 'salvage') return t('settings.daoris.space.rule.salvage', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'deps') return t('settings.daoris.space.rule.deps', { count: rule.days, gb: rule.gb });
   // A finished session's tree goes an hour after its record is kept; `whole` keeps it its days, its record kept all the same.
   if (rule.kind === 'days' && kind.id === 'set-aside') {
@@ -177,7 +176,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
         <Button disabled={saving || kind.rule.default} onClick={() => send({ kind: id, default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }
@@ -267,7 +266,7 @@ function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep:
         <Button disabled={saving || floor?.from === 'default'} onClick={() => send({ kind: 'floor', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }
@@ -325,7 +324,7 @@ function AllowanceEditor({ allowance, volume, onKeep, onClose }: {
         <Button disabled={saving || allowance.default} onClick={() => send({ kind: 'allowance', default: true })}>{t('settings.daoris.space.edit.default')}</Button>
         <Button variant="ghost" disabled={saving} onClick={onClose}>{t('common.cancel')}</Button>
       </div>
-      {said && <p className="m-0 text-small text-ink-danger" role="alert">{said}</p>}
+      {said && <p className="m-0 text-small text-fail-ink" role="alert">{said}</p>}
     </div>
   );
 }
@@ -543,6 +542,19 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
           </div>
         </SettingRow>
       ))}
+      {space.strays && space.strays.paths.length > 0 && (
+        <SettingRow label={t('settings.daoris.space.strays.label')} control={<span className="text-small text-ink-soft">{size(space.strays.paths.reduce((sum, stray) => sum + stray.bytes, 0))}</span>}>
+          <div className="grid gap-1">
+            <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.strays.hint')}</p>
+            <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft" data-strays>
+              {space.strays.paths.map((stray) => (
+                <li key={stray.path} className="flex flex-wrap gap-x-2"><code>{stray.path}</code><span>{size(stray.bytes)}</span></li>
+              ))}
+            </ul>
+            {space.strays.partial && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.strays.partial')}</p>}
+          </div>
+        </SettingRow>
+      )}
     </WiringCard>
   );
 }

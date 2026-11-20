@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-20 - Every driven session of this repository took 5 to 9.5 minutes to open, most of it reinstalling the root dependencies (SESSIONOPEN2)
+
+- **Symptom:** on the install all of 2026-11-19, `session.opening` said 317 to 567 s an open, `files` 101 to 333 s of it, with no
+  `files.*` step named; each session's notes said "`node_modules` was installed in this tree and not stored: its install wrote
+  `docs/index/` outside its folder".
+- **Measured first,** on `OpeningShapeProcessTests` (11,500 tracked files, build output in the checkout, the root installed by a real
+  `npm ci` from a lockfile marking one script, an optional package for another system, under a `prepare` that reads the whole tree and
+  writes beside its folder, a web dependency of 17,000 files): the second opening 132,084 ms, `tree` 15,774, `files` 116,311
+  (`files.read` 27,894, `files.deps` 81,687), the root installed again and unstored. On a clone of this repository: the root's
+  `npm ci` 38 s, its `prepare` 54 s (the index alone 39 s), the web folder's placement by the store's copy 6 s.
+- **Root cause:** `InstallScripts` read a package npm never installs on this system as one whose script the install runs. Since
+  01bd3fc1de (the merge tool's tests on Vitest) the root lockfile marks `fsevents` (`optional`, `os: darwin`), so the root kept its
+  scripts: `prepare` wrote `docs/index/` and git's own files, the install was never sealed, and every open ran `npm ci`, the three set-up
+  tools and an index write again. And `TreeFilesRun` never handed its steps to the stage (since de02b4c460, which added them as an
+  optional parameter), so the line named no `files.*` step.
+- **Fix:** `NpmPlatform.LeavesOut` (a package whose `os` leaves this system out runs nothing here), read by `InstallScripts` and the
+  analysis's `InstallScript`; the run's `files` stage hands its steps; the hand times its plugins' servers as `hand.servers`; the root
+  rule's `setup` names `merge-backlog.mjs --install` as `prepare` does.
+- **Left:** the fixture's time after the fix is not yet said: with the web folder now sealed its run passed the test host's five
+  minutes on a loaded machine, so it is a bench (`OPENING_SHAPE_BENCH=1`). After the root, `files.read` (18.8 to 27.9 s, npm's
+  three toolchain reads one after another among it) and `tree` (11.0 to 15.8 s) are the next costs; and this repository's own
+  `post-checkout` hook writes the index at every new tree (41 s, 30 s when nothing changed).
+- **Verify:** `InstallScriptsTests` (a package another system's runs no script here; one for this system keeps the scripts).
+
 ## 2026-11-18 - A run revived at its push never had its pull request asked, so its monitor stayed working (PRWATCH1)
 
 - **Symptom:** a run ended failed-held at `push`, revived by LEFTSTEP1 once origin held its branch at the landed tip, opened its pull
@@ -93,8 +117,10 @@ repository.
   same way; gates15's `tools/merge/flow.test.ts`; gates16's web `WorkFrame.conversation` and `Composer` files; on 2026-11-19
   APPROVEPRESS2's web `app/notifications.test.tsx`, and builders' runs `app/sessionEnd`, `AttentionBand` and ten `*PortsTests`;
   SESSIONVIEW1d's `Driver.Tests.LookAccountTests` again, and SIGNINWAIT2's once more (a third sighting: it is a candidate for its
-  own row if it flakes again).
-- **Cause:** none found; load-shaped by the alone passes.
+  own row if it flakes again); NOCOMPAT2's `LookAccountTests` a fourth time (its row is LOOKFLAKE1) and web `app/pageRoot.test.tsx`.
+- **Cause:** none found; load-shaped by the alone passes. `LookAccountTests`' many-runs case (LOOKFLAKE1): its warm look
+  is a few tens of milliseconds made of stages each under `LookStages.Floor`, which the line leaves out, so "stages say half the
+  look" held only on an idle machine; the case now says the cold look whole and the warm one by its ratio to the cold.
 
 ## 2026-11-18 - Six full-app web test files failed in a whole web run under load and passed alone (FLAKE1)
 
@@ -14510,3 +14536,144 @@ installed window is not yet seen.
 - **Fix:** the `settings` usage names `settings drain <minutes>`; `question_ask`'s words are cut to what an agent needs (2,4xx
   characters), the listing 51,392.
 - **Verify:** the driver's command and text tests (838 passed); the service's listing, description and question tests (84 passed).
+
+## 2026-11-20 — The workflow editor's composing tests sit on the unit timeout (WorkflowEditor.test.tsx)
+
+- **Seen:** SESSIONVIEW1g's merge: `src/workflow/edit/WorkflowEditor.test.tsx` "failed again alone" in reached, "Test timed out
+  in 10000ms" on the keyboard and pointer composing cases (10,189 and 10,361 ms) and the removing cases after them; 14 of 14
+  pass on a quiet machine.
+- **Cause:** each composing case types a whole release workflow through the chart, about 10 s on an idle machine, against
+  the suite's 10 s `testTimeout` (`vite.config.ts`): any load fails it; no change of the branch's reaches it.
+- **Fix:** the composing and removing groups carry a 30 s timeout of their own; the editor itself goes with the window
+  redesign's workflow rows.
+- **Verify:** `npx vitest run src/workflow/edit/WorkflowEditor.test.tsx`: 14 passed.
+
+## 2026-11-20 — The session groups route sent a step's node, kind and mark only (SESSIONVIEW1g, GroupsStateSliceTests)
+
+- **Seen:** SESSIONVIEW1g's merge: `GroupsStateSliceTests` red, "the page reads `steps.role`, which is neither pushed nor the
+  pull's" for `role`, `attempt`, `since`, `code`, `earlier` and an earlier attempt's fields.
+- **Cause:** SESSIONVIEW1g added each step's role, attempt, start, code and earlier attempts to the passage the head's track and
+  the step rows read, and not to the window's route (`SessionsGroupsWires`) or the pushed slice (`GroupsStateSlice`), so the
+  window would have drawn the track without them; the slice's census caught it at the merge.
+- **Fix:** the route projects the new fields and the slice pushes them (`steps`, `earlier`); the census's fixture carries them.
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter "FullyQualifiedName~GroupsStateSliceTests"`: 18 passed.
+
+## 2026-11-20 — Three of the install's agent accounts vanished after an update (NOCOMPAT2)
+
+- **Seen:** after the install took 56515d428c, `daoris agent list` showed one Claude account of four, and three runs' authors,
+  handed their second opinions, reopened with `why: account` and could not resume.
+- **Cause:** NOCOMPAT2 (1f5aa03e71) removed the home table's old-place reader (D323) while the install still kept three
+  accounts' homes at the old place `data/harnesses/claude-code/<id>`; the table names only `profiles/agents/<harness>/<id>`,
+  where the newest account already lived, so the others were no longer read. No check named files left in a place no entry
+  names.
+- **Fix:** on the install, the three folders were moved to `profiles/agents/claude-code/<id>` (a rename; nothing read or
+  copied); HOMEORPHAN1 makes the home name every file in a place no entry names, and a removal of an old reader refuses while
+  the install holds files there.
+- **Verify:** `daoris agent list` lists all four accounts, two signed in.
+
+## 2026-11-20 — Two of the CLI's tool tests red on main, unreached by the merges that broke them (TESTSCOPE1 found them)
+
+- **Seen:** TESTSCOPE1's census run on main 652a72ca50: `merge-branch-worktrees.test.ts` "this repository commits no generated
+  folder" (expected no `generated` entry) and `desktop-publish.test.ts` (expected `HomeEntry.Running` with four arguments).
+- **Cause:** BOOKHOOK1 (af6bfd38f3) declared `tools/size-ratchet.json` a generated entry in `daoris.gates.json`, and NOCOMPAT2
+  (da048b0b37) cut `HomeEntry.Running`'s old-place argument; both tests read those files as text, and the merges' reached plans
+  mapped tests from code files only, so neither ran.
+- **Fix:** the first asserts the size list is the one generated entry (a file, no folder); the second asserts the three-argument
+  entry. TESTSCOPE1's pattern sets map a test to the files it reads, so a change to either file reaches it.
+- **Verify:** `node --test src/Daoris.Cli/tool-test/merge-branch-worktrees.test.ts` (13 passed) and
+  `node --test src/Daoris.Cli/tool-test/desktop-publish.test.ts` (53 passed).
+
+## 2026-11-20 — A batch's reached gate ran 27 and 34 minutes and failed on three reds none of its branches made
+
+- **Seen:** the merge of steward-batch-1120e: `reached` was killed by its hang bound under load after 27 m 40 s, then ran alone
+  34 m 12 s and failed: the driver's test host crashed on `TreePoolSharesGitTests` (and the classes in its host with it), two
+  `WorkflowEditorCanvas.test.tsx` tests timed out at 10 s, and `driver-names.test.ts` (STRUCT1) named
+  `tools/time-ratchet.test.mjs reads ${name}.cs by its folder`.
+- **Cause:** `TreePoolSharesGitTests` runs real git and links, five tests taking 4 m 16 s alone, yet carried no Process trait since
+  TREEPOOL1ac (59cf005dc6), so the fast tier ran it and the 60 s inactivity bound killed its host under load; two other real-git
+  classes (`GitGlobalFileGitTests`, `GitOwnInputScopedGitTests`) lacked it too. The canvas suite is the editor's sibling whose
+  composing tests sit on the unit timeout (the entry above for `WorkflowEditor.test.tsx`). The ratchet test (9108ee25ed) built its
+  synthetic world's paths in the driver test project's folder, which the STRUCT1 scan reads as a fixed read.
+- **Fix:** the three git classes carry the Process tier's traits, as their siblings do; the canvas suite's composing groups take
+  30 s; the ratchet test's synthetic paths sit under `src/D.Tests/`, as its other cases' do.
+- **Verify:** `TreePoolSharesGitTests` alone (5 passed, 4 m 16 s); `node --test tools/time-ratchet.test.mjs` and the STRUCT1
+  test (passed); the merge's `reached` rerun.
+## 2026-11-20 — A run's check held not known had no door but its stop (CHECKUNKNOWN1)
+
+- **Seen:** on the install, run 8e9340198a4c stood 11 hours at its `check`, read *not known* with "Daoris asks after it before it
+  starts anything new", and `daoris workflow again 8e9340198a4c check` was refused "was not kept (not-cause)", leaving only
+  `workflow stop`, which ends the run. Its record held attempt 3 `held`, code `changed` (the gates at the commit were not the accepted
+  ones), as two other runs' checks did from the same evening; nothing asked after them, and the run's line named no door for them.
+- **Cause:** the run's `again` is the table's `failed → ready` by the person (cc53305ee5, LEFTSTEP1), and the table holds no person's
+  move from `unknown`, so it refused every not-known check `not-cause`; a held check's *Run again* lived only on the held door
+  (`daoris work held … again`). The graph run's sentence for every unknown node (1d429e554f) said Daoris asks after it, which nothing
+  does for a held attempt, and its terminal line offered only the stop. Beside it, a check whose process a restart cut off was sent
+  again at every start, unbounded.
+- **Fix:** the run's `again` on a not-known check is kept as its current attempt's *Run again* (`UnknownChecks`), held with it where
+  Daoris still asked after it, so the next look settles it as the person's and starts a new attempt; a not-known check says it holds
+  nothing as passed, in the page's words, and its terminal line names `daoris workflow again <run> <node>` beside the stop; `not-cause`
+  is said for a person. A check its executor finds no result and no job of is sent once more as the same attempt, then held `lost`
+  with its newest log's last 20 lines on the attempt's own `tail` (`LostChecks`), never a red round; held, it holds no slot. Only a
+  loss nothing explains counts: the executor's own close (an ordinary update) leaves a `closed` mark and is sent again uncounted, and a
+  send's `began` mark tells one cut off while queued from one that ran. A held check's *Run again* stops its old invocation.
+- **Verify:** the filtered driver classes below, each new test seen failing first; on the install, `daoris workflow again
+  8e9340198a4c check` once this build is there (the steward's).
+## 2026-11-20 — Each look judged every owed opinion again, though nothing it read had moved (OPINIONLOOK1)
+
+- **Seen:** the owner: "Daoris has been slow". The install's machine log of 2026-11-19/20: `look.slow` for stage `opinions`
+  2,327 times on quest #ba5c8968fdf5, 531 on #82406c797e18, 334 on #4f86d13167d5, then 322, 218, 207 (#8e9340198a4c), 127;
+  looks minutes apart said `~opinions=48089x5@#8e9340198a4c ~opinions.queue=54960`, `~opinions=18347x6`, `~opinions=9065x7`,
+  `~opinions=6059x7`: every look judged 5–7 owed opinions at 5–10 s each beside it, with seconds queued for git's places, on
+  runs whose reviewer had finished and runs unchanged for hours.
+- **Cause:** since owed opinions were judged beside the look (PARALLEL1g, 8c4bd52e70), each look began one judgment per owed
+  opinion whatever had moved, and each judgment read the whole quest list for itself (a `ServiceReviewWorld` per judgment), the
+  ask, its opinions and its tree's work. The tree's work is kept while the tree and every counted ref of its repository stand
+  (LOOKOPINIONS1), so on a repository whose branches move all day (each agent's commit on its own branch) the tree was walked
+  again (`log`, `status`) at nearly every look, behind the tidy for the repository's places. Nothing kept what a judgment had
+  read, so nothing could say it need not run.
+- **Fix:** `OpinionJudgments` reads, for each judgment, a stamp of what it reads, made without git and without a service read of
+  its own: the due itself (a press replaces it in place); the chain's quests and the working line's, reviewers' and rechecks'
+  records from the look's one read; the tree's link, `HEAD` and branch commit from git's files; the gate, deliveries, run binding
+  and node record by a hash of what they hold, the landings, rule and cool-off files by write time and length; and the drain.
+  The stamp is kept with the judgment's fact on the watch's running sessions (`LookFacts`): the first build kept it on
+  `OpinionGateLook`, which the watch builds again with each look's driver, so no stamp outlived its look on the install, and the
+  bench, reusing one driver, did not show it. A look judges an owed opinion again only where that stamp moved, five minutes after
+  its last judgment, past its gate's reset or a reading pass's minutes (a moment already past bounds nothing); a judgment whose
+  gate or review read `unread` keeps none, and a pass begun for it, or a pass's or a delivery's end, lets the stamp go, a
+  judgment that read before that keeping none. `OpinionLookWorld` reads the quests, the records and each ask once a look for every judgment of it.
+- **Measured** (`OpinionJudgmentsTests`: six owed landing opinions settled on their own trees among a thousand closed quests,
+  the host in process, a driver of its own each look over one set of running sessions, as the watch builds them). Before: every
+  look judged all six; the first took 5.6 s with 14 git starts and read the quest list 6 times; each later look made 6
+  judgments, 6 quest-list reads, 6 ask reads and 6 opinion reads (190–280 ms in process; on the install each judgment waited on
+  the service, and on git after any ref moved). The first build, its stamps on the look's own parts: each later look still made
+  6 judgments and 6 opinion reads (91–314 ms). After: the first look took 3.2–5.0 s with 14 git starts and read the quest list
+  and the ask once; a look over nothing moved makes 0 judgments, 0 git starts and no ask or opinion read, and reads the quest and
+  record lists once each (25–33 ms); a commit in one tree judges that one alone (2 git starts); a quest reopened, a node blocked
+  or a delivery written judges that one alone with no git (28–48 ms); a drain begun or lifted judges every one (94–98 ms); under
+  a neighbour's load the same counts held at 16–20 s, 28–53 ms, 71–184 ms and 295–626 ms. A
+  recheck's reviewer ending, a due replaced, a reading pass's minutes passing, a gate read unread, and a pass begun that ended
+  writing nothing each judge that one again at the next look, and each is judged again five minutes after its last judgment
+  (the judges' clock moved by hand, `MovedClock`, which the watch's running sessions hand them).
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings
+  --filter "FullyQualifiedName~OpinionJudgmentsTests"` (red first on the base: 6 judgments and 6 quest-list reads a look; on the
+  first build, 6 judgments a look, and each input test red with its own fix taken out),
+  `--filter "FullyQualifiedName~OpinionJudgmentsStandTests|FullyQualifiedName~OpinionLookTests"`.
+
+## 2026-11-20 — Icons turned blue and the taskbar's count turned black after the role set landed (UIDS1)
+
+- **Seen:** on the installed window after UIDS1 (main 2d5ced6d6c): the chosen place's glyph on the activity bar, the strip's mark,
+  and the icons inside links and doors (a link's icon, *Open ›*'s chevron, an external link's arrow, Focus's check) were blue; and,
+  with the page dark, the taskbar button's waiting count read as a black *9+* on light red.
+- **Cause:** UIDS1's codemod (`tools/token-codemod.mjs`, a200e343f1, its word-boundary fix cd9a1d3397) moved every `text-accent`
+  to `text-accent-ink`. Under the old palette that was the bronze accent; under the role set it is the links' blue, and a glyph
+  draws in `currentColor`, so every icon inside such a word or control took the blue. The same commit copied `--fail`/`--on-fail`
+  into `ChromePalette`'s close colours by theme, and the taskbar count (`TaskbarWear`) borrowed them: the dark set's label on its
+  light red is `#111110`, where the old one was `#faf9f6` in both themes.
+- **Fix:** glyphs wear the inks (the window design §7.1): the chosen place `ink` on its accent field and rail, the mark `ink`,
+  icons beside a link's or door's blue words `ink-soft`, the plan's entry under way `ink`. The taskbar count wears
+  `ChromePalette.CountFill`/`CountInk`, the light theme's `--fail` and white, whatever the page's theme; the close button keeps
+  its per-theme colours. `design/glyphInk.test.tsx` and every story's render (`test/composeStories.ts`) fail a glyph whose
+  nearest colour, its own or a container's, is the accent's or `live`'s; `ChromePaletteTests` holds the count white on red.
+- **Verify:** the census failed 152 story renders before the fix and none after; `ChromePaletteTests` (new test red, then
+  green); the window built from the branch, shot before and after in both themes (overview, Settings, the notifications panel)
+  and the taskbar's count captured.

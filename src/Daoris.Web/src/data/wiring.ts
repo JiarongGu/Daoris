@@ -14,12 +14,9 @@ type Why = string | null;
  */
 export interface SetupAnswer { done: boolean; changed: boolean; why?: string | null; message?: string | null }
 
-export interface WiringOld { entry: string; path: string; bytes: number | null; why: string }
-
 export interface WiringFolder {
   id: 'app' | 'update' | 'data' | 'profiles' | 'work' | 'cache' | 'run' | 'logs';
   path: string | null; pathWhy: Why; present: boolean; bytes: number | null; bytesWhy: Why; measured: string | null;
-  old: WiringOld[];
 }
 
 export interface WiringFile {
@@ -201,6 +198,7 @@ export type SystemSpace = {
   kinds: SpaceKind[];
   /** Absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
+  strays?: { paths: { path: string; bytes: number }[]; partial: boolean };
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };

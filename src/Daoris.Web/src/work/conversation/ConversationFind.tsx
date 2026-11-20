@@ -2,6 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { isComposing } from '../../lib/composing';
 import { searchable } from '../../lib/searchable';
 import { Button, Icon } from '../../design/ui';
+import type { useSessionReading } from './useSessionReading';
+
+/** A long run's way through, as its reading offers it: the jumps, the search and its hits. */
+export function ReadingFind({ find }: { find: NonNullable<ReturnType<typeof useSessionReading>['find']> }) {
+  const { settled, hits, ...presses } = find;
+  return <ConversationFind {...presses} hits={searchable(settled) ? hits : undefined} />;
+}
 
 /**
  * The way through a long run: a jump to where it first failed and to its last words, and a
@@ -63,7 +70,7 @@ export function ConversationFind({
         />
         {hits !== undefined && searchable(query) && (
           <>
-            <span aria-live="polite" className="whitespace-nowrap text-meta tabular-nums text-ink-faint">
+            <span aria-live="polite" className="whitespace-nowrap text-caption tabular-nums text-ink-faint">
               {found === 0
                 ? t('work.find.none')
                 : t(cut ? 'work.find.countMore' : 'work.find.count', { at: at + 1, count: found })}

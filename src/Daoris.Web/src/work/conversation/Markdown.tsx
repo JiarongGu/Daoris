@@ -68,7 +68,7 @@ type Components = ComponentProps<typeof ReactMarkdown>['components'];
 
 const COMPONENTS: Components = {
   a: ({ href, children }) => goPlace(href) ? <GoLink href={href}>{children}</GoLink> : (
-    <ExternalLink href={href} className="text-accent underline underline-offset-2">
+    <ExternalLink href={href} className="text-accent-ink underline underline-offset-2">
       {children}
     </ExternalLink>
   ),
@@ -76,7 +76,7 @@ const COMPONENTS: Components = {
   // agent wrote into its URL would leave the machine even where its harness's own network tools are
   // refused. Raw HTML is already text; a Markdown image is not raw HTML. It is a link.
   img: ({ src, alt }) => (
-    <ExternalLink href={typeof src === 'string' ? src : undefined} className="text-accent underline underline-offset-2">
+    <ExternalLink href={typeof src === 'string' ? src : undefined} className="text-accent-ink underline underline-offset-2">
       {`🖼 ${alt || (typeof src === 'string' ? src : '')}`}
     </ExternalLink>
   ),
@@ -95,7 +95,7 @@ const COMPONENTS: Components = {
   ul: ({ children }) => <ul className="my-2 list-disc pl-5">{children}</ul>,
   ol: ({ children }) => <ol className="my-2 list-decimal pl-5">{children}</ol>,
   li: ({ children }) => <li className="my-0.5">{children}</li>,
-  h1: ({ children }) => <h3 className="mb-1.5 mt-3 text-title font-semibold">{children}</h3>,
+  h1: ({ children }) => <h3 className="mb-1.5 mt-3 text-heading font-semibold">{children}</h3>,
   h2: ({ children }) => <h4 className="mb-1.5 mt-3 text-body font-semibold">{children}</h4>,
   h3: ({ children }) => <h5 className="mb-1 mt-2.5 text-body font-semibold">{children}</h5>,
   blockquote: ({ children }) => (

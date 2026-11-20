@@ -58,15 +58,7 @@ internal sealed class PluginOutputKeeping(Func<DateTimeOffset> clock) : IOutputK
 
     private static IEnumerable<string> Outputs(string home)
     {
-        string data;
-        try
-        {
-            data = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), PluginCatalog.DataFolder);
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return [];
-        }
+        var data = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), PluginCatalog.DataFolder);
 
         return Directory.Exists(data)
             ? Directory.EnumerateDirectories(data).Select(plugin => Path.Combine(plugin, Folder)).Where(Directory.Exists)

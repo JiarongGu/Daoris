@@ -8,6 +8,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// share is partitioned at it and never entered, a share whose entry no longer reads as its link is the line's own, and a link that
 /// leads elsewhere is refused as foreign.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class TreePoolSharesGitTests : IDisposable
 {
     private const string Rules = """

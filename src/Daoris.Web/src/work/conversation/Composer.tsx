@@ -30,7 +30,7 @@ function Words({ message }: { message: ChatMessage }) {
     <span className="min-w-0 flex-1">
       <span className="line-clamp-2 whitespace-pre-wrap wrap-anywhere">{message.text}</span>
       {message.files.length > 0 && (
-        <span className="mt-0.5 flex min-w-0 items-center gap-1 text-meta text-ink-faint">
+        <span className="mt-0.5 flex min-w-0 items-center gap-1 text-caption text-ink-faint">
           <Icon name="attach" size={11} className="shrink-0" />
           <span className="truncate">{message.files.join(', ')}</span>
         </span>
@@ -428,26 +428,26 @@ export function Composer({
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live && attachments ? attach.handlers : {})}
     >
-      {(refusal ?? refused) && <p role="alert" className="m-0 text-small text-ink-danger">{refusal ?? refused}</p>}
+      {(refusal ?? refused) && <p role="alert" className="m-0 text-small text-fail-ink">{refusal ?? refused}</p>}
       {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
 
       {live && queued.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
           {/* Folded: one line with the count, so a park's answer is one box; a press opens the list. */}
           {fold ? (
-            <div className="flex min-w-0 items-center gap-2 text-meta text-ink-faint">
+            <div className="flex min-w-0 items-center gap-2 text-caption text-ink-faint">
               <span className="shrink-0 font-semibold text-ink-soft">{t('work.composer.waitCount', { n: queued.length })}</span>
               <span id={waitingLabel} className="min-w-0 truncate">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
               <Button
                 type="button" variant="ghost" aria-expanded={listed}
                 onClick={() => setListed(!listed)}
-                className="ml-auto h-6 shrink-0 px-1.5 text-meta"
+                className="ml-auto h-6 shrink-0 px-1.5 text-caption"
               >
                 {t(listed ? 'work.composer.waitHide' : 'work.composer.waitShow')}
               </Button>
             </div>
           ) : (
-            <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
+            <span id={waitingLabel} className="text-caption text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
           )}
           {(!fold || listed) && (
           <ol aria-labelledby={waitingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
@@ -466,7 +466,7 @@ export function Composer({
                         type="button" variant="ghost"
                         aria-label={t('work.say.moveToHeadItem', { text: message.text })}
                         onClick={() => onMove(message.id!)}
-                        className="h-6 px-1.5 text-meta"
+                        className="h-6 px-1.5 text-caption"
                       >
                         {t('work.say.moveToHead')}
                       </Button>
@@ -500,7 +500,7 @@ export function Composer({
                         type="button" variant="ghost"
                         aria-label={t('work.composer.editItem', { text: message.text })}
                         onClick={() => startEdit(message)}
-                        className="h-6 px-1.5 text-meta"
+                        className="h-6 px-1.5 text-caption"
                       >
                         {t('work.composer.edit')}
                       </Button>
@@ -510,7 +510,7 @@ export function Composer({
                         type="button" variant="ghost"
                         aria-label={t('work.composer.removeItem', { text: message.text })}
                         onClick={() => { void remove(message.id!); }}
-                        className="h-6 px-1.5 text-meta"
+                        className="h-6 px-1.5 text-caption"
                       >
                         {t('work.composer.remove')}
                       </Button>
@@ -536,7 +536,7 @@ export function Composer({
             )
             : (
               <span>
-                <Button type="button" variant="ghost" disabled={stopping} onClick={() => setAsking(true)} className="h-6 px-1.5 text-meta">
+                <Button type="button" variant="ghost" disabled={stopping} onClick={() => setAsking(true)} className="h-6 px-1.5 text-caption">
                   {t('work.steer.stopKeeping')}
                 </Button>
               </span>
@@ -549,7 +549,7 @@ export function Composer({
           driver's to take back yet. */}
       {going && going.words.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          <span id={goingLabel} className="text-meta text-ink-faint">
+          <span id={goingLabel} className="text-caption text-ink-faint">
             {t(going.late ? 'work.composer.unanswered' : 'work.composer.sending')}
           </span>
           <ol aria-labelledby={goingLabel} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1 p-0">
@@ -571,7 +571,7 @@ export function Composer({
             >
               <Icon name="attach" size={12} className="shrink-0 text-ink-faint" />
               <span className="min-w-0 truncate">{file.name}</span>
-              <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.size)}</span>
+              <span className="shrink-0 font-mono text-caption text-ink-faint">{size(file.size)}</span>
               <Button
                 type="button" variant="ghost"
                 aria-label={t('carry.remove', { name: file.name })}
@@ -585,7 +585,7 @@ export function Composer({
         </ul>
       )}
       {attach.leftOff && (
-        <p role="status" className="m-0 text-small text-ink-danger">
+        <p role="status" className="m-0 text-small text-fail-ink">
           {t(`carry.${attach.leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
         </p>
       )}
@@ -628,7 +628,7 @@ export function Composer({
             onKeyDown={onKeyDown}
             placeholder={placeholder ?? t('work.composer.placeholder')}
             className={cn(
-              'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) read-only:bg-page read-only:text-ink-soft',
+              'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--duration-quick) read-only:bg-page read-only:text-ink-soft',
               // Where a dragged file will go: the whole form takes it, and the box lights up to say so.
               attach.dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
             )}
@@ -679,13 +679,13 @@ export function Composer({
               <Menu.Item onSelect={() => sendAt('urgent')}>
                 <span className="grid min-w-0">
                   <span>{t('work.composer.levelUrgent')}</span>
-                  {!levels.nextStep && <span className="text-meta text-ink-faint">{t('work.steer.notNowTurnEnd')}</span>}
+                  {!levels.nextStep && <span className="text-caption text-ink-faint">{t('work.steer.notNowTurnEnd')}</span>}
                 </span>
               </Menu.Item>
               <Menu.Item disabled={!levels.steers && !levels.stops} onSelect={() => sendAt('now')}>
                 <span className="grid min-w-0">
                   <span>{t('work.composer.levelNow')}</span>
-                  <span className="text-meta text-ink-faint">
+                  <span className="text-caption text-ink-faint">
                     {t(levels.steers ? 'work.steer.nowTip' : levels.stops ? 'work.steer.nowStopsTip'
                       : levels.nextStep ? 'work.steer.notNowNextStep' : 'work.steer.notNowTurnEnd')}
                   </span>

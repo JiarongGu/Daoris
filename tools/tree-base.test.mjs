@@ -33,7 +33,7 @@ const REASONS = {
   resolver: (site, text) => /export function assemblyExe\(|export const targetExe =/.test(text)
     && /join\(projectDir, 'bin', flavour\)|^export const targetExe =/.test(site.statement),
   'own output': (site, text) => /\bownBuildRoot\(/.test(text) || TEST.test(site.file),
-  'no output': (site) => /homeEntry\(|homeBins\(|homePlaces\(|"usr", "bin"|managed, "bin"|new\("bin"|'cache', 'bin'|'home', 'bin'|"app", "bin"/.test(site.statement),
+  'no output': (site) => /homeEntry\(|homeBin\(|"usr", "bin"|managed, "bin"|new\("bin"|'cache', 'bin'|'home', 'bin'|"app", "bin"/.test(site.statement),
   referenced: (site, _text, entry) => referenced(site.file, entry.project),
   fixture: (site) => TEST.test(site.file),
   'merge tool': (site) => /^tools\/merge(?:-branch(?:\.mjs$|\/)|\/)/.test(site.file) && site.shape === 'R2' && !/out\.push\(/.test(site.statement),
@@ -92,6 +92,7 @@ const CENSUS = [
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Rehearsals/Workplace/ContentProofLossTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/TreeBaseWordsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/FileAnalysisTests.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Deps/OpeningShapeProcessTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/Files/RuleFileFormTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitDoorsTests.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workplace/GitHoldsProcessTests.cs',

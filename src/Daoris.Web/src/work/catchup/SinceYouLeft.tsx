@@ -46,7 +46,7 @@ export function SinceYouLeft({ digest, read, now, onJump }: {
   const { t } = useTranslation();
   return (
     <section aria-label={t('work.catchup.label')} data-catchup className="grid min-w-0 scroll-mt-12 gap-1 border-t border-line pt-2">
-      <p className="m-0 text-meta uppercase tracking-[0.06em] text-ink-faint">
+      <p className="m-0 text-caption uppercase tracking-[0.06em] text-ink-faint">
         {t('work.catchup.since', { span: elapsed(read, new Date(now).toISOString()) })}
       </p>
       <ul className="m-0 grid list-none gap-0.5 p-0">

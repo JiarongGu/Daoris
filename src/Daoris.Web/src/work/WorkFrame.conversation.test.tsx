@@ -22,6 +22,8 @@ let SESSIONS: unknown[] = [DRIVEN];
 
 /** Every `SESSION_INPUT` the page sent, in order (a send the page stopped waiting on is never said twice). */
 const inputs = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
+const panel = () => screen.findByRole('region', { name: i18n.t('work.session.label') });
+const panelHead = async () => (await panel()).querySelector<HTMLElement>('[data-region="head"]')!;
 
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
@@ -50,7 +52,6 @@ describe('starting and holding a conversation', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
-    // A draft outlives its test the way it outlives a reload, and so do the starts this machine remembers.
     window.localStorage.removeItem('daoris.drafts');
     window.localStorage.removeItem('daoris.start.recent');
     window.localStorage.removeItem('daoris.start.chosen');
@@ -154,7 +155,6 @@ describe('starting and holding a conversation', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Repository: game' }));
     const groups = within(screen.getByRole('listbox', { name: 'Repository' })).getAllByRole('group');
     expect(groups[0]).toHaveAttribute('aria-label', 'Recent');
-    // Newest first by the session's own update: game, then engine; Ask Daoris's chat is not a repository.
     expect(within(groups[0]!).getAllByRole('option').map((row) => row.textContent?.split(' ')[0])).toEqual(['game', 'engine']);
   });
 
@@ -533,12 +533,12 @@ describe('starting and holding a conversation', () => {
    * A right-click on the attended session's page offers its header's acts, the loud act and
    * *Stop…* with its ⋯'s, each carried out by the one owner: *Stop…* asks under the header as its button does.
    */
-  it('offers the page header’s acts on a right-click anywhere on the session’s page', async () => {
+  it('offers the head’s acts on a right-click on its title and anywhere on the session’s page', async () => {
     SESSIONS = [CHAT];
     show('c0ffee11');
     render(<ContextMenus doors={{ copy: () => {} }} />);
 
-    const title = await screen.findByRole('heading', { level: 1 });
+    const title = await within(await panelHead()).findByRole('heading');
     rightClick(title);
     const acts = await menuActs();
     expect(acts[0]).toBe('Stop…');
@@ -899,7 +899,7 @@ describe('starting and holding a conversation', () => {
    * A live chat between turns is idle in the rail, and working again the moment the driver says a turn is in flight; the header's
    * state line is the reader's, never that word.
    */
-  it('says a live chat is idle between turns in the rail, its header the reader\'s line', async () => {
+  it('says a live chat is idle between turns in the rail, its panel head the reader\'s word', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return STRUCTURED_ROSTER;
@@ -910,9 +910,9 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11');
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
-    const head = screen.getByRole('heading', { level: 1 }).closest('header')!;
-    expect(within(head).getByText('Reading its state')).toBeInTheDocument();
-    expect(within(head).queryByText('idle')).toBeNull();
+    const head = await panelHead();
+    expect(head).toHaveTextContent(i18n.t('work.session.state.loading'));
+    expect(head).not.toHaveTextContent(/\bidle\b/i);
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
     await waitFor(() => expect(within(rail).getByText('working')).toBeInTheDocument());
@@ -955,7 +955,7 @@ describe('starting and holding a conversation', () => {
   it('offers no composer for a driven session', async () => {
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    await within(await panelHead()).findByRole('heading', { name: /Expose a streaming budget/ });
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
@@ -1183,7 +1183,7 @@ describe('starting and holding a conversation', () => {
       : DRIVER_STATE));
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    await within(await panelHead()).findByRole('heading', { name: /Expose a streaming budget/ });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
     expect(screen.queryByLabelText('Message')).toBeNull();
   });

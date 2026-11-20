@@ -83,7 +83,7 @@ function TreeChip({ tree, onTree, repository, workspace, readCheckout }: {
             <Menu.RadioItem key={choice} value={choice}>
               <span className="grid min-w-0">
                 <span>{t(`work.start.tree.${choice}`)}</span>
-                <span className="text-meta text-ink-faint">
+                <span className="text-caption text-ink-faint">
                   {choice === 'checkout' ? on('tree.checkoutNote') : t(`work.start.tree.${choice}Note`)}
                 </span>
               </span>
@@ -286,7 +286,7 @@ export function NewConversation({
       onSubmit={(event) => { event.preventDefault(); go(); }}
       {...attach.handlers}
     >
-      <label htmlFor={promptId} className="text-view font-semibold text-ink">{t('work.start.prompt')}</label>
+      <label htmlFor={promptId} className="text-display font-semibold text-ink">{t('work.start.prompt')}</label>
 
       {carry.files.length > 0 && (
         <ul aria-label={t('work.composer.attached')} className="m-0 flex list-none flex-wrap gap-1.5 p-0">
@@ -297,7 +297,7 @@ export function NewConversation({
             >
               <Icon name="attach" size={12} className="shrink-0 text-ink-faint" />
               <span className="min-w-0 truncate">{file.name}</span>
-              <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.size)}</span>
+              <span className="shrink-0 font-mono text-caption text-ink-faint">{size(file.size)}</span>
               <Button
                 variant="ghost"
                 aria-label={t('carry.remove', { name: file.name })}
@@ -311,7 +311,7 @@ export function NewConversation({
         </ul>
       )}
       {attach.leftOff && (
-        <p role="status" className="m-0 text-small text-ink-danger">
+        <p role="status" className="m-0 text-small text-fail-ink">
           {t(`carry.${attach.leftOff}`, { max: MAX_FILES, size: size(MAX_FILE_BYTES) })}
         </p>
       )}
@@ -324,7 +324,7 @@ export function NewConversation({
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
         className={cn(
-          'min-h-24 resize-y rounded-control border bg-raised px-3 py-2 text-body text-ink transition-colors duration-(--speed)',
+          'min-h-24 resize-y rounded-control border bg-raised px-3 py-2 text-body text-ink transition-colors duration-(--duration-quick)',
           // Where a dragged file will go: the whole form takes it, and the box lights up to say so.
           attach.dragging ? 'border-accent bg-accent-soft' : 'border-line-strong',
         )}

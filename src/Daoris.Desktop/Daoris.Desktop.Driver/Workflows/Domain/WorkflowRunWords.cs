@@ -247,6 +247,7 @@ public static class WorkflowRunWords
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
         if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
+        if (step.Detail == WorkflowGraphDetails.Active && node == NodeKinds.Check && step.Wait is { Code: CheckSlotWaits.HeldBy or CheckSlotWaits.Queued } slot) return CheckSlotWaits.Said(slot);
         var on = On(step);
         return step.Detail switch
         {
@@ -256,6 +257,7 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
+                NodeKinds.Opinion when step.Wait is { Code: OpinionStepWaits.Answer } answer => OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
@@ -278,16 +280,31 @@ public static class WorkflowRunWords
                 "Its branch no longer stands and the line's remote does not hold its work, so nothing was pushed: restore the branch, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
                 "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate => $"Failed: the gate `{gate}` failed; its words went to the work.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Opinion && OpinionStepWaits.EndedSaid(step.Code) is { } ended => ended,
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
             WorkflowGraphDetails.Stopped => "You stopped it.",
+            WorkflowGraphDetails.Unknown when node == NodeKinds.Check => CheckUnknownSaid(step.Held),
             WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",
             WorkflowGraphDetails.Invalidated => "What it rested on moved, so Daoris judges it again at its next look.",
             _ => $"Shown as recorded: {step.State}, {step.Detail}.",
         };
     }
+
+    /// <summary>What a check not known says, as the page's check words say it: nothing asks after a held check, so it never says Daoris does.</summary>
+    private static string CheckUnknownSaid(WorkflowRunHeld? held) => held switch
+    {
+        { Resolution: HeldResolutions.Stop } => "You left it for now; nothing more is asked of it.",
+        { Resolution: HeldResolutions.Again } => "You asked to run it again; Daoris's next look starts it.",
+        { Words.Count: > 0 } => "Its outcome could not be established, so nothing is taken as passed. Run it again, or leave it for now.",
+        _ => "Its outcome could not be established, so nothing is taken as passed.",
+    };
+
+    private static bool AgainOnCheck(WorkflowRunStep step) =>
+        step.Node == NodeKinds.Check && step.Detail == WorkflowGraphDetails.Unknown && step.Held?.Resolution is null;
 
     /// <summary>What a graph run's node observes, named: its quest, its branch at its tip, or its landing there; null for the run itself.</summary>
     private static string? On(WorkflowRunStep step) => step.On switch
@@ -349,12 +366,13 @@ public static class WorkflowRunWords
                 : run.ChatRun is { } chat ? $"chat run {chat}"
                 : run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
             var workflow = run.Process?.Named == true ? $"{run.Process.Name} workflow"
+                : run.NotStarted ? "Not started yet"
                 : run.Problem is not null ? "Workflow unread" : $"Current workflow, version {run.Current.Version}";
             said.Append($"{run.Repository} · {workflow} · {quests}");
             if (run.Ask is { } ask) said.Append($" · ask #{ask}");
             said.Append('\n');
             foreach (var asked in run.Line is { } judged ? LineRunWords.Under(judged) : []) said.Append($"  {asked}\n");
-            if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
+            if (run.Problem is { } problem) said.Append(run.NotStarted ? $"  {char.ToUpperInvariant(problem[0])}{problem[1..]}\n" : $"  Cannot read this run: {problem}\n");
             if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
             if (run.Graph is { } graph)
             {
@@ -406,6 +424,7 @@ public static class WorkflowRunWords
             if (acts.Contains(NodeWordActs.Approve)) yield return $"`daoris workflow approve|reject {run} {node} [\"…\"]` answers it: it waits for your approval.";
             yield return acts.Contains(NodeWordActs.Skip) ?$"`daoris workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
                 : acts.Contains(NodeWordActs.Changes) ? $"`daoris workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
+                : AgainOnCheck(step) ? $"`daoris workflow again {run} {node}` runs it again as a new attempt; {stop}"
                 : stop;
         }
 
@@ -413,6 +432,13 @@ public static class WorkflowRunWords
         {
             if (graph.Outcomes.TryGetValue(step.Step.Id, out var outcome)) yield return $"Its outcome: `{outcome}`.";
             if (graph.NotTaken.Contains(step.Step.Id, StringComparer.Ordinal)) yield return "Not taken: the outcomes reached leave no route to it.";
+        }
+
+        // A check held for its lost process: the last of its log, as the terminal's own lines.
+        if (step.Node == NodeKinds.Check && step.Held?.Tail is { Length: > 0 } tail)
+        {
+            yield return "Its log ends:";
+            foreach (var line in tail.ReplaceLineEndings("\n").Split('\n').TakeLast(LostChecks.TailLines)) yield return $"  {line}";
         }
 
         var kind = step.Step.Kind;

@@ -1,15 +1,11 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../data/api';
 import { aQuest } from '../quests/aQuest';
-import i18n from '../locales/i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { sessionWidths } from '../design/storyWidths';
 import { AttendedSession } from './AttendedSession';
-import { sessionFacts } from './head/headFacts';
-import { questName } from './identity';
-import { SessionPageHead } from './head/SessionPageHead';
 import { answer, SESSION_CHAIN } from './head/traceFixtures';
 import { ViewMain } from './frame/ViewMain';
 
@@ -107,24 +103,11 @@ const FAILED_BEFORE = [1, 2, 3].map((n): Session => ({
   ...ATTEMPT, id: `f${n}000000`, state: 'failed', created: at(60 - n * 10), updated: at(59 - n * 10),
 }));
 
-/** The page as the install's session would read: the head, the record folded, then the agent's first words. */
+/** The page as the install's session would read: the record folded, then the agent's first words. */
 function SessionPage({ quest }: { quest: Quest }) {
-  const title = questName(quest);
   return (
     <div className="flex h-[47.5rem] flex-col border border-line bg-page">
-      <ViewMain
-        gutters="session"
-        header={(
-          <SessionPageHead
-            session={ATTEMPT} title={title} shown="working" onAct={() => {}}
-            facts={sessionFacts(i18n.t.bind(i18n), {
-              session: ATTEMPT, shown: 'working',
-              grouping: { session: ATTEMPT.id, group: 'working', shown: 'working', archived: false, teammate: false, strikes: 3 },
-            })}
-            acts={['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']}
-          />
-        )}
-      >
+      <ViewMain gutters="session">
         <AttendedSession
           session={ATTEMPT} quest={quest} headed
           chain={buildChain(quest.id, [quest], [...FAILED_BEFORE, ATTEMPT])}

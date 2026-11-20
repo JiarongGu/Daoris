@@ -126,7 +126,7 @@ function ProposedRule({ proposal, busy, onAnswer, heard, onConversation, marked,
       </p>
       {/* The session's reason, as it wrote it (content, shown as it is). */}
       {proposal.why && <p className="m-0 whitespace-pre-wrap text-small text-ink-soft">{proposal.why}</p>}
-      <p className="m-0 font-mono text-meta text-ink-faint">{t('work.wait.rule.proposed', { ago: ago(proposal.proposed) })}</p>
+      <p className="m-0 font-mono text-caption text-ink-faint">{t('work.wait.rule.proposed', { ago: ago(proposal.proposed) })}</p>
       {!heard && <p className="m-0 text-small text-ink-soft">{t('work.wait.rule.unheard')}</p>}
       {onAnswer && !asking && (
         <div className="mt-1 flex flex-wrap items-center gap-2">

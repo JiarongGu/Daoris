@@ -1,0 +1,18 @@
+{
+  "work.exchange.asked": "Asked {{who}}",
+  "work.exchange.back": "{{who}}: {{outcome}}",
+  "work.exchange.findings_one": "{{count}} finding",
+  "work.exchange.findings_other": "{{count}} findings",
+  "work.exchange.judged.here": "on this session’s work",
+  "work.exchange.judged.part": "on an earlier part’s work",
+  "work.exchange.open": "Open its session",
+  "work.exchange.toDock": "Waits on you, in the dock",
+  "work.exchange.quest.asked": "Asked #{{quest}} of {{repository}}",
+  "work.exchange.quest.question": "its question",
+  "work.exchange.quest.back": "#{{quest}}: {{outcome}}",
+  "work.exchange.quest.open": "Open the quest",
+  "work.exchange.askedBy": "Its quest was published by another session",
+  "work.exchange.resumed": "Resumed after #{{quest}} came back",
+  "work.exchange.channel.note": "Your words, to {{to}} on the channel.",
+  "work.exchange.channel.cancel": "Cancel"
+}

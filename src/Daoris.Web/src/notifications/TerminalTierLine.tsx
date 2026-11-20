@@ -21,7 +21,7 @@ function PressLine({ press, onOpen }: { press: TerminalPress; onOpen: (press: Te
       {press.target && (opens
         ? <Button variant="ghost" aria-label={t('notifications.terminalTier.openLabel', { target: press.target })} onClick={() => onOpen(press)}>{press.target}</Button>
         : <span className="text-ink-soft">{press.target}</span>)}
-      {press.command && <code className="text-meta text-ink-soft">{press.command}</code>}
+      {press.command && <code className="text-caption text-ink-soft">{press.command}</code>}
       <time dateTime={press.at} className="text-ink-faint">{clockOf(press.at, undefined, i18n.language)}</time>
       <span data-terminal-outcome={press.outcome} className="text-ink-faint">{outcome}</span>
     </li>

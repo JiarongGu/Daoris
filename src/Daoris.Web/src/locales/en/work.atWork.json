@@ -11,7 +11,7 @@
   "work.atWork.part.earlier_one": "{{count}} earlier part",
   "work.atWork.part.earlier_other": "{{count}} earlier parts",
   "work.atWork.waitingOn": "Waiting on {{what}}",
-  "work.atWork.openAtWork": "Open At work",
+  "work.atWork.toRow": "Show its row",
   "work.atWork.open": "Open",
   "work.atWork.coworkers": "Co-workers",
   "work.atWork.coworker.helper": "{{agent}}, as helper",

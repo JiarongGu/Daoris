@@ -37,7 +37,7 @@ describe('a repository\'s git remotes', () => {
     const onSetUp = vi.fn();
     draw(<GitRemotes remotes={[AZURE, { ...ORIGIN, name: 'backup', address: '/mnt/backup', host: null, way: null, serves: 'local', label: null }]} identities={[DEPLOY]} acts={{ use: vi.fn(), onSetUp }} />);
 
-    expect(screen.getByText('No git identity')).toHaveClass('text-ink-danger');
+    expect(screen.getByText('No git identity')).toHaveClass('text-fail-ink');
     await userEvent.click(screen.getByRole('button', { name: 'Set one up…' }));
     expect(onSetUp).toHaveBeenCalledWith('dev.azure.com');
     expect(screen.getByText('A local path: no identity needed.')).toBeInTheDocument();

@@ -68,7 +68,6 @@ export type TraceAskLink = {
   sentence?: string | null;
   /** Null where the service answers none: a host from before they were kept, which is not the same as none said. */
   words?: TraceWord[] | null;
-  wordsKeptFrom?: string | null;
   /** Null where the service answers none: a host from before them. */
   goAheads?: TraceGoAhead[] | null;
 };

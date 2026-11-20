@@ -112,7 +112,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
     <div className="grid min-w-0 gap-4">
       {(choice?.plugin || about) && (
         <div className="grid min-w-0 gap-1">
-          {choice?.plugin && <p className="m-0 text-meta text-ink-soft">{t('workflow.edit.inspector.by', { plugin: choice.plugin })}</p>}
+          {choice?.plugin && <p className="m-0 text-caption text-ink-soft">{t('workflow.edit.inspector.by', { plugin: choice.plugin })}</p>}
           {about && <Prose className="text-small">{about}</Prose>}
         </div>
       )}
@@ -220,7 +220,7 @@ function RemoveConfirm({ palette, draft, node, titleOf, onRemove, onCancel }: {
       <p className="m-0 text-small text-ink">{t('workflow.edit.remove.says', { step: titleOf(node.id) })}</p>
       {ending && (
         <div className="grid min-w-0 gap-1">
-          <span className="text-meta text-ink-soft">{t('workflow.edit.remove.end')}</span>
+          <span className="text-caption text-ink-soft">{t('workflow.edit.remove.end')}</span>
           <SelectField ariaLabel={t('workflow.edit.remove.end')} value={end} onChange={setEndAt}
             options={[{ value: NONE, label: t('workflow.edit.remove.endNone') }, ...mayEnd.map((each) => ({ value: each.id, label: titleOf(each.id) }))]} />
         </div>
@@ -265,7 +265,7 @@ function Carries({ draft, node, titleOf, onChange }: {
           ? [{ value: valueOf(fed.from, fed.fromPort ?? ''), label: label(fed.from, fed.fromPort ?? '') }] : [];
         return (
           <div key={input} className="grid min-w-0 gap-1">
-            <span className="text-meta text-ink-soft">{t('workflow.edit.carries.input', { input })}</span>
+            <span className="text-caption text-ink-soft">{t('workflow.edit.carries.input', { input })}</span>
             <SelectField
               ariaLabel={t('workflow.edit.carries.label', { step: title, input })}
               value={fed && fed.from !== null ? valueOf(fed.from, fed.fromPort ?? '') : NONE}
@@ -282,8 +282,8 @@ function Carries({ draft, node, titleOf, onChange }: {
                 ...sources.map((source) => ({ value: valueOf(source.from, source.port), label: label(source.from, source.port) })),
               ]}
             />
-            {sources.length === 0 && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.carries.none')}</p>}
-            {asking.has(input) && <p className="m-0 text-meta text-ink">{t('workflow.edit.carries.asks')}</p>}
+            {sources.length === 0 && <p className="m-0 text-caption text-ink-faint">{t('workflow.edit.carries.none')}</p>}
+            {asking.has(input) && <p className="m-0 text-caption text-ink">{t('workflow.edit.carries.asks')}</p>}
           </div>
         );
       })}
@@ -344,7 +344,7 @@ function MoreWays({ palette, draft, node, titleOf, onChange }: {
         {join === 'recorded' && <p className="m-0 text-small text-ink-soft">{t('workflow.edit.more.joinRecorded')}</p>}
         {(join === 'all' || join === 'any') && (
           <div className="grid min-w-0 gap-1">
-            <span className="text-meta text-ink-soft">{t('workflow.edit.more.join')}</span>
+            <span className="text-caption text-ink-soft">{t('workflow.edit.more.join')}</span>
             <SelectField
               ariaLabel={t('workflow.edit.more.join')}
               value={join}

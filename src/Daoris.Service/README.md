@@ -395,9 +395,7 @@ worked out from the quests on every read and never stored, so a quest closed on 
 counts when it syncs in. The default list hides a done ask as it hides a closed one. An ask also keeps
 **the person's words after it** (DRIFT1a, D133 §1): each answer to a session on its work, each message
 added to one, and each word said to one after it ended once a session took it (`reopened`, MSG1a),
-verbatim, with when, the session and its quest, after its own sentence (`words`). They are
-not back-filled, so an ask from before says from when they are kept (`wordsKeptFrom`).
-
+verbatim, with when, the session and its quest, after its own sentence (`words`).
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
 drift, and the same ask would be deliverable through one door and refused at the other, which for a

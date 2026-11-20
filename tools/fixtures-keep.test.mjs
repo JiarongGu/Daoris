@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { KEPT, removeStale, stale } from './fixtures-keep.mjs';
+import { KEPT, removeStale, stale, sweepFixtures } from './fixtures-keep.mjs';
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
 mkdirSync(join(REPO, '_fixtures'), { recursive: true });
@@ -67,6 +67,19 @@ test('TESTDIET1: a link is never followed nor removed, and what it names outside
     assert.equal(existsSync(join(root, '_fixtures', 'old')), false);
     assert.equal(existsSync(join(root, '_fixtures', 'linked')), true);
     assert.equal(existsSync(join(outside, 'kept.txt')), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the sweep the prune runs removes what the rule says, and refuses a folder git does not ignore', () => {
+  const root = checkout([{ name: 'left-by-a-killed-run', hours: 72 }, { name: 'today', hours: 1 }, { name: KEPT[1], hours: 900 }]);
+  try {
+    const done = sweepFixtures(root, { now: NOW, hours: 24 });
+    assert.deepEqual([done.removed, done.held], [['left-by-a-killed-run'], []]);
+    assert.equal(existsSync(join(root, '_fixtures', 'today')), true);
+    assert.equal(existsSync(join(root, '_fixtures', KEPT[1])), true);
+    assert.throws(() => sweepFixtures(join(root, 'no-such-checkout'), { now: NOW }), /does not ignore/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

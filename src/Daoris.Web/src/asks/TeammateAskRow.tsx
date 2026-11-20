@@ -31,8 +31,8 @@ export function TeammateAskRow({ ask, chosen = false, onOpen }: { ask: Elsewhere
           {ask.unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: ask.unread })}</Pill>}
         </span>
         <span className="mt-0.5 block truncate font-mono text-body text-ink">#{ask.id}</span>
-        <span className="block truncate font-mono text-meta text-ink-faint">
-          {ask.workspace && <><span className="text-accent">{t('asks.card.workspace', { workspace: ask.workspace })}</span> · </>}
+        <span className="block truncate font-mono text-caption text-ink-faint">
+          {ask.workspace && <><span className="text-accent-ink">{t('asks.card.workspace', { workspace: ask.workspace })}</span> · </>}
           {t('asks.elsewhere.latest', { ago: ago(ask.latest) })}
         </span>
       </ListRowDoor>

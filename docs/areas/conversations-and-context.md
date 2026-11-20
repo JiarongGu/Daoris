@@ -206,7 +206,8 @@ of everything it handed, section by section.
     record is shown `starting` as it opens, before its tree's files, and the files stage says its own waits on it. (from D163, D188)
 29. A hand-over is refused for Ask Daoris, for the same agent and account, for a closed quest, for a tree that is gone, and
     for a session the person parked. (from D163, D212)
-    *Go on in a new session*, the words a cooling account holds on a driven record, is the same press naming no agent:
+    *Go on in a new session*, the words a cooling account holds on a driven record, or words a session awaiting its step could
+    not go on with (marked, driving rule 28), is the same press naming no agent:
     `SESSION_HAND_OVER` without `agent` (and `daoris session hand-over <id>`) keeps the choice for the next look, and
     answers `{sessionId: null, kept, why, message}` with `GoOnNew`'s codes. `SESSION_GO_ON_NEW` and `go-on-new` are gone.
     *Go on with Daoris's brief* is the same press for a conversation, a closed quest's session or Ask Daoris's: where `GoOnNew`

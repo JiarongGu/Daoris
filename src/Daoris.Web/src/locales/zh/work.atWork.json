@@ -11,7 +11,7 @@
   "work.atWork.part.earlier_one": "更早的 {{count}} 段",
   "work.atWork.part.earlier_other": "更早的 {{count}} 段",
   "work.atWork.waitingOn": "在等{{what}}",
-  "work.atWork.openAtWork": "打开分工",
+  "work.atWork.toRow": "查看其行",
   "work.atWork.open": "打开",
   "work.atWork.coworkers": "同事",
   "work.atWork.coworker.helper": "{{agent}}，作为助手",

@@ -487,7 +487,7 @@ export function PlaceWorkflowView({
         {landed && start && (
           <LandedLines landed={start.landed} page={page} repository={page === 'repository' ? name : null} onVerify={onVerify} />
         )}
-        {!editor && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
+        {!editor && <p className="m-0 text-caption text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>}
         {!wide && drawn && <div ref={setSlot} className="min-w-0" />}
         {landing ? landing({ asked: asked.section, again: asked.n, lead: [...gates, ...repositories], lands }) : gates.length + repositories.length > 0 && <FoldRow folds={[...gates, ...repositories]} />}
       </div>

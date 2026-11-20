@@ -51,7 +51,7 @@ public static class GitHostKeys
 
     private static IEnumerable<string> Lists(string? home, string baseDirectory)
     {
-        if (home is not null) yield return Path.Combine([DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, .. ToolResources.Layout]);
+        if (home is not null) yield return Path.Combine([DaorisHome.FolderOf(Path.GetFullPath(home)), .. ToolResources.Layout]);
         yield return Path.Combine(baseDirectory, ToolResources.FileName);
     }
 

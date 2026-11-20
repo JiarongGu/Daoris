@@ -88,7 +88,7 @@ export function SignInSteps({
   ) : switchTo ? (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       {switchTo}
-      {other === 'browser' && <span className="text-meta text-ink-faint">{t('signin.switch.deviceHint')}</span>}
+      {other === 'browser' && <span className="text-caption text-ink-faint">{t('signin.switch.deviceHint')}</span>}
     </div>
   ) : null;
 
@@ -178,16 +178,16 @@ function Link({ url, acts, hint = true }: { url: string; acts: SignInActs; hint?
       <ExternalLink
         href={url}
         system
-        className="inline-flex max-w-full items-center gap-1 truncate font-mono text-small text-accent underline-offset-2 hover:underline"
+        className="inline-flex max-w-full items-center gap-1 truncate font-mono text-small text-accent-ink underline-offset-2 hover:underline"
       >
-        <Icon name="external" size={12} />
+        <Icon name="external" size={12} className="text-ink-soft" />
         <span className="truncate">{url}</span>
       </ExternalLink>
       <Button variant="ghost" onClick={() => acts.onCopy('link', url)}>
         <Icon name="copy" size={12} />
         {acts.copied === 'link' ? t('signin.copied') : t('signin.copy')}
       </Button>
-      {hint && <span className="text-meta text-ink-faint">{t('signin.step.openHint')}</span>}
+      {hint && <span className="text-caption text-ink-faint">{t('signin.step.openHint')}</span>}
     </div>
   );
 }
@@ -232,7 +232,7 @@ function Browser({ read, since, acts }: { read: ToolRead; since: number | null; 
           <Remaining
             until={since + read.minutes * 60_000}
             say={(time) => t('signin.device.expires', { time })}
-            className="block text-meta text-ink-faint"
+            className="block text-caption text-ink-faint"
           />
         )}
         {read.url && <Link url={read.url} acts={acts} hint={false} />}

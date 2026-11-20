@@ -11,6 +11,10 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>Each git is handed the tools' environment as every child is, with a scratch home of the test's own and no system file; its
 /// scratch is the repository's <c>_fixtures/</c>.</remarks>
+[Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Process)]
+[Trait(Category.Needs, Needed.Git)]
+[Trait(Category.Parallel, Category.Git)]
 public sealed class GitGlobalFileGitTests : IDisposable
 {
     private const string Ssh = "C:/Windows/System32/OpenSSH/ssh.exe";

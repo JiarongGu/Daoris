@@ -57,7 +57,7 @@ export function Minimap({ world, view, viewport, boxes, onGo }: {
       <canvas ref={layer} width={width} height={height} className="absolute inset-0" />
       <div
         data-canvas-minimap-view=""
-        className="pointer-events-none absolute border border-accent bg-accent/10"
+        className="pointer-events-none absolute border border-accent bg-accent-soft"
         style={{ left: geometry.rect.x, top: geometry.rect.y, width: geometry.rect.w, height: geometry.rect.h }}
       />
     </div>

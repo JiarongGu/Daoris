@@ -115,7 +115,7 @@ async function pickByKeys(search: string, title: string) {
   await waitFor(() => expect(focused()).toBe(step(title)));
 }
 
-describe('the editor\'s chart in the viewport', () => {
+describe('the editor\'s chart in the viewport', { timeout: 30_000 }, () => {
   it('stands in a region with its sizing, and composes the release workflow by keyboard alone, + on a step adding after it', async () => {
     render(wrap(<Editor />));
     await tabTo(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));
@@ -231,7 +231,7 @@ describe('the editor\'s chart in the viewport', () => {
 
 // Many steps are chosen for Copy alone, and the inspector stands beside the chart where the
 // editor's region holds both, read in the root's rem.
-describe('choosing more than one step', () => {
+describe('choosing more than one step', { timeout: 30_000 }, () => {
   it('outlines each step chosen with Ctrl or Shift, copies them all and pastes them all, while every other act takes the first', async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));

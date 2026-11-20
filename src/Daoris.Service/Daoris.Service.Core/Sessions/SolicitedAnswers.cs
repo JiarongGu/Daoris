@@ -149,6 +149,7 @@ internal static class SolicitedAnswers
             // An open conversation between turns is working: the chat runner says the word as its next turn. One still being started is not open yet.
             { Kind: SessionKind.Chat, State: SessionState.Working } => null,
             { Kind: SessionKind.Driven, State: SessionState.Working } when ask.Running => null,
+            { State: SessionState.AwaitingStep } => null,
             { Active: true } =>
                 $"Session `{head.Id}` is {Session.Spell(head.State)}: {ask.Reaches} reaches a running session at its turn's end, never into a step in flight",
             _ => null,

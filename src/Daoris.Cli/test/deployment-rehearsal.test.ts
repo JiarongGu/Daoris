@@ -50,7 +50,7 @@ test('the offers check names an offer not carried and one installed, and passes 
 
   assert.deepEqual(offerProblems(install, [home]), []);
 
-  fx.write(`home/plugins/${OFFERED_PLUGINS[0]}/plugin.json`, '{}');
+  fx.write(`home/data/plugins/${OFFERED_PLUGINS[0]}/plugin.json`, '{}');
   assert.deepEqual(offerProblems(install, [home]), [`${OFFERED_PLUGINS[0]} is installed under ${home}`]);
 
   const bare = join(fx.root, 'bare');

@@ -49,14 +49,14 @@ export function WorkflowHead({ page, name, current }: { page: 'repository' | 'wo
   return (
     <section aria-labelledby={headId} className="grid min-w-0 gap-1.5">
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 id={headId} className="m-0 text-title font-semibold text-ink">{t('workflow.head.title')}</h2>
+        <h2 id={headId} className="m-0 text-heading font-semibold text-ink">{t('workflow.head.title')}</h2>
         <Tip content={t('workflow.versionTip')}>
-          <span className="font-mono text-meta text-ink-faint">{t('workflow.version', { version: current.version })}</span>
+          <span className="font-mono text-caption text-ink-faint">{t('workflow.version', { version: current.version })}</span>
         </Tip>
       </div>
       <Prose className="text-small"><Inline text={read} /></Prose>
       <Prose className="text-ink"><Inline text={partSaid(t, current)} /></Prose>
-      <p className="m-0 text-meta text-ink-faint">
+      <p className="m-0 text-caption text-ink-faint">
         <Inline text={page === 'repository'
           ? t('workflow.twin.repository', { repository: name })
           : t('workflow.twin.workspace', { workspace: name })}
@@ -143,7 +143,7 @@ function Compose({ editor, place }: { editor?: WorkflowEditorBridge; place: { re
             {editor && (
               <Button variant="ghost" className="justify-self-start border border-line" onClick={() => show(true)}>{t('workflow.compose.open')}</Button>
             )}
-            <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>
+            <p className="m-0 text-caption text-ink-faint"><Inline text={t('workflow.compose.twin')} /></p>
           </div>
         )}
     </PageSection>
@@ -194,7 +194,7 @@ function Repositories({ repositories, onOpen }: {
                           {repository}
                         </span>
                       )}
-                    <span className="justify-self-start rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
+                    <span className="justify-self-start rounded-full border border-line-strong px-2 py-px text-caption text-ink-soft">
                       {t(own ? 'workflow.repositories.own' : 'workflow.repositories.follows')}
                     </span>
                   </li>

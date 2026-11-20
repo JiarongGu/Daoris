@@ -69,7 +69,7 @@ export function itemOf(view: View, chosen: string | null | undefined, standing: 
 }
 
 const VIEW_NAMES: Record<ViewId, string> = {
-  notifications: 'Notifications', timeline: 'the timeline', outputs: 'Outputs', workflow: 'the workflow', atWork: 'At work',
+  notifications: 'Notifications', timeline: 'the timeline', outputs: 'Outputs',
   ask: 'Ask Daoris', console: 'the console', terminal: 'the terminal',
 };
 

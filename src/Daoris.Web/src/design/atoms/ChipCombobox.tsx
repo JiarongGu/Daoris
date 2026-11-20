@@ -5,7 +5,7 @@ import { isComposing } from '../../lib/composing';
 /** A chip's frame, the composers' alike: a rounded token a size down from the prompt, pressed to choose. */
 export const CHIP = cn(
   'inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-full border border-line bg-raised px-2.5 text-small text-ink-soft',
-  'cursor-pointer transition-colors duration-(--speed) hover:bg-accent-soft hover:text-ink',
+  'cursor-pointer transition-colors duration-(--duration-quick) hover:bg-accent-soft hover:text-ink',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
   'aria-expanded:bg-accent-soft aria-expanded:text-ink',
 );
@@ -217,7 +217,7 @@ export function ChipCombobox({
             {shown.filter((group) => group.rows.length > 0).map((group) => (group.name || group.label ? (
               <div key={group.key} role="group" aria-label={group.label ?? group.name}>
                 {group.head}
-                {group.name && <div aria-hidden className="px-2 pb-0.5 pt-1.5 text-meta text-ink-faint">{group.name}</div>}
+                {group.name && <div aria-hidden className="px-2 pb-0.5 pt-1.5 text-caption text-ink-faint">{group.name}</div>}
                 {group.rows.map(row)}
               </div>
             ) : <Fragment key={group.key}>{group.rows.map(row)}</Fragment>))}

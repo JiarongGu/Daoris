@@ -33,11 +33,9 @@ export function useDoors({ lists, open, setWorkIntent, t, messages, view, attend
   // view precisely so a door can name which session it is opening (one selection, every
   // region) — the view change alone would land the person on whatever they last attended.
   const openInWork = (session: string) => open('sessions', session);
-  // A door into a run: its session attended in Sessions, the Workflow view opened on it.
+  // A door into a run: its session attended in Sessions, its run's flowchart opened as its track's *Flowchart* opens it.
   const openRun = (session: string) => { open('sessions', session); setWorkIntent('workflow'); };
   const openReview = (run: string, session?: string | null) => { open('sessions', session ?? attending); setWorkIntent(`outputs/${run}`); };
-  // A line of work of an ask folded to a count: its own view, the session attended with *At work* open on it.
-  const openAtWork = (session: string) => { open('sessions', session); setWorkIntent('atWork'); };
   // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
   const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
@@ -61,5 +59,5 @@ export function useDoors({ lists, open, setWorkIntent, t, messages, view, attend
   // Where a starter's, a setup step's or Ask Daoris's door leads: a view and the item
   // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Repositories.
   const go = (door: StarterDoor) => apply(doorOpening(door, circle));
-  return { openInWork, openRun, openReview, openAtWork, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer };
+  return { openInWork, openRun, openReview, openQuest, openAsk, go, messageAnnouncements, setAttending, openAnswer };
 }

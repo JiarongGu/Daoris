@@ -113,7 +113,7 @@ export function HowItCameToBe({
             </ol>
           )}
           {answer && (answer.unread.length > 0 || !chain) && (
-            <p className="m-0 text-meta text-ink-faint"><Inline text={t('work.trace.terminal', { kind, id })} /></p>
+            <p className="m-0 text-caption text-ink-faint"><Inline text={t('work.trace.terminal', { kind, id })} /></p>
           )}
         </div>
       )}
@@ -146,7 +146,7 @@ function Step({ icon, head, source, children }: { icon: IconName; head: ReactNod
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-body text-ink">
         <Icon name={icon} size={14} className="text-ink-faint" />
         {head}
-        {source && <span className="text-meta text-ink-faint">{t('work.trace.from', { source: t(`work.trace.source.${source}`) })}</span>}
+        {source && <span className="text-caption text-ink-faint">{t('work.trace.from', { source: t(`work.trace.source.${source}`) })}</span>}
       </div>
       {children}
     </div>
@@ -158,7 +158,7 @@ function Gap({ text }: { text: string }) {
   const { t } = useTranslation();
   return (
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-      <span className="mr-1.5 inline-block rounded-control border border-dashed border-line-strong px-1 align-baseline text-meta leading-[1.4] text-ink-faint">
+      <span className="mr-1.5 inline-block rounded-control border border-dashed border-line-strong px-1 align-baseline text-caption leading-[1.4] text-ink-faint">
         {t('work.trace.missing')}
       </span>
       <Inline text={text} />
@@ -180,7 +180,7 @@ function Door({ label, onOpen }: { label: string; onOpen?: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-accent underline-offset-2 hover:underline"
+      className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-accent-ink underline-offset-2 hover:underline"
     >
       {label}
     </button>
@@ -191,7 +191,7 @@ function Door({ label, onOpen }: { label: string; onOpen?: () => void }) {
 function Said({ meta, children }: { meta?: string; children: string }) {
   return (
     <div className="grid min-w-0 gap-0.5">
-      {meta && <span className="text-meta text-ink-faint">{meta}</span>}
+      {meta && <span className="text-caption text-ink-faint">{meta}</span>}
       <blockquote className="m-0 whitespace-pre-wrap border-l-2 border-line-strong pl-2 text-body text-ink [overflow-wrap:anywhere]">
         {children}
       </blockquote>
@@ -204,8 +204,8 @@ function Recorded({ meta, text }: { meta?: string; text: string }) {
   const { t } = useTranslation();
   return (
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-      {meta && <span className="mr-1.5 text-meta text-ink-faint">{meta}</span>}
-      <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-meta leading-[1.4] text-ink-faint">
+      {meta && <span className="mr-1.5 text-caption text-ink-faint">{meta}</span>}
+      <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-caption leading-[1.4] text-ink-faint">
         {t('work.handed.recorded')}
       </span>
       <Inline text={text} />
@@ -217,7 +217,7 @@ function Recorded({ meta, text }: { meta?: string; text: string }) {
 function Part({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-1">
-      <span className="text-meta font-semibold text-ink-faint">{title}</span>
+      <span className="text-caption font-semibold text-ink-faint">{title}</span>
       {children}
     </div>
   );
@@ -256,7 +256,6 @@ function AskStep({ ask, doors }: { ask: TraceAskLink; doors: Doors }) {
       {ask.words ? (
         <Part title={t('work.trace.ask.words')}>
           {ask.words.map((word, index) => <Said key={index} meta={`${at(word.at)} · ${given(t, word)}`}>{word.text}</Said>)}
-          {ask.wordsKeptFrom && <p className="m-0 text-small text-ink-soft">{t('work.trace.ask.wordsKeptFrom', { at: at(ask.wordsKeptFrom) })}</p>}
         </Part>
       ) : (
         <Part title={t('work.trace.ask.words')}>
@@ -344,7 +343,7 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
               <li key={requirement.number} className="grid min-w-0 gap-0.5">
                 <Said meta={`${requirement.number} · ${t('work.trace.quest.check', { check: requirement.check })}`}>{requirement.quote}</Said>
                 <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-                  <span className={cn(requirement.answer === 'met' ? 'text-ink-done' : requirement.answer === 'departed' ? 'text-ink-open' : 'text-ink-faint')}>
+                  <span className={cn(requirement.answer === 'met' ? 'text-ok-ink' : requirement.answer === 'departed' ? 'text-ink-open' : 'text-ink-faint')}>
                     {t(`work.trace.answer.${requirement.answer}`)}
                   </span>
                   {requirement.met && `${t('work.trace.colon')}${requirement.met}`}
@@ -383,7 +382,7 @@ function Records({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
       {quest.records.map((record) => (
         <span key={record.id} className="inline-flex items-baseline gap-1">
           <Door label={record.id} onOpen={doors.session(record.id)} />
-          <span className="text-meta text-ink-faint">{t(`sessionState.${record.state}`, { defaultValue: record.state })}</span>
+          <span className="text-caption text-ink-faint">{t(`sessionState.${record.state}`, { defaultValue: record.state })}</span>
         </span>
       ))}
     </p>
@@ -560,11 +559,11 @@ function Landed({ branch }: { branch: TraceBranch }) {
         {branch.pullRequest && branch.pushed && (
           <>
             {' · '}
-            <ExternalLink href={branch.pullRequest} className="text-accent underline underline-offset-2">{t('work.trace.session.pullRequest')}</ExternalLink>
+            <ExternalLink href={branch.pullRequest} className="text-accent-ink underline underline-offset-2">{t('work.trace.session.pullRequest')}</ExternalLink>
           </>
         )}
       </p>
-      <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={accepted.join(' · ')} /></p>
+      <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]"><Inline text={accepted.join(' · ')} /></p>
     </div>
   );
 }

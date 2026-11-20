@@ -16,6 +16,8 @@
 
   "localInputs": ["local/lyntai-local.props", "local/shenora-local.props"],
 
+  "generated": [{ "paths": "tools/size-ratchet.json", "run": "node tools/size-ratchet.mjs --shrink" }],
+
   "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
 
   "gates": [
@@ -70,7 +72,7 @@
         "src/Daoris.Service/Daoris.Service.Shared/", "src/Daoris.Ports/Daoris.Ports.csproj", "src/Daoris.Ports/Memory/",
         "src/Daoris.Adapters/Daoris.Adapters.Memory.Lyntai/", "tools/fsx.mjs"
       ] },
-    { "name": "layers", "timeoutMinutes": 15, "timeoutWhy": "no recent green wall time (killed at 10.0 min on a quiet machine): 10 x 1.5; re-set from the next green wall time", "run": "node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-boundary.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests",
+    { "name": "layers", "timeoutMinutes": 15, "timeoutWhy": "no recent green wall time (killed at 10.0 min on a quiet machine): 10 x 1.5; re-set from the next green wall time", "run": "node tools/layers-census.mjs && node tools/test-sets.mjs run --gate layers && dotnet test src/Daoris.Testing.Tests",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json", "Directory.Build.props",
         "src/", "tools/fsx.mjs", "tools/partials.mjs", "tools/merge/lanes-file.ts", "tools/layers-census.mjs", "tools/layers-census.json",
@@ -96,7 +98,7 @@
         "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
         "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
-    { "name": "reached", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
+    { "name": "reached", "timeoutMinutes": 20, "timeoutWhy": "13.4 min p90 of the merges run with no budget (2026-11-14 to 20) x 1.5; under load it runs on past it (MERGENOKILL1)", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
         "src/", "tools/", "examples/", "canon/"
@@ -266,6 +268,38 @@
         "tools/service-publish.mjs", "tools/stage-package.mjs", "tools/test-failures.mjs", "tools/desktop/", "tools/desktop-publish/"
       ] }
   ],
+
+  "tests": {
+    "_why": "The test files each runner runs, as sets of patterns, so a new test file under a pattern is run, censused and reached with no list to edit (TESTSCOPE1). A file is in the first set whose files hold it; gate names who runs a set (node tools/test-sets.mjs run --gate <gate>), suite the census's name for its units, cwd where its runner starts, last a set run after the rest of its gate's, bounded a set reached only within its gate's paths, of a pick of another set run apart. The .NET halves are their gates' dotnet test commands, by project and filter.",
+    "sets": [
+      { "name": "layers", "gate": "layers", "runner": "node", "files": ["tools/layers-census*.test.mjs"] },
+      { "name": "tool-tests", "gate": "tool-tests", "runner": "node", "cwd": "src/Daoris.Cli",
+        "files": ["src/Daoris.Cli/tool-test/**/*.test.ts", "tools/team-briefs.test.mjs"], "whole": ["src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/package.json"],
+        "args": ["--test-timeout=1800000", "--test-force-exit", "--test-reporter=spec", "--test-reporter-destination=stdout", "--test-reporter=junit", "--test-reporter-destination=../../_fixtures/test-timing/tool-tests.xml"] },
+      { "name": "tool-e2e", "gate": "tool-e2e", "runner": "node", "cwd": "src/Daoris.Cli", "bounded": true,
+        "files": ["src/Daoris.Cli/tool-test/**/*.e2e.ts", "tools/as-merged.test.mjs"], "whole": ["src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/package.json"],
+        "args": ["--test-concurrency=4", "--test-timeout=1800000", "--test-force-exit", "--test-reporter=spec", "--test-reporter-destination=stdout", "--test-reporter=junit", "--test-reporter-destination=../../_fixtures/test-timing/tool-e2e.xml"] },
+      { "name": "merge-e2e", "gate": "tool-e2e", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "e2e", "timeoutMs": 120000, "bounded": true,
+        "files": ["tools/merge/**/*.e2e.ts"], "whole": ["tools/vitest.config.ts", "src/Daoris.Cli/package.json"],
+        "args": ["--reporter=default", "--reporter=json", "--outputFile.json=_fixtures/test-timing/tool-e2e.json"] },
+      { "name": "cli", "gate": "cli-tests", "suite": "cli", "runner": "node", "cwd": "src/Daoris.Cli",
+        "files": ["src/Daoris.Cli/test/**/*.ts"], "whole": ["src/Daoris.Cli/tsconfig.json", "src/Daoris.Cli/package.json"] },
+      { "name": "merge-unit", "gate": "cli-tests", "suite": "cli", "runner": "vitest", "config": "tools/vitest.config.ts", "project": "unit", "timeoutMs": 10000,
+        "files": ["tools/merge/**/*.test.ts"], "whole": ["tools/vitest.config.ts"],
+        "args": ["--reporter=default", "--reporter=json", "--outputFile.json=_fixtures/test-timing/tool-unit.json"] },
+      { "name": "lyntai-local", "gate": "cli-tests", "suite": "cli", "runner": "node", "last": true, "files": ["tools/lyntai-local.test.mjs"],
+        "_why": "it rewrites the local props file the contracts test rewrites, and the two raced when run together" },
+      { "name": "tools", "gate": "cli-tests", "suite": "cli", "runner": "node", "files": ["tools/*.test.mjs"] },
+      { "name": "web-rules", "gate": "web-rules", "runner": "vitest", "cwd": "src/Daoris.Web", "of": "web-unit",
+        "files": ["src/Daoris.Web/src/design/tokens.test.ts", "src/Daoris.Web/src/test/structure.test.ts", "src/Daoris.Web/src/test/providerCensus.test.ts", "src/Daoris.Web/src/design/presentational.test.ts", "src/Daoris.Web/src/design/pageMeasure.test.tsx"] },
+      { "name": "web-unit", "gate": "web-unit", "runner": "vitest", "cwd": "src/Daoris.Web", "files": ["src/Daoris.Web/src/**/*.test.{ts,tsx}"],
+        "whole": ["src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/test/setup.tsx", "src/Daoris.Web/tsconfig.json", "src/Daoris.Web/package.json"], "setup": "src/Daoris.Web/src/test/setup.tsx" },
+      { "name": "web", "gate": "web", "runner": "playwright", "cwd": "src/Daoris.Web", "files": ["src/Daoris.Web/e2e/**/*.spec.ts"],
+        "whole": ["src/Daoris.Web/playwright.config.ts", "src/Daoris.Web/package.json", "src/Daoris.Web/tsconfig.json"] },
+      { "name": "web-measured", "gate": "web-measured", "runner": "playwright", "cwd": "src/Daoris.Web", "files": ["src/Daoris.Web/measured/**/*.spec.ts"],
+        "whole": ["src/Daoris.Web/playwright.measured.config.ts", "src/Daoris.Web/package.json"] }
+    ]
+  },
 
   "unasked": {
     "_why": "What an agent may do here without asking, accepted once by the owner (2026-11-15) and read by tools: each grant an exact act. The owner calls are named as excluded, so the boundary is visible. A change to this entry takes effect once it has landed and the owner has accepted it.",

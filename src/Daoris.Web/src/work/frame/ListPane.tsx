@@ -118,7 +118,7 @@ export function ListPane({
   const control = 'h-6 w-6 justify-center px-0';
   const header = (
     <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line pl-3 pr-1.5">
-      <span className="mr-auto min-w-0 truncate text-meta uppercase tracking-[0.06em] text-ink-faint">{name}</span>
+      <span className="mr-auto min-w-0 truncate text-caption uppercase tracking-[0.06em] text-ink-faint">{name}</span>
       {make && <MakeButton make={make} className={control} />}
       {more}
       <Tip content={labels.close}>
@@ -132,7 +132,7 @@ export function ListPane({
   const body = (
     <div
       aria-busy={resyncing || undefined}
-      className={cn('min-h-0 flex-1 overflow-y-auto', resyncing && 'opacity-60 transition-opacity duration-(--speed)')}
+      className={cn('min-h-0 flex-1 overflow-y-auto', resyncing && 'opacity-60 transition-opacity duration-(--duration-quick)')}
       onKeyDown={keys}
     >
       {loading
@@ -284,7 +284,7 @@ export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
       aria-current={chosen || undefined}
       onClick={onPress}
       className={cn(
-        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed)',
+        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft/50',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
         dimmed && 'opacity-75',

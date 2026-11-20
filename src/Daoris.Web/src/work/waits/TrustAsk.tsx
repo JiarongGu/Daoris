@@ -69,7 +69,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   if (hold.own) {
     return (
       <WaitingCard title={t('trust.title')}>
-        <p className="m-0 mt-1.5 text-meta text-ink"><PathText path={hold.folder} /></p>
+        <p className="m-0 mt-1.5 text-caption text-ink"><PathText path={hold.folder} /></p>
         <p className="m-0 mt-2 text-body leading-relaxed">{t('trust.ownHome')}</p>
         {onCancel && (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -82,7 +82,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
 
   return (
     <WaitingCard title={t('trust.title')}>
-      <p className="m-0 mt-1.5 text-meta text-ink"><PathText path={hold.folder} /></p>
+      <p className="m-0 mt-1.5 text-caption text-ink"><PathText path={hold.folder} /></p>
       <p className="m-0 mt-2 text-body leading-relaxed">{t('trust.what')}</p>
       <p className="m-0 mt-1.5 text-small text-ink-soft">
         {hold.quest
@@ -90,7 +90,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
           : t('trust.holding.ask', { id: hold.ask ?? '' })}
       </p>
       <p className="m-0 mt-2 text-small text-ink-faint">{t('trust.file')}</p>
-      <p className="m-0 mt-0.5 text-meta text-ink-faint"><PathText path={hold.trustFile} /></p>
+      <p className="m-0 mt-0.5 text-caption text-ink-faint"><PathText path={hold.trustFile} /></p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
           variant="primary"

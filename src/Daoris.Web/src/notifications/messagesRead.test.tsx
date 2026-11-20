@@ -14,7 +14,9 @@ vi.mock('@shenora/react', async (original) => ({
   useShenoraEvent: () => {},
 }));
 
-import { ChannelPanel, ChannelSection } from '../asks/ChannelSection';
+import { ChannelSection } from '../asks/ChannelSection';
+import { LineRow } from '../work/exchanges/LineRows';
+import { lineRowsOf } from '../work/exchanges/rows';
 import { noticesSlice, useMessages } from '../bridge/notices';
 import { useMarkChannel } from '../bridge/sessions/asks';
 import { pushedOf } from '../bridge/state/slices';
@@ -102,9 +104,9 @@ describe("reading an ask's messages", () => {
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Messages' })).toBeNull());
   });
 
-  it("leaves the item where a session's panel shows its part of the channel", async () => {
+  it("leaves the item where a session's timeline shows its line's messages as rows", async () => {
     const client = await live();
-    draw(client, () => <ChannelPanel channel={CHANNEL} only={{ entry: 'db-entry', repository: 'db' }} onPost={() => {}} />);
+    draw(client, () => <>{lineRowsOf({ messages: CHANNEL.items }).map((row) => <LineRow key={row.key} row={row} attended="s1" docked={[]} onToDock={() => {}} />)}</>);
 
     await waitFor(() => expect(screen.getByRole('region', { name: 'Messages' })).toBeInTheDocument());
     await act(() => new Promise((settled) => { setTimeout(settled, 20); }));

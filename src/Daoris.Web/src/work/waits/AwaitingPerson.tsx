@@ -182,7 +182,7 @@ export function AwaitingPerson({
                 className={field}
               />
             </label>
-            {refused && <p role="status" className="m-0 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
+            {refused && <p role="status" className="m-0 text-small text-fail-ink [overflow-wrap:anywhere]">{refused}</p>}
             <div className="flex flex-wrap gap-2">
               {/* The say door keeps words, so an answer with none waits for them, as the box below does. */}
               <Button

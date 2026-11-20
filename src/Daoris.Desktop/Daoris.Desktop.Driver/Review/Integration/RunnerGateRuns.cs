@@ -118,7 +118,7 @@ internal sealed class RunnerGateRuns(
         foreach (var gate in run.Gates.Where(gate => gate.Verdict == RunnerVerdicts.Fail && failures.All(each => each.Gate != gate.Name)))
         {
             var output = ReadLog(gate.Log ?? log);
-            failures.Add(new GateFailure(gate.Name, new RunnerFailure("", gate.Name, FailureReader.GateSignature(gate.Name, "run", output))));
+            failures.Add(new GateFailure(gate.Name, new RunnerFailure("", gate.Name, FailureReader.GateSignature(gate.Name, "run", output, null, gate.Exit))));
         }
 
         return failures;

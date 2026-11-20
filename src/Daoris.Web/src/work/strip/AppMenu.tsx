@@ -48,9 +48,9 @@ function Row({ item, glyphs }: { item: MenuItem; glyphs: boolean }) {
         : glyphs && <span aria-hidden className="w-[0.8125rem] shrink-0" />}
       <span className="truncate">{item.label}</span>
       {item.badge !== undefined && item.badge > 0 && (
-        <span className="ml-auto shrink-0 font-mono text-meta tabular-nums text-ink-faint">{item.badge}</span>
+        <span className="ml-auto shrink-0 font-mono text-caption tabular-nums text-ink-faint">{item.badge}</span>
       )}
-      {item.shortcut && <kbd className="ml-auto shrink-0 pl-4 font-mono text-meta text-ink-faint">{item.shortcut}</kbd>}
+      {item.shortcut && <kbd className="ml-auto shrink-0 pl-4 font-mono text-caption text-ink-faint">{item.shortcut}</kbd>}
     </>
   );
 }
@@ -160,7 +160,7 @@ const NAME = cn(
   // A target of 28 px at least: `py-1` alone gives the fold's ☰ about 23 px and a
   // name 24. A minimum, not a height, so the strip (`h-9`, 36 px) keeps its height and centres the 28 in it.
   'min-h-7 min-w-7 justify-center',
-  'transition-colors duration-(--speed)',
+  'transition-colors duration-(--duration-quick)',
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
   'text-ink-soft hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
 );

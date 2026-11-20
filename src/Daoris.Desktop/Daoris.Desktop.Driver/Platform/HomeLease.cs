@@ -104,7 +104,7 @@ public sealed class HomeLease : IDisposable
     /// Where this build takes a home's lease: the home's <c>home-lease</c> entry, <c>run/home.lease</c>,
     /// whichever spelling of the home is asked.
     /// </summary>
-    public static string PathIn(string home) => DaorisHome.Places(home, HomeEntry.HomeLease)[0];
+    public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.HomeLease);
 
     /// <summary>Take the home, or null with the live holder that already has it.</summary>
     /// <param name="what">A verb's own words, which a refusal names; never its arguments.</param>

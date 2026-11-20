@@ -38,7 +38,7 @@ export function PartsFlow(props: PartsProps) {
                 type="button"
                 tabIndex={-1}
                 onClick={() => onShow(node.id)}
-                className="cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+                className="cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft underline-offset-2 hover:text-ink hover:underline"
               >
                 {t('work.parts.show', { n: at + 1 })}
               </button>

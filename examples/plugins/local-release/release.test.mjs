@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { scratchRoot } from '../../../tools/merge/fixture-home.ts';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -58,7 +58,7 @@ const attempt = (step, n, inputs = []) => ({
 });
 
 function scratch(t) {
-  const at = mkdtempSync(join(tmpdir(), 'local-release-'));
+  const at = mkdtempSync(join(scratchRoot(), 'local-release-'));
   t.after(() => rmSync(at, { recursive: true, force: true }));
   mkdirSync(join(at, 'home'));
   return { data: join(at, 'data'), home: join(at, 'home') };

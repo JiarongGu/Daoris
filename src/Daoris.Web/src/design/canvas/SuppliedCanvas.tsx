@@ -350,7 +350,7 @@ export function SuppliedCanvas({
                   aria-label={nodeLabel(id)}
                   onClick={(event) => press(id, event.detail)}
                   className={cn(
-                    'block h-full w-full cursor-pointer rounded-[inherit] text-left transition-opacity duration-(--speed)',
+                    'block h-full w-full cursor-pointer rounded-[inherit] text-left transition-opacity duration-(--duration-quick)',
                     dim && 'opacity-25',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink',
                   )}

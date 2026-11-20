@@ -41,7 +41,7 @@ function ZoomedWindow({ level, theme = 'light' }: { level: number; theme?: 'ligh
           <div className="flex min-h-0 flex-1">
             <ActivityBar label="Views" items={PLACES} end={SETTINGS} active="quests" onSelect={() => {}} />
             <main data-content="" className="min-w-0 flex-1 overflow-auto p-4">
-              <h1 className="m-0 text-view font-semibold">Quests</h1>
+              <h1 className="m-0 text-display font-semibold">Quests</h1>
               <p className="mt-2 text-body text-ink-soft">
                 The content grows and shrinks with the zoom; the title strip, the places and the status bar keep their size.
               </p>

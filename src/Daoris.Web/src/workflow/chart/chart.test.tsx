@@ -63,8 +63,8 @@ describe('StepNode', () => {
     const node: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['Its role does not do this step\'s work.'] }) };
     render(<StepNode context={context(node, { description: 'Next: Review.' })} step={node.step!} />);
     const item = screen.getByRole('listitem', { name: 'The work' });
-    expect(item.className).toContain('border-st-declined');
-    expect(item.className).toContain('ring-st-declined');
+    expect(item.className).toContain('border-fail');
+    expect(item.className).toContain('ring-fail');
     expect(item.className).not.toContain('border-2');
     expect(item).toHaveAttribute('data-refused', 'true');
     expect(item.querySelector('[data-flow-refusal]')).toBeNull();
@@ -74,7 +74,7 @@ describe('StepNode', () => {
   it('wears no refusal mark on a step the judgement holds, and says each refusal it has in the description', () => {
     const plain: ChartNode = { id: 'a', title: 'The work', step: step({ refused: [] }) };
     const { rerender } = render(<StepNode context={context(plain)} step={plain.step!} />);
-    expect(screen.getByRole('listitem').className).not.toContain('border-st-declined');
+    expect(screen.getByRole('listitem').className).not.toContain('border-fail');
     const two: ChartNode = { id: 'a', title: 'The work', step: step({ refused: ['First.', 'Second.'] }) };
     rerender(<StepNode context={context(two)} step={two.step!} />);
     expect(screen.getByRole('listitem')).toHaveAccessibleDescription('To put right: First. To put right: Second.');
@@ -213,13 +213,13 @@ describe('EdgeChip', () => {
   it('says a problem with a ⚠ in the danger ink and leaves the edge\'s ink to the canvas', () => {
     const { container } = render(<EdgeChip style="next" text="" count={1} problem="needs a role" />);
     expect(container).toHaveTextContent('⚠ needs a role');
-    expect(container.innerHTML).toContain('text-ink-danger');
+    expect(container.innerHTML).toContain('text-fail-ink');
   });
 
   it('says the problem\'s short word beside the ⚠, never the mark alone', () => {
     const { container } = render(<EdgeChip style="next" text="" count={1} problem="Refused" />);
     expect(container.querySelector('[data-flow-refusal-chip]')).toHaveTextContent('⚠ Refused');
-    expect(container.querySelector('[data-flow-refusal-chip]')?.className).toContain('text-ink-danger');
+    expect(container.querySelector('[data-flow-refusal-chip]')?.className).toContain('text-fail-ink');
   });
 
   it('wears no status hue in any kind', () => {

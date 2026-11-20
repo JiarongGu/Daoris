@@ -97,9 +97,9 @@ public static class HarnessAccountFolders
     public static bool NotAnAccount(string name) =>
         name.StartsWith('.') || name.EndsWith(".lock", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Every folder under a harness's account homes, in both places, by name, sorted.</summary>
+    /// <summary>Every folder under a harness's account homes, by name, sorted.</summary>
     private static IEnumerable<string> Folders(string home, string harness) =>
-        DaorisHome.Places(home, HomeEntry.AgentHomes, Name(harness, "agent name"))
+        new[] { DaorisHome.Entry(home, HomeEntry.AgentHomes, Name(harness, "agent name")) }
             .Where(Directory.Exists)
             .SelectMany(Directory.EnumerateDirectories)
             .Select(Path.GetFileName)
@@ -107,9 +107,9 @@ public static class HarnessAccountFolders
             .Distinct(StringComparer.Ordinal)
             .OrderBy(name => name, StringComparer.Ordinal);
 
-    /// <summary>Every folder directly under the account homes, in both places, by name, sorted.</summary>
+    /// <summary>Every folder directly under the account homes, by name, sorted.</summary>
     internal static IEnumerable<string> AgentFolders(string home) =>
-        DaorisHome.Places(home, HomeEntry.AgentHomes, "_")
+        new[] { DaorisHome.Entry(home, HomeEntry.AgentHomes, "_") }
             .Select(Path.GetDirectoryName)
             .OfType<string>()
             .Where(Directory.Exists)

@@ -82,7 +82,7 @@ function Focused({ beside, read, home }: { beside: Beside; read: ChildRead; home
   ].filter(Boolean).join(' · ');
   return (
     <>
-      <p className="m-0 text-meta text-ink-faint" title={beside.task ?? undefined}>{facts}</p>
+      <p className="m-0 text-caption text-ink-faint" title={beside.task ?? undefined}>{facts}</p>
       {!read.loaded
         ? <p className="m-0 text-small text-ink-faint">{t('work.beside.reading')}</p>
         : turns === null

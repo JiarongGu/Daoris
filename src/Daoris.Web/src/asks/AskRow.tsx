@@ -103,8 +103,8 @@ export function AskRow({ ask, intake = null, unread = 0, chosen = false, onOpen 
           </span>
         </span>
         <span title={title} className="mt-0.5 block truncate text-body text-ink">{title}</span>
-        <span className="block truncate font-mono text-meta text-ink-faint">
-          <span className="text-accent">{t('asks.card.workspace', { workspace: ask.workspace })}</span>
+        <span className="block truncate font-mono text-caption text-ink-faint">
+          <span className="text-accent-ink">{t('asks.card.workspace', { workspace: ask.workspace })}</span>
           {' '}· {tierWords(t, ask.tier, 'short')} · {t('asks.card.asked', { ago: ago(ask.asked) })}
           {became && <> · {t('asks.card.became', { quests: became })}</>}
           {!became && proposed && !askEnded(ask) && <> · {t('asks.card.proposed', { repositories: proposed })}</>}

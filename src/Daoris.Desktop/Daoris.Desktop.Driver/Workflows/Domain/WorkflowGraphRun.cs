@@ -146,6 +146,8 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// <summary>The gate each failed check named, by node, read by the reader from the attempt's result; none where unread.</summary>
     public IReadOnlyDictionary<string, string> Failures { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
+    public IReadOnlyDictionary<string, WorkflowRunWait> Slots { get; init; } = new Dictionary<string, WorkflowRunWait>(StringComparer.Ordinal);
+
     /// <summary>What each refused step's <c>needs</c> came to (<see cref="RunNeeds"/>), by node; none where unread.</summary>
     public IReadOnlyDictionary<string, RunNeed> Needs { get; init; } = new Dictionary<string, RunNeed>(StringComparer.Ordinal);
 
@@ -217,6 +219,8 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
+            var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(status, run.Opinion) : null;
+            if (answers is not null && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
             var checkHeld = node.Kind == NodeKinds.Check && status.State == NodeStates.Unknown ? CheckHeld(facts.Record, node.Id) : null;
@@ -232,8 +236,8 @@ public static class WorkflowGraphRuns
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Role = waits?.Role ?? StepRoles.Of(node),
-                Holder = waits?.Holder,
+                Role = waits?.Role ?? (answers is null ? StepRoles.Of(node) : StepRoles.Design),
+                Holder = waits?.Holder ?? (answers is null ? null : new StepHolder(StepHolders.Agent, answers.Values.GetValueOrDefault("session"))),
                 HeldBy = tenure?.Holder,
                 Epoch = tenure?.Epoch,
                 Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
@@ -249,7 +253,8 @@ public static class WorkflowGraphRuns
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
-                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder) : NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null,
+                Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder)
+                    : answers ?? facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -333,7 +338,7 @@ public static class WorkflowGraphRuns
     private static (WorkflowRunHeld Held, string? Code)? CheckHeld(NodeRecord? record, string node)
     {
         if (record?.Attempts.LastOrDefault(attempt => attempt.Node == node && attempt.Plugin == NodeKinds.Check) is not { } attempt) return null;
-        if (attempt.State == AttemptStates.Held) return (new WorkflowRunHeld(record.Unit, attempt.Attempt, HeldResolutions.Of(attempt)) { Resolution = attempt.Resolution }, attempt.Code);
+        if (attempt.State == AttemptStates.Held) return (new WorkflowRunHeld(record.Unit, attempt.Attempt, HeldResolutions.Of(attempt)) { Resolution = attempt.Resolution, Tail = attempt.Tail }, attempt.Code);
         return attempt is { State: AttemptStates.Settled, Resolution: HeldResolutions.Stop }
             ? (new WorkflowRunHeld(record.Unit, attempt.Attempt, []) { Resolution = attempt.Resolution }, attempt.Code)
             : null;
@@ -359,6 +364,8 @@ public static class WorkflowGraphRuns
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
         : node.Kind == NodeKinds.Land && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
+        : node.Kind == NodeKinds.Opinion && status.Holds == OpinionGateStates.WithSession ? null
+        : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Failed ? OpinionStepWaits.EndedSaid(status.Code)
         : status.State == NodeStates.Active ? status.Holds
         : null;
 

@@ -553,7 +553,7 @@ export function SearchResults({
     onMore();
   };
 
-  const heading = 'px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint';
+  const heading = 'px-3 py-1 text-caption font-semibold uppercase tracking-wide text-ink-faint';
   return (
     <div ref={root}>
       {named.length > 0 && (
@@ -575,7 +575,7 @@ export function SearchResults({
                   aria-current={id === selected || undefined}
                   onClick={() => onSelect?.(id)}
                   className={cn(
-                    'block w-full border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed) hover:bg-accent-soft/50',
+                    'block w-full border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick) hover:bg-accent-soft/50',
                     id === selected ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
                   )}
                 >
@@ -601,10 +601,10 @@ export function SearchResults({
         <p className="m-0 px-3 py-1.5 text-small text-ink-faint">{t('work.rail.search.none', { query: typed })}</p>
       )}
       {/* A shell before pages says only that it left some out; one that counts says how many, and reads the rest on a press. */}
-      {current && total === null && cut && <p className="m-0 px-3 py-1.5 text-meta text-ink-faint">{t('work.rail.search.cut')}</p>}
+      {current && total === null && cut && <p className="m-0 px-3 py-1.5 text-caption text-ink-faint">{t('work.rail.search.cut')}</p>}
       {current && onMore && total !== null && (
         <div ref={foot} className="grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 px-3 py-1.5">
-          <p className="m-0 text-meta text-ink-faint">{t('work.rail.search.listed', { shown: covered, total })}</p>
+          <p className="m-0 text-caption text-ink-faint">{t('work.rail.search.listed', { shown: covered, total })}</p>
           {moreError && <Refused sentence={t('work.rail.search.moreFailed', { why: moreError })} />}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <Button className="px-2.5 text-small" onClick={more}>{t('work.rail.search.more')}</Button>

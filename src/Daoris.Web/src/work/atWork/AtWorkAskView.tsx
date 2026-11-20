@@ -52,7 +52,7 @@ export function AtWorkAskView({ held, error, onOpenEntry, onOpenQuest, considere
       {stale !== null && (
         <p role="status" className="m-0 flex flex-wrap items-baseline gap-2 text-small text-ink-soft">
           {t('work.atWork.stale', { why: stale })}
-          {onRetry && <button type="button" className="text-accent underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
+          {onRetry && <button type="button" className="text-accent-ink underline" onClick={onRetry}>{t('work.atWork.retry')}</button>}
         </p>
       )}
       <div className={cn('grid min-w-0 gap-3', stale !== null && 'opacity-60')}>
@@ -86,11 +86,11 @@ function Entries({ answer, onOpenEntry, channel }: { answer: AtWorkAskA; onOpenE
               <span className="min-w-0 text-ink [overflow-wrap:anywhere]">{entry.repository}</span>
               {/* A word this page has none for is said as the driver wrote it. */}
               <Pill tone={SESSION_TONE[entry.shown as ShownState] ?? 'neutral'}>{t(`sessionState.${entry.shown}`, { defaultValue: entry.shown })}</Pill>
-              <span className="text-meta text-ink-faint">{t('work.atWork.ask.parts', { count: entry.parts, working: entry.working })}</span>
+              <span className="text-caption text-ink-faint">{t('work.atWork.ask.parts', { count: entry.parts, working: entry.working })}</span>
               {entry.subagents > 0 && (
-                <span className="text-meta text-ink-faint">{t('work.atWork.part.children', { count: entry.subagents, working: entry.subagentsWorking })}</span>
+                <span className="text-caption text-ink-faint">{t('work.atWork.part.children', { count: entry.subagents, working: entry.subagentsWorking })}</span>
               )}
-              {entry.elsewhere && <span className="basis-full text-meta text-ink-faint">{t('work.atWork.elsewhere')}</span>}
+              {entry.elsewhere && <span className="basis-full text-caption text-ink-faint">{t('work.atWork.elsewhere')}</span>}
             </button>
             {postedBy(channel, entry).length > 0 && (
               <ol className="m-0 mt-0.5 grid list-none gap-0.5 p-0 ps-4">
@@ -100,7 +100,7 @@ function Entries({ answer, onOpenEntry, channel }: { answer: AtWorkAskA; onOpenE
           </li>
         ))}
       </ol>
-      {(answer.moreEntries ?? 0) > 0 && <p className="m-0 text-meta text-ink-faint">{t('work.atWork.ask.moreEntries', { count: answer.moreEntries })}</p>}
+      {(answer.moreEntries ?? 0) > 0 && <p className="m-0 text-caption text-ink-faint">{t('work.atWork.ask.moreEntries', { count: answer.moreEntries })}</p>}
     </section>
   );
 }
@@ -117,7 +117,7 @@ function AskChannel({ channel, entries }: { channel: AtWorkChannel; entries: rea
       {loose.length > 0 && <ol className="m-0 grid list-none gap-1 p-0">{loose.map((item) => <Word key={item.id ?? item.at} item={item} />)}</ol>}
       {channel.onOpen && (
         <div>
-          <button type="button" className="text-small text-accent underline underline-offset-2" onClick={channel.onOpen}>{t('work.atWork.channel.all')}</button>
+          <button type="button" className="text-small text-accent-ink underline underline-offset-2" onClick={channel.onOpen}>{t('work.atWork.channel.all')}</button>
         </div>
       )}
     </section>

@@ -31,6 +31,7 @@ export const STRAY_AUDITED = [
   'settings.daoris.toolHome.absent:zh', 'settings.daoris.toolHome.caseFolded:zh', 'settings.daoris.toolHome.listWhy.inside-daoris:zh',
   'settings.daoris.toolHome.listWhy.unread:zh', 'settings.daoris.toolHome.what:zh',
   'settings.rules.why:en',
+  'work.exchange.toDock:en',
   'work.status.indexedTip:en',
   // 结束 is a turn ending before it takes the words, which is no outcome and no done.
   'work.steer.nowTip:zh',

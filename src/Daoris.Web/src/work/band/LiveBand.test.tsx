@@ -150,6 +150,24 @@ describe('the live band', () => {
     fireEvent.click(count);
     expect(rows()).toEqual(['act', 'a1', 'b1', 'b2']);
   });
+
+  it('draws a helper or a reviewer working for the line, its time ticking from when it was asked, its session a press away', () => {
+    const onOpenSession = vi.fn();
+    band({
+      lifetimes: [], act: null, onOpenSession,
+      exchanges: [{
+        id: 'helper:h1', part: 's1', expects: 'answer', to: 'codex', delivery: 'taken', outcome: 'asked', holds: true, at: at(7),
+        session: 'h-sess', agent: 'codex',
+      }],
+    });
+
+    expect(screen.getByRole('region', { name: 'Running 1' })).toBeTruthy();
+    expect(rows()).toEqual(['helper:h1']);
+    expect(row('helper:h1').textContent).toContain('codex, as helper');
+    expect(row('helper:h1').textContent).toContain(span(2 * 60_000));
+    fireEvent.click(within(row('helper:h1')).getByRole('button', { name: 'Open' }));
+    expect(onOpenSession).toHaveBeenCalledWith('h-sess');
+  });
 });
 
 describe('what the band opens and keeps', () => {

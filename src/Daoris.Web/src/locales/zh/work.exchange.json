@@ -1,0 +1,18 @@
+{
+  "work.exchange.asked": "已请求{{who}}",
+  "work.exchange.back": "{{who}}：{{outcome}}",
+  "work.exchange.findings_one": "{{count}} 条发现",
+  "work.exchange.findings_other": "{{count}} 条发现",
+  "work.exchange.judged.here": "关于这个会话的工作",
+  "work.exchange.judged.part": "关于更早一段的工作",
+  "work.exchange.open": "打开它的会话",
+  "work.exchange.toDock": "等你处理，去处理",
+  "work.exchange.quest.asked": "已向 {{repository}} 请求委托 #{{quest}}",
+  "work.exchange.quest.question": "它的问题",
+  "work.exchange.quest.back": "委托 #{{quest}}：{{outcome}}",
+  "work.exchange.quest.open": "打开委托",
+  "work.exchange.askedBy": "它的委托由另一个会话发布",
+  "work.exchange.resumed": "委托 #{{quest}} 已回复，会话继续",
+  "work.exchange.channel.note": "你的话，在频道上发给 {{to}}。",
+  "work.exchange.channel.cancel": "取消"
+}

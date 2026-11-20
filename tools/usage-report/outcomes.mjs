@@ -137,7 +137,6 @@ function outcomeOf(quest, runs, facts) {
   let added = null;
   const askId = askOf(quest.from);
   const ask = askId && facts.asks ? facts.asks.get(askId) : null;
-  const keptFrom = momentOf(ask?.wordsKeptFrom);
   if (!askId) {
     missing.push({ fact: 'answers', why: 'asked by a repository, and only an ask keeps the person\'s words (D133)' });
   } else if (!facts.asks) {
@@ -146,11 +145,6 @@ function outcomeOf(quest, runs, facts) {
     missing.push({ fact: 'answers', why: `its ask #${askId} is not on the host` });
   } else if (!Array.isArray(ask.words)) {
     missing.push({ fact: 'answers', why: 'the host answered its ask without the person\'s words (a host from before DRIFT1a)' });
-  } else if (keptFrom !== null && (filed === null || keptFrom > filed)) {
-    missing.push({
-      fact: 'answers',
-      why: `its ask keeps the person's words from ${minute(isoOf(keptFrom))} UTC, after the quest was published`,
-    });
   } else {
     const on = ask.words.filter((each) => record(each) && each.quest === quest.id);
     answers = on.filter((each) => each.kind === 'answered').length;

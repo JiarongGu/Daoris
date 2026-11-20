@@ -100,22 +100,11 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
               size={each.path ? <Size folder={each} measuring={measuring} /> : null}
               open={opener(each.id, each.present && Boolean(each.path))}
             >
-              {(each.old.length > 0 || (each.id === 'cache' && each.present && (downloads || onDownloads))) && (
+              {each.id === 'cache' && each.present && (downloads || onDownloads) && (
                 <>
-                  {each.old.length > 0 && (
-                    <ul className="m-0 grid list-none gap-1 p-0">
-                      {each.old.map((entry) => (
-                        <li key={entry.entry} className="flex flex-wrap items-baseline gap-x-3 text-small text-ink-faint">
-                          <span className="font-mono text-ink-soft">{entry.entry}</span>
-                          {entry.bytes !== null && <span>{size(entry.bytes)}</span>}
-                          <span>{t(`settings.daoris.old.${entry.why}`, { defaultValue: entry.why })}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {each.id === 'cache' && each.present && (downloads ?? (onDownloads && (
+                  {downloads ?? (onDownloads && (
                     <p className="m-0"><Button variant="ghost" onClick={onDownloads}>{t('settings.daoris.downloads.open')}</Button></p>
-                  )))}
+                  ))}
                 </>
               )}
             </FolderRow>

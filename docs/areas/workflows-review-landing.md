@@ -21,7 +21,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 | `Workflows/Domain/` | Choosing (`WorkflowSelection`), a version read and its digest (`WorkflowNamed`), a run derived from its records, the graph's gate (`GraphGate`) |
 | `Workflows/Kinds/<Kind>/` | Each step kind whole: its declaration (`<Kind>Node`), options, save rules, reading and door (rule 49) |
 | `Workflows/Deployables/` | A repository's declared deployables (`DeployableDeclaration`), each keyed to its release nodes (`DeployableTargets`), and their read (`DeployablesCommand`) (rule 3b) |
-| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), the pass that journals and settles by them (`StepActs`), and testing a quest's parts together (`JointChecks`, `JointReturns`) |
+| `Workflows/Acts/` | A role's acts: the receipts a step maps and the knowledge it names (`StepReceipts`), the session's rounds and the run's journal (`StepActFiles`), the rows the run's view draws (`StepActViews`), the long loop's proposals (`StepLessons`), a repository's values moved into its delivery knowledge (`ValuesMoves`), the pass that journals and settles by them (`StepActs`), and testing a quest's parts together (`JointChecks`, `JointReturns`) |
 | `Workflows/Cast/` | Who holds a step: each place's cast of every role (`PlaceCastBook`, `PlaceCastFiles`), a step's tenures (`AttemptTenures`, `StepHolding`), the one door that settles a step by its holder (`SettleDoor`), and the `daoris settings cast` verb (`PlaceCastVerb`), which the settings reach only through the answer it installs (`PlaceCastLease`) |
 | `Workflows/Nodes/` | The runtime: one pass (`NodeRuntime`), what it governs, judges, takes in turn, tells the plugins and keeps; the performer (`WorkPerformer`), the wires, the graph rules (`NodeContract`, `NodeGraphs`), the person's waits |
 | `Workplace/` | The landing performer (`LandPerformer`), a tree's landing (`TreeLands`, `LandingPress`), deliveries, landed branches, pull requests, integration, entry landings, the together press, tree hand-offs |
@@ -38,6 +38,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    that has a `driver.json` is never seeded and converts on the person's press. (D227)
 2. The workflow a chain's work follows is the first of: the task's choice, the repository's for the kind, its default, the
    workspace's for the kind, its default, the home default. With none, its run is bound to no workflow (`current`) and held.
+   An open quest has no run bound yet: its run reads "not started yet: waits to be taken" naming the workflow its start will bind
+   and the level that chose it (`WorkflowNotStarted`), and says "no workflow is chosen" only where the choice is none.
    A kind's paths hold its work where the kind chose a workflow that asks less of the person or runs fewer checks than the one it
    would follow without the kind (`KindLowering`: the person's part, then a check dropped or its gates narrowed): a change outside
    them holds until `daoris workflow keep`. Nothing infers a kind from paths. (D157, D227, D232)
@@ -51,7 +53,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    `WorkflowValuesKey.Apply` (the terminal twin is routed to `WorkflowConsole` from the tree, as `take`, `hand` and `give-back` are), which
    refuses a value that is no JSON or a change with no reason and records the reason beside the values; values are read by node id, so
    `workflow apply` says each declared entry its new version holds no node for and, for each new node of the same plugin that takes
-   none, prints the `workflow values …` line that carries it, never writing one itself (`WorkflowApplyNotes`)
+   none, prints the `workflow values …` line that carries it, never writing one itself (`WorkflowApplyNotes`), except values whose
+   node the new version replaced by a step naming a delivery knowledge entry, which it says move into that entry (rule 3e)
    (`workflowValuesWhy`, by `repository/workflow/node`); the release manager's holder sets a release target there from what a `no-target`
    or `target-changed` failure listed, never by editing the file: on the run's step failed so, the window's form (`ReleaseStepDoors`)
    asks the plugin's `discover-releases`, the holder picks a definition (with its pipeline and trigger branches), a stage and an action
@@ -108,7 +111,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    browser sees (`SignInAnswers`) or their words, is its next turn through the say door, its retry's receipt settling the step with no
    one relaying it. The long loop: a step its receipts settle whose act reached only after a receipt that did not (failed, or waiting on
    another role) proposes what it came to for the knowledge entry it names (`StepLessons`, `workflows/acts/proposed.json`), carried
-   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. The shipped
+   once by the next run's hand-off of a step naming that entry in that repository, whose holder amends the entry in its own change. A
+   repository's values the newest version of its workflow reads no more move the same way (`ValuesMoves`, D325 point 5): where that version
+   holds a step naming an entry (of the dropped node's role, else the one entry it names), the pass at the look's deadline proposes the
+   entry each value, whatever door saved the version, carried by every hand-off of a step naming it until the entry in the repository's
+   checkout holds each value as a word of its own; then each node's values are cleared from `workflowValues` with that reason, save a
+   node's that a run not ended is bound to a version holding (its fixed release steps) and a node's set anew since. The approval node's
+   values, which the actor form still reads, never move: they are the reader D325 point 7 keeps. The shipped
    `pull-request-release` preset, once its Azure DevOps pull request merges, holds the release manager's `release` step (procedure
    `release-path`; receipts `release-created`, `stage-started`, `stage-ended`) beside the approver's `release-approve`, both before the
    after-release steps (CONFIGSTEP1): `config-needed`, a decision the release manager's holder proposes (or the work's session from its
@@ -308,7 +317,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check that came back unknown with the code `unrun` (Daoris could not run it) settles with no verdict and is asked again as a new
-    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
+    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person.
+    A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
+    same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
+    that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
+    that closed, is sent again each time and counts for nothing; the second send lost with a start mark and no close mark is held for the
+    person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
+    the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
+    never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
+    slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
@@ -367,7 +384,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     earlier one there. `TOGETHER_PRESS` lands nothing. (D167, D227, D232, D259)
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed, the environment still the `reviews` rule's, and `SET_REVIEW required` is refused. (D154, D227)
-26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once. A
+26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once, as its next
+    turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
+    `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
+    `OpinionStepWaits`), never *working*. A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
+    the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
     never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
@@ -381,7 +402,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     by commit ids, by a squashing landing's record, or by patch (a landing that replayed the commits and merged the replay
     leaves the tree's own ids on no branch), each read as the review reads the tree (`TreeWork`), kept while its `HEAD`, its
     repository's refs, its files and the home's records stand (`TreeReadMemo`), so a look over an owed opinion whose tree did not move
-    starts no git. (D155, D190, D227)
+    starts no git. Under the watch an owed opinion is judged again only where what its judgment reads moved (`OpinionJudgments`: the
+    due itself, its chain's quests, its line's, its reviewers' and its rechecks' records, its tree's commit, its gate, deliveries,
+    run binding and node record, the landings, the rule, the cool-offs, the drain), past its gate's reset or a reading pass's
+    minutes, or five minutes after its last judgment whatever moved, so work a branch outside Daoris's landings took closes within
+    five minutes; a judgment whose gate or review read unread keeps no stamp, and a pass begun for it, or a pass's or a delivery's
+    end, lets its stamp go (`LookFacts`, kept by the watch across the looks' drivers); every judgment of one look shares one read of
+    the quests and the records (`OpinionLookWorld`). (D155, D190, D227)
 27. Review's diff is a dependency graph of git reads, kept by no later open, taking no lock and refreshing no index in a tree
     Daoris does not own; within one open each question is asked of git once (`GitReadOnce`), and leaving the page stops its git.
     (D202)
@@ -455,7 +482,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     no quest at the run's checkout holding no tree, lease or cap, read-only, with only its plugin's `daoris-plugins` server and
     `step_answer`, refusing the person's words (*Workflow step* in Sessions). `step_answer` keeps one answer, `reached` with a
     declared decision, evidence and outputs, or `failed` with a code, applied as the plugin's completion; a session ending
-    unanswered fails it `no-answer`. A step with no goal stays on `work/perform`. (D274)
+    unanswered fails it `no-answer`. A session its agent refused for its account's sign-in goes on once under the walk's next account
+    with no press; where no account could take the step, it fails `sign-in`, naming the accounts and the sign-in to make (agents rule
+    40). A step with no goal stays on `work/perform`. (D274, D328)
 32. A merge runs through the integration transport under the legacy policy (no gates, one at a time, a merge commit): the person's
     press at the `press` door, settled *merged on the person's press*; an automatic `land`'s delivery at its `landing` door,
     settled *merged by its workflow's landing, with no press*. (D215)
@@ -545,13 +574,25 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
-    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt; *Not now* settles an unknown with
+    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt,
+    and the run's `again` on a check not known is that word (`daoris workflow again <run> <check>`, `UnknownChecks`: kept on its current
+    attempt, which is held with it where Daoris still asked after it), named on the run's terminal line beside its stop; a not-known check
+    says it holds nothing as passed, never that Daoris asks after it; *Not now* settles an unknown with
     no verdict, or a failure's held row. *Ask for a fix…* publishes one ask per failed gate with its last 256 KiB, never twice;
     `failed: ask`, only in a version the person saved, asks at each look, `wait` waits for the press, `stop` asks nothing.
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
-    the change reaches (driving rule 7); `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    the change reaches (driving rule 7), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
+    and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
+    run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
+    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The
+    runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
+    after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
+    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
+    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
+    *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
+    check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
@@ -660,7 +701,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a plugin's actor and a go-ahead, `AgentSettles.Wait`) has no settler yet, so it stays a `step` row of *What needs you*, "waiting on
     `<role>`: <holder>" with *Take*, an Accept and an approval among them.
     The waits whose role the person holds are theirs: Sessions places the run's newest
-    session in Needs you with its `waits`, opening the run's view, and *What needs you* has a row for each with at least one press or the
+    session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
     session page's head (`RunWaitsHead`, its census beside it): an Accept and a part left after a done are the placed session's
     rows, the step a run ended failed at its own `step` row whatever its quest's state (`LeftSteps`: *Try again*, *Done outside
@@ -670,7 +711,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
     under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
     with the same presses beside it, each passing the epoch its row read, and the row's *Take*, *Pass to…* and *Give back*
-    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`). A run's view and `daoris workflow show` say it the same way: a run step has one
+    (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`).
+    That session's page reads its run from one answer, `SESSION_GROUPS`' `passage` (`RunPassageReader`: each step's mark, its role, its
+    newest attempt's number, start and failure code, and the attempts its record keeps before it): the track under its head and a row for
+    each attempt's start and end between its turns (`work/track/`), the record keeping no moment for an outcome, so an end stands where
+    the next attempt or step started; the run's view opens from the track's *Flowchart*. A run's view and `daoris workflow show` say it the same way: a run step has one
     waiting state (`waiting`, with `waiting-on-you` and `waiting-on-agent` deleted), its `Role` the one it waits on and its `Holder` whoever
     fills it, said "waiting on `<role>`: <holder>" (等待 `<role>`：<holder>), the holder's word the only part that differs (D304 point 2, D309
     point 4); "you" is how the window names the person's holding, and its pill wears the person's hue only where they hold the role. A step
@@ -694,11 +739,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and *After the Accept*; a newer revision is a banner naming the outputs that moved, never swapped in. A folder's file is drawn at
     the record's hash, or from the place only while it still hashes so, else refused `moved`; a Markdown file opens on its changes,
     rendered one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are
-    the **Accept card**'s alone (`ReviewCard`), under the session's conversation, bound to the attempt and revision it draws: a newer
+    the **Accept card**'s alone (`ReviewCard`), under the session panel's story (`ReviewCards`), bound to the attempt and revision it draws: a newer
     revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
-    tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
-    open the outputs by run (their presses read *Open outputs*, 打开产出), and the head's *To the Accept card* leads to the newest card
-    drawn in the conversation (`seekReviewCard`), offered, as the head's *next: Accept…* is, only once the run's review has begun and
+    tree's discard and draw no Accept; the dock's work card and an entry's part draw an outputs door, *What needs you* and the run view
+    open the outputs by run (their presses read *Open outputs*, 打开产出), and the work card's *To the Accept card* leads to the newest card
+    drawn under the story (`seekReviewCard`), offered, as its *next: Accept…* is, only once the run's review has begun and
     its card is drawn (`landingStands`, the landing's `accept` with its attempt); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is
@@ -739,6 +784,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §11): an ask's split is the supervisor's, made without a press
+  (D341, UIWF2, UIWF6), and the workflow step editor goes for a before-and-after card (D342, UIWF8, UIWF10). Today the rules
+  below stand; each row rewrites the one it makes false.
 - **TEAMWORK1f** (`docs/2026-11-12-teamwork-design.md` §7): the train, the `parts` kind, the tagged landing, the two shipped workflows, the
   line's tip merged into the ask's branch, its batch refs and the ask-keyed delivery run (rule 39b) are built; left are the person's one item
   for the run's Accept (today a run is placed in Sessions and *What needs you* by a quest's session, which the delivery run has none of, and

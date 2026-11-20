@@ -27,6 +27,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
     {
         Directory.CreateDirectory(_folder);
+        AttemptMarks.Write(AttemptMarks.Began(home, send.Run, send.Invocation, send.Delivery), send.Delivery, world.Clock.GetUtcNow());
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
         // The declaration is read as git objects at the commit, the blob the person accepted, never a tree's file.
         var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);
@@ -51,7 +52,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
-        if (send.Reached) return await HandbackAsync(declared, ct).ConfigureAwait(false);
+        if (send.Reached) return await HandbackAsync(declared, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
         if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from) is { } command) return (await ReachedAsync(reached, command, ct).ConfigureAwait(false), false);
 
         var runner = VerifyRunner.Of(text);
@@ -113,8 +114,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private static VerifyResult Told(VerifyResult result, string? words) =>
         words is null ? result : result with { Why = result.Why is { } why ? $"{why}\n{words}" : words };
 
-    /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) the change reaches. No line, or git unable to say, is unrun and never failed.</summary>
-    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
+    /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) the change reaches, each printing the outcome line (<paramref name="marker"/>) saying what it ran, replayed and left owed (<see cref="ReachedVerdict.Told"/>). No line, or git unable to say, is unrun and never failed.</summary>
+    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, string marker, CancellationToken ct)
     {
         if (await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is not { } line)
         {
@@ -135,7 +136,10 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
         var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
         if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, seen.Words(), kept) { Declaration = send.Accepted }, false);
-        return (Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), seen.Words()), false);
+        var result = Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), seen.Words());
+        var classes = result.Gates.Where(gate => gate is { Log: not null, Verdict: RunnerVerdicts.Pass or RunnerVerdicts.Fail })
+            .Select(gate => ReadText(gate.Log!) is { } log ? ReachedVerdict.Told(log, marker) : null).OfType<string>().ToList();
+        return (classes.Count == 0 ? result : Told(result, string.Join("\n", classes)), false);
     }
 
     private async Task<(VerifyResult? Result, bool Busy)> RunnerAsync(VerifyRunner runner, IReadOnlyList<DeclaredGate> declared, CancellationToken ct)

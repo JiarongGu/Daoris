@@ -72,7 +72,12 @@ function frame(selected: string) {
 
 const asked = (type: string) => invoke.mock.calls.filter(([module, route]) => module === 'DAORIS.DRIVER' && route === type);
 
-describe('a file\'s preview in the side bar (PREVIEW1)', () => {
+async function fileDoor() {
+  await userEvent.click(await screen.findByRole('button', { name: /read 1 file/ }));
+  return screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' });
+}
+
+describe('a file\'s preview in the side bar', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -100,7 +105,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     frame('c0ffee11');
 
     // The dock opens on demand: closed until the door is pressed.
-    await userEvent.click(await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' }));
+    await userEvent.click(await fileDoor());
 
     const side = screen.getByRole('complementary', { name: 'right side bar' });
     expect(within(side).getByRole('tab', { name: 'Preview: chunk.ts', selected: true })).toBeInTheDocument();
@@ -114,15 +119,12 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     expect(rows.flatMap((row, index) => (row.dataset.marked === 'true' ? [index + 1] : [])))
       .toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     expect(within(preview).getByText('lines 10–19, as the call named them')).toBeInTheDocument();
-    // The review has not been asked for, so the preview says nothing of changes and asks git for none.
-    expect(within(preview).queryByRole('radiogroup', { name: 'Show' })).toBeNull();
-    expect(asked('SESSION_DIFF')).toEqual([]);
   });
 
   it('closes back to the tab it covered', async () => {
     SESSIONS = [CHAT];
     frame('c0ffee11');
-    await userEvent.click(await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' }));
+    await userEvent.click(await fileDoor());
     const side = screen.getByRole('complementary', { name: 'right side bar' });
 
     await userEvent.click(within(side).getByRole('button', { name: 'Close the preview' }));
@@ -140,7 +142,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     // Every view the side bar holds by default is in the panel, the workflow among them.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     frame('c0ffee11');
-    const door = await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' });
+    const door = await fileDoor();
     expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
 
     await userEvent.click(door);
@@ -188,11 +190,12 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
           code: 'PREVIEW_LINK_LEAVES_TREE', parameters: { session: 'c0ffee11', path: 'src/chunk.ts' },
         });
       }
+      if (type === 'SESSION_DIFF') return DIFF;
       return { drivable: [], holds: [], trees: [], running: [] };
     });
     frame('c0ffee11');
 
-    await userEvent.click(await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' }));
+    await userEvent.click(await fileDoor());
 
     const preview = await screen.findByRole('region', { name: 'preview of src/chunk.ts' });
     expect(await within(preview).findByText(/goes through a link that leads out of this session's tree/)).toBeInTheDocument();

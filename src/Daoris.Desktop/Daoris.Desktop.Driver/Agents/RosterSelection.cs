@@ -147,40 +147,15 @@ internal sealed class RosterSelection(HarnessRoster roster)
                 account.Trim(), roster.Clock()).Session.Judge(model) is not null;
 
         var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
-        // A record on a Daoris account is judged against the set a start walks, whatever its
-        // workspace; one that began in the tool's own home is judged against no scope (F1, ResumeAccount.Judge).
-        var settled = roster.Settings.Set(owner);
-        var scope = named is null ? settled : Walked(settled, owner, toolchain);
-        IReadOnlyCollection<string> present;
-        try
-        {
-            present = named is null ? [] : HarnessSettings.Profiles(roster.Home, owner);
-        }
-        catch (DriverException)
-        {
-            present = [];
-        }
-
         var names = AccountNames.Of(roster.Home, owner);
-        // The own account is judged as the walk judges one: its reading at a whole window cools it until that reset, where the person
-        // did not pick it (a pick waits only on a cool-off a start recorded).
-        AccountState Before()
-        {
-            var now = roster.Clock();
-            var fact = picked || named is null ? null : HarnessRoster.FactOf(roster.Facts(owner, [named], now), named);
-            return roster.Before(owner, named, now, names, fact, model);
-        }
-
-        var before = Before();
-        var own = ResumeAccount.Judge(named, scope, kind, before, present);
+        var (own, before) = OwnOf(owner, toolchain, named, kind, picked, model, names);
         // A limited record's own account, ready by its cool-off, is asked its maker's
         // reading first, where its door carries none of its windows, and judged again on what that left; where its door carries them, the
         // attempt is the probe. A resume's probe is skipped for the person's words.
         if (limited && named is not null && own == NextHold.Ready)
         {
             await roster.FreshenAsync(adapter, owner, [named], config, ct).ConfigureAwait(false);
-            before = Before();
-            own = ResumeAccount.Judge(named, scope, kind, before, present);
+            (own, before) = OwnOf(owner, toolchain, named, kind, picked, model, names);
         }
 
         // The rule: a record's words never wait for its own account while another
@@ -250,6 +225,57 @@ internal sealed class RosterSelection(HarnessRoster roster)
             NotOffered = notOffered,
             Answer = answered,
         };
+    }
+
+    /// <summary>
+    /// What holds a record's own account before any probe, and the account as the roster finds it. A record on a Daoris account is
+    /// judged against the set a start walks, whatever its workspace; one that began in the tool's own home against no scope (F1,
+    /// <see cref="ResumeAccount.Judge"/>). Its reading at a whole window cools it until that reset, where the person did not pick it (a
+    /// pick waits only on a cool-off a start recorded).
+    /// </summary>
+    private (NextHold Own, AccountState Before) OwnOf(
+        string owner, AccountAgent toolchain, string? named, StartKind kind, bool picked, string? model, IReadOnlyDictionary<string, string> names)
+    {
+        var settled = roster.Settings.Set(owner);
+        var scope = named is null ? settled : Walked(settled, owner, toolchain);
+        IReadOnlyCollection<string> present;
+        try
+        {
+            present = named is null ? [] : HarnessSettings.Profiles(roster.Home, owner);
+        }
+        catch (DriverException)
+        {
+            present = [];
+        }
+
+        var now = roster.Clock();
+        var fact = picked || named is null ? null : HarnessRoster.FactOf(roster.Facts(owner, [named], now), named);
+        var before = roster.Before(owner, named, now, names, fact, model);
+        return (ResumeAccount.Judge(named, scope, kind, before, present), before);
+    }
+
+    /// <summary>
+    /// What holds a record's own account from carrying words held for it, as the look reads it: the resume's own
+    /// judgement before any probe (<see cref="OwnOf"/>), its agent's last reading of a sign-in gone read as signed out. Nothing is
+    /// probed, spawned or counted; an unknown sign-in is ready, as a start treats it, and an agent this build does not drive is missing.
+    /// </summary>
+    public NextHold OwnHold(string adapter, string? account, StartKind kind)
+    {
+        try
+        {
+            var resolved = roster.Adapters.Door(adapter);
+            if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return NextHold.Ready;
+            var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+            var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
+            var (own, _) = OwnOf(owner, toolchain, named, kind, picked: false, model: null, AccountNames.Of(roster.Home, owner));
+            return own is NextHold.Ready or NextHold.Near && named is not null && HarnessRoster.SaidOut(AccountReads.Of(roster.Home, owner), named)
+                ? NextHold.SignedOut
+                : own;
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            return NextHold.Missing;
+        }
     }
 
     /// <summary>

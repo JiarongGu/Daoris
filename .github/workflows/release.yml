@@ -297,7 +297,7 @@ jobs:
       # The layers' census: the reference graph, the ambient ratchet and the unit budget, the planted banned effects, and the
       # ports' fakes held to their contract cases.
       - name: Layers gate
-        run: node tools/layers-census.mjs && node --test tools/layers-census.test.mjs tools/layers-census-boundary.test.mjs tools/layers-census-plant.test.mjs && dotnet test src/Daoris.Testing.Tests --nologo
+        run: node tools/layers-census.mjs && node tools/test-sets.mjs run --gate layers && dotnet test src/Daoris.Testing.Tests --nologo
 
       # The packages' lock: each package's fingerprint against its row, and the dependency suite of a package whose fingerprint
       # moved, run here at the release as the CI beside a merge, which a merge that changed no package never runs.

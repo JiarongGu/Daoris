@@ -42,7 +42,8 @@ public static class WorkflowApplyNotes
     /// <summary>
     /// A line for each repository's declared value of <paramref name="workflow"/> keyed by a node id <paramref name="next"/> does not hold
     /// (<c>workflowValues</c> is read by node id), and for each of them the <c>workflow values</c> line that would carry it to each new node of the
-    /// same plugin that takes none, the plugin read from <paramref name="previous"/>'s node of that id. Nothing is written.
+    /// same plugin that takes none, the plugin read from <paramref name="previous"/>'s node of that id. Values whose node <paramref name="next"/>
+    /// replaced by a step naming a delivery knowledge entry move into that entry instead (<see cref="ValuesMoves"/>), one line each. Nothing is written.
     /// </summary>
     public static IReadOnlyList<string> Unread(DriverConfig config, string workflow, int version, NodeGraph? previous, NodeGraph next)
     {
@@ -51,7 +52,16 @@ public static class WorkflowApplyNotes
         foreach (var (repository, values) in config.WorkflowValues.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             if (!values.ByWorkflow.TryGetValue(workflow, out var nodes)) continue;
-            foreach (var (node, options) in nodes.Where(pair => !held.Contains(pair.Key)).OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            var moving = ValuesMoves.ByEntry(nodes, node => previous?.Nodes.FirstOrDefault(each => each.Id == node), next);
+            foreach (var (entry, moved) in moving)
+            {
+                lines.Add($"`{repository}`'s values for {ValuesMoves.Nodes(moved.Keys)} are read by no step of v{version}: they move into its delivery knowledge `{entry}`, "
+                    + "which a step of it names (D325). Daoris proposes them into the entry, handed to that step's holder until the entry in the repository's checkout "
+                    + "holds each, and then clears them here; until then they stay.");
+            }
+
+            foreach (var (node, options) in nodes.Where(pair => !held.Contains(pair.Key) && !moving.Values.Any(moved => moved.ContainsKey(pair.Key)))
+                .OrderBy(pair => pair.Key, StringComparer.Ordinal))
             {
                 lines.Add($"`{repository}`'s values for `{node}` ({string.Join(", ", options.Keys)}) are left unread by v{version}: it holds no node `{node}`, so its steps run without them.");
                 if (previous?.Nodes.FirstOrDefault(old => old.Id == node) is not { } was || !NodeKit.IsPlugin(was.Kind)) continue;

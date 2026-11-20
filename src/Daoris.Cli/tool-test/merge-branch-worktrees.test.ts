@@ -262,7 +262,8 @@ test('a folder under .claude/worktrees/ git does not list goes when it holds no 
 
 
 test('this repository commits no generated folder: its orientation index is ignored, written in each checkout', () => {
-  assert.deepEqual(tool.readGenerated(repoRoot), []);
+  const generated = tool.readGenerated(repoRoot).map((entry) => entry.folder);
+  assert.deepEqual(generated, ['tools/size-ratchet.json'], 'the size list is the one generated entry, a file');
   assert.match(readFileSync(join(repoRoot, '.gitignore'), 'utf8'), /^docs\/index\/$/m);
 });
 

@@ -1,13 +1,13 @@
 import { type Grid, queryGrid } from './spatialGrid';
 import type { Box, Size } from './viewMath';
 
-// How much of a positioned world is drawn, and how: the tier follows the effective size of `text-meta`,
+// How much of a positioned world is drawn, and how: the tier follows the effective size of `text-caption`,
 // the budget lowers it before the frame drops, and past 400 nodes only what is in view, and what must stay, is mounted.
 
 export type Tier = 'full' | 'chip' | 'dot';
 
-/** `text-meta` in px at the root's default size and a zoom of 1. */
-const META = 11;
+/** `text-caption` in px at the root's default size and a zoom of 1: 12, the floor Han is never drawn under. */
+const META = 12;
 /** The effective size from which a node is its own component, and from which it is a chip. */
 export const FULL_FROM = 9;
 export const CHIP_FROM = 4;
@@ -21,7 +21,7 @@ export const CULL_PAST = 400;
 /** A grouped world shows its groups, not its nodes, past this many nodes. */
 export const OVERVIEW_PAST = 1000;
 
-/** The effective size of `text-meta` on screen: 11 px × the window's zoom (the root's size over 16) × the canvas's scale. */
+/** The effective size of `text-caption` on screen: 12 px × the window's zoom (the root's size over 16) × the canvas's scale. */
 export const effectiveMeta = (k: number, rem: number): number => META * (rem / 16) * k;
 
 /** The tier the person's zoom asks for. */

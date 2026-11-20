@@ -104,15 +104,6 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// <inheritdoc cref="RosterCooling.SignedOut"/>
     public void SignedOut(string adapter, string? profile) => Cooling.SignedOut(adapter, profile);
 
-    // The accounts a refusal of a signed-in reading owes one fresh reading, by owner and account: taken by the next walk
-    // that reaches the account, then spent. Any other reading of the account settles it (`Keep`).
-    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _owed = new(StringComparer.OrdinalIgnoreCase);
-
-    // The signed-in readings a fresh reading made, by owner and account, with the time each is kept: a refusal of one
-    // owes none.
-    internal readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _fresh =
-        new(StringComparer.OrdinalIgnoreCase);
-
     /// <inheritdoc cref="RosterCooling.WindowsOf"/>
     public WindowWords? WindowsOf(string adapter) => Cooling.WindowsOf(adapter);
 
@@ -284,6 +275,8 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// <inheritdoc cref="RosterSelection.ResumeAsync"/>
     public Task<ResumeChoice> ResumeAsync(string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false, LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null, bool picked = false)
         => Selecting.ResumeAsync(adapter, config, workspace, account, kind, newSession, line, ct, limited, model, picked);
+
+    public NextHold OwnHold(string adapter, string? account, StartKind kind = StartKind.Driven) => Selecting.OwnHold(adapter, account, kind);
 
     /// <inheritdoc cref="RosterSelection.CarriedOnAsync"/>
     public Task<(HarnessSelection Selection, string? Passed)> CarriedOnAsync(ResumeChoice resume, string adapter, DriverConfig config, string? workspace, string? account, CancellationToken ct = default, string? model = null)

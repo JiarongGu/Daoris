@@ -52,7 +52,7 @@ internal sealed class DirectGateRuns(IntegrationVerdictAsk ask, CandidateJob job
             if (code != 0)
             {
                 var output = ReadLog(log);
-                failures.Add(new GateFailure(gate.Name, new RunnerFailure("", gate.Name, FailureReader.GateSignature(gate.Name, "run", output, ask.Tree))));
+                failures.Add(new GateFailure(gate.Name, new RunnerFailure("", gate.Name, FailureReader.GateSignature(gate.Name, "run", output, ask.Tree, code))));
             }
         }
 

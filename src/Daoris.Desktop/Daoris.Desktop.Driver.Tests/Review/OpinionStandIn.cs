@@ -66,6 +66,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>How many times the records were read whole (a held hand reads none until its asker moves).</summary>
     public int RecordReads { get; private set; }
 
+    public Dictionary<string, int> Asked { get; } = new(StringComparer.Ordinal);
+
     /// <summary>How many times a helper's hand is asked, taken or refused (a hand the host refuses is not asked again until its asker moves).</summary>
     public int HelperHandsAsked { get; private set; }
 
@@ -77,6 +79,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
 
     /// <summary>Where set, an ask's read fails: <c>unreachable</c> as a transport failure, <c>refused</c> as a refusal.</summary>
     public string? AskFailure { get; set; }
+
+    /// <summary>Where set, every opinion's read fails as a host answering with an error does.</summary>
+    public bool OpinionFailure { get; set; }
 
     /// <summary>Where set, every helper's hand is refused with this reason, as an older or a failing desk refuses one.</summary>
     public string? HelperHandRefusal { get; set; }
@@ -204,7 +209,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// </summary>
     public OpinionStandIn Opinion(
         string id, string working, string state = "given", string[]? weights = null, string pass = "first", string? rechecks = null,
-        string? why = null, string adapter = "codex-acp", string? tip = null, string? @base = null)
+        string? why = null, string adapter = "codex-acp", string? tip = null, string? @base = null, DateTimeOffset? due = null)
     {
         var opinion = new JsonObject
         {
@@ -215,7 +220,7 @@ internal sealed class OpinionStandIn : HttpMessageHandler
             },
             ["reviewer"] = new JsonObject { ["door"] = adapter, ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
             ["families"] = new JsonArray("claude-code"), ["posture"] = "copy-alone", ["minutes"] = 20, ["tier"] = "agent",
-            ["asked"] = "2026-10-09T09:00:00Z", ["due"] = "2026-10-09T09:20:00Z", ["state"] = state, ["why"] = why,
+            ["asked"] = "2026-10-09T09:00:00Z", ["due"] = due is { } at ? at.ToString("O", System.Globalization.CultureInfo.InvariantCulture) : "2026-10-09T09:20:00Z", ["state"] = state, ["why"] = why,
             ["given"] = weights is null ? null : new JsonObject
             {
                 ["findings"] = new JsonArray([.. weights.Select((weight, at) => (JsonNode)new JsonObject
@@ -267,6 +272,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
         lock (_gate)
         {
+            var door = $"{request.Method.Method} {path}";
+            Asked[door] = Asked.GetValueOrDefault(door) + 1;
             switch (request.Method.Method, path)
             {
                 case ("GET", "/api/sessions"):
@@ -292,6 +299,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("GET", _) when AskFailure is not null && path.StartsWith("/api/asks/", StringComparison.Ordinal):
                     if (AskFailure == "unreachable") throw new HttpRequestException("the service did not answer");
                     return Refuse(HttpStatusCode.InternalServerError, "the asks could not be read");
+
+                case ("GET", _) when OpinionFailure && path.StartsWith("/api/opinions/", StringComparison.Ordinal):
+                    return Refuse(HttpStatusCode.InternalServerError, "the opinions could not be read");
 
                 // The ledger's moves as far as a helper's asker reaches them: a live record moves as the ledger lets it, and a
                 // finished one only where it ended waiting on its own helper, back to the person; the note and its parts kept.

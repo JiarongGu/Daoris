@@ -7,11 +7,11 @@ import type { Place, ViewId } from './placements';
 export type ViewEntry = { id: ViewId; label: string; icon: IconName };
 
 const VIEW_NAME: Record<ViewId, string> = {
-  notifications: 'notifications.title', timeline: 'work.review.timelineTab', outputs: 'work.outputs.title', workflow: 'work.views.workflow',
-  atWork: 'work.atWork.view', ask: 'help.title', console: 'work.views.console', terminal: 'work.views.terminal',
+  notifications: 'notifications.title', timeline: 'work.review.timelineTab', outputs: 'work.outputs.title',
+  ask: 'help.title', console: 'work.views.console', terminal: 'work.views.terminal',
 };
 const VIEW_ICON: Record<ViewId, IconName> = {
-  notifications: 'bell', timeline: 'quests', outputs: 'diff', workflow: 'workflow', atWork: 'atWork', ask: 'help', console: 'frameWork',
+  notifications: 'bell', timeline: 'quests', outputs: 'diff', ask: 'help', console: 'frameWork',
   terminal: 'terminal',
 };
 
@@ -72,7 +72,7 @@ export function ViewsMenu({
             aria-label={label}
             className={cn(
               'flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-ink-faint',
-              'transition-colors duration-(--speed) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
+              'transition-colors duration-(--duration-quick) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             )}
           >

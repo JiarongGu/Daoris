@@ -83,7 +83,7 @@ describe('each menu (the design §3.2)', () => {
 
   it('View: Commands, the regions, the views, the windows, Theme and Language, the zoom, Refresh the index', () => {
     expect(ids(inMenu(table({ view: 'sessions', list: { shown: true } }), 'view'))).toEqual([
-      'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.notifications', 'view.timeline', 'view.workflow',
+      'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.notifications', 'view.timeline',
       'view.console', 'view.monitor', 'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
       'view.language:zh', 'view.zoomIn', 'view.zoomOut', 'view.zoomReset', 'view.refresh',
     ]);

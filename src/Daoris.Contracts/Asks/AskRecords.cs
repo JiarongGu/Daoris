@@ -21,7 +21,6 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 /// once every quest it became has closed; <c>Deletable</c> whether the desk would delete it with every quest asked by it.
 /// </summary>
 /// <param name="Words">Every word the person gave on it, oldest first: its sentence, then each answer and each message added to a session.</param>
-/// <param name="WordsKeptFrom">Said only of an ask made before the words were kept: from when they are, since nothing is back-filled.</param>
 /// <param name="GoAheads">Every go-ahead its sessions asked the person for, oldest first, one per act.</param>
 /// <param name="ReviewChoices">The person's review choices, oldest first, the latest standing; absent where there is none.</param>
 /// <param name="ReviewProposals">Its intake's proposals, each with its reason and the quest it came with; absent where there is none.</param>
@@ -37,7 +36,7 @@ public sealed record AskResponse(
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
     IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
-    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
+    IReadOnlyList<AskWordResponse>? Words = null,
     IReadOnlyList<GoAheadResponse>? GoAheads = null,
     IReadOnlyList<AskReviewChoiceResponse>? ReviewChoices = null, IReadOnlyList<AskReviewProposalResponse>? ReviewProposals = null,
     IReadOnlyList<AskWorkflowChoiceResponse>? WorkflowChoices = null, IReadOnlyList<AskWorkflowProposalResponse>? WorkflowProposals = null,

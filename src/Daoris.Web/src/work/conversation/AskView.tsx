@@ -25,7 +25,7 @@ export const AUTHOR_KEYS = {
 export const ChannelHomes = createContext<ChannelHome>(NO_CHANNEL_HOME);
 
 /** Another session's claim, named by its poster where the page holds the channel's message, else as a claim in Daoris's words. */
-const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
+export const claimLabel = (t: TFunction, poster: ChannelPoster | undefined) => {
   // An agent outside Daoris is its own, named as outside, never as the person or a session.
   if (poster?.outside) {
     const who = [poster.repository, poster.agent].filter(Boolean).join(' · ');
@@ -89,7 +89,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
             type="button"
             aria-expanded={open}
             onClick={() => setOpen((was) => !was)}
-            className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+            className="border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
           >
             {open ? t('work.conversation.hide') : t('work.conversation.show')}
           </button>
@@ -97,7 +97,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
       </SenderChip>
       {/* The question the helper's answer answers, whose and when, quiet above the answer. */}
       {helperAnswer && (
-        <p data-answers className="m-0 mt-0.5 line-clamp-2 wrap-anywhere text-meta text-ink-soft">
+        <p data-answers className="m-0 mt-0.5 line-clamp-2 wrap-anywhere text-caption text-ink-soft">
           {t(helperAnswer.byPerson ? 'work.conversation.answers.yours' : 'work.conversation.answers.session', {
             time: clockOf(helperAnswer.asked, new Date(), i18n.language),
           })}
@@ -112,7 +112,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
           <p className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
         )}
       <Attached files={ask.files} />
-      {ask.cutIn && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('work.conversation.cutIn')}</p>}
+      {ask.cutIn && <p className="m-0 mt-0.5 text-caption text-ink-faint">{t('work.conversation.cutIn')}</p>}
       {ask.receipts && <ReceiptsLine receipts={ask.receipts} />}
       {/* What the target is composed of, section by section, beside the words it composes. */}
       {target && !findings && <HandedAccount account={ask.account} />}
@@ -130,7 +130,7 @@ function ReceiptsLine({ receipts }: { receipts: Receipts }) {
     .filter((receipt) => receipts[receipt])
     .map((receipt) => `${t(`work.receipt.${receipt}`)} ${clockOf(receipts[receipt]!, new Date(), i18n.language)}`);
   if (seen.length === 0) return null;
-  return <p data-receipts className="m-0 mt-1 text-meta text-ink-faint">{seen.join(' · ')}</p>;
+  return <p data-receipts className="m-0 mt-1 text-caption text-ink-faint">{seen.join(' · ')}</p>;
 }
 
 /** What the person attached: names, as the record keeps them. */
@@ -142,7 +142,7 @@ export function Attached({ files }: { files?: string[] }) {
       {files.map((name, index) => (
         <li
           key={`${index}:${name}`}
-          className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-meta text-ink-soft"
+          className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-caption text-ink-soft"
         >
           <Icon name="attach" size={11} className="shrink-0 text-ink-faint" />
           <span className="min-w-0 truncate">{name}</span>

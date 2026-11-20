@@ -169,7 +169,7 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
           : t('settings.git.httpsFact', { user: identity.user ?? '' })}
       </div>
       {ssh && identity.ssh && (
-        <div className="min-w-0 wrap-anywhere font-mono text-meta text-ink-faint">{t('settings.git.sshProgram', { path: identity.ssh })}</div>
+        <div className="min-w-0 wrap-anywhere font-mono text-caption text-ink-faint">{t('settings.git.sshProgram', { path: identity.ssh })}</div>
       )}
       {(identity.commitsName || identity.commitsEmail) && (
         <div className="min-w-0 wrap-anywhere text-small text-ink-faint">
@@ -178,12 +178,12 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
       )}
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
         <TestState identity={identity} />
-        <span className="text-meta text-ink-faint">
+        <span className="text-caption text-ink-faint">
           {identity.lastUsed ? t('settings.git.lastUsed', { time: ago(identity.lastUsed) }) : t('settings.git.neverUsed')}
           {' · '}{t('settings.git.usedBy', { repositories: identity.repositories, workspaces: identity.workspaces })}
         </span>
       </div>
-      {identity.test?.result === 'refused' && <p className="m-0 text-small text-ink-danger">{t('settings.git.refused')}</p>}
+      {identity.test?.result === 'refused' && <p className="m-0 text-small text-fail-ink">{t('settings.git.refused')}</p>}
 
       <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
         <Button disabled={busy || (needsRepository && !repository.trim())} onClick={() => test()}>
@@ -240,8 +240,8 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
           </p>
           {tested.hostKeys.map((key) => (
             <div key={key.fingerprint} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
-              <span className="font-mono text-meta text-ink-soft">{key.algorithm} {key.fingerprint}</span>
-              <span className={key.published === false ? 'text-ink-danger' : 'text-ink-faint'}>
+              <span className="font-mono text-caption text-ink-soft">{key.algorithm} {key.fingerprint}</span>
+              <span className={key.published === false ? 'text-fail-ink' : 'text-ink-faint'}>
                 {key.published === true ? t('settings.git.keyPublished') : key.published === false ? t('settings.git.keyNotPublished') : t('settings.git.keyNoneKnown')}
               </span>
               <Button disabled={busy} onClick={() => test(key.fingerprint)}>{t('settings.git.trust')}</Button>

@@ -17,22 +17,22 @@ import { useAttendedWaits } from './waits/useAttendedWaits';
 import { useAttendedHead } from './head/useAttendedHead';
 import { type Sent, useSending, useSettled } from './conversation/sending';
 import { useSessionAtWork } from '../bridge/sessions/atWork';
-import { WaitStrip } from './waits/WaitStrip';
+import { SessionDock } from './session/SessionDock';
+import { AttendedSessionPanel } from './session/AttendedSessionPanel';
+import { coolingFor } from './say';
 import { SessionBand } from './band/SessionBand';
 import { dockOf } from './waits/dock';
 import { useRunWaitDoors } from './head/useRunWaitDoors';
-import { WaitPanel } from './waits/WaitPanel';
 import { namer } from '../settings/accounts/namer';
-import { coolingFor } from './say';
+import { modelRan } from './session/headFacts';
 import { type FrameIntent, memoryOfIntent, outputsOfIntent } from '../menus/commands';
-import { BackToBottom, ToTheTop } from './conversation/SessionConversation';
 import { useNow } from './useNow';
 import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyRow } from './HeavySlotLine';
 import { sessionOrigin, sessionTitle } from './identity';
 import { RightDock } from './frame/RightDock';
-import { SESSION_ACTIVE, type Notify } from '../design/ui';
+import { Drawer, SESSION_ACTIVE, type Notify } from '../design/ui';
 import { useSessionActs } from './sessionActs';
 import { useNewStart } from './start/useNewStart';
 import { StartPane } from './start/StartPane';
@@ -49,13 +49,10 @@ import { useFrameLayout } from './frame/useFrameLayout';
 import { useDockViews } from './frame/useDockViews';
 import { useRegionSurfaces } from './frame/regionSurface';
 import { useSessionsList } from './rail/useSessionsList';
-import { opensRun } from './rail/runWaitFact';
 import { AttendedPane } from './head/AttendedPane';
-import { useAtWorkSeek } from './atWork/exchangeSeek';
 import { partRowsOf } from './head/partRows';
-import { AttendedConversation } from './conversation/AttendedConversation';
-import { channelHomeOf } from './conversation/channelHome';
-import { AttendedBoxes } from './conversation/AttendedBoxes';
+import { toExchangeRow } from './exchanges/seek';
+import { toDockLine } from './track/seek';
 import { useSeekPart } from './conversation/useSeekPart';
 
 /**
@@ -82,11 +79,6 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
  * **Desktop-only, structurally.** Over a keyed remote none of this is rendered: the stream and a
  * tree path are machine-local, and a frame whose centre is a stream has nothing honest to
  * show a browser. `App` gates on the same "is a shell here" answer every control uses.
- *
- * **The centre is the record, then the conversation**: the head and the session's
- * conversation scroll together, and the conversation follows its tail. The right dock holds the
- * timeline and the review; the console is the panel below, the
- * conversation's raw view.
  *
  * **Every view hands it a `ViewLayout`**: its list pane where it has one, and its main area. It
  * draws the list for every view that hands one, and Sessions' rail is one such list, built here because
@@ -200,7 +192,6 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
-  // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
   const frame = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
   const { root, width, listed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock } = frame;
@@ -239,9 +230,6 @@ export function WorkFrame({
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
 
-  // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is:
-  // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
-  // so the palette's ask never landed. The parent is told from an effect, not during this render.
   const views = useDockViews({
     attended, elsewhere, here, ask, notifications, terminal, placed, closed: frame.closed, collapsed, dockClosed, closeDock, askFocus,
     notificationsShow, notificationsToggle,
@@ -262,6 +250,7 @@ export function WorkFrame({
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
+  const [flowchartOpen, setFlowchartOpen] = useState(false);
   // The run `outputs/<run>` opened, at the attempt an Accept card named, kept while the session it opened over stays followed.
   const [reviewing, setReviewing] = useState<{ run: string; over: string | null; attempt: number | null } | null>(null);
   const onReviewRun = (run: string, attempt: number | null = null) => {
@@ -278,8 +267,7 @@ export function WorkFrame({
     else if (memoryOf) setMemorySeek((was) => ({ session: memoryOf, n: (was?.n ?? 0) + 1 }));
     else if (intent === 'start') newConversationPressed();
     else if (intent === 'review') openView('outputs');
-    else if (intent === 'workflow') openView('workflow');
-    else if (intent === 'atWork') openView('atWork');
+    else if (intent === 'workflow') setFlowchartOpen(true);
   }
   if (!intent && taken) setTaken(null);
 
@@ -299,8 +287,7 @@ export function WorkFrame({
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
   const agentRoster = agentRosterOf(t, roster, accounts.data);
-  // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose
-  // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
+  // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose own account cools.
   const between = attended && here && attended.kind !== 'chat'
     && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
   const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
@@ -359,46 +346,40 @@ export function WorkFrame({
   const { workAsk } = work;
   const waitsState = useAttendedWaits({
     t, notify, attended, here, intake, agentRoster, actions, chosen, attend, box, say, answering, question, goAheads, parkAsk, onAnswerAsk,
-    boxWords, openView, work, talking, centre, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
+    boxWords, openView, work, talking, pieceAsking: asks.pieceAsking, setPieceAsking: asks.setPieceAsking,
     onChangeRule: onChangeRule && attended ? onChangeRule : undefined,
   });
   const {
-    partnerPieces, waits, answerBelow, toEvent, waitsOnScreen, goToWait, seekAt, ruleAsk, waitPanel, tail, awayFromTop, toTop,
+    partnerPieces, waits, answerBelow, toEvent, goToWait, seekAt, ruleAsk,
   } = waitsState;
   const runWaitDoors = useRunWaitDoors(attended?.id ?? null, { awaitingStep: attended?.state === 'awaiting-step', onQuest: onOpenQuest });
   const docked = attended && here && waits
-    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits).filter((line) => !(line.wait.kind === 'goAhead' && waits.parkBox))
+    ? dockOf({ ...waits, answerBelow }, runWaitDoors.waits)
     : [];
   const headState = useAttendedHead({
     t, language: i18n.language, attended, here, live, quest, grouping, registry: registry.data, roster, accounts: accounts.data, nameOf,
     sheets: harnesses.data?.agents, actions, doors, asks, actors: actors.data, wiring, entryAsks: entryAsks.data, channelAsk, attendedEntry, openings,
     sessions: sessions.data, quests: quests.data, branch, partnerPieces, agentRoster, waiting, following, withIt, atWorkHeld, heavyPart,
     heavyTitleOf, integration, docked, goToWait, chosen, rootOf, where, taking, supervision: record.supervision, groupings: groups.data, attend,
+    steps: runWaitDoors.steps, onFlowchart: () => setFlowchartOpen(true),
   });
-  const { limitLine, pageMenu, pageHead } = headState;
+  const { pageMenu } = headState;
 
-  // The head's *Waiting on* opens At work at the request it names.
-  const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, terminals, terminalCwd,
-    session, record, work, views, frame, boxState, onReviewRun, agentRoster, attend, runNodeWord, atWork, atWorkSeek: atWorkSeek.seek,
+    session, work, views, boxState, onReviewRun, attend, runNodeWord,
     reviewRun: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.run : null,
     reviewAttempt: reviewing && reviewing.over === (following?.id ?? null) ? reviewing.attempt : null,
+    flowchartOpen,
   });
-  const { surface, previewSurface, consoleView, withWhose } = regions;
-  // A row its run's waits placed opens on its run's view, where the step that waits is acted on.
-  const attendRow = (id: string) => {
-    attend(id);
-    if (opensRun(groups.data, id)) openView('workflow');
-  };
+  const { surface, previewSurface, consoleView, withWhose, flowchart } = regions;
   const spec = useSessionsList({
-    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend: attendRow, newConversationPressed,
+    t, notify, selected, elsewhere, viewLayout, group, onGroupBrought, session, frame, boxState, asks, chosen, attend, newConversationPressed,
   });
   const partRows = partRowsOf(sessions.data, rootOf, where, spent);
-  const { partBox, seek } = useSeekPart();
+  const { seek } = useSeekPart();
 
   return (
-    // Positioned, so a dock filling the frame lies over exactly this and nothing more.
     // 🔴 `min-w-0`: a flex item is otherwise no narrower than its content, and every view but
     // Sessions is drawn in here, so a long title that should truncate would widen the frame past the
     // window (a browser draws the view outside the frame).
@@ -408,17 +389,99 @@ export function WorkFrame({
       {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={go.setOver} />}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {elsewhere ? viewLayout.main : (<>
+        {elsewhere ? viewLayout.main : attended ? (
+          // The session panel: one session's head, story, live band, dock, composer and Changes rail, in one column.
+          <ViewMain ref={centre} gutters="session" menu={pageMenu} state="chosen">
+            <div className="flex h-full min-h-0 min-w-0 flex-col">
+              <AttendedSessionPanel
+                t={t}
+                notify={notify}
+                session={session}
+                boxState={boxState}
+                words={words}
+                boxWords={boxWords}
+                waitsState={waitsState}
+                headState={headState}
+                grouping={grouping}
+                roster={roster}
+                refusal={refusal}
+                openPreview={openPreview}
+                along={{
+                  atWork: atWorkHeld, record, docked: docked.map((line) => line.key), onToDock: toDockLine, onOpenSession: attend, onOpenQuest,
+                  nameOf: (agent) => agentRoster.names?.[agent] ?? agent,
+                }}
+                branch={branch?.branch ?? null}
+                onOpenOutputs={onReviewRun}
+                asks={asks}
+                rootOf={rootOf}
+                attend={attend}
+                coolsUntil={coolsUntil}
+                partRows={partRows}
+                prelude={(
+                  <AttendedPane
+                    t={t}
+                    notify={notify}
+                    session={session}
+                    record={record}
+                    work={work}
+                    boxState={boxState}
+                    waitsState={waitsState}
+                    headState={headState}
+                    roster={roster}
+                    nameOf={nameOf}
+                    agentRoster={agentRoster}
+                    memorySeek={memorySeek}
+                    following={following}
+                    atWorkHeld={atWorkHeld}
+                    heavy={heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
+                    partRows={partRows}
+                    onShowPart={(id) => { attend(id); seek(); }}
+                    openAtWork={toExchangeRow}
+                    attend={attend}
+                    onOpenQuest={onOpenQuest}
+                    onAnswerAsk={onAnswerAsk}
+                    onOpenBranch={onOpenBranch}
+                  />
+                )}
+                band={here ? (
+                  <>
+                    <SessionBand
+                      key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify}
+                      exchanges={following?.id === attended.id && atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.exchanges : undefined}
+                      onOpenSession={attend} nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
+                    />
+                    {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
+                  </>
+                ) : undefined}
+                dock={waits ? (
+                  <SessionDock
+                    key={`dock:${attended.id}`}
+                    {...waits}
+                    answerBelow={answerBelow}
+                    workAsk={workAsk}
+                    ruleAsk={ruleAsk}
+                    toEvent={toEvent}
+                    seek={seekAt('foot')}
+                    runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
+                    quest={quest}
+                    beside={waitsState.beside}
+                    // Who asks, as the head names the session's agent: its repository, its maker and the model that ran.
+                    asker={{
+                      role: attended.repository,
+                      agent: roster.find((row) => row.door === attended.door)?.product || attended.door,
+                      model: modelRan(attended).model,
+                    }}
+                    onRefused={(said) => notify(said, 'error')}
+                  />
+                ) : undefined}
+              />
+            </div>
+          </ViewMain>
+        ) : (<>
         <ViewMain
           ref={centre}
           gutters="session"
-          // Pinned at the top while the conversation scrolls under it; none with nothing attended.
-          header={pageHead || undefined}
-          menu={pageMenu}
-          // A remembered session is found in the list, so while the list first loads it is on its way, never
-          // the composer. With nothing attended the main area is *New conversation*: no notice is
-          // handed, so the state's body is the composer.
-          state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
+          state={selected && sessions.isPending ? 'loading' : 'none'}
         >
           {/* *New conversation*, the main area while nothing is attended. */}
           {!attended && (
@@ -433,109 +496,7 @@ export function WorkFrame({
               attend={attend}
             />
           )}
-          <AttendedPane
-            t={t}
-            notify={notify}
-            session={session}
-            record={record}
-            work={work}
-            boxState={boxState}
-            waitsState={waitsState}
-            headState={headState}
-            roster={roster}
-            nameOf={nameOf}
-            agentRoster={agentRoster}
-            memorySeek={memorySeek}
-            following={following}
-            atWorkHeld={atWorkHeld}
-            heavy={attended && heavyPart ? heavyRow(t, heavySlot.data, attended.id, heavyTitleOf, attend) : null}
-            partRows={partRows}
-            onShowPart={(id) => { attend(id); seek(); }}
-            openAtWork={atWorkSeek.open}
-            attend={attend}
-            onOpenQuest={onOpenQuest}
-            onAnswerAsk={onAnswerAsk}
-            onOpenBranch={onOpenBranch}
-          />
-          <AttendedConversation
-            onOpenOutputs={onReviewRun}
-            t={t}
-            session={session}
-            boxState={boxState}
-            words={words}
-            waitsState={waitsState}
-            headState={headState}
-            grouping={grouping}
-            coolsUntil={coolsUntil}
-            roster={roster}
-            rootOf={rootOf}
-            openPreview={openPreview}
-            centre={centre}
-            partRows={partRows}
-            partBox={partBox}
-            attend={attend}
-            // The channel its panel reads names each message's poster, and a turn's door opens that panel.
-            channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
-              record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
-            ) : undefined}
-          />
         </ViewMain>
-
-        {/* The waiting panel: the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
-            and the conversation's *To the top* and *Back to bottom* above that edge, never under it. */}
-        <WaitPanel
-          height={waitPanel.height}
-          onResize={waitPanel.resize}
-          onReset={waitPanel.reset}
-          controls={attended && here && (awayFromTop || (tail && !tail.atTail)) ? (
-            <>
-              {awayFromTop && <ToTheTop onPress={toTop} className="bg-overlay shadow-sm" />}
-              {tail && !tail.atTail && <BackToBottom onPress={tail.toTail} className="bg-overlay shadow-sm" />}
-            </>
-          ) : undefined}
-        >
-          {/* The dock: every wait the person settles, above the box and outside the conversation's scroll, each with its own
-              press; a teammate's record draws them as lines with none. Keyed by the session. 🔴 The strip, the settler and the composer each name their kind beside the id:
-              keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
-          {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
-          {waitsOnScreen === false && limitLine('mb-2')}
-          {/* The live band: what runs now, above the dock, each line ticking with its last line and its presses. */}
-          {attended && here && <SessionBand key={`band:${attended.id}`} session={attended.id} told={waitsState.beside} notify={notify} />}
-          {attended && waits && (
-            <WaitStrip
-              key={`strip:${attended.id}`}
-              {...waits}
-              // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
-              answerBelow={answerBelow}
-              workAsk={workAsk}
-              ruleAsk={ruleAsk}
-              toEvent={toEvent}
-              seek={seekAt('foot')}
-              runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
-              quest={quest}
-              beside={waitsState.beside}
-            />
-          )}
-
-          {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
-
-          <AttendedBoxes
-            t={t}
-            notify={notify}
-            session={session}
-            boxState={boxState}
-            words={words}
-            boxWords={boxWords}
-            asks={asks}
-            waitsState={waitsState}
-            headState={headState}
-            refusal={refusal}
-            roster={roster}
-            rootOf={rootOf}
-            attend={attend}
-          />
-        </WaitPanel>
-
         </>)}
 
         {/* An emptied panel that is hidden is not drawn at all, unless a view is being dragged to it;
@@ -587,6 +548,7 @@ export function WorkFrame({
           {dock === 'preview' ? previewSurface : dock ? surface(dock, 'right') : null}
         </RightDock>
       )}
+      {flowchart && <Drawer title={t('work.track.flowchartTitle')} onClose={() => setFlowchartOpen(false)}>{flowchart}</Drawer>}
     </div>
   );
 }

@@ -41,10 +41,6 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
 
     private DepsKeeping Deps => _deps ??= new DepsKeeping(Clock);
 
-    private SalvageKeeping? _salvage;
-
-    private SalvageKeeping Salvage => _salvage ??= new SalvageKeeping(Clock);
-
     /// <summary>
     /// The Keeping pass, in the tidy's task after its repositories, where the purge ran,
     /// so it holds no repository's hold and a start never waits on it: it tries the home's run lock, and held elsewhere removes nothing
@@ -70,10 +66,9 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         lock (_gate) historyDue = history.Days is not null && (_historyDaily is not { } cleared || Clock() - cleared >= DownloadsPace || _historyDays != history.Days);
         var depsDue = Deps.Due(home);
         var pluginOutputDue = tidy.PluginOutput?.Due(home) == true;
-        var salvageDue = Salvage.Due(home, Policy(home));
-        // Nothing set aside, nothing downloaded, no log's day, no history's clear and no store's eviction, plugin output's prune or
-        // salvage's removal due, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
-        if (!setAside && !Downloaded() && !logsDue && !historyDue && !depsDue && !pluginOutputDue && !salvageDue) return lines;
+        // Nothing set aside, nothing downloaded, no log's day, no history's clear and no store's eviction or plugin output's prune
+        // due, nothing to keep: the run lock and its holder's file are not written every pace for nothing.
+        if (!setAside && !Downloaded() && !logsDue && !historyDue && !depsDue && !pluginOutputDue) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
@@ -106,9 +101,8 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
         if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
-        if (depsDue) lines.AddRange(KeepDeps(run, met));
+        if (depsDue) lines.AddRange(KeepDeps(run, log, met));
         if (pluginOutputDue) lines.AddRange(KeepPluginOutput(tidy.PluginOutput!));
-        if (salvageDue) lines.AddRange(KeepSalvage(run, met));
         if (Sizes is not null && (setAside || Downloaded())) lines.AddRange(await KeepLimitsAsync(service, run, log, ct).ConfigureAwait(false));
 
         // Each kind counted at most once a day, and the kinds this run wrote a `last` for at
@@ -248,7 +242,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
             var plan = SpaceFree.Plan(new SpaceFreeWorld(home) { Sizes = Sizes ?? new SpaceSizes(), Policy = Policy, Now = Clock });
             return plan.Units.Sum(unit => unit.Bytes ?? 0);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException or HomeEntryTwiceException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
             return null;
         }
@@ -273,14 +267,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     /// <summary>Whether anything is downloaded here to keep: either folder of the downloads, or both places of the layout holding one.</summary>
     private bool Downloaded()
     {
-        try
-        {
-            return Directory.Exists(DaorisHome.Entry(home, HomeEntry.Toolchain)) || Directory.Exists(DaorisHome.Entry(home, HomeEntry.ToolVersions));
-        }
-        catch (HomeEntryTwiceException)
-        {
-            return true;
-        }
+        return Directory.Exists(DaorisHome.Entry(home, HomeEntry.Toolchain)) || Directory.Exists(DaorisHome.Entry(home, HomeEntry.ToolVersions));
     }
 
     /// <summary>
@@ -380,7 +367,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     }
 
     /// <summary>The dependency store's daily eviction, holding the home's run; what went said, and <c>last.deps</c> written where one went.</summary>
-    private IReadOnlyList<string> KeepDeps(KeepingRun run, HashSet<string> met)
+    private IReadOnlyList<string> KeepDeps(KeepingRun run, MachineLog? log, HashSet<string> met)
     {
         var lines = new List<string>();
         var read = KeepingRecord.Read(home);
@@ -388,7 +375,8 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         var (removed, bytes) = Deps.Keep(home, policy);
         if (removed == 0) return lines;
         lines.Add(Look.Of(LookClass.Progress, "tidy", $"tidy  removed {removed} dependency store entr{(removed == 1 ? "y" : "ies")} not placed in {(int)policy.DepsDays.TotalDays} days or over its limit ({Size(bytes)})."));
-        if (KeepingRecord.WriteLast(home, read, KeepKinds.Deps.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
+        log?.Info("deps.evicted", ("entries", removed), ("freed", bytes));
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.Deps.Id,new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
         {
             lock (_gate)
             {
@@ -399,25 +387,6 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         return lines;
     }
 
-    /// <summary>The salvage rule (<see cref="SalvageKeeping"/>), holding the home's run: what went said in the report, and <c>last.salvage</c> written.</summary>
-    private IReadOnlyList<string> KeepSalvage(KeepingRun run, HashSet<string> met)
-    {
-        var lines = new List<string>();
-        var read = KeepingRecord.Read(home);
-        var policy = Policy(home);
-        var (removed, bytes) = Salvage.Keep(home, policy);
-        if (removed == 0) return lines;
-        lines.Add(Look.Of(LookClass.Progress, "tidy", $"tidy  removed {removed} migration salvage folder{(removed == 1 ? "" : "s")} older than {(int)policy.SalvageDays.TotalDays} days ({Size(bytes)})."));
-        if (KeepingRecord.WriteLast(home, read, KeepKinds.Salvage.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
-        {
-            lock (_gate)
-            {
-                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Of(LookClass.Retry, "tidy", $"tidy  {Clause(refused)}."));
-            }
-        }
-
-        return lines;
-    }
 
     private IReadOnlyList<string> KeepPluginOutput(IOutputKeeping output)
     {

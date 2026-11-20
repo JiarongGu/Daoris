@@ -7,7 +7,7 @@ import type { WorkPlanSession } from '../work/pausing/pausing';
 import { whyItSits, type WorkItem } from './workTree';
 
 /** A door into another page, in the accent, as the ask's other doors are. */
-const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
+const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent-ink underline-offset-2 hover:underline';
 
 /** The doors and facts every row of the work reads, handed down unchanged. */
 type Shared = {
@@ -62,7 +62,7 @@ function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         {/* What the page holds of the quest says its submission and hold; the plan's own word where it holds none. */}
         <QuestStatus quest={{ status: quest.status, submission: held?.submission, hold: held?.hold }} />
-        <span className="shrink-0 font-mono text-meta text-ink-faint">#{quest.quest.slice(0, 6)}</span>
+        <span className="shrink-0 font-mono text-caption text-ink-faint">#{quest.quest.slice(0, 6)}</span>
         {/* A door only onto a quest the page holds: a question to a repository in another workspace is named, not opened. */}
         {questTitles[quest.quest] ? (
           // Named as every list names it, whole on its tip.
@@ -77,21 +77,21 @@ function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
         ) : (
           <span className="min-w-0 wrap-anywhere text-body text-ink">{quest.title}</span>
         )}
-        <span className="text-meta text-ink-faint">→ {quest.to}</span>
+        <span className="text-caption text-ink-faint">→ {quest.to}</span>
       </p>
 
       {sentence && <p className="m-0 mt-0.5 wrap-anywhere text-small text-ink-soft"><Inline text={sentence} /></p>}
 
       {sessions.length > 0 && (
         <p className="m-0 mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="text-meta text-ink-faint">{t('asks.work.sessions')}</span>
+          <span className="text-caption text-ink-faint">{t('asks.work.sessions')}</span>
           {sessions.map((session) => <SessionDoor key={session.session} session={session} onAttend={onAttend} />)}
         </p>
       )}
 
       {questions.length > 0 && (
         <div className="mt-1.5 min-w-0">
-          <span className="text-meta text-ink-faint">{asked}</span>
+          <span className="text-caption text-ink-faint">{asked}</span>
           <ul aria-label={asked} className="m-0 mt-1 grid list-none gap-2.5 border-l border-line py-0.5 pl-3">
             {questions.map((question) => <WorkRow key={question.quest.quest} item={question} {...shared} />)}
           </ul>
@@ -114,15 +114,15 @@ function SessionDoor({ session, onAttend }: { session: WorkPlanSession; onAttend
           type="button"
           aria-label={t('asks.work.openSession', { id: session.session })}
           onClick={() => onAttend(session.session)}
-          className={`${DOOR} min-w-0 wrap-anywhere font-mono text-meta`}
+          className={`${DOOR} min-w-0 wrap-anywhere font-mono text-caption`}
         >
           {session.session}
         </button>
       ) : (
-        <span className="min-w-0 wrap-anywhere font-mono text-meta text-ink-soft">{session.session}</span>
+        <span className="min-w-0 wrap-anywhere font-mono text-caption text-ink-soft">{session.session}</span>
       )}
       {session.teammate && (
-        <span className="text-meta text-ink-faint">
+        <span className="text-caption text-ink-faint">
           {session.machine ? t('asks.work.teammate', { machine: session.machine }) : t('asks.work.teammateUnnamed')}
         </span>
       )}

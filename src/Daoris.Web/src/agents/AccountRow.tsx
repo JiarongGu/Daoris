@@ -74,7 +74,7 @@ export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[4
  */
 export function AccountColumnsHead() {
   const { t } = useTranslation();
-  const cell = 'text-meta font-medium uppercase tracking-[0.04em] text-ink-faint';
+  const cell = 'text-caption font-medium uppercase tracking-[0.04em] text-ink-faint';
   return (
     <li aria-hidden className="hidden pb-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-subgrid">
       <span className={cell}>{t('agents.col.account')}</span>

@@ -46,6 +46,7 @@ const ORGANISMS = new Set<string>([
   './work/conversation/SessionConversation.tsx',
   './work/catchup/useCatchUp.ts',
   './work/band/SessionBand.tsx',
+  './work/exchanges/useLineRows.tsx',
   // The earlier parts of a line: each is the conversation's organism in its earlier mode, so this holds none of its own.
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',
@@ -102,8 +103,9 @@ const ORGANISMS = new Set<string>([
   './work/head/useRunWaitDoors.tsx',
   './workflow/release/ReleaseStepDoors.tsx',
   './work/head/partRows.ts',
-  './work/conversation/AttendedConversation.tsx',
-  './work/conversation/AttendedBoxes.tsx',
+  './work/session/AttendedSessionPanel.tsx', // the session panel's organism: the head, story, dock and composer hold no hook
+  './work/conversation/useSessionReading.ts', // the session's record and scroll, read once for the story and the conversation
+  './work/beside/BesideReading.tsx', // a subagent's record and a task's console, so the beside rows and the band read none
   // The application's hooks: each holds one part of what the window reads and presses, so the shell composes.
   './app/shell/useShellState.ts',
   './app/shell/useFrameDoors.ts',

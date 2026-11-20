@@ -164,8 +164,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 
 **Accounts**
 
-26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters; an `account-N`
-    keeps its name as its id); removing it deletes the folder. An API key is an account too: kept in `keys.json`, sealed by the
+26. An account is made by signing in into a fresh folder named by a new id, `acct-` and eight hex characters (`AccountIdForm`);
+    `agent account add <agent> <name>` and the bridge's `profile-add` make one the same way (`AccountAdd`), the word given its
+    name, never its id; one already so named is the answer. An id an earlier build named by a counter (`account-N`) or a word moves once to that form, to
+    an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
+    orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
+    `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):
+    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A word id stays
+    the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
+    account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
+    a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the
     machine's seal the root hands (`SecretSeal`; the machine adapter's `KeySeal`, DPAPI for the Windows user; an unsealed key is
     sealed at the file's next write), handed only to a start's process in
     the tool's variable, shown by its last four characters. An agent held by a key alone (dsh) reads an account by its key: none
@@ -192,14 +200,18 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model names
     that family (`opus` in `claude-opus-4-5`) or runs at account default, and passes one naming another (`held.cooling-model`);
     every reader that knows a line's model reads it so (`CoolingOf` over `AccountCooling.Holding`). A refused account is passed
-    until a person acts, a signed-out one until a sign-in or an hour after its last reading. With no account ready the start
-    waits, saying the soonest way out. (D125, D130, D205)
+    until a person acts, a signed-out one until a sign-in marks it or an hour after its last reading, when its status is asked again.
+    A refusal of its sign-in is such a reading, whatever its status would say within that hour, since Claude Code's status reads its
+    own store, which a sign-in revoked at its server leaves. With no account ready the start waits, saying the soonest way out.
+    (D125, D130, D205, D328)
 31. A running conversation moves at its turn's end to another account of the same agent with room (10 points under its curve on
     every window), never mid-turn, and not again within 30 minutes. Where none has room, the `handOver` rule decides another
     agent. (D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home; a start on another
     agent is on another account. A resume judges that account as the walk does: a whole window with its reset ahead cools it
-    until then, unless the person picked it. (D131, D137, D206)
+    until then, unless the person picked it. (D131, D137, D206) The look reads that judgement without a probe for words held for
+    the account (`HarnessRoster.OwnHold`, one code with the resume's): present, in the set, not kept, cooling or refused, and its
+    last reading not signed out; an unknown sign-in is usable, as a start treats it. (D348)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150) An
     agent that declares its stored sign-in (`IStoredSignIn`, Claude Code's `.credentials.json`) is read for its shape alone,
     whether each token is there and when the access token expires, never a value. A start that has counted its account renews
@@ -259,8 +271,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     protocol-door run takes that retry (`TransientRetries.For`, `ChatRetry`), checked by its kind's own authority
     (`TransientOwners`); a pass with minutes of its own waits none past them and fails with its kind's code (`helper.transient`
     and its kin), never *timed out*. (D210, D229)
-40. Access goes to the person: the account is marked refused or signed out, with no retry. A fatal error fails with its reason
-    and is a strike. (D210)
+40. Access goes to the person: the account is marked refused or signed out, and its card asks for its sign-in. A driven start, or
+    a plugin step's session, its agent refused for its account's sign-in goes on once under the walk's next account, by Daoris itself
+    (`ClaimedStart`, `StepAgents`), the new record saying it moved; a walk that gives the refused account again runs nothing. With no
+    account left the start waits naming each account and its sign-in, and the step fails `sign-in`, its message naming the accounts
+    and the sign-in to make (`StepSignIns`), never a bare `no-answer`. A fatal error fails with its reason and is a strike. (D210, D328)
 
 **Toolchain and models**
 
@@ -369,6 +384,9 @@ An older word the code departs from, then what reads right.
 
 ## Open
 
+- **The window redesign** (`docs/2026-11-19-window-design.md` §13): budgets follow how an account is paid, a subscription shown
+  against its plan's windows and a per-use account carrying a weekly or monthly budget, with money only where it is real (D343,
+  UIRP28), and the model that ran is named wherever a session is (UISE1, UIRP6). Today the rules below stand.
 - **AGENTPROVIDER1**: h's containment on the installed launcher; r's Stub Two partner exchange (COAGENT1e); the rest of t, after
   every door has moved; j, each protocol door reading its own agent's extensions, after 1e. All Daoris's own.
 - **AGENTLYNTAI1**: the owner's, d's acceptance and installed proof and s-ii's spend (the three tools a headless turn cannot answer).
