@@ -3,7 +3,10 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>What makes a verification tree ready: its dependencies by the lockfiles that key them and the declared local inputs, as the files stage makes a session's; a seam for a test.</summary>
+/// <summary>
+/// What makes a verification tree ready, as the files stage makes a session's: its dependencies installed or placed by the lockfiles that
+/// key them, its local inputs copied (each <c>regenerate</c> runs at every check instead); a seam for a test, <see cref="Real"/> the stage.
+/// </summary>
 internal interface IVerifyPreparation
 {
     /// <summary>The words that say which inputs the tree stands on (each dependency's key and the declared local inputs), or null where git cannot say.</summary>

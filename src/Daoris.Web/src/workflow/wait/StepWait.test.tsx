@@ -27,14 +27,18 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'rebase', { code: 'turn' })).not.toMatch(/[A-Za-z]{4}/);
   });
 
-  it('says a check waiting for the machine\'s check slot by the run holding it and since when, or by its place in the queue, never as ready', async () => {
-    const held = { code: 'slot', values: { run: 'r-41', heldSince: '2026-11-20T08:15:00Z', position: '2', of: '3' }, since: '2026-11-20T08:20:00Z' };
-    const at = new Date('2026-11-20T08:15:00Z').toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
-    expect(waitSaid(t, 'check', held)).toBe(`Waits for the machine's check slot, held by run \`r-41\`'s check since ${at}: 2 of 3 in its queue.`);
-    expect(waitSaid(t, 'check', { code: 'slot-queued', values: { position: '1', of: '2' } })).toBe('Waits for the machine\'s check slot: 1 of 2 in its queue.');
+  it('says why a check waits for one of the machine\'s check slots: the slots all run, memory, or its repository\'s heavy run, with its place in the queue, never as ready', async () => {
+    const full = { code: 'slot', values: { running: '2', slots: '2', position: '2', of: '3' }, since: '2026-11-20T08:20:00Z' };
+    const memory = { code: 'slot-memory', values: { free: '4.1', need: '6', position: '1', of: '1' } };
+    const repository = { code: 'slot-repository', values: { repository: 'Daoris', position: '1', of: '2' } };
+    expect(waitSaid(t, 'check', full)).toBe('Waits for a check slot: 2 of 2 run; 2 of 3 in its queue.');
+    expect(waitSaid(t, 'check', memory)).toBe('Waits for memory: 4.1 GB free, the next check needs 6 GB; 1 of 1 in its queue.');
+    expect(waitSaid(t, 'check', repository)).toBe('Waits for `Daoris`\'s heavy-run slots, each held by another of its heavy runs; 1 of 2 in its queue.');
+    expect(waitSaid(t, 'check', { code: 'slot-queued', values: { position: '1', of: '2' } })).toBe('Waits for a check slot: 1 of 2 in its queue.');
     await i18n.changeLanguage('zh');
-    expect(waitSaid(t, 'check', held, 'zh')).toContain('`r-41`');
-    expect(waitSaid(t, 'check', held, 'zh')).not.toMatch(/[A-Za-z]{4}/);
+    expect(waitSaid(t, 'check', memory, 'zh')).toContain('4.1 GB');
+    expect(waitSaid(t, 'check', repository, 'zh')).toContain('`Daoris`');
+    for (const wait of [full, memory]) expect(waitSaid(t, 'check', wait, 'zh')).not.toMatch(/[A-Za-z]{4}/);
   });
 
   it('says a wait this page has no words for as recorded', () => {

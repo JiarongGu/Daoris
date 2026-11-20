@@ -86,13 +86,20 @@ public static class StepSettleAsks
     /// </summary>
     public static async Task<IReadOnlyList<NodeWorded>> TakeAsync(
         NodeRecordFiles records, Func<string, string?> agentOf, Func<string, string, string, CancellationToken, Task<SayAnswer>>? say, Func<DateTimeOffset> clock,
-        CancellationToken ct)
+        CancellationToken ct, Func<string, IReadOnlyCollection<string>?>? makers = null)
     {
         var done = new List<NodeWorded>();
         foreach (var kept in Waiting(records.Home))
         {
-            var by = SettleBy.OfChannel(TerminalTierBy.Session, appointed: false, kept.Epoch, agentOf(kept.Session))!;
-            var worded = StepSettles.Settle(records, kept.Ask, by, clock);
+            var by = SettleBy.OfChannel(TerminalTierBy.Session, appointed: false, kept.Epoch, agentOf(kept.Session), kept.Session)!;
+            var worded = StepSettles.Settle(records, kept.Ask, by, clock, makers?.Invoke(kept.Ask.Run.Trim().TrimStart('#')));
+            if (worded.Refused == SettleDoor.OwnWork && worded.Detail?.StartsWith(SettleDoor.NotYet, StringComparison.Ordinal) == true)
+            {
+                // The makers are not read (a restart): the ask stays open, so the next look takes it, and the session is told once.
+                if (say is not null) await say(kept.Session, StepSettles.Said(worded), $"step-settle:{kept.Id}:not-yet", ct).ConfigureAwait(false);
+                continue;
+            }
+
             done.Add(worded);
             JsonFile.Write(PathOf(records.Home, kept.Session, StateSuffix), writer =>
             {

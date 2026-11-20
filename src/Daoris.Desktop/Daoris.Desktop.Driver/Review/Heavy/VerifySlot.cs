@@ -10,16 +10,18 @@ public sealed record VerifyHolder(int Pid, long Started, string Run, string Invo
 /// <summary>An attempt sent to the executor that has not started, in the order sent, and what it waits for now.</summary>
 public sealed record VerifyWaiter(int Pid, long Started, string Run, string Invocation, string Repository, DateTimeOffset Since, int Order)
 {
-    /// <summary>What it waits for: the run holding a slot, or the runner's own run; null before its first look.</summary>
+    /// <summary>What it waits for, in words, and by code (<see cref="CheckWait"/>) where the admission said; null before its first look.</summary>
     public string? For { get; init; }
+
+    public CheckWait? Wait { get; init; }
 }
 
-/// <summary>The home's verification slot as it stands: its holder and the attempts waiting, each only while its process runs.</summary>
-public sealed record VerifyLook(VerifyHolder? Holder, IReadOnlyList<VerifyWaiter> Waiters);
+/// <summary>The home's verification slots as they stand: their holders and the attempts waiting, each only while its process runs.</summary>
+public sealed record VerifyLook(IReadOnlyList<VerifyHolder> Holders, IReadOnlyList<VerifyWaiter> Waiters);
 
 /// <summary>
-/// The home's one verification slot: one verification run in the home at a time, its handle the lock as a
-/// repository's heavy-run slot's is, its holder and its waiters said beside it under <c>locks/verify/</c>.
+/// One of the home's verification slots, the machine's check slots, as <see cref="CheckAdmission"/> admits them: each handle a lock,
+/// its holder and the waiters said beside them under <c>locks/verify/</c>, the first slot <c>home.lock</c>, the n-th <c>home-n.lock</c>.
 /// </summary>
 public sealed class VerifySlot : IDisposable
 {
@@ -28,25 +30,31 @@ public sealed class VerifySlot : IDisposable
 
     private VerifySlot(FileStream file, string record) => (_file, _record) = (file, record);
 
-    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Locks, "verify", "home.lock");
+    /// <summary>The lock of the slot at <paramref name="index"/>, the first at 0, and its holder's record.</summary>
+    public static string PathOf(string home, int index = 0) => DaorisHome.Entry(home, HomeEntry.Locks, "verify", Name(index) + ".lock");
 
-    public static string RecordOf(string home) => DaorisHome.Entry(home, HomeEntry.Locks, "verify", "home.json");
+    public static string RecordOf(string home, int index = 0) => DaorisHome.Entry(home, HomeEntry.Locks, "verify", Name(index) + ".json");
 
     public static string WaitersOf(string home) => DaorisHome.Entry(home, HomeEntry.Locks, "verify", "waits");
 
-    /// <summary>The slot, or null while another run holds it. Never waits.</summary>
-    public static VerifySlot? TryTake(string home)
+    private static string Name(int index) => index == 0 ? "home" : $"home-{index + 1}";
+
+    /// <summary>The first of the first <paramref name="slots"/> slots that is free, or null while runs hold every one. Never waits.</summary>
+    public static VerifySlot? TryTake(string home, int slots = 1)
     {
-        var path = PathOf(home);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        try
+        Directory.CreateDirectory(Path.GetDirectoryName(PathOf(home))!);
+        for (var index = 0; index < slots; index++)
         {
-            return new VerifySlot(new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None), RecordOf(home));
+            try
+            {
+                return new VerifySlot(new FileStream(PathOf(home, index), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None), RecordOf(home, index));
+            }
+            catch (IOException held) when (!OperatingSystem.IsWindows() || (held.HResult & 0xFFFF) is 32 or 33)
+            {
+            }
         }
-        catch (IOException held) when (!OperatingSystem.IsWindows() || (held.HResult & 0xFFFF) is 32 or 33)
-        {
-            return null;
-        }
+
+        return null;
     }
 
     public void Keep(VerifyHolder holder) => AtomicFile.WriteText(_record, Json(writer =>
@@ -74,16 +82,20 @@ public sealed class VerifySlot : IDisposable
         _file.Dispose();
     }
 
-    /// <summary>The slot's holder and its waiters, the first sent first, each only where its process runs. Reads files only.</summary>
+    /// <summary>The slots' holders, the first taken first, and their waiters, the first sent first, each only where its process runs. Reads files only.</summary>
     public static VerifyLook Look(string home, Func<int, long, bool>? alive = null)
     {
         alive ??= HeavySlot.Running;
-        VerifyHolder? holder = null;
-        if (Read(RecordOf(home)) is { } held && Text(held, "run") is { } run && Text(held, "invocation") is { } invocation
-            && held.TryGetProperty("pid", out var pid) && pid.TryGetInt32(out var id) && held.TryGetProperty("started", out var started) && started.TryGetInt64(out var ticks)
-            && held.TryGetProperty("since", out var since) && since.TryGetDateTimeOffset(out var at) && alive(id, ticks))
+        var holders = new List<VerifyHolder>();
+        var verify = Path.GetDirectoryName(PathOf(home))!;
+        foreach (var record in Directory.Exists(verify) ? Directory.EnumerateFiles(verify, "home*.json").ToList() : [])
         {
-            holder = new VerifyHolder(id, ticks, run, invocation, Text(held, "repository") ?? "", at);
+            if (Read(record) is { } held && Text(held, "run") is { } run && Text(held, "invocation") is { } invocation
+                && held.TryGetProperty("pid", out var pid) && pid.TryGetInt32(out var id) && held.TryGetProperty("started", out var started) && started.TryGetInt64(out var ticks)
+                && held.TryGetProperty("since", out var since) && since.TryGetDateTimeOffset(out var at) && alive(id, ticks))
+            {
+                holders.Add(new VerifyHolder(id, ticks, run, invocation, Text(held, "repository") ?? "", at));
+            }
         }
 
         var waiters = new List<VerifyWaiter>();
@@ -93,7 +105,7 @@ public sealed class VerifySlot : IDisposable
             if (Read(file) is { } one && Waiter(one) is { } waiter && alive(waiter.Pid, waiter.Started)) waiters.Add(waiter);
         }
 
-        return new VerifyLook(holder, [.. waiters.OrderBy(waiter => waiter.Since).ThenBy(waiter => waiter.Order)]);
+        return new VerifyLook([.. holders.OrderBy(holder => holder.Since)], [.. waiters.OrderBy(waiter => waiter.Since).ThenBy(waiter => waiter.Order)]);
     }
 
     /// <summary>Say an attempt waits, in a file of its own named by its invocation; one that cannot be written costs the page a waiter.</summary>
@@ -112,6 +124,13 @@ public sealed class VerifySlot : IDisposable
                 writer.WriteString("since", waiter.Since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
                 writer.WriteNumber("order", waiter.Order);
                 if (waiter.For is { } what) writer.WriteString("for", what);
+                if (waiter.Wait is { } wait)
+                {
+                    writer.WriteString("wait", wait.Code);
+                    writer.WriteStartObject("values");
+                    foreach (var (name, value) in wait.Values) writer.WriteString(name, value);
+                    writer.WriteEndObject();
+                }
             }));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -135,7 +154,13 @@ public sealed class VerifySlot : IDisposable
         && Text(root, "run") is { } run && Text(root, "invocation") is { } invocation
         && root.TryGetProperty("since", out var since) && since.TryGetDateTimeOffset(out var at)
             ? new VerifyWaiter(id, ticks, run, invocation, Text(root, "repository") ?? "", at,
-                root.TryGetProperty("order", out var order) && order.TryGetInt32(out var number) ? number : 0) { For = Text(root, "for") }
+                root.TryGetProperty("order", out var order) && order.TryGetInt32(out var number) ? number : 0) { For = Text(root, "for"), Wait = WaitOf(root) }
+            : null;
+
+    private static CheckWait? WaitOf(JsonElement root) =>
+        Text(root, "wait") is { } code && root.TryGetProperty("values", out var values) && values.ValueKind == JsonValueKind.Object
+            ? new CheckWait(code, values.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String)
+                .ToDictionary(each => each.Name, each => each.Value.GetString()!, StringComparer.Ordinal))
             : null;
 
     private static JsonElement? Read(string path)

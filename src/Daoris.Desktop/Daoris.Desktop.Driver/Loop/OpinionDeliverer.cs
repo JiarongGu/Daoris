@@ -93,7 +93,31 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         var kept = Deliveries.Read(view.Id);
         if (kept.Person is { } toPerson) return ToPerson(view, named, toPerson);
         if (view.HandedTo is null) return await HandAsync(view, named, asked, ct).ConfigureAwait(false);
-        if (kept.Answered is { } answered) return await AnsweredAsync(view, named, answered, kept, asked, ct).ConfigureAwait(false);
+        if (kept.Answered is { } answered)
+        {
+            // 🔴 Answered after its reading: a turn a restart cut off is read as it ends, before it answers, and the line goes on and
+            // answers. Before any recheck, those answers are read again once the turn answering them has ended.
+            if (kept.Recheck is null && answered.Behind(view))
+            {
+                var answering = await Service.RecordAsync(answered.Session, ct).ConfigureAwait(false);
+                var busy = answering?.Running == true;
+                if (answering is not null && ChatRunOf(answering, asked) && _context.SendsBack?.TurnEnded(answering.Session) is { } idle) busy = !idle;
+                if (busy && answering is not null)
+                {
+                    return new OpinionDelivery(
+                        view.Id, OpinionDeliveryStates.WithSession,
+                        $"with-session  {named}: session {answering.Session} is answering its {Plural(view.Findings.Count, "finding")}.")
+                    {
+                        Session = answering.Session,
+                    };
+                }
+
+                answered = await ReadAnswersAsync(view, answering?.Session ?? answered.Session, answering?.Tree, ct).ConfigureAwait(false);
+                kept = Deliveries.Reread(view.Id);
+            }
+
+            return await AnsweredAsync(view, named, answered, kept, asked, ct).ConfigureAwait(false);
+        }
 
         // Handed: its record has the words, or its turn on them runs, until the turn ends and its answers are read.
         var record = await Service.RecordAsync(view.HandedTo, ct).ConfigureAwait(false);
@@ -366,8 +390,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
     /// <summary>
     /// The one recheck: a fresh pass by the same reviewer, walked again for its account, over the commits from the
-    /// first pass's tip to the working tree's tip as its turn ended, handed the first pass's findings and the answers. Where an account's
-    /// cool-off holds that reviewer, the rule's next holder that is ready reads it, as a first pass's walk goes on.
+    /// first pass's tip to the working tree's tip as its turn ended, handed the first pass's findings and the answers. Where that reviewer
+    /// cannot read it (a cool-off, no account signed in, not installed, refused), the rule's next holder that is ready reads it, as a first
+    /// pass's walk goes on.
     /// </summary>
     /// <param name="capped">The recheck a cap ended, asked again here: asked only of a holder that is ready, and said handed on.</param>
     private async Task<OpinionPassRun> RecheckAsync(
@@ -394,7 +419,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             && records.GetValueOrDefault(first.Session) is { Asked: { } was } record
             ? [new ActorEffective(first.Door, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
             : null;
-        // The rule's other reviewers, walked where the first is held by a cool-off or this call passed its account.
+        // The rule's other reviewers, walked wherever the first cannot read it: cooling, signed out, not installed or refused, or its account
+        // passed by this call. The walk takes another maker's ready agent first, and the choice's label says which it took.
         IReadOnlyList<string> next = reviewers is [var only] && string.Equals(only, first.Door, StringComparison.OrdinalIgnoreCase)
             ? [.. asked.Rule.Reviewers.Where(each => !string.Equals(each, first.Door, StringComparison.OrdinalIgnoreCase))]
             : [];
@@ -404,7 +430,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                     _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order,
                     catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home))
                 .ConfigureAwait(false);
-            if (same.Chosen || next.Count == 0 || (same.Cooling is null && passed is not { Count: > 0 })) return same;
+            if (same.Chosen || next.Count == 0) return same;
             var other = await ReviewerChoice.ChooseAsync(
                     _context.Harnesses, asked.Rule with { Reviewers = next }, wrote, _context.Config, asked.Workspace, ct, passed: passed,
                     catalogue: () => RoleCatalog.ReadHome(_context.Harnesses.Home))

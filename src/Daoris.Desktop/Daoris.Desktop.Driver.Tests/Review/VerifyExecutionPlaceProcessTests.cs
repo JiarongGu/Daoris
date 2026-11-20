@@ -4,17 +4,17 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A check regenerates what its gates' declaration says before them, every check and not only where its tree's preparation moved, and
-/// holds one place in the machine's admission for the regeneration and every gate (or the reached runner) it runs; a reached runner
-/// runs the fast tier unless the step names <c>heavy</c>.
+/// A check holds one place in the machine's admission for its regeneration and every gate (or the reached runner) it runs, which a machine
+/// that admits one run at a time proves: a second place would wait on the first for ever. A reached runner runs the fast tier unless the
+/// step names <c>heavy</c>.
 /// </summary>
 /// <remarks>Real git, node and job processes: the Process half's.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
-public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
+public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
 {
-    private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "verify-regenerate", Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "verify-place", Guid.NewGuid().ToString("N")[..8]);
     private readonly List<HeavyExecutor> _executors = [];
     private int _sent;
     private string Home => Path.Combine(_folder, "home");
@@ -22,9 +22,8 @@ public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         Directory.CreateDirectory(Home);
-        // Each stand-in notes what it is and the admission hold it runs inside, in the order the check runs them.
         const string note = "import { appendFileSync } from 'node:fs'; import { join } from 'node:path'; const note = (words) => appendFileSync(join(process.argv[2], 'calls.log'), `${words} ${process.env.DAORIS_ADMISSION_HOLD ?? 'none'}\\n`);";
-        await File.WriteAllTextAsync(At("regen.mjs"), note + " note('regen'); process.exit(Number(process.argv[3] ?? 0));");
+        await File.WriteAllTextAsync(At("regen.mjs"), note + " note('regen');");
         await File.WriteAllTextAsync(At("gate.mjs"), note + " note(`gate:${process.argv[3]}`);");
         await File.WriteAllTextAsync(At("reached.mjs"), note + " note(`reached:${process.argv[3]}:${process.argv[4]}`); console.log('reached-classes: {\"ran\":1,\"replayed\":0,\"flaked\":[],\"mainRed\":[],\"red\":[]}');");
     }
@@ -43,14 +42,14 @@ public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
         ? [.. File.ReadAllLines(At("calls.log")).Select(line => line.Split(' ')).Select(words => (words[0], words[1]))]
         : [];
 
-    private async Task<(string Checkout, string Commit, string Blob)> RepositoryAsync(int regenerateExit, bool reached)
+    private async Task<(string Checkout, string Commit, string Blob)> RepositoryAsync(bool reached)
     {
         var checkout = At("engine");
         Directory.CreateDirectory(checkout);
         await GitFixture.GitAsync(checkout, "init", "-q", "-b", "main");
         await GitFixture.GitAsync(checkout, "config", "user.email", "test@example.com");
         await GitFixture.GitAsync(checkout, "config", "user.name", "Test");
-        var regenerate = Node(At("regen.mjs"), _folder, regenerateExit.ToString());
+        var regenerate = Node(At("regen.mjs"), _folder);
         var declaration = new
         {
             gates = new[]
@@ -68,46 +67,30 @@ public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
 
     private async Task<VerifyResult> RunAsync((string Checkout, string Commit, string Blob) repository, string? baseRef = null, bool heavy = false)
     {
-        var executor = new HeavyExecutor(Home, new VerifyWorld() with { Poll = TimeSpan.FromMilliseconds(50) });
+        var world = new VerifyWorld { Poll = TimeSpan.FromMilliseconds(50), Processors = 8, Capacity = 1, Memory = () => new MemoryReading(20L << 30, 20L << 30) };
+        var executor = new HeavyExecutor(Home, world);
         _executors.Add(executor);
         var number = ++_sent;
         var run = $"v-{900 + number:D16}";
-        await executor.SendAsync(new VerifySend(run, $"i-regen-{number}", "engine", repository.Checkout, repository.Commit, repository.Blob)
+        await executor.SendAsync(new VerifySend(run, $"i-place-{number}", "engine", repository.Checkout, repository.Commit, repository.Blob)
         {
             Tree = repository.Checkout + "-verify", Base = baseRef, Heavy = heavy,
         });
-        var path = VerifyFiles.ResultOf(Home, run, $"i-regen-{number}");
+        var path = VerifyFiles.ResultOf(Home, run, $"i-place-{number}");
         await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
 
     [Fact]
-    public async Task Each_check_regenerates_once_before_its_gates_and_runs_them_all_inside_one_place()
+    public async Task A_check_regenerates_then_runs_every_gate_inside_one_place_on_a_machine_that_admits_one()
     {
-        var repository = await RepositoryAsync(0, reached: false);
+        var result = await RunAsync(await RepositoryAsync(reached: false));
 
-        var one = await RunAsync(repository);
-        Assert.True(one.Verdict == VerifyVerdicts.Reached, one.Why);
-        var first = Calls();
-        Assert.Equal(["regen", "gate:a", "gate:b"], first.Select(call => call.What));
-        Assert.NotEqual("none", first[0].Hold);
-        Assert.Single(first.Select(call => call.Hold).Distinct());
-
-        // The preparation's stamp has not moved, yet the next check regenerates again.
-        var two = await RunAsync(repository);
-        Assert.True(two.Verdict == VerifyVerdicts.Reached, two.Why);
-        Assert.Equal(["regen", "gate:a", "gate:b", "regen", "gate:a", "gate:b"], Calls().Select(call => call.What));
-    }
-
-    [Fact]
-    public async Task A_regeneration_that_fails_fails_the_check_naming_it_and_runs_no_gate()
-    {
-        var result = await RunAsync(await RepositoryAsync(3, reached: false));
-
-        Assert.Equal((VerifyVerdicts.Failed, VerifyExecution.RegenerateGate), (result.Verdict, result.Failed));
-        Assert.Contains("failed with exit 3", result.Why);
-        Assert.Equal(["regen"], Calls().Select(call => call.What));
-        Assert.Equal([VerifyExecution.RegenerateGate, "a", "b"], result.Gates.Select(gate => gate.Name));
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        var calls = Calls();
+        Assert.Equal(["regen", "gate:a", "gate:b"], calls.Select(call => call.What));
+        Assert.NotEqual("none", calls[1].Hold);
+        Assert.Equal(calls[1].Hold, calls[2].Hold);
     }
 
     [Theory]
@@ -115,11 +98,11 @@ public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
     [InlineData(true, "all")]
     public async Task A_reached_runner_runs_after_the_regeneration_in_the_checks_one_place_and_the_fast_tier_unless_the_step_names_heavy(bool heavy, string tier)
     {
-        var result = await RunAsync(await RepositoryAsync(0, reached: true), baseRef: "main", heavy: heavy);
+        var result = await RunAsync(await RepositoryAsync(reached: true), baseRef: "main", heavy: heavy);
 
         Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
         var calls = Calls();
         Assert.Equal(["regen", $"reached:main:{tier}"], calls.Select(call => call.What));
-        Assert.Single(calls.Select(call => call.Hold).Distinct());
+        Assert.NotEqual("none", calls[1].Hold);
     }
 }

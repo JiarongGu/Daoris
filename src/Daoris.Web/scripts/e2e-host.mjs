@@ -6,9 +6,8 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { e2ePort, webRoot } from './e2e-port.mjs';
 
-const webRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(webRoot));
 const { copyTree } = await import(`file://${join(repoRoot, 'tools', 'fsx.mjs')}`);
 const { guarded } = await import(`file://${join(repoRoot, 'tools', 'tree-base.mjs')}`);
@@ -45,10 +44,10 @@ const host = spawn('dotnet', [dll], {
     ...process.env,
     DAORIS_KNOWLEDGE_ROOT: family,
     DAORIS_KNOWLEDGE_DB: join(scratch, 'knowledge.db'),
-    // 5196, deliberately apart from the family rehearsal's 5197–5200: the two suites run in the same
-    // CI job, and an orphaned host on a shared port makes one gate's readiness probe answer against
-    // the other's server — a failure that reads as flakiness rather than a port clash.
-    ASPNETCORE_URLS: 'http://localhost:5196',
+    // The checkout's own port (`e2e-port.mjs`), which the config hands here: a host on a port another
+    // checkout's suite shares makes one gate's readiness probe answer against the other's server, or
+    // its bind fail — a failure that reads as the change's rather than a port clash.
+    ASPNETCORE_URLS: `http://localhost:${e2ePort(webRoot)}`,
     // Hermetic like the family rehearsal (its own prelude states the argument): the developer's real
     // remotes map must never leak a deployment into a gate run — and the home itself points at
     // scratch, so nothing this host derives from it is the machine's either.

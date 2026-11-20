@@ -2,10 +2,10 @@
   "id": "branch-to-push",
   "order": 4,
   "name": "Branch workflow",
-  "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push.",
+  "for": "For a repository you push yourself: the work's Accept follows the risk policy (it passes where nothing gates it), and it lands on a branch of its own for you to push.",
   "delivery": {
     "name": "A branch to push",
-    "for": "For a repository you push yourself: you review the work, and it lands on a branch of its own for you to push."
+    "for": "For a repository you push yourself: the work's Accept follows the risk policy (it passes where nothing gates it), and it lands on a branch of its own for you to push."
   },
   "setUp": true,
   "graph": {

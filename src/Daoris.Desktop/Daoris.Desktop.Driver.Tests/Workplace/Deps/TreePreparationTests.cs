@@ -5,8 +5,8 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// What a repository declares to prepare a tree: a session's tree is handed without it, its session told the commands; a verification
-/// tree is prepared by no declared command: a check runs the <c>regenerate</c> of its gates (<c>VerifyExecutionRegenerateProcessTests</c>). Real git and real commands; fixtures live under the
-/// repository's gitignored <c>_fixtures/</c>.
+/// tree runs each gate's <c>regenerate</c> once before each check, the first that does not finish named and the rest not run, never the
+/// <c>treeBaseline</c>. Real git and real commands; fixtures live under the repository's gitignored <c>_fixtures/</c>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -74,4 +74,37 @@ public sealed class TreePreparationTests : IDisposable
         Assert.DoesNotContain("files.prep", line);
     }
 
+    [Fact]
+    public void A_declarations_text_names_the_same_regenerates_as_its_file()
+    {
+        Assert.Equal(["node regen.cjs"], TreePrepDeclared.Of(Declared).Regenerate);
+        Assert.True(TreePrepDeclared.Of("{ not json").Empty);
+        Assert.True(TreePrepDeclared.Of(null).Empty);
+    }
+
+    [Fact]
+    public async Task A_verification_tree_regenerates_each_command_once_and_never_runs_the_baseline()
+    {
+        var tree = await MakeTreeAsync(Declared, "1");
+
+        var failed = await TreePreparation.RegenerateAsync(Home, "engine", TreePrepDeclared.Of(Declared).Regenerate, tree, CancellationToken.None);
+
+        Assert.Null(failed);
+        Assert.Equal("x", await File.ReadAllTextAsync(Path.Combine(tree, "local", "regen.txt")));
+        Assert.False(File.Exists(Path.Combine(tree, "local", "base.txt")));
+    }
+
+    [Fact]
+    public async Task A_regenerate_that_does_not_finish_is_named_with_its_output_and_the_rest_do_not_run()
+    {
+        var tree = await MakeTreeAsync(Declared, "0");
+        const string broken = "node -e \"console.log('contracts would not build'); process.exit(2)\"";
+
+        var failed = await TreePreparation.RegenerateAsync(Home, "engine", [broken, "node regen.cjs"], tree, CancellationToken.None);
+
+        Assert.NotNull(failed);
+        Assert.Equal((broken, 2), (failed.Command, failed.Ran.Code));
+        Assert.Contains("contracts would not build", failed.Ran.Output);
+        Assert.False(File.Exists(Path.Combine(tree, "local", "regen.txt")));
+    }
 }

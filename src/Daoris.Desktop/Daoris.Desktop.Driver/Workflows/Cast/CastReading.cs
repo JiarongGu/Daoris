@@ -26,7 +26,17 @@ public static class CastReading
 
     public static Func<string, bool> AgentHolds(string home, PluginPlace place)
     {
-        var cast = new Lazy<Func<string, string>>(() => Home(home, place.Workspace, place.Repository));
-        return role => cast.Value(role) != CastHolders.Person;
+        var cast = new Lazy<Func<string, CastNow>>(() => Now(home, place.Workspace, place.Repository));
+        return role => AgentHeld(cast.Value(role));
     }
+
+    /// <param name="live">Whether a live session serves the repository running the agent named, or any agent for null; null reads the cast alone.</param>
+    public static Func<string, bool> Serves(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository, Func<string?, string?, bool>? live = null)
+    {
+        var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
+        return role => book.At(role, workspace, repository, place) is var now && AgentHeld(now)
+            && (now.Why == CastWhy.Staffed || live is null || live(CastHolders.StepOf(now.Holder).Name, repository));
+    }
+
+    private static bool AgentHeld(CastNow now) => now.Why != CastWhy.Default && now.Holder != CastHolders.Person;
 }

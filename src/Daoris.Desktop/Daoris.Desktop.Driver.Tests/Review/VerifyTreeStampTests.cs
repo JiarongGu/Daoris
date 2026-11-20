@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// A check's verification tree is prepared again whenever any input its preparation reads moves: the stamp changes with a dependency
 /// key and each declared local input's presence and content, so a new input cannot be left out silently (a tree that kept a stale stamp
-/// lacked the local file the files stage copies). A <c>regenerate</c> command is none: a check runs it before every gate.
+/// lacked the local file the files stage copies). A <c>regenerate</c> command is no input of it: each runs at every check.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
@@ -35,8 +35,8 @@ public sealed class VerifyTreeStampTests : IDisposable
     private async Task<string> StampAsync() =>
         await VerifyPreparation.Real.StampAsync(Home, Root, Root, "engine", CancellationToken.None) ?? throw new InvalidOperationException("git said no stamp");
 
-    private static string Gates(string regenerate, string localInputs) =>
-        $$"""{ "gates": [ { "name": "a", "run": "x", "regenerate": "{{regenerate}}" } ], "localInputs": [{{localInputs}}] }""";
+    private static string Gates(string localInputs) =>
+        $$"""{ "gates": [ { "name": "a", "run": "x", "regenerate": "node a.cjs" } ], "localInputs": [{{localInputs}}] }""";
 
     [Fact]
     public async Task The_stamp_moves_with_each_input_the_preparation_reads()
@@ -48,7 +48,7 @@ public sealed class VerifyTreeStampTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "local/\n");
         await WriteAsync("package.json", """{ "name": "x", "version": "1.0.0" }""");
         await WriteAsync("package-lock.json", """{ "name": "x", "lockfileVersion": 3, "packages": {} }""");
-        await WriteAsync("daoris.gates.json", Gates("node a.cjs", ""));
+        await WriteAsync("daoris.gates.json", Gates(""));
         await CommitAsync();
         var seen = new List<string> { await StampAsync() };
 
@@ -60,10 +60,7 @@ public sealed class VerifyTreeStampTests : IDisposable
             seen.Add(stamp);
         }
 
-        await WriteAsync("daoris.gates.json", Gates("node b.cjs", ""));
-        await CommitAsync();
-        Assert.Equal(seen[0], await StampAsync());
-        await MovedBy("a local input was declared", async () => { await WriteAsync("daoris.gates.json", Gates("node b.cjs", "\"local/one.props\"")); await CommitAsync(); });
+        await MovedBy("a local input was declared", async () => { await WriteAsync("daoris.gates.json", Gates("\"local/one.props\"")); await CommitAsync(); });
         await MovedBy("the declared local input appeared", () => WriteAsync("local/one.props", "first"));
         await MovedBy("the declared local input's content changed", () => WriteAsync("local/one.props", "second"));
         await MovedBy("a dependency key changed", async () =>

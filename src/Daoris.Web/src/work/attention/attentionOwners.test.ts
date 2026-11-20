@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  attentionGroups, attentionInOrder, attentionOf, bellCount, needsListed, obligationOf, ownersListed, placeCounts, type PushedAttention,
+  attentionGroup, attentionGroups, attentionInOrder, attentionOf, bellCount, needsListed, obligationOf, ownersListed, placeCounts, type PushedAttention,
 } from './attention';
 
 // The window counts only what is the owner's, as .NET's census classes each row (`AttentionOwnership`): an agents' row is listed
@@ -30,5 +30,13 @@ describe('what the window counts', () => {
     const rows = attentionInOrder([row('parked', 'p1', { class: 'agents' }), row('review', 'r1'), row('signed-out', 's1', { class: 'owner' })]);
     expect(rows.map(obligationOf)).toEqual(['signed-out:s1', 'review:r1', 'parked:p1']);
     expect(attentionOf(rows).map((each) => each.class ?? null)).toEqual(['owner', null, 'agents']);
+  });
+
+  it('lists a vacancy under its own group, before the agents’, and never counts it as the owner’s', () => {
+    const rows = [row('step', 'q7/sign', { class: 'vacant' }), row('work', 'daoris/s1', { class: 'agents' }), row('departure', 'q2')];
+
+    expect(ownersListed(rows).map(obligationOf)).toEqual(['departure:q2']);
+    expect(bellCount([], rows)).toBe(1);
+    expect(attentionInOrder(rows).map((each) => attentionGroup(each))).toEqual(['word', 'vacant', 'agents']);
   });
 });

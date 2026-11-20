@@ -33,6 +33,8 @@ public sealed record PlaceCastView(
             {
                 CastWhy.Cast => $"cast ({role.Source}){(role.Words is { } words ? $": {words}" : "")}",
                 CastWhy.Risk => $"the risk is high ({role.Source})",
+                CastWhy.Default => "no cast names another",
+                CastWhy.SignIn => "a sign-in is your act in a browser",
                 _ => role.Why,
             };
             yield return $"  {role.Role,-20} {CastHolders.Said(role.Holder)} — {why}";

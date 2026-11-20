@@ -2,7 +2,7 @@
   "id": "ask-delivery",
   "order": 12,
   "name": "Ask delivery workflow",
-  "for": "For a planned ask: it waits until every part of its plan has landed on the ask's branch, the whole is checked together, and you accept it once; then the ask's branch lands on the line.",
+  "for": "For a planned ask: it waits until every part of its plan has landed on the ask's branch, the whole is checked together, and its Accept follows the risk policy (it passes where nothing gates it); then the ask's branch lands on the line.",
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

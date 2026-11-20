@@ -137,6 +137,7 @@ public sealed class SessionNotifier : IDisposable
             Repository = Read(payload, "Repository"),
             State = Read(payload, "State"),
             Quest = quest,
+            Role = Read(payload, "Role"),
             Strikes = payload.GetType().GetProperty("Strikes")?.GetValue(payload) as int?,
             Module = Read(payload, "Module"),
             Route = Read(payload, "Route"),

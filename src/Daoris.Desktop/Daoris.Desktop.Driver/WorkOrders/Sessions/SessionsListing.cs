@@ -59,13 +59,15 @@ internal static class SessionsListing
 
         if (ask.Json)
         {
-            output.Add(times.Time("lines", () => SessionsJson.Json(rows, entries)));
+            output.Add(times.Time("lines", () => SessionsJson.Json(rows, entries, ask.Group is null ? VacantWaits(look, ask.Repository) : null)));
             return output;
         }
 
+        var vacant = ask.Group is null ? Vacant(look, ask.Repository) : [];
         if (entries.Count == 0)
         {
             output.Add($"sessions: {Nothing(ask)}.");
+            output.AddRange(vacant);
             return output;
         }
 
@@ -99,7 +101,24 @@ internal static class SessionsListing
             }
         }
 
+        output.AddRange(vacant);
         return output;
+    }
+
+    /// <summary>The steps waiting on a role an agent holds that no agent session serves (<see cref="StepVacancies"/>), of <paramref name="repository"/> where one is named.</summary>
+    internal static IReadOnlyList<PersonWait> VacantWaits(SessionLook look, string? repository) =>
+        [.. look.RunWaits.Where(wait => wait.Vacant && (repository is null || string.Equals(wait.Repository, repository, StringComparison.OrdinalIgnoreCase)))];
+
+    internal static IReadOnlyList<string> Vacant(SessionLook look, string? repository)
+    {
+        var vacant = VacantWaits(look, repository);
+        if (vacant.Count == 0) return [];
+        return
+        [
+            $"Vacant ({vacant.Count})",
+            .. vacant.Select(wait => $"  #{wait.Run}  {wait.Node}  {wait.Repository} — waits on `{wait.Role}`, its agent's, and no agent session answers its {wait.Why}: "
+                + "cast the role, or take the step; past its bound it gives up"),
+        ];
     }
 
     /// <summary>How a part began, in the terminal's words: what it followed or who asked; a word this build does not know, opened.</summary>

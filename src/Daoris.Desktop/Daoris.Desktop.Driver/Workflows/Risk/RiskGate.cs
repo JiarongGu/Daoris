@@ -59,15 +59,15 @@ public sealed record RiskVerdict(string Kind, string? Qualifier, string Outcome,
 
 /// <summary>
 /// The one judge of every hold: model-free and pure, act, actor, place and subject against the policy give a verdict with the
-/// rule that decided. The narrowest place with a row for the act decides (repository, workspace, machine), a qualified row standing over its
+/// rule that decided. A <c>release.production</c> mark anywhere on the place's chain keeps every <c>release.*</c> act at the owner, over every
+/// row. Otherwise the narrowest place with a row for the act decides (repository, workspace, machine), a qualified row standing over its
 /// kind's and a row keyed by the place's mode over one keyed by none; then a level carried from <c>placeRisk</c> (a place at <c>high</c>, every
-/// kind at the owner; a <c>release.production</c> mark, <c>release.start/production</c> at the owner); then the seed. In shadow it decides
-/// nothing: <see cref="RiskShadow"/> journals what it would say beside today's gates.
+/// kind at the owner); then the seed. In shadow it decides nothing: <see cref="RiskShadow"/> journals what it would say beside today's gates.
 /// </summary>
 public static class RiskGate
 {
     /// <summary>The verdict on <paramref name="act"/> by <paramref name="actor"/> at <paramref name="place"/> on <paramref name="subject"/>.</summary>
-    /// <remarks>The actor and the subject are recorded with the verdict and judge nothing yet: the refusal of a worker answering its own gate comes with the first hold the judge decides.</remarks>
+    /// <remarks>The actor and the subject are recorded with the verdict and judge nothing: a worker answering its own gate is refused at the settle door (<see cref="SettleDoor.Own"/>).</remarks>
     public static RiskVerdict Judge(RiskPolicy policy, RiskAct act, string actor, RiskPlace place, string subject)
     {
         _ = (actor, subject);
@@ -90,6 +90,12 @@ public static class RiskGate
         }
 
         var chain = place.Chain();
+        if (act.Kind.StartsWith("release.", StringComparison.Ordinal)
+            && chain.FirstOrDefault(key => policy.PlaceRisk.Places.GetValueOrDefault(key)?.Marked(PlaceMarks.ProductionReleases) == true) is { } marked)
+        {
+            return Verdict(RiskClasses.Owner, null, marked, $"`{marked}` is marked `{PlaceMarks.ProductionReleases}` in `placeRisk`, which keeps every release act at the owner");
+        }
+
         var leveled = chain.FirstOrDefault(key => policy.PlaceRisk.Places.ContainsKey(key));
         foreach (var key in chain)
         {
@@ -102,11 +108,6 @@ public static class RiskGate
             if (key == leveled && level?.Risk == PlaceRisks.High)
             {
                 return Verdict(RiskClasses.Owner, null, key, $"`{key}` is at high risk in `placeRisk`, read as every act at the owner there");
-            }
-
-            if (act is { Kind: RiskActs.ReleaseStart, Qualifier: "production" } && level?.Marked(PlaceMarks.ProductionReleases) == true)
-            {
-                return Verdict(RiskClasses.Owner, null, key, $"`{key}` is marked `{PlaceMarks.ProductionReleases}` in `placeRisk`, read as its destination's row at the owner");
             }
         }
 

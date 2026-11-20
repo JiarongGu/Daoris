@@ -2,7 +2,7 @@
   "id": "release",
   "order": 8,
   "name": "Release workflow",
-  "for": "For a repository that releases: the work is checked, you review it, it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
+  "for": "For a repository that releases: the work is checked, its Accept follows the risk policy (it passes where nothing gates it), it merges into the line, and the Local release plugin finds a pending release, records it and copies the built package into its own registry folder; with none pending the run ends at the line.",
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

@@ -247,7 +247,7 @@ public static class WorkflowRunWords
     {
         if (!States.Contains(step.State) || !WorkflowGraphDetails.All.Contains(step.Detail)) return $"Shown as recorded: {step.State}, {step.Detail}.";
         if (step.Detail == WorkflowGraphDetails.Active && step.Wait is { Code: StepWaiting.Actor or StepWaiting.Going } progress) return StepWaiting.Said(progress);
-        if (step.Detail == WorkflowGraphDetails.Active && node == NodeKinds.Check && step.Wait is { Code: CheckSlotWaits.HeldBy or CheckSlotWaits.Queued } slot) return CheckSlotWaits.Said(slot);
+        if (step.Detail == WorkflowGraphDetails.Active && node == NodeKinds.Check && step.Wait is { } slot && CheckSlotWaits.Codes.Contains(slot.Code)) return CheckSlotWaits.Said(slot);
         var on = On(step);
         return step.Detail switch
         {
@@ -257,7 +257,7 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
-                NodeKinds.Opinion when step.Wait is { Code: OpinionStepWaits.Answer } answer => OpinionStepWaits.Said(answer),
+                NodeKinds.Opinion when step.Wait is { } answer && OpinionStepWaits.Codes.Contains(answer.Code) => OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
@@ -288,6 +288,7 @@ public static class WorkflowRunWords
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
+            WorkflowGraphDetails.Stopped when step.Code == NodeSource.Daoris => $"Daoris gave it up: {step.Words ?? "nobody could answer it."}",
             WorkflowGraphDetails.Stopped => "You stopped it.",
             WorkflowGraphDetails.Unknown when node == NodeKinds.Check => CheckUnknownSaid(step.Held),
             WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",

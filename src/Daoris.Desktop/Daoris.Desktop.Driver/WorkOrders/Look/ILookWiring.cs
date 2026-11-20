@@ -69,4 +69,7 @@ internal interface ILookWiring
 
     /// <summary>The machine log, or null where nothing keeps one.</summary>
     MachineLog? Log { get; }
+
+    /// <summary>The sessions that made <paramref name="run"/>'s work, as the runtime last governed it (<see cref="NodeRuntime.Workers"/>); null where not read.</summary>
+    IReadOnlyList<string>? RunWorkers(string run) => null;
 }

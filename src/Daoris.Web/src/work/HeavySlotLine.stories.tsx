@@ -26,20 +26,20 @@ const titleOf = (id: string) => TITLES[id] ?? id;
 
 const RUNNING: HeavySlot = {
   repository: 'engine',
-  holder: { session: 's-fts', gates: ['build', 'test:web', 'e2e'], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } },
+  holders: [{ session: 's-fts', gates: ['build', 'test:web', 'e2e'], since: ago(9), now: { gate: 'test:web', at: 1, since: ago(6) } }],
   waiters: [{ session: 's-chan', since: ago(3) }],
 };
 const FAILED: HeavySlot = {
   ...RUNNING,
-  holder: { ...RUNNING.holder!, failed: { gate: 'test:web', exit: 1 } },
+  holders: [{ ...RUNNING.holders[0], failed: { gate: 'test:web', exit: 1 } }],
   waiters: [],
 };
 const TERMINAL: HeavySlot = {
   repository: 'engine',
-  holder: { gates: ['build', 'test:web'], since: ago(4), now: { gate: 'build', at: 0, since: ago(4) } },
+  holders: [{ gates: ['build', 'test:web'], since: ago(4), now: { gate: 'build', at: 0, since: ago(4) } }],
   waiters: [{ session: 's-chan', since: ago(2) }, { since: ago(1) }],
 };
-const NONE: HeavySlot = { repository: 'engine', waiters: [] };
+const NONE: HeavySlot = { repository: 'engine', holders: [], waiters: [] };
 
 /** The rail's rows, the session's line and its *Details*, and the repository's row, for one slot. */
 function Slot({ slot, session }: { slot: HeavySlot; session: Session }) {
@@ -55,7 +55,7 @@ function Slot({ slot, session }: { slot: HeavySlot; session: Session }) {
             session={one}
             name={titleOf(one.id)}
             heavy={heavyPartOf(slot, one.id)}
-            heavyBehind={slot.holder?.session ? titleOf(slot.holder.session) : null}
+            heavyBehind={slot.holders[0]?.session ? titleOf(slot.holders[0].session) : null}
           />
         ))}
       </ul>

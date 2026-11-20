@@ -58,7 +58,10 @@ public static class CastWhy
     /// <summary>No cast names one, and the role's staffing runs an agent: the work and the second opinion.</summary>
     public const string Staffed = "staffed";
 
-    /// <summary>No cast names one: the person holds it until one does.</summary>
+    /// <summary>No cast names one, and the role is the keys' keeper: a sign-in is the person's act in a browser, which no setting grants.</summary>
+    public const string SignIn = "sign-in";
+
+    /// <summary>No cast names one: the role is unfilled, so its agent holds it until a cast names another, never the person by default.</summary>
     public const string Default = "default";
 }
 
@@ -84,8 +87,8 @@ public sealed record PlaceCastBook(IReadOnlyDictionary<string, IReadOnlyDictiona
     public static IReadOnlyList<string> Staffed { get; } = [StepRoles.Design, StepRoles.Opinion];
 
     /// <summary>
-    /// Who holds <paramref name="role"/> at the place now, and why: the owner role the person's; a marked place's approver the owner's; at high
-    /// risk the person; else the narrowest cast (the repository's, the workspace's, the machine's); else the role's staffing or the person.
+    /// Who holds <paramref name="role"/> at the place now, and why: the owner role and a marked place's approver the person's; at high risk the
+    /// person; else the narrowest cast; else the role's staffing, the keys' keeper the person's, and every other role its agent's, never theirs.
     /// </summary>
     public CastNow At(string role, string? workspace, string? repository, PlaceRiskNow risk)
     {
@@ -97,10 +100,13 @@ public sealed record PlaceCastBook(IReadOnlyDictionary<string, IReadOnlyDictiona
             if (Places.GetValueOrDefault(key)?.GetValueOrDefault(role) is { } cast) return new(role, cast.Holder, CastWhy.Cast, source, cast.Why);
         }
 
-        return Staffed.Contains(role, StringComparer.Ordinal)
-            ? new(role, CastHolders.Agent, CastWhy.Staffed, PlaceRiskBook.DefaultSource)
-            : new(role, CastHolders.Person, CastWhy.Default, PlaceRiskBook.DefaultSource);
+        if (Staffed.Contains(role, StringComparer.Ordinal)) return new(role, CastHolders.Agent, CastWhy.Staffed, PlaceRiskBook.DefaultSource);
+        return role == StepRoles.CredentialsKeeper
+            ? new(role, CastHolders.Person, CastWhy.SignIn, PlaceRiskBook.DefaultSource)
+            : new(role, CastHolders.Agent, CastWhy.Default, PlaceRiskBook.DefaultSource);
     }
+
+    public static string Uncast(string role) => Empty.At(role, null, null, PlaceRiskBook.Unwritten.At(null, null)).Holder;
 
     /// <summary>The book with <paramref name="role"/> at the place cast to <paramref name="holder"/>, or its cast taken away where null.</summary>
     public PlaceCastBook With(string place, string role, RoleCast? cast)

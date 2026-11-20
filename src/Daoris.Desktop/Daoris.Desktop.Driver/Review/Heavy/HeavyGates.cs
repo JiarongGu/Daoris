@@ -172,6 +172,31 @@ public static class HeavyGates
 
     private static string Names(IReadOnlyList<HeavyGate> gates) => gates.Count == 0 ? "none" : string.Join(", ", gates.Select(gate => gate.Name));
 
+    /// <summary>The key in <c>daoris.gates.json</c> by which a repository says how many of its heavy runs run at once.</summary>
+    public const string SlotsKey = "heavySlots";
+
+    /// <summary>
+    /// How many of its heavy runs at once (checks, sessions' runs, gated integration lines) the checkout's file declares, within what the
+    /// machine admits; null where it declares none or the file does not read. A value that is no whole number from 1 reads as 1: "cannot
+    /// tell" is never more at once. Read from the checkout's file, never a tree's, as <see cref="TreePrepDeclared.Read"/> reads its commands.
+    /// </summary>
+    public static int? SlotsOf(string checkout)
+    {
+        try
+        {
+            var file = Path.Combine(checkout, DeclarationNames.Gates);
+            if (!File.Exists(file)) return null;
+            using var document = JsonDocument.Parse(File.ReadAllBytes(file));
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty(SlotsKey, out var slots)) return null;
+            return slots.ValueKind == JsonValueKind.Number && slots.TryGetInt32(out var count) && count >= 1 ? count : 1;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
+
     private static string? Text(JsonElement gate, string name) =>
         gate.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 }

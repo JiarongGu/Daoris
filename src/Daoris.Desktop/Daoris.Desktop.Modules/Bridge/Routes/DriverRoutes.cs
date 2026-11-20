@@ -181,22 +181,19 @@ public sealed class DriverRoutes(DriverContext context)
         }
 
         var look = HeavySlot.Look(home, key, alive);
-        var holder = look.Holder is { } held
-            ? new
-            {
-                session = held.Session,
-                // The verification run holding it, where the heavy executor does.
-                run = held.Run,
-                gates = held.Gates,
-                since = held.Since,
-                now = held.Now is { } now ? new { gate = now.Gate, at = now.At, since = now.Since } : null,
-                failed = held.Failed is { } failed ? new { gate = failed.Gate, exit = failed.Exit } : null,
-            }
-            : null;
+        var holders = look.Holders.Select(held => new
+        {
+            session = held.Session,
+            run = held.Run,
+            gates = held.Gates,
+            since = held.Since,
+            now = held.Now is { } now ? new { gate = now.Gate, at = now.At, since = now.Since } : null,
+            failed = held.Failed is { } failed ? new { gate = failed.Gate, exit = failed.Exit } : null,
+        }).ToArray();
         return new
         {
             repository,
-            holder,
+            holders,
             waiters = look.Waiters.Select(waiter => new { session = waiter.Session, since = waiter.Since }).ToArray(),
             admission = AdmissionOf(home),
         };
@@ -282,6 +279,18 @@ public sealed class DriverRoutes(DriverContext context)
     {
         var minutes = press.Minutes is { } value && DrainSetting.Takes(value) ? (int)value : throw new DriverException(DrainSetting.Refusal);
         _context.Change(config => config.WithDrain(minutes));
+        return State(_loop);
+    }
+
+    // The `checks` `daoris settings checks <n>|auto` edits: a number in its bounds, or null for auto; out of them is the driver's refusal.
+    [DriverRoute("SET_CHECKS", PipeClass.Person, Drain = PipeDrain.Passes)]
+    [Owner("SET_CHECKS", None = OwnerNone.MachineSetting)]
+    [GroundRead("SET_CHECKS", nameof(PipeReads.Checks))]
+    [Publishes("SET_CHECKS", StateScopes.Driver)]
+    private object? SetChecks(SetChecks press)
+    {
+        var checks = press.Checks is { } value ? ChecksSetting.Takes(value) ? (int)value : throw new DriverException(ChecksSetting.Refusal) : (int?)null;
+        _context.Change(config => config.WithChecks(checks));
         return State(_loop);
     }
 

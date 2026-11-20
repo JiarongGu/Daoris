@@ -78,6 +78,23 @@ public static class SettleDoor
     /// <summary>A role the owner holds (the owner role itself) is handed to nobody but the person.</summary>
     public const string OwnerRole = "owner-role";
 
+    public const string OwnWork = "own-work";
+
+    /// <summary>The words an <see cref="OwnWork"/> refusal begins with while the makers are not read: nothing is kept, and the word may be given again.</summary>
+    public const string NotYet = "not yet: try again after Daoris's next look";
+
+    private static readonly string[] Yes = [NodeWordActs.Accept, NodeWordActs.Approve, NodeWordActs.Skip, NodeWordActs.Decide, NodeWordActs.Done];
+
+    /// <summary>
+    /// Why a yes to the hold <paramref name="why"/> is refused: its author, the working session its channel proved, is one of the work's
+    /// <paramref name="makers"/>, or may be while they are not read. A step that is work and not a hold, and every other channel, pass.
+    /// </summary>
+    public static SettleRefusal? Own(NodeDeclaration node, string? why, string act, SettleBy by, IReadOnlyCollection<string>? makers) =>
+        by.Session is not { } session || why is null || RiskStepHolds.KindOf(why, node) is null || !Yes.Contains(act, StringComparer.Ordinal) ? null
+        : makers is null ? new(OwnWork, $"{NotYet}: session {session} speaks for a working session, and the work's makers are not read yet")
+        : makers.Contains(session, StringComparer.OrdinalIgnoreCase) ? new(OwnWork, $"session {session} is one of the work's makers")
+        : null;
+
     /// <summary>
     /// Why the word <paramref name="by"/> gives is not taken on a step its tenure <paramref name="current"/> holds, or null where it is. An
     /// observation, and the owner role's end of the work and answer to a decision, are taken whoever holds the step and in whichever epoch
@@ -93,7 +110,7 @@ public static class SettleDoor
         if (by.Epoch is { } epoch && epoch != current.Epoch) return new(StepTenureFiles.EndedEpoch, StepTenureFiles.Said(current));
         if (current.Why == TenureWhy.Marked && by.Who != CastHolders.Person)
         {
-            return new(Marked, $"{StepTenureFiles.Said(current)}, the owner's mark keeping it the owner role's");
+            return new(Marked, $"{StepTenureFiles.Said(current)}, the owner's mark or the risk policy keeping it the owner role's");
         }
 
         var admitted = by.Who == SettleBy.Line ? current.Holder == CastHolders.Person : Holds(current.Holder, by.Who);
