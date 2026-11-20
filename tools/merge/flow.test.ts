@@ -8,6 +8,7 @@ import { fixtureFolder } from './fixture-home.ts';
 import { againWhy, runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
 import { LockInstalls } from './lock-install.ts';
 import type { StoredVerdict } from './verdict-store.ts';
+import { verificationOf } from './verification.ts';
 
 const gate = { name: 'censuses', run: 'dotnet test src/A --filter Category=Census', reuse: 'inputs' };
 
@@ -289,6 +290,27 @@ test('settling a merge sets down main\'s reds, fails the merge on the branch\'s,
   assert.deepEqual(both.failed.map((each) => each.gate.name), ['reached']);
   assert.match(both.lines.join('\n'), /cli took 6 min, over its 5 min budget/);
   assert.equal(both.record.firstPass, false);
+});
+
+test('settling a merge past the workspace\'s verification budget says where its time went, files the overrun and keeps the rule in the record', () => {
+  const { dir, remove } = fixtureFolder('flow-overrun');
+  try {
+    const rule = verificationOf(JSON.stringify({ verification: { budgetMinutes: 10, fullRunReasons: { widePaths: ['daoris.gates.json'] } } }))!;
+    const file = join(dir, 'verify-overruns.jsonl');
+    const reached = { gate: { name: 'reached', run: 'x' }, verdict: 'PASS', note: '', ms: 9 * 60_000, steps: [{ step: 'plan', ms: 120_000 }, { step: 'run cli', ms: 420_000 }] };
+    const verification = { rule, reason: null, line: 'said', file, shown: 'local/verify-overruns.jsonl' };
+    const settled = settleMerge({ branch: 'b', at: 'now', wallMs: 12 * 60_000, mains: [], previous: [], verification, results: [reached, { gate: { name: 'cli', run: 'y' }, verdict: 'PASS', note: '', ms: 2 * 60_000 }] });
+    assert.match(settled.lines.join('\n'), /verification: 12 min, over this workspace's 10 min budget \(D349\)[^\n]*\n {4}where its time went: reached 9 min \(run cli 7 m 0 s, plan 2 m 0 s\), cli 2 min\n {4}filed in local\/verify-overruns\.jsonl/);
+    assert.deepEqual(settled.record.verification, { budgetMs: 600_000, wallMs: 720_000, over: true, scope: 'reach' });
+    const filed = readFileSync(file, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    assert.deepEqual(filed.map((each) => [each.branch, each.wallMs, each.gates.map((gate: { name: string }) => gate.name)]), [['b', 720_000, ['reached', 'cli']]]);
+    const within = settleMerge({ branch: 'c', at: 'now', wallMs: 60_000, mains: [], previous: [], verification, results: [] });
+    assert.equal(within.record.verification?.over, false);
+    assert.doesNotMatch(within.lines.join('\n'), /verification:/);
+    assert.equal(readFileSync(file, 'utf8').trim().split('\n').length, 1, 'a run within its budget files nothing');
+  } finally {
+    remove();
+  }
 });
 
 test('a gate whose failure was read whole fails the merge under a finding of main\'s that names no test, and the summary says why', () => {

@@ -371,6 +371,7 @@ import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
 import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
 import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
+import { FULL_COMMAND, checkoutScope, mergeVerifying, owedLine, planReaches, previewScope, requireFullReason } from './merge/merge-verification.ts';
 import { chooseGates } from './merge/choose-gates.ts';
 import { pathsReaching, reachingOf, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
 import { driftsAt } from './merge/tree-drift.ts';
@@ -452,7 +453,7 @@ const STATE = `${SCRATCH}/merge-batch.json`;
 export { VERDICTS_FILE, verdictsHome } from './merge/home.ts';
 
 /** The command that runs the full set on the checkout as it stands: what a refused stage names when nothing smaller would do. */
-export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
+export { FULL_COMMAND };
 
 /** The command that runs each stale gate again on the checkout as it stands: what a refused stage names when it would do. */
 export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
@@ -2537,11 +2538,6 @@ function runRecorded(root, gates, dir, {
   });
 }
 
-/** The line that ends a merge's run with gates skipped: the full set is still owed before a stage. */
-const owedLine = (skipped) => (skipped
-  ? `  ${count(skipped, 'gate')} of the plan skipped; the full set runs before the install is staged (${FULL_COMMAND}, or --full on a merge).`
-  : null);
-
 async function gateMerge(root, state, plan) {
   const started = Date.now();
   const branch = state.branches[state.at];
@@ -2560,6 +2556,7 @@ async function gateMerge(root, state, plan) {
   writeState(root, state);
 
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
+  const verifying = mergeVerifying(root, selection);
   for (const line of selectionLines(selection)) console.log(line);
   const results = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || 'blocking',
@@ -2577,6 +2574,7 @@ async function gateMerge(root, state, plan) {
   const settled = settleMerge({
     branch, at: nowIso(), wallMs: Date.now() - started, results, dir,
     mains: mainRedsOf(flowSeams(), root, home), previous: readRecords(join(home, MERGE_RECORD)),
+    verification: verifying,
   });
   appendRecord(join(home, MERGE_RECORD), settled.record);
   const failed = settled.failed;
@@ -3083,6 +3081,7 @@ async function start(root, options) {
   // A misspelt later branch refuses before the first is merged; the first is checked as it merges.
   for (const branch of options.branches.slice(1)) requireBranch(root, branch);
   readPlan(root);
+  if (options.full) requireFullReason(root, options.branches);
   return mergeNext(root, {
     branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck, autoPrune: options.autoPrune,
     full: options.full, gated: options.gated, oneAtATime: options.oneAtATime,
@@ -3093,6 +3092,7 @@ async function resume(root, options) {
   const state = readState(root);
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
+  if (options.full && !state.full) requireFullReason(root, state.branches.slice(state.at));
   state.full = state.full === true || options.full;
   state.gated = state.gated === true || options.gated;
   // A loaded machine stays loaded through its batch, so one at a time, once given, is kept.
@@ -3133,11 +3133,7 @@ async function resume(root, options) {
 /** What `--plan` asks of this tool's own units: the lane report, the gates a branch reaches, the prune and the owed line. */
 const planSeams = {
   laneReport,
-  reaches(root, branch, plan, { full, gated }) {
-    const selection = selectGates(plan, branchChanges(root, branch), { lanes: readLanes(root)?.lanes ?? [], full, gated });
-    const runs = selection.gates.filter((entry) => entry.run);
-    return { runs: runs.map((entry) => entry.gate.name), lines: selectionLines(selection.gates) };
-  },
+  reaches: planReaches,
   prune: (root, hold) => printPrunePlan(root, planPrune(root, { hold, atMerge: true }), true),
   owed: owedLine,
   heavy: (root) => heavyStanding(readHeavy(verdictsHome(root))),
@@ -6130,6 +6126,7 @@ function previewVerb(root, options) {
   const selection = selectGates(plan, branchChanges(home, branch), { lanes, gated: true });
   const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
   const set = scopedSet({ gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })), reached });
+  previewScope(home, branch, selection.gates);
   console.log(`its scoped run, before standing verdicts: ${set.run.map((entry) => entry.name).join(', ')}`);
   if (set.deferred.length) console.log(`  deferred to the background run: ${set.deferred.map((entry) => entry.name).join(', ')}`);
   withQueue(home, (queue) => ({ queue: notePreview(queue, { branch, tip, base, at: nowIso() }) }));
@@ -6388,7 +6385,7 @@ async function mergeVerb(root, options) {
   // One run of the CI, its watch, or the stop asked of the watch.
   if (options.ci) return options.stop ? ciStopVerb(root) : options.watch ? ciWatchVerb(root, options) : gateCi(root, options);
   if (options.beside) return options.daorisVerify ? gateVerify(root, options) : gateBeside(root, options);
-  if (options.full && options.branches.length === 0) return gateCheckout(root, options);
+  if (options.full && options.branches.length === 0) return checkoutScope(root, () => gateCheckout(root, options));
   return start(root, options);
 }
 
