@@ -49,7 +49,7 @@ export function HandOverOfferLine({ offer, actorName, agentName, accountName, bu
     <div
       role="group"
       aria-label={t('work.handOver.offer.label')}
-      className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-l-[3px] border-st-open pl-2.5 text-small text-ink-soft"
+      className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-ink-soft"
     >
       <p className="m-0 min-w-0 wrap-anywhere">{kept ?? why}</p>
       {!kept && choice && <p className="m-0 min-w-0 wrap-anywhere">{choice}</p>}

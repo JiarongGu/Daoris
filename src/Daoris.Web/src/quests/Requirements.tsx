@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { QuestAnswer, QuestRequirement, QuestStep } from '../data/api';
 import { ago } from '../locales/format';
-import { Button, Pill, SectionTitle } from '../design/ui';
+import { Button, cardFrame, Pill, SectionTitle } from '../design/ui';
 
 /** The person's words, quoted: set apart by a rule, never slanted, kept as they were said. */
 export function Quoted({ words }: { words: string }) {
@@ -111,7 +111,7 @@ export function QuestRequirements({ id, requirements, answers: given, status, he
     <section
       aria-label={t('quests.requirements.title')}
       className={held
-        ? `rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5 ${className ?? ''}`
+        ? `${cardFrame('wait')} ${className ?? ''}`
         : className}
     >
       <SectionTitle>{t('quests.requirements.title')}</SectionTitle>

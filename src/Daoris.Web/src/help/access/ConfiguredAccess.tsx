@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId, HelpGrantState } from './wired';
-import { Button, CheckField, Icon, Inline, Pill } from '../../design/ui';
+import { Button, CheckField, Icon, Inline, Note, Pill } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { GRANTS, grantState, type GrantSpec } from './grants';
 
@@ -165,7 +165,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         </p>
       )}
       {spec.id === 'browser' && (
-        <p className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink">{t('help.grants.signedIn')}</p>
+        <Note tone="caution">{t('help.grants.signedIn')}</Note>
       )}
       {spec.onPlugin && (
         <>

@@ -5,7 +5,7 @@ import { TOAST_LIMIT, withNotice } from '../../data/signals';
 import * as Toast from '@radix-ui/react-toast';
 import { Icon } from './Icon';
 import { Button } from './Button';
-import { Inline } from './Card';
+import { cardEdge, Inline } from './Card';
 import { watchDrawers, drawerOpen } from './Drawer';
 import { Tip } from './Tip';
 
@@ -64,8 +64,8 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           onOpenChange={(open) => { if (!open) onClose(toast.id); }}
           className={cn(
             'flex items-start gap-2.5 rounded-card border border-line bg-overlay py-2.5 pl-3.5 pr-2.5 text-body',
-            'border-l-[3px] shadow-[0_6px_24px_rgb(15_12_8/0.12)] motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
-            toast.kind === 'error' ? 'border-l-fail' : 'border-l-accent',
+            'shadow-[0_6px_24px_rgb(15_12_8/0.12)] motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
+            cardEdge(toast.kind === 'error' ? 'failed' : undefined),
           )}
         >
           {/* 🔴 Clamped, with the whole of it one hover away. The driver's hold on an untrusted

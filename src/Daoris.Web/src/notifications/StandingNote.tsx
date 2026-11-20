@@ -28,7 +28,7 @@ export function StandingNote({ dataAttribute, label, words, actions, show, hide,
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
   return (
-    <section {...{ [dataAttribute]: '' }} aria-label={label} className="grid gap-1 border-l-[3px] border-l-warn pl-2">
+    <section {...{ [dataAttribute]: '' }} aria-label={label} className="grid gap-1">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
         <p className="m-0 min-w-0 text-small text-ink-soft">
           {words.map((each, at) => <span key={at}>{at > 0 && <span aria-hidden="true"> · </span>}<span>{each}</span></span>)}

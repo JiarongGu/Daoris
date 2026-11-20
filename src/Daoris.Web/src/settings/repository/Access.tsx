@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckField, Segmented, SettingRow } from '../../design/ui';
+import { CheckField, Note, Segmented, SettingRow } from '../../design/ui';
 import { shellWord } from '../../lib/shellWord';
 import { Inheritable } from '../../projects/setup/SetupParts';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
@@ -165,7 +165,7 @@ function fromSays(t: TFunction, source: string | null, owner: AccessOwner, works
   return source === null ? t('settings.access.from.mixed') : '';
 }
 
-const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink';
+const WARN_LINE = 'bg-raised px-3 py-1.5';
 
 /**
  * **A level's access rows**: the full-access switch, then each pause with what it means, its
@@ -249,11 +249,11 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
           />
         )}
       >
-        <p className={full ? WARN_LINE : 'm-0 text-small text-ink-soft'}>
+        <Note tone={full ? 'caution' : 'plain'} className={full ? WARN_LINE : undefined}>
           {full
             ? [t('settings.access.full.on'), fromSays(t, sourceOf(shown), owner, workspace)].filter(Boolean).join(sentence)
             : t('settings.access.full.off')}
-        </p>
+        </Note>
         <p className="m-0 mt-1 text-small text-ink-faint">
           {[t('settings.access.full.offs'), t('settings.access.full.stays'), t('settings.access.full.codex')].join(sentence)}
         </p>
