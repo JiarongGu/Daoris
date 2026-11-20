@@ -12,7 +12,7 @@ public sealed class SupervisedWordsTests : NodeRunFixture
     private const string ApprovalGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
-                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"]},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"],"role":"approver"},
                   {"id":"handed","kind":"land","version":1,"reach":"performed"},
                   {"id":"redo","kind":"task","version":1,"reach":"pressed","outcomes":["done"]}],
          "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
@@ -45,6 +45,7 @@ public sealed class SupervisedWordsTests : NodeRunFixture
     private async Task<NodeRuntime> WaitingAsync(ILandingWords? decisions)
     {
         BoundTo(ApprovalGraph);
+        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, StepRoles.Approver, CastHolders.Person, "mine", _now));
         Read();
         var runtime = Runtime();
         runtime.Landings = decisions;

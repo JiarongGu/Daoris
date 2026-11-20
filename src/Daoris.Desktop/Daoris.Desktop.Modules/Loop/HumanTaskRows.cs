@@ -33,6 +33,7 @@ internal static class HumanTaskRows
             }
 
             carried["presses"] ??= new JsonArray();
+            if (carried["vacant"] is JsonValue vacant && vacant.TryGetValue<bool>(out var yes) && !yes) carried.Remove("vacant");
             row["step"] = carried;
             yield return row;
         }
