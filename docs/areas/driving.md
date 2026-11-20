@@ -32,7 +32,7 @@ the run's stages and the quest log's operations in their order.
 | `Departments/` | A place's manifests and turns (`Manifest/`), a folder turn's review (`Review/`), a system's plans (`Systems/`), `PlaceHomeMarker` |
 | `Service/Quests/`, `Service/Sessions/`, `Service/Asks/` | `QuestStore` and `QuestExchange` (every door's judgement, the log's operations, `QuestLog`, `QuestTransitions`), `SessionStore` and `SessionLedger` (opens, moves, says, the tree lock and the place lease), `AskStore` and `AskDesk`, each a root wiring parts of its own |
 
-A folder that is no git checkout is a place of its own (`daoris repository add <folder>`), its manifest every file but the
+A folder that is no git checkout is a place of its own (`daoris repository add <folder>`); one decides git or folder, `PlaceKind.At`, by the folder's own `.git` (a linked worktree's file too), never an enclosing repository's, so a folder inside a checkout reads none of that checkout's branches, recovery refs or session-branch waits, and its page draws Details, Files and Workflow alone. Its manifest is every file but the
 excludes with size, time and SHA-256, too large to follow past 250,000 files or five minutes (the `manifest` setting). A system
 place is never changed by a session: it plans through the connector's `system_plan`. The kept slots (`Workplace/Pool/`, D214) are
 built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers where a record's line stands.

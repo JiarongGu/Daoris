@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isFolder, type Registration } from '../data/api';
 import { FolderExcludesSection } from './FolderExcludesSection';
-import { FolderNoGit } from './FolderNoGit';
 import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { sentence } from '../locales/format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
@@ -328,10 +327,9 @@ export function useProjectsView({
               })}
             />
           ) : undefined}
-          // Its branches and its line's history: a shell's, each read only while its tab shows.
-          branches={attached && isFolder(shown)
-            ? <FolderNoGit />
-            : attached
+          // Its branches and its line's history: a shell's, each read only while its tab shows. A folder (one with no `.git` of its
+          // own, though a repository may enclose it) has none of the four git tabs, so draws Details, Files and Workflow alone.
+          branches={attached && !isFolder(shown)
             ? (
               <RepositoryBranches
                 repository={shown.repository}
@@ -343,19 +341,15 @@ export function useProjectsView({
               />
             )
             : undefined}
-          history={attached && isFolder(shown)
-            ? <FolderNoGit />
-            : attached
+          history={attached && !isFolder(shown)
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
-          changes={attached && named(driver.data?.checkoutWrites, shown.repository)
+          changes={attached && !isFolder(shown) && named(driver.data?.checkoutWrites, shown.repository)
             ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
           // Its queue, candidates and history, read while its tab shows.
-          integration={attached && isFolder(shown)
-            ? <FolderNoGit />
-            : attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
+          integration={attached && !isFolder(shown) ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           files={attached && Boolean(shown.root) ? <RepositoryFiles repository={shown.repository} /> : undefined}
           treePool={attached && Boolean(shown.root) && !isFolder(shown)
             ? <RepositoryTreePool workspace={workspaceOf(shown)} repository={shown.repository} /> : undefined}

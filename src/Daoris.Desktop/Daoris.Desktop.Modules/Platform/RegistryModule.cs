@@ -79,7 +79,7 @@ public sealed class RegistryModule(IEventBus events, PickFolder pickFolder) : Mo
             Name = exists ? new DirectoryInfo(path.TrimEnd(Path.DirectorySeparatorChar, '/')).Name : "",
             Exists = exists,
             Adopted = declaration is not null,
-            Git = exists && Directory.Exists(Path.Combine(path, ".git")),
+            Git = exists && PlaceKind.At(path) == PlaceKind.Git,
             Summary = declaration?.Summary,
             Owns = declaration?.Owns ?? [],
             Accepts = declaration?.Accepts ?? [],
