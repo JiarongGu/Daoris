@@ -14584,19 +14584,30 @@ installed window is not yet seen.
   (LOOKOPINIONS1), so on a repository whose branches move all day (each agent's commit on its own branch) the tree was walked
   again (`log`, `status`) at nearly every look, behind the tidy for the repository's places. Nothing kept what a judgment had
   read, so nothing could say it need not run.
-- **Fix:** `OpinionJudgments` keeps, with each judgment's fact, a stamp of what it reads, made without git and without a service
-  read of its own: the chain's quests and the working line's and reviewers' records from the look's one read; the tree's link,
-  `HEAD` and branch commit from git's files; the gate, deliveries, run binding, node record, landings, rule and cool-off files by
-  write time and length; and the drain. A look judges an owed opinion again only where that stamp moved, five minutes after its
-  last judgment, or past its gate's reset; a pass a run of this loop already holds is judged again at the next look.
-  `OpinionLookWorld` reads the quests, the records and each ask once a look for every judgment of it.
+- **Fix:** `OpinionJudgments` reads, for each judgment, a stamp of what it reads, made without git and without a service read of
+  its own: the due itself (a press replaces it in place); the chain's quests and the working line's, reviewers' and rechecks'
+  records from the look's one read; the tree's link, `HEAD` and branch commit from git's files; the gate, deliveries, run binding
+  and node record by a hash of what they hold, the landings, rule and cool-off files by write time and length; and the drain.
+  The stamp is kept with the judgment's fact on the watch's running sessions (`LookFacts`): the first build kept it on
+  `OpinionGateLook`, which the watch builds again with each look's driver, so no stamp outlived its look on the install, and the
+  bench, reusing one driver, did not show it. A look judges an owed opinion again only where that stamp moved, five minutes after
+  its last judgment, past its gate's reset or a reading pass's minutes (a moment already past bounds nothing); a judgment whose
+  gate or review read `unread` keeps none, and a pass begun for it, or a pass's or a delivery's end, lets the stamp go, a
+  judgment that read before that keeping none. `OpinionLookWorld` reads the quests, the records and each ask once a look for every judgment of it.
 - **Measured** (`OpinionJudgmentsTests`: six owed landing opinions settled on their own trees among a thousand closed quests,
-  the host in process). Before: every look judged all six; the first took 5.6 s with 14 git starts and read the quest list 6
-  times; each later look made 6 judgments, 6 quest-list reads, 6 ask reads and 6 opinion reads (190–280 ms in process; on the
-  install each judgment waited on the service, and on git after any ref moved). After: the first look took 2.4–3.1 s and read
-  the quest list and the ask once; a look over nothing moved makes 0 judgments, 0 git starts and no ask or opinion read, and
-  reads the quest and record lists once each (15–40 ms); a commit in one tree judges that one alone (330 ms, 2 git starts), and a
-  quest reopened or a node blocked judges that one alone with no git (26–28 ms).
+  the host in process, a driver of its own each look over one set of running sessions, as the watch builds them). Before: every
+  look judged all six; the first took 5.6 s with 14 git starts and read the quest list 6 times; each later look made 6
+  judgments, 6 quest-list reads, 6 ask reads and 6 opinion reads (190–280 ms in process; on the install each judgment waited on
+  the service, and on git after any ref moved). The first build, its stamps on the look's own parts: each later look still made
+  6 judgments and 6 opinion reads (91–314 ms). After: the first look took 3.2–5.0 s with 14 git starts and read the quest list
+  and the ask once; a look over nothing moved makes 0 judgments, 0 git starts and no ask or opinion read, and reads the quest and
+  record lists once each (25–33 ms); a commit in one tree judges that one alone (2 git starts); a quest reopened, a node blocked
+  or a delivery written judges that one alone with no git (28–48 ms); a drain begun or lifted judges every one (94–98 ms); under
+  a neighbour's load the same counts held at 16–20 s, 28–53 ms, 71–184 ms and 295–626 ms. A
+  recheck's reviewer ending, a due replaced, a reading pass's minutes passing, a gate read unread, and a pass begun that ended
+  writing nothing each judge that one again at the next look, and each is judged again five minutes after its last judgment
+  (the judges' clock moved by hand, `MovedClock`, which the watch's running sessions hand them).
 - **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings
-  --filter "FullyQualifiedName~OpinionJudgmentsTests"` (red first on the base: 6 judgments and 6 quest-list reads a look),
+  --filter "FullyQualifiedName~OpinionJudgmentsTests"` (red first on the base: 6 judgments and 6 quest-list reads a look; on the
+  first build, 6 judgments a look, and each input test red with its own fix taken out),
   `--filter "FullyQualifiedName~OpinionJudgmentsStandTests|FullyQualifiedName~OpinionLookTests"`.

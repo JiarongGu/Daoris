@@ -16,8 +16,6 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
 
     private readonly OpinionDeliverer _deliverer = deliverer;
 
-    private readonly OpinionJudgments _judgments = new(context.Home);
-
     private ServiceClient Service => _context.Service;
 
     private string Home => _context.Home;
@@ -95,7 +93,6 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var facts = _context.Runs.Facts;
         var open = new OpinionDues(Home).Open();
         facts.KeepOpinionsOf(open.Select(Subject));
-        _judgments.KeepOnly(open.Select(Subject));
         var world = new OpinionLookWorld(Service, ct);
         var passes = 0;
         foreach (var due in open)
@@ -107,7 +104,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             else if (facts.TakeAct(subject) is OpinionAct act)
             {
                 if (Begin(act, ct)) passes++;
-                else _judgments.Forget(subject);
+                // Not begun, it is owed still; begun, its pass may write what the look's read does not hold.
+                facts.Unstamped(subject);
             }
             if (facts.Opinion(subject) is OpinionFact fact)
             {
@@ -154,26 +152,29 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     private void Judging(OpinionDue due, string subject, OpinionLookWorld world, LookStages stages, CancellationToken ct) =>
         _context.Runs.Judge("opinion", subject, OpinionsAtOnce, async token =>
         {
+            var facts = _context.Runs.Facts;
             try
             {
                 var named = due.Run ?? $"#{due.Quest}";
-                var stamp = await stages.TimeAsync("opinions.inputs", () => _judgments.StampAsync(due, world, _context.Trees, Config, token), named, beside: true)
+                var mark = facts.Mark();
+                var stamp = await stages.TimeAsync("opinions.inputs", () => OpinionJudgments.StampAsync(Home, due, world, _context.Trees, Config, token), named, beside: true)
                     .ConfigureAwait(false);
-                if (_context.Runs.Facts.Opinion(subject) is not null && _judgments.Stands(subject, stamp)) return [];
+                if (facts.Stands(subject, stamp)) return [];
                 var fact = await stages.TimeAsync("opinions", async () =>
                     await JudgeAsync(due, new OpinionDues(Home), world, await world.QuestsAsync(token).ConfigureAwait(false), keep: true, beside: true, token)
                         .ConfigureAwait(false), named, beside: true).ConfigureAwait(false);
-                _context.Runs.Facts.Judged($"opinion/{subject}");
-                _judgments.Keep(subject, stamp, fact?.Cools);
-                if (_context.Runs.Facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
+                facts.Judged($"opinion/{subject}");
+                if (facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
+                if (fact is { Unread: true }) facts.Unstamped(subject);
+                else facts.Stamped(subject, stamp, fact?.Turns ?? [], mark);
                 return [];
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !token.IsCancellationRequested))
             {
-                _judgments.Forget(subject);
-                return _context.Runs.Facts.Failed($"opinion/{subject}")
+                facts.Unstamped(subject);
+                return facts.Failed($"opinion/{subject}")
                     ? [$"opinion  the second opinion owed on session {due.Session}'s work could not be judged this time, and is judged again at a later look: {error.Message}"]
                     : [];
             }
@@ -273,13 +274,24 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         else if ((gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first && !Config.Draining
                  && _context.Runs.TryOpinion(claim))
         {
-            OpinionBeside(claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
+            OpinionBeside(Subject(due), claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
         }
 
         var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
         Sit(sits, due, chain, gate);
-        return new OpinionFact(sits, kept, inFlight ? null : act) { Cools = gate.Until - now };
+        return new OpinionFact(sits, kept, inFlight ? null : act)
+        {
+            Turns = Turns(gate),
+            Unread = gate.State == OpinionGateStates.Unread || review?.State == ReviewStates.Unread,
+        };
     }
+
+    /// <summary>When what a judgment read of <paramref name="gate"/> turns over though no record moves: its reset, and a reading pass's
+    /// end of minutes (<see cref="LookFacts.Stamped"/> keeps the earliest still ahead).</summary>
+    internal static IReadOnlyList<DateTimeOffset> Turns(OpinionGateState gate) =>
+        [.. ((DateTimeOffset?[])[gate.Until, Reading(gate.Opinion), Reading(gate.Recheck)]).OfType<DateTimeOffset>()];
+
+    private static DateTimeOffset? Reading(OpinionView? pass) => pass is { State: OpinionViews.Reading } ? pass.Due : null;
 
     /// <summary>
     /// Begin the pass <paramref name="act"/> found owed, beside the look, under the chain's claim: false where a pass or a delivery of this
@@ -302,7 +314,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         var occasion = request?.Occasion ?? act.Occasion;
-        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token, act.Early ? act.Ended ?? "" : null), ct, SettledNews(act.Due));
+        OpinionBeside(Subject(act.Due), act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token, act.Early ? act.Ended ?? "" : null), ct, SettledNews(act.Due));
         return true;
     }
 
@@ -357,9 +369,10 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
 
     /// <summary>
     /// A pass or a delivery beside the look, as a start runs: told opened at once, so the look never waits on it, its
-    /// line joining a later look's report, and the chain's claim let go however it ended.
+    /// line joining a later look's report, and the chain's claim and <paramref name="subject"/>'s stamp let go however it ended.
     /// </summary>
-    private void OpinionBeside(string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct, Func<string, LookClassed?>? classed = null) =>
+    private void OpinionBeside(
+        string subject, string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct, Func<string, LookClassed?>? classed = null) =>
         _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
@@ -376,7 +389,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             }
             finally
             {
+                // The claim is let go first, so a judgment marked after the stamp goes reads no pass in flight and owes the next.
                 _context.Runs.OpinionDone(claim);
+                _context.Runs.Facts.Unstamped(subject);
             }
         });
 
