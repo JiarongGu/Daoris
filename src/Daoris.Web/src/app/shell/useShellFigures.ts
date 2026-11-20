@@ -5,7 +5,7 @@ import { type NotificationsAt } from '../../notifications/NotificationsView';
 import { usePressAnnouncements } from '../../notifications/announce';
 import { type MessageNames } from '../../notifications/Messages';
 import { askName, sessionTitle } from '../../work/identity';
-import { bellCount, needsListed, placeCounts } from '../../work/attention/attention';
+import { bellCount, needsListed, ownersListed, placeCounts } from '../../work/attention/attention';
 import { failure } from '../../design/ui';
 import { useNoticeWords, useSyncNow, useTaskbarCount } from '../../bridge/shell';
 import { type Confirmation, type PressNames, routeKey } from '../../person/Confirmations';
@@ -47,8 +47,9 @@ export function useShellFigures({ repositories, driver, attached, attention, pre
   // The bell's count: each press of either source once, and every other row of What needs
   // you as .NET judges them, a press's own row being its card. Two answers to "how many need me" would disagree the first
   // time either changed. Before the first judgement the rows are no count yet, and the presses count alone. Each obligation once,
-  // and an unread message none.
-  const needsRows = attention.state === 'known' ? needsListed(attention.rows).length : 0;
+  // an unread message none, and an agents' row none: listed under *With the agents*, it keeps *What needs you* drawn, never counted.
+  const needsRows = attention.state === 'known' ? ownersListed(attention.rows).length : 0;
+  const agentsRows = attention.state === 'known' ? needsListed(attention.rows).length - needsRows : 0;
   const waiting = bellCount(presses, attention.state === 'known' ? attention.rows : []);
   // While any press waits unshown, the bell wears the warning hue with the presses' own count.
   const pressUnshown = presses.some((each) => each.shown !== true);
@@ -149,5 +150,5 @@ export function useShellFigures({ repositories, driver, attached, attention, pre
     },
     onError: failure(notify),
   });
-  return { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed };
+  return { machineRegistry, circle, wired, onSyncNow, syncNow, driving, announcements, waiting, pressUnshown, placed, sessionsRunning, questsTaken, needsRows, agentsRows, working, pressNames, messageNames, presence, workingSaid, standing, everything, indexed };
 }
