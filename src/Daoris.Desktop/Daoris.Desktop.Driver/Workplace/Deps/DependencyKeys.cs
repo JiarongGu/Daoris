@@ -21,17 +21,19 @@ internal static class DependencyKeys
     {
         var reads = new ToolchainReads(home, tree);
         var keys = new List<string>();
-        foreach (var dependency in dependencies) keys.Add(await KeyAsync(home, tree, commit, repository, dependency, keys, reads, ct).ConfigureAwait(false));
+        var listing = new Lazy<Task<string>>(() => ListedAsync(tree, commit, ct));
+        foreach (var dependency in dependencies) keys.Add(await KeyAsync(home, tree, commit, repository, dependency, keys, reads, ct, listing).ConfigureAwait(false));
         return keys;
     }
 
     internal static async Task<string> KeyAsync(
-        string home, string tree, string commit, string repository, StoreDependency dependency, IReadOnlyList<string> before, ToolchainReads reads, CancellationToken ct)
+        string home, string tree, string commit, string repository, StoreDependency dependency, IReadOnlyList<string> before, ToolchainReads reads, CancellationToken ct,
+        Lazy<Task<string>>? listing = null)
     {
         var rule = dependency.Rule;
         var environment = InstallEnvironment.Of(rule);
         var lines = new List<string> { $"path\t{dependency.Path}" };
-        lines.AddRange(await KeyedAsync(tree, commit, rule.Key ?? [], ct).ConfigureAwait(false));
+        lines.AddRange(await KeyedAsync(tree, commit, rule.Key ?? [], ct, listing).ConfigureAwait(false));
         lines.Add($"install\t{rule.Install}");
         foreach (var command in rule.Toolchain ?? [])
         {
@@ -47,7 +49,7 @@ internal static class DependencyKeys
     }
 
     /// <summary>Each key path's blob id at the commit, absent as absent, in one read of git's objects; an empty key keys the commit's tree.</summary>
-    internal static async Task<IReadOnlyList<string>> KeyedAsync(string tree, string commit, IReadOnlyList<string> key, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>> KeyedAsync(string tree, string commit, IReadOnlyList<string> key, CancellationToken ct, Lazy<Task<string>>? listing = null)
     {
         if (key.Count == 0)
         {
@@ -57,8 +59,7 @@ internal static class DependencyKeys
         }
 
         // ls-tree takes no pathspec magic, so the commit's paths are listed once and each key path or glob matched here.
-        var (listed, said, error) = await WorkingTree.GitAsync(tree, ["ls-tree", "-r", "-z", "--full-tree", commit], ct).ConfigureAwait(false);
-        if (listed != 0) throw new DriverException($"git could not list the files that key it: {error.Trim()}");
+        var said = await (listing?.Value ?? ListedAsync(tree, commit, ct)).ConfigureAwait(false);
         var globs = key.Where(Globbed).Select(RoomPaths.Declared).ToList();
         var literal = key.Where(path => !Globbed(path)).ToHashSet(StringComparer.Ordinal);
         var blobs = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -72,6 +73,14 @@ internal static class DependencyKeys
         var lines = blobs.Select(each => $"key\t{each.Key}\t{each.Value}").ToList();
         lines.AddRange(literal.Where(path => !blobs.ContainsKey(path)).Order(StringComparer.Ordinal).Select(path => $"key\t{path}\tabsent"));
         return lines;
+    }
+
+    /// <summary>The commit's files as git lists them, read once for every dependency of a stage.</summary>
+    private static async Task<string> ListedAsync(string tree, string commit, CancellationToken ct)
+    {
+        var (listed, said, error) = await WorkingTree.GitAsync(tree, ["ls-tree", "-r", "-z", "--full-tree", commit], ct).ConfigureAwait(false);
+        if (listed != 0) throw new DriverException($"git could not list the files that key it: {error.Trim()}");
+        return said;
     }
 
     /// <summary>Whether a tracked file that keys <paramref name="dependency"/> has a working change in the tree.</summary>

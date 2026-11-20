@@ -149,7 +149,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `files.read`. The npm signature's three alone (`node --version`, `npm --version`, `npm config list --json`) are also held in the
     driver's memory for ten minutes under a fingerprint of what decides them (`NpmToolchain`: the node program, the npm launcher and
     package, and the content of the project, user, global and bundled `.npmrc`), so an opening after another starts no npm unless a
-    program or file moved; a read that failed or printed nothing is never held, and nothing is written (SESSIONOPEN3). It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
+    program or file moved; a read that failed or printed nothing is never held, and nothing is written (SESSIONOPEN3). It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); the keys list the commit's files once for every dependency; a folder the
     store will not take (unstored, a group's, a companion) is recorded by size and write time, unhashed, a moved write time read as
     a change (FILESSLOW1); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
@@ -503,7 +503,7 @@ are roots that wire and grow by a one-line door at most.
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
-| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a bench under `OPENING_SHAPE_BENCH=1`: a second opening of a repository of this one's shape, its tree and files stages timed) |
+| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a second opening of a repository of this one's shape, its tree and files stages timed and held to 30 s), `NpmToolchainMemoTests`, `TreeCheckoutSpreadTests` |
 | rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
 | a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |

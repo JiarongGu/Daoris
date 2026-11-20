@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 
@@ -67,11 +68,22 @@ public sealed class ToolchainReadsTests : IDisposable
     private IReadOnlyList<string> ReadsRun() => File.Exists(Reads) ? File.ReadAllLines(Reads) : [];
 
     [Fact]
-    public async Task Each_toolchain_read_runs_once_per_stage_for_every_dependency_that_names_it_and_each_key_holds_it()
+    public async Task Each_toolchain_read_runs_once_per_stage_for_every_dependency_that_names_it_and_the_commits_files_are_listed_once()
     {
         var one = await TreeAsync("t1");
 
-        var installed = await new TreeFilesStage(Home, Root, one, "engine").RunAsync(CancellationToken.None);
+        var listings = 0;
+        TreeFilesOutcome installed;
+        using (ProcessStarts.Within(info =>
+        {
+            if (info.ArgumentList.Contains("ls-tree") && info.ArgumentList.Contains("--full-tree")) Interlocked.Increment(ref listings);
+            return Process.Start(info);
+        }))
+        {
+            installed = await new TreeFilesStage(Home, Root, one, "engine").RunAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(1, listings);
 
         Assert.Equal(new[] { "one", "two" }, ReadsRun());
         var codes = installed.Said.SelectMany(each => each.Parts).Select(part => part.Code).ToList();
