@@ -98,6 +98,31 @@ public sealed class NpmToolchainMemoTests : IDisposable
     }
 
     [Fact]
+    public void A_reading_whose_programs_or_configuration_the_fingerprint_cannot_place_is_never_held()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Programme();
+        var environment = Environment();
+        var tree = Tree("a");
+        Assert.NotNull(NpmToolchain.Fingerprint(NpmToolchain.NpmConfig, environment, tree));
+
+        var chosen = new Dictionary<string, string>(environment) { ["npm_config_userconfig"] = Path.Combine(_scratch, "mine.npmrc") };
+        Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NpmConfig, chosen, tree));
+
+        var near = Tree("b");
+        File.WriteAllText(Path.Combine(near, "node.cmd"), "@echo off\r\necho v1.0.0\r\n");
+        Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NodeVersion, environment, near));
+
+        var relative = new Dictionary<string, string>(environment) { ["PATH"] = "bin;" + environment["PATH"] };
+        Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NodeVersion, relative, Tree("c")));
+
+        var redirected = Tree("d");
+        File.WriteAllText(Path.Combine(redirected, ".npmrc"), "userconfig=elsewhere.npmrc\n");
+        Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NpmConfig, environment, redirected));
+        Assert.NotNull(NpmToolchain.Fingerprint(NpmToolchain.NodeVersion, environment, redirected));
+    }
+
+    [Fact]
     public async Task A_read_that_fails_and_a_command_the_signature_does_not_name_are_never_held()
     {
         if (!OperatingSystem.IsWindows()) return;

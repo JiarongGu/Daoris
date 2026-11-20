@@ -72,20 +72,26 @@ export function keptPlace(root, env = process.env) {
 
 /**
  * The index kept for this tree id put in the work tree, where one is kept. A tree id is the files git holds, so a tree at the same
- * commit as one written before has the index that one's generator wrote, which a new tree is asked for at every opening.
+ * commit as one written before has the index that one's generator wrote, which a new tree is asked for at every opening. Put
+ * only in a clean tree: a changed or new file makes the index the working files say another one.
  */
-export function restoreIndex(root, place) {
-  if (!existsSync(join(place.dir, 'README.md'))) return false;
+export function restoreIndex(root, place, env = process.env) {
+  if (!existsSync(join(place.dir, 'README.md')) || !cleanTree(root, env)) return false;
   const target = join(root, INDEX);
   rmSync(target, { recursive: true, force: true });
   cpSync(place.dir, target, { recursive: true });
   return true;
 }
 
-/** The index just written kept for its tree id, only where the work tree holds nothing git does not: a changed file's index is no tree's. */
-export function keepIndex(root, place, env = process.env) {
+/** Whether the work tree holds nothing git does not: only then is its index the one its tree id names. */
+export function cleanTree(root, env = process.env) {
   const status = spawnGit(['--no-optional-locks', 'status', '--porcelain', '--untracked-files=normal'], { cwd: root, env: cleanEnv(env), encoding: 'utf8' });
-  if (status.status !== 0 || status.stdout.trim() !== '') return false;
+  return status.status === 0 && status.stdout.trim() === '';
+}
+
+/** The index just written kept for its tree id, only where the work tree is clean: a changed file's index is no tree's. */
+export function keepIndex(root, place, env = process.env) {
+  if (!cleanTree(root, env)) return false;
   const aside = `${place.dir}.${process.pid}`;
   try {
     rmSync(aside, { recursive: true, force: true });

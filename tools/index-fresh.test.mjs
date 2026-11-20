@@ -137,3 +137,45 @@ test('a tree at a commit whose index was written before gets that index, and a c
   assert.equal(existsSync(place.dir), false, 'the index of a changed tree is kept for none');
   assert.equal(keptPlace(join(scratch, 'nothing')), null);
 });
+
+test('a kept index is put only in a clean tree: a changed file or a new one makes the working files say another', () => {
+  const root = join(scratch, 'dirty');
+  const runs = join(scratch, 'dirty-runs.txt');
+  mkdirSync(join(root, 'tools'), { recursive: true });
+  writeFileSync(join(root, 'tools', 'orient-index.mjs'), [
+    "import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';",
+    "import { join } from 'node:path';",
+    "const root = process.argv[process.argv.indexOf('--root') + 1];",
+    `appendFileSync(${JSON.stringify(runs)}, 'ran\\n');`,
+    "mkdirSync(join(root, 'docs', 'index'), { recursive: true });",
+    "writeFileSync(join(root, 'docs', 'index', 'README.md'), readFileSync(join(root, 'content.txt'), 'utf8'));",
+    '',
+  ].join('\n'));
+  writeFileSync(join(root, 'content.txt'), 'one\n');
+  writeFileSync(join(root, '.gitignore'), 'docs/index/\n');
+  const git = (cwd, ...args) => {
+    const ran = spawnGit(['-c', 'user.email=t@example.com', '-c', 'user.name=T', '-c', 'core.autocrlf=false', ...args], { cwd, encoding: 'utf8' });
+    assert.equal(ran.status, 0, ran.stderr);
+  };
+  git(root, 'init', '-q', '-b', 'main');
+  git(root, 'add', '-A');
+  git(root, 'commit', '-q', '-m', 'one');
+  const said = [];
+  const run = () => main(['--root', root], { tool: join(root, 'tools', 'orient-index.mjs'), out: () => {}, err: (line) => said.push(line), cwd: root });
+  const count = () => readFileSync(runs, 'utf8').trim().split('\n').length;
+
+  assert.equal(run(), 0, said.join('|'));
+  assert.equal(count(), 1);
+  assert.equal(run(), 0);
+  assert.equal(count(), 1, 'a clean tree at a kept tree id is handed the kept index');
+
+  writeFileSync(join(root, 'content.txt'), 'edited\n');
+  assert.equal(run(), 0);
+  assert.equal(count(), 2, 'a changed tracked file writes the index again');
+  assert.equal(readFileSync(join(root, 'docs', 'index', 'README.md'), 'utf8'), 'edited\n');
+
+  git(root, 'checkout', '-q', '--', 'content.txt');
+  writeFileSync(join(root, 'new.ts'), 'export {};\n');
+  assert.equal(run(), 0);
+  assert.equal(count(), 3, 'a new file writes the index again');
+});
