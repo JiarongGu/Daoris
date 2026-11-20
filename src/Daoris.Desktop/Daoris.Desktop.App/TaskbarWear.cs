@@ -29,7 +29,7 @@ internal static class TaskbarWear
         }.Wear(form);
     }
 
-    /// <summary>Draw the count white on red, as the platform's count is, whatever the page's theme: the taskbar is the OS's.</summary>
+    /// <summary>Draw the count dark on the owner's amber, whatever the page's theme: the taskbar is the OS's, the count the owner's.</summary>
     public static TaskbarOverlay Wear(this TaskbarOverlay overlay)
     {
         overlay.Fill = ChromePalette.CountFill;

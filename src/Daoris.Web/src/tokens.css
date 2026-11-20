@@ -1,7 +1,8 @@
-/* The design language's tokens (D330, the window design §7), as the Tailwind theme (D42).
-   Components name ROLES, never base colours, and only this file holds a value. Warm paper in the neutrals; one blue accent
-   for what can be pressed or moves (`live` is its second name); amber (`you`) for what waits on the owner and nothing else;
-   red (`fail`) for a failure alone; green (`ok`) for an outcome. There is no neutral state colour: waiting, queued, ended and
+/* The design language's tokens (D330, its palette D351; the window design §7), as the Tailwind theme (D42).
+   Components name ROLES, never base colours, and only this file holds a value. Near-neutral greys with a faint cool lean, so
+   the only warm things in the window are amber and red; one blue accent for what can be pressed or moves (`live` is its second
+   name, on the same field); amber (`you`) for what waits on the owner and nothing else; a crimson red (`fail`) for a failure
+   alone, kept well apart from amber; green (`ok`) for an outcome. There is no neutral state colour: waiting, queued, ended and
    stale are told by their mark's shape in `ink-soft` or `ink-faint`. `design/roles.test.ts` holds the contrast table: every
    text pair at 4.5:1 on every surface and soft field, every mark and control edge at 3:1, in both themes.
    The runtime variables flip with the OS theme; `@theme inline` hands them to the utilities. */
@@ -19,45 +20,45 @@
   color-scheme: light dark;
 
   /* Surfaces: the window, panes and rows, wells, what floats, a row under the pointer. */
-  --page: #f7f6f2;
+  --page: #f6f7f8;
   --raised: #ffffff;
-  --sunken: #efeee9;
+  --sunken: #eeeff1;
   --overlay: #ffffff;
-  --hover: #ecebe5;
-  --scrim: rgb(16 16 14 / 0.4);
+  --hover: #e9eaed;
+  --scrim: rgb(15 17 20 / 0.4);
   /* Lines: a row's separator, a card's edge, a control's edge (3:1). */
-  --line-subtle: #e6e4dd;
-  --line: #d5d3cb;
-  --line-strong: #86847c;
-  /* Ink: text, secondary, metadata (each 4.5:1), and a disabled control's label alone. */
-  --ink: #1a1a18;
-  --ink-soft: #54534e;
-  --ink-faint: #67655f;
-  --ink-disabled: #a19f98;
+  --line-subtle: #e4e5e8;
+  --line: #d1d3d8;
+  --line-strong: #7b7f88;
+  /* Ink: text, secondary, metadata (each 4.5:1), and a disabled control's label alone (about 3:1, no opacity over it). */
+  --ink: #17191c;
+  --ink-soft: #4d5158;
+  --ink-faint: #62666e;
+  --ink-disabled: #8e929a;
   /* The accent: a primary button, the focus ring, a selected rail; its ink for links and words that act; the label on it;
-     a selected row's field. */
+     a selected row's field, and selected text. */
   --accent: #2f5bd3;
   --accent-ink: #2346a8;
   --on-accent: #ffffff;
-  --accent-soft: #e8eefb;
-  /* Moving: the ● mark, *Moving*, a live band. One hue with the accent, two names. */
+  --accent-soft: #e1eafc;
+  /* Moving: the ● mark, *Moving*, a live band. One hue with the accent, two names, one field. */
   --live: #2f5bd3;
   --live-ink: #2346a8;
-  --live-soft: #eaf0fc;
-  /* The owner's alone: ◆, the waits pill, a wait card's edge and field, its *yes*. */
-  --you: #b87400;
-  --you-ink: #8a4f00;
-  --you-soft: #fff3d9;
-  --on-you: #1a1a18;
+  --live-soft: #e1eafc;
+  /* The owner's alone: ◆, the waits pill, a wait card's edge and field, its *yes*, the taskbar's count. */
+  --you: #b27400;
+  --you-ink: #875000;
+  --you-soft: #fff3d6;
+  --on-you: #0e1014;
   /* Failed: ▲, failure words, a failed step's band, a danger label. Declined and stopped are neutral. */
-  --fail: #d1322a;
-  --fail-ink: #a8201a;
-  --fail-soft: #fcebe9;
+  --fail: #cf2d3f;
+  --fail-ink: #a81d2f;
+  --fail-soft: #fdebed;
   --on-fail: #ffffff;
   /* An outcome: ✓ (never a large fill), *Landed*, a passed check's band. */
-  --ok: #23824a;
-  --ok-ink: #1d6b38;
-  --ok-soft: #e6f4ea;
+  --ok: #1f8050;
+  --ok-ink: #19683f;
+  --ok-soft: #e5f4ec;
 
   /* A monogram's identity hues (PLUGUI2, D140 §3.3): which plugin, never how it stands. Computed in
      plugins/icon.test.ts: each glyph at least 4.5:1 on its 15% field, each hue ΔE 20 from every state. */
@@ -69,43 +70,43 @@
   --ident-stone: #646059;
 
   /* Shadows only on what floats over the window (§7.4). */
-  --popover-shadow: 0 4px 16px rgb(16 16 14 / 0.12);
-  --sheet-shadow: 0 12px 48px rgb(16 16 14 / 0.22);
+  --popover-shadow: 0 4px 16px rgb(15 17 20 / 0.12);
+  --sheet-shadow: 0 12px 48px rgb(15 17 20 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --page: #131312;
-    --raised: #1b1b19;
-    --sunken: #0e0e0d;
-    --overlay: #242422;
-    --hover: #2a2a27;
+    --page: #111316;
+    --raised: #191b1f;
+    --sunken: #0b0c0e;
+    --overlay: #212429;
+    --hover: #292c32;
     --scrim: rgb(0 0 0 / 0.55);
-    --line-subtle: #2b2b28;
-    --line: #3a3936;
-    --line-strong: #74736c;
-    --ink: #ecebe6;
-    --ink-soft: #b3b1aa;
-    --ink-faint: #96948d;
-    --ink-disabled: #5f5e59;
+    --line-subtle: #282b30;
+    --line: #383b42;
+    --line-strong: #787c86;
+    --ink: #eaecef;
+    --ink-soft: #b1b5bd;
+    --ink-faint: #959aa3;
+    --ink-disabled: #6d717a;
     --accent: #5f86f2;
     --accent-ink: #93aef8;
-    --on-accent: #111110;
-    --accent-soft: #1d2845;
+    --on-accent: #0e1014;
+    --accent-soft: #1c2a4d;
     --live: #5f86f2;
     --live-ink: #93aef8;
-    --live-soft: #1a2443;
+    --live-soft: #1c2a4d;
     --you: #f0b03a;
     --you-ink: #f6c567;
     --you-soft: #36280b;
-    --on-you: #111110;
-    --fail: #ee5a50;
-    --fail-ink: #ff948a;
-    --fail-soft: #3a1614;
-    --on-fail: #111110;
-    --ok: #43ae66;
-    --ok-ink: #76d193;
-    --ok-soft: #13301e;
+    --on-you: #0e1014;
+    --fail: #f05c6c;
+    --fail-ink: #ff9aa3;
+    --fail-soft: #3b161c;
+    --on-fail: #0e1014;
+    --ok: #49b279;
+    --ok-ink: #7ad3a0;
+    --ok-soft: #11301f;
 
     --ident-moss: #b4c698;
     --ident-teal: #8bcbcb;
@@ -126,80 +127,80 @@
    absent for the system, so these never apply unless a person chose. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --page: #f7f6f2;
+  --page: #f6f7f8;
   --raised: #ffffff;
-  --sunken: #efeee9;
+  --sunken: #eeeff1;
   --overlay: #ffffff;
-  --hover: #ecebe5;
-  --scrim: rgb(16 16 14 / 0.4);
-  --line-subtle: #e6e4dd;
-  --line: #d5d3cb;
-  --line-strong: #86847c;
-  --ink: #1a1a18;
-  --ink-soft: #54534e;
-  --ink-faint: #67655f;
-  --ink-disabled: #a19f98;
+  --hover: #e9eaed;
+  --scrim: rgb(15 17 20 / 0.4);
+  --line-subtle: #e4e5e8;
+  --line: #d1d3d8;
+  --line-strong: #7b7f88;
+  --ink: #17191c;
+  --ink-soft: #4d5158;
+  --ink-faint: #62666e;
+  --ink-disabled: #8e929a;
   --accent: #2f5bd3;
   --accent-ink: #2346a8;
   --on-accent: #ffffff;
-  --accent-soft: #e8eefb;
+  --accent-soft: #e1eafc;
   --live: #2f5bd3;
   --live-ink: #2346a8;
-  --live-soft: #eaf0fc;
-  --you: #b87400;
-  --you-ink: #8a4f00;
-  --you-soft: #fff3d9;
-  --on-you: #1a1a18;
-  --fail: #d1322a;
-  --fail-ink: #a8201a;
-  --fail-soft: #fcebe9;
+  --live-soft: #e1eafc;
+  --you: #b27400;
+  --you-ink: #875000;
+  --you-soft: #fff3d6;
+  --on-you: #0e1014;
+  --fail: #cf2d3f;
+  --fail-ink: #a81d2f;
+  --fail-soft: #fdebed;
   --on-fail: #ffffff;
-  --ok: #23824a;
-  --ok-ink: #1d6b38;
-  --ok-soft: #e6f4ea;
+  --ok: #1f8050;
+  --ok-ink: #19683f;
+  --ok-soft: #e5f4ec;
   --ident-moss: #576837;
   --ident-teal: #1c6d6d;
   --ident-slate: #396588;
   --ident-iris: #635887;
   --ident-plum: #7f4f6a;
   --ident-stone: #646059;
-  --popover-shadow: 0 4px 16px rgb(16 16 14 / 0.12);
-  --sheet-shadow: 0 12px 48px rgb(16 16 14 / 0.22);
+  --popover-shadow: 0 4px 16px rgb(15 17 20 / 0.12);
+  --sheet-shadow: 0 12px 48px rgb(15 17 20 / 0.22);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #131312;
-  --raised: #1b1b19;
-  --sunken: #0e0e0d;
-  --overlay: #242422;
-  --hover: #2a2a27;
+  --page: #111316;
+  --raised: #191b1f;
+  --sunken: #0b0c0e;
+  --overlay: #212429;
+  --hover: #292c32;
   --scrim: rgb(0 0 0 / 0.55);
-  --line-subtle: #2b2b28;
-  --line: #3a3936;
-  --line-strong: #74736c;
-  --ink: #ecebe6;
-  --ink-soft: #b3b1aa;
-  --ink-faint: #96948d;
-  --ink-disabled: #5f5e59;
+  --line-subtle: #282b30;
+  --line: #383b42;
+  --line-strong: #787c86;
+  --ink: #eaecef;
+  --ink-soft: #b1b5bd;
+  --ink-faint: #959aa3;
+  --ink-disabled: #6d717a;
   --accent: #5f86f2;
   --accent-ink: #93aef8;
-  --on-accent: #111110;
-  --accent-soft: #1d2845;
+  --on-accent: #0e1014;
+  --accent-soft: #1c2a4d;
   --live: #5f86f2;
   --live-ink: #93aef8;
-  --live-soft: #1a2443;
+  --live-soft: #1c2a4d;
   --you: #f0b03a;
   --you-ink: #f6c567;
   --you-soft: #36280b;
-  --on-you: #111110;
-  --fail: #ee5a50;
-  --fail-ink: #ff948a;
-  --fail-soft: #3a1614;
-  --on-fail: #111110;
-  --ok: #43ae66;
-  --ok-ink: #76d193;
-  --ok-soft: #13301e;
+  --on-you: #0e1014;
+  --fail: #f05c6c;
+  --fail-ink: #ff9aa3;
+  --fail-soft: #3b161c;
+  --on-fail: #0e1014;
+  --ok: #49b279;
+  --ok-ink: #7ad3a0;
+  --ok-soft: #11301f;
   --ident-moss: #b4c698;
   --ident-teal: #8bcbcb;
   --ident-slate: #9bc3e5;
@@ -424,8 +425,16 @@
     outline-offset: 2px;
   }
 
+  /* Selected text is the selected row's field under the body's ink: the accent's family, in both themes. */
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--ink);
+  }
+
+  /* A disabled control is told by its label in `ink-disabled` (about 3:1), never by fading the whole control: an
+     opacity over the label took it under 2:1, and over a filled button it faded the fill as well. The atoms set the ink. */
   button { cursor: pointer; }
-  button:disabled { cursor: default; opacity: 0.55; }
+  button:disabled { cursor: default; }
 
   /* 🔴 The OS accent, not ours. `<input type="search">` brings Chromium's native clear button, and
      WebView2 paints it in WINDOWS' accent colour — a second blue ✕ beside the palette's own, seen on

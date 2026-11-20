@@ -161,7 +161,7 @@ export function QuickPanel({ open, onClose, title, header, wide = false, fill = 
           }}
           className={cn(
             'fixed left-1/2 top-[12vh] z-20 flex -translate-x-1/2 flex-col overflow-hidden rounded-overlay border border-line bg-overlay',
-            'shadow-[0_12px_48px_rgb(15_12_8/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
+            'shadow-[0_12px_48px_rgb(15_17_20/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
             fill ? 'h-[min(34rem,72vh)]' : 'max-h-[60vh]',
             wide ? 'w-[min(42rem,92vw)]' : 'w-[min(34rem,92vw)]',
           )}
