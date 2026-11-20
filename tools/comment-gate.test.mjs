@@ -80,6 +80,20 @@ test('comments reads line, block and doc comments and leaves strings, chars and 
   ]);
 });
 
+test('a file checked out with CRLF line ends reads the same comments as its LF blob', () => {
+  const lf = [
+    '/// <summary>A status a move took away.</summary>',
+    'public sealed record NodeHistory(DateTimeOffset At, string Why, NodeStatus Was);',
+    '',
+    '    /// <summary>The words.</summary>',
+    '    public const string AskAgain = "ask-again";',
+    '    var word = done ? "it was declined" : "it waits"; // why the two words',
+    '',
+  ].join('\n');
+  assert.deepEqual(comments(lf.replace(/\n/g, '\r\n')), comments(lf));
+  assert.deepEqual(share(lf.replace(/\n/g, '\r\n')), share(lf));
+});
+
 test('the share counts comment-only lines among the non-blank ones', () => {
   assert.deepEqual(share(BASE), { comment: 1, total: 7 });
   assert.deepEqual(share('// a\n\n// b\ncode(); // c\n'), { comment: 2, total: 3 });
