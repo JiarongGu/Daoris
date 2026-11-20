@@ -8,8 +8,7 @@ import { dockKeyOfExchange } from '../waits/dock';
 import { ChannelReply } from './ChannelReply';
 import { actorOf, cameBack, coworkerName, type LineRow as Row } from './rows';
 
-export type LineRowsProps = {
-  rows: readonly Row[];
+export type LineRowHome = {
   /** The part attended: a request that judged its work reads as this session's. */
   attended: string;
   /** The keys of the dock's lines, so a request waiting on the person leads to its own. */
@@ -31,8 +30,6 @@ const PRESS = 'shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small te
 /** The protocol's word for where it stands, in the reader's language; one the page has no word for is said as recorded. */
 const outcomeOf = (t: TFunction, word: string): string =>
   t(`work.atWork.outcome.${word}`, { defaultValue: t('work.atWork.outcome.other', { word }) });
-
-export type LineRowHome = Omit<LineRowsProps, 'rows'>;
 
 /**
  * **One of a line's exchanges or channel messages as a row**: a request at its asking or at its coming back, its actor named, with
@@ -130,14 +127,4 @@ export function LineRow({ row, attended, docked, onToDock, onOpenSession, onOpen
         </div>
       );
   }
-}
-
-export function LineRows({ rows, ...home }: LineRowsProps) {
-  const { t } = useTranslation();
-  if (rows.length === 0) return null;
-  return (
-    <ol aria-label={t('work.exchange.rows')} className="m-0 grid list-none gap-1 p-0">
-      {rows.map((row) => <li key={row.key} className="m-0 min-w-0"><LineRow row={row} {...home} /></li>)}
-    </ol>
-  );
 }

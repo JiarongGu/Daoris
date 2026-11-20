@@ -11,7 +11,6 @@ import type { Notify } from '../../design/ui';
 import { sentence } from '../../locales/format';
 import type { AnchorState, TailState } from '../conversation/SessionConversation';
 import type { BandTold } from '../band/bandRows';
-import { useAwayFromTop } from '../conversation/followTail';
 import type { useBoxWords } from '../conversation/useBoxWords';
 import type { ViewId } from '../frame/placements';
 import type { Answered } from '../InlineConfirm';
@@ -27,8 +26,7 @@ import { handOverRefused, type HandOverAskWait } from './HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './PermissionAsks';
 import type { RuleAsk } from './ProposedRules';
 import { useRuleAnswer } from './ruleAnswer';
-import type { WaitProps } from './WaitStrip';
-import { useWaitPanelHeight } from './waitPanelHeight';
+import type { WaitProps } from './waitProps';
 import { waitsOf } from './waits';
 import { useWaitsOnScreen } from './waitsOnScreen';
 import { useTeam } from '../team/useTeam';
@@ -303,25 +301,12 @@ export function useAttendedWaits({
     open: asking?.session === attended.id ? asking.id : null,
     onOpen: (id) => setAsking((was) => (id !== null ? { session: attended.id, id } : was?.session === attended.id ? null : was)),
   } : undefined;
-  // The waiting panel's height, kept per viewer; and the conversation's presses drawn above it, so neither is ever
-  // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
-  const waitPanel = useWaitPanelHeight();
+  // *Back to bottom* as the conversation tells it (`onTail`), and what runs beside it for the live band.
   const [tail, setTail] = useState<TailState | null>(null);
   const [beside, setBeside] = useState<BandTold | null>(null);
-  const awayFromTop = useAwayFromTop(centre, attended?.id);
-  // *To the top*, above the waiting panel: the record's head, where every wait stands with its
-  // reading, the focus with it.
-  const toTop = () => {
-    const element = centre.current;
-    if (!element) return;
-    // A test's DOM has no scrollTo on elements; a property set is the same place without the glide.
-    if (typeof element.scrollTo === 'function') element.scrollTo({ top: 0, behavior: 'smooth' });
-    else element.scrollTop = 0;
-    element.querySelector<HTMLElement>('[data-record-head]')?.focus({ preventScroll: true });
-  };
 
   return {
     partnerPieces, helperWaits, pieceSection, waits, answerBelow, standing, setAnchored, toEvent, waitsOnScreen, goToWait, seekAt,
-    ruleAsk, waitPanel, tail, setTail, beside, setBeside, awayFromTop, toTop,
+    ruleAsk, tail, setTail, beside, setBeside,
   };
 }

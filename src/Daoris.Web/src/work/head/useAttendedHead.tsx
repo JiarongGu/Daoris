@@ -39,7 +39,7 @@ import { stateLineOf, stateLineSaid } from './stateLine';
 import type { HeadLink } from './headRows';
 import type { AskOrigin } from './startedFrom';
 import { RenameAsk } from './RenameAsk';
-import { DeleteAsk, StopAsk } from './SessionPageHead';
+import { DeleteAsk, StopAsk } from './EndAsks';
 import { HeadActs } from './HeadActs';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { stepHolder } from '../attention/taskRead';
