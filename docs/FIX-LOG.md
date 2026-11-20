@@ -14618,3 +14618,23 @@ installed window is not yet seen.
   send's `began` mark tells one cut off while queued from one that ran. A held check's *Run again* stops its old invocation.
 - **Verify:** the filtered driver classes below, each new test seen failing first; on the install, `daoris workflow again
   8e9340198a4c check` once this build is there (the steward's).
+
+## 2026-11-20 — Each change of the line's gates held every run in flight, and accepting it freed none (GATEACCEPT1)
+
+- **Seen:** on the install, every change of this repository's `daoris.gates.json` on main held every Daoris run in flight at its
+  `check` as *not known: gates changed* (four on 2026-11-20, one for 14 hours) until each merged main; the owner accepted main's
+  newest blob and that freed none, while the Setup page said "Everything goes on under the ones you accepted until you accept these".
+- **Cause:** the heavy executor compared the blob of `daoris.gates.json` at the work's commit with the accepted blob and held
+  `changed` on any difference (`VerifyExecution`, since `82eace1825`, FABRIC-PIPELINE1d part 1), so a work that merely carried an
+  older or newer line's declaration held, whatever it changed itself; an acceptance moved the blob it compared against, never to the
+  work's, and nothing asked a held check again.
+- **Fix:** a check runs under the accepted declaration's text and holds only where the work's own change, against its merge base with
+  the line, alters a command (`CheckDeclaration`, D350); one rule says what alters a command (`DeclarationCommands`: equal once members
+  named with `_`, each check's `paths`, `timeoutMinutes`, `timeoutWhy`, `memoryGb`, and `tests`, `tiers`, `docs` are set aside); a landed
+  change that alters none keeps the acceptance as it lands, said (`IntegrationOwed.Kept`); a changed one's row names its checks added,
+  removed and changed; a held result keeps the acceptance it held under, and a check held `changed` is worded *Run again* once that
+  moves (`ChangedChecks`); the window's words say what happens, en and zh.
+- **Verify:** `HeavyExecutorProcessTests` (a branch predating and one following the line's change checked as accepted; a work's own
+  command change held, said; a pattern change run), `CheckPerformTests` (an acceptance reruns the held check), `IntegrationOwedGitTests`
+  (a pattern-only change kept, a command change owed with its difference), `DeclarationCommandsTests`, each seen failing first; the
+  page's `attention.test.ts`. On the install once this build is there (the steward's): a run held `changed` reruns at the next look.

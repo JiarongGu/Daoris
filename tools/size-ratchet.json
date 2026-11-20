@@ -96,7 +96,7 @@
   "src/Daoris.Web/src/work/attention/AttentionBand.test.tsx": 54788,
   "src/Daoris.Web/src/work/attention/AttentionRow.test.tsx": 46231,
   "src/Daoris.Web/src/work/attention/attention.stories.tsx": 44517,
-  "src/Daoris.Web/src/work/attention/attention.test.ts": 87643,
+  "src/Daoris.Web/src/work/attention/attention.test.ts": 87462,
   "src/Daoris.Web/src/work/conversation/ConversationView.test.tsx": 77978,
   "src/Daoris.Web/src/work/conversation/conversation.test.ts": 76960,
   "src/Daoris.Web/src/work/noteLines.test.ts": 105583,

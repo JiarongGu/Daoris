@@ -90,6 +90,11 @@ public sealed class DriverWatch(
             {
                 if (await DeclarationAcceptance.AcceptByModeAsync(home, configPath, owned, ct).ConfigureAwait(false) is { } line) said.Add(line);
             }
+
+            foreach (var kept in _owed.Kept(DriverConfig.Load(configPath)))
+            {
+                if (await DeclarationAcceptance.AcceptKeptAsync(home, configPath, kept, ct).ConfigureAwait(false) is { } line) said.Add(line);
+            }
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or IOException or UnauthorizedAccessException)
         {

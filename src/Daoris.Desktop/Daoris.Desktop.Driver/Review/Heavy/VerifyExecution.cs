@@ -17,7 +17,7 @@ internal sealed record VerifyRunner(string Run, string? Cwd, bool Clock, bool Re
     }
 }
 
-/// <summary>One attempt's run, holding both slots: the accepted declaration read at the commit, then its runner or its gates in the job.</summary>
+/// <summary>One attempt's run, holding both slots: the accepted declaration it runs under (<see cref="CheckDeclaration"/>), then its runner or its gates in the job.</summary>
 internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob job, VerifyWorld world, string key, Action<Func<HeavyHolder, HeavyHolder>> keep)
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
@@ -29,25 +29,10 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         Directory.CreateDirectory(_folder);
         AttemptMarks.Write(AttemptMarks.Began(home, send.Run, send.Invocation, send.Delivery), send.Delivery, world.Clock.GetUtcNow());
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
-        // The declaration is read as git objects at the commit, the blob the person accepted, never a tree's file.
-        var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", DeclarationNames.Gates], ct).ConfigureAwait(false);
-        if (listed != 0) return (Unknown($"git could not read {TextBounds.ShortCommit(send.Commit, 7)} here: {problem.Trim()}"), false);
-        var parts = entry.Split('\t', 2)[0].Split(' ');
-        var tip = parts is [_, "blob", var blob] ? blob.Trim() : HeavyExecutor.NoDeclaration;
-        if (!string.Equals(tip, send.Accepted, StringComparison.Ordinal))
-        {
-            return (Unknown("the gates changed since you accepted them") with { Code = VerifyResult.Changed, Declaration = tip }, false);
-        }
-
-        string? text = null;
-        if (tip != HeavyExecutor.NoDeclaration)
-        {
-            text = await GitObjectReads.TextAsync(send.Checkout, tip, 256 * 1024, ct).ConfigureAwait(false);
-            if (text is null)
-            {
-                return (Unknown($"the accepted declaration {TextBounds.ShortCommit(tip, 7)} could not be read here"), false);
-            }
-        }
+        var under = await CheckDeclaration.OfAsync(send.Checkout, send.Commit, send.Accepted, ct).ConfigureAwait(false);
+        if (under.Problem is { } problem) return (Unknown(problem), false);
+        if (under.Held is { } held) return (Unknown(held) with { Code = VerifyResult.Changed, Declaration = under.Work, Accepted = send.Accepted }, false);
+        var text = under.Text;
 
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]

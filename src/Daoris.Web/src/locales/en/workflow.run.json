@@ -349,7 +349,7 @@
   "workflow.run.check.waiting": "waiting for {{what}}",
   "workflow.run.check.turn": "its turn",
   "workflow.run.check.gates": "its gates",
-  "workflow.run.check.why.changed": "gates changed",
+  "workflow.run.check.why.changed": "its own gates change waits for you",
   "workflow.run.check.why.bound": "ran past its time",
   "workflow.run.check.why.stopped": "stopped",
   "workflow.run.check.why.busy": "runner busy",

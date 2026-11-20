@@ -3,7 +3,7 @@
   "settings.integration.why": "The checks in the repository's `daoris.gates.json`, with the files its integration writes, the rules it runs and the scratch it clears. They are used only as you accept them, once for everything they serve: verifying the work that lands and integrating it. A repository's own file never grants itself.",
   "settings.integration.accepted": "Accepted. The line's checks run as you accepted them.",
   "settings.integration.acceptedNone": "Accepted: {{branch}} declares no checks, and nothing runs until some land and you accept them.",
-  "settings.integration.changed": "The line's checks changed since you accepted them. Everything goes on under the ones you accepted until you accept these.",
+  "settings.integration.changed": "The line's checks changed their commands since you accepted them. Until you accept these, work that does not change them itself is checked under the ones you accepted, and work whose own change alters a command waits for you; the checks held so run again once you accept.",
   "settings.integration.unaccepted": "The line's checks are not accepted yet: none of them runs until you accept them.",
   "settings.integration.unread": "Where the line's checks stand could not be read here.",
   "settings.integration.declaration": "daoris.gates.json on {{branch}}",

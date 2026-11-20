@@ -125,6 +125,36 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Empty(owed.ByMode(restricted));
     }
 
+    [Fact]
+    public async Task A_landed_change_of_no_command_keeps_the_acceptance_said_and_a_command_change_is_owed_with_its_difference()
+    {
+        const string Checks = """{ "gates": [ { "name": "build", "run": "dotnet build" } ], "integration": { "by": "daoris" } }""";
+        const string Pattern = """{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] } ], "integration": { "by": "daoris" } }""";
+        const string Command = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release", "paths": ["src/"] } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Checks);
+        var second = await CommitAsync(Pattern);
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        Choices(first).Save(configPath);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+        Assert.Empty(owed.Under(Choices(first)));
+        var kept = Assert.Single(owed.Kept(Choices(first)));
+        var said = await DeclarationAcceptance.AcceptKeptAsync(_home, configPath, kept, CancellationToken.None);
+
+        Assert.Equal("engine's daoris.gates.json on main changed no command (changed `build`), so it stays accepted as it landed.", said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+        Assert.Null(await DeclarationAcceptance.AcceptKeptAsync(_home, configPath, kept, CancellationToken.None));
+
+        var third = await CommitAsync(Command);
+        await owed.LookAsync(Choices(second), Registry, _now.AddMinutes(1), CancellationToken.None);
+
+        Assert.Empty(owed.Kept(Choices(second)));
+        var row = Assert.Single(owed.Under(Choices(second)));
+        Assert.Equal((IntegrationAcceptance.Changed, third), (row.State, row.Blob));
+        Assert.Equal([new DeclaredCheck("build", "dotnet build -c Release", "dotnet build")], row.Change!.Changed);
+    }
+
     /// <summary>The acceptance ends the row at once, from the choices as they stand, with no look and no git.</summary>
     [Fact]
     public async Task An_acceptance_ends_the_row_without_another_look()

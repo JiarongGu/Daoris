@@ -184,7 +184,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
     `daoris notices` lists, and `daoris notices --show <subject>` prints what the window shows for a memory row's session or sweep
     (`NoticesShown`, `MemoryWaitShown`), read from the running Daoris and deciding nothing; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
-    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    (D283), a changed one saying the checks its commands added, removed and changed and that work not changing them itself is checked
+    under the ones accepted (D350). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
     the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its

@@ -349,7 +349,7 @@
   "workflow.run.check.waiting": "正在等待{{what}}",
   "workflow.run.check.turn": "轮到它",
   "workflow.run.check.gates": "它的检查项",
-  "workflow.run.check.why.changed": "检查项已更改",
+  "workflow.run.check.why.changed": "它自己对检查项的改动等你采纳",
   "workflow.run.check.why.bound": "运行超时",
   "workflow.run.check.why.stopped": "已停止",
   "workflow.run.check.why.busy": "运行器繁忙",

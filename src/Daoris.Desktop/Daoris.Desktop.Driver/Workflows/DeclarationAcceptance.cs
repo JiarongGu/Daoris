@@ -24,6 +24,18 @@ public static class DeclarationAcceptance
         return $"{owed.Repository}'s {DeclarationChange.Between(was, now).Words(owed.Line)}";
     }
 
+    /// <summary>A change that alters no command (<see cref="IntegrationOwed.Kept"/>) accepted and said; null where its judged acceptance moved meanwhile.</summary>
+    internal static Task<string?> AcceptKeptAsync(string home, string configPath, DeclarationOwed owed, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var config = DriverConfig.Load(configPath);
+        var before = IntegrationAcceptance.Of(config, owed.Repository) ?? WorkflowSelection.ResolveLanded(config, owed.Repository, owed.Workspace).Gates;
+        if (owed.Against is not { } against || before != against) return Task.FromResult<string?>(null);
+        Accept(home, config, owed.Repository, owed.Workspace, owed.Blob).Save(configPath);
+        var said = owed.Change?.Said() is { Length: > 0 } change ? change : "its words";
+        return Task.FromResult<string?>($"{owed.Repository}'s daoris.gates.json on {owed.Line} changed no command ({said}), so it stays accepted as it landed.");
+    }
+
     /// <summary>The one withdrawal: <paramref name="repository"/>'s acceptance dropped for every purpose, as <see cref="Accept"/> kept it.</summary>
     public static DriverConfig Withdraw(string home, DriverConfig config, string repository, string? workspace)
     {

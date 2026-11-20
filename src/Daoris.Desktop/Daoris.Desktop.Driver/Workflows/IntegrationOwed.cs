@@ -15,6 +15,12 @@ public sealed record DeclarationOwed(string Repository, string Workspace, string
 {
     /// <summary>The checkout the declaration is read in, for the look's own use; never said.</summary>
     internal string? Root { get; init; }
+
+    /// <summary>What it changes against the blob accepted, by check and command; null where nothing is accepted or the texts were not read.</summary>
+    public DeclarationChange? Change { get; init; }
+
+    /// <summary>The accepted blob it is judged against: a keeping applies only while that acceptance stands.</summary>
+    internal string? Against { get; init; }
 }
 
 /// <summary>
@@ -22,7 +28,8 @@ public sealed record DeclarationOwed(string Repository, string Workspace, string
 /// git. Each repository with a checkout here is read at its line's committed <c>daoris.gates.json</c> against the one acceptance
 /// (<see cref="IntegrationAcceptance.Of"/>, and the landed route's gates where that route verifies). A line that holds no declaration
 /// owes nothing, nor does one that declares no <c>integration</c> to a repository whose landed route verifies nothing. A repository in full
-/// access owns its line, so it accepts the declaration its line commits as it lands (<see cref="ByMode"/>) and is never owed.
+/// access owns its line, so it accepts the declaration its line commits as it lands (<see cref="ByMode"/>) and is never owed; nor is a
+/// change that alters no command (<see cref="Kept"/>). A changed row carries its <see cref="DeclarationOwed.Change"/>.
 /// </summary>
 /// <remarks>
 /// The tip commit is read from git's own files (<see cref="TreeTips.Named"/>, no process), and git is asked only when it moved since the last
@@ -52,21 +59,58 @@ public sealed class IntegrationOwed
     /// <summary>What <paramref name="config"/>'s full-access repositories accept as it lands: each declaration waiting that its repository's own line owns.</summary>
     public IReadOnlyList<DeclarationOwed> ByMode(DriverConfig config) => Judge(config).ByMode;
 
-    private (IReadOnlyList<DeclarationOwed> Owed, IReadOnlyList<DeclarationOwed> ByMode) Judge(DriverConfig config)
+    /// <summary>Each changed declaration that alters no command against the accepted blob (<see cref="DeclarationCommands.Keeps"/>): never owed.</summary>
+    public IReadOnlyList<DeclarationOwed> Kept(DriverConfig config) => Judge(config).Kept;
+
+    private (IReadOnlyList<DeclarationOwed> Owed, IReadOnlyList<DeclarationOwed> ByMode, IReadOnlyList<DeclarationOwed> Kept) Judge(DriverConfig config)
     {
         var owed = new List<DeclarationOwed>();
         var byMode = new List<DeclarationOwed>();
+        var kept = new List<DeclarationOwed>();
         foreach (var read in _held)
         {
             var state = StandingOf(config, read.Repository, read.Workspace, read.Line, read.Blob, read.Declares);
             if (state is not (IntegrationAcceptance.Unaccepted or IntegrationAcceptance.Changed)) continue;
-            var row = new DeclarationOwed(read.Repository, read.Workspace, read.Line, read.Blob, state, read.Since) { Root = read.Root };
-            (AccessRules.Resolve(config, read.Repository, read.Workspace).Full ? byMode : owed).Add(row);
+            var against = Against(config, read);
+            var judged = against is not null && _judged.TryGetValue((against, read.Blob), out var pair) ? pair : ((DeclarationChange Change, bool Keeps)?)null;
+            var row = new DeclarationOwed(read.Repository, read.Workspace, read.Line, read.Blob, state, read.Since)
+            {
+                Root = read.Root, Change = judged?.Change, Against = against,
+            };
+            (AccessRules.Resolve(config, read.Repository, read.Workspace).Full ? byMode
+                : state == IntegrationAcceptance.Changed && judged is { Keeps: true } ? kept
+                : owed).Add(row);
         }
 
         static IReadOnlyList<DeclarationOwed> Ordered(List<DeclarationOwed> rows) =>
             [.. rows.OrderBy(each => each.Since).ThenBy(each => each.Repository, StringComparer.Ordinal)];
-        return (Ordered(owed), Ordered(byMode));
+        return (Ordered(owed), Ordered(byMode), Ordered(kept));
+    }
+
+    /// <summary>The blob a read is judged against: the integration's acceptance, else the landed route's gates; null where none is accepted.</summary>
+    private static string? Against(DriverConfig config, Read read) =>
+        IntegrationAcceptance.Of(config, read.Repository) ?? WorkflowSelection.ResolveLanded(config, read.Repository, read.Workspace).Gates;
+
+    /// <summary>Each pair of accepted and line blobs judged once, replaced whole by the look so a judge meanwhile reads one whole map.</summary>
+    private volatile IReadOnlyDictionary<(string Accepted, string Blob), (DeclarationChange Change, bool Keeps)> _judged =
+        new Dictionary<(string Accepted, string Blob), (DeclarationChange Change, bool Keeps)>();
+
+    /// <summary>Each held read not at the accepted blob judged against it once a pair, from git's objects; a pair no read holds is forgotten.</summary>
+    private async Task JudgeAsync(DriverConfig config, IReadOnlyList<Read> held, CancellationToken ct)
+    {
+        var blobs = held.Select(read => read.Blob).ToHashSet(StringComparer.Ordinal);
+        var next = _judged.Where(each => blobs.Contains(each.Key.Blob)).ToDictionary(each => each.Key, each => each.Value);
+        foreach (var read in held)
+        {
+            if (Against(config, read) is not { } against || against == read.Blob || next.ContainsKey((against, read.Blob))) continue;
+            GitReads++;
+            var was = await IntegrationAcceptance.TextAsync(read.Root, against, ct).ConfigureAwait(false);
+            var now = await IntegrationAcceptance.TextAsync(read.Root, read.Blob, ct).ConfigureAwait(false);
+            if (now is null || (was is null && against != IntegrationAcceptance.None)) continue;
+            next[(against, read.Blob)] = (DeclarationChange.Between(was, now), DeclarationCommands.Keeps(was, now));
+        }
+
+        _judged = next;
     }
 
     /// <summary>The state of the one acceptance of <paramref name="blob"/>: the integration's where the line declares one, else the landed route's where it verifies.</summary>
@@ -110,6 +154,7 @@ public sealed class IntegrationOwed
 
         // A repository the registry no longer holds is forgotten with its read.
         foreach (var gone in _reads.Keys.Where(key => !seen.Contains(key)).ToList()) _reads.Remove(gone);
+        await JudgeAsync(config, held, ct).ConfigureAwait(false);
         _held = held;
     }
 
