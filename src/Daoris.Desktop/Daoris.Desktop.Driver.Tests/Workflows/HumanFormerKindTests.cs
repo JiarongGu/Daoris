@@ -55,6 +55,21 @@ public sealed class HumanFormerKindTests : IDisposable
         Assert.DoesNotContain(await ListAsync(), line => line.Contains("`human`", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("""{"id":"broken","name":"Broken","versions":[{"version":1,"schema":2,"graph":42}]}""")]
+    [InlineData("""{"id":"broken","name":"Broken","versions":42}""")]
+    public async Task Workflow_list_still_lists_beside_a_file_of_another_shape_and_the_census_still_counts(string broken)
+    {
+        RunHome.SaveGraph(_home, Saved);
+        File.WriteAllText(WorkflowStore.PathOf(_home, "broken"), broken);
+
+        var said = await ListAsync();
+
+        Assert.Contains(said, line => line.StartsWith("  `broken` — ", StringComparison.Ordinal));
+        Assert.Contains("daoris: saved versions still spelling the former `human` kind, each read as a `task` until none does: `docs v1`.", said);
+    }
+
     private async Task<IReadOnlyList<string>> ListAsync()
     {
         var output = new StringWriter();
