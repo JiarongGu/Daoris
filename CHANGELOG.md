@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A brainstorm's pass reads its packet as files instead of one large JSON: an index naming the question and each source's file,
+  where it came from, its size, how many of the question's terms it holds and why it is in, and one Markdown file per source. A
+  source the search matched by words alone that holds few of the question's terms is listed apart, so a pass opens only what it
+  needs.
+
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood
   at, what that policy would have said beside what happened. The policy decides nothing yet: it is recorded beside today's holds so

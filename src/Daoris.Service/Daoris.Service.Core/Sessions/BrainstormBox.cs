@@ -44,7 +44,7 @@ public sealed record BrainstormKept(bool Kept, IReadOnlyList<string> Codes, stri
 /// may give it again within its turn, and stays the file's until a valid one replaces it: a turn that ends refused is the driver's to
 /// judge, and its one repair is handed the same codes. A valid answer is kept once; Daoris never repairs, trims or keeps part of one.</para>
 ///
-/// <para><b>Judged against what the turn is handed</b>, read from its room: a generator's sources from <c>packet.json</c>, a
+/// <para><b>Judged against what the turn is handed</b>, read from its room: a generator's sources from the files its packet's index names under <c>sources/</c>, a
 /// synthesis's anonymous ids from <c>proposals.json</c>. A room that holds neither judges nothing, and nothing is written.</para>
 /// </remarks>
 public sealed class BrainstormBox(BrainstormScope scope)
@@ -74,10 +74,10 @@ public sealed class BrainstormBox(BrainstormScope scope)
             return new(false, [], $"This turn is a brainstorm's {(Scope.Synthesis ? "synthesis" : "generator")}: answer through `{own}`. Nothing was kept.");
         }
 
-        var handed = synthesis ? Handed(Scope.Room!, "proposals.json", "proposals") : Handed(Scope.Room!, "packet.json", "sources");
+        var handed = synthesis ? Handed(Scope.Room!, "proposals.json", "proposals") : Sources(Scope.Room!);
         if (handed is null)
         {
-            var file = synthesis ? "proposals.json" : "packet.json";
+            var file = synthesis ? "proposals.json" : IndexFile;
             return new(false, [], $"This turn's room holds no readable `{file}`, so the answer cannot be judged. Nothing was kept.");
         }
 
@@ -118,6 +118,25 @@ public sealed class BrainstormBox(BrainstormScope scope)
 
         var proposals = Count("proposals");
         return proposals == 0 ? "no proposal, and why" : $"{proposals} {(proposals == 1 ? "proposal" : "proposals")}";
+    }
+
+    public const string IndexFile = "index.md";
+
+    /// <summary>A generator's source ids, its room's <c>sources/</c> files as the driver's <c>BrainstormRoomPacket</c> names them; null with no index.</summary>
+    private static IReadOnlyList<string>? Sources(string room)
+    {
+        try
+        {
+            if (!File.Exists(Path.Combine(room, IndexFile))) return null;
+            var folder = Path.Combine(room, "sources");
+            return Directory.Exists(folder)
+                ? [.. Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)]
+                : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The ids a room's file lists under <paramref name="list"/>, or null where it does not read.</summary>

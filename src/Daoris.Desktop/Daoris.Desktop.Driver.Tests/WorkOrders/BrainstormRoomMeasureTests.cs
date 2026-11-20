@@ -41,7 +41,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
         Assert.Equal(laid.Tokens[BrainstormRoomProbe.Absolute] + "\n", File.ReadAllText(laid.Absolute));
         Assert.Equal(laid.Tokens[BrainstormRoomProbe.Parent] + "\n", File.ReadAllText(laid.Parent));
         Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(laid.Room)!, laid.ListingName)));
-        Assert.Contains(laid.Tokens[BrainstormRoomProbe.Control], File.ReadAllText(Path.Combine(laid.Room, BrainstormInstruction.PacketFile)), StringComparison.Ordinal);
+        Assert.Contains(laid.Tokens[BrainstormRoomProbe.Control], File.ReadAllText(Path.Combine(laid.Room, BrainstormRoomPacket.IndexFile)), StringComparison.Ordinal);
         Assert.Equal(4, laid.Tokens.Values.Distinct().Count());
         foreach (var token in laid.Tokens.Values) Assert.DoesNotContain(token, instruction, StringComparison.Ordinal);
         Assert.Contains(laid.Absolute, instruction, StringComparison.Ordinal);

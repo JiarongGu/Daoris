@@ -356,10 +356,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var deadline = started + minutes.Request * Minute;
             var generatorsEnd = started + minutes.Generators * Minute;
             var sources = packet.Sources.Select(source => source.Id).ToHashSet(StringComparer.Ordinal);
+            var laid = BrainstormRoomPacket.Lay(packet);
             var plan = Generators(request, rule, workspace);
             var generators = plan.Select(each => each.Allowed
                 ? PassAsync<BrainstormAnswer>(
-                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, bytes, DesignPasses.Generator(request, digest), null,
+                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, laid, DesignPasses.Generator(request, digest), null,
                     text =>
                     {
                         var check = BrainstormAnswers.Check(text, sources);
@@ -404,7 +405,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 // The synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
                 var generated = plan.First(each => each.Pass == answered[0].By.Pass).Entry;
                 var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
-                    id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, DesignPasses.Synthesizer(request, digest),
+                    id, "s1", synthesizer, BrainstormPassRecord.Synthesize, laid, DesignPasses.Synthesizer(request, digest),
                     BrainstormSyntheses.Anonymous(handed),
                     text =>
                     {
@@ -511,7 +512,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <param name="run">How its turns run; null for a brainstorm's: its test stand-in, else <see cref="TurnAsync"/>.</param>
     /// <param name="workspace">The workspace its turns ask their accounts for (<see cref="BrainstormTurn.Workspace"/>); null for the machine's.</param>
     internal async Task<(BrainstormPassRecord Record, T? Valid)> PassAsync<T>(
-        string id, string pass, string agent, string role, byte[] packet, string instruction, byte[]? proposals,
+        string id, string pass, string agent, string role, IReadOnlyList<RoomFile> packet, string instruction, byte[]? proposals,
         Func<string?, (T? Valid, IReadOnlyList<string> Codes)> check, BrainstormFiles files, TimeSpan own, DateTimeOffset until,
         CancellationToken stop, CancellationToken ct, Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? run = null,
         ActorEffective? entry = null, string? workspace = null)

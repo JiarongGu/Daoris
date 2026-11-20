@@ -7,9 +7,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class BrainstormInstruction
 {
-    /// <summary>The packet's file in every pass's room.</summary>
-    public const string PacketFile = "packet.json";
-
     /// <summary>The anonymous proposals' file in the synthesis's room.</summary>
     public const string ProposalsFile = "proposals.json";
 
@@ -19,8 +16,8 @@ public static class BrainstormInstruction
     /// <summary>A generator's instruction: read the packet, answer the question once through <c>brainstorm_give</c>.</summary>
     public static string Generator(string digest) =>
         Lead(digest)
-        + "Your job: propose answers to the packet's question. Read the packet's sources; they are everything you are given, and "
-        + "nothing outside this folder is yours to read.\n\n"
+        + "Your job: propose answers to the packet's question. The packet's files are everything you are given, and nothing outside "
+        + "this folder is yours to read.\n\n"
         + "Answer once, through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`. Each "
         + "proposal: `idea` (at most 200 characters), `rationale` (at most 1,200), `effort` (small, medium, large or unknown), `risk` "
         + "(low, medium, high or unknown), `reversible` (yes, partly, no or unknown), `undo` (how it would be undone or why it cannot, "
@@ -76,6 +73,7 @@ public static class BrainstormInstruction
         + ". Answer again, whole, through the same tool. This is your last turn.\n";
 
     private static string Lead(string digest) =>
-        $"Daoris asks you one question, in the context packet `{PacketFile}` in this folder, packet `{digest}`. Read the packet "
-        + "first: its question, then its sources, each with where it came from and how much of it was kept.\n\n";
+        $"Daoris asks you one question, in the context packet `{digest}`, laid out as files in this folder. Read "
+        + $"`{BrainstormRoomPacket.IndexFile}` first: the question, then each source's file under `{BrainstormRoomPacket.SourcesFolder}/` with where "
+        + "it came from, its size, its relevance and why it is in. Open only the sources you need.\n\n";
 }

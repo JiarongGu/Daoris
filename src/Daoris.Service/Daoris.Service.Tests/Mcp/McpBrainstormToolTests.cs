@@ -25,15 +25,16 @@ public sealed class McpBrainstormToolTests : IDisposable
 
     private string Answer(string turn) => Path.Combine(_root, "brainstorms", "b1", "answers", $"{turn}.json");
 
-    /// <summary>A turn's room as the driver opens it: the packet with its sources, and for a synthesis the anonymous proposals.</summary>
+    /// <summary>A turn's room as the driver opens it: the packet's index and source files, and for a synthesis the anonymous proposals.</summary>
     private string Room(string turn, bool packet = true)
     {
         var room = Directory.CreateDirectory(Path.Combine(_root, "brainstorm-rooms", "b1", turn)).FullName;
         if (packet)
         {
-            File.WriteAllText(Path.Combine(room, "packet.json"), """
-                { "packet": 1, "digest": "sha256:00", "question": "Why?", "sources": [{ "id": "S1", "kind": "decision" }, { "id": "S2", "kind": "document" }] }
-                """);
+            File.WriteAllText(Path.Combine(room, "index.md"), "# Packet `sha256:00`\n\n## The question\n\nWhy?\n");
+            Directory.CreateDirectory(Path.Combine(room, "sources"));
+            File.WriteAllText(Path.Combine(room, "sources", "S1.md"), "# S1: `docs/decisions/D1.md`\n");
+            File.WriteAllText(Path.Combine(room, "sources", "S2.md"), "# S2: `docs/design.md`\n");
         }
 
         if (turn.StartsWith('s'))
@@ -149,7 +150,7 @@ public sealed class McpBrainstormToolTests : IDisposable
     [Fact]
     public void A_room_with_no_packet_keeps_nothing()
     {
-        Assert.Contains("packet.json", Turn("g3", packet: false).Give([Proposal()]));
+        Assert.Contains("index.md", Turn("g3", packet: false).Give([Proposal()]));
         Assert.False(File.Exists(Answer("g3")));
     }
 

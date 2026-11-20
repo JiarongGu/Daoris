@@ -261,7 +261,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                 var turn = MeetingFiles.Turn(round, participant.Id);
                 Refuse(id, files, refused, said);
                 var (record, text) = await _brainstorms.PassAsync<string>(
-                    id, turn, participant.Adapter, MeetingPackets.Say, bytes, MeetingInstruction.Say(digest, participant, round), null,
+                    id, turn, participant.Adapter, MeetingPackets.Say, MeetingInstruction.Room(bytes), MeetingInstruction.Say(digest, participant, round), null,
                     answer =>
                     {
                         var check = MeetingMessages.Check(answer);
