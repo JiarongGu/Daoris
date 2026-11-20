@@ -57,14 +57,22 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
     public static HeavyWaiting Default { get; } = new(TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow);
 }
 
+/// <summary>What admits a run waiting for its repository's slot: the rules, read at each look, the checkout whose file may say how many at once, and its record.</summary>
+public sealed record HeavyAdmit(Func<CheckRules> Rules, string Checkout, Func<HeavyHolder> Holder);
+
+/// <summary>A wait for a repository's slot as it ended: the slot, or none and why the admission refused it (null where none judged).</summary>
+public sealed record HeavyTake(HeavySlot? Slot, CheckWait? Wait);
+
 /// <summary>
-/// A repository's heavy-run slots, across its trees: as many runs of its heavy gates at once as the machine's check admission
-/// admits (<see cref="CheckAdmission"/>); a run from any checkout of it that finds none admitted waits and says why and behind whom.
+/// A repository's heavy-run slots, across its trees: as many runs of its heavy gates at once as the machine's admission admits
+/// (<see cref="CheckAdmission"/>), or fewer where the repository says so; a run from any checkout of it that finds none admitted waits
+/// and says why and behind whom.
 /// </summary>
 /// <remarks>
 /// <para><b>Why, and why not one.</b> Two driven sessions on one repository each ran its full build and suites at once on the installed
-/// Daoris (about 25 node workers and 5 GB between them, a neighbour's shell killed). The cost is memory, so the slots are admitted as the
-/// machine's checks are: a pinned <c>checks</c> is that many, <c>auto</c> another while the memory holds one more.</para>
+/// Daoris (about 25 node workers and 5 GB between them, a neighbour's shell killed). The cost is memory, so the slots are admitted by the
+/// one judgement over every heavy run on the machine: a pinned <c>checks</c> is that many, <c>auto</c> another while the memory holds one
+/// more, fewer where the repository says (<see cref="HeavyGates.SlotsKey"/>).</para>
 ///
 /// <para><b>Keyed by the repository, never the tree.</b> The key is the repository's common git folder, read from git's own files with
 /// no process (<see cref="TreeTips.CommonDirectory"/>), named by the folder's identity where Windows gives one (a junction, a
@@ -174,10 +182,10 @@ public sealed class HeavySlot : IDisposable
     }
 
     /// <summary>
-    /// A slot, waited for while <paramref name="rules"/> admit none, saying on <paramref name="said"/> why and behind which runs, at
+    /// A slot, waited for while the machine's admission admits none, saying on <paramref name="said"/> why and behind which runs, at
     /// <paramref name="waiting"/>'s cadence, until one is this run's. An admitted free slot is taken at once, saying nothing.
     /// </summary>
-    /// <param name="rules">What admits another run beside the slots' holders (<see cref="CheckAdmission.Judge"/>); null admits one.</param>
+    /// <param name="admit">What admits the run (<see cref="CheckAdmission.TryTake"/>), its rules read at each look; null takes the first slot alone, writing nothing.</param>
     /// <param name="waiter">
     /// What this run writes beside the slots while it waits, so the page can say who waits; taken away as it takes a
     /// slot or stops. Null writes nothing.
@@ -185,16 +193,16 @@ public sealed class HeavySlot : IDisposable
     /// <exception cref="OperationCanceledException">Stopped while waiting; nothing is held.</exception>
     public static async Task<HeavySlot> TakeAsync(
         string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting = null, HeavyWaiter? waiter = null,
-        CheckRules? rules = null) =>
-        (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null, rules).ConfigureAwait(false))!;
+        HeavyAdmit? admit = null) =>
+        (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null, admit).ConfigureAwait(false)).Slot!;
 
     /// <summary>
-    /// <see cref="TakeAsync"/>, giving up without waiting once a slot it waits for is held by one <paramref name="yieldTo"/> names (a
-    /// session's run never waits behind a verification): null then, nothing held and no waiter left.
+    /// <see cref="TakeAsync"/>, giving up without waiting once a slot of the repository is held by one <paramref name="yieldTo"/> names (a
+    /// session's run never waits behind a verification): no slot then, the admission's wait, nothing held and no waiter left.
     /// </summary>
-    public static async Task<HeavySlot?> TakeUnlessAsync(
+    public static async Task<HeavyTake> TakeUnlessAsync(
         string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting, HeavyWaiter? waiter,
-        Func<HeavyHolder, bool>? yieldTo, CheckRules? rules = null)
+        Func<HeavyHolder, bool>? yieldTo, HeavyAdmit? admit = null)
     {
         waiting ??= HeavyWaiting.Default;
         var waited = Stopwatch.StartNew();
@@ -206,16 +214,26 @@ public sealed class HeavySlot : IDisposable
             for (var looks = 0; ; looks++)
             {
                 ct.ThrowIfCancellationRequested();
-                var slots = rules?.Slots ?? 1;
-                var wait = rules is null ? null : CheckAdmission.Judge([.. Look(home, key).Holders.Select(holder => holder.Since)], rules, waiting.Clock());
-                if (wait is null && TryTake(home, key, slots) is { } slot)
+                CheckWait? wait = null;
+                HeavySlot? slot;
+                if (admit is null)
                 {
-                    if (looks > 0) said.WriteLine($"run-heavy: `{repository}`'s heavy-run slot is this run's, after waiting {Took(waited.Elapsed)}.");
-                    return slot;
+                    slot = TryTake(home, key);
+                }
+                else
+                {
+                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, admit.Checkout, admit.Holder));
+                    slot = taken?.Repository;
                 }
 
-                var holders = Enumerable.Range(0, slots).Select(index => Holder(home, key, index)).OfType<HeavyHolder>().ToList();
-                if (yieldTo is not null && holders.Any(yieldTo)) return null;
+                if (slot is not null)
+                {
+                    if (looks > 0) said.WriteLine($"run-heavy: `{repository}`'s heavy-run slot is this run's, after waiting {Took(waited.Elapsed)}.");
+                    return new HeavyTake(slot, null);
+                }
+
+                var holders = Records(home, key);
+                if (yieldTo is not null && holders.Any(yieldTo)) return new HeavyTake(null, wait);
                 if (waiter is not null && waits is null) waits = KeepWaiter(home, key, waiter);
                 var of = string.Join('|', holders.Select(holder => $"{holder.Pid}:{holder.Started}:{holder.Since:O}")) + wait?.Code;
                 if (saidAt is null || waited.Elapsed - saidAt >= waiting.SayEvery || of != saidOf)
@@ -243,9 +261,7 @@ public sealed class HeavySlot : IDisposable
     public static HeavyLook Look(string home, string key, Func<int, long, bool>? alive = null)
     {
         alive ??= Running;
-        var holders = Files(Path.GetDirectoryName(PathOf(home, key))!, $"{key}*.json")
-            .Select(ReadShared).OfType<string>().Select(Parse).OfType<HeavyHolder>().Where(held => alive(held.Pid, held.Started))
-            .OrderBy(held => held.Since).ToList();
+        var holders = Records(home, key).Where(held => alive(held.Pid, held.Started)).ToList();
         var waiters = new List<HeavyWaiter>();
         foreach (var file in Files(WaitersOf(home, key), "*.json"))
         {
@@ -258,6 +274,26 @@ public sealed class HeavySlot : IDisposable
         }
 
         return new HeavyLook(holders, [.. waiters.OrderBy(one => one.Since).ThenBy(one => one.Pid)]);
+    }
+
+    /// <summary>The records beside the repository's slots that read, the first taken first, whatever their processes.</summary>
+    private static List<HeavyHolder> Records(string home, string key) =>
+        [.. Files(Path.GetDirectoryName(PathOf(home, key))!, $"{key}*.json").Select(ReadShared).OfType<string>().Select(Parse).OfType<HeavyHolder>().OrderBy(held => held.Since)];
+
+    /// <summary>Every repository's slots' holders, each with its repository's key, only where its process runs. Reads files only.</summary>
+    public static IReadOnlyList<(string Key, HeavyHolder Holder)> Holders(string home, Func<int, long, bool>? alive = null)
+    {
+        alive ??= Running;
+        var held = new List<(string, HeavyHolder)>();
+        foreach (var file in Files(Path.GetDirectoryName(PathOf(home, "_"))!, "*.json"))
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            var dash = name.LastIndexOf('-');
+            var key = dash > 0 && name[(dash + 1)..].All(char.IsAsciiDigit) ? name[..dash] : name;
+            if (ReadShared(file) is { } text && Parse(text) is { } holder && alive(holder.Pid, holder.Started)) held.Add((key, holder));
+        }
+
+        return held;
     }
 
     private static List<string> Files(string folder, string pattern)
@@ -495,12 +531,15 @@ public sealed class HeavySlot : IDisposable
     private static string? Text(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
+    /// <summary>Why the run waits: behind its repository's holders, or for the machine's memory or slots, beside them where there are any.</summary>
     private static string Waiting(string repository, IReadOnlyList<HeavyHolder> holders, CheckWait? wait, DateTimeOffset now, TimeSpan waited)
     {
         var who = holders.Count == 0 ? "a run that has not said what it runs yet" : string.Join("; ", holders.Select(holder =>
             (holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
             + $", running {(holder.Gates.Count == 0 ? "its gates" : string.Join(", ", holder.Gates))} for {Took(now - holder.Since)} in {holder.Checkout}"));
-        var why = wait?.Code == CheckWait.Memory ? $"waits for {wait.Sentence}, beside {who}" : $"is held by {who}";
+        var why = wait?.Code is CheckWait.Memory or CheckWait.Slots
+            ? $"waits for {wait.Sentence}{(holders.Count > 0 ? $", beside {who}" : "")}"
+            : $"is held by {who}";
         return $"run-heavy: `{repository}`'s heavy-run slot {why}; this run waits for it ({Took(waited)} so far).";
     }
 

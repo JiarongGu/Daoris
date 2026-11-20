@@ -291,12 +291,13 @@ public sealed class HeavySlotTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 With memory for two, a second run of one repository takes a slot beside the first at once; with memory for one it waits for
-    /// memory and says so; a pinned one keeps one, the second waiting behind the first.
+    /// 🔴 With memory for two, a second run of one repository takes a slot beside the first at once, its record written as it takes it;
+    /// with memory for one it waits for memory and says so; a pinned one keeps one, the second waiting behind the first. The first is
+    /// still in its first gate, so its need counts again.
     /// </summary>
     [Theory]
     [InlineData(null, 20L, null)]
-    [InlineData(null, 5L, "waits for memory: 5.0 GB free, a check needs 6 GB, beside session s-1")]
+    [InlineData(null, 5L, "waits for memory: 5.0 GB free, a check needs 16 GB with 1 still starting, beside session s-1")]
     [InlineData(1, 20L, "is held by session s-1")]
     public async Task A_second_run_of_one_repository_is_admitted_by_the_checks_rule(int? checks, long freeGb, string? says)
     {
@@ -307,16 +308,18 @@ public sealed class HeavySlotTests : IDisposable
         using var holding = HeavySlot.TryTake(_fixture.Home, key)!;
         holding.Keep(new HeavyHolder(Environment.ProcessId, started, _fixture.Checkout, ["build"], now - TimeSpan.FromMinutes(10), "s-1", null));
         var rules = new CheckRules(checks, 16, 4, () => new MemoryReading(freeGb << 30, freeGb << 30));
+        var admit = new HeavyAdmit(() => rules, _fixture.Tree, () => new HeavyHolder(Environment.ProcessId, started, _fixture.Tree, ["build"], now, "s-2", null));
         var said = new SaidWriter();
 
         using var stop = new CancellationTokenSource();
         var taking = HeavySlot.TakeAsync(
-            _fixture.Home, key, "engine", said, stop.Token, new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromMinutes(1), () => now), rules: rules);
+            _fixture.Home, key, "engine", said, stop.Token, new HeavyWaiting(TimeSpan.FromMilliseconds(20), TimeSpan.FromMinutes(1), () => now), admit: admit);
         if (says is null)
         {
             using var beside = await taking.WaitAsync(Poll.Patience);
             Assert.Equal($"{key}-2", beside.Name);
             Assert.Equal("", said.Text);
+            Assert.Equal(["s-1", "s-2"], HeavySlot.Look(_fixture.Home, key).Holders.Select(holder => holder.Session));
             return;
         }
 

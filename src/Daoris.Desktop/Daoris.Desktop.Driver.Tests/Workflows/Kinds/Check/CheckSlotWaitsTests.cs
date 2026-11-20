@@ -63,7 +63,7 @@ public sealed class CheckSlotWaitsTests
         var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
 
         Assert.Equal(CheckSlotWaits.Repository, wait.Code);
-        Assert.Equal("Waits for Daoris's heavy-run slot, one heavy run of a repository at a time; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
+        Assert.Equal("Waits for a heavy-run slot of Daoris: its other heavy runs hold every one it has; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
     }
 
     [Fact]

@@ -46,6 +46,27 @@ public static class ChecksSetting
         }
     }
 
+    /// <summary>
+    /// The <c>checks</c> the file at <paramref name="path"/> holds where it holds one the reader takes as auto (not a whole number in
+    /// bounds), as written there, so the list can say it does not read; null where it holds none, holds one that reads, or the file does not read.
+    /// </summary>
+    public static string? Unread(string path)
+    {
+        try
+        {
+            if (!System.IO.File.Exists(path)) return null;
+            using var document = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllBytes(path));
+            var root = document.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object || !root.TryGetProperty(File, out var value)) return null;
+            var number = value.ValueKind == System.Text.Json.JsonValueKind.Number && value.TryGetInt64(out var pinned) ? pinned : (long?)null;
+            return Read(number) is null ? value.GetRawText() : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>Pin how many checks run at once, or clear it with null for auto.</summary>
     /// <exception cref="DriverException">A value out of its bounds.</exception>
     public static DriverConfig WithChecks(this DriverConfig config, int? checks) =>

@@ -649,12 +649,40 @@
       "before": null,
       "exit": 0,
       "out": [
-        "daoris: this machine runs at most 2 check(s) at once, whatever its memory.",
-        "  One repository's checks run side by side by the same rule, and each check's steps still take a place in the machine's heavy-run admission.",
+        "daoris: this machine runs at most 2 heavy run(s) at once, whatever its memory, and never more than its heavy-run admission holds.",
+        "  Checks, sessions' heavy runs and integrations' gates count alike; a repository's run side by side unless its daoris.gates.json says fewer (`heavySlots`).",
         "  Written to <config> — read at the next look, so nothing restarts."
       ],
       "err": [],
       "after": "{\n  \"checks\": 2\n}\n"
+    },
+    {
+      "name": "checks with no value says it",
+      "argv": [
+        "checks"
+      ],
+      "before": "{\n  \"checks\": 2\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  checks     2 at once  (set — `daoris settings checks auto` runs as many as the memory admits)"
+      ],
+      "err": [],
+      "after": "{\n  \"checks\": 2\n}\n"
+    },
+    {
+      "name": "checks that does not read is said",
+      "argv": [
+        "checks"
+      ],
+      "before": "{\n  \"checks\": \"two\"\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  checks     auto  (the file's `checks` is \"two\", which does not read as auto or 1 to 16, so the default runs — `daoris settings checks <n>|auto` writes one that reads)"
+      ],
+      "err": [],
+      "after": "{\n  \"checks\": \"two\"\n}\n"
     },
     {
       "name": "checks auto",
@@ -665,8 +693,8 @@
       "before": "{\n  \"checks\": 2\n}\n",
       "exit": 0,
       "out": [
-        "daoris: this machine runs another check while its free memory holds one more (6 GB a check), up to a quarter of its processors.",
-        "  One repository's checks run side by side by the same rule, and each check's steps still take a place in the machine's heavy-run admission.",
+        "daoris: this machine runs another heavy run while its free memory holds one more (8 GB each, 8 GB more for each still in its first step), up to a quarter of its processors.",
+        "  Checks, sessions' heavy runs and integrations' gates count alike; a repository's run side by side unless its daoris.gates.json says fewer (`heavySlots`).",
         "  Written to <config> — read at the next look, so nothing restarts."
       ],
       "err": [],

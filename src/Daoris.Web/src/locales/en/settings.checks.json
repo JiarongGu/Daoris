@@ -1,7 +1,7 @@
 {
   "settings.checks.label": "Checks at once",
   "settings.checks.terminal": "Also `daoris settings checks <n>|auto`, a number from 1 to 16 — one file, either door.",
-  "settings.checks.body": "A run's check builds its repository and runs its tests, which can take minutes and several gigabytes. On auto, another check starts while the machine keeps 6 GB free for it, up to a quarter of its processors; a number runs that many whatever the memory. One repository's checks and heavy runs go side by side by the same rule, and each still takes a place in the machine's heavy-run admission beside merges.",
+  "settings.checks.body": "A run's check builds its repository and runs its tests, which can take minutes and several gigabytes. On auto, another starts while the machine keeps 8 GB free for it, and 8 GB more for each run still in its first step, up to a quarter of its processors; a number runs that many whatever the memory, never more than the machine's heavy-run admission holds. Checks, sessions' heavy runs and integrations' checks all count, and one repository's run side by side unless it declares fewer with heavySlots.",
   "settings.checks.auto": "As many as the memory admits",
   "settings.checks.state.auto": "Auto: another check starts while the memory holds one more.",
   "settings.checks.state.pinned": "At most {{count}} check at once.",

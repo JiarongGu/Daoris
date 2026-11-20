@@ -194,10 +194,10 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
 
             foreach (var each in due)
             {
-                (VerifySlot Home, HeavySlot Repository)? slots;
+                HeavyTaken? held;
                 try
                 {
-                    slots = TryTake(each);
+                    held = TryTake(each);
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
@@ -205,7 +205,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                     continue;
                 }
 
-                if (slots is not { } held) continue;
+                if (held is null) continue;
                 SlotsTaken?.Invoke();
 
                 // A stop between taking the slots and here has taken the attempt off the queue and settled it: it is not run as well.
@@ -214,13 +214,12 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                     if (_queue.Remove(each))
                     {
                         _running[each.Send.Invocation] = each;
-                        _runs.Add(Task.Run(() => RunOneAsync(each, held.Home, held.Repository)));
+                        _runs.Add(Task.Run(() => RunOneAsync(each, held)));
                         continue;
                     }
                 }
 
-                held.Repository.Dispose();
-                held.Home.Dispose();
+                held.Dispose();
             }
 
             bool waiting;
@@ -229,24 +228,39 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
     }
 
-    /// <summary>One attempt's run: off the running at its end (back on the queue in one step where a busy runner sent it), the loop woken.</summary>
-    private async Task RunOneAsync(Queued queued, VerifySlot homeSlot, HeavySlot repository)
+    /// <summary>One attempt's run: off the running at its end (requeued in one step, under the stop's lock, where a busy runner sent it and no stop came), a cancel not the driver's end answered, the loop woken.</summary>
+    private async Task RunOneAsync(Queued queued, HeavyTaken held)
     {
         var again = false;
         try
         {
-            again = await RunAsync(queued, homeSlot, repository).ConfigureAwait(false);
+            again = await RunAsync(queued, held).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (_ends.IsCancellationRequested)
         {
         }
+        catch (OperationCanceledException error)
+        {
+            Settle(queued.Send, Unknown(queued.Send, $"the verification was cut off by something other than its bound, its stop or the driver's end ({error.Message})"));
+        }
         finally
         {
+            bool stopped;
             lock (_gate)
             {
                 _running.Remove(queued.Send.Invocation);
-                if (again) _queue.Add(queued);
+                stopped = again && queued.Stop.IsCancellationRequested;
+                if (again && !stopped) _queue.Add(queued);
                 _runs.RemoveAll(run => run.IsCompleted);
+            }
+
+            if (stopped)
+            {
+                VerifySlot.Forget(home, queued.Send.Invocation);
+                Settle(queued.Send, new VerifyResult(queued.Send.Invocation, queued.Send.Commit, VerifyVerdicts.Unknown, "the person stopped it before it ran again", [])
+                {
+                    Code = VerifyResult.Stopped, Declaration = queued.Send.Accepted,
+                });
             }
 
             Wake();
@@ -273,8 +287,8 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         Settle(queued.Send, Unknown(queued.Send, $"the verification could not be started ({error.Message})"));
     }
 
-    /// <summary>A verification slot as the checks admit, then a repository slot, each tried without waiting; one not free lets the other go, said.</summary>
-    private (VerifySlot Home, HeavySlot Repository)? TryTake(Queued queued)
+    /// <summary>A check slot and a repository slot as the machine's admission admits, each record written as it is taken, tried without waiting; why not, said.</summary>
+    private HeavyTaken? TryTake(Queued queued)
     {
         var send = queued.Send;
         if (HeavySlot.KeyOf(send.Checkout) is not { } key)
@@ -286,36 +300,14 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         var now = _world.Clock.GetUtcNow();
-        var rules = _world.Rules();
-        var (homeSlot, wait) = CheckAdmission.TryTake(
-            home, rules, now, () => new VerifyHolder(Environment.ProcessId, _started, send.Run, send.Invocation, send.Repository, now));
-        if (homeSlot is null)
+        var ask = new HeavyAsk(key, send.Repository, send.Checkout,
+            () => new HeavyHolder(Environment.ProcessId, _started, send.Checkout, [], DateTimeOffset.UtcNow, null, JobName(home, send.Invocation)) { Run = send.Run })
         {
-            Blocked(queued, wait!);
-            return null;
-        }
-
-        HeavySlot? repository;
-        try
-        {
-            repository = HeavySlot.TryTake(home, key, rules.Slots);
-        }
-        catch
-        {
-            homeSlot.Dispose();
-            throw;
-        }
-
-        if (repository is null)
-        {
-            homeSlot.Dispose();
-            var holders = HeavySlot.Look(home, key).Holders.Select(holder =>
-                holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}'s heavy run" : "a heavy run from a terminal");
-            Blocked(queued, CheckWait.OfRepository(send.Repository, string.Join(", ", holders.DefaultIfEmpty("a heavy run"))));
-            return null;
-        }
-
-        return (homeSlot, repository);
+            Check = () => new VerifyHolder(Environment.ProcessId, _started, send.Run, send.Invocation, send.Repository, now),
+        };
+        var (taken, wait) = CheckAdmission.TryTake(home, _world.Rules(), ask);
+        if (taken is null) Blocked(queued, wait!);
+        return taken;
     }
 
     private void Blocked(Queued queued, CheckWait wait)
@@ -335,18 +327,18 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         });
 
     /// <summary>The attempt's run, both slots let go at its end; true where a busy runner sends it back to the queue for a later offer.</summary>
-    private async Task<bool> RunAsync(Queued queued, VerifySlot homeSlot, HeavySlot repository)
+    private async Task<bool> RunAsync(Queued queued, HeavyTaken held)
     {
         var send = queued.Send;
         var key = HeavySlot.KeyOf(send.Checkout)!;
         var job = JobName(home, send.Invocation);
-        var holder = new HeavyHolder(Environment.ProcessId, _started, send.Checkout, [], DateTimeOffset.UtcNow, null, job) { Run = send.Run };
+        var repository = held.Repository;
+        var holder = held.Holder;
         VerifyResult? result = null;
         var busy = false;
         var ran = Stopwatch.StartNew();
         try
         {
-            repository.Keep(holder);
             VerifySlot.Forget(home, send.Invocation);
             if (repository.Before is { Job: { } left } && OperatingSystem.IsWindows()) await ProcessJob.EndNamedAsync(left).ConfigureAwait(false);
 
@@ -402,8 +394,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
         finally
         {
-            repository.Dispose();
-            homeSlot.Dispose();
+            held.Dispose();
         }
 
         if (busy && result is null && !_ends.IsCancellationRequested)

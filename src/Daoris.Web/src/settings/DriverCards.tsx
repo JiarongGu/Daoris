@@ -53,7 +53,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   facts: DriverFacts;
   /** The settings held in minutes, and the checks' bounds, as the driver's list declares them, which the domain reads from the list. */
   minutes: { cooloff: MinutesDeclared; quiet: MinutesDeclared; drain?: MinutesDeclared; manifest?: MinutesDeclared; checks?: MinutesDeclared };
-  busy: { access: boolean; gitAccess?: boolean };
+  busy: { access: boolean; gitAccess?: boolean; checks?: boolean };
   onGo: (door: StarterDoor) => void;
   onNotify: (on: boolean) => void;
   /** A cool-off in minutes the person typed and left: whole, one or more, and not the one held. */
@@ -165,7 +165,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
           {facts.terminal && onTerminal && <TerminalTierSetting held={facts.terminal} changes={facts.terminalChanges} onSet={onTerminal} />}
 
           {/* How many checks the machine runs at once: auto by its memory, or a pinned number. Null is auto; absent is no answer. */}
-          {facts.checks !== undefined && minutes.checks && onChecks && <ChecksSetting setting={minutes.checks} held={facts.checks} onSet={onChecks} />}
+          {facts.checks !== undefined && minutes.checks && onChecks && <ChecksSetting setting={minutes.checks} held={facts.checks} onSet={onChecks} busy={busy.checks} />}
 
           {facts.pluginsFolder && (
             <SettingRow

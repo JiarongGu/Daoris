@@ -28,13 +28,29 @@ public static class MachineMemory
                 return GlobalMemoryStatusEx(ref status) ? new MemoryReading((long)status.AvailPhys, (long)status.AvailPageFile) : null;
             }
 
-            if (OperatingSystem.IsLinux()) return Meminfo(File.ReadAllText("/proc/meminfo"), File.ReadAllText("/proc/sys/vm/overcommit_memory").Trim() == "2");
+            if (OperatingSystem.IsLinux()) return Meminfo(File.ReadAllText("/proc/meminfo"), Strict(() => File.ReadAllText("/proc/sys/vm/overcommit_memory")));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DllNotFoundException or EntryPointNotFoundException)
         {
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether the kernel holds a process to its commit (<c>overcommit_memory</c> 2), as <paramref name="read"/> says it. A mode that cannot
+    /// be read is not strict, so the available memory alone is judged and a readable <c>/proc/meminfo</c> is never lost with it.
+    /// </summary>
+    internal static bool Strict(Func<string> read)
+    {
+        try
+        {
+            return read().Trim() == "2";
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     /// <summary><c>/proc/meminfo</c> read: <c>MemAvailable</c>, and <c>CommitLimit</c> less <c>Committed_AS</c> where <paramref name="strict"/>.</summary>

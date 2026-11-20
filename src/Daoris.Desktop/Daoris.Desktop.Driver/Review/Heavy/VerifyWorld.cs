@@ -24,7 +24,7 @@ public sealed record VerifyWorld
 
     public int Processors { get; init; } = Environment.ProcessorCount;
 
-    internal CheckRules Rules() => new(Checks(), Processors, Capacity ?? MachineAdmission.CapacityOf(Variable, Processors), Memory);
+    internal CheckRules Rules() => CheckRules.Of(Checks(), Processors, Capacity, Variable, Memory);
 
     /// <summary>A variable of the driver's own environment, which the admission reads for a hold this process is already inside.</summary>
     public Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;

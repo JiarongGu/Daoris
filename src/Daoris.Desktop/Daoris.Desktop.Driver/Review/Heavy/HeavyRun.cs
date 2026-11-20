@@ -26,8 +26,8 @@ public sealed record HeavyMarker(string Slot, IReadOnlyList<string> Gates);
 /// <summary>
 /// <c>daoris gate run [--gate &lt;name&gt;]</c>: run in a checkout, it runs the gates its
 /// <c>daoris.gates.json</c> marks heavy one after another (<see cref="HeavyGates"/>), or where it marks none this machine's mapping
-/// for it (<see cref="HeavyMapping"/>), holding its repository's one heavy-run slot (<see cref="HeavySlot"/>), every
-/// gate's processes in one job that is ended and emptied before the slot is let go.
+/// for it (<see cref="HeavyMapping"/>), holding one of its repository's heavy-run slots as the machine's admission admits
+/// (<see cref="HeavySlot"/>, <see cref="CheckAdmission"/>), every gate's processes in one job that is ended and emptied before the slot is let go.
 /// </summary>
 /// <remarks>
 /// <para><b>Why.</b> Two driven sessions on one repository each ran its full build and suites at once on the installed Daoris, and
@@ -243,28 +243,32 @@ public static class HeavyRun
 
         var session = world.Variable(IntakeRoom.SessionVariable) is { Length: > 0 } ofSession ? ofSession : null;
         var (pid, started) = world.Asker;
-        HeavySlot? slot;
+        var gates = choice.Gates.Select(gate => gate.Name).ToList();
+        HeavyHolder? written = null;
+        HeavyTake took;
         try
         {
-            // While it waits it says so beside the slot, for the page to say who waits behind whom.
+            // While it waits it says so beside the slot, for the page to say who waits behind whom; its record is written as it takes it.
             // A session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
-            slot = await HeavySlot.TakeUnlessAsync(
-                world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, world.Rules()).ConfigureAwait(false);
+            var admit = new HeavyAdmit(world.Rules, checkout, () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null));
+            took = await HeavySlot.TakeUnlessAsync(
+                world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, admit).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             output.WriteLine("run-heavy: stopped while waiting for the slot; nothing ran.");
             return 1;
         }
-
-        if (slot is null)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            output.WriteLine(
-                $"run-heavy: `{repository}`'s heavy-run slot is held by its verification run {HeavySlot.Look(world.Home, key).Holders.FirstOrDefault(holder => holder.Run is not null)?.Run}, which runs the repository's "
-                + "heavy gates on its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the "
-                + "checks your change reaches, filtered, instead.");
+            throw new DriverException($"what this run runs could not be written beside its slot ({error.Message}), so nothing ran.");
+        }
+
+        if (took.Slot is not { } slot)
+        {
+            output.WriteLine($"run-heavy: {NotAdmitted(took.Wait, repository, HeavySlot.Look(world.Home, key).Holders.FirstOrDefault(holder => holder.Run is not null)?.Run)}");
             return 1;
         }
 
@@ -277,8 +281,7 @@ public static class HeavyRun
 
             var named = OperatingSystem.IsWindows() ? $"Local\\daoris-heavy-{Guid.NewGuid():N}" : null;
             var job = Job(named);
-            var holder = new HeavyHolder(
-                pid, started, checkout, [.. choice.Gates.Select(gate => gate.Name)], DateTimeOffset.UtcNow, session, named);
+            var holder = written! with { Job = named };
             try
             {
                 slot.Keep(holder);
@@ -326,6 +329,20 @@ public static class HeavyRun
                 return await RunGatesAsync(checkout, choice.Gates, key, [], job, output, ct, Keep, Inside(hold), steps: world.Steps).ConfigureAwait(false);
             }
         }
+    }
+
+    /// <summary>Why a session's run is not admitted and does not wait: its true reason, then that its verification runs these gates on the line.</summary>
+    internal static string NotAdmitted(CheckWait? wait, string repository, string? run)
+    {
+        var why = wait?.Code switch
+        {
+            CheckWait.Memory or CheckWait.Slots =>
+                $"this session's run is not admitted now (it would wait for {wait.Sentence}), and the verification run {run} holds one of `{repository}`'s heavy-run slots",
+            CheckWait.Repository => $"`{repository}`'s heavy-run slots are held by {wait.Sentence}",
+            _ => $"`{repository}`'s heavy-run slot is held by its verification run {run}",
+        };
+        return why + ": the verification runs the repository's heavy gates on its line, so this session's run does not wait behind it; the verdict "
+               + "shows on the repository's Workflow tab. Run the checks your change reaches, filtered, instead.";
     }
 
     /// <summary>What a run started inside a hold is handed, so it takes no second place: <see cref="MachineAdmission.InsideVariable"/>, where the hold is this run's.</summary>

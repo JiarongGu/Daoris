@@ -68,9 +68,9 @@ public sealed record AdmissionRequest(string What)
 /// hold one past two minutes. There is no lease and no timeout otherwise: a run that lives and beats holds its place as long as it runs.</para>
 ///
 /// <para><b>Changed under the keeping write's lock</b> (<see cref="KeepLock"/>, <c>keeplock.ts</c>): the file is put in place whole, and the
-/// waiting is done outside the lock, by looking again. Of the repository's per-repository slot (<see cref="HeavySlot"/>, the handle is
-/// the lock) it is the machine-wide counterpart: that one says one run of a repository's gates at a time, this one how many heavy runs
-/// the machine holds at all. A Node process cannot hold a handle another program's open refuses, which is why the two are not one.</para>
+/// waiting is done outside the lock, by looking again. Beside the heavy-run slots (<see cref="HeavySlot"/>, each handle a lock, as many as
+/// <see cref="CheckAdmission"/> admits whole heavy runs) it counts places: how many heavy steps the machine holds, the merge tool's gates
+/// among them. A Node process cannot hold a handle another program's open refuses, which is why the two are not one.</para>
 /// </remarks>
 public static class MachineAdmission
 {

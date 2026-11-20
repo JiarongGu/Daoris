@@ -7,13 +7,15 @@ import type { MinutesDeclared } from './MinutesSetting';
  * How many checks the machine runs at once (`checks`): auto, as many as its memory admits, or a pinned number in the setting's bounds.
  * Auto is a switch; off, the number beside it is the one held. A molecule: the held value by props, every change out.
  */
-export function ChecksSetting({ setting, held, onSet }: {
+export function ChecksSetting({ setting, held, onSet, busy = false }: {
   /** The setting as the driver's list declares it: its bounds. */
   setting: MinutesDeclared;
   /** The pinned number, or null for auto. */
   held: number | null;
   /** A change the person made: a whole number in bounds and not the one held, or null for auto. */
   onSet: (checks: number | null) => void;
+  /** A change is being written: both controls wait for it, so a second press never races the first. */
+  busy?: boolean;
 }) {
   const { t } = useTranslation();
   const least = setting.least ?? 1;
@@ -29,12 +31,12 @@ export function ChecksSetting({ setting, held, onSet }: {
       why={t('settings.checks.body')}
       control={(
         <>
-          <CheckField checked={held === null} onChange={(auto) => onSet(auto ? null : shown)} label={t('settings.checks.auto')} />
+          <CheckField checked={held === null} disabled={busy} onChange={(auto) => onSet(auto ? null : shown)} label={t('settings.checks.auto')} />
           <input
             type="number"
             min={least}
             max={most}
-            disabled={held === null}
+            disabled={held === null || busy}
             aria-label={t('settings.checks.label')}
             value={typed ?? String(shown)}
             onChange={(event) => setTyped(event.target.value)}

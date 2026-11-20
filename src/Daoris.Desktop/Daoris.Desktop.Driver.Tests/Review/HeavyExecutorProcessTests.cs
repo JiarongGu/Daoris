@@ -113,8 +113,12 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
 
-    private IReadOnlyList<(string What, string Tag)> Intervals() =>
-        [.. File.ReadAllLines(At("intervals.log")).Select(line => line.Split(' ')).Select(parts => (parts[0], parts[1]))];
+    private IReadOnlyList<(string What, string Tag)> Intervals()
+    {
+        using var stream = new FileStream(At("intervals.log"), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return [.. reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Split(' ')).Where(parts => parts.Length >= 2).Select(parts => (parts[0], parts[1]))];
+    }
 
     [Fact]
     public async Task With_checks_pinned_at_one_two_verifications_never_overlap_and_wait_in_the_order_they_were_sent()

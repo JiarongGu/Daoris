@@ -89,7 +89,7 @@ public static class CheckSlotWaits
         {
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
             Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
-            Repository => $"Waits for {Value("repository")}'s heavy-run slot, one heavy run of a repository at a time; {queue}.",
+            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
             _ => $"Waits for a check slot: {queue}.",
         };
     }

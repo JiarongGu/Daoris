@@ -49,6 +49,17 @@ public sealed record IntegrationTransportWorld
 
     /// <summary>How long a line whose candidate is held or waits, or whose gates wait for the slots, is let be before it is tried again.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>The machine's seams a gated line's admission reads (<see cref="CheckRules.Of"/>): this machine's unless a test holds them.</summary>
+    public Func<MemoryReading?> Memory { get; init; } = MachineMemory.Read;
+
+    public int Processors { get; init; } = Environment.ProcessorCount;
+
+    public int? Capacity { get; init; }
+
+    public Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;
+
+    internal CheckRules Rules(int? checks) => CheckRules.Of(checks, Processors, Capacity, Variable, Memory);
 }
 
 /// <summary>
@@ -57,10 +68,10 @@ public sealed record IntegrationTransportWorld
 /// is in. Its answer asks the pass, which reads each request's outcome onto its node.
 /// </summary>
 /// <remarks>
-/// <para><b>Shared with the heavy executor.</b> A line whose rule declares its gates runs holding the home's verification slot and then the
-/// repository's heavy-run slot, each tried without waiting, as a check does, so a candidate's gates and a check never run in one repository at
-/// once; a line with no gates takes neither. A line whose slots are held waits, said, and is tried again after <see cref="IntegrationTransportWorld.Poll"/>
-/// or at the next send.</para>
+/// <para><b>Shared with the heavy executor.</b> A gated line holds a check slot and a repository slot, records written, under the one admission
+/// (<see cref="CheckAdmission"/>), so it runs beside a check of its repository as two checks do; a check judged as merged reads the line's tip
+/// once and merges from objects alone (<see cref="LineMerge"/>), never a half-landed line. A line with no gates takes neither; one whose
+/// slots are held waits, said, and is tried again after <see cref="IntegrationTransportWorld.Poll"/> or at the next send.</para>
 /// </remarks>
 public sealed class IntegrationTransport(string home, IntegrationTransportWorld? world = null) : IIntegrationLines, IAsyncDisposable
 {
@@ -211,19 +222,26 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             },
             new IntegrationPromoteAsk(send.Repository, send.Workspace, root, send.Line, config, home) { Tidy = _world.Tidy, Beside = _world.Beside });
 
-        VerifySlot? verifying = null;
-        HeavySlot? heavy = null;
+        HeavyTaken? held = null;
         if (Gated(store, send))
         {
-            var now = _world.Clock.GetUtcNow();
-            var rules = new CheckRules(config.Checks, Environment.ProcessorCount, MachineAdmission.Capacity(), MachineMemory.Read);
-            (verifying, var wait) = CheckAdmission.TryTake(home, rules, now,
-                () => new VerifyHolder(Environment.ProcessId, Started, $"integration of {send.Line}", $"integration-{send.Repository}-{send.Line}", send.Repository, now));
-            heavy = verifying is null || HeavySlot.KeyOf(root) is not { } key ? null : HeavySlot.TryTake(home, key, rules.Slots);
-            if (heavy is null)
+            if (HeavySlot.KeyOf(root) is not { } key)
             {
-                verifying?.Dispose();
-                Later(send, $"integration: `{send.Repository}`'s line `{send.Line}` waits for {(wait is not null ? wait.Sentence : "the repository's heavy run")}.");
+                Later(send, $"integration: git's files at {root} do not say which repository it is a checkout of, so `{send.Line}`'s gates wait for a heavy-run slot that cannot be told.");
+                return null;
+            }
+
+            var now = _world.Clock.GetUtcNow();
+            var integrating = $"integration of {send.Line}";
+            var ask = new HeavyAsk(key, send.Repository, root,
+                () => new HeavyHolder(Environment.ProcessId, Started, root, [], now, null, null) { Run = integrating })
+            {
+                Check = () => new VerifyHolder(Environment.ProcessId, Started, integrating, $"integration-{send.Repository}-{send.Line}", send.Repository, now),
+            };
+            (held, var wait) = CheckAdmission.TryTake(home, _world.Rules(config.Checks), ask);
+            if (held is null)
+            {
+                Later(send, $"integration: `{send.Repository}`'s line `{send.Line}` waits for {wait!.Sentence}.");
                 return null;
             }
         }
@@ -235,8 +253,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         }
         finally
         {
-            heavy?.Dispose();
-            verifying?.Dispose();
+            held?.Dispose();
         }
 
         // A candidate left standing is held or waits for its verdict: tried again once the wait is over, never at every pass.

@@ -25,15 +25,18 @@ public sealed class ChecksVerb : ChoiceVerb
         }, _ => null, _ =>
         {
             Say(checks is { } pinned
-                ? $"daoris: this machine runs at most {pinned} check(s) at once, whatever its memory."
-                : "daoris: this machine runs another check while its free memory holds one more (6 GB a check), up to a quarter of its processors.");
-            Say("  One repository's checks run side by side by the same rule, and each check's steps still take a place in the machine's heavy-run admission.");
+                ? $"daoris: this machine runs at most {pinned} heavy run(s) at once, whatever its memory, and never more than its heavy-run admission holds."
+                : "daoris: this machine runs another heavy run while its free memory holds one more (8 GB each, 8 GB more for each still in its first step), up to a quarter of its processors.");
+            Say("  Checks, sessions' heavy runs and integrations' gates count alike; a repository's run side by side unless its daoris.gates.json says fewer (`heavySlots`).");
             Say($"  Written to {path} — read at the next look, so nothing restarts.");
             return 0;
         });
     }
 
+    /// <summary>The setting as the list says it: a pinned number, auto, or auto because the file's value does not read, which the reader takes as auto.</summary>
     public override void Listed(DriverConfig choices, DriverChoicesWorld world) => world.Instance.Out.WriteLine(choices.Checks is { } pinned
         ? $"  checks     {pinned} at once  (set — `daoris settings checks auto` runs as many as the memory admits)"
-        : "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)");
+        : ChecksSetting.Unread(world.ConfigPath) is { } unread
+            ? $"  checks     auto  (the file's `checks` is {unread}, which does not read as auto or 1 to {ChecksSetting.Most}, so the default runs — `daoris settings checks <n>|auto` writes one that reads)"
+            : "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)");
 }

@@ -80,7 +80,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         machineAccess: driver.data?.machineAccess,
         machineGitAccess: driver.data?.machineGitAccess,
       }}
-      busy={{ access: setAccess.isPending, gitAccess: setGitAccess.isPending }}
+      busy={{ access: setAccess.isPending, gitAccess: setGitAccess.isPending, checks: setChecks.isPending }}
       // This machine's git access, as Settings → Git sets it.
       onGitAccess={(edit, answered) => setGitAccess.mutate({ machine: true, ...edit }, {
         onSuccess: () => answered?.done(),
