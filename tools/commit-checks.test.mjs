@@ -141,6 +141,31 @@ test('the layers counts run for a staged .cs or .csproj only, and a breach refus
   assert.match(said.join('\n'), /layers-census: the ambient count rose/);
 });
 
+test('a layers shrink is written and staged into the commit before the counts judge, for a staged .cs or .csproj only', () => {
+  const LIST = 'tools/layers-census.json';
+  const dir = repository({ 'src/a.ts': plain, [LIST]: '{\n  "clock": {\n    "src/B.cs": 3\n  },\n  "slowTests": {}\n}\n' });
+  const order = [];
+  const checks = {
+    shrink: (root) => {
+      order.push('shrink');
+      writeFileSync(join(root, LIST), '{\n  "clock": {\n    "src/B.cs": 1\n  },\n  "slowTests": {}\n}\n');
+      return ['clock src/B.cs: 3 to 1'];
+    },
+    counts: () => { order.push('counts'); return { code: 0, problems: [] }; },
+  };
+  put(dir, { 'src/a.ts': `${plain}export const more = 1;\n` });
+  git(dir, 'add', '-A');
+  assert.equal(runCommitChecks({ root: dir, env: env(), say() {}, err() {}, ...checks }), 0);
+  assert.deepEqual(order, [], 'a commit with no .cs runs neither');
+  put(dir, { 'src/B.cs': 'namespace Daoris;\n' });
+  git(dir, 'add', '-A');
+  const said = [];
+  assert.equal(runCommitChecks({ root: dir, env: env(), say: (line) => said.push(line), err() {}, ...checks }), 0);
+  assert.deepEqual(order, ['shrink', 'counts']);
+  assert.match(said.join('\n'), /layers list lowered \(1\)/);
+  assert.equal(git(dir, 'show', `:${LIST}`).stdout, '{\n  "clock": {\n    "src/B.cs": 1\n  },\n  "slowTests": {}\n}\n', 'the lowered list is staged');
+});
+
 test('a tool error never blocks a commit, and the opt-out runs nothing', () => {
   const dir = repository({ 'src/a.ts': plain });
   put(dir, { 'src/B.cs': 'namespace Daoris;\n' });

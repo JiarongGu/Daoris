@@ -33,13 +33,13 @@ export function checkReferences(tree, list) {
         problems.push(`${project.name} takes the package ${name}: an application and its unit tests take analyzers and test libraries alone`);
       }
       for (const name of allowed.filter((each) => !outside.includes(each))) {
-        problems.push(`${project.name}: ${name} is on the list and no longer referenced: write the list again (node tools/layers-census.mjs --write)`);
+        problems.push(`${project.name}: ${name} is on the list and no longer referenced: lower the list (node tools/layers-census.mjs --shrink)`);
       }
     }
   }
   const named = new Set(projects.map((project) => project.name));
   for (const name of Object.keys(list.packages)) {
-    if (!named.has(name)) problems.push(`${name} is on the package list and is no project: write the list again (node tools/layers-census.mjs --write)`);
+    if (!named.has(name)) problems.push(`${name} is on the package list and is no project: lower the list (node tools/layers-census.mjs --shrink)`);
   }
   return problems;
 }

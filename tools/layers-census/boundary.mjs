@@ -77,7 +77,7 @@ export function checkBoundaries(tree, list = {}) {
         if (count > (held[name] ?? 0)) problems.push(`lane ${id}: ${across} ${name} ${count} times, over the ratchet's ${held[name] ?? 0}: reach it through a port of the boundary instead`);
       }
       for (const [name, count] of Object.entries(held)) {
-        if ((found[way][name] ?? 0) < count) problems.push(`lane ${id}: ${across} ${name} ${found[way][name] ?? 0} times, under the ratchet's ${count}: write the list again (node tools/layers-census.mjs --write)`);
+        if ((found[way][name] ?? 0) < count) problems.push(`lane ${id}: ${across} ${name} ${found[way][name] ?? 0} times, under the ratchet's ${count}: lower the list (node tools/layers-census.mjs --shrink)`);
       }
     }
   }
