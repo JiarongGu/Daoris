@@ -13,7 +13,8 @@ namespace Daoris.Driver;
 public sealed class PlaceRiskVerb : ChoiceVerb
 {
     private const string Usage = "usage: daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>] — "
-        + "e.g. `daoris settings risk aurora low --mark release.production`; marks are comma-separated; with nothing to set it says what stands.";
+        + "e.g. `daoris settings risk aurora low --mark release.production`; marks are comma-separated; with nothing to set it says what stands "
+        + "and each act's class there; `daoris settings risk why <run> [<step>]` says the verdicts journaled for a run's holds.";
 
     /// <summary>The refusal of a file write from where an agent is: the record is the owner's, and an agent's press goes on the owner's card.</summary>
     internal const string Alone =
@@ -29,10 +30,28 @@ public sealed class PlaceRiskVerb : ChoiceVerb
 
     public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
+        if (Operands(args, Valued).Skip(1).FirstOrDefault() == Why) return SaidWhy(args, world);
         var edit = Read(args);
         var now = before.PlaceRisk.At(edit.Workspace, edit.Repository);
         world.Instance.Out.WriteLine($"daoris: {Named(edit)}: {now.Risk} ({now.Source}){Marks(now.Marks)}.");
         if (!before.PlaceRisk.Written) world.Instance.Out.WriteLine("  No record is written yet: Daoris writes it at its next start.");
+        foreach (var line in Acts?.Invoke(before, edit.Workspace, edit.Repository) ?? []) world.Instance.Out.WriteLine(line);
+        return 0;
+    }
+
+    /// <summary>The risk judge's table at a place and its journal's lines for a run: Workflows' readings, which Loop hands this verb.</summary>
+    public Func<DriverConfig, string?, string?, IReadOnlyList<string>>? Acts { get; init; }
+
+    public Func<string, string, string?, IReadOnlyList<string>>? Verdicts { get; init; }
+
+    private const string Why = "why";
+
+    private int SaidWhy(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        var words = Operands(args, Valued).Skip(2).ToList();
+        if (words.Count is 0 or > 2) throw new ChoiceWords($"`settings risk why` needs a run, and may name one step — {Usage}");
+        if (Verdicts is not { } verdicts) throw new ChoiceWords("this program was handed no reading of the risk verdicts; nothing was read.");
+        foreach (var line in verdicts(DriverConfig.HomeOf(world.ConfigPath), words[0], words.ElementAtOrDefault(1))) world.Instance.Out.WriteLine(line);
         return 0;
     }
 

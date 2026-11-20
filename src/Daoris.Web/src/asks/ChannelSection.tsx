@@ -260,7 +260,7 @@ function AddressedRow({ item }: { item: ChannelItem }) {
   const { t } = useTranslation();
   const state = item.receipt ?? null;
   return (
-    <li data-addressed={item.id ?? ''} className={cn('grid gap-1 rounded-control border border-line px-3 py-2', item.person ? 'border-l-[3px] border-l-accent bg-raised' : 'bg-page')}>
+    <li data-addressed={item.id ?? ''} className={cn('grid gap-1 rounded-control border border-line px-3 py-2', item.person ? 'bg-raised' : 'bg-page')}>
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-caption text-ink-faint">
         <span className="text-small font-semibold text-ink">{whoOf(t, item)}</span>
         <span>{t('asks.channel.toPart', { part: item.part ?? '' })}</span>
@@ -314,7 +314,7 @@ export function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onF
       tabIndex={-1}
       className={cn(
         'grid gap-1 rounded-control border border-line px-3 py-2 outline-none',
-        item.person ? 'border-l-[3px] border-l-accent bg-raised' : 'bg-page',
+        item.person ? 'bg-raised' : 'bg-page',
       )}
     >
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-caption text-ink-faint">

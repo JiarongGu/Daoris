@@ -2,9 +2,14 @@
  * The lane table, as data: which gates can see a changed path. The merge tool's tests hold it to what each suite
  * reads and each rehearsal runs, so a gate a merge skips is one that could not see the change.
  */
+import { fileURLToPath } from 'node:url';
 import { reachRows } from './reach-rows.ts';
+import { readWidePaths } from './verification.ts';
 
 export type Rule = { paths?: readonly string[]; lane?: string; gates: '*' | readonly string[]; why: string };
+
+// The declared wide paths, read apart from the rule's budget; a verifyBudget declared without them fails here, at load.
+const WIDE_PATHS: readonly string[] = readWidePaths(fileURLToPath(new URL('../..', import.meta.url)));
 
 // The .NET suites with a test that reads the page's catalogues or sources.
 const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];
@@ -38,12 +43,9 @@ const PACKAGE_SUITES = ['packages-lock'];
 // read, so the census of test units follows this file's imports and not its strings.
 export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   {
-    paths: [
-      'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs',
-      'src/Daoris.Cli/src/tools/gitforwindows.ts',
-    ],
+    paths: WIDE_PATHS,
     gates: '*',
-    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)',
+    why: "it changes how every gate runs or reaches a path, a declared wide path (D349): the gates, lanes and test tools, the scripts, dependencies, lockfiles and build files, the shared contracts, line endings, what is tracked, or the file helpers every rehearsal imports and the git they start (GITSTART4)",
   },
   // Before the merge tool's own rule, which would place it there alone: the driver's twin reads the attribution contract too.
   {
@@ -66,11 +68,11 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
   { paths: ['tools/as-merged.mjs', 'tools/as-merged.test.mjs'], gates: ['tool-e2e'], why: "the merge's commit as a check reads it, and its tests merge in scratch repositories in the end-to-end tier (TOOLTIER1)" },
   {
     paths: [
-      'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-map/**', 'tools/test-recall.mjs',
+      'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-recall.mjs',
       'tools/worktree-setup.mjs', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
-    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census's failure reader and recall (CISCOPE1c; the census itself is a declared wide path), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
   },
   // The machine's heavy-run admission, which the merge tool's gates take places in; its own tests run in verify.
   {
@@ -145,7 +147,7 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     why: "the driver's WorkflowRunSaidTwinTests, its WorkFrameCensusTests (each wait a progress makes said) and the page's runSaid vitest read a run's English table (WORKFLOW1c5)",
   },
   {
-    paths: ['src/Daoris.Desktop/Directory.Build.props','src/Daoris.Desktop/Directory.Packages.props'],
+    paths: ['src/Daoris.Desktop/Directory.Build.props'],
     gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
     why: 'every desktop project builds with it: the suites, the headless host the family rehearsal drives, and the deployed shell',
   },
@@ -378,13 +380,6 @@ export const REACH: readonly Rule[] = Object.freeze<Rule[]>([
     paths: ['src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs'],
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
     why: "the service lane's own, and the modules' OwnerSetCensusTests holds each person's door to the record kind it declares (STEWARDROLE1a-ii)",
-  },
-  // The modules' state-slice tests hold the page's types to the contract records they read, so a change there reaches the modules; a path
-  // rule replaces the service lane's, so its readers stay.
-  {
-    paths: ['src/Daoris.Contracts/**'],
-    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
-    why: "the service lane's own, and the modules' state-slice tests read the records the page's types are held to",
   },
   // The modules' ReconcileStatusProcessTests runs this checkout's CLI over a copy of the example engine; a path rule
   // replaces the cli lane's and the examples' (examples/engine/ is read by those two).

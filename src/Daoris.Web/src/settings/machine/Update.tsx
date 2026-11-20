@@ -83,7 +83,7 @@ export function UpdateSection({ update, busy = false, onSay }: {
   const words = WORDS[state] ?? [];
 
   return (
-    <Card id="settings-update" className="scroll-mt-3">
+    <Card id="settings-update" className="scroll-mt-3" edge={state === 'refused' ? 'failed' : undefined}>
       <section aria-label={t('settings.update.title')}>
         <SectionTitle>{t('settings.update.title')}</SectionTitle>
         {/* The rows apart from the title, so the rule between rows falls between them and never under the title. */}

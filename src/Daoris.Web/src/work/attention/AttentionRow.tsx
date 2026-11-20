@@ -17,6 +17,7 @@ import {
   type QuietWait,
   type StaleSince,
 } from './attention';
+import type { AttentionClass } from './attentionPushed';
 import { Note } from '../Note';
 import type { Answered } from '../InlineConfirm';
 import type { TaskAct } from '../../workflow/task/TaskPress';
@@ -91,6 +92,10 @@ export type Attention = {
   /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal; for a `go-ahead`, its ask and its number, since one ask holds several. */
   id: string;
   kind: AttentionKind;
+  /** Whose it is, as .NET's census classed it: an agents' row is listed under *With the agents*, its edge without amber. */
+  class?: AttentionClass;
+  /** An agents' kind counted as the owner's since no role is appointed to take it: its status line says so. */
+  untaken?: boolean;
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
   /** A `request-declined` row's node and the quest declined, to where it went and the run's newest work quest, which its door reads the run by. */
@@ -475,7 +480,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
       // The row's key, by which the UX trail names a press made in it (`uxTrail.ts`).
       data-attention-row={`${item.kind}:${item.id}`}
       className={cn(
-        'grid gap-x-4 gap-y-1.5 border-l-[3px] border-l-st-open px-3 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
+        'grid gap-x-4 gap-y-1.5 px-4 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
         doorOnly && offered.length === 0 && 'grid-cols-[minmax(0,1fr)_auto] items-center',
       )}
     >
@@ -507,6 +512,13 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
             <>
               <span aria-hidden className="text-ink-faint">·</span>
               <span className="font-mono text-caption text-ink-faint">{when}</span>
+            </>
+          )}
+          {/* An agents' kind no role is appointed to take: the owner's until one is, said so rather than left to nobody. */}
+          {item.untaken && (
+            <>
+              <span aria-hidden className="text-ink-faint">·</span>
+              <span className="text-caption text-ink-soft">{t('work.attention.untaken')}</span>
             </>
           )}
         </p>

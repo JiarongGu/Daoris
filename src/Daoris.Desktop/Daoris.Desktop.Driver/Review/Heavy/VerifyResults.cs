@@ -78,8 +78,10 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
     /// <summary>The gate a failed check names (a runner's name for an opaque one).</summary>
     public string? Failed { get; init; }
 
-    /// <summary>The blob of <c>daoris.gates.json</c> it ran under, or <c>none</c>.</summary>
+    /// <summary>The blob of <c>daoris.gates.json</c> it ran under, or <c>none</c>; a <see cref="Changed"/> hold's is the work's, its <see cref="Accepted"/> the person's then.</summary>
     public string? Declaration { get; init; }
+
+    public string? Accepted { get; init; }
 
     public double? WallSeconds { get; init; }
 
@@ -103,6 +105,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
             if (Code is { } code) writer.WriteString("code", code);
             if (Failed is { } failed) writer.WriteString("failed", failed);
             if (Declaration is { } declaration) writer.WriteString("declaration", declaration);
+            if (Accepted is { } accepted) writer.WriteString("accepted", accepted);
             if (WallSeconds is { } wall) writer.WriteNumber("wallSeconds", Math.Round(wall, 1));
             writer.WriteStartArray("gates");
             foreach (var gate in Gates)
@@ -157,7 +160,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
             return new VerifyResult(invocation, commit, verdict, Text(root, "why"), gates)
             {
-                Code = Text(root, "code"), Failed = Text(root, "failed"), Declaration = Text(root, "declaration"), WallSeconds = Seconds(root),
+                Code = Text(root, "code"), Failed = Text(root, "failed"), Declaration = Text(root, "declaration"), Accepted = Text(root, "accepted"), WallSeconds = Seconds(root),
             };
         }
         catch (JsonException)

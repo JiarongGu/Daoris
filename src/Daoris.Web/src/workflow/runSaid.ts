@@ -251,7 +251,8 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       }
       return on ? t('workflow.run.graph.said.active', { on }) : t('workflow.run.graph.said.activeRun');
     case 'reached': return node === 'land' && step.words ? step.words
-      : on ? t('workflow.run.graph.said.reached', { on }) : t('workflow.run.graph.said.reachedRun');
+      : node === 'quest.holds' && step.code === 'no-reader' ? t('workflow.run.graph.said.holdsNoReader')
+      : on ?t('workflow.run.graph.said.reached', { on }) : t('workflow.run.graph.said.reachedRun');
     case 'skipped': return t(step.code === 'person' ? 'workflow.run.graph.said.skippedByYou' : 'workflow.run.graph.said.skippedByRecord');
     // A declined request is the person's to ask again or go on without.
     case 'failed':

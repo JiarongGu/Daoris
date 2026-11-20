@@ -367,6 +367,7 @@ public sealed class DriverModuleWorkflowTests : DriverModuleBridge
         var now = accepted.GetProperty("start").GetProperty("integration");
         Assert.Equal((IntegrationAcceptance.Accepted, blob), (now.GetProperty("state").GetString(), now.GetProperty("gates").GetString()));
         Assert.Equal(JsonValueKind.Null, now.GetProperty("declaration").ValueKind);
+        Assert.Equal(DeclarationMode.Restricted, now.GetProperty("mode").GetString());
         Assert.Equal(blob, DriverConfig.Load(DriverConfigPath).IntegrationGates["engine"]);
         Assert.False(DriverConfig.Load(DriverConfigPath).Workflows.ContainsKey("engine"), "the landed route's acceptance is apart");
 

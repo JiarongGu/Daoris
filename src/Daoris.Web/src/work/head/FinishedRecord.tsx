@@ -16,7 +16,7 @@ export function FinishedRecord({ record }: { record: SessionRecord }) {
   const { post } = record;
   const commits = post.commits ?? [];
   return (
-    <section className="grid gap-1.5 border-l-[3px] border-line-strong bg-page/60 px-3.5 py-2" aria-label={t('work.record.title')}>
+    <section className="grid gap-1.5 bg-page/60 px-3.5 py-2" aria-label={t('work.record.title')}>
       <h3 className="m-0 text-body font-medium text-ink">{t('work.record.title')}</h3>
       <p className="m-0 text-small text-ink-soft">{t('work.record.hint', { when: moment(record.at) })}</p>
       <p className="m-0 text-small text-ink-soft">

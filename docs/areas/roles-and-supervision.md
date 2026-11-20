@@ -312,6 +312,20 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     own makers read it after the rule's, said as not independent), `prepaid` (the DeepSeek harness's prepaid key, granted), `wait`; a
     leave is its pass up. The look's next walk reads the newest act, and a walk whose reviewer holds the step journals `filled`, which
     ends the vacancy and its acts, so the walk after it reads the rule's order again; the person's own ask is theirs. (D304)
+49b. One judge (`RiskGate.Judge`, `Workflows/Risk/`) reads one risk policy and decides nothing yet: it runs in shadow. The policy is `risk` in
+    the home's `driver.json` (`RiskPolicy`), rows keyed by place (`machine`, `workspace/<name>`, `repository/<name>`), each a list of
+    `{ kind[/qualifier], class none|role|owner, by?, mode? full|restricted }` over a closed census of sixteen act kinds (`RiskActs`;
+    a door naming another is refused). For an act the narrowest place with a row decides, a qualified row over its kind's and a row keyed
+    by the place's access mode over one keyed by none; then `placeRisk` read through (a place whose level stands at `high` reads every
+    kind at `owner`, a `release.production` mark `release.start/production` at `owner`); then the seed: `none`, but `reach.widen` (`role`
+    by the place's approver under restricted access), `command.change` (`owner` under restricted access), `history.rewrite`, `data.delete`
+    and `policy.change` (`owner`); `policy.change` is fixed whatever a row says. An absent record reads as the seed; one that does not read
+    reads every act at `owner` with its fault said; a class the build does not know reads `owner`; a row naming no kind of the census is
+    named and not read. Beside each hold today's gates open and release (a run step's unchecked done, Accept, approval, go-ahead and
+    recovery waits, read at the runtime's pass; a declaration owed acceptance, read at the look) one `risk.judged` line is appended to
+    the home's journal (`data/workflows/risk/judged.jsonl`, history) at its open and at its release, the release judged again under the
+    policy then, with what today's gate did and whether the two agree. `daoris settings risk` prints the resolved table at the place it
+    names; `daoris settings risk why <run> [<step>]` the run's journaled verdicts. No door writes a row yet. (D354)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits it. (D208)
 51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of sixteen with no card: drive, undrive, hold,
     resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a session's tree clean, a
@@ -447,6 +461,11 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 - **The window redesign** (`docs/2026-11-19-window-design.md` §5, §6, §13.4): the agents' attention kinds go to the appointed
   supervisor and only the owner's kinds wait on the owner (D336, UISH6, UISE9), and every owner act is defined once and can be
   given to an appointed role, but *Confirm it was you* (D340, UISH24, UIRP17, UIRP29). Today the rules below stand.
+- **RISKGATE1** (D354): rule 49a's levels and marks become one risk policy of act kinds, each `none`, `role` or `owner` at its place,
+  read by one judge at every hold; a gate names a role filled by the cast, refuses an answer from the work's own lineage (`own-work`)
+  and never falls to the owner when vacant; a change to the policy, a cast granting an act or an access mode stays the owner's own,
+  given in the window, under the person's key or confirmed in the assistant's conversation. The judge and its record run in shadow
+  (rule 49b); today rules 43 to 49a decide.
 - **THROUGH1** (D277): Ask Daoris carries the person's words on an ask (`--require`, `--through`), never pressing a run's step.
 - **CONVO1b** (D280): Ask Daoris's reach set by its access mode alone, the card's *Always* the grant of a named family shown before
   the yes, five fences in both modes each held by its owner on each path and said where only the room and the second check hold

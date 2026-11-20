@@ -52,7 +52,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
   if (repositories === undefined) {
     return (
       <div className="grid min-w-0 gap-0.5">
-        <button type="button" disabled aria-label={words.label} className={cn(CHIP, 'cursor-default opacity-70')}>…</button>
+        <button type="button" disabled aria-label={words.label} className={cn(CHIP, 'cursor-default')}>…</button>
         <p role="status" className="m-0 text-caption text-ink-faint">{t('help.scope.reading')}</p>
       </div>
     );

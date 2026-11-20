@@ -83,7 +83,7 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
               aria-current={here || undefined}
               onClick={() => onShow(part.session)}
               className={cn(
-                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] px-2.5 py-1 text-left text-small',
+                'flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-2 px-2.5 py-1 text-left text-small',
                 'transition-colors duration-(--duration-quick) hover:bg-accent-soft/50',
                 here ? 'border-l-accent bg-accent-soft text-ink' : 'border-l-transparent text-ink-soft',
               )}

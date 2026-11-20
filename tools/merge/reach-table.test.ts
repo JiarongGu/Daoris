@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { ALL, repoLanes, repoRoot, reaches, repoPlan, runs, KEPT_NAMES, declared, inPlanOrder } from './repo-gates.ts';
-import { BASELINE, selectGates } from './reach.ts';
+import { BASELINE, ruleFor, selectGates } from './reach.ts';
 import { REACH } from './reach-table.ts';
 import type { Rule } from './reach-table.ts';
 import { pageReads } from './page-reads.ts';
@@ -29,6 +29,18 @@ test('every gate the lane table names is one this repository runs, and every lan
   for (const id of ruled) assert.ok(repoLanes.some((lane) => lane.id === id), `a rule names the lane '${id}', which the map does not declare`);
   // A path no rule places is not refused here: it runs every gate, and the merge names it. A branch in
   // another lane may add one, and the table is the tools lane's to extend.
+});
+
+test('every path a rule names by itself is one that rule places: a rule an earlier rule shadows decides nothing', () => {
+  const shadowed: string[] = [];
+  for (const rule of REACH) {
+    for (const path of rule.paths ?? []) {
+      if (/[*?{[]/.test(path)) continue;
+      const placing = ruleFor(path, REACH, repoLanes);
+      if (placing !== rule) shadowed.push(`${path}, named for "${rule.why.slice(0, 50)}…", is placed by "${placing?.why.slice(0, 50)}…"`);
+    }
+  }
+  assert.deepEqual(shadowed, []);
 });
 
 /**

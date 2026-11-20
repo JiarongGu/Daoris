@@ -18,7 +18,10 @@ export function declarationStanding(start: Pick<WorkflowStart, 'landed' | 'integ
   if (integration && waitsOf(integration.state)) return integration;
   const landed: WorkflowLanded = start.landed;
   if (landed.workflow !== 'current' && (waitsOf(landed.state) || (integration === null && landed.state === 'accepted'))) {
-    return { gates: landed.gates, state: landed.state, tip: landed.tip, problem: landed.problem, declaration: landed.declaration, change: landed.change };
+    return {
+      gates: landed.gates, state: landed.state, tip: landed.tip, problem: landed.problem, declaration: landed.declaration, change: landed.change,
+      mode: integration?.mode ?? null,
+    };
   }
   return integration;
 }
@@ -50,9 +53,9 @@ export function DeclarationChangeWords({ change }: { change: DeclarationChange }
 }
 
 /**
- * **The line's declaration, accepted once**: where the acceptance of the repository's `daoris.gates.json` stands, what it changed in the
- * person's words (checks added, removed and changed, each with its command), the file as written folded under it, and *Accept* and
- * *Withdraw*. One press accepts it for every purpose it serves, landed verification and integration alike.
+ * **The line's declaration, accepted once**: where its acceptance stands, the access mode that decides whether a command change waits,
+ * what it changed in the person's words (checks added, removed and changed, each with its command), the file as written folded under it,
+ * and *Accept* and *Withdraw*. One press accepts it for every purpose it serves, landed verification and integration alike.
  *
  * @remarks
  * *Accept* sends the blob of the declaration shown, so a tip that moved is refused in the driver's sentence, said under the press.
@@ -89,6 +92,7 @@ export function DeclarationAcceptance({ repository, standing, busy = false, onAc
   return (
     <div className="grid gap-2" data-repository={repository}>
       <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>
+      {standing.mode && <p className="m-0 text-small text-ink-soft">{t(`settings.integration.mode.${standing.mode}`)}</p>}
       {waits && standing.change && <DeclarationChangeWords change={standing.change} />}
       {waits && standing.declaration && tip && (
         <details className="m-0 min-w-0 text-small">

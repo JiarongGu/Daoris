@@ -2,7 +2,7 @@ import type { Session } from '../../data/api';
 import type { AttentionKind } from './AttentionRow';
 import type { PushedAttention } from './attentionPushed';
 
-/** What *What needs you* lists and the bell counts: every row of the window's scope but a press's own, whose card is drawn from the confirmation channel. The bell, the taskbar, *Notifications*' group and Overview's summary read this one answer, so a count never holds a row the list does not. */
+/** What *What needs you* lists: every row but a press's own, whose card is drawn from the confirmation channel, the agents' among them under their own group. What is counted is `ownersListed`'s part of this one answer, so a count never holds a row the list does not. */
 export function needsListed<T extends { kind: string; id?: string; obligation?: string }>(rows: readonly T[]): T[] {
   // Each obligation once, the first row that names it standing for it.
   const seen = new Set<string>();
@@ -21,12 +21,19 @@ export function needsListed<T extends { kind: string; id?: string; obligation?: 
  */
 export const obligationOf = (row: { kind: string; id?: string; obligation?: string }): string => row.obligation ?? `${row.kind}:${row.id ?? ''}`;
 
+export const theAgents = (row: { class?: string }): boolean => row.class === 'agents';
+
+/** What the bell, the taskbar, the title, the places and Overview count: the listed rows but the agents', a row no census reached counted. */
+export function ownersListed<T extends { kind: string; id?: string; obligation?: string; class?: string }>(rows: readonly T[]): T[] {
+  return needsListed(rows).filter((row) => !theAgents(row));
+}
+
 /**
- * The bell's count: each press of either source once, and each obligation of
- * *What needs you* once. A message unread in a channel is no obligation, and is marked by the channel's own dot, never counted here.
+ * The bell's count: each press of either source once, and each obligation of *What needs you* the owner's once. A message unread
+ * in a channel is no obligation, and is marked by the channel's own dot, never counted here, nor an agents' row.
  */
-export const bellCount = (presses: readonly unknown[], rows: readonly { kind: string; id?: string; obligation?: string }[]): number =>
-  presses.length + needsListed(rows).length;
+export const bellCount = (presses: readonly unknown[], rows: readonly { kind: string; id?: string; obligation?: string; class?: string }[]): number =>
+  presses.length + ownersListed(rows).length;
 
 /** The places of the activity bar a wait can be counted at: those a row's door opens. */
 export type AttentionPlace = 'sessions' | 'quests' | 'projects' | 'agents' | 'settings';
@@ -106,12 +113,12 @@ export function placeOf(row: Pick<PushedAttention, 'kind' | 'held' | 'blocked' |
 }
 
 /**
- * How many waits each place counts: every listed row (`needsListed`) at its place (`placeOf`). A place with none is
+ * How many waits each place counts: every row of the owner's (`ownersListed`) at its place (`placeOf`). A place with none is
  * absent, so it wears no number.
  */
 export function placeCounts(rows: readonly PushedAttention[], sessions?: PlaceSessions): Partial<Record<AttentionPlace, number>> {
   const counted: Partial<Record<AttentionPlace, number>> = {};
-  for (const row of needsListed(rows)) {
+  for (const row of ownersListed(rows)) {
     const place = placeOf(row, sessions);
     if (place) counted[place] = (counted[place] ?? 0) + 1;
   }

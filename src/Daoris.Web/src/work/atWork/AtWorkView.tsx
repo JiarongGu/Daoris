@@ -89,7 +89,7 @@ export function QuestRows({ quests, more, considered, onOpenQuest, sought }: {
             <button
               type="button"
               onClick={() => onOpenQuest?.(quest.id)}
-              className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
+              className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-2 border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
             >
               <span className="font-mono text-caption text-ink-faint">#{quest.id}</span>
               <span className="min-w-0 text-ink [overflow-wrap:anywhere]">{quest.title}</span>

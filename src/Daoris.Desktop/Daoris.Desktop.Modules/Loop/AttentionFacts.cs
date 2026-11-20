@@ -132,4 +132,7 @@ public sealed record AttentionFacts
 
     /// <summary>The rows set aside, by <see cref="Daoris.Driver.Notices.HiddenKey"/>.</summary>
     public IReadOnlySet<string> Hidden { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Who is appointed to take the agents' kinds now; none by default, so an agents' row is the owner's until one is.</summary>
+    public AttentionTakers Takers { get; init; } = AttentionTakers.None;
 }

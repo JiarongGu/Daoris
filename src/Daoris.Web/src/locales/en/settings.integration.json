@@ -1,9 +1,11 @@
 {
   "settings.integration.label": "Checks the line declares",
-  "settings.integration.why": "The checks in the repository's `daoris.gates.json`, with the files its integration writes, the rules it runs and the scratch it clears. They are used only as you accept them, once for everything they serve: verifying the work that lands and integrating it. A repository's own file never grants itself.",
+  "settings.integration.why": "The checks in the repository's `daoris.gates.json`, with the files its integration writes, the rules it runs and the scratch it clears. They are accepted once for everything they serve: verifying the work that lands and integrating it. Whether that waits for you is the repository's access mode. Under restricted access a repository's own file never grants itself: Daoris starts only the commands you accepted, and they run the work's own code; a landed change that alters no command, only paths, time or memory budgets, test sets or words, keeps your acceptance by itself. Under full access nothing waits for you: a landed change is taken and said in one line, and each work's check runs the declaration it committed, as its agents could run any command in their own sessions anyway.",
+  "settings.integration.mode.full": "Full access: taken without asking. A change to these checks is accepted as it lands, and each work's check runs the declaration it committed.",
+  "settings.integration.mode.restricted": "Restricted: waits for you. A declaration whose commands change waits for your Accept, and a work whose own change alters a command waits with it.",
   "settings.integration.accepted": "Accepted. The line's checks run as you accepted them.",
   "settings.integration.acceptedNone": "Accepted: {{branch}} declares no checks, and nothing runs until some land and you accept them.",
-  "settings.integration.changed": "The line's checks changed since you accepted them. Everything goes on under the ones you accepted until you accept these.",
+  "settings.integration.changed": "The line's checks changed their commands since you accepted them. Until you accept these, work that does not change them itself is checked under the ones you accepted, and work whose own change alters a command waits for you; the checks held so run again once you accept.",
   "settings.integration.unaccepted": "The line's checks are not accepted yet: none of them runs until you accept them.",
   "settings.integration.unread": "Where the line's checks stand could not be read here.",
   "settings.integration.declaration": "daoris.gates.json on {{branch}}",

@@ -21,7 +21,7 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 | `App/` | The composition (`Program`), the frameless main window and the framed secondary windows on the kit's `ChromiumWindowHost`, the notifier, the taskbar's wear, the browser's host and process |
 | `Modules/Bridge/` | `DAORIS.DRIVER`, one route class per domain in `Routes/` with its bodies and wire shapes in types beside it, `PersonRoutes` |
 | `Modules/Platform/` | `StatePublisher`, `StateSlices`, the instance pipe and its `Pipe*` parts, `LogModule` |
-| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers, the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
+| `Modules/Loop/` | `DriverLoop` and its parts, `HostSupervisor`, the 16 `*StateSlice` owners, the attention judge's helpers and the census of whose each of its rows is (`AttentionOwnership`) and of who is appointed to take the agents' (`AttentionTakers`), the person's words to a session (`SessionWords`, `HeldWords*`, `Words*`) |
 | `Modules/Windows/`, `Modules/Browser/` | `DAORIS.WINDOWS`, the theme order, balloons, the waiting badge, `WindowPost`, `TerminalModule`; Daoris's browser |
 | `Driver/Platform/` | `ProcessStarts` and `OwnedProcesses`: the start gate, placed by the machine adapter's `StartPlaces` through `MachinePorts`, and the one management of what starts (rule 63) |
 | web `app/`, `work/frame/` | The window's frame (`App.tsx`, its hooks in `app/shell/`), the regions and where views stand (`placements.ts`) |
@@ -125,10 +125,12 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
-19. Each main window wears its own workspace's waiting count on its taskbar button (white on the light theme's red in either theme, *9+* past nine) and
-    in its title, and the install's identity Daoris chooses. A notification's click brings forward the window that holds its
-    subject. A press waiting unshown flashes the button of the main window last in front while none is in front; a closed
-    main window is forgotten there, its flash going to the first. (from D196, D108)
+19. Each main window wears the count of what waits on the owner, every workspace's rows the census classes the owner's (rule 32), on
+    its taskbar button (dark ink on the owner's amber in either theme, since what it counts waits on the owner and red is a
+    failure's alone; *9+* past nine) and in its title, as its page tells it, and the install's identity Daoris chooses. A
+    notification's click brings forward the window that holds its subject. A press waiting unshown flashes the button of
+    the main window last in front while none is in front; a closed main window is forgotten there, its flash going to the
+    first. (from D196, D108, D351)
 20. The shell notifies and decides nothing. A balloon shows when no window has focus, worded from the words the page
     hands it in its language, with the English catalogue as fallback. (from D196, D142) A run's step waiting on a role the person
     holds is one (`Step`): its click attends the session its run placed, whose head carries the step's presses.
@@ -187,12 +189,24 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 32. .NET judges *What needs you*, and its rows are every workspace's, whatever scope the window looks at, the same rows
     `daoris notices` lists, and `daoris notices --show <subject>` prints what the window shows for a memory row's session or sweep
     (`NoticesShown`, `MemoryWaitShown`), read from the running Daoris and deciding nothing; a declaration owed acceptance leaves it at the press, judged from the choices each time it is asked
-    (D283). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
+    (D283), a changed one saying the checks its commands added, removed and changed and that work not changing them itself is checked
+    under the ones accepted (D350); only restricted access owes one, so its row begins *Restricted: waits for you*, and a full-access
+    repository's change is said in the look's one line instead (D353). A session's row there is its line's (`LineNeeds`): none for a part whose line works through a later part or needs
     the person through another session, so a line is listed once. A row acts where one press is safe; no row starts a process to find a fact out. *Ready for
     you* holds a review row for each session Sessions' list places in Needs you for a run's Accept, except one of a quest
     whose run the person stopped with its review among its steps (`StoppedRuns`). A session's memory row opens the session at its
     Memory section, its head carrying a role's held answer there with *Overrule*. Overview keeps one summary line per group.
-    (from D150, D181, D196, D297)
+    Each pushed row carries whose it is, judged by one census in the modules (`AttentionOwnership`, D336), which gives every kind
+    the judge makes the owner's kind of wait (question, go-ahead, release, sign-in, money, confirm it was you), and a kind with an
+    agents' side the role that takes it and what tells a row's side; its test reads every source of the modules that makes rows and
+    fails a kind made with no class. An agents' kind is counted as the owner's until a role is appointed to take it: it is the
+    agents' only where the roles as they stand at the judgement appoint one (`AttentionTakers`: the decisions' admission answers a
+    supervisor of the kind's act at the row's place, or a holder holds the steward); else it is the owner's, counted, and its row
+    says *no role takes this yet* (尚无角色接手). A policy hold that names money and a start an account holds for anything but a
+    cool-off or a reading are the owner's whoever is appointed. The bell, the taskbar and the title, a place's number,
+    *Notifications*' count, Overview's lines, a held call's or a step's toast and `daoris notices` count the owner's rows alone
+    (`ownersListed`); the agents' are listed last under *With the agents* (交给智能体), on the plain line's edge, and Overview's
+    line for them is neutral. (from D150, D181, D196, D297, D336)
 33. What announces depends on what waits and how urgent it is. An agent's message never reaches the desktop. The notify
     switch governs every announcement except a press's. (from D196, D188)
 34. Every surface is reached from the frame and adds no new place. It needs a door from *What needs you* where it waits
@@ -284,18 +298,22 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 
 **The design language**
 
-41. Components name roles, never colours, and only `tokens.css` holds a value. Warm paper in the neutrals; one blue
-    accent for what can be pressed or moves (`live` is its second name); amber (`you`) marks only what waits on the owner,
+41. Components name roles, never colours, and only `tokens.css` holds a value. Near-neutral greys with a faint cool lean,
+    so amber and red are the only warm things; one blue accent for what can be pressed or moves (`live` is its second name,
+    on the same field, which selected text wears too); amber (`you`) marks only what waits on the owner,
     a census over the sources holding it (`ownersAmber.test.ts`, the old `st-open`, `ink-open` and `warn` counted there as
-    aliases until UIDS18); red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A word wears
+    aliases until UIDS18); a crimson red (`fail`) only a failure; no neutral state colour, a mark's shape tells the rest. A
+    disabled control is told by its label in `ink-disabled` in the atoms' neutral frame, never by an opacity. A word wears
     its role's `-ink`; a glyph wears the inks and never the accent, beside a link's blue words too, every story's render held
     to it (`glyphInk.test.tsx`). `roles.test.ts` holds every text pair at 4.5:1 and every mark and control edge at 3:1 in both
     themes, and a status is never shown by colour alone. `tools/token-codemod.mjs` moves a web source from the old names,
-    and a second run changes nothing. (from D330, D41)
+    and a second run changes nothing. (from D330, D351, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,
     mono 13, none under 12 px, each line height a variable that `:lang(zh)` sets taller. Every size is a step and every
-    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport.
-    (from D330, D56, D185)
+    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport. A card
+    pads 12 by 16 and wears no left edge (`Card`, `cardFrame`); cards stack 16 apart and queue 8 apart. A border is 1 or 2 px
+    (the focus ring, a selected row's rail), and 3 only as `Card`'s `edge`, a wait's or a failure's (`design/edges.test.ts`);
+    a note says its tone in words. (from D330, D56, D185)
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that

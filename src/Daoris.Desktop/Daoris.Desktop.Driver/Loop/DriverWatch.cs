@@ -59,6 +59,9 @@ public sealed class DriverWatch(
     /// <summary>The steps waiting on a role the person holds, as the evaluation runtime last governed them; none before a pass.</summary>
     public IReadOnlyList<HeldStep> HeldSteps => _doors.Nodes?.HeldSteps() ?? [];
 
+    /// <inheritdoc cref="NodeRuntime.Workers"/>
+    public IReadOnlyList<string>? RunWorkers(string run) => _doors.Nodes?.Workers(run);
+
     /// <summary>The runs' plugin steps in flight the evaluation runtime governs, their plugin up (<see cref="NodeRuntime.PluginStepsInFlight"/>); none before a pass.</summary>
     public int PluginStepsInFlight => _doors.Nodes?.PluginStepsInFlight() ?? 0;
 
@@ -77,8 +80,9 @@ public sealed class DriverWatch(
 
     /// <summary>
     /// The look's read of the declarations owed acceptance (<see cref="IntegrationOwed"/>): git only where a line's tip moved. What a
-    /// repository in full access commits on its own line is accepted here as it lands, and said in one sentence each (returned). A read that
-    /// fails keeps what the last one found and is said, never a reason to fail the look.
+    /// repository in full access commits on its own line is accepted here as it lands, and said in one sentence each (returned), as is a
+    /// change the look could not judge (it waits for the person). A read that fails, whatever its fault, keeps what the last one found and
+    /// is said, never a reason to fail the look.
     /// </summary>
     internal async Task<IReadOnlyList<string>> OwedLookAsync(DriverConfig config, CancellationToken ct)
     {
@@ -86,12 +90,20 @@ public sealed class DriverWatch(
         try
         {
             await _owed.LookAsync(config, await service.RegistryAsync(ct).ConfigureAwait(false), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            said.AddRange(_owed.Unjudged);
+            // The risk judge in shadow: each declaration owed journaled with the verdict it would get beside today's acceptance.
+            if (Nodes?.Risk is { } risk) RiskDeclarationHolds.Shadow(risk, _owed, DriverConfig.Load(configPath));
             foreach (var owned in _owed.ByMode(DriverConfig.Load(configPath)))
             {
                 if (await DeclarationAcceptance.AcceptByModeAsync(home, configPath, owned, ct).ConfigureAwait(false) is { } line) said.Add(line);
             }
+
+            foreach (var kept in _owed.Kept(DriverConfig.Load(configPath)))
+            {
+                if (await DeclarationAcceptance.AcceptKeptAsync(home, configPath, kept, ct).ConfigureAwait(false) is { } line) said.Add(line);
+            }
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is not OperationCanceledException)
         {
             Log?.Failed("the read of the declarations owed acceptance", error);
         }

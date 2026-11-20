@@ -70,6 +70,9 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
     private static string BranchRevision(long sequence) =>
         ReviewWork.RevisionOf(ReviewKinds.Branch, new ReviewReference { Branch = "daoris/s1", Tip = Tip1 }, [new ReviewPart(RunId, "The work") { Machine = "m1", Sequence = sequence }]);
 
+    private void ReadByThePerson() =>
+        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, StepRoles.AskReader, CastHolders.Person, "the owner reads the dones", _now));
+
     private ReviewRecord RecordOf(NodeStatus review) => ReviewRecords.Read(_home, RunId, "review", review.Attempt)!;
 
     private async Task<NodeStatus> ActiveAsync()
@@ -190,6 +193,7 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
     [Fact]
     public async Task An_unchecked_done_is_passed_in_the_same_edit_as_the_accept_that_named_it_and_a_replay_is_refused_worded()
     {
+        ReadByThePerson();
         BoundTo(HeldGraph);
         OnBranch(1, from: "ask #a1b2c3");
         await RunPassAsync(Runtime());
@@ -216,6 +220,7 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
     [Fact]
     public async Task An_unchecked_done_and_its_accept_are_dropped_together_where_the_work_moved_before_the_pass()
     {
+        ReadByThePerson();
         BoundTo(HeldGraph);
         OnBranch(1, from: "ask #a1b2c3");
         await RunPassAsync(Runtime());

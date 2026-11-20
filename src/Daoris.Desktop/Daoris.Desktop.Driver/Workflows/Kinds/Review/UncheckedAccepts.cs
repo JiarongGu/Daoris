@@ -37,20 +37,32 @@ public static class UncheckedAccepts
             var standing = WorkPerformer.StatusOf(record, node);
             if (standing.State is not (NodeStates.Blocked or NodeStates.Ready)) return (null, Refuse(NodeRefusal.NotInTable) with { State = standing.State });
 
-            var passes = new List<NodeWord>();
+            var person = SettleBy.Person();
+            var judged = new List<(NodeDeclaration Hold, StepTenure? Holding, bool Takes)>();
             foreach (var hold in holds)
             {
                 var status = WorkPerformer.StatusOf(record, hold.Id);
-                // Each pass is the person's word on its hold, through the one door: a hold another holder holds is not passed for them.
+                // Each pass is the person's word on its hold, through the one door: one another holder holds is taken by this press, as a pass
+                // pressed on its row takes it; one marked or in an ended epoch is not passed for them.
                 var holding = tenures.Current(hold.Id, status.Attempt);
-                if (SettleDoor.Admit(holding, SettleBy.Person()) is { } refusal)
+                var takes = StepHolding.TakesOnPress(holding, person);
+                if (!takes && SettleDoor.Admit(holding, person) is { } refusal)
                 {
                     return (null, Refuse(refusal.Code) with { Detail = refusal.Detail, State = status.State });
                 }
 
                 var move = new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = Words, Scope = new NodeScope(digest, bound.Run) };
-                if (NodeLifecycle.Apply(hold, status, move) is { Moved: false } judged) return (null, Refuse(judged.Refused!) with { State = status.State });
-                passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision, Epoch = NodeWordEpoch.Of(holding, SettleBy.Person()) });
+                if (NodeLifecycle.Apply(hold, status, move) is { Moved: false } refused) return (null, Refuse(refused.Refused!) with { State = status.State });
+                judged.Add((hold, holding, takes));
+            }
+
+            // Every hold judged first, so a refusal takes nothing; each the press takes is the person's in a new epoch, journaled `pressed accept`.
+            var passes = new List<NodeWord>();
+            foreach (var (hold, holding, takes) in judged)
+            {
+                var held = holding;
+                if (takes && (held = StepHolding.TakeOnPress(tenures, records, run, holding!, NodeWordActs.Accept, now)) is null) return (null, Refuse(StepHolding.Unwritable));
+                passes.Add(new NodeWord(hold.Id, NodeWordActs.Skip, Words, now) { Review = node, Revision = revision, Epoch = NodeWordEpoch.Of(held, person) });
             }
 
             var accept = new NodeWord(node, NodeWordActs.Accept, null, now) { Kept = true, Review = node, Revision = revision };

@@ -23,6 +23,9 @@ public static class StepRoles
     /// <summary>Who decides on the work at a revision: the Accept.</summary>
     public const string Acceptor = "acceptor";
 
+    /// <summary>Who reads an unchecked done at <c>quest.holds</c>, cast like any role; never the repository a quest comes from.</summary>
+    public const string AskReader = "ask-reader";
+
     /// <summary>Who says yes to one act outside a repository: a go-ahead.</summary>
     public const string Approver = "approver";
 
@@ -43,16 +46,14 @@ public static class StepRoles
 
     /// <summary>Every role a step may name without the catalogue, in the editor's order: the census the window words, in both catalogues.</summary>
     public static IReadOnlyList<string> All { get; } =
-        [Design, Opinion, Tester, Acceptor, Approver, ReleaseManager, Operations, ConfigChanger, CredentialsKeeper, Owner];
+        [Design, Opinion, Tester, Acceptor, AskReader, Approver, ReleaseManager, Operations, ConfigChanger, CredentialsKeeper, Owner];
 
     /// <summary>A role's id: lowercase words of letters and digits joined by dashes, at most 40, as a catalogue role's id is.</summary>
     public static readonly System.Text.RegularExpressions.Regex Shape =
         new(@"^(?=.{1,40}\z)[a-z0-9]+(?:-[a-z0-9]+)*\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    /// <summary>
-    /// Words that name a holder, never a role: whoever fills a role, a person or an agent alike, so the refusal says the same
-    /// of either; <c>human</c> stays though no kind has it, so a role named for the old kind is refused. The agents' ids are their providers' and the model families'.
-    /// </summary>
+    /// <summary>Words that name a holder, never a role, a person or an agent alike, so the refusal says the same of either; <c>human</c> stays
+    /// though no kind has it, so a role named for the old kind is refused. The agents' ids are their providers' and the model families'.</summary>
     public static IReadOnlyList<string> Holders { get; } =
     [
         "you", "me", "i", "person", "human", "user", "someone", "anyone", "nobody", "agent", "daoris",

@@ -568,6 +568,80 @@ describe("The taskbar's count", () => {
 });
 
 /**
+ * Measured on 2026-11-20, the window said *Waiting for your word 37* while 34 of the 37 were the agents' own session
+ * branches' clean-up. The window counts only what is the owner's, as .NET's census classes each row: the bell, the taskbar and the
+ * title, the places and Overview say 3; the agents' 34 are listed under *With the agents*, never counted as the owner's.
+ */
+describe('The window counts only what is yours', () => {
+  afterEach(async () => {
+    cleanup();
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    await i18n.changeLanguage('en');
+  });
+
+  const at = '2026-10-01T10:00:00Z';
+  /** The agents' own session branches whose clean-up is blocked, as .NET classes them. */
+  const AGENTS: PushedAttention[] = Array.from({ length: 34 }, (_, n) => ({
+    kind: 'work', id: `session:s${n}`, since: at, workspace: 'default', where: 'engine', session: `s${n}`, title: `daoris/s${n}`,
+    blocked: { unknown: false, entries: [{ kind: 'tree', resource: `trees/engine/s${n}`, detail: 'busy', code: 'unfollowed', facts: { branch: `daoris/s${n}` } }] },
+    class: 'agents',
+  }));
+  /** Three waits only the owner settles. */
+  const OWNERS: PushedAttention[] = [
+    { kind: 'unanswerable', id: 'q9', since: at, workspace: 'default', where: 'web', class: 'owner', waitKind: 'question' },
+    { kind: 'departure', id: 'q1', since: at, workspace: 'default', where: 'engine', class: 'owner', waitKind: 'question' },
+    { kind: 'space', id: 'D:', since: at, class: 'owner', waitKind: 'go-ahead' },
+  ];
+
+  it('counts the owner’s 3 on the bell, the taskbar and Overview, and lists the agents’ 34 apart', async () => {
+    start([...AGENTS, ...OWNERS], {}, {});
+
+    await waitFor(() => expect(within(bell()).getByText('3')).toBeInTheDocument());
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 waiting on you', order: expect.any(Number) } }]));
+    // No place counts the agents' clean-up; the owner's are counted where their doors open.
+    expect(figure('Repositories')).toBeNull();
+    expect([figure('Quests'), figure('Settings')]).toEqual(['2', '1']);
+    // Overview: the owner's 3 waiting for their word, and the agents' 34 on a line of their own, in no owner's ink.
+    expect(await screen.findByRole('button', { name: /^Waiting for your word3/ })).toBeInTheDocument();
+    const agents = await screen.findByRole('button', { name: /^With the agents34/ });
+    expect(agents.querySelector('.text-ink-open')).toBeNull();
+
+    // *Notifications* lists every row: the owner's in their groups, the agents' under *With the agents*.
+    await openNotifications();
+    const apart = await screen.findByRole('group', { name: 'With the agents' });
+    expect(within(apart).getAllByRole('listitem')).toHaveLength(34);
+    expect(within(screen.getByRole('group', { name: 'Waiting for your word' })).getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  /** Nothing of the owner's waits: no number anywhere, *Nothing needs you* said, and the agents' rows still listed, none hidden. */
+  it('counts nothing and still lists the agents’ rows where none is the owner’s', async () => {
+    start(AGENTS, {}, {});
+
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 0, description: '0 waiting on you', order: expect.any(Number) } }]));
+    expect(within(bell()).queryByText(/^\d+$/)).toBeNull();
+    await openNotifications();
+    expect(within(await screen.findByRole('group', { name: 'With the agents' })).getAllByRole('listitem')).toHaveLength(34);
+    const head = screen.getByRole('button', { name: /^What needs you/ });
+    expect(within(head).queryByText(/^\d+$/)).toBeNull();
+    expect(screen.getAllByText('Nothing needs you').length).toBeGreaterThan(0);
+  });
+
+  it('says the agents’ line in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    start([...AGENTS, ...OWNERS], {}, {});
+
+    await waitFor(() => expect(badges().at(-1)).toEqual(
+      ['DAORIS.WINDOWS', 'SET_BADGE', { payload: { count: 3, description: '3 个等你处理', order: expect.any(Number) } }]));
+    expect(await screen.findByRole('button', { name: /^交给智能体34/ })).toBeInTheDocument();
+  });
+});
+
+/**
  * Two windows on one home, each on its own workspace, and one window's bell and taskbar counted three sessions the other's
  * list placed to review. Each row of a session, a quest or an ask carries its workspace (`AttentionStateSliceTests` holds which), so a
  * window on one workspace neither counts nor lists another's, on the bell, the taskbar or Sessions' badge; the machine's rows carry

@@ -5,14 +5,14 @@ import { cn } from '../../lib/cn';
 
 const BUTTON: Record<string, string> = {
   default:
-    'border border-line bg-raised text-ink hover:enabled:border-accent',
+    'border border-line bg-raised text-ink hover:enabled:border-accent disabled:text-ink-disabled',
   primary:
-    'border border-accent bg-accent text-on-accent hover:enabled:brightness-108',
+    'border border-accent bg-accent text-on-accent hover:enabled:brightness-108 disabled:border-line disabled:bg-raised disabled:text-ink-disabled',
   ghost:
-    'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line',
+    'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line disabled:text-ink-disabled',
   // Its label in the danger ink, its line and its hover field in declined's hue: the hue as text is 3.95:1 in dark.
   danger:
-    'border border-fail bg-transparent text-fail-ink hover:enabled:bg-fail-soft',
+    'border border-fail bg-transparent text-fail-ink hover:enabled:bg-fail-soft disabled:border-line disabled:text-ink-disabled',
 };
 
 /**

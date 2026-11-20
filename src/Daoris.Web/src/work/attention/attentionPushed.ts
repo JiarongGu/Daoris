@@ -23,6 +23,12 @@ export type QuietWait = {
   heavy?: string | null;
 };
 
+/** Whose a row is, as .NET's census classes it (`AttentionOwnership`): the owner's, counted, or the agents', listed apart. */
+export type AttentionClass = 'owner' | 'agents';
+
+/** The six kinds of wait only the owner settles, carried on the owner's rows. */
+export type OwnerWaitKind = 'question' | 'go-ahead' | 'release' | 'sign-in' | 'money' | 'confirm';
+
 /**
  * One row of *What needs you* as the shell pushes it: who needs the person is judged in .NET
  * (`NeedsAPerson`, `AccountAttention`), and the page orders and words its rows. Each carries its kind, its id, since when it has
@@ -33,6 +39,10 @@ export type PushedAttention = {
   kind: AttentionKind;
   id: string;
   since: string | null;
+  /** Whose it is, and the owner's kind of wait; a row no census reached says none, and is counted rather than hidden. */
+  class?: AttentionClass;
+  waitKind?: OwnerWaitKind;
+  untaken?: boolean;
   /**
    * The obligation it is, by its exchange's id where that is not its kind and id: a go-ahead's `go-ahead:<ask>/<n>`, which
    * the park of each session that asked it waits on too. `obligationOf` reads it.
@@ -161,7 +171,14 @@ export type IntegrationWait = {
   unit?: string | null;
   tip?: string | null;
   why?: string | null;
+  change?: DeclarationCommandsChange | null;
 };
+
+/** One check of a declaration's change: its name and command, and the command it ran before where that changed. Content, shown as written. */
+export type DeclaredCheck = { name: string; run: string; was?: string | null };
+
+/** What a line's declaration's commands changed against the one accepted (`DeclarationChange.Wire`), `unread` where it does not read strictly. */
+export type DeclarationCommandsChange = { added: DeclaredCheck[]; removed: DeclaredCheck[]; changed: DeclaredCheck[]; other: string[]; unread?: boolean };
 
 /**
  * A run held at a request the receiver declined: the `work.requests` node the person's *Pass over…* is said on, the

@@ -84,7 +84,7 @@ describe("a Workflow tab's start node", () => {
     render(<WorkflowTab page="repository" name="engine" current={{ ...ROUTED, start: GATES_CHANGED }} />);
 
     const landed = node('Landed work');
-    expect(landed).toHaveTextContent('The gates changed since you accepted them: nothing runs until you accept them again, under Gates on its Setup page.');
+    expect(landed).toHaveTextContent("The gates' commands changed since you accepted them: work is checked under the ones you accepted, and their new commands run once you accept them, under Gates on its Setup page.");
     expect(screen.queryByLabelText("daoris.gates.json at main's tip aa11bb2")).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Accept the gates' })).not.toBeInTheDocument();
   });
@@ -127,6 +127,6 @@ describe("a Workflow tab's start node", () => {
     expect(screen.getByRole('heading', { name: '工作在这里如何分流' })).toBeInTheDocument();
     const list = screen.getByRole('list', { name: '工作在这里如何分流' });
     expect(within(list).getByRole('listitem', { name: '起点' })).toBeInTheDocument();
-    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查项在你采纳之后变了：在你再次采纳之前，什么都不会运行，请在它配置页的检查项里采纳。');
+    expect(within(list).getByRole('listitem', { name: '落地的工作' })).toHaveTextContent('这些检查项的命令在你采纳之后变了：工作仍按你采纳过的那份验证，新的命令在你采纳之后才会运行，请在它配置页的检查项里采纳。');
   });
 });

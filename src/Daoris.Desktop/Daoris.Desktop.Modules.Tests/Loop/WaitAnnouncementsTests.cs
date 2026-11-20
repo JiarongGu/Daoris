@@ -92,6 +92,22 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
     }
 
     /// <summary>No other row is announced here: a park, a helper's ask, a terminal's press each has its own voice or none.</summary>
+    /// <summary>A held call an allow supervisor takes is never said; its role gone, it is the owner's and said then, once.</summary>
+    [Fact]
+    public async Task A_held_call_a_role_takes_is_not_announced_until_it_is_the_owner_s()
+    {
+        var (slice, facts, set) = Slice(Held("s1a2b3c4", "900"));
+        set(facts() with { Takers = new AttentionTakers((kind, _, _) => kind == SupervisorKinds.Allow, steward: false) });
+
+        await slice.JudgeAsync();
+        Assert.Empty(Said());
+
+        set(facts() with { Takers = AttentionTakers.None });
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+        Assert.Equal("900", Assert.Single(Said()).GetProperty("Id").GetString()?.Split('#')[^1]);
+    }
+
     [Fact]
     public async Task Only_a_held_call_is_announced_here()
     {

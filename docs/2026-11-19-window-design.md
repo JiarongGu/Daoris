@@ -378,24 +378,26 @@ owner perform.
 
 Components name roles, never base colours; only `src/Daoris.Web/src/tokens.css` holds a value; its first `:root` block is
 light and its second dark, then the forced blocks (`ChromePaletteTests` reads the first two). Names stay where the job stays.
+The neutrals are near-neutral greys with a faint cool lean, so beside the blue accent the only warm things are the owner's
+amber and a failure's crimson (D351).
 
 | Token | Light | Dark | Job |
 |---|---|---|---|
-| `page` | `#F7F6F2` | `#131312` | the window behind panes |
-| `raised` | `#FFFFFF` | `#1B1B19` | panes, cards, rows |
-| `sunken` | `#EFEEE9` | `#0E0E0D` | code wells, the steer box, the owner's own lines |
-| `overlay` | `#FFFFFF` | `#242422` | menus, popovers, sheets, palette, toasts |
-| `hover` (new) | `#ECEBE5` | `#2A2A27` | a row or quiet control under the pointer |
-| `scrim` | `rgb(16 16 14 / .40)` | `rgb(0 0 0 / .55)` | behind a sheet or the palette |
-| `line-subtle` (new), `line`, `line-strong` | `#E6E4DD`, `#D5D3CB`, `#86847C` | `#2B2B28`, `#3A3936`, `#74736C` | row separators; card edges; control edges (≥ 3:1) |
-| `ink`, `ink-soft`, `ink-faint` | `#1A1A18`, `#54534E`, `#67655F` | `#ECEBE6`, `#B3B1AA`, `#96948D` | text, secondary, metadata (now ≥ 4.5:1) |
-| `ink-disabled` (new) | `#A19F98` | `#5F5E59` | a disabled control's label only, its reason in a tooltip |
-| `accent`, `accent-ink`, `on-accent`, `accent-soft` | `#2F5BD3`, `#2346A8`, `#FFFFFF`, `#E8EEFB` | `#5F86F2`, `#93AEF8`, `#111110`, `#1D2845` | primary button, focus ring, selected rail; links and words that act; label on accent; selected row |
-| `live`, `live-ink`, `live-soft` | `#2F5BD3`, `#2346A8`, `#EAF0FC` | `#5F86F2`, `#93AEF8`, `#1A2443` | the ● mark; *Moving*; a live band (one hue with the accent, two names) |
-| `you`, `you-ink`, `you-soft`, `on-you` | `#B87400`, `#8A4F00`, `#FFF3D9`, `#1A1A18` | `#F0B03A`, `#F6C567`, `#36280B`, `#111110` | only what waits on the owner: ◆, the pill, a wait card's edge and field, the *yes* button |
-| `fail`, `fail-ink`, `fail-soft`, `on-fail` | `#D1322A`, `#A8201A`, `#FCEBE9`, `#FFFFFF` | `#EE5A50`, `#FF948A`, `#3A1614`, `#111110` | ▲, failure words, a failed step's band, a danger label |
-| `ok`, `ok-ink`, `ok-soft` | `#23824A`, `#1D6B38`, `#E6F4EA` | `#43AE66`, `#76D193`, `#13301E` | ✓ (never a large fill), *Landed*, a passed check's band |
-| `ident-*` | as today | as today | plugin monograms: identity, never state |
+| `page` | `#F6F7F8` | `#111316` | the window behind panes |
+| `raised` | `#FFFFFF` | `#191B1F` | panes, cards, rows |
+| `sunken` | `#EEEFF1` | `#0B0C0E` | code wells, the steer box, the owner's own lines |
+| `overlay` | `#FFFFFF` | `#212429` | menus, popovers, sheets, palette, toasts |
+| `hover` | `#E9EAED` | `#292C32` | a row or quiet control under the pointer |
+| `scrim` | `rgb(15 17 20 / .40)` | `rgb(0 0 0 / .55)` | behind a sheet or the palette (the light shadows share the base) |
+| `line-subtle`, `line`, `line-strong` | `#E4E5E8`, `#D1D3D8`, `#7B7F88` | `#282B30`, `#383B42`, `#787C86` | row separators; card edges; control edges (≥ 3:1) |
+| `ink`, `ink-soft`, `ink-faint` | `#17191C`, `#4D5158`, `#62666E` | `#EAECEF`, `#B1B5BD`, `#959AA3` | text, secondary, metadata (≥ 4.5:1) |
+| `ink-disabled` | `#8E929A` | `#6D717A` | a disabled control's label only (about 3:1, no opacity over it), its reason in a tooltip |
+| `accent`, `accent-ink`, `on-accent`, `accent-soft` | `#2F5BD3`, `#2346A8`, `#FFFFFF`, `#E1EAFC` | `#5F86F2`, `#93AEF8`, `#0E1014`, `#1C2A4D` | primary button, focus ring, selected rail; links and words that act; label on accent; selected row and selected text |
+| `live`, `live-ink`, `live-soft` | `#2F5BD3`, `#2346A8`, `#E1EAFC` | `#5F86F2`, `#93AEF8`, `#1C2A4D` | the ● mark; *Moving*; a live band (the accent under a second name, its field the same value) |
+| `you`, `you-ink`, `you-soft`, `on-you` | `#B27400`, `#875000`, `#FFF3D6`, `#0E1014` | `#F0B03A`, `#F6C567`, `#36280B`, `#0E1014` | only what waits on the owner: ◆, the pill, a wait card's edge and field, the *yes* button, the taskbar's count |
+| `fail`, `fail-ink`, `fail-soft`, `on-fail` | `#CF2D3F`, `#A81D2F`, `#FDEBED`, `#FFFFFF` | `#F05C6C`, `#FF9AA3`, `#3B161C`, `#0E1014` | ▲, failure words, a failed step's band, a danger label (a crimson, 51° from amber light, 61° dark) |
+| `ok`, `ok-ink`, `ok-soft` | `#1F8050`, `#19683F`, `#E5F4EC` | `#49B279`, `#7AD3A0`, `#11301F` | ✓ (never a large fill), *Landed*, a passed check's band |
+| `ident-*` | as `tokens.css` | as `tokens.css` | plugin monograms: identity, never state |
 
 There is no neutral state colour: waiting on others, queued, ended and stale use `ink-soft` and `ink-faint` with their own mark
 shapes. A glyph (an icon, the mark) wears the inks, never the accent: `ink-soft` beside the blue words of a link or a door,
@@ -403,9 +405,11 @@ shapes. A glyph (an icon, the mark) wears the inks, never the accent: `ink-soft`
 split site by site into `you` (where it waits on the owner) or neutral, and stay as listed aliases until UIDS18 deletes them.
 
 **Contrast**, computed on these values (the whole table is held by `design/tokens.test.ts`): every text pair is at least 4.5:1
-on `page`, `raised`, `sunken`, `overlay`, `hover`, `accent-soft` and the role fields in both themes (worst: `ink-faint` 4.9 light,
-4.7 dark); every mark, focus ring and control edge at least 3:1 (worst: `line-strong` 3.1 / 3.0, `you` 3.2 light); labels on
-solid fills at least 4.5:1 (`on-you` on `you` 4.6 light).
+on `page`, `raised`, `sunken`, `overlay`, `hover`, `accent-soft` and the role fields in both themes (worst: `ink-faint` 4.8 light,
+5.0 dark); every mark, focus ring and control edge at least 3:1 (worst: `line-strong` 3.3 / 3.3, `you` 3.2 light); labels on
+solid fills at least 4.5:1 (`on-you` on `you` 4.9 light); `ink-disabled` at least 3:1 on `raised` and `overlay`. A disabled
+control is told by that label in the atoms' neutral frame, never by an opacity over the whole control. The focus ring is
+`accent`, 2 px; selected text is `accent-soft` under `ink`.
 
 ### 7.2 Type: one scale for Latin and Han
 
@@ -443,7 +447,8 @@ drawn as SVG, never font glyphs; Chinese means Simplified, in the console regist
 ### 7.4 Radii, borders, elevation, layers, motion
 
 - Radii: `control` 4, `card` 6, `overlay` 8, `full` for badges and tags; rows have none. Borders 1, 2 (the focus ring, a
-  selected row's rail) and 3 (a focused wait card's or a failed card's edge); no other width; cards lose today's default left edge.
+  selected row's rail) and 3 (a focused wait card's or a failed card's edge, `Card`'s `edge` alone); no other width
+  (`design/edges.test.ts`); a card wears no left edge otherwise (UIDS19).
 - Borders separate; shadows only on overlays: `shadow-popover` and `shadow-sheet`, a value per theme.
 - Layers `--z-sticky` 1, `--z-sheet` 10, `--z-palette` 20, `--z-popover` 30, `--z-toast` 40, `--z-tooltip` 50.
 - Motion: `--duration-quick` 120 ms (hover, press), `--duration-move` 180 ms (expand, a card leaving, a wait arriving),
