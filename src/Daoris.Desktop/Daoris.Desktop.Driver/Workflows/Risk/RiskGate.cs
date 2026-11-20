@@ -104,9 +104,9 @@ public static class RiskGate
                 return Verdict(RiskClasses.Owner, null, key, $"`{key}` is at high risk in `placeRisk`, read as every act at the owner there");
             }
 
-            if (act is { Kind: RiskActs.ReleaseStart, Qualifier: "production" } && level?.Marked(PlaceMarks.ProductionReleases) == true)
+            if (act.Kind.StartsWith("release.", StringComparison.Ordinal) && level?.Marked(PlaceMarks.ProductionReleases) == true)
             {
-                return Verdict(RiskClasses.Owner, null, key, $"`{key}` is marked `{PlaceMarks.ProductionReleases}` in `placeRisk`, read as its destination's row at the owner");
+                return Verdict(RiskClasses.Owner, null, key, $"`{key}` is marked `{PlaceMarks.ProductionReleases}` in `placeRisk`, read as every release act at the owner");
             }
         }
 

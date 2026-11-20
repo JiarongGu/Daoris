@@ -11,7 +11,7 @@ public static class AttemptTenures
     /// <summary>The tenures begun for <paramref name="unit"/>'s standing attempts; none where every one holds one or its record does not read.</summary>
     public static IReadOnlyList<StepTenure> Keep(
         NodeRecordFiles records, string unit, IEnumerable<NodeDeclaration> nodes, string workspace, string? repository, PlaceRiskBook? risk, DateTimeOffset now,
-        Func<RiskAct, RiskVerdict>? judge = null)
+        RiskStepJudge? judge = null)
     {
         if (records.Read(unit) is not { Ended: null } record) return [];
         var standing = new List<(NodeDeclaration Node, NodeStatus Status)>();

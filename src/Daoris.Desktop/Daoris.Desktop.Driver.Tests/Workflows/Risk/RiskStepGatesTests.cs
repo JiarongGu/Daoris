@@ -65,6 +65,44 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         Assert.Equal((CastHolders.Person, TenureWhy.Marked), (held?.Holder, held?.Why));
     }
 
+    [Fact]
+    public async Task At_a_place_marked_for_production_releases_an_approvers_approval_waits_on_the_owner_with_nothing_configured()
+    {
+        OnBranch(Signed());
+        await RunPassAsync(Runtime(), """{"risk":{},"placeRisk":{"machine":{"risk":"low","marks":["release.production"]}}}""");
+
+        Assert.Equal(NodeStates.Active, RunStatus("sign").State);
+        var held = new StepTenureFiles(_home, () => true).Current(RunUnit, "sign", RunStatus("sign").Attempt);
+        Assert.Equal((CastHolders.Person, TenureWhy.Marked), (held?.Holder, held?.Why));
+    }
+
+    [Theory]
+    [InlineData(PersonWaits.Approval)]
+    [InlineData(PersonWaits.Accept)]
+    public void A_hold_whose_role_is_the_owners_is_the_owners_whatever_the_policy_says(string why)
+    {
+        var node = why == PersonWaits.Accept
+            ? new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed) { Role = StepRoles.Owner }
+            : new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["approved"] };
+        var judge = RiskStepGates.At(DriverConfig.Parse("""{"risk":{}}"""), null, "engine");
+
+        Assert.Equal(RiskVerdict.OwnerOutcome, RiskStepGates.Verdict(node, why, judge)?.Outcome);
+        Assert.Equal(RiskVerdict.Pass, RiskStepGates.Verdict(node with { Role = why == PersonWaits.Accept ? StepRoles.Acceptor : StepRoles.Approver }, why, judge)?.Outcome);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("staging")]
+    [InlineData("production")]
+    public void At_a_marked_place_every_release_act_is_the_owners(string? qualifier)
+    {
+        var config = DriverConfig.Parse("""{"risk":{},"placeRisk":{"workspace/games":{"risk":"low","marks":["release.production"]}}}""");
+
+        var verdict = RiskGate.Judge(RiskPolicy.Of(config), new RiskAct(RiskActs.ReleaseStart, qualifier), "", RiskPlace.Of(config, "games", null), "");
+
+        Assert.Equal((RiskVerdict.OwnerOutcome, "workspace/games"), (verdict.Outcome, verdict.Source));
+    }
+
     private void OnBranch(string graph)
     {
         BoundTo(graph);
