@@ -5,7 +5,7 @@
  * The pass is recorded per class once it passes, in a store of its own (`local/reached-classes.json`).
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export type Unit = { suite: string; unit: string };
@@ -59,7 +59,7 @@ export class PassedClasses {
     this.passes[id] = [...rest, { key, at, ...(run ? { run } : {}) }].slice(-KEPT_PER_CLASS);
   }
 
-  save(): void {
+  save(say: (line: string) => void = (line) => process.stderr.write(`${line}\n`)): void {
     mkdirSync(dirname(this.file), { recursive: true });
     const beside = new PassedClasses(this.file).passes;
     for (const [id, theirs] of Object.entries(beside)) {
@@ -69,7 +69,19 @@ export class PassedClasses {
     }
     const temporary = `${this.file}.${process.pid}.tmp`;
     writeFileSync(temporary, `${JSON.stringify({ schema: 1, passes: this.passes }, null, 1)}\n`);
-    renameSync(temporary, this.file);
+    for (let attempt = 1; ; attempt += 1) {
+      try {
+        renameSync(temporary, this.file);
+        return;
+      } catch (error) {
+        if (attempt >= 5) {
+          rmSync(temporary, { force: true });
+          say(`class-reuse: could not save ${this.file} (${(error as Error).message}); the next run runs these classes again`);
+          return;
+        }
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 40 * attempt);
+      }
+    }
   }
 }
 
