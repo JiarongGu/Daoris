@@ -93,6 +93,13 @@ public static class StepSettleAsks
         {
             var by = SettleBy.OfChannel(TerminalTierBy.Session, appointed: false, kept.Epoch, agentOf(kept.Session), kept.Session)!;
             var worded = StepSettles.Settle(records, kept.Ask, by, clock, makers?.Invoke(kept.Ask.Run.Trim().TrimStart('#')));
+            if (worded.Refused == SettleDoor.OwnWork && worded.Detail?.StartsWith(SettleDoor.NotYet, StringComparison.Ordinal) == true)
+            {
+                // The makers are not read (a restart): the ask stays open, so the next look takes it, and the session is told once.
+                if (say is not null) await say(kept.Session, StepSettles.Said(worded), $"step-settle:{kept.Id}:not-yet", ct).ConfigureAwait(false);
+                continue;
+            }
+
             done.Add(worded);
             JsonFile.Write(PathOf(records.Home, kept.Session, StateSuffix), writer =>
             {

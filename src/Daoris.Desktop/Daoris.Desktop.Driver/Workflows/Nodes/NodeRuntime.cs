@@ -128,13 +128,13 @@ public sealed class NodeRuntime(
 
     public RiskShadow? Risk { get; set; }
 
-    /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
+    /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null where unread.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;
 
-    /// <summary>Every quest the last look read, by id: a close's chain, and what its quests now read.</summary>
+    /// <summary>Every quest the last look read, by id: a close's chain, and what its quests read.</summary>
     private Dictionary<string, QuestView> _quests = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -150,7 +150,7 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
-    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run);
+    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run, records.Home);
 
     /// <inheritdoc cref="LeftSteps.With"/>
     public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);

@@ -80,6 +80,9 @@ public static class SettleDoor
 
     public const string OwnWork = "own-work";
 
+    /// <summary>The words an <see cref="OwnWork"/> refusal begins with while the makers are not read: nothing is kept, and the word may be given again.</summary>
+    public const string NotYet = "not yet: try again after Daoris's next look";
+
     private static readonly string[] Yes = [NodeWordActs.Accept, NodeWordActs.Approve, NodeWordActs.Skip, NodeWordActs.Decide, NodeWordActs.Done];
 
     /// <summary>
@@ -88,8 +91,8 @@ public static class SettleDoor
     /// </summary>
     public static SettleRefusal? Own(NodeDeclaration node, string? why, string act, SettleBy by, IReadOnlyCollection<string>? makers) =>
         by.Session is not { } session || why is null || RiskStepHolds.KindOf(why, node) is null || !Yes.Contains(act, StringComparer.Ordinal) ? null
-        : makers is null ? new(OwnWork, $"session {session} speaks for a working session, and the work's makers are not read yet")
-        : makers.Contains(session, StringComparer.Ordinal) ? new(OwnWork, $"session {session} is one of the work's makers")
+        : makers is null ? new(OwnWork, $"{NotYet}: session {session} speaks for a working session, and the work's makers are not read yet")
+        : makers.Contains(session, StringComparer.OrdinalIgnoreCase) ? new(OwnWork, $"session {session} is one of the work's makers")
         : null;
 
     /// <summary>

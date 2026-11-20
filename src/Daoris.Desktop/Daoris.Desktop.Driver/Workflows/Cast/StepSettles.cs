@@ -77,6 +77,8 @@ public static class StepSettles
         (RunNodeWords.NotOutcome, _) => $"Your settle of `{done.Node}` on run #{done.Run} is refused: answer with one of its outcomes ({done.Detail}). Nothing was kept.",
         (RunNodeWords.NotWaiting, _) =>
             $"Your settle of `{done.Node}` on run #{done.Run} is refused: it does not wait on a task its holder settles now ({done.State ?? "not under way"}). Nothing was kept.",
+        (SettleDoor.OwnWork, _) when done.Detail?.StartsWith(SettleDoor.NotYet, StringComparison.Ordinal) == true =>
+            $"Your settle of `{done.Node}` on run #{done.Run} is not taken: {done.Detail}. Nothing was kept, and it stays open.",
         _ => $"Your settle of `{done.Node}` on run #{done.Run} is refused ({done.Refused}{(done.Detail is { } detail ? $": {detail}" : "")}). Nothing was kept.",
     };
 }

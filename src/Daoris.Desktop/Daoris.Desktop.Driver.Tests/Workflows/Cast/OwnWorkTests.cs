@@ -24,9 +24,9 @@ public sealed class OwnWorkTests : IDisposable
     private NodeRecordFiles Records => new(_home, () => true);
 
     /// <summary>A run standing at <paramref name="node"/> (a <paramref name="kind"/> step) under way at its first attempt, its role cast to <c>agent:claude</c>.</summary>
-    private void Start(string node, string kind, string role, string extra = "")
+    private void Start(string node, string kind, string role, string extra = "", string holder = "agent:claude")
     {
-        new PlaceCastFiles(_home, () => true).Cast("machine", role, "agent:claude", "the agents answer it", _now);
+        new PlaceCastFiles(_home, () => true).Cast("machine", role, holder, "the agents answer it", _now);
         var digest = RunHome.SaveGraph(_home, $$"""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
@@ -74,6 +74,61 @@ public sealed class OwnWorkTests : IDisposable
     {
         Start("sign", NodeKinds.Task, StepRoles.Approver, ""","outcomes":["approved"]""");
         Assert.Equal(SettleDoor.OwnWork, Word("sign", NodeWordActs.Approve, "s-worker", ["s-worker"]).Refused);
+    }
+
+    [Fact]
+    public void The_bare_agent_holder_is_refused_a_makers_session_and_ids_compare_without_case()
+    {
+        Start("review", NodeKinds.Review, StepRoles.Acceptor, holder: CastHolders.Agent);
+
+        var own = RunNodeWords.Word(Records, Run, "review", NodeWordActs.Accept, "Read it.", () => _now,
+            settle: new SettleBy(CastHolders.Agent, 1) { Session = "S-Worker" }, workers: ["s-worker"]);
+
+        Assert.Equal(SettleDoor.OwnWork, own.Refused);
+        Assert.Contains("one of the work's makers", own.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_helper_a_maker_started_and_its_own_helpers_are_makers()
+    {
+        var helpers = new HelperFiles(_home);
+        var first = helpers.WriteAsk("s-worker", "Which door?", null, _now);
+        helpers.WriteState(new HelperState(first, HelperStates.Answered, null, "s-helper", _now));
+        var second = helpers.WriteAsk("S-Helper", "And its test?", null, _now);
+        helpers.WriteState(new HelperState(second, HelperStates.Started, null, "s-deeper", _now));
+        var other = helpers.WriteAsk("s-stranger", "Anything?", null, _now);
+        helpers.WriteState(new HelperState(other, HelperStates.Answered, null, "s-unrelated", _now));
+
+        var makers = RunWorkers.WithHelpers(_home, ["s-worker", "S-WORKER"]);
+
+        Assert.Equal(["s-worker", "s-helper", "s-deeper"], makers);
+    }
+
+    [Fact]
+    public async Task A_settle_while_the_makers_are_not_read_is_not_taken_and_stays_open()
+    {
+        Start("review", NodeKinds.Review, StepRoles.Acceptor, holder: CastHolders.Agent);
+        var path = DaorisHome.Entry(_home, HomeEntry.Sessions, "s-reviewer" + StepSettleAsks.AskSuffix);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, $$"""{"id":"a1","run":"{{Run}}","node":"review","outcome":"accepted","words":"Read it.","epoch":1}""");
+        var told = new List<(string Text, string Key)>();
+        Task<SayAnswer> Say(string session, string text, string key, CancellationToken ct)
+        {
+            told.Add((text, key));
+            return Task.FromResult(new SayAnswer(true, "kept"));
+        }
+
+        var unread = await StepSettleAsks.TakeAsync(Records, _ => null, Say, () => _now, CancellationToken.None, _ => null);
+
+        Assert.Empty(unread);
+        Assert.Single(StepSettleAsks.Waiting(_home));
+        Assert.Null(StepSettleAsks.AnsweredId(_home, "s-reviewer"));
+        Assert.Contains(SettleDoor.NotYet, Assert.Single(told).Text, StringComparison.Ordinal);
+
+        var read = await StepSettleAsks.TakeAsync(Records, _ => null, Say, () => _now, CancellationToken.None, _ => ["s-worker"]);
+
+        Assert.True(Assert.Single(read).Done);
+        Assert.Empty(StepSettleAsks.Waiting(_home));
     }
 
     [Fact]
