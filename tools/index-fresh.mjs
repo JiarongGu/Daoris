@@ -84,7 +84,7 @@ export function restoreIndex(root, place) {
 
 /** The index just written kept for its tree id, only where the work tree holds nothing git does not: a changed file's index is no tree's. */
 export function keepIndex(root, place, env = process.env) {
-  const status = spawnGit(['status', '--porcelain', '--untracked-files=normal'], { cwd: root, env: cleanEnv(env), encoding: 'utf8' });
+  const status = spawnGit(['--no-optional-locks', 'status', '--porcelain', '--untracked-files=normal'], { cwd: root, env: cleanEnv(env), encoding: 'utf8' });
   if (status.status !== 0 || status.stdout.trim() !== '') return false;
   const aside = `${place.dir}.${process.pid}`;
   try {
