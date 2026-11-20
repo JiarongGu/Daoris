@@ -543,8 +543,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var delivered = await _deliverer.DeliverAsync(first.Id, ask, ct).ConfigureAwait(false);
         if (delivered.Recheck is { Opinion: { } recheck })
         {
-            Service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, first.Label, first.Door, OpinionViews.RecheckPass));
-            if (await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { Given: true } given) Service.LandingSaid(OpinionLines.Given(given, null));
+            var view = await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false);
+            Service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, view?.Label ?? first.Label, view?.Door ?? first.Door, OpinionViews.RecheckPass));
+            if (view is { Given: true } given) Service.LandingSaid(OpinionLines.Given(given, null));
         }
 
         return $"opinion  {delivered.Line}";

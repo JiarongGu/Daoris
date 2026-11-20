@@ -57,6 +57,12 @@ public sealed class OpinionDeliveries(string home)
     public OpinionDelivered Rechecked(string opinion, string? recheck, string? why) =>
         Keep(opinion, kept => kept.Recheck is not null || kept.RecheckWhy is not null ? kept : kept with { Recheck = recheck, RecheckWhy = why });
 
+    /// <summary>Answers read again past the reading kept: a recheck the older reading found no fix for is judged again; any other stays.</summary>
+    public OpinionDelivered Reread(string opinion) =>
+        Keep(opinion, kept => kept.Recheck is null && kept.RecheckWhy is OpinionRechecks.NoFix or OpinionRechecks.NotAnswered
+            ? kept with { RecheckWhy = null }
+            : kept);
+
     /// <summary>The recheck a cap ended, replaced by the one asked of the next holder, only while it is still the one kept.</summary>
     public OpinionDelivered HandedOn(string opinion, string capped, string recheck) =>
         Keep(opinion, kept => string.Equals(kept.Recheck, capped, StringComparison.Ordinal) ? kept with { Recheck = recheck } : kept);

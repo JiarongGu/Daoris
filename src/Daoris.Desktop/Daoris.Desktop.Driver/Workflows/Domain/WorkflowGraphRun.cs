@@ -239,8 +239,10 @@ public static class WorkflowGraphRuns
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Role = waits?.Role ?? (answers is null ? StepRoles.Of(node) : StepRoles.Design),
-                Holder = waits?.Holder ?? (answers is null ? null : new StepHolder(StepHolders.Agent, answers.Values.GetValueOrDefault("session"))),
+                Role = waits?.Role ?? (answers is null || OpinionStepWaits.OnPerson(answers) ? StepRoles.Of(node) : StepRoles.Design),
+                Holder = waits?.Holder ?? (answers is null ? null
+                    : OpinionStepWaits.OnPerson(answers) ? new StepHolder(StepHolders.Person)
+                    : new StepHolder(StepHolders.Agent, answers.Values.GetValueOrDefault("session"))),
                 HeldBy = tenure?.Holder, Vacant = vacant,
                 Epoch = tenure?.Epoch,
                 Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
