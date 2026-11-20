@@ -287,11 +287,24 @@ public static class WorkflowRunWords
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
             WorkflowGraphDetails.Stopped => "You stopped it.",
+            WorkflowGraphDetails.Unknown when node == NodeKinds.Check => CheckUnknownSaid(step.Held),
             WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",
             WorkflowGraphDetails.Invalidated => "What it rested on moved, so Daoris judges it again at its next look.",
             _ => $"Shown as recorded: {step.State}, {step.Detail}.",
         };
     }
+
+    /// <summary>What a check not known says, as the page's check words say it: nothing asks after a held check, so it never says Daoris does.</summary>
+    private static string CheckUnknownSaid(WorkflowRunHeld? held) => held switch
+    {
+        { Resolution: HeldResolutions.Stop } => "You left it for now; nothing more is asked of it.",
+        { Resolution: HeldResolutions.Again } => "You asked to run it again; Daoris's next look starts it.",
+        { Words.Count: > 0 } => "Its outcome could not be established, so nothing is taken as passed. Run it again, or leave it for now.",
+        _ => "Its outcome could not be established, so nothing is taken as passed.",
+    };
+
+    private static bool AgainOnCheck(WorkflowRunStep step) =>
+        step.Node == NodeKinds.Check && step.Detail == WorkflowGraphDetails.Unknown && step.Held?.Resolution is null;
 
     /// <summary>What a graph run's node observes, named: its quest, its branch at its tip, or its landing there; null for the run itself.</summary>
     private static string? On(WorkflowRunStep step) => step.On switch
@@ -411,6 +424,7 @@ public static class WorkflowRunWords
             if (acts.Contains(NodeWordActs.Approve)) yield return $"`daoris workflow approve|reject {run} {node} [\"…\"]` answers it: it waits for your approval.";
             yield return acts.Contains(NodeWordActs.Skip) ?$"`daoris workflow skip {run} {node} \"…\"` passes it over for this run; {stop}"
                 : acts.Contains(NodeWordActs.Changes) ? $"`daoris workflow changes {run} {node} \"…\"` asks for changes in place of your Accept; {stop}"
+                : AgainOnCheck(step) ? $"`daoris workflow again {run} {node}` runs it again as a new attempt; {stop}"
                 : stop;
         }
 

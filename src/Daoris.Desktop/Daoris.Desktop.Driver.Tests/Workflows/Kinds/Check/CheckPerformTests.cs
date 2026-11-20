@@ -231,6 +231,31 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
+    public async Task A_check_lost_to_a_restart_is_run_again_once_and_lost_again_is_held_with_its_log_s_tail()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+        _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.NotStarted));
+
+        Assert.Equal(PerformedWhat.Redelivered, Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None)).What);
+        Assert.Equal((2, 2), (_checks.Sent.Count, Attempt().Deliveries));
+        Assert.Equal(PerformedWhat.Redelivered, Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None)).What);
+        Assert.Equal(3, _checks.Sent.Count);
+
+        var log = Path.Combine(VerifyFiles.AttemptFolder(_home, CheckExecution.RunOf(Unit), sent.Call.Invocation), "gate-01-suite.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+        File.WriteAllText(log, string.Join('\n', Enumerable.Range(1, 40).Select(line => $"line {line}")) + "\n");
+        var held = Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Held, LostChecks.Code), (held.What, held.Code));
+        Assert.Equal(3, _checks.Sent.Count);
+        Assert.Equal((NodeStates.Unknown, AttemptStates.Held, LostChecks.Code), (Status().State, Attempt().State, Attempt().Code));
+        Assert.StartsWith($"line {40 - LostChecks.TailLines + 1}\n", Attempt().Note);
+        Assert.EndsWith("line 40", Attempt().Note);
+        Assert.Equal([HeldResolutions.Again, HeldResolutions.Stop], HeldResolutions.Of(Attempt()));
+    }
+
+    [Fact]
     public async Task No_completion_is_heard_for_a_check()
     {
         var performer = Performer();

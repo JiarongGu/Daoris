@@ -403,6 +403,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     return Hold(record, current, NoOutcome);
                 case ReconcileStates.Failed:
                     return Outcomes.Outcome(record, current, node, answer.Outcome is { State: WorkStates.Failed } failed ? failed : new WorkOutcome(WorkStates.Failed, NoCode), generation);
+                case ReconcileStates.NotStarted when isCurrent && OnPort(current):
+                    return LostChecks.Settle(record, current, node, status, generation, now, records.Home);
                 case ReconcileStates.NotStarted when isCurrent:
                     return (Kept(record, NodeLifecycle.Apply(node, status, new NodeMove(NodeStates.Active, NodeCause.Daoris)), "redeliver", now),
                         new WorkPerformed(unit, node.Id, PerformedWhat.Redelivered));

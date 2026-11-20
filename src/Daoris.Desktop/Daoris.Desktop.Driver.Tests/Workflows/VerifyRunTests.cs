@@ -29,9 +29,13 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
             return Task.CompletedTask;
         }
 
-        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(new WorkReconcileAnswer(ReconcileStates.Running));
+        public HashSet<string> Answers { get; } = [];
 
-        public bool Answered(string invocation) => false;
+        public Func<NodeAttempt, WorkReconcileAnswer> Answer { get; set; } = _ => new(ReconcileStates.Running);
+
+        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(Answer(attempt));
+
+        public bool Answered(string invocation) => Answers.Contains(invocation);
 
         public void Stop(string invocation)
         {
@@ -72,6 +76,36 @@ public sealed class VerifyRunTests : NodeRuntimeFixture
         // Nothing of it is a plugin's or a chain's.
         Assert.Empty(_port.Sent);
         Assert.False(Directory.Exists(WorkflowRunBindings.FolderOf(_home)));
+    }
+
+    [Fact]
+    public async Task Again_on_a_check_held_not_known_is_its_run_again_and_the_next_look_sends_a_new_attempt()
+    {
+        var digest = SaveVerification();
+        VerifyRuns.Bind(_home, new VerifyRun(Run, "engine", "default", "checkout", "verify", 1, digest, Commit, VerifyRuns.Person, _now));
+        var checks = new Checks
+        {
+            Answer = attempt => CheckExecution.AnswerOf(new VerifyResult(attempt.Call.Invocation, Commit, VerifyVerdicts.Unknown, "the gates changed since you accepted them", [])
+            {
+                Code = VerifyResult.Changed,
+            }),
+        };
+        var runtime = Runtime();
+        runtime.Doors = runtime.Doors.With(NodeKinds.Check, checks);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        checks.Answers.Add(Assert.Single(checks.Sent).Attempt.Call.Invocation);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        var unit = RunUnits.IdOf(Run);
+        Assert.Equal(NodeStates.Unknown, Files.Read(unit)!.Statuses["verify"].State);
+
+        var worded = RunNodeWords.Word(Files, Run, "verify", NodeWordActs.Again, null, () => _now);
+
+        Assert.True(worded.Done, worded.Refused);
+        await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        if (checks.Sent.Count < 2) await runtime.PassAsync(Look("{}"), CancellationToken.None);
+        Assert.Equal(2, checks.Sent.Count);
+        Assert.Equal((NodeStates.Active, 2), (Files.Read(unit)!.Statuses["verify"].State, Files.Read(unit)!.Statuses["verify"].Attempt));
+        Assert.Equal(AttemptStates.Settled, Files.Read(unit)!.Attempts[0].State);
     }
 
     [Fact]

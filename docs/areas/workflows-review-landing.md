@@ -317,7 +317,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check that came back unknown with the code `unrun` (Daoris could not run it) settles with no verdict and is asked again as a new
-    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
+    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person.
+    A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
+    same attempt under its key (again each time where it was still queued, its folder never made); lost again once it began, it is held for
+    the person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt, never run a third time by itself and never a
+    red round. A held check holds no slot: the machine's verification and heavy-run
+    slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
@@ -560,7 +565,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
-    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt; *Not now* settles an unknown with
+    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt,
+    and the run's `again` on a check not known is that word (`daoris workflow again <run> <check>`, `UnknownChecks`: kept on its current
+    attempt, which is held with it where Daoris still asked after it), named on the run's terminal line beside its stop; a not-known check
+    says it holds nothing as passed, never that Daoris asks after it; *Not now* settles an unknown with
     no verdict, or a failure's held row. *Ask for a fix…* publishes one ask per failed gate with its last 256 KiB, never twice;
     `failed: ask`, only in a version the person saved, asks at each look, `wait` waits for the press, `stop` asks nothing.
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
