@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pill } from '../design/ui';
+import { Note, Pill } from '../design/ui';
 import type { ChoiceFrom, StartWiring } from './wiring';
 
 /**
@@ -66,9 +66,9 @@ export function StartWiringList({ starts, nameOf }: {
           {start.refusal && (
             // The driver's sentence, whole, at the card's width with every block of the page: it
             // wore a 65ch measure once, which gave the page two edges.
-            <p className="m-0 whitespace-pre-wrap text-small text-ink-soft">
+            <Note tone="fail" className="whitespace-pre-wrap">
               {start.refusal}
-            </p>
+            </Note>
           )}
         </li>
       ))}

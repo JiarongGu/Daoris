@@ -1,6 +1,6 @@
 import { createContext, type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
+import { Button, cardEdge, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
 import { ago, clockOf, list, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
@@ -362,7 +362,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
       id={confirmationAnchor(waiting.id)}
       tabIndex={-1}
       data-press={`${waiting.source}:${waiting.id}`}
-      className="grid gap-1.5 bg-page/60 px-3 py-2 text-body text-ink"
+      className={`grid gap-1.5 bg-page/60 px-3 py-2 text-body text-ink ${cardEdge('wait')}`}
     >
       {/* The decision region (§3.4): its head through its buttons, bounded whatever the press carries. */}
       <div ref={region} data-press-region="" className="grid gap-1.5">

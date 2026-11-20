@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Button, Card, CheckField, FormGrid, FormRow, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
+  Button, Card, CheckField, FormGrid, FormRow, Icon, Inline, Note, PathText, Pill, Prose, SectionTitle, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 import { OPEN_STATES, proposalAuthor, proposalChange } from './proposals';
 
@@ -166,9 +166,9 @@ export function AgentRules({
 
       {/* The driver's own sentence, verbatim: the defaults still hold when the file does not. */}
       {rules.problem && (
-        <p className="bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="fail" className="bg-page/60 px-3.5 py-2 text-body">
           {rules.problem}
-        </p>
+        </Note>
       )}
 
       {proposals.length > 0 && (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline } from '../../design/ui';
+import { Button, Inline, Note } from '../../design/ui';
 
 // Declared here, structurally equal to bridge/sessions/trees.ts's shapes, so these molecules import no bridge domain.
 /** One commit a landing leaves out because the line already holds it: short id, subject, why, and the line's commit with the same patch. */
@@ -28,7 +28,7 @@ export function RebaseAsk({ conflict, onSay }: { conflict: LandingConflict; onSa
   };
   return (
     <div className="grid gap-1 text-small text-ink-soft">
-      <p className="m-0"><Inline text={t('work.review.conflict', { says: conflict.says })} /></p>
+      <Note tone="fail"><Inline text={t('work.review.conflict', { says: conflict.says })} /></Note>
       <p className="m-0 text-ink-faint">{t('work.review.rebaseWords')}</p>
       <blockquote className="m-0 whitespace-pre-wrap border-l border-line pl-2"><Inline text={conflict.words} /></blockquote>
       {said ? <p className="m-0">{said}</p> : (

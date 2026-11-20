@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { KeepSet, SpaceAllowance, SpaceKind, SpaceVolume, SystemSpace } from '../../data/wiring';
-import { Button, Card, CheckField, SelectField, SettingRow, SkeletonRows } from '../../design/ui';
+import { Button, Card, CheckField, Note, SelectField, SettingRow, SkeletonRows } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { clockOf, dayOf, size } from '../../locales/format';
 import { WiringCard } from './WiringParts';
@@ -453,9 +453,9 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
     >
       {space.run && <SpaceRunLine run={space.run} />}
       {space.held && !running && (
-        <p className="m-0 bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
+        <Note tone="caution" className="bg-page/60 px-3.5 py-2 text-body" role="status">
           {t(space.held.gone ? 'settings.daoris.space.stopped' : 'settings.daoris.space.held', { door: door(space.held.door), when: clockOf(space.held.since) })}
-        </p>
+        </Note>
       )}
       <SettingRow
         label={t('settings.daoris.space.free')}

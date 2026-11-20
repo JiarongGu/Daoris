@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, PathText, Pill } from '../design/ui';
+import { Button, Inline, Note, PathText, Pill } from '../design/ui';
 
 /** Where an installed plugin came from: a folder, the install's offer, a package, no record, or one that does not read. */
 export type PluginSourceShown = {
@@ -75,7 +75,7 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
   return (
     <section aria-label={t('plugin.update.title')} className="rounded-control border border-line bg-page/60 px-3.5 py-2.5">
       {plan.refusal ? (
-        <p className="m-0 text-body text-ink-soft"><Inline text={plan.refusal} /></p>
+        <Note tone="fail" className="text-body"><Inline text={plan.refusal} /></Note>
       ) : plan.changes.length === 0 ? (
         <p className="m-0 text-small text-ink-soft">{t('plugin.update.same')}</p>
       ) : (

@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Pill, SkeletonRows } from '../../design/ui';
+import { Button, Icon, Inline, Note, Pill, SkeletonRows } from '../../design/ui';
 import { Refused } from '../../work/InlineConfirm';
 import { Acceptances } from '../../workflow/place/Acceptances';
 import {
@@ -131,8 +131,9 @@ export function PlaceReview({
                 <Section id={`${own}-stops`} title={t('agents.setup.set.stops')}>
                   <ul className="m-0 grid list-none gap-2 p-0">
                     {refused.map((each: PlaceRefusal) => (
-                      <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-ink-soft [overflow-wrap:anywhere]">
+                      <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-fail-ink [overflow-wrap:anywhere]">
                         <span>
+                          <Icon name="conflict" size={13} className="mr-1.5 inline align-[-2px]" />
                           {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
                           <Inline text={each.sentence} />
                         </span>
@@ -170,10 +171,10 @@ export function PlaceReview({
               {lowers.length > 0 && (
                 <Section id={`${own}-yours`} title={t('agents.setup.set.yours')}>
                   {lowers.map((each) => (
-                    <p key={`${each.repository}${each.said}`} className="m-0 text-small text-ink [overflow-wrap:anywhere]">
+                    <Note key={`${each.repository}${each.said}`} tone="caution" className="[overflow-wrap:anywhere]">
                       {several && <span className="font-mono text-caption">{each.repository}: </span>}
                       <Inline text={each.said} />
-                    </p>
+                    </Note>
                   ))}
                 </Section>
               )}

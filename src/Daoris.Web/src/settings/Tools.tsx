@@ -4,7 +4,7 @@ import { ago, size } from '../locales/format';
 import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { GitPageShown } from './git/Git';
 import {
-  Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
+  Button, Card, CardHeader, Inline, Note, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';
 
 /** How a tool is run: the system's, from PATH; a version Daoris keeps; or a file the person names. */
@@ -215,9 +215,9 @@ export function ToolCard({
 
       {/* The way set cannot run, in the driver's own words: it never falls back to PATH. */}
       {tool.refused && tool.problem && (
-        <p className="mt-2 bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="fail" className="mt-2 bg-page/60 px-3.5 py-2 text-body">
           <Inline text={tool.problem} />
-        </p>
+        </Note>
       )}
 
       <SettingList className="mt-2">
@@ -500,9 +500,9 @@ export function ToolLocations({
           <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={look.sentence} /></p>
         )}
         {list.problem && (
-          <p className="m-0 mt-1 bg-page/60 px-3.5 py-2 text-small text-ink-soft">
+          <Note tone="fail" className="mt-1 bg-page/60 px-3.5 py-2">
             <Inline text={list.problem} />
-          </p>
+          </Note>
         )}
       </SettingRow>
     );

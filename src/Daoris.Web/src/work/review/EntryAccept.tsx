@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Button, CheckField, Inline } from '../../design/ui';
+import { Button, CheckField, Inline, Note } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import type { LandingConflict, LandsCommit, LeftOutCommit } from './LandingSync';
 
@@ -149,15 +149,15 @@ function PlanLines({ t, plan, name, leaving, onLeave, held, refused }: {
               )}
               {part.conflict && <span><Inline text={t('work.accept.conflict', { part: part_, says: part.conflict.says })} /></span>}
               {part.held && (
-                <span><Inline text={t('work.accept.held',{ part: part_, says: part.held })} /></span>
+                <Note as="span" tone="caution"><Inline text={t('work.accept.held',{ part: part_, says: part.held })} /></Note>
               )}
               {part.problem && (
-                <span><Inline text={t('work.accept.problem',{ part: part_, says: part.problem })} /></span>
+                <Note as="span" tone="fail"><Inline text={t('work.accept.problem',{ part: part_, says: part.problem })} /></Note>
               )}
               {part.clash && (
-                <span>
+                <Note as="span" tone="fail">
                   <Inline text={t('work.accept.clash', { part: part_, by: name(part.clash.by), says: part.clash.says })} />
-                </span>
+                </Note>
               )}
               {part.superseded && (
                 <>
@@ -180,8 +180,8 @@ function PlanLines({ t, plan, name, leaving, onLeave, held, refused }: {
           );
         })}
       </ul>
-      {held && <p className="m-0">{t('work.accept.heldAsk', { repository: plan.repository })}</p>}
-      {refused && <p className="m-0">{t('work.accept.problemAsk', { repository: plan.repository })}</p>}
+      {held && <Note tone="you">{t('work.accept.heldAsk', { repository: plan.repository })}</Note>}
+      {refused && <Note tone="fail">{t('work.accept.problemAsk', { repository: plan.repository })}</Note>}
     </div>
   );
 }

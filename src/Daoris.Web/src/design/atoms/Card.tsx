@@ -67,7 +67,7 @@ export function Tile({ label, value, note, warn }: {
         ? <span className="text-display font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
         : <i aria-hidden className="my-1 block h-5 w-12 rounded-[4px] bg-accent-soft opacity-55" />}
       {known
-        ? <span className={cn('text-small', warn ? 'text-ink-open' : 'text-ink-faint')}>{note}</span>
+        ? <span className={cn('text-small', warn ? 'font-semibold text-you-ink' : 'text-ink-faint')}>{note}</span>
         : <i aria-hidden className="my-1 block h-3 w-3/4 rounded-[4px] bg-accent-soft opacity-55" />}
     </div>
   );

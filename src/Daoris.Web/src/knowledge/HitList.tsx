@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Hit } from '../data/api';
 import { mark } from './highlight';
-import { Button, CheckField, EmptyState, Icon, Inline, PathText, SkeletonRows } from '../design/ui';
+import { Button, CheckField, EmptyState, Icon, Inline, Note, PathText, SkeletonRows } from '../design/ui';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
 import { contextOffer } from '../menus/press';
@@ -142,9 +142,9 @@ export function HitList({
           {/* Found, but by words alone on a deployment that matches meaning too: said beside the list, or it reads as
               complete when a conclusion reached in other words may be missing. */}
           {semantic && !answer.byMeaning && answer.hits.length > 0 && (
-            <p className="mx-2 mb-1.5 mt-0.5 bg-raised px-2.5 py-1.5 text-small text-ink-soft">
+            <Note tone="caution" className="mx-2 mb-1.5 mt-0.5 bg-raised px-2.5 py-1.5">
               {t('search.meaningDown')}
-            </p>
+            </Note>
           )}
           <ul className={cn('m-0 list-none p-0', answer.searching && 'opacity-60 transition-opacity duration-(--duration-quick)')}>
             {answer.hits.map((hit) => (

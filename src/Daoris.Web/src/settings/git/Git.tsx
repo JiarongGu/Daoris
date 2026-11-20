@@ -4,7 +4,7 @@ import { sentence, ago } from '../../locales/format';
 import { ExternalLink } from '../../design/links';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 import {
-  Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
+  Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Note, Pill, Prose, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 import type { GitLibraryReadShown } from './GitReads';
 
@@ -232,12 +232,12 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
 
       {tested && panel === 'trust' && (
         <div className="mt-1 grid gap-1.5" role="group" aria-label={t('settings.git.trustTitle', { host: identity.host })}>
-          <p className="m-0 text-small text-ink-soft">
+          <Note tone="caution">
             <Inline text={tested.result === 'host-changed'
               ? t('settings.git.trustChanged', { host: identity.host })
               : t('settings.git.trustUnknown', { host: identity.host })}
             />
-          </p>
+          </Note>
           {tested.hostKeys.map((key) => (
             <div key={key.fingerprint} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
               <span className="font-mono text-caption text-ink-soft">{key.algorithm} {key.fingerprint}</span>

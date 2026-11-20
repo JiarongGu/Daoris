@@ -1,7 +1,7 @@
 {
   "./agents/AccountRow.tsx": 1,
   "./agents/setup/SetupList.tsx": 4,
-  "./design/atoms/Card.tsx": 2,
+  "./design/atoms/Card.tsx": 1,
   "./design/atoms/Marks.tsx": 2,
   "./design/atoms/Pill.tsx": 3,
   "./design/atoms/Tip.tsx": 4,
@@ -32,7 +32,6 @@
   "./settings/repository/Commits.tsx": 1,
   "./settings/wiring/WiringSpace.tsx": 4,
   "./settings/wiring/WiringSpaceFree.tsx": 1,
-  "./work/InlineConfirm.tsx": 2,
   "./work/attention/AttentionList.tsx": 1,
   "./work/band/LiveBand.tsx": 1,
   "./work/conversation/ContextRing.tsx": 2,

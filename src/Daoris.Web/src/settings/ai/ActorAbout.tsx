@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pill } from '../../design/ui';
+import { Note, Pill } from '../../design/ui';
 import type { StartWiring } from '../../map/wiring';
 
 /**
@@ -41,7 +41,7 @@ export function IntakeAbout({ agent, starts, nameOf }: {
               </span>
               {/* The driver's sentence, verbatim: it names what to run. */}
               {start.refusal && (
-                <p className="m-0 whitespace-pre-wrap text-ink-soft">{start.refusal}</p>
+                <Note tone="fail" className="whitespace-pre-wrap">{start.refusal}</Note>
               )}
             </li>
           ))}

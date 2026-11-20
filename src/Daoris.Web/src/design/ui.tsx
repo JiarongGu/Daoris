@@ -9,6 +9,7 @@ export * from './atoms/Pill';
 export * from './atoms/Marks';
 export * from './atoms/MiddlePath';
 export * from './atoms/Card';
+export * from './atoms/Note';
 export * from './atoms/Drawer';
 export * from './atoms/FormControls';
 export * from './atoms/Menu';

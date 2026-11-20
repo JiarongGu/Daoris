@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Registration, Repository } from '../data/api';
 import { ago, figure } from '../locales/format';
 import type { RepositoryLine } from '../settings/repository/Lines';
-import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../design/ui';
+import { Button, Chip, Icon, Inline, Note, Prose, Tip, WhyGlyph } from '../design/ui';
 import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/frame/ViewMain';
 import { RepositoryMarks } from './ProjectList';
 import type { ProjectTab } from './tabs';
@@ -153,9 +153,9 @@ export function ProjectPage({
       {adopted && !summary && (
         /* Addressable regardless — adoption gates addressing, declaration does not — but an asker deserves to
            know they would be guessing. */
-        <p className="m-0 mb-4 bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="caution" className="mb-4 bg-raised px-3.5 py-2 text-body">
           <Inline text={t('projects.undeclared')} />
-        </p>
+        </Note>
       )}
 
       <dl className="m-0 grid grid-cols-[max-content_1fr] items-baseline gap-x-4 gap-y-2">

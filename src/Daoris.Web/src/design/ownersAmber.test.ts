@@ -13,6 +13,7 @@ import ALIAS_SITES from './amberAliases.json';
  */
 const OWNERS_WAITS: Record<string, string> = {
   './design/atoms/Card.tsx': "the card atom's wait edge, the one a card that waits on the owner wears (`Card`'s `edge`)",
+  './design/atoms/Note.tsx': "the note's `you` tone: a line saying what waits on the owner, in the waiting ink",
   './work/session/WaitCard.tsx': "a wait card in the session's dock: its ◆ and its edge",
   './work/session/SessionPanel.tsx': "the dock's count of what waits on the owner",
   './work/session/PanelHead.tsx': "the head's press to the oldest wait on the owner",

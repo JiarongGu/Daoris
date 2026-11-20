@@ -2,7 +2,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState 
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { isComposing } from '../lib/composing';
-import { Button, Icon, Inline } from '../design/ui';
+import { Button, Icon, Inline, Note } from '../design/ui';
 
 /**
  * How an act pressed in a question hears how it ended: `done` once it landed, and `refused` with the
@@ -21,16 +21,14 @@ export type Answered = { done: () => void; refused: (sentence: string) => void }
  */
 export function Refused({ sentence, id, className }: { sentence: string; id?: string; className?: string }) {
   return (
-    <p
+    <Note
+      tone="fail"
       id={id}
       role="alert"
-      className={cn(
-        'm-0 min-w-0 basis-full whitespace-pre-wrap wrap-anywhere text-small text-ink-soft',
-        className,
-      )}
+      className={cn('basis-full whitespace-pre-wrap wrap-anywhere', className)}
     >
       <Inline text={sentence} />
-    </p>
+    </Note>
   );
 }
 
@@ -319,12 +317,11 @@ export function InlineConfirm({
       {meanIt && (
         <Button
           variant={tone === 'warn' ? 'default' : tone}
-          className={tone === 'warn' ? 'border-warn' : undefined}
           disabled={waiting || !ready}
           aria-describedby={refusal ? `${saysId} ${refusalId}` : saysId}
           onClick={confirm}
         >
-          {tone === 'warn' && <Icon name="conflict" size={13} className="text-warn" />}
+          {tone === 'warn' && <Icon name="conflict" size={13} />}
           {meanIt}
         </Button>
       )}

@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, ChoiceRow, Inline, Pill, SkeletonRows } from '../../design/ui';
+import { Button, CheckField, ChoiceRow, Icon, Inline, Pill, SkeletonRows } from '../../design/ui';
 import type { PresetWorkflow } from '../../workflow/edit/answers';
 import { deliveryFor, deliveryName } from '../../workflow/edit/presetWords';
 import { Refused } from '../../work/InlineConfirm';
@@ -67,8 +67,9 @@ function PartRefusals({ refusals, doorFor }: { refusals: readonly PlaceRefusal[]
       {refusals.map((each) => {
         const go = doorFor?.(each) ?? null;
         return (
-          <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-ink-soft [overflow-wrap:anywhere]">
+          <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-fail-ink [overflow-wrap:anywhere]">
             <span>
+              <Icon name="conflict" size={13} className="mr-1.5 inline align-[-2px]" />
               {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
               <Inline text={each.sentence} />
             </span>

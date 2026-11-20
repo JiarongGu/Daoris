@@ -4,7 +4,7 @@ import {
   useAddFavorite, useBrowserSettings, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks,
 } from '../bridge/shell';
 import {
-  Button, Card, failure, FormField, FormGrid, FormRow, Icon, type Notify, PathText, Prose, SectionTitle, Segmented, SettingList,
+  Button, Card, failure, FormField, FormGrid, FormRow, Icon, type Notify, Note, PathText, Prose, SectionTitle, Segmented, SettingList,
   SettingRow, useErrorNotify,
 } from '../design/ui';
 import type { BrowserDriver } from '../work/strip/browserDrivers';
@@ -104,9 +104,9 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data && !data.edgeFound && (
-          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <Note tone="caution" className="mt-3 bg-raised px-3.5 py-2 text-body">
             {t('settings.browser.which.noEdge')}
-          </p>
+          </Note>
         )}
         {data?.browser === 'edge' && (
           <Prose className="mt-3 text-small">{t('settings.browser.ownOnly')}</Prose>
@@ -149,9 +149,9 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data?.favoritesProblem && (
-          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <Note tone="fail" className="mt-3 bg-raised px-3.5 py-2 text-body">
             {t('settings.browser.unreadable', { file: data.favoritesPath, problem: data.favoritesProblem })}
-          </p>
+          </Note>
         )}
         {data && data.favorites.length === 0 && !data.favoritesProblem && (
           <Prose className="mt-3">{t('settings.browser.favorites.none')}</Prose>
@@ -235,9 +235,9 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data?.settingsProblem && (
-          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <Note tone="fail" className="mt-3 bg-raised px-3.5 py-2 text-body">
             {t('settings.browser.unreadable', { file: data.settingsPath, problem: data.settingsProblem })}
-          </p>
+          </Note>
         )}
       </Card>
     </>

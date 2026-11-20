@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../../locales/format';
 import { useDriver, useGitIdentity, useSetGitAccess, useSetGitUse, useToolPick, useTools } from '../../bridge/shell';
-import { Card, CardHeader, failure, Inline, type Notify, Prose, SettingList, useErrorNotify } from '../../design/ui';
+import { Card, CardHeader, failure, Inline, type Notify, Note, Prose, SettingList, useErrorNotify } from '../../design/ui';
 import { GitAccessRows, resolveGitAccess } from '../repository/GitAccess';
 import { DomainLoading } from '../DomainLoading';
 import {
@@ -88,9 +88,9 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
       <Prose className="mb-1"><Inline text={t('settings.git.intro')} /></Prose>
       <Prose className="text-small"><Inline text={t('settings.git.terminal')} /></Prose>
       {page.problem && (
-        <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="fail" className="mt-3 bg-raised px-3.5 py-2 text-body">
           <Inline text={t('settings.git.fileProblem', { problem: page.problem })} />
-        </p>
+        </Note>
       )}
       {adding && (
         <GitAdd

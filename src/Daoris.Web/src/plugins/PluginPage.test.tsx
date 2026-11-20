@@ -161,8 +161,8 @@ describe("a plugin's page", () => {
     const source = screen.getByRole('region', { name: 'Source' });
     expect(source).toHaveTextContent("Its icon is not drawn: icon icon.svg is not a file in the plugin's folder.");
     expect(within(source).getByText('icon.svg').tagName).toBe('CODE');
-    // Never a refusal: no warn-railed sentence leads the page.
-    expect(document.querySelector('.border-warn')).toBeNull();
+    // Never a refusal: no sentence in the failure ink leads the page.
+    expect(document.querySelector('p.text-fail-ink')).toBeNull();
     unmount();
 
     page();
@@ -449,8 +449,10 @@ describe("a plugin's page", () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });
 
     const sentence = screen.getByText('needs plugin API 99, and this build speaks 1.');
-    expect(sentence.closest('p')!.className).toMatch(/\bbg-page\/60\b/);
-    expect(sentence.closest('p')!.className).not.toMatch(/\bborder-(?:l-|warn)/);
+    const refusal = sentence.closest('p')!;
+    expect(refusal).toHaveClass('text-fail-ink');
+    expect(refusal.querySelector('svg')).not.toBeNull();
+    expect(refusal.className).not.toMatch(/\bborder-(?:l-|warn)/);
     expect(within(header()).getByText('refused').className).toMatch(/\bborder-st-open\b/);
     expect(acts()).not.toContain('Try');
   });
