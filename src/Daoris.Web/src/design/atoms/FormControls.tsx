@@ -45,7 +45,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         aria-label={ariaLabel}
         className={bar
           ? 'flex h-full items-center gap-1.5 px-2 text-caption text-ink transition-colors duration-[var(--duration-quick)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
-          : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:cursor-default data-[disabled]:border-line data-[disabled]:text-ink-disabled'}
+          : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:data-[placeholder]:text-ink-disabled data-[disabled]:cursor-default data-[disabled]:border-line data-[disabled]:text-ink-disabled'}
       >
         {bar && <Layers size={glyphSize(12)} aria-hidden className="shrink-0 text-ink-soft" />}
         <span className="min-w-0 truncate"><RadixSelect.Value placeholder={placeholder} /></span>
