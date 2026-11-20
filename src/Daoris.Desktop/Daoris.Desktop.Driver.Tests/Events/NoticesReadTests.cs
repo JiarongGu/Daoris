@@ -129,6 +129,27 @@ public sealed class NoticesReadTests
         Assert.NotNull(presses.Single(each => each!["id"]!.GetValue<string>() == "h1")!["expires"]);
     }
 
+    /// <summary>The terminal counts what the bell counts: a row a role takes is listed under <i>With the agents</i>, counted nowhere.</summary>
+    [Fact]
+    public void A_row_a_role_takes_is_listed_with_the_agents_and_counted_nowhere()
+    {
+        var now = new DateTimeOffset(2026, 11, 20, 9, 0, 0, TimeSpan.Zero);
+        Assert.Equal(NoticesRead.WithTheAgents,NoticesRead.Group("parked", stands: false, stale: false, agents: true));
+        Assert.Equal("holding", NoticesRead.Group("parked", stands: false, stale: false));
+        var look = new NoticesLook([], [
+            new NeedWaiting(NoticesRead.Group("parked", false, false, agents: true), "parked", "s1", "default", now, null),
+            new NeedWaiting(NoticesRead.Group("work", false, false, agents: true), "work", "s2", "default", now, null),
+            new NeedWaiting(NoticesRead.Group("unanswerable", false, false), "unanswerable", "q1", "default", now, null),
+        ], [], []);
+
+        var said = NoticesRead.Said(look, json: false, now).Out.ToList();
+
+        Assert.Contains("What needs you (1)", said);
+        Assert.Contains("  Waiting for your word (1)", said);
+        Assert.Contains("  With the agents (2)", said);
+        Assert.True(said.IndexOf("  Waiting for your word (1)") < said.IndexOf("  With the agents (2)"));
+    }
+
     /// <summary>A row the person set aside is a marker, no notice: neither the text nor the JSON lists it, in Done and failed or anywhere.</summary>
     [Fact]
     public async Task A_row_set_aside_is_no_notice_in_the_text_or_the_json()

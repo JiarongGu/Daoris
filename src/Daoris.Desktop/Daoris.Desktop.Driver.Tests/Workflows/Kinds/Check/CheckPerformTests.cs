@@ -168,6 +168,49 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
+    public async Task A_check_held_for_a_changed_declaration_is_run_again_by_itself_once_the_acceptance_moves()
+    {
+        const string Held = "1111111111111111111111111111111111111111";
+        const string Newer = "2222222222222222222222222222222222222222";
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Attempt().Call.Invocation;
+        _checks.Answers.Add(invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation));
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        Assert.Equal((AttemptStates.Held, VerifyResult.Changed), (Attempt().State, Attempt().Code));
+        var path = VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), invocation);
+        (Result(VerifyVerdicts.Unknown, invocation) with { Accepted = Held }).Write(path);
+
+        Assert.Empty(ChangedChecks.Again(Files, _ => Held, _now));
+        Assert.Empty(ChangedChecks.Again(Files, _ => null, _now));
+        Assert.Null(Attempt().Resolution);
+
+        var again = Assert.Single(ChangedChecks.Again(Files, _ => Newer, _now));
+        Assert.Equal((Unit, Check.Id, PerformedWhat.Worded), (again.Unit, again.Node, again.What));
+        Assert.Equal(HeldResolutions.Again, Attempt().Resolution);
+        Assert.Empty(ChangedChecks.Again(Files, _ => Newer, _now));
+        performer.Resolve(Declared);
+
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
+    }
+
+    [Fact]
+    public async Task A_check_held_for_a_changed_declaration_before_its_acceptance_was_kept_is_run_again_once_one_is_accepted()
+    {
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Attempt().Call.Invocation;
+        _checks.Answers.Add(invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation));
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        Result(VerifyVerdicts.Unknown, invocation).Write(VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), invocation));
+
+        Assert.Single(ChangedChecks.Again(Files, _ => "3333333333333333333333333333333333333333", _now));
+        Assert.Equal(HeldResolutions.Again, Attempt().Resolution);
+    }
+
+    [Fact]
     public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_held_for_the_person_once_its_asks_are_spent()
     {
         var performer = Performer();

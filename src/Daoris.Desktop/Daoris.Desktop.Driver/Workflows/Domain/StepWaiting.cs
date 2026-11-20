@@ -45,7 +45,7 @@ public static class StepWaiting
             _ => null,
         };
         if (why is null) return null;
-        var role = why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead ? StepRoles.Of(node) : RoleOf(why);
+        var role = OnOwnRole(why) ? StepRoles.Of(node) : RoleOf(why);
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
 
@@ -64,12 +64,15 @@ public static class StepWaiting
     /// </summary>
     public static string RoleOf(string why) => why switch
     {
-        PersonWaits.Accept or PersonWaits.Pass => "acceptor",
+        PersonWaits.Accept => "acceptor",
         PersonWaits.Approval or PersonWaits.GoAhead => "approver",
         PersonWaits.Task or PersonWaits.Choose => "worker",
         PersonWaits.Held => "operations",
         _ => AppointedRoles.Supervisor,
     };
+
+    public static bool OnOwnRole(string why) =>
+        why is PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Task or PersonWaits.GoAhead or PersonWaits.Pass;
 
     /// <summary>Where a wait's act is taken in the window when no press of its own settles it from a row: the run view, else nowhere.</summary>
     public static string? OpensAt(string why) => why is PersonWaits.Choose or PersonWaits.GoAhead or PersonWaits.Vacant ? OpensRun : null;

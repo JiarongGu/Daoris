@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SectionTitle, Tip } from '../../design/ui';
+import { cardEdge, cardFrame, SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import type { StepHoldBridge } from '../../workflow/wait/StepHold';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
@@ -23,9 +23,9 @@ export const READY_SHOWN = 5;
 export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
 
 /**
- * *What needs you* with something in it: its title and count, then a group per kind of wait that holds
+ * *What needs you* with something in it: its title and the owner's count, then a group per kind of wait that holds
  * any, each named, its rows in the order `attentionInOrder` gave them. *Ready for you* shows five, then counts the rest with a
- * door into Sessions, where they are.
+ * door into Sessions, where they are. The agents' rows follow apart, *With the agents*, in a plain frame with no edge, uncounted.
  *
  * @remarks
  * Its kind wears open's hue on the card's edge and on each row's (waiting on the person is open's hue, everywhere
@@ -68,58 +68,73 @@ export function AttentionList({
   stepHold?: StepHoldBridge;
 }) {
   const { t } = useTranslation();
+  const groups = attentionGroups(items);
+  const owners = groups.filter(({ group }) => group !== 'agents');
+  const agents = groups.find(({ group }) => group === 'agents');
+  const counted = owners.reduce((sum, { items: rows }) => sum + rows.length, 0);
+  const drawn = ({ group, items: rows }: (typeof groups)[number]) => {
+    const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;
+    const more = rows.length - shown.length;
+    const stale = onRefuseStale ? staleGoAheads(rows) : [];
+    return (
+      <div key={group} role="group" aria-label={t(`work.attention.group.${group}`)} className={bare ? 'mt-1 first:mt-0' : 'mt-2'}>
+        <div className="px-4"><SectionTitle level={3}>{t(`work.attention.group.${group}`)}</SectionTitle></div>
+        {onRefuseStale && stale.length >= STALE_AT_ONCE && (
+          <StaleGoAheads items={stale} busy={refusingStale} onRefuse={onRefuseStale} />
+        )}
+        {onSetAsideKind && repeatedKinds(rows).map(({ kind, count }) => (
+          <SetAsideKind key={kind} kind={kind} count={count} busy={settingAside} onSetAside={onSetAsideKind} />
+        ))}
+        <ul className="m-0 grid list-none gap-1 p-0">
+          {shown.map((item) => (
+            <AttentionRow
+              key={attentionKey(item)}
+              item={item}
+              onOpen={doors[item.kind]}
+              onRun={run?.(item)}
+              acts={acts}
+              busy={acting === attentionKey(item) || (held?.(item) ?? false)}
+              below={below?.(item)}
+              stepHold={stepHold}
+            />
+          ))}
+        </ul>
+        {more > 0 && (
+          <p className="m-0 px-4 pt-1 text-small">
+            {onSessions
+              ? (
+                <button type="button" onClick={onSessions} className="text-accent-ink underline-offset-2 hover:underline">
+                  {t('work.attention.more', { count: more })}
+                </button>
+              )
+              : <span className="text-ink-faint">{t('work.attention.more', { count: more })}</span>}
+          </p>
+        )}
+      </div>
+    );
+  };
   return (
-    <div className={bare ? 'border-l-[3px] border-l-st-open pb-1' : 'rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-0 pb-2 pt-3.5'}>
-      {!bare && (
-        <header className="flex items-baseline justify-between gap-4 px-[1.15rem] pb-1">
-          <Tip content={t('work.attention.hint')}>
-            <h2 className="m-0 text-heading font-semibold">{t('work.attention.title')}</h2>
-          </Tip>
-          <span className="font-mono text-caption tabular-nums text-ink-open">{items.length}</span>
-        </header>
+    <>
+      {owners.length > 0 && (
+        <div className={bare ? cn('pb-1', cardEdge('wait')) : cn(cardFrame('wait'), 'px-0 pb-2')}>
+          {!bare && (
+            <header className="flex items-baseline justify-between gap-4 px-4 pb-1">
+              <Tip content={t('work.attention.hint')}>
+                <h2 className="m-0 text-heading font-semibold">{t('work.attention.title')}</h2>
+              </Tip>
+              <span className="font-mono text-caption tabular-nums text-ink-open">{counted}</span>
+            </header>
+          )}
+          {owners.map(drawn)}
+        </div>
       )}
-      {attentionGroups(items).map(({ group, items: rows }) => {
-        const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;
-        const more = rows.length - shown.length;
-        const stale = onRefuseStale ? staleGoAheads(rows) : [];
-        return (
-          <div key={group} role="group" aria-label={t(`work.attention.group.${group}`)} className={bare ? 'mt-1 first:mt-0' : 'mt-2'}>
-            <div className="px-[1.15rem]"><SectionTitle level={3}>{t(`work.attention.group.${group}`)}</SectionTitle></div>
-            {onRefuseStale && stale.length >= STALE_AT_ONCE && (
-              <StaleGoAheads items={stale} busy={refusingStale} onRefuse={onRefuseStale} />
-            )}
-            {onSetAsideKind && repeatedKinds(rows).map(({ kind, count }) => (
-              <SetAsideKind key={kind} kind={kind} count={count} busy={settingAside} onSetAside={onSetAsideKind} />
-            ))}
-            <ul className="m-0 grid list-none gap-1 p-0">
-              {shown.map((item) => (
-                <AttentionRow
-                  key={attentionKey(item)}
-                  item={item}
-                  onOpen={doors[item.kind]}
-                  onRun={run?.(item)}
-                  acts={acts}
-                  busy={acting === attentionKey(item) || (held?.(item) ?? false)}
-                  below={below?.(item)}
-                  stepHold={stepHold}
-                />
-              ))}
-            </ul>
-            {more > 0 && (
-              <p className="m-0 px-[1.15rem] pt-1 text-small">
-                {onSessions
-                  ? (
-                    <button type="button" onClick={onSessions} className="text-accent-ink underline-offset-2 hover:underline">
-                      {t('work.attention.more', { count: more })}
-                    </button>
-                  )
-                  : <span className="text-ink-faint">{t('work.attention.more', { count: more })}</span>}
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </div>
+      {agents && (
+        <div data-agents-group className={cn(bare ? 'pb-1' : cn(cardFrame(), 'px-0 pb-2'), owners.length > 0 && 'mt-3')}>
+          {drawn(agents)}
+          <p className="m-0 px-4 pt-1 text-small text-ink-faint">{t('work.attention.agentsNote')}</p>
+        </div>
+      )}
+    </>
   );
 }
 

@@ -37,7 +37,7 @@ export function DomainList({ label, domains, chosen, onChoose, note }: {
               aria-current={id === chosen ? 'page' : undefined}
               onClick={() => onChoose(id)}
               className={cn(
-                'block w-full truncate border-l-[3px] px-3 py-1.5 text-left text-body transition-colors duration-(--duration-quick)',
+                'block w-full truncate border-l-2 px-3 py-1.5 text-left text-body transition-colors duration-(--duration-quick)',
                 id === chosen
                   ? 'border-l-accent bg-accent-soft font-medium text-ink'
                   : 'border-l-transparent text-ink-soft hover:bg-accent-soft/50',

@@ -619,7 +619,8 @@ public sealed class WorkflowRoutes(DriverContext context)
             ? UncheckedAccepts.Keep(records, run, node, drawn)
             : await Task.Run(() => RunNodeWords.WordAsync(
                 records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken, attempt: press.Attempt is { } named ? (int)Math.Clamp(named, 0, int.MaxValue) : null, revision: press.Revision,
-                    part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch)),
+                    part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch),
+                    workers: _loop.RunWorkers(run)),
                 cancellationToken)
                 .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();

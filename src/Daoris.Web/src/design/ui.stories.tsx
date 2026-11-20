@@ -126,7 +126,7 @@ function SettingRowsCards({ zh = false }: { zh?: boolean }) {
             why="One quest whose session could not start ran eighteen times, and every run spent an account."
             control={numberField}
           >
-            <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+            <p className="m-0 bg-page/60 px-3.5 py-2 text-body text-ink-soft">
               {zh ? '零表示一直重试。' : 'Zero means it keeps trying.'}
             </p>
           </SettingRow>
@@ -351,7 +351,7 @@ export const MetaLines: StoryObj = {
 
 export const Tiles: StoryObj = {
   render: () => (
-    <div className="grid max-w-3xl grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
+    <div className="grid max-w-3xl grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-4">
       <Tile label="Adopted repositories" value={2} note="of 17 in the family" />
       <Tile label="Open quests" value={3} note="oldest has sat 12d" warn />
       <Tile label="Knowledge entries" value="12.9K" note="across 14 repositories" />

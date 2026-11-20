@@ -39,7 +39,7 @@ function Field({ count, opening }: { count: number; opening: number }) {
       zoom={{ min: 0.1, max: 2.5 }} opening={opening}
       nodeLabel={(id) => id} titleOf={(id) => id}
       renderNode={(id, state) => (
-        <span className={cn('flex h-full w-full items-center rounded-card border bg-raised px-2', state.selected ? 'border-[3px] border-accent' : 'border-line-strong')}>
+        <span className={cn('flex h-full w-full items-center rounded-card border bg-raised px-2', state.selected ? 'border-2 border-accent' : 'border-line-strong')}>
           {state.tier === 'full' && <span className="truncate font-mono text-caption text-ink">{id}</span>}
         </span>
       )}

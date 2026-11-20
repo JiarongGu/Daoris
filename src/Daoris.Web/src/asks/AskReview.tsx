@@ -87,7 +87,7 @@ export function AskReview({ ask, environments = [], busy = false, onChoose }: {
         const key = `${proposal.choice}:${proposal.at}`;
         const refused = refusal.at(key);
         return (
-          <div key={key} className="flex flex-wrap items-center gap-x-2 gap-y-1 border-l-[3px] border-line-strong pl-2 text-small text-ink-soft">
+          <div key={key} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink-soft">
             <span className="min-w-0 flex-1 basis-64">
               <Inline text={t('review.proposal', { choice: choiceWords(t, proposal.choice), reason: proposal.reason })} />
             </span>

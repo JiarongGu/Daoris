@@ -121,7 +121,7 @@ export function MapWorld({ topology, selected, onSelect, tools, storeKey, reveal
           const back = near !== null && !near.has(id);
           if (id === ASKS) {
             return (
-              <span className={cn('flex h-full w-full items-center justify-center rounded-full border-[1.5px] border-accent bg-accent-soft text-caption font-semibold text-accent-ink', back && 'opacity-40')}>
+              <span className={cn('flex h-full w-full items-center justify-center rounded-full border border-accent bg-accent-soft text-caption font-semibold text-accent-ink', back && 'opacity-40')}>
                 {state.tier === 'dot' ? null : ring ? t('map.asks') : t('map.asksCard', { count: askCount })}
               </span>
             );

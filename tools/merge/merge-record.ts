@@ -9,6 +9,7 @@ import { dirname } from 'node:path';
 import type { Breach, Separation } from '../time-why.mjs';
 import { GATE_BUDGET_MS, overBudget, type Slow } from './timing.ts';
 import { outsideTests, type Step } from './reached-steps.ts';
+import type { VerificationRecord } from './verification.ts';
 
 export const MERGE_RECORD = 'local/merge-record.jsonl';
 
@@ -22,15 +23,15 @@ export type GateRecord = {
 export type MainRedRecord = { gate: string; unit: string; key: string };
 export type MergeRecord = {
   schema: 1; branch: string; at: string; ms: number; wallMs?: number; flakes?: number; attempt: number; firstPass: boolean; passed: boolean;
-  gates: GateRecord[]; mainReds: MainRedRecord[]; overBudget: { gates: string[]; merge: boolean };
-  heavy?: { deferred: string[] }; breaches?: Breach[]; separations?: Separation[];
+  gates: GateRecord[]; mainReds: MainRedRecord[]; overBudget: { gates: string[] };
+  heavy?: { deferred: string[] }; breaches?: Breach[]; separations?: Separation[]; verification?: VerificationRecord;
 };
 
 const passes = (gate: GateRecord): boolean => gate.verdict === 'PASS' || gate.verdict === 'FLAKE' || (gate.verdict === 'FAIL' && gate.mainRed);
 
-export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous, deferred = [], breaches = [], separations = [] }: {
+export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous, deferred = [], breaches = [], separations = [], verification }: {
   branch: string; at: string; ms: number; wallMs: number; gates: GateRecord[]; mainReds: MainRedRecord[]; previous: MergeRecord[]; deferred?: string[];
-  breaches?: Breach[]; separations?: Separation[];
+  breaches?: Breach[]; separations?: Separation[]; verification?: VerificationRecord;
 }): MergeRecord {
   const attempt = previous.filter((each) => each.branch === branch).length + 1;
   const passed = gates.every(passes);
@@ -38,8 +39,8 @@ export function buildRecord({ branch, at, ms, wallMs, gates, mainReds, previous,
     schema: 1, branch, at, ms, wallMs, flakes: gates.reduce((n, gate) => n + (gate.flakes?.length ?? 0), 0), attempt, passed,
     firstPass: attempt === 1 && passed,
     gates: gates.map((gate) => ({ ...gate, over: gate.ms > GATE_BUDGET_MS })),
-    mainReds, overBudget: overBudget(gates, ms), ...(deferred.length ? { heavy: { deferred } } : {}),
-    ...(breaches.length ? { breaches } : {}), ...(separations.length ? { separations } : {}),
+    mainReds, overBudget: overBudget(gates), ...(deferred.length ? { heavy: { deferred } } : {}),
+    ...(breaches.length ? { breaches } : {}), ...(separations.length ? { separations } : {}), ...(verification ? { verification } : {}),
   };
 }
 

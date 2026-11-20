@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { clockOf } from '../../locales/format';
 import { cn } from '../../lib/cn';
-import { Chip, Icon } from '../../design/ui';
+import { cardFrame, Chip, Icon } from '../../design/ui';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import type { Ask, Receipts } from './conversation';
 import type { Author } from './sender';
@@ -77,10 +77,7 @@ export function AskView({ ask, answer }: { ask: Ask; answer?: AnswerHead }) {
   return (
     <div
       data-word={ask.key}
-      className={cn(
-        'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
-        findings || marked ? 'border-l-line-strong' : 'border-l-accent',
-      )}
+      className={cardFrame()}
     >
       <SenderChip label={label} at={ask.at}>
         {home && <ChannelDoor message={home} onOpen={onOpen!} />}

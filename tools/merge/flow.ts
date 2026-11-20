@@ -19,6 +19,7 @@ import { parseOutcome, type ClassOutcome } from './reached-classify.ts';
 import { parseSteps, type Step } from './reached-steps.ts';
 import { againNote, cappedNote, LOAD_CAP, overBudgetNote, ranOnNote, waitFree } from './timeout.ts';
 import { budgetLines, loggedRun, type Slow } from './timing.ts';
+import { settleVerification, type Planned } from './verification.ts';
 import { keyOf, replayFor, type GateDeclaration, type Replay, type StoredVerdict, type Toolchain, type TreeEntry, type VerdictKey } from './verdict-store.ts';
 
 export type PlanGate = GateDeclaration & { [other: string]: unknown };
@@ -249,8 +250,9 @@ export function reportBreaches(results: readonly GateResult[], dir: string | nul
  * A merge's gates settled: each failure main already has (its test, its signature) set down as main's, the failed gates left
  * for the branch's, the record and the summary's lines built, the breaches written in `dir`. `wallMs` is the gating's wall time.
  */
-export function settleMerge({ branch, at, wallMs, results, mains, previous, dir = null }: {
+export function settleMerge({ branch, at, wallMs, results, mains, previous, dir = null, verification = null }: {
   branch: string; at: string; wallMs: number; results: GateResult[]; mains: MainRed[]; previous: MergeRecord[]; dir?: string | null;
+  verification?: (Planned & { file: string; shown: string }) | null;
 }): { failed: GateResult[]; held: Held[]; lines: string[]; record: MergeRecord } {
   const ms = results.reduce((sum, result) => sum + (result.ms ?? 0), 0);
   const held: Held[] = [];
@@ -264,14 +266,18 @@ export function settleMerge({ branch, at, wallMs, results, mains, previous, dir 
   }
   const records = results.map(gateRecord);
   const { breaches, found, file } = breachReport(results, dir);
+  const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [], steps: result.steps ?? [] }));
+  const verified = verification ? settleVerification(verification, { branch, at, wallMs, gates: timed, file: verification.file, shown: verification.shown }) : null;
   const record = buildRecord({
     branch, at, ms, wallMs, gates: records, previous, mainReds: held.map((each) => ({ gate: each.gate, unit: each.unit, key: each.key })),
-    deferred: results.flatMap((result) => result.classes?.deferred ?? []), breaches, separations: found,
+    deferred: results.flatMap((result) => result.classes?.deferred ?? []), breaches, separations: found, ...(verified ? { verification: verified.record } : {}),
   });
-  const timed = results.map((result) => ({ name: result.gate.name, ms: result.ms ?? 0, slowest: result.slowest ?? [], steps: result.steps ?? [] }));
   const failed = results.filter((result) => result.verdict === 'FAIL' && !result.mainRed);
   return {
     failed, held, record,
-    lines: [...mainRedLines(held), ...unspecificLines(mains, failed.map((result) => result.gate.name)), ...budgetLines(timed, ms), ...breachLines(breaches, found, { file })],
+    lines: [
+      ...mainRedLines(held), ...unspecificLines(mains, failed.map((result) => result.gate.name)), ...(verified?.lines ?? []), ...budgetLines(timed),
+      ...breachLines(breaches, found, { file }),
+    ],
   };
 }

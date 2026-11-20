@@ -14,7 +14,7 @@ import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from 
 import { useScope } from '../data/scope';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 import {
-  Button, Card, EmptyState, Icon, type Notify, PageHeader, SkeletonRows, useErrorNotify,
+  Button, Card, EmptyState, Icon, type Notify, Note, PageHeader, SkeletonRows, useErrorNotify,
 } from '../design/ui';
 
 /** The similarity the Convergence view opens at — the map's dotted lines are the same findings. */
@@ -107,9 +107,9 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           /* The service's own sentence, whole: it names the first rule the file broke. */
           <Card>
             <p className="m-0 mb-2 text-body font-semibold text-ink">{t('code.refused')}</p>
-            <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-body text-ink-soft">
+            <Note tone="fail" className="whitespace-pre-wrap text-body">
               {answer.problem}
-            </p>
+            </Note>
           </Card>
         )}
         {/* 🔴 ABSENT, not null: the host leaves a null field out of its answer, and `=== null` drew

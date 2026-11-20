@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Icon } from '../../design/ui';
+import { Button, cardFrame, Icon } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { clockOf } from '../../locales/format';
 import type { ExchangeCard } from './exchanges';
@@ -46,7 +46,7 @@ export function ExchangeCardView({ card, revealed, onOpen }: {
       tabIndex={-1}
       data-exchange={card.id}
       aria-label={card.agent ? t('work.conversation.asked.helper', { agent: card.agent }) : t('work.conversation.asked.anyHelper')}
-      className="rounded-card border border-line border-l-[3px] border-l-line-strong bg-raised px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      className={cn(cardFrame(), 'outline-none focus-visible:ring-2 focus-visible:ring-accent/60')}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
         <span className="text-caption text-ink-soft">
