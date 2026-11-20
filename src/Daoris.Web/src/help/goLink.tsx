@@ -40,7 +40,7 @@ export function GoLink({ href, children }: { href: string | undefined; children:
   const door = place ? placeDoor(place) : null;
   if (!open || !door) return <>{children}</>;
   return (
-    <button type="button" className="cursor-pointer border-0 bg-transparent p-0 font-[inherit] text-accent underline underline-offset-2"
+    <button type="button" className="cursor-pointer border-0 bg-transparent p-0 font-[inherit] text-accent-ink underline underline-offset-2"
       onClick={() => open(door)}>
       {children}
     </button>

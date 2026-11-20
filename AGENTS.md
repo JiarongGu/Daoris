@@ -10,6 +10,8 @@ Every change keeps these:
 - Local operation needs no remote; the doctrine commands need no service and no runtime dependency.
 - Machine-local state (streams, accounts, browser state, filesystem actions) stays on the desktop. A shared host
   exchanges permitted records, serves no UI and answers no machine path.
+- Daoris supplies frameworks a workspace configures, never one way for every repository (D349).
+- Replacing one logic changes its module and its wiring alone.
 - Window chrome translates through the English and Chinese catalogues; authored content, configuration included, stays
   as written.
 - A feature that uses a model says which tier actually ran.

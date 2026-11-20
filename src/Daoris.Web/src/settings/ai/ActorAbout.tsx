@@ -35,7 +35,7 @@ export function IntakeAbout({ agent, starts, nameOf }: {
                   <>
                     <span className="text-ink-faint">{t('settings.ai.intake.runsAs')}</span>
                     <span className="text-ink wrap-anywhere">{nameOf(start.owner, start.profile)}</span>
-                    <span className="text-meta text-ink-faint">{t(`wiring.accountFrom.${start.profileFrom}`)}</span>
+                    <span className="text-caption text-ink-faint">{t(`wiring.accountFrom.${start.profileFrom}`)}</span>
                   </>
                 )}
               </span>

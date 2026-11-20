@@ -37,7 +37,7 @@ function Newer({ answer, onRead }: { answer: RunReviewAnswer; onRead?: (attempt:
         <span>{names.length > 0 ? t('work.outputs.newer', { attempt: newer.attempt, changed: names.join(', ') }) : t('work.outputs.newerSame', { attempt: newer.attempt })}</span>
         {onRead && <Button variant="primary" className="min-h-0 px-2 py-0.5 text-small" onClick={() => onRead(newer.attempt)}>{t('work.outputs.newerRead', { attempt: newer.attempt })}</Button>}
       </p>
-      <p className="m-0 text-meta text-ink-faint">{t('work.outputs.older', { attempt: answer.record.attempt, revision: answer.record.revision.slice(0, 7) })}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('work.outputs.older', { attempt: answer.record.attempt, revision: answer.record.revision.slice(0, 7) })}</p>
     </div>
   );
 }
@@ -68,7 +68,7 @@ function RawDisplay({ output }: { output: ReviewOutput }) {
   return (
     <div className="grid gap-1 px-3 pb-3">
       <p className="m-0 text-small text-ink-faint">{t('work.outputs.raw')}</p>
-      <pre className="m-0 overflow-x-auto rounded-control bg-raised p-2 font-mono text-meta text-ink-soft">{JSON.stringify(output, null, 2)}</pre>
+      <pre className="m-0 overflow-x-auto rounded-control bg-raised p-2 font-mono text-caption text-ink-soft">{JSON.stringify(output, null, 2)}</pre>
     </div>
   );
 }
@@ -78,7 +78,7 @@ function AfterTheAccept({ steps }: { steps: RunReviewStep[] }) {
   const { t } = useTranslation();
   return (
     <section aria-label={t('work.outputs.afterAccept')} className="grid gap-1.5 px-3 py-3">
-      <h3 className="m-0 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.afterAccept')}</h3>
+      <h3 className="m-0 text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.afterAccept')}</h3>
       {steps.length === 0 ? <p className="m-0 text-small text-ink-soft">{t('work.outputs.followsNone')}</p> : (
         <>
           <p className="m-0 text-small text-ink-soft">{t('work.outputs.wouldFollow')}</p>
@@ -89,8 +89,8 @@ function AfterTheAccept({ steps }: { steps: RunReviewStep[] }) {
                   {t('work.outputs.step', { node: step.node, state: t(`work.outputs.state.${step.state}`, { defaultValue: step.state }) })}
                   {step.outcome && <span className="text-ink-faint"> · {step.outcome}</span>}
                 </span>
-                {step.door && <span className="font-mono text-meta text-ink-faint">{step.door}</span>}
-                {step.words && <span className="text-meta text-ink-faint">{step.words}</span>}
+                {step.door && <span className="font-mono text-caption text-ink-faint">{step.door}</span>}
+                {step.words && <span className="text-caption text-ink-faint">{step.words}</span>}
               </li>
             ))}
           </ul>
@@ -156,14 +156,14 @@ export function OutputsView({ answer, viewed, onRead, fileBody }: {
       </header>
       <Newer answer={answer} onRead={onRead} />
       <section aria-label={t('work.outputs.underReview', { attempt })} className="grid border-b border-line">
-        <h3 className="m-0 px-3 pt-2 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.underReview', { attempt })}</h3>
+        <h3 className="m-0 px-3 pt-2 text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.underReview', { attempt })}</h3>
         {outputs.length === 0 && <p className="m-0 px-3 py-2 text-small text-ink-soft">{t('work.outputs.nothing')}</p>}
         {outputs.map((output) => (
           <article key={output.id} className="grid gap-1 border-t border-line first-of-type:border-t-0">
             <h4 className="m-0 flex flex-wrap items-baseline gap-2 px-3 pt-2 text-small font-semibold text-ink">
               {outputName(t, output)}
               {output.display === 'change-set' && (
-                <span className="text-meta font-normal text-ink-faint">
+                <span className="text-caption font-normal text-ink-faint">
                   {answer.commits ? `${t('work.outputs.commits', { count: answer.commits.commits.length })} · ` : ''}{t('work.outputs.files', { count: fileCount })}
                 </span>
               )}

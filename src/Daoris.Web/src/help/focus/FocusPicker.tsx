@@ -53,7 +53,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
     return (
       <div className="grid min-w-0 gap-0.5">
         <button type="button" disabled aria-label={words.label} className={cn(CHIP, 'cursor-default opacity-70')}>…</button>
-        <p role="status" className="m-0 text-meta text-ink-faint">{t('help.scope.reading')}</p>
+        <p role="status" className="m-0 text-caption text-ink-faint">{t('help.scope.reading')}</p>
       </div>
     );
   }
@@ -70,15 +70,15 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
     return (
       <>
         <span className="flex w-3 shrink-0 self-center">
-          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-accent" />}
+          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-accent-ink" />}
         </span>
         <span className="flex w-3 shrink-0 self-center text-ink-faint">
           {row.place.kind === 'workspace' && !row.nested && <Icon name={row.open ? 'chevronDown' : 'chevronRight'} size={11} />}
         </span>
         <Icon name={icon} size={12} className="shrink-0 self-center text-ink-faint" />
         <span className="min-w-0 truncate">{nameOf(row.place, machine)}</span>
-        {row.beside && <>{' '}<span className="min-w-[6ch] shrink truncate text-meta text-ink-faint">{row.beside}</span></>}
-        {mark && <>{' '}<span className="ml-auto shrink-0 text-meta text-ink-faint">{mark}</span></>}
+        {row.beside && <>{' '}<span className="min-w-[6ch] shrink truncate text-caption text-ink-faint">{row.beside}</span></>}
+        {mark && <>{' '}<span className="ml-auto shrink-0 text-caption text-ink-faint">{mark}</span></>}
       </>
     );
   };
@@ -153,7 +153,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
       onOpen={onOpen}
       onChoose={choose}
       onKey={onKey}
-      foot={() => <p className="m-0 px-1.5 py-1 text-meta text-ink-faint">{t('help.focus.foot')}</p>}
+      foot={() => <p className="m-0 px-1.5 py-1 text-caption text-ink-faint">{t('help.focus.foot')}</p>}
       reveal={reveal ? { typed: '', active: placeSaid(focus), n: reveal } : null}
       upward
       panelClassName="max-h-80 w-80 max-w-[calc(100cqw-1.5rem)]"

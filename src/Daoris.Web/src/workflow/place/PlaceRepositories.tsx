@@ -38,7 +38,7 @@ export function PlaceRepositories({ repositories, onOpen }: { repositories: Work
                           {repository}
                         </span>
                       )}
-                    <span className="justify-self-start rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
+                    <span className="justify-self-start rounded-full border border-line-strong px-2 py-px text-caption text-ink-soft">
                       {t(own ? 'workflow.repositories.own' : 'workflow.repositories.follows')}
                     </span>
                   </li>

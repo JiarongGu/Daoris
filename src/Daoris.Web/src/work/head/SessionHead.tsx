@@ -269,7 +269,7 @@ export function SessionHead({
            as on the page. The state follows the title rather than the far edge (status leads), two lines at
            most, whole on hover. */
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-          <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
+          <h2 className="m-0 line-clamp-2 text-heading font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
             {sessionTitle(session, quest, opening)}
           </h2>
           {state && (
@@ -302,7 +302,7 @@ export function SessionHead({
       ) : ownBranch ? (
         <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
           <span className="text-ink-faint">{t('work.head.itsWork')}</span>
-          <PathText path={ownBranch} className="min-w-0 text-meta text-ink-faint" />
+          <PathText path={ownBranch} className="min-w-0 text-caption text-ink-faint" />
         </p>
       ) : null}
 

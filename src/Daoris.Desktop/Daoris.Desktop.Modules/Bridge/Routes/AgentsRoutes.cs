@@ -603,7 +603,7 @@ public sealed class AgentsRoutes(DriverContext context)
         AccountNames.SignedInSentence(account, owner, called, fresh, apart);
 
     /// <summary>
-    /// Make a credential profile under a name the caller chose: a directory, and nothing else.
+    /// Make an account under a name the caller chose: a directory under a drawn id, and the name beside it.
     /// </summary>
     /// <remarks>
     /// Idempotent, exactly as the CLI verb is — asking for one that exists is an answer, not a
@@ -612,7 +612,7 @@ public sealed class AgentsRoutes(DriverContext context)
     /// </remarks>
     private int ProfileAdd(string harness, string? named)
     {
-        Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(named)));
+        AccountAdd.Make(_loop.Harnesses.Home, harness, Named(named));
         return 0;
     }
 

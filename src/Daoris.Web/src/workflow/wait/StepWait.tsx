@@ -35,7 +35,7 @@ export function StepWait({ step }: { step: RunStep }) {
   return (
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
       <Inline text={waitSaid(t, step.step.kind, step.wait, i18n.language)} />
-      {since && <span className="text-meta text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
+      {since && <span className="text-caption text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
       {step.wait.values?.url && <> · <ExternalLink href={step.wait.values.url}>{t('workflow.wait.open')}</ExternalLink></>}
     </p>
   );

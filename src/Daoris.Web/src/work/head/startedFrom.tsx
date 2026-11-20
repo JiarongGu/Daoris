@@ -83,7 +83,7 @@ export function startingOf(
   return brief ? { kind: 'handedBrief', items: [], brief } : null;
 }
 
-const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left font-sans text-small text-accent hover:underline';
+const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left font-sans text-small text-accent-ink hover:underline';
 
 /** The origins, each its kind and its name, the name a press where it opens. */
 export function OriginLinks({ origins, t }: { origins: readonly Origin[]; t: TFunction }): ReactNode {

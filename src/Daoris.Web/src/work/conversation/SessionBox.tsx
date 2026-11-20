@@ -53,7 +53,7 @@ export function SessionBox({ goes, toHead, ...props }: ComponentProps<typeof Box
             <button
               type="button"
               onClick={toHead}
-              className="cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+              className="cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent-ink hover:underline"
             >
               {t('work.say.toHead')}
             </button>
@@ -134,7 +134,7 @@ function Boxed({
               <button
                 type="button"
                 onClick={() => onOpenSession(went.session)}
-                className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+                className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent-ink hover:underline"
               >
                 {t('work.head.openSession')}
               </button>

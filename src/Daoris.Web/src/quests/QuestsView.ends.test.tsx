@@ -53,7 +53,7 @@ describe('a quest’s closure graph’s end, read from the driver for its page',
     const page = await chooseRow('Expose a streaming budget');
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'work' } }));
     expect(await within(page).findByText(/^Partially closed: #abc123 is no longer done/)).toBeInTheDocument();
-    expect(within(page).getByText(/^Its closing step “close” waits again, and would close #abc123 over that take/)).toHaveClass('text-ink-danger');
+    expect(within(page).getByText(/^Its closing step “close” waits again, and would close #abc123 over that take/)).toHaveClass('text-fail-ink');
     expect(page).not.toHaveTextContent('Closed by you before its end');
 
     await act(async () => { await i18n.changeLanguage('zh'); });

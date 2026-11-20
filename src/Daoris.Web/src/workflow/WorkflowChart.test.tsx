@@ -170,7 +170,7 @@ describe("the Workflow view's run on the flowchart", () => {
     // The pill is the node's, once.
     expect(within(look).getAllByText('waiting on tester: you')).toHaveLength(1);
     expect(within(look).getByText(/Waits for your look in/)).toHaveTextContent('Waits for your look in dev: shown at 01234567.');
-    expect(within(node('The work', run())).getByText('done')).toHaveClass('text-ink-done');
+    expect(within(node('The work', run())).getByText('done')).toHaveClass('text-ok-ink');
     expect(node('The work', run())).toHaveTextContent('this session');
     const landing = node('Landing on a branch', run());
     expect(landing.className).toMatch(/border-dashed/);

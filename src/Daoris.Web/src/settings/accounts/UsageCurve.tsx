@@ -63,11 +63,11 @@ export function CurveChart({ window, points, own, accounts }: {
         {[0, 50, 100].map((used) => (
           <g key={`y${used}`}>
             <line x1={xOf(0)} x2={xOf(100)} y1={yOf(used)} y2={yOf(used)} className="stroke-line" strokeWidth={1} />
-            <text x={BOX.left - 4} y={yOf(used)} textAnchor="end" dominantBaseline="central" className="fill-ink-faint text-meta">{`${used}%`}</text>
+            <text x={BOX.left - 4} y={yOf(used)} textAnchor="end" dominantBaseline="central" className="fill-ink-faint text-caption">{`${used}%`}</text>
           </g>
         ))}
         {[0, 50, 100].map((gone) => (
-          <text key={`x${gone}`} x={xOf(gone)} y={BOX.height - 6} textAnchor={gone === 0 ? 'start' : gone === 100 ? 'end' : 'middle'} className="fill-ink-faint text-meta">
+          <text key={`x${gone}`} x={xOf(gone)} y={BOX.height - 6} textAnchor={gone === 0 ? 'start' : gone === 100 ? 'end' : 'middle'} className="fill-ink-faint text-caption">
             {`${gone}%`}
           </text>
         ))}
@@ -96,14 +96,14 @@ export function CurveChart({ window, points, own, accounts }: {
             <g key={account.name} data-account={account.name}>
               <title>{t('harness.curve.account', { account: account.label, used: `${Math.round(account.used)}%`, gone: `${Math.round(account.gone)}%` })}</title>
               <circle cx={x} cy={y} r={4} className={account.over ? 'fill-warn stroke-page' : 'fill-ink-soft stroke-page'} strokeWidth={2} />
-              <text x={left ? x - 7 : x + 7} y={y} textAnchor={left ? 'end' : 'start'} dominantBaseline="central" className="fill-ink-soft text-meta">
+              <text x={left ? x - 7 : x + 7} y={y} textAnchor={left ? 'end' : 'start'} dominantBaseline="central" className="fill-ink-soft text-caption">
                 {account.label}
               </text>
             </g>
           );
         })}
       </svg>
-      <figcaption className="mt-0.5 text-meta text-ink-faint">{t('harness.curve.axes')}</figcaption>
+      <figcaption className="mt-0.5 text-caption text-ink-faint">{t('harness.curve.axes')}</figcaption>
     </figure>
   );
 }
@@ -175,8 +175,8 @@ export function CurvePoints({ window, points, start, hint, busy, onSave }: {
     <fieldset className="m-0 min-w-0 border-0 p-0">
       <legend className="p-0 text-small font-medium text-ink">{t('harness.curve.points', { window: name })}</legend>
       <div className="mt-1 grid w-fit grid-cols-[auto_auto_auto] items-center gap-x-2 gap-y-1">
-        <span className="text-meta text-ink-faint">{t('harness.curve.goneHead')}</span>
-        <span className="text-meta text-ink-faint">{t('harness.curve.usedHead')}</span>
+        <span className="text-caption text-ink-faint">{t('harness.curve.goneHead')}</span>
+        <span className="text-caption text-ink-faint">{t('harness.curve.usedHead')}</span>
         <span />
         {draft.map(([elapsed, used], at) => (
           // Rows are positions, so a row's key is its place: taking one out renumbers the rest, as the door counts them.

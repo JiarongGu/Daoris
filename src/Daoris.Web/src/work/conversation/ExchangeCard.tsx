@@ -49,15 +49,15 @@ export function ExchangeCardView({ card, revealed, onOpen }: {
       className="rounded-card border border-line border-l-[3px] border-l-line-strong bg-raised px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-        <span className="text-meta text-ink-soft">
+        <span className="text-caption text-ink-soft">
           {card.agent ? t('work.conversation.asked.helper', { agent: card.agent }) : t('work.conversation.asked.anyHelper')}
         </span>
-        <span data-exchange-state className="text-meta text-ink-faint">{said}</span>
+        <span data-exchange-state className="text-caption text-ink-faint">{said}</span>
       </div>
       <p className="m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink">{card.question}</p>
       {card.answer ? (
         <div className="mt-1.5 border-l-2 border-line pl-2">
-          <p className="m-0 text-meta text-ink-faint">{answerHead}</p>
+          <p className="m-0 text-caption text-ink-faint">{answerHead}</p>
           <p data-exchange-answer className={cn('m-0 mt-0.5 whitespace-pre-wrap wrap-anywhere text-body text-ink-soft', !all && 'line-clamp-3')}>
             {card.answer.text}
           </p>
@@ -65,13 +65,13 @@ export function ExchangeCardView({ card, revealed, onOpen }: {
             type="button"
             aria-expanded={all}
             onClick={() => setAll((was) => !was)}
-            className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+            className="border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
           >
             {all ? t('work.conversation.hide') : t('work.conversation.show')}
           </button>
         </div>
       ) : state !== 'refused' && (
-        <p className="m-0 mt-1 text-meta text-ink-faint">{t('work.conversation.asked.comesBack')}</p>
+        <p className="m-0 mt-1 text-caption text-ink-faint">{t('work.conversation.asked.comesBack')}</p>
       )}
       {card.helper && onOpen && (
         <div className="mt-1.5 flex justify-end">
@@ -91,13 +91,13 @@ export function ExchangeCardView({ card, revealed, onOpen }: {
 export function TakenLine({ card, onShow }: { card: ExchangeCard; onShow?: (call: string) => void }) {
   const { t } = useTranslation();
   const words = card.agent ? t('work.conversation.asked.began', { agent: card.agent }) : t('work.conversation.asked.beganAny');
-  if (!onShow) return <p data-taken={card.id} className="m-0 text-meta text-ink-faint">{words}</p>;
+  if (!onShow) return <p data-taken={card.id} className="m-0 text-caption text-ink-faint">{words}</p>;
   return (
     <button
       type="button"
       data-taken={card.id}
       onClick={() => onShow(card.call)}
-      className="inline-flex items-center gap-1 justify-self-start border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+      className="inline-flex items-center gap-1 justify-self-start border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
     >
       {words}
       <Icon name="chevronUp" size={12} />

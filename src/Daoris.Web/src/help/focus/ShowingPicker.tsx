@@ -43,8 +43,8 @@ export function ShowingPicker({ showing, window, repositories, recent, onChoose,
       <>
         <Icon name={icon} size={12} className="shrink-0 self-center text-ink-faint" />
         <span className="min-w-0 truncate">{label}</span>
-        {beside && <>{' '}<span className="min-w-[6ch] shrink truncate text-meta text-ink-faint">{beside}</span></>}
-        {mark && <>{' '}<span className="ml-auto shrink-0 text-meta text-ink-faint">{mark}</span></>}
+        {beside && <>{' '}<span className="min-w-[6ch] shrink truncate text-caption text-ink-faint">{beside}</span></>}
+        {mark && <>{' '}<span className="ml-auto shrink-0 text-caption text-ink-faint">{mark}</span></>}
       </>
     ),
   });

@@ -11,7 +11,7 @@ export function SenderChip({ label, at, children }: { label: string; at: string;
   const { i18n } = useTranslation();
   return (
     <div data-sender className="flex flex-wrap items-baseline justify-between gap-x-2">
-      <span className="min-w-0 text-meta text-ink-faint wrap-anywhere">
+      <span className="min-w-0 text-caption text-ink-faint wrap-anywhere">
         <span>{label}</span>
         {' · '}
         <time dateTime={at}>{clockOf(at, new Date(), i18n.language)}</time>
@@ -29,7 +29,7 @@ export function ChannelDoor({ message, onOpen }: { message: string; onOpen: (mes
       type="button"
       data-channel-door={message}
       onClick={() => onOpen(message)}
-      className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+      className="border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
     >
       {t('work.conversation.inChannel')}
     </button>

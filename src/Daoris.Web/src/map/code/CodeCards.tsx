@@ -36,7 +36,7 @@ export function CodeCard({ id, group, state, back = false }: { id: string; group
           <>
             <span className="min-w-0 truncate text-small font-semibold text-ink">{name}</span>
             {(group.kind === 'folder' || tier === 'chip') && (
-              <span className="shrink-0 font-mono text-meta tabular-nums text-ink-soft">{t('code.times', { count: group.count })}</span>
+              <span className="shrink-0 font-mono text-caption tabular-nums text-ink-soft">{t('code.times', { count: group.count })}</span>
             )}
           </>
         )}
@@ -51,7 +51,7 @@ export function CodeCard({ id, group, state, back = false }: { id: string; group
         state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong', back && 'opacity-40',
       )}
     >
-      {tier !== 'dot' && <span className="truncate font-mono text-meta text-ink">{tier === 'full' ? cutId(id) : lastSegment(id)}</span>}
+      {tier !== 'dot' && <span className="truncate font-mono text-caption text-ink">{tier === 'full' ? cutId(id) : lastSegment(id)}</span>}
       <CardLabel state={state}>{id}</CardLabel>
     </span>
   );

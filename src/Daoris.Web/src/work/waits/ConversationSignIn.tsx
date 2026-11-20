@@ -44,7 +44,7 @@ export function ConversationSignIn({ question, site, pending = false, onAnswer, 
       <div className="mt-1.5">
         <QuestionCard question={question} />
         <SignInAsk site={site} busy={pending || sending} onSigned={onAnswer ? () => { void signed(); } : undefined} />
-        {refused && <p role="status" className="m-0 mt-2 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
+        {refused && <p role="status" className="m-0 mt-2 text-small text-fail-ink [overflow-wrap:anywhere]">{refused}</p>}
       </div>
       <p className="m-0 mt-2 flex flex-wrap items-center gap-x-2 text-small text-ink-faint">
         <span>{t('work.wait.signIn.conversation')}</span>

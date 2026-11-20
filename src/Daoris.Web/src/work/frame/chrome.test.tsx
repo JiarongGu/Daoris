@@ -136,7 +136,7 @@ describe('ActivityBar', () => {
     for (const figure of ['1', '3']) {
       expect(screen.getByText(figure).className).toContain('border-st-open');
       expect(screen.getByText(figure).className).toContain('text-ink-open');
-      expect(screen.getByText(figure).className).not.toContain('text-accent');
+      expect(screen.getByText(figure).className).not.toContain('text-accent-ink');
     }
   });
 
@@ -150,7 +150,7 @@ describe('ActivityBar', () => {
 
     const sessions = screen.getByRole('button', { name: 'Sessions' });
     expect(sessions.querySelector('[data-running]')).not.toBeNull();
-    expect(sessions.querySelector('[data-running]')!.className).toContain('bg-st-taken');
+    expect(sessions.querySelector('[data-running]')!.className).toContain('bg-live');
     expect(within(sessions).queryByText(/^\d+$/)).toBeNull();
     expect(sessions).toHaveAccessibleDescription('3 under way');
     await userEvent.hover(sessions);

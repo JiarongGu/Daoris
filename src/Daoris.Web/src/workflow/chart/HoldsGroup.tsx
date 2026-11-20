@@ -8,7 +8,7 @@ import type { ChartStep } from './stepKinds';
 // members and the press that opens them. Opened, its first member carries the press that folds them again (`HoldsPress`, which `StepNode`
 // draws). A caller opens it where a refusal lies inside it, by handing `graphFlow` the group open.
 
-const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline';
+const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft underline-offset-2 hover:text-ink hover:underline';
 
 /** The press that opens the folded group or folds it again; Enter on the node does the same. */
 export function HoldsPress({ count, open, onPress }: { count: number; open: boolean; onPress: (() => void) | undefined }) {

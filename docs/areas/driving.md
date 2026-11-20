@@ -200,6 +200,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     to the line, moves none of the run's steps (workflows rule 17, D319).
     A declined quest (an abandon declines it) has ended its line: words kept on its last session, a limited one's included, go on
     in nothing, so the line is not pending and its sessions archive at the next look. (D137, D188)
+    Words a record could not go on with are marked by their ids (`<session>.cannot.json`) and the look leaves them waiting, but
+    words held for the record's own account (why `account`) are read again at each look (`UnableLook`, `HeldAccountWords`): once
+    that account is usable again, five minutes or more after the mark, they go on in its own conversation; while it stays
+    unusable past half an hour they go on in a new session on a ready account, in its tree (a closed quest's session through
+    the shell's runner, as for an account that cools); another agent's findings alone, which no new session is handed, stay with
+    the person they went to. The dock says which and why (`held  session …`). A session awaiting its step whose words are so
+    held is no longer reached by them, so *Go on in a new session* takes it. (D348)
 29. Answers alone that would take a line past its answers-alone rule's number in a row wait for the person; the hold's note and
     an ended conversation's refusal name that number. (D188, D229)
 

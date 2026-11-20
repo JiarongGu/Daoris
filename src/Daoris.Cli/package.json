@@ -41,9 +41,9 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test": "node --test \"test/**/*.ts\"",
-    "tooltests": "node -e \"require('fs').mkdirSync('../../_fixtures/test-timing',{recursive:true})\" && node --test --test-timeout=1800000 --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=../../_fixtures/test-timing/tool-tests.xml \"tool-test/**/*.test.ts\" ../../tools/team-briefs.test.mjs",
-    "tooltests:e2e": "node -e \"require('fs').mkdirSync('../../_fixtures/test-timing',{recursive:true})\" && node --test --test-concurrency=4 --test-timeout=1800000 --test-force-exit --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=../../_fixtures/test-timing/tool-e2e.xml \"tool-test/**/*.e2e.ts\" ../../tools/as-merged.test.mjs && vitest run --config ../../tools/vitest.config.ts --project e2e --reporter=default --reporter=json --outputFile.json=_fixtures/test-timing/tool-e2e.json",
+    "test": "node ../../tools/test-sets.mjs run cli",
+    "tooltests": "node ../../tools/test-sets.mjs run --gate tool-tests",
+    "tooltests:e2e": "node ../../tools/test-sets.mjs run --gate tool-e2e",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build && node ../../tools/stage-package.mjs",

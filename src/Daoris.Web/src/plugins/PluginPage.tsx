@@ -46,7 +46,7 @@ export function PointRows({ points, kitPoints }: { points: string[]; kitPoints?:
         const known = kitPoints?.find((each) => each.name === point);
         return (
           <li key={point} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small">
-            <code className="font-mono text-meta text-ink">{point}</code>
+            <code className="font-mono text-caption text-ink">{point}</code>
             {known?.kind && <span className="text-ink-soft">{pointGloss(t, known)}</span>}
           </li>
         );
@@ -107,7 +107,7 @@ function HelpServerRow({ plugin, server, onHelp, full }: {
   return (
     <li className="flex flex-col gap-0.5 text-small text-ink-soft">
       <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <code className="font-mono text-meta text-ink">{server.name}</code>
+        <code className="font-mono text-caption text-ink">{server.name}</code>
         <span>{t(full && state !== 'refused' ? 'plugin.help.state.full'
           : state === 'waits' && server.changed ? 'plugin.help.state.changed' : `plugin.help.state.${state}`)}</span>
       </span>
@@ -178,7 +178,7 @@ export function SkillRows({ skills }: { skills?: SkillShown[] }) {
         {skills.map((skill) => (
           <li key={skill.name} className="flex flex-col gap-0.5 text-small">
             <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-              <code className="font-mono text-meta text-ink">{skill.name}</code>
+              <code className="font-mono text-caption text-ink">{skill.name}</code>
               <span className="text-ink-soft">{t(skillTo(skill.to))}</span>
             </span>
             {skill.problem && <span className="text-ink-soft"><Inline text={skill.problem} /></span>}
@@ -209,7 +209,7 @@ export function StepRows({ plugin, steps, resources }: { plugin: string; steps?:
             {steps.map((step) => (
               <li key={step.name} className="flex flex-col gap-0.5 text-small text-ink-soft">
                 <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                  <code className="font-mono text-meta text-ink">{step.name}</code>
+                  <code className="font-mono text-caption text-ink">{step.name}</code>
                   <span>{t(`plugin.steps.reach.${step.reach}`, { defaultValue: step.reach })}</span>
                   <span className="text-ink-faint">{t('plugin.steps.version', { version: step.version })}</span>
                 </span>
@@ -227,7 +227,7 @@ export function StepRows({ plugin, steps, resources }: { plugin: string; steps?:
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {resources.map((resource) => (
               <li key={resource.schema} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-small">
-                <code className="font-mono text-meta text-ink">{resource.schema}</code>
+                <code className="font-mono text-caption text-ink">{resource.schema}</code>
                 <span className="text-ink-soft">{t(`plugin.resources.role.${resource.role}`, { defaultValue: resource.role })}</span>
               </li>
             ))}
@@ -243,7 +243,7 @@ export function StepRows({ plugin, steps, resources }: { plugin: string; steps?:
 export function NameRows({ names }: { names: string[] }) {
   return (
     <ul className="m-0 flex list-none flex-col gap-1 p-0">
-      {names.map((name) => <li key={name}><code className="font-mono text-meta text-ink">{name}</code></li>)}
+      {names.map((name) => <li key={name}><code className="font-mono text-caption text-ink">{name}</code></li>)}
     </ul>
   );
 }
@@ -538,7 +538,7 @@ function PluginAbout({
       </PageSection>
 
       {/* The two doors stay in sight: only the terminal's verbs that exist. */}
-      <div className="mt-8 flex flex-col gap-1 border-t border-line pt-3 text-meta text-ink-faint">
+      <div className="mt-8 flex flex-col gap-1 border-t border-line pt-3 text-caption text-ink-faint">
         <p className="m-0"><Inline text={t('plugin.page.terminal', { id: plugin.id })} /></p>
         {speaks(plugin) && <p className="m-0"><Inline text={t('plugin.page.terminalTry', { id: plugin.id })} /></p>}
       </div>

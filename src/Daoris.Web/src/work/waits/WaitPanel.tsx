@@ -147,7 +147,7 @@ export function WaitPanel({ height, onResize, onReset, controls, children }: {
             event.preventDefault();
           }}
           // Over the panel's top border, 6px tall and centred on it, so it takes no height of its own.
-          className="absolute inset-x-0 -top-[3px] z-10 h-1.5 cursor-ns-resize bg-transparent transition-colors duration-(--speed) hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none"
+          className="absolute inset-x-0 -top-[3px] z-10 h-1.5 cursor-ns-resize bg-transparent transition-colors duration-(--duration-quick) hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none"
         />
       )}
       {children}

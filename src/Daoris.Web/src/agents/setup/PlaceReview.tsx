@@ -133,7 +133,7 @@ export function PlaceReview({
                     {refused.map((each: PlaceRefusal) => (
                       <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
                         <span>
-                          {each.repository && <span className="mr-1.5 font-mono text-meta text-ink">{each.repository}</span>}
+                          {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
                           <Inline text={each.sentence} />
                         </span>
                         <Button variant="ghost" className="min-h-0 border border-line px-2.5 py-0.5 text-small" onClick={() => onBack(PARTS.find((part) => part === each.part) ?? 'delivery')}>
@@ -171,7 +171,7 @@ export function PlaceReview({
                 <Section id={`${own}-yours`} title={t('agents.setup.set.yours')}>
                   {lowers.map((each) => (
                     <p key={`${each.repository}${each.said}`} className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink [overflow-wrap:anywhere]">
-                      {several && <span className="font-mono text-meta">{each.repository}: </span>}
+                      {several && <span className="font-mono text-caption">{each.repository}: </span>}
                       <Inline text={each.said} />
                     </p>
                   ))}
@@ -252,7 +252,7 @@ export function PlaceReview({
       )}
 
       {plan !== null && (
-        <details className="m-0 min-w-0 text-meta text-ink-faint">
+        <details className="m-0 min-w-0 text-caption text-ink-faint">
           <summary className="cursor-pointer">{t('agents.setup.set.terminal')}</summary>
           <code className="mt-1 block font-mono [overflow-wrap:anywhere]">{plan.terminal}</code>
         </details>

@@ -23,7 +23,7 @@ export function HoldFields({ hold, disabled, onChange }: { hold: HoldDraft; disa
     <div className="grid gap-2">
       {hold.kind === 'supervisor' && (
         <fieldset className="m-0 grid gap-1 border-0 p-0">
-          <legend className="mb-1 p-0 text-meta text-ink-faint">{t('agents.setup.roles.hold.field.decides')}</legend>
+          <legend className="mb-1 p-0 text-caption text-ink-faint">{t('agents.setup.roles.hold.field.decides')}</legend>
           {fixed ? (
             <p className="m-0 text-small text-ink-soft">{t('agents.setup.roles.hold.decides.machine')}</p>
           ) : (
@@ -43,11 +43,11 @@ export function HoldFields({ hold, disabled, onChange }: { hold: HoldDraft; disa
         </fieldset>
       )}
       <fieldset className="m-0 grid gap-1 border-0 p-0">
-        <legend className="mb-1 p-0 text-meta text-ink-faint">{t('agents.setup.roles.hold.field.acts')}</legend>
+        <legend className="mb-1 p-0 text-caption text-ink-faint">{t('agents.setup.roles.hold.field.acts')}</legend>
         {hold.kind === 'supervisor'
           ? decidedKinds(hold.decides).map((kind) => (
             <div key={kind} role="group" aria-label={t(`agents.setup.roles.hold.decides.${kind}`)} className="grid gap-1">
-              <span className="text-meta text-ink-faint">
+              <span className="text-caption text-ink-faint">
                 {t(`agents.setup.roles.hold.decides.${kind}`)}
                 {AT_ONCE.includes(kind) ? ` · ${t('agents.setup.roles.hold.atOnce')}` : ''}
               </span>

@@ -34,7 +34,7 @@ export function TurnFoldLine({ line, open, onToggle }: { line: FoldLine; open: b
     >
       <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} />
       {words}
-      {failed && <span className="text-ink-danger">{`· ${failed}`}</span>}
+      {failed && <span className="text-fail-ink">{`· ${failed}`}</span>}
     </button>
   );
 }

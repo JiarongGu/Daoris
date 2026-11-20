@@ -41,8 +41,8 @@ export function MemberThread({ lead, ask, working, onBack, onAskAgain, onPass, b
     <section data-member-thread className="grid gap-1.5 rounded-control border-l-[3px] border-l-accent bg-accent-soft/30 px-3 py-2">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="min-w-0 text-small text-ink wrap-anywhere">{t('work.team.thread.for', { title: lead })}</span>
-        <span className="text-meta text-ink-faint">{t('work.team.role.helper')} · {t('work.team.thread.confined')}</span>
-        {onBack && <button type="button" className="text-small text-accent underline" onClick={onBack}>{t('work.team.thread.back')}</button>}
+        <span className="text-caption text-ink-faint">{t('work.team.role.helper')} · {t('work.team.thread.confined')}</span>
+        {onBack && <button type="button" className="text-small text-accent-ink underline" onClick={onBack}>{t('work.team.thread.back')}</button>}
       </div>
       {working && <p className="m-0 text-small text-ink-soft">{t('work.team.thread.working')}</p>}
       {!working && went && <p data-went={went} className="m-0 text-small text-ink-soft">{t(`work.team.thread.went.${went}`, { lead })}</p>}

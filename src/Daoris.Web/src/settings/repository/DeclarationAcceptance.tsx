@@ -95,7 +95,7 @@ export function DeclarationAcceptance({ repository, standing, busy = false, onAc
           <summary className="cursor-pointer text-ink-soft">{t('settings.integration.readFile')}</summary>
           <pre
             aria-label={t('settings.integration.declaration', { branch: tip.line })}
-            className="mt-1 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-meta text-ink"
+            className="mt-1 max-h-48 overflow-auto rounded-control border border-line bg-raised px-2 py-1 font-mono text-caption text-ink"
           >
             {standing.declaration}
           </pre>

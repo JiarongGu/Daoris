@@ -142,7 +142,7 @@ export function ReviewGate({
       aria-labelledby={headingId}
       className={cn(
         'grid min-w-0 gap-2 rounded-card border border-line border-l-[3px] bg-raised px-3 py-2.5',
-        REVIEW_TONE[state] === 'open' ? 'border-l-st-open' : REVIEW_TONE[state] === 'done' ? 'border-l-st-done' : 'border-l-line-strong',
+        REVIEW_TONE[state] === 'open' ? 'border-l-st-open' : REVIEW_TONE[state] === 'done' ? 'border-l-ok' : 'border-l-line-strong',
         className,
       )}
     >
@@ -158,7 +158,7 @@ export function ReviewGate({
       {sentence && <p className="m-0 text-small text-ink-soft"><Inline text={sentence} /></p>}
       {/* A look that cannot start says the driver's words beneath: a chat run's name the terminal's door, `workflow skip`. */}
       {said && (state === 'unread' || state === 'cannot-start') && (
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('review.driverSaid', { said })} /></p>
+        <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('review.driverSaid', { said })} /></p>
       )}
       {proposal && state === 'not-shown' && (
         <p className="m-0 border-l-[3px] border-line-strong pl-2 text-small text-ink-soft">
@@ -190,7 +190,7 @@ export function ReviewGate({
       )}
       {/* The terminal's way to the two choices the page presses here: needs the quest to name. */}
       {quest && (offered.includes('skip') || offered.includes('setUp')) && asking === null && (
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
+        <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]">
           <Inline text={t('review.choiceTwin', { quest: shellWord(quest, '<quest>') })} />
         </p>
       )}
@@ -243,7 +243,7 @@ export function ReviewGate({
 
       {older.length > 0 && (
         <div className="grid gap-1.5 border-t border-line pt-2">
-          <h4 className="m-0 text-meta font-semibold text-ink-faint">{t('review.setUp.older')}</h4>
+          <h4 className="m-0 text-caption font-semibold text-ink-faint">{t('review.setUp.older')}</h4>
           {older.map((setUp) => (
             <SetUpShown key={`${setUp.machine ?? ''}:${setUp.sequence ?? setUp.commit}`} setUp={setUp} step={step!} />
           ))}
@@ -278,7 +278,7 @@ function SetUpShown({ setUp, step, served = null, lead, full = false }: {
   const commit = shortCommit(setUp.commit);
   return (
     <div className="grid min-w-0 gap-1 text-small">
-      {lead && <h4 className="m-0 text-meta font-semibold text-ink-faint">{lead}</h4>}
+      {lead && <h4 className="m-0 text-caption font-semibold text-ink-faint">{lead}</h4>}
       {setUp.shows
         ? <p className="m-0 whitespace-pre-wrap text-body text-ink [overflow-wrap:anywhere]">{setUp.shows}</p>
         : <p className="m-0 text-ink-faint">{t('review.setUp.nothingSaid')}</p>}
@@ -286,8 +286,8 @@ function SetUpShown({ setUp, step, served = null, lead, full = false }: {
         <span className="text-ink-faint">{t('review.setUp.where')}</span>
         {setUp.look
           ? setUp.local === false
-            ? <ExternalLink href={setUp.look} className="min-w-0 text-accent underline-offset-2 hover:underline [overflow-wrap:anywhere]">{setUp.look}</ExternalLink>
-            : <CodeText text={setUp.look} className="min-w-0 text-meta" />
+            ? <ExternalLink href={setUp.look} className="min-w-0 text-accent-ink underline-offset-2 hover:underline [overflow-wrap:anywhere]">{setUp.look}</ExternalLink>
+            : <CodeText text={setUp.look} className="min-w-0 text-caption" />
           : <span className="text-ink-soft">{t('review.setUp.elsewhere', { machine: setUp.machine ?? '' })}</span>}
       </p>
       {full && served !== null && setUp.local !== false && (
@@ -300,7 +300,7 @@ function SetUpShown({ setUp, step, served = null, lead, full = false }: {
           <span className="text-ink-faint">{t('review.setUp.again')} · </span>{setUp.again}
         </p>
       )}
-      <p className="m-0 text-meta text-ink-faint">
+      <p className="m-0 text-caption text-ink-faint">
         <Inline text={setUp.session
           ? t('review.setUp.by', { session: setUp.session, ago: when, commit })
           : t('review.setUp.own', { ago: when, commit })} />

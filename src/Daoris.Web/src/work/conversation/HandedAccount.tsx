@@ -37,7 +37,7 @@ export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
   const rule = ruled ? 'mt-1.5 border-t border-line pt-1.5' : 'mt-0.5';
 
   if (!account) {
-    return <p className={cn('m-0 text-meta text-ink-faint', rule)}>{t('work.handed.notKept')}</p>;
+    return <p className={cn('m-0 text-caption text-ink-faint', rule)}>{t('work.handed.notKept')}</p>;
   }
 
   const view = handedView(t, (key) => i18n.exists(key), account, i18n.language);
@@ -52,7 +52,7 @@ export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
-        className="flex w-full min-w-0 cursor-pointer items-start gap-1.5 border-0 bg-transparent p-0 text-left text-meta text-ink-faint hover:text-ink"
+        className="flex w-full min-w-0 cursor-pointer items-start gap-1.5 border-0 bg-transparent p-0 text-left text-caption text-ink-faint hover:text-ink"
       >
         <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} className="mt-0.5 shrink-0" />
         <span className="min-w-0">
@@ -64,7 +64,7 @@ export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
         <>
           <table className="mt-1.5 w-full border-collapse text-small">
             <thead>
-              <tr className="text-meta text-ink-faint">
+              <tr className="text-caption text-ink-faint">
                 <th scope="col" className="pb-0.5 pr-3 text-left font-normal">{t('work.handed.column.section')}</th>
                 <th scope="col" className="pb-0.5 pr-3 text-right font-normal">{t('work.handed.column.size')}</th>
                 <th scope="col" className="pb-0.5 text-left font-normal">{t('work.handed.column.source')}</th>
@@ -77,7 +77,7 @@ export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
             </tbody>
           </table>
           {view.absent.length > 0 && (
-            <p className="m-0 mt-1.5 text-meta text-ink-faint">
+            <p className="m-0 mt-1.5 text-caption text-ink-faint">
               {view.absent.some((line) => line.recorded)
                 ? view.absent.map((line, index) => (
                   <span key={index} className="mr-2 inline">
@@ -110,13 +110,13 @@ function Row({ row }: { row: HandedRow }) {
         <th scope="row" className="py-1 pr-3 text-left font-normal text-ink">
           {row.name.text}
           {row.beside && (
-            <span className="ml-1.5 inline-block rounded-control border border-line px-1 text-meta leading-[1.4] text-ink-faint">
+            <span className="ml-1.5 inline-block rounded-control border border-line px-1 text-caption leading-[1.4] text-ink-faint">
               {t('work.handed.beside')}
             </span>
           )}
         </th>
         {/* A character count is a figure set in the column's mono; the rules handed beside it are counted in words. */}
-        <td className={cn('whitespace-nowrap py-1 pr-3 text-right text-meta text-ink-soft', !row.beside && 'font-mono tabular-nums')}>
+        <td className={cn('whitespace-nowrap py-1 pr-3 text-right text-caption text-ink-soft', !row.beside && 'font-mono tabular-nums')}>
           {row.size ?? '—'}
         </td>
         <td className="py-1 text-ink-faint wrap-anywhere">
@@ -128,7 +128,7 @@ function Row({ row }: { row: HandedRow }) {
       {row.cuts.map((cut, index) => (
         <tr key={index} className="align-baseline">
           <td colSpan={3} className="pb-1">
-            <span className="ml-3 block border-l-2 border-line-strong pl-2 text-meta text-ink-soft">
+            <span className="ml-3 block border-l-2 border-line-strong pl-2 text-caption text-ink-soft">
               {cut.recorded ? <Said line={cut} /> : cut.text}
             </span>
           </td>
@@ -143,7 +143,7 @@ function Said({ line }: { line: HandedLine }) {
   const { t } = useTranslation();
   return (
     <>
-      <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-meta leading-[1.4] text-ink-faint">
+      <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-caption leading-[1.4] text-ink-faint">
         {t('work.handed.recorded')}
       </span>
       <Inline text={line.text} />

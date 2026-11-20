@@ -133,8 +133,8 @@ describe('the workspace map', () => {
     await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
     const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
     // The pill's line in the hue, its word in that hue's ink.
-    expect(within(detail).getByText('working').getAttribute('class')).toContain('border-st-taken');
-    expect(within(detail).getByText('working').getAttribute('class')).toContain('text-ink-taken');
+    expect(within(detail).getByText('working').getAttribute('class')).toContain('border-live');
+    expect(within(detail).getByText('working').getAttribute('class')).toContain('text-live-ink');
 
     SESSIONS[0] = { ...SESSIONS[0]!, state: 'awaiting-person' };
     try {
@@ -230,7 +230,7 @@ describe('the workspace map', () => {
       show();
       const line = await screen.findByRole('button', { name: '2 quests from game to engine, a session working on one now' });
       // The rail's hue for working, dashed like the node's ring: never hue alone.
-      expect(line.querySelector('circle[stroke-dasharray]')!.getAttribute('class')).toContain('stroke-st-taken');
+      expect(line.querySelector('circle[stroke-dasharray]')!.getAttribute('class')).toContain('stroke-live');
       expect(screen.getByRole('button', { name: '1 quest your asks became on game' }).querySelector('circle[stroke-dasharray]')).toBeNull();
     } finally {
       SESSIONS[0] = { id: 's1', repository: 'engine', door: 'stub', state: 'working', created: '', updated: '' };

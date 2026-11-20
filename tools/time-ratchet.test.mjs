@@ -5,49 +5,77 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writ
 import { join } from 'node:path';
 import { GATE_START, LIMITS, checkTimes, limitFor, readJunit, readTrx, readVitest, reasonLines, reasonProblems, runStart, scanRecords, settleLoaded, slowestClasses, tighten } from './time-ratchet.mjs';
 import { isLoaded, readMarks, stampLoad } from './time-load.mjs';
-import { judgeByReach, splitByReach, unitsOf } from './time-reach.mjs';
+import { judgeByOwner, splitByOwner, unitsOf } from './time-reach.mjs';
 
 const trx = (rows) => `<TestRun><Results>${rows.map(([name, duration, outcome = 'Passed']) =>
   `<UnitTestResult executionId="x" testName="${name}" duration="${duration}" outcome="${outcome}" />`).join('')}</Results></TestRun>`;
 
-const worldOf = (reads) => ({
-  units: new Map(Object.keys(reads).map((unit) => [unit, { unit }])),
-  reaches: (unit, path) => reads[unit.unit].includes(path),
-});
+const worldOf = (files) => ({ units: new Map(Object.entries(files).map(([unit, file]) => [unit, { unit, file }])), reaches: () => true });
 const DOTNET_KEY = 'D.Tests.LineAccountTests.A_recorded_pick(x: 1)';
 const WEB_KEY = 'src/Web/a/Box.test.tsx::opens';
+const NO_RECORD = () => null;
 
-test('a slow test is the merge\'s where the census says a changed path reaches it, whatever the path is named', () => {
-  const world = worldOf({ 'D.Tests.LineAccountTests': ['src/D/Ports/Driver.cs'], 'src/Web/a/Box.test.tsx': ['src/Web/a/Box.test.tsx'] });
+test('a slow test is the merge\'s only where the merge adds or changes its file, or it ran over half slower than main\'s alone record', () => {
+  const world = worldOf({ 'D.Tests.LineAccountTests': 'src/D.Tests/LineAccountTests.cs', 'src/Web/a/Box.test.tsx': 'src/Web/a/Box.test.tsx' });
   const found = { [DOTNET_KEY]: { ms: 54_000, limit: 30_000 }, [WEB_KEY]: { ms: 11_000, limit: 10_000 } };
-  const named = splitByReach(found, ['src/D/Ports/Driver.cs'], world);
-  assert.deepEqual(Object.keys(named.mine), [DOTNET_KEY], 'a file named for another subject, which the class reads');
-  assert.deepEqual(Object.keys(named.others), [WEB_KEY]);
-  const unrelated = splitByReach(found, ['docs/areas/x.md', 'src/D/Line/LineAccount.cs'], world);
-  assert.deepEqual(unrelated.mine, {}, 'a file named for the class\'s subject, which it does not read, is not reached');
-  assert.equal(Object.keys(splitByReach(found, [WEB_KEY.split('::')[0]], world).mine)[0], WEB_KEY, 'the test\'s own file');
-  assert.equal(Object.keys(splitByReach({ 'Nowhere.Unknown.Case': { ms: 1, limit: 0 } }, ['docs/x.md'], world).mine).length, 1, 'a test the census holds no unit for is judged');
+  const reads = splitByOwner(found, { changed: ['src/D/Ports/Driver.cs'], world, mainMs: NO_RECORD });
+  assert.deepEqual(reads.mine, {}, 'a path the class reads is not its file: the slowness is main\'s');
+  assert.deepEqual(Object.keys(reads.inherited), [DOTNET_KEY, WEB_KEY]);
+  assert.deepEqual(Object.keys(splitByOwner(found, { changed: ['src/D.Tests/LineAccountTests.cs'], world, mainMs: NO_RECORD }).mine), [DOTNET_KEY], 'its class file changed');
+  assert.deepEqual(Object.keys(splitByOwner(found, { changed: [WEB_KEY.split('::')[0]], world, mainMs: NO_RECORD }).mine), [WEB_KEY], 'the test\'s own file');
+  const slower = splitByOwner(found, { changed: [], world, mainMs: (key) => (key === DOTNET_KEY ? 40_000 : 7_000) });
+  assert.deepEqual(Object.keys(slower.mine), [WEB_KEY], '11 s against main\'s 7 s alone is over half slower; 54 s against 40 s is not');
+  assert.deepEqual([slower.mine[WEB_KEY].main, slower.inherited[DOTNET_KEY].main], [7_000, 40_000]);
+  assert.equal(Object.keys(splitByOwner({ 'Nowhere.Unknown.Case': { ms: 1, limit: 0 } }, { changed: ['docs/x.md'], world, mainMs: NO_RECORD }).mine).length, 1, 'a test of no known file is judged');
   assert.deepEqual(unitsOf(found, world), ['D.Tests.LineAccountTests', 'src/Web/a/Box.test.tsx']);
 });
 
-test('a reached test over its limit is measured again alone and its alone time decides; nothing over reads no census', async () => {
-  const world = worldOf({ 'D.Tests.LineAccountTests': ['src/D/Ports/Driver.cs'] });
+test('a test the merge owns is measured again alone and its alone time decides; an inherited one is not measured; nothing over reads no census', async () => {
+  const world = worldOf({ 'D.Tests.LineAccountTests': 'src/D.Tests/LineAccountTests.cs' });
   const over = (ms) => ({ over: { [DOTNET_KEY]: { ms, limit: 30_000 } }, seen: new Set([DOTNET_KEY]) });
   const run = async (scans, changed) => {
     const asked = { world: 0, measured: [] };
-    const result = await judgeByReach({ scan: () => scans.shift(), changed, world: async () => { asked.world += 1; return world; }, measure: (units) => asked.measured.push(units) });
+    const result = await judgeByOwner({ scan: () => scans.shift(), changed, mainMs: NO_RECORD, world: async () => { asked.world += 1; return world; }, measure: (units) => asked.measured.push(units) });
     return { ...asked, result };
   };
-  const fast = await run([over(54_000), { over: {}, seen: new Set([DOTNET_KEY]) }], ['src/D/Ports/Driver.cs']);
+  const own = ['src/D.Tests/LineAccountTests.cs'];
+  const fast = await run([over(54_000), { over: {}, seen: new Set([DOTNET_KEY]) }], own);
   assert.deepEqual(fast.measured, [['D.Tests.LineAccountTests']]);
   assert.deepEqual(fast.result.mine, {}, 'fast alone: the load was the machine\'s');
-  const slow = await run([over(54_000), over(41_000)], ['src/D/Ports/Driver.cs']);
-  assert.deepEqual(slow.result.mine, { [DOTNET_KEY]: { ms: 41_000, limit: 30_000 } }, 'slow alone: its alone time is judged');
-  const unreached = await run([over(54_000)], ['docs/areas/x.md']);
-  assert.deepEqual(unreached.measured, [], 'a test no path reaches is not measured');
-  assert.deepEqual(Object.keys(unreached.result.others), [DOTNET_KEY]);
-  const none = await run([{ over: {}, seen: new Set() }], ['src/D/Ports/Driver.cs']);
+  const slow = await run([over(54_000), over(41_000)], own);
+  assert.deepEqual(slow.result.mine, { [DOTNET_KEY]: { ms: 41_000, limit: 30_000, why: 'changed' } }, 'slow alone: its alone time is judged');
+  const inherited = await run([over(54_000)], ['src/D/Ports/Driver.cs']);
+  assert.deepEqual(inherited.measured, [], 'a test the merge does not own is not measured');
+  assert.deepEqual(Object.keys(inherited.result.inherited), [DOTNET_KEY]);
+  const none = await run([{ over: {}, seen: new Set() }], own);
   assert.equal(none.world, 0);
+});
+
+test('the fourteen ratchet reds of 2026-11-17 to 19 replayed, main keeping no alone record yet: each breach is inherited, and only a planted slowdown in a changed test fails', () => {
+  const FLOW = 'tools/merge/flow.test.ts::a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails';
+  const census = (name) => `Daoris.Desktop.Driver.Tests.${name}`;
+  const units = Object.fromEntries(['CensusReachTests', 'SharedCompileTests', 'SettledReadersCensusTests', 'CheckoutWritersCensusTests', 'ContinuedReadersCensusTests',
+    'SayKeysCensusTests', 'DeclarationLiteralsCensusTests', 'LineAccountTests', 'StructureTests', 'HomePurgeEdgeTests'].map((name) => [census(name), `src/D.Tests/${name}.cs`]));
+  const world = worldOf({ ...units, 'tools/merge/flow.test.ts': 'tools/merge/flow.test.ts' });
+  const at = (name, ms) => [`${census(name)}.Case`, { ms, limit: 30_000 }];
+  const flow = (ms) => [FLOW, { ms, limit: 10_000 }];
+  const week = [
+    [at('CensusReachTests', 69_844), at('SharedCompileTests', 33_199)],
+    [at('SettledReadersCensusTests', 76_930), at('CheckoutWritersCensusTests', 78_251), at('ContinuedReadersCensusTests', 79_035), at('CensusReachTests', 77_524), at('SharedCompileTests', 68_008), at('SayKeysCensusTests', 77_972)],
+    [at('DeclarationLiteralsCensusTests', 48_506)], [at('LineAccountTests', 34_465)], [flow(10_235)], [flow(11_263)], [flow(16_340)],
+    [at('DeclarationLiteralsCensusTests', 54_519), at('StructureTests', 34_154)], [flow(12_078)], [flow(20_009)], [at('HomePurgeEdgeTests', 32_135)],
+    [flow(12_422)], [flow(30_631)], [flow(10_184)],
+  ];
+  assert.equal(week.flat().length, 21);
+  const changed = ['tools/merge/flow.ts', 'tools/merge/reached-run.ts', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Heavy/HeavyRun.cs', 'docs/areas/driving.md'];
+  for (const breaches of week) {
+    const { mine, inherited } = splitByOwner(Object.fromEntries(breaches), { changed, world, mainMs: NO_RECORD });
+    assert.deepEqual(checkTimes(mine, {}), [], 'none of the week\'s breaches fails the merge');
+    assert.equal(Object.keys(inherited).length, breaches.length);
+  }
+  const planted = { ...Object.fromEntries(week[1]), [`${census('LineAccountTests')}.Planted`]: { ms: 45_000, limit: 30_000 } };
+  const { mine } = splitByOwner(planted, { changed: [...changed, units[census('LineAccountTests')]], world, mainMs: NO_RECORD });
+  assert.deepEqual(checkTimes(mine, {}).map((line) => line.split(' ')[0]), [`${census('LineAccountTests')}.Planted`]);
 });
 
 test('a reached command\'s record, written when a class is measured again alone, is read against its suite\'s limit', () => {

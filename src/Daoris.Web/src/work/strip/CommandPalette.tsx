@@ -138,7 +138,7 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
               >
                 <Icon name={command.icon} size={15} />
                 <span className="min-w-0 flex-1 truncate">{command.title}</span>
-                <span className="shrink-0 text-meta text-ink-faint">{command.group}</span>
+                <span className="shrink-0 text-caption text-ink-faint">{command.group}</span>
               </button>
             </li>
           ))}

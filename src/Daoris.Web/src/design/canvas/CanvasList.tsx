@@ -40,7 +40,7 @@ export function CanvasList({ label, groups, selected, onPick }: {
                   className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-small font-medium text-ink hover:bg-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                 >
                   <span className="truncate">{group.title}</span>
-                  <span className="shrink-0 font-mono text-meta text-ink-soft">{t('canvas.items', { count: group.items.length })}</span>
+                  <span className="shrink-0 font-mono text-caption text-ink-soft">{t('canvas.items', { count: group.items.length })}</span>
                 </button>
               </h3>
             )}

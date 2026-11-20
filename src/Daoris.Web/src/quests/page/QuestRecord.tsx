@@ -61,7 +61,7 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
           <SectionTitle>{t('quests.session.title')}</SectionTitle>
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone={SESSION_TONE[shown ?? session.state]}>{t(shownKey(shown ?? session.state))}</Pill>
-            <span className="font-mono text-meta text-ink-faint">
+            <span className="font-mono text-caption text-ink-faint">
               {session.id} · {sessionTool(session, false, nameOf)}
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>

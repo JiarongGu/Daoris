@@ -28,6 +28,10 @@ public sealed class StoredOldNamesCensusTests : IDisposable
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Domain/WorkEventGrammar.cs",
             "Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Relay/RelaySaid.cs",
         ],
+        ["the desktop store's bindings column an account id's move reads"] =
+        [
+            "Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountIds/AccountIdRecordStores.cs",
+        ],
         ["driver.json's staffing keys"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Roles/RoleStaffing.cs",

@@ -50,7 +50,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
     <section
       aria-label={t('work.attention.title')}
       aria-busy={resyncing || undefined}
-      className={cn('mb-5 grid gap-2', resyncing && 'opacity-60 transition-opacity duration-(--speed)')}
+      className={cn('mb-5 grid gap-2', resyncing && 'opacity-60 transition-opacity duration-(--duration-quick)')}
     >
       <SectionTitle>{t('work.attention.title')}</SectionTitle>
       {body}
@@ -107,7 +107,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
             <span className="min-w-0 text-body text-ink">{line.label}</span>
             {/* A wait's figure wears open's ink, the bell's, a press's the warning hue; Messages' and Done and failed's count items and
                 notices, which wait on nobody, so theirs is neutral. */}
-            <span className={cn('font-mono text-meta tabular-nums', line.id === 'presses' ? 'text-warn'
+            <span className={cn('font-mono text-caption tabular-nums', line.id === 'presses' ? 'text-warn'
               : line.id === 'messages' || line.id === 'done' ? 'text-ink-soft' : 'text-ink-open')}
             >
               {line.count}

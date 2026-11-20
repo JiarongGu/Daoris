@@ -126,11 +126,11 @@ describe("the session's Workflow view", () => {
   it("wears open's hue only where the person is waited on, done's green for done, and red only for a failure", () => {
     const { unmount } = render(<WorkflowRunView answer={answerOf(IN_REVIEW)} />);
     expect(within(row('look')).getByText('waiting on tester: you')).toHaveClass('text-ink-open');
-    expect(within(row('work')).getByText('done')).toHaveClass('text-ink-done');
+    expect(within(row('work')).getByText('done')).toHaveClass('text-ok-ink');
     unmount();
 
     render(<WorkflowRunView answer={answerOf(FAILED)} />);
-    expect(within(row('work')).getByText('failed')).toHaveClass('text-ink-danger');
+    expect(within(row('work')).getByText('failed')).toHaveClass('text-fail-ink');
     expect(document.body).toHaveTextContent('At The work · failed');
   });
 

@@ -593,12 +593,38 @@ internal static class FailureReader
 
     private static readonly Regex ErrorLine = Rx(NotAfterWord + "error" + NotWord + "|" + NotAfterWord + "failed" + NotWord + "|" + NotAfterWord + "error:", ignoreCase: true);
 
+    private static readonly Regex BuildErrorLine = Rx(NotAfterWord + "error" + NotWord, ignoreCase: true);
+
+    private static readonly Regex PassedLine = Rx("^[" + Space + @"]*(?:reached: [^:\n]+: )?(?:[✔✓ℹ]|ok [0-9]|# )");
+
+    // A line that is nothing but a count or a summary: a build's `0 Error(s)` and `Build FAILED.`, a runner's `fail 0`.
+    private static readonly Regex CountLine = Rx(
+        "^[" + Space + @"]*(?:[ℹ#][" + Space + "]*)?(?:(?:[0-9]+|no)[" + Space + @"]+(?:Error|Warning)\(s\)|(?:0|no)[" + Space + @"]+(?:errors?|failed|failures?)|(?:fail|failed|errors?)[" + Space + "]*:?[" + Space + @"]*0|Build FAILED\.?|Passed!" + Dot + @"*)[" + Space + "]*$",
+        ignoreCase: true);
+
+    // A cross or `not ok` that names no test: a linter's summary, node's failing-tests header, a TAP todo or skip.
+    private static readonly Regex NamesNoTest = Rx(
+        "^[" + Space + @"]*[✖✗][" + Space + @"]+(?:[0-9]+[" + Space + @"]+problems?" + NotWord + "|failing tests:?[" + Space + "]*$)|(?:^|[" + Space + @"])not ok [0-9]+\b" + Dot + @"*#[" + Space + "]*(?:TODO|SKIP)" + NotWord,
+        ignoreCase: true);
+
+    private static readonly Regex RedAlone = Rx("^[" + Space + @"]*reached: RED: \S" + Dot + @"* failed again alone[" + Space + "]*$");
+
+    private static readonly Regex WarnedLine = Rx(":[" + Space + "]*warning[" + Space + "]|" + NotAfterWord + "warning[" + Space + "]+[A-Za-z]+[0-9]+", ignoreCase: true);
+
+    private static readonly Regex FailedTestLine = Rx(
+        "(?:^|[" + Space + @"])(?:not ok [0-9]+|[✖✗])[" + Space + @"]+\S|" + NotAfterWord + "failed test '");
+
+    private static bool NotAFailure(string line) => PassedLine.IsMatch(line) || CountLine.IsMatch(line) || WarnedLine.IsMatch(line) || NamesNoTest.IsMatch(line);
+
+    private static string? FirstLineOf(string text, Regex pattern) =>
+        NewLine.Split(text).FirstOrDefault(line => pattern.IsMatch(line) && !NotAFailure(line));
+
     /// <summary>
-    /// A gate that names no failing test, signed by its step: for a build, the set of its compiler errors' codes with their files
-    /// (<c>src/.../X.cs</c>), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
-    /// error line, normalised.
+    /// A gate that names no failing test, signed by its step: a build by the set of its compiler errors' codes and files (<c>src/.../X.cs</c>),
+    /// sorted, since MSBuild prints each project's errors as its node finishes; else the first <c>not ok</c> or cross line, else the first
+    /// error line (never a pass line, a count of none or a warning), normalised; else that the run ended without a failing test, and its exit.
     /// </summary>
-    public static FailureSignature GateSignature(string gate, string step, string? output, string? root = null)
+    public static FailureSignature GateSignature(string gate, string step, string? output, string? root = null, int? exit = null)
     {
         var text = output ?? "";
         var scanned = LineEnds.Replace(text, "\n");
@@ -612,8 +638,9 @@ internal static class FailureReader
             return new FailureSignature { Gate = gate, Step = step, Errors = sorted };
         }
 
-        var first = NewLine.Split(text).FirstOrDefault(line => ErrorLine.IsMatch(line)) ?? "";
-        return new FailureSignature { Gate = gate, Step = step, Message = Normalise(first) };
+        var first = (step == "build" ? null : FirstLineOf(text, RedAlone) ?? FirstLineOf(text, FailedTestLine)) ?? FirstLineOf(text, step == "build" ? BuildErrorLine : ErrorLine);
+        if (first is not null) return new FailureSignature { Gate = gate, Step = step, Message = Normalise(first) };
+        return new FailureSignature { Gate = gate, Step = step, Message = exit is { } code ? $"ended without a failing test, exit {code}" : "ended without a failing test" };
     }
 
     private static string ErrorOf(string code, string file, string? root) => $"{code} {RepositoryPath(Trim(file), root) ?? Trim(file)}";

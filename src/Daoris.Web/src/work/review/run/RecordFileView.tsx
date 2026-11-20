@@ -35,7 +35,7 @@ export function RecordFileView({ path, before, after }: { path: string; before: 
   return (
     <div className="px-3 pb-2">
       {switcher}
-      {!whole && <p className="m-0 pb-1 text-meta text-ink-faint">{t('work.outputs.fileTooLarge')}</p>}
+      {!whole && <p className="m-0 pb-1 text-caption text-ink-faint">{t('work.outputs.fileTooLarge')}</p>}
       <DiffLines lines={lines} language={languageOf(path)} />
     </div>
   );

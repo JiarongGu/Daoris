@@ -27,7 +27,7 @@ export function AskThrough({ ask, busy = false, onTakeBack }: {
   return (
     <div className="grid gap-1.5">
       <p className="m-0 text-body">{t('asks.record.through', { words: latest.words })}</p>
-      <p className="m-0 text-meta text-ink-faint">{t('asks.record.throughSince', { ago: ago(latest.at) })}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('asks.record.throughSince', { ago: ago(latest.at) })}</p>
       {onTakeBack && ask.state !== 'Closed' && !asking && (
         <div>
           <Button variant="ghost" disabled={busy} className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(true)}>

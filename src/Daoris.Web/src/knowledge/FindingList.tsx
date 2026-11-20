@@ -66,7 +66,7 @@ export function FindingList({ threshold, onThreshold, semantic, answer, chosen, 
             className="w-full accent-accent"
           />
         </label>
-        <p className="m-0 text-meta text-ink-faint">{semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}</p>
+        <p className="m-0 text-caption text-ink-faint">{semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}</p>
       </div>
 
       {/* A first load is skeleton rows, with the words in the line the count takes, so nothing moves when the
@@ -103,7 +103,7 @@ export function FindingList({ threshold, onThreshold, semantic, answer, chosen, 
                 ? t('convergence.cappedAt', { count: answer.findings.length })
                 : t('convergence.count', { count: answer.findings.length })}
           </p>
-          <ul className={cn('m-0 list-none p-0', answer.comparing && 'opacity-60 transition-opacity duration-(--speed)')}>
+          <ul className={cn('m-0 list-none p-0', answer.comparing && 'opacity-60 transition-opacity duration-(--duration-quick)')}>
             {answer.findings.map((finding) => {
               const id = findingId(finding);
               const title = findingTitle(finding);
@@ -112,12 +112,12 @@ export function FindingList({ threshold, onThreshold, semantic, answer, chosen, 
                   <ListRowDoor chosen={chosen === id} onPress={() => onChoose(id)}>
                     <span title={title} className="block truncate text-body text-ink">{title}</span>
                     <span className="flex items-baseline gap-2 text-small">
-                      <span className={cn('min-w-0 truncate', finding.method === 'Convergent' ? 'text-accent' : 'text-ink-soft')}>
+                      <span className={cn('min-w-0 truncate', finding.method === 'Convergent' ? 'text-accent-ink' : 'text-ink-soft')}>
                         {t(`convergence.methods.${finding.method}.label`)}
                       </span>
                       <span className="ml-auto shrink-0 font-mono tabular-nums text-ink-faint">{finding.similarity.toFixed(3)}</span>
                     </span>
-                    <span className="block truncate text-meta text-ink-faint">{finding.repositories.join(' ↔ ')}</span>
+                    <span className="block truncate text-caption text-ink-faint">{finding.repositories.join(' ↔ ')}</span>
                   </ListRowDoor>
                 </li>
               );

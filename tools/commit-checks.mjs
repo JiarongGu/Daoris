@@ -66,7 +66,7 @@ export function runCommitChecks({ root, env = process.env, say = console.log, er
   step('comments', () => {
     const base = gitOrNull(root, ['merge-base', 'main', 'HEAD'])?.trim();
     if (!base) throw new Error('no merge-base with main');
-    const { problems, checked } = checkChange(root, base, null, { staged: true });
+    const { problems, checked } = checkChange(root, base, null, { staged: true, only: staged });
     for (const problem of problems) err(`comment-gate: ${problem}`);
     if (problems.length) failures.push('comments');
     else if (checked) done.push(`comments clean (${checked} file${checked === 1 ? '' : 's'})`);

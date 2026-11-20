@@ -74,6 +74,18 @@ test('a commit that adds no comment passes, and says what it ran', () => {
   assert.match(`${done.stdout}${done.stderr}`, /commit checks: comments clean \(1 file\)/);
 });
 
+test('the comment gate reads only the staged files, not the branch\'s earlier commits', () => {
+  const dir = repository({ 'src/a.ts': plain, 'src/b.ts': plain });
+  assert.equal(git(dir, 'checkout', '-q', '-b', 'work').status, 0);
+  put(dir, { 'src/a.ts': `${plain}export const more = 1;\n`, 'src/b.ts': `${plain}export const more = 2;\n` });
+  git(dir, 'add', '-A');
+  assert.equal(git(dir, 'commit', '-q', '--no-verify', '-m', 'earlier').status, 0);
+  put(dir, { 'src/c.ts': plain });
+  const done = commit(dir);
+  assert.equal(done.status, 0, done.stderr);
+  assert.match(`${done.stdout}${done.stderr}`, /commit checks: comments clean \(1 file\)/);
+});
+
 test('a size shrink is written to the list and staged into the same commit', () => {
   const list = { 'src/big.ts': BUDGET + 500 };
   const dir = repository({ 'src/big.ts': bigAt(BUDGET + 500), 'tools/size-ratchet.json': `${JSON.stringify(list)}\n` });
