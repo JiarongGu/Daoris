@@ -344,7 +344,7 @@ public sealed class OpinionGateTests
         Assert.Equal(ContinueWhy.StoodDown, gate.ToPerson);
     }
 
-    /// <summary>🔴 Answers given after a cut-off turn's reading put the gate back with the session; the same answers keep the dispute.</summary>
+    /// <summary>🔴 Answers past a cut-off turn's reading put the gate with the session; the same, a commit read only on a fix, keep the dispute.</summary>
     [Fact]
     public async Task Answers_given_after_the_reading_put_the_gate_back_with_the_working_session()
     {
@@ -358,7 +358,7 @@ public sealed class OpinionGateTests
 
         Assert.Equal((OpinionGateStates.WithSession, false), (behind.State, behind.LetsGo));
 
-        world.Opinions["o1"] = world.Opinions["o1"] with { Answers = [new OpinionAnswerView(1, OpinionViews.Rejected)] };
+        world.Opinions["o1"] = world.Opinions["o1"] with { Answers = [new OpinionAnswerView(1, OpinionViews.Rejected) { Commit = "2222222" }] };
         world.Delivered["o1"] = new OpinionDelivered(null, null, Answers(Read, (OpinionViews.Must, OpinionViews.Rejected))) { RecheckWhy = OpinionRechecks.NoFix };
         Assert.Equal(OpinionGateStates.Disputed, (await JudgeAsync(Facts(Rule()) with { Asks = [AskOf("o1")] }, world)).State);
     }

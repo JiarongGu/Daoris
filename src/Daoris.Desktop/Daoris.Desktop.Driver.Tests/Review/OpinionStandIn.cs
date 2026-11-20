@@ -256,6 +256,11 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         lock (_gate) _opinions[opinion]["given"]!["rechecked"]!.AsArray().Add(new JsonObject { ["finding"] = finding, ["says"] = says });
     }
 
+    public void HandedTo(string opinion, string session)
+    {
+        lock (_gate) _opinions[opinion]["handed"] = new JsonObject { ["session"] = session, ["word"] = $"w-{opinion}", ["at"] = "2026-10-09T09:15:00Z" };
+    }
+
     /// <summary>Where a first pass's findings went, once handed.</summary>
     public JsonNode? Handed(string opinion)
     {

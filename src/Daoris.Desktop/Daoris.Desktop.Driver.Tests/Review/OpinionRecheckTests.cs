@@ -37,7 +37,7 @@ public sealed class OpinionRecheckTests : IDisposable
     private (ProviderRegistry Adapters, HarnessRoster Roster) Machine(params string[] absent)
     {
         var adapters = new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase);
-        foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
+        foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp", "dsh" })
         {
             var real = ProviderRegistry.Built().AgentNamed(name)!;
             adapters[name] = Adapter(name, new TestAgent(
@@ -305,10 +305,13 @@ public sealed class OpinionRecheckTests : IDisposable
 
     /// <summary>
     /// 🔴 The first reviewer cannot read the recheck (here it is not installed, so no cool-off holds it): the rule's next
-    /// ready holder reads it, chosen by its own label: another maker's where one is ready, else, as here, the same agent fresh.
+    /// ready holder reads it, chosen by its own label: another maker's where one is ready, else the same agent fresh.
     /// </summary>
-    [Fact]
-    public async Task A_recheck_its_first_reviewer_cannot_read_goes_to_the_rules_next_ready_holder_saying_which()
+    [Theory]
+    [InlineData("codex-acp,claude-code-acp", "claude-code-acp", ReviewerLabels.SameAgent)]
+    [InlineData("codex-acp,claude-code-acp,dsh", "dsh", ReviewerLabels.AnotherMaker)]
+    public async Task A_recheck_its_first_reviewer_cannot_read_goes_to_the_rules_next_ready_holder_saying_which(
+        string declared, string reviewer, string label)
     {
         var (host, git, tip, fix, _) = Answered("must");
         var client = host.Client();
@@ -324,7 +327,7 @@ public sealed class OpinionRecheckTests : IDisposable
                 return Task.FromResult(new OpinionPassRun("completed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "completed" });
             },
         };
-        var rule = AskedAt(tip) with { Rule = Rule with { Reviewers = ["codex-acp", "claude-code-acp"] } };
+        var rule = AskedAt(tip) with { Rule = Rule with { Reviewers = declared.Split(',') } };
         await driver.DeliverAsync("op1", rule);
         host.Take("s1");
         host.Answer("op1", 1, "fixed", commit: fix);
@@ -332,8 +335,22 @@ public sealed class OpinionRecheckTests : IDisposable
         await driver.DeliverAsync("op1", rule);
 
         var (_, choice) = Assert.Single(_passes);
-        Assert.Equal((true, "claude-code-acp", ReviewerLabels.SameAgent), (choice.Chosen, choice.Reviewer, choice.Label));
+        Assert.Equal((true, reviewer, label), (choice.Chosen, choice.Reviewer, choice.Label));
         Assert.Equal("op2", new OpinionDeliveries(_home).Read("op1").Recheck);
+    }
+
+    /// <summary>A re-read judges again only a recheck its older reading found no fix for; one asked, or refused, stays.</summary>
+    [Fact]
+    public void A_reread_never_clears_a_recheck_asked_or_refused()
+    {
+        var deliveries = new OpinionDeliveries(_home);
+        deliveries.Rechecked("op1", "op2", null);
+        deliveries.Rechecked("op3", null, ReviewerUnavailable.NoReviewer);
+        deliveries.Rechecked("op4", null, OpinionRechecks.NoFix);
+
+        Assert.Equal(("op2", (string?)null), (deliveries.Reread("op1").Recheck, deliveries.Read("op1").RecheckWhy));
+        Assert.Equal(ReviewerUnavailable.NoReviewer, deliveries.Reread("op3").RecheckWhy);
+        Assert.Null(deliveries.Reread("op4").RecheckWhy);
     }
 
     /// <summary>

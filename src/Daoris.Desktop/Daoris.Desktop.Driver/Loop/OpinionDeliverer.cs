@@ -100,7 +100,9 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             if (kept.Recheck is null && answered.Behind(view))
             {
                 var answering = await Service.RecordAsync(answered.Session, ct).ConfigureAwait(false);
-                if (answering is { Running: true })
+                var busy = answering?.Running == true;
+                if (answering is not null && ChatRunOf(answering, asked) && _context.SendsBack?.TurnEnded(answering.Session) is { } idle) busy = !idle;
+                if (busy && answering is not null)
                 {
                     return new OpinionDelivery(
                         view.Id, OpinionDeliveryStates.WithSession,

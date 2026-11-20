@@ -417,8 +417,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
     `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
     `OpinionStepWaits`), never *working*. Answers the session gives after its answers were read (a turn a restart cut off is read as it
-    ends, before it answered, and the line goes on and answers) are read again before any recheck is asked, the gate standing with the
-    session until then, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
+    ends, before it answered, and the line goes on and answers) are read again before any recheck is asked, once the answering turn
+    has ended (a chat run's read by its turn state, as its hand is), the gate standing with the session until then; an answer counts as
+    new where its word differs, or a fix's commit does, as the reading keeps them, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
     never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under

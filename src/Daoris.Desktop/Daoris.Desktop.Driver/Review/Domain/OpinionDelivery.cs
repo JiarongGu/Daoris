@@ -43,7 +43,8 @@ public sealed record OpinionReading(string Session, string? Tip, DateTimeOffset 
     public bool Behind(OpinionView opinion) => (opinion.Findings ?? []).Any(finding =>
         opinion.AnswerTo(finding.Number) is { } answer
         && Findings.FirstOrDefault(row => row.Finding == finding.Number) is var row
-        && (row is null || row.Said != answer.Said || !string.Equals(row.Commit, answer.Commit, StringComparison.OrdinalIgnoreCase)));
+        && (row is null || row.Said != answer.Said
+            || (answer.Said == OpinionViews.Fixed && !string.Equals(row.Commit, answer.Commit, StringComparison.OrdinalIgnoreCase))));
 
     /// <summary>
     /// <c>person-steered</c>: a chat's answering turn took a word of the
