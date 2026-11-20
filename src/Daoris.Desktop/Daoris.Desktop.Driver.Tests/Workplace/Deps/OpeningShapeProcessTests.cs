@@ -70,7 +70,7 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         var tree = Path.Combine(_scratch, "trees", name);
         using (steps.Begin("tree"))
         {
-            await GitAsync(Root, [.. TreeOpenings.HooksHeld(Home), "worktree", "add", "-q", "-b", $"daoris/{name}", tree, "main"]);
+            await GitAsync(Root, [.. TreeOpenings.HooksHeld(Home), .. TreeOpenings.CheckoutSpread, "worktree", "add", "-q", "-b", $"daoris/{name}", tree, "main"]);
             TreeFilesRecord.Mark(Home, tree);
         }
 

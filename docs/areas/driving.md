@@ -134,7 +134,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`, the
     run's `files` stage handing its steps to the stage) and the hand's own preparation, its plugins' servers apart as `hand.servers`, are
     timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
-20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
+20. A fresh tree is a linked git worktree, its files written by git's parallel checkout on every core (`TreeOpenings.CheckoutSpread`, about half the `tree` stage of one worker, SESSIONOPEN3), at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
@@ -146,7 +146,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys
     run each `toolchain` read once per stage for each environment, every dependency that names it sharing the output
     (`ToolchainReads`), since run per `package.json` folder the npm signature's three reads were most of a large web repository's
-    `files.read`. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
+    `files.read`. The npm signature's three alone (`node --version`, `npm --version`, `npm config list --json`) are also held in the
+    driver's memory for ten minutes under a fingerprint of what decides them (`NpmToolchain`: the node program, the npm launcher and
+    package, and the content of the project, user, global and bundled `.npmrc`), so an opening after another starts no npm unless a
+    program or file moved; a read that failed or printed nothing is never held, and nothing is written (SESSIONOPEN3). It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
     store will not take (unstored, a group's, a companion) is recorded by size and write time, unhashed, a moved write time read as
     a change (FILESSLOW1); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
