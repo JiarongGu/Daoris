@@ -32,6 +32,9 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
     /// <summary>The kind of attention a run's step waiting on a role the person holds is told as.</summary>
     public const string StepKind = "Step";
 
+    /// <summary>The kind of attention a vacancy is told as, once (<see cref="AttentionOwnership.VacantClass"/>): a step nobody's session answers.</summary>
+    public const string VacantKind = "Vacant";
+
     /// <summary>The kind of <i>What needs you</i>'s row a held tool call is (<see cref="NeedsAPerson"/>).</summary>
     private const string RowKind = "permission";
 
@@ -77,17 +80,22 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
     {
         var session = Json.Text(row, "session");
         var repository = Json.Text(row, "where") is { Length: > 0 } where ? where : session ?? "";
-        // A step's: the session its run placed, which a click opens, its head reading the wait with its presses; the run's work quest.
+        // A step's: the session its run placed, which a click opens, its head reading the wait with its presses; its work quest and role.
         if (Json.Text(row, "kind") == StepRowKind)
         {
+            var step = row["step"] as JsonObject;
+            var role = step is null ? null : Json.Text(step, "role");
+            // A vacancy is told as its own kind: no agent's session answers it, and it is listed under Vacant, not under Needs you.
+            var kind = Json.Text(row, "class") == AttentionOwnership.VacantClass ? VacantKind : StepKind;
             return new
             {
-                Kind = StepKind,
+                Kind = kind,
                 Id = Json.Text(row, "id"),
                 Session = session,
-                Quest = row["step"] is JsonObject step ? Json.Text(step, "work") : null,
+                Quest = step is null ? null : Json.Text(step, "work"),
                 Repository = repository,
-                Headline = SessionBalloon.Words(new BalloonFacts(StepKind) { Repository = repository }).Title,
+                Role = role,
+                Headline = SessionBalloon.Words(new BalloonFacts(kind) { Repository = repository, Role = role }).Title,
                 Detail = (string?)null,
             };
         }

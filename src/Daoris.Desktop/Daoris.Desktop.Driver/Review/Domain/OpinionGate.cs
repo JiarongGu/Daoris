@@ -119,6 +119,7 @@ public static class OpinionGate
             }
             else if (kept.Answered is { } answers)
             {
+                if (kept.Recheck is null && answers.Behind(first)) return state with { State = OpinionGateStates.WithSession, Answers = answers };
                 state = state with { Answers = answers };
                 var recheck = kept.Recheck is { } again ? await reads.Opinion(again).ConfigureAwait(false) : null;
                 state = state with { Recheck = recheck };

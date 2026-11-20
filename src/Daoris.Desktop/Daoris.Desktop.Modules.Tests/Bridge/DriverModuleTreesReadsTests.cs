@@ -142,8 +142,8 @@ public sealed class DriverModuleTreesReadsTests : DriverModuleBridge
         Assert.Equal(["sessions: no session on this machine."], Said(verb).Out);
         Assert.Equal(["sessions: nothing needs you."], Said(named).Out);
         Assert.Equal(0, Said(verb).Code);
-        // `--json` is the page's own answer, field for field, as `SessionsCommand.Json` writes it.
-        Assert.Equal(SessionsCommand.Json([], []), Said(written).Out.Single());
+        // `--json` is the page's own answer, field for field, as `SessionsCommand.Json` writes it; the whole list adds the vacant steps, none here.
+        Assert.Equal(SessionsCommand.Json([], [], []), Said(written).Out.Single());
     }
 
     /// <summary>A service that answers every read with <paramref name="answer"/>: no records, or the records a case names.</summary>

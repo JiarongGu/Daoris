@@ -17,7 +17,7 @@ public static class StepActs
         PlaceRiskBook? risk, Func<DateTimeOffset> clock, List<string> said, CancellationToken ct)
     {
         if (records.Read(governed.Unit.Id) is not { Ended: null } kept) return;
-        var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk)
+        var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk, new StepVacancyFiles(records.Home))
             .Where(step => step.Handed)
             .Select(step => (Step: step, Node: governed.Graph.Nodes.FirstOrDefault(node => node.Id == step.Node)))
             .Where(each => each.Node is not null && StepReceipts.Mapped(each.Node).Count > 0)

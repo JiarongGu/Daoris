@@ -2,7 +2,7 @@
   "id": "plan-review-apply",
   "order": 10,
   "name": "Plan, review and apply workflow",
-  "for": "For a system: one session at a time plans its change, you review the plan, and the plan you accepted is applied; a plan gone stale goes back to the work, which plans again from what the system holds.",
+  "for": "For a system: one session at a time plans its change, the plan's Accept follows the risk policy (it passes where nothing gates it), and the accepted plan is applied; a plan gone stale goes back to the work, which plans again from what the system holds.",
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

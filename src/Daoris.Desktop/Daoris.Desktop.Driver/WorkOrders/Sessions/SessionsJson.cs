@@ -8,7 +8,7 @@ internal static class SessionsJson
     /// <summary>
     /// <c>{"sessions": [...]}</c>, and with <paramref name="entries"/> the entries beside the rows, which stay what they were.
     /// </summary>
-    internal static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null)
+    internal static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null, IReadOnlyList<PersonWait>? vacant = null)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
@@ -204,6 +204,24 @@ internal static class SessionsJson
                     }
 
                     writer.WriteEndArray();
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
+            if (vacant is not null)
+            {
+                writer.WriteStartArray("vacant");
+                foreach (var wait in vacant)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("run", wait.Run);
+                    writer.WriteString("node", wait.Node);
+                    writer.WriteString("repository", wait.Repository);
+                    writer.WriteString("role", wait.Role);
+                    writer.WriteString("why", wait.Why);
+                    if (wait.Since is { } since) writer.WriteString("since", since); else writer.WriteNull("since");
                     writer.WriteEndObject();
                 }
 

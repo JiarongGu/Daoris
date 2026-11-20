@@ -5,11 +5,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What makes a verification tree ready, as the files stage makes a session's: its dependencies installed or placed by the lockfiles that
-/// key them, then the gates' <c>regenerate</c> commands (<see cref="TreePreparation"/>); a seam for a test, <see cref="Real"/> the stage.
+/// key them, its local inputs copied (each <c>regenerate</c> runs at every check instead); a seam for a test, <see cref="Real"/> the stage.
 /// </summary>
 internal interface IVerifyPreparation
 {
-    /// <summary>The words that say which inputs the tree stands on (each dependency's key and the declared commands), or null where git cannot say.</summary>
+    /// <summary>The words that say which inputs the tree stands on (each dependency's key and the declared local inputs), or null where git cannot say.</summary>
     Task<string?> StampAsync(string home, string checkout, string tree, string repository, CancellationToken ct);
 
     /// <summary>Prepares <paramref name="tree"/> from <paramref name="checkout"/>'s declaration: the sentence of what did not finish, or null.</summary>
@@ -26,15 +26,13 @@ internal sealed class VerifyPreparation : IVerifyPreparation
         if (head is null) return null;
         var deps = await StoreDependencyRules.ReadAsync(home, tree, repository, head, ct).ConfigureAwait(false);
         var keys = await DependencyKeys.EachAsync(home, tree, head, repository, deps.Each, ct).ConfigureAwait(false);
-        var declared = TreePrepDeclared.Read(checkout);
-        return Of(keys, declared.Regenerate, TreeLocalInputs.Declared(checkout), checkout);
+        return Of(keys, TreeLocalInputs.Declared(checkout), checkout);
     }
 
     /// <summary>The stamp over every input the preparation reads; a new input goes in here, and the stamp test moves it.</summary>
-    internal static string Of(IReadOnlyList<string> keys, IReadOnlyList<string> regenerate, IReadOnlyList<LocalInput> localInputs, string checkout)
+    internal static string Of(IReadOnlyList<string> keys, IReadOnlyList<LocalInput> localInputs, string checkout)
     {
         var words = new List<string>(keys);
-        words.AddRange(regenerate.Select(command => "regenerate:" + command));
         words.AddRange(localInputs.Select(input => "local:" + input.Path + "=" + ContentOf(Path.Combine(checkout, input.Path))));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', words))));
     }
@@ -55,17 +53,17 @@ internal sealed class VerifyPreparation : IVerifyPreparation
     {
         TreeFilesRecord.Mark(home, tree);
         var said = new List<Noted>();
-        var outcome = await TreeFilesStep.RunAsync(home, checkout, tree, repository, said.Add, ct, regenerate: true).ConfigureAwait(false);
+        var outcome = await TreeFilesStep.RunAsync(home, checkout, tree, repository, said.Add, ct).ConfigureAwait(false);
         TreeFilesStep.Hand(home, tree);
         var failed = outcome.Said.Where(line => outcome.Stopped || line.Parts.Any(part => part.Code is { } code
-            && (code == StartNoteCodes.StartedFilesFailed.Code || code == StartNoteCodes.StartedPrepFailed.Code || code == StartNoteCodes.StartedDepsUnplaced.Code))).ToList();
+            && (code == StartNoteCodes.StartedFilesFailed.Code || code == StartNoteCodes.StartedDepsUnplaced.Code))).ToList();
         return failed.Count == 0 && !outcome.Stopped ? null : string.Join(' ', failed.Select(line => line.Note));
     }
 }
 
 /// <summary>
 /// A check's verification tree prepared before its gates run: the preparation asked once for the tree, then again only where the
-/// inputs it stands on moved (the stamp is the dependency keys the stage itself reads, the declared commands and the declared local inputs).
+/// inputs it stands on moved (the stamp is the dependency keys the stage itself reads and the declared local inputs).
 /// </summary>
 internal static class VerifyTreeReady
 {

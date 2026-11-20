@@ -148,7 +148,7 @@ export function useProjectsView({
   // quests that name them are the rail's own reads, asked only while someone holds or waits.
   const detailsShown = active && driver.data !== undefined && tab === 'details' && chosenRepository !== null;
   const heavySlot = useHeavySlot(chosenRepository ?? '', { enabled: detailsShown });
-  const heavyBusy = Boolean(heavySlot.data && (heavySlot.data.holder || heavySlot.data.waiters.length > 0));
+  const heavyBusy = Boolean(heavySlot.data && (heavySlot.data.holders.length > 0 || heavySlot.data.waiters.length > 0));
   const heavySessions = useSessions(null, true, heavyBusy);
   const heavyQuests = useQuests(null, true, heavyBusy);
   const heavyTitleOf = (id: string) => {

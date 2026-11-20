@@ -34,7 +34,7 @@ public static class StepHandOffs
         PlaceRiskBook? risk, Func<string, string, string, CancellationToken, Task<SayAnswer>>? say, List<string> said, CancellationToken ct, ISet<string>? told = null)
     {
         if (say is null || records.Read(governed.Unit.Id) is not { Ended: null } kept) return;
-        var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk)
+        var steps = HeldSteps.Of([governed], _ => kept, new StepTenureFiles(records.Home, records.HoldsLease), casts, risk, new StepVacancyFiles(records.Home))
             .Where(step => step.Handed).ToList();
         if (steps.Count == 0 || PartReceipts.Waiting(records.Home, governed.Run, scope).Count > 0) return;
         var executors = (IReadOnlyList<string>)[.. scope.Quest?.Executors ?? [], .. scope.Branch?.Executors ?? []];

@@ -5,7 +5,7 @@
 A workflow says how a repository's work moves from an agent's done to the line. It is a saved graph of steps of fixed kinds:
 holds, a second opinion, the person's look, the person's Accept (`review`), one landing (`land`), and what follows it (a pushed
 branch, a pull request, integration, a release). Each place (this machine, a workspace, a repository) follows one saved workflow;
-a fresh home follows a shipped copy of *Merge after you accept*. A chain's work in one repository is a run, bound at its first
+a fresh home follows a shipped copy of *Merge after you accept*, whose Accept follows the risk policy and passes where nothing gates it. A chain's work in one repository is a run, bound at its first
 start to one version. The node runtime in the driver loop evaluates the run's graph and performs the `land` itself once the gates
 hold: a merge into the line, a branch for the person, a plugin's push and pull request, or the line's integration. Work no saved
 workflow governs is held, and nothing lands it.
@@ -215,7 +215,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    the line standing in where the person holds it, the owner where the step names `owner`; where the person holds it, its *What needs
    you* row and session page offer the run's skip with words, and their Accept naming the unchecked hand-back takes it from an agent
    holder in the same press (`pressed accept`). A pass from one of the run's working sessions (`NodeRuntime.Workers`), or from a working
-   session while those are not read, is refused `own-done`; the role is never cast or handed to the bare `agent`. The person's through
+   session while those are not read, is refused `own-work` (rule 49); the role is never cast or handed to the bare `agent`. The person's through
    words on its ask pass it (rule 23), or a version turns its `yes` off; it is never compared with the ask's words instead (D352); a
    set-up quest is Daoris's own ask, whose press reads the repository it set up, so it never waits so. It reads the run's branch first: where the line holds that branch's tip (any proof but
    *empty*), it reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, so the
@@ -304,11 +304,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     read is skipped, counted and kept as written, never the casts dropped for it; casts that do not read keep the last good read, refuse
     every write (`unreadable-casts`) and are said in the machine log and in the cast's Settings; a rewrite keeps a holder word and a field
     it did not read. The
-    owner role, an approver at a destination marked as the person's and every role at high risk stay the person's), the person for a
-    role no cast names. `daoris settings cast` and the workspace's and repository's Settings set it, only by the person, and neither casts
-    an agent to a role whose steps only their holder's press settles, nor does *Pass to…* pass such a step to one (`AgentSettles`, D312: no
-    agent's channel speaks an Accept or an approval yet, a task's Done and a decision its working session's tool, D318; an agent settles a step by an observation or a plugin's
-    act, and the work and the second opinion by its session); through words take no step another holder holds. Each holder's tenure
+    owner role, an approver at a destination marked as the person's and every role at high risk stay the person's, the high-risk branch
+    standing until RISKGATE1j retires `placeRisk`), the keys' keeper (`credentials-keeper`) the person's where no cast names another, a
+    sign-in being their act in a browser (`sign-in`, D354 point 1), and every other role no cast names its agent's (`default`, *the role's
+    agent fills it until a choice names another*): the person holds a role only by their own cast, a mark, the owner role or a high-risk
+    place, never by default (D354 point 4). A role its agent holds only by default hands no plugin's role act (`CastReading.AgentHolds`),
+    and a wait with no cast in hand reads the same rule (`PlaceCastBook.Uncast`). `daoris settings cast` and the workspace's and repository's Settings set it, only by the person, and neither casts
+    an agent to the owner role (`AgentSettles.Roles`); an agent settles a step by an observation or a plugin's act, the work and the second
+    opinion by its session, and a task's Done, a decision, an Accept and an approval by a session's tool, `step_settle` (D318, D354);
+    through words take no step another holder holds. Each holder's tenure
     of an attempt, `{role, holder, epoch, since, why}`, is kept apart from the node record, in `workflows/tenures/` (`StepTenureFiles`),
     which no older build reads: a pass writes each standing attempt's first epoch before its rounds and after them (`AttemptTenures`, the
     person where the step's own words say `you`, else the cast's holder, `AttemptTenures.FirstHolder`), and a unit's file drops only ended
@@ -378,7 +382,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 **Review and Accept**
 
-22. The person's Accept is a `review` before the steps writing the work. A graph with no `land` is work in place and refuses a
+22. The person's Accept is a `review` before the steps writing the work. It waits only where the risk policy gates `work.accept` at the
+    run's place (`RiskStepGates`, the judge the pass reads from the look's config, D354): with nothing configured (the seed, `none`) the
+    review is reached by the policy (`policy`, its words the verdict's rule and revision) and no one is asked; classed `role` it waits on
+    its own role (`acceptor` where it names none) as the place casts it; classed `owner` the owner role holds it from its start, as a marked
+    approver is. A `task`'s approval reads `task.approve`, or the act its `act` option names (an approval spending a destination,
+    `release.start/production`), alike, reached `approved` where it passes; one naming no role is still the owner role's. An `act` that is no act of the census, spelled exactly (an unknown kind or a case mismatch, a qualifier on any kind but `release.start`, not a string) is refused at the graph's declaration (`RiskStepHolds.BadAct`) and judged `owner` at runtime, so it never fails open. A branch that committed nothing has nothing to accept: its review follows the policy like any other (it passes where the policy gates nothing). A tenure's class is judged again each pass where the step would release (`TenureRejudge`): a raise to `owner` while it waits moves it to the owner role, a lowering from `owner` hands it back to the holder the place casts, and a lowering to a pass reaches it by the policy. A graph with no `land` is work in place and refuses a
     landing's press. A flow with no `review` lands with no press, its authority judged again before the first effect. A run is over
     when no node can move, nothing is pending and no failure is kept for the person, its end `completed`, `failed` or `stopped`
     (with whose). Each review attempt reads the run's work into one record, written as it begins and never edited
@@ -416,13 +425,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once, as its next
     turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
     `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
-    `OpinionStepWaits`), never *working*. A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
+    `OpinionStepWaits`), never *working*. Answers the session gives after its answers were read (a turn a restart cut off is read as it
+    ends, before it answered, and the line goes on and answers) are read again before any recheck is asked, once the answering turn
+    has ended (a chat run's read by its turn state, as its hand is), the gate standing with the session until then; an answer counts as
+    new where its word differs, or a fix's commit does, as the reading keeps them, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under
+    `commits-since`, each with its count, held by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
-    recheck goes the same way: its first reviewer held by a cool-off, the rule's next ready holder reads it, and one a cap ended is gated
+    recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the
+    rule's next ready holder reads it, another maker's first, its `opinion.asked` line naming the reviewer and label that took it; and one a cap ended is gated
     cooling and asked again by the next look's delivery. Under a saved graph the
     `opinion` node says whether one is asked and among which declared reviewers, and cannot start with none; `SET_OPINION none`
     there is refused. A copy made with `--with-opinion` names the shipped `opinion` role, which says only which model reads; the
@@ -615,13 +629,34 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the change reaches (driving rule 7), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
     and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
-    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The
+    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. A failed gate's
+    why carries the failing step's own lines with its log's path: the log's red blocks (an `== RED <step>` line to the next `== `) and
+    its last lines, within about 40 lines and 4 KB (`GateLogExcerpt`), so the work reads why without asking for the log. The
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
     A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
-    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
-    *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
-    check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    the declaration's `reached` runner over every tier. The machine runs as many heavy runs at once as its one admission admits
+    (`CheckAdmission`), judging every heavy run on it together from the records beside the slots: the checks' and gated integration
+    lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
+    once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
+    starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
+    number, never more than the machine's heavy-run admission holds; `auto`, the default, runs the first always and another while free
+    physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process
+    classes its change reaches), counted again for each run whose first gate has not ended (its record says so; a Daoris check's one
+    `reached` gate holds its build and its suites, so it counts twice for its whole run), up to a quarter of the processors within the
+    machine's heavy-run admission, whose places each step still takes; memory that cannot be read runs one. A repository's heavy-run
+    slots (`HeavySlot`, `locks/heavy/<key>.lock` then `<key>-n.lock`, each with its holder's record and its own dead-holder clean-up)
+    are as many as the admission's, so one repository's checks, its sessions' heavy runs and its integration's gated lines run side by
+    side, each check in its slot's verification tree (`lines/trees/<key>`, `<key>-n`; a tree past the slots there are now, left by a
+    larger `checks`, stays as it is, kept for when they grow again). A repository whose gates share what two trees cannot declares
+    `"heavySlots": <n>` in its `daoris.gates.json`, read from its checkout at each look: its heavy runs then run that many at once, 1
+    for one at a time, within the machine's admission (D349: the framework is Daoris's, the count the repository's). A check judged as
+    merged reads its line's tip once and merges from objects alone, so an integration landing beside it never shows it a half-moved
+    line. A session's `run-heavy` that is not admitted while its verification holds a slot of the repository says the true reason
+    (its repository's slots, memory or the machine's slots) and does not wait. A sent check the executor
+    has not started says why it waits on its step, never *Ready*: every slot running (`slot`, how many of how many), memory (`slot-memory`,
+    free and needed), every slot of its repository held (`slot-repository`), else its place in the queue (`slot-queued`), each with that place
+    (`CheckSlotWaits`, read from the slots' waiter files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
@@ -633,8 +668,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
     saying so; a line's own run and a declaration's runner judge their commit as it stands (D299). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
-    gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
-    preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.
+    checkout's declared local inputs), again only where its stamp moved (a dependency key, or a declared local input's presence or
+    content). Then, on every check, the tree runs each `regenerate` of the declaration the check runs under, read as its gates are
+    (`TreePreparation.RegenerateAsync`; `--if-stale` is cheap where nothing moved), never the `treeBaseline`: a later commit whose
+    generated inputs' sources moved reads them current though the stamp stands (VERIFYREGEN1). A preparation or a `regenerate` that
+    does not finish ends the attempt `unknown` with code `unprepared` and its sentence (a `regenerate`'s command and its output's
+    lines, kept as the attempt's `regenerate.log`), never failed, no gate run.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
@@ -726,11 +765,32 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     folder the next look takes (`StepSettleAsks`) through the run's node door at the settle door as the agent its start ran, refused with
     nothing kept where the step does not wait on its holder's word, its outcome or a named evidence is missing (`TaskEvidence`), or the door
     refuses it, a refusal told to the session as its next turn; where it cannot do the step it asks up its line. Its row in *What needs
-    you* reads "waiting on `<role>`: <agent>" with *Take* its only press. Any other wait an agent holds that only a press settles (any but
-    a plugin's actor and a go-ahead, `AgentSettles.Wait`) stays a `step` row of *What needs you*, "waiting on `<role>`: <holder>" with
-    *Take*, an Accept and an approval among them; an unchecked done's pass is the one its agent holder settles itself, through the node
+    you* reads "waiting on `<role>`: <agent>" with *Take* its only press. A plugin's actor whose role a staffing gives an agent, or a cast
+    gives an agent a live session of serves the place (`SessionDelegates.Serving`), is served by that session, to which the plugin grants
+    its acts, and makes no row. Every other wait an agent holds that no agent's session serves (a plugin's actor held by its role's agent
+    by default or cast to an agent with no live session there, a go-ahead, a file's choice, an opinion's vacancy, an unchecked done's
+    pass, and a role-classed Accept or approval, which no dispatcher hands to a session yet) is a vacancy (D354 point 4, `StepVacancies`).
+    The pass alone judges it and keeps it from the moment it became vacant (`StepVacancyFiles`, `workflows/vacancies/`, which survives a
+    restart), and every reader says what it kept: a `step` row marked `vacant`, never handed (so a release's approval is never handed to
+    the run's maker), listed under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session
+    list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
+    handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
+    the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
+    (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the step as its own (`NodeSource.Daoris`, never the
+    person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
+    up, never asked of the owner; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts again if it
+    becomes one. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
+    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
+    passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
+    gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
+    `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node
     door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads and whose
-    pass of it is refused `own-done`.
+    pass of it is refused `own-work`. No worker answers its own gate (D354 point 5): at the settle door (`SettleDoor.Own`, asked by the
+    node door and `step_settle` alike) a yes (an Accept, an approval, a pass, a decision's answer, a Done) to a step standing at a hold of
+    the risk census (`RiskStepHolds.KindOf`) from a working session the run's makers hold (`NodeRuntime.Workers`: those serving its quests
+    and those that worked its branch, with every helper session a maker started and theirs in turn, read from the home's helper asks, ids compared without case; handed to the look as `ILookWiring.RunWorkers`) is refused `own-work`, read from the word's channel
+    and its proved session, never its words, whatever holder it speaks as; while the makers are not read such a yes from a working session
+    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the next look takes it; a task's own Done, which is work and not a hold, stays its worker's. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
@@ -739,8 +799,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Daoris…* where its kind reads the proof, *End this work…*), an attempt held its held row, and every other wait a `step` row (`HeldSteps`) carrying the role and holder, the step's own words
     that settle it (a skip reads *Not needed this run*) and its stop where the step offers one (*Stop this step…*, asked once, the run's node stop as the owner role's, D316), its tenure's epoch and the holder acts it offers (*Pass to…*, *Give back*; none on a go-ahead, whose answer is the grants', D306, none on a wait on another role than the step's, and none before the pass casts the step), a plugin's words and page, under a release step waiting on its approver the run's view's approval card, *Done outside Daoris* on the attempt
     out now where a plugin's wait has no page, or the run's view (`opens: run`) where a file's choice, a go-ahead and a vacancy are
-    answered. A `step` row names the session its run placed; it is announced once as a park is (`WaitAnnouncements`, kind `Step`,
-    under a park's switch), and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
+    answered. A `step` row names the session its run placed; one whose role the person holds is announced once as a park is
+    (`WaitAnnouncements`, kind `Step`, under a park's switch, its words naming the role: *a step waits on `<role>`, which you fill*),
+    and its notification opens that session, whose head reads each wait "<node>: waiting on `<role>`: <holder>"
     with the same presses beside it, each passing the epoch its row read, and the row's *Take*, *Pass to…* and *Give back*
     (`RunWaitsHead`). Sessions' placing reads the waits as the rows do, the step's tenure and the place's cast (`PersonWaitReader`).
     That session's page reads its run from one answer, `SESSION_GROUPS`' `passage` (`RunPassageReader`: each step's mark, its role, its

@@ -168,7 +168,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
                 "brainstorms", "workflow", "keep",
                 // The role catalogue's door.
                 "role", "terminal",
-                "risk", "cast", "settings"],
+                "risk", "cast", "checks", "settings"],
             DriverChoicesCommand.Verbs);
         Assert.All(DriverChoicesCommand.Verbs, verb =>
             Assert.Matches($"(?<![\\w-]){System.Text.RegularExpressions.Regex.Escape(verb)}(?![\\w-])", DriverChoicesCommand.Usage));

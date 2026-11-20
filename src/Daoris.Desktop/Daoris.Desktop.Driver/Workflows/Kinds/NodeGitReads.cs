@@ -27,4 +27,7 @@ public sealed record NodeGitReads(Func<LandedBranch, string?>? RemoteTip = null)
 
     /// <summary>Each role's cast at the unit's place as the pass read it; null where not read, and an unchecked done then waits.</summary>
     public Func<string, CastNow>? Cast { get; init; }
+
+    /// <summary>The risk policy's judge at the unit's place as the pass read it (<see cref="RiskStepGates.At"/>); null where not read, and a step's own hold then waits.</summary>
+    public RiskStepJudge? Risk { get; init; }
 }

@@ -32,6 +32,7 @@ public sealed class NodeLifecycleTableTests
             "blocked>skipped:daoris", "ready>skipped:daoris", "invalidated>skipped:daoris",
             "skipped>blocked:person", "skipped>invalidated:daoris", "reached>reached:authority", "skipped>skipped:daoris",
             "blocked>stopped:person", "ready>stopped:person", "active>stopped:person", "unknown>stopped:person", "invalidated>stopped:person",
+            "blocked>stopped:daoris", "ready>stopped:daoris", "active>stopped:daoris", "unknown>stopped:daoris", "invalidated>stopped:daoris",
             "active>invalidated:daoris", "reached>invalidated:daoris", "failed>invalidated:daoris", "rejected>invalidated:daoris",
             "unknown>invalidated:daoris",
             "invalidated>blocked:daoris", "invalidated>ready:daoris",

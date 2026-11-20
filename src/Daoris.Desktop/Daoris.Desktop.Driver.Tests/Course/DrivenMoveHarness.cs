@@ -141,14 +141,14 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     }
 
     /// <summary>The first run cut mid-turn, its quest taken: by the driver's close, or by the sweep, the dead loop's close then finding it ended.</summary>
-    public async Task CutAsync(bool sweep)
+    public async Task CutAsync(bool sweep, bool person = false)
     {
         using var stop = new CancellationTokenSource();
         var first = Driver().RunOnceAsync(stop.Token);
         await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt") && Service.Status("q1") == "Taken", Seen);
-        if (sweep)
+        if (sweep || person)
         {
-            var swept = await Orphans.EndAsync(new ServiceClient(Service.Url, null), new SessionProcesses());
+            var swept = await Orphans.EndAsync(new ServiceClient(Service.Url, null), new SessionProcesses(), only: person ? "s1" : null);
             Assert.Equal(["s1"], swept.Select(ended => ended.Id));
         }
 
@@ -156,6 +156,8 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
         await first.WaitAsync(Poll.Patience);
         Assert.True(Service.State("s1") == "stopped", Service.Record("s1"));
     }
+
+    public void SaveConfig() => Config().Save(ConfigPath);
 
     /// <summary>
     /// The carry-on of <c>s1</c>, run by a loop of run <see cref="Killed"/> stopped for good at <paramref name="cut"/>; none runs the look to its
@@ -296,13 +298,13 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// The real watch's first look and the looks after it, over the one home: the sweep of the dead loop's records, the take-up of its move, the
     /// look's starts. It runs until <see cref="StopAsync"/>.
     /// </summary>
-    public void ComeUp()
+    public void ComeUp(bool markers = false)
     {
         Config().Save(ConfigPath);
         var adapters = ProviderRegistry.Built();
         _closing = new CancellationTokenSource();
         var watch = new DriverWatch(
-            new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(), sync: null,
+            new ServiceClient(Service.Url, null), ConfigPath, Home, new SessionProcesses(markers ? DaorisHome.Entry(Home, HomeEntry.Sessions) : null), sync: null,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(Home, HomeEntry.Harnesses)));
         _watch = watch;
         var closing = _closing.Token;

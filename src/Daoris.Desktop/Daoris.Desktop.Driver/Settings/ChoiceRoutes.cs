@@ -16,6 +16,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Drain { get; } = Person("SET_DRAIN");
     public static InstanceRoute Cap { get; } = Person("SET_CAP");
     public static InstanceRoute Terminal { get; } = Person("SET_TERMINAL");
+    public static InstanceRoute Checks { get; } = Person("SET_CHECKS");
     public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
@@ -48,6 +49,7 @@ public static class ChoiceRoutes
         ("driver drain <minutes>", Drain, "the window's bound on an update's drain"),
         ("driver cap <n>", Cap, "the window's session cap"),
         ("driver terminal ask|act", Terminal, "the window's tier of a terminal's presses"),
+        ("driver checks <n>|auto", Checks, "the window's checks the machine runs at once"),
         ("driver manifest files|minutes <n>", Manifest, "the window's bounds on a folder's manifest read"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),

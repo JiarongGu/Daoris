@@ -21,8 +21,10 @@ public static class StepSettles
     /// <summary>The step names evidence its settle left out; the detail names each.</summary>
     public const string MissingEvidence = "missing-evidence";
 
+    private const string Accepted = "accepted";
+
     /// <summary>Keeps the settle <paramref name="ask"/> on the run's record for the next pass, as <paramref name="by"/> speaks, or refuses it.</summary>
-    public static NodeWorded Settle(NodeRecordFiles records, StepSettleAsk ask, SettleBy by, Func<DateTimeOffset> clock)
+    public static NodeWorded Settle(NodeRecordFiles records, StepSettleAsk ask, SettleBy by, Func<DateTimeOffset> clock, IReadOnlyCollection<string>? makers = null)
     {
         var run = ask.Run.Trim().TrimStart('#');
         var node = ask.Node.Trim();
@@ -38,6 +40,21 @@ public static class StepSettles
         }
 
         var outcome = string.IsNullOrWhiteSpace(ask.Outcome) ? null : ask.Outcome.Trim();
+        if (declared.Kind == NodeKinds.Review || TaskNode.Presses(declared).Contains(NodeWordActs.Approve, StringComparer.Ordinal))
+        {
+            var review = declared.Kind == NodeKinds.Review;
+            var answer = outcome switch
+            {
+                Accepted when review => NodeWordActs.Accept,
+                "approved" when !review => NodeWordActs.Approve,
+                "changes" when review => NodeWordActs.Changes,
+                "rejected" when !review => NodeWordActs.Reject,
+                _ => null,
+            };
+            if (answer is null) return new(run, node, act, RunNodeWords.NotOutcome) { Detail = review ? "accepted, changes" : "approved, rejected" };
+            return RunNodeWords.Word(records, run, node, answer, TaskEvidence.Words(ask.Words, ask.Evidence), clock, epoch: by.Epoch, settle: by, workers: makers);
+        }
+
         if (decision ? outcome is null || !declared.Outcomes.Contains(outcome, StringComparer.Ordinal) : outcome is not null && outcome != "done")
         {
             return new(run, node, act, RunNodeWords.NotOutcome) { Detail = string.Join(", ", declared.Outcomes) };
@@ -48,7 +65,8 @@ public static class StepSettles
             return new(run, node, act, MissingEvidence) { Detail = string.Join(", ", missing), State = status.State };
         }
 
-        return RunNodeWords.Word(records, run, node, act, TaskEvidence.Words(ask.Words, ask.Evidence), clock, outcome: decision ? outcome : null, epoch: by.Epoch, settle: by);
+        return RunNodeWords.Word(records, run, node, act, TaskEvidence.Words(ask.Words, ask.Evidence), clock, outcome: decision ? outcome : null, epoch: by.Epoch, settle: by,
+            workers: makers);
     }
 
     /// <summary>What the settle came to, as its session is told it: kept, or refused and why.</summary>
@@ -61,6 +79,8 @@ public static class StepSettles
         (RunNodeWords.NotOutcome, _) => $"Your settle of `{done.Node}` on run #{done.Run} is refused: answer with one of its outcomes ({done.Detail}). Nothing was kept.",
         (RunNodeWords.NotWaiting, _) =>
             $"Your settle of `{done.Node}` on run #{done.Run} is refused: it does not wait on a task its holder settles now ({done.State ?? "not under way"}). Nothing was kept.",
+        (SettleDoor.OwnWork, _) when done.Detail?.StartsWith(SettleDoor.NotYet, StringComparison.Ordinal) == true =>
+            $"Your settle of `{done.Node}` on run #{done.Run} is not taken: {done.Detail}. Nothing was kept, and it stays open.",
         _ => $"Your settle of `{done.Node}` on run #{done.Run} is refused ({done.Refused}{(done.Detail is { } detail ? $": {detail}" : "")}). Nothing was kept.",
     };
 }

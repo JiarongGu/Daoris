@@ -289,7 +289,7 @@ public sealed class WorkflowGraphRunTests
             Status(NodeKinds.Claimed, NodeStates.Reached, "quest:q1", "q1-moment"),
             Status("go", NodeStates.Active, Self)));
 
-        Assert.Equal((WorkflowRunStates.Waiting, "Waiting on `approver`: you. Waits for your go-ahead: deploy the release"), (Step(waiting, "go").State, WorkflowRunWords.Said(Step(waiting, "go"))));
+        Assert.Equal((WorkflowRunStates.Waiting, "Waiting on `approver`: `an agent`. Waits for your go-ahead: deploy the release"), (Step(waiting, "go").State, WorkflowRunWords.Said(Step(waiting, "go"))));
         Assert.Null(Step(waiting, "go").On);
         Assert.Equal("go", waiting.At);
 

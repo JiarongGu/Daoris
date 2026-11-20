@@ -128,13 +128,15 @@ public sealed class NodeRuntime(
 
     public RiskShadow? Risk { get; set; }
 
-    /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
+    public Func<string?, string?, bool>? Serving { get; set; }
+
+    /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null where unread.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
 
     /// <summary>The choices the pass in hand reads, the door's rules under them: set by a pass holding <see cref="_one"/>.</summary>
     private DriverConfig? _config;
 
-    /// <summary>Every quest the last look read, by id: a close's chain, and what its quests now read.</summary>
+    /// <summary>Every quest the last look read, by id: a close's chain, and what its quests read.</summary>
     private Dictionary<string, QuestView> _quests = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -150,10 +152,10 @@ public sealed class NodeRuntime(
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
 
-    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run);
+    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run, records.Home);
 
     /// <inheritdoc cref="LeftSteps.With"/>
-    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);
+    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config);
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -214,9 +216,8 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
-    /// Whether a run bound to a graph version arms the runtime: one whose record does not hold its end, one a start of
-    /// its chain asked a pass for, one ended failed at a step an observed fact may still settle, and every one at this process's first look. Lists the runs folder; a home with none costs one stat. A run
-    /// whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
+    /// Whether a bound run arms the runtime: one not ended, one its chain asked a pass for, one failed at a step an observed fact may still
+    /// settle, and every one at the first look. A run whose version no longer reads arms nothing: it is held whole, and said.
     /// </summary>
     private bool ArmsRuns =>
         _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)
@@ -486,7 +487,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
-            if (Risk is { } risk) RiskStepHolds.Shadow(risk, governed.Values, records, look.Config);
+            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
@@ -524,7 +525,7 @@ public sealed class NodeRuntime(
             if (observed && await FailedHeldRuns.AgainAsync(records, _graphRuns, governed, tip, git.Git, clock, ct).ConfigureAwait(false)) atEnd = false;
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
             // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.
-            AttemptTenures.Keep(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config?.PlaceRisk, clock());
+            AttemptTenures.KeepAt(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config, clock());
         }
 
         for (var round = 0; !atEnd && round <= governed.Graph.Nodes.Count; round++)
@@ -543,9 +544,8 @@ public sealed class NodeRuntime(
 
             // What git says for the built-ins this round's record holds waiting on it, read once a pass; the gates its opinion and look wait
             // on, likewise.
-            var reads = await NodeStepReads.ReadAsync(governed, records.Home, await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
-                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct).ConfigureAwait(false), ct)
-                .ConfigureAwait(false);
+            var reads = RiskStepGates.Reads(await NodeStepReads.ReadAsync(governed, records.Home, await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
+                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct).ConfigureAwait(false), ct).ConfigureAwait(false), _config, governed);
             var gates = await NodeEvaluations.GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
             var (before, evaluated) = governed.Scope is null
                 ? NodeEvaluations.Evaluate(governed, record, tipped, tip, reads, gates, clock)
@@ -597,7 +597,7 @@ public sealed class NodeRuntime(
                 .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
-            AttemptTenures.Keep(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config?.PlaceRisk, clock());
+            AttemptTenures.KeepAt(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config, clock());
             await Keeping.HandStepsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
         }
     }

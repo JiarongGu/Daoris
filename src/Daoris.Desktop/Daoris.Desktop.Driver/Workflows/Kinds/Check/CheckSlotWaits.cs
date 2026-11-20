@@ -3,25 +3,35 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's sent check waits for while the heavy executor has not started it: the machine's one check slot (the home's verification
-/// slot, <see cref="VerifySlot"/>), held by another run's check since a time, else its place in the slot's queue. Read from the slot's files
-/// at each look and never stored, so a check whose gates run, one settled, or one not sent waits on no slot.
+/// What a run's sent check waits for while the heavy executor has not started it: the machine's check slots
+/// (<see cref="VerifySlot"/>, as many as <see cref="CheckAdmission"/> admits) and why it waits for one, by its waiter's file, with its
+/// place in their queue. Read from the slots' files at each look and never stored, so a check whose gates run, one settled, or one not
+/// sent waits on no slot.
 /// </summary>
 public static class CheckSlotWaits
 {
-    /// <summary>The wait's code where another run's check holds the slot: its values name that run and this check's place in the queue.</summary>
-    public const string HeldBy = "slot";
+    /// <summary>The wait's code where every slot runs a check: <c>running</c> of <c>slots</c>, and its place in the queue.</summary>
+    public const string Full = "slot";
 
-    /// <summary>The wait's code where no check holds the slot now (another repository's heavy run, or the next look takes it): its place in the queue.</summary>
+    /// <summary>The wait's code where another check would leave too little memory: <c>free</c> and <c>need</c> in GB, and its place.</summary>
+    public const string Memory = "slot-memory";
+
+    /// <summary>The wait's code where a heavy run of its own repository runs: <c>repository</c>, and its place.</summary>
+    public const string Repository = "slot-repository";
+
+    /// <summary>The wait's code where nothing is said yet (the next look takes a slot): its place in the queue.</summary>
     public const string Queued = "slot-queued";
 
-    /// <summary>The slot's waits of a run's graph, read from the home's slot only where a check of its record is under way.</summary>
+    /// <summary>Every code a check's slots wait under, as the check kind declares them.</summary>
+    public static IReadOnlyList<string> Codes { get; } = [Full, Memory, Repository, Queued];
+
+    /// <summary>The slots' waits of a run's graph, read from the home's slots only where a check of its record is under way.</summary>
     public static IReadOnlyDictionary<string, WorkflowRunWait> Read(string home, NodeGraph graph, NodeRecord? record) =>
         record is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Check && record.Statuses.GetValueOrDefault(node.Id)?.State == NodeStates.Active)
             ? Of(graph, record, VerifySlot.Look(home))
             : new Dictionary<string, WorkflowRunWait>(StringComparer.Ordinal);
 
-    /// <summary>The wait of each active check of <paramref name="record"/> whose attempt out now is among the slot's waiters, by node.</summary>
+    /// <summary>The wait of each active check of <paramref name="record"/> whose attempt out now is among the slots' waiters, by node.</summary>
     public static IReadOnlyDictionary<string, WorkflowRunWait> Of(NodeGraph graph, NodeRecord? record, VerifyLook look)
     {
         var waits = new Dictionary<string, WorkflowRunWait>(StringComparer.Ordinal);
@@ -41,26 +51,46 @@ public static class CheckSlotWaits
             {
                 ["position"] = (at.index + 1).ToString(CultureInfo.InvariantCulture), ["of"] = look.Waiters.Count.ToString(CultureInfo.InvariantCulture),
             };
-            if (look.Holder is { } holder)
+            var said = at.waiter.Wait;
+            var code = said?.Code switch
             {
-                values["run"] = holder.Run;
-                values["heldSince"] = holder.Since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+                CheckWait.Slots => Full,
+                CheckWait.Memory => Memory,
+                CheckWait.Repository => Repository,
+                _ => Queued,
+            };
+            if (code == Full)
+            {
+                values["running"] = said!.Values.GetValueOrDefault("running") ?? "?";
+                values["slots"] = said.Values.GetValueOrDefault("of") ?? "?";
+            }
+            else if (code == Memory)
+            {
+                values["free"] = said!.Values.GetValueOrDefault("free") ?? "?";
+                values["need"] = said.Values.GetValueOrDefault("need") ?? "?";
+            }
+            else if (code == Repository)
+            {
+                values["repository"] = said!.Values.GetValueOrDefault("repository") ?? at.waiter.Repository;
             }
 
-            waits[node.Id] = new WorkflowRunWait(look.Holder is null ? Queued : HeldBy, values, at.waiter.Since);
+            waits[node.Id] = new WorkflowRunWait(code, values, at.waiter.Since);
         }
 
         return waits;
     }
 
-    /// <summary>The terminal's words for a slot's wait: the run holding it and since when, and the check's place in the queue.</summary>
+    /// <summary>The terminal's words for a slot's wait: why it waits, and the check's place in the queue.</summary>
     public static string Said(WorkflowRunWait wait)
     {
-        var queue = $"{wait.Values.GetValueOrDefault("position") ?? "?"} of {wait.Values.GetValueOrDefault("of") ?? "?"} in its queue";
-        if (wait.Code != HeldBy) return $"Waits for the machine's check slot: {queue}.";
-        var since = DateTimeOffset.TryParse(wait.Values.GetValueOrDefault("heldSince"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
-            ? $" since {at.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)}"
-            : "";
-        return $"Waits for the machine's check slot, held by run {wait.Values.GetValueOrDefault("run")}'s check{since}: {queue}.";
+        string Value(string name) => wait.Values.GetValueOrDefault(name) ?? "?";
+        var queue = $"{Value("position")} of {Value("of")} in its queue";
+        return wait.Code switch
+        {
+            Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
+            Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
+            Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
+            _ => $"Waits for a check slot: {queue}.",
+        };
     }
 }

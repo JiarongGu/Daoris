@@ -23,7 +23,7 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRo
     public override NodeAuthority Row { get; } =
         new(NodeKinds.Opinion, NodeReach.Observed, NodeSource.Opinion, NodeSource.Opinion, false, true, true, true) { SkipBy = NodeSource.Opinion };
 
-    public override IReadOnlyList<string> Waits { get; } = [OpinionStepWaits.Answer];
+    public override IReadOnlyList<string> Waits => OpinionStepWaits.Codes;
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Branch;
 

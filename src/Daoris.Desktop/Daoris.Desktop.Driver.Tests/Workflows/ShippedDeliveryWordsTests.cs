@@ -27,7 +27,7 @@ public sealed class ShippedDeliveryWordsTests
                 ("in-place", "Work in place"),
             ],
             Offered.Select(id => (WorkflowDefaults.Of(id)!.DeliveryWords.Id, WorkflowDefaults.Of(id)!.DeliveryWords.Name)));
-        Assert.StartsWith("For a repository whose work you accept", WorkflowDefaults.Of("merge-after-accept")!.DeliveryWords.For);
+        Assert.StartsWith("For a repository whose work merges once it is accepted", WorkflowDefaults.Of("merge-after-accept")!.DeliveryWords.For);
         Assert.All(WorkflowDefaults.All, each => Assert.False(
             string.IsNullOrWhiteSpace(each.DeliveryWords.Id) || string.IsNullOrWhiteSpace(each.DeliveryWords.Name)
             || string.IsNullOrWhiteSpace(each.DeliveryWords.For) || string.IsNullOrWhiteSpace(each.Name) || string.IsNullOrWhiteSpace(each.For), each.Id));

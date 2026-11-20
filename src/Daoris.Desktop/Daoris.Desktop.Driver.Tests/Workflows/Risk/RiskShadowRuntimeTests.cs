@@ -18,7 +18,7 @@ public sealed class RiskShadowRuntimeTests : NodeRunFixture
         """;
 
     [Fact]
-    public async Task A_runs_approval_journals_its_open_and_its_release_beside_todays_gate_and_waits_as_before()
+    public async Task A_runs_approval_classed_role_journals_its_open_and_its_release_and_agrees_with_its_wait()
     {
         BoundTo(ApprovalGraph);
         _branchTips["daoris/s1"] = Tip1;
@@ -32,8 +32,7 @@ public sealed class RiskShadowRuntimeTests : NodeRunFixture
         var opened = Assert.Single(RiskJournal.Read(_home));
         Assert.Equal((RiskJudged.Opened, RiskActs.TaskApprove, RunId, "sign"), (opened.Stage, opened.Kind, opened.Run, opened.Step));
         Assert.Equal(StepWaiting.Line(StepRoles.Owner, new StepHolder(StepHolders.Person, null)), opened.Today);
-        Assert.Equal((RiskVerdict.Pass, false), (opened.Outcome, opened.Agrees));
-        // Today's wait stands as it did.
+        Assert.Equal((RiskVerdict.Gate, true), (opened.Outcome, opened.Agrees));
         Assert.Equal(PersonWaits.Approval, Assert.Single(runtime.HeldSteps()).Why);
 
         Assert.True(RunNodeWords.Word(Files, RunId, "sign", NodeWordActs.Approve, null, () => _now).Done);

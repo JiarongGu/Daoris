@@ -119,16 +119,9 @@ public static class RunNodeWords
     /// </summary>
     public const string Promoted = "promoted";
 
-    /// <summary>The session that did the work never passes its own done, whatever holder it speaks as.</summary>
-    public const string OwnDone = "own-done";
-
-
-    private static string? OwnDoneOf(NodeDeclaration node, NodeStatus status, string act, SettleBy speaker, IReadOnlyCollection<string>? workers) =>
-        act != NodeWordActs.Skip || speaker.Session is not { } session
-        || !(status.State == NodeStates.Active && NodeKit.Of(node.Kind) is IWaitsOnRole waits && waits.Waits(node, status) == PersonWaits.Pass) ? null
-        : workers is null ? $"session {session} speaks for a working session, and the run's working sessions are not read yet"
-        : workers.Contains(session, StringComparer.Ordinal) ? $"session {session} is one of the run's working sessions"
-        : null;
+    /// <summary>The hold <paramref name="node"/> stands at now, or null where it stands at none.</summary>
+    private static string? HoldOf(NodeDeclaration node, NodeStatus status) =>
+        status.State == NodeStates.Active && NodeKit.Of(node.Kind) is IWaitsOnRole waits ? waits.Waits(node, status) : null;
 
     /// <summary>
     /// Keep the person's <paramref name="act"/> on <paramref name="node"/> of <paramref name="run"/>, with their <paramref name="words"/>, on the
@@ -178,7 +171,7 @@ public static class RunNodeWords
             // A step not reached (an early Accept on the way to its review) has no attempt standing: the tenure at its last attempt is an ended one's.
             var holding = status.State is NodeStates.Blocked or NodeStates.Ready ? null : hold.Current(node, status.Attempt);
             var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
-            if (OwnDoneOf(declared, status, act, speaker, workers) is { } own) return (null, Refuse(OwnDone) with { Detail = own, State = status.State });
+            if (SettleDoor.Own(declared, HoldOf(declared, status), act, speaker, workers) is { } own) return (null, Refuse(own.Code) with { Detail = own.Detail, State = status.State });
             // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
             var takes = StepHolding.TakesOnPress(holding, speaker);
             if (!takes && SettleDoor.Admit(holding, speaker, hold.Unread) is { } refusal)
@@ -201,6 +194,7 @@ public static class RunNodeWords
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
                 Revision = by is null ? null : revision?.Trim(), Outcome = outcome, Holder = holder,
                 Decider = act == NodeWordActs.Decide && holder is null && SettleDoor.Holds(CastHolders.Agent, speaker.Who) ? speaker.Who : null,
+                GaveUp = act == NodeWordActs.Stop && speaker.Who == SettleBy.Observed,
             };
             if (act == NodeWordActs.Accept && by is null)
             {
@@ -390,7 +384,7 @@ public static class RunNodeWords
         TakenBy(word.Act) is { } owner && owner.Move(node, word, status, scope) is { } own ? own
         : word.Act == NodeWordActs.Skip ? new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope }
         : word.Act == NodeWordActs.Again ? new NodeMove(NodeStates.Ready, NodeCause.Person)
-        : new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words };
+        : new NodeMove(NodeStates.Stopped, word.GaveUp ? NodeCause.Daoris : NodeCause.Person) { Words = word.Words };
 
 
     /// <summary>
@@ -473,9 +467,9 @@ public static class RunNodeWords
         (SettleDoor.NotHolder, _) or (StepTenureFiles.EndedEpoch, _) =>
             $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}, so only its holder settles it: take it first (`daoris workflow take {done.Run} {done.Node}`) to act on it.",
         (SettleDoor.Marked, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.Detail}: only the owner role settles it.",
-        (OwnDone, _) =>
-            $"workflow: `{done.Node}` on run {done.Run} holds the run's own done, and the session that did the work never passes it: {done.Detail}; "
-            + $"whoever holds `{StepRoles.AskReader}` reads it against its ask.",
+        (SettleDoor.OwnWork, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} holds the run's own work, and its maker never answers its own gate: {done.Detail}; "
+            + "another holder of the step's role answers it.",
         (StepTenureFiles.Unread, _) => $"workflow: `{done.Node}` on run {done.Run} was not settled: {done.Detail}, so only your own word is taken until they are mended.",
         (Promoted, _) => $"workflow: `{done.Node}` on run {done.Run} has promoted onto the line, and nothing reverses the line, so there is nothing to stop: its record reads its reach.",
         (NodeRefusal.NoWords, _) => $"workflow: passing `{done.Node}` over keeps your words with it, and none were given: say why.",

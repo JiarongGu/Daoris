@@ -4,8 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The verification executor, on scratch repositories with stand-in gates: two verifications never overlap
-/// and wait in the order sent; a repository whose slot a heavy run holds keeps another's run from nothing; a gate's failure, a runner's
+/// The verification executor, on scratch repositories with stand-in gates: as many verifications run at once as the machine's check
+/// slots admit (memory for two runs two, the third waiting for a slot; memory for one runs one; <c>checks 1</c> pins one), the waiting in
+/// the order sent; a repository whose slot a heavy run holds keeps another's run from nothing; a gate's failure, a runner's
 /// answer by file, busy, a changed declaration, the bound, the person's stop and a restart each come to their result in the attempt's
 /// folder; the job's first process runs below normal and a <c>clock</c> gate at normal.
 /// </summary>
@@ -112,17 +113,21 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
 
-    private IReadOnlyList<(string What, string Tag)> Intervals() =>
-        [.. File.ReadAllLines(At("intervals.log")).Select(line => line.Split(' ')).Select(parts => (parts[0], parts[1]))];
+    private IReadOnlyList<(string What, string Tag)> Intervals()
+    {
+        using var stream = new FileStream(At("intervals.log"), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using var reader = new StreamReader(stream);
+        return [.. reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Split(' ')).Where(parts => parts.Length >= 2).Select(parts => (parts[0], parts[1]))];
+    }
 
     [Fact]
-    public async Task Two_verifications_never_overlap_and_wait_in_the_order_they_were_sent()
+    public async Task With_checks_pinned_at_one_two_verifications_never_overlap_and_wait_in_the_order_they_were_sent()
     {
         var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
         var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)));
-        var executor = Executor();
+        var executor = Executor(new VerifyWorld { Checks = () => 1 });
 
-        // The home's verification slot held from outside, so both wait, then run one after another in the order they came.
+        // The home's one verification slot held from outside, so both wait, then run one after another in the order they came.
         using (var held = VerifySlot.TryTake(Home))
         {
             Assert.NotNull(held);
@@ -131,7 +136,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
             // Each says what it waits for once the executor has looked; read then, so no rewrite is read half-made.
             await Poll.Until(() => VerifySlot.Look(Home).Waiters is { Count: 2 } waiters && waiters.All(waiter => waiter.For is not null));
             Assert.Equal(["i-a", "i-b"], VerifySlot.Look(Home).Waiters.Select(waiter => waiter.Invocation));
-            Assert.All(VerifySlot.Look(Home).Waiters, waiter => Assert.Equal("another verification", waiter.For));
+            Assert.All(VerifySlot.Look(Home).Waiters, waiter => Assert.Equal("a slot: 1 of 1 run", waiter.For));
         }
 
         Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
@@ -141,18 +146,91 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task With_memory_for_two_two_repositories_checks_run_at_once_and_a_third_waits_for_a_slot_saying_so()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder), true, false)));
+        var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder), true, false)));
+        var tool = await RepositoryAsync("tool", Gates(("unit", Node(At("gate.mjs"), "c", _folder), true, false)));
+        // Eight processors and two places in the machine's admission: two checks at most, and 20 GB free admits the second.
+        var executor = Executor(new VerifyWorld { Processors = 8, Capacity = 2, Memory = () => new MemoryReading(20L << 30, 20L << 30) });
+
+        Assert.True(await executor.SendAsync(Send("v-0000000000000001", "i-a", engine)));
+        Assert.True(await executor.SendAsync(Send("v-0000000000000002", "i-b", game, "game")));
+        Assert.True(await executor.SendAsync(Send("v-0000000000000003", "i-c", tool, "tool")));
+
+        // a and b both start before either ends; c waits, saying it waits for a slot, until one lets go.
+        await Poll.Until(() => File.Exists(At("intervals.log")) && Intervals().Count(each => each.What == "start") == 2, () => "two checks did not start at once");
+        await Poll.Until(() => VerifySlot.Look(Home).Waiters is [{ For: not null }]);
+        var waiter = Assert.Single(VerifySlot.Look(Home).Waiters);
+        Assert.Equal("i-c", waiter.Invocation);
+        Assert.Equal("a slot: 2 of 2 run", waiter.For);
+        Assert.Equal(2, VerifySlot.Look(Home).Holders.Count);
+
+        await File.WriteAllTextAsync(At("go-a"), "");
+        await File.WriteAllTextAsync(At("go-b"), "");
+        await File.WriteAllTextAsync(At("go-c"), "");
+        foreach (var (run, invocation) in new[] { ("v-0000000000000001", "i-a"), ("v-0000000000000002", "i-b"), ("v-0000000000000003", "i-c") })
+        {
+            Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync(run, invocation)).Verdict);
+        }
+
+        Assert.Equal(["a", "b"], Intervals().Take(2).Select(each => each.Tag).Order());
+        Assert.All(Intervals().Take(2), each => Assert.Equal("start", each.What));
+        Assert.Empty(VerifySlot.Look(Home).Holders);
+    }
+
+    [Fact]
+    public async Task With_memory_for_two_two_checks_of_one_repository_run_at_once_each_in_its_own_slot_s_tree()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder), true, false)));
+        var executor = Executor(new VerifyWorld { Processors = 8, Capacity = 2, Memory = () => new MemoryReading(20L << 30, 20L << 30) });
+
+        Assert.True(await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Tree = null }));
+        Assert.True(await executor.SendAsync(Send("v-0000000000000002", "i-b", engine) with { Tree = null }));
+
+        await Poll.Until(() => File.Exists(At("intervals.log")) && Intervals().Count(each => each.What == "start") == 2, () => "two checks of one repository did not start at once");
+        var key = HeavySlot.KeyOf(engine.Checkout)!;
+        Assert.Equal(2, HeavySlot.Look(Home, key).Holders.Count);
+        Assert.True(Directory.Exists(Path.Combine(VerifyFiles.LinesFolder(Home), "trees", $"{key}-2")));
+
+        await File.WriteAllTextAsync(At("go-a"), "");
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000002", "i-b")).Verdict);
+        Assert.Empty(HeavySlot.Look(Home, key).Holders);
+    }
+
+    [Fact]
+    public async Task With_memory_for_one_a_second_check_of_one_repository_waits_for_memory_saying_so()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder), true, false)));
+        var executor = Executor(new VerifyWorld { Processors = 32, Capacity = 4, Memory = () => new MemoryReading(4L << 30, 9L << 30) });
+
+        Assert.True(await executor.SendAsync(Send("v-0000000000000001", "i-a", engine)));
+        await Poll.Until(() => File.Exists(At("intervals.log")));
+        Assert.True(await executor.SendAsync(Send("v-0000000000000002", "i-b", engine)));
+
+        await Poll.Until(() => VerifySlot.Look(Home).Waiters is [{ For: not null }]);
+        var waiter = Assert.Single(VerifySlot.Look(Home).Waiters);
+        Assert.Equal(CheckWait.Memory, waiter.Wait!.Code);
+        Assert.Equal("4.0", waiter.Wait.Values["free"]);
+
+        await File.WriteAllTextAsync(At("go-a"), "");
+        Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000002", "i-b")).Verdict);
+        Assert.Equal([("start", "a"), ("end", "a"), ("start", "a"), ("end", "a")], Intervals());
+    }
+
+    [Fact]
     public async Task A_heavy_run_holding_one_repository_keeps_another_repository_s_run_from_nothing()
     {
         var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
         var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)));
-        var executor = Executor();
+        var executor = Executor(new VerifyWorld { Checks = () => 1 });
 
         var held = HeavySlot.TryTake(Home, HeavySlot.KeyOf(engine.Checkout)!);
         Assert.NotNull(held);
         await executor.SendAsync(Send("v-0000000000000001", "i-a", engine));
         await executor.SendAsync(Send("v-0000000000000002", "i-b", game, "game"));
 
-        // The engine's run waits behind the heavy run holding its slot, and holds no slot while it waits: the game's runs to its verdict.
         Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000002", "i-b")).Verdict);
         Assert.False(File.Exists(VerifyFiles.ResultOf(Home, "v-0000000000000001", "i-a")));
         held.Dispose();
@@ -497,7 +575,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
 
         // What a driver ended mid-run left: a job of the attempt's name, its gate still in it.
         var executor = Executor();
-        using (var left = ProcessJob.Create(HeavyExecutor.JobName("i-a"))!)
+        using (var left = ProcessJob.Create(HeavyExecutor.JobName(Home, "i-a"))!)
         using (HeavyStep.Start(left, Node(At("gate.mjs"), "left", _folder, "hold"), _folder, new Dictionary<string, string>()))
         {
             await Poll.Until(() => File.Exists(At("child-left.txt")));
@@ -530,7 +608,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.True(File.Exists(AttemptMarks.Began(Home, "v-0000000000000001", "i-a", 0)), "its send said it began");
         Assert.True(File.Exists(AttemptMarks.Closed(Home, "v-0000000000000001", "i-a", 0)), "the executor's own close said why it ended");
         Assert.False(Alive(child), "what its gate left was ended with it");
-        Assert.Null(VerifySlot.Look(Home).Holder);
+        Assert.Empty(VerifySlot.Look(Home).Holders);
         var after = Executor();
         Assert.Equal(VerifyAnswers.NotStarted, (await after.ReconcileAsync("v-0000000000000001", "i-a")).State);
 

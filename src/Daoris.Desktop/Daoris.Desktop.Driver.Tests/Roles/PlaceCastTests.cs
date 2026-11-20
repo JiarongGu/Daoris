@@ -54,7 +54,7 @@ public sealed class PlaceCastTests : IDisposable
     {
         var low = Risk().At("work", "reports");
         var empty = Casts.Book();
-        Assert.Equal((CastHolders.Person, CastWhy.Default), (empty.At(StepRoles.Acceptor, "work", "reports", low) is var a ? (a.Holder, a.Why) : default));
+        Assert.Equal((CastHolders.Agent, CastWhy.Default), (empty.At(StepRoles.Acceptor, "work", "reports", low) is var a ? (a.Holder, a.Why) : default));
         Assert.Equal((CastHolders.Agent, CastWhy.Staffed), (empty.At(StepRoles.Design, "work", "reports", low) is var d ? (d.Holder, d.Why) : default));
         Assert.Equal(CastWhy.Owner, empty.At(StepRoles.Owner, "work", "reports", low).Why);
 
@@ -75,6 +75,35 @@ public sealed class PlaceCastTests : IDisposable
         Assert.Null(Casts.Cast("workspace/work", StepRoles.Acceptor, null, "back to me", _now));
         Assert.Equal(CastWhy.Default, Casts.Book().At(StepRoles.Acceptor, "work", "reports", low).Why);
         Assert.Equal(3, Casts.Journal().Count);
+    }
+
+    [Fact]
+    public void A_role_no_cast_fills_is_its_agents_and_the_person_holds_one_only_by_their_own_cast_or_mark()
+    {
+        var low = Risk().At("work", "reports");
+        var empty = Casts.Book();
+        foreach (var role in StepRoles.All.Except([StepRoles.Owner, StepRoles.Design, StepRoles.Opinion, StepRoles.CredentialsKeeper]))
+        {
+            var now = empty.At(role, "work", "reports", low);
+            Assert.Equal((role, CastHolders.Agent, CastWhy.Default, PlaceRiskBook.DefaultSource), (role, now.Holder, now.Why, now.Source));
+            Assert.Equal(CastHolders.Agent, PlaceCastBook.Uncast(role));
+        }
+
+        Assert.Equal((CastHolders.Agent, CastWhy.Default), empty.At("reviewer", "work", null, low) is var r ? (r.Holder, r.Why) : default);
+        Assert.Equal(CastHolders.Agent, PlaceCastBook.Uncast(AppointedRoles.Supervisor));
+
+        Assert.Equal((CastHolders.Person, CastWhy.SignIn), empty.At(StepRoles.CredentialsKeeper, "work", "reports", low) is var k ? (k.Holder, k.Why) : default);
+        Assert.Equal(CastHolders.Person, PlaceCastBook.Uncast(StepRoles.CredentialsKeeper));
+
+        Assert.Equal((CastHolders.Person, CastWhy.Owner), empty.At(StepRoles.Owner, "work", "reports", low) is var o ? (o.Holder, o.Why) : default);
+        var marked = Risk(PlaceRisks.Low, PlaceMarks.ProductionReleases).At("work", null);
+        Assert.Equal((CastHolders.Person, CastWhy.Marked), empty.At(StepRoles.Approver, "work", null, marked) is var m ? (m.Holder, m.Why) : default);
+
+        Assert.Null(Casts.Cast("workspace/work", StepRoles.Tester, CastHolders.Person, "I try these myself", _now));
+        Assert.Equal((CastHolders.Person, CastWhy.Cast), Casts.Book().At(StepRoles.Tester, "work", "reports", low) is var t ? (t.Holder, t.Why) : default);
+        var said = PlaceCastView.Of(Casts.Book(), Risk(), "work", null, [], slots: null).Said().ToList();
+        Assert.Contains(said, line => line.Contains("acceptor", StringComparison.Ordinal) && line.Contains("the role's agent — no cast names another", StringComparison.Ordinal));
+        Assert.DoesNotContain(said, line => line.Contains("you — default", StringComparison.Ordinal));
     }
 
     private string Plant(string json)

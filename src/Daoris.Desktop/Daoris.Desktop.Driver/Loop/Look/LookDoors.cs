@@ -25,6 +25,8 @@ internal sealed class LookDoors(Driver driver) : ILandingWiring, IPluginWiring, 
 
     Func<string, Noted, bool>? ILookWiring.Stops => driver.Stops;
 
+    IReadOnlyList<string>? ILookWiring.RunWorkers(string run) => driver.Makers?.Invoke(run);
+
     HarnessRoster ILookWiring.Harnesses => Context.Harnesses;
 
     TimeProvider ILookWiring.Clock => driver.RetryClock;

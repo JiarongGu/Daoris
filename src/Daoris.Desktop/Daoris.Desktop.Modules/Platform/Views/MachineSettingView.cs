@@ -52,6 +52,14 @@ public sealed class MachineSettingView : IPressView
         return Shown("drain", new() { ["minutes"] = text }, $"daoris settings drain {text}");
     });
 
+    public static MachineSettingView Checks() => new("SET_CHECKS", payload =>
+    {
+        if (Number(payload, "checks") is not { } checks) return Shown("checks-auto", [], $"daoris settings checks {ChecksSetting.Auto}");
+        if (!ChecksSetting.Takes(checks)) return PressViewed.Refused(ChecksSetting.Refusal);
+        var text = checks.ToString(CultureInfo.InvariantCulture);
+        return Shown("checks", new() { ["checks"] = text }, $"daoris settings checks {text}");
+    });
+
     public static MachineSettingView Terminal() => new("SET_TERMINAL", payload =>
     {
         var tier = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("tier", out var value) && value.ValueKind == JsonValueKind.String

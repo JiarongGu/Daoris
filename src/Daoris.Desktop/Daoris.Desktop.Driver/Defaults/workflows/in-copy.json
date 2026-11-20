@@ -2,7 +2,7 @@
   "id": "in-copy",
   "order": 11,
   "name": "In-copy workflow",
-  "for": "For a folder: each session works in a copy of it, you review what the copy changed, and what you accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
+  "for": "For a folder: each session works in a copy of it, the Accept of what the copy changed follows the risk policy (it passes where nothing gates it), and what was accepted is brought back; a file changed in both the folder and the copy waits for your choice.",
   "setUp": false,
   "graph": {
     "schemaVersion": 2,

@@ -161,14 +161,30 @@ public sealed class ReviewRecordRunTests : NodeRunFixture
         Assert.Equal(("modified", first), (Assert.Single(record.Rows).Change, record.Rows[0].Before));
     }
 
-    [Fact]
-    public async Task Work_that_committed_nothing_waits_for_the_persons_review_rather_than_passing_unread()
+    private void EmptyBranch()
     {
         BoundTo(LandingGraph);
         _branchTips["daoris/s1"] = "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0";
         var branch = RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId]);
         var held = new HeldFact(Opened, Opened, EndBy.Empty, "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0", "main", "origin/main", "f9", "repo-1");
         _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), branch with { Records = branch.Records with { Branch = branch.Records.Branch! with { Held = held } } }];
+    }
+
+    [Fact]
+    public async Task Work_that_committed_nothing_has_nothing_to_accept_and_passes_by_the_policy_where_the_seed_passes()
+    {
+        EmptyBranch();
+
+        await RunPassAsync(Runtime(), """{"risk":{}}""");
+
+        var review = RunStatus("review");
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy), (review.State, review.By));
+    }
+
+    [Fact]
+    public async Task Work_that_committed_nothing_waits_where_the_policy_gates_its_review_rather_than_passing_unread()
+    {
+        EmptyBranch();
 
         var review = await ActiveAsync();
 

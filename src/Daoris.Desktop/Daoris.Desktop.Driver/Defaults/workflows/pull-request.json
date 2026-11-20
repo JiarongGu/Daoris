@@ -2,10 +2,10 @@
   "id": "pull-request",
   "order": 5,
   "name": "Hosted merge workflow",
-  "for": "For a repository on GitHub: you review the work, Daoris pushes its branch, the GitHub pull request plugin opens a pull request for you to merge, and once it is merged Daoris tidies the work's branches away.",
+  "for": "For a repository on GitHub: the work's Accept follows the risk policy (it passes where nothing gates it), Daoris pushes its branch, the GitHub pull request plugin opens a pull request for you to merge, and once it is merged Daoris tidies the work's branches away.",
   "delivery": {
     "name": "A pull request",
-    "for": "For a repository on GitHub: you review the work, Daoris pushes its branch, the GitHub pull request plugin opens a pull request for you to merge, and once it is merged Daoris tidies the work's branches away."
+    "for": "For a repository on GitHub: the work's Accept follows the risk policy (it passes where nothing gates it), Daoris pushes its branch, the GitHub pull request plugin opens a pull request for you to merge, and once it is merged Daoris tidies the work's branches away."
   },
   "setUp": true,
   "graph": {

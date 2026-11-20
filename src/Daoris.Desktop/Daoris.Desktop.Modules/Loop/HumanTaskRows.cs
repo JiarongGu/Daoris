@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 internal static class HumanTaskRows
 {
     /// <summary>The fields a step's row carries, as the slice pushes them (<see cref="AttentionStateSlice.Fields"/>).</summary>
-    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work", "held", "epoch", "holds"];
+    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work", "held", "epoch", "holds", "vacant", "givesUp"];
 
     /// <param name="groups">Sessions' placings, by which a row names the session its run's waits placed in Needs you: what its notification opens.</param>
     public static IEnumerable<JsonObject> Of(IReadOnlyList<JsonObject> steps, IReadOnlyList<JsonObject>? groups = null)
@@ -33,6 +33,7 @@ internal static class HumanTaskRows
             }
 
             carried["presses"] ??= new JsonArray();
+            if (carried["vacant"] is JsonValue vacant && vacant.TryGetValue<bool>(out var yes) && !yes) carried.Remove("vacant");
             row["step"] = carried;
             yield return row;
         }

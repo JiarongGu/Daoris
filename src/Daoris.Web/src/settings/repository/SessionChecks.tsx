@@ -73,7 +73,7 @@ export function SessionChecksRow({ repository, checks, light, heavy, known, busy
 
   return (
     <SettingRow
-      label={t('settings.checks.label')}
+      label={t('settings.checks.sessions')}
       hint={t('settings.checks.twin', { repository: shellWord(repository, '<repository>') })}
       why={t('settings.checks.why')}
       control={(

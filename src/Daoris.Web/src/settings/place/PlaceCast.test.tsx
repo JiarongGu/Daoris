@@ -15,6 +15,7 @@ const view: PlaceCastView = {
     { role: 'acceptor', holder: 'agent:codex', why: 'cast', source: 'own', words: 'low-risk docs' },
     { role: 'approver', holder: 'person', why: 'marked', source: 'default' },
     { role: 'owner', holder: 'person', why: 'owner', source: 'default' },
+    { role: 'tester', holder: 'agent', why: 'default', source: 'default' },
   ],
   roster: ['person', 'agent', 'agent:codex'],
   line: [{ level: 'workspace-supervisor', role: 'supervisor', holder: 'agent', why: '' }, { level: 'owner', holder: 'person', why: '' }],
@@ -28,6 +29,8 @@ describe('a place’s cast in its Settings', () => {
     render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={onCast} />);
     expect(screen.getByText(/Chosen\. Set for this place\. low-risk docs/)).toBeInTheDocument();
     expect(screen.getByText(/Your mark keeps production releases yours\./)).toBeInTheDocument();
+    expect(screen.getByText(/Nobody is chosen, so the role’s agent fills it until a choice names another\./)).toBeInTheDocument();
+    expect(screen.queryByText(/Nobody else is chosen/)).toBeNull();
     expect(screen.getByText(/Who can fill a role: you, the role’s agent/)).toBeInTheDocument();
     expect(screen.getByText(/reports to the workspace’s supervisor/)).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Who fills owner' })).toBeNull();
@@ -49,6 +52,7 @@ describe('a place’s cast in its Settings', () => {
     render(<PlaceCastSetting name="work" twin="twin" view={view} onCast={vi.fn()} />);
     expect(screen.getByText('角色及其担任者')).toBeInTheDocument();
     expect(screen.getByText(/可以担任角色的：你、该角色的智能体/)).toBeInTheDocument();
+    expect(screen.getByText(/未选定担任者，所以由该角色的智能体担任，直到选定其他担任者。/)).toBeInTheDocument();
   });
 });
 

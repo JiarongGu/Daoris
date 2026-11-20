@@ -22,7 +22,7 @@ namespace Daoris.Desktop.Driver.Tests;
 [Trait(Category.Needs, Needed.Network)]
 public sealed class PartnerProcessTests : IDisposable
 {
-    private const string Piece = "p7a1b2c3";
+    private static readonly string Piece = "p" + Guid.NewGuid().ToString("N")[..7];
 
     private const string Version = "0.0.0-stand-in";
 

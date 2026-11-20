@@ -4,7 +4,7 @@ import { cardEdge, cardFrame, SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import type { StepHoldBridge } from '../../workflow/wait/StepHold';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
-import { attentionGroups, staleGoAheads } from './attention';
+import { APART, attentionGroups, staleGoAheads } from './attention';
 import { repeatedKinds } from './repeatedKinds';
 import type { Answered } from '../InlineConfirm';
 import { SetAsideKind } from './SetAsideKind';
@@ -69,8 +69,8 @@ export function AttentionList({
 }) {
   const { t } = useTranslation();
   const groups = attentionGroups(items);
-  const owners = groups.filter(({ group }) => group !== 'agents');
-  const agents = groups.find(({ group }) => group === 'agents');
+  const owners = groups.filter(({ group }) => !APART.includes(group));
+  const apart = groups.filter(({ group }) => APART.includes(group));
   const counted = owners.reduce((sum, { items: rows }) => sum + rows.length, 0);
   const drawn = ({ group, items: rows }: (typeof groups)[number]) => {
     const shown = group === 'ready' ? rows.slice(0, READY_SHOWN) : rows;
@@ -128,12 +128,19 @@ export function AttentionList({
           {owners.map(drawn)}
         </div>
       )}
-      {agents && (
-        <div data-agents-group className={cn(bare ? 'pb-1' : cn(cardFrame(), 'px-0 pb-2'), owners.length > 0 && 'mt-3')}>
-          {drawn(agents)}
-          <p className="m-0 px-4 pt-1 text-small text-ink-faint">{t('work.attention.agentsNote')}</p>
+      {apart.map((each, at) => (
+        <div
+          key={each.group}
+          data-agents-group={each.group === 'agents' || undefined}
+          data-vacant-group={each.group === 'vacant' || undefined}
+          className={cn(bare ? 'pb-1' : cn(cardFrame(), 'px-0 pb-2'), (owners.length > 0 || at > 0) && 'mt-3')}
+        >
+          {drawn(each)}
+          <p className="m-0 px-4 pt-1 text-small text-ink-faint">
+            {t(each.group === 'vacant' ? 'work.attention.vacantNote' : 'work.attention.agentsNote')}
+          </p>
         </div>
-      )}
+      ))}
     </>
   );
 }

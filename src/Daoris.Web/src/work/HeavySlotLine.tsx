@@ -5,7 +5,7 @@ import { elapsed } from '../locales/format';
 import { Dot } from '../design/ui';
 import { PhaseList, type PhaseRow, type PhaseState } from '../design/phases';
 import type { DetailRow } from './head/DetailsFold';
-import { type HeavyHolder, type HeavyPart, heavyPartOf, type HeavySlot } from './heavySlot';
+import { heldBy, type HeavyHolder, type HeavyPart, heavyPartOf, type HeavySlot } from './heavySlot';
 import { useNow } from './useNow';
 
 /**
@@ -118,15 +118,16 @@ export function heavyRow(
 ): DetailRow | null {
   const part = heavyPartOf(slot, session);
   if (!part || !slot) return null;
-  const value = part.kind === 'waiting' || part.kind === 'admission' || !slot.holder
+  const holder = heldBy(slot, session);
+  const value = part.kind === 'waiting' || part.kind === 'admission' || !holder
     ? <HeavySlotLine part={part} titleOf={titleOf} onOpen={onOpen} />
-    : <PhaseList phases={heavyPhases(t, slot.holder)} label={t('work.heavy.label')} />;
+    : <PhaseList phases={heavyPhases(t, holder)} label={t('work.heavy.label')} />;
   return { label: t('work.heavy.label'), value };
 }
 
 /**
- * A repository's *Heavy run* row on its Details (§3.5): who holds the slot and at which gate, for how long, and how many wait, each a
- * door to its session; *No heavy run now* otherwise. Its tip names the terminal's twin, `run-heavy --look`.
+ * A repository's *Heavy run* row on its Details (§3.5): who holds each of its slots and at which gate, for how long, and how many
+ * wait, each a door to its session; *No heavy run now* otherwise. Its tip names the terminal's twin, `run-heavy --look`.
  */
 export function HeavySlotRow({ slot, titleOf, onOpen }: {
   slot: HeavySlot;
@@ -134,31 +135,31 @@ export function HeavySlotRow({ slot, titleOf, onOpen }: {
   onOpen?: (session: string) => void;
 }) {
   const { t } = useTranslation();
-  const { holder, waiters } = slot;
-  useNow(holder || waiters.length > 0 ? 15_000 : null);
-  if (!holder && waiters.length === 0) {
+  const { holders, waiters } = slot;
+  useNow(holders.length > 0 || waiters.length > 0 ? 15_000 : null);
+  if (holders.length === 0 && waiters.length === 0) {
     return <span className="text-small text-ink-soft">{slot.refusal ?? t('projects.heavy.none')}</span>;
   }
-  const failed = holder?.failed ?? null;
-  const n = (holder?.now?.at ?? 0) + 1;
-  const gate = holder?.now?.gate ?? holder?.gates[0] ?? '';
   const [waitsBefore] = t('projects.heavy.waits', { count: waiters.length, sessions: GAP }).split(GAP);
   return (
     <span className="grid min-w-0 gap-1 text-small text-ink-soft">
-      {holder && (
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+      {holders.map((holder) => (
+        <span key={`${holder.run ?? holder.session ?? 'terminal'}-${holder.since}`} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
           {holder.run
             ? <span>{t('projects.heavy.verification', { run: holder.run })}</span>
             : <SessionDoor session={holder.session} titleOf={titleOf} onOpen={onOpen} />}
           <Dot
-            tone={failed ? 'failed' : 'live'}
-            label={failed
-              ? t('work.heavy.failed', { gate: failed.gate })
-              : t('projects.heavy.at', { n, total: Math.max(holder.gates.length, 1), gate, time: elapsed(holder.now?.since ?? holder.since) })}
+            tone={holder.failed ? 'failed' : 'live'}
+            label={holder.failed
+              ? t('work.heavy.failed', { gate: holder.failed.gate })
+              : t('projects.heavy.at', {
+                n: (holder.now?.at ?? 0) + 1, total: Math.max(holder.gates.length, 1), gate: holder.now?.gate ?? holder.gates[0] ?? '',
+                time: elapsed(holder.now?.since ?? holder.since),
+              })}
             className="whitespace-normal"
           />
         </span>
-      )}
+      ))}
       {waiters.length > 0 && (
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
           <Dot tone="waits" label={waitsBefore.trimEnd()} />

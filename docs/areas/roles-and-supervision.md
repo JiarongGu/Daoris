@@ -292,7 +292,9 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     comes from, each press `SET_PLACE_RISK` naming that repository), `daoris settings risk`, and Ask
     Daoris's press, which goes on the owner's card in every mode, while a process in an agents' job proving no key is refused
     (`owner-only`, `PipeOwnerOnly`). The roles' admission reads it at each act: at high risk no appointed role acts (`high-risk`) and the
-    decision waits on the owner role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line,
+    decision waits on the owner role. The cast reads it alike: at high risk every role there is the person's (`risk`), the one
+    place-wide holder left until RISKGATE1j retires `placeRisk`; elsewhere a role no cast fills is its agent's, never the person's by
+    default (`PlaceCastBook.At`, D354 point 4), and a run's step is the owner's row only where the person holds its role. A line's mark (`line`, `line.<kind>`) is the owner holding that place's level of the reporting line,
     and a risk the build does not know reads high. A `driver.json` with no record (an older build
     rewrote it) reads the line as before the record, until no home on a supported update path lacks it. (D305, D309)
     A run step is settled only through one door (`SettleDoor`): by the holder its attempt's tenure names now, in its epoch, by an

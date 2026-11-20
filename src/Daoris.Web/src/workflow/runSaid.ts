@@ -84,7 +84,7 @@ export function checkWord(t: TFunction, step: RunStep): string | null {
   }
 }
 
-const slotWait = (step: RunStep): boolean => step.wait?.code === 'slot' || step.wait?.code === 'slot-queued';
+const slotWait = (step: RunStep): boolean => step.wait?.code === 'slot' || step.wait?.code?.startsWith('slot-') === true;
 
 /** A step's status word: a check's verdict where it has one, a wait's *waiting on `<role>`: `<holder>`*, else its state's. */
 export const stepWord = (t: TFunction, step: RunStep): string => {
@@ -261,7 +261,7 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
     // A review's rejection is the person's changes, which go to the work.
     case 'rejected': return t(node === 'review' ? 'workflow.run.graph.said.changes' : 'workflow.run.graph.said.rejected');
-    case 'stopped': return t('workflow.run.graph.said.stopped');
+    case 'stopped': return t(step.code === 'daoris' ? 'workflow.run.graph.said.gaveUp' : 'workflow.run.graph.said.stopped');
     case 'unknown': return t('workflow.run.graph.said.unknown');
     case 'invalidated': return t('workflow.run.graph.said.invalidated');
     default: return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });

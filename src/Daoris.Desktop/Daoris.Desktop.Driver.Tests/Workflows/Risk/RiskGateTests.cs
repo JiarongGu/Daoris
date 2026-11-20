@@ -142,7 +142,7 @@ public sealed class RiskGateTests
         Assert.Equal(RiskClasses.None, Judge(policy, RiskActs.WorkDone, new RiskPlace("work", "calm", true)).Class);
         var shop = new RiskPlace("shop", "store", true);
         Assert.Equal(RiskClasses.Owner, Judge(policy, "release.start/production", shop).Class);
-        Assert.Equal(RiskClasses.None, Judge(policy, RiskActs.ReleaseStart, shop).Class);
+        Assert.Equal(RiskClasses.Owner, Judge(policy, RiskActs.ReleaseStart, shop).Class);
         Assert.Equal(RiskClasses.None, Judge(policy, RiskActs.WorkDone, shop).Class);
     }
 

@@ -49,12 +49,12 @@ public static class StepWaiting
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
 
-    /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast; the person where none is in hand.</summary>
+    /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast, else the cast's rule (<see cref="PlaceCastBook.Uncast"/>).</summary>
     public static string HolderOf(NodeDeclaration node, NodeStatus status, string role, StepTenure? held, Func<string, string>? cast)
     {
         var own = role == StepRoles.Of(node);
         if (own && held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt) return tenure.Holder;
-        return (own ? HolderWords.First(node) : null) ?? cast?.Invoke(role) ?? CastHolders.Person;
+        return (own ? HolderWords.First(node) : null) ?? cast?.Invoke(role) ?? PlaceCastBook.Uncast(role);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public static class StepWaiting
         Put("environment", progress.Environment);
         if (progress.Actor is { } actor)
         {
-            var filled = holder ?? CastHolders.StepOf(CastHolders.Person);
+            var filled = holder ?? CastHolders.StepOf(PlaceCastBook.Uncast(actor));
             Put("actor", actor);
             Put("holder", filled.Kind);
             Put("holderName", filled.Name);
@@ -177,6 +177,11 @@ public sealed record HeldStep(
     public WorkflowRunHeld? Held { get; init; }
 
     public bool Handed { get; init; }
+
+    /// <summary>A vacancy (<see cref="StepVacancies"/>), never handed, never counted as the owner's, never hidden.</summary>
+    public bool Vacant { get; init; }
+
+    public DateTimeOffset? GivesUp { get; init; }
 }
 
 /// <summary>
@@ -185,36 +190,44 @@ public sealed record HeldStep(
 /// </summary>
 public static class HeldSteps
 {
+    /// <param name="vacancies">Where the pass keeps the vacancies (<see cref="IStepVacancyStore"/>); null reads none.</param>
+    /// <param name="bound">How long a vacancy stands before Daoris gives it up (<see cref="VacancySetting"/>).</param>
     public static IReadOnlyList<HeldStep> Of(
-        IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null)
+        IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null,
+        IStepVacancyStore? vacancies = null, TimeSpan? bound = null)
     {
         var steps = new List<HeldStep>();
         foreach (var each in governed)
         {
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
             var holding = tenures?.Holding(each.Unit.Id, kept.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
-            var cast = casts is null ? null : CastReading.At(casts, risk, each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
+            var (workspace, repository) = (each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
+            var cast = casts is null ? null : CastReading.At(casts, risk, workspace, repository);
+            var vacant = vacancies?.Of(each.Unit.Id);
             foreach (var node in each.Graph.Nodes)
             {
                 var held = holding?.GetValueOrDefault(node.Id);
-                if (Step(each.Run, each.Unit.Owner.Repository ?? "", each.Unit.Owner.Workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held, cast) is { } step) steps.Add(step);
+                if (Step(each.Run, repository ?? "", workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held, cast, vacant, bound) is { } step) steps.Add(step);
             }
         }
 
         return [.. steps.OrderBy(step => step.Run, StringComparer.Ordinal).ThenBy(step => step.Node, StringComparer.Ordinal)];
     }
 
-    /// <summary>The row of one step, or null where a word is pending on it, another row carries it, or an agent's channel settles it.</summary>
+    /// <summary>The row of one step, or null where a word is pending on it, another row carries it, or an agent's channel serves it.</summary>
     public static HeldStep? Step(
-        string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null)
+        string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null,
+        IReadOnlyList<StepVacancy>? vacancies = null, TimeSpan? bound = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
         if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
+        var vacancy = carried ? null : StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt);
+        var vacant = vacancy is not null;
 
         // A step its agent's working session settles by its tool or its acts is handed to that session: the person's one press is Take.
-        if (!carried && AgentSettles.Handed(node, status, wait))
+        if (!carried && !vacant && AgentSettles.Handed(node, status, wait))
         {
             return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, [], work, wait.Since)
             {
@@ -223,7 +236,7 @@ public static class HeldSteps
             };
         }
 
-        if (carried || (wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
+        if (carried || (!vacant && wait.Holder.Kind != StepHolders.Person && AgentSettles.Wait(wait.Why))) return null;
         var presses = RunNodeWords.Acts(node, status).ToList();
         // A plugin's role wait with no page is acted on where nothing observes it: its holder says it is done outside, with the link.
         var outside = wait is { Why: PersonWaits.Actor, Url: null } && PluginFailureHeld.Of(record, node, status) is { } attempt
@@ -233,6 +246,7 @@ public static class HeldSteps
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
             Held = outside, Epoch = tenure?.Epoch, Holds = HoldsOn(node, wait, tenure),
+            Vacant = vacant, GivesUp = vacancy is { } standing ? standing.Since +(bound ?? VacancySetting.Of(null)) : null,
         };
     }
 

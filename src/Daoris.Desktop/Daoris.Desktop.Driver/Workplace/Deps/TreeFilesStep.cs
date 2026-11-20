@@ -5,12 +5,12 @@ internal static class TreeFilesStep
 {
     /// <summary>The stage in <paramref name="tree"/>, one of Daoris's trees of <paramref name="root"/>; a failure of git or the disk said, never thrown.</summary>
     internal static async Task<TreeFilesOutcome> RunAsync(
-        string home, string root, string tree, string repository, Action<Noted> say, CancellationToken ct, bool regenerate = false, LookStages? steps = null)
+        string home, string root, string tree, string repository, Action<Noted> say, CancellationToken ct, LookStages? steps = null)
     {
         TreeFilesOutcome outcome;
         try
         {
-            outcome = await new TreeFilesStage(home, root, tree, repository, regenerate, steps).RunAsync(ct).ConfigureAwait(false);
+            outcome = await new TreeFilesStage(home, root, tree, repository, steps).RunAsync(ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {

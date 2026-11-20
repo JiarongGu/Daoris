@@ -32,6 +32,9 @@ public static class AttentionOwnership
     /// <summary>The agents' class: a role appointed now takes it; listed, never counted as the owner's.</summary>
     public const string AgentsClass = "agents";
 
+    /// <summary>A step its agent holds that no agent's session serves (<c>StepVacancies</c>): listed under <i>Vacant</i>, never counted.</summary>
+    public const string VacantClass = "vacant";
+
     /// <summary>The six kinds only the owner settles, as a row carries them.</summary>
     public static class Wait
     {
@@ -108,6 +111,12 @@ public static class AttentionOwnership
     /// <summary>Nobody need take it: it ends at its own time or reading.</summary>
     private static bool ByItself(JsonObject _, AttentionTakers __) => true;
 
+    private static bool HeldByThePerson(JsonObject row) =>
+        row["step"] is not JsonObject step || Text(step, "holder") is not { } holder || holder == StepHolders.Person;
+
+    public static bool Vacant(JsonObject row) =>
+        Text(row, "kind") == "step" && row["step"] is JsonObject step && step["vacant"] is JsonValue value && value.TryGetValue<bool>(out var vacant) && vacant;
+
     /// <summary>Every kind of <i>What needs you</i>, classed as the window design's §5.2 says.</summary>
     public static readonly IReadOnlyList<Class> Census =
     [
@@ -143,11 +152,6 @@ public static class AttentionOwnership
             Wait = Wait.GoAhead, Takes = Taker.Approver, OwnersWhen = EveryRow,
             Otherwise = "Freeing what the declaration lets go goes to its approver role; no row carries one yet.",
         },
-        new("step", "A run's step waits on a role the owner holds (only such a step is a row): a release to a stage they keep.")
-        {
-            Wait = Wait.Release, Takes = Taker.Holder, OwnersWhen = EveryRow,
-            Otherwise = "A step whose role another holds goes to that role, an acceptor's step to the acceptor, and waits in its session's dock.",
-        },
         new("set-up", "A set-up shown for the owner's look: the owner holds every set-up step's look today.")
         {
             Wait = Wait.Release, Takes = Taker.Holder, OwnersWhen = EveryRow,
@@ -160,6 +164,11 @@ public static class AttentionOwnership
         },
 
         // ---- the owner's by a row's own facts, else the agents' while a role is appointed to take it ----
+        new("step", "A run's step waits on a role the person holds, by their own cast, a mark, the owner role or a high-risk place: theirs to settle.")
+        {
+            Wait = Wait.Release, Takes = Taker.Holder, OwnersWhen = HeldByThePerson, TakenWhen = (_, _) => true,
+            Otherwise = "A step whose role an agent holds, by a cast or as the role's agent where nothing casts it (D354 point 4), is that holder's, said with its role and holder.",
+        },
         new("account-wait", "A start waits on accounts that only a sign-in clears: signed out, a key refused, expired or revoked, an error, or no account at all; a sign-in is the owner's.")
         {
             Wait = Wait.SignIn, Takes = Taker.Clock, OwnersWhen = NeedsASignIn, TakenWhen = ByItself,
@@ -277,6 +286,7 @@ public static class AttentionOwnership
     public static Side Of(JsonObject row, AttentionTakers takers)
     {
         if (Text(row, "kind") is not { } kind || !ByKind.TryGetValue(kind, out var known)) return new(OwnersClass, null);
+        if (Vacant(row)) return new(VacantClass, null);
         var wait = known.WaitOf?.Invoke(row) ?? known.Wait;
         if (known.Takes is null || known.OwnersWhen?.Invoke(row) != false) return new(OwnersClass, wait);
         return known.TakenWhen?.Invoke(row, takers) == true ? new(AgentsClass, null) : new(OwnersClass, wait, Untaken: true);
