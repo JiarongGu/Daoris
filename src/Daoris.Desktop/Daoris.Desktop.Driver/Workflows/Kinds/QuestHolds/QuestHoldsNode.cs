@@ -33,6 +33,8 @@ internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole
 
     public override NodeLook Look => NodeLook.Holds;
 
+    public override string Role => StepRoles.Asker;
+
     public NodeObservation Observe(NodeReading reading) => QuestHoldsReading.Observe(reading);
 
     string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => UncheckedDones.Says(status.Holds) ? PersonWaits.Pass : null;

@@ -42,7 +42,7 @@ public sealed class StepRolesTests : IDisposable
         [NodeKinds.WorkRequests] = StepRoles.Operations,
         [NodeKinds.Request] = StepRoles.Operations,
         [NodeKinds.Land] = StepRoles.Operations,
-        [NodeKinds.QuestHolds] = StepRoles.Operations,
+        [NodeKinds.QuestHolds] = StepRoles.Asker,
         [NodeKinds.ContentHolds] = StepRoles.Operations,
         [NodeKinds.Monitor] = StepRoles.Operations,
         [NodeKinds.Tidy] = StepRoles.Operations,

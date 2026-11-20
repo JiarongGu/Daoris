@@ -20,8 +20,8 @@ describe('a step\'s role', () => {
 
   it('words each of Daoris\'s roles in both catalogues, and a catalogue role as written', async () => {
     const said = (language: string) => STEP_ROLES.map((role) => roleSaid(i18n.getFixedT(language), i18n, role));
-    expect(said('en')).toEqual(['Design', 'Second opinion', 'Tester', 'Acceptor', 'Approver', 'Release manager', 'Operations', 'Config changer', 'Credentials keeper', 'Owner']);
-    expect(said('zh')).toEqual(['设计', '第二意见', '试用人', '采纳人', '审批人', '发布负责人', '运维', '配置变更人', '凭据管理人', '所有者']);
+    expect(said('en')).toEqual(['Design', 'Second opinion', 'Tester', 'Acceptor', 'Asker', 'Approver', 'Release manager', 'Operations', 'Config changer', 'Credentials keeper', 'Owner']);
+    expect(said('zh')).toEqual(['设计', '第二意见', '试用人', '采纳人', '委托方', '审批人', '发布负责人', '运维', '配置变更人', '凭据管理人', '所有者']);
     expect(roleSaid(t, i18n, 'night-builder')).toBe('night-builder');
   });
 
