@@ -30,10 +30,23 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     {
         Directory.CreateDirectory(_folder);
         AttemptMarks.Write(AttemptMarks.Began(home, send.Run, send.Invocation, send.Delivery), send.Delivery, world.Clock.GetUtcNow());
-        if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
+        var mode = DeclarationMode.Of(home, send.Repository, send.Workspace);
+        if (send.Accepted is null && mode == DeclarationMode.Restricted)
+        {
+            return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
+        }
+
+        var (result, busy) = await RunAsync(mode, ct).ConfigureAwait(false);
+        return send.Accepted is null && result is not null
+            ? (Told(result, $"nothing was accepted yet, so the work's own declaration ran ({DeclarationMode.Said(DeclarationMode.Full)})"), busy)
+            : (result, busy);
+    }
+
+    private async Task<(VerifyResult? Result, bool Busy)> RunAsync(string mode, CancellationToken ct)
+    {
         var under = await CheckDeclaration.OfAsync(
-            send.Checkout, send.Commit, send.Accepted, DeclarationMode.Of(home, send.Repository, send.Checkout),
-            each => CheckDeclaration.LineAsync(home, send.Repository, send.Checkout, each), ct).ConfigureAwait(false);
+            send.Checkout, send.Commit, send.Accepted ?? IntegrationAcceptance.None, mode,
+            each => CheckDeclaration.LineAsync(home, send.Repository, send.Checkout, send.Workspace, each), ct).ConfigureAwait(false);
         if (under.Problem is { } problem) return (Unknown(problem), false);
         if (under.Held is { } held) return (Unknown(held) with { Code = VerifyResult.Changed, Declaration = under.Work, Accepted = send.Accepted }, false);
         _ran = under.Blob ?? send.Accepted;

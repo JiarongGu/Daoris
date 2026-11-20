@@ -172,7 +172,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    `tests`, `tiers` and `docs`), and a check's name, command, folder, hand-back or flags, a check added, removed or moved, and any other
    part wait for the person; the change shown names command changes alone. A change the look cannot judge waits and is said once, and
    never ends the look. In full access a check runs the work's own declaration as its commit carries it, a command change of its own
-   included, as the work's agents run any command in their own sessions anyway; its result names that blob and nothing holds. In
+   included, as the work's agents run any command in their own sessions anyway, also before any acceptance (said in one line); its result
+   names that blob and nothing holds. The workspace its mode resolves through is the work's bound one. A driver file that does not
+   read is restricted. In
    restricted access a check runs under the accepted declaration, read from its blob, never the work's file (`CheckDeclaration`): a
    work whose declaration runs only what the accepted one runs, or whose own change against where it left the line (the merge base with
    the local branch of the line the look reads) alters no command, is checked as accepted, so a declaration change on the line holds no

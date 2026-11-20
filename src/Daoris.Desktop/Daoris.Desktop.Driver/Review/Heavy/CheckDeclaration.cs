@@ -9,7 +9,6 @@ namespace Daoris.Driver;
 /// <param name="Text">The declaration's text; null where its blob is <c>none</c> (the line held none).</param>
 internal sealed record CheckDeclaration(string? Text, string? Blob = null, string? Held = null, string? Work = null, string? Problem = null)
 {
-    /// <summary>What a held check's person can do, said at the end of each hold.</summary>
     private const string Doors = "once the change lands, accept it on its repository's Setup page and the check runs again by itself, or answer the held check with It happened";
 
     /// <summary>
@@ -71,11 +70,11 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
     }
 
     /// <summary>
-    /// The line a check of <paramref name="repository"/> in <paramref name="checkout"/> judges its work against: the one the acceptance look
+    /// The line a check of <paramref name="repository"/> in <paramref name="checkout"/> (of <paramref name="workspace"/>) judges its work against: the one the acceptance look
     /// reads (<see cref="CanonicalLine.ResolveAsync(string, string, string?, DriverConfig, CancellationToken)"/>); null where the choices do
     /// not read or no line is set and git names none.
     /// </summary>
-    internal static async Task<string?> LineAsync(string home, string repository, string checkout, CancellationToken ct)
+    internal static async Task<string?> LineAsync(string home, string repository, string checkout, string? workspace, CancellationToken ct)
     {
         DriverConfig config;
         try
@@ -87,7 +86,6 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
             return null;
         }
 
-        var workspace = GitFolders.RepositoryOf(home, checkout).Workspace;
         return (await CanonicalLine.ResolveAsync(checkout, repository, workspace, config, ct).ConfigureAwait(false)).Branch;
     }
 

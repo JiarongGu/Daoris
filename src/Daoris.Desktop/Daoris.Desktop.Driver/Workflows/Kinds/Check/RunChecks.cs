@@ -13,6 +13,7 @@ public static class RunChecks
         var accepted = AcceptanceOf(home, binding.Repository);
         return new VerifySend(binding.Run, attempt.Call.Invocation, binding.Repository, root, attempt.Call.SubjectRevision, accepted)
         {
+            Workspace = binding.Workspace,
             Gates = CheckNode.GatesOf(node),
             Reached = CheckNode.ReachedChoice(node),
             Bound = WorkPerformer.Timeout(node),
@@ -24,8 +25,7 @@ public static class RunChecks
     {
         var id = CheckExecution.RunOf(unit);
         if (!SafeNames.IsPlainId(id) || WorkflowRunBindings.Read(home, id) is not { } binding) return null;
-        var root = GitFolders.Read(home).FirstOrDefault(checkout => string.Equals(checkout.Repository, binding.Repository, StringComparison.OrdinalIgnoreCase)).Root;
-        return new ChecksStanding(AcceptanceOf(home, binding.Repository), DeclarationMode.Of(home, binding.Repository, root) == DeclarationMode.Restricted);
+        return new ChecksStanding(AcceptanceOf(home, binding.Repository), DeclarationMode.Of(home, binding.Repository, binding.Workspace) == DeclarationMode.Restricted);
     }
 
     private static string? AcceptanceOf(string home, string repository) => IntegrationAcceptance.Of(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository);

@@ -24,10 +24,11 @@ public static class DeclarationMode
     public static bool Waits(DriverConfig config, string repository, string? workspace) => Of(config, repository, workspace) == Restricted;
 
     /// <summary>
-    /// The mode of <paramref name="repository"/> as <paramref name="home"/>'s choices stand now, its workspace the one its checkout
-    /// <paramref name="checkout"/> is registered in; restricted where the choices do not read, so a file that does not read never loosens.
+    /// The mode of <paramref name="repository"/> as <paramref name="home"/>'s choices stand now, <paramref name="workspace"/> the one the work
+    /// is bound to (the registry's, never one a checkout path guesses, so a verification tree outside a checkout reads as the line does);
+    /// restricted where the choices do not read, so a file that does not read never loosens.
     /// </summary>
-    internal static string Of(string home, string repository, string? checkout)
+    internal static string Of(string home, string repository, string? workspace)
     {
         DriverConfig config;
         try
@@ -39,7 +40,7 @@ public static class DeclarationMode
             return Restricted;
         }
 
-        return Of(config, repository, checkout is null ? null : GitFolders.RepositoryOf(home, checkout).Workspace);
+        return Of(config, repository, workspace);
     }
 
     /// <summary>Which mode decided, in the driver's words: <c>full access: taken without asking</c> or <c>restricted: waits for you</c>.</summary>
