@@ -67,7 +67,7 @@ public sealed record RiskVerdict(string Kind, string? Qualifier, string Outcome,
 public static class RiskGate
 {
     /// <summary>The verdict on <paramref name="act"/> by <paramref name="actor"/> at <paramref name="place"/> on <paramref name="subject"/>.</summary>
-    /// <remarks>The actor and the subject are recorded with the verdict and judge nothing yet: the refusal of a worker answering its own gate comes with the first hold the judge decides.</remarks>
+    /// <remarks>The actor and the subject are recorded with the verdict and judge nothing: a worker answering its own gate is refused at the settle door (<see cref="SettleDoor.Own"/>).</remarks>
     public static RiskVerdict Judge(RiskPolicy policy, RiskAct act, string actor, RiskPlace place, string subject)
     {
         _ = (actor, subject);

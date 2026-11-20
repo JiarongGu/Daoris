@@ -21,6 +21,8 @@ public static class StepSettles
     /// <summary>The step names evidence its settle left out; the detail names each.</summary>
     public const string MissingEvidence = "missing-evidence";
 
+    private const string Accepted = "accepted";
+
     /// <summary>Keeps the settle <paramref name="ask"/> on the run's record for the next pass, as <paramref name="by"/> speaks, or refuses it.</summary>
     public static NodeWorded Settle(NodeRecordFiles records, StepSettleAsk ask, SettleBy by, Func<DateTimeOffset> clock, IReadOnlyCollection<string>? makers = null)
     {
@@ -38,6 +40,19 @@ public static class StepSettles
         }
 
         var outcome = string.IsNullOrWhiteSpace(ask.Outcome) ? null : ask.Outcome.Trim();
+        if (declared.Kind == NodeKinds.Review || TaskNode.Presses(declared).Contains(NodeWordActs.Approve, StringComparer.Ordinal))
+        {
+            var review = declared.Kind == NodeKinds.Review;
+            var answer = outcome switch
+            {
+                null or Accepted or "approved" => review ? NodeWordActs.Accept : NodeWordActs.Approve,
+                "changes" or "rejected" => review ? NodeWordActs.Changes : NodeWordActs.Reject,
+                _ => null,
+            };
+            if (answer is null) return new(run, node, act, RunNodeWords.NotOutcome) { Detail = review ? "accepted, changes" : "approved, rejected" };
+            return RunNodeWords.Word(records, run, node, answer, TaskEvidence.Words(ask.Words, ask.Evidence), clock, epoch: by.Epoch, settle: by, workers: makers);
+        }
+
         if (decision ? outcome is null || !declared.Outcomes.Contains(outcome, StringComparer.Ordinal) : outcome is not null && outcome != "done")
         {
             return new(run, node, act, RunNodeWords.NotOutcome) { Detail = string.Join(", ", declared.Outcomes) };

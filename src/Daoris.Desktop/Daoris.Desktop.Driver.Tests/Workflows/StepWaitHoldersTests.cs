@@ -133,19 +133,15 @@ public sealed class StepWaitHoldersTests
         Assert.Equal((PersonWaits.Task, (IReadOnlyList<string>?)null), (uncast?.Why, uncast?.Holds));
     }
 
-    /// <summary>Settings and Hand refuse an agent for a step only a press settles, with the reason; a step settled by an observation or a plugin's act takes one.</summary>
     [Fact]
-    public void A_cast_or_hand_over_of_an_agent_to_a_step_only_a_press_settles_is_refused()
+    public void Only_the_owner_role_refuses_an_agent_and_an_accept_is_handed_to_one()
     {
-        Assert.Contains(StepRoles.Acceptor, AgentSettles.Roles);
-        Assert.Contains(StepRoles.Owner, AgentSettles.Roles);
-        Assert.DoesNotContain(StepRoles.Operations, AgentSettles.Roles);
-        Assert.DoesNotContain(StepRoles.Approver, AgentSettles.Roles);
+        Assert.Equal([StepRoles.Owner], AgentSettles.Roles);
 
-        Assert.NotNull(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
-        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, CastHolders.Person));
-        Assert.Null(AgentSettles.Cast(StepRoles.Operations, CastHolders.Agent));
-        Assert.Contains("`acceptor`", AgentSettles.Hand(Review, CastHolders.Agent));
+        Assert.NotNull(AgentSettles.Cast(StepRoles.Owner, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Approver, CastHolders.Agent));
+        Assert.Null(AgentSettles.Hand(Review, CastHolders.Agent));
         Assert.Null(AgentSettles.Hand(Release, "agent:beta"));
         Assert.Null(AgentSettles.Hand(Opinion, CastHolders.Agent));
     }

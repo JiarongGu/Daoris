@@ -524,7 +524,7 @@ public sealed class NodeRuntime(
             if (observed && await FailedHeldRuns.AgainAsync(records, _graphRuns, governed, tip, git.Git, clock, ct).ConfigureAwait(false)) atEnd = false;
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
             // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.
-            AttemptTenures.Keep(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config?.PlaceRisk, clock());
+            AttemptTenures.KeepAt(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config, clock());
         }
 
         for (var round = 0; !atEnd && round <= governed.Graph.Nodes.Count; round++)
@@ -543,9 +543,8 @@ public sealed class NodeRuntime(
 
             // What git says for the built-ins this round's record holds waiting on it, read once a pass; the gates its opinion and look wait
             // on, likewise.
-            var reads = await NodeStepReads.ReadAsync(governed, records.Home, await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
-                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct).ConfigureAwait(false), ct)
-                .ConfigureAwait(false);
+            var reads = RiskStepGates.Reads(await NodeStepReads.ReadAsync(governed, records.Home, await NodeEvaluations.ContentAsync(governed, record, tip, git.Content,
+                    await NodeEvaluations.GitReadsAsync(governed, record, git.Git, ct).ConfigureAwait(false), ct).ConfigureAwait(false), ct).ConfigureAwait(false), _config, governed);
             var gates = await NodeEvaluations.GatesAsync(governed, record, tip, git.Gates, ct).ConfigureAwait(false);
             var (before, evaluated) = governed.Scope is null
                 ? NodeEvaluations.Evaluate(governed, record, tipped, tip, reads, gates, clock)
@@ -597,7 +596,7 @@ public sealed class NodeRuntime(
                 .ConfigureAwait(false);
             await Keeping.ReleaseStepsAsync(governed, run, ct).ConfigureAwait(false);
             Keeping.OwnTrees(run);
-            AttemptTenures.Keep(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config?.PlaceRisk, clock());
+            AttemptTenures.KeepAt(records, governed.Unit.Id, governed.Graph.Nodes, run.Run.Binding.Workspace, run.Run.Binding.Repository, _config, clock());
             await Keeping.HandStepsAsync(governed, run, _config, said, ct).ConfigureAwait(false);
         }
     }

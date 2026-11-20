@@ -7,7 +7,10 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class ReviewReading
 {
-    public static NodeObservation Observe(NodeReading reading)
+    public static NodeObservation Observe(NodeReading reading) =>
+        Read(reading) is var read && read is { Outcome: null, Refused: null } ? RiskStepGates.Passed(reading, PersonWaits.Accept) ?? read : read;
+
+    private static NodeObservation Read(NodeReading reading)
     {
         if (reading.Unit.Kind == WorkUnitKind.Run)
         {
