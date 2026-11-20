@@ -104,19 +104,41 @@ public sealed class StepWaitHoldersTests
         Assert.Contains(CastActs.Take, row.Holds!);
     }
 
-    /// <summary>A plugin's act an agent is cast to is served by that agent's sessions and is no row; its default agent's is a vacancy's row.</summary>
+    /// <summary>A plugin's act an agent holds is no row while no vacancy is kept for it; a kept one's bound counts from when it became vacant.</summary>
     [Fact]
-    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons()
+    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons_and_a_kept_vacancy_is_one_from_when_it_became_vacant()
     {
         var release = Release with { Role = StepRoles.ReleaseManager };
         var record = Standing("release", Active("release") with { Unreconciled = 1 }, SignIn().Attempts[0] with
         {
-            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now),
+            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now.AddDays(-3)),
         });
         var held = HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent);
+        StepVacancy[] kept = [new("release", record.Statuses["release"].Attempt, Now, true, false)];
 
-        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, serves: _ => true));
-        Assert.True(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, serves: _ => false)?.Vacant);
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held));
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, vacancies: kept, bound: TimeSpan.FromHours(5));
+        Assert.Equal((true, Now.AddHours(5)), (row?.Vacant, row?.GivesUp));
+    }
+
+    [Fact]
+    public void A_plugin_actor_cast_to_an_agent_with_no_live_session_is_a_vacancy()
+    {
+        var home = Path.Combine(AppContext.BaseDirectory, "_vacancy-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            new PlaceCastFiles(home, () => true).Cast("machine", StepRoles.ReleaseManager, "agent:bob", "bob releases", Now);
+            var book = new PlaceCastFiles(home).Book();
+            var wait = new RoleWait(PersonWaits.Actor, StepRoles.ReleaseManager, new StepHolder(StepHolders.Agent, "bob"), Now);
+
+            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (_, _) => false)));
+            Assert.False(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (holder, at) => holder == "agent:bob" && at == "engine")));
+            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (holder, at) => holder == "agent:alice")));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
     }
 
     /// <summary>

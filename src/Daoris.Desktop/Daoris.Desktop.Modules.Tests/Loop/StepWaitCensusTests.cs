@@ -196,7 +196,11 @@ public sealed class StepWaitCensusTests
             ? (new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed), Standing("review", Active("review")))
             : StepAt(why)!.Value;
         if (node.Kind == NodeKinds.Task) node = node with { Role = why == PersonWaits.Task ? "worker" : StepRoles.Approver };
-        var held = HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast);
+        var status = WorkPerformer.StatusOf(record, node.Id);
+        var wait = StepWaiting.Read(record, node, status, null, PlaceCastBook.Uncast)!;
+        Assert.Equal(vacant, StepVacancies.Is(wait, _ => false));
+        StepVacancy[] kept = [new(node.Id, status.Attempt, Now, true, false)];
+        var held = HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast, vacancies: vacant ? kept : null);
 
         Assert.NotNull(held);
         Assert.Equal((why, StepHolders.Agent, vacant, !vacant), (held.Why, held.Holder, held.Vacant, held.Handed));
@@ -209,9 +213,12 @@ public sealed class StepWaitCensusTests
     public void A_plugins_role_wait_an_agent_is_cast_to_is_served_and_its_default_agent_is_a_vacancy()
     {
         var (node, record) = StepAt(PersonWaits.Actor)!.Value;
+        var status = WorkPerformer.StatusOf(record, node.Id);
 
-        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: _ => "agent:beta", serves: _ => true));
-        Assert.True(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast, serves: _ => false)!.Vacant);
+        Assert.False(StepVacancies.Is(StepWaiting.Read(record, node, status, null, _ => "agent:beta")!, _ => true));
+        Assert.True(StepVacancies.Is(StepWaiting.Read(record, node, status, null, PlaceCastBook.Uncast)!, _ => false));
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: _ => "agent:beta"));
+        Assert.True(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast, vacancies: [new(node.Id, status.Attempt, Now, true, false)])!.Vacant);
     }
 
     /// <summary>

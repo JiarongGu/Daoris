@@ -357,8 +357,11 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// </summary>
     public NodeWordEpoch? Epoch { get; init; }
 
-    /// <summary>The source its move carries to the node: the person's, or the landing supervisor's.</summary>
-    public string Source => By is null ? NodeSource.Person : NodeSource.Supervisor;
+    /// <summary>Daoris's own stop of a step that stood vacant past its bound (<see cref="StepVacancies"/>), never the person's; false on an older record.</summary>
+    public bool GaveUp { get; init; }
+
+    /// <summary>The source its move carries to the node: Daoris's where it gave the step up, else the person's, or the landing supervisor's.</summary>
+    public string Source => GaveUp ? NodeSource.Daoris : By is null ? NodeSource.Person : NodeSource.Supervisor;
 }
 
 /// <summary>A step's attempt and the epoch of its tenure the settle door admits a kept word in (<see cref="NodeWord.Epoch"/>).</summary>

@@ -194,6 +194,7 @@ public static class RunNodeWords
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
                 Revision = by is null ? null : revision?.Trim(), Outcome = outcome, Holder = holder,
                 Decider = act == NodeWordActs.Decide && holder is null && SettleDoor.Holds(CastHolders.Agent, speaker.Who) ? speaker.Who : null,
+                GaveUp = act == NodeWordActs.Stop && speaker.Who == SettleBy.Observed,
             };
             if (act == NodeWordActs.Accept && by is null)
             {
@@ -383,7 +384,7 @@ public static class RunNodeWords
         TakenBy(word.Act) is { } owner && owner.Move(node, word, status, scope) is { } own ? own
         : word.Act == NodeWordActs.Skip ? new NodeMove(NodeStates.Skipped, NodeCause.Person) { Words = word.Words, Scope = scope }
         : word.Act == NodeWordActs.Again ? new NodeMove(NodeStates.Ready, NodeCause.Person)
-        : new NodeMove(NodeStates.Stopped, NodeCause.Person) { Words = word.Words };
+        : new NodeMove(NodeStates.Stopped, word.GaveUp ? NodeCause.Daoris : NodeCause.Person) { Words = word.Words };
 
 
     /// <summary>

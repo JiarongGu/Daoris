@@ -128,6 +128,8 @@ public sealed class NodeRuntime(
 
     public RiskShadow? Risk { get; set; }
 
+    public Func<string, string?, bool>? Serving { get; set; }
+
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null where unread.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
 
@@ -153,7 +155,7 @@ public sealed class NodeRuntime(
     public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run, records.Home);
 
     /// <inheritdoc cref="LeftSteps.With"/>
-    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);
+    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config);
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -214,9 +216,8 @@ public sealed class NodeRuntime(
     }
 
     /// <summary>
-    /// Whether a run bound to a graph version arms the runtime: one whose record does not hold its end, one a start of
-    /// its chain asked a pass for, one ended failed at a step an observed fact may still settle, and every one at this process's first look. Lists the runs folder; a home with none costs one stat. A run
-    /// whose version no longer reads arms nothing: it is held whole, and said whenever a pass reads the units.
+    /// Whether a bound run arms the runtime: one not ended, one its chain asked a pass for, one failed at a step an observed fact may still
+    /// settle, and every one at the first look. A run whose version no longer reads arms nothing: it is held whole, and said.
     /// </summary>
     private bool ArmsRuns =>
         _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)
@@ -486,7 +487,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
-            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said);
+            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };

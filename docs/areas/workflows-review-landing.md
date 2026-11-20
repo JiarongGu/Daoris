@@ -760,17 +760,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     folder the next look takes (`StepSettleAsks`) through the run's node door at the settle door as the agent its start ran, refused with
     nothing kept where the step does not wait on its holder's word, its outcome or a named evidence is missing (`TaskEvidence`), or the door
     refuses it, a refusal told to the session as its next turn; where it cannot do the step it asks up its line. Its row in *What needs
-    you* reads "waiting on `<role>`: <agent>" with *Take* its only press. A plugin's actor whose role a cast or a staffing gives an agent
-    is served by that agent's sessions, to which the plugin grants its acts, and makes no row. Every other wait an agent holds that no
-    agent's session serves (a plugin's actor held by its role's agent by default, a go-ahead, a file's choice, an opinion's vacancy, an
-    unchecked done's pass, and a role-classed Accept or approval, which no dispatcher hands to a session yet) is a vacancy (D354 point 4,
-    `StepVacancies`): a `step` row marked `vacant`, never handed (so a release's approval is never handed to the run's maker), listed
-    under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as handed to an agent), never counted as
-    the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in the run's lines; the person's press
-    still takes and settles it. Past its bound (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the
-    step with what it tried, so its run ends there as gave up, never asked of the owner. At a place marked for production releases an
-    approver's approval and every `release.*` act are the owner's, and a step whose role is the owner's is the owner's whatever the policy
-    says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
+    you* reads "waiting on `<role>`: <agent>" with *Take* its only press. A plugin's actor whose role a staffing gives an agent, or a cast
+    gives an agent a live session of serves the place (`SessionDelegates.Serving`), is served by that session, to which the plugin grants
+    its acts, and makes no row. Every other wait an agent holds that no agent's session serves (a plugin's actor held by its role's agent
+    by default or cast to an agent with no live session there, a go-ahead, a file's choice, an opinion's vacancy, an unchecked done's
+    pass, and a role-classed Accept or approval, which no dispatcher hands to a session yet) is a vacancy (D354 point 4, `StepVacancies`).
+    The pass alone judges it and keeps it from the moment it became vacant (`StepVacancyFiles`, `workflows/vacancies/`, which survives a
+    restart), and every reader says what it kept: a `step` row marked `vacant`, never handed (so a release's approval is never handed to
+    the run's maker), listed under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session
+    list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
+    handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
+    the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
+    (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the step as its own (`NodeSource.Daoris`, never the
+    person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
+    up, never asked of the owner; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts again if it
+    becomes one. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
+    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
     passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
     gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
     `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node

@@ -288,6 +288,7 @@ public static class WorkflowRunWords
             // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
+            WorkflowGraphDetails.Stopped when step.Code == NodeSource.Daoris => $"Daoris gave it up: {step.Words ?? "nobody could answer it."}",
             WorkflowGraphDetails.Stopped => "You stopped it.",
             WorkflowGraphDetails.Unknown when node == NodeKinds.Check => CheckUnknownSaid(step.Held),
             WorkflowGraphDetails.Unknown => "Its outcome could not be established yet; Daoris asks after it before it starts anything new.",

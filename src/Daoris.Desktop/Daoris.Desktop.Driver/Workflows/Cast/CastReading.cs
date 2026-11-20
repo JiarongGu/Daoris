@@ -27,21 +27,15 @@ public static class CastReading
     public static Func<string, bool> AgentHolds(string home, PluginPlace place)
     {
         var cast = new Lazy<Func<string, CastNow>>(() => Now(home, place.Workspace, place.Repository));
-        return role => ServedBy(cast.Value(role));
+        return role => AgentHeld(cast.Value(role));
     }
 
-    /// <summary>Whether an agent session serves each role at the place as <paramref name="home"/>'s files say it now.</summary>
-    public static Func<string, bool> ServesAt(string home, string? workspace, string? repository)
-    {
-        var cast = Now(home, workspace, repository);
-        return role => ServedBy(cast(role));
-    }
-
-    public static Func<string, bool> Serves(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository)
+    public static Func<string, bool> Serves(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository, Func<string, string?, bool>? live = null)
     {
         var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
-        return role => ServedBy(book.At(role, workspace, repository, place));
+        return role => book.At(role, workspace, repository, place) is var now && AgentHeld(now)
+            && (now.Why == CastWhy.Staffed || live is null || live(now.Holder, repository));
     }
 
-    private static bool ServedBy(CastNow now) => now.Why != CastWhy.Default && now.Holder != CastHolders.Person;
+    private static bool AgentHeld(CastNow now) => now.Why != CastWhy.Default && now.Holder != CastHolders.Person;
 }

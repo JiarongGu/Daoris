@@ -332,6 +332,7 @@ public static class NodeLifecycle
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
+        foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, daoris, "Daoris gives up a step that stood vacant past its bound (StepVacancies)"));
         rows.Add(new(NodeStates.Failed, NodeStates.Stopped, person, "the person stops a failed node, which ends it and its run as stopped"));
         foreach (var from in NodeStates.Bound)
         {
@@ -475,7 +476,7 @@ public static class NodeLifecycle
                 return To(next with { By = NodeSource.Person, Words = move.Words, Scope = move.Scope });
 
             case NodeStates.Stopped:
-                return To(next with { By = NodeSource.Person, Words = move.Words });
+                return To(next with { By = move.By == NodeCause.Daoris ? NodeSource.Daoris : NodeSource.Person, Words = move.Words });
 
             case NodeStates.Unknown:
                 if (Unbound(move.Attempt) is { } unknownAttempt) return Refuse(unknownAttempt);

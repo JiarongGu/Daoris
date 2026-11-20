@@ -46,6 +46,10 @@ public sealed class SessionDelegates
     /// <summary>The agent <paramref name="session"/>'s last start ran (<see cref="ProviderRegistry.AgentNameOf"/>), its press's speaker; null where it named none.</summary>
     public string? AgentOf(string session) => _agents.GetValueOrDefault(session);
 
+    public bool Serving(string holder, string? repository) =>
+        _held.Keys.Any(session => _places.GetValueOrDefault(session) is { } place && string.Equals(place.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && (holder == CastHolders.Agent || (_agents.GetValueOrDefault(session) is { } agent && CastHolders.AgentNamed(agent) == holder)));
+
     /// <summary>The hashes held for <paramref name="session"/>: none where it runs nothing here, or its keys were forgotten.</summary>
     public IReadOnlyList<byte[]> Of(string session) =>
         _held.TryGetValue(session, out var held) ? [.. held.Select(each => each.Hash)] : [];

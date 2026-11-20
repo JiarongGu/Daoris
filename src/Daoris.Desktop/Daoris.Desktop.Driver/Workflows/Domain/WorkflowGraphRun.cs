@@ -157,7 +157,7 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
     /// <summary>The run's place's cast, role to holder (<see cref="CastReading"/>): the holder of a role a wait is on other than its step's own.</summary>
     public Func<string, string>? Cast { get; init; }
 
-    public Func<string, bool>? Serves { get; init; }
+    public IReadOnlyList<StepVacancy>? Vacancies { get; init; }
 
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
 
@@ -234,7 +234,7 @@ public static class WorkflowGraphRuns
             var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
             var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             // A step handed to the agent holding its role offers the person Take alone, as its row in What needs you does.
-            var vacant = waits is not null && StepVacancies.Is(waits, facts.Serves ?? (_ => true));
+            var vacant = waits is not null && StepVacancies.Kept(facts.Vacancies, waits, node.Id, status.Attempt) is not null;
             var toAgent = !vacant && waits is not null && AgentSettles.Handed(node, status, waits);
             var step = new WorkflowRunStep(cell, state, detail)
             {
@@ -247,7 +247,7 @@ public static class WorkflowGraphRuns
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Journal = StepActViews.Of(facts.Acts, node.Id, status.Attempt, facts.Cast),
                 Joint = facts.Parts.Joints.GetValueOrDefault(node.Id),
-                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By
+                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped || status is { State: NodeStates.Stopped, By: NodeSource.Daoris } ? status.By
                     : status.Code ?? checkHeld?.Code ?? UncheckedDones.CodeOf(node, status),
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said ?? (vacant ? StepVacancies.RunSaid(waits!) : null),
                 Needs = needs?.Needs,
@@ -358,7 +358,7 @@ public static class WorkflowGraphRuns
         var step = new WorkflowRunStep(Cell(node, null), state, detail)
         {
             Node = node.Kind,
-            Code = status.State == NodeStates.Skipped ? status.By : status.Code,
+            Code = status.State == NodeStates.Skipped || status is { State: NodeStates.Stopped, By: NodeSource.Daoris } ? status.By : status.Code,
             Words = WordsOf(node, status),
         };
         return WorkflowRunWords.Said(step) ?? "Not reached yet.";

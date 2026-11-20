@@ -1,64 +1,97 @@
-using System.Collections.Concurrent;
-
 namespace Daoris.Driver;
 
 /// <summary>
 /// A vacancy: a run's step waiting on a role an agent holds, that no agent's session serves with a tool that answers it. Never hidden and
-/// never the owner's: listed under <i>Vacant</i>, announced once, said once in the run's lines, and stopped by Daoris past its bound
-/// (<see cref="VacancySetting"/>) with what it tried. Served are a task's Done or decision, handed to the run's working session, and a
-/// plugin's actor whose role a cast or a staffing gives an agent (<see cref="CastReading.Serves"/>). No dispatcher hands a role-classed
-/// Accept or approval to a session yet, so one an agent holds is a vacancy, though that agent may still answer it by <c>step_settle</c>.
+/// never the owner's: judged by the pass alone, which keeps it (<see cref="StepVacancyFiles"/>) from the moment it became vacant, so every
+/// row, view and list reads the one judgement; listed under <i>Vacant</i>, announced once, and stopped by Daoris (<see cref="NodeSource.Daoris"/>)
+/// once it has been announced and has stood vacant past its bound (<see cref="VacancySetting"/>), with what it tried. Served are a task's Done
+/// or decision, handed to the run's working session, and a plugin's actor whose role a cast or a staffing gives an agent that a live session
+/// of serves (<see cref="CastReading.Serves"/>). No dispatcher hands a role-classed Accept or approval to a session yet, so one an agent holds
+/// is a vacancy, though that agent may still answer it by <c>step_settle</c>.
 /// </summary>
 public static class StepVacancies
 {
-    private static readonly ConcurrentDictionary<string, byte> Told = new(StringComparer.Ordinal);
-
-    public static bool Served(RoleWait wait, Func<string, bool>? serves) =>
-        wait.Why == PersonWaits.Task || (wait.Why == PersonWaits.Actor && serves?.Invoke(wait.Role) == true);
+    public static bool Served(RoleWait wait, Func<string, bool> serves) =>
+        wait.Why == PersonWaits.Task || (wait.Why == PersonWaits.Actor && serves(wait.Role));
 
     /// <summary>A part left and an attempt held are carried by rows of their own.</summary>
-    public static bool Is(RoleWait wait, Func<string, bool>? serves) =>
+    public static bool Is(RoleWait wait, Func<string, bool> serves) =>
         wait.Holder.Kind == StepHolders.Agent && wait.Why is not (PersonWaits.Left or PersonWaits.Held) && !Served(wait, serves);
 
-    public static string Said(HeldStep step, TimeSpan bound) =>
-        $"vacant: `{step.Role}` is its agent's{Named(step)}, and no agent session answers its {step.Why}; listed under Vacant for anyone to take, it gives up "
-        + $"{VacancySetting.Said(bound)} after it began waiting";
+    /// <summary>The vacancy <paramref name="vacancies"/> keep for the step's attempt now, where its holder is still an agent.</summary>
+    public static StepVacancy? Kept(IReadOnlyList<StepVacancy>? vacancies, RoleWait wait, string node, int attempt) =>
+        wait.Holder.Kind == StepHolders.Agent ? vacancies?.FirstOrDefault(each => each.Node == node && each.Attempt == attempt) : null;
+
+    public static string Said(RoleWait wait, TimeSpan bound) =>
+        $"vacant: `{wait.Role}` is its agent's{Named(wait)}, and no agent session answers its {wait.Why}; listed under Vacant for anyone to take, Daoris gives "
+        + $"it up {VacancySetting.Said(bound)} after it became vacant";
 
     /// <summary>What a run's view says of a step standing vacant: its role's agent holds it and no agent session answers it.</summary>
     public static string RunSaid(RoleWait wait) =>
         $"vacant: `{wait.Role}` is its agent's, and no agent session answers its {wait.Why}; it is listed under Vacant for anyone to take";
 
-    public static string Tried(HeldStep step, TimeSpan bound) =>
-        $"gave up: `{step.Role}` stood vacant past {VacancySetting.Said(bound)}. Tried: the place's cast (no cast names a holder whose session answers "
-        + $"its {step.Why}), the role's agent{Named(step)} (no session of it answers it), and listing it under Vacant, where nobody took it";
+    /// <summary>The words Daoris's stop keeps on the step, which its run view says after <i>Daoris gave it up:</i>.</summary>
+    public static string Tried(RoleWait wait, TimeSpan bound) =>
+        $"nobody could answer it in {VacancySetting.Said(bound)}. Tried: the place's cast (no cast names a holder whose session answers its {wait.Why}), "
+        + $"the role's agent{Named(wait)} (no session of it answers it), and listing it under Vacant, where nobody took it";
 
-    /// <summary>Each vacancy first seen by this process said once; one past its bound stopped as an observation, so its run ends as gave up.</summary>
-    internal static void Look(NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig? config, DateTimeOffset now, List<string> said)
+    /// <summary>
+    /// Each run's vacancies judged now and kept: one first seen is kept from now and announced; one announced and past its bound is stopped as
+    /// Daoris's own, so its run ends as gave up; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts
+    /// again if it becomes one. <paramref name="live"/> says whether a live session of a cast agent serves the place; null reads the cast alone.
+    /// </summary>
+    internal static void Look(
+        NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig? config, DateTimeOffset now, List<string> said, Func<string, string?, bool>? live = null)
     {
         var bound = VacancySetting.Of(config);
         var casts = new PlaceCastFiles(records.Home).Book();
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
+        var files = new StepVacancyFiles(records.Home);
         foreach (var each in governed)
         {
-            if (each.Scope is null || records.Read(each.Unit.Id) is not { Ended: null } record) continue;
-            foreach (var step in HeldSteps.Of([each], _ => record, tenures, casts, config?.PlaceRisk, bound).Where(step => step.Vacant))
+            if (each.Scope is null || records.Read(each.Unit.Id) is not { } record) continue;
+            var kept = files.Of(each.Unit.Id);
+            var next = new List<StepVacancy>();
+            var (workspace, repository) = (each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
+            var holding = tenures.Holding(each.Unit.Id, record.Statuses.ToDictionary(pair => pair.Key, pair => pair.Value.Attempt, StringComparer.Ordinal));
+            var cast = CastReading.At(casts, config?.PlaceRisk, workspace, repository);
+            var serves = CastReading.Serves(casts, config?.PlaceRisk, workspace, repository, live);
+            foreach (var node in record.Ended is null ? each.Graph.Nodes : [])
             {
-                var key = $"{records.Home}|{step.Run}/{step.Node}#{WorkPerformer.StatusOf(record, step.Node).Attempt}";
-                if (step.GivesUp is { } at && at <= now)
+                var status = WorkPerformer.StatusOf(record, node.Id);
+                if (StepWaiting.Read(record, node, status, holding.GetValueOrDefault(node.Id), cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)
+                    || !Is(wait, serves))
                 {
-                    var words = Tried(step, bound);
-                    var stopped = RunNodeWords.Word(records, step.Run, step.Node, NodeWordActs.Stop, words, () => now, settle: SettleBy.Observation);
-                    said.Add(stopped.Done
-                        ? $"work  {each.Unit.Id}: step `{step.Node}` of #{step.Run} {words}; Daoris stopped it, and its run ends there."
-                        : $"work  {each.Unit.Id}: step `{step.Node}` of #{step.Run} is past its vacancy's bound, and its stop is refused ({stopped.Refused}).");
+                    continue;
                 }
-                else if (Told.TryAdd(key, 0))
+
+                var vacancy = kept.FirstOrDefault(one => one.Node == node.Id && one.Attempt == status.Attempt) ?? new StepVacancy(node.Id, status.Attempt, now, false, false);
+                var step = $"work  {each.Unit.Id}: step `{node.Id}` of #{each.Run}";
+                if (!vacancy.Told)
                 {
-                    said.Add($"work  {each.Unit.Id}: step `{step.Node}` of #{step.Run} is {Said(step, bound)}.");
+                    said.Add($"{step} is {Said(wait, bound)}.");
+                    vacancy = vacancy with { Told = true };
                 }
+                else if (vacancy.Since + bound <= now)
+                {
+                    var words = Tried(wait, bound);
+                    var stopped = RunNodeWords.Word(records, each.Run, node.Id, NodeWordActs.Stop, words, () => now, settle: SettleBy.Observation);
+                    if (stopped.Done)
+                    {
+                        said.Add($"{step}: Daoris gave it up: {words}. Its run ends there.");
+                        continue;
+                    }
+
+                    if (!vacancy.Refused) said.Add($"{step} is past its vacancy's bound, and Daoris's stop is refused ({stopped.Refused}).");
+                    vacancy = vacancy with { Refused = true };
+                }
+
+                next.Add(vacancy);
             }
+
+            if (!next.SequenceEqual(kept)) files.Keep(each.Unit.Id, next);
         }
     }
 
-    private static string Named(HeldStep step) => step.HolderName is { } name ? $" (`{name}`)" : "";
+    private static string Named(RoleWait wait) => wait.Holder.Name is { } name ? $" (`{name}`)" : "";
 }

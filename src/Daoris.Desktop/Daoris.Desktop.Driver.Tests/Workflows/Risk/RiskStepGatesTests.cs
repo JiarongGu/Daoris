@@ -342,9 +342,36 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         _now = _now.AddHours(2);
         var past = await RunPassAsync(runtime, Bound);
-        Assert.Contains(past.Said, line => line.Contains("gave up:", StringComparison.Ordinal) && line.Contains("Tried:", StringComparison.Ordinal));
+        Assert.Contains(past.Said, line => line.Contains("Daoris gave it up:", StringComparison.Ordinal) && line.Contains("Tried:", StringComparison.Ordinal));
         await RunPassAsync(runtime, Bound);
-        Assert.NotEqual(NodeStates.Active, RunStatus("review").State);
+        var review = RunStatus("review");
+        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (review.State, review.By));
+        Assert.StartsWith("nobody could answer it in 2 hours", review.Words, StringComparison.Ordinal);
+        Assert.Empty(new StepVacancyFiles(_home).Of(RunUnit));
+    }
+
+    [Fact]
+    public async Task An_accept_that_waited_days_on_the_owner_and_is_lowered_to_role_is_announced_vacant_first_and_gives_up_its_bound_after_it_became_vacant()
+    {
+        const string Lowered = """{"risk":{"machine":[{"kind":"work.accept","class":"role"}]},"vacancyHours":2}""";
+        OnBranch(Reviewed);
+        await RunPassAsync(Runtime(), AcceptOwner);
+        Assert.Equal(CastHolders.Person, ReviewHolder()?.Holder);
+
+        _now = _now.AddDays(2);
+        var lowered = await RunPassAsync(Runtime(), Lowered);
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+        Assert.Single(lowered.Said, line => line.Contains("is vacant:", StringComparison.Ordinal));
+        Assert.Equal(_now, new StepVacancyFiles(_home).Current(RunUnit, "review", RunStatus("review").Attempt)?.Since);
+
+        _now = _now.AddHours(1);
+        var restarted = await RunPassAsync(Runtime(), Lowered);
+        Assert.DoesNotContain(restarted.Said, line => line.Contains("vacant", StringComparison.Ordinal));
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+
+        _now = _now.AddHours(1);
+        var past = await RunPassAsync(Runtime(), Lowered);
+        Assert.Contains(past.Said, line => line.Contains("Daoris gave it up:", StringComparison.Ordinal));
     }
 
     private const string AcceptOwner = """{"risk":{"machine":[{"kind":"work.accept","class":"owner"}]}}""";
