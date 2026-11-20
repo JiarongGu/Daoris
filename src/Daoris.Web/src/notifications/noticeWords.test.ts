@@ -52,6 +52,12 @@ describe('the notices\' words (NOTIFY2d)', () => {
       'engine: a step waits on `worker`, which you fill'],
     ['zh', { kind: 'Step', repository: 'engine', role: 'worker', headline: 'engine: a step waits on `worker`, which you fill', session: 's1' },
       'engine：一个步骤在等 `worker`，由你担任'],
+    ['en', { kind: 'Step', repository: 'engine', role: null, headline: 'engine: a step waits', session: 's1' }, 'engine: a step waits'],
+    ['zh', { kind: 'Step', repository: 'engine', headline: 'engine: a step waits', session: 's1' }, 'engine：一个步骤在等'],
+    ['en', { kind: 'Vacant', repository: 'engine', role: 'approver', headline: 'x', session: 's1' },
+      'engine: a step waits on `approver`, and no agent\'s session answers it'],
+    ['zh', { kind: 'Vacant', repository: 'engine', role: 'approver', headline: 'x', session: 's1' },
+      'engine：一个步骤在等 `approver`，却没有智能体的会话来应答'],
     ['zh', { kind: 'Later', headline: 'engine — something new', detail: 'As it said.' }, 'engine — something new: As it said.'],
   ] as const)('a %s window toasts %j in its own words', async (language, item, said) => {
     await i18n.changeLanguage(language);

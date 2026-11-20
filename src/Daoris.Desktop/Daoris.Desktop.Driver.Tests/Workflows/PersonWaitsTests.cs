@@ -73,7 +73,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
             },
         });
 
-        Assert.Empty(PersonWaitReader.Read(_home));
+        Assert.Equal(why is null ? [] : [(RunId, "return", why, true)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, wait.Vacant)));
         YouHold(StepWaiting.RoleOf(PersonWaits.Choose));
         Assert.Equal(why is null ? [] : [(RunId, "return", why)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why)));
     }
@@ -141,6 +141,7 @@ public sealed class PersonWaitsTests : NodeRunFixture
             ],
         });
 
+        Assert.Equal(why is null ? [] : [(RunId, "release", true)], PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Vacant)));
         YouHold(StepRoles.Approver);
         var waits = PersonWaitReader.Read(_home).Select(wait => (wait.Run, wait.Node, wait.Why, (string?)wait.Role, wait.Since)).ToList();
 

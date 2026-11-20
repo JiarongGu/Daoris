@@ -68,7 +68,10 @@ export function attentionToast(t: TFunction, item: AttentionTold): string | null
       case 'Waiting': return t('notifications.system.waiting.title', { repository });
       case 'Answered': return help ? t('notifications.system.answered.help') : t('notifications.system.answered.title', { repository });
       case 'Holding': return help ? t('notifications.system.holding.help') : t('notifications.system.holding.title', { repository });
-      case 'Step': return t('notifications.system.step.title', { repository, role: item.role ?? '' });
+      case 'Step': return item.role
+        ? t('notifications.system.step.title', { repository, role: item.role })
+        : t('notifications.system.step.titleNoRole', { repository });
+      case 'Vacant': return t('notifications.system.vacant.title', { repository, role: item.role ?? '' });
       default: return null;
     }
   })();

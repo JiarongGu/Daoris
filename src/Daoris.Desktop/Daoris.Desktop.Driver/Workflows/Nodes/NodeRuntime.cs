@@ -486,7 +486,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
-            if (Risk is { } risk) RiskStepHolds.Shadow(risk, governed.Values, records, look.Config);
+            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };

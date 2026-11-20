@@ -25,16 +25,18 @@ public static class PersonWaitReader
             if (run.Ended is not null || run.Version.Graph is not { } graph || record(run.Unit) is not { } kept) continue;
             var holding = home is null ? null : StepTenureFiles.HoldingOf(home, run.Run, kept);
             var cast = casts is null ? null : CastReading.At(casts, risk, run.Binding.Workspace, run.Binding.Repository);
+            var serves = casts is null ? null : CastReading.Serves(casts, risk, run.Binding.Workspace, run.Binding.Repository);
             foreach (var node in graph.Nodes)
             {
                 if (StepWaiting.Read(kept, node, WorkPerformer.StatusOf(kept, node.Id), holding?.GetValueOrDefault(node.Id), cast) is not { } wait
-                    || wait.Holder.Kind != StepHolders.Person
                     || kept.Pending.Any(word => word.Node == node.Id))
                 {
                     continue;
                 }
 
-                waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role });
+                var vacant = StepVacancies.Is(wait, serves);
+                if (wait.Holder.Kind != StepHolders.Person && !vacant) continue;
+                waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role, Vacant = vacant });
             }
         }
 

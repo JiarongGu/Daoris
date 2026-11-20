@@ -32,6 +32,9 @@ public static class AttentionOwnership
     /// <summary>The agents' class: a role appointed now takes it; listed, never counted as the owner's.</summary>
     public const string AgentsClass = "agents";
 
+    /// <summary>A step its agent holds that no agent's session serves (<c>StepVacancies</c>): listed under <i>Vacant</i>, never counted.</summary>
+    public const string VacantClass = "vacant";
+
     /// <summary>The six kinds only the owner settles, as a row carries them.</summary>
     public static class Wait
     {
@@ -110,6 +113,9 @@ public static class AttentionOwnership
 
     private static bool HeldByThePerson(JsonObject row) =>
         row["step"] is not JsonObject step || Text(step, "holder") is not { } holder || holder == StepHolders.Person;
+
+    public static bool Vacant(JsonObject row) =>
+        Text(row, "kind") == "step" && row["step"] is JsonObject step && step["vacant"] is JsonValue value && value.TryGetValue<bool>(out var vacant) && vacant;
 
     /// <summary>Every kind of <i>What needs you</i>, classed as the window design's §5.2 says.</summary>
     public static readonly IReadOnlyList<Class> Census =
@@ -280,6 +286,7 @@ public static class AttentionOwnership
     public static Side Of(JsonObject row, AttentionTakers takers)
     {
         if (Text(row, "kind") is not { } kind || !ByKind.TryGetValue(kind, out var known)) return new(OwnersClass, null);
+        if (Vacant(row)) return new(VacantClass, null);
         var wait = known.WaitOf?.Invoke(row) ?? known.Wait;
         if (known.Takes is null || known.OwnersWhen?.Invoke(row) != false) return new(OwnersClass, wait);
         return known.TakenWhen?.Invoke(row, takers) == true ? new(AgentsClass, null) : new(OwnersClass, wait, Untaken: true);

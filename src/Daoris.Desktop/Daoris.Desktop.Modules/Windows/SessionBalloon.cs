@@ -109,6 +109,9 @@ public static partial class SessionBalloon
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
         [Prefix + "step.title"] = "{{repository}}: a step waits on `{{role}}`, which you fill",
         [Prefix + "step.body"] = "Open Daoris at its step to answer it.",
+        [Prefix + "step.titleNoRole"] = "{{repository}}: a step waits",
+        [Prefix + "vacant.title"] = "{{repository}}: a step waits on `{{role}}`, and no agent's session answers it",
+        [Prefix + "vacant.body"] = "It is listed under Vacant: cast the role or take the step, or it gives up past its bound.",
         // The tray menu's one item: said in the window's language like the balloons, English before a page hands words.
         [Prefix + "reloadPage"] = "Reload the page of every window",
     };
@@ -156,7 +159,9 @@ public static partial class SessionBalloon
             WaitAnnouncements.AttentionKind => (
                 repository == HelpRoom.Repository ? Word(Prefix + "holding.help") : Fill(Word(Prefix + "holding.title"), named),
                 Written(Prefix + "holding.body")),
-            WaitAnnouncements.StepKind => (Fill(Word(Prefix + "step.title"), named), Word(Prefix + "step.body")),
+            // A step whose wait names no role says no role, never an empty one.
+            WaitAnnouncements.StepKind => (Fill(Word(Prefix + (string.IsNullOrWhiteSpace(facts.Role) ? "step.titleNoRole" : "step.title")), named), Word(Prefix + "step.body")),
+            WaitAnnouncements.VacantKind => (Fill(Word(Prefix + "vacant.title"), named), Word(Prefix + "vacant.body")),
             // A terminal's press: its act by its route's words, never the route; the event's English is not said.
             PipeConfirmations.AttentionKind => (Word(Prefix + "confirming.title"), Act(facts, handed) is { } act
                 ? Fill(Word(Prefix + "confirming.body"), new Dictionary<string, string>(StringComparer.Ordinal) { ["act"] = act })
@@ -187,7 +192,7 @@ public static partial class SessionBalloon
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
         kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or PipeConfirmations.RestoredKind
-            or WaitAnnouncements.AttentionKind or WaitAnnouncements.StepKind
+            or WaitAnnouncements.AttentionKind or WaitAnnouncements.StepKind or WaitAnnouncements.VacantKind
             ? BalloonIcon.Warning
             : BalloonIcon.Info;
 

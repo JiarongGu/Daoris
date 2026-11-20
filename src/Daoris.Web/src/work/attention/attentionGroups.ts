@@ -1,15 +1,19 @@
 import type { Attention, AttentionKind } from './AttentionRow';
-import { theAgents } from './attentionCounts';
+import { theAgents, vacant } from './attentionCounts';
 import type { AttentionClass, StaleSince } from './attentionPushed';
 
 /**
  * *What needs you*'s groups, in the order a person acts on them: what holds work up until they act, what waits for their word, and
- * what is ready for them to look at; then what the agents take, listed and never counted as the owner's.
+ * what is ready for them to look at; then the vacancies, steps no agent's session answers, and what the agents take, each listed and
+ * never counted as the owner's.
  */
-export type AttentionGroup = 'holding' | 'word' | 'ready' | 'agents';
+export type AttentionGroup = 'holding' | 'word' | 'ready' | 'vacant' | 'agents';
 
-/** The groups in the order the band shows them, the agents' last. */
-export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready', 'agents'];
+/** The groups that are never the owner's count: listed apart, each in its own frame. */
+export const APART: readonly AttentionGroup[] = ['vacant', 'agents'];
+
+/** The groups in the order the band shows them, the vacancies and the agents' last. */
+export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready', 'vacant', 'agents'];
 
 /**
  * Each kind's group. **Holding work**: a parked session holds its tree, a parked quest its repository's next
@@ -17,7 +21,7 @@ export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready
  * publish, an intake's question, a departure, a widening, a quest nobody can take, none of which holds anything already
  * running. **Ready for you**: finished work to review.
  */
-export const ATTENTION_GROUP: Readonly<Record<AttentionKind, Exclude<AttentionGroup, 'agents'>>> = {
+export const ATTENTION_GROUP: Readonly<Record<AttentionKind, Exclude<AttentionGroup, 'agents' | 'vacant'>>> = {
   parked: 'holding',
   'parked-quest': 'holding',
   // A quest the steward's stop holds for a Try again, the steward's or the person's.
@@ -102,6 +106,7 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, Exclude<AttentionGr
  */
 export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; stale?: StaleSince | null; class?: AttentionClass }): AttentionGroup {
   if (theAgents(row)) return 'agents';
+  if (vacant(row)) return 'vacant';
   // A held git remote holds work where a session of one of its repositories runs or waits on the person.
   if ((row.kind === 'hand-over' || row.kind === 'integration' || row.kind === 'git-held') && row.stands) return 'holding';
   if (row.kind === 'go-ahead' && row.stale) return 'word';

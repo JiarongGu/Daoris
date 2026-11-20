@@ -23,9 +23,11 @@ export const obligationOf = (row: { kind: string; id?: string; obligation?: stri
 
 export const theAgents = (row: { class?: string }): boolean => row.class === 'agents';
 
-/** What the bell, the taskbar, the title, the places and Overview count: the listed rows but the agents', a row no census reached counted. */
+export const vacant = (row: { class?: string }): boolean => row.class === 'vacant';
+
+/** What the bell, the taskbar, the title, the places and Overview count: the listed rows but the agents' and the vacancies, a row no census reached counted. */
 export function ownersListed<T extends { kind: string; id?: string; obligation?: string; class?: string }>(rows: readonly T[]): T[] {
-  return needsListed(rows).filter((row) => !theAgents(row));
+  return needsListed(rows).filter((row) => !theAgents(row) && !vacant(row));
 }
 
 /**

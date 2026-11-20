@@ -24,7 +24,7 @@ export type QuietWait = {
 };
 
 /** Whose a row is, as .NET's census classes it (`AttentionOwnership`): the owner's, counted, or the agents', listed apart. */
-export type AttentionClass = 'owner' | 'agents';
+export type AttentionClass = 'owner' | 'agents' | 'vacant';
 
 /** The six kinds of wait only the owner settles, carried on the owner's rows. */
 export type OwnerWaitKind = 'question' | 'go-ahead' | 'release' | 'sign-in' | 'money' | 'confirm';

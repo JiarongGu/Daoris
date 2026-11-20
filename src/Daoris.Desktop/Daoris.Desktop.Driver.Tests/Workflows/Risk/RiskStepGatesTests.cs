@@ -107,6 +107,28 @@ public sealed class RiskStepGatesTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task Classed_role_a_review_its_agent_holds_by_default_is_said_vacant_once_and_gives_up_past_its_bound()
+    {
+        const string Bound = """{"vacancyHours":2}""";
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        var first = await RunPassAsync(runtime, Bound);
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+        Assert.Single(first.Said, line => line.Contains("is vacant:", StringComparison.Ordinal) && line.Contains("2 hours", StringComparison.Ordinal));
+
+        _now = _now.AddHours(1);
+        var again = await RunPassAsync(runtime, Bound);
+        Assert.DoesNotContain(again.Said, line => line.Contains("vacant", StringComparison.Ordinal));
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+
+        _now = _now.AddHours(2);
+        var past = await RunPassAsync(runtime, Bound);
+        Assert.Contains(past.Said, line => line.Contains("gave up:", StringComparison.Ordinal) && line.Contains("Tried:", StringComparison.Ordinal));
+        await RunPassAsync(runtime, Bound);
+        Assert.NotEqual(NodeStates.Active, RunStatus("review").State);
+    }
+
+    [Fact]
     public async Task Classed_owner_the_review_waits_on_the_person()
     {
         OnBranch(Reviewed);

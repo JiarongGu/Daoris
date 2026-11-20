@@ -27,6 +27,14 @@ public static class CastReading
     public static Func<string, bool> AgentHolds(string home, PluginPlace place)
     {
         var cast = new Lazy<Func<string, CastNow>>(() => Now(home, place.Workspace, place.Repository));
-        return role => cast.Value(role) is { Why: not CastWhy.Default } now && now.Holder != CastHolders.Person;
+        return role => ServedBy(cast.Value(role));
     }
+
+    public static Func<string, bool> Serves(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository)
+    {
+        var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
+        return role => ServedBy(book.At(role, workspace, repository, place));
+    }
+
+    private static bool ServedBy(CastNow now) => now.Why != CastWhy.Default && now.Holder != CastHolders.Person;
 }

@@ -104,7 +104,7 @@ public sealed class StepWaitHoldersTests
         Assert.Contains(CastActs.Take, row.Holds!);
     }
 
-    /// <summary>A plugin's act an agent holds is observed by its plugin, so it waits on the agent and is no row of the person's.</summary>
+    /// <summary>A plugin's act an agent is cast to is served by that agent's sessions and is no row; its default agent's is a vacancy's row.</summary>
     [Fact]
     public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons()
     {
@@ -113,8 +113,10 @@ public sealed class StepWaitHoldersTests
         {
             Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now),
         });
+        var held = HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent);
 
-        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent)));
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, serves: _ => true));
+        Assert.True(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, serves: _ => false)?.Vacant);
     }
 
     /// <summary>
