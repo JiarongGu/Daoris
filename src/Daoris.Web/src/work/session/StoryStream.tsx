@@ -22,7 +22,7 @@ type Of<K extends StoryItem['kind']> = Extract<StoryItem, { kind: K }>;
 /** A line's actor, small, above or beside its words. */
 function Actor({ children, tone = 'soft' }: { children: ReactNode; tone?: 'soft' | 'accent' | 'open' }) {
   return (
-    <span className={cn('text-small font-medium', tone === 'accent' ? 'text-accent' : tone === 'open' ? 'text-ink-open' : 'text-ink-soft')}>
+    <span className={cn('text-small font-medium', tone === 'accent' ? 'text-accent-ink' : tone === 'open' ? 'text-ink-open' : 'text-ink-soft')}>
       {children}
     </span>
   );
@@ -66,7 +66,7 @@ function StepRule({ item }: { item: Of<'step'> }) {
   return (
     <div data-part="step" data-step-row={rowMark(item.run, item.node)} className="flex items-center gap-2 py-1 text-small text-ink-soft">
       <span className="h-px w-4 bg-line-strong" aria-hidden="true" />
-      <span className={cn('font-semibold', item.mark === 'failed' ? 'text-ink-danger' : item.mark === 'passed' ? 'text-ink-done' : 'text-ink')}>
+      <span className={cn('font-semibold', item.mark === 'failed' ? 'text-fail-ink' : item.mark === 'passed' ? 'text-ok-ink' : 'text-ink')}>
         <span aria-hidden="true">{glyph} </span>{said}
       </span>
       {facts && <span className="text-ink-faint">{facts}</span>}
@@ -93,7 +93,7 @@ function ToolsFold({ item }: { item: Of<'tools'> }) {
         className="flex w-fit cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left text-small text-ink-soft hover:text-ink"
       >
         <span aria-hidden="true">{open ? '▾' : '▸'}</span>
-        <span className={cn(item.failed > 0 && 'text-ink-danger')}>{said}</span>
+        <span className={cn(item.failed > 0 && 'text-fail-ink')}>{said}</span>
       </button>
       {open && <FoldedCalls blocks={item.blocks} />}
     </div>
@@ -198,7 +198,7 @@ export function StoryStream({ story, actor, readMark, since: digest, loading = f
       {story.map((item, index) => (
         <Fragment key={item.key}>
           {index === since && (
-            <li data-part="since" className="flex items-center gap-2 text-meta text-ink-open">
+            <li data-part="since" className="flex items-center gap-2 text-caption text-ink-open">
               <span className="flex-1 border-t border-dashed border-st-open" aria-hidden="true" />
               {t('work.session.story.since')}
               <span className="w-4 border-t border-dashed border-st-open" aria-hidden="true" />

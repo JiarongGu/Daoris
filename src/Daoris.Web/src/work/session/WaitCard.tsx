@@ -86,7 +86,7 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
       >
         <span aria-hidden="true" className="text-ink-open">◆</span>
         <span className="min-w-0 flex-1 truncate text-body text-ink">{wait.title}</span>
-        <span className="shrink-0 text-meta text-ink-faint">{facts}</span>
+        <span className="shrink-0 text-caption text-ink-faint">{facts}</span>
       </button>
     );
   }
@@ -100,8 +100,8 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
     >
       <header className="flex min-w-0 items-baseline gap-2">
         <span aria-hidden="true" className="text-ink-open">◆</span>
-        <h3 className="m-0 min-w-0 flex-1 text-title font-semibold text-ink">{wait.title}</h3>
-        <span className="shrink-0 text-meta text-ink-faint">{facts}</span>
+        <h3 className="m-0 min-w-0 flex-1 text-heading font-semibold text-ink">{wait.title}</h3>
+        <span className="shrink-0 text-caption text-ink-faint">{facts}</span>
       </header>
       <p className="m-0 whitespace-pre-line text-body text-ink">{wait.what}</p>
       <dl className="m-0 grid gap-1">
@@ -119,9 +119,9 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
           {wait.look.length === 0 ? <Unsaid /> : (
             <span className="flex flex-wrap gap-x-3">
               {wait.look.map((door) => (door.href
-                ? <ExternalLink key={door.label} href={door.href} className="text-accent underline">{door.label} ↗</ExternalLink>
+                ? <ExternalLink key={door.label} href={door.href} className="text-accent-ink underline">{door.label} ↗</ExternalLink>
                 : (
-                  <button key={door.label} type="button" onClick={door.onOpen} className="cursor-pointer border-0 bg-transparent p-0 text-accent underline">
+                  <button key={door.label} type="button" onClick={door.onOpen} className="cursor-pointer border-0 bg-transparent p-0 text-accent-ink underline">
                     {door.label}
                   </button>
                 )))}
@@ -131,7 +131,7 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
         <Row label={t('work.session.wait.known')}>
           {wait.known.length === 0 ? <Unsaid /> : (
             <span className="flex flex-wrap gap-x-3">
-              {wait.known.map((fact) => <span key={fact} className="text-ink-done">✓ {fact}</span>)}
+              {wait.known.map((fact) => <span key={fact} className="text-ok-ink">✓ {fact}</span>)}
             </span>
           )}
         </Row>

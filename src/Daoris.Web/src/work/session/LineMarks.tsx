@@ -19,7 +19,7 @@ export function HeadLineOf({ said, onOpen }: { said: string; onOpen?: (() => voi
     <span data-line-state="" className="flex shrink-0 items-baseline gap-1.5 text-small text-ink-soft">
       {said}
       {onOpen && (
-        <button type="button" onClick={onOpen} className="cursor-pointer border-0 bg-transparent p-0 text-small text-accent hover:underline">
+        <button type="button" onClick={onOpen} className="cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink hover:underline">
           {t('work.parts.line.open')}
         </button>
       )}

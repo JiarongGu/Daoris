@@ -27,7 +27,7 @@ export function changesFact(t: TFunction, changes: ChangesFacts): string {
 }
 
 const CHANGE_INK: Readonly<Record<ChangedFile['change'], string>> = {
-  A: 'text-ink-done', M: 'text-ink-taken', D: 'text-ink-danger', R: 'text-ink-soft',
+  A: 'text-ok-ink', M: 'text-live-ink', D: 'text-fail-ink', R: 'text-ink-soft',
 };
 
 /**
@@ -47,7 +47,7 @@ export function ChangesRail({ changes, now, onReview, onFile }: {
   const more = changes.files.length - shown.length;
   return (
     <section aria-label={t('work.session.changes.title')} className="grid content-start gap-1.5">
-      <h3 className="m-0 flex items-baseline gap-2 text-meta font-semibold uppercase tracking-wide text-ink-soft">
+      <h3 className="m-0 flex items-baseline gap-2 text-caption font-semibold uppercase tracking-wide text-ink-soft">
         {t('work.session.changes.title')}
         {changes.files.length > 0 && <span className="font-normal normal-case tracking-normal text-ink-faint">{changesFact(t, changes)}</span>}
       </h3>
@@ -62,10 +62,10 @@ export function ChangesRail({ changes, now, onReview, onFile }: {
                   onClick={() => onFile?.(file.path)}
                   className="grid w-full cursor-pointer grid-cols-[1rem_minmax(0,1fr)_auto] items-baseline gap-1.5 rounded-control border-0 bg-transparent px-1 py-0.5 text-left text-small hover:bg-sunken"
                 >
-                  <span className={cn('font-mono text-meta', CHANGE_INK[file.change])}>{file.change}</span>
+                  <span className={cn('font-mono text-caption', CHANGE_INK[file.change])}>{file.change}</span>
                   <PathText path={file.path} className="text-ink" />
-                  <span className="whitespace-nowrap font-mono text-meta">
-                    <span className="text-ink-done">+{file.added}</span> <span className="text-ink-danger">−{file.removed}</span>
+                  <span className="whitespace-nowrap font-mono text-caption">
+                    <span className="text-ok-ink">+{file.added}</span> <span className="text-fail-ink">−{file.removed}</span>
                   </span>
                 </button>
               </li>
@@ -73,7 +73,7 @@ export function ChangesRail({ changes, now, onReview, onFile }: {
           </ul>
         )}
       {more > 0 && (
-        <button type="button" onClick={() => setAll(true)} className="w-fit cursor-pointer border-0 bg-transparent p-0 text-small text-accent">
+        <button type="button" onClick={() => setAll(true)} className="w-fit cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink">
           {t('work.session.changes.more', { count: more })}
         </button>
       )}
@@ -84,7 +84,7 @@ export function ChangesRail({ changes, now, onReview, onFile }: {
         ].filter(Boolean).join(' · ')}
       </p>
       {changes.checks && (
-        <p className={cn('m-0 text-small', changes.checks.passed === changes.checks.of ? 'text-ink-done' : 'text-ink-danger')}>
+        <p className={cn('m-0 text-small', changes.checks.passed === changes.checks.of ? 'text-ok-ink' : 'text-fail-ink')}>
           {changes.checks.passed === changes.checks.of ? '✓ ' : '▲ '}
           {t('work.session.changes.checks', { ...changes.checks, time: clockOf(changes.checks.at, new Date(now), i18n.language) })}
         </p>

@@ -70,7 +70,7 @@ export function PanelHead({ head, now, acts, changes, chips, onWait, facts }: {
     <header data-region="head" className="grid gap-0.5 border-b border-line pb-2">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <Dot tone={TONE[head.state]} label={word} className="text-small font-semibold" />
-        {head.state !== 'loading' && <span className="text-meta text-ink-faint">{phaseTime(now - Date.parse(head.since))}</span>}
+        {head.state !== 'loading' && <span className="text-caption text-ink-faint">{phaseTime(now - Date.parse(head.since))}</span>}
         {head.doing && (onWait ? (
           <button
             type="button"
@@ -82,7 +82,7 @@ export function PanelHead({ head, now, acts, changes, chips, onWait, facts }: {
         ) : <span className="min-w-0 flex-1 truncate text-small text-ink-soft">{head.doing}</span>)}
         {acts && <span className="ml-auto flex shrink-0 items-center gap-1">{acts}</span>}
       </div>
-      <h2 className={cn('m-0 min-w-0 text-view font-semibold text-ink', head.wraps ? 'line-clamp-2' : 'truncate')}>
+      <h2 className={cn('m-0 min-w-0 text-display font-semibold text-ink', head.wraps ? 'line-clamp-2' : 'truncate')}>
         {head.ask && <span className="font-normal text-ink-soft">{head.ask} › </span>}
         {head.title}
       </h2>
@@ -92,7 +92,7 @@ export function PanelHead({ head, now, acts, changes, chips, onWait, facts }: {
         {changes}
       </p>
       {facts && facts.said.length > 0 && (
-        <p data-head-facts className="m-0 min-w-0 truncate text-meta text-ink-faint" title={facts.tip ?? facts.said.join(' · ')}>
+        <p data-head-facts className="m-0 min-w-0 truncate text-caption text-ink-faint" title={facts.tip ?? facts.said.join(' · ')}>
           {facts.said.join(' · ')}
         </p>
       )}

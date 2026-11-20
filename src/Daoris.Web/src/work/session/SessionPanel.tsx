@@ -53,7 +53,7 @@ export function Dock({ waits, now, narrow, onAnswer, count = waits.length, child
   return (
     <div data-region="dock" className="grid max-h-[40%] min-h-0 shrink-0 content-start gap-1.5 overflow-y-auto py-1.5">
       {waits.length > 0 && count > 0 && (
-        <p data-dock-count className="sticky top-0 m-0 bg-page text-meta font-semibold uppercase tracking-wide text-ink-open">
+        <p data-dock-count className="sticky top-0 m-0 bg-page text-caption font-semibold uppercase tracking-wide text-ink-open">
           {t('work.session.wait.count', { count })}
         </p>
       )}
@@ -149,7 +149,7 @@ export function SessionPanel({
     <button
       type="button"
       onClick={facts.onReview}
-      className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small text-accent"
+      className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink"
     >
       {changesFact(t, changes)} ▸
     </button>

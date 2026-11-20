@@ -26,8 +26,8 @@ export function PanelComposer({ reads, chip, children }: { reads: Reads; chip: s
     <div className="grid min-w-0 gap-1">
       {children}
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-2">
-        <span className="rounded-control border border-line px-1.5 py-0.5 text-meta text-ink-soft">{chip}</span>
-        <span className="min-w-0 flex-1 truncate text-meta text-ink-faint">{t(READS_LINE[reads])}</span>
+        <span className="rounded-control border border-line px-1.5 py-0.5 text-caption text-ink-soft">{chip}</span>
+        <span className="min-w-0 flex-1 truncate text-caption text-ink-faint">{t(READS_LINE[reads])}</span>
       </p>
     </div>
   );

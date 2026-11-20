@@ -25,7 +25,7 @@ export function HeldWhen({ reaches }: { reaches?: string | null }) {
   const { chat, cooling } = useContext(SaidDoors);
   const resume = reaches === 'resume';
   return (
-    <span className="text-meta text-ink-faint">
+    <span className="text-caption text-ink-faint">
       {resume && cooling ? t('work.conversation.held.cooling', { time: moment(cooling.until) })
         : resume ? t(chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume')
           : t('work.session.story.held')}
