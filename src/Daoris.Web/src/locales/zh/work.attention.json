@@ -6,6 +6,8 @@
   "work.attention.group.ready": "待你审阅",
   "work.attention.group.agents": "交给智能体",
   "work.attention.agentsNote": "各由受任命接手的角色处理：列在这里，从不计入你的待办。",
+  "work.attention.group.vacant": "空缺",
+  "work.attention.vacantNote": "每一项都在等由智能体担任的角色，却没有智能体的会话来应答：指派这个角色或接手这一步。过了时限就放弃；从不计入你的待办。",
   "work.attention.untaken": "尚无角色接手",
   "work.attention.parked": "在检查点挂起",
   "work.attention.parked-quest": "会话失败后挂起",

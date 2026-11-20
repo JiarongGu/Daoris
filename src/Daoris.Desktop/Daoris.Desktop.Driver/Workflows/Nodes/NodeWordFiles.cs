@@ -33,6 +33,7 @@ internal static class NodeWordFiles
         if (word.Outcome is { } outcome) writer.WriteString("outcome", outcome);
         if (word.Holder is { } holder) writer.WriteString("holder", holder);
         if (word.Decider is { } decider) writer.WriteString("decider", decider);
+        if (word.GaveUp) writer.WriteBoolean("gaveUp", true);
         if (word.Epoch is { } held)
         {
             writer.WriteStartObject("epoch");
@@ -83,6 +84,7 @@ internal static class NodeWordFiles
             By = by, Attempt = attempt, Supersedes = Text(each, "supersedes"), Kept = kept, Tip = Text(each, "tip"),
             Revision = Text(each, "revision"), Review = Text(each, "review"), Part = Text(each, "part"),
             Outcome = Text(each, "outcome"), Holder = Text(each, "holder"), Decider = Text(each, "decider"), Epoch = held,
+            GaveUp = each.TryGetProperty("gaveUp", out var gave) && gave.ValueKind == JsonValueKind.True,
         };
     }
 

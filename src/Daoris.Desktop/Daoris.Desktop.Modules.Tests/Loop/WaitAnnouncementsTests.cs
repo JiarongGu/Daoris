@@ -141,10 +141,29 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
 
         var told = Assert.Single(Said());
         Assert.Equal(
-            (WaitAnnouncements.StepKind, "q7/sign", "s1a2b3c4", "engine"),
+            (WaitAnnouncements.StepKind, "q7/sign", "s1a2b3c4", "engine", "worker"),
             (told.GetProperty("Kind").GetString(), told.GetProperty("Id").GetString(), told.GetProperty("Session").GetString(),
-                told.GetProperty("Repository").GetString()));
-        Assert.Equal("engine: a step is waiting on a role you hold", told.GetProperty("Headline").GetString());
+                told.GetProperty("Repository").GetString(), told.GetProperty("Role").GetString()));
+        Assert.Equal("engine: a step waits on `worker`, which you fill", told.GetProperty("Headline").GetString());
+    }
+
+    /// <summary>A step a role's agent holds, the default where no cast names another, is the agents' row: never announced as the owner's.</summary>
+    [Fact]
+    public async Task A_step_its_role_s_agent_holds_is_not_announced()
+    {
+        var facts = new AttentionFacts
+        {
+            Sessions = [Session("s1a2b3c4", "engine")],
+            Steps = [JsonNode.Parse("""
+                {"run":"q7","node":"check","repository":"engine","workspace":"default","why":"held","role":"operations","holder":"agent","presses":[],
+                 "since":"2026-11-16T09:51:00Z"}
+                """)!.AsObject()],
+        };
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true, () => true));
+
+        await slice.JudgeAsync();
+
+        Assert.Empty(Said());
     }
 
     /// <summary>The loop's switch, read at each announcement as a conversation's answer reads it: a choice that does not read errs toward saying it.</summary>

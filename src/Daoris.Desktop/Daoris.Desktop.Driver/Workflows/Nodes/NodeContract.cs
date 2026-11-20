@@ -214,6 +214,9 @@ public static class NodeSource
     /// <summary>The landing supervisor the person appointed, whose Accept or Approve reaches a node a person's press reaches.</summary>
     public const string Supervisor = "supervisor";
 
+    /// <summary>The risk policy, whose judge passes a press's step where its place declares no risk for its act.</summary>
+    public const string Policy = "policy";
+
     /// <summary>A commitment's receipt, or its owner's decline.</summary>
     public const string Commitment = "commitment";
 

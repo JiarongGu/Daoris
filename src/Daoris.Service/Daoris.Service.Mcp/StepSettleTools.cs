@@ -20,7 +20,7 @@ public sealed class StepSettleTools(IntakeScope? intake = null, SessionLedger? l
     public async Task<string> SettleAsync(
         [Description("The run the step's words named.")] string run,
         [Description("The step's id.")] string node,
-        [Description("A decision's outcome; none for a task.")] string? outcome = null,
+        [Description("A decision's outcome; a review's accepted or changes; an approval's approved or rejected: required for each. None for a task.")] string? outcome = null,
         [Description("What you did, or why.")] string? words = null,
         [Description("The evidence by name.")] Dictionary<string, string>? evidence = null,
         [Description("The epoch the words named.")] int? epoch = null,

@@ -89,6 +89,19 @@ public sealed class RunWaitGroupsTests
     }
 
     [Fact]
+    public void The_json_listing_carries_the_vacancy_group_the_text_listing_prints()
+    {
+        var look = Look([Record("s1", "completed", "q1", 0)], [Quest("q1")], [Waits("q1", "review", PersonWaits.Accept) with { Role = "acceptor", Vacant = true }]);
+
+        var json = JsonNode.Parse(string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list") { Json = true }, TestHomes.Root, T0)))!;
+        var vacant = json["vacant"]!.AsArray().Single()!;
+        var text = string.Join("\n", SessionsListing.ListLines(look, new SessionsAsk("list"), TestHomes.Root, T0));
+
+        Assert.Equal(("q1", "review", "acceptor", PersonWaits.Accept), ((string?)vacant["run"], (string?)vacant["node"], (string?)vacant["role"], (string?)vacant["why"]));
+        Assert.Contains("Vacant (1)", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_live_session_of_a_waiting_run_stays_working()
     {
         var look = Look([Record("s1", "working", "q1", 0)], [Quest("q1", "Taken")], [Waits("q1", "review", PersonWaits.Accept)]);

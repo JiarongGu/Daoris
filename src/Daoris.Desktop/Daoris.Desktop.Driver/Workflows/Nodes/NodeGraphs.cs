@@ -83,6 +83,10 @@ public static class NodeGraphs
             // Judged with the graph, so the declarations' own checks leave it alone.
             else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
             else if (StepRoles.Problem(node) is { } role) problems.Add(role);
+            else if (saved && onSave && RiskStepHolds.BadAct(node) is { } act)
+            {
+                Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `act` {act} names no act of the census.");
+            }
         }
 
         problems.AddRange(NodeWires.Problems(graph.Nodes, graph.Wires));

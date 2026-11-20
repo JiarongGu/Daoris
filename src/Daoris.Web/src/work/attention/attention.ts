@@ -23,8 +23,8 @@ import { planQuestionDetail } from './planQuestionDetail';
 import { declarationOwedWhy } from './declarationWords';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
-export { ATTENTION_GROUP, type AttentionGroup, attentionGroup, attentionGroups, GROUP_ORDER } from './attentionGroups';
-export { ATTENTION_PLACE, bellCount, needsListed, obligationOf, ownersListed, placeCounts, placeOf, theAgents, workCutFor } from './attentionCounts';
+export { APART, ATTENTION_GROUP, type AttentionGroup, attentionGroup, attentionGroups, GROUP_ORDER } from './attentionGroups';
+export { ATTENTION_PLACE, bellCount, needsListed, obligationOf, ownersListed, placeCounts, placeOf, theAgents, vacant, workCutFor } from './attentionCounts';
 export type { AttentionPlace } from './attentionCounts';
 
 /**

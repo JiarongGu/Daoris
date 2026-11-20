@@ -10,7 +10,8 @@ public static class AttemptTenures
 {
     /// <summary>The tenures begun for <paramref name="unit"/>'s standing attempts; none where every one holds one or its record does not read.</summary>
     public static IReadOnlyList<StepTenure> Keep(
-        NodeRecordFiles records, string unit, IEnumerable<NodeDeclaration> nodes, string workspace, string? repository, PlaceRiskBook? risk, DateTimeOffset now)
+        NodeRecordFiles records, string unit, IEnumerable<NodeDeclaration> nodes, string workspace, string? repository, PlaceRiskBook? risk, DateTimeOffset now,
+        RiskStepJudge? judge = null)
     {
         if (records.Read(unit) is not { Ended: null } record) return [];
         var standing = new List<(NodeDeclaration Node, NodeStatus Status)>();
@@ -24,17 +25,25 @@ public static class AttemptTenures
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         var held = tenures.Holding(unit, standing.ToDictionary(each => each.Node.Id, each => each.Status.Attempt, StringComparer.Ordinal));
         var unheld = standing.Where(each => !held.ContainsKey(each.Node.Id)).ToList();
-        if (unheld.Count == 0) return [];
-
         var book = new PlaceCastFiles(records.Home).Book();
         var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
-        return tenures.Begin(unit, [.. unheld.Select(each =>
+        var judged = TenureRejudge.Apply(tenures, unit, standing.Where(each => held.ContainsKey(each.Node.Id)), held,
+            node => book.At(StepRoles.Of(node), workspace, repository, place), judge, now);
+        if (unheld.Count == 0) return judged;
+        return [.. judged, .. tenures.Begin(unit, [.. unheld.Select(each =>
         {
             var role = StepRoles.Of(each.Node);
-            var cast = book.At(role, workspace, repository, place);
+            // A hold the risk policy classes the owner's is the owner role's from its start, as a marked approver is.
+            var cast = RiskStepGates.Owned(each.Node, each.Status, judge)
+                ? new CastNow(role, CastHolders.Person, CastWhy.Marked, RiskPolicy.Key)
+                : book.At(role, workspace, repository, place);
             return (each.Node.Id, each.Status.Attempt, role, FirstHolder(each.Node, cast), each.Status.Since ?? now, WhyOf(cast));
-        })]);
+        })])];
     }
+
+    public static IReadOnlyList<StepTenure> KeepAt(
+        NodeRecordFiles records, string unit, IEnumerable<NodeDeclaration> nodes, string workspace, string? repository, DriverConfig? config, DateTimeOffset now) =>
+        Keep(records, unit, nodes, workspace, repository, config?.PlaceRisk, now, RiskStepGates.At(config, workspace, repository));
 
     /// <summary>
     /// Who first holds an attempt of <paramref name="node"/>, and whom <i>Give back</i> returns it to: the person where the step's own word says

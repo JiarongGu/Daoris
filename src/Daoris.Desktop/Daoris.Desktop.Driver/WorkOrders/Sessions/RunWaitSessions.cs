@@ -8,8 +8,8 @@ internal static class RunWaitSessions
     /// <summary>Each such session's id, with its run's waits in the order the look read them.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<PersonWait>> Of(SessionLook look)
     {
-        if (look.RunWaits.Count == 0) return None;
-        var byRun = look.RunWaits.GroupBy(wait => wait.Run, StringComparer.Ordinal)
+        if (!look.RunWaits.Any(wait => !wait.Vacant)) return None;
+        var byRun = look.RunWaits.Where(wait => !wait.Vacant).GroupBy(wait => wait.Run, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => (IReadOnlyList<PersonWait>)[.. group], StringComparer.Ordinal);
         var quests = look.Quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);

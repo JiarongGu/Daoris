@@ -332,6 +332,7 @@ public static class NodeLifecycle
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
+        foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, daoris, "Daoris gives up a step that stood vacant past its bound (StepVacancies)"));
         rows.Add(new(NodeStates.Failed, NodeStates.Stopped, person, "the person stops a failed node, which ends it and its run as stopped"));
         foreach (var from in NodeStates.Bound)
         {
@@ -418,7 +419,7 @@ public static class NodeLifecycle
                 // A reach is answered again only where its kind's authority lets it: a decision's, which its door offers alone.
                 if (status.State == NodeStates.Reached && !authority.Reanswers) return Refuse(NodeRefusal.NotReanswered);
                 if (move.Source != authority.ReachBy && move.Source != authority.ObservedBy
-                    && !(move.Source == NodeSource.Supervisor && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
+                    && !(move.Source is NodeSource.Supervisor or NodeSource.Policy && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);
                 if (move.Acceptance is not { } accepted) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);
@@ -475,7 +476,7 @@ public static class NodeLifecycle
                 return To(next with { By = NodeSource.Person, Words = move.Words, Scope = move.Scope });
 
             case NodeStates.Stopped:
-                return To(next with { By = NodeSource.Person, Words = move.Words });
+                return To(next with { By = move.By == NodeCause.Daoris ? NodeSource.Daoris : NodeSource.Person, Words = move.Words });
 
             case NodeStates.Unknown:
                 if (Unbound(move.Attempt) is { } unknownAttempt) return Refuse(unknownAttempt);

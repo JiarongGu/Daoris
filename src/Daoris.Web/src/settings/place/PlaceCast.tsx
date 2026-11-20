@@ -5,7 +5,7 @@ import { Inline, SelectField, SettingRow } from '../../design/ui';
 
 const DEFAULT_HOLDER = 'default';
 
-/** One role's holder at a place now, and why (`CastNow`): `owner`, `marked`, `risk`, `cast`, `staffed` or `default`. */
+/** One role's holder at a place now, and why (`CastNow`): `owner`, `marked`, `risk`, `cast`, `staffed`, `sign-in` or `default` (the role's agent). */
 export type CastRole = { role: string; holder: string; why: string; source: string; words?: string | null };
 
 /** One level of the reporting line every role at the place reports to. */

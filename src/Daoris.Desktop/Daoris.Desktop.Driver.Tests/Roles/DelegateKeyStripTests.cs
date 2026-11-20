@@ -65,6 +65,18 @@ public sealed class DelegateKeyStripTests
         Assert.All(registry.Names, door => Assert.Contains(ProviderRegistry.AgentNameOf(registry.Door(door)), registry.Agents));
     }
 
+    /// <summary>A live session serves the repository its start names, for any agent or for the agent it runs by name, and no other.</summary>
+    [Fact]
+    public void A_session_serves_its_start_s_repository_for_any_agent_or_its_own_by_name()
+    {
+        var delegates = new SessionDelegates();
+        delegates.Hand(new Dictionary<string, string?> { [ChildMarks.SessionVariable] = "s-bob" }, new SessionPlace("engine", null), "bob");
+        delegates.Hand(new Dictionary<string, string?> { [ChildMarks.SessionVariable] = "s-bare" }, new SessionPlace("game", null));
+
+        Assert.Equal((true, true, false, false), (delegates.Serving(null, "engine"), delegates.Serving("bob", "Engine"), delegates.Serving("alice", "engine"), delegates.Serving("bob", "game")));
+        Assert.Equal((true, false), (delegates.Serving(null, "game"), delegates.Serving(null, "other")));
+    }
+
     /// <summary>Every start the driver composes names the registry its key is drawn in and the agent it runs: a start handed none would hold no key.</summary>
     [Fact]
     public void Every_start_the_driver_composes_names_where_its_key_is_drawn()

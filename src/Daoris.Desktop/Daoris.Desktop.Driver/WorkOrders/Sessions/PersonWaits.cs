@@ -13,6 +13,8 @@ public sealed record PersonWait(string Run, string Node, string Why, string Repo
 
     /// <summary>Whether its run ended failed at it (<see cref="FailedHeldRuns"/>): its own <c>step</c> row carries it, whatever its quest's state.</summary>
     public bool Ended { get; init; }
+
+    public bool Vacant { get; init; }
 }
 
 /// <summary>

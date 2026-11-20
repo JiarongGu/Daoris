@@ -135,7 +135,15 @@ public abstract class NodeRuntimeFixture : IDisposable
     /// <summary>The engine's quests a pass reads: the one quest, unless a test names more.</summary>
     protected IReadOnlyList<WorkUnit> _units = [Quest];
 
-    protected NodeRuntimeLook Look(string config, bool whole = true) => new(DriverConfig.Parse(config), whole)
+    protected static string Classed(string config)
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(config)!.AsObject();
+        root[RiskPolicy.Key] ??= System.Text.Json.Nodes.JsonNode.Parse(
+            """{"machine":[{"kind":"work.accept","class":"role"},{"kind":"task.approve","class":"role"}]}""");
+        return root.ToJsonString();
+    }
+
+    protected NodeRuntimeLook Look(string config, bool whole = true) => new(DriverConfig.Parse(Classed(config)), whole)
     {
         Units = _ =>
         {

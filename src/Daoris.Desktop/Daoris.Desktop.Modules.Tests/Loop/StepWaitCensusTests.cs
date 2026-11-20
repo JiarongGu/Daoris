@@ -31,6 +31,8 @@ public sealed class StepWaitCensusTests
 
     private static NodeStatus Active(string node) => new(Unit, node, NodeStates.Active) { Attempt = 1, Tries = 1, Since = Now };
 
+    private static readonly Func<string, string> PersonCast = _ => CastHolders.Person;
+
     /// <summary>A step standing at <paramref name="why"/>, as a run's record keeps it: its declaration and the record.</summary>
     private static (NodeDeclaration Node, NodeRecord Record)? StepAt(string why) => why switch
     {
@@ -62,7 +64,7 @@ public sealed class StepWaitCensusTests
             var status = WorkPerformer.StatusOf(step.Record, step.Node.Id);
             var wait = StepWaiting.Read(step.Record, step.Node, status);
             Assert.Equal(why, wait?.Why);
-            var held = HeldSteps.Step(Run, "engine", "aurora", Run, step.Node, step.Record);
+            var held = HeldSteps.Step(Run, "engine", "aurora", Run, step.Node, step.Record, cast: PersonCast);
             Assert.NotNull(held);
             return new() { Steps = [JsonSerializer.SerializeToNode(held, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()] };
         }
@@ -178,6 +180,47 @@ public sealed class StepWaitCensusTests
         Assert.Equal((StepWaiting.OpensRun, AppointedRoles.Supervisor),(vacancy["opens"]!.GetValue<string>(), vacancy["role"]!.GetValue<string>()));
     }
 
+    /// <summary>Every hold its role's agent holds by default is served (a task's Done, handed) or a vacancy listed apart. Seen failing first on each.</summary>
+    [Theory]
+    [InlineData(PersonWaits.Task, false)]
+    [InlineData(PersonWaits.Accept, true)]
+    [InlineData(PersonWaits.Approval, true)]
+    [InlineData(PersonWaits.GoAhead, true)]
+    [InlineData(PersonWaits.Choose, true)]
+    [InlineData(PersonWaits.Vacant, true)]
+    [InlineData(PersonWaits.Pass, true)]
+    [InlineData(PersonWaits.Actor, true)]
+    public void Every_hold_its_roles_agent_holds_by_default_is_served_or_a_vacancy_listed_apart(string why, bool vacant)
+    {
+        var (node, record) = why == PersonWaits.Accept
+            ? (new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed), Standing("review", Active("review")))
+            : StepAt(why)!.Value;
+        if (node.Kind == NodeKinds.Task) node = node with { Role = why == PersonWaits.Task ? "worker" : StepRoles.Approver };
+        var status = WorkPerformer.StatusOf(record, node.Id);
+        var wait = StepWaiting.Read(record, node, status, null, PlaceCastBook.Uncast)!;
+        Assert.Equal(vacant, StepVacancies.Is(wait, _ => false));
+        StepVacancy[] kept = [new(node.Id, status.Attempt, Now, true, false)];
+        var held = HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast, vacancies: vacant ? kept : null);
+
+        Assert.NotNull(held);
+        Assert.Equal((why, StepHolders.Agent, vacant, !vacant), (held.Why, held.Holder, held.Vacant, held.Handed));
+        Assert.Equal(vacant ? Now.AddHours(VacancySetting.Default) : null, held.GivesUp);
+        var row = Assert.Single(Rows(new AttentionFacts { Steps = [JsonSerializer.SerializeToNode(held, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()] }));
+        Assert.Equal(vacant ? AttentionOwnership.VacantClass : AttentionOwnership.AgentsClass, AttentionOwnership.Of(row, AttentionTakers.None).Class);
+    }
+
+    [Fact]
+    public void A_plugins_role_wait_an_agent_is_cast_to_is_served_and_its_default_agent_is_a_vacancy()
+    {
+        var (node, record) = StepAt(PersonWaits.Actor)!.Value;
+        var status = WorkPerformer.StatusOf(record, node.Id);
+
+        Assert.False(StepVacancies.Is(StepWaiting.Read(record, node, status, null, _ => "agent:beta")!, _ => true));
+        Assert.True(StepVacancies.Is(StepWaiting.Read(record, node, status, null, PlaceCastBook.Uncast)!, _ => false));
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: _ => "agent:beta"));
+        Assert.True(HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PlaceCastBook.Uncast, vacancies: [new(node.Id, status.Attempt, Now, true, false)])!.Vacant);
+    }
+
     /// <summary>
     /// A plugin's role wait with no page is acted on outside Daoris, where nothing observes it: its row offers <i>Done outside Daoris</i> on
     /// the attempt out now, its link the evidence; one with a page is taken on the page and observed there.
@@ -191,12 +234,12 @@ public sealed class StepWaitCensusTests
 
         var row = (JsonObject)Assert.Single(Rows(new AttentionFacts
         {
-            Steps = [JsonSerializer.SerializeToNode(HeldSteps.Step(Run, "engine", "aurora", Run, node, bare), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+            Steps = [JsonSerializer.SerializeToNode(HeldSteps.Step(Run, "engine", "aurora", Run, node, bare, cast: PersonCast), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
         }))["step"]!;
         Assert.Contains(HeldResolutions.DoneOutside, ((JsonArray)row["presses"]!).Select(each => each!.GetValue<string>()));
         Assert.Equal((Unit, 1), (row["held"]!["unit"]!.GetValue<string>(), row["held"]!["attempt"]!.GetValue<int>()));
 
-        var paged = HeldSteps.Step(Run, "engine", "aurora", Run, node, record)!;
+        var paged = HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PersonCast)!;
         Assert.DoesNotContain(HeldResolutions.DoneOutside, paged.Presses);
         Assert.Null(paged.Held);
     }

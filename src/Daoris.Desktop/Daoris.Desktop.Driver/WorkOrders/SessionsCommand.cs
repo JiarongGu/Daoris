@@ -137,7 +137,8 @@ public static class SessionsCommand
         };
 
     /// <summary>The written form of one listing, as <c>SESSION_GROUPS</c> answers it (see <see cref="SessionsJson.Json"/>).</summary>
-    public static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null) => SessionsJson.Json(rows, entries);
+    public static string Json(IEnumerable<SessionGrouping> rows, IEnumerable<SessionEntry>? entries = null, IReadOnlyList<PersonWait>? vacant = null) =>
+        SessionsJson.Json(rows, entries, vacant);
 
     /// <summary>The listing's lines from one look (see <see cref="SessionsListing.ListLines"/>).</summary>
     public static IReadOnlyList<string> ListLines(

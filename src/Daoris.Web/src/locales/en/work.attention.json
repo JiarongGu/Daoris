@@ -6,6 +6,8 @@
   "work.attention.group.ready": "Ready for you",
   "work.attention.group.agents": "With the agents",
   "work.attention.agentsNote": "A role appointed to take each of these settles it: listed here, never counted as yours.",
+  "work.attention.group.vacant": "Vacant",
+  "work.attention.vacantNote": "Each waits on a role its agent holds, and no agent's session answers it: cast the role or take the step. Past its bound it gives up; never counted as yours.",
   "work.attention.untaken": "no role takes this yet",
   "work.attention.parked": "parked at a checkpoint",
   "work.attention.parked-quest": "parked after failed sessions",

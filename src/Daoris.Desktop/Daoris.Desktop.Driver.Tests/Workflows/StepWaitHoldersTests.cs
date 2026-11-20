@@ -44,7 +44,21 @@ public sealed class StepWaitHoldersTests
         var row = HeldSteps.Step(Run, "engine", "aurora", Run, Opinion, record, held);
 
         Assert.NotNull(row);
-        Assert.Equal((PersonWaits.Vacant, AppointedRoles.Supervisor, StepHolders.Person), (row.Why, row.Role, row.Holder));
+        Assert.Equal((PersonWaits.Vacant, AppointedRoles.Supervisor, StepHolders.Agent), (row.Why, row.Role, row.Holder));
+    }
+
+    /// <summary>A check held not known waits on `operations`, which nothing casts here: its agent's, never a wait of the person's.</summary>
+    [Fact]
+    public void A_held_check_on_a_role_nothing_casts_waits_on_its_agent_and_never_on_the_person()
+    {
+        var check = new NodeDeclaration("check", NodeKinds.Check, 1, NodeReach.Observed);
+        var record = Standing("check", new NodeStatus(Unit, "check", NodeStates.Unknown) { Attempt = 1, Since = Now });
+        var cast = CastReading.At(PlaceCastBook.Empty, null, "aurora", "engine");
+
+        var wait = StepWaiting.Read(record, check, record.Statuses["check"], null, cast);
+
+        Assert.Equal((PersonWaits.Held, StepRoles.Operations, StepHolders.Agent), (wait?.Why, wait?.Role, wait?.Holder.Kind));
+        Assert.Equal("Waiting on `operations`: `an agent`.", StepWaiting.Line(wait!.Role, wait.Holder));
     }
 
     [Fact]
@@ -90,17 +104,41 @@ public sealed class StepWaitHoldersTests
         Assert.Contains(CastActs.Take, row.Holds!);
     }
 
-    /// <summary>A plugin's act an agent holds is observed by its plugin, so it waits on the agent and is no row of the person's.</summary>
+    /// <summary>A plugin's act an agent holds is no row while no vacancy is kept for it; a kept one's bound counts from when it became vacant.</summary>
     [Fact]
-    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons()
+    public void A_wait_an_agents_channel_settles_is_no_row_of_the_persons_and_a_kept_vacancy_is_one_from_when_it_became_vacant()
     {
         var release = Release with { Role = StepRoles.ReleaseManager };
         var record = Standing("release", Active("release") with { Unreconciled = 1 }, SignIn().Attempts[0] with
         {
-            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now),
+            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now.AddDays(-3)),
         });
+        var held = HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent);
+        StepVacancy[] kept = [new("release", record.Statuses["release"].Attempt, Now, true, false)];
 
-        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent)));
+        Assert.Null(HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held));
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, vacancies: kept, bound: TimeSpan.FromHours(5));
+        Assert.Equal((true, Now.AddHours(5)), (row?.Vacant, row?.GivesUp));
+    }
+
+    [Fact]
+    public void A_plugin_actor_cast_to_an_agent_with_no_live_session_is_a_vacancy()
+    {
+        var home = Path.Combine(AppContext.BaseDirectory, "_vacancy-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            new PlaceCastFiles(home, () => true).Cast("machine", StepRoles.ReleaseManager, "agent:bob", "bob releases", Now);
+            var book = new PlaceCastFiles(home).Book();
+            var wait = new RoleWait(PersonWaits.Actor, StepRoles.ReleaseManager, new StepHolder(StepHolders.Agent, "bob"), Now);
+
+            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (_, _) => false)));
+            Assert.False(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (agent, at) => agent == "bob" && at == "engine")));
+            Assert.True(StepVacancies.Is(wait, CastReading.Serves(book, null, null, "engine", (agent, _) => agent == "alice")));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
     }
 
     /// <summary>
@@ -119,19 +157,15 @@ public sealed class StepWaitHoldersTests
         Assert.Equal((PersonWaits.Task, (IReadOnlyList<string>?)null), (uncast?.Why, uncast?.Holds));
     }
 
-    /// <summary>Settings and Hand refuse an agent for a step only a press settles, with the reason; a step settled by an observation or a plugin's act takes one.</summary>
     [Fact]
-    public void A_cast_or_hand_over_of_an_agent_to_a_step_only_a_press_settles_is_refused()
+    public void Only_the_owner_role_refuses_an_agent_and_an_accept_is_handed_to_one()
     {
-        Assert.Contains(StepRoles.Acceptor, AgentSettles.Roles);
-        Assert.Contains(StepRoles.Owner, AgentSettles.Roles);
-        Assert.DoesNotContain(StepRoles.Operations, AgentSettles.Roles);
-        Assert.DoesNotContain(StepRoles.Approver, AgentSettles.Roles);
+        Assert.Equal([StepRoles.Owner], AgentSettles.Roles);
 
-        Assert.NotNull(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
-        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, CastHolders.Person));
-        Assert.Null(AgentSettles.Cast(StepRoles.Operations, CastHolders.Agent));
-        Assert.Contains("`acceptor`", AgentSettles.Hand(Review, CastHolders.Agent));
+        Assert.NotNull(AgentSettles.Cast(StepRoles.Owner, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Acceptor, "agent:beta"));
+        Assert.Null(AgentSettles.Cast(StepRoles.Approver, CastHolders.Agent));
+        Assert.Null(AgentSettles.Hand(Review, CastHolders.Agent));
         Assert.Null(AgentSettles.Hand(Release, "agent:beta"));
         Assert.Null(AgentSettles.Hand(Opinion, CastHolders.Agent));
     }

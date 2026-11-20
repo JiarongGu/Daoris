@@ -32,10 +32,12 @@ public sealed class StepWaitPassTests
     public void An_unchecked_done_held_at_holds_waits_on_your_pass_with_the_runs_skip_as_its_press()
     {
         var record = Standing(Unchecked);
+        Func<string, string> yours = _ => CastHolders.Person;
 
-        var wait = StepWaiting.Read(record, Holds, WorkPerformer.StatusOf(record, "holds"));
-        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Holds, record);
+        var wait = StepWaiting.Read(record, Holds, WorkPerformer.StatusOf(record, "holds"), cast: yours);
+        var row = HeldSteps.Step(Run, "engine", "aurora", Run, Holds, record, cast: yours);
 
+        Assert.Equal(StepHolders.Agent, StepWaiting.Read(record, Holds, WorkPerformer.StatusOf(record, "holds"))?.Holder.Kind);
         Assert.Equal((PersonWaits.Pass, StepRoles.AskReader, StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
         Assert.NotNull(row);
         Assert.Equal((PersonWaits.Pass, StepHolders.Person), (row.Why, row.Holder));

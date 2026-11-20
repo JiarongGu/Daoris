@@ -54,7 +54,7 @@ public static class HomeHistory
     public static IReadOnlyList<string> WorkflowRecords { get; } =
     [
         "agent-steps", "candidates", "closures", "lines", "looks", "rebases", "resolves", "resources", "risk", "run-ends-owed", "runs", "tenures",
-        "units", "quests.json",
+        "units", "vacancies", "quests.json",
     ];
 
     /// <summary>The desktop store's history tables, each emptied, in an order that empties a row's referrer before it.</summary>
