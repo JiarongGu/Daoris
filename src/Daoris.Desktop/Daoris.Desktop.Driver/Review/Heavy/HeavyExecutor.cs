@@ -197,7 +197,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 HeavyTaken? held;
                 try
                 {
-                    held = TryTake(each);
+                    held = await TryTakeAsync(each).ConfigureAwait(false);
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
@@ -288,7 +288,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     }
 
     /// <summary>A check slot and a repository slot as the machine's admission admits, each record written as it is taken, tried without waiting; why not, said.</summary>
-    private HeavyTaken? TryTake(Queued queued)
+    private async Task<HeavyTaken?> TryTakeAsync(Queued queued)
     {
         var send = queued.Send;
         if (HeavySlot.KeyOf(send.Checkout) is not { } key)
@@ -300,7 +300,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         var now = _world.Clock.GetUtcNow();
-        var ask = new HeavyAsk(key, send.Repository, send.Checkout,
+        var ask = new HeavyAsk(key, send.Repository, await AcceptedSlots.OfBlobAsync(send.Checkout, send.Accepted, _ends.Token).ConfigureAwait(false),
             () => new HeavyHolder(Environment.ProcessId, _started, send.Checkout, [], DateTimeOffset.UtcNow, null, JobName(home, send.Invocation)) { Run = send.Run })
         {
             Check = () => new VerifyHolder(Environment.ProcessId, _started, send.Run, send.Invocation, send.Repository, now),

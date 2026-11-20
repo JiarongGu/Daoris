@@ -649,8 +649,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     are as many as the admission's, so one repository's checks, its sessions' heavy runs and its integration's gated lines run side by
     side, each check in its slot's verification tree (`lines/trees/<key>`, `<key>-n`; a tree past the slots there are now, left by a
     larger `checks`, stays as it is, kept for when they grow again). A repository whose gates share what two trees cannot declares
-    `"heavySlots": <n>` in its `daoris.gates.json`, read from its checkout at each look: its heavy runs then run that many at once, 1
-    for one at a time, within the machine's admission (D349: the framework is Daoris's, the count the repository's). A check judged as
+    `"heavySlots": <n>` in its `daoris.gates.json`, read for every caller (a check, a gated integration line, a session's `run-heavy`) from
+    the declaration the person accepted for it, by git's object store at each look (`AcceptedSlots`), never from a branch's, tree's or
+    checkout's own file: a branch that raises `heavySlots` gets the line's count, and where nothing is accepted the machine's count
+    stands. Its heavy runs then run that many at once, 1 for one at a time, within the machine's admission (D349: the framework is
+    Daoris's, the count the repository's); a change to `heavySlots` is a change of the declaration like any other part the person has not
+    accepted, so it holds a restricted work's runs and is said by its key. A start that cannot have the admission's lock in its tries
+    waits saying the lock is held (`CheckWait.Admitting`), never a slot count. A check judged as
     merged reads its line's tip once and merges from objects alone, so an integration landing beside it never shows it a half-moved
     line. A session's `run-heavy` that is not admitted while its verification holds a slot of the repository says the true reason
     (its repository's slots, memory or the machine's slots) and does not wait. A sent check the executor

@@ -308,7 +308,7 @@ public sealed class HeavySlotTests : IDisposable
         using var holding = HeavySlot.TryTake(_fixture.Home, key)!;
         holding.Keep(new HeavyHolder(Environment.ProcessId, started, _fixture.Checkout, ["build"], now - TimeSpan.FromMinutes(10), "s-1", null));
         var rules = new CheckRules(checks, 16, 4, () => new MemoryReading(freeGb << 30, freeGb << 30));
-        var admit = new HeavyAdmit(() => rules, _fixture.Tree, () => new HeavyHolder(Environment.ProcessId, started, _fixture.Tree, ["build"], now, "s-2", null));
+        var admit = new HeavyAdmit(() => rules, _ => Task.FromResult<int?>(null), () => new HeavyHolder(Environment.ProcessId, started, _fixture.Tree, ["build"], now, "s-2", null));
         var said = new SaidWriter();
 
         using var stop = new CancellationTokenSource();

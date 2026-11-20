@@ -252,7 +252,7 @@ public static class HeavyRun
             // A session's run (its tree read from git's lock) never waits behind a verification.
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
-            var admit = new HeavyAdmit(world.Rules, checkout, () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null));
+            var admit = new HeavyAdmit(world.Rules, token => AcceptedSlots.OfRepositoryAsync(world.Home, keyedAs, checkout, token), () => written = new HeavyHolder(pid, started, checkout, gates, DateTimeOffset.UtcNow, session, null));
             took = await HeavySlot.TakeUnlessAsync(
                 world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, admit).ConfigureAwait(false);
         }

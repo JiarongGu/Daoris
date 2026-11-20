@@ -461,8 +461,9 @@ one at a time, its verdict the session's next word. Off Windows there are no job
   `RefusalCatalogueTests`, `WindowsModuleTests`; the web's `test/structure.test.ts`, `design/`, `locales/`, `menus/` and
   `bridge/state/` tests, `e2e/platform.spec.ts` and `measured/*.spec.ts`.
 - **The gates that bite:** `web-types`; `web-rules`; `web-unit`; `web`, whose build runs `i18n-check`, `names-check --strict`,
-  `tsc` and `vite build` before Playwright over the HTTP host; `web-measured`; `modules`, `modules-process` and `censuses`;
-  `driver` for Ask Daoris's coverage. A story or a mocked bridge is no proof of the installed window.
+  `tsc` and `vite build` before Playwright over the HTTP host, whose port is the first free one of the band 7200 to 7899 from the one
+  the web folder's path hashes to (`freeE2ePort`), so two checkouts hashing to one port both bind; `web-measured`; `modules`,
+  `modules-process` and `censuses`; `driver` for Ask Daoris's coverage. A story or a mocked bridge is no proof of the installed window.
 
 ## Contradictions
 
