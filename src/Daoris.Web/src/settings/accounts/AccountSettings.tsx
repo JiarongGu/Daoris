@@ -20,7 +20,7 @@ const offered = (values: readonly string[], held: string | null) =>
  */
 export function AccountSettingsSummary({ settings }: { settings: AccountSettings }) {
   const { t } = useTranslation();
-  if (settings.problem) return <span className="text-meta text-ink-danger">{settings.problem}</span>;
+  if (settings.problem) return <span className="text-caption text-fail-ink">{settings.problem}</span>;
 
   // The choice's name is sentence case; inside this line the value is a fragment of its own.
   const unset = t('harness.settings.summary.default');
@@ -31,7 +31,7 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
       t('harness.settings.summary.effort', { effort: settings.effort ?? unset }),
       ...(settings.perModel.length > 0 ? [t('harness.settings.summary.perModel', { count: settings.perModel.length })] : []),
     ].join(' · ');
-  return <span className="text-meta text-ink-faint">{said}</span>;
+  return <span className="text-caption text-ink-faint">{said}</span>;
 }
 
 /**
@@ -123,7 +123,7 @@ export function AccountSettingsForm({
 
       {settings.perModel.length > 0 && (
         <div role="group" aria-label={t('harness.settings.perModelLabel')} className="grid gap-1">
-          <span className="text-meta text-ink-faint">{t('harness.settings.perModel')}</span>
+          <span className="text-caption text-ink-faint">{t('harness.settings.perModel')}</span>
           {settings.perModel.map((entry) => (
             <div key={entry.model} className="flex flex-wrap items-center gap-2">
               <span className="min-w-40 font-mono text-small text-ink">{entry.model}</span>
@@ -138,8 +138,8 @@ export function AccountSettingsForm({
         </div>
       )}
 
-      <p className="m-0 text-meta text-ink-faint">{t('harness.settings.hint')}</p>
-      <p className="m-0 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
+      <p className="m-0 text-caption text-ink-faint">{t('harness.settings.hint')}</p>
+      <p className="m-0 flex flex-wrap items-baseline gap-1.5 text-caption text-ink-faint">
         <span>{t('harness.settings.terminal')}</span>
         <CodeText text={`daoris agent settings ${harness} --account ${shellWord(account, '<account>')} model <model> effort <effort>`} />
       </p>

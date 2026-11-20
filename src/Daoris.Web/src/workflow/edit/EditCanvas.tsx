@@ -63,7 +63,7 @@ export function EditCanvas({ flow, selected, edit, list, waiting, onBegin }: {
       <Prose className="text-small">{t('workflow.edit.empty.body')}</Prose>
       {presets.length > 0 && (
         <div className="grid min-w-0 gap-1">
-          <p className="m-0 text-meta text-ink-soft">{t('workflow.edit.empty.presets')}</p>
+          <p className="m-0 text-caption text-ink-soft">{t('workflow.edit.empty.presets')}</p>
           <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
             {presets.map((preset) => begin(presetName(t, i18n, preset), () => onBegin({ preset }), `preset:${preset.id}`))}
           </ul>
@@ -71,7 +71,7 @@ export function EditCanvas({ flow, selected, edit, list, waiting, onBegin }: {
       )}
       {saved.length > 0 && (
         <div className="grid min-w-0 gap-1">
-          <p className="m-0 text-meta text-ink-soft">{t('workflow.edit.source.saved')}</p>
+          <p className="m-0 text-caption text-ink-soft">{t('workflow.edit.source.saved')}</p>
           <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
             {saved.map((each) => begin(
               t('workflow.edit.source.savedVersion', { name: each.name ?? each.id, version: each.versions.at(-1) ?? 1 }),
@@ -80,7 +80,7 @@ export function EditCanvas({ flow, selected, edit, list, waiting, onBegin }: {
           </ul>
         </div>
       )}
-      {waiting && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.source.loading', { id: waiting })}</p>}
+      {waiting && <p className="m-0 text-caption text-ink-faint">{t('workflow.edit.source.loading', { id: waiting })}</p>}
     </div>
   );
 }

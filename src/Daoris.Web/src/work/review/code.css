@@ -7,14 +7,14 @@
 .hljs-selector-tag,
 .hljs-literal,
 .hljs-built_in {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .hljs-string,
 .hljs-regexp,
 .hljs-symbol,
 .hljs-addition {
-  color: var(--ink-done);
+  color: var(--ok-ink);
 }
 
 .hljs-number,
@@ -22,7 +22,7 @@
 .hljs-attribute,
 .hljs-variable,
 .hljs-template-variable {
-  color: var(--ink-taken);
+  color: var(--live-ink);
 }
 
 .hljs-comment,
@@ -41,5 +41,5 @@
 }
 
 .hljs-deletion {
-  color: var(--ink-danger);
+  color: var(--fail-ink);
 }

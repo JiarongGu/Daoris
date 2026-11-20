@@ -132,7 +132,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
         {!notice.read && (
           <span role="img" aria-label={t('notifications.done.unread')} className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
         )}
-        <span className={cn('min-w-0 flex-1', failed && !notice.read && 'text-ink-danger')}>{noticeWords(notice, t)}</span>
+        <span className={cn('min-w-0 flex-1', failed && !notice.read && 'text-fail-ink')}>{noticeWords(notice, t)}</span>
       </p>
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 text-small text-ink-faint">

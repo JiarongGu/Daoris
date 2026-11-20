@@ -16,9 +16,9 @@ function Refusal({ problem }: { problem: GraphProblem }) {
   const { t, i18n } = useTranslation();
   const worded = i18n.exists(`workflow.edit.refusal.${problem.code}`);
   return (
-    <li className="text-small text-ink-danger">
+    <li className="text-small text-fail-ink">
       {worded ? refusalSaid(t, i18n, problem) : <Inline text={problem.words} />}
-      {worded && <p className="m-0 text-meta text-ink-faint"><Inline text={t('workflow.edit.judge.driver', { words: problem.words })} /></p>}
+      {worded && <p className="m-0 text-caption text-ink-faint"><Inline text={t('workflow.edit.judge.driver', { words: problem.words })} /></p>}
     </li>
   );
 }
@@ -52,11 +52,11 @@ export function ToPutRight({ items, onDoor, onAsk }: {
             {step
               ? (
                 <button type="button" onClick={() => onDoor(step)}
-                  className="min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-ink-danger underline-offset-2 [overflow-wrap:anywhere] hover:underline">
+                  className="min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-fail-ink underline-offset-2 [overflow-wrap:anywhere] hover:underline">
                   {where}
                 </button>
               )
-              : <span className="min-w-0 text-ink-danger [overflow-wrap:anywhere]"><Inline text={words} /></span>}
+              : <span className="min-w-0 text-fail-ink [overflow-wrap:anywhere]"><Inline text={words} /></span>}
             {onAsk && <span className="flex gap-1">{ask('why')}{ask('fix')}</span>}
           </li>
         );

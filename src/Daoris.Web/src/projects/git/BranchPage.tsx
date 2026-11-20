@@ -173,7 +173,7 @@ function standingLine(t: TFunction, facts: BranchFacts): ReactNode {
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-ink-soft">
       {sentences.map((sentence) => <span key={sentence}><Inline text={sentence} /></span>)}
-      {link && <ExternalLink href={link} className="text-accent underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>}
+      {link && <ExternalLink href={link} className="text-accent-ink underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>}
       {said.map(({ sentence, at }) => (
         <span key={sentence}>
           <Inline text={sentence} />

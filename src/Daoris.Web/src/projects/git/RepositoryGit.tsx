@@ -419,5 +419,5 @@ function Path({ path, status, code }: { path: string; status?: string; code?: st
 }
 
 function Detail({ parts }: { parts: string[] }) {
-  return <p className="m-0 flex flex-wrap gap-x-2 text-meta text-ink-faint">{parts.map((part) => <span key={part}>{part}</span>)}</p>;
+  return <p className="m-0 flex flex-wrap gap-x-2 text-caption text-ink-faint">{parts.map((part) => <span key={part}>{part}</span>)}</p>;
 }

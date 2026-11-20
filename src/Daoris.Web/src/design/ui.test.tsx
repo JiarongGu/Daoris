@@ -21,7 +21,7 @@ describe('the primitives', () => {
     render(<Pill tone="declined" title="turned down">Declined</Pill>);
     const pill = screen.getByText('Declined');
     expect(pill).toHaveAttribute('title', 'turned down');
-    expect(pill.className).toContain('st-declined');
+    expect(pill.className).toContain('fail');
   });
 
   it('a warned tile wears the warning on its note, never on its value', () => {
@@ -409,8 +409,8 @@ describe('the liveness dot', () => {
       return [container.querySelector('[aria-hidden="true"]')!.className, container.firstElementChild!.className] as const;
     };
     const [doneMark, doneWord] = marked('done');
-    expect(doneMark).toContain('bg-st-done');
-    expect(doneWord).toContain('text-ink-done');
+    expect(doneMark).toContain('bg-ok');
+    expect(doneWord).toContain('text-ok-ink');
     const [waitsMark, waitsWord] = marked('waits');
     expect(waitsMark).not.toMatch(/\bbg-st-/);
     expect(waitsWord).not.toMatch(/text-ink-(open|done|danger|taken)/);
@@ -427,7 +427,7 @@ describe('the liveness dot', () => {
     const mark = (tone: 'parked' | 'failed') =>
       render(<Dot tone={tone} label={tone} />).container.querySelector('[aria-hidden="true"]')!.className;
     expect(mark('parked')).toContain('bg-st-open');
-    expect(mark('failed')).toContain('bg-st-declined');
+    expect(mark('failed')).toContain('bg-fail');
     const card = render(<WaitingCard title="waiting" />).container.querySelector('section')!;
     expect(card.className).toContain('border-l-st-open');
   });
@@ -568,9 +568,9 @@ describe('a code span breaks only between its words', () => {
   });
 
   it('is the same span a screen sets as code itself, with its own size and ink', () => {
-    const { container } = render(<CodeText text="daoris agent settings claude-code --account work" className="text-meta" />);
+    const { container } = render(<CodeText text="daoris agent settings claude-code --account work" className="text-caption" />);
     const code = container.querySelector('code')!;
-    expect(code.className).toContain('text-meta');
+    expect(code.className).toContain('text-caption');
     expect(boxesOf(code).words.map((word) => word.textContent)).toEqual(['daoris', 'agent', 'settings', 'claude-code', '--account', 'work']);
     boxesOf(code).words.forEach(unbreakable);
   });

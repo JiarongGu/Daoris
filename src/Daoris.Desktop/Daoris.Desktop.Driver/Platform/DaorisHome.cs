@@ -41,6 +41,9 @@ public static class DaorisHome
     /// <summary>The folder the install's programs run from, beside <see cref="InstallData"/>.</summary>
     public const string InstallApp = "app";
 
+    public const string InstallUpdate = "update";
+    public const string InstallLauncher = "Daoris.exe";
+
     /// <summary>The install's own home, beside <see cref="InstallApp"/>.</summary>
     public const string InstallData = "data";
 

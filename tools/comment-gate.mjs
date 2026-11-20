@@ -249,11 +249,13 @@ function touched(root, base, tip, staged = false) {
   return files.filter((f) => f.status !== 'D' && isSource(f.path) && !SKIPPED.test(f.path));
 }
 
-/** The breaches of the change `base`..`tip` (the working tree where `tip` is null, the index where `staged`) in the repository at `root`. */
-export function checkChange(root, base, tip = null, { staged = false } = {}) {
+/** The breaches of the change `base`..`tip` (the working tree where `tip` is null, the index where `staged`) in the repository at `root`, of the paths `only` names where given. */
+export function checkChange(root, base, tip = null, { staged = false, only = null } = {}) {
   const problems = [];
   let checked = 0;
+  const kept = only ? new Set(only) : null;
   for (const file of touched(root, base, tip, staged)) {
+    if (kept && !kept.has(file.path)) continue;
     const after = tip ? gitOrNull(root, ['show', `${tip}:${file.path}`])
       : staged ? gitOrNull(root, ['show', `:${file.path}`]) : readWork(root, file.path);
     if (after === null) continue;

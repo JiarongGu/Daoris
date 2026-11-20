@@ -42,7 +42,7 @@ export function StepHoldPresses({ holds, heldBy, roster, busy = false, onHold, s
   return (
     <div className="grid min-w-0 gap-1">
       <div className="flex flex-wrap items-center gap-1.5" aria-label={t('workflow.hold.label')}>
-        {heldBy && <span className="text-meta text-ink-faint">{t('workflow.hold.heldBy', { holder: holderSaid(t, heldBy) })}</span>}
+        {heldBy && <span className="text-caption text-ink-faint">{t('workflow.hold.heldBy', { holder: holderSaid(t, heldBy) })}</span>}
         {holds.map((act) => (
           <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" disabled={busy}
             onClick={() => (act === 'hand' ? setHanding((open) => !open) : onHold(act))}>

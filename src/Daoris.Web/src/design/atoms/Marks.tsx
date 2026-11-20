@@ -6,24 +6,24 @@ import { Tip } from './Tip';
 /* ---------------------------------------------------------------- dots, wells, meta lines */
 
 export const DOT_TONE: Record<string, { mark: string; word: string }> = {
-  live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
+  live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent-ink' },
   // Waiting on a person is the status palette's waiting hue, the one `WaitingCard` and the map wear.
   // Declined's red would read a session waiting on its person as one that had failed.
   parked: { mark: 'bg-st-open', word: 'text-ink-open' },
   // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
-  failed: { mark: 'bg-st-declined', word: 'text-ink-danger' },
+  failed: { mark: 'bg-fail', word: 'text-fail-ink' },
   // Ended is completed, failed, declined and stopped at once, so it wears no outcome's hue: done's
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },
   idle: { mark: 'bg-line', word: 'text-ink-faint' },
   // A fact's mark: what is reached or kept wears done's hue, the one the status palette's
   // done already is; what waits on another is a neutral, neither the person's open hue nor an outcome's.
-  done: { mark: 'bg-st-done', word: 'text-ink-done' },
+  done: { mark: 'bg-ok', word: 'text-ok-ink' },
   waits: { mark: 'bg-ink-soft', word: 'text-ink-soft' },
   // Work under way at a place of the activity bar: taken's hue, the status palette's *in progress*,
   // which a working session's pill and a taken quest's wear. Not done's green, an outcome's, and not the accent, which reads as open's
   // amber at badge size beside a wait's number; still, since it stands for as long as the work runs.
-  running: { mark: 'bg-st-taken', word: 'text-ink-taken' },
+  running: { mark: 'bg-live', word: 'text-live-ink' },
 };
 
 /**
@@ -40,7 +40,7 @@ export function Dot({ tone = 'idle', label, className }: {
   const shade = DOT_TONE[tone];
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 whitespace-nowrap text-meta', shade.word, className,
+      'inline-flex items-center gap-1.5 whitespace-nowrap text-caption', shade.word, className,
     )}
     >
       <DotMark tone={tone} />
@@ -104,7 +104,7 @@ export function StripMark({ label, initialOf, letters, face, tone, dimmed = fals
           aria-current={current || undefined}
           onClick={onPress}
           className={cn(
-            'relative flex h-8 w-10 items-center justify-center rounded-control transition-colors duration-(--speed)',
+            'relative flex h-8 w-10 items-center justify-center rounded-control transition-colors duration-(--duration-quick)',
             current ? 'bg-accent-soft text-ink' : 'text-ink-soft hover:bg-accent-soft/50',
           )}
         >
@@ -154,7 +154,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
   return (
     <div className={cn(fill && 'flex min-h-0 flex-1 flex-col')}>
       {(label || live) && (
-        <p className="mb-1 flex items-baseline gap-2 text-meta text-ink-faint">
+        <p className="mb-1 flex items-baseline gap-2 text-caption text-ink-faint">
           {label && <span>{label}</span>}
           {live && <Dot tone="live" label={t('console.live')} />}
         </p>
@@ -170,7 +170,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
         {text}
       </pre>
       {dropped > 0 && (
-        <p className="mt-1 text-meta text-ink-faint">{t('console.dropped', { count: dropped })}</p>
+        <p className="mt-1 text-caption text-ink-faint">{t('console.dropped', { count: dropped })}</p>
       )}
     </div>
   );

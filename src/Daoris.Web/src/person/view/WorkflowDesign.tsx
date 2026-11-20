@@ -41,7 +41,7 @@ export function WorkflowDesign({ workflow, base }: { workflow: PressWorkflow; ba
         <FlowChart label={flow.label} nodes={flow.nodes} edges={flow.edges} entries={flow.entries} sections={flow.sections} track={flow.track} />
       </div>
       {changes && changes.length > 0 && (
-        <ul aria-label={t('person.view.workflow.changes', { base })} className="m-0 flex list-none flex-col gap-0.5 p-0 text-meta text-ink-soft">
+        <ul aria-label={t('person.view.workflow.changes', { base })} className="m-0 flex list-none flex-col gap-0.5 p-0 text-caption text-ink-soft">
           {changes.map((change) => (
             <li key={change.id} className="m-0 break-words">
               {t(`person.view.workflow.change.${change.what}-${change.change}`, {

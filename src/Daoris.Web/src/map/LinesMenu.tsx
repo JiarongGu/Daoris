@@ -103,13 +103,13 @@ export function LinesMenu({ shown, counts, onToggle, when, onWhen }: {
             aria-label={t('map.linesLabel', { shown: shown.size, all: LINE_KINDS.length })}
             className={cn(
               'flex h-7 shrink-0 items-center gap-1.5 rounded-control px-2 text-small text-ink-soft',
-              'transition-colors duration-(--speed) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
+              'transition-colors duration-(--duration-quick) hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             )}
           >
             {t('map.lines')}
-            {some && <span className="font-mono text-meta tabular-nums text-ink-faint">{shown.size}/{LINE_KINDS.length}</span>}
-            {when !== 'all' && <span className="text-meta text-ink-faint">· {t(`map.when.short.${when}`)}</span>}
+            {some && <span className="font-mono text-caption tabular-nums text-ink-faint">{shown.size}/{LINE_KINDS.length}</span>}
+            {when !== 'all' && <span className="text-caption text-ink-faint">· {t(`map.when.short.${when}`)}</span>}
           </button>
         </Menu.Trigger>
       </Tip>
@@ -124,7 +124,7 @@ export function LinesMenu({ shown, counts, onToggle, when, onWhen }: {
           >
             <Sample kind={kind} />
             <span className="flex-1 truncate">{t(`map.kind.${kind}`)}</span>
-            <span className="font-mono text-meta tabular-nums text-ink-faint">{counts[kind]}</span>
+            <span className="font-mono text-caption tabular-nums text-ink-faint">{counts[kind]}</span>
           </Menu.CheckboxItem>
         ))}
         <Menu.Separator />

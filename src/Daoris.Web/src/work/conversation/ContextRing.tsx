@@ -38,7 +38,7 @@ export function ContextRing({ usage, door }: {
           tabIndex={0}
           role="img"
           aria-label={t('work.context.none')}
-          className="inline-flex items-center gap-1.5 text-meta text-ink-faint"
+          className="inline-flex items-center gap-1.5 text-caption text-ink-faint"
         >
           <Ring fraction={0} dashed />
           <span aria-hidden>—</span>
@@ -65,7 +65,7 @@ export function ContextRing({ usage, door }: {
         aria-valuenow={usage.used}
         aria-valuetext={said}
         data-tone={warn ? 'warn' : 'normal'}
-        className={cn('inline-flex items-center gap-1.5 font-mono text-meta', warn ? 'text-warn' : 'text-ink-faint')}
+        className={cn('inline-flex items-center gap-1.5 font-mono text-caption', warn ? 'text-warn' : 'text-ink-faint')}
       >
         <Ring fraction={fraction} warn={warn} />
         {percent}

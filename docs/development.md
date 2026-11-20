@@ -124,7 +124,8 @@ It runs within its bound, 25 minutes unless `--bound <minutes>` says otherwise: 
 admission says so as it starts to wait, with who holds the places, and again each minute; the preflight says each minute what
 runs and what waits; at the bound it ends what it started, starts nothing more, and says which gates passed, which failed, which
 it stopped and which never started, and why. A red writes `local/scratch/merge-<branch>/brief.md`: each failing test or first
-error, its file and line, the first error lines, and whether main fails it too, from that selection run on main's tip in the
+error, its file and line, the first error lines, and whether main fails it too (a log's failing test is its first `not ok` or `✖` line, and its
+error never a pass line, a count of none or a warning; a log with none says the run ended without a failing test, with its exit), from that selection run on main's tip in the
 worktree's `local/scratch/main-tree`. The branch-worker hands back on its summary: its pass, its brief, or what its bound left.
 
 Every time breach says why (`tools/time-why.mjs`): a test over its time ratchet limit, a unit test over the layers census's second,
@@ -213,12 +214,24 @@ desktop's carry `[Trait("Category","Census")]` and are the `censuses` gate; a CL
 `// reaches: <glob> — <why>` lines (the home census and the provider census name `tools/**`, the tree-base census every code
 file, the declarations test every `.d.mts` and script beside it), so `node tools/reached-checks.mjs --base main` (a builder's checks
 and the merge's `reached` gate) runs it for a diff that touches those paths. A declared path is one read from the test, so no
-suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). The
-`tools/*.test.mjs` files a gate lists one by one, the CLI's verify's (`cli-tests`) and the `layers` gate's, are units too
-(`tools/test-map/listed.mjs`), run from the root as their gate runs them. The scripts (`partials`, `read-shares`,
+suite's bound leaves it out, and it reaches the test even where the census cannot bound its reach (a computed import). Every
+file of a declared test set (below) is a unit of the set's suite, run from the set's folder. The scripts (`partials`, `read-shares`,
 `optional-locks`, `live-logins`, `test-patience`, `tool-test-census`, the layers' counts) are steps of `verify:checks`, which `npm
 run quick` runs whole. A census that reads a place its test does not name is a defect of the test: add the line. Each of the six
 reds that landed on 2026-11-17 and 18 past a green merge is replayed in `tools/merge/missed-reds.test.ts` (MAINRED1).
+
+Which tests run is declared once, in `daoris.gates.json`'s `tests`: a list of sets, each a runner (`node`, `vitest`,
+`playwright`) and the patterns of its files (`tools/*.test.mjs`, `src/Daoris.Cli/tool-test/**/*.test.ts`), with the gate that
+runs it, the census's `suite` for its units, the folder its runner starts in and the runner's own `args`. A test file is in the
+first set whose pattern holds it, so a new file under a pattern is run by its gate, censused and reached with no list to edit;
+to scope a test apart, declare a narrower set before the wider one it carves from (`layers` before `tools`). A gate or script runs
+its sets with `node tools/test-sets.mjs run --gate <gate>` (a set by its name; `list` says each set's files, `reach <path>` the
+sets a changed path reaches); the tools' Vitest
+projects read their files from their sets; a change reaches a set's units by the census's reach of each (`tools/test-map.mjs`),
+a `bounded` set's only within its gate's `paths`; a pick (`of`) runs some of another set's files apart, as `web-rules` does.
+`node tools/tool-test-census.mjs`, a step of `verify:checks`, refuses a test file no set holds, a set that holds none or names
+an undeclared gate, a set run by its own config that would run an earlier set's file twice, and a script or gate command that
+names a test file. The .NET halves are their gates' `dotnet test` commands: a test project and its filter.
 
 A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
 quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
@@ -659,7 +672,8 @@ watch say what is overdue. `MERGE_BRANCH_CI_NIGHT_HOUR` sets the hour, and `off`
 
 Each failure a run finds is filed as **known red** in `local/ci-findings.json`. A Process half's failure is filed by test,
 from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
-message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
+message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step: its first `not ok` or `✖` line, else its first error line (a build's the set of its compiler
+errors), else that the run ended without a failing test, with its exit. A failure
 whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
 it, but only on a commit on main's first-parent line from where it was last seen failing. A pass the run kept instead of
 running clears it under the same rules: the kept verdict stands exactly on the run's tree, passed, and is of the same gate; a

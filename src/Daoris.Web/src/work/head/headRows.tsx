@@ -25,7 +25,7 @@ export function linkRow(
           <button
             type="button"
             onClick={() => onOpenSession(link.session)}
-            className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+            className="ml-2 cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent-ink hover:underline"
           >
             {t('work.head.openSession')}
           </button>

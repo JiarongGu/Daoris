@@ -94,7 +94,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
       {/* Two lines at most, whole on hover: a quest's title can run to a paragraph, as the session's head holds it. */}
       {title && <p className="m-0 line-clamp-2 text-small font-semibold text-ink" title={title}>{title}</p>}
       {(facts.length > 0 || reading) && (
-        <p className="m-0 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-meta text-ink-faint">
+        <p className="m-0 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-caption text-ink-faint">
           {facts.flatMap((fact, index) => (index === 0
             ? [fact]
             : [<span key={`between-${index}`} aria-hidden>·</span>, fact]))}
@@ -102,7 +102,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
         </p>
       )}
       {past && (
-        <p className="m-0 mt-1 border-l-[3px] border-warn pl-2 text-meta text-ink-soft">
+        <p className="m-0 mt-1 border-l-[3px] border-warn pl-2 text-caption text-ink-soft">
           <Inline text={t('work.review.behind', { line: past.line, count: past.commits })} />
         </p>
       )}
@@ -136,11 +136,11 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
   return (
     <>
       <header className="flex shrink-0 flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-line px-3 py-1.5">
-        <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
+        <span className="text-caption uppercase tracking-[0.06em] text-ink-faint">
           {files.length === 0 ? t('work.review.committedNothing') : t('work.review.files', { count: files.length })}
         </span>
         {done > 0 && (
-          <span className="text-meta tabular-nums text-ink-faint">
+          <span className="text-caption tabular-nums text-ink-faint">
             {t('work.review.progress', { done, total: files.length })}
           </span>
         )}
@@ -176,14 +176,14 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
 
         {/* The bound is the host's sentence, shown rather than summarised — it names where the rest is. */}
         {truncated && (
-          <p className="m-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{truncated}</p>
+          <p className="m-0 border-t border-line px-3 py-2 text-caption text-ink-faint">{truncated}</p>
         )}
 
         {/* What the tree holds that no commit does: apart from the committed list and after it, through the same
             rows. Its marks are kept under their own keys, since a path can be committed and edited again. */}
         {uncommitted && uncommitted.files.length > 0 && (
           <section aria-label={t('work.review.uncommitted', { count: uncommitted.files.length })}>
-            <h3 className="m-0 border-y border-line px-3 py-1.5 text-meta font-normal uppercase tracking-[0.06em] text-ink-faint">
+            <h3 className="m-0 border-y border-line px-3 py-1.5 text-caption font-normal uppercase tracking-[0.06em] text-ink-faint">
               {t('work.review.uncommitted', { count: uncommitted.files.length })}
             </h3>
             <ul className="m-0 list-none p-0">
@@ -205,7 +205,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
               })}
             </ul>
             {uncommitted.truncated && (
-              <p className="m-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{t('work.review.uncommittedTruncated')}</p>
+              <p className="m-0 border-t border-line px-3 py-2 text-caption text-ink-faint">{t('work.review.uncommittedTruncated')}</p>
             )}
           </section>
         )}
@@ -267,7 +267,7 @@ export function ReviewReading({ repository, since }: {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <p className="m-0 shrink-0 border-b border-line px-3 py-1.5 text-meta text-ink-soft">
+      <p className="m-0 shrink-0 border-b border-line px-3 py-1.5 text-caption text-ink-soft">
         <Reading words={repository ? t('work.review.reading', { repository }) : t('work.review.readingAny')} since={since} />
       </p>
       <ReviewSkeleton />

@@ -82,7 +82,7 @@ export function MentionList({ id, options, active, query, listing, refusal, empt
                     long name keeps most of the row and a hint of where it lives (seen on the window). */}
                 <span className="min-w-0 truncate">{path.slice(slash + 1)}</span>
                 {slash > 0 && (
-                  <span className="min-w-0 shrink-[100] truncate text-meta text-ink-faint">{path.slice(0, slash)}</span>
+                  <span className="min-w-0 shrink-[100] truncate text-caption text-ink-faint">{path.slice(0, slash)}</span>
                 )}
               </li>
             );
@@ -91,7 +91,7 @@ export function MentionList({ id, options, active, query, listing, refusal, empt
       )}
       {said && <p className="m-0 px-2.5 py-2 text-small text-ink-faint">{said}</p>}
       {unlisted > 0 && !refusal && (
-        <p className="m-0 border-t border-line px-2.5 py-1.5 text-meta text-ink-faint">
+        <p className="m-0 border-t border-line px-2.5 py-1.5 text-caption text-ink-faint">
           {t('work.composer.mention.unlisted', { count: unlisted })}
         </p>
       )}

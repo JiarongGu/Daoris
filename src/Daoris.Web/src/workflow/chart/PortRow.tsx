@@ -49,7 +49,7 @@ export function PortRow({ node, ported, onFollow, edit }: {
             else if (foot) onFollow(node, foot.to);
           }}
           className={cn(
-            'flex min-w-0 cursor-pointer items-baseline gap-1 border-0 bg-transparent px-2 py-1 text-left text-meta text-ink-soft hover:text-ink',
+            'flex min-w-0 cursor-pointer items-baseline gap-1 border-0 bg-transparent px-2 py-1 text-left text-caption text-ink-soft hover:text-ink',
             index > 0 && 'border-l border-line',
             port.taken ? 'font-semibold text-ink' : '',
           )}

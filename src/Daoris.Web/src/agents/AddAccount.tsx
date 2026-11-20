@@ -133,7 +133,7 @@ export function NameAccount({
             className={FIELD}
           />
           {/* The name it is called left empty, and where that is not its id, the id a terminal types. */}
-          <span className="basis-full text-meta text-ink-faint">
+          <span className="basis-full text-caption text-ink-faint">
             {t(fallback === account ? 'agents.add.nameHint' : 'agents.add.nameHintId', { name: fallback, id: account })}
           </span>
         </label>
@@ -142,7 +142,7 @@ export function NameAccount({
         </div>
         {refusal && <Refused sentence={refusal} />}
         {twin && (
-          <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
+          <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]">
             <Inline text={t('agents.add.terminal', { commands: twin })} />
           </p>
         )}
@@ -201,7 +201,7 @@ export function RenameAccount({ agent, account, current, fallback = account, bus
       <Button type="submit" variant="primary" disabled={busy || name.trim() === (current ?? '')}>{t('agents.rename.save')}</Button>
       <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
       {refusal && <Refused sentence={refusal} />}
-      <span className="basis-full text-meta text-ink-faint [overflow-wrap:anywhere]">
+      <span className="basis-full text-caption text-ink-faint [overflow-wrap:anywhere]">
         <Inline text={t('agents.add.terminal', { commands: twin })} />
       </span>
     </form>

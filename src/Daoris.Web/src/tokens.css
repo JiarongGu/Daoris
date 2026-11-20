@@ -1,11 +1,14 @@
-/* The design language's tokens (docs/archive/2026-09-19-platform-ux.md, D41), as the Tailwind theme (D42).
-   Warm paper, thin ink, one bronze accent; the quest-state palette is computed, not tasted — both
-   themes pass all six checks of the visualization validator, and a status never appears color-alone.
+/* The design language's tokens (D330, the window design §7), as the Tailwind theme (D42).
+   Components name ROLES, never base colours, and only this file holds a value. Warm paper in the neutrals; one blue accent
+   for what can be pressed or moves (`live` is its second name); amber (`you`) for what waits on the owner and nothing else;
+   red (`fail`) for a failure alone; green (`ok`) for an outcome. There is no neutral state colour: waiting, queued, ended and
+   stale are told by their mark's shape in `ink-soft` or `ink-faint`. `design/roles.test.ts` holds the contrast table: every
+   text pair at 4.5:1 on every surface and soft field, every mark and control edge at 3:1, in both themes.
    The runtime variables flip with the OS theme; `@theme inline` hands them to the utilities. */
 
 @import "tailwindcss";
 
-/* 🔴 ONE light :root and ONE dark one: the desktop's native chrome copies these tokens, and its
+/* 🔴 ONE light :root and ONE dark one, first: the desktop's native chrome copies these tokens, and its
    test (ChromePaletteTests) reads the first block as light and the second as dark. A third block
    ahead of them shifted both and turned that test red (FIX-LOG 2026-09-23). */
 :root {
@@ -15,220 +18,370 @@
      faint ink token rather than the OS grey (the base layer, below, since it lost its arrows). */
   color-scheme: light dark;
 
-  --ink: #1a1a18;
-  --ink-soft: #5b5a55;
-  --ink-faint: #8a887f;
-  /* Red drawn as words (UXFIX5): a danger button's label, a refusal, a declined pill's word. Declined's own hue is a
-     fill's, and in dark it read 3.2 to 3.95:1 as text; this ink keeps its hue (OKLCH 30°) and is lifted until
-     tokens.test.ts holds it at 4.5:1 on every surface and on declined's soft field over each, in both themes. In light
-     the fill already reads, so the two are one value. A fill, a border and a mark keep --st-declined. */
-  --ink-danger: #9e2f24;
-  /* Every other status hue drawn as words has its ink the same way (UXFIX5c): its pill's word, a count, a diff's added
-     lines. Open's and done's fills read 2.8 to 3.8:1 as text in light, and taken's 4.1:1 on its field; each ink keeps
-     its fill's OKLCH hue and moves in lightness until it reads 4.6:1 at worst. A fill, a border, a mark and the
-     terminal's colours keep the st- hues. */
-  --ink-open: #8b5c02;
-  --ink-taken: #2765ab;
-  --ink-done: #017545;
-  --page: #faf9f6;
-  /* One step below the page (LOOK6): the box a move asks once in (stop, pause, delete, remove), and the command
-     center on the strip. tokens.test.ts holds it under the page in both themes, and every ink readable on it. */
-  --sunken: #f3f1ec;
+  /* Surfaces: the window, panes and rows, wells, what floats, a row under the pointer. */
+  --page: #f7f6f2;
   --raised: #ffffff;
+  --sunken: #efeee9;
   --overlay: #ffffff;
-  --line: #e3e0d8;
-  --line-strong: #cfcabe;
-  --accent: #7a5c2e;
-  --accent-ink: #faf9f6;
-  --accent-soft: #f0e9dc;
-  --warn: #8a4b2a;
-
-  --st-open: #b07818;
-  --st-taken: #2f6db3;
-  --st-done: #2c9a62;
-  --st-declined: #9e2f24;
+  --hover: #ecebe5;
+  --scrim: rgb(16 16 14 / 0.4);
+  /* Lines: a row's separator, a card's edge, a control's edge (3:1). */
+  --line-subtle: #e6e4dd;
+  --line: #d5d3cb;
+  --line-strong: #86847c;
+  /* Ink: text, secondary, metadata (each 4.5:1), and a disabled control's label alone. */
+  --ink: #1a1a18;
+  --ink-soft: #54534e;
+  --ink-faint: #67655f;
+  --ink-disabled: #a19f98;
+  /* The accent: a primary button, the focus ring, a selected rail; its ink for links and words that act; the label on it;
+     a selected row's field. */
+  --accent: #2f5bd3;
+  --accent-ink: #2346a8;
+  --on-accent: #ffffff;
+  --accent-soft: #e8eefb;
+  /* Moving: the ● mark, *Moving*, a live band. One hue with the accent, two names. */
+  --live: #2f5bd3;
+  --live-ink: #2346a8;
+  --live-soft: #eaf0fc;
+  /* The owner's alone: ◆, the waits pill, a wait card's edge and field, its *yes*. */
+  --you: #b87400;
+  --you-ink: #8a4f00;
+  --you-soft: #fff3d9;
+  --on-you: #1a1a18;
+  /* Failed: ▲, failure words, a failed step's band, a danger label. Declined and stopped are neutral. */
+  --fail: #d1322a;
+  --fail-ink: #a8201a;
+  --fail-soft: #fcebe9;
+  --on-fail: #ffffff;
+  /* An outcome: ✓ (never a large fill), *Landed*, a passed check's band. */
+  --ok: #23824a;
+  --ok-ink: #1d6b38;
+  --ok-soft: #e6f4ea;
 
   /* A monogram's identity hues (PLUGUI2, D140 §3.3): which plugin, never how it stands. Computed in
      plugins/icon.test.ts: each glyph at least 4.5:1 on its 15% field, each hue ΔE 20 from every state. */
   --ident-moss: #576837;
-  --ident-teal: #1c6e6e;
+  --ident-teal: #1c6d6d;
   --ident-slate: #396588;
   --ident-iris: #635887;
   --ident-plum: #7f4f6a;
   --ident-stone: #646059;
 
-  --speed: 140ms;
+  /* Shadows only on what floats over the window (§7.4). */
+  --popover-shadow: 0 4px 16px rgb(16 16 14 / 0.12);
+  --sheet-shadow: 0 12px 48px rgb(16 16 14 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #e8e6df;
-    --ink-soft: #a9a69c;
-    --ink-faint: #7a7770;
-    --ink-danger: #ee6955;
-    --ink-open: #c68b31;
-    --ink-taken: #619ce2;
-    --ink-done: #43aa7b;
-    --page: #16161a;
-    --sunken: #0f0f12;
-    --raised: #1e1e23;
-    --overlay: #24242a;
-    --line: #2e2e34;
-    --line-strong: #3d3d45;
-    --accent: #d3ac6b;
-    --accent-ink: #16161a;
-    --accent-soft: #2a2419;
-    --warn: #d99a72;
-
-    /* The dark set is its own validated palette, not a filter. */
-    --st-open: #bd8226;
-    --st-taken: #5c97dd;
-    --st-done: #3da476;
-    --st-declined: #c74534;
+    --page: #131312;
+    --raised: #1b1b19;
+    --sunken: #0e0e0d;
+    --overlay: #242422;
+    --hover: #2a2a27;
+    --scrim: rgb(0 0 0 / 0.55);
+    --line-subtle: #2b2b28;
+    --line: #3a3936;
+    --line-strong: #74736c;
+    --ink: #ecebe6;
+    --ink-soft: #b3b1aa;
+    --ink-faint: #96948d;
+    --ink-disabled: #5f5e59;
+    --accent: #5f86f2;
+    --accent-ink: #93aef8;
+    --on-accent: #111110;
+    --accent-soft: #1d2845;
+    --live: #5f86f2;
+    --live-ink: #93aef8;
+    --live-soft: #1a2443;
+    --you: #f0b03a;
+    --you-ink: #f6c567;
+    --you-soft: #36280b;
+    --on-you: #111110;
+    --fail: #ee5a50;
+    --fail-ink: #ff948a;
+    --fail-soft: #3a1614;
+    --on-fail: #111110;
+    --ok: #43ae66;
+    --ok-ink: #76d193;
+    --ok-soft: #13301e;
 
     --ident-moss: #b4c698;
     --ident-teal: #8bcbcb;
     --ident-slate: #9bc3e5;
-    --ident-iris: #c0b6e4;
+    --ident-iris: #c8b5e0;
     --ident-plum: #ddadc7;
     --ident-stone: #c2bdb5;
+
+    --popover-shadow: 0 4px 16px rgb(0 0 0 / 0.45);
+    --sheet-shadow: 0 12px 48px rgb(0 0 0 / 0.6);
   }
 }
 
 /* 🔴 A CHOSEN theme outranks the OS's (D66): the Settings page puts `data-theme` on <html>, and
    `:root[data-theme]` is more specific than the media query's `:root`, so it wins wherever the OS
-   stands. Each block is a copy of its twin above — `tokens.test.ts` holds every value equal, because
+   stands. Each block is a copy of its twin above — `tokens.test.ts` holds every colour equal, because
    two copies of a palette are two palettes the first time one is edited alone. The attribute is
    absent for the system, so these never apply unless a person chose. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --ink: #1a1a18;
-  --ink-soft: #5b5a55;
-  --ink-faint: #8a887f;
-  --ink-danger: #9e2f24;
-  --ink-open: #8b5c02;
-  --ink-taken: #2765ab;
-  --ink-done: #017545;
-  --page: #faf9f6;
-  --sunken: #f3f1ec;
+  --page: #f7f6f2;
   --raised: #ffffff;
+  --sunken: #efeee9;
   --overlay: #ffffff;
-  --line: #e3e0d8;
-  --line-strong: #cfcabe;
-  --accent: #7a5c2e;
-  --accent-ink: #faf9f6;
-  --accent-soft: #f0e9dc;
-  --warn: #8a4b2a;
-  --st-open: #b07818;
-  --st-taken: #2f6db3;
-  --st-done: #2c9a62;
-  --st-declined: #9e2f24;
+  --hover: #ecebe5;
+  --scrim: rgb(16 16 14 / 0.4);
+  --line-subtle: #e6e4dd;
+  --line: #d5d3cb;
+  --line-strong: #86847c;
+  --ink: #1a1a18;
+  --ink-soft: #54534e;
+  --ink-faint: #67655f;
+  --ink-disabled: #a19f98;
+  --accent: #2f5bd3;
+  --accent-ink: #2346a8;
+  --on-accent: #ffffff;
+  --accent-soft: #e8eefb;
+  --live: #2f5bd3;
+  --live-ink: #2346a8;
+  --live-soft: #eaf0fc;
+  --you: #b87400;
+  --you-ink: #8a4f00;
+  --you-soft: #fff3d9;
+  --on-you: #1a1a18;
+  --fail: #d1322a;
+  --fail-ink: #a8201a;
+  --fail-soft: #fcebe9;
+  --on-fail: #ffffff;
+  --ok: #23824a;
+  --ok-ink: #1d6b38;
+  --ok-soft: #e6f4ea;
   --ident-moss: #576837;
-  --ident-teal: #1c6e6e;
+  --ident-teal: #1c6d6d;
   --ident-slate: #396588;
   --ident-iris: #635887;
   --ident-plum: #7f4f6a;
   --ident-stone: #646059;
+  --popover-shadow: 0 4px 16px rgb(16 16 14 / 0.12);
+  --sheet-shadow: 0 12px 48px rgb(16 16 14 / 0.22);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ink: #e8e6df;
-  --ink-soft: #a9a69c;
-  --ink-faint: #7a7770;
-  --ink-danger: #ee6955;
-  --ink-open: #c68b31;
-  --ink-taken: #619ce2;
-  --ink-done: #43aa7b;
-  --page: #16161a;
-  --sunken: #0f0f12;
-  --raised: #1e1e23;
-  --overlay: #24242a;
-  --line: #2e2e34;
-  --line-strong: #3d3d45;
-  --accent: #d3ac6b;
-  --accent-ink: #16161a;
-  --accent-soft: #2a2419;
-  --warn: #d99a72;
-  --st-open: #bd8226;
-  --st-taken: #5c97dd;
-  --st-done: #3da476;
-  --st-declined: #c74534;
+  --page: #131312;
+  --raised: #1b1b19;
+  --sunken: #0e0e0d;
+  --overlay: #242422;
+  --hover: #2a2a27;
+  --scrim: rgb(0 0 0 / 0.55);
+  --line-subtle: #2b2b28;
+  --line: #3a3936;
+  --line-strong: #74736c;
+  --ink: #ecebe6;
+  --ink-soft: #b3b1aa;
+  --ink-faint: #96948d;
+  --ink-disabled: #5f5e59;
+  --accent: #5f86f2;
+  --accent-ink: #93aef8;
+  --on-accent: #111110;
+  --accent-soft: #1d2845;
+  --live: #5f86f2;
+  --live-ink: #93aef8;
+  --live-soft: #1a2443;
+  --you: #f0b03a;
+  --you-ink: #f6c567;
+  --you-soft: #36280b;
+  --on-you: #111110;
+  --fail: #ee5a50;
+  --fail-ink: #ff948a;
+  --fail-soft: #3a1614;
+  --on-fail: #111110;
+  --ok: #43ae66;
+  --ok-ink: #76d193;
+  --ok-soft: #13301e;
   --ident-moss: #b4c698;
   --ident-teal: #8bcbcb;
   --ident-slate: #9bc3e5;
-  --ident-iris: #c0b6e4;
+  --ident-iris: #c8b5e0;
   --ident-plum: #ddadc7;
   --ident-stone: #c2bdb5;
+  --popover-shadow: 0 4px 16px rgb(0 0 0 / 0.45);
+  --sheet-shadow: 0 12px 48px rgb(0 0 0 / 0.6);
 }
 
+/* What no theme changes: the layers, the motion, and the amber aliases. */
+:root {
+  --z-sticky: 1;
+  --z-sheet: 10;
+  --z-palette: 20;
+  --z-popover: 30;
+  --z-toast: 40;
+  --z-tooltip: 50;
+
+  --duration-quick: 120ms; /* hover, press */
+  --duration-move: 180ms; /* expand, a card leaving, a wait arriving */
+  --duration-sheet: 240ms;
+
+  /* 🔴 Aliases until UIDS18: today's open, its ink and the warning draw the owner's amber, and each site is split into `you`
+     (where it waits on the owner) or neutral by its screen's row. `design/ownersAmber.test.ts` counts the sites per file, a
+     list that only shrinks; `tools/token-codemod.mjs --aliases` lists them. Never a new site. */
+  --st-open: var(--you);
+  --ink-open: var(--you-ink);
+  --warn: var(--you-ink);
+}
+
+/* Reduced motion: every duration 0 (a cross-fade of at most 80 ms is a component's own). */
 @media (prefers-reduced-motion: reduce) {
-  :root { --speed: 0ms; }
+  :root {
+    --duration-quick: 0ms;
+    --duration-move: 0ms;
+    --duration-sheet: 0ms;
+  }
+}
+
+/* One type scale for Latin and Han (§7.2). Each step's line height is a variable that Chinese resets, taller, and the face
+   follows the words' language: the window's words the window's, authored content its own (`AuthoredText` sets `lang`), so an
+   English island in a Chinese page takes the Latin leading back. The Latin face leads, so Latin words and numerals in a Chinese
+   line keep it; under Chinese the punctuation alias leads it, so curly quotes, the ellipsis, the middle dot and the em dash are
+   set full width by the Han face. */
+:root, [lang]:not(:lang(zh)) {
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  --leading-caption: 1rem;
+  --leading-small: 1.125rem;
+  --leading-body: 1.25rem;
+  --leading-heading: 1.375rem;
+  --leading-display: 1.75rem;
+  --leading-mono: 1.25rem;
+}
+
+:lang(zh) {
+  --font-ui: "Daoris Han Punct", "Segoe UI Variable Text", "Segoe UI", system-ui, "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  --leading-caption: 1.125rem;
+  --leading-small: 1.25rem;
+  --leading-body: 1.375rem;
+  --leading-heading: 1.5rem;
+  --leading-display: 1.875rem;
+  --leading-mono: 1.25rem;
+  line-break: strict;
+  text-autospace: normal;
+}
+
+@font-face {
+  font-family: "Daoris Han Punct";
+  src: local("Microsoft YaHei UI"), local("Microsoft YaHei"), local("PingFang SC"), local("Noto Sans SC");
+  font-weight: 400;
+  unicode-range: U+2018-201D, U+2026, U+00B7, U+2014;
+}
+
+@font-face {
+  font-family: "Daoris Han Punct";
+  src: local("Microsoft YaHei UI Bold"), local("Microsoft YaHei Bold"), local("PingFang SC Semibold"), local("Noto Sans SC Bold");
+  font-weight: 600;
+  unicode-range: U+2018-201D, U+2026, U+00B7, U+2014;
 }
 
 @theme inline {
   --color-*: initial;
   --color-page: var(--page);
-  --color-sunken: var(--sunken);
   --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
   --color-overlay: var(--overlay);
+  --color-hover: var(--hover);
+  --color-scrim: var(--scrim);
+  --color-line-subtle: var(--line-subtle);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
-  --color-ink-danger: var(--ink-danger);
-  --color-ink-open: var(--ink-open);
-  --color-ink-taken: var(--ink-taken);
-  --color-ink-done: var(--ink-done);
+  --color-ink-disabled: var(--ink-disabled);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
   --color-accent-soft: var(--accent-soft);
-  --color-warn: var(--warn);
-  --color-st-open: var(--st-open);
-  --color-st-taken: var(--st-taken);
-  --color-st-done: var(--st-done);
-  --color-st-declined: var(--st-declined);
+  --color-live: var(--live);
+  --color-live-ink: var(--live-ink);
+  --color-live-soft: var(--live-soft);
+  --color-you: var(--you);
+  --color-you-ink: var(--you-ink);
+  --color-you-soft: var(--you-soft);
+  --color-on-you: var(--on-you);
+  --color-fail: var(--fail);
+  --color-fail-ink: var(--fail-ink);
+  --color-fail-soft: var(--fail-soft);
+  --color-on-fail: var(--on-fail);
+  --color-ok: var(--ok);
+  --color-ok-ink: var(--ok-ink);
+  --color-ok-soft: var(--ok-soft);
   --color-ident-moss: var(--ident-moss);
   --color-ident-teal: var(--ident-teal);
   --color-ident-slate: var(--ident-slate);
   --color-ident-iris: var(--ident-iris);
   --color-ident-plum: var(--ident-plum);
   --color-ident-stone: var(--ident-stone);
-  --color-scrim: rgb(15 12 8 / 0.4);
+  /* The aliases (above), until UIDS18. */
+  --color-st-open: var(--st-open);
+  --color-ink-open: var(--ink-open);
+  --color-warn: var(--warn);
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --font-sans: var(--font-ui);
+  --font-mono: "Cascadia Mono", Consolas, "Sarasa Mono SC", "Microsoft YaHei UI", ui-monospace, monospace;
 
-  /* One step flatter: a corner says "this is a surface", and at 6/8/10 it said it louder than the
-     content. */
+  /* Radii: a control, a card, what floats; rows have none. */
   --radius-control: 4px;
   --radius-card: 6px;
   --radius-overlay: 8px;
 
-  /* The type scale, as tokens rather than literals (D41 §3 as amended by D56). It is denser than
-     the console scale it replaces — 13px body against 15.2px — because the desktop is an IDE whose
-     organising object is a session, and the old scale left that session reading in a 365px box.
+  --shadow-popover: var(--popover-shadow);
+  --shadow-sheet: var(--sheet-shadow);
 
-     It is TOKENS because the literal form had already drifted: the code carried fifteen distinct
-     `text-[…rem]` values where the document named eight, and four of them (0.7, 0.78, 0.82, 0.85)
-     were in no scale at all. A named step cannot drift without someone adding one, and
-     `tokens.test.ts` fails on a raw literal. */
-  --text-meta: 0.6875rem;       /* 11px — mono meta, badges, the status bar */
-  --text-meta--line-height: 1.4;
-  --text-small: 0.75rem;        /* 12px — secondary prose, control labels */
-  --text-small--line-height: 1.45;
-  --text-body: 0.8125rem;       /* 13px — the base; body inherits it */
-  --text-body--line-height: 1.45;
-  --text-title: 0.9375rem;      /* 15px — a card's own title */
-  --text-title--line-height: 1.35;
-  --text-view: 1.125rem;        /* 18px — the one h-level per view */
-  --text-view--line-height: 1.3;
-  --text-wordmark: 1.25rem;     /* 20px — the serif's one appearance */
-  --text-wordmark--line-height: 1.2;
-  --text-value: 1.625rem;       /* 26px — a stat tile's number */
-  --text-value--line-height: 1.15;
+  /* The type scale (§7.2), in rem so the window's zoom (ZOOM1) follows it: caption 12, small 13 (rows, menus, controls),
+     body 14, heading 16, display 20 (the one title of a screen, or a number), mono 13 (code, paths, hashes, never a
+     sentence). Nothing under 12 px, so Han is never drawn smaller; `roles.test.ts` holds it, and `tokens.test.ts` fails a
+     raw size. */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: var(--leading-caption);
+  --text-small: 0.8125rem;
+  --text-small--line-height: var(--leading-small);
+  --text-body: 0.875rem;
+  --text-body--line-height: var(--leading-body);
+  --text-heading: 1rem;
+  --text-heading--line-height: var(--leading-heading);
+  --text-display: 1.25rem;
+  --text-display--line-height: var(--leading-display);
+  --text-mono: 0.8125rem;
+  --text-mono--line-height: var(--leading-mono);
+
+  /* Named sizes on the 4 px grid (§7.3): the hit-target floor is `control-sm`. */
+  --spacing-control-sm: 1.75rem;
+  --spacing-control: 2rem;
+  --spacing-row: 2rem;
+  --spacing-row-2: 2.75rem;
+  --spacing-row-table: 1.75rem;
+  --spacing-titlebar: 2.25rem;
+  --spacing-statusbar: 1.5rem;
+  --spacing-rail: 4.5rem;
+  --spacing-rail-narrow: 3rem;
+  --spacing-icon-sm: 0.75rem;
+  --spacing-icon: 1rem;
+  --spacing-icon-lg: 1.25rem;
+  --spacing-mark: 1rem;
+
+  /* Widths (§7.5): the window's breakpoints, read by the shell alone; a region's containers. */
+  --breakpoint-narrow: 45rem;
+  --breakpoint-mid: 64rem;
+  --breakpoint-wide: 80rem;
+  --container-list: 18.75rem;
+  --container-side: 25rem;
+  --container-sheet: 40rem;
+  --container-sheet-form: 30rem;
+  --container-palette: 40rem;
+  --container-measure: 72ch;
+  --container-stack: 32rem;
+
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
   /* A mark at rest is still (FREEZE1, D41's motion rule). Tailwind's pulse runs for ever, and the live dot that wears it
      kept the window drawing at the display's rate for as long as a session was live (601 frames in 5 s, its GPU process a
@@ -257,9 +410,9 @@
     margin: 0;
     background: var(--page);
     color: var(--ink);
-    font-family: var(--font-sans);
+    font-family: var(--font-ui);
     font-size: var(--text-body);
-    line-height: 1.45;
+    line-height: var(--leading-body);
     /* An ideograph has no italic. The Chinese system face carries none, so every italic hint in
        中文 was slanted by synthesis, which is a typesetting error rather than an emphasis. The
        Latin face has a true italic and keeps it: only the made-up oblique is refused. */
@@ -275,7 +428,7 @@
   button:disabled { cursor: default; opacity: 0.55; }
 
   /* 🔴 The OS accent, not ours. `<input type="search">` brings Chromium's native clear button, and
-     WebView2 paints it in WINDOWS' accent colour — a blue ✕ in a palette that has no blue, seen on
+     WebView2 paints it in WINDOWS' accent colour — a second blue ✕ beside the palette's own, seen on
      the deployed application in both themes. The field keeps its type; the platform draws its own
      clearing control (SearchView). */
   input[type="search"]::-webkit-search-cancel-button,

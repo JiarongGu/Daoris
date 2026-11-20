@@ -114,7 +114,7 @@ function FailurePath({ step }: { step: WorkflowStep }) {
   const { t } = useTranslation();
   const outcome = outcomeOf(step);
   if (!outcome) return null;
-  return <p data-failed="" className="m-0 mt-1 text-meta text-ink-soft"><Inline text={outcomeSaid(t, outcome)} /></p>;
+  return <p data-failed="" className="m-0 mt-1 text-caption text-ink-soft"><Inline text={outcomeSaid(t, outcome)} /></p>;
 }
 
 /**
@@ -162,7 +162,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
             <Icon name={glyphOf(step)} size={14} className="translate-y-0.5 text-ink-soft" />
             <span className="min-w-0"><Inline text={stepTitle(t, step)} /></span>
           </h4>
-          <span className="rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
+          <span className="rounded-full border border-line-strong px-2 py-px text-caption text-ink-soft">
             {t(`workflow.participation.${who.participation}`)}
           </span>
           <span className="min-w-0 text-small text-ink-soft"><Inline text={who.executor} /></span>
@@ -187,7 +187,7 @@ function RunLimit({ limit }: { limit: { text: string; recorded: boolean } | null
   const { t } = useTranslation();
   if (!limit) return null;
   return (
-    <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-raised px-2.5 py-1 text-meta text-ink-soft">
+    <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-raised px-2.5 py-1 text-caption text-ink-soft">
       <Inline text={limit.text} />
       {limit.recorded && <span className="ml-1.5 text-ink-faint">{t('workflow.limit.recorded')}</span>}
     </p>
@@ -224,7 +224,7 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
           )}
         </p>
       )}
-      <p className="m-0 mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-meta text-ink-faint">
+      <p className="m-0 mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-caption text-ink-faint">
         <span className="min-w-0">{sourceSaid(t, step, page, workspace)}</span>
         <Tip content={t(`workflow.runtimeTip.${step.runtime}`)}>
           <span className="text-ink-soft">{t(`workflow.runtime.${step.runtime}`)}</span>
@@ -236,10 +236,10 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
       {limit && (
         <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
           <Inline text={limit.text} />
-          {limit.recorded && <span className="ml-1.5 text-meta text-ink-faint">{t('workflow.limit.recorded')}</span>}
+          {limit.recorded && <span className="ml-1.5 text-caption text-ink-faint">{t('workflow.limit.recorded')}</span>}
         </p>
       )}
-      {edge && <p data-edge className="m-0 mb-1 mt-2 text-meta text-ink-soft">{edgeSaid(t, step)}</p>}
+      {edge && <p data-edge className="m-0 mb-1 mt-2 text-caption text-ink-soft">{edgeSaid(t, step)}</p>}
       {edge && <FailurePath step={step} />}
     </>
   );
@@ -251,7 +251,7 @@ export function Who({ step, agent = false }: { step: WorkflowStep; agent?: boole
   const who = whoSaid(t, step, agent);
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-2 py-px text-meta text-ink-soft">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-line-strong px-2 py-px text-caption text-ink-soft">
         <PartMark participation={who.participation} />
         {t(`workflow.participation.${who.participation}`)}
       </span>
@@ -413,7 +413,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
       who: <Who step={step} agent={mark?.agent} />,
       lines: (
         <>
-          {node.lines && <p className="m-0 mb-1 text-meta">{node.lines}</p>}
+          {node.lines && <p className="m-0 mb-1 text-caption">{node.lines}</p>}
           {mark
             ? <div className="grid min-w-0">{mark.node ?? mark.mark}<RunLimit limit={limit} /></div>
             : <StepSettings step={step} page={page} workspace={workflow.workspace} limit={limit} doors={doors} edge={false} />}

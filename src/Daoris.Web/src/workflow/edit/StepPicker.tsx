@@ -89,7 +89,7 @@ export function StepPicker({ open, palette, place, onPick, onClose }: {
         {shown.map((each, index) => (
           <div key={each.choice.kind}>
             {(index === 0 || shown[index - 1]!.group !== each.group) && (
-              <p aria-hidden className="m-0 px-2 pb-0.5 pt-2 text-meta font-semibold text-ink-faint">{each.group}</p>
+              <p aria-hidden className="m-0 px-2 pb-0.5 pt-2 text-caption font-semibold text-ink-faint">{each.group}</p>
             )}
             <div
               id={optionId(index)}
@@ -101,7 +101,7 @@ export function StepPicker({ open, palette, place, onPick, onClose }: {
               className={cn('cursor-pointer rounded-control px-2 py-1', index === at ? 'bg-raised text-ink' : 'text-ink')}
             >
               <span className="block text-body [overflow-wrap:anywhere]">{each.title}</span>
-              {each.about && <span className="block text-meta text-ink-soft [overflow-wrap:anywhere]">{each.about}</span>}
+              {each.about && <span className="block text-caption text-ink-soft [overflow-wrap:anywhere]">{each.about}</span>}
             </div>
           </div>
         ))}

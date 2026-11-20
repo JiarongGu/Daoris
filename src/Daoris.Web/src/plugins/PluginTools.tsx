@@ -69,7 +69,7 @@ function ToolRow({ plugin, tool, busy, fixing, refused, onFix }: {
     <li className="flex flex-col gap-1 text-small text-ink-soft">
       <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <span className="text-body font-medium text-ink">{tool.name}</span>
-        <code className="font-mono text-meta text-ink-faint">{tool.id}</code>
+        <code className="font-mono text-caption text-ink-faint">{tool.id}</code>
         {tool.versions && <span className="text-ink-faint">{t('plugin.tools.versions', { versions: tool.versions })}</span>}
       </span>
       {tool.for && <span>{tool.for}</span>}
@@ -81,7 +81,7 @@ function ToolRow({ plugin, tool, busy, fixing, refused, onFix }: {
             ? (
               <span className="flex flex-wrap items-baseline gap-x-1.5">
                 <span>{t('plugin.tools.install')}</span>
-                <code className="font-mono text-meta text-ink">{tool.install}</code>
+                <code className="font-mono text-caption text-ink">{tool.install}</code>
               </span>
             )
             : <span>{t('plugin.tools.noInstall')}</span>}
@@ -141,15 +141,15 @@ function CheckRow({ plugin, tool, check, number, busy, open, refused, onFix }: {
         )}
       </span>
       {unmet && check.fix && check.press && (
-        <span className="flex flex-wrap items-baseline gap-x-1.5 text-meta text-ink-faint">
+        <span className="flex flex-wrap items-baseline gap-x-1.5 text-caption text-ink-faint">
           <span>{t('plugin.tools.runs')}</span>
           <code className="font-mono text-ink">{check.fix}</code>
         </span>
       )}
-      {check.fix && !check.press && check.refusal && <span className="text-meta"><Inline text={check.refusal} /></span>}
-      {open && <span className="text-meta text-ink"><Inline text={t('plugin.tools.open', { fix: check.fix ?? '' })} /></span>}
+      {check.fix && !check.press && check.refusal && <span className="text-caption"><Inline text={check.refusal} /></span>}
+      {open && <span className="text-caption text-ink"><Inline text={t('plugin.tools.open', { fix: check.fix ?? '' })} /></span>}
       {refused && (
-        <span className="text-meta text-ink-danger">
+        <span className="text-caption text-fail-ink">
           {CODED.has(refused.why)
             ? <Inline text={t(`plugin.tools.refused.${refused.why}`, { message: refused.message })} />
             : <Inline text={refused.message} />}

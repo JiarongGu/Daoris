@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
  */
 
 interface Reach { files: string[]; folders: string[]; globs: string[]; wide: string[] }
-interface Unit { suite: string; kind: string; unit: string; file: string; subject: string; reach: Reach }
+interface Unit { suite: string; kind: string; unit: string; file: string; cwd?: string; subject: string; reach: Reach }
 interface Map { units: Unit[]; dotnet: unknown[]; problems: string[] }
 
 const tool = await import(
@@ -221,26 +221,25 @@ test('a report names each class with a test that did not execute (REVIEW2 T1)', 
   assert.deepEqual(tool.trxSkipped(trx), ['Ns.SshProofs']);
 });
 
-test('a tools test a gate lists is a unit of its suite, run from where its gate runs it, and its declared listing reaches it one read away', async () => {
-  const listed = await import(
-    // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
-    '../../../tools/test-map/listed.mjs') as { listedNodeTests: (gates: { name: string; run: string }[], read: (file: string) => string) => { suite: string; file: string; cwd: string }[] };
+test("a tools test is a unit of the first declared set whose pattern holds it, run from the set's folder, a new file with no list edited", () => {
   const files: Record<string, string> = {
-    'package.json': JSON.stringify({ scripts: { 'verify:tests': 'npm test -w daoris && node --test tools/a.test.mjs', tooltests: 'npm run tooltests -w daoris' } }),
-    'src/Daoris.Cli/package.json': JSON.stringify({ scripts: { test: 'node --test test/**/*.ts', tooltests: 'node --test "tool-test/**/*.test.ts" ../../tools/b.test.mjs' } }),
-    'daoris.gates.json': JSON.stringify({ gates: [
-      { name: 'cli-tests', run: 'npm run verify:tests' }, { name: 'tool-tests', run: 'npm run tooltests' },
-      { name: 'layers', run: 'node tools/layers-census.mjs && node --test tools/c.test.mjs' },
-    ] }),
-    'tools/a.test.mjs': '// reaches: src/**/*.cs — it lists every C# source\n', 'tools/b.test.mjs': '', 'tools/c.test.mjs': '', 'src/X.cs': '',
+    'daoris.gates.json': JSON.stringify({
+      gates: [{ name: 'cli-tests', run: 'npm run verify:tests' }, { name: 'tool-tests', run: 'npm run tooltests' }, { name: 'layers', run: 'node tools/test-sets.mjs run --gate layers' }],
+      tests: { sets: [
+        { name: 'layers', gate: 'layers', runner: 'node', files: ['tools/c.test.mjs'] },
+        { name: 'tool-tests', gate: 'tool-tests', runner: 'node', cwd: 'src/Daoris.Cli', files: ['tools/b.test.mjs'] },
+        { name: 'tools', gate: 'cli-tests', suite: 'cli', runner: 'node', files: ['tools/*.test.mjs'] },
+      ] },
+    }),
+    'tools/a.test.mjs': '// reaches: src/**/*.cs — it lists every C# source\n', 'tools/b.test.mjs': '', 'tools/c.test.mjs': '', 'tools/brand-new.test.mjs': '', 'src/X.cs': '',
   };
   const read = (file: string) => files[file] ?? '';
-  const gates = JSON.parse(read('daoris.gates.json')).gates;
-  assert.deepEqual(listed.listedNodeTests(gates, read), [
-    { suite: 'cli', file: 'tools/a.test.mjs', cwd: '.' }, { suite: 'tool-tests', file: 'tools/b.test.mjs', cwd: 'src/Daoris.Cli' },
-    { suite: 'layers', file: 'tools/c.test.mjs', cwd: '.' },
-  ]);
   const map = tool.census(Object.keys(files), read);
+  const placed = map.units.filter((each) => each.file.startsWith('tools/')).map((each) => ({ suite: each.suite, file: each.file, cwd: each.cwd }));
+  assert.deepEqual(placed, [
+    { suite: 'layers', file: 'tools/c.test.mjs', cwd: '.' }, { suite: 'tool-tests', file: 'tools/b.test.mjs', cwd: 'src/Daoris.Cli' },
+    { suite: 'cli', file: 'tools/a.test.mjs', cwd: '.' }, { suite: 'cli', file: 'tools/brand-new.test.mjs', cwd: '.' },
+  ]);
   const unit = map.units.find((each) => each.file === 'tools/a.test.mjs');
   assert.equal(unit?.subject, 'tools/a.mjs');
   assert.equal(tool.unitHops(unit, ['src/X.cs'], map), 1);

@@ -83,7 +83,7 @@ export function LandingLifeFlow({ landing }: { landing: LandingOf }) {
         <div className="grid min-w-0 justify-items-start gap-0.5">
           {own.map((line, index) => <p key={index} className="m-0 min-w-0 [overflow-wrap:anywhere]"><Inline text={line} /></p>)}
           {link && (
-            <ExternalLink href={link} className="text-meta text-accent underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>
+            <ExternalLink href={link} className="text-caption text-accent-ink underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>
           )}
         </div>
       ),

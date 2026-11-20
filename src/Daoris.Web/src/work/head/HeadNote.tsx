@@ -57,7 +57,7 @@ export function Left({ branch, onReview, onDiscard, discarding = false }: {
         <span className="text-ink-faint">{t('work.head.itsWork')}</span>
         <span className={theirs ? 'text-ink-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
         {/* Whole, as a branch row's name is: it wraps after its separators on this line's own row, never cut. */}
-        <PathText path={branch.branch} className="min-w-0 text-meta text-ink-faint" />
+        <PathText path={branch.branch} className="min-w-0 text-caption text-ink-faint" />
         {theirs && onReview && (
           <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
         )}

@@ -59,7 +59,7 @@ export function StructureNode({ node, identity, stop, chosen, lit, description, 
           tabIndex={-1}
           aria-expanded={false}
           onClick={onOpenFold}
-          className="mt-1 cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+          className="mt-1 cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft underline-offset-2 hover:text-ink hover:underline"
         >
           {t('agents.roles.diagram.unfold')}
         </button>
@@ -72,7 +72,7 @@ export function StructureNode({ node, identity, stop, chosen, lit, description, 
               type="button"
               tabIndex={-1}
               onClick={() => onFollow(foot.to)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
+              className="cursor-pointer border-0 bg-transparent p-0 text-left text-caption text-ink-soft [overflow-wrap:anywhere] hover:text-ink"
             >
               <span aria-hidden className="mr-1">→</span>{foot.text}
             </button>

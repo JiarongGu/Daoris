@@ -45,7 +45,7 @@ export function RunTrack({ track, holderOf, onChip, onFlowchart }: {
                 aria-label={said(chip)}
                 onClick={() => onChip(chip.node)}
                 className={cn(
-                  'inline-flex min-h-7 min-w-0 cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent px-1 text-small hover:text-accent',
+                  'inline-flex min-h-7 min-w-0 cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent px-1 text-small hover:text-accent-ink',
                   chip.mark === 'next' ? 'text-ink-faint' : 'text-ink',
                   (chip.mark === 'current' || chip.mark === 'failed') && 'font-medium',
                 )}

@@ -16,7 +16,7 @@ export type RelatedRow = {
 /** The asking session's own tree could not be read here; when it last could be, or null. */
 export type RelatedOwn = { readAt: string | null };
 
-const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-meta underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
+const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-caption underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent';
 
 /** Each path with the sessions that meet on it, in the order the read gave them. */
 const byPath = (rows: readonly RelatedRow[], paths: (row: RelatedRow) => readonly string[]) => {
@@ -51,11 +51,11 @@ export function RelatedSessions({ repository, related, own = null, onSession }: 
 
   const door = (id: string) => (onSession
     ? <button type="button" aria-label={t('work.related.door', { id })} onClick={() => onSession(id)} className={DOOR}>{id}</button>
-    : <span className="font-mono text-meta">{id}</span>);
+    : <span className="font-mono text-caption">{id}</span>);
   const line = (key: string, groups: [string, string[]][]) => groups.map(([path, ids]) => (
     <li key={`${key}:${path}`} className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-1.5">
       <span>{t(`work.related.${key}`, { count: ids.length })}</span>
-      <code className="font-mono text-meta text-ink [overflow-wrap:anywhere]">{path}</code>
+      <code className="font-mono text-caption text-ink [overflow-wrap:anywhere]">{path}</code>
       <span className="flex flex-wrap gap-x-1.5">{ids.map((id) => <Fragment key={id}>{door(id)}</Fragment>)}</span>
     </li>
   ));

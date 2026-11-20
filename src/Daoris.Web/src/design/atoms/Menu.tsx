@@ -125,7 +125,7 @@ function MenuRadioRow({ className, children, ...props }: ComponentProps<typeof D
 
 /** A group's name, small and faint; its padding above is the caller's where it opens the menu or follows a rule. */
 function MenuLabel({ className, ...props }: ComponentProps<typeof DropdownMenu.Label>) {
-  return <DropdownMenu.Label {...props} className={cn('px-2 pb-1 pt-1 text-meta text-ink-faint', className)} />;
+  return <DropdownMenu.Label {...props} className={cn('px-2 pb-1 pt-1 text-caption text-ink-faint', className)} />;
 }
 
 /** The rule between a menu's groups. */

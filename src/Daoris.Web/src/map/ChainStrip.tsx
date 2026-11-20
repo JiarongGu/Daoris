@@ -62,7 +62,7 @@ export function ChainStrip({ chain, level = 2, attended, onQuest, onSession, nam
         ))}
       </ol>
       {chain.some((step) => step.kind === 'pending') && (
-        <p className="m-0 mt-2 text-meta text-ink-faint">{t('chain.pendingHint')}</p>
+        <p className="m-0 mt-2 text-caption text-ink-faint">{t('chain.pendingHint')}</p>
       )}
     </section>
   );
@@ -86,7 +86,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
   if (step.kind === 'ask') {
     return (
       <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small">
-        <span className="font-mono text-meta text-ink">{t('chain.ask', { id: step.id })}</span>
+        <span className="font-mono text-caption text-ink">{t('chain.ask', { id: step.id })}</span>
         <span className="text-ink-faint">{t('chain.askHint')}</span>
       </p>
     );
@@ -95,7 +95,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
   if (step.kind === 'unseen') {
     return (
       <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-small">
-        <span className="font-mono text-meta text-ink-soft">#{step.id}</span>
+        <span className="font-mono text-caption text-ink-soft">#{step.id}</span>
         <span className="text-ink-faint">{t('chain.unseen')}</span>
       </p>
     );
@@ -105,10 +105,10 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
     return (
       <div className="min-w-0 text-small">
         <p className="m-0 flex flex-wrap items-baseline gap-x-2">
-          <span className="text-accent">→ {step.step.to}</span>
+          <span className="text-accent-ink">→ {step.step.to}</span>
           <span className="min-w-0 text-ink-soft">{step.step.title}</span>
         </p>
-        <p className="m-0 text-meta text-ink-faint">{t('chain.pending')}</p>
+        <p className="m-0 text-caption text-ink-faint">{t('chain.pending')}</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
         onClick={() => onQuest(quest)}
         // Underlined at rest, faintly: an ink title among ink titles gives no sign it is a door.
         title={quest.title}
-        className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+        className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
       >
         {questName(quest)}
       </button>
@@ -137,14 +137,14 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {title}
         <QuestStatus quest={quest} />
-        {current && <span className="text-meta text-ink-faint">{t('chain.current')}</span>}
+        {current && <span className="text-caption text-ink-faint">{t('chain.current')}</span>}
       </p>
-      <p className="m-0 font-mono text-meta text-ink-faint">
+      <p className="m-0 font-mono text-caption text-ink-faint">
         #{quest.id} · {t('chain.route', { from: quest.from, to: quest.to })}
       </p>
       {sessions.length === 0
         ? (
-          <p className="m-0 text-meta text-ink-faint">
+          <p className="m-0 text-caption text-ink-faint">
             {/* A closed quest nobody drove is closed by a person; "yet" would promise a session. */}
             {t(quest.status === 'Done' || quest.status === 'Declined' ? 'chain.closedUnrun' : 'chain.noSession')}
           </p>
@@ -153,7 +153,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
           <>
             {/* The agent is said once where every session of the quest ran on the same one: repeated on each row, it
                 would bury the fact that matters, three failed before this one. */}
-            {agentOnce && sessions.length > 1 && <p className="m-0 font-mono text-meta text-ink-faint">{agentOnce}</p>}
+            {agentOnce && sessions.length > 1 && <p className="m-0 font-mono text-caption text-ink-faint">{agentOnce}</p>}
             <ul className="m-0 grid list-none gap-1 p-0">
               {sessions.map((session, index) => {
                 // A quest carried on several times would draw identical rows: which attempt, its account and how long tell
@@ -176,15 +176,15 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
                           onClick={() => onSession(session)}
                           title={sessionTool(session, false, nameOf)}
                           // Underlined at rest, faintly, as a quest title that is a door is.
-                          className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+                          className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-caption text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent-ink hover:decoration-accent"
                         >
                           {name}
                         </button>
                       )
-                      : <span title={sessionTool(session, false, nameOf)} className="min-w-0 truncate font-mono text-meta text-ink-soft">{name}</span>}
-                    {account && <span className="text-meta text-ink-faint">{account}</span>}
-                    <span className="text-meta text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
-                    {here && <span className="text-meta font-medium text-ink">{t('chain.thisSession')}</span>}
+                      : <span title={sessionTool(session, false, nameOf)} className="min-w-0 truncate font-mono text-caption text-ink-soft">{name}</span>}
+                    {account && <span className="text-caption text-ink-faint">{account}</span>}
+                    <span className="text-caption text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
+                    {here && <span className="text-caption font-medium text-ink">{t('chain.thisSession')}</span>}
                   </li>
                 );
               })}

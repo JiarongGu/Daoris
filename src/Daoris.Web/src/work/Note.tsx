@@ -80,7 +80,7 @@ export function Note({ parts, className, clamp, compact = false, names }: {
 function Recorded() {
   const { t } = useTranslation();
   return (
-    <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-meta not-italic leading-[1.4] text-ink-faint">
+    <span className="mr-1.5 inline-block rounded-control border border-line px-1 align-baseline text-caption not-italic leading-[1.4] text-ink-faint">
       {t('work.note.recorded')}
     </span>
   );

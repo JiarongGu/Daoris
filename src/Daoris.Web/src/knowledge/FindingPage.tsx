@@ -44,10 +44,10 @@ export function FindingPage({ finding, readings }: {
         return (
           // Each entry is a document: a right-click on it copies its path.
           <section key={entry.id} aria-label={entry.title} className="mt-6 border-t border-line pt-4" {...contextOffer(documentMenu(t, entry))}>
-            <h2 className="m-0 text-title font-semibold wrap-anywhere">{entry.title}</h2>
+            <h2 className="m-0 text-heading font-semibold wrap-anywhere">{entry.title}</h2>
             <div className="mb-3 mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <EntryPills kind={entry.kind} provenance={read?.provenance} />
-              <span className="font-mono text-meta text-ink-faint wrap-anywhere">{entryPlace(entry)}</span>
+              <span className="font-mono text-caption text-ink-faint wrap-anywhere">{entryPlace(entry)}</span>
             </div>
             {reading.state === 'read' && <EntryText body={reading.entry.body} />}
             {reading.state === 'loading' && <SkeletonRows rows={4} />}

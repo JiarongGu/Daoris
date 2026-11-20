@@ -14570,3 +14570,31 @@ installed window is not yet seen.
   copied); HOMEORPHAN1 makes the home name every file in a place no entry names, and a removal of an old reader refuses while
   the install holds files there.
 - **Verify:** `daoris agent list` lists all four accounts, two signed in.
+
+## 2026-11-20 — Two of the CLI's tool tests red on main, unreached by the merges that broke them (TESTSCOPE1 found them)
+
+- **Seen:** TESTSCOPE1's census run on main 652a72ca50: `merge-branch-worktrees.test.ts` "this repository commits no generated
+  folder" (expected no `generated` entry) and `desktop-publish.test.ts` (expected `HomeEntry.Running` with four arguments).
+- **Cause:** BOOKHOOK1 (af6bfd38f3) declared `tools/size-ratchet.json` a generated entry in `daoris.gates.json`, and NOCOMPAT2
+  (da048b0b37) cut `HomeEntry.Running`'s old-place argument; both tests read those files as text, and the merges' reached plans
+  mapped tests from code files only, so neither ran.
+- **Fix:** the first asserts the size list is the one generated entry (a file, no folder); the second asserts the three-argument
+  entry. TESTSCOPE1's pattern sets map a test to the files it reads, so a change to either file reaches it.
+- **Verify:** `node --test src/Daoris.Cli/tool-test/merge-branch-worktrees.test.ts` (13 passed) and
+  `node --test src/Daoris.Cli/tool-test/desktop-publish.test.ts` (53 passed).
+
+## 2026-11-20 — A batch's reached gate ran 27 and 34 minutes and failed on three reds none of its branches made
+
+- **Seen:** the merge of steward-batch-1120e: `reached` was killed by its hang bound under load after 27 m 40 s, then ran alone
+  34 m 12 s and failed: the driver's test host crashed on `TreePoolSharesGitTests` (and the classes in its host with it), two
+  `WorkflowEditorCanvas.test.tsx` tests timed out at 10 s, and `driver-names.test.ts` (STRUCT1) named
+  `tools/time-ratchet.test.mjs reads ${name}.cs by its folder`.
+- **Cause:** `TreePoolSharesGitTests` runs real git and links, five tests taking 4 m 16 s alone, yet carried no Process trait since
+  TREEPOOL1ac (59cf005dc6), so the fast tier ran it and the 60 s inactivity bound killed its host under load; two other real-git
+  classes (`GitGlobalFileGitTests`, `GitOwnInputScopedGitTests`) lacked it too. The canvas suite is the editor's sibling whose
+  composing tests sit on the unit timeout (the entry above for `WorkflowEditor.test.tsx`). The ratchet test (9108ee25ed) built its
+  synthetic world's paths in the driver test project's folder, which the STRUCT1 scan reads as a fixed read.
+- **Fix:** the three git classes carry the Process tier's traits, as their siblings do; the canvas suite's composing groups take
+  30 s; the ratchet test's synthetic paths sit under `src/D.Tests/`, as its other cases' do.
+- **Verify:** `TreePoolSharesGitTests` alone (5 passed, 4 m 16 s); `node --test tools/time-ratchet.test.mjs` and the STRUCT1
+  test (passed); the merge's `reached` rerun.

@@ -324,7 +324,7 @@ function Said({ text }: { text: string | null }) {
 
 /** When a commit is dated or a plugin answered: how long ago, its whole stamp in its tip. The branch page says it so too. */
 export function When({ at }: { at: string }) {
-  return <time dateTime={at} title={stamp(at)} className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(at)}</time>;
+  return <time dateTime={at} title={stamp(at)} className="shrink-0 text-caption text-ink-faint tabular-nums">{ago(at)}</time>;
 }
 
 /**
@@ -342,7 +342,7 @@ function LandedFacts({ name, landed }: { name: string; landed: ListedLanded }) {
       {(link || said.length > 0) && (
         <Facts>
           {link && (
-            <ExternalLink href={landed.pullRequest!} className="text-accent underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>
+            <ExternalLink href={landed.pullRequest!} className="text-accent-ink underline underline-offset-2">{t('work.review.pullRequest')}</ExternalLink>
           )}
           {said.map(({ sentence, at }) => (
             <span key={sentence}>

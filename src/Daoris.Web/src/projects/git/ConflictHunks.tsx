@@ -85,10 +85,10 @@ function ConflictBlock({ hunk, at, count, take, busy, onTake }: {
   const { t } = useTranslation();
   return (
     <div className="grid min-w-0 gap-1 rounded-control border border-line p-2" data-conflict={hunk.id}>
-      <p className="m-0 text-meta font-semibold text-ink-faint">{t('projects.git.changes.conflict.heading', { at, count })}</p>
+      <p className="m-0 text-caption font-semibold text-ink-faint">{t('projects.git.changes.conflict.heading', { at, count })}</p>
       <Lines lines={hunk.before} tone="text-ink-soft" />
-      <Side label={t('projects.git.changes.conflict.ours')} lines={hunk.ours} tone="text-ink-done" />
-      <Side label={t('projects.git.changes.conflict.theirs')} lines={hunk.theirs} tone="text-ink-danger" />
+      <Side label={t('projects.git.changes.conflict.ours')} lines={hunk.ours} tone="text-ok-ink" />
+      <Side label={t('projects.git.changes.conflict.theirs')} lines={hunk.theirs} tone="text-fail-ink" />
       <Lines lines={hunk.after} tone="text-ink-soft" />
       <div role="group" aria-label={t('projects.git.changes.conflict.choose', { at })} className="flex flex-wrap gap-2">
         {TAKES.map((each) => (
@@ -105,7 +105,7 @@ function Side({ label, lines, tone }: { label: string; lines: readonly string[];
   const { t } = useTranslation();
   return (
     <div className="grid min-w-0 gap-0.5">
-      <span className="text-meta text-ink-faint">{label}</span>
+      <span className="text-caption text-ink-faint">{label}</span>
       {lines.length === 0 ? <span className="text-small text-ink-soft">{t('projects.git.changes.conflict.empty')}</span> : <Lines lines={lines} tone={tone} />}
     </div>
   );

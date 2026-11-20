@@ -48,19 +48,19 @@ export function StartWiringList({ starts, nameOf }: {
             <dt className="text-ink-faint">{t('wiring.agent')}</dt>
             <dd className="m-0 min-w-0 text-ink">
               {start.product ?? start.adapter}
-              {start.product && <span className="ml-2 font-mono text-meta text-ink-faint">{start.adapter}</span>}
+              {start.product && <span className="ml-2 font-mono text-caption text-ink-faint">{start.adapter}</span>}
             </dd>
             <dt className="text-ink-faint">{t('wiring.account')}</dt>
             <dd className="m-0 min-w-0">
               <span className="text-ink wrap-anywhere">
                 {nameOf(start.owner, start.profile)}
               </span>
-              <span className="ml-2 text-meta text-ink-faint">{accountFrom(t, start.profileFrom)}</span>
+              <span className="ml-2 text-caption text-ink-faint">{accountFrom(t, start.profileFrom)}</span>
             </dd>
             <dt className="text-ink-faint">{t('wiring.version')}</dt>
             <dd className="m-0 min-w-0">
               <span className="font-mono text-ink">{start.version ?? t('wiring.versionUnknown')}</span>
-              <span className="ml-2 text-meta text-ink-faint">{versionFrom(t, start)}</span>
+              <span className="ml-2 text-caption text-ink-faint">{versionFrom(t, start)}</span>
             </dd>
           </dl>
           {start.refusal && (

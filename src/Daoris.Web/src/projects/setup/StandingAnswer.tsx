@@ -48,7 +48,7 @@ export function StandingAnswer({ repository, says, at = null, busy = false, onSa
       {!editing && says !== null && (
         <div className="grid gap-1">
           <blockquote className="m-0 whitespace-pre-wrap border-l-[3px] border-line-strong pl-3 text-body text-ink">{says}</blockquote>
-          {at && <span className="font-mono text-meta text-ink-faint">{t('projects.standing.set', { ago: ago(at) })}</span>}
+          {at && <span className="font-mono text-caption text-ink-faint">{t('projects.standing.set', { ago: ago(at) })}</span>}
         </div>
       )}
       {!editing && says === null && <p className="m-0 text-small text-ink-soft">{t('projects.standing.none')}</p>}

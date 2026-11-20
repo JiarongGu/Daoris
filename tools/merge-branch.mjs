@@ -4510,7 +4510,7 @@ const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...
 /**
  * What a CI run's end writes beside its verdicts. The due record: each Process half it ran whole and gave every class a verdict
  * (`sweepSatisfied`) is swept; a finished nightly run satisfies the night. The findings: each failure is filed as known red (a
- * Process half's by test from its trx, row 3's fingerprint and signature, source read from the run's tree; any other gate's by
+ * Process half's by test from its trx, source read from the run's tree; any other gate's by
  * its step, `gateSignature`), a death of memory never; each pass clears the known red of its test or gate, and a test a whole run
  * no longer lists ends as gone (`clearGone`), on a commit on main's first-parent line from where it last failed. Answers the
  * overdue report and the known red the watch says.
@@ -4550,7 +4550,7 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
         }))
         : [(() => {
           const output = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
-          const signature = gateSignature(name, 'run', output, tree);
+          const signature = gateSignature(name, 'run', output, tree, result.code);
           const message = signature.message ?? (signature.errors ?? []).join(' ');
           return { gate: name, unit: name, test: name, fingerprint: { test: name, exception: '', at: null, message }, signature, message, lines: [message].filter(Boolean) };
         })()];
@@ -5361,7 +5361,7 @@ function failuresOf(tree, result, trxFile) {
   }
   const output = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
   const step = /\berror (?:CS|TS|MSB|NU)\d+/.test(output) ? 'build' : 'run';
-  return [{ names: 'gate', gate: result.gate.name, unit: result.gate.name, test: result.gate.name, signature: gateSignature(result.gate.name, step, output, tree) }];
+  return [{ names: 'gate', gate: result.gate.name, unit: result.gate.name, test: result.gate.name, signature: gateSignature(result.gate.name, step, output, tree, result.code) }];
 }
 
 /** A `dotnet test` gate with a trx of its own, so a fast half's failing tests are read by name too. */

@@ -220,8 +220,8 @@ function Group({ id, title, count, folded, onFold, warn = false, unread, childre
           <Icon name={folded ? 'chevronRight' : 'chevronDown'} size={13} className="text-ink-faint" />
           <span className="min-w-0 flex-1">{title}</span>
           {count !== null && (unread
-            ? <span className="text-meta font-normal tabular-nums text-ink-soft">{unread}</span>
-            : <span className={warn ? 'font-mono text-meta tabular-nums text-warn' : 'font-mono text-meta tabular-nums text-ink-open'}>{count}</span>)}
+            ? <span className="text-caption font-normal tabular-nums text-ink-soft">{unread}</span>
+            : <span className={warn ? 'font-mono text-caption tabular-nums text-warn' : 'font-mono text-caption tabular-nums text-ink-open'}>{count}</span>)}
         </button>
       </h2>
       {!folded && children}

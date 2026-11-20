@@ -43,7 +43,7 @@ export function CanvasFind({ label, query, onQuery, matches, at, onStep, onClear
         onKeyDown={onKeyDown}
         className="h-7 w-44 min-w-0 rounded-control border border-line bg-page px-2 text-small text-ink placeholder:text-ink-faint focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
       />
-      <span role="status" aria-live="polite" className={cn('font-mono text-meta tabular-nums text-ink-soft', !searching && 'sr-only')}>
+      <span role="status" aria-live="polite" className={cn('font-mono text-caption tabular-nums text-ink-soft', !searching && 'sr-only')}>
         {searching ? (matches.length === 0 ? t('canvas.findNone') : t('canvas.findAt', { at: Math.max(at, 0) + (at >= 0 ? 1 : 0), count: matches.length })) : ''}
       </span>
       {searching && matches.length > 0 && (
