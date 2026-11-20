@@ -71,12 +71,12 @@ public sealed class VerifyExecutionRegenerateProcessTests : IAsyncLifetime
         var executor = new HeavyExecutor(Home, new VerifyWorld() with { Poll = TimeSpan.FromMilliseconds(50) });
         _executors.Add(executor);
         var number = ++_sent;
-        var run = $"v-{number:D16}";
-        await executor.SendAsync(new VerifySend(run, $"i-{number}", "engine", repository.Checkout, repository.Commit, repository.Blob)
+        var run = $"v-{900 + number:D16}";
+        await executor.SendAsync(new VerifySend(run, $"i-regen-{number}", "engine", repository.Checkout, repository.Commit, repository.Blob)
         {
             Tree = repository.Checkout + "-verify", Base = baseRef, Heavy = heavy,
         });
-        var path = VerifyFiles.ResultOf(Home, run, $"i-{number}");
+        var path = VerifyFiles.ResultOf(Home, run, $"i-regen-{number}");
         await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
         return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
     }
