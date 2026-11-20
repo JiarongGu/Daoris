@@ -198,7 +198,12 @@ agent's part (the sender marks, the wait counted once, a line's channel, the ste
     says what was kept of what it had. A pass reads the packet laid out as files in its room, never one JSON (`BrainstormRoomPacket`):
     `index.md` names the question and each source's file under `sources/`, with where it came from, its size, its relevance (how many
     of the question's terms it holds) and why it is in, and lists apart a source matched by words alone that holds under a third of
-    them; the frozen `packet.json` stays the driver's record, which `show` and the desk read and no pass is handed. A pass whose maker's accounts all cool waits for the first to lift when that is before the
+    them; the frozen `packet.json` stays the driver's record, which `show` and the desk read and no pass is handed. A brainstorm's
+    minutes are its own (`BrainstormDeadlines`): the policy's, a design pass's generators twice the policy's pass and a question naming
+    sources whole half as long again, the request's grown so the generators' window holds a pass. A generator is told its minutes and
+    asked to give its answer so far early with `partial: true`, which `brainstorm_give` keeps and a later answer replaces until one is
+    given whole; a pass cut at its deadline keeps its last valid answer, `answered (partial)` on its record and in the document's
+    passes, and the synthesis reads it with the rest. A pass whose maker's accounts all cool waits for the first to lift when that is before the
     generators' deadline, its slot let go meanwhile; a maker cooling past it, meeting its limit on its restart too, or held by the cap, ends the brainstorm
     `short-handed` before any synthesis: what answered (nothing, if none did) is kept unranked, and the document names who and offers the wait by cause (ask again
     once the account lifts, its limit resets or the cap frees). (from D176, D284)

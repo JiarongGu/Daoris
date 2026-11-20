@@ -4,17 +4,16 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The brainstorm at the look: a request the person's verb wrote is frozen into one packet from
-/// Daoris's own knowledge and waits for the person's send; sent, each named agent's generator answers once in a room holding that
-/// packet, Daoris validates every answer with no model and gives a failed one its one repair, the synthesis ranks the proposals
-/// under anonymous ids, and Daoris re-attaches who gave which and keeps the document. Nothing is published, nothing travels, and
-/// nothing is written into any repository.
+/// Daoris's own knowledge and waits for the person's send; sent, each named agent's generator answers in a room holding that
+/// packet as files, Daoris validates every answer with no model and gives a failed one its one repair, the synthesis ranks the
+/// proposals under anonymous ids, and Daoris re-attaches who gave which and keeps the document. Nothing is published or travels.
 /// </summary>
 /// <remarks>
 /// <para><b>The state file is the driver's alone</b> (<see cref="BrainstormFiles"/>): <c>frozen</c> naming the packet's digest,
 /// <c>running</c>, and <c>ended</c>. The person's send and stop are files of their own.</para>
 ///
-/// <para><b>Bounded, and never hanging</b>: the person's policy names the agents and the
-/// minutes. The generators run side by side, each taking a slot under the cap and waiting for one within the deadline; the
+/// <para><b>Bounded, and never hanging</b>: the policy names the agents and the minutes, fitted by
+/// <see cref="BrainstormDeadlines"/>. The generators run side by side, each taking a slot under the cap and waiting for one within the deadline; the
 /// generators end at the request's deadline less the synthesis's and the challenge's minutes, reserved from the start; a pass past
 /// its own minutes, or past that deadline, is stopped, and what answered is kept. A crash fails its pass alone. A limit cools its
 /// account and starts the pass once more on the next ready account, as its one repair. The person's stop ends every pass,
@@ -351,7 +350,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         var watching = WatchAsync(id, files, stop, done.Token);
         try
         {
-            var minutes = rule.Minutes;
+            var minutes = BrainstormDeadlines.Of(rule.Minutes, request);
             var started = Clock.GetUtcNow();
             var deadline = started + minutes.Request * Minute;
             var generatorsEnd = started + minutes.Generators * Minute;
@@ -360,7 +359,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             var plan = Generators(request, rule, workspace);
             var generators = plan.Select(each => each.Allowed
                 ? PassAsync<BrainstormAnswer>(
-                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, laid, DesignPasses.Generator(request, digest), null,
+                    id, each.Pass, each.Agent, BrainstormPassRecord.Generate, laid, DesignPasses.Generator(request, digest, minutes.Pass), null,
                     text =>
                     {
                         var check = BrainstormAnswers.Check(text, sources);
@@ -666,7 +665,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 }
 
                 var (valid, failed) = check(files.ReadAnswer(id, turn));
-                if (valid is not null) return Ended(BrainstormPassRecord.Answered, [], turns, valid);
+                if (valid is not null) return Ended(BrainstormPassRecord.Answered, BrainstormPassRecord.CodesOf(valid), turns, valid);
                 if (cut || window.IsCancellationRequested)
                 {
                     ct.ThrowIfCancellationRequested();

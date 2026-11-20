@@ -24,6 +24,11 @@ public sealed record BrainstormPassRecord(BrainstormBy By, string Role, string S
     public const string Synthesize = "synthesize";
 
     public const string Answered = "answered";
+
+    public const string Partial = "partial";
+
+    public static IReadOnlyList<string> CodesOf(object? answer) => answer is BrainstormAnswer { Partial: true } ? [Partial] : [];
+
     public const string Failed = "failed";
     public const string Unavailable = "unavailable";
 

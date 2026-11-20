@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A brainstorm's passes get minutes that fit what it asks: a design pass twice the policy's, a question naming whole sources half
+  as long again. Each pass is told its minutes and asked to give its answer so far early; a pass cut at its deadline keeps the last
+  answer it gave, marked partial on its record and in the document, and the synthesis reads it with the others instead of losing it.
+
 - A brainstorm's pass reads its packet as files instead of one large JSON: an index naming the question and each source's file,
   where it came from, its size, how many of the question's terms it holds and why it is in, and one Markdown file per source. A
   source the search matched by words alone that holds few of the question's terms is listed apart, so a pass opens only what it

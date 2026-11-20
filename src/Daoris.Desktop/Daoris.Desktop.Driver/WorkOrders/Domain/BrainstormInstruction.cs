@@ -13,12 +13,13 @@ public static class BrainstormInstruction
     /// <summary>The instruction's file in every pass's room.</summary>
     public const string InstructionFile = "instruction.md";
 
-    /// <summary>A generator's instruction: read the packet, answer the question once through <c>brainstorm_give</c>.</summary>
-    public static string Generator(string digest) =>
+    /// <summary>A generator's instruction: read the packet, answer the question through <c>brainstorm_give</c> within its minutes.</summary>
+    public static string Generator(string digest, int minutes) =>
         Lead(digest)
         + "Your job: propose answers to the packet's question. The packet's files are everything you are given, and nothing outside "
         + "this folder is yours to read.\n\n"
-        + "Answer once, through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`. Each "
+        + Deadline(minutes)
+        + "Answer through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`. Each "
         + "proposal: `idea` (at most 200 characters), `rationale` (at most 1,200), `effort` (small, medium, large or unknown), `risk` "
         + "(low, medium, high or unknown), `reversible` (yes, partly, no or unknown), `undo` (how it would be undone or why it cannot, "
         + "at most 400, required unless reversible is yes), `confidence` (low, medium or high), `assumptions` (at most five of 200), "
@@ -46,12 +47,13 @@ public static class BrainstormInstruction
     /// A design pass's designer: the packet's question is the purpose brief, and it is all the designer is given. Its design is
     /// answered through the same <c>brainstorm_give</c>, each proposal one part of the design.
     /// </summary>
-    public static string Designer(string digest) =>
+    public static string Designer(string digest, int minutes) =>
         Lead(digest)
         + "Your job: write a design for the product the packet's question describes. The question is its purpose brief, and it is "
         + "everything you are given: no code, documents, decisions or earlier designs, and none is yours to look for. Design from the "
         + "purpose alone; do not guess how the product is built today.\n\n"
-        + "Answer once, through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`: each "
+        + Deadline(minutes)
+        + "Answer through your tool `brainstorm_give`, with `{ brainstorm: 1, proposals: [...], needs: [...], none }`: each "
         + "proposal is one part of your design, its `idea` the part (at most 200 characters) and its `rationale` how it serves the "
         + "purpose (at most 1,200), with `effort`, `risk`, `reversible`, `undo`, `confidence` and `assumptions` as the tool describes; "
         + "`sources` stays empty. At most eight parts, the most foundational first. Put what the brief leaves open in `needs`.\n\n"
@@ -71,6 +73,12 @@ public static class BrainstormInstruction
     public static string Repair(string instruction, IReadOnlyList<string> codes) =>
         instruction + "\nYour last answer was refused by Daoris's validator, with these codes: " + string.Join(", ", codes)
         + ". Answer again, whole, through the same tool. This is your last turn.\n";
+
+    /// <summary>A generator's minutes, and its answer so far given early so a pass cut at them keeps what it has.</summary>
+    private static string Deadline(int minutes) =>
+        $"Your pass has {minutes} minutes, and is cut at them. As soon as you have an answer worth keeping, give it with `partial: true`: "
+        + "it is kept as your answer so far, and you may give it again as you learn more. Give it whole, without `partial`, before your "
+        + "minutes end; a pass cut at its deadline keeps its last answer, said as partial.\n\n";
 
     private static string Lead(string digest) =>
         $"Daoris asks you one question, in the context packet `{digest}`, laid out as files in this folder. Read "

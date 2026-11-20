@@ -85,7 +85,7 @@ public sealed class BrainstormBox(BrainstormScope scope)
             ? BrainstormChecks.Synthesize(answer, handed)
             : BrainstormChecks.Give(answer, handed.ToHashSet(StringComparer.Ordinal));
 
-        if (Read(Scope.Answer!) is { } before && Judge(before).Count == 0)
+        if (Read(Scope.Answer!) is { } before && Judge(before).Count == 0 && !Partial(before))
         {
             return new(false, [], "Your answer is already kept for this turn, and an answer is kept once. You can end now.");
         }
@@ -101,8 +101,28 @@ public sealed class BrainstormBox(BrainstormScope scope)
                 + "this tool before you end: an answer still refused when your turn ends fails the turn.");
         }
 
+        if (Partial(text))
+        {
+            return new(true, [], $"Your answer so far is kept: {Counted(text, synthesis)}. Give it again, whole and without `partial`, "
+                + "before your minutes end; if your pass is cut first, this one is kept, said as partial.");
+        }
+
         return new(true, [], $"Your {(synthesis ? "synthesis" : "answer")} is kept: {Counted(text, synthesis)}. It is a claim the person "
             + "reads, and nobody can ask you anything after. You can end now.");
+    }
+
+    private static bool Partial(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("partial", out var marked)
+                && marked.ValueKind == JsonValueKind.True;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     /// <summary>What a kept answer holds, in words: its proposals, or its groups and what it left out.</summary>

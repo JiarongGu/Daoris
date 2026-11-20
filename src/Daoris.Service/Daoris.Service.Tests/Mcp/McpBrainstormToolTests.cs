@@ -114,6 +114,22 @@ public sealed class McpBrainstormToolTests : IDisposable
         Assert.DoesNotContain("Another", File.ReadAllText(Answer("g1")));
     }
 
+    [Fact]
+    public void An_answer_so_far_is_kept_marked_partial_and_replaced_until_one_is_given_whole()
+    {
+        var tools = Turn("g4");
+
+        Assert.Contains("answer so far is kept", tools.Give([Proposal("First thought")], partial: true));
+        Assert.True(JsonNode.Parse(File.ReadAllText(Answer("g4")))!["partial"]!.GetValue<bool>());
+        Assert.Contains("answer so far is kept", tools.Give([Proposal("Second thought")], partial: true));
+        Assert.Contains("Second thought", File.ReadAllText(Answer("g4")));
+
+        Assert.Contains("kept: 1 proposal", tools.Give([Proposal("Whole thought")]));
+        Assert.Null(JsonNode.Parse(File.ReadAllText(Answer("g4")))!["partial"]);
+        Assert.Contains("already kept", tools.Give([Proposal("Late thought")], partial: true));
+        Assert.Contains("Whole thought", File.ReadAllText(Answer("g4")));
+    }
+
     /// <summary>An answer with no proposal is valid only with why, and is kept as such.</summary>
     [Fact]
     public void No_proposal_is_an_answer_only_with_why()
