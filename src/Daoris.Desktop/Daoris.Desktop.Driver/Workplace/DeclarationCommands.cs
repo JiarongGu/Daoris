@@ -21,7 +21,7 @@ public static class DeclarationCommands
     /// <summary>The one way a declaration's text is read, by every reader of it: no member written twice, no comment, no trailing comma.</summary>
     internal static readonly JsonDocumentOptions Strict = new() { AllowDuplicateProperties = false };
 
-    private static readonly HashSet<string> InertParts = new(StringComparer.Ordinal) { "tests", "tiers", "docs" };
+    private static readonly HashSet<string> InertParts = new(StringComparer.Ordinal) { "tests", "tiers", "docs", "verifyBudget" };
 
     private static readonly HashSet<string> InertCheckParts = new(StringComparer.Ordinal) { "paths", "timeoutMinutes", "timeoutWhy", "memoryGb" };
 
@@ -124,6 +124,7 @@ public sealed record DeclarationSetAside(string? Check, string Part)
     public const string Tests = "tests";
     public const string Tiers = "tiers";
     public const string Docs = "docs";
+    public const string Budget = "budget";
 
     /// <summary>The kind of the inert member <paramref name="name"/>.</summary>
     internal static string Of(string name) => name switch
@@ -134,6 +135,7 @@ public sealed record DeclarationSetAside(string? Check, string Part)
         "tests" => Tests,
         "tiers" => Tiers,
         "docs" => Docs,
+        "verifyBudget" => Budget,
         _ => Words,
     };
 
@@ -148,6 +150,7 @@ public sealed record DeclarationSetAside(string? Check, string Part)
             Tests => "the test sets",
             Tiers => "the tiers",
             Docs => "the document patterns",
+            Budget => "the verification budget",
             _ => "the words",
         };
         return Check is null ? what : $"{what} of `{Check}`";

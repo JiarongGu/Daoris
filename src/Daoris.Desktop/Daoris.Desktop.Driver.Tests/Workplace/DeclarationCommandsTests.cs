@@ -36,6 +36,14 @@ public sealed class DeclarationCommandsTests
         Assert.True(DeclarationCommands.Keeps(Accepted, Edited(from, to)));
     }
 
+    /// <summary>The verification budget is a workspace's rule the driver never reads, unlike the runner `verification` names, which waits.</summary>
+    [Fact]
+    public void A_verification_budget_added_keeps_the_acceptance_and_a_verification_runner_waits()
+    {
+        Assert.True(DeclarationCommands.Keeps(Accepted, Edited("\"integration\":", "\"verifyBudget\": { \"budgetMinutes\": 10 },\n  \"integration\":")));
+        Assert.False(DeclarationCommands.Keeps(Accepted, Edited("\"integration\":", "\"verification\": { \"run\": \"node verify.mjs\" },\n  \"integration\":")));
+    }
+
     /// <summary>A text the strict reader refuses (a member written twice, a comment, a trailing comma) is no declaration: it waits for the person and never throws.</summary>
     [Theory]
     [InlineData("\"run\": \"npm test\"", "\"run\": \"npm test\", \"run\": \"npm test --all\"")]
