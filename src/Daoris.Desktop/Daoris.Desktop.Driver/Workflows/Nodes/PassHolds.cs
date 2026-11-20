@@ -10,6 +10,8 @@ internal static class PassHolds
         RiskShadow? risk, NodeRecordFiles records, IReadOnlyCollection<GovernedUnit> governed, DriverConfig config, DateTimeOffset now, bool leased, List<string> said)
     {
         if (risk is not null) RiskStepHolds.Shadow(risk, governed, records, config);
-        if (leased) StepVacancies.Look(records, governed, config, now, said);
+        if (!leased) return;
+        PolicyPasses.Look(records, governed, config, now, said);
+        StepVacancies.Look(records, governed, config, now, said);
     }
 }

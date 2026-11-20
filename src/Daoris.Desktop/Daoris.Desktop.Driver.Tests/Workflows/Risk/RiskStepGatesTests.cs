@@ -66,6 +66,25 @@ public sealed class RiskStepGatesTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_review_the_policy_passes_journals_its_verdict_once_and_a_wait_held_for_the_person_is_told_once()
+    {
+        Casts.Cast("machine", StepRoles.Acceptor, CastHolders.Person, "mine", _now);
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+
+        var passed = await RunPassAsync(runtime, Seed);
+        var again = await RunPassAsync(runtime, Seed);
+
+        Assert.Equal(NodeStates.Reached, RunStatus("review").State);
+        var line = Assert.Single(RiskJournal.Read(_home), each => each.Today == PolicyPasses.Today);
+        Assert.Equal((RiskActs.WorkAccept, RiskVerdict.Pass, RiskVerdict.Seed, "review"), (line.Kind, line.Outcome, line.Source, line.Step));
+        Assert.Single(passed.Said, said => said.Contains("passed by the risk policy: no rule gates `work.accept` here", StringComparison.Ordinal));
+        Assert.DoesNotContain(again.Said, said => said.Contains(PolicyPasses.Today, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task At_a_place_marked_for_production_releases_an_approvers_approval_waits_on_the_owner_with_nothing_configured()
     {
         OnBranch(Signed());

@@ -743,7 +743,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     under its own heading, *Vacant*, in the window (`AttentionOwnership.VacantClass`) and in `daoris session list`, never counted as
     the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in the run's lines; the person's press
     still takes and settles it. Past its bound (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the
-    step with what was tried, so its run ends there as gave up, never asked of the owner. A review's Accept and a task's approval wait only where the risk policy
+    step with what it tried, so its run ends there as gave up, never asked of the owner. At a place marked for production releases an
+    approver's approval and every `release.*` act are the owner's, and a step whose role is the owner's is the owner's whatever the policy
+    says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
+    passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
     gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
     `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node
     door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads and whose

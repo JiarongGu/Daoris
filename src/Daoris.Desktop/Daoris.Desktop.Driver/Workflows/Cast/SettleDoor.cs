@@ -107,7 +107,7 @@ public static class SettleDoor
         if (by.Epoch is { } epoch && epoch != current.Epoch) return new(StepTenureFiles.EndedEpoch, StepTenureFiles.Said(current));
         if (current.Why == TenureWhy.Marked && by.Who != CastHolders.Person)
         {
-            return new(Marked, $"{StepTenureFiles.Said(current)}, the owner's mark keeping it the owner role's");
+            return new(Marked, $"{StepTenureFiles.Said(current)}, the owner's mark or the risk policy keeping it the owner role's");
         }
 
         var admitted = by.Who == SettleBy.Line ? current.Holder == CastHolders.Person : Holds(current.Holder, by.Who);
