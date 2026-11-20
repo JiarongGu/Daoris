@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// nothing again; and the policy's agents bound the request's. Every turn is a scripted stand-in on a minute shortened to a tenth of
 /// a second, so nothing starts a process; the deadline's stop on a real agent is <c>BrainstormProcessTests</c>'.
 /// </summary>
-public sealed class BrainstormBoundsTests : IDisposable
+public sealed partial class BrainstormBoundsTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-brainstorm-bounds-" + Guid.NewGuid().ToString("N")[..8]);
 
@@ -241,49 +241,6 @@ public sealed class BrainstormBoundsTests : IDisposable
         var unanswered = Assert.Single(document["unanswered"]!.AsArray())!;
         Assert.Equal(("acp-stub", "timed-out"), (unanswered["door"]!.GetValue<string>(), unanswered["codes"]![0]!.GetValue<string>()));
         Assert.Contains("Did not answer: `acp-stub` (maker stub): timed-out", Files.DocumentText(id)!, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// 🔴 A design pass runs to its own longer deadline, and one cut there keeps the answer it gave so far, said as partial, which the
-    /// synthesis reads beside the whole one.
-    /// </summary>
-    [Fact]
-    public async Task A_pass_cut_at_its_brainstorm_s_own_deadline_keeps_its_answer_so_far_and_the_synthesis_reads_it()
-    {
-        var clock = new MovedClock();
-        var (driver, script) = Start(rule: Rule(pass: 10, request: 60), clock: clock);
-        var id = Files.WriteRequest("What should the palette be for?", null, ["stub", "acp-stub"], At, pass: DesignPasses.Design);
-        await LookAsync(driver);
-        Files.WriteSent(id, Files.ReadState(id)!.Packet!, At);
-        script.Answers["g1"] = Give("A neutral grey ladder");
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        script.Behaviours["g2"] = (turn, ct) =>
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(turn.Answer)!);
-            var partial = JsonNode.Parse(Give("Contrast first, at 4.5:1"))!.AsObject();
-            partial["partial"] = true;
-            File.WriteAllText(turn.Answer, partial.ToJsonString());
-            entered.TrySetResult();
-            return Hang(turn, ct);
-        };
-        string? handed = null;
-        script.Behaviours["s1"] = (turn, _) =>
-        {
-            handed = File.ReadAllText(Path.Combine(turn.Room, BrainstormInstruction.ProposalsFile));
-            return Task.FromResult(new BrainstormTurnRun(true, "work", null, "completed  brainstorm turn s1"));
-        };
-
-        var look = LookAsync(driver);
-        await entered.Task.WaitAsync(Poll.Patience);
-        var armed = clock.Pending.Contains(clock.GetUtcNow() + 20 * Minute);
-        clock.Advance(20 * Minute);
-        await SpendAsync(clock, look);
-
-        Assert.True(armed, "a design pass's deadline is its brainstorm's own, twice the policy's minutes");
-        Assert.Equal(("answered", BrainstormPassRecord.Partial, 1), Of(Pass(id, "g2")));
-        Assert.Contains("Contrast first, at 4.5:1", handed, StringComparison.Ordinal);
-        Assert.Contains("A neutral grey ladder", handed, StringComparison.Ordinal);
-        Assert.Contains($"answered ({BrainstormPassRecord.Partial})", Files.DocumentText(id)!, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -85,12 +85,21 @@ public sealed class BrainstormBox(BrainstormScope scope)
             ? BrainstormChecks.Synthesize(answer, handed)
             : BrainstormChecks.Give(answer, handed.ToHashSet(StringComparer.Ordinal));
 
-        if (Read(Scope.Answer!) is { } before && Judge(before).Count == 0 && !Partial(before))
+        var before = Read(Scope.Answer!);
+        var keptSoFar = before is not null && Judge(before).Count == 0;
+        if (keptSoFar && !Partial(before!))
         {
             return new(false, [], "Your answer is already kept for this turn, and an answer is kept once. You can end now.");
         }
 
         var codes = Judge(text);
+        if (codes.Count > 0 && keptSoFar)
+        {
+            return new(false, codes,
+                $"Daoris's validator refused this answer, with these codes: {string.Join(", ", codes)}. Your answer so far stays kept; give "
+                + "this one again, whole, before your minutes end.");
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(Scope.Answer!)!);
         // As composed, byte for byte: the driver judges the same text, and a newline added here would count against its bound.
         AtomicFile.WriteText(Scope.Answer!, text);

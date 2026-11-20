@@ -124,6 +124,11 @@ public sealed class McpBrainstormToolTests : IDisposable
         Assert.Contains("answer so far is kept", tools.Give([Proposal("Second thought")], partial: true));
         Assert.Contains("Second thought", File.ReadAllText(Answer("g4")));
 
+        var refused = tools.Give([Proposal("Broken thought", effort: "tiny")]);
+        Assert.Contains("field:effort", refused);
+        Assert.Contains("stays kept", refused);
+        Assert.Contains("Second thought", File.ReadAllText(Answer("g4")));
+
         Assert.Contains("kept: 1 proposal", tools.Give([Proposal("Whole thought")]));
         Assert.Null(JsonNode.Parse(File.ReadAllText(Answer("g4")))!["partial"]);
         Assert.Contains("already kept", tools.Give([Proposal("Late thought")], partial: true));
