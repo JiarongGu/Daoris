@@ -35,14 +35,13 @@ export const Statuses: StoryObj = {
   ),
 };
 
-/** The four shapes of the panel. Empty in each, because a story has no driver to stream from. */
+/** The three shapes of the panel. Empty in each, because a story has no driver to stream from. */
 export const Panels: StoryObj = {
   render: () => (
     <div className="grid gap-6">
       <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
       <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={360} collapsed={false} onResize={() => {}} onToggle={() => {}} />
       <OutputPanel console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />} height={200} collapsed onResize={() => {}} onToggle={() => {}} />
-      <OutputPanel console={null} height={140} collapsed={false} onResize={() => {}} onToggle={() => {}} />
     </div>
   ),
 };

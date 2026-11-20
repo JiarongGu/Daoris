@@ -10,9 +10,8 @@ import { store, stored } from '../../lib/stored';
  * them from every view, as VS Code's layout toggles sit in its title bar. The Work frame reads them
  * as props, and keeps its own where it is rendered alone.
  *
- * Per-viewer conveniences, in the same keys as ever, so nothing a person closed
- * reopens on the upgrade. **A view's list is not here**: each view remembers its own
- * closing (`listPanes.ts`).
+ * Per-viewer conveniences, the dock's in the same key as ever; **the panel's closing is not kept**. **A view's list is not
+ * here**: each view remembers its own closing (`listPanes.ts`).
  */
 export type FrameClosings = {
   /**
@@ -28,12 +27,12 @@ export type FrameClosings = {
   setDock: (closed: boolean) => void;
 };
 
-export const PANEL_CLOSED = 'daoris.panelClosed';
 export const DOCK_CLOSED = 'daoris.dockClosed';
 
 export function useFrameClosings(): FrameClosings {
   const [listOver, setListOver] = useState(false);
-  const [panel, setPanelState] = useState(() => stored(PANEL_CLOSED) === '1');
+  // 🔴 Closed at every start, kept nowhere: a terminal opens it and the last one's closing shuts it (`useDockViews`).
+  const [panel, setPanelState] = useState(true);
   // 🔴 Closed until the person opens it, as the reference's dock opens on demand: open by
   // default at 45%, it would leave a 1400px window's conversation 442px. So an absent choice is closed, and
   // opening is remembered as `0` beside closing's `1`.
@@ -44,7 +43,7 @@ export function useFrameClosings(): FrameClosings {
     panel,
     dock,
     setListOver,
-    setPanel: (closed) => { setPanelState(closed); store(PANEL_CLOSED, closed ? '1' : '0'); },
+    setPanel: setPanelState,
     setDock: (closed) => { setDockState(closed); store(DOCK_CLOSED, closed ? '1' : '0'); },
   };
 }

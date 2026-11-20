@@ -38,9 +38,8 @@ export function OutputPanel({
   console: stream, height, collapsed, onResize, onToggle, views = ['console'], view, onView, onMove, onReset, onDrag, children,
 }: {
   /**
-   * The attended session's console, or null when nothing is attended — a state rather than an
-   * absence. Handed in by the organism above, because the console reaches the bridge and a molecule
-   * imports no hook, not even through an organism.
+   * The attended session's console, null where there is none: the console is no view then, so nothing shows the null. Handed in
+   * by the organism above, because the console reaches the bridge and a molecule imports no hook, not even through an organism.
    */
   console: ReactNode | null;
   height: number;
@@ -177,10 +176,8 @@ export function OutputPanel({
       {!collapsed && (shown === 'console' || !shown
         ? (
           <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
-            {/* The panel keeps its height; a session with nothing held here keeps it as a sentence,
-                not as an empty bordered well, which read as a field on the installed window. */}
             {shown
-              ? stream ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>
+              ? stream
               // Every view moved out: VS Code's empty container, which says how to fill it.
               : <p className="m-0 text-small text-ink-faint">{t('work.views.empty')}</p>}
           </div>

@@ -151,7 +151,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
 25. One list pane on every view: a header with ＋ and ⋯, per-view resize, a 56 px strip when closed, Ctrl+B. Its closing,
     width, chosen item and filters are remembered per view. (from D118)
 26. The side bar and panel hold movable views: *Notifications*, Timeline, Review and Ask Daoris on
-    the right, Console and Terminal in the panel, until the viewer moves them. The side bar's body always holds its
+    the right, Console and Terminal in the panel, until the viewer moves them. The panel is closed at every start and
+    remembers only its height: the first terminal opens it at that height and the last one's closing shuts it, so with
+    none the page has the window's height between the title and status strips; the Console is a view only where a session
+    is attended, never an empty tab (UISH25). The side bar's body always holds its
     scrollbar's width (`DOCK_BODY`), since a chart placed by the pane's width otherwise flips as a scrollbar comes and goes.
     (from D118, D196, D96)
 27. A page is one column. `ViewMain` caps nothing, no block keeps a measure of its own, and the main area lays out by

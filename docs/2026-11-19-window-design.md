@@ -60,8 +60,13 @@ Every screen hangs on this; no row adds a region, a place or a standing number w
 | List pane | 264–420 px, 300 to start; Settings' 200 | the place's list under one head | the place |
 | Main area | floor 560 px | first row the breadcrumb (the frame's); below it the place's page | the place |
 | Side bar | 360–560 px, 400 to start | Ask Daoris, and nothing else | frame |
-| Panel | 120 px to 60% of the height, 30% to start | the owner's terminal, and nothing else | frame |
+| Panel | 120 px to 60% of the height; closed at every start, and opens with a terminal at the height last kept (200 px the first time) | the owner's terminal, and nothing else | frame |
 | Status strip | 24 px | facts the owner can trust, registered by places (§15.2) | frame, items by places |
+
+The panel is closed at every start and whenever its last terminal closes (UISH25): with no terminal the main area is the window
+minus the title strip (36 px) and the status strip (24 px), and no bar or empty tab stands where it was. Opening a terminal opens
+it at the height the owner last dragged it to; only that height is kept, never that it was open. (Measured 2026-11-20: open on
+every place it took 247 of 734 px, 34%, to say *Attend a session and its console streams here*.)
 
 There are no movable views. A column beside a page (the session's facts rail, an ask's side column) is drawn inside the place's
 own main area. Overlays sit between the title strip and the status strip and never cover the rail: the palette (640 px, near
@@ -1198,7 +1203,7 @@ own folders (a one-line registration in a shared table, `domains.ts`, `ui.tsx`, 
 |---|---|---|
 | 0 The design system's foundation | UIDS1–UIDS7, UISE23 | UISE23 first and beside the rest (a week of the trial's baseline, recorded before UISE2); UIDS1 alone (its codemod, a re-runnable tool, renames classes across `src/`); UIDS2 ∥ UIDS3; UIDS4; UIDS5; UIDS6 ∥ UIDS7 |
 | 1 The library and the acts | UIDS8–UIDS17, UISH24 | UIDS8; UIDS9 ∥ UIDS10; UIDS11; UIDS12 ∥ UIDS13 ∥ UIDS15; UIDS14 ∥ UIDS17; UIDS16; UISH24 |
-| 2 The frame | UISH2–10, 14, 15, 17, 18 | UISH2 alone; UISH3 ∥ UISH4 ∥ UISH5 ∥ UISH17 ∥ UISH18; UISH6 ∥ UISH7 ∥ UISH9 ∥ UISH10; UISH8 ∥ UISH14; UISH15 |
+| 2 The frame | UISH2–10, 14, 15, 17, 18, 25 | UISH2 alone; UISH3 ∥ UISH4 ∥ UISH5 ∥ UISH17 ∥ UISH18 ∥ UISH25; UISH6 ∥ UISH7 ∥ UISH9 ∥ UISH10; UISH8 ∥ UISH14; UISH15 |
 | 3 Overview and the waits | UISE1–7, 9–12, UISH12 | UISE1 ∥ UISE2; UISE12 ∥ UISE11 ∥ UISE9; UISE3; UISE4 ∥ UISE5 ∥ UISE10; UISE6 ∥ UISH12; UISE7 |
 | 4 The session panel | UISE14–20, 22, UISH13, UISH22 | UISE14 ∥ UISE15 ∥ UISE16 ∥ UISE17 ∥ UISE20; UISE18; UISE19 ∥ UISH13; UISE22 ∥ UISH22 |
 | 5 Asks and work | UIWF1–7, UISE13, UISH19–21 | UIWF1; UIWF2 ∥ UIWF3; UIWF4 ∥ UIWF5 ∥ UIWF6 ∥ UISH19; UIWF7 ∥ UISE13 ∥ UISH20 ∥ UISH21 |
