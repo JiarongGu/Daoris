@@ -2,10 +2,15 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What one judgment of an owed opinion found: the quests it sits, each with its sentence (<see cref="Snapshot.Opinions"/>);
-/// the landing opinion's gate, as the attention band reads it; and the pass it found owed, for a look to begin.
+/// the landing opinion's gate, as the attention band reads it; the pass it found owed, for a look to begin; when what it read turns
+/// over unmoved (<see cref="OpinionGateLook.Turns"/>); and whether its gate or the review beside it could not be read, kept unstamped.
 /// </summary>
 internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits, OpinionJudged? Judged, OpinionAct? Act) : IOpinionFact
 {
+    public IReadOnlyList<DateTimeOffset> Turns { get; init; } = [];
+
+    public bool Unread { get; init; }
+
     IEnumerable<string> IOpinionFact.SatQuests => Sits.Keys;
 
     IOpinionAct? IOpinionFact.Act => Act;

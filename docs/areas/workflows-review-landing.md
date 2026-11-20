@@ -402,7 +402,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     by commit ids, by a squashing landing's record, or by patch (a landing that replayed the commits and merged the replay
     leaves the tree's own ids on no branch), each read as the review reads the tree (`TreeWork`), kept while its `HEAD`, its
     repository's refs, its files and the home's records stand (`TreeReadMemo`), so a look over an owed opinion whose tree did not move
-    starts no git. (D155, D190, D227)
+    starts no git. Under the watch an owed opinion is judged again only where what its judgment reads moved (`OpinionJudgments`: the
+    due itself, its chain's quests, its line's, its reviewers' and its rechecks' records, its tree's commit, its gate, deliveries,
+    run binding and node record, the landings, the rule, the cool-offs, the drain), past its gate's reset or a reading pass's
+    minutes, or five minutes after its last judgment whatever moved, so work a branch outside Daoris's landings took closes within
+    five minutes; a judgment whose gate or review read unread keeps no stamp, and a pass begun for it, or a pass's or a delivery's
+    end, lets its stamp go (`LookFacts`, kept by the watch across the looks' drivers); every judgment of one look shares one read of
+    the quests and the records (`OpinionLookWorld`). (D155, D190, D227)
 27. Review's diff is a dependency graph of git reads, kept by no later open, taking no lock and refreshing no index in a tree
     Daoris does not own; within one open each question is asked of git once (`GitReadOnce`), and leaving the page stops its git.
     (D202)

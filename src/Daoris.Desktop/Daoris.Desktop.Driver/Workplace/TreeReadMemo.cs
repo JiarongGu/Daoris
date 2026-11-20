@@ -146,6 +146,8 @@ internal sealed record CountedRefs(string CommonDir, string Version, IReadOnlyDi
     }
 }
 
+internal sealed record TreeHead(string Link, string GitDir, string Common, string Text, string? Name, string? Loose);
+
 internal readonly record struct TreeReadStamp(string Tree, CountedRefs Refs, string GitDir, string Head)
 {
     internal string? Branch { get; init; }
@@ -275,33 +277,40 @@ internal sealed class TreeReadPass(TreeReadMemo memo, SessionTrees trees, LookTi
     {
         try
         {
-            var link = Path.Combine(tree, ".git");
-            if (!File.Exists(link)) return null;
-            var linkText = File.ReadAllText(link).Trim();
-            if (!linkText.StartsWith("gitdir:", StringComparison.Ordinal)) return null;
-            var gitDir = Path.GetFullPath(Path.Combine(tree, linkText["gitdir:".Length..].Trim()));
-            var commonFile = Path.Combine(gitDir, "commondir");
-            if (!File.Exists(commonFile)) return null;
-            var common = Path.GetFullPath(Path.Combine(gitDir, File.ReadAllText(commonFile).Trim()));
-            var head = File.ReadAllText(Path.Combine(gitDir, "HEAD")).Trim();
-            if (Repository(common) is not { } refs) return null;
-            var at = head;
+            if (HeadOf(tree) is not { } head || Repository(head.Common) is not { } refs) return null;
+            var at = head.Text;
             string? branch = null;
-            if (head.StartsWith("ref:", StringComparison.Ordinal))
+            if (head.Name is { } name)
             {
-                var name = head["ref:".Length..].Trim();
                 if (name.StartsWith("refs/heads/", StringComparison.Ordinal)) branch = name["refs/heads/".Length..];
-                var loose = Path.Combine(common, name.Replace('/', Path.DirectorySeparatorChar));
-                at = File.Exists(loose) ? File.ReadAllText(loose).Trim() : refs.Packed.GetValueOrDefault(name, "none");
+                at = head.Loose ?? refs.Packed.GetValueOrDefault(name, "none");
                 if (at.Length == 0) return null;
             }
 
-            return new TreeReadStamp(string.Join('\n', linkText, head, at), refs, gitDir, at) { Branch = branch };
+            return new TreeReadStamp(string.Join('\n', head.Link, head.Text, at), refs, head.GitDir, at) { Branch = branch };
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             return null;
         }
+    }
+
+    /// <summary>A linked tree's <c>HEAD</c> from git's files, the loose commit of the ref it names among them; null for no linked tree.</summary>
+    internal static TreeHead? HeadOf(string tree)
+    {
+        var link = Path.Combine(tree, ".git");
+        if (!File.Exists(link)) return null;
+        var linkText = File.ReadAllText(link).Trim();
+        if (!linkText.StartsWith("gitdir:", StringComparison.Ordinal)) return null;
+        var gitDir = Path.GetFullPath(Path.Combine(tree, linkText["gitdir:".Length..].Trim()));
+        var commonFile = Path.Combine(gitDir, "commondir");
+        if (!File.Exists(commonFile)) return null;
+        var common = Path.GetFullPath(Path.Combine(gitDir, File.ReadAllText(commonFile).Trim()));
+        var head = File.ReadAllText(Path.Combine(gitDir, "HEAD")).Trim();
+        if (!head.StartsWith("ref:", StringComparison.Ordinal)) return new(linkText, gitDir, common, head, null, null);
+        var name = head["ref:".Length..].Trim();
+        var loose = Path.Combine(common, name.Replace('/', Path.DirectorySeparatorChar));
+        return new(linkText, gitDir, common, head, name, File.Exists(loose) ? File.ReadAllText(loose).Trim() : null);
     }
 
     private CountedRefs? Repository(string common)

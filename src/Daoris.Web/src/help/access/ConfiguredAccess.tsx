@@ -139,7 +139,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
             onClick={() => onManage(spec.id, choice?.plugin ?? null)}
           >
             {t(`help.grants.door.${spec.door}`)}
-            <Icon name="chevronRight" size={12} />
+            <Icon name="chevronRight" size={12} className="text-ink-soft" />
           </Button>
         )}
         {spec.door && !spec.onPlugin && (
@@ -152,7 +152,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
             onClick={() => setOpen((was) => !was)}
           >
             {t(`help.grants.door.${spec.door}`)}
-            <Icon name="chevronDown" size={12} className={cn('transition-transform duration-(--duration-quick)', open && 'rotate-180')} />
+            <Icon name="chevronDown" size={12} className={cn('text-ink-soft transition-transform duration-(--duration-quick)', open && 'rotate-180')} />
           </Button>
         )}
       </div>
