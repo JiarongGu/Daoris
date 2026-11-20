@@ -105,7 +105,7 @@ set before a hand-back: the index and the page's generated types written, then e
 ratchet, so a comment, partial or sensitive finding is read in the builder's tree and the work is merged as handed back.
 
 This workspace verifies a task in under ten minutes (D349: its own rule, not the product's and not canon; `daoris.gates.json`'s
-`verification`, `.claude/knowledge/verification-budget.md`). One task's verification, a builder's checks, a run's check or a
+`verifyBudget`, `.claude/knowledge/verification-budget.md`). One task's verification, a builder's checks, a run's check or a
 merge's gates for one branch, is scoped to what its paths reach: the light gates on its paths and the reached classes before the
 landing, the heavy tier after it in the background. A full run needs a reason the tools check against the change: a declared wide
 path (the list the lane table's every-gate rule reads, its one source, apart from the budget), a reach of half or more of what
@@ -118,7 +118,7 @@ what that merge changes, a fix made in it included; the refusal names the reason
 release's run by its kind. A merge past the budget says so in its summary with each gate's time and the reached run's steps,
 files a line in `local/verify-overruns.jsonl` for the steward (or says it could not), and keeps `verification` (budget, wall
 time, the scope its change calls for, a full run's reason, and what ran) in its merge record; `tools/merge/verification.ts`
-holds the rule until a supervisor actor does (WORKSPACERULES1). A repository whose gates file sets no `verification` has no such
+holds the rule until a supervisor actor does (WORKSPACERULES1). A repository whose gates file sets no `verifyBudget` has no such
 rule.
 
 The `cli` gate, `npm run verify:checks`, is `tools/verify-checks.mjs`: the steps of `tools/verify-checks/steps.mjs`, the index's

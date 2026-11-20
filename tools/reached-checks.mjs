@@ -65,7 +65,7 @@ import { HEAVY_PREFIX } from './merge/heavy-after.ts';
 import { createHalt, wired } from './merge/heavy-halt.ts';
 import { WAIT_BOUND_MS } from './merge/heavy-stack.ts';
 import { endTree } from './merge/step-trees.ts';
-import { planVerification, verificationOf } from './merge/verification.ts';
+import { planVerification, verifyBudgetOf } from './merge/verification.ts';
 /** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. `started` hears its pid. */
 const execAsync = (command, args, cwd, started) => new Promise((done) => {
   const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true });
@@ -203,7 +203,7 @@ async function main(argv) {
     world?.keep();
     return planned;
   });
-  const verifying = world && !classes.length ? planVerification(verificationOf(world.gatesText), paths, reach) : null;
+  const verifying = world && !classes.length ? planVerification(verifyBudgetOf(world.gatesText), paths, reach) : null;
   if (verifying) say(`reached: ${verifying.line}`);
   for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) say(line);
   if (argv.includes('--plan')) {

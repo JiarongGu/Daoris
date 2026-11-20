@@ -172,7 +172,7 @@ finishes first and the whole set runs once.
     the run's base handed in: HEAD for a merge in place, the candidate's base in the queue's committed scope tree and the merge base in
     a preflight's committed branch (REACHEDCOMMITTED1), runs the unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
     change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands. A census that reads sources by text names its reads as `// reaches: <glob> — <why>` lines (the home and provider censuses name `tools/**`), so a diff under those paths reaches it in a builder's `--base main` run and the merge's gate; the table of censuses a change owed is gone.
-    This workspace's verification rule (D349, VERIFY10; `daoris.gates.json`'s `verification`, read by `tools/merge/verification.ts`)
+    This workspace's verification rule (D349, VERIFY10; `daoris.gates.json`'s `verifyBudget`, read by `tools/merge/verification.ts`)
     gives one task's verification ten minutes of wall time, scoped to its reach: the merge, `--plan`, `--preview` and the reached run
     say the scope first, by what runs, or that the run is full and why (a declared wide path, which the lane table's every-gate rule
     reads as its paths apart from the budget; a reach of half or more of the gates the lane table can skip, or of the census's

@@ -8,7 +8,7 @@ import { fixtureFolder } from './fixture-home.ts';
 import { againWhy, runOne, settleMerge, verdictExtras, type FlowDeps, type GateResult } from './flow.ts';
 import { LockInstalls } from './lock-install.ts';
 import type { StoredVerdict } from './verdict-store.ts';
-import { verificationOf } from './verification.ts';
+import { verifyBudgetOf } from './verification.ts';
 
 const gate = { name: 'censuses', run: 'dotnet test src/A --filter Category=Census', reuse: 'inputs' };
 
@@ -295,7 +295,7 @@ test('settling a merge sets down main\'s reds, fails the merge on the branch\'s,
 test('settling a merge past the workspace\'s verification budget says where its time went, files the overrun and keeps the rule in the record', () => {
   const { dir, remove } = fixtureFolder('flow-overrun');
   try {
-    const rule = verificationOf(JSON.stringify({ verification: { budgetMinutes: 10, fullRunReasons: { widePaths: ['daoris.gates.json'] } } }))!;
+    const rule = verifyBudgetOf(JSON.stringify({ verifyBudget: { budgetMinutes: 10, fullRunReasons: { widePaths: ['daoris.gates.json'] } } }))!;
     const file = join(dir, 'verify-overruns.jsonl');
     const reached = { gate: { name: 'reached', run: 'x' }, verdict: 'PASS', note: '', ms: 9 * 60_000, steps: [{ step: 'plan', ms: 120_000 }, { step: 'run cli', ms: 420_000 }] };
     const verification = { rule, reason: null, ran: 'reach' as const, line: 'said', file, shown: 'local/verify-overruns.jsonl' };

@@ -11,7 +11,7 @@ import { verdictsHome } from './home.ts';
 import { readLanes } from './lanes.ts';
 import { readPlan, type Planned as PlanGate } from './plan.ts';
 import { gateReach, selectGates, selectionLines, type Selection } from './reach.ts';
-import { RUN_REASONS, fullRefusal, planVerification, readVerification, type Planned } from './verification.ts';
+import { RUN_REASONS, fullRefusal, planVerification, readVerifyBudget, type Planned } from './verification.ts';
 
 const lanesOf = (root: string) => readLanes(root)?.lanes ?? [];
 
@@ -28,7 +28,7 @@ export const owedLine = (skipped: number): string | null => (skipped
  * findings file, in the main checkout, its overrun is filed in.
  */
 export function mergeVerifying(root: string, selection: readonly Selection[], { full }: { full?: boolean }, say: (line: string) => void = console.log): (Planned & { file: string; shown: string }) | null {
-  const planned = planVerification(readVerification(root), mergeChanges(root), gateReach(selection), { ran: full === true ? 'full' : 'reach' });
+  const planned = planVerification(readVerifyBudget(root), mergeChanges(root), gateReach(selection), { ran: full === true ? 'full' : 'reach' });
   if (!planned) return null;
   say(planned.line);
   return { ...planned, file: join(verdictsHome(root), planned.rule.overruns), shown: planned.rule.overruns };
@@ -38,7 +38,7 @@ export function mergeVerifying(root: string, selection: readonly Selection[], { 
 export function planReaches(root: string, branch: string, plan: PlanGate[], { full, gated }: { full: boolean; gated: boolean }): { runs: string[]; lines: string[] } {
   const changed = branchChanges(root, branch);
   const selection = selectGates(plan, changed, { lanes: lanesOf(root), full, gated }).gates;
-  const said = planVerification(readVerification(root), changed, gateReach(selection), { ran: full ? 'full' : 'reach' });
+  const said = planVerification(readVerifyBudget(root), changed, gateReach(selection), { ran: full ? 'full' : 'reach' });
   return {
     runs: selection.filter((entry) => entry.run).map((entry) => entry.gate.name),
     lines: [...(said ? [said.line] : []), ...selectionLines(selection)],
@@ -47,7 +47,7 @@ export function planReaches(root: string, branch: string, plan: PlanGate[], { fu
 
 /** The scope a branch's preview says, from the selection it read. */
 export function previewScope(home: string, branch: string, selection: readonly Selection[], say: (line: string) => void = console.log): void {
-  const said = planVerification(readVerification(home), branchChanges(home, branch), gateReach(selection));
+  const said = planVerification(readVerifyBudget(home), branchChanges(home, branch), gateReach(selection));
   if (said) say(said.line);
 }
 
@@ -56,7 +56,7 @@ export function previewScope(home: string, branch: string, selection: readonly S
  * refuses it, an open merge being `--continue`'s to gate.
  */
 export function checkoutScope<T>(root: string, run: () => T, say: (line: string) => void = console.log): T {
-  const said = mergeInProgress(root) ? null : planVerification(readVerification(root), [], undefined, { kind: RUN_REASONS.release });
+  const said = mergeInProgress(root) ? null : planVerification(readVerifyBudget(root), [], undefined, { kind: RUN_REASONS.release });
   if (said) say(said.line);
   return run();
 }
@@ -68,7 +68,7 @@ export function checkoutScope<T>(root: string, run: () => T, say: (line: string)
  * included, which is what its run reads.
  */
 export function fullRefused(root: string, branches: readonly string[], { open = false }: { open?: boolean } = {}): string | null {
-  const rule = readVerification(root);
+  const rule = readVerifyBudget(root);
   if (!rule) return null;
   const apart = open ? branches.slice(1) : branches;
   for (const branch of apart) requireBranch(root, branch);

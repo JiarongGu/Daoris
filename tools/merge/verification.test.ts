@@ -8,14 +8,14 @@ import { BASELINE, BLOCKING, MERGE_SUITES, gateReach, selectGates } from './reac
 import { isLongGate, isProcessGate } from './plan.ts';
 import { buildRecord } from './merge-record.ts';
 import {
-  declaredWidePaths, fileOverrun, fullReason, fullRefusal, overrunLines, planVerification, readVerification, readWidePaths, scopeLine, settleVerification,
-  verificationOf, verificationRecord, RUN_REASONS, type FullReason,
+  declaredWidePaths, fileOverrun, fullReason, fullRefusal, overrunLines, planVerification, readVerifyBudget, readWidePaths, scopeLine, settleVerification,
+  verifyBudgetOf, verificationRecord, RUN_REASONS, type FullReason,
 } from './verification.ts';
 
 // test-map: strings name paths as data — the cases name changed paths, which the rule matches and nothing reads
 
-const RULE = verificationOf(JSON.stringify({
-  verification: {
+const RULE = verifyBudgetOf(JSON.stringify({
+  verifyBudget: {
     budgetMinutes: 10, overruns: 'local/verify-overruns.jsonl',
     fullRunReasons: { widePaths: ['daoris.gates.json', 'package-lock.json', 'src/Contracts/**'], reachShare: 0.5, runs: ['after-landing', 'release'] },
   },
@@ -26,8 +26,8 @@ const SKIPPABLE = 'gates the lane table can skip';
 const WIDE: FullReason = { kind: 'wide-path', said: 'x is a declared wide path' };
 
 test("this repository declares its rule, a gates file with none has no rule, and the lane table's every-gate rule is the declared wide paths", () => {
-  const rule = readVerification(repoRoot);
-  assert.ok(rule, 'daoris.gates.json declares a verification');
+  const rule = readVerifyBudget(repoRoot);
+  assert.ok(rule, 'daoris.gates.json declares a verifyBudget');
   assert.equal(rule.budgetMs, 10 * 60_000);
   assert.equal(REACH[0]!.gates, '*');
   assert.deepEqual([...REACH[0]!.paths!], [...rule.widePaths], 'one source: the paths that change how every gate runs are the declared wide paths');
@@ -35,35 +35,35 @@ test("this repository declares its rule, a gates file with none has no rule, and
   for (const path of ['daoris.gates.json', 'package-lock.json', 'src/Daoris.Web/package-lock.json', 'src/Daoris.Contracts/x.json', 'tools/test-map.mjs']) {
     assert.ok(fullReason(rule, [path]), `${path} is a declared wide path`);
   }
-  assert.equal(verificationOf(JSON.stringify({ gates: [] })), null, 'nothing applies to a workspace that did not set it');
-  assert.equal(verificationOf('not json'), null);
+  assert.equal(verifyBudgetOf(JSON.stringify({ gates: [] })), null, 'nothing applies to a workspace that did not set it');
+  assert.equal(verifyBudgetOf('not json'), null);
 });
 
 test("the lane table's every-gate rule reads the declared wide paths whatever the budget, and a rule declared without them fails at load", () => {
-  const block = (verification: object) => JSON.stringify({ verification, gates: [] });
+  const block = (verifyBudget: object) => JSON.stringify({ verifyBudget, gates: [] });
   for (const budgetMinutes of [0, 'ten', undefined]) {
     const text = block({ budgetMinutes, fullRunReasons: { widePaths: ['a.json', 'b/**'] } });
     assert.deepEqual([...declaredWidePaths(text)], ['a.json', 'b/**'], `a budget of ${String(budgetMinutes)} leaves the wide paths`);
-    assert.equal(verificationOf(text), null, 'while the rule itself still needs its budget');
+    assert.equal(verifyBudgetOf(text), null, 'while the rule itself still needs its budget');
   }
   assert.deepEqual([...declaredWidePaths(JSON.stringify({ gates: [] }))], [], 'a gates file with no rule declares none');
   for (const reasons of [undefined, {}, { widePaths: [] }, { widePaths: 'a.json' }, { widePaths: [3] }]) {
-    assert.throws(() => declaredWidePaths(block({ budgetMinutes: 10, fullRunReasons: reasons })), /declares a verification with no fullRunReasons\.widePaths/, JSON.stringify(reasons));
+    assert.throws(() => declaredWidePaths(block({ budgetMinutes: 10, fullRunReasons: reasons })), /declares a verifyBudget with no fullRunReasons\.widePaths/, JSON.stringify(reasons));
   }
 });
 
 test('the rule reads only the runs it knows and keeps its findings inside the checkout', () => {
-  const of = (verification: object) => verificationOf(JSON.stringify({ verification }));
+  const of = (verifyBudget: object) => verifyBudgetOf(JSON.stringify({ verifyBudget }));
   assert.deepEqual(of({ budgetMinutes: 10, fullRunReasons: { widePaths: ['a'], runs: ['toString', 'constructor', '__proto__', 'release'] } })!.runs, ['release']);
   for (const outside of ['../elsewhere.jsonl', 'local/../../x.jsonl', 'local\\..\\..\\x.jsonl', '/tmp/x.jsonl', 'C:\\x.jsonl', 'C:x.jsonl', '\\\\host\\share\\x.jsonl']) {
-    assert.throws(() => of({ budgetMinutes: 10, overruns: outside }), /verification\.overruns names .* outside the checkout/, outside);
+    assert.throws(() => of({ budgetMinutes: 10, overruns: outside }), /verifyBudget.overruns names .* outside the checkout/, outside);
   }
   assert.equal(of({ budgetMinutes: 10, overruns: 'local/findings/over.jsonl' })!.overruns, 'local/findings/over.jsonl');
   assert.equal(of({ budgetMinutes: 10 })!.overruns, 'local/verify-overruns.jsonl');
 });
 
 test('a one-file change runs no wide gate and its plan states its scope: the light gates and reached classes now, the heavy tier after', () => {
-  const rule = readVerification(repoRoot)!;
+  const rule = readVerifyBudget(repoRoot)!;
   const paths = ['tools/merge/format.ts'];
   const selection = selectGates(repoPlan, paths, { lanes: repoLanes }).gates;
   const ran = selection.filter((entry) => entry.run).map((entry) => entry.gate);
@@ -76,7 +76,7 @@ test('a one-file change runs no wide gate and its plan states its scope: the lig
 });
 
 test('the reach share counts only the gates the lane table can skip: a Service and a Desktop file read as scoped, a declared wide path as full', () => {
-  const rule = readVerification(repoRoot)!;
+  const rule = readVerifyBudget(repoRoot)!;
   // The gates every merge runs, and those no rule names (which every path reaches), are not a measure of a change's reach.
   const skippable = repoPlan.filter((gate) => ![...BLOCKING, ...BASELINE, ...MERGE_SUITES].includes(gate.name)
     && REACH.some((each) => each.gates !== '*' && each.gates.includes(gate.name)));
@@ -124,7 +124,7 @@ test('--full is refused with no reason the change bears, naming the reasons it a
   assert.equal(fullRefusal(RULE, ['a.ts'], { reached: 20, of: 25, what: 'gates' }), null, 'a reach over the share');
   // The runs that are a reason by their kind, named only where the rule declares them.
   assert.deepEqual(Object.keys(RUN_REASONS), ['after-landing', 'release']);
-  const releaseOnly = verificationOf(JSON.stringify({ verification: { budgetMinutes: 10, fullRunReasons: { widePaths: ['a.json'], runs: ['release'] } } }))!;
+  const releaseOnly = verifyBudgetOf(JSON.stringify({ verifyBudget: { budgetMinutes: 10, fullRunReasons: { widePaths: ['a.json'], runs: ['release'] } } }))!;
   assert.deepEqual(releaseOnly.runs, ['release']);
   const said = fullRefusal(releaseOnly, ['b.ts'], { reached: 1, of: 10, what: 'gates' })!;
   assert.doesNotMatch(said, /the run after a landing/);

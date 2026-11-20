@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { missing } from './records.mjs';
-import { readVerification } from '../merge/verification.ts';
+import { readVerifyBudget } from '../merge/verification.ts';
 
 export const BUDGET_FILE = 'tools/dev-metrics/budgets.json';
 export const budgets = JSON.parse(readFileSync(new URL('./budgets.json', import.meta.url), 'utf8'));
-const verification = readVerification(fileURLToPath(new URL('../..', import.meta.url)));
+const verification = readVerifyBudget(fileURLToPath(new URL('../..', import.meta.url)));
 
 export function judge(report, logs, mergeRecords) {
   const checks = [];

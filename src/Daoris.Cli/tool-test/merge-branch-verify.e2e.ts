@@ -13,8 +13,8 @@ import { CASES_AT_ONCE } from './support/e2e-repository.ts';
 /** A scratch repository whose gates file declares this workspace's verification rule, `build.props` its one wide path. */
 function verifying(name: string) {
   const gates = [{ name: 'first', run: 'node gate.mjs first' }];
-  const verification = { budgetMinutes: 10, fullRunReasons: { widePaths: ['build.props'], reachShare: 0.5, runs: ['after-landing', 'release'] } };
-  const repo = scratch(name, gates, { 'daoris.gates.json': `${JSON.stringify({ verification, gates }, null, 2)}\n`, 'build.props': 'a\n' });
+  const verifyBudget = { budgetMinutes: 10, fullRunReasons: { widePaths: ['build.props'], reachShare: 0.5, runs: ['after-landing', 'release'] } };
+  const repo = scratch(name, gates, { 'daoris.gates.json': `${JSON.stringify({ verifyBudget, gates }, null, 2)}\n`, 'build.props': 'a\n' });
   // What each merge's record keeps of its verification: what ran, the scope its change calls for, and its reason's kind.
   const kept = () => readFileSync(join(repo.root, 'local', 'merge-record.jsonl'), 'utf8').trim().split('\n')
     .map((line) => JSON.parse(line).verification).map((each) => [each.ran, each.scope, each.kind ?? null]);

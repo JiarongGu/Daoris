@@ -19,12 +19,12 @@ longer than its change's reach is a scope defect, not a cost of safety; a budget
 
 ## How it is kept
 
-- **The rule is data.** `daoris.gates.json`'s `verification` holds the budget (`budgetMinutes`), the findings file
+- **The rule is data.** `daoris.gates.json`'s `verifyBudget` holds the budget (`budgetMinutes`), the findings file
   (`overruns`, `local/verify-overruns.jsonl`, a path inside the checkout) and the full run's reasons (`fullRunReasons`): the
   declared wide paths (the gates and the test tools, dependency files and lockfiles, build files, the shared contracts, what is
   tracked and the helpers every rehearsal imports), a reach of the declared share or more, and the runs that are a reason by
   their kind (the run after a landing, a release). The lane table's every-gate rule reads the same wide paths, its one source,
-  apart from the budget: a budget missing or mistyped never drops them, and a `verification` declared without them fails at
+  apart from the budget: a budget missing or mistyped never drops them, and a `verifyBudget` declared without them fails at
   load. So a change to a wide path reaches every gate by intent: the shared contracts (`src/Daoris.Contracts/**`) run all of
   them, as the gates file and the lockfiles do.
 - **A reach is measured on what could be left out.** At a merge the share counts only the gates the lane table can skip: the

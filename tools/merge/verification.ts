@@ -1,10 +1,10 @@
 /**
- * This workspace's verification rule, read from `daoris.gates.json`'s `verification`: a task's verification
+ * This workspace's verification rule, read from `daoris.gates.json`'s `verifyBudget`: a task's verification
  * stays within its budget and is scoped to what its paths reach (the light gates on its paths and the reached classes before
  * the landing, the heavy tier after it); a full run is taken only for a reason the change bears (a declared wide path, a reach
  * of the declared share or more) or one its kind is (the run after a landing, a release), and says it; and a verification past
  * its budget is said with where its time went and filed as a finding the steward reads. A repository whose gates file sets no
- * `verification` has no rule, and nothing here applies to it. The rule is data this unit reads; the merge tool and the reached
+ * `verifyBudget` has no rule, and nothing here applies to it. The rule is data this unit reads; the merge tool and the reached
  * checks wire it, until a supervisor actor keeps it.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -48,10 +48,10 @@ const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filt
 
 type Declared = { budgetMinutes?: unknown; overruns?: unknown; fullRunReasons?: { widePaths?: unknown; reachShare?: unknown; runs?: unknown } };
 
-/** A gates file's `verification` as written, or undefined where it sets none (or is not JSON). */
+/** A gates file's `verifyBudget` as written, or undefined where it sets none (or is not JSON). */
 function declaredOf(gatesText: string): Declared | undefined {
   try {
-    return (JSON.parse(gatesText) as { verification?: Declared } | null)?.verification ?? undefined;
+    return (JSON.parse(gatesText) as { verifyBudget?: Declared } | null)?.verifyBudget ?? undefined;
   } catch {
     return undefined;
   }
@@ -63,7 +63,7 @@ const insideCheckout = (path: string): boolean => !posix.isAbsolute(path) && !wi
 
 /**
  * The paths a gates file's text declares wide, read apart from the budget: the lane table's every-gate rule reads them as its
- * one source, so a budget missing or mistyped never drops them. None where no `verification` is declared; a `verification`
+ * one source, so a budget missing or mistyped never drops them. None where no `verifyBudget` is declared; a `verifyBudget`
  * declared without them is an error, said at once, rather than every merge silently reaching too little.
  */
 export function declaredWidePaths(gatesText: string): readonly string[] {
@@ -72,7 +72,7 @@ export function declaredWidePaths(gatesText: string): readonly string[] {
   const raw = declared.fullRunReasons?.widePaths;
   const paths = strings(raw);
   if (!Array.isArray(raw) || !paths.length || paths.length !== raw.length) {
-    throw new Error(`${GATES_FILE} declares a verification with no fullRunReasons.widePaths (a list of paths): the lane table's every-gate rule reads them (D349)`);
+    throw new Error(`${GATES_FILE} declares a verifyBudget with no fullRunReasons.widePaths (a list of paths): the lane table's every-gate rule reads them (D349)`);
   }
   return Object.freeze(paths);
 }
@@ -87,14 +87,14 @@ export function readWidePaths(root: string): readonly string[] {
  * The rule a gates file's text declares, or null where it declares none (or no budget): nothing applies then. A findings file
  * declared outside the checkout is an error, said at once.
  */
-export function verificationOf(gatesText: string): Verification | null {
+export function verifyBudgetOf(gatesText: string): Verification | null {
   const declared = declaredOf(gatesText);
   const minutes = declared?.budgetMinutes;
   if (!declared || typeof minutes !== 'number' || !(minutes > 0)) return null;
   const share = declared.fullRunReasons?.reachShare;
   const overruns = typeof declared.overruns === 'string' && declared.overruns ? declared.overruns : DEFAULT_OVERRUNS;
   if (!insideCheckout(overruns)) {
-    throw new Error(`${GATES_FILE}'s verification.overruns names ${overruns}, outside the checkout: name a path inside it, as ${DEFAULT_OVERRUNS}`);
+    throw new Error(`${GATES_FILE}'s verifyBudget.overruns names ${overruns}, outside the checkout: name a path inside it, as ${DEFAULT_OVERRUNS}`);
   }
   return {
     budgetMs: Math.round(minutes * 60_000),
@@ -106,9 +106,9 @@ export function verificationOf(gatesText: string): Verification | null {
 }
 
 /** The rule of the repository at `root`, or null where its gates file is missing or sets none. */
-export function readVerification(root: string): Verification | null {
+export function readVerifyBudget(root: string): Verification | null {
   const file = join(root, GATES_FILE);
-  return existsSync(file) ? verificationOf(readFileSync(file, 'utf8')) : null;
+  return existsSync(file) ? verifyBudgetOf(readFileSync(file, 'utf8')) : null;
 }
 
 /** Of `changed`, the paths the rule declares wide. */
@@ -152,7 +152,7 @@ export function scopeLine(rule: Verification, changed: readonly string[], reach:
 
 const listed = (paths: readonly string[], most = 6): string => (paths.length <= most
   ? paths.join(', ')
-  : `${paths.slice(0, most).join(', ')} and ${paths.length - most} more in ${GATES_FILE}'s verification`);
+  : `${paths.slice(0, most).join(', ')} and ${paths.length - most} more in ${GATES_FILE}'s verifyBudget`);
 
 /** Why `--full` is refused for `changed`, naming the reasons it accepts; null where the change bears one. */
 export function fullRefusal(rule: Verification, changed: readonly string[], reach: Reach): string | null {

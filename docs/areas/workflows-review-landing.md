@@ -93,7 +93,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 3e. A role's acts are its holder's tools, settled by their receipts (D325). A `task` step's `receipts` option maps each evidence name to
    the fact a tool's receipt names, and its `knowledge` option names the repository's delivery knowledge entry holding its procedure
    (`StepReceipts`); its hand-off names that entry, its acts and their facts in place of `step_settle`. This repository's own
-   example of such knowledge is its verification rule (D349): `daoris.gates.json`'s `verification` and
+   example of such knowledge is its verification rule (D349): `daoris.gates.json`'s `verifyBudget` and
    `.claude/knowledge/verification-budget.md`, kept by its merge tool until a supervisor actor keeps it (WORKSPACERULES1). Each round of the run's working
    session's plugin tools that answered a receipt is kept for the session by the tools server (`StepActFiles`, whatever its exit), and
    the pass at the look's deadline journals it once on the run (`workflows/acts/<key>.json`) against the agent-held step waiting whose receipts take its fact,
