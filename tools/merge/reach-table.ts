@@ -4,11 +4,12 @@
  */
 import { fileURLToPath } from 'node:url';
 import { reachRows } from './reach-rows.ts';
-import { readVerification } from './verification.ts';
+import { readWidePaths } from './verification.ts';
 
 export type Rule = { paths?: readonly string[]; lane?: string; gates: '*' | readonly string[]; why: string };
 
-const WIDE_PATHS: readonly string[] = readVerification(fileURLToPath(new URL('../..', import.meta.url)))?.widePaths ?? [];
+// The declared wide paths, read apart from the rule's budget; a verification declared without them fails here, at load.
+const WIDE_PATHS: readonly string[] = readWidePaths(fileURLToPath(new URL('../..', import.meta.url)));
 
 // The .NET suites with a test that reads the page's catalogues or sources.
 const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];

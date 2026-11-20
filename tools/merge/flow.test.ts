@@ -298,10 +298,10 @@ test('settling a merge past the workspace\'s verification budget says where its 
     const rule = verificationOf(JSON.stringify({ verification: { budgetMinutes: 10, fullRunReasons: { widePaths: ['daoris.gates.json'] } } }))!;
     const file = join(dir, 'verify-overruns.jsonl');
     const reached = { gate: { name: 'reached', run: 'x' }, verdict: 'PASS', note: '', ms: 9 * 60_000, steps: [{ step: 'plan', ms: 120_000 }, { step: 'run cli', ms: 420_000 }] };
-    const verification = { rule, reason: null, line: 'said', file, shown: 'local/verify-overruns.jsonl' };
+    const verification = { rule, reason: null, ran: 'reach' as const, line: 'said', file, shown: 'local/verify-overruns.jsonl' };
     const settled = settleMerge({ branch: 'b', at: 'now', wallMs: 12 * 60_000, mains: [], previous: [], verification, results: [reached, { gate: { name: 'cli', run: 'y' }, verdict: 'PASS', note: '', ms: 2 * 60_000 }] });
     assert.match(settled.lines.join('\n'), /verification: 12 min, over this workspace's 10 min budget \(D349\)[^\n]*\n {4}where its time went: reached 9 min \(run cli 7 m 0 s, plan 2 m 0 s\), cli 2 min\n {4}filed in local\/verify-overruns\.jsonl/);
-    assert.deepEqual(settled.record.verification, { budgetMs: 600_000, wallMs: 720_000, over: true, scope: 'reach' });
+    assert.deepEqual(settled.record.verification, { budgetMs: 600_000, wallMs: 720_000, over: true, scope: 'reach', ran: 'reach' });
     const filed = readFileSync(file, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
     assert.deepEqual(filed.map((each) => [each.branch, each.wallMs, each.gates.map((gate: { name: string }) => gate.name)]), [['b', 720_000, ['reached', 'cli']]]);
     const within = settleMerge({ branch: 'c', at: 'now', wallMs: 60_000, mains: [], previous: [], verification, results: [] });

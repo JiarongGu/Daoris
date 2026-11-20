@@ -15,7 +15,11 @@ test('the tool reads the census of this repository: a changed module reaches the
   });
   const planned = run('--plan', '--paths', 'tools/merge/reached.ts');
   assert.equal(planned.status, 0, planned.stderr);
+  assert.match(planned.stdout, /reached: verification: scoped to its reach: 1 path reaches \d+ of \d+ classes; the light gates/);
   assert.match(planned.stdout, /reached: tool-e2e: (\d+ of )?\d+ reached units? run/);
+  const wide = run('--plan', '--paths', 'daoris.gates.json');
+  assert.equal(wide.status, 0, wide.stderr);
+  assert.match(wide.stdout, /reached: verification: scoped to its reach: 1 path reaches \d+ of \d+ classes; it bears a full run's reason \(daoris\.gates\.json is a declared wide path\)/);
   assert.match(planned.stdout, /tool-e2e: node .*vitest\.mjs run .*tools\/merge\/reached\.e2e\.ts/);
   const none = run('--plan', '--paths', '');
   assert.equal(none.status, 0, none.stderr);

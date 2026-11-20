@@ -371,7 +371,7 @@ import { laneMatcher, globToRegExp } from './merge/lanes-file.ts';
 import { attributePattern, readLanes, unionRecords } from './merge/lanes.ts';
 import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
-import { FULL_COMMAND, checkoutScope, mergeVerifying, owedLine, planReaches, previewScope, requireFullReason } from './merge/merge-verification.ts';
+import { FULL_COMMAND, checkoutScope, fullRefused, mergeVerifying, owedLine, planReaches, previewScope, requireContinueReason, requireFullReason } from './merge/merge-verification.ts';
 import { chooseGates } from './merge/choose-gates.ts';
 import { pathsReaching, reachingOf, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
 import { driftsAt } from './merge/tree-drift.ts';
@@ -2556,7 +2556,7 @@ async function gateMerge(root, state, plan) {
   writeState(root, state);
 
   console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
-  const verifying = mergeVerifying(root, selection);
+  const verifying = mergeVerifying(root, selection, state);
   for (const line of selectionLines(selection)) console.log(line);
   const results = await withFinalRatchet(() => runRecorded(root, gates, dir, {
     keepGoing: state.keepGoing || 'blocking',
@@ -2762,7 +2762,7 @@ async function rerunGates(root, options) {
  */
 async function gateCheckout(root, options, watch = null, trees = null) {
   if (mergeInProgress(root)) {
-    throw new Refusal('a merge is open here: node tools/merge-branch.mjs --continue --full gates it with every gate, or git merge --abort');
+    throw new Refusal('a merge is open here: node tools/merge-branch.mjs --continue gates it (--full where its changes bear a reason, D349), or git merge --abort');
   }
   const head = headCommit(root);
   if (!head) throw new Refusal('this checkout has no commit to gate');
@@ -3092,7 +3092,7 @@ async function resume(root, options) {
   const state = readState(root);
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
-  if (options.full && !state.full) requireFullReason(root, state.branches.slice(state.at));
+  if (options.full && !state.full) requireContinueReason(root, state.branches, state.at);
   state.full = state.full === true || options.full;
   state.gated = state.gated === true || options.gated;
   // A loaded machine stays loaded through its batch, so one at a time, once given, is kept.
@@ -3134,6 +3134,7 @@ async function resume(root, options) {
 const planSeams = {
   laneReport,
   reaches: planReaches,
+  fullRefused,
   prune: (root, hold) => printPrunePlan(root, planPrune(root, { hold, atMerge: true }), true),
   owed: owedLine,
   heavy: (root) => heavyStanding(readHeavy(verdictsHome(root))),
