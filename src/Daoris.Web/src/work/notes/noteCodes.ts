@@ -131,7 +131,6 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // An install that changed git's own hooks or configuration for the repository, named.
   'started.deps-common': { values: ['path', 'changed'] },
   'started.setup-failed': { values: ['path', 'command', 'why'] },
-  'started.prep-failed': { values: ['command', 'why'] },
   'started.files-waiting': { values: ['count', 'repository'] },
   'started.files-unread': { values: ['repository', 'why'] },
   'started.files-stopped': { values: [] },

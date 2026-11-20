@@ -12,16 +12,29 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
     internal bool Empty => Regenerate.Count == 0 && Baseline is null;
 
     /// <summary>
-    /// Read from <paramref name="checkout"/>'s gates file, never the tree's: what runs as a tree opens is the checkout's say, as the
-    /// machine-local inputs are. A file that is absent or does not read declares nothing.
+    /// Read from <paramref name="checkout"/>'s gates file, never the tree's: what a session's fresh tree is told is the checkout's say, as
+    /// the machine-local inputs are. A file that is absent or does not read declares nothing.
     /// </summary>
     internal static TreePrepDeclared Read(string checkout)
     {
         try
         {
             var file = Path.Combine(checkout, DeclarationNames.Gates);
-            if (!File.Exists(file)) return None;
-            using var document = JsonDocument.Parse(File.ReadAllBytes(file));
+            return File.Exists(file) ? Of(File.ReadAllText(file)) : None;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return None;
+        }
+    }
+
+    /// <summary>Read from a declaration's <paramref name="text"/>, as a check reads the gates of the one it runs under; one that does not read declares nothing.</summary>
+    internal static TreePrepDeclared Of(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return None;
+        try
+        {
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return None;
             var regenerate = new List<string>();
@@ -30,9 +43,9 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
                 foreach (var gate in gates.EnumerateArray())
                 {
                     if (gate.ValueKind == JsonValueKind.Object && gate.TryGetProperty("regenerate", out var command) && command.ValueKind == JsonValueKind.String
-                        && command.GetString() is { Length: > 0 } text && !regenerate.Contains(text))
+                        && command.GetString() is { Length: > 0 } written && !regenerate.Contains(written))
                     {
-                        regenerate.Add(text);
+                        regenerate.Add(written);
                     }
                 }
             }
@@ -40,23 +53,26 @@ internal sealed record TreePrepDeclared(IReadOnlyList<string> Regenerate, string
             var baseline = root.TryGetProperty("treeBaseline", out var named) && named.ValueKind == JsonValueKind.String && named.GetString() is { Length: > 0 } run ? run : null;
             return new(regenerate, baseline);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
             return None;
         }
     }
 }
 
+/// <summary>A <c>regenerate</c> that did not finish: its command, and its exit and output.</summary>
+internal sealed record RegenerateFailed(string Command, CommandRan Ran);
+
 /// <summary>
 /// What a repository declares to make a tree like its checkout, once its dependencies and machine-local files stand: each <c>regenerate</c>
 /// makes a generated input current, and the <c>treeBaseline</c> records the base a later check reads its reds against. A session's tree
 /// is handed without either and told them (<see cref="Told"/>): run before the hand they held its open minutes with its agent idle, for
-/// work only its later checks read. A verification tree, which no session prepares, runs each <c>regenerate</c>, never the baseline.
+/// work only its later checks read. A verification tree, which no session prepares, runs each <c>regenerate</c> of the declaration a
+/// check runs under before that check's gates, on every check, never the baseline (<see cref="RegenerateAsync"/>).
 /// </summary>
 /// <remarks>
 /// Run as a gate's command is (<see cref="IInstallRunner.GateEnvironment"/>), inside the machine's admission, and ended with all it started at the
-/// bound, a cancel or a terminal's visit. The commands are the repository's own, from the checkout's declaration, and write only
-/// what git ignores.
+/// bound or a cancel. The commands are the repository's own, and write only what git ignores.
 /// </remarks>
 internal static class TreePreparation
 {
@@ -64,25 +80,21 @@ internal static class TreePreparation
     internal static readonly TimeSpan Bound = TimeSpan.FromMinutes(30);
 
     /// <summary>
-    /// Runs each declared <c>regenerate</c> in <paramref name="tree"/>, saying each that failed. True where a terminal's visit ended one,
-    /// which stops the stage as it does an install.
+    /// Runs each of <paramref name="commands"/> in <paramref name="tree"/> in order, the first that does not finish ending the run, since a
+    /// later one may read what it makes: that one, or null where each finished. Cheap where nothing it makes is stale (<c>--if-stale</c>).
     /// </summary>
-    internal static async Task<bool> RegenerateAsync(
-        string home, string repository, string checkout, string tree, List<Noted> said, CancellationToken ct, CancellationToken visited)
+    internal static async Task<RegenerateFailed?> RegenerateAsync(string home, string repository, IReadOnlyList<string> commands, string tree, CancellationToken ct)
     {
-        var declared = TreePrepDeclared.Read(checkout);
-        if (declared.Regenerate.Count == 0) return false;
+        if (commands.Count == 0) return null;
         using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
         var environment = InstallRunner.Current.GateEnvironment();
-        foreach (var command in declared.Regenerate)
+        foreach (var command in commands)
         {
-            var ran = await DependencyCommands.RunAsync(home, tree, command, tree, environment, Bound, ct, visited).ConfigureAwait(false);
-            if (ran.Code == DependencyCommands.Visited) return true;
-            if (ran.Code == 0) continue;
-            said.Add(Noted.Of(StartNoteCodes.StartedPrepFailed, $"The tree's preparation `{command}` did not finish: {ran.Tail}.", ("command", command), ("why", ran.Tail)));
+            var ran = await DependencyCommands.RunAsync(home, tree, command, tree, environment, Bound, ct).ConfigureAwait(false);
+            if (ran.Code != 0) return new RegenerateFailed(command, ran);
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>What a session handed a fresh tree is told of its checkout's declaration; null where it declares nothing.</summary>

@@ -26,6 +26,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
     private string? _ran = send.Accepted;
 
+    private IReadOnlyList<string> _regenerate = [];
+
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
     {
         Directory.CreateDirectory(_folder);
@@ -51,6 +53,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         if (under.Held is { } held) return (Unknown(held) with { Code = VerifyResult.Changed, Declaration = under.Work, Accepted = send.Accepted }, false);
         _ran = under.Blob ?? send.Accepted;
         var text = under.Text;
+        _regenerate = TreePrepDeclared.Of(text).Regenerate;
 
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
@@ -222,10 +225,11 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds });
                 if (exit == 0) continue;
                 keep(holder => holder with { Failed = new HeavyGateFailed(gate.Name, exit.Value) });
-                return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest, .. kept])
+                var failed = new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest, .. kept])
                 {
                     Failed = gate.Name, Declaration = _ran,
                 };
+                return Told(failed, ReadText(log) is { } text ? GateLogExcerpt.Told(text, log) : null);
             }
 
             return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran };
@@ -264,7 +268,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         string? failed;
         try
         {
-            failed = await VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct).ConfigureAwait(false);
+            failed = await VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct).ConfigureAwait(false)
+                ?? await RegeneratedAsync(tree, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -275,6 +280,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var why = $"the verification tree's preparation did not finish: {failed}";
         world.Said.WriteLine($"verify: {why}");
         return Unknown(why) with { Code = VerifyResult.Unprepared };
+    }
+
+    private async Task<string?> RegeneratedAsync(string tree, CancellationToken ct)
+    {
+        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct).ConfigureAwait(false) is not { } failed) return null;
+        var log = Path.Combine(_folder, "regenerate.log");
+        AtomicFile.WriteText(log, failed.Ran.Output);
+        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log) is { } told ? $"\n{told}" : "");
     }
 
     /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>

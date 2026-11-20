@@ -615,7 +615,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the change reaches (driving rule 7), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
     and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
-    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The
+    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. A failed gate's
+    why carries the failing step's own lines with its log's path: the log's red blocks (an `== RED <step>` line to the next `== `) and
+    its last lines, within about 40 lines and 4 KB (`GateLogExcerpt`), so the work reads why without asking for the log. The
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
     A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
@@ -652,8 +654,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     then. A conflict fails the step, gate `hand-back`, naming the paths, and no gate runs; git unable to merge checks the work as it stands,
     saying so; a line's own run and a declaration's runner judge their commit as it stands (D299). The verification tree is prepared as a
     session's tree is before either runs (`VerifyTreeReady`: the files stage's dependencies by their lockfiles' keys, then the
-    gates' declared `regenerate`, never the `treeBaseline`, then the checkout's declared local inputs), again only where its stamp moved (a dependency key, a declared command, or a declared local input's presence or content); a
-    preparation that does not finish ends the attempt `unknown` with code `unprepared` and its sentence, no gate run.
+    checkout's declared local inputs), again only where its stamp moved (a dependency key, or a declared local input's presence or
+    content). Then, on every check, the tree runs each `regenerate` of the declaration the check runs under, read as its gates are
+    (`TreePreparation.RegenerateAsync`; `--if-stale` is cheap where nothing moved), never the `treeBaseline`: a later commit whose
+    generated inputs' sources moved reads them current though the stamp stands (VERIFYREGEN1). A preparation or a `regenerate` that
+    does not finish ends the attempt `unknown` with code `unprepared` and its sentence (a `regenerate`'s command and its output's
+    lines, kept as the attempt's `regenerate.log`), never failed, no gate run.
 41. `SET_ACCESS` refuses the `landing` pause, and `full` access opens no landing pause on a saved-graph place. (D184, D227)
 
 **Set up, conversion and Current**
