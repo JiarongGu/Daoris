@@ -23,12 +23,15 @@ import type { useAttendedHead } from '../head/useAttendedHead';
 import type { useAttendedSession } from '../head/useAttendedSession';
 import { opinionAsked } from '../gates/opinion';
 import { anchorOf } from '../waits/anchors';
-import { rulesAsked } from '../waits/waits';
+import { rulesAsked, type Wait } from '../waits/waits';
 import type { useAttendedWaits } from '../waits/useAttendedWaits';
 import type { StateLine } from '../head/stateLine';
 import { stepsNow } from '../catchup/digest';
 import type { ChangesFacts } from './ChangesRail';
+import { StoryTree } from './FoldedCalls';
 import { HeadChips } from './HeadChips';
+import { HeadLineOf, PartBegan } from './LineMarks';
+import { beginsByMove } from '../conversation/conversation';
 import { headFactsOf } from './headFacts';
 import type { Reads } from './PanelComposer';
 import { PanelComposer } from './PanelComposer';
@@ -115,6 +118,10 @@ export function AttendedSessionPanel({
     only: attendedEntry ? { entry: attendedEntry.entry, repository: attendedEntry.repository } : null,
     opinion: opinionAsked(waits?.landing) ?? null,
   });
+  const toWait = (wait: Wait) => {
+    const anchor = anchorOf(wait);
+    if (anchor) goToWait(anchor);
+  };
   const reading = useSessionReading({
     session: attended?.id ?? '',
     adapter: attended?.door,
@@ -130,10 +137,7 @@ export function AttendedSessionPanel({
       proposals: rulesAsked(waits.rules?.proposals, attended.id), helpers: waits.helpers?.asks, permissions: waits.permissions?.waits,
     } : undefined,
     onAnchors: (id, state) => setAnchored({ session: id, ...state }),
-    onToWait: (wait) => {
-      const anchor = anchorOf(wait);
-      if (anchor) goToWait(anchor);
-    },
+    onToWait: toWait,
     onTail: setTail,
     onUsage,
     onWaiting,
@@ -174,6 +178,7 @@ export function AttendedSessionPanel({
     const row = (session.sessions.data ?? []).find((each) => each.id === id);
     return row ? [{ id, adapter: row.door, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }] : [];
   }) : [];
+  const began = here && reading.loaded && !reading.earlier && !beginsByMove(reading.turns) ? beganOf(attended.id) : undefined;
   const { onStartFrom, onGoOnBrief, onSayAgain, onGoOnNew, goOnNew, newSession } = words;
   const doors: Said = {
     chat: attended.kind === 'chat',
@@ -191,7 +196,7 @@ export function AttendedSessionPanel({
     },
   };
   return (
-    <FileOpener.Provider value={openPreview}>
+    <FileOpener.Provider value={openPreview}><StoryTree.Provider value={attended.tree ?? null}>
       <SaidDoors.Provider value={doors}>
         <SessionPanel
           facts={{
@@ -200,7 +205,12 @@ export function AttendedSessionPanel({
             onFile: (path) => openPreview({ path }),
           }}
           acts={panelHead.acts}
-          chips={<HeadChips session={attended} supervision={panelHead.chip} />}
+          chips={(
+            <>
+              {panelHead.lineOf && <HeadLineOf said={panelHead.lineOf.said} onOpen={panelHead.lineOf.onOpen} />}
+              <HeadChips session={attended} supervision={panelHead.chip} />
+            </>
+          )}
           track={panelHead.track || undefined}
           asking={panelHead.asking || undefined}
           band={band}
@@ -209,7 +219,7 @@ export function AttendedSessionPanel({
           story={(
             <SessionStory
               session={attended.id} reading={reading} story={story} actor={{ maker, model: head.model }} scroller={scroller}
-              rowHome={lines?.home}
+              rowHome={lines?.home} onToWait={toWait}
               prelude={(
                 <>
                   {prelude}
@@ -217,6 +227,7 @@ export function AttendedSessionPanel({
                   {earlier.length > 0 && (
                     <EarlierParts key={`${attended.id}:${session.openedAt ?? ''}`} line={earlier} at={session.openedAt} scroller={scroller} />
                   )}
+                  {began && <PartBegan words={began} />}
                 </>
               )}
             />
@@ -232,6 +243,6 @@ export function AttendedSessionPanel({
           )}
         />
       </SaidDoors.Provider>
-    </FileOpener.Provider>
+    </StoryTree.Provider></FileOpener.Provider>
   );
 }

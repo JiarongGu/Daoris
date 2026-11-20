@@ -8,15 +8,12 @@ import { SinceYouLeft } from '../catchup/SinceYouLeft';
 import { BESIDE_READER, BesideReading, ReadingFind } from '../conversation/SessionConversation';
 import type { useSessionReading } from '../conversation/useSessionReading';
 import type { LineRowHome } from '../exchanges/LineRows';
+import type { Wait } from '../waits/waits';
 import { type StoryItem, storyOf } from './story';
 import { type StoryActor, StoryStream } from './StoryStream';
+import { lineOfBlock, storyWaitsOf } from './storyWaits';
 
 type Reading = ReturnType<typeof useSessionReading>;
-
-/** The story's line a block of the record stands in: its own line, or the burst of activity it folded into. */
-export function lineOfBlock(story: readonly StoryItem[], block: string): string | undefined {
-  return story.find((item) => (item.kind === 'tools' ? item.blocks.some((each) => each.key === block) : item.key.endsWith(`:${block}`)))?.key;
-}
 
 /**
  * **The story as the page reads it**: the session's one stream (`StoryStream`) over its reading (`useSessionReading`), with every way
@@ -25,10 +22,12 @@ export function lineOfBlock(story: readonly StoryItem[], block: string): string 
  * into view, the pages before loaded first; the read mark opens it under *Since you left*; and a subagent or a task the live band
  * opens takes the story's place with a way back.
  */
-export function SessionStory({ session, reading, story, actor, scroller, prelude, rowHome }: {
+export function SessionStory({ session, reading, story, actor, scroller, prelude, rowHome, onToWait }: {
   session: string;
   /** What the page says of the session above its story. */
   prelude?: ReactNode;
+  /** A raising line's *To the wait*: to the wait's line, where it is answered. */
+  onToWait?: (wait: Wait) => void;
   /** What its line's rows press. */
   rowHome?: LineRowHome;
   reading: Reading;
@@ -85,6 +84,7 @@ export function SessionStory({ session, reading, story, actor, scroller, prelude
         story={story}
         actor={actor}
         home={rowHome}
+        waits={storyWaitsOf(story, { marks: reading.marks, revealed: reveal?.key, onToWait })}
         loading={!loaded}
         readMark={Number.isFinite(read) ? read : null}
         since={caught.digest && caught.read

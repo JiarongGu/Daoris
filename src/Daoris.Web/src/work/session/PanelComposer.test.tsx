@@ -42,7 +42,7 @@ describe('PanelComposer', () => {
     const box = screen.getByRole('textbox', { name: 'Message' });
     fireEvent.change(box, { target: { value: 'Keep the burst at 20.' } });
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(props.onSend.mock.calls[0]?.slice(0, 2)).toEqual(['Keep the burst at 20.', []]);
+    expect(vi.mocked(props.onSend).mock.calls[0]?.slice(0, 2)).toEqual(['Keep the burst at 20.', []]);
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     expect(props.onFinish).toHaveBeenCalled();
   });

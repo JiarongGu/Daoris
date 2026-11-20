@@ -92,7 +92,7 @@
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 61585,
   "src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx": 61461,
   "src/Daoris.Web/src/work/WorkFrame.landed.test.tsx": 79442,
-  "src/Daoris.Web/src/work/WorkFrame.test.tsx": 90223,
+  "src/Daoris.Web/src/work/WorkFrame.test.tsx": 85289,
   "src/Daoris.Web/src/work/WorkFrame.words.test.tsx": 49882,
   "src/Daoris.Web/src/work/attention/AttentionBand.test.tsx": 54788,
   "src/Daoris.Web/src/work/attention/AttentionRow.test.tsx": 46233,

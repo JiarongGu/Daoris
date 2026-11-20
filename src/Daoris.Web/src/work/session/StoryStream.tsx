@@ -6,8 +6,11 @@ import { Markdown } from '../conversation/Markdown';
 import { LineRow, type LineRowHome } from '../exchanges/LineRows';
 import { NewSessionDoor } from '../conversation/NoteLines';
 import { rowMark } from '../track/passage';
+import { FoldedCalls } from './FoldedCalls';
+import { SOUGHT, WaitMark } from '../waits/WaitAnchor';
 import { HeldWhen, SaidNote } from './SaidLines';
 import type { StoryItem, StoryWho } from './story';
+import type { StoryWaits } from './storyWaits';
 
 /** The session's agent as its lines name it: its maker and the model that ran, null where the record named none. */
 export type StoryActor = { maker: string; model: string | null };
@@ -71,15 +74,7 @@ function ToolsFold({ item }: { item: Of<'tools'> }) {
         <span aria-hidden="true">{open ? '▾' : '▸'}</span>
         <span className={cn(item.failed > 0 && 'text-ink-danger')}>{said}</span>
       </button>
-      {open && (
-        <ul className="m-0 grid list-none gap-0.5 border-l border-line pl-3">
-          {item.blocks.filter((block) => block.kind === 'tool').map((block) => (
-            <li key={block.key} className={cn('truncate text-small', block.status === 'failed' ? 'text-ink-danger' : 'text-ink-soft')}>
-              {block.title ?? block.toolKind ?? block.kind}
-            </li>
-          ))}
-        </ul>
-      )}
+      {open && <FoldedCalls blocks={item.blocks} />}
     </div>
   );
 }
@@ -158,9 +153,11 @@ const READ_ONLY: LineRowHome = { attended: '', docked: [], onToDock: () => {} };
  * (a request, a quest, a channel message) is its `LineRow`, with its presses where the host hands them (`home`).
  * The person's read mark is a dashed rule before the first line after it.
  */
-export function StoryStream({ story, actor, readMark, since: digest, loading = false, home }: {
+export function StoryStream({ story, actor, readMark, since: digest, loading = false, home, waits }: {
   story: readonly StoryItem[];
   actor: StoryActor;
+  /** The waits its lines raised, each line's *To the wait* under it, and the line a wait led to, outlined. */
+  waits?: StoryWaits;
   /** What a line's rows press: its dock, its sessions, its quests, its channel; absent, they are read only. */
   home?: LineRowHome;
   /** When the person last read this session (ms); absent, no mark is drawn. */
@@ -192,8 +189,9 @@ export function StoryStream({ story, actor, readMark, since: digest, loading = f
             </li>
           )}
           {index === since && digest && <li data-part="digest" className="min-w-0">{digest}</li>}
-          <li data-block={item.key} className="min-w-0">
+          <li data-block={item.key} className={cn('min-w-0', waits?.sought === item.key && SOUGHT)}>
             <Line item={item} actor={actor} home={home} />
+            {waits?.marks[item.key] && <WaitMark waits={waits.marks[item.key]!} onPress={() => waits?.onToWait(waits.marks[item.key]![0]!)} />}
           </li>
         </Fragment>
       ))}

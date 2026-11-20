@@ -118,7 +118,7 @@ describe('a conversation its limit holds', () => {
 
 /**
  * A closed quest's finished session whose words are held for a cooling account reads the wait on its rail row and, by the
- * reader, as *Held* on its page's state line, never *Done*; with nothing held the line reads *Done*.
+ * reader, its hold's reason in the panel's head, never *Finished*; with nothing held the head reads *Finished*.
  */
 describe('a closed quest’s session held for an account’s reset', () => {
   const until = '2026-10-28T12:30:00Z';
@@ -127,8 +127,7 @@ describe('a closed quest’s session held for an account’s reset', () => {
     holds: { why: 'cooling', reason: 'every account is cooling.', until, account: 'account-2', accountName: 'Work' },
   };
   const FREE = { session: 's1a2b3c4', group: 'done', shown: 'completed', archived: false, teammate: false };
-  // The session's page head, the banner that holds its title (the window's own bars are banners too).
-  const pageHead = () => screen.getAllByRole('banner').find((bar) => within(bar).queryByRole('heading', { level: 1 }))!;
+  const head = async () => (await screen.findByRole('region', { name: i18n.t('work.session.label') })).querySelector('[data-region="head"]') as HTMLElement;
   const answering = (row: unknown) =>
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS' ? { sessions: [row] } : DRIVER_STATE));
 
@@ -143,33 +142,30 @@ describe('a closed quest’s session held for an account’s reset', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('wears the wait on its row and its state line, in English and 中文', async () => {
+  it('wears the wait on its row and its hold in the head, never finished, in English and 中文', async () => {
     answering(HELD);
     show('s1a2b3c4');
 
-    await waitFor(() => expect(pageHead()).toBeDefined());
-    const header = pageHead();
-    await waitFor(() => expect(within(header).getByText('Held')).toBeInTheDocument());
-    expect(within(header).queryByText('Done')).toBeNull();
+    const header = await head();
+    await waitFor(() => expect(header).toHaveTextContent('every account is cooling.'));
+    expect(header).not.toHaveTextContent('Finished');
     // The rail's row beside it says the wait's word, and still the time and the account on its line.
     expect(screen.getAllByText('waiting for a limit to reset')).toHaveLength(1);
     expect(screen.queryByText('completed')).toBeNull();
     expect(screen.getAllByText((said) => said.includes(`it resumes by itself at ${moment(until)}, on Work.`)).length).toBeGreaterThan(0);
 
     await i18n.changeLanguage('zh');
-    await waitFor(() => expect(within(pageHead()).getByText('被挂起')).toBeInTheDocument());
-    expect(screen.getAllByText('正在等待额度重置')).toHaveLength(1);
-    expect(screen.queryByText('已完成')).toBeNull();
+    await waitFor(() => expect(screen.getAllByText('正在等待额度重置')).toHaveLength(1));
+    expect(await head()).not.toHaveTextContent('已完成');
   });
 
-  it('reads completed where nothing is held', async () => {
+  it('reads finished in the head where nothing is held', async () => {
     answering(FREE);
     show('s1a2b3c4');
 
-    await waitFor(() => expect(pageHead()).toBeDefined());
-    const header = pageHead();
+    const header = await head();
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } }));
-    expect(within(header).getByText('Done')).toBeInTheDocument();
+    await waitFor(() => expect(header).toHaveTextContent('Finished'));
     expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
   });
 });
