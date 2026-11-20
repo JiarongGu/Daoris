@@ -143,6 +143,22 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         Assert.Equal((RiskVerdict.OwnerOutcome, "workspace/games"), (verdict.Outcome, verdict.Source));
     }
 
+    [Theory]
+    [InlineData("release.start", null)]
+    [InlineData("release.start", "production")]
+    [InlineData("release.start/production", "production")]
+    public void No_row_lowers_a_release_act_at_a_place_the_machine_marks_for_production_releases(string row, string? qualifier)
+    {
+        var config = DriverConfig.Parse("{\"risk\":{\"repository/engine\":[{\"kind\":\"" + row + "\",\"class\":\"none\"}]},"
+            + "\"placeRisk\":{\"machine\":{\"risk\":\"low\",\"marks\":[\"release.production\"]}}}");
+
+        var verdict = RiskGate.Judge(RiskPolicy.Of(config), new RiskAct(RiskActs.ReleaseStart, qualifier), "", RiskPlace.Of(config, null, "engine"), "");
+        var other = RiskGate.Judge(RiskPolicy.Of(config), new RiskAct(RiskActs.WorkAccept, null), "", RiskPlace.Of(config, null, "engine"), "");
+
+        Assert.Equal((RiskVerdict.OwnerOutcome, PlaceRiskBook.MachineKey), (verdict.Outcome, verdict.Source));
+        Assert.Equal(RiskVerdict.Pass, other.Outcome);
+    }
+
     [Fact]
     public async Task A_branch_bound_review_passes_by_the_seed_and_its_words_carry_the_rule_and_its_revision()
     {
