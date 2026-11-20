@@ -12,13 +12,11 @@ import * as wiring from '../src/settings/wiring/Wiring.stories';
 import * as parts from '../src/work/head/PartsFlow.stories';
 import * as session from '../src/work/head/SessionFlow.stories';
 import * as landing from '../src/projects/git/LandingFlow.stories';
-import * as head from '../src/work/AttendedSession.head.stories';
 import { sideBarTimeline } from './sideBarTimeline';
 import * as workflow from '../src/workflow/WorkflowFlow.stories';
 import * as graph from '../src/workflow/GraphFlow.stories';
 import * as runView from '../src/workflow/WorkflowRunFlow.stories';
 import * as zoom from '../src/work/frame/ZoomReadout.stories';
-import * as waitPanel from '../src/work/waits/WaitPanel.stories';
 import * as sessionPanel from '../src/work/session/SessionPanel.stories';
 import * as roles from '../src/agents/roles/StructureCanvas.stories';
 import * as place from '../src/agents/setup/PlacePage.stories';
@@ -34,8 +32,7 @@ import { applyZoom } from '../src/design/zoom';
 
 // The measured-box checks' page (the flowchart design §7, trap 3, the UI/UX design §5's first trap):
 // one story, composed as Storybook composes it, with the project's decorators, the shipped tokens and catalogues, and drawn
-// alone in a real browser so `measure.ts` can measure every box of a flow, `settingRows.ts` every row's value against
-// its track, and `recordHead.ts` how far down the record's head puts the conversation.
+// alone in a real browser so `measure.ts` can measure every box of a flow and `settingRows.ts` every row's value against its track.
 // `?story=flow/Lifecycle` names the stories file, by its book below, and the story.
 
 setProjectAnnotations(preview);
@@ -62,12 +59,8 @@ const books: Record<string, Record<string, ComponentType>> = {
   driver: composeStories(driver) as unknown as Record<string, ComponentType>,
   ai: composeStories(ai) as unknown as Record<string, ComponentType>,
   workspace: composeStories(workspace) as unknown as Record<string, ComponentType>,
-  // The record head with every block, at the main area's three widths: how far down the conversation starts.
-  head: composeStories(head) as unknown as Record<string, ComponentType>,
   // The window at each zoom level: the frame's bars at their own size, the content scaled.
   zoom: composeStories(zoom) as unknown as Record<string, ComponentType>,
-  // The waiting panel: its edge dragged and kept, and the conversation's presses above it, never under it.
-  waitPanel: composeStories(waitPanel) as unknown as Record<string, ComponentType>,
   sessionPanel: composeStories(sessionPanel) as unknown as Record<string, ComponentType>,
   // The roles' diagram: across at 80rem with its detail beside, its list at 39 and 25rem.
   roles: composeStories(roles) as unknown as Record<string, ComponentType>,
