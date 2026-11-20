@@ -1,9 +1,7 @@
 /**
- * Reach rows of the lane table (`tools/merge/reach-table.ts`) that read the driver's readers, in a unit of their own.
- *
- * A provider's own sources: the tools' provider census runs the contracts' generator,
- * which reads each provider's sources (the words its vocabulary names) and the registry's reader of them, so a change there
- * reaches the driver's own readers and the tool tests.
+ * Reach rows of the lane table (`tools/merge/reach-table.ts`) that read the driver's readers, in a unit of their own. A
+ * provider's own sources: the tools' provider census runs the contracts' generator, which reads each provider's sources (the
+ * words its vocabulary names) and the registry's reader of them, so a change there reaches the driver's own readers and the tool tests.
  */
 import type { Rule } from './reach-table.ts';
 
@@ -37,13 +35,6 @@ const canonVersion = (driverReaders: Readers): Rule => ({
   why: "the release version every desktop assembly is stamped with, which the driver test BuildVersionTests reads beside the stage manifest, and a file the package ships and the service's doctrine scan reads like the rest of `canon/`",
 });
 
-/** The build settings every .NET project builds with, each tree's importing them: where the commit is stamped. */
-const rootBuild = (driverReaders: Readers): Rule => ({
-  paths: ['Directory.Build.props'],
-  gates: [...driverReaders, 'service', 'service-process', 'devkit', 'code-map'],
-  why: "every .NET project builds with it, each tree's settings importing it: the desktop's, the service's and the devkit's suites, the headless host the family rehearsal drives, and the deployed shell, whose publish stamps the commit (BUILDSTAMP1)",
-});
-
 /** The kept build base's guard and builder, which the tools that build a project or read its output import or run. */
 const treeBase = (): Rule => ({
   paths: ['tools/tree-base.mjs'],
@@ -58,6 +49,6 @@ const privateGateFiles = (): Rule => ({
   why: "what the merge tool imports to copy the private gate files, which its tests hold; the local packs' own tests import it too, in verify",
 });
 
-/** The rows, in REACH's order: a provider's files, its sources, the stamped version, the stamp's settings, the base's guard and the copier. */
+/** The rows, in REACH's order: a provider's files, its sources, the stamped version, the base's guard and the copier. */
 export const reachRows = (driverReaders: Readers): Rule[] =>
-  [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), rootBuild(driverReaders), treeBase(), privateGateFiles()];
+  [declarations(driverReaders), sources(driverReaders), canonVersion(driverReaders), treeBase(), privateGateFiles()];

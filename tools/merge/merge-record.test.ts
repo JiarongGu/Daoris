@@ -33,9 +33,10 @@ test('a failure is a pass of the branch only when it is main\'s red alone', () =
   assert.equal(brought.firstPass, false);
 });
 
-test('the record carries each gate\'s time, its slowest classes, and the gates and merge over budget', () => {
+test('the record carries each gate\'s time, its slowest classes, and the gates over budget; the whole run\'s budget is the verification\'s', () => {
   const record = buildRecord({ ...base, ms: 11 * 60_000, gates: [gate('reached', { ms: 6 * 60_000, slowest: [{ name: 'X', ms: 1, tests: 1 }] }), gate('cli')] });
-  assert.deepEqual(record.overBudget, { gates: ['reached'], merge: true });
+  assert.deepEqual(record.overBudget, { gates: ['reached'] });
+  assert.equal(record.verification, undefined, 'a run with no rule records none');
   assert.equal(record.gates[0]!.over, true);
   assert.equal(record.gates[0]!.slowest[0]!.name, 'X');
 });
