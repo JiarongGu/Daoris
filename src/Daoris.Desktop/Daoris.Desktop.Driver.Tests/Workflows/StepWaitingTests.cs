@@ -100,7 +100,8 @@ public sealed class StepWaitingTests : IDisposable
         var active = new NodeStatus("run:q7", "release", NodeStates.Active) { Attempt = 1 };
 
         var progress = StepWaiting.Of(record, Release, active);
-        var wait = StepWaiting.WaitOf(progress!);
+        var wait = StepWaiting.WaitOf(progress!, CastHolders.StepOf(CastHolders.Person));
+        Assert.Equal(StepHolders.Agent, StepWaiting.WaitOf(progress!).Values["holder"]);
 
         Assert.Equal(StepWaiting.Actor, wait.Code);
         Assert.Equal("approver", wait.Values["actor"]);

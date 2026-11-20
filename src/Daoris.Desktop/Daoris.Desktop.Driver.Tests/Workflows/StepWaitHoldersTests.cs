@@ -44,7 +44,21 @@ public sealed class StepWaitHoldersTests
         var row = HeldSteps.Step(Run, "engine", "aurora", Run, Opinion, record, held);
 
         Assert.NotNull(row);
-        Assert.Equal((PersonWaits.Vacant, AppointedRoles.Supervisor, StepHolders.Person), (row.Why, row.Role, row.Holder));
+        Assert.Equal((PersonWaits.Vacant, AppointedRoles.Supervisor, StepHolders.Agent), (row.Why, row.Role, row.Holder));
+    }
+
+    /// <summary>A check held not known waits on `operations`, which nothing casts here: its agent's, never a wait of the person's.</summary>
+    [Fact]
+    public void A_held_check_on_a_role_nothing_casts_waits_on_its_agent_and_never_on_the_person()
+    {
+        var check = new NodeDeclaration("check", NodeKinds.Check, 1, NodeReach.Observed);
+        var record = Standing("check", new NodeStatus(Unit, "check", NodeStates.Unknown) { Attempt = 1, Since = Now });
+        var cast = CastReading.At(PlaceCastBook.Empty, null, "aurora", "engine");
+
+        var wait = StepWaiting.Read(record, check, record.Statuses["check"], null, cast);
+
+        Assert.Equal((PersonWaits.Held, StepRoles.Operations, StepHolders.Agent), (wait?.Why, wait?.Role, wait?.Holder.Kind));
+        Assert.Equal("Waiting on `operations`: `an agent`.", StepWaiting.Line(wait!.Role, wait.Holder));
     }
 
     [Fact]

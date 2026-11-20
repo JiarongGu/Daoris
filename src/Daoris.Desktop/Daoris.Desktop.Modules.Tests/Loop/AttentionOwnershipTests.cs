@@ -229,6 +229,16 @@ public sealed partial class AttentionOwnershipTests : IDisposable
                 .Select(each => each.Kind).Order(StringComparer.Ordinal));
     }
 
+    /// <summary>A run's step is the owner's row only where the person holds its role; one a role's agent holds is the agents'.</summary>
+    [Fact]
+    public void A_step_row_is_the_owner_s_only_where_the_person_holds_its_role()
+    {
+        Assert.Equal(Owners("release"), Of("""{"kind":"step","id":"r/n","step":{"role":"approver","holder":"person"}}""", AttentionTakers.None));
+        Assert.Equal(Agents, Of("""{"kind":"step","id":"r/n","step":{"role":"acceptor","holder":"agent"}}""", AttentionTakers.None));
+        Assert.Equal(Agents, Of("""{"kind":"step","id":"r/n","step":{"role":"tester","holder":"agent","holderName":"codex"}}""", AttentionTakers.None));
+        Assert.Equal(Owners("release"), Of("""{"kind":"step","id":"r/n"}""", AttentionTakers.None));
+    }
+
     /// <summary>
     /// The appointment is read from the roles as they stand, through the decisions' admission: a question supervisor an agent holds, granted
     /// its answer, takes a park in its workspace; its grant taken away, or a supervisor of another kind, takes none, and the park is the owner's.

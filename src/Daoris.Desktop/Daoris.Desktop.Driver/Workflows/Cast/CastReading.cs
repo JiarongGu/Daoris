@@ -26,7 +26,7 @@ public static class CastReading
 
     public static Func<string, bool> AgentHolds(string home, PluginPlace place)
     {
-        var cast = new Lazy<Func<string, string>>(() => Home(home, place.Workspace, place.Repository));
-        return role => cast.Value(role) != CastHolders.Person;
+        var cast = new Lazy<Func<string, CastNow>>(() => Now(home, place.Workspace, place.Repository));
+        return role => cast.Value(role) is { Why: not CastWhy.Default } now && now.Holder != CastHolders.Person;
     }
 }

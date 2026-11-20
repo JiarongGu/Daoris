@@ -77,17 +77,20 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
     {
         var session = Json.Text(row, "session");
         var repository = Json.Text(row, "where") is { Length: > 0 } where ? where : session ?? "";
-        // A step's: the session its run placed, which a click opens, its head reading the wait with its presses; the run's work quest.
+        // A step's: the session its run placed, which a click opens, its head reading the wait with its presses; its work quest and role.
         if (Json.Text(row, "kind") == StepRowKind)
         {
+            var step = row["step"] as JsonObject;
+            var role = step is null ? null : Json.Text(step, "role");
             return new
             {
                 Kind = StepKind,
                 Id = Json.Text(row, "id"),
                 Session = session,
-                Quest = row["step"] is JsonObject step ? Json.Text(step, "work") : null,
+                Quest = step is null ? null : Json.Text(step, "work"),
                 Repository = repository,
-                Headline = SessionBalloon.Words(new BalloonFacts(StepKind) { Repository = repository }).Title,
+                Role = role,
+                Headline = SessionBalloon.Words(new BalloonFacts(StepKind) { Repository = repository, Role = role }).Title,
                 Detail = (string?)null,
             };
         }

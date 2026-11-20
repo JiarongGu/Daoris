@@ -33,7 +33,8 @@ public static class RiskStepHolds
         {
             var status = WorkPerformer.StatusOf(record, node.Id);
             if (StepWaiting.Read(record, node, status, held?.GetValueOrDefault(node.Id), cast) is not { } wait || KindOf(wait.Why, node) is not { } kind) continue;
-            var actor = wait.Holder.Kind == StepHolders.Agent ? CastHolders.AgentNamed(wait.Holder.Name ?? "agent") : CastHolders.Person;
+            var actor = wait.Holder.Kind != StepHolders.Agent ? CastHolders.Person
+                : wait.Holder.Name is { } name ? CastHolders.AgentNamed(name) : CastHolders.Agent;
             holds.Add(new RiskHold($"{Domain}:{run}/{node.Id}#{status.Attempt}:{wait.Why}", wait.Why, RiskAct.Of(kind), actor, place,
                 $"run {run}, step {node.Id}, attempt {status.Attempt}", StepWaiting.Line(wait.Role, wait.Holder), TodayHeld: true)
             {

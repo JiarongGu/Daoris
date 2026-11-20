@@ -67,6 +67,7 @@ public sealed class ReviewStopRunTests : NodeRunFixture
     public async Task An_agents_whole_stop_names_its_speaker_and_leaves_a_review_the_person_holds()
     {
         OnBranch();
+        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, StepRoles.Acceptor, CastHolders.Person, "I accept these", _now));
         await RunPassAsync(Runtime());
         Assert.Equal(CastHolders.Person, new StepTenureFiles(_home, () => true).Current(RunUnit, "review", RunStatus("review").Attempt)!.Holder);
 

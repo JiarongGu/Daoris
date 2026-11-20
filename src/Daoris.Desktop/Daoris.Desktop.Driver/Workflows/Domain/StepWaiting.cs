@@ -49,12 +49,12 @@ public static class StepWaiting
         return new RoleWait(why, role, HolderOf(role), status.Since);
     }
 
-    /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast; the person where none is in hand.</summary>
+    /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast, else the cast's rule (<see cref="PlaceCastBook.Uncast"/>).</summary>
     public static string HolderOf(NodeDeclaration node, NodeStatus status, string role, StepTenure? held, Func<string, string>? cast)
     {
         var own = role == StepRoles.Of(node);
         if (own && held is { } tenure && tenure.Node == node.Id && tenure.Attempt == status.Attempt) return tenure.Holder;
-        return (own ? HolderWords.First(node) : null) ?? cast?.Invoke(role) ?? CastHolders.Person;
+        return (own ? HolderWords.First(node) : null) ?? cast?.Invoke(role) ?? PlaceCastBook.Uncast(role);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public static class StepWaiting
         Put("environment", progress.Environment);
         if (progress.Actor is { } actor)
         {
-            var filled = holder ?? CastHolders.StepOf(CastHolders.Person);
+            var filled = holder ?? CastHolders.StepOf(PlaceCastBook.Uncast(actor));
             Put("actor", actor);
             Put("holder", filled.Kind);
             Put("holderName", filled.Name);

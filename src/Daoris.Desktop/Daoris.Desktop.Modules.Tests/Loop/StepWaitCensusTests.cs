@@ -31,6 +31,8 @@ public sealed class StepWaitCensusTests
 
     private static NodeStatus Active(string node) => new(Unit, node, NodeStates.Active) { Attempt = 1, Tries = 1, Since = Now };
 
+    private static readonly Func<string, string> PersonCast = _ => CastHolders.Person;
+
     /// <summary>A step standing at <paramref name="why"/>, as a run's record keeps it: its declaration and the record.</summary>
     private static (NodeDeclaration Node, NodeRecord Record)? StepAt(string why) => why switch
     {
@@ -62,7 +64,7 @@ public sealed class StepWaitCensusTests
             var status = WorkPerformer.StatusOf(step.Record, step.Node.Id);
             var wait = StepWaiting.Read(step.Record, step.Node, status);
             Assert.Equal(why, wait?.Why);
-            var held = HeldSteps.Step(Run, "engine", "aurora", Run, step.Node, step.Record);
+            var held = HeldSteps.Step(Run, "engine", "aurora", Run, step.Node, step.Record, cast: PersonCast);
             Assert.NotNull(held);
             return new() { Steps = [JsonSerializer.SerializeToNode(held, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()] };
         }
@@ -191,12 +193,12 @@ public sealed class StepWaitCensusTests
 
         var row = (JsonObject)Assert.Single(Rows(new AttentionFacts
         {
-            Steps = [JsonSerializer.SerializeToNode(HeldSteps.Step(Run, "engine", "aurora", Run, node, bare), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+            Steps = [JsonSerializer.SerializeToNode(HeldSteps.Step(Run, "engine", "aurora", Run, node, bare, cast: PersonCast), Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
         }))["step"]!;
         Assert.Contains(HeldResolutions.DoneOutside, ((JsonArray)row["presses"]!).Select(each => each!.GetValue<string>()));
         Assert.Equal((Unit, 1), (row["held"]!["unit"]!.GetValue<string>(), row["held"]!["attempt"]!.GetValue<int>()));
 
-        var paged = HeldSteps.Step(Run, "engine", "aurora", Run, node, record)!;
+        var paged = HeldSteps.Step(Run, "engine", "aurora", Run, node, record, cast: PersonCast)!;
         Assert.DoesNotContain(HeldResolutions.DoneOutside, paged.Presses);
         Assert.Null(paged.Held);
     }

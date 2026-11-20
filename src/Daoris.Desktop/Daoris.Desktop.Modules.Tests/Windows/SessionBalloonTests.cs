@@ -38,6 +38,8 @@ public sealed partial class SessionBalloonTests
     [InlineData("Holding", "zh", "engine", null, null, "engine：一个会话的工具调用在等你处理", "在它被自动拒绝前，打开 Daoris 回答它。")]
     [InlineData("Holding", "en", "engine", null, null, "engine: a session holds a tool call for you", "Open Daoris to answer it before it is refused by itself.")]
     [InlineData("Holding", "en", "daoris:help", "Edit notes.md", null, "Ask Daoris holds a tool call for you", "Edit notes.md")]
+    [InlineData("Step", "zh", "engine", null, null, "engine：一个步骤在等 `worker`，由你担任", "打开 Daoris，在这一步作答。")]
+    [InlineData("Step", "none", "engine", null, null, "engine: a step waits on `worker`, which you fill", "Open Daoris at its step to answer it.")]
     public void Each_kind_is_worded_from_the_words_handed_in_either_language_and_in_english_with_none(
         string kind, string language, string repository, string? detail, int? strikes, string title, string body)
     {
@@ -47,6 +49,7 @@ public sealed partial class SessionBalloonTests
             State = kind == "Ended" ? "failed" : null,
             Quest = kind == "QuestParked" ? "7a82cc" : null,
             Strikes = strikes,
+            Role = kind == "Step" ? "worker" : null,
         };
 
         var said = SessionBalloon.Words(facts, Words(language));

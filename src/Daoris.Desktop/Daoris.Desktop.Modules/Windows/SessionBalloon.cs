@@ -29,6 +29,9 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
     /// <summary>The quest a quest's park names.</summary>
     public string? Quest { get; init; }
 
+    /// <summary>The role a run's step waits on, as its workflow names it: an id, said as written.</summary>
+    public string? Role { get; init; }
+
     /// <summary>How many sessions failed before a quest parked; null where unsaid.</summary>
     public int? Strikes { get; init; }
 
@@ -104,7 +107,7 @@ public static partial class SessionBalloon
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
-        [Prefix + "step.title"] = "{{repository}}: a step is waiting on a role you hold",
+        [Prefix + "step.title"] = "{{repository}}: a step waits on `{{role}}`, which you fill",
         [Prefix + "step.body"] = "Open Daoris at its step to answer it.",
         // The tray menu's one item: said in the window's language like the balloons, English before a page hands words.
         [Prefix + "reloadPage"] = "Reload the page of every window",
@@ -127,7 +130,10 @@ public static partial class SessionBalloon
         // What a session wrote, as written; else the kind's own line.
         string Written(string key) => string.IsNullOrWhiteSpace(facts.Detail) ? Word(key) : facts.Detail;
         var repository = facts.Repository ?? "";
-        var named = new Dictionary<string, string>(StringComparer.Ordinal) { ["repository"] = repository, ["quest"] = facts.Quest ?? "" };
+        var named = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["repository"] = repository, ["quest"] = facts.Quest ?? "", ["role"] = facts.Role ?? "",
+        };
 
         var (title, body) = facts.Kind switch
         {
