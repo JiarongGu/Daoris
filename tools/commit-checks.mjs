@@ -40,10 +40,13 @@ export function layersCounts(root) {
   return { code: problems.length ? 1 : 0, problems };
 }
 
-/** The layers list lowered to the tree (`layers-census.mjs --shrink`); the lines saying each. */
+/** The layers list lowered to the tree (`layers-census.mjs --shrink`), only where the work tree is the index for what the census reads; the lines saying each. */
 export function layersShrink(root) {
   const file = join(root, LIST_FILE);
   if (!existsSync(file)) return [];
+  const names = (args) => (gitOrNull(root, ['--no-optional-locks', ...args]) ?? '').split(String.fromCharCode(0)).filter(Boolean);
+  const apart = [...names(['diff', '--name-only', '-z', '--no-renames']), ...names(['ls-files', '-z', '--others', '--exclude-standard'])];
+  if (apart.some((path) => CODE.test(path) || path === LIST_FILE.split(String.fromCharCode(92)).join('/') || path.endsWith('daoris.lanes.json'))) return [];
   return shrinkFile(file, treeAt(root), EMPTY);
 }
 
