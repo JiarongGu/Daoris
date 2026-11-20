@@ -65,6 +65,7 @@ import { HEAVY_PREFIX } from './merge/heavy-after.ts';
 import { createHalt, wired } from './merge/heavy-halt.ts';
 import { WAIT_BOUND_MS } from './merge/heavy-stack.ts';
 import { endTree } from './merge/step-trees.ts';
+import { planVerification, verifyBudgetOf } from './merge/verification.ts';
 /** A command run to its end with its output shown; asynchronous, so a hold's beat keeps sounding while it runs. `started` hears its pid. */
 const execAsync = (command, args, cwd, started) => new Promise((done) => {
   const child = spawn(command, args, { cwd, stdio: 'inherit', windowsHide: true });
@@ -132,7 +133,8 @@ export function planFor(root, paths, store, { bounds = {}, classes = [], tier = 
   const counts = {};
   for (const unit of replayed) counts[unit.suite] = (counts[unit.suite] ?? 0) + 1;
   const counted = run.map((unit) => ({ ...unit, hops: unitHops(unit, paths, map) }));
-  return { plan: reachedPlan(counted, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred };
+  const reach = { reached: reached.length, of: map.units.length, what: 'classes' };
+  return { plan: reachedPlan(counted, paths, { bounds, replayed: counts, processSuites }), night, keys, replayed: replayed.length, deferred, reach };
 }
 
 /** The digest of what the build of `project` reads on the tree `world` reads, or null where git cannot list it. */
@@ -196,11 +198,13 @@ async function main(argv) {
       },
     }), buildSeams).catch(() => undefined)
     : null;
-  const { plan, night, keys, replayed, deferred } = await clock.time('plan', () => {
+  const { plan, night, keys, replayed, deferred, reach } = await clock.time('plan', () => {
     const planned = planFor(root, paths, store, { bounds, classes, tier, world });
     world?.keep();
     return planned;
   });
+  const verifying = world && !classes.length ? planVerification(verifyBudgetOf(world.gatesText), paths, reach) : null;
+  if (verifying) say(`reached: ${verifying.line}`);
   for (const line of [...reachedLines(plan), ...nightLines(night), ...deferredLines(deferred)]) say(line);
   if (argv.includes('--plan')) {
     for (const each of reachedCommands(plan)) say(`  ${each.label}: ${each.command} ${each.args.join(' ')}`);

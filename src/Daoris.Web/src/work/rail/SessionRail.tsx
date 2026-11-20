@@ -575,7 +575,7 @@ export function SearchResults({
                   aria-current={id === selected || undefined}
                   onClick={() => onSelect?.(id)}
                   className={cn(
-                    'block w-full border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick) hover:bg-accent-soft/50',
+                    'block w-full border-l-2 px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick) hover:bg-accent-soft/50',
                     id === selected ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
                   )}
                 >

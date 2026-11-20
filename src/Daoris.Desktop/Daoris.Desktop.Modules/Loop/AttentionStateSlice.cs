@@ -70,7 +70,7 @@ public static class AttentionStateSlice
             "permission", "blocked", "held", "unreadable", "wholeWorkspace", "holding", "read", "account", "answer", "ended",
             "confirmation", "agent", "stands", "stale", "space", "git", "quiet", "declined", "memory", "integration",
             "convert", "gitAsk", "obligation", "step", "secondCheck",
-            "brainstorm", "design", "options",
+            "brainstorm", "design", "options", "class", "waitKind", "untaken",
         ],
         ["waiting"] = ["kind", "workspace"],
         ["working"] = ["workspace"],
@@ -251,8 +251,8 @@ public static class AttentionStateSlice
         foreach (var row in NeedsAPerson.Rows(facts))
         {
             var key = $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";
-            // Two rows of one key would be one row on the page, as the band keys them: the first stands.
-            if (!rows.ContainsKey(key)) rows[key] = Picked(row);
+            // Two rows of one key would be one row on the page, as the band keys them: the first stands, saying whose it is.
+            if (!rows.ContainsKey(key)) rows[key] = Picked(AttentionOwnership.Classed(row, facts.Takers));
         }
 
         var counted = new JsonObject();
@@ -338,6 +338,7 @@ public static class AttentionStateSlice
             StoppedQuests = StoppedRuns.Quests(loop.Home),
             SecondCheck = Written(AttentionSecondCheckRows.Unseen(loop.Home)),
             Hidden = Notices.Hidden(Notices.Read(loop.Home, DateTimeOffset.UtcNow) ?? []),
+            Takers = AttentionTakers.Of(loop.Pipe?.StandingConfirmation),
         };
     }
 

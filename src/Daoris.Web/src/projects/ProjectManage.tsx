@@ -11,7 +11,7 @@ import { type PluginEntry, usePlugins } from '../bridge/plugins';
 import { chooseInPlace } from '../bridge/repositories/setup';
 import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from '../data/queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from '../bridge/shell';
-import { Button, CheckField, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from '../design/ui';
+import { Button, CheckField, Chip, Drawer, failure, Inline, type Notify, Note, PathText, SectionTitle, Tip } from '../design/ui';
 
 /**
  * Managing the machine's repositories — the surfaces that exist only where a shell is
@@ -215,9 +215,9 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">
+            <Note tone="caution" className="mt-3 bg-raised px-3.5 py-2 text-body">
               {t('projects.manage.folderNote')}
-            </p>
+            </Note>
           )}
 
           {!found.git && <FolderExcludesField value={excludes} onChange={setExcludes} />}
@@ -461,9 +461,9 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
       <div className="mt-6">
         <SectionTitle>{t('projects.manage.retire')}</SectionTitle>
         <p className="text-body text-ink-soft">{t('projects.manage.retireBody')}</p>
-        <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <Note tone="caution" className="mt-2 bg-raised px-3.5 py-2 text-body">
           {t('projects.manage.retireNotDelete')}
-        </p>
+        </Note>
         {confirming ? (
           <InlineConfirm
             className="mt-2.5"

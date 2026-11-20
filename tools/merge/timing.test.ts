@@ -1,22 +1,20 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { GATE_BUDGET_MS, MERGE_BUDGET_MS, budgetLines, loggedRun, overBudget } from './timing.ts';
+import { GATE_BUDGET_MS, budgetLines, loggedRun, overBudget } from './timing.ts';
 
-test('a gate over five minutes and a merge over ten are named, and none is refused for it', () => {
-  const over = overBudget([{ name: 'cli', ms: GATE_BUDGET_MS + 1 }, { name: 'comments', ms: 3_000 }], MERGE_BUDGET_MS + 1);
-  assert.deepEqual(over, { gates: ['cli'], merge: true });
-  assert.deepEqual(overBudget([{ name: 'cli', ms: GATE_BUDGET_MS }], MERGE_BUDGET_MS), { gates: [], merge: false });
+test('a gate over five minutes is named, and none is refused for it; the whole run is the verification rule\'s (verification.ts)', () => {
+  const over = overBudget([{ name: 'cli', ms: GATE_BUDGET_MS + 1 }, { name: 'comments', ms: 3_000 }]);
+  assert.deepEqual(over, { gates: ['cli'] });
+  assert.deepEqual(overBudget([{ name: 'cli', ms: GATE_BUDGET_MS }]), { gates: [] });
 });
 
 test('the summary says each gate over budget with its slowest classes, so a slow test becomes a row', () => {
   const lines = budgetLines(
     [{ name: 'reached', ms: 21 * 60_000, slowest: [{ name: 'FooTests', ms: 400_000, tests: 12 }] }, { name: 'cli', ms: 1_000, slowest: [] }],
-    22 * 60_000,
   );
-  assert.match(lines[0]!, /merge took 22 min, over its 10 min budget/);
-  assert.match(lines[1]!, /reached took 21 min, over its 5 min budget; slowest: FooTests 6\.7 min/);
-  assert.equal(lines.length, 2);
-  assert.deepEqual(budgetLines([{ name: 'cli', ms: 1000, slowest: [] }], 5000), []);
+  assert.match(lines[0]!, /reached took 21 min, over its 5 min budget; slowest: FooTests 6\.7 min/);
+  assert.equal(lines.length, 1);
+  assert.deepEqual(budgetLines([{ name: 'cli', ms: 1000, slowest: [] }]), []);
 });
 
 test('a dotnet test command gets a trx logger of its own per segment, other commands none', () => {

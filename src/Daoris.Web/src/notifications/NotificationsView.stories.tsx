@@ -33,7 +33,7 @@ const NAMES: PressNames = { session: (id) => (id === '3f2a91c4' ? { title: 'Fix 
 
 /** A stand-in for *What needs you*'s rows, as the band draws them in the view. */
 const ROWS = (
-  <ul className="m-0 grid list-none gap-1 border-l-[3px] border-l-st-open p-0 pl-3 text-body">
+  <ul className="m-0 grid list-none gap-1 p-0 text-body">
     <li>Fix the menu · parked at a checkpoint</li>
     <li>Cap the hydration per frame · proposed, not yet published</li>
   </ul>

@@ -32,7 +32,7 @@ describe("a repository's integration declaration on its Setup", () => {
     const onAccept = vi.fn();
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_CHANGED} onAccept={onAccept} />);
 
-    expect(screen.getByText(/changed since you accepted them/)).toBeInTheDocument();
+    expect(screen.getByText(/changed their commands since you accepted them\. Until you accept these, work that does not change them itself is checked under the ones you accepted/)).toBeInTheDocument();
     expect(screen.getByLabelText('daoris.gates.json on main')).toHaveTextContent('"scratch": ["dist/", "coverage/"]');
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
     expect(onAccept).toHaveBeenCalledWith({ gates: INTEGRATION_CHANGED.tip!.gates }, expect.anything());
@@ -63,10 +63,21 @@ describe("a repository's integration declaration on its Setup", () => {
     expect(screen.getByRole('alert')).toHaveTextContent('another declaration than the one you read');
   });
 
+  it('says which access mode decides: full access takes a change without asking, restricted waits for the person', () => {
+    const { unmount } = render(<IntegrationDeclaration repository="engine" integration={{ ...INTEGRATION_ACCEPTED, mode: 'full' }} onAccept={vi.fn()} />);
+    expect(screen.getByText(/^Full access: taken without asking\./)).toBeInTheDocument();
+    unmount();
+
+    render(<IntegrationDeclaration repository="engine" integration={{ ...INTEGRATION_CHANGED, mode: 'restricted' }} onAccept={vi.fn()} />);
+    expect(screen.getByText(/^Restricted: waits for you\./)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Accept' })).toBeInTheDocument();
+  });
+
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
-    render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_UNACCEPTED} onAccept={vi.fn()} />);
+    render(<IntegrationDeclaration repository="engine" integration={{ ...INTEGRATION_UNACCEPTED, mode: 'restricted' }} onAccept={vi.fn()} />);
     expect(screen.getByText('主线声明的检查项')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '采纳' })).toBeInTheDocument();
+    expect(screen.getByText(/^受限：等你。/)).toBeInTheDocument();
   });
 });

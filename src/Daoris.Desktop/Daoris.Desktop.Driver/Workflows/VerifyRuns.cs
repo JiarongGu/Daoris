@@ -85,6 +85,7 @@ public static class VerifyRuns
         if (!SafeNames.IsPlainId(id) || !File.Exists(PathOf(home, id)) || Parse(AtomicFile.ReadText(PathOf(home, id))) is not { } run) return null;
         return new VerifySend(run.Run, attempt.Call.Invocation, run.Repository, run.Root, run.Commit, run.Accepted)
         {
+            Workspace = run.Workspace,
             Gates = CheckNode.GatesOf(node),
             Reach = CheckNode.ReachesByPaths(node) && run is { Base: { } from, Line: not null } ? new VerifyReach(from, GatesPassed.Of(home, run)) : null,
             Base = run.Base ?? run.Line,

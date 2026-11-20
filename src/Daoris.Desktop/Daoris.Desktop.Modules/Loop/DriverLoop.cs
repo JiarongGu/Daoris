@@ -339,6 +339,9 @@ public sealed class DriverLoop(
     /// <summary>The steps waiting on a role the person holds, for <i>What needs you</i>; none before a pass has read.</summary>
     public IReadOnlyList<HeldStep> HeldSteps => _state.Watch?.HeldSteps ?? [];
 
+    /// <summary>A run's working sessions as the last pass governed it, which never pass its own done; null before a pass has governed it.</summary>
+    public IReadOnlyList<string>? RunWorkers(string run) => _state.Watch?.RunWorkers(run);
+
     /// <summary>The run steps waiting on the person, for Sessions' groups and so <i>What needs you</i>; none before the watch is wired.</summary>
     public IReadOnlyList<PersonWait> PersonWaits => _state.Watch?.PersonWaits ?? [];
 

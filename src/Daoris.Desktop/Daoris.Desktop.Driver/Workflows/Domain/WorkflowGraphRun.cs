@@ -244,7 +244,8 @@ public static class WorkflowGraphRuns
                 Requests =node.Kind == NodeKinds.Claimed && run.Requests.Count > 0 ? run.Requests : null,
                 Journal = StepActViews.Of(facts.Acts, node.Id, status.Attempt, facts.Cast),
                 Joint = facts.Parts.Joints.GetValueOrDefault(node.Id),
-                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By : status.Code ?? checkHeld?.Code,
+                Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped ? status.By
+                    : status.Code ?? checkHeld?.Code ?? UncheckedDones.CodeOf(node, status),
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said,
                 Needs = needs?.Needs,
                 Acts = acts.Count > 0 && !toAgent ? acts : null,

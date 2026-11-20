@@ -38,7 +38,7 @@ export function LimitWaitLine({ lines, busy = false, refusal = null, onGoOnNow, 
     <div
       role="group"
       aria-label={t('work.limit.label')}
-      className={`flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-l-[3px] border-line-strong pl-2.5 text-small text-ink-soft ${className ?? ''}`}
+      className={`flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-ink-soft ${className ?? ''}`}
     >
       <p className="m-0 min-w-0 wrap-anywhere">{joinLines(t, lines)}</p>
       {onGoOnNow && <Button variant="primary" disabled={busy} onClick={onGoOnNow}>{t('work.limit.goOnNow')}</Button>}

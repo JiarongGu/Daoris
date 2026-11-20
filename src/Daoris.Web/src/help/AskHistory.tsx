@@ -377,7 +377,7 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
     <li
       data-list-row=""
       className={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] items-start rounded-control border-l-[3px] transition-colors duration-(--duration-quick)',
+        'grid grid-cols-[minmax(0,1fr)_auto] items-start rounded-control border-l-2 transition-colors duration-(--duration-quick)',
         current ? 'border-l-accent bg-accent-soft' : 'border-l-transparent hover:bg-accent-soft/50',
       )}
     >

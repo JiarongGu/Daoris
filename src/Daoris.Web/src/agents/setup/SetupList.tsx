@@ -52,7 +52,7 @@ function TreeRow({ item, chosen, focused, onPress, onToggle, children }: RowProp
       tabIndex={focused ? 0 : -1}
       onClick={onPress}
       className={cn(
-        'flex w-full min-w-0 cursor-pointer items-start gap-1 border-l-[3px] py-1.5 pr-2.5 outline-none transition-colors duration-(--duration-quick)',
+        'flex w-full min-w-0 cursor-pointer items-start gap-1 border-l-2 py-1.5 pr-2.5 outline-none transition-colors duration-(--duration-quick)',
         item.level === 1 ? 'pl-1.5' : item.level === 2 ? 'pl-5' : 'pl-9',
         'hover:bg-accent-soft/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',

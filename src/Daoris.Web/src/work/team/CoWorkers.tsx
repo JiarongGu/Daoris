@@ -100,7 +100,7 @@ function Member({ row, onOpen, onPass, passing }: {
         <button
           type="button"
           onClick={() => onOpen(helper)}
-          className="min-w-0 flex-1 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink hover:bg-accent-soft/50"
+          className="min-w-0 flex-1 rounded-control border-l-2 border-l-transparent px-2 py-1 text-left text-small text-ink hover:bg-accent-soft/50"
         >
           {said}
         </button>

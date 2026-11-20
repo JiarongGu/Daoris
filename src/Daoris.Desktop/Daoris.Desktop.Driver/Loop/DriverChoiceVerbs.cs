@@ -22,7 +22,7 @@ public static class DriverChoiceVerbs
         new HelpersVerb(),
         new HandOverVerb(),
         new GrowthVerb(),
-        new PlaceRiskVerb(),
+        new PlaceRiskVerb { Acts = RiskTable.Of, Verdicts = RiskWhy.Said },
         new PlaceCastVerb(),
         new RoleVerb(),
         new WorkflowVerb(),

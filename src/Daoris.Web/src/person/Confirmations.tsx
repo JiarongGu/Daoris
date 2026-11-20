@@ -1,6 +1,6 @@
 import { createContext, type RefObject, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
+import { Button, cardEdge, drawerOpen, Icon, type Notify, watchDrawers } from '../design/ui';
 import { ago, clockOf, list, sentence } from '../locales/format';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 import { useNow } from '../work/useNow';
@@ -144,7 +144,7 @@ export const PressArea = createContext<RefObject<HTMLElement | null> | null>(nul
 export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
   const { t } = useTranslation();
   return (
-    <div role="status" className="flex flex-wrap items-center gap-2 border-b border-l-[3px] border-line border-l-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
+    <div role="status" className="flex flex-wrap items-center gap-2 border-b border-line bg-raised px-3 py-1.5 text-small text-ink-soft">
       <span className="min-w-0 flex-1">{t('person.adopted')}</span>
       <Button variant="ghost" onClick={onDismiss}>{t('common.dismiss')}</Button>
     </div>
@@ -362,7 +362,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
       id={confirmationAnchor(waiting.id)}
       tabIndex={-1}
       data-press={`${waiting.source}:${waiting.id}`}
-      className="grid gap-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-2 text-body text-ink"
+      className={`grid gap-1.5 bg-page/60 px-3 py-2 text-body text-ink ${cardEdge('wait')}`}
     >
       {/* The decision region (§3.4): its head through its buttons, bounded whatever the press carries. */}
       <div ref={region} data-press-region="" className="grid gap-1.5">

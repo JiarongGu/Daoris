@@ -198,7 +198,7 @@ export function ListPane({
           onKeyDown={onOverKey}
           className={cn(
             'absolute inset-y-0 left-full z-30 flex flex-col border-r border-line bg-page outline-none',
-            'shadow-[6px_0_24px_rgb(15_12_8/0.12)]',
+            'shadow-[6px_0_24px_rgb(15_17_20/0.12)]',
           )}
           style={{ width: layout.width }}
         >
@@ -284,7 +284,7 @@ export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
       aria-current={chosen || undefined}
       onClick={onPress}
       className={cn(
-        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
+        'block w-full min-w-0 border-l-2 px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft/50',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
         dimmed && 'opacity-75',

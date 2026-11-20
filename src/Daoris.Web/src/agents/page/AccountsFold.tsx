@@ -120,7 +120,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
           {pooled.length > 0 && (
             <section
               aria-label={t('agents.pooled.title', { product })}
-              className="mb-2 flex flex-wrap items-start gap-x-3 gap-y-1.5 border-l-[3px] border-accent bg-page/60 px-3 py-2"
+              className="mb-2 flex flex-wrap items-start gap-x-3 gap-y-1.5 bg-page/60 px-3 py-2"
             >
               <div className="min-w-0 flex-1 basis-72">
                 <p className="m-0 text-small font-medium text-ink">{t('agents.pooled.title', { product })}</p>

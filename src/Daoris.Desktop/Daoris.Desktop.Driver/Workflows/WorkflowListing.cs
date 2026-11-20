@@ -42,6 +42,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
                 + (reads is null ? "; no version of it reads here." : $"; v{reads.Version} is the newest that reads."));
         }
 
+        if (HumanFormerKind.Said(run.Home) is { } former) run.Say(former);
         run.Say("Defaults built in, for `daoris workflow new <id> --from <default>` (`--with-opinion`, `--with-look`):");
         foreach (var preset in WorkflowPresets.GraphTable)
         {

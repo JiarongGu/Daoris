@@ -114,7 +114,7 @@ public sealed class NodeRuntime(
 
     public ILandingWords? Landings { get; set; }
 
-    /// <summary>Where the pull request a plugin's step opened is written on its landing: none by default, so a runtime nobody wired writes none.</summary>
+    /// <summary>Where a plugin step's pull request is written on its landing; unwired, none is.</summary>
     public IPullRequestRecords? PullRequests { get; set; }
 
     /// <summary>
@@ -125,6 +125,8 @@ public sealed class NodeRuntime(
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
     public Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>? Finish { get; set; }
+
+    public RiskShadow? Risk { get; set; }
 
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
@@ -147,6 +149,8 @@ public sealed class NodeRuntime(
     /// </summary>
     public IReadOnlyList<RequestHold> RequestHolds() =>
         _governed is { } governed ? Daoris.Driver.RequestHolds.Of(governed.Values, records.Read, _quests) : [];
+
+    public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run);
 
     /// <inheritdoc cref="LeftSteps.With"/>
     public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config?.PlaceRisk);
@@ -408,6 +412,7 @@ public sealed class NodeRuntime(
             // A holder's Done outside Daoris link handed to its plugin's check first, which settles or refuses it; then the person's word on a
             // held attempt, applied under the declaration governing now, before any new attempt.
             done.AddRange(await _performer.CheckLinksAsync(Declared, sends, ct).ConfigureAwait(false));
+            done.AddRange(ChangedChecks.Again(records, unit => RunChecks.StandingOf(records.Home, unit), clock()));
             done.AddRange(_performer.Resolve(Declared));
             // The person's word on a held close, a close's recovery, before the closer sends any close again below; judged on the quests this
             // pass read, so a word on a close for a submission reopened or replaced since never reaches the next one.
@@ -481,6 +486,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            if (Risk is { } risk) RiskStepHolds.Shadow(risk, governed.Values, records, look.Config);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };

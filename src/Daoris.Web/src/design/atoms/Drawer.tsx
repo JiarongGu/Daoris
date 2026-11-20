@@ -86,7 +86,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
             'w-[min(32rem,calc(100%-3rem))]',
           )}
         >
-          <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
+          <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
             <div>
               <Dialog.Title className="text-heading font-[650] leading-[1.35]">{title}</Dialog.Title>
               {meta && (
@@ -100,7 +100,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
             </Dialog.Close>
           </header>
           <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <footer className="border-t border-line px-5 py-3.5">{footer}</footer>}
+          {footer && <footer className="border-t border-line px-5 py-3">{footer}</footer>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -161,14 +161,14 @@ export function QuickPanel({ open, onClose, title, header, wide = false, fill = 
           }}
           className={cn(
             'fixed left-1/2 top-[12vh] z-20 flex -translate-x-1/2 flex-col overflow-hidden rounded-overlay border border-line bg-overlay',
-            'shadow-[0_12px_48px_rgb(15_12_8/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
+            'shadow-[0_12px_48px_rgb(15_17_20/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--duration-quick)_ease-out]',
             fill ? 'h-[min(34rem,72vh)]' : 'max-h-[60vh]',
             wide ? 'w-[min(42rem,92vw)]' : 'w-[min(34rem,92vw)]',
           )}
         >
           {header
             ? (
-              <header className="flex shrink-0 items-center gap-2 border-b border-line px-3.5 py-2">
+              <header className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-2">
                 <Icon name={header.icon} size={15} className="text-ink-soft" />
                 <Dialog.Title className="m-0 text-body font-semibold text-ink">{title}</Dialog.Title>
                 <span className="ml-auto flex items-center gap-0.5">

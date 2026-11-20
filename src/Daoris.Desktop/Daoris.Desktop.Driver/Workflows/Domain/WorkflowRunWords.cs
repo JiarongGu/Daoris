@@ -269,6 +269,8 @@ public static class WorkflowRunWords
                 _ => on is null ? "Under way." : $"Observed on {on}.",
             },
             WorkflowGraphDetails.Reached when node == NodeKinds.Land && step.Words is { Length: > 0 } reached => reached,
+            WorkflowGraphDetails.Reached when node == NodeKinds.QuestHolds && step.Code == UncheckedDones.NoReader =>
+                $"{char.ToUpperInvariant(UncheckedDones.GoesOn[0])}{UncheckedDones.GoesOn[1..]}.",
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
             WorkflowGraphDetails.Skipped => step.Code == NodeSource.Person ? "Passed over for this work, by you." : "Passed over for this work by its record.",
             // A declined request is yours to ask again or go on without; its quest's note is what the receiver said.
