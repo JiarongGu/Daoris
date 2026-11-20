@@ -561,6 +561,7 @@
   "agents.setup.fold.lookOn": "先经你的查看",
   "agents.setup.fold.opinion": "第二意见：{{who}}",
   "agents.setup.fold.access.full": "完全访问",
+  "agents.setup.fold.access.declarations": "其声明的命令免确认",
   "agents.setup.fold.access.today": "停顿照旧",
   "agents.setup.fold.access.custom": "自定的停顿",
   "agents.setup.fold.helpers.ask": "助手先问你",

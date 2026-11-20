@@ -91,6 +91,8 @@ public sealed class DriverWatch(
         {
             await _owed.LookAsync(config, await service.RegistryAsync(ct).ConfigureAwait(false), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
             said.AddRange(_owed.Unjudged);
+            // The risk judge in shadow: each declaration owed journaled with the verdict it would get beside today's acceptance.
+            if (Nodes?.Risk is { } risk) RiskDeclarationHolds.Shadow(risk, _owed, DriverConfig.Load(configPath));
             foreach (var owned in _owed.ByMode(DriverConfig.Load(configPath)))
             {
                 if (await DeclarationAcceptance.AcceptByModeAsync(home, configPath, owned, ct).ConfigureAwait(false) is { } line) said.Add(line);
