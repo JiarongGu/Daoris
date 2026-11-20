@@ -133,9 +133,23 @@ public static class UpdateCommand
         };
     }
 
+    /// <summary>The version the install's own application carries, never the driver that asks; null where it is not there or does not read.</summary>
+    private static string? CarriedBy(string install)
+    {
+        var path = Path.Combine(install, "app", "Daoris.Desktop.App.dll");
+        try
+        {
+            return File.Exists(path) && System.Diagnostics.FileVersionInfo.GetVersionInfo(path).ProductVersion is { Length: > 0 } version ? version : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
     {
-        output.AppendLine(Installed(UpdateRefusal.Running));
+        output.AppendLine(Installed(CarriedBy(install)));
         if (!StagedBuild.IsStaged(install))
         {
             output.AppendLine($"update: nothing is staged beside {install}.");

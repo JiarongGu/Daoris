@@ -154,8 +154,8 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     `data/last-build.json`), so two publishes in a row say two versions, and one never falls below the newest that ran, which the
     launcher would refuse. It is passed to every publish recipe as `-p:Version=`, so every assembly (the window's System page and the
     machine log's `app.started`), the doctrine tool's package (`daoris --version`) and the stage's `build.json` name it; the canon
-    beside the tool keeps the release's version, which every synced file's header names, and `daoris update` says the installed
-    build's version and commit before what is staged. A development build carries the release's version (the desktop's
+    beside the tool keeps the release's version, which every synced file's header names, and `daoris update` says the version and commit the
+    target install's own `app/Daoris.Desktop.App.dll` carries (never the driver that asks) before what is staged. A development build carries the release's version (the desktop's
     `Directory.Build.props`). The running
     build, the launcher's read of `app/` and a stage's manifest read one number. The commit follows it (`0.0.2+<commit>`) only where
     a publish builds: every publish recipe passes `-p:DaorisStamp=true`, which the root `Directory.Build.props`, imported by each

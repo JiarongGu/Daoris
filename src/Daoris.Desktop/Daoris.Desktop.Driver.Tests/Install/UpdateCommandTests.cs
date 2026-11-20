@@ -68,17 +68,24 @@ public sealed class UpdateCommandTests : IDisposable
     }
 
     [Fact]
-    public void The_status_says_the_installed_build_before_what_is_staged_or_that_nothing_is()
+    public void The_status_says_the_build_the_install_carries_not_the_driver_that_asks()
     {
-        var installed = UpdateCommand.Installed(UpdateRefusal.Running);
+        var (_, none) = Run();
+        Assert.StartsWith("update: the installed build does not say its version.", none);
+        Assert.Contains("nothing is staged", none);
 
-        var (_, nothing) = Run();
-        Assert.StartsWith(installed, nothing);
-        Assert.Contains("nothing is staged", nothing);
+        var carried = typeof(SqliteConnection).Assembly.Location;
+        var app = Path.Combine(Install, "app");
+        Directory.CreateDirectory(app);
+        File.Copy(carried, Path.Combine(app, "Daoris.Desktop.App.dll"));
+        var product = System.Diagnostics.FileVersionInfo.GetVersionInfo(carried).ProductVersion;
+        Assert.NotEqual(HomeLastBuild.Numbered(UpdateRefusal.Running), HomeLastBuild.Numbered(product));
+        var expected = UpdateCommand.Installed(product);
 
         Stage("b1", "0.0.9");
         var (_, staged) = Run();
-        Assert.StartsWith(installed, staged);
+        Assert.StartsWith(expected, staged);
+        Assert.DoesNotContain(UpdateCommand.Installed(UpdateRefusal.Running), staged);
         Assert.Contains("Daoris 0.0.9 (abc1234) is staged", staged);
     }
 
