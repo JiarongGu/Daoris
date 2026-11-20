@@ -28,6 +28,7 @@ public static class RiskStepGates
     {
         if (judge is null || why is not (PersonWaits.Accept or PersonWaits.Approval) || RiskStepHolds.KindOf(why, node) is not { } kind) return null;
         var verdict = judge.Act(RiskAct.Of(kind));
+        if (RiskStepHolds.BadAct(node) is { } bad) return Owners(verdict, $"its `act` option {bad} names no act of the census, which no policy row can class");
         var role = StepRoles.Of(node);
         if (verdict.Outcome == RiskVerdict.OwnerOutcome) return verdict;
         if (role == StepRoles.Owner) return Owners(verdict, $"the step's role is `{StepRoles.Owner}`, which is the owner's own");

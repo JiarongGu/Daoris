@@ -16,7 +16,7 @@ public static class RiskStepHolds
     {
         PersonWaits.Pass => RiskActs.WorkDone,
         PersonWaits.Accept => RiskActs.WorkAccept,
-        PersonWaits.Approval or PersonWaits.GoAhead => node.Options.GetValueOrDefault("act") is { } written && NodeOptions.Value(written) is string act && Named(act)
+        PersonWaits.Approval or PersonWaits.GoAhead => node.Options.GetValueOrDefault("act") is { } written && NodeOptions.Value(written) is string act && (why == PersonWaits.Approval ? Spelled(act) : Named(act))
             ? act
             : RiskActs.TaskApprove,
         PersonWaits.Choose or PersonWaits.Vacant or PersonWaits.Held or PersonWaits.Left => RiskActs.WorkRecover,
@@ -90,6 +90,14 @@ public static class RiskStepHolds
             return Released(units.TryGetValue(run, out var unit) ? records.Read(unit) : null, node);
         });
     }
+
+    /// <summary>The task's `act` option where it is no act of the census (an unknown kind or qualifier, a case mismatch, not a string); null where it names none or a good one.</summary>
+    public static string? BadAct(NodeDeclaration node) =>
+        node.Kind == NodeKinds.Task && node.Options.TryGetValue("act", out var written) && !(NodeOptions.Value(written) is string act && Spelled(act)) ? written : null;
+
+    private static bool Spelled(string act) =>
+        Named(act) && RiskAct.Of(act) is var named && named.ToString() == act
+        && (named.Qualifier is null ? !act.Contains('/', StringComparison.Ordinal) : named.Kind == RiskActs.ReleaseStart && named.Qualifier.All(c => c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-' or '.' or '_'));
 
     private static bool Named(string act)
     {

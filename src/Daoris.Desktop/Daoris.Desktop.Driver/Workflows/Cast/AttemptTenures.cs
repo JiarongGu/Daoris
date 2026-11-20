@@ -25,11 +25,12 @@ public static class AttemptTenures
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         var held = tenures.Holding(unit, standing.ToDictionary(each => each.Node.Id, each => each.Status.Attempt, StringComparer.Ordinal));
         var unheld = standing.Where(each => !held.ContainsKey(each.Node.Id)).ToList();
-        if (unheld.Count == 0) return [];
-
         var book = new PlaceCastFiles(records.Home).Book();
         var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
-        return tenures.Begin(unit, [.. unheld.Select(each =>
+        var judged = TenureRejudge.Apply(tenures, unit, standing.Where(each => held.ContainsKey(each.Node.Id)), held,
+            node => book.At(StepRoles.Of(node), workspace, repository, place), judge, now);
+        if (unheld.Count == 0) return judged;
+        return [.. judged, .. tenures.Begin(unit, [.. unheld.Select(each =>
         {
             var role = StepRoles.Of(each.Node);
             // A hold the risk policy classes the owner's is the owner role's from its start, as a marked approver is.
@@ -37,7 +38,7 @@ public static class AttemptTenures
                 ? new CastNow(role, CastHolders.Person, CastWhy.Marked, RiskPolicy.Key)
                 : book.At(role, workspace, repository, place);
             return (each.Node.Id, each.Status.Attempt, role, FirstHolder(each.Node, cast), each.Status.Since ?? now, WhyOf(cast));
-        })]);
+        })])];
     }
 
     public static IReadOnlyList<StepTenure> KeepAt(

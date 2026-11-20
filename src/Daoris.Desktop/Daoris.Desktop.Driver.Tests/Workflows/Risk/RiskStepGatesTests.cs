@@ -122,6 +122,114 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         Assert.Equal((RiskVerdict.OwnerOutcome, "workspace/games"), (verdict.Outcome, verdict.Source));
     }
 
+    [Fact]
+    public async Task A_branch_bound_review_passes_by_the_seed_and_its_words_carry_the_rule_and_its_revision()
+    {
+        OnBranch(Reviewed);
+        await RunPassAsync(Runtime(), Seed);
+        Assert.Matches(@"rule seed at [0-9a-f]{12}\)", RunStatus("review").Words);
+    }
+
+    [Fact]
+    public async Task A_policy_row_elsewhere_gives_the_passed_review_the_written_revision_in_its_words()
+    {
+        OnBranch(Reviewed);
+        await RunPassAsync(Runtime(), """{"risk":{"machine":[{"kind":"work.done","class":"none"}]}}""");
+
+        var words = RunStatus("review").Words;
+        Assert.Matches(@"rule seed at [0-9a-f]{12}\)", words);
+        Assert.DoesNotContain("at seed)", words, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_approval_naming_an_act_passes_by_the_seed_and_journals_that_act()
+    {
+        OnBranch(Signed(""","options":{"act":"release.start/production"}"""));
+        await RunPassAsync(Runtime(), Seed);
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy, "approved"), (RunStatus("sign").State, RunStatus("sign").By, RunStatus("sign").Acceptance?.Outcome));
+        var line = Assert.Single(RiskJournal.Read(_home), each => each.Today == PolicyPasses.Today);
+        Assert.Equal((RiskActs.ReleaseStart, "production", "sign"), (line.Kind, line.Qualifier, line.Step));
+    }
+
+    [Theory]
+    [InlineData("""{"risk":5}""")]
+    [InlineData("""{"risk":{"machine":"owner"}}""")]
+    [InlineData("""{"risk":{"nowhere":[]}}""")]
+    [InlineData("""{"risk":{"machine":[{"kind":"work.accept"}]}}""")]
+    [InlineData("""{"risk":{"machine":[{"kind":"work.accept","class":"none","mode":"never"}]}}""")]
+    public async Task A_malformed_risk_block_judges_every_hold_the_owners_and_holds_a_review_for_the_person(string config)
+    {
+        var policy = RiskPolicy.Of(DriverConfig.Parse(config));
+        Assert.NotNull(policy.Fault);
+        var place = RiskPlace.Of(DriverConfig.Parse(config), null, "engine");
+        foreach (var kind in RiskActs.All)
+        {
+            var verdict = RiskGate.Judge(policy, new RiskAct(kind, null), "", place, "");
+            Assert.Equal((RiskVerdict.OwnerOutcome, kind == RiskActs.PolicyChange ? RiskVerdict.Fixed : RiskVerdict.Unreadable), (verdict.Outcome, verdict.Source));
+        }
+
+        OnBranch(Reviewed);
+        await RunPassAsync(Runtime(), config);
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+        Assert.Equal(CastHolders.Person, ReviewHolder()?.Holder);
+    }
+
+    [Theory]
+    [InlineData("workspace/games", "games", null)]
+    [InlineData("repository/engine", null, "engine")]
+    [InlineData("repository/engine", "games", "engine")]
+    public void A_workspace_and_a_repository_place_key_class_an_act_at_its_own_place_only(string place, string? workspace, string? repository)
+    {
+        var config = DriverConfig.Parse("{\"risk\":{\"" + place + "\":[{\"kind\":\"work.accept\",\"class\":\"owner\"}]}}");
+        var policy = RiskPolicy.Of(config);
+        var accept = new RiskAct(RiskActs.WorkAccept, null);
+
+        var here = RiskGate.Judge(policy, accept, "", RiskPlace.Of(config, workspace, repository), "");
+        var elsewhere = RiskGate.Judge(policy, accept, "", RiskPlace.Of(config, "other", "elsewhere"), "");
+
+        Assert.Equal((RiskVerdict.OwnerOutcome, place), (here.Outcome, here.Source));
+        Assert.Equal((RiskVerdict.Pass, RiskVerdict.Seed), (elsewhere.Outcome, elsewhere.Source));
+    }
+
+    [Theory]
+    [InlineData("\"release.strat/production\"")]
+    [InlineData("\"release.start/Production\"")]
+    [InlineData("\"Release.Start/production\"")]
+    [InlineData("\"release.start/\"")]
+    [InlineData("\"task.approve/x\"")]
+    [InlineData("5")]
+    [InlineData("[\"release.start/production\"]")]
+    public void An_act_option_that_names_no_act_of_the_census_is_refused_in_the_graph_and_judged_owner_at_runtime(string written)
+    {
+        var node = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed)
+        {
+            Outcomes = ["approved"], Role = StepRoles.Approver, Options = new Dictionary<string, string> { ["act"] = written },
+        };
+        var judge = RiskStepGates.At(DriverConfig.Parse("""{"risk":{}}"""), null, "engine");
+
+        Assert.Equal("act", NodeDeclarations.Problem(node));
+        var verdict = RiskStepGates.Verdict(node, PersonWaits.Approval, judge);
+        Assert.Equal(RiskVerdict.OwnerOutcome, verdict?.Outcome);
+        Assert.Contains("names no act of the census", verdict?.Reason, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("\"release.start/production\"", RiskVerdict.Pass)]
+    [InlineData("\"release.start\"", RiskVerdict.Pass)]
+    [InlineData("\"task.approve\"", RiskVerdict.Pass)]
+    public void An_act_option_that_is_spelled_as_the_census_names_it_is_judged_by_its_row(string written, string outcome)
+    {
+        var node = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed)
+        {
+            Outcomes = ["approved"], Role = StepRoles.Approver, Options = new Dictionary<string, string> { ["act"] = written },
+        };
+        var judge = RiskStepGates.At(DriverConfig.Parse("""{"risk":{}}"""), null, "engine");
+
+        Assert.Null(NodeDeclarations.Problem(node));
+        Assert.Equal(outcome, RiskStepGates.Verdict(node, PersonWaits.Approval, judge)?.Outcome);
+    }
+
     private void OnBranch(string graph)
     {
         BoundTo(graph);
@@ -130,8 +238,8 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         _units = [RunHome.QuestUnit(done) with { Executors = ["s-worker"] }, RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
     }
 
-    private NodeWorded Settle(string node, string session, string? outcome = null) =>
-        StepSettles.Settle(Files, new StepSettleAsk(RunId, node, outcome, "Read it: it does what was asked.", new Dictionary<string, string>()),
+    private NodeWorded Settle(string node, string session, string? outcome = null, bool bare = false) =>
+        StepSettles.Settle(Files, new StepSettleAsk(RunId, node, bare ? null : outcome ?? (node == "review" ? "accepted" : "approved"), "Read it: it does what was asked.", new Dictionary<string, string>()),
             new SettleBy("agent:reviewer") { Session = session }, () => _now, ["s-worker"]);
 
     [Fact]
@@ -183,6 +291,55 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         Assert.Contains(past.Said, line => line.Contains("gave up:", StringComparison.Ordinal) && line.Contains("Tried:", StringComparison.Ordinal));
         await RunPassAsync(runtime, Bound);
         Assert.NotEqual(NodeStates.Active, RunStatus("review").State);
+    }
+
+    private const string AcceptOwner = """{"risk":{"machine":[{"kind":"work.accept","class":"owner"}]}}""";
+
+    private StepTenure? ReviewHolder() => new StepTenureFiles(_home, () => true).Current(RunUnit, "review", RunStatus("review").Attempt);
+
+    [Fact]
+    public async Task A_settle_of_a_review_or_an_approval_with_no_outcome_is_refused_naming_the_outcomes_and_never_taken_as_the_yes()
+    {
+        OnBranch(Reviewed);
+        await RunPassAsync(Runtime());
+        var review = Settle("review", "s-reviewer", bare: true);
+        Assert.Equal(RunNodeWords.NotOutcome, review.Refused);
+        Assert.Contains("accepted, changes", StepSettles.Said(review), StringComparison.Ordinal);
+        Assert.Equal(RunNodeWords.NotOutcome, Settle("review", "s-reviewer", "approved").Refused);
+        Assert.Empty(Files.Read(RunUnit)!.Pending);
+        Assert.True(Settle("review", "s-reviewer").Done);
+    }
+
+    [Fact]
+    public async Task A_raise_to_owner_while_the_review_waits_moves_it_to_the_person_and_a_lowering_to_role_gives_it_back_to_its_cast_holder()
+    {
+        Casts.Cast("machine", StepRoles.Acceptor, "agent:reviewer", "the reviewer accepts", _now);
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.Equal(("agent:reviewer", TenureWhy.Cast, 1), (ReviewHolder()?.Holder, ReviewHolder()?.Why, ReviewHolder()?.Epoch));
+
+        await RunPassAsync(runtime, AcceptOwner);
+        Assert.Equal((CastHolders.Person, TenureWhy.Marked, 2), (ReviewHolder()?.Holder, ReviewHolder()?.Why, ReviewHolder()?.Epoch));
+        await RunPassAsync(runtime, AcceptOwner);
+        Assert.Equal(2, ReviewHolder()?.Epoch);
+
+        await RunPassAsync(runtime);
+        Assert.Equal(("agent:reviewer", TenureWhy.Cast, 3), (ReviewHolder()?.Holder, ReviewHolder()?.Why, ReviewHolder()?.Epoch));
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+    }
+
+    [Fact]
+    public async Task A_lowering_of_an_owner_class_to_the_seed_releases_the_review_by_the_policy()
+    {
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime, AcceptOwner);
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+
+        await RunPassAsync(runtime, Seed);
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy), (RunStatus("review").State, RunStatus("review").By));
     }
 
     [Fact]
