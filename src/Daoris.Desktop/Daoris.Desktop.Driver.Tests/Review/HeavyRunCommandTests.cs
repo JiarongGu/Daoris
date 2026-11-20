@@ -459,6 +459,7 @@ public sealed class HeavyRunCommandTests : IDisposable
     private HeavyRunWorld World(string directory, params (string Name, string Value)[] variables) =>
         new(_fixture.Home, directory, name => variables.FirstOrDefault(variable => variable.Name == name).Value)
         {
+            Checks = () => new CheckRules(1, 4, 1, () => null),
             Admission = new AdmissionWaiting(
                 TimeSpan.FromMilliseconds(10), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5), () => DateTimeOffset.UtcNow, _ => true),
         };

@@ -19,6 +19,13 @@ public sealed record HeavyRunWorld(string Home, string Directory, Func<string, s
     /// <summary>Whom the slot names as holding or waiting: this process, unless the run is a terminal's in the running Daoris.</summary>
     public HeavyAsker Asker { get; init; } = HeavyAsker.ThisProcess();
 
+    /// <summary>What admits the run beside its repository's others (<see cref="CheckAdmission"/>); null reads the machine's, its <c>checks</c> from the home's driver file.</summary>
+    public Func<CheckRules>? Checks { get; init; }
+
+    internal CheckRules Rules() => Checks?.Invoke() ?? new(
+        ChecksSetting.At(DriverConfig.ResolvePath(Home)), System.Environment.ProcessorCount,
+        MachineAdmission.CapacityOf(Variable, System.Environment.ProcessorCount), MachineMemory.Read);
+
     /// <summary>The whole environment the gates start in, with the run's own variables over it; null for this process's.</summary>
     public IReadOnlyDictionary<string, string>? Environment { get; init; }
 

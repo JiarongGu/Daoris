@@ -612,9 +612,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
     A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
-    the declaration's `reached` runner over every tier. A sent check the executor has not started says what it waits for on its step, never
-    *Ready*: the machine's check slot, held by run `<run>`'s check since a time, else its place in the slot's queue (`CheckSlotWaits`, the
-    check's waits `slot` and `slot-queued`, read from the slot's files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
+    the declaration's `reached` runner over every tier. The machine runs as many checks at once as its check slots admit
+    (`CheckAdmission`, the home's verification slots under `locks/verify/`, a gated integration line taking one as a check does): the
+    machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a number, and `auto`, the default,
+    runs the first always and another while free physical memory and free commit both hold a check's need (the merge tool's 6 GB for a
+    suite, counted again for each check that took its slot in the last two minutes), up to a quarter of the processors within the
+    machine's heavy-run admission, whose places each check's steps still take; memory that cannot be read runs one. A repository's
+    heavy-run slots (`HeavySlot`, `locks/heavy/<key>.lock` then `<key>-n.lock`, each with its holder's record and its own dead-holder
+    clean-up) are as many as the checks admit, and a session's `run-heavy` is judged by the same rule over its repository's holders, so
+    one repository's checks run side by side, each in its slot's verification tree (`lines/trees/<key>`, `<key>-n`); no declaration
+    keeps a repository serial. A sent check the executor
+    has not started says why it waits on its step, never *Ready*: every slot running (`slot`, how many of how many), memory (`slot-memory`,
+    free and needed), every slot of its repository held (`slot-repository`), else its place in the queue (`slot-queued`), each with that place
+    (`CheckSlotWaits`, read from the slots' waiter files at each look). `["reached"]` in a list still names a gate called so. (D192, D293) A declaration's `reached` entry (`run` with `{base}`, `cwd`, `clock`, and
     `outcome`, the marker of the last line the runner prints, JSON of `ran`, `replayed`, `flaked`, `mainRed`, `red`) replaces the
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other

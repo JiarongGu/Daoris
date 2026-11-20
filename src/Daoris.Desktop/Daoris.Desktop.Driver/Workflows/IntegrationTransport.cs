@@ -15,6 +15,8 @@ public sealed record IntegrationTransportWorld
 {
     public Func<DriverConfig> Config { get; init; } = () => DriverConfig.Empty;
 
+    public TimeProvider Clock { get; init; } = TimeProvider.System;
+
     /// <summary>A repository's registered checkout in its workspace; null where this machine has none, and its line is not run.</summary>
     public Func<string, string, CancellationToken, Task<string?>> Root { get; init; } = (_, _, _) => Task.FromResult<string?>(null);
 
@@ -68,6 +70,15 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
     private readonly Dictionary<IntegrationLineSend, DateTimeOffset> _notBefore = [];
     private readonly HashSet<string> _queued = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _ends = new();
+
+    /// <summary>This process's start, in UTC ticks, which a check slot's holder names so a reused process id is not read as it.</summary>
+    private static readonly long Started = StartedOf();
+
+    private static long StartedOf()
+    {
+        using var self = System.Diagnostics.Process.GetCurrentProcess();
+        return self.StartTime.ToUniversalTime().Ticks;
+    }
     private TaskCompletionSource _wake = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Task? _loop;
 
@@ -118,7 +129,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             var woken = Volatile.Read(ref _wake).Task;
             IntegrationLineSend? next;
             DateTimeOffset? soonest;
-            var now = DateTimeOffset.UtcNow;
+            var now = _world.Clock.GetUtcNow();
             lock (_gate)
             {
                 next = _queue.FirstOrDefault(send => !_notBefore.TryGetValue(send, out var at) || at <= now);
@@ -175,7 +186,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         {
             lock (_gate)
             {
-                _notBefore[send] = DateTimeOffset.UtcNow + _world.Poll;
+                _notBefore[send] = _world.Clock.GetUtcNow() + _world.Poll;
                 if (!_queue.Contains(send)) _queue.Add(send);
             }
 
@@ -204,12 +215,15 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         HeavySlot? heavy = null;
         if (Gated(store, send))
         {
-            verifying = VerifySlot.TryTake(home);
-            heavy = verifying is null || HeavySlot.KeyOf(root) is not { } key ? null : HeavySlot.TryTake(home, key);
+            var now = _world.Clock.GetUtcNow();
+            var rules = new CheckRules(config.Checks, Environment.ProcessorCount, MachineAdmission.Capacity(), MachineMemory.Read);
+            (verifying, var wait) = CheckAdmission.TryTake(home, rules, now,
+                () => new VerifyHolder(Environment.ProcessId, Started, $"integration of {send.Line}", $"integration-{send.Repository}-{send.Line}", send.Repository, now));
+            heavy = verifying is null || HeavySlot.KeyOf(root) is not { } key ? null : HeavySlot.TryTake(home, key, rules.Slots);
             if (heavy is null)
             {
                 verifying?.Dispose();
-                Later(send, $"integration: `{send.Repository}`'s line `{send.Line}` waits for {(verifying is null ? "the verification running in this home" : "the repository's heavy run")}.");
+                Later(send, $"integration: `{send.Repository}`'s line `{send.Line}` waits for {(wait is not null ? wait.Sentence : "the repository's heavy run")}.");
                 return null;
             }
         }
@@ -229,7 +243,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         var waits = store.StandingFor(send.Repository, send.Line) is not null;
         lock (_gate)
         {
-            if (waits) _notBefore[send] = DateTimeOffset.UtcNow + _world.Poll;
+            if (waits) _notBefore[send] = _world.Clock.GetUtcNow() + _world.Poll;
             else _notBefore.Remove(send);
         }
 
@@ -265,7 +279,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
     {
         lock (_gate)
         {
-            _notBefore[send] = DateTimeOffset.UtcNow + _world.Poll;
+            _notBefore[send] = _world.Clock.GetUtcNow() + _world.Poll;
             if (!_queue.Contains(send)) _queue.Add(send);
         }
 

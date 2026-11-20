@@ -32,5 +32,6 @@ public static class DriverChoiceVerbs
         new CommitsVerb(),
         new KeepVerb(),
         new TerminalVerb(),
+        new ChecksVerb(),
     ];
 }

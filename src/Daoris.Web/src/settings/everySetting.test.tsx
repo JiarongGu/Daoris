@@ -42,14 +42,15 @@ describe('every machine setting', () => {
     render(
       <Tooltip.Provider>
         <DriverCards
-          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
-          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest') }}
+          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, checks: null, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
+          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks') }}
           busy={{ access: false }}
           onGo={vi.fn()}
           onNotify={vi.fn()}
           onCoolOff={vi.fn()}
           onQuiet={vi.fn()}
           onDrain={vi.fn()}
+          onChecks={vi.fn()}
           onManifest={vi.fn()}
           onCap={vi.fn()}
           onTerminal={vi.fn()}

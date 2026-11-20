@@ -29,6 +29,7 @@ internal static class DriverConfigWriter
             if (config.CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             if (config.QuietMinutes is { } quiet) writer.WriteNumber(QuietSetting.File, quiet);
             if (config.DrainMinutes is { } drain) writer.WriteNumber(DrainSetting.File, drain);
+            if (config.Checks is { } checks) writer.WriteNumber(ChecksSetting.File, checks);
             config.Manifest.Write(writer);
             writer.WriteStartObject("forgiven");
             foreach (var (quest, mark) in config.Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))

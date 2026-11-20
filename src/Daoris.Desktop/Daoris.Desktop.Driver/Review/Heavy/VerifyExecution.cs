@@ -18,7 +18,7 @@ internal sealed record VerifyRunner(string Run, string? Cwd, bool Clock, bool Re
 }
 
 /// <summary>One attempt's run, holding both slots: the accepted declaration it runs under (<see cref="CheckDeclaration"/>), then its runner or its gates in the job.</summary>
-internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob job, VerifyWorld world, string key, Action<Func<HeavyHolder, HeavyHolder>> keep)
+internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob job, VerifyWorld world, string key, string slot, Action<Func<HeavyHolder, HeavyHolder>> keep)
 {
     private readonly string _folder = VerifyFiles.AttemptFolder(home, send.Run, send.Invocation);
 
@@ -150,7 +150,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     /// <summary>The repository's reached runner in the verification tree at the commit, in place of the gates, under the step's one admission hold.</summary>
     private async Task<VerifyResult> ReachedAsync(ReachedRunner runner, string command, CancellationToken ct)
     {
-        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", key);
+        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
         try
         {
@@ -172,7 +172,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     /// <summary>The gates one after another in Daoris's verification tree at the commit, the first failure ending the sequence.</summary>
     private async Task<VerifyResult> GatesAsync(IReadOnlyList<DeclaredGate> gates, IReadOnlyList<VerifyGate> kept, CancellationToken ct)
     {
-        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", key);
+        var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
         var ran = new List<VerifyGate>();
         try

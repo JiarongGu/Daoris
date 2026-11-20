@@ -74,6 +74,8 @@ export type DriverState = {
   quiet?: number;
   /** How long a staged build's drain may hold new work, in minutes: the file's, or the default. */
   drain?: number;
+  /** How many checks the machine runs at once: the pinned number, or null for auto (as many as its memory admits). */
+  checks?: number | null;
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;
@@ -368,6 +370,9 @@ export const useSetCap = () => useDriverChange('SET_CAP');
 /** Whether a terminal's press waits for the Confirm or runs at once as the person's: the same `terminal` `daoris settings terminal ask|act` edits. */
 export const useSetTerminal = () => useDriverChange('SET_TERMINAL');
 
+/** How many checks the machine runs at once, a number or null for auto: the same `checks` `daoris settings checks <n>|auto` edits. */
+export const useSetChecks = () => useDriverChange('SET_CHECKS');
+
 /**
  * One kind's keep rule: the same `keep` `daoris settings keep` edits. A value out of its
  * kind's bounds is the driver's `KEEP_OUT_OF_RANGE`, said under the row's editor. It declares the wiring with the state, so the card
@@ -648,7 +653,7 @@ export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?
  * change and a wait's end are seen within seconds; every 30 s while it is free, since nothing wakes the page when a run starts.
  */
 export const heavySlotAgainIn = (slot: HeavySlot | null | undefined): number =>
-  slot && (slot.holder || slot.waiters.length > 0) ? 5_000 : 30_000;
+  slot && (slot.holders.length > 0 || slot.waiters.length > 0) ? 5_000 : 30_000;
 
 const heavySlotQuery = (client: QueryClient, repository: string, enabled: boolean) => ({
   queryKey: keys.heavySlot(repository),

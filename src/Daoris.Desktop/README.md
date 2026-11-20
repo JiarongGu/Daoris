@@ -688,9 +688,10 @@ The old `Sessions/` module no longer exists; its files went to the subdomains th
 
 A session's heavy checks run through `daoris gate run [--gate <name> | --look | -- <command>]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in
 `Review/Heavy/` (once `Sessions/Heavy/`): run in a checkout, it runs the gates its `daoris.gates.json` marks `"heavy": true` one after another, or the one
-named (`HeavyGates`), holding one slot per repository across its trees (`HeavySlot`: the repository's common git folder, read
-from git's own files, keys a file under the home's `locks/heavy/` whose open handle is the lock, with no lease; a waiting run says
-behind whom and how long from the holder's record beside it). Each gate starts suspended and joins the run's kill-on-close job
+named (`HeavyGates`), holding one of its repository's slots across its trees (`HeavySlot`: the repository's common git folder, read
+from git's own files, keys files under the home's `locks/heavy/`, `<key>.lock` then `<key>-n.lock`, each open handle a lock, with no
+lease; as many as the machine's checks admit, `CheckAdmission` judging the repository's holders; a waiting run says why and behind
+whom from the holders' records beside them). Each gate starts suspended and joins the run's kill-on-close job
 before it runs, writing to the run's own output (`HeavyStep`, `ProcessJob.Create`); a pass, a failure and a stop alike end the
 job and wait until it is empty before the slot goes, and the next holder ends a job a dead holder left. The verb holds no home lease.
 Who holds it and who waits is read, never parsed from a run's output (HEAVYSLOT1, the UI/UX design §3.5): the holder rewrites its

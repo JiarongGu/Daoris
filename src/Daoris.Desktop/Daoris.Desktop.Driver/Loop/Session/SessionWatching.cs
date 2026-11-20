@@ -97,7 +97,7 @@ internal sealed class SessionWatching(string home, DriverConfig config, LoopCont
         if (tree is null || HeavySlot.KeyOf(tree) is not { } key) return null;
         var look = HeavySlot.Look(home, key);
         return look.Waiters.Any(waiter => string.Equals(waiter.Session, session, StringComparison.OrdinalIgnoreCase))
-            ? new HeavyWait(look.Holder?.Session)
+            ? new HeavyWait(look.Holders.FirstOrDefault()?.Session)
             : null;
     }
 }

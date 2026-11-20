@@ -251,7 +251,7 @@ public static class HeavyRun
             var waiter = new HeavyWaiter(pid, started, checkout, DateTimeOffset.UtcNow, session);
             var sessions = SessionLocks.HolderOf(checkout) is not null;
             slot = await HeavySlot.TakeUnlessAsync(
-                world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null).ConfigureAwait(false);
+                world.Home, key, repository, output, ct, world.Waiting, waiter, sessions ? holder => holder.Run is not null : null, world.Rules()).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -262,7 +262,7 @@ public static class HeavyRun
         if (slot is null)
         {
             output.WriteLine(
-                $"run-heavy: `{repository}`'s heavy-run slot is held by its verification run {HeavySlot.Holder(world.Home, key)?.Run}, which runs the repository's "
+                $"run-heavy: `{repository}`'s heavy-run slot is held by its verification run {HeavySlot.Look(world.Home, key).Holders.FirstOrDefault(holder => holder.Run is not null)?.Run}, which runs the repository's "
                 + "heavy gates on its line, so this session's run does not wait behind it; the verdict shows on the repository's Workflow tab. Run the "
                 + "checks your change reaches, filtered, instead.");
             return 1;
@@ -304,7 +304,7 @@ public static class HeavyRun
                 }
             }
 
-            // The repository's slot says one run of its gates at a time; the machine's admission says how many heavy runs the
+            // The repository's slots say how many runs of its gates at once; the machine's admission says how many heavy runs the
             // machine holds at all, the merge queue's gates among them. It comes after the slot, so a run waiting for its repository's turn
             // holds no place; a wait for it is said here and on the page, and the job is ended if the wait is.
             AdmissionHold? hold;
@@ -414,11 +414,8 @@ public static class HeavyRun
 
         var look = HeavySlot.Look(world.Home, key, alive);
         var now = world.Waiting.Clock();
-        if (look.Holder is not { } holder)
-        {
-            output.WriteLine($"run-heavy: no heavy run of `{repository}` now.");
-        }
-        else
+        if (look.Holders.Count == 0) output.WriteLine($"run-heavy: no heavy run of `{repository}` now.");
+        foreach (var holder in look.Holders)
         {
             var who = holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}" : "a run from a terminal";
             var where = holder.Failed is { } failed

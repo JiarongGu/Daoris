@@ -42,10 +42,10 @@ public sealed record HeavyGateFailed(string Gate, int Exit);
 public sealed record HeavyWaiter(int Pid, long Started, string Checkout, DateTimeOffset Since, string? Session);
 
 /// <summary>
-/// A repository's slot as it stands: the run holding it and the runs waiting for it, each only where its process (its id
-/// and its start) is still there, so a record a run that died left behind holds nothing and waits for nothing.
+/// A repository's slots as they stand: the runs holding them, the first taken first, and the runs waiting, each only where its process
+/// (its id and its start) is still there, so a record a run that died left behind holds nothing and waits for nothing.
 /// </summary>
-public sealed record HeavyLook(HeavyHolder? Holder, IReadOnlyList<HeavyWaiter> Waiters);
+public sealed record HeavyLook(IReadOnlyList<HeavyHolder> Holders, IReadOnlyList<HeavyWaiter> Waiters);
 
 /// <summary>How a run waiting for the slot looks again, and how often it says that it still waits.</summary>
 /// <param name="Poll">Between looks.</param>
@@ -58,12 +58,13 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 }
 
 /// <summary>
-/// One heavy-run slot per repository, across its trees: while one run of a repository's heavy
-/// gates holds it, a second, from any checkout of the same repository, waits and says behind whom.
+/// A repository's heavy-run slots, across its trees: as many runs of its heavy gates at once as the machine's check admission
+/// admits (<see cref="CheckAdmission"/>); a run from any checkout of it that finds none admitted waits and says why and behind whom.
 /// </summary>
 /// <remarks>
-/// <para><b>Why.</b> Two driven sessions on one repository each ran its full build and suites at once on the installed Daoris (6 to 9
-/// minutes each, about 25 node workers and 5 GB between them, a neighbour's shell killed).</para>
+/// <para><b>Why, and why not one.</b> Two driven sessions on one repository each ran its full build and suites at once on the installed
+/// Daoris (about 25 node workers and 5 GB between them, a neighbour's shell killed). The cost is memory, so the slots are admitted as the
+/// machine's checks are: a pinned <c>checks</c> is that many, <c>auto</c> another while the memory holds one more.</para>
 ///
 /// <para><b>Keyed by the repository, never the tree.</b> The key is the repository's common git folder, read from git's own files with
 /// no process (<see cref="TreeTips.CommonDirectory"/>), named by the folder's identity where Windows gives one (a junction, a
@@ -71,13 +72,13 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
 /// the root checkout and every linked tree of it share one slot, with no registry: a root checkout is no session tree, and the tree
 /// list names none for it.</para>
 ///
-/// <para><b>The handle is the lock</b>, as <see cref="TreeLock"/>'s is: one file under the home's <c>locks/heavy/</c>, opened alone. A
-/// process that dies lets go of it with its handles, so nothing stale blocks, and there is no lease and no timeout anywhere: a timed
-/// lease admits overlap the moment a run outlasts it.</para>
+/// <para><b>Each handle is a lock</b>, as <see cref="TreeLock"/>'s is: a file under the home's <c>locks/heavy/</c> per slot (the first
+/// <c>&lt;key&gt;.lock</c>, the n-th <c>&lt;key&gt;-n.lock</c>), opened alone. A process that dies lets go of it with its handles, so
+/// nothing stale blocks, and there is no lease and no timeout anywhere: a timed lease admits overlap the moment a run outlasts it.</para>
 ///
-/// <para><b>The holder says what it runs</b> in a record beside the lock (<see cref="HeavyHolder"/>), which a waiting run reads to say
-/// it, and which the holder takes away as it lets go. One left behind is a holder that died holding the slot: the next run reads it
-/// (<see cref="Before"/>) and ends the job it names, if it is still there, before its own gates start.</para>
+/// <para><b>Each holder says what it runs</b> in a record beside its lock (<see cref="HeavyHolder"/>), which a waiting run reads to say
+/// it, and which the holder takes away as it lets go. One left behind is a holder that died holding that slot: the next run to take it
+/// reads it (<see cref="Before"/>) and ends the job it names, if it is still there, before its own gates start.</para>
 ///
 /// <para><b>The page reads who holds it and who waits</b>: the holder rewrites its record at each
 /// gate with that gate and its start, and each waiting run keeps a record of its own under <see cref="WaitersOf"/>, gone as it takes
@@ -89,12 +90,16 @@ public sealed class HeavySlot : IDisposable
     private readonly FileStream _file;
     private readonly string _record;
 
-    private HeavySlot(FileStream file, string record, HeavyHolder? before)
+    private HeavySlot(FileStream file, string record, string name, HeavyHolder? before)
     {
         _file = file;
         _record = record;
+        Name = name;
         Before = before;
     }
+
+    /// <summary>The slot's own name: the repository's key for its first, <c>&lt;key&gt;-n</c> for the n-th, which names the verification tree a check in it runs in.</summary>
+    public string Name { get; }
 
     /// <summary>The record the slot holds when it is taken: the run before, which died holding it; null where it let go as it should.</summary>
     public HeavyHolder? Before { get; }
@@ -130,83 +135,94 @@ public sealed class HeavySlot : IDisposable
             : name.EndsWith(".git", StringComparison.OrdinalIgnoreCase) ? name[..^4] : name;
     }
 
-    /// <summary>Where a repository's slot is, under the home's <c>locks/</c>.</summary>
-    public static string PathOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{key}.lock");
+    /// <summary>Where a repository's slot at <paramref name="index"/> is, under the home's <c>locks/</c>, the first at 0.</summary>
+    public static string PathOf(string home, string key, int index = 0) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{NameOf(key, index)}.lock");
 
     /// <summary>Where its holder says what it runs, beside the slot.</summary>
-    public static string RecordOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{key}.json");
+    public static string RecordOf(string home, string key, int index = 0) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{NameOf(key, index)}.json");
 
-    /// <summary>Where the runs waiting for it each say so, one file a run, beside the slot.</summary>
+    /// <summary>Where the runs waiting for one of them each say so, one file a run, beside the slots.</summary>
     public static string WaitersOf(string home, string key) => DaorisHome.Entry(home, HomeEntry.Locks, "heavy", $"{key}.waits");
 
-    /// <summary>The slot, or null while another run holds it. Never waits.</summary>
+    private static string NameOf(string key, int index) => index == 0 ? key : $"{key}-{index + 1}";
+
+    /// <summary>The first of the repository's first <paramref name="slots"/> slots that is free, or null while runs hold every one. Never waits.</summary>
     /// <remarks>
-    /// The file held the other way is an answer: null. A folder that cannot be made, or an error that is no sharing violation, is
+    /// The file held the other way is an answer: the next slot. A folder that cannot be made, or an error that is no sharing violation, is
     /// thrown, since "cannot tell" is never "free". Off Windows .NET takes an advisory lock, which every Daoris process honours, and
     /// says a held one as any other failure to open, so there every failure to open is read as held.
     /// </remarks>
-    public static HeavySlot? TryTake(string home, string key)
+    public static HeavySlot? TryTake(string home, string key, int slots = 1)
     {
-        var path = PathOf(home, key);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        FileStream file;
-        try
+        Directory.CreateDirectory(Path.GetDirectoryName(PathOf(home, key))!);
+        for (var index = 0; index < slots; index++)
         {
-            file = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-        }
-        catch (IOException held) when (!OperatingSystem.IsWindows() || (held.HResult & 0xFFFF) is SharingViolation or LockViolation)
-        {
-            return null;
+            FileStream file;
+            try
+            {
+                file = new FileStream(PathOf(home, key, index), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException held) when (!OperatingSystem.IsWindows() || (held.HResult & 0xFFFF) is SharingViolation or LockViolation)
+            {
+                continue;
+            }
+
+            return new HeavySlot(file, RecordOf(home, key, index), NameOf(key, index), Holder(home, key, index));
         }
 
-        return new HeavySlot(file, RecordOf(home, key), Holder(home, key));
+        return null;
     }
 
     /// <summary>
-    /// The slot, waited for while another run holds it, saying on <paramref name="said"/> behind which run and for how long, at
-    /// <paramref name="waiting"/>'s cadence, until it is this run's. A free slot is taken at once, saying nothing.
+    /// A slot, waited for while <paramref name="rules"/> admit none, saying on <paramref name="said"/> why and behind which runs, at
+    /// <paramref name="waiting"/>'s cadence, until one is this run's. An admitted free slot is taken at once, saying nothing.
     /// </summary>
+    /// <param name="rules">What admits another run beside the slots' holders (<see cref="CheckAdmission.Judge"/>); null admits one.</param>
     /// <param name="waiter">
-    /// What this run writes beside the slot while it waits, so the page can say who waits; taken away as it takes the
+    /// What this run writes beside the slots while it waits, so the page can say who waits; taken away as it takes a
     /// slot or stops. Null writes nothing.
     /// </param>
     /// <exception cref="OperationCanceledException">Stopped while waiting; nothing is held.</exception>
     public static async Task<HeavySlot> TakeAsync(
-        string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting = null, HeavyWaiter? waiter = null) =>
-        (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null).ConfigureAwait(false))!;
+        string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting = null, HeavyWaiter? waiter = null,
+        CheckRules? rules = null) =>
+        (await TakeUnlessAsync(home, key, repository, said, ct, waiting, waiter, yieldTo: null, rules).ConfigureAwait(false))!;
 
     /// <summary>
-    /// <see cref="TakeAsync"/>, giving up without waiting once the slot's holder is one <paramref name="yieldTo"/> names (a
+    /// <see cref="TakeAsync"/>, giving up without waiting once a slot it waits for is held by one <paramref name="yieldTo"/> names (a
     /// session's run never waits behind a verification): null then, nothing held and no waiter left.
     /// </summary>
     public static async Task<HeavySlot?> TakeUnlessAsync(
         string home, string key, string repository, TextWriter said, CancellationToken ct, HeavyWaiting? waiting, HeavyWaiter? waiter,
-        Func<HeavyHolder, bool>? yieldTo)
+        Func<HeavyHolder, bool>? yieldTo, CheckRules? rules = null)
     {
         waiting ??= HeavyWaiting.Default;
         var waited = Stopwatch.StartNew();
         TimeSpan? saidAt = null;
-        HeavyHolder? saidOf = null;
+        string? saidOf = null;
         string? waits = null;
         try
         {
             for (var looks = 0; ; looks++)
             {
                 ct.ThrowIfCancellationRequested();
-                if (TryTake(home, key) is { } slot)
+                var slots = rules?.Slots ?? 1;
+                var wait = rules is null ? null : CheckAdmission.Judge([.. Look(home, key).Holders.Select(holder => holder.Since)], rules, waiting.Clock());
+                if (wait is null && TryTake(home, key, slots) is { } slot)
                 {
                     if (looks > 0) said.WriteLine($"run-heavy: `{repository}`'s heavy-run slot is this run's, after waiting {Took(waited.Elapsed)}.");
                     return slot;
                 }
 
-                var holder = Holder(home, key);
-                if (holder is not null && yieldTo?.Invoke(holder) == true) return null;
+                var holders = Enumerable.Range(0, slots).Select(index => Holder(home, key, index)).OfType<HeavyHolder>().ToList();
+                if (yieldTo is not null && holders.Any(yieldTo)) return null;
                 if (waiter is not null && waits is null) waits = KeepWaiter(home, key, waiter);
-                if (saidAt is null || waited.Elapsed - saidAt >= waiting.SayEvery || !SameRun(holder, saidOf))
+                var of = string.Join('|', holders.Select(holder => $"{holder.Pid}:{holder.Started}:{holder.Since:O}")) + wait?.Code;
+                if (saidAt is null || waited.Elapsed - saidAt >= waiting.SayEvery || of != saidOf)
                 {
-                    said.WriteLine(Waiting(repository, holder, waiting.Clock(), waited.Elapsed));
+                    said.WriteLine(Waiting(repository, holders, wait, waiting.Clock(), waited.Elapsed));
                     saidAt = waited.Elapsed;
-                    saidOf = holder;
+                    saidOf = of;
                 }
 
                 await Task.Delay(waiting.Poll, ct).ConfigureAwait(false);
@@ -219,7 +235,7 @@ public sealed class HeavySlot : IDisposable
     }
 
     /// <summary>
-    /// The slot as it stands: its holder and the runs waiting for it, the longest waiting first, each only where
+    /// The slots as they stand: their holders and the runs waiting, the longest waiting first, each only where
     /// <paramref name="alive"/> finds its process (its id and its start). Neither file alone is a hold: the handle is the lock, and a
     /// run that died leaves its record behind, so one whose process is gone is read as nothing. Reads files only, and takes nothing.
     /// </summary>
@@ -227,30 +243,33 @@ public sealed class HeavySlot : IDisposable
     public static HeavyLook Look(string home, string key, Func<int, long, bool>? alive = null)
     {
         alive ??= Running;
-        var holder = Holder(home, key) is { } held && alive(held.Pid, held.Started) ? held : null;
+        var holders = Files(Path.GetDirectoryName(PathOf(home, key))!, $"{key}*.json")
+            .Select(ReadShared).OfType<string>().Select(Parse).OfType<HeavyHolder>().Where(held => alive(held.Pid, held.Started))
+            .OrderBy(held => held.Since).ToList();
         var waiters = new List<HeavyWaiter>();
-        var folder = WaitersOf(home, key);
-        IEnumerable<string> files;
-        try
+        foreach (var file in Files(WaitersOf(home, key), "*.json"))
         {
-            files = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.json").ToList() : [];
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            files = [];
-        }
-
-        foreach (var file in files)
-        {
-            // The holder's own record is never a wait: a run that took the slot took its wait away first, or is about to.
+            // A holder's own record is never a wait: a run that took a slot took its wait away first, or is about to.
             if (ReadShared(file) is { } text && ParseWaiter(text) is { } one && alive(one.Pid, one.Started)
-                && (holder is null || holder.Pid != one.Pid || holder.Started != one.Started))
+                && !holders.Any(holder => holder.Pid == one.Pid && holder.Started == one.Started))
             {
                 waiters.Add(one);
             }
         }
 
-        return new HeavyLook(holder, [.. waiters.OrderBy(one => one.Since).ThenBy(one => one.Pid)]);
+        return new HeavyLook(holders, [.. waiters.OrderBy(one => one.Since).ThenBy(one => one.Pid)]);
+    }
+
+    private static List<string> Files(string folder, string pattern)
+    {
+        try
+        {
+            return Directory.Exists(folder) ? [.. Directory.EnumerateFiles(folder, pattern)] : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
     }
 
     /// <summary>Whether a process of that id runs and started then: a reused id is another process. One whose start cannot be read is taken as it.</summary>
@@ -275,9 +294,9 @@ public sealed class HeavySlot : IDisposable
         }
     }
 
-    /// <summary>What the slot's holder says it runs, or null where nothing is said or what is there does not read.</summary>
-    public static HeavyHolder? Holder(string home, string key)
-        => ReadShared(RecordOf(home, key)) is { } text ? Parse(text) : null;
+    /// <summary>What the holder of the slot at <paramref name="index"/> says it runs, or null where nothing is said or what is there does not read.</summary>
+    public static HeavyHolder? Holder(string home, string key, int index = 0)
+        => ReadShared(RecordOf(home, key, index)) is { } text ? Parse(text) : null;
 
     /// <summary>A record's text, read sharing writing and deletion with its writer, so a run letting go is never refused by a reader.</summary>
     private static string? ReadShared(string path)
@@ -476,17 +495,14 @@ public sealed class HeavySlot : IDisposable
     private static string? Text(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    private static string Waiting(string repository, HeavyHolder? holder, DateTimeOffset now, TimeSpan waited)
+    private static string Waiting(string repository, IReadOnlyList<HeavyHolder> holders, CheckWait? wait, DateTimeOffset now, TimeSpan waited)
     {
-        var who = holder is null
-            ? "a run that has not said what it runs yet"
-            : (holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
-              + $", running {(holder.Gates.Count == 0 ? "its gates" : string.Join(", ", holder.Gates))} for {Took(now - holder.Since)} in {holder.Checkout}";
-        return $"run-heavy: `{repository}`'s heavy-run slot is held by {who}; this run waits for it ({Took(waited)} so far).";
+        var who = holders.Count == 0 ? "a run that has not said what it runs yet" : string.Join("; ", holders.Select(holder =>
+            (holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
+            + $", running {(holder.Gates.Count == 0 ? "its gates" : string.Join(", ", holder.Gates))} for {Took(now - holder.Since)} in {holder.Checkout}"));
+        var why = wait?.Code == CheckWait.Memory ? $"waits for {wait.Sentence}, beside {who}" : $"is held by {who}";
+        return $"run-heavy: `{repository}`'s heavy-run slot {why}; this run waits for it ({Took(waited)} so far).";
     }
-
-    private static bool SameRun(HeavyHolder? one, HeavyHolder? other) =>
-        one is null ? other is null : other is not null && one.Pid == other.Pid && one.Started == other.Started && one.Since == other.Since;
 
     private static string? Common(string directory) =>
         CheckoutOf(directory) is { } checkout ? TreeTips.CommonDirectory(checkout) : null;
