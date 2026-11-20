@@ -45,7 +45,7 @@ export function PluginSourceLine({ source }: { source?: PluginSourceShown | null
   switch (source.kind) {
     case 'folder':
       return (
-        <span>{t('plugin.source.folder')} <PathText path={source.folder ?? ''} className="text-meta" /></span>
+        <span>{t('plugin.source.folder')} <PathText path={source.folder ?? ''} className="text-caption" /></span>
       );
     case 'offer':
       return <span>{t('plugin.source.offer')}</span>;
@@ -70,7 +70,7 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const side = (value: string) => (value ? <code className="font-mono text-meta">{value}</code> : <span>{t('plugin.update.none')}</span>);
+  const side = (value: string) => (value ? <code className="font-mono text-caption">{value}</code> : <span>{t('plugin.update.none')}</span>);
 
   return (
     <section aria-label={t('plugin.update.title')} className="rounded-control border border-line bg-page/60 px-3.5 py-2.5">
@@ -91,7 +91,7 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
           ))}
         </ul>
       )}
-      {!plan.refusal && <p className="m-0 mt-2 text-meta text-ink-faint">{t('plugin.update.note')}</p>}
+      {!plan.refusal && <p className="m-0 mt-2 text-caption text-ink-faint">{t('plugin.update.note')}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
         {!plan.refusal && (
           <Button variant="primary" disabled={busy} aria-busy={busy || undefined} onClick={() => onApply(plan.id)}>{t('plugin.update.apply')}</Button>

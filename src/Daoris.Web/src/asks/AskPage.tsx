@@ -422,7 +422,7 @@ export function AskPage({
       )}
 
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
-        <dt className="text-ink-faint">{t('work.head.id')}</dt><dd className="m-0 font-mono text-meta">#{ask.id}</dd>
+        <dt className="text-ink-faint">{t('work.head.id')}</dt><dd className="m-0 font-mono text-caption">#{ask.id}</dd>
         <dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd>
         <dt className="text-ink-faint">{t('asks.record.asked')}</dt>
         <dd className="m-0">{stamp(ask.asked)} · {ago(ask.asked)}</dd>
@@ -516,19 +516,19 @@ export function AskPage({
                   <button
                     type="button"
                     onClick={() => onAttend(intake.id)}
-                    className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-accent underline-offset-2 hover:underline"
+                    className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-caption text-accent-ink underline-offset-2 hover:underline"
                   >
                     {sessionTool(intake, false, nameOf)}
                   </button>
                 ) : (
-                  <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(intake, false, nameOf)}</span>
+                  <span className="min-w-0 truncate font-mono text-caption text-ink-soft">{sessionTool(intake, false, nameOf)}</span>
                 )}
-                <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
+                <span className="font-mono text-caption text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>
               <Note parts={intake.noteParts} className="mt-1.5 text-body text-ink-soft" />
             </>
           ) : (
-            <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>
+            <span className="font-mono text-caption text-ink-soft">#{ask.intake.slice(0, 6)}</span>
           )}
         </PageSection>
       )}
@@ -575,13 +575,13 @@ export function AskPage({
                   <button
                     type="button"
                     onClick={() => onOpenQuest(id)}
-                    className="inline-flex max-w-full items-baseline gap-2 text-left text-body text-accent underline-offset-2 hover:underline"
+                    className="inline-flex max-w-full items-baseline gap-2 text-left text-body text-accent-ink underline-offset-2 hover:underline"
                   >
-                    <span className="shrink-0 font-mono text-meta">#{id.slice(0, 6)}</span>
+                    <span className="shrink-0 font-mono text-caption">#{id.slice(0, 6)}</span>
                     <span className="truncate">{questTitles[id]}</span>
                   </button>
                 ) : (
-                  <span className="font-mono text-meta text-ink-soft">#{id.slice(0, 6)}</span>
+                  <span className="font-mono text-caption text-ink-soft">#{id.slice(0, 6)}</span>
                 )}
               </li>
             ))}
@@ -665,7 +665,7 @@ export function AskPage({
                 {/* Where the person chose, their browser or Daoris's. */}
                 <ExternalLink
                   href={link}
-                  className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
+                  className="inline-flex max-w-full items-center gap-1.5 text-body text-accent-ink underline-offset-2 hover:underline"
                 >
                   <Icon name="link" size={12} />
                   <span className="truncate">{link}</span>
@@ -683,7 +683,7 @@ export function AskPage({
               <li key={file.sha256} className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-body text-ink-soft">
                 <Icon name="attach" size={12} />
                 <span className="truncate">{file.name}</span>
-                <span className="font-mono text-meta text-ink-faint">{size(file.bytes)} · {t('asks.record.fileKept')}</span>
+                <span className="font-mono text-caption text-ink-faint">{size(file.bytes)} · {t('asks.record.fileKept')}</span>
               </li>
             ))}
           </ul>

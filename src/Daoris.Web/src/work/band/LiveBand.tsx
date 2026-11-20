@@ -54,13 +54,13 @@ export function LiveBand({ lifetimes, act, reader, stoppable, onStop, onOpen, sh
             type="button"
             aria-expanded={unfolded}
             onClick={() => setUnfolded(!unfolded)}
-            className="flex items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-meta text-ink-soft hover:text-ink"
+            className="flex items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-caption text-ink-soft hover:text-ink"
           >
             <Icon name={unfolded ? 'chevronDown' : 'chevronRight'} size={12} />
             {said}
           </button>
         )
-        : <p className="m-0 text-meta text-ink-faint">{said}</p>}
+        : <p className="m-0 text-caption text-ink-faint">{said}</p>}
       {shown && act && (
         <Line id="act" icon="atWork" kind={t('work.band.agent')} name={act.title ?? t('work.band.thinking')}
           ran={act.since ? now - Date.parse(act.since) : null} />
@@ -80,7 +80,7 @@ export function LiveBand({ lifetimes, act, reader, stoppable, onStop, onOpen, sh
   );
 }
 
-const PRESS = 'shrink-0 border-0 bg-transparent p-0 text-meta text-accent underline decoration-dotted underline-offset-2 hover:text-ink';
+const PRESS = 'shrink-0 border-0 bg-transparent p-0 text-caption text-accent-ink underline decoration-dotted underline-offset-2 hover:text-ink';
 
 /** A subagent's line: its last act from its own record, quiet from that record's last moment, opened by the way to it. */
 function ChildLine({ beside, lifetimes, reader, now, onOpen }: {
@@ -146,8 +146,8 @@ function Line({ id, icon, kind, name, depth = 1, ran, last, tail, quiet = null, 
         <Icon name={icon} size={14} className="shrink-0 text-ink-faint" />
         <span className="shrink-0">{words.join(' · ')}</span>
         {last && <span className="min-w-0 truncate text-ink-faint">“{last}”</span>}
-        {quiet !== null && <span className="shrink-0 text-meta text-warn">{t('work.band.quiet', { span: span(quiet) })}</span>}
-        {stopping && <span className="shrink-0 text-meta text-ink-faint">{t('work.band.stopping')}</span>}
+        {quiet !== null && <span className="shrink-0 text-caption text-warn">{t('work.band.quiet', { span: span(quiet) })}</span>}
+        {stopping && <span className="shrink-0 text-caption text-ink-faint">{t('work.band.stopping')}</span>}
         <span className="ml-auto flex shrink-0 items-center gap-2">
           {tail && tail.length > 0 && (
             <button type="button" aria-pressed={following} onClick={() => setFollowing(!following)} className={PRESS}>
@@ -164,14 +164,14 @@ function Line({ id, icon, kind, name, depth = 1, ran, last, tail, quiet = null, 
         </span>
       </p>
       {asking && (
-        <p className="m-0 ml-5 flex flex-wrap items-center gap-x-2 text-meta text-ink-soft">
+        <p className="m-0 ml-5 flex flex-wrap items-center gap-x-2 text-caption text-ink-soft">
           <span>{t('work.band.ask', { name })}</span>
           <button type="button" onClick={stop} className={PRESS}>{t('work.band.stopIt')}</button>
           <button type="button" onClick={() => setAsking(false)} className={PRESS}>{t('work.band.keep')}</button>
         </p>
       )}
       {following && tail && (
-        <pre className="m-0 ml-5 max-h-16 overflow-hidden whitespace-pre-wrap font-mono text-meta text-ink-faint">{tail.join('\n')}</pre>
+        <pre className="m-0 ml-5 max-h-16 overflow-hidden whitespace-pre-wrap font-mono text-caption text-ink-faint">{tail.join('\n')}</pre>
       )}
     </div>
   );

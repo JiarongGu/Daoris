@@ -89,10 +89,10 @@ for (const [story, { nodes, target }] of Object.entries(SIZES)) {
 });
 
 // The tier follows 11 px × the window's zoom × k (trap 12 beside it): 9 px full, 4 px a chip, below it a dot.
-const expectedTier = (k: number, rem: number) => { const size = 11 * (rem / 16) * k; return size >= 9 ? 'full' : size >= 4 ? 'chip' : 'dot'; };
+const expectedTier = (k: number, rem: number) => { const size = 12 * (rem / 16) * k; return size >= 9 ? 'full' : size >= 4 ? 'chip' : 'dot'; };
 
 for (const zoom of [50, 100, 200]) {
-  test(`the tiers switch by the effective text-meta at window zoom ${zoom}%`, async ({ page }) => {
+  test(`the tiers switch by the effective text-caption at window zoom ${zoom}%`, async ({ page }) => {
     await open(page, 'Hundred', `&zoom=${zoom}`);
     const rem = await page.evaluate(() => Number.parseFloat(getComputedStyle(document.documentElement).fontSize));
     for (const k of [2, 1, 0.7, 0.4, 0.2, 0.1]) {

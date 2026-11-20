@@ -58,7 +58,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
       {settingsShown && (
         <Fold section="settings" title={t('agents.section.settings')} summary={settingsSummary(tool)} open={open.has('settings')} onToggle={toggle}>
           {/* What an account's own model means now actors choose models: their *account default*. */}
-          <p className="m-0 pb-1.5 text-meta text-ink-soft">{t('agents.settings.roles')}</p>
+          <p className="m-0 pb-1.5 text-caption text-ink-soft">{t('agents.settings.roles')}</p>
           <ul className="m-0 list-none p-0">
             {tool.accounts.filter((account) => account.settings).map((account) => (
               <li key={account.home} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-1.5 first:border-t-0">
@@ -118,7 +118,7 @@ export function AgentMore({ rulesShown, t, rules, open, toggle, busy, acts, sett
               })}
             </ul>
           )}
-          <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+          <p className="m-0 mt-2 text-caption text-ink-faint">{t('usage.note')}</p>
         </Fold>
       )}
 

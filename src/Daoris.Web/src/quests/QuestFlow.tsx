@@ -106,7 +106,7 @@ function MoveLines({ lines }: { lines: QuestMoveLine[] }) {
           type="button"
           tabIndex={-1}
           onClick={() => setAll(true)}
-          className="cursor-pointer justify-self-start border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+          className="cursor-pointer justify-self-start border-0 bg-transparent p-0 text-left text-caption text-ink-soft underline-offset-2 hover:text-ink hover:underline"
         >
           {t('quests.flow.more', { count: lines.length - SHOWN })}
         </button>

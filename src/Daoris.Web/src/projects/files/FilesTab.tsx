@@ -43,7 +43,7 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
   return (
     <div className="grid min-w-0 gap-5">
       <section className="grid min-w-0 gap-1.5">
-        <h2 className="m-0 text-title font-semibold text-ink">{t('files.view.title')}</h2>
+        <h2 className="m-0 text-heading font-semibold text-ink">{t('files.view.title')}</h2>
         <Prose className="text-small"><Inline text={t('files.view.lead', { repository })} /></Prose>
       </section>
 
@@ -54,7 +54,7 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
       )}
       {said && <p role="status" className="m-0 text-small text-warn">{said}</p>}
       {look.problems.length > 0 && (
-        <ul aria-label={t('files.view.problems')} className="m-0 grid list-none gap-0.5 p-0 text-meta text-warn">
+        <ul aria-label={t('files.view.problems')} className="m-0 grid list-none gap-0.5 p-0 text-caption text-warn">
           {look.problems.map((problem) => <li key={problem}>{t('files.view.refused', { problem })}</li>)}
         </ul>
       )}
@@ -71,14 +71,14 @@ export function FilesTab({ repository, look, reading = false, refusal = null, sa
 
       <FilesKept look={look} onPress={onPress} />
       <FilesRules look={look} onPress={onPress} />
-      {look.firstForm && <p className="m-0 text-meta text-ink-faint">{t('files.view.firstForm', { repository })}</p>}
+      {look.firstForm && <p className="m-0 text-caption text-ink-faint">{t('files.view.firstForm', { repository })}</p>}
 
       <details open={look.acts.some((act) => act.verdict === 'held') || undefined} className="min-w-0">
         <summary className="cursor-pointer text-small text-ink-soft">{t('files.view.how')}</summary>
         <div className="mt-2 grid min-w-0 gap-3">
           <Prose className="text-small"><Inline text={t('files.view.body', { repository })} /></Prose>
-          <p className="m-0 text-meta text-ink-faint"><Inline text={t('files.view.twin', { repository })} /></p>
-          <p className="m-0 text-meta text-ink-faint">
+          <p className="m-0 text-caption text-ink-faint"><Inline text={t('files.view.twin', { repository })} /></p>
+          <p className="m-0 text-caption text-ink-faint">
             {look.foundCommit ? t('files.view.read', { commit: look.commit, found: look.foundCommit }) : t('files.view.neverRead', { commit: look.commit })}
           </p>
           {onPress && (
@@ -101,23 +101,23 @@ function Top({ file, acts }: { file: FilesFile; acts: FilesAct[] }) {
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
         <span className="font-mono text-ink [overflow-wrap:anywhere]">{file.path}</span>
         <Pill tone={file.kind ? KIND_TONE[file.kind] : 'neutral'}>{file.kind ? t(`files.view.kind.${file.kind}`) : t('files.view.kind.git')}</Pill>
-        <span className="text-meta text-ink-soft">{file.layer ? t(`files.view.layer.${file.layer}`) : t('files.view.layer.none')}</span>
+        <span className="text-caption text-ink-soft">{file.layer ? t(`files.view.layer.${file.layer}`) : t('files.view.layer.none')}</span>
         {file.files != null && file.bytes != null && (
-          <span className="text-meta text-ink-faint tabular-nums">
+          <span className="text-caption text-ink-faint tabular-nums">
             {t(file.more ? 'files.view.sizeMore' : 'files.view.size', { count: file.files, size: size(file.bytes) })}
           </span>
         )}
       </span>
-      {file.floor && <Prose className="text-meta text-ink-soft">{t(`files.view.floor.${file.floor}`)}</Prose>}
-      {file.idle && <Prose className="text-meta text-ink-soft">{t(`files.view.idle.${file.idle}`)}</Prose>}
-      {file.evidence && file.evidence.length > 0 && <Prose className="text-meta text-ink-faint">{file.evidence.join('; ')}</Prose>}
+      {file.floor && <Prose className="text-caption text-ink-soft">{t(`files.view.floor.${file.floor}`)}</Prose>}
+      {file.idle && <Prose className="text-caption text-ink-soft">{t(`files.view.idle.${file.idle}`)}</Prose>}
+      {file.evidence && file.evidence.length > 0 && <Prose className="text-caption text-ink-faint">{file.evidence.join('; ')}</Prose>}
       {file.copy && (
-        <Prose className="text-meta text-ink-soft">
+        <Prose className="text-caption text-ink-soft">
           {t('files.view.copy')} {copy && t(`files.view.copyVerdict.${copy.verdict}`)}
         </Prose>
       )}
       {file.below && file.below.length > 0 && (
-        <span className="text-meta text-ink-faint">
+        <span className="text-caption text-ink-faint">
           {t('files.view.below', {
             said: file.below.map((each) => t('files.view.belowOne', { layer: t(`files.view.layerName.${each.layer}`), kind: t(`files.view.kind.${each.kind}`) })).join(t('files.view.belowJoin')),
           })}

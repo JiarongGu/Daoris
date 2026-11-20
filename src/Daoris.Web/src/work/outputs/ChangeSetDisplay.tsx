@@ -21,10 +21,10 @@ function Commits({ answer, only, onOnly }: { answer: RunReviewAnswer; only: stri
   if (commits.length === 0) return null;
   return (
     <section aria-label={t('work.outputs.commits', { count: commits.length })} className="border-b border-line px-3 py-1.5">
-      <p className="m-0 flex items-baseline gap-2 text-meta uppercase tracking-[0.06em] text-ink-faint">
+      <p className="m-0 flex items-baseline gap-2 text-caption uppercase tracking-[0.06em] text-ink-faint">
         {t('work.outputs.commits', { count: commits.length })}
         {only && (
-          <button type="button" onClick={() => onOnly(null)} className="cursor-pointer border-0 bg-transparent p-0 text-meta normal-case tracking-normal text-accent underline">
+          <button type="button" onClick={() => onOnly(null)} className="cursor-pointer border-0 bg-transparent p-0 text-caption normal-case tracking-normal text-accent-ink underline">
             {t('work.outputs.commitAll')}
           </button>
         )}
@@ -39,9 +39,9 @@ function Commits({ answer, only, onOnly }: { answer: RunReviewAnswer; only: stri
               onClick={() => onOnly(only === commit.sha ? null : commit.sha)}
               className={cn('flex w-full min-w-0 cursor-pointer items-baseline gap-2 rounded-control border-0 bg-transparent px-1 py-0.5 text-left text-small text-ink hover:bg-raised', only === commit.sha && 'bg-accent-soft')}
             >
-              <span className="shrink-0 font-mono text-meta text-ink-faint">{commit.sha.slice(0, 7)}</span>
+              <span className="shrink-0 font-mono text-caption text-ink-faint">{commit.sha.slice(0, 7)}</span>
               <span className="min-w-0 truncate">{commit.subject}</span>
-              <span className="ml-auto shrink-0 text-meta text-ink-faint">{t('work.outputs.files', { count: commit.files.length })}</span>
+              <span className="ml-auto shrink-0 text-caption text-ink-faint">{t('work.outputs.files', { count: commit.files.length })}</span>
             </button>
           </li>
         ))}
@@ -93,7 +93,7 @@ export function ChangeSetDisplay({ answer, viewed, fileBody }: { answer: RunRevi
       />
       {uncommitted.length > 0 && (
         <section aria-label={t('work.outputs.uncommitted')} className="border-t border-line px-3 py-1.5">
-          <p className="m-0 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.uncommitted')}</p>
+          <p className="m-0 text-caption uppercase tracking-[0.06em] text-ink-faint">{t('work.outputs.uncommitted')}</p>
           <ul className="m-0 list-none p-0">
             {uncommitted.map((path) => <li key={path}><PathText path={path} className="text-small" /></li>)}
           </ul>

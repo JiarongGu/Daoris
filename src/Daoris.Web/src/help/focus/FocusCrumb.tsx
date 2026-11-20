@@ -44,7 +44,7 @@ export function FocusCrumb({ focus, next, gone = false, window, home, onOpen }: 
   ];
 
   return (
-    <nav aria-label={t('help.focus.list')} className="flex flex-wrap items-baseline gap-x-1.5 px-3 pb-1 text-meta">
+    <nav aria-label={t('help.focus.list')} className="flex flex-wrap items-baseline gap-x-1.5 px-3 pb-1 text-caption">
       <span className="min-w-0 wrap-anywhere">
         {segments.map((place, at) => {
           const own = at === segments.length - 1;

@@ -122,12 +122,12 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                 {step.commands.map((command) => (
                   <span key={command} className="inline-flex min-w-0 items-center gap-1">
-                    <CodeText text={command} className="text-meta text-ink-soft" />
+                    <CodeText text={command} className="text-caption text-ink-soft" />
                     <button
                       type="button"
                       aria-label={t('setup.copy', { command })}
                       onClick={() => void copy(command)}
-                      className="inline-flex cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent p-0.5 text-meta text-ink-faint hover:text-ink"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent p-0.5 text-caption text-ink-faint hover:text-ink"
                     >
                       <Icon name={copied === command ? 'check' : 'copy'} size={12} />
                       {copied === command && <span>{t('setup.copied')}</span>}

@@ -52,7 +52,7 @@ export function PositionedWorld({
 }) {
   const { t } = useTranslation();
   const arrow = useId();
-  // The type scale's size counter-scaled, so a chip's word is as large on screen as `text-meta` whatever the zoom.
+  // The type scale's size counter-scaled, so a chip's word is as large on screen as `text-caption` whatever the zoom.
   const word: CSSProperties = { fontSize: 11 / k, lineHeight: 1.2 };
   const latest = useRef({ onPress, onOpen });
   latest.current = { onPress, onOpen };

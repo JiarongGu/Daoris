@@ -67,7 +67,7 @@ function HunkBlock({ hunk, verb, busy, onPress }: {
   });
   return (
     <div className="grid min-w-0 gap-1 rounded-control border border-line p-2" data-hunk={hunk.id}>
-      <code className="min-w-0 font-mono text-meta text-ink-faint [overflow-wrap:anywhere]">{hunk.header}</code>
+      <code className="min-w-0 font-mono text-caption text-ink-faint [overflow-wrap:anywhere]">{hunk.header}</code>
       <ul className="m-0 grid min-w-0 list-none p-0">
         {hunk.lines.map((line, at) => {
           const change = line.kind === '+' || line.kind === '-';
@@ -77,7 +77,7 @@ function HunkBlock({ hunk, verb, busy, onPress }: {
                 ? <CheckField checked={chosen.has(at)} onChange={(on) => toggle(at, on)} disabled={busy} hideLabel label={t('projects.git.changes.line.choose', { text: line.text })} />
                 : <span aria-hidden className="size-4 shrink-0" />}
               <code
-                className={`min-w-0 whitespace-pre-wrap font-mono text-small [overflow-wrap:anywhere] ${line.kind === '+' ? 'text-ink-done' : line.kind === '-' ? 'text-ink-danger' : 'text-ink-soft'}`}
+                className={`min-w-0 whitespace-pre-wrap font-mono text-small [overflow-wrap:anywhere] ${line.kind === '+' ? 'text-ok-ink' : line.kind === '-' ? 'text-fail-ink' : 'text-ink-soft'}`}
               >
                 {line.kind}{line.text}
               </code>

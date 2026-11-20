@@ -63,7 +63,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                     </Pill>
                     {each.managed && (
                       <Tip content={t('harness.pin.managedTip')}>
-                        <span className="min-w-0 flex-1 truncate font-mono text-meta text-ink-faint">{each.managed}</span>
+                        <span className="min-w-0 flex-1 truncate font-mono text-caption text-ink-faint">{each.managed}</span>
                       </Tip>
                     )}
                     <Button variant="ghost" className="ml-auto" disabled={busy} onClick={() => acts.onDoor(each.door, 'unpin')}>

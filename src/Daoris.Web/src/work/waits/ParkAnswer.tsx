@@ -107,7 +107,7 @@ export function ParkAnswer({
                   )}
                 >
                   <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="font-mono text-meta text-ink-faint">#{goAhead.number}</span>
+                    <span className="font-mono text-caption text-ink-faint">#{goAhead.number}</span>
                     <span className="text-body font-semibold">
                       {t('asks.goAhead.act', {
                         kind: KINDS.has(goAhead.kind) ? t(`asks.goAhead.kind.${goAhead.kind}`) : goAhead.kind, on: goAhead.on,

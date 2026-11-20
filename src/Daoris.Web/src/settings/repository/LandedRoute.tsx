@@ -80,7 +80,7 @@ export function LandedRoute({ repository, workspace, start, busy = false, onChoo
       variant="ghost"
       aria-pressed={pressed}
       disabled={busy}
-      className="min-h-0 border border-line px-2.5 py-0.5 text-small aria-pressed:border-accent aria-pressed:text-accent"
+      className="min-h-0 border border-line px-2.5 py-0.5 text-small aria-pressed:border-accent aria-pressed:text-accent-ink"
       onClick={() => { if (!pressed) choose(workflow); }}
     >
       {label}
@@ -102,7 +102,7 @@ export function LandedRoute({ repository, workspace, start, busy = false, onChoo
           {landed.level !== 'current' && option(t('settings.landedRoute.follow', { workspace }), null, landed.level === 'workspace-landed')}
         </div>
         {start.verifications.length === 0 && <p className="m-0 text-small text-ink-soft"><Inline text={t('settings.landedRoute.none')} /></p>}
-        <p className="m-0 text-meta text-ink-faint"><Inline text={t('settings.landedRoute.accepts')} /></p>
+        <p className="m-0 text-caption text-ink-faint"><Inline text={t('settings.landedRoute.accepts')} /></p>
         {refused && <Refused sentence={refused} />}
       </div>
     </SettingRow>

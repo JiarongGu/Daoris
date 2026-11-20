@@ -54,10 +54,10 @@ export function StreamTile({ session, quest, opening, taking, grouping, onDetach
         <span title={sessionTitle(session, quest, opening)} className="truncate text-body">
           {sessionTitle(session, quest, opening)}
         </span>
-        <span className="shrink-0 font-mono text-meta text-ink-faint">{session.repository}</span>
+        <span className="shrink-0 font-mono text-caption text-ink-faint">{session.repository}</span>
         <span
           title={t('work.rail.elapsedTip')}
-          className="ml-auto shrink-0 font-mono text-meta text-ink-faint"
+          className="ml-auto shrink-0 font-mono text-caption text-ink-faint"
         >
           {elapsed(session.created, running ? null : session.updated)}
         </span>

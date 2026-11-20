@@ -63,7 +63,7 @@ export function ConversationFind({
         />
         {hits !== undefined && searchable(query) && (
           <>
-            <span aria-live="polite" className="whitespace-nowrap text-meta tabular-nums text-ink-faint">
+            <span aria-live="polite" className="whitespace-nowrap text-caption tabular-nums text-ink-faint">
               {found === 0
                 ? t('work.find.none')
                 : t(cut ? 'work.find.countMore' : 'work.find.count', { at: at + 1, count: found })}

@@ -45,7 +45,7 @@ export function PublishedList({ items, counts, failed = false, open, onToggle, o
         <span className="min-w-0 flex-1 wrap-anywhere">
           <span className="text-small font-semibold text-ink">{t('help.published.title')}</span>
           {parts.map((part) => (
-            <span key={part.key} className={part.waits ? 'text-meta font-semibold text-ink-open' : 'text-meta text-ink-soft'}>
+            <span key={part.key} className={part.waits ? 'text-caption font-semibold text-ink-open' : 'text-caption text-ink-soft'}>
               {' · '}{part.words}
             </span>
           ))}
@@ -103,7 +103,7 @@ function QuestRow({ quest, onOpen }: { quest: PublishedQuest; onOpen: (door: Pub
     : <Pill tone={QUEST_TONE[record.status]}>{t(`status.${quest.shown ?? record.status}`)}</Pill>;
   const who = quest.session
     ? <Pill tone={SESSION_TONE[quest.session.state]}>{t('help.published.session', { state: t(`sessionState.${quest.session.state}`) })}</Pill>
-    : quest.elsewhere ? <span className="text-meta text-ink-soft">{t('help.published.elsewhere')}</span> : null;
+    : quest.elsewhere ? <span className="text-caption text-ink-soft">{t('help.published.elsewhere')}</span> : null;
   return (
     <Row
       pill={pill} name={questName(record)} kind="quest"
@@ -130,7 +130,7 @@ function Row({ pill, name, kind, meta, waits = null, after = null, onOpen }: {
         {pill}
         <span className="min-w-0 text-small text-ink wrap-anywhere">{name}</span>
       </span>
-      <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-meta text-ink-soft">
+      <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-caption text-ink-soft">
         <span className="wrap-anywhere">{meta}</span>
         {waits && <span className="font-semibold text-ink-open">{waits}</span>}
         {after}

@@ -72,7 +72,7 @@ export function BeyondReceipt({ entries, focus, next, onFocus, defaultOpen = fal
       </Button>
       {open && (
         <div id={`${id}-entries`} className="grid min-w-0 gap-1 pl-4">
-          <p className="m-0 text-meta text-ink-faint">{t('help.beyond.source')}</p>
+          <p className="m-0 text-caption text-ink-faint">{t('help.beyond.source')}</p>
           <ul className="m-0 grid list-none gap-1 p-0">
             {entries.map((entry, at) => {
               const already = samePlace(entry.place, focus) || (next !== null && samePlace(entry.place, next));

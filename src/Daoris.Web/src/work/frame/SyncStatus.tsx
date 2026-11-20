@@ -82,15 +82,15 @@ export function SyncStatus({
         <div className="grid gap-1 px-2 py-1.5">
           <div className="flex items-baseline justify-between gap-2">
             <span className="truncate text-ink">{workspace}</span>
-            <span className="shrink-0 text-meta text-ink-faint">{when}</span>
+            <span className="shrink-0 text-caption text-ink-faint">{when}</span>
           </div>
           {problem && (
-            <p className="m-0 text-meta text-warn">
+            <p className="m-0 text-caption text-warn">
               {t('work.sync.lastTry', { when: tried ? ago(tried) : '' })}{' '}
               <span className="text-ink-soft">{problem}</span>
             </p>
           )}
-          <p className="m-0 text-meta tabular-nums text-ink-soft">
+          <p className="m-0 text-caption tabular-nums text-ink-soft">
             {t('work.sync.aheadLine', { count: ahead })} · {t('work.sync.behindLine', { count: behind.length })}
           </p>
         </div>
@@ -102,7 +102,7 @@ export function SyncStatus({
             {conflicts.map((conflict) => (
               <Menu.Item key={conflict.id} onSelect={() => onOpenQuest(conflict.id)}>
                 <Icon name="conflict" size={12} className="shrink-0 text-warn" />
-                <span className="shrink-0 font-mono text-meta text-ink-faint">#{conflict.id.slice(0, 6)}</span>
+                <span className="shrink-0 font-mono text-caption text-ink-faint">#{conflict.id.slice(0, 6)}</span>
                 <span className="truncate">{conflict.title ?? t('work.sync.untitled')}</span>
               </Menu.Item>
             ))}

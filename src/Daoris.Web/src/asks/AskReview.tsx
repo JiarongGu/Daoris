@@ -137,7 +137,7 @@ export function AskReview({ ask, environments = [], busy = false, onChoose }: {
         </div>
       )}
       {live && onChoose && (
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
+        <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]">
           <Inline text={t('asks.record.reviewTwin', { id: shellWord(ask.id, '<id>') })} />
         </p>
       )}

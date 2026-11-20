@@ -18,7 +18,7 @@ function Row({ row, chosen, focused, onPress }: { row: TreeRow; chosen: boolean;
       tabIndex={focused ? 0 : -1}
       onClick={onPress}
       className={cn(
-        'flex w-full min-w-0 cursor-pointer items-center gap-1 border-l-[3px] py-1.5 pr-2.5 outline-none transition-colors duration-(--speed)',
+        'flex w-full min-w-0 cursor-pointer items-center gap-1 border-l-[3px] py-1.5 pr-2.5 outline-none transition-colors duration-(--duration-quick)',
         row.level === 1 ? 'pl-1.5' : row.level === 2 ? 'pl-5' : 'pl-9',
         'hover:bg-accent-soft/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
@@ -28,7 +28,7 @@ function Row({ row, chosen, focused, onPress }: { row: TreeRow; chosen: boolean;
         {row.expandable && <Icon name={row.expanded ? 'chevronDown' : 'chevronRight'} size={12} />}
       </span>
       <span className={cn('min-w-0 flex-1 truncate', row.kind === 'group' ? 'text-small font-medium text-ink' : cn('text-small text-ink', chosen && 'font-medium'))}>{row.title}</span>
-      {row.kind === 'group' && <span className="shrink-0 font-mono text-meta text-ink-soft">{t('canvas.items', { count: row.count })}</span>}
+      {row.kind === 'group' && <span className="shrink-0 font-mono text-caption text-ink-soft">{t('canvas.items', { count: row.count })}</span>}
     </div>
   );
 }

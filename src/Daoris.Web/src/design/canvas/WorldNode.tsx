@@ -71,6 +71,6 @@ export const WorldEdge = memo(function WorldEdge({ id, d, lit, marker, stroke }:
 }) {
   return (
     <path data-flow-edge={id} d={d} fill="none" stroke="currentColor" strokeWidth={1} vectorEffect={stroke} markerEnd={marker}
-      className={lit ? 'text-accent' : undefined} />
+      className={lit ? 'text-accent-ink' : undefined} />
   );
 });

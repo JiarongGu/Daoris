@@ -15,7 +15,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * the class is right there in the source, which is all a source scan can see. What it does hold is
  * that this list is the one `tokens.css` declares, so a step added there reaches the merge.
  */
-export const TYPE_STEPS = ['meta', 'small', 'body', 'title', 'view', 'wordmark', 'value'] as const;
+export const TYPE_STEPS = ['caption', 'small', 'body', 'heading', 'display', 'mono'] as const;
 
 const merge = extendTailwindMerge({
   extend: { classGroups: { 'font-size': [{ text: [...TYPE_STEPS] }] } },

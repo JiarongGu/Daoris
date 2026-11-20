@@ -174,7 +174,7 @@ function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
       {wait.title && wait.kind && (
         <p className="m-0 text-small text-ink-soft"><Inline text={t('work.wait.permission.kind', { kind: wait.kind })} /></p>
       )}
-      <p className="m-0 font-mono text-meta text-ink-faint">
+      <p className="m-0 font-mono text-caption text-ink-faint">
         {minutes === null
           ? t('work.wait.permission.waitedUnbounded', { span: elapsed(wait.since) })
           : t('work.wait.permission.waited', { span: elapsed(wait.since), minutes })}

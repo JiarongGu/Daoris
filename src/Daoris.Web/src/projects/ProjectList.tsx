@@ -29,7 +29,7 @@ export function RepositoryMarks({ drivable, held, adopted, here }: RepositorySta
   const { t } = useTranslation();
   const marks = [
     held ? <Pill key="held" tone="declined">{t('work.group.held')}</Pill> : null,
-    drivable && !held ? <span key="drivable" className="text-meta text-ink-faint">{t('work.group.drivable')}</span> : null,
+    drivable && !held ? <span key="drivable" className="text-caption text-ink-faint">{t('work.group.drivable')}</span> : null,
     adopted === false ? <Pill key="adopted">{t('work.group.notAdopted')}</Pill> : null,
     here === false ? <Pill key="here">{t('work.group.noCheckout')}</Pill> : null,
   ].filter(Boolean);
@@ -131,7 +131,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
           </span>
           {line && <span title={line} className="mt-0.5 block truncate text-small text-ink-soft">{line}</span>}
           {facts.branches !== undefined && facts.branches > 0 && (
-            <span className="mt-0.5 block text-meta text-ink-faint">{t('projects.row.branches', { count: facts.branches })}</span>
+            <span className="mt-0.5 block text-caption text-ink-faint">{t('projects.row.branches', { count: facts.branches })}</span>
           )}
         </ListRowDoor>
       </li>
@@ -238,7 +238,7 @@ function WorkspaceHead({ name, count }: { name: string; count: number }) {
     <span className="flex min-w-0 items-baseline gap-2">
       <span className="min-w-0 truncate text-body font-semibold text-ink">{name}</span>
       {' '}
-      <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{t('projects.workspace.repositories', { count })}</span>
+      <span className="ml-auto shrink-0 text-caption tabular-nums text-ink-faint">{t('projects.workspace.repositories', { count })}</span>
     </span>
   );
 }

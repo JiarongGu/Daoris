@@ -380,7 +380,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
         )}
         {words.map((each) => (
           // The words a press carries are its own field, quoted in the content's face and set apart from Daoris's sentence (§3.2).
-          <blockquote key={each.name} className={`m-0 whitespace-pre-wrap break-words border-l-2 border-line pl-2 font-serif ${BOX}`}>
+          <blockquote key={each.name} className={`m-0 whitespace-pre-wrap break-words border-l-2 border-line pl-2 font-sans ${BOX}`}>
             “{each.value}”
           </blockquote>
         ))}

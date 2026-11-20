@@ -40,7 +40,7 @@ function Finding({ finding }: { finding: ReadingFinding }) {
         <span className={finding.severity === 'flag' ? 'text-warn' : 'text-ink-soft'}>{t(`help.secondCheck.severity.${finding.severity}`)}</span>
         {' · '}{t(`help.secondCheck.certainty.${finding.certainty}`)}{' · '}{finding.says}
       </span>
-      <span className="text-meta text-ink-faint">
+      <span className="text-caption text-ink-faint">
         {t('help.secondCheck.restsOn', { call: finding.call })}
         {' · '}{finding.instruction === 'none' ? t('help.secondCheck.noWords') : t('help.secondCheck.words', { words: finding.instruction })}
       </span>
@@ -85,7 +85,7 @@ export function ReadingLine({ session, reading }: { session: string; reading: Re
             <div className="grid gap-1">
               <Button variant="ghost" aria-expanded={sent} onClick={() => setSent((was) => !was)}>{t('help.secondCheck.whatWasSent')}</Button>
               {sent && (
-                <pre data-reading-packet="" className="m-0 max-h-80 overflow-auto whitespace-pre-wrap text-meta text-ink">
+                <pre data-reading-packet="" className="m-0 max-h-80 overflow-auto whitespace-pre-wrap text-caption text-ink">
                   {packet.data ?? (packet.isLoading ? t('help.secondCheck.loading') : t('help.secondCheck.noPacket'))}
                 </pre>
               )}

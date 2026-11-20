@@ -165,9 +165,9 @@ export function HeavyGates({ repository, gates, marks, busy = false, onSave }: {
                 while the form holds them, each gate stacked under its own field names below 40rem, never by the window. */}
             <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
               <FormRow head>
-                <span className="text-meta text-ink-faint">{t('settings.heavy.field.name')}</span>
-                <span className="text-meta text-ink-faint">{t('settings.heavy.field.run')}</span>
-                <span className="text-meta text-ink-faint">{t('settings.heavy.field.cwd')}</span>
+                <span className="text-caption text-ink-faint">{t('settings.heavy.field.name')}</span>
+                <span className="text-caption text-ink-faint">{t('settings.heavy.field.run')}</span>
+                <span className="text-caption text-ink-faint">{t('settings.heavy.field.cwd')}</span>
                 <span />
               </FormRow>
               {drafts.map((draft, at) => {

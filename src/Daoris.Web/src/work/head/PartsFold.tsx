@@ -5,7 +5,7 @@ import { ranLine } from '../actors';
 import { PartsFlow } from './PartsFlow';
 import type { PartsProps } from './PartsStrip';
 
-const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent hover:underline';
+const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink hover:underline';
 
 /**
  * **A session's parts, folded to one line**: which part the page is

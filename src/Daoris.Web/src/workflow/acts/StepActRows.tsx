@@ -29,7 +29,7 @@ export function StepActRows({ step }: { step: RunStep }) {
               {t('workflow.run.state.waitingOn', { role: roleSaid(t, i18n, act.waitsOn), holder: act.holder ? holderSaid(act.holder) : t('workflow.run.holder.you') })}
             </span>
           )}
-          {act.url && <ExternalLink href={act.url} className="text-small text-accent">{t('workflow.run.acts.page')}</ExternalLink>}
+          {act.url && <ExternalLink href={act.url} className="text-small text-accent-ink">{t('workflow.run.acts.page')}</ExternalLink>}
         </li>
       ))}
     </ul>

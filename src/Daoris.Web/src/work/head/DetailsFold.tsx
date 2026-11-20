@@ -67,13 +67,13 @@ export function DetailsFold({ summary, rows, aside, className }: {
           {shown.map((row) => (
             <div key={row.label} className="contents">
               <dt className="text-ink-faint">{row.label}</dt>
-              <dd className={cn('m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-ink-soft', row.mono && 'font-mono text-meta')}>
+              <dd className={cn('m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-ink-soft', row.mono && 'font-mono text-caption')}>
                 <span className="min-w-0 [overflow-wrap:anywhere]">{row.value}</span>
                 {row.copy && (
                   <button
                     type="button"
                     onClick={() => void copy(row.copy!)}
-                    className="cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent hover:underline"
+                    className="cursor-pointer border-0 bg-transparent p-0 font-sans text-small text-accent-ink hover:underline"
                   >
                     {copied === row.copy ? t('work.head.copied') : t('work.head.copyId')}
                   </button>

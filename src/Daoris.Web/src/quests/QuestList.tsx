@@ -86,7 +86,7 @@ export function QuestList({
   return (
     <div>
       {filteredTo && (
-        <p className="m-0 truncate px-2.5 pb-0.5 pt-2 text-meta text-ink-faint">{t('quests.list.filtered', { repository: filteredTo })}</p>
+        <p className="m-0 truncate px-2.5 pb-0.5 pt-2 text-caption text-ink-faint">{t('quests.list.filtered', { repository: filteredTo })}</p>
       )}
       {/* Each heading's id is what a door into its group brings into view. */}
       {waiting.length > 0 && (
@@ -211,8 +211,8 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
         </span>
         {/* Its name, the short title where there is one, whole title on its tip. */}
         <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{name}</span>
-        <span className="block truncate font-mono text-meta text-ink-faint">
-          <span className="text-accent">{quest.from} → {quest.to}</span>
+        <span className="block truncate font-mono text-caption text-ink-faint">
+          <span className="text-accent-ink">{quest.from} → {quest.to}</span>
           {/* The lanes of the repository it asks, beside the repository: `to` stays one. */}
           {quest.lanes?.length ? (
             <>

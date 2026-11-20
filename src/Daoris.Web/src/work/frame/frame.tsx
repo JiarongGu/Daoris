@@ -171,7 +171,7 @@ export function AppStrip({
             appearance, and it is not spent on saying the name of the thing you are already
             looking at. */}
         <div className="pointer-events-none flex items-center pl-3.5">
-          <Mark size={18} className="text-accent" />
+          <Mark size={18} className="text-accent-ink" />
         </div>
 
         {/* The application's menus (VS Code's menu bar). There is no mode switch beside them:
@@ -272,9 +272,9 @@ export function ActivityBar<T extends string>({
         {...(active === tab && onToggleCurrent ? { [LIST_DOOR]: '' } : {})}
         onClick={() => (active === tab && onToggleCurrent ? onToggleCurrent() : onSelect(tab))}
         className={cn(
-          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--speed)',
+          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--duration-quick)',
           active === tab
-            ? 'bg-accent-soft text-accent'
+            ? 'bg-accent-soft text-accent-ink'
             : 'text-ink-faint hover:bg-raised hover:text-ink',
         )}
       >
@@ -402,7 +402,7 @@ export function StatusBar({
       // It keeps its size while the window zooms, and so do its tips and menus: the zoom it says never grows under the
       // pointer that presses it back.
       className={cn(
-        'flex h-6 shrink-0 items-stretch overflow-hidden border-t-[length:var(--frame-rule)] border-line bg-raised text-meta text-ink-soft',
+        'flex h-6 shrink-0 items-stretch overflow-hidden border-t-[length:var(--frame-rule)] border-line bg-raised text-caption text-ink-soft',
         FRAME_HELD,
       )}
     >
@@ -495,7 +495,7 @@ export function StatusBar({
             tip={t(tier.semantic ? 'work.status.tierSemanticTip' : 'work.status.tierLexicalTip')}
             label={t('work.status.tierLabel')}
           >
-            <span className={cn('font-mono', tier.semantic ? 'text-accent' : 'text-warn')}>
+            <span className={cn('font-mono', tier.semantic ? 'text-accent-ink' : 'text-warn')}>
               {t(tier.semantic ? 'work.status.tierSemantic' : 'work.status.tierLexical')}
             </span>
           </StatusItem>
@@ -524,7 +524,7 @@ export function StatusBar({
  * to look at and to tab to — two copies of this string would be two bars.
  */
 export const STATUS_PRESSABLE = cn(
-  'flex items-stretch transition-colors duration-[var(--speed)]',
+  'flex items-stretch transition-colors duration-[var(--duration-quick)]',
   'hover:bg-accent-soft hover:text-ink',
   'focus-visible:bg-accent-soft focus-visible:outline-none',
   'focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent',
@@ -643,7 +643,7 @@ export function Splitter({ label, value, min, max, edge, onChange, onReset }: {
         event.preventDefault();
       }}
       className={cn(
-        'absolute inset-y-0 z-10 w-1.5 cursor-ew-resize bg-transparent transition-colors duration-(--speed)',
+        'absolute inset-y-0 z-10 w-1.5 cursor-ew-resize bg-transparent transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none',
         edge === 'right' ? '-right-[3px]' : '-left-[3px]',
       )}

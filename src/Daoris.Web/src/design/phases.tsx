@@ -99,8 +99,8 @@ export function Remaining({ until, say, className }: { until: number; say: (time
 function PhaseMark({ state }: { state: PhaseState }) {
   return (
     <span aria-hidden className="inline-flex size-4 shrink-0 items-center justify-center">
-      {state === 'done' && <Icon name="check" size={12} className="text-ink-done" />}
-      {state === 'failed' && <Icon name="x" size={12} className="text-ink-danger" />}
+      {state === 'done' && <Icon name="check" size={12} className="text-ok-ink" />}
+      {state === 'failed' && <Icon name="x" size={12} className="text-fail-ink" />}
       {state === 'now' && <DotMark tone="live" />}
       {state === 'waits' && <DotMark tone="parked" />}
       {state === 'to-come' && <span className="inline-block size-1.5 rounded-full border border-ink-faint" />}
@@ -113,7 +113,7 @@ const LABEL_INK: Record<PhaseState, string> = {
   now: 'text-ink',
   // A phase waiting on the person wears open's hue, theirs alone (R2).
   waits: 'text-ink-open',
-  failed: 'text-ink-danger',
+  failed: 'text-fail-ink',
   'to-come': 'text-ink-faint',
 };
 
@@ -126,7 +126,7 @@ function PhaseLine({ phase, whole }: { phase: PhaseRow; whole?: number | null })
       <PhaseMark state={phase.state} />
       <span className={cn('min-w-0 text-body', LABEL_INK[phase.state], running && 'font-semibold')}>{phase.label}</span>
       <span className="sr-only">{`, ${t(STATE_WORD[phase.state])}`}</span>
-      <span className="ml-auto flex shrink-0 items-center gap-2 text-meta text-ink-faint">
+      <span className="ml-auto flex shrink-0 items-center gap-2 text-caption text-ink-faint">
         {phase.from != null && phase.state !== 'to-come' && (phase.to != null || running) && (
           <Elapsed from={phase.from} to={running ? null : phase.to} />
         )}
@@ -139,7 +139,7 @@ function PhaseLine({ phase, whole }: { phase: PhaseRow; whole?: number | null })
 /** What the phase now says under its line, and a failed one's sentence, whole. */
 function PhaseUnder({ phase }: { phase: PhaseRow }) {
   if (phase.state === 'failed' && phase.sentence) {
-    return <p role="alert" className="m-0 mt-1 pl-6 text-small text-ink-danger [overflow-wrap:anywhere]"><Inline text={phase.sentence} /></p>;
+    return <p role="alert" className="m-0 mt-1 pl-6 text-small text-fail-ink [overflow-wrap:anywhere]"><Inline text={phase.sentence} /></p>;
   }
   if ((phase.state === 'now' || phase.state === 'waits') && phase.body) return <div className="mt-1 min-w-0 pl-6">{phase.body}</div>;
   return null;

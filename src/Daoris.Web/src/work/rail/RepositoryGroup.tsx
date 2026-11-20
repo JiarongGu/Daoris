@@ -46,13 +46,13 @@ export function RepositoryGroup({
     // mark a working session wears: a group whose one chat is idle or parked does not read live.
     busy
       ? (
-        <span key="busy" className="text-meta text-ink-soft">
+        <span key="busy" className="text-caption text-ink-soft">
           {busy === true ? t('work.group.busy') : t('work.group.busyTree', { tree: busy })}
         </span>
       )
       : null,
     drivable && !held
-      ? <span key="drivable" className="text-meta text-ink-faint">{t('work.group.drivable')}</span>
+      ? <span key="drivable" className="text-caption text-ink-faint">{t('work.group.drivable')}</span>
       : null,
     adopted === false ? <Pill key="adopted">{t('work.group.notAdopted')}</Pill> : null,
     hasCheckout === false ? <Pill key="checkout">{t('work.group.noCheckout')}</Pill> : null,
@@ -64,7 +64,7 @@ export function RepositoryGroup({
         <h3 className="m-0 truncate text-small font-semibold text-ink">{label ?? repository}</h3>
         <span
           title={t('work.group.sessions', { count })}
-          className="shrink-0 font-mono text-meta text-ink-faint"
+          className="shrink-0 font-mono text-caption text-ink-faint"
         >
           {count}
         </span>

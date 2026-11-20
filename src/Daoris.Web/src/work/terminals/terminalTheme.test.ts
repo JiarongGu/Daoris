@@ -8,12 +8,12 @@ import { mix, terminalTheme } from './terminalTheme';
 const LIGHT: Record<string, string> = {
   ink: '#1a1a18', 'ink-soft': '#5b5a55', 'ink-faint': '#8a887f', page: '#faf9f6', raised: '#ffffff',
   line: '#e3e0d8', 'line-strong': '#cfcabe', accent: '#7a5c2e', 'accent-soft': '#f0e9dc',
-  'st-open': '#b07818', 'st-taken': '#2f6db3', 'st-done': '#2c9a62', 'st-declined': '#9e2f24',
+  'st-open': '#b07818', 'live': '#2f6db3', 'ok': '#2c9a62', 'fail': '#9e2f24',
 };
 const DARK: Record<string, string> = {
   ink: '#e8e6df', 'ink-soft': '#a9a69c', 'ink-faint': '#7a7770', page: '#16161a', raised: '#1e1e23',
   line: '#2e2e34', 'line-strong': '#3d3d45', accent: '#d3ac6b', 'accent-soft': '#2a2419',
-  'st-open': '#bd8226', 'st-taken': '#5c97dd', 'st-done': '#3da476', 'st-declined': '#c74534',
+  'st-open': '#bd8226', 'live': '#5c97dd', 'ok': '#3da476', 'fail': '#c74534',
 };
 
 const read = (table: Record<string, string>) => (name: string) => table[name] ?? '';
@@ -31,13 +31,13 @@ describe('the terminal\'s theme (CONSOLE4b)', () => {
   it('names its colours by the status palette, which was validated in both themes', () => {
     for (const [table, dark] of [[LIGHT, false], [DARK, true]] as const) {
       const theme = terminalTheme(read(table), dark);
-      expect(theme.red).toBe(table['st-declined']);
-      expect(theme.green).toBe(table['st-done']);
+      expect(theme.red).toBe(table['fail']);
+      expect(theme.green).toBe(table['ok']);
       expect(theme.yellow).toBe(table['st-open']);
-      expect(theme.blue).toBe(table['st-taken']);
+      expect(theme.blue).toBe(table['live']);
       // Two the palette has no token for are halfway between two it has: purple from red and blue, teal from blue and green.
-      expect(theme.magenta).toBe(mix(table['st-declined']!, table['st-taken']!));
-      expect(theme.cyan).toBe(mix(table['st-taken']!, table['st-done']!));
+      expect(theme.magenta).toBe(mix(table['fail']!, table['live']!));
+      expect(theme.cyan).toBe(mix(table['live']!, table['ok']!));
     }
   });
 

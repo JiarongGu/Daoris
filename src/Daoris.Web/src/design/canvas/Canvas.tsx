@@ -80,7 +80,7 @@ export const CANVAS_FLOOR = 36;
 const BELOW = 150;
 /** The least height, in rem: a small drawing is never a tall empty box, and none is shorter than this. */
 const LEAST = 20;
-/** The edit mode's floor (the map's four fifths), 100% on a coarse pointer, so `text-meta`, the ＋ and the ports stay usable. */
+/** The edit mode's floor (the map's four fifths), 100% on a coarse pointer, so `text-caption`, the ＋ and the ports stay usable. */
 const EDIT_FLOOR = 0.8;
 /** A drag's travel, in screen pixels, before it is a pan rather than a press. */
 const THRESHOLD = 3;

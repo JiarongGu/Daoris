@@ -123,12 +123,12 @@ function CatalogueRow({ icon, name, version, quiet = false, word, gives, meta, u
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className={cn('min-w-0 text-body font-medium [overflow-wrap:anywhere]', quiet ? 'text-ink-soft' : 'text-ink')}>{name}</span>
-          {version && <span className="shrink-0 font-mono text-meta text-ink-faint">{version}</span>}
+          {version && <span className="shrink-0 font-mono text-caption text-ink-faint">{version}</span>}
           {word && <span className="ml-auto shrink-0">{word}</span>}
         </span>
         {gives && <span className="block truncate text-small text-ink-soft">{gives}</span>}
         {(meta || update) && (
-          <span className="flex min-w-0 items-center gap-1.5 text-meta text-ink-faint">
+          <span className="flex min-w-0 items-center gap-1.5 text-caption text-ink-faint">
             {meta && <span className="min-w-0 truncate">{meta}</span>}
             {update && <span className="shrink-0">{update}</span>}
           </span>
@@ -172,7 +172,7 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
       aria-current={chosen || undefined}
       onClick={onPress}
       className={cn(
-        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed)',
+        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--duration-quick)',
         'hover:bg-accent-soft/50',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
       )}

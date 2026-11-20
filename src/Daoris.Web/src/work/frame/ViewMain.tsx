@@ -82,7 +82,7 @@ export function PageHead({
             {lead && <span className="flex shrink-0 items-baseline gap-1.5 self-start pt-1.5">{lead}</span>}
             {clamp
               ? <ClampedTitle title={title} lines={clamp} showAll={!wholeElsewhere} />
-              : <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>}
+              : <h1 className="m-0 min-w-0 text-display font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>}
             {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
             {pills}
           </div>
@@ -101,7 +101,7 @@ export function PageHead({
                 {fact}
               </p>
             ))}
-          {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
+          {id && <p className="m-0 mt-0.5 font-mono text-caption text-ink-faint">{id}</p>}
           {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>
       </div>
@@ -146,7 +146,7 @@ function ClampedTitle({ title, lines, showAll }: { title: string; lines: 1 | 2; 
         ref={own}
         title={title}
         className={cn(
-          'm-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere',
+          'm-0 min-w-0 text-display font-[650] tracking-[-0.01em] wrap-anywhere',
           !whole && (lines === 1 ? 'line-clamp-1' : 'line-clamp-2'),
         )}
       >
@@ -219,7 +219,7 @@ export function PageTabs<T extends string>({ label, tabs, chosen, onChoose, chil
             tabIndex={tab.id === chosen ? 0 : -1}
             onClick={() => onChoose(tab.id)}
             className={cn(
-              '-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-1.5 text-body transition-colors duration-(--speed) first:pl-0',
+              '-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-1.5 text-body transition-colors duration-(--duration-quick) first:pl-0',
               tab.id === chosen ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
             )}
           >
