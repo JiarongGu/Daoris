@@ -70,7 +70,7 @@ export function FocusPicker({ focus, next, window, repositories, recent, onChoos
     return (
       <>
         <span className="flex w-3 shrink-0 self-center">
-          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-accent-ink" />}
+          {samePlace(row.place, focus) && !row.nested && row.group === 'first' && <Icon name="check" size={12} className="text-ink" />}
         </span>
         <span className="flex w-3 shrink-0 self-center text-ink-faint">
           {row.place.kind === 'workspace' && !row.nested && <Icon name={row.open ? 'chevronDown' : 'chevronRight'} size={11} />}

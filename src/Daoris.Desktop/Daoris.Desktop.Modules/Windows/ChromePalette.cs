@@ -39,8 +39,7 @@ public sealed record ChromePalette(
         Surface: Rgb("#ffffff"),
         Line: Rgb("#d5d3cb"),
         Ink: Rgb("#1a1a18"),
-        // A hovered caption button wears `--hover`, the field every quiet control on the page lifts to
-        // under the pointer, and pressed the card edge, `--line`, one step further.
+        // A hovered caption button wears `--hover`, as every quiet control does, and pressed the card edge, `--line`.
         Hover: Rgb("#ecebe5"),
         Pressed: Rgb("#d5d3cb"),
         // Close goes red on hover, which is platform convention and not ours to reinvent. The hue is
@@ -60,6 +59,12 @@ public sealed record ChromePalette(
         CloseHover: Rgb("#ee5a50"),
         ClosePressed: Rgb("#d1322a"),
         CloseGlyphHot: Rgb("#111110"));
+
+    /// <summary>The taskbar count's red, the light theme's <c>--fail</c> in either theme: the taskbar is the OS's, not the page's.</summary>
+    public static Color CountFill => Light.CloseHover;
+
+    /// <summary>The taskbar count's label, white (<c>--on-fail</c> of the light theme), never the dark set's dark one.</summary>
+    public static Color CountInk => Light.CloseGlyphHot;
 
     /// <summary>The set for a theme, by the one flag the page sends over <c>SET_THEME</c>.</summary>
     public static ChromePalette For(bool dark) => dark ? Dark : Light;

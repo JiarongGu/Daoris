@@ -52,7 +52,7 @@ export function PlanView({ entries }: { entries: PlanEntry[] }) {
               aria-hidden
               className={cn(
                 'w-3 shrink-0 text-center',
-                entry.status === 'completed' ? 'text-ok' : entry.status === 'in_progress' ? 'text-accent-ink' : 'text-ink-faint',
+                entry.status === 'completed' ? 'text-ok' : entry.status === 'in_progress' ? 'text-ink' : 'text-ink-faint',
               )}
             >
               {PLAN_MARK[entry.status ?? ''] ?? '○'}

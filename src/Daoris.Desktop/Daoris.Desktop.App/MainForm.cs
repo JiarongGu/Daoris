@@ -122,7 +122,7 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
 
         // One taskbar button for a pinned Daoris, and on it how much waits on the person (a workspace build wears no identity).
         TaskbarWear.Wear(this);
-        _badge = new TaskbarOverlay(this).Wear(_palette);
+        _badge = new TaskbarOverlay(this).Wear();
 
         // It also fixes the tray: `SessionNotifier` reads `window.Icon ?? SystemIcons.Application`,
         // so every balloon this app raised wore a generic Windows glyph until now.
@@ -342,7 +342,6 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
         ApplyChromeTheme(_palette.Page, _palette.Line, immersiveDarkMode: dark);
 
         if (!_splash.IsDisposed) _splash.BackColor = _palette.Page;
-        _badge.Wear(_palette);
         if (_trouble is { IsDisposed: false })
         {
             _trouble.BackColor = _palette.Page;

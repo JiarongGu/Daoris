@@ -14598,3 +14598,22 @@ installed window is not yet seen.
   30 s; the ratchet test's synthetic paths sit under `src/D.Tests/`, as its other cases' do.
 - **Verify:** `TreePoolSharesGitTests` alone (5 passed, 4 m 16 s); `node --test tools/time-ratchet.test.mjs` and the STRUCT1
   test (passed); the merge's `reached` rerun.
+
+## 2026-11-20 — Icons turned blue and the taskbar's count turned black after the role set landed (UIDS1)
+
+- **Seen:** on the installed window after UIDS1 (main 2d5ced6d6c): the chosen place's glyph on the activity bar, the strip's mark,
+  and the icons inside links and doors (a link's icon, *Open ›*'s chevron, an external link's arrow, Focus's check) were blue; and,
+  with the page dark, the taskbar button's waiting count read as a black *9+* on light red.
+- **Cause:** UIDS1's codemod (`tools/token-codemod.mjs`, a200e343f1, its word-boundary fix cd9a1d3397) moved every `text-accent`
+  to `text-accent-ink`. Under the old palette that was the bronze accent; under the role set it is the links' blue, and a glyph
+  draws in `currentColor`, so every icon inside such a word or control took the blue. The same commit copied `--fail`/`--on-fail`
+  into `ChromePalette`'s close colours by theme, and the taskbar count (`TaskbarWear`) borrowed them: the dark set's label on its
+  light red is `#111110`, where the old one was `#faf9f6` in both themes.
+- **Fix:** glyphs wear the inks (the window design §7.1): the chosen place `ink` on its accent field and rail, the mark `ink`,
+  icons beside a link's or door's blue words `ink-soft`, the plan's entry under way `ink`. The taskbar count wears
+  `ChromePalette.CountFill`/`CountInk`, the light theme's `--fail` and white, whatever the page's theme; the close button keeps
+  its per-theme colours. `design/glyphInk.test.tsx` and every story's render (`test/composeStories.ts`) fail a glyph whose
+  nearest colour, its own or a container's, is the accent's or `live`'s; `ChromePaletteTests` holds the count white on red.
+- **Verify:** the census failed 152 story renders before the fix and none after; `ChromePaletteTests` (new test red, then
+  green); the window built from the branch, shot before and after in both themes (overview, Settings, the notifications panel)
+  and the taskbar's count captured.
