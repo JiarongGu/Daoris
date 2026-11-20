@@ -11,6 +11,65 @@ public sealed class GateLogExcerptTests
 {
     private const string Path = "data/workflows/lines/q/attempts/i-1/gate-01-cli.log";
 
+    private static readonly string Home = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "excerpt-home");
+
+    private static readonly string Log = System.IO.Path.Combine(Home, "data", "workflows", "lines", "q", "attempts", "i-1", "gate-01-cli.log");
+
+    // Assembled at run time: the sensitive gate scans this file, and a literal token shape in it would be refused as one.
+    private static string Token() => string.Concat("ghp", "_", new string('a', 30), "0123");
+
+    [Fact]
+    public void A_line_holding_a_token_pattern_is_withheld_and_the_lines_around_it_are_told()
+    {
+        var log = string.Join("\n",
+        [
+            "== RED node tools/push.mjs (0.4s)",
+            "remote: token " + Token() + " was refused",
+            "the line after it",
+            "> Authorization: Basic dXNlcjpzM2NyZXQ=",
+            string.Concat("-----BEGIN ", "OPENSSH PRIVATE KEY-----"),
+            "b3BlbnNzaC1rZXktdjEAAAAABG5vbmU",
+            string.Concat("-----END ", "OPENSSH PRIVATE KEY-----"),
+            "the last line",
+        ]);
+
+        var told = GateLogExcerpt.Told(log, Log, Home)!;
+
+        Assert.DoesNotContain(Token(), told);
+        Assert.DoesNotContain("was refused", told);
+        Assert.DoesNotContain("dXNlcjpzM2NyZXQ", told);
+        Assert.DoesNotContain("b3BlbnNzaC1rZXktdjEAAAAABG5vbmU", told);
+        Assert.DoesNotContain(GitWords.Cut, told);
+        Assert.Contains(GateLogExcerpt.Withheld, told);
+        Assert.Contains("== RED node tools/push.mjs (0.4s)\n" + GateLogExcerpt.Withheld + "\nthe line after it", told);
+        Assert.EndsWith("the last line", told);
+    }
+
+    [Fact]
+    public void The_logs_path_is_said_relative_to_the_home_and_a_path_outside_it_by_its_file_name()
+    {
+        var inside = GateLogExcerpt.Told("a line", Log, Home)!;
+        var outside = GateLogExcerpt.Told("a line", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "elsewhere", "gate-01-cli.log"), Home)!;
+
+        Assert.StartsWith($"its log, {Path}, says:", inside);
+        Assert.DoesNotContain(Home, inside);
+        Assert.StartsWith("its log, gate-01-cli.log, says:", outside);
+        Assert.StartsWith("its output says:", GateLogExcerpt.Told("a line", null, Home));
+    }
+
+    [Fact]
+    public void A_line_that_only_begins_with_the_red_words_is_no_red_block()
+    {
+        var lines = new List<string> { "== REDUCED to a header that is no step's" };
+        for (var at = 0; at < 100; at++) lines.Add($"filler {at}");
+        lines.Insert(1, "its own first line");
+
+        var told = GateLogExcerpt.Told(string.Join("\n", lines), Log, Home)!;
+
+        Assert.DoesNotContain("REDUCED", told);
+        Assert.Contains("filler 99", told);
+    }
+
     [Fact]
     public void A_red_block_and_the_last_lines_are_told_with_the_logs_path()
     {
@@ -27,7 +86,7 @@ public sealed class GateLogExcerptTests
             "",
         ]);
 
-        var told = GateLogExcerpt.Told(log, Path)!;
+        var told = GateLogExcerpt.Told(log, Log, Home)!;
 
         Assert.Contains(Path, told);
         Assert.Contains("== RED node tools/contracts.mjs --check (0.4s)\nsrc/Daoris.Web/src/data/generated/service.ts is stale", told);
@@ -46,7 +105,7 @@ public sealed class GateLogExcerptTests
         for (var at = 0; at < 100; at++) lines.Add($"after {at}");
         lines.Add("the last line");
 
-        var told = GateLogExcerpt.Told(string.Join("\n", lines), Path)!;
+        var told = GateLogExcerpt.Told(string.Join("\n", lines), Log, Home)!;
 
         Assert.True(Encoding.UTF8.GetByteCount(told) <= GateLogExcerpt.Bytes + 512, $"{Encoding.UTF8.GetByteCount(told)} bytes");
         Assert.True(told.Split('\n').Length <= GateLogExcerpt.Lines + 8, $"{told.Split('\n').Length} lines");
@@ -61,10 +120,10 @@ public sealed class GateLogExcerptTests
     {
         var log = string.Join("\n", Enumerable.Range(0, 100).Select(at => $"line {at}"));
 
-        var told = GateLogExcerpt.Told(log, Path)!;
+        var told = GateLogExcerpt.Told(log, Log, Home)!;
 
         Assert.Contains("line 99", told);
         Assert.DoesNotContain("line 10\n", told);
-        Assert.Null(GateLogExcerpt.Told("\r\n\n", Path));
+        Assert.Null(GateLogExcerpt.Told("\r\n\n", Log, Home));
     }
 }

@@ -174,7 +174,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
         try
         {
-            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
+            if (await UnpreparedAsync(tree, [new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.NotRun)], ct).ConfigureAwait(false) is { } unprepared) return unprepared;
             var log = Path.Combine(_folder, "reached.log");
             var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
             keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
@@ -197,7 +197,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var ran = new List<VerifyGate>();
         try
         {
-            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
+            var pending = gates.Select(each => new VerifyGate(each.Name, RunnerVerdicts.NotRun)).Concat(kept).ToList();
+            if (await UnpreparedAsync(tree, pending, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
             for (var at = 0; at < gates.Count; at++)
             {
                 var gate = gates[at];
@@ -229,7 +230,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 {
                     Failed = gate.Name, Declaration = _ran,
                 };
-                return Told(failed, ReadText(log) is { } text ? GateLogExcerpt.Told(text, log) : null);
+                return Told(failed, ReadText(log) is { } text ? GateLogExcerpt.Told(text, log, home) : null);
             }
 
             return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran };
@@ -263,13 +264,17 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await WorkingTree.GitAsync(send.Checkout, ["worktree", "lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), tree], ct).ConfigureAwait(false);
     }
 
-    private async Task<VerifyResult?> UnpreparedAsync(string tree, CancellationToken ct)
+    private async Task<VerifyResult?> UnpreparedAsync(string tree, IReadOnlyList<VerifyGate> pending, CancellationToken ct)
     {
         string? failed;
         try
         {
             failed = await VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct).ConfigureAwait(false)
                 ?? await RegeneratedAsync(tree, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Ended(pending);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -286,8 +291,17 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     {
         if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct).ConfigureAwait(false) is not { } failed) return null;
         var log = Path.Combine(_folder, "regenerate.log");
-        AtomicFile.WriteText(log, failed.Ran.Output);
-        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log) is { } told ? $"\n{told}" : "");
+        string? kept = log;
+        try
+        {
+            AtomicFile.WriteText(log, failed.Ran.Output);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            kept = null;
+        }
+
+        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, kept, home) is { } told ? $"\n{told}" : "");
     }
 
     /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>

@@ -630,8 +630,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
     verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. A failed gate's
-    why carries the failing step's own lines with its log's path: the log's red blocks (an `== RED <step>` line to the next `== `) and
-    its last lines, within about 40 lines and 4 KB (`GateLogExcerpt`), so the work reads why without asking for the log. The
+    why carries the failing step's own lines with its log's path, said relative to the home: the log's red blocks (an `== RED <step>`
+    header line, matched as a step's header only, to the next `== `) and its last lines, within about 40 lines and 4 KB
+    (`GateLogExcerpt`), so the work reads why without asking for the log. The log is a child's words and passes `GitWords.Redact` first:
+    a line holding a secret's shape (a token, a key block, an Authorization or Cookie header) is withheld whole, so what a verdict's why
+    keeps and says never carries one. The same excerpt follows a `regenerate` that did not finish, its `regenerate.log` written in a
+    try of its own (a log that cannot be kept leaves the command and its output said without a path), and a check cancelled in the
+    preparation or a regenerate ends as ended (`it was ended before its verdict`, each gate not run), never as an exception. The
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
     A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
