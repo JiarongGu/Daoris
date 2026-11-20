@@ -53,7 +53,7 @@ public static class HomeHistory
     /// </summary>
     public static IReadOnlyList<string> WorkflowRecords { get; } =
     [
-        "agent-steps", "candidates", "closures", "lines", "looks", "rebases", "resolves", "resources", "run-ends-owed", "runs", "tenures",
+        "agent-steps", "candidates", "closures", "lines", "looks", "rebases", "resolves", "resources", "risk", "run-ends-owed", "runs", "tenures",
         "units", "quests.json",
     ];
 

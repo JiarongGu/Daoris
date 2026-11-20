@@ -126,6 +126,8 @@ public sealed class NodeRuntime(
 
     public Func<RunFinish, CancellationToken, Task<Daoris.Contracts.Quests.RunEndResponse?>>? Finish { get; set; }
 
+    public RiskShadow? Risk { get; set; }
+
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null answered where they do not read.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
 
@@ -482,6 +484,7 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            if (Risk is { } risk) RiskStepHolds.Shadow(risk, governed.Values, records, look.Config);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
             return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };

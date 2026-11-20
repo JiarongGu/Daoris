@@ -87,6 +87,7 @@ internal sealed class WatchNodes
 
         // Where the pull request a plugin's step opened is written on its landing.
         nodes.PullRequests = new PullRequestRecords(home);
+        nodes.Risk = new RiskShadow(home, clock);
 
         nodes.Landings = watch.Supervisor.LandingWords;
         watch.Supervisor.LandingApplied = LandingApplied.Of(home);
