@@ -6,6 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits, OpinionJudged? Judged, OpinionAct? Act) : IOpinionFact
 {
+    public TimeSpan? Cools { get; init; }
+
     IEnumerable<string> IOpinionFact.SatQuests => Sits.Keys;
 
     IOpinionAct? IOpinionFact.Act => Act;

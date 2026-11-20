@@ -66,6 +66,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>How many times the records were read whole (a held hand reads none until its asker moves).</summary>
     public int RecordReads { get; private set; }
 
+    public Dictionary<string, int> Asked { get; } = new(StringComparer.Ordinal);
+
     /// <summary>How many times a helper's hand is asked, taken or refused (a hand the host refuses is not asked again until its asker moves).</summary>
     public int HelperHandsAsked { get; private set; }
 
@@ -267,6 +269,8 @@ internal sealed class OpinionStandIn : HttpMessageHandler
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
         lock (_gate)
         {
+            var door = $"{request.Method.Method} {path}";
+            Asked[door] = Asked.GetValueOrDefault(door) + 1;
             switch (request.Method.Method, path)
             {
                 case ("GET", "/api/sessions"):

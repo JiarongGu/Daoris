@@ -14570,3 +14570,33 @@ installed window is not yet seen.
   copied); HOMEORPHAN1 makes the home name every file in a place no entry names, and a removal of an old reader refuses while
   the install holds files there.
 - **Verify:** `daoris agent list` lists all four accounts, two signed in.
+
+## 2026-11-20 — Each look judged every owed opinion again, though nothing it read had moved (OPINIONLOOK1)
+
+- **Seen:** the owner: "Daoris has been slow". The install's machine log of 2026-11-19/20: `look.slow` for stage `opinions`
+  2,327 times on quest #ba5c8968fdf5, 531 on #82406c797e18, 334 on #4f86d13167d5, then 322, 218, 207 (#8e9340198a4c), 127;
+  looks minutes apart said `~opinions=48089x5@#8e9340198a4c ~opinions.queue=54960`, `~opinions=18347x6`, `~opinions=9065x7`,
+  `~opinions=6059x7`: every look judged 5–7 owed opinions at 5–10 s each beside it, with seconds queued for git's places, on
+  runs whose reviewer had finished and runs unchanged for hours.
+- **Cause:** since owed opinions were judged beside the look (PARALLEL1g, 8c4bd52e70), each look began one judgment per owed
+  opinion whatever had moved, and each judgment read the whole quest list for itself (a `ServiceReviewWorld` per judgment), the
+  ask, its opinions and its tree's work. The tree's work is kept while the tree and every counted ref of its repository stand
+  (LOOKOPINIONS1), so on a repository whose branches move all day (each agent's commit on its own branch) the tree was walked
+  again (`log`, `status`) at nearly every look, behind the tidy for the repository's places. Nothing kept what a judgment had
+  read, so nothing could say it need not run.
+- **Fix:** `OpinionJudgments` keeps, with each judgment's fact, a stamp of what it reads, made without git and without a service
+  read of its own: the chain's quests and the working line's and reviewers' records from the look's one read; the tree's link,
+  `HEAD` and branch commit from git's files; the gate, deliveries, run binding, node record, landings, rule and cool-off files by
+  write time and length; and the drain. A look judges an owed opinion again only where that stamp moved, five minutes after its
+  last judgment, or past its gate's reset; a pass a run of this loop already holds is judged again at the next look.
+  `OpinionLookWorld` reads the quests, the records and each ask once a look for every judgment of it.
+- **Measured** (`OpinionJudgmentsTests`: six owed landing opinions settled on their own trees among a thousand closed quests,
+  the host in process). Before: every look judged all six; the first took 5.6 s with 14 git starts and read the quest list 6
+  times; each later look made 6 judgments, 6 quest-list reads, 6 ask reads and 6 opinion reads (190–280 ms in process; on the
+  install each judgment waited on the service, and on git after any ref moved). After: the first look took 2.4–3.1 s and read
+  the quest list and the ask once; a look over nothing moved makes 0 judgments, 0 git starts and no ask or opinion read, and
+  reads the quest and record lists once each (15–40 ms); a commit in one tree judges that one alone (330 ms, 2 git starts), and a
+  quest reopened or a node blocked judges that one alone with no git (26–28 ms).
+- **Verify:** `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings
+  --filter "FullyQualifiedName~OpinionJudgmentsTests"` (red first on the base: 6 judgments and 6 quest-list reads a look),
+  `--filter "FullyQualifiedName~OpinionJudgmentsStandTests|FullyQualifiedName~OpinionLookTests"`.
