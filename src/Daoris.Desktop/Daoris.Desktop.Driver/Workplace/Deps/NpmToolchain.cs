@@ -34,11 +34,11 @@ internal static class NpmToolchain
 
         var prefix = Path.GetDirectoryName(node)!;
         if (!OperatingSystem.IsWindows()) prefix = Path.GetDirectoryName(prefix) ?? prefix;
-        var home = Named(environment, "USERPROFILE") ?? Named(environment, "HOME");
+        var profile = Named(environment, "USERPROFILE") ?? Named(environment, "HOME");
         foreach (var (role, file) in new (string, string?)[]
         {
             ("project", Path.Combine(tree, ".npmrc")),
-            ("user", home is null ? null : Path.Combine(home, ".npmrc")),
+            ("user", profile is null ? null : Path.Combine(profile, ".npmrc")),
             ("global", Path.Combine(prefix, "etc", "npmrc")),
             ("builtin", Path.Combine(Path.GetDirectoryName(package)!, "npmrc")),
         })
