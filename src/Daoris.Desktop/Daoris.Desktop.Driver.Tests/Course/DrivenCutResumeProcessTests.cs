@@ -51,4 +51,20 @@ public sealed class DrivenCutResumeProcessTests : IAsyncLifetime
         Assert.Equal(("stopped", true), (turns[0]!["end"]!["state"]!.GetValue<string>(), turns[0]!["end"]!["interrupted"]!.GetValue<bool>()));
         Assert.Equal(1, (await new ServiceClient(_h.Service.Url, null).StrikesAsync())["q1"]);
     }
+
+    /// <summary>The person's stop of a record nothing runs is never carried on, though the sweep's end of the same record is.</summary>
+    [Fact]
+    public async Task A_stop_the_person_asked_is_never_carried_on_where_a_cut_the_system_made_is()
+    {
+        await _h.CutAsync(sweep: false, person: true);
+
+        _h.ComeUp();
+        await _h.LooksAsync();
+        await _h.StopAsync();
+
+        Assert.Equal((1, "stopped", "Taken"), (_h.Service.SessionCount, _h.Service.State("s1"), _h.Service.Status("q1")));
+        Assert.Empty(_h.Heard().Where(line => line["method"]!.GetValue<string>() == "session/resume"));
+        Assert.Equal(0, _h.Carried("s1", ShellClose.Words));
+        Assert.Empty(_h.Service.DaorisSaid);
+    }
 }

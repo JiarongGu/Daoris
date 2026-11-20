@@ -141,14 +141,14 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     }
 
     /// <summary>The first run cut mid-turn, its quest taken: by the driver's close, or by the sweep, the dead loop's close then finding it ended.</summary>
-    public async Task CutAsync(bool sweep)
+    public async Task CutAsync(bool sweep, bool person = false)
     {
         using var stop = new CancellationTokenSource();
         var first = Driver().RunOnceAsync(stop.Token);
         await Poll.Until(() => Heard().Any(line => line["method"]!.GetValue<string>() == "session/prompt") && Service.Status("q1") == "Taken", Seen);
-        if (sweep)
+        if (sweep || person)
         {
-            var swept = await Orphans.EndAsync(new ServiceClient(Service.Url, null), new SessionProcesses());
+            var swept = await Orphans.EndAsync(new ServiceClient(Service.Url, null), new SessionProcesses(), only: person ? "s1" : null);
             Assert.Equal(["s1"], swept.Select(ended => ended.Id));
         }
 
