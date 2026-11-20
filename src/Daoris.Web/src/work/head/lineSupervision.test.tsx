@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { DetailsFold } from './DetailsFold';
 import { type CourseRead, countRows, courseRow, type LineSupervision, readSupervision, supervisionChip, supervisorRow } from './lineSupervision';
-import { SessionPageHead } from './SessionPageHead';
+import { HeadChips } from '../session/HeadChips';
 
 // The line's counts and the acts the person's rules made on it: *Details*' course and Supervisor line, and the head's
 // chip with its count, in both languages.
@@ -122,10 +122,10 @@ describe('a line’s supervision', () => {
   it('puts the chip on the head with its count and its tip', async () => {
     render(
       <Tooltip.Provider>
-        <SessionPageHead session={session} title="Build the policy store" shown="awaiting-person" acts={[]} chip={supervisionChip(t, held)} />
+        <HeadChips session={session} supervision={supervisionChip(t, held)} />
       </Tooltip.Provider>,
     );
-    const chip = within(screen.getByRole('banner')).getByText('answers alone in a row 2 of 2');
+    const chip = within(document.querySelector<HTMLElement>('[data-head-chips]')!).getByText('answers alone in a row 2 of 2');
     expect(chip.getAttribute('data-supervision-chip')).toBe('held');
   });
 });

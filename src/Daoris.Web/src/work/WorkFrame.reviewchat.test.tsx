@@ -114,8 +114,10 @@ describe('a driven session waiting for review is driven on from its page', () =>
         const box = await screen.findByLabelText(language === 'en' ? 'Message' : '消息');
         expect(box).toHaveAttribute('placeholder', WORDS[language].placeholder);
         if (group === 'review') {
-          expect(await within(await screen.findByRole('region', { name: /waiting on you|等你处理/i })).findByRole('button', { name: WORDS[language].review })).toBeInTheDocument();
-          expect(within(screen.getByRole('main')).queryByRole('button', { name: WORDS[language].review })).toBeNull();
+          const panel = await screen.findByRole('region', { name: i18n.t('work.session.label') });
+          await waitFor(() => expect(panel.querySelector('[data-region="dock"]')).not.toBeNull());
+          expect(await within(panel.querySelector<HTMLElement>('[data-region="dock"]')!).findByRole('button', { name: WORDS[language].review })).toBeInTheDocument();
+          expect(within(panel).getAllByRole('button', { name: WORDS[language].review })).toHaveLength(1);
         }
         await userEvent.say(box, 'also update the notes');
         await userEvent.click(screen.getByRole('button', { name: WORDS[language].send }));

@@ -364,7 +364,11 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 await candidate.DisposeAsync().ConfigureAwait(false);
             }
 
-            if (_ends.IsCancellationRequested) result = null;
+            if (_ends.IsCancellationRequested)
+            {
+                result = null;
+                Closed(send);
+            }
             else if (queued.Stop.IsCancellationRequested) result = (result ?? Unknown(send, "")) with { Verdict = VerifyVerdicts.Unknown, Why = "the person stopped it, and its job was ended", Code = VerifyResult.Stopped, Failed = null };
             else if (bound.IsCancellationRequested) result = (result ?? Unknown(send, "")) with { Verdict = VerifyVerdicts.Unknown, Why = $"it ran past its bound of {HeavySlot.Took(send.Bound)}, and its job was ended", Code = VerifyResult.Bound, Failed = null };
         }
@@ -405,6 +409,19 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
 
         if (result is null) return; // the driver ending: no result, so its restart sends the same attempt again.
         Settle(send, result with { WallSeconds = ran.Elapsed.TotalSeconds });
+    }
+
+    /// <summary>The executor's own close ended this send's job: its loss is explained (<see cref="LostChecks"/>).</summary>
+    private void Closed(VerifySend send)
+    {
+        try
+        {
+            AttemptMarks.Write(AttemptMarks.Closed(home, send.Run, send.Invocation, send.Delivery), send.Delivery, _world.Clock.GetUtcNow());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            _world.Said.WriteLine($"verify: the close of run {send.Run}'s check could not be marked ({error.Message}); its loss counts as unexplained.");
+        }
     }
 
     private void Settle(VerifySend send, VerifyResult result)

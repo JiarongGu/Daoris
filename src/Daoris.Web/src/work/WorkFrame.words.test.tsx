@@ -3,12 +3,11 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The box on every session that takes words, and clearing a parked session, in the Work frame, one part of its suite
-// (the suite is cut into parts that run beside each other). The bridge is mocked as
-// present, because the frame does not exist without one; what the parts share is in `test/workFrameBridge.ts`
-// and `test/workFrameKit.tsx`.
+// The box on every session that takes words, and clearing a parked session, in the Work frame, one part of its suite. The
+// bridge is mocked as present; what the parts share is in `test/workFrameBridge.ts` and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
+import i18n from '../locales/i18n';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import { said } from '../test/said';
 import {
@@ -22,6 +21,10 @@ let SESSIONS: unknown[] = [DRIVEN];
 /** Every `SESSION_INPUT` the page sent, in order (a send the page stopped waiting on is never said twice). */
 const inputs = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT');
 
+const panel = () => screen.findByRole('region', { name: i18n.t('work.session.label') });
+const head = async () => (await panel()).querySelector<HTMLElement>('[data-region="head"]')!;
+const parkCard = async () => (await screen.findByRole('button', { name: 'Answer and carry on…' })).closest('article')!;
+
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
@@ -29,9 +32,7 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-// 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
-// and a test that hid the console left it hidden for whichever console test ran next: four failed
-// in a shuffled order, and passed in file order only by luck of the order.
+// 🔴 Every test starts from a viewer with nothing remembered: the frame keeps its layout per viewer.
 afterEach(() => window.localStorage.clear());
 
 /**
@@ -88,9 +89,10 @@ describe('the box on every session that takes words', () => {
     driver({});
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 1 });
+    const region = await panel();
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
     expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(region.querySelector('[data-region="composer"]')).toBeNull();
   });
 
   /** Where nothing takes words the driver says why by a code, and the page draws the line instead of the box. */
@@ -287,8 +289,9 @@ describe('the box on every session that takes words', () => {
     driver({});
     show('s1a2b3c4');
 
-    const header = await screen.findByRole('heading', { level: 1 });
-    expect(within(header.closest('header')!).getByText('Reading its state')).toBeInTheDocument();
+    const top = await head();
+    expect(within(top).getByText(i18n.t('work.session.state.loading'))).toBeInTheDocument();
+    expect(top).not.toHaveTextContent(i18n.t('work.session.state.live'));
   });
 
   /** The words shown at once, then where they went, the session a door to it. */
@@ -503,16 +506,14 @@ describe('clearing a parked session', () => {
 
     const box = await screen.findByLabelText('Message');
     expect(screen.getByText(/or in the box below/)).toBeInTheDocument();
-    // An answer is words: nothing to attach, and no ending of the box's own (the card holds those, and
-    // the card's Finish and the box's are one name for one act, so the box is asked).
+    // An answer is words: nothing to attach, and no ending of the box's own (the card holds those).
     expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
     expect(within(box.closest('form')!).queryByRole('button', { name: 'Finish' })).toBeNull();
 
     await userEvent.say(box, 'go ahead with the PUT');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
-    // Through the one door every box says through: the driver keeps it on the record, shows it at once in the
-    // conversation and nudges its loop, where the service's answer door does none of the last two.
+    // Through the one door every box says through: the driver keeps it, shows it at once and nudges its loop.
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
     }));
@@ -542,7 +543,8 @@ describe('clearing a parked session', () => {
     const notify = vi.fn();
     show('p4rk3d00', notify);
 
-    const card = (await screen.findByText(/Say yes or no here/)).closest('section')!;
+    const card = await parkCard();
+    expect(card).toHaveTextContent(/Say yes or no here/);
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
     await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'yes');
     await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
@@ -562,7 +564,8 @@ describe('clearing a parked session', () => {
     });
     show('p4rk3d00');
 
-    const card = (await screen.findByText(/I recommend the second/)).closest('section')!;
+    const card = await parkCard();
+    expect(card).toHaveTextContent(/I recommend the second/);
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
     const field = within(card).getByLabelText('your answer — the same session goes on with these words');
     await userEvent.say(field, 'the second');
@@ -651,27 +654,28 @@ describe('clearing a parked session', () => {
     expect(await screen.findByLabelText('Message')).toHaveAttribute('placeholder', 'write to it — the same session goes on with your words');
     expect(screen.queryByText('This one is waiting on you')).toBeNull();
     for (const name of ['Finish', 'Decline…', 'Carry on with this answer']) expect(screen.queryByRole('button', { name })).toBeNull();
-    // Its stop stays the page header's, saying what a driven session's stop says, never that it stops unanswered.
+    // Its stop stays the head's, saying what a driven session's stop says, never that it stops unanswered.
     await userEvent.click(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' }));
     const ask = screen.getByRole('group', { name: 'stop this session' });
     expect(ask).toHaveTextContent('Stops the session now.');
     expect(ask).not.toHaveTextContent('unanswered');
   });
 
-  /** The card keeps finish and decline; the stop is the page header's, which asks once. */
-  it('shows the analysis and its moves on the attended session, its stop in the page header', async () => {
+  /** The card keeps finish and decline; the stop is the head's, which asks once. */
+  it('shows the analysis and its moves in the park\'s card, its stop in the panel\'s head', async () => {
     show('p4rk3d00');
 
-    expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
+    const card = await parkCard();
+    expect(card).toHaveTextContent(/I recommend the second/);
     // Its quest is still open, so its finish asks what becomes of it first.
-    expect(screen.getByRole('button', { name: 'Finish…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'Finish…' })).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
-    expect(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+    expect(within(await head()).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
   });
 
   /** A session waiting on you, with no process left, stops unanswered through its resolve, as its card's stop does. */
-  it('stops a parked session from its page header through its resolve, saying it stops unanswered', async () => {
+  it('stops a parked session from its head through its resolve, saying it stops unanswered', async () => {
     show('p4rk3d00');
     await userEvent.click(await screen.findByRole('button', { name: 'Stop…' }));
 
@@ -683,25 +687,25 @@ describe('clearing a parked session', () => {
   });
 
   /**
-   * **One owner for the moves at a time.** A parked conversation does not render both the band's
-   * *finish it · decline… · stop it* and the composer's *send · finish · stop*, 400px
-   * apart — two owners for one set of verbs is worse than either. The band owns them while a
+   * **One owner for the moves at a time.** A parked conversation does not render both the card's
+   * *finish it · decline…* and the composer's *send · finish · stop*, apart from each other
+   * — two owners for one set of verbs is worse than either. The park's card owns them while a
    * session is parked, and the composer keeps `send` alone so answering stays possible.
    */
-  it('gives the verbs to the band while parked, and back to the composer when live', async () => {
+  it('gives the verbs to the park\'s card while parked, and back to the composer when live', async () => {
     SESSIONS = [{ ...PARKED, kind: 'chat' }];
     show('p4rk3d00');
 
-    // The band's Finish and the composer's are one name for one act, so the box is asked.
+    // The card's Finish and the composer's are one name for one act, so the box is asked.
     const box = () => screen.getByLabelText('Message').closest('form')!;
     await screen.findByRole('button', { name: 'Finish' });
     expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
-    // The band's verbs, and only the band's.
+    // The card's verbs, and only the card's.
     expect(screen.getAllByRole('button', { name: 'Finish' })).toHaveLength(1);
     expect(within(box()).queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(within(box()).queryByRole('button', { name: 'Stop' })).toBeNull();
 
-    // Working again: no band, and the composer owns Finish; the stop is the page header's at every state.
+    // Working again: no card, and the composer owns Finish.
     SESSIONS = [{ ...PARKED, kind: 'chat', state: 'working' }];
     cleanup();
     show('p4rk3d00');
@@ -828,7 +832,7 @@ describe('clearing a parked session', () => {
     expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    // Its page header offers only what reaches no process: its ⋯, with its id.
+    // Its head offers only what reaches no process: its ⋯, with its id.
     const acts = within(screen.getByRole('group', { name: 'Session actions' }));
     expect(acts.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['More actions']);
   });
@@ -876,7 +880,7 @@ describe('clearing a parked session', () => {
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
   });
 
-  /** The stop is in the page header, not the composer or its card: the process is cut off, over the driver, from the page header. */
+  /** The stop is in the head, not the composer or its card: the process is cut off, over the driver, from the head. */
   it('stops a running intake over the driver', async () => {
     SESSIONS = [RUNNING_INTAKE];
     show('r7n8t7k6');
@@ -900,7 +904,8 @@ describe('clearing a parked session', () => {
     SESSIONS = [DRIVEN];
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    expect(await within(await head()).findByRole('heading', { name: 'Expose a streaming budget' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish…' })).toBeNull();
   });
 });

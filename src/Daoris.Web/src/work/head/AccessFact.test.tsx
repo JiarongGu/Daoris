@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { accessRow, startedFull } from './AccessFact';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { HeadChips } from '../session/HeadChips';
 import { SessionHead } from './SessionHead';
-import { SessionPageHead } from './SessionPageHead';
 
 // A session says the access it started under, read from its
 // record's pause map as the driver resolved it at the start, never from today's settings. The fixture is that map.
@@ -20,8 +21,9 @@ const session = (over: Partial<Session> = {}): Session => ({
 });
 
 const pageHead = (over: Partial<Session> = {}) => render(
-  <SessionPageHead session={session(over)} title="Expose a streaming budget" shown="working" facts={['engine', '12m']} acts={[]} />,
+  <Tooltip.Provider><HeadChips session={session(over)} supervision={null} /></Tooltip.Provider>,
 );
+const chips = () => document.querySelector<HTMLElement>('[data-head-chips]');
 
 /** The record's *Details*, opened, and its *Access* row's value; null where it has none. */
 async function detailsAccess(over: Partial<Session> = {}): Promise<string | null> {
@@ -37,10 +39,9 @@ afterEach(async () => {
 });
 
 describe('the access a session started under', () => {
-  it('wears the full-access chip on its facts line only where every pause it recorded is open', () => {
+  it('wears the full-access chip on the head only where every pause it recorded is open', () => {
     pageHead({ access: FULL });
-    // The facts are cut before the chip, never the chip: the line holds both, the facts in a span of their own.
-    const line = screen.getByText('engine · 12m').parentElement!;
+    const line = chips()!;
     expect(within(line).getByText('Full access')).toBeInTheDocument();
     expect(line.querySelector('[data-access="full"] svg')).not.toBeNull();
   });
@@ -49,7 +50,7 @@ describe('the access a session started under', () => {
     for (const access of [TODAY, SOME, null]) {
       pageHead({ access });
       expect(screen.queryByText('Full access')).toBeNull();
-      expect(screen.getByText('engine · 12m').textContent).toBe('engine · 12m');
+      expect(chips()).toBeNull();
       cleanup();
     }
   });
@@ -103,9 +104,9 @@ describe('the access a session started under', () => {
 
 // The choice its actor ran is worn beside the access chip, only where it is not the first.
 describe('the choice its actor ran', () => {
-  it('wears choice n on the facts line before the access chip, and your pick for a pick', () => {
+  it('wears choice n on the head before the access chip, and your pick for a pick', () => {
     pageHead({ choice: '2', access: FULL });
-    const line = screen.getByText('engine · 12m').parentElement!;
+    const line = chips()!;
     const chip = within(line).getByText('choice 2');
     expect(chip.closest('[data-choice="2"]')).not.toBeNull();
     expect(chip.compareDocumentPosition(within(line).getByText('Full access')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

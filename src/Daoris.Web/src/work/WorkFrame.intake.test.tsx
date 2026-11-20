@@ -8,6 +8,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // `test/workFrameBridge.ts` and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
+import i18n from '../locales/i18n';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import { DRIVER_STATE, PARKED_INTAKE, QUESTS, REGISTRY, show, userEvent } from '../test/workFrameKit';
 import { WorkFrame } from './WorkFrame';
@@ -51,10 +52,16 @@ describe('a parked intake', () => {
       </QueryClientProvider>,
     );
 
+    const region = await screen.findByRole('region', { name: i18n.t('work.session.label') });
     // The dock above the composer is the one place it is pressed: the head's card in the main area draws none.
-    await userEvent.click(await within(await screen.findByRole('region', { name: 'Waiting on you' })).findByRole('button', { name: 'Answer ask #0fda18' }));
+    const dock = await waitFor(() => {
+      const found = region.querySelector<HTMLElement>('[data-region="dock"]');
+      if (!found) throw new Error('no dock yet');
+      return found;
+    });
+    await userEvent.click(await within(dock).findByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
-    expect(within(screen.getByRole('main')).queryByRole('button', { name: 'Answer ask #0fda18' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Answer ask #0fda18' })).toHaveLength(1);
     expect(onAnswerAsk).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();

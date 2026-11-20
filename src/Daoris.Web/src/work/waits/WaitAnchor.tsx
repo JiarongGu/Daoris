@@ -16,9 +16,11 @@ export function leftFor(event: FocusEvent<HTMLElement>): boolean {
   return !event.currentTarget.contains(event.relatedTarget as Node | null);
 }
 
-/** A wait's line inside `box`: a go-ahead's, a rule's, a helper's and a held call's by their own, the question's and the work's by their place. */
+/** A wait's line inside `box`: the dock's card by its key (an opinion's is the work's), else a park box's line by its own mark. */
 function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null | undefined {
-  // A proposal's id is the driver's, found by its value rather than spelled into a selector.
+  const key = wait === 'opinion' ? 'work' : wait;
+  const card = [...(box?.querySelectorAll<HTMLElement>('[data-wait]') ?? [])].find((each) => each.dataset.wait === key);
+  if (card) return card;
   if (wait.startsWith('rule:')) {
     const id = wait.slice('rule:'.length);
     return [...(box?.querySelectorAll<HTMLElement>('[data-rule]') ?? [])].find((each) => each.dataset.rule === id);
@@ -31,17 +33,14 @@ function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null |
     const id = wait.slice('permission:'.length);
     return [...(box?.querySelectorAll<HTMLElement>('[data-permission]') ?? [])].find((each) => each.dataset.permission === id);
   }
-  return box?.querySelector<HTMLElement>(wait.startsWith('goAhead:')
-    ? `[data-go-ahead="${wait.slice('goAhead:'.length)}"]`
-    : `[data-wait="${wait === 'opinion' ? 'work' : wait}"]`);
+  return wait.startsWith('goAhead:') ? box?.querySelector<HTMLElement>(`[data-go-ahead="${wait.slice('goAhead:'.length)}"]`) : null;
 }
 
 /**
- * The wait a press led to, in the strip at the foot or the record's head: each
- * new `seek` makes its wait the one outlined, `onSeek` first opens whatever hides its line, and the line in `box` takes the focus
- * once it is drawn. `letGo` puts the outline down, once the person moves on from the place it led to.
+ * The wait a press led to, in the dock or the park's box: each new `seek` outlines its wait, `onSeek` first opens what hides it, and
+ * its line takes the focus once drawn, looked for again as `drawn` (what the place holds) changes. `letGo` puts the outline down.
  */
-export function useSought(box: RefObject<HTMLElement | null>, seek: Seek | null | undefined, onSeek?: () => void) {
+export function useSought(box: RefObject<HTMLElement | null>, seek: Seek | null | undefined, onSeek?: () => void, drawn?: unknown) {
   const [sought, setSought] = useState<AnchorWait | null>(null);
   // A press owes its line the focus until the line is drawn: in the strip only once the fold opens.
   const focusing = useRef(false);
@@ -53,12 +52,13 @@ export function useSought(box: RefObject<HTMLElement | null>, seek: Seek | null 
   }, [seek?.n]);
   useEffect(() => {
     if (!focusing.current || !seek) return;
-    const drawn = lineOf(box.current, seek.wait);
-    if (!drawn) return;
-    drawn.focus();
+    const line = lineOf(box.current, seek.wait);
+    if (!line) return;
+    line.focus();
     // A line in a place standing aside takes no focus until the place is drawn again for it.
-    if (drawn.ownerDocument.activeElement === drawn) focusing.current = false;
-  });
+    if (line.ownerDocument.activeElement === line) focusing.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `drawn` says when the place holds something new to look in
+  }, drawn === undefined ? undefined : [seek?.n, sought, drawn]);
   return { sought, letGo: () => setSought(null) };
 }
 
@@ -84,21 +84,24 @@ export function InConversation({ onPress }: { onPress: () => void }) {
 }
 
 /**
- * The mark under a block that raised a wait: a quiet glyph in the waiting hue, *To the wait* and what
- * waits its name, and what waits on the person from here its tip (a line of words under the block would be one more copy
- * of the wait on the screen). Its press takes the person to the wait's line, in the head or at the foot, where it is answered.
- * Props only.
+ * The mark under a block that raised waits: for each, a quiet glyph in the waiting hue, *To the wait* and its name, and what
+ * waits on the person from here its tip (a line of words under the block would be one more copy of the wait on the screen). Each
+ * press takes the person to its own wait, in the dock, where it is answered. Props only.
  */
-export function WaitMark({ waits, onPress }: { waits: readonly Wait[]; onPress: () => void }) {
+export function WaitMark({ waits, onPress }: { waits: readonly Wait[]; onPress: (wait: Wait) => void }) {
   const { t } = useTranslation();
-  const names = waits.map((wait) => waitName(t, wait)).join(' · ');
   return (
-    <div className="mt-1 flex">
-      <Tip content={t('work.wait.raised', { names })}>
-        <Button variant="ghost" aria-label={t('work.wait.toWait', { names })} onClick={onPress} className="h-6 w-6 justify-center px-0 text-ink-open">
-          <Icon name="answer" size={13} />
-        </Button>
-      </Tip>
+    <div className="mt-1 flex gap-1">
+      {waits.map((wait) => {
+        const names = waitName(t, wait);
+        return (
+          <Tip key={names} content={t('work.wait.raised', { names })}>
+            <Button variant="ghost" aria-label={t('work.wait.toWait', { names })} onClick={() => onPress(wait)} className="h-6 w-6 justify-center px-0 text-ink-open">
+              <Icon name="answer" size={13} />
+            </Button>
+          </Tip>
+        );
+      })}
     </div>
   );
 }
