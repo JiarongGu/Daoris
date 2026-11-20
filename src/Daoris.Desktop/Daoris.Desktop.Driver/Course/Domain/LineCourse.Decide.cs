@@ -384,10 +384,8 @@ public static class CourseDecision
     {
         var head = facts.Head;
         if (head.AskDaoris) return Refused(facts, WordsNever.Help);
-        if (facts.Boundary is CourseBoundary.TurnRunning or CourseBoundary.BetweenTurns && head.State != "awaiting-person")
-        {
-            return Refused(facts, GoOnNew.Running);
-        }
+        var reached = head.State != "awaiting-person" && !(head.State == "awaiting-step" && head.Judged is not null);
+        if (facts.Boundary is CourseBoundary.TurnRunning or CourseBoundary.BetweenTurns && reached) return Refused(facts, GoOnNew.Running);
 
         if (head.Words.Count == 0) return Refused(facts, GoOnNew.NoWords);
         if (head.Conversation || head.QuestStatus is null) return Refused(facts, GoOnNew.Conversation, [CourseDoor.StartFrom]);
@@ -402,8 +400,10 @@ public static class CourseDecision
             case LineAnswer.Hold hold:
                 return Held(facts, CourseHoldWhy.Account, repair: hold.Repair);
             default:
-                // Its account is not cooling: the same session goes on with the words at the driver's next look.
-                return Refused(facts, GoOnNew.NotCooling);
+                // Its account is not cooling: the same session goes on with the words at the next look, held ones there or in a new one.
+                return head.Judged is null
+                    ? Refused(facts, GoOnNew.NotCooling)
+                    : Moved(facts, CourseWhen.Now, OwnOrWalk(facts), CourseFromWhy.Retry, CourseFromBy.Person, Ids(head.Words.Where(word => word.Persons)));
         }
     }
 

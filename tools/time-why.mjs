@@ -148,11 +148,12 @@ export function testBreach({ kind = 'test', key, ms, limit, fails, record = '', 
 }
 
 /**
- * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `others` (no path the merge
- * changes reaches them) and `loaded` (timed only under load), each key -> { ms, limit }. `records()` maps a key to its record.
+ * The time ratchet's breaches: `found` (the merge's, failing unless `listedAt` holds it at no less), `inherited` (main's: a known
+ * red with its cause and row, failing nothing; `main`, main's alone record, where there is one) and `loaded` (timed only under
+ * load), each key -> { ms, limit }. `records()` maps a key to its record.
  */
-export function ratchetBreaches({ found, others = {}, loaded = {}, listedAt = () => undefined, records = () => new Map(), source = () => null }) {
-  if (!Object.keys(found).length && !Object.keys(others).length && !Object.keys(loaded).length) return [];
+export function ratchetBreaches({ found, inherited = {}, loaded = {}, listedAt = () => undefined, records = () => new Map(), source = () => null }) {
+  if (!Object.keys(found).length && !Object.keys(inherited).length && !Object.keys(loaded).length) return [];
   const timedIn = records();
   const one = (key, { ms, limit }, given) => testBreach({ key, ms, limit, record: timedIn.get(key) ?? '', source: source(key), ...given });
   return [
@@ -160,7 +161,10 @@ export function ratchetBreaches({ found, others = {}, loaded = {}, listedAt = ()
       const listed = listedAt(key);
       return one(key, over, { fails: !(listed >= over.ms), ...(listed === undefined ? {} : { note: `listed at ${listed} ms` }) });
     }),
-    ...Object.entries(others).map(([key, over]) => one(key, over, { fails: false, note: "not this merge's: no path it changes reaches it" })),
+    ...Object.entries(inherited).map(([key, over]) => ({
+      ...one(key, over, { fails: false, note: `inherited from main: the merge does not change its file${typeof over.main === 'number' ? `, and it ran within half again main's alone record, ${over.main} ms` : ', and main keeps no alone record of it'}` }),
+      inherited: true,
+    })),
     ...Object.entries(loaded).map(([key, over]) => one(key, over, { fails: false, loaded: true })),
   ];
 }
@@ -195,8 +199,8 @@ function stepCause(step) {
 }
 
 /**
- * A gate killed at its budget: `load` where the sampler's `peak` held more than the gate's own place, else its longest step's cause
- * (the step clocks), else its own category's by its name.
+ * A gate past its budget, killed or run on: `load` where the sampler's `peak` held more than the gate's own place, else its longest
+ * step's cause (the step clocks), else its own category's by its name.
  */
 export function gateBreach({ gate, ms, budget, steps = [], peak = null, fails }) {
   const loaded = typeof peak === 'number' && peak > ALONE_HOLDS;
@@ -216,7 +220,7 @@ export function gateBreach({ gate, ms, budget, steps = [], peak = null, fails })
     cause = 'scan';
     evidence = 'its category: a census of the sources';
   }
-  const fix = cause === 'load' ? 'none: run again alone once the machine is free' : GATE_ROWS[gate] ?? (cause === 'process' ? (/git/.test(gate) ? 'LAYERS1 f' : 'COMPONENT1') : cause === 'scan' ? 'CENSUSDIFF1' : 'TESTSLOW1');
+  const fix = cause === 'load' ? 'none: it ran on under load, and the heavy tier measures it alone' : GATE_ROWS[gate] ?? (cause === 'process' ? (/git/.test(gate) ? 'LAYERS1 f' : 'COMPONENT1') : cause === 'scan' ? 'CENSUSDIFF1' : 'TESTSLOW1');
   return { kind: 'gate', name: gate, ms, limit: budget, cause, evidence, fix, fails };
 }
 
@@ -263,7 +267,7 @@ const SAID = { gate: ['killed after', 'budget'], hang: ['hung', 'hang timeout'],
 /** One breach as a person reads it. */
 export function breachLine(breach) {
   const [did, bound] = SAID[breach.kind] ?? SAID.test;
-  return `${breach.name} ${did} ${span(breach.ms)}, its ${bound} ${span(breach.limit)}: ${breach.cause} (${breach.evidence}); fix: ${breach.fix}${breach.fails ? '; it fails the run' : ''}`;
+  return `${breach.name} ${did} ${span(breach.ms)}, its ${bound} ${span(breach.limit)}: ${breach.cause} (${breach.evidence}); fix: ${breach.fix}${breach.fails ? '; it fails the run' : breach.inherited ? '; main\'s known red, failing nothing' : ''}`;
 }
 
 /** The summary's lines: a head naming the file, each failing or load breach first, at most `max`, then the separation candidates. */

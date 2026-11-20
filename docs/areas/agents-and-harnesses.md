@@ -162,8 +162,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 
 **Accounts**
 
-26. An account is made by signing in into a fresh folder named by a new id (`acct-` and eight hex characters; an `account-N`
-    keeps its name as its id); removing it deletes the folder. An API key is an account too: kept in `keys.json`, sealed by the
+26. An account is made by signing in into a fresh folder named by a new id, `acct-` and eight hex characters (`AccountIdForm`);
+    `agent account add <agent> <name>` and the bridge's `profile-add` make one the same way (`AccountAdd`), the word given its
+    name, never its id; one already so named is the answer. An id an earlier build named by a counter (`account-N`) or a word moves once to that form, to
+    an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
+    orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
+    `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):
+    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A word id stays
+    the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
+    account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
+    a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the
     machine's seal the root hands (`SecretSeal`; the machine adapter's `KeySeal`, DPAPI for the Windows user; an unsealed key is
     sealed at the file's next write), handed only to a start's process in
     the tool's variable, shown by its last four characters. An agent held by a key alone (dsh) reads an account by its key: none
@@ -199,7 +207,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     agent. (D165, D163)
 32. A resume asks for its record's own account, because a harness keeps a conversation in that account's home; a start on another
     agent is on another account. A resume judges that account as the walk does: a whole window with its reset ahead cools it
-    until then, unless the person picked it. (D131, D137, D206)
+    until then, unless the person picked it. (D131, D137, D206) The look reads that judgement without a probe for words held for
+    the account (`HarnessRoster.OwnHold`, one code with the resume's): present, in the set, not kept, cooling or refused, and its
+    last reading not signed out; an unknown sign-in is usable, as a start treats it. (D348)
 33. One status question per configuration home runs at a time. No real sign-in runs under a scratch home. (D125, D150) An
     agent that declares its stored sign-in (`IStoredSignIn`, Claude Code's `.credentials.json`) is read for its shape alone,
     whether each token is there and when the access token expires, never a value. A start that has counted its account renews

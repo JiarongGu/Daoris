@@ -25,6 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { isMain, writeAtomic } from './fsx.mjs';
 import { readFindings, writeFindings, fileSighting } from './ci-background.mjs';
 import { processAlive } from './machine-admission.mjs';
+import { startBackground } from './merge/background.ts';
 import { HEAVY_PREFIX, HEAVY_TREE, appendHeavy, settleHeavy } from './merge/heavy-after.ts';
 import { readHalt } from './merge/heavy-halt.ts';
 import {
@@ -208,6 +209,8 @@ async function main(argv) {
     return 2;
   }
   const home = resolve(process.cwd());
+  const lowered = startBackground();
+  if (lowered) console.log(`${HEAVY_PREFIX} it could not lower its priority (${lowered}); it runs at the priority it has, its places still background ones`);
   const input = { id, commit, base, branches: (valueOf(argv, '--branches') ?? '').split(',').filter(Boolean), at: new Date().toISOString() };
   const settled = await runTier(input, {
     checkout: home,

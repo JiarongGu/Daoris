@@ -27,7 +27,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolResourcesTests.cs": 41082,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs": 65586,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/TraceTests.cs": 55646,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs": 68306,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AccountRotationTickTests.cs": 60823,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/AnswerContinuesTickTests.cs": 42210,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatGoesOnProcessTests.cs": 52541,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/ChatTransientProcessTests.cs": 49364,
@@ -107,7 +107,7 @@
   "src/Daoris.Web/src/workflow/WorkflowRunView.test.tsx": 54623,
   "tools/deployment-rehearsal.mjs": 106226,
   "tools/family-rehearsal.mjs": 368023,
-  "tools/merge-branch.mjs": 392448,
+  "tools/merge-branch.mjs": 391890,
   "tools/merge-queue.mjs": 65185,
   "tools/rehearsal-kit.mjs": 56329,
   "tools/rehearsal-kit.test.mjs": 45819
