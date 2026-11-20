@@ -19,15 +19,16 @@ export function SaidNote({ block }: { block: Block }) {
   return <NoteLine text={block.text ?? ''} parts={block.parts} under={block.under} />;
 }
 
-/** When held words reach the session: at the cooling account's reset where they wait for a resume, else after the turn. */
+/** When held words reach the session: where they wait for a resume, as it goes on (at a cooling account's reset), else after the turn. */
 export function HeldWhen({ reaches }: { reaches?: string | null }) {
   const { t } = useTranslation();
-  const { cooling } = useContext(SaidDoors);
+  const { chat, cooling } = useContext(SaidDoors);
+  const resume = reaches === 'resume';
   return (
     <span className="text-meta text-ink-faint">
-      {reaches === 'resume' && cooling
-        ? t('work.conversation.held.cooling', { time: moment(cooling.until) })
-        : t('work.session.story.held')}
+      {resume && cooling ? t('work.conversation.held.cooling', { time: moment(cooling.until) })
+        : resume ? t(chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume')
+          : t('work.session.story.held')}
     </span>
   );
 }
