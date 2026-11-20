@@ -164,7 +164,7 @@ public sealed class NodeRuntime(
 
     private readonly UnknownAttempts _unknown = new();
 
-    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read, records.Home, _config?.PlaceRisk);
+    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read, records.Home, _config?.PlaceRisk, Serving);
 
     /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
     public IReadOnlyList<RunPassage> Passages() => RunPassageReader.Of(_graphRuns.Read(), records.Read);

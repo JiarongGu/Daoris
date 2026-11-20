@@ -46,6 +46,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     public static string KeyOf(string unit) => WorkplaceRunFiles.UnitKey(unit);
 
+    public bool Exists(string unit) => File.Exists(PathOf(home, unit));
+
     /// <summary>The unit's record: an empty one where it has none, null where its file does not read.</summary>
     public NodeRecord? Read(string unit)
     {

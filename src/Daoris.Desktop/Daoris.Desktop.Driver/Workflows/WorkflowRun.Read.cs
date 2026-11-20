@@ -320,7 +320,8 @@ public static class WorkflowRunReader
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
                 Slots = CheckSlotWaits.Read(sources.Home, graph, record),
                 Needs = RunNeeds.Of(sources.Home, record), Holding = StepTenureFiles.HoldingOf(sources.Home, bound, record),
-                Cast = CastReading.Home(sources.Home, workspace, repository), Vacancies = new StepVacancyFiles(sources.Home).Of(RunUnits.IdOf(bound)), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
+                Cast = CastReading.Home(sources.Home, workspace, repository), Serves = CastReading.ServesHome(sources.Home, workspace, repository),
+                Vacancies = new StepVacancyFiles(sources.Home).Of(RunUnits.IdOf(bound)), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
             },
             workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
@@ -370,7 +371,8 @@ public static class WorkflowRunReader
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
                 Slots = CheckSlotWaits.Read(reads.Sources.Home, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
-                Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository), Vacancies = new StepVacancyFiles(reads.Sources.Home).Of(RunUnits.IdOf(run)),
+                Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository), Serves = CastReading.ServesHome(reads.Sources.Home, workspace, repository),
+                Vacancies = new StepVacancyFiles(reads.Sources.Home).Of(RunUnits.IdOf(run)),
                 Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),
                 // What its part waits on and its joint checks hold, read from its ask's plan and the parts' journals as the pass reads them.
                 Parts = PartViews.Read(reads.Sources.Home, askId is null ? null : await reads.PartsAsync(askId).ConfigureAwait(false), run,

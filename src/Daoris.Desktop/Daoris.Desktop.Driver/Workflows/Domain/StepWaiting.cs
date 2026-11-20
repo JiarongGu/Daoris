@@ -194,7 +194,7 @@ public static class HeldSteps
     /// <param name="bound">How long a vacancy stands before Daoris gives it up (<see cref="VacancySetting"/>).</param>
     public static IReadOnlyList<HeldStep> Of(
         IEnumerable<GovernedUnit> governed, Func<string, NodeRecord?> record, StepTenureFiles? tenures = null, PlaceCastBook? casts = null, PlaceRiskBook? risk = null,
-        IStepVacancyStore? vacancies = null, TimeSpan? bound = null)
+        IStepVacancyStore? vacancies = null, TimeSpan? bound = null, Func<string?, string?, bool>? live = null)
     {
         var steps = new List<HeldStep>();
         foreach (var each in governed)
@@ -204,10 +204,11 @@ public static class HeldSteps
             var (workspace, repository) = (each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
             var cast = casts is null ? null : CastReading.At(casts, risk, workspace, repository);
             var vacant = vacancies?.Of(each.Unit.Id);
+            var serves = casts is null ? null : StepVacancies.ServesAt(casts, risk, workspace, repository, live);
             foreach (var node in each.Graph.Nodes)
             {
                 var held = holding?.GetValueOrDefault(node.Id);
-                if (Step(each.Run, repository ?? "", workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held, cast, vacant, bound) is { } step) steps.Add(step);
+                if (Step(each.Run, repository ?? "", workspace, scope.Quests.LastOrDefault()?.Id, node, kept, held, cast, vacant, bound, serves) is { } step) steps.Add(step);
             }
         }
 
@@ -217,13 +218,13 @@ public static class HeldSteps
     /// <summary>The row of one step, or null where a word is pending on it, another row carries it, or an agent's channel serves it.</summary>
     public static HeldStep? Step(
         string run, string repository, string workspace, string? work, NodeDeclaration node, NodeRecord record, StepTenure? held = null, Func<string, string>? cast = null,
-        IReadOnlyList<StepVacancy>? vacancies = null, TimeSpan? bound = null)
+        IReadOnlyList<StepVacancy>? vacancies = null, TimeSpan? bound = null, Func<string, bool>? serves = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
         if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
-        var vacancy = carried ? null : StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt);
+        var vacancy = carried ? null : StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt, serves);
         var vacant = vacancy is not null;
 
         // A step its agent's working session settles by its tool or its acts is handed to that session: the person's one press is Take.

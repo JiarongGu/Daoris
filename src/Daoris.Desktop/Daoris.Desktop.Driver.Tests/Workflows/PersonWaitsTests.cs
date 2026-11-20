@@ -150,6 +150,38 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Equal(why is null ? [] : [(RunId, "release", why, actor, (DateTimeOffset?)said)], waits);
     }
 
+    [Fact]
+    public void A_stored_vacancy_of_a_step_served_again_is_judged_again_on_read_and_leaves_the_vacant_list_at_once()
+    {
+        BoundTo(ReleaseGraph);
+        var unit = RunUnits.IdOf(RunId);
+        var call = new WorkPerformCall("unit-b1", "acme.deploy/release", 1, "i-1", "k-1", "tip-1", [], _now.AddHours(1));
+        Files.Write(new NodeRecord(unit)
+        {
+            Statuses = new SortedDictionary<string, NodeStatus>(StringComparer.Ordinal)
+            {
+                ["release"] = new(unit, "release", NodeStates.Active) { Attempt = 1, Tries = 1, Unreconciled = 1, Since = _now.AddMinutes(-10) },
+            },
+            Attempts =
+            [
+                new NodeAttempt("release", 1, "acme.deploy", call, AttemptStates.Sent)
+                {
+                    RecordedAt = _now, Generation = 1, Deliveries = 1,
+                    Progress = new StepProgress("approver", "Approve Production in Azure DevOps.", "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90", "Production", _now.AddMinutes(-3)),
+                },
+            ],
+        });
+        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.Approver, "agent:bob", "bob approves", _now);
+        new StepVacancyFiles(_home).Keep(unit, [new("release", 1, _now, true, false)]);
+        var runs = new GraphRuns(Files).Read();
+
+        var idle = PersonWaitReader.Of(runs, Files.Read, _home, null, (_, _) => false);
+        var served = PersonWaitReader.Of(runs, Files.Read, _home, null, (agent, _) => agent == "bob");
+
+        Assert.Equal([(RunId, "release", true)], idle.Select(wait => (wait.Run, wait.Node, wait.Vacant)));
+        Assert.Empty(served);
+    }
+
     [Theory]
     [InlineData(RunOutcomes.Failed, "return", PersonWaits.Left)]
     [InlineData(RunOutcomes.Failed, null, null)]
