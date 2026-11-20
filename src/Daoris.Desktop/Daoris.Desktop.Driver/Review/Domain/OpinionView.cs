@@ -53,6 +53,9 @@ public sealed record OpinionView(
     /// <summary>The rule's bound of the pass, in minutes; null where the host says none.</summary>
     public int? Minutes { get; init; }
 
+    /// <summary>When the pass's minutes run out, past which the host reads one still reading as out of time; null where the host says none.</summary>
+    public DateTimeOffset? Due { get; init; }
+
     /// <summary>The commits the candidate holds, oldest first.</summary>
     public IReadOnlyList<string> Commits { get; init; } = [];
 
@@ -149,6 +152,7 @@ public static class OpinionViews
             Maker = root.Reviewer.Maker,
             Why = root.Why,
             Minutes = root.Minutes,
+            Due = root.Due == default ? null : root.Due,
             Commits = [.. (root.Candidate.Commits ?? []).OfType<string>()],
             Findings = given is null ? null : [.. (given.Findings ?? []).Select(Finding).OfType<OpinionFindingView>()],
             Read = given?.Read,

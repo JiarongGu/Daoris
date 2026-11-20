@@ -101,17 +101,38 @@ public sealed class ChromePaletteTests
     [Fact]
     public void TheCloseGlyphReadsOnItsRed()
     {
+        foreach (var palette in new[] { ChromePalette.Light, ChromePalette.Dark })
+        {
+            var ratio = Contrast(palette.CloseGlyphHot, palette.CloseHover);
+            Assert.True(ratio >= 4.5, $"the close glyph reads {ratio:F2}:1 on its red ({(palette.IsDark ? "dark" : "light")})");
+        }
+    }
+
+    /// <summary>
+    /// 🔴 The taskbar's count is white on red in either theme: on the close button's dark-theme colours it read as a black
+    /// <c>9+</c> on the taskbar, which is the OS's and not the page's (FIX-LOG 2026-11-20).
+    /// </summary>
+    [Fact]
+    public void TheTaskbarCountIsWhiteOnRedInEitherTheme()
+    {
+        var light = Declarations(TokensCss(), dark: false);
+        Assert.Equal(light["--fail"].ToArgb(), ChromePalette.CountFill.ToArgb());
+        Assert.Equal(light["--on-fail"].ToArgb(), ChromePalette.CountInk.ToArgb());
+        Assert.Equal(Color.White.ToArgb(), ChromePalette.CountInk.ToArgb());
+        Assert.True(Contrast(ChromePalette.CountInk, ChromePalette.CountFill) >= 4.5,
+            $"the count reads {Contrast(ChromePalette.CountInk, ChromePalette.CountFill):F2}:1 on its red");
+        Assert.NotEqual(ChromePalette.Dark.CloseGlyphHot.ToArgb(), ChromePalette.CountInk.ToArgb());
+    }
+
+    private static double Contrast(Color first, Color second)
+    {
         static double Luminance(Color c) => new[] { c.R, c.G, c.B }
             .Select(v => v / 255.0)
             .Select(v => v <= 0.04045 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4))
             .Zip(new[] { 0.2126, 0.7152, 0.0722 }, (v, w) => v * w)
             .Sum();
-        foreach (var palette in new[] { ChromePalette.Light, ChromePalette.Dark })
-        {
-            var (a, b) = (Luminance(palette.CloseGlyphHot), Luminance(palette.CloseHover));
-            var ratio = (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
-            Assert.True(ratio >= 4.5, $"the close glyph reads {ratio:F2}:1 on its red ({(palette.IsDark ? "dark" : "light")})");
-        }
+        var (a, b) = (Luminance(first), Luminance(second));
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
 
     /// <summary>

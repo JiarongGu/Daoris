@@ -393,7 +393,8 @@ light and its second dark, then the forced blocks (`ChromePaletteTests` reads th
 | `ident-*` | as today | as today | plugin monograms: identity, never state |
 
 There is no neutral state colour: waiting on others, queued, ended and stale use `ink-soft` and `ink-faint` with their own mark
-shapes. A declined or stopped outcome is neutral (–), not red; red means failed. Today's `st-open`, `ink-open` and `warn` are
+shapes. A glyph (an icon, the mark) wears the inks, never the accent: `ink-soft` beside the blue words of a link or a door,
+`ink` where chosen, its place told by the rail and the field (`design/glyphInk.test.tsx` holds every story to it). A declined or stopped outcome is neutral (–), not red; red means failed. Today's `st-open`, `ink-open` and `warn` are
 split site by site into `you` (where it waits on the owner) or neutral, and stay as listed aliases until UIDS18 deletes them.
 
 **Contrast**, computed on these values (the whole table is held by `design/tokens.test.ts`): every text pair is at least 4.5:1
