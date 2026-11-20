@@ -13,10 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// tree and writes beside its folder, and a web dependency of 5,000 files. The second opening is the one every session pays:
 /// both dependencies placed from the store, inside the budget, each stage said. Scratch under the repository's ignored <c>_fixtures/</c>.
 /// </summary>
-/// <remarks>
-/// Alone: it times real installs and copies, which a class beside it would slow. Only where <c>OPENING_SHAPE_BENCH</c> is <c>1</c>: its
-/// two openings and the first's installs take minutes on a loaded machine, past a gate's limit for one test.
-/// </remarks>
+/// <remarks>Alone: it times real installs and copies, which a class beside it would slow.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Needs, Needed.Process)]
 [Trait(Category.Needs, Needed.Git)]
@@ -41,7 +38,6 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
     [Fact]
     public async Task A_second_opening_places_each_dependency_from_the_store_inside_its_budget_and_says_each_stage()
     {
-        if (Environment.GetEnvironmentVariable("OPENING_SHAPE_BENCH") != "1") return;
         await MakeAsync();
         var first = new LookStages();
         var cold = Stopwatch.StartNew();
