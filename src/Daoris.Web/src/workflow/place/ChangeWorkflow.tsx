@@ -364,7 +364,7 @@ export function ChangeWorkflow({
                 </div>
                 {workflow.line && <span className="block pl-3 text-small text-ink-soft"><Inline text={workflow.line} /></span>}
                 {workflow.problem && <span className="block pl-3 text-small text-warn">{workflow.problem}</span>}
-                {elsewhere.length > 0 && <span className="block pl-3 text-meta text-ink-faint">{t('workflow.place.change.chosenAt', { places: elsewhere.join(', ') })}</span>}
+                {elsewhere.length > 0 && <span className="block pl-3 text-caption text-ink-faint">{t('workflow.place.change.chosenAt', { places: elsewhere.join(', ') })}</span>}
               </li>
             );
           })}

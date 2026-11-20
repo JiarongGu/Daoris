@@ -41,7 +41,7 @@ export function TeammateAskPage({ ask, channel, onPost, onRead }: {
     <ViewMain header={head}>
       <p className="m-0 mb-4 text-body leading-relaxed">{t('asks.elsewhere.note')}</p>
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
-        <dt className="text-ink-faint">{t('work.head.id')}</dt><dd className="m-0 font-mono text-meta">#{ask.id}</dd>
+        <dt className="text-ink-faint">{t('work.head.id')}</dt><dd className="m-0 font-mono text-caption">#{ask.id}</dd>
         {ask.workspace && <><dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd></>}
         {ask.origins.length > 0 && (
           <><dt className="text-ink-faint">{t('asks.elsewhere.from')}</dt><dd className="m-0 wrap-anywhere">{ask.origins.join(', ')}</dd></>

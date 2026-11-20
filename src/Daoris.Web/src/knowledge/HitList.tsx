@@ -146,7 +146,7 @@ export function HitList({
               {t('search.meaningDown')}
             </p>
           )}
-          <ul className={cn('m-0 list-none p-0', answer.searching && 'opacity-60 transition-opacity duration-(--speed)')}>
+          <ul className={cn('m-0 list-none p-0', answer.searching && 'opacity-60 transition-opacity duration-(--duration-quick)')}>
             {answer.hits.map((hit) => (
               <li
                 key={hit.id}
@@ -163,11 +163,11 @@ export function HitList({
               >
                 <ListRowDoor chosen={chosen === hit.id} onPress={() => onChoose(hit.id)}>
                   <span className="block truncate text-body text-ink">{hit.title}</span>
-                  <span title={hit.path} className="block truncate font-mono text-meta text-ink-faint">
+                  <span title={hit.path} className="block truncate font-mono text-caption text-ink-faint">
                     {hit.repository} · {t(`kind.${hit.kind}`)}
                   </span>
                   {hit.firstLine && (
-                    <span className="block min-w-0 font-mono text-meta text-ink-soft">
+                    <span className="block min-w-0 font-mono text-caption text-ink-soft">
                       <PathText path={`${hit.path}:${hit.excerptLine ?? hit.firstLine}`} />
                     </span>
                   )}

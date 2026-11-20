@@ -16,7 +16,7 @@ export const atWidths = (widths: readonly number[] = FLOW_WIDTHS): Decorator => 
   <div className="grid gap-6">
     {widths.map((width) => (
       <section key={width} aria-label={`${width} px`} data-frame={width} className="grid gap-1">
-        <p className="m-0 font-mono text-meta text-ink-faint">{width} px</p>
+        <p className="m-0 font-mono text-caption text-ink-faint">{width} px</p>
         <div className="outline-1 outline-dashed outline-line" style={{ width }}><Story /></div>
       </section>
     ))}

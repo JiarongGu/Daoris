@@ -6,8 +6,8 @@
  * ## The units
  *
  * A **unit** is what a runner selects: a .NET class of a declared `dotnet test` gate (each half, each test project of a
- * solution gate), a `node --test` file of the CLI's suite, the tool-tests or a `tools/` test a gate lists (`test-map/listed.mjs`),
- * a vitest file, a Playwright spec, a rehearsal. Each has:
+ * solution gate), a file of a test set `daoris.gates.json` declares (`tests`, `tools/test-sets.mjs`: a `node --test` file, a vitest
+ * file, a Playwright spec), a rehearsal. Each has:
  *
  * - **its reach**. .NET: the Process census unchanged (`censusOf`, the area grain, one level of naming, **not a closure**);
  *   a fast half's filter is read from its command, and a solution gate's test projects each count. TypeScript: a closure over
@@ -44,9 +44,8 @@ import { isMain } from './fsx.mjs';
 import { globToRegExp } from './merge/lanes-file.ts';
 import { censusOf, halfOf, pathReach } from './process-reach.mjs';
 import { classHitByAreas } from './process-reach/census.mjs';
-import { TOOL_PROJECTS } from './vitest.config.ts';
 import { tsFacts, resolveImport } from './test-map/ts-facts.mjs';
-import { listedUnits } from './test-map/listed.mjs';
+import { declaredSets, filesBySet, scopeOf, testSets } from './test-sets.mjs';
 import { webReach } from './test-map/web-reach.mjs';
 import { stepReadFailures } from './verify-checks/reads.mjs';
 import { CHECK_STEPS } from './verify-checks/steps.mjs';
@@ -105,26 +104,14 @@ export function globRegExp(glob) {
 const GLOBS = new Map();
 
 /**
- * The TypeScript suites: each gate, the files its runner discovers (its own glob, as its command gives it), what a file must
- * hold to be a unit, and the files that act on every unit unnamed. A rehearsal is a unit of its own, its tool.
+ * The test sets this checkout declares (`daoris.gates.json`'s `tests`): each its suite, its runner, the patterns of its files and
+ * the files that act on every unit unnamed (`whole`). A tree's census reads the tree's own declaration, this one where the tree
+ * declares none (a fixture's tree). A rehearsal is a unit of its own, its tool.
  */
-export const TS_SUITES = Object.freeze([
-  { suite: 'cli', runner: 'node', glob: 'src/Daoris.Cli/test/**/*.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
-  { suite: 'tool-tests', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.test.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'] },
-  // The end-to-end tier's units are `bounded`: a path reaches one only where its gate's declared `paths` hold it, so a tool the merge
-  // tool merely imports reaches the unit tier and no end-to-end spec.
-  { suite: 'tool-e2e', runner: 'node', glob: 'src/Daoris.Cli/tool-test/**/*.e2e.ts', whole: ['src/Daoris.Cli/tsconfig.json', 'src/Daoris.Cli/package.json'], bounded: true },
-  // The merge tool's Vitest projects: the unit one runs in the CLI's verify, the end-to-end one in the end-to-end tier.
-  { suite: 'cli', runner: 'vitest', glob: TOOL_PROJECTS.unit.include[0], whole: ['tools/vitest.config.ts'] },
-  { suite: 'tool-e2e', runner: 'vitest', glob: TOOL_PROJECTS.e2e.include[0], whole: ['tools/vitest.config.ts', 'src/Daoris.Cli/package.json'], bounded: true },
-  {
-    suite: 'web-unit', runner: 'vitest', glob: 'src/Daoris.Web/src/**/*.test.{ts,tsx}',
-    whole: ['src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/src/test/setup.tsx', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/package.json'],
-    setup: 'src/Daoris.Web/src/test/setup.tsx',
-  },
-  { suite: 'web', runner: 'playwright', glob: 'src/Daoris.Web/e2e/**/*.spec.ts', whole: ['src/Daoris.Web/playwright.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/tsconfig.json'] },
-  { suite: 'web-measured', runner: 'playwright', glob: 'src/Daoris.Web/measured/**/*.spec.ts', whole: ['src/Daoris.Web/playwright.measured.config.ts', 'src/Daoris.Web/package.json'] },
-]);
+export const TS_SUITES = declaredSets();
+
+/** The sets whose files are units: a tree's declared ones (this checkout's where it declares none), less the picks of another set. */
+const unitSets = (declaration) => (declaration.tests ? testSets(declaration) : TS_SUITES).filter((set) => !set.of);
 
 /** The rehearsals, each a unit: its gate and its tool. */
 export const REHEARSALS = Object.freeze([
@@ -302,7 +289,8 @@ export function tsSubject(file) {
   const web = /^src\/Daoris\.Web\/src\/([^/]+)\//.exec(file);
   if (web) return `src/Daoris.Web/src/${web[1]}`;
   if (file.startsWith('src/Daoris.Web/')) return 'src/Daoris.Web';
-  return file;
+  const ownTool = /^(tools\/.+)\.test\.mjs$/.exec(file);
+  return ownTool ? `${ownTool[1]}.mjs` : file;
 }
 
 /** A .NET class's own file: the one that declares it (its first, where several do). */
@@ -328,7 +316,8 @@ const VIRTUAL_SETTINGS = '<virtual>.runsettings';
 
 /** The census of every suite over a tree (`files`, `read`): each suite's units with their reach and subject. */
 export function census(files, read, { suites = null } = {}) {
-  const gates = JSON.parse(read('daoris.gates.json') || '{"gates":[]}').gates ?? [];
+  const declaration = JSON.parse(read('daoris.gates.json') || '{"gates":[]}');
+  const gates = declaration.gates ?? [];
   const wanted = (suite) => !suites || suites.includes(suite);
   const units = [];
   const problems = [];
@@ -355,20 +344,19 @@ export function census(files, read, { suites = null } = {}) {
     }
   }
   const ts = tsReader(files, read);
-  for (const suite of TS_SUITES.filter((each) => wanted(each.suite))) {
-    const pattern = globRegExp(suite.glob);
-    // A bounded suite's units are reached only within its gate's declared paths; a gate that declares none bounds nothing.
-    const declared = suite.bounded ? gates.find((gate) => gate.name === suite.suite)?.paths : null;
-    const within = Array.isArray(declared) ? declared : null;
-    const setup = suite.setup && files.includes(suite.setup) ? ts.reachOf(suite.setup) : null;
-    for (const file of files.filter((each) => pattern.test(each))) {
+  const sets = unitSets(declaration);
+  const held = filesBySet(sets, files);
+  for (const set of sets.filter((each) => wanted(each.suite))) {
+    // A bounded set's units are reached only within its gate's declared paths; a gate that declares none bounds nothing.
+    const within = scopeOf(set, gates);
+    const setup = set.setup && files.includes(set.setup) ? ts.reachOf(set.setup) : null;
+    for (const file of held.get(set.name)) {
       const own = ts.reachOf(file);
       const reach = setup ? { files: [...new Set([...own.files, ...setup.files])].sort(), folders: [...new Set([...own.folders, ...setup.folders])].sort(), globs: [...new Set([...own.globs, ...setup.globs])], wide: [...own.wide, ...setup.wide] } : own;
-      units.push({ suite: suite.suite, kind: suite.runner, unit: file, name: posix.basename(file), file, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
+      const where = set.runner === 'node' ? { cwd: set.cwd } : {};
+      units.push({ suite: set.suite, kind: set.runner, unit: file, name: posix.basename(file), file, ...where, subject: tsSubject(file), reach: within ? { ...reach, within } : reach });
     }
   }
-  const bounded = (suite) => (TS_SUITES.some((each) => each.suite === suite && each.bounded) ? gates.find((gate) => gate.name === suite)?.paths ?? null : null);
-  units.push(...listedUnits({ gates, read, files, reachOf: ts.reachOf, wanted, within: bounded }));
   for (const rehearsal of REHEARSALS.filter((each) => wanted(each.suite))) {
     if (!files.includes(rehearsal.file)) continue;
     units.push({ suite: rehearsal.suite, kind: 'rehearsal', unit: rehearsal.file, name: posix.basename(rehearsal.file), file: rehearsal.file, subject: rehearsal.file, reach: ts.reachOf(rehearsal.file) });

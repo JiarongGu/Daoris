@@ -29,7 +29,7 @@ const line = (command: string[]) => command.map((word) => (word.includes(' ') ? 
 export function PluginRuns({ plugin }: { plugin: PressPlugin }) {
   const { t } = useTranslation();
   const said = (text: string, key: string) => (
-    <li key={key} className="m-0 text-meta text-ink-soft"><Inline text={text} /></li>
+    <li key={key} className="m-0 text-caption text-ink-soft"><Inline text={text} /></li>
   );
   return (
     <ul aria-label={t('person.plugin.shows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">

@@ -37,7 +37,7 @@ function RefusedRow({ refusal }: { refusal: InterfaceRefusal }) {
   return (
     <li className="flex flex-col gap-0.5 text-small text-ink-faint" aria-disabled="true">
       <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        {refusal.entry && <code className="font-mono text-meta">{refusal.entry}</code>}
+        {refusal.entry && <code className="font-mono text-caption">{refusal.entry}</code>}
         <Pill tone="declined">{t('plugin.setup.refusedWord')}</Pill>
       </span>
       <span><Inline text={refusal.problem} /></span>
@@ -70,7 +70,7 @@ export function CommandRows({ commands, refused, cannot, running, onRun }: {
               <span className="flex min-w-0 flex-1 basis-64 flex-col gap-0.5 text-small text-ink-soft">
                 <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="font-medium text-ink">{title}</span>
-                  <code className="font-mono text-meta text-ink-faint">{command.name}</code>
+                  <code className="font-mono text-caption text-ink-faint">{command.name}</code>
                   <CommandMarks command={command} />
                 </span>
                 {authoredText(command.about, i18n.language) && <span><Inline text={authoredText(command.about, i18n.language)} /></span>}
@@ -115,7 +115,7 @@ export function ViewRows({ views, refused }: { views: ViewShown[]; refused: Inte
         <li key={view.id} className="flex flex-col gap-0.5 text-small text-ink-soft">
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-medium text-ink">{authoredText(view.title, i18n.language)}</span>
-            <code className="font-mono text-meta text-ink-faint">{view.id}</code>
+            <code className="font-mono text-caption text-ink-faint">{view.id}</code>
           </span>
           <span>
             {view.where.map((where) => t(`plugin.setup.viewWhere.${where}`, { defaultValue: where })).join(' · ')}
@@ -203,7 +203,7 @@ export function WhereItIsOn({ interfaces, points, switches, places, busy = false
             {rows.map((what) => (
               <tr key={what} className="border-t border-line">
                 <th scope="row" className="py-1.5 pr-3 text-left font-normal text-ink-soft">
-                  {points.includes(what) ? <code className="font-mono text-meta text-ink">{what}</code> : whatLabel(what)}
+                  {points.includes(what) ? <code className="font-mono text-caption text-ink">{what}</code> : whatLabel(what)}
                 </th>
                 {columns.map((place) => (
                   <td key={place} className="px-2 py-1.5">
@@ -236,7 +236,7 @@ export function WhereItIsOn({ interfaces, points, switches, places, busy = false
           />
         </div>
       )}
-      <p className="m-0 text-meta text-ink-faint">{t('plugin.setup.onBody')}</p>
+      <p className="m-0 text-caption text-ink-faint">{t('plugin.setup.onBody')}</p>
     </div>
   );
 }
@@ -276,7 +276,7 @@ export function PluginSetup({ id, enabled, refused, interfaces, points, switches
       {(interfaces.commands.length > 0 || refusedOf('commands').length > 0) && (
         <PageSection title={t('plugin.setup.commands')}>
           <CommandRows commands={interfaces.commands} refused={refusedOf('commands')} cannot={cannot} running={running} onRun={onRun} />
-          <p className="m-0 mt-2 text-meta text-ink-faint"><Inline text={t('plugin.setup.commandsBody', { id })} /></p>
+          <p className="m-0 mt-2 text-caption text-ink-faint"><Inline text={t('plugin.setup.commandsBody', { id })} /></p>
         </PageSection>
       )}
       {(interfaces.storage || refusedOf('storage').length > 0) && (
@@ -288,7 +288,7 @@ export function PluginSetup({ id, enabled, refused, interfaces, points, switches
       {(interfaces.views.length > 0 || refusedOf('views').length > 0) && (
         <PageSection title={t('plugin.setup.views')}>
           <ViewRows views={interfaces.views} refused={refusedOf('views')} />
-          <p className="m-0 mt-2 text-meta text-ink-faint">{t('plugin.setup.viewsBody')}</p>
+          <p className="m-0 mt-2 text-caption text-ink-faint">{t('plugin.setup.viewsBody')}</p>
         </PageSection>
       )}
       {interfaces.unknown.length > 0 && (

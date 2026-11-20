@@ -133,7 +133,7 @@ export function OutputPanel({
                   className={cn(
                     // The side bar's tabs, a size down: the selected one whole, and the rest whole
                     // while the header holds every name, their icons alone when it does not; never cut.
-                    'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+                    'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-caption transition-colors duration-(--duration-quick)',
                     shown === id ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
                   )}
                 >
@@ -147,7 +147,7 @@ export function OutputPanel({
           // name as VS Code's lone view is by its title.
           : entries[0] && (
             <span
-              className={cn('shrink-0 text-meta text-ink-faint', onMove && 'cursor-grab')}
+              className={cn('shrink-0 text-caption text-ink-faint', onMove && 'cursor-grab')}
               {...carry(entries[0].id)}
             >
               {shown === 'console' ? t('work.panel.title') : entries[0].label}

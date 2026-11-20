@@ -92,7 +92,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
         </header>
         {/* Which circle, only when the map spans several: in one, it is the circle on screen (U49). */}
         {topology.circles > 1 && node.workspace && (
-          <p className="m-0 -mt-2 text-meta text-ink-faint">{t('map.detail.circle', { workspace: node.workspace })}</p>
+          <p className="m-0 -mt-2 text-caption text-ink-faint">{t('map.detail.circle', { workspace: node.workspace })}</p>
         )}
         {node.summary && <p className="m-0 text-small text-ink-soft">{node.summary}</p>}
         {(onOpenRepository || onOpenCode) && (
@@ -103,35 +103,35 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
         )}
         {node.owns.length > 0 && (
           <section>
-            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.owns')}</p>
+            <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.owns')}</p>
             <div className="flex flex-wrap gap-1">{node.owns.map((o) => <Chip key={o}>{o}</Chip>)}</div>
           </section>
         )}
         {node.accepts.length > 0 && (
           <section>
-            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.accepts')}</p>
+            <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.accepts')}</p>
             <div className="flex flex-wrap gap-1">{node.accepts.map((a) => <Chip key={a}>{a}</Chip>)}</div>
           </section>
         )}
         {/* What it says it uses, and who says they use it: declarations, beside the others. */}
         {uses.length > 0 && (
           <section>
-            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.uses')}</p>
+            <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.uses')}</p>
             <div className="flex flex-wrap gap-1">{uses.map((name) => <Chip key={name}>{name}</Chip>)}</div>
           </section>
         )}
         {usedBy.length > 0 && (
           <section>
-            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.usedBy')}</p>
+            <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.usedBy')}</p>
             <div className="flex flex-wrap gap-1">{usedBy.map((name) => <Chip key={name}>{name}</Chip>)}</div>
           </section>
         )}
         <section>
-          <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.into')}</p>
+          <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.into')}</p>
           <QuestList quests={into} onOpenQuest={onOpenQuest} />
         </section>
         <section>
-          <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.out')}</p>
+          <p className="m-0 mb-1 text-caption text-ink-faint">{t('map.detail.out')}</p>
           <QuestList quests={out} onOpenQuest={onOpenQuest} />
         </section>
       </div>
@@ -171,7 +171,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
         {edge.steps.length > 0 && <QuestList quests={edge.steps} onOpenQuest={onOpenQuest} />}
         {edge.waiting.length > 0 && (
           <section>
-            <p className="m-0 mb-1 text-meta text-ink-faint">{t('chain.pending')}</p>
+            <p className="m-0 mb-1 text-caption text-ink-faint">{t('chain.pending')}</p>
             <ul className="m-0 grid list-none gap-0.5 p-0">
               {edge.waiting.map((step, index) => (
                 <li key={`${step.to}-${index}`} className="px-1 py-1 text-small text-ink-soft">{step.title}</li>

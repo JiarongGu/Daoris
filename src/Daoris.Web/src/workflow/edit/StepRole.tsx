@@ -84,7 +84,7 @@ export function StepRole({ id, value, roleTakes, roles, place, staffing, onChoos
 
   return (
     <div className="grid min-w-0 gap-1">
-      <span id={id} className="text-meta text-ink-soft">{t('workflow.edit.role.label')}</span>
+      <span id={id} className="text-caption text-ink-soft">{t('workflow.edit.role.label')}</span>
       <SelectField
         ariaLabel={t('workflow.edit.role.label')}
         value={value || NONE}
@@ -94,7 +94,7 @@ export function StepRole({ id, value, roleTakes, roles, place, staffing, onChoos
           ...offered.map((role) => ({ value: role.id, label: named(role) })),
         ]}
       />
-      {taking.length === 0 && <p className="m-0 text-meta text-ink-faint">{t('workflow.edit.role.none')}</p>}
+      {taking.length === 0 && <p className="m-0 text-caption text-ink-faint">{t('workflow.edit.role.none')}</p>}
       {staffing && catalogue && place && editing === null && (
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {own
@@ -111,7 +111,7 @@ export function StepRole({ id, value, roleTakes, roles, place, staffing, onChoos
             )}
         </div>
       )}
-      {said && <p role="status" className="m-0 text-meta text-ink-soft [overflow-wrap:anywhere]">{said}</p>}
+      {said && <p role="status" className="m-0 text-caption text-ink-soft [overflow-wrap:anywhere]">{said}</p>}
       {staffing && place && editing && (
         <RolesCard
           editorOnly

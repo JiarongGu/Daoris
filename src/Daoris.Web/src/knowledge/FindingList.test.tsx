@@ -44,7 +44,7 @@ describe("Convergence's list", () => {
     expect(identical.getByText('engine ↔ game ↔ studio-tools')).toBeInTheDocument();
     // A likeness in different words, the finding no text comparison can make, wears the accent.
     expect(within(screen.getByRole('listitem', { name: 'D12 — streaming budget per frame · world-streaming' }))
-      .getByText('Same lesson, different words')).toHaveClass('text-accent');
+      .getByText('Same lesson, different words')).toHaveClass('text-accent-ink');
   });
 
   it('chooses a finding by its entries, and wears the choice on its row', async () => {

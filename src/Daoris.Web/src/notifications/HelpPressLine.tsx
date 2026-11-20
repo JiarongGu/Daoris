@@ -111,7 +111,7 @@ export function HelpPressLine({ standing, since = null, busy = false, onOpen, on
       )}
       {asked.length > 0 && (
         <div className="grid gap-1">
-          <p id={`${id}-asked`} className="m-0 text-meta text-ink-faint">{t('notifications.helpPressed.askedList')}</p>
+          <p id={`${id}-asked`} className="m-0 text-caption text-ink-faint">{t('notifications.helpPressed.askedList')}</p>
           <ul aria-labelledby={`${id}-asked`} className="m-0 grid list-none gap-1 p-0">
             {asked.map((each) => <PressLine key={each.id} press={each} busy={busy} onOpen={onOpen} onReverse={onReverse} {...(onOpenTarget ? { onOpenTarget } : {})} />)}
           </ul>

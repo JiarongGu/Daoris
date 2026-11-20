@@ -18,8 +18,8 @@ export function SupervisorChange({ supervisor }: { supervisor: PressSupervisor }
   const place = supervisor.scope.kind === 'machine' ? 'machine' : `${supervisor.scope.kind}:${supervisor.scope.id ?? ''}`;
   const side = (label: string, hold: RoleHoldRead | null | undefined, which: 'before' | 'after') => (
     <section aria-label={label} data-side={which} className="m-0 mt-1">
-      <p className="m-0 text-meta font-semibold text-ink-soft">{label}</p>
-      <p className="m-0 text-meta text-ink-soft">{hold ? holdLine(t, hold) : t('person.supervisor.none')}</p>
+      <p className="m-0 text-caption font-semibold text-ink-soft">{label}</p>
+      <p className="m-0 text-caption text-ink-soft">{hold ? holdLine(t, hold) : t('person.supervisor.none')}</p>
     </section>
   );
   return (

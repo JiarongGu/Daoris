@@ -18,7 +18,7 @@ export function SessionWork({ session, grouping, accountName }: {
   const tip = [...steps, ...turns].join('\n');
 
   return (
-    <span className="mt-0.5 block font-mono text-meta text-ink-faint">
+    <span className="mt-0.5 block font-mono text-caption text-ink-faint">
       <span title={tip || undefined} className="block truncate">{sentence}</span>
     </span>
   );

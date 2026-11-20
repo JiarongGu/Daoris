@@ -25,7 +25,7 @@ export function GrantTools({ grant }: { grant: PressGrant }) {
   const tools = (names: string[]) => names.map((name) => `\`${name}\``).join(', ');
   const asked = grant.writes.filter((tool) => !grant.accepted.includes(tool));
   const said = (text: string, key: string) => (
-    <li key={key} className="m-0 text-meta text-ink-soft"><Inline text={text} /></li>
+    <li key={key} className="m-0 text-caption text-ink-soft"><Inline text={text} /></li>
   );
   return (
     <ul aria-label={t(grant.withdraw ? 'person.grant.loses' : 'person.grant.shows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">

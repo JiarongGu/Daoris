@@ -39,7 +39,7 @@ export function ZoomReadout({ level, lasts = READOUT_LASTS }: {
       role="status"
       className={cn(
         'pointer-events-none fixed left-1/2 top-12 z-40 -translate-x-1/2 rounded-card border border-line bg-overlay px-3 py-1.5',
-        'text-title tabular-nums text-ink shadow-lg',
+        'text-heading tabular-nums text-ink shadow-lg',
         FRAME_HELD,
       )}
     >

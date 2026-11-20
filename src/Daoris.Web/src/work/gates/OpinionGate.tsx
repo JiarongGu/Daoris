@@ -36,7 +36,7 @@ const ACT: Record<OpinionPress, keyof OpinionGateActs> = {
 
 /** The border a tone wears, beside its pill's word: never the hue alone. */
 const RAIL: Record<ReturnType<typeof opinionTone>, string> = {
-  open: 'border-l-st-open', taken: 'border-l-st-taken', done: 'border-l-st-done', neutral: 'border-l-line-strong',
+  open: 'border-l-st-open', taken: 'border-l-live', done: 'border-l-ok', neutral: 'border-l-line-strong',
 };
 
 /**
@@ -126,9 +126,9 @@ export function OpinionGate({
       </div>
 
       {sentence.map((line) => <p key={line} className="m-0 text-small text-ink-soft"><Inline text={line} /></p>)}
-      {opinionConsulted(t, detail).map((line) => <p key={line} className="m-0 text-meta text-ink-faint">{line}</p>)}
+      {opinionConsulted(t, detail).map((line) => <p key={line} className="m-0 text-caption text-ink-faint">{line}</p>)}
       {state === 'unread' && gate.says && (
-        <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('opinion.driverSaid', { said: gate.says })} /></p>
+        <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('opinion.driverSaid', { said: gate.says })} /></p>
       )}
       {personWords && (state === 'anyway' || state === 'myself' || state === 'answered') && (
         <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">{t('opinion.says.personWords', { words: personWords })}</p>
@@ -138,7 +138,7 @@ export function OpinionGate({
           {t(detail.toPerson === 'recheck' || detail.toPerson === 'conversation' ? `opinion.toPerson.${detail.toPerson}` : 'opinion.toPerson.other')}
         </p>
       )}
-      {detail?.tier && <p className="m-0 text-meta text-ink-faint">{t(tierKey(detail.tier))}</p>}
+      {detail?.tier && <p className="m-0 text-caption text-ink-faint">{t(tierKey(detail.tier))}</p>}
 
       {(findings.length > 0 || detail?.first?.read || detail?.first?.limits) && (
         <div className="grid min-w-0 gap-1.5">
@@ -325,7 +325,7 @@ function Findings({ detail }: { detail: OpinionDetail }) {
       )}
       {recheck.length > 0 && (
         <>
-          <h4 className="m-0 text-meta font-semibold text-ink-faint">{t('opinion.recheckTitle')}</h4>
+          <h4 className="m-0 text-caption font-semibold text-ink-faint">{t('opinion.recheckTitle')}</h4>
           <ol className="m-0 grid min-w-0 list-none gap-2 p-0">
             {recheck.map((finding) => <Finding key={`recheck:${finding.number}`} finding={finding} />)}
           </ol>
@@ -335,19 +335,19 @@ function Findings({ detail }: { detail: OpinionDetail }) {
         <dl key={pass!.id} className="m-0 grid min-w-0 gap-1 text-small">
           {pass!.read && (
             <div className="min-w-0">
-              <dt className="text-meta text-ink-faint">{t('opinion.read')}</dt>
+              <dt className="text-caption text-ink-faint">{t('opinion.read')}</dt>
               <dd className="m-0 whitespace-pre-wrap text-ink-soft [overflow-wrap:anywhere]">{pass!.read}</dd>
             </div>
           )}
           {pass!.limits && (
             <div className="min-w-0">
-              <dt className="text-meta text-ink-faint">{t('opinion.limits')}</dt>
+              <dt className="text-caption text-ink-faint">{t('opinion.limits')}</dt>
               <dd className="m-0 whitespace-pre-wrap text-ink-soft [overflow-wrap:anywhere]">{pass!.limits}</dd>
             </div>
           )}
           {pass!.usage !== undefined && (
             <div className="min-w-0">
-              <dt className="text-meta text-ink-faint">{t('opinion.usage')}</dt>
+              <dt className="text-caption text-ink-faint">{t('opinion.usage')}</dt>
               <dd className="m-0 text-ink-soft">
                 {pass!.usage && pass!.usage.size > 0
                   ? t('opinion.usageMeasured', { used: pass!.usage.used.toLocaleString(i18n.language), size: pass!.usage.size.toLocaleString(i18n.language) })
@@ -377,28 +377,28 @@ function Finding({ finding }: { finding: OpinionFinding }) {
   return (
     <li className={cn('grid min-w-0 gap-1 border-l-2 pl-2.5', disputed ? 'border-l-st-open' : 'border-l-line')}>
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small">
-        <span className="font-mono text-meta text-ink-faint">#{finding.number}</span>
+        <span className="font-mono text-caption text-ink-faint">#{finding.number}</span>
         <Pill tone={finding.weight === 'must' ? 'open' : 'neutral'}>{t(`opinion.weight.${finding.weight}`, { defaultValue: finding.weight })}</Pill>
         {place && open
           ? (
             <button
               type="button"
               onClick={() => open(place)}
-              className="min-w-0 border-0 bg-transparent p-0 text-left font-mono text-meta text-accent underline-offset-2 hover:underline [overflow-wrap:anywhere]"
+              className="min-w-0 border-0 bg-transparent p-0 text-left font-mono text-caption text-accent-ink underline-offset-2 hover:underline [overflow-wrap:anywhere]"
             >
               {where}
             </button>
           )
-          : <span className="min-w-0 font-mono text-meta text-ink-soft [overflow-wrap:anywhere]"><Inline text={where} /></span>}
-        {finding.sure && <span className="text-meta text-ink-faint">{t(`opinion.sure.${finding.sure}`, { defaultValue: finding.sure })}</span>}
-        {disputed && <span className="text-meta font-semibold text-ink-open">{t('opinion.disputed')}</span>}
+          : <span className="min-w-0 font-mono text-caption text-ink-soft [overflow-wrap:anywhere]"><Inline text={where} /></span>}
+        {finding.sure && <span className="text-caption text-ink-faint">{t(`opinion.sure.${finding.sure}`, { defaultValue: finding.sure })}</span>}
+        {disputed && <span className="text-caption font-semibold text-ink-open">{t('opinion.disputed')}</span>}
       </p>
       <p className="m-0 whitespace-pre-wrap text-body text-ink [overflow-wrap:anywhere]">{finding.claim}</p>
       {finding.consequence && <Said label={t('opinion.finding.consequence')} text={finding.consequence} />}
       {finding.reproduce && <Said label={t('opinion.finding.reproduce')} text={finding.reproduce} />}
       {finding.proposal && <Said label={t('opinion.finding.proposal')} text={finding.proposal} />}
       {(answer || counts) && <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]"><Inline text={answerWords(t, finding)} /></p>}
-      {rechecked && <p className="m-0 text-meta text-ink-faint">{t(`opinion.rechecked.${rechecked}`, { defaultValue: rechecked })}</p>}
+      {rechecked && <p className="m-0 text-caption text-ink-faint">{t(`opinion.rechecked.${rechecked}`, { defaultValue: rechecked })}</p>}
     </li>
   );
 }
@@ -407,7 +407,7 @@ function Finding({ finding }: { finding: OpinionFinding }) {
 function Said({ label, text }: { label: string; text: string }) {
   return (
     <div className="min-w-0 text-small">
-      <span className="text-meta text-ink-faint">{label} · </span>
+      <span className="text-caption text-ink-faint">{label} · </span>
       <span className="whitespace-pre-wrap text-ink-soft [overflow-wrap:anywhere]">{text}</span>
     </div>
   );

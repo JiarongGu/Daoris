@@ -71,7 +71,7 @@ export function Tile({ label, value, note, warn }: {
     >
       <span className="text-small text-ink-soft">{label}</span>
       {known
-        ? <span className="text-value font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
+        ? <span className="text-display font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>
         : <i aria-hidden className="my-1 block h-5 w-12 rounded-[4px] bg-accent-soft opacity-55" />}
       {known
         ? <span className={cn('text-small', warn ? 'text-ink-open' : 'text-ink-faint')}>{note}</span>
@@ -87,7 +87,7 @@ export function PageHeader({ title, description, action }: {
   return (
     <header className="mb-5 flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-view font-[650] tracking-[-0.01em]">{title}</h1>
+        <h1 className="text-display font-[650] tracking-[-0.01em]">{title}</h1>
         <Prose className="mt-1">{description}</Prose>
       </div>
       {action && <div className="shrink-0">{action}</div>}

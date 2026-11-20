@@ -10,9 +10,9 @@ import { type DiffLayout, PatchView } from './PatchView';
 
 /** How a status reads as a mark. Never colour alone — the letter is the label. */
 const MARK: Record<string, { letter: string; tone: string }> = {
-  added: { letter: 'A', tone: 'text-ink-done' },
-  modified: { letter: 'M', tone: 'text-ink-taken' },
-  deleted: { letter: 'D', tone: 'text-ink-danger' },
+  added: { letter: 'A', tone: 'text-ok-ink' },
+  modified: { letter: 'M', tone: 'text-live-ink' },
+  deleted: { letter: 'D', tone: 'text-fail-ink' },
   renamed: { letter: 'R', tone: 'text-ink-open' },
   copied: { letter: 'C', tone: 'text-ink-open' },
 };
@@ -67,7 +67,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
           <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} />
           <span
             aria-label={t(`work.review.status.${file.status}`)}
-            className={cn('shrink-0 font-mono text-meta', mark.tone)}
+            className={cn('shrink-0 font-mono text-caption', mark.tone)}
           >
             {mark.letter}
           </span>
@@ -91,15 +91,15 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
           </Tip>
         )}
 
-        <span className="shrink-0 font-mono text-meta tabular-nums">
+        <span className="shrink-0 font-mono text-caption tabular-nums">
           {file.added === null || file.removed === null
             // A binary file is not counted, which is not the same as counting zero.
             ? <span className="text-ink-faint">{t('work.review.binary')}</span>
             : (
               <>
-                <span className="text-ink-done">+{file.added}</span>
+                <span className="text-ok-ink">+{file.added}</span>
                 {' '}
-                <span className="text-ink-danger">−{file.removed}</span>
+                <span className="text-fail-ink">−{file.removed}</span>
               </>
             )}
         </span>
@@ -109,7 +109,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
           checked={viewed}
           onChange={onViewed}
           label={t('work.review.viewed')}
-          className="shrink-0 gap-1.5 text-meta text-ink-faint"
+          className="shrink-0 gap-1.5 text-caption text-ink-faint"
         />
       </div>
 

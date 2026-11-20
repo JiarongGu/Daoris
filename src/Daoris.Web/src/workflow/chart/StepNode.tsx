@@ -42,7 +42,7 @@ export function StepNode({ context, step, edit }: { context: NodeContext; step: 
             {node.state && <span id={ids.state}><Pill tone={node.state.tone}>{node.state.word}</Pill></span>}
           </div>
           {step.role && (
-            <p data-step-role={step.role} className="m-0 mt-0.5 min-w-0 text-meta text-ink-soft [overflow-wrap:anywhere]">
+            <p data-step-role={step.role} className="m-0 mt-0.5 min-w-0 text-caption text-ink-soft [overflow-wrap:anywhere]">
               {t('workflow.role.line', { role: roleSaid(t, i18n, step.role) })}
             </p>
           )}
@@ -55,7 +55,7 @@ export function StepNode({ context, step, edit }: { context: NodeContext; step: 
             <p data-flow-mark className="m-0 mt-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
               <Icon name="stepFinished" size={12} className="mr-1 inline translate-y-px" />
               <span className="font-semibold">{node.mark.word}</span>
-              {node.mark.foot && <span className="block text-meta">{node.mark.foot}</span>}
+              {node.mark.foot && <span className="block text-caption">{node.mark.foot}</span>}
             </p>
           )}
           <NodeFeet node={node.id} feet={rest} onFollow={onFollow} />

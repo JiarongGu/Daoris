@@ -94,7 +94,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
         <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
           <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <SectionTitle>{t('harness.accounts')}</SectionTitle>
-            <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
+            <span className="ml-auto flex items-baseline gap-2 text-caption text-ink-faint">
               {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
               {/* Each account's use, asked of its agent with no prompt: no sign-in, so beside *Read again*. */}
               {tool.present && use?.reads && (
@@ -168,7 +168,7 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
                 {/* Held while the key is on its way, so a refusal is never said to nobody. */}
                 <Button variant="ghost" disabled={busy} onClick={() => askKey(false)}>{t('common.cancel')}</Button>
                 {refusalOf('key', '') && <Refused sentence={refusalOf('key', '')!} />}
-                <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+                <span className="basis-full text-caption text-ink-faint">{t('harness.profile.keyHint')}</span>
               </form>
               </li>
             )}
@@ -184,12 +184,12 @@ export function AccountsFold({ adding, goingBack, signInNewPanel, added, back, b
                 type="button"
                 aria-expanded={termsOpen}
                 onClick={() => setTermsOpen((was) => !was)}
-                className="flex min-h-7 items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
+                className="flex min-h-7 items-center gap-1 rounded-control text-caption text-ink-faint hover:text-ink"
               >
                 {t('agents.terms.show')}
                 <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
               </button>
-              {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
+              {termsOpen && <p className="m-0 mt-1 text-caption text-ink-faint">{t('harness.terms')}</p>}
             </div>
           )}
         </section>

@@ -65,14 +65,14 @@ function Verification({ run, onHeld }: { run: WorkflowRun; onHeld?: VerifyRunsPr
         <span className="min-w-0 font-mono text-small text-ink [overflow-wrap:anywhere]">
           {line.branch ? t('workflow.run.line.of', { branch: line.branch, commit }) : commit}
         </span>
-        <span className="text-meta text-ink-faint">
+        <span className="text-caption text-ink-faint">
           {t(line.level === 'person' ? 'workflow.run.line.asked' : 'workflow.run.line.started', { when: ago(line.at) })}
         </span>
-        {batch && <span className="text-meta text-ink-soft">{batch}</span>}
+        {batch && <span className="text-caption text-ink-soft">{batch}</span>}
       </div>
       {run.problem && <p className="m-0 text-small text-ink-soft">{t('workflow.run.line.unread')}</p>}
       {line.gates.length > 0 && (
-        <ul aria-label={t('workflow.run.line.gates')} className="m-0 flex list-none flex-wrap gap-x-3 gap-y-0.5 p-0 text-meta text-ink-soft">
+        <ul aria-label={t('workflow.run.line.gates')} className="m-0 flex list-none flex-wrap gap-x-3 gap-y-0.5 p-0 text-caption text-ink-soft">
           {line.gates.map((gate) => (
             <li key={gate.name} className="font-mono">
               {[

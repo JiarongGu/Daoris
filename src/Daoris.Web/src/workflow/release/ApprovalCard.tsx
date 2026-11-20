@@ -46,7 +46,7 @@ export function ApprovalCard({ words, url, canApprove, onDecide, onOpen }: {
           <>
             <Button variant="primary" disabled={sending} className={press} onClick={() => decide('approve')}>{t('workflow.release.approval.approve')}</Button>
             <Button variant="ghost" disabled={sending} className={press} onClick={() => decide('reject')}>{t('workflow.release.approval.reject')}</Button>
-            <span className="text-meta text-ink-faint">{t('workflow.release.approval.yours')}</span>
+            <span className="text-caption text-ink-faint">{t('workflow.release.approval.yours')}</span>
           </>
         ) : url && (
           <Button variant="ghost" className={press} onClick={() => onOpen(url)}>{t('workflow.release.approval.open')}</Button>

@@ -218,7 +218,7 @@ export function AskHistory({
         {error && rows.length > 0 && (
           <div className="mx-2 mb-2 grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1">
             <Refused sentence={error} />
-            {onRetry && <Button variant="ghost" className="px-0 text-small text-accent" onClick={onRetry}>{t('help.history.retry')}</Button>}
+            {onRetry && <Button variant="ghost" className="px-0 text-small text-accent-ink" onClick={onRetry}>{t('help.history.retry')}</Button>}
           </div>
         )}
 
@@ -257,7 +257,7 @@ export function AskHistory({
 
         {/* What a search covered, said as it answers: never over a newer search's wait, whose rows are the last one's. */}
         {searching && !refreshing && rows.length > 0 && (
-          <p role="status" className="m-0 px-2.5 pb-1 pt-1.5 text-meta text-ink-faint wrap-anywhere">
+          <p role="status" className="m-0 px-2.5 pb-1 pt-1.5 text-caption text-ink-faint wrap-anywhere">
             {aboutPlace ? t('help.history.searchedAbout', { count, words, place: aboutPlace })
               : onlyIn ? t('help.history.searchedIn', { count, words, workspace: onlyIn }) : t('help.history.searched', { count, words })}
           </p>
@@ -265,7 +265,7 @@ export function AskHistory({
 
         {groups.map((group) => (
           <div key={group.id} role="group" aria-labelledby={`${headingId}-${group.id}`} className="mt-1.5 first:mt-0">
-            <h4 id={`${headingId}-${group.id}`} className="m-0 truncate px-2.5 pb-1 pt-1.5 text-meta font-semibold text-ink-soft">
+            <h4 id={`${headingId}-${group.id}`} className="m-0 truncate px-2.5 pb-1 pt-1.5 text-caption font-semibold text-ink-soft">
               {group.title}
             </h4>
             <ul aria-labelledby={`${headingId}-${group.id}`} className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
@@ -291,7 +291,7 @@ export function AskHistory({
 
         {onMore && rows.length > 0 && (
           <div ref={moreFoot} className="grid grid-cols-[minmax(0,1fr)] justify-items-start gap-1.5 px-2.5 pt-2">
-            <p className="m-0 text-meta text-ink-faint">{t('help.history.listed', { shown: rows.length, total: count })}</p>
+            <p className="m-0 text-caption text-ink-faint">{t('help.history.listed', { shown: rows.length, total: count })}</p>
             {moreError && <Refused sentence={moreError} />}
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Button className="px-2.5 text-small" onClick={more}>{t('help.history.more')}</Button>
@@ -377,7 +377,7 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
     <li
       data-list-row=""
       className={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] items-start rounded-control border-l-[3px] transition-colors duration-(--speed)',
+        'grid grid-cols-[minmax(0,1fr)_auto] items-start rounded-control border-l-[3px] transition-colors duration-(--duration-quick)',
         current ? 'border-l-accent bg-accent-soft' : 'border-l-transparent hover:bg-accent-soft/50',
       )}
     >
@@ -392,7 +392,7 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
         <span className="block text-body text-ink wrap-anywhere">
           {inTitle ? <Marked text={row.title} words={words} /> : row.title}
           {current && (
-            <span className="ml-1.5 inline-block rounded-[3px] border border-line-strong px-1 align-[1px] text-meta leading-normal text-ink-soft">
+            <span className="ml-1.5 inline-block rounded-[3px] border border-line-strong px-1 align-[1px] text-caption leading-normal text-ink-soft">
               {t('help.history.current')}
             </span>
           )}
@@ -402,7 +402,7 @@ function HistoryRow({ row, current, busy, words, asking, onAsk, onOpen, onRename
             {find ? <Marked text={find} words={words} /> : about}
           </span>
         )}
-        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-meta text-ink-faint">
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-caption text-ink-faint">
           {row.pinned && (
             <span className="inline-flex items-center text-ink-soft">
               <Icon name="pin" size={11} />
@@ -541,7 +541,7 @@ function RenameHelp({ row, onSave, onClose }: {
       {refusal && <Refused sentence={refusal} />}
       {kept && (
         // `min-w-0`: a grid item is otherwise as wide as its longest word, and a code word breaks only inside its line.
-        <span className="min-w-0 text-meta text-ink-faint wrap-anywhere">
+        <span className="min-w-0 text-caption text-ink-faint wrap-anywhere">
           <Inline text={t('help.command', { command: `daoris ask-daoris rename ${row.session} ${shellWord(kept, '<name>')}` })} />
         </span>
       )}

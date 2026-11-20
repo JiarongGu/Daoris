@@ -502,11 +502,11 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
           >
             {item.title}
           </span>
-          {where && <><span aria-hidden className="text-ink-faint">·</span><span className="text-accent">{where}</span></>}
+          {where && <><span aria-hidden className="text-ink-faint">·</span><span className="text-accent-ink">{where}</span></>}
           {when && (
             <>
               <span aria-hidden className="text-ink-faint">·</span>
-              <span className="font-mono text-meta text-ink-faint">{when}</span>
+              <span className="font-mono text-caption text-ink-faint">{when}</span>
             </>
           )}
         </p>
@@ -575,7 +575,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
                 type="button"
                 onClick={() => onOpen(item)}
                 aria-describedby={titleId}
-                className="ml-auto inline-flex min-h-[1.75rem] items-center gap-0.5 rounded-control px-1.5 text-small font-medium text-accent hover:bg-accent-soft @3xl/main:ml-0"
+                className="ml-auto inline-flex min-h-[1.75rem] items-center gap-0.5 rounded-control px-1.5 text-small font-medium text-accent-ink hover:bg-accent-soft @3xl/main:ml-0"
               >
                 {/* An account's row opens its agent's page, and says whose (*Claude Code ›*). */}
                 {AT_AN_AGENT.has(item.kind) && item.account ? item.account.product : t('work.attention.door.open')}

@@ -30,7 +30,7 @@ function PreviewDoor({ path, lines, open }: { path: string; lines: LineRange | n
           : t('work.preview.openLine', { path, from: lines.from })}
       // Gives way at its FRONT, as the review's paths do: the file's name is the half a person looks for.
       dir="rtl"
-      className="min-w-0 shrink cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong decoration-dotted underline-offset-2 hover:text-accent hover:decoration-accent"
+      className="min-w-0 shrink cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-caption text-ink-soft underline decoration-line-strong decoration-dotted underline-offset-2 hover:text-accent-ink hover:decoration-accent"
     >
       <span dir="ltr">{path}</span>
     </button>
@@ -128,15 +128,15 @@ export function ToolCard({ call, tree }: {
   const marks = (
     <>
       {counts && (
-        <span className="shrink-0 font-mono text-meta">
-          <span className="text-ink-done">+{counts.added}</span>{' '}
-          <span className="text-ink-danger">−{counts.removed}</span>
+        <span className="shrink-0 font-mono text-caption">
+          <span className="text-ok-ink">+{counts.added}</span>{' '}
+          <span className="text-fail-ink">−{counts.removed}</span>
         </span>
       )}
       {!open && carried > 1 && (
-        <span className="shrink-0 text-meta tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
+        <span className="shrink-0 text-caption tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
       )}
-      {took >= 1000 && <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{span(took)}</span>}
+      {took >= 1000 && <span className="ml-auto shrink-0 text-caption tabular-nums text-ink-faint">{span(took)}</span>}
       <Dot
         className={cn('shrink-0', !(took >= 1000) && 'ml-auto')}
         tone={stopped ? 'idle' : STATUS_TONE[status] ?? 'idle'}
@@ -189,7 +189,7 @@ export function ToolCard({ call, tree }: {
             {kind}
             <span className="min-w-0 truncate text-small text-ink">{title}</span>
             {where && !title.includes(where) && (
-              <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{where}</span>
+              <span className="min-w-0 truncate font-mono text-caption text-ink-faint">{where}</span>
             )}
             {marks}
           </button>
@@ -215,7 +215,7 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
     return (
       <figure className="m-0 overflow-hidden rounded-control border border-line">
         {item.path && (
-          <figcaption className="flex min-w-0 border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">
+          <figcaption className="flex min-w-0 border-b border-line bg-page px-2.5 py-1 font-mono text-caption text-ink-soft">
             {previewing && opener ? <PreviewDoor path={previewing} lines={null} open={opener} /> : inTree(item.path, tree)}
           </figcaption>
         )}
@@ -260,8 +260,8 @@ export function unfenced(text: string): string {
 function Raw({ label, text }: { label: string; text: string }) {
   return (
     <div>
-      <span className="text-meta text-ink-faint">{label}</span>
-      <pre className="m-0 mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere rounded-control bg-page px-2.5 py-1.5 font-mono text-meta text-ink-soft">
+      <span className="text-caption text-ink-faint">{label}</span>
+      <pre className="m-0 mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere rounded-control bg-page px-2.5 py-1.5 font-mono text-caption text-ink-soft">
         {text}
       </pre>
     </div>

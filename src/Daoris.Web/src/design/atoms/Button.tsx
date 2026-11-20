@@ -7,12 +7,12 @@ const BUTTON: Record<string, string> = {
   default:
     'border border-line bg-raised text-ink hover:enabled:border-accent',
   primary:
-    'border border-accent bg-accent text-accent-ink hover:enabled:brightness-108',
+    'border border-accent bg-accent text-on-accent hover:enabled:brightness-108',
   ghost:
     'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line',
   // Its label in the danger ink, its line and its hover field in declined's hue: the hue as text is 3.95:1 in dark.
   danger:
-    'border border-st-declined bg-transparent text-ink-danger hover:enabled:bg-st-declined/10',
+    'border border-fail bg-transparent text-fail-ink hover:enabled:bg-fail-soft',
 };
 
 /**
@@ -30,7 +30,7 @@ export function Button({
       type={type}
       className={cn(
         'inline-flex min-h-[1.9rem] items-center gap-1.5 rounded-control px-3 py-1.5 text-body',
-        'transition-colors duration-(--speed)',
+        'transition-colors duration-(--duration-quick)',
         BUTTON[variant],
         className,
       )}

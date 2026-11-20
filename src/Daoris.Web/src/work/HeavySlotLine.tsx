@@ -48,7 +48,7 @@ function SessionDoor({ session, titleOf, onOpen }: {
       type="button"
       onClick={() => onOpen(session)}
       title={title}
-      className="max-w-full truncate align-bottom text-accent underline-offset-2 hover:underline focus-visible:underline"
+      className="max-w-full truncate align-bottom text-accent-ink underline-offset-2 hover:underline focus-visible:underline"
     >
       {title}
     </button>
@@ -68,7 +68,7 @@ export function HeavySlotLine({ part, titleOf, onOpen }: {
   useNow(part.kind === 'failed' ? null : 15_000);
   if (part.kind === 'admission') {
     return (
-      <span title={t('work.heavy.admissionTip')} className="inline-flex flex-wrap items-baseline gap-x-1.5 text-meta text-ink-soft">
+      <span title={t('work.heavy.admissionTip')} className="inline-flex flex-wrap items-baseline gap-x-1.5 text-caption text-ink-soft">
         <Dot tone="waits" label={heavyLine(t, part, titleOf)} className="whitespace-normal" />
       </span>
     );
@@ -79,7 +79,7 @@ export function HeavySlotLine({ part, titleOf, onOpen }: {
   // The sentence with its session in place, in either language: split where the session goes.
   const [before, after] = t('work.heavy.waiting', { session: GAP, time: elapsed(part.since) }).split(GAP);
   return (
-    <span title={t('work.heavy.waitingTip')} className="inline-flex flex-wrap items-baseline gap-x-1.5 text-meta text-ink-soft">
+    <span title={t('work.heavy.waitingTip')} className="inline-flex flex-wrap items-baseline gap-x-1.5 text-caption text-ink-soft">
       <Dot tone="waits" label={before.trimEnd()} className="whitespace-normal" />
       <SessionDoor session={part.behind} titleOf={titleOf} onOpen={onOpen} />
       {after && <span>{after.trimStart()}</span>}

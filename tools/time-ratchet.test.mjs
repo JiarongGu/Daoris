@@ -55,7 +55,7 @@ test('the fourteen ratchet reds of 2026-11-17 to 19 replayed, main keeping no al
   const FLOW = 'tools/merge/flow.test.ts::a gate whose hang bound killed a test under load fails nothing yet and runs again alone; a hang killed alone fails';
   const census = (name) => `Daoris.Desktop.Driver.Tests.${name}`;
   const units = Object.fromEntries(['CensusReachTests', 'SharedCompileTests', 'SettledReadersCensusTests', 'CheckoutWritersCensusTests', 'ContinuedReadersCensusTests',
-    'SayKeysCensusTests', 'DeclarationLiteralsCensusTests', 'LineAccountTests', 'StructureTests', 'HomePurgeEdgeTests'].map((name) => [census(name), `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/${name}.cs`]));
+    'SayKeysCensusTests', 'DeclarationLiteralsCensusTests', 'LineAccountTests', 'StructureTests', 'HomePurgeEdgeTests'].map((name) => [census(name), `src/D.Tests/${name}.cs`]));
   const world = worldOf({ ...units, 'tools/merge/flow.test.ts': 'tools/merge/flow.test.ts' });
   const at = (name, ms) => [`${census(name)}.Case`, { ms, limit: 30_000 }];
   const flow = (ms) => [FLOW, { ms, limit: 10_000 }];

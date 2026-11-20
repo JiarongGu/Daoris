@@ -3,7 +3,7 @@ import { buildGrid } from './spatialGrid';
 import { cullSupplied, lineDrawn } from './suppliedCull';
 import type { Box } from './viewMath';
 
-// A supplied world's cards culled past 400 and drawn as dots below 4 px of `text-meta`,
+// A supplied world's cards culled past 400 and drawn as dots below 4 px of `text-caption`,
 // the focused, the selected and find's match always mounted.
 
 const field = (count: number): Map<string, Box> => {
@@ -39,7 +39,7 @@ describe('a supplied world\'s cull', () => {
     expect(lineDrawn(cull.culled, 'card-450', 'card-451')).toBe(cull.mounted.has('card-450') || cull.mounted.has('card-451'));
   });
 
-  it('draws dots below 4 px of text-meta, the pinned alone mounted, and the window\'s zoom counted', () => {
+  it('draws dots below 4 px of text-caption, the pinned alone mounted, and the window\'s zoom counted', () => {
     const grid = buildGrid(field(100));
     const far = cullSupplied(grid, { view: { x: 0, y: 0, k: 0.3 }, viewport: VIEWPORT }, 16, ['card-7']);
     expect(far).toMatchObject({ tier: 'dot', dots: true, culled: null });

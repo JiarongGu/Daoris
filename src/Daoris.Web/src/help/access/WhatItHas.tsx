@@ -63,7 +63,7 @@ export function WhatItHas({ wired, loading, error, onRetry, onDoor, onMode, onCl
               </div>
             </details>
           )}
-          <p className="m-0 text-meta text-ink-faint">{t('help.wired.private')}</p>
+          <p className="m-0 text-caption text-ink-faint">{t('help.wired.private')}</p>
         </>
       )}
     </section>
@@ -83,7 +83,7 @@ function Receipt({ receipt, onDoor, onMode }: {
 
   return (
     <div className="grid min-w-0 gap-2">
-      <p className="m-0 text-meta text-ink-faint">
+      <p className="m-0 text-caption text-ink-faint">
         {t(receipt.start === 'going-on' ? 'help.wired.at.going-on' : 'help.wired.at.new', { at: clockOf(receipt.at) })}
       </p>
       <dl className="m-0 grid min-w-0 gap-2 text-small">
@@ -124,7 +124,7 @@ function Receipt({ receipt, onDoor, onMode }: {
                     {' · '}{state(server.state)}{server.why && `: ${why(server.why)}`}
                   </span>
                   {server.tools && server.tools.length > 0 && (
-                    <span className="block text-meta text-ink-faint wrap-anywhere">{server.tools.join(', ')}</span>
+                    <span className="block text-caption text-ink-faint wrap-anywhere">{server.tools.join(', ')}</span>
                   )}
                 </li>
               ))}
@@ -143,7 +143,7 @@ function Receipt({ receipt, onDoor, onMode }: {
                 </summary>
                 {(['allow', 'ask', 'deny'] as const).filter((list) => receipt.rules![list].length > 0).map((list) => (
                   <div key={list} className="mt-1">
-                    <span className="text-meta text-ink-faint">{t(`help.wired.rules.${list}`)}</span>
+                    <span className="text-caption text-ink-faint">{t(`help.wired.rules.${list}`)}</span>
                     <Names names={receipt.rules![list]} />
                   </div>
                 ))}
@@ -159,7 +159,7 @@ function Receipt({ receipt, onDoor, onMode }: {
                 <li key={checkout.path}>
                   <span>{checkout.name}</span>
                   <span className="text-ink-faint"> · {checkout.workspace}</span>
-                  <PathText path={checkout.path} className="block text-meta text-ink-faint" />
+                  <PathText path={checkout.path} className="block text-caption text-ink-faint" />
                 </li>
               ))}
             </Rows>
@@ -192,9 +192,9 @@ function Lack({ lack, why, onDoor, onMode }: {
         <span className="text-ink-soft"> · {why}</span>
       </span>
       {door === 'mode' ? (
-        <Button variant="ghost" className="px-0 text-small text-accent" onClick={onMode}>{t('help.wired.door.mode')}</Button>
+        <Button variant="ghost" className="px-0 text-small text-accent-ink" onClick={onMode}>{t('help.wired.door.mode')}</Button>
       ) : door ? (
-        <Button variant="ghost" className="px-0 text-small text-accent" onClick={() => onDoor(door)}>
+        <Button variant="ghost" className="px-0 text-small text-accent-ink" onClick={() => onDoor(door)}>
           {t(`help.door.${door.section ?? door.view}`)}
         </Button>
       ) : null}

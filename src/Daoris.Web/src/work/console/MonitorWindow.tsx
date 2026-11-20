@@ -127,13 +127,13 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
       <header className="flex shrink-0 items-baseline gap-3 border-b border-line px-4 py-2">
         {/* The one heading step a view has, so the
             title is drawn at a size a token declares. */}
-        <h1 className="m-0 text-view font-[650] tracking-[-0.01em]">{t('work.monitor.title')}</h1>
+        <h1 className="m-0 text-display font-[650] tracking-[-0.01em]">{t('work.monitor.title')}</h1>
         <p className="m-0 text-small text-ink-faint">{t('work.monitor.subtitle')}</p>
         {/* The one piece of ambient truth this window cannot do without: with the driver stopped,
             "nothing is running" means something entirely different and the window would be lying
             by omission. */}
         {driver.isError && (
-          <p className="m-0 ml-auto text-small text-ink-danger">{t('work.monitor.driverStopped')}</p>
+          <p className="m-0 ml-auto text-small text-fail-ink">{t('work.monitor.driverStopped')}</p>
         )}
       </header>
 

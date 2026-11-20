@@ -40,7 +40,7 @@ export function PlanView({ entries }: { entries: PlanEntry[] }) {
   const { t } = useTranslation();
   return (
     <div className="rounded-control border border-line bg-raised px-3 py-2">
-      <span className="flex items-center gap-1.5 text-meta text-ink-faint">
+      <span className="flex items-center gap-1.5 text-caption text-ink-faint">
         <Icon name="plan" size={13} />
         {t('work.conversation.plan')}
       </span>
@@ -52,7 +52,7 @@ export function PlanView({ entries }: { entries: PlanEntry[] }) {
               aria-hidden
               className={cn(
                 'w-3 shrink-0 text-center',
-                entry.status === 'completed' ? 'text-st-done' : entry.status === 'in_progress' ? 'text-accent' : 'text-ink-faint',
+                entry.status === 'completed' ? 'text-ok' : entry.status === 'in_progress' ? 'text-accent-ink' : 'text-ink-faint',
               )}
             >
               {PLAN_MARK[entry.status ?? ''] ?? '○'}
@@ -70,12 +70,12 @@ export function RawLine({ block }: { block: Block }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <div className="text-meta text-ink-faint">
+    <div className="text-caption text-ink-faint">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
-        className="flex items-center gap-1 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+        className="flex items-center gap-1 border-0 bg-transparent p-0 text-caption text-ink-faint hover:text-ink"
       >
         <Icon name={open ? 'chevronDown' : 'chevronRight'} size={12} />
         {t('work.conversation.raw', { title: block.title ?? '' })}

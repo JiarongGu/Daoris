@@ -64,7 +64,7 @@ function Slot({ slot, session }: { slot: HeavySlot; session: Session }) {
         <DetailsFold summary="" rows={[row]} />
       )}
       <dl className="m-0 grid grid-cols-[max-content_1fr] items-baseline gap-x-4">
-        <dt className="text-meta text-ink-faint">{t('projects.heavy.slot')}</dt>
+        <dt className="text-caption text-ink-faint">{t('projects.heavy.slot')}</dt>
         <dd className="m-0 min-w-0"><HeavySlotRow slot={slot} titleOf={titleOf} onOpen={() => {}} /></dd>
       </dl>
     </div>

@@ -13,7 +13,7 @@ import { cn } from './cn';
 describe('cn', () => {
   it('keeps a named type step beside a colour', () => {
     expect(cn('text-small', 'text-ink-soft')).toBe('text-small text-ink-soft');
-    expect(cn('text-meta', 'text-accent')).toBe('text-meta text-accent');
+    expect(cn('text-caption', 'text-accent-ink')).toBe('text-caption text-accent-ink');
   });
 
   it('still resolves a real conflict last-wins, which is what it is for', () => {

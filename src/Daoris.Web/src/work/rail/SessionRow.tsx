@@ -273,7 +273,7 @@ export function SessionRow({
           {/* A span, so a finished session reads as a lifetime and a live one as an age. */}
           <span
             title={t('work.rail.elapsedTip')}
-            className="shrink-0 font-mono text-meta text-ink-faint"
+            className="shrink-0 font-mono text-caption text-ink-faint"
           >
             {elapsed(session.created, running ? null : session.updated)}
           </span>
@@ -292,7 +292,7 @@ export function SessionRow({
         </span>
         <span
           title={tip || undefined}
-          className="block truncate font-mono text-meta text-ink-faint"
+          className="block truncate font-mono text-caption text-ink-faint"
         >
           {meta}
         </span>
@@ -308,7 +308,7 @@ export function SessionRow({
               aria-label={t('work.rail.menu.label', { title })}
               className={cn(
                 'absolute bottom-1 right-1.5 flex h-5 w-5 items-center justify-center rounded-control text-ink-faint',
-                'bg-raised opacity-0 transition-opacity duration-(--speed) hover:text-ink',
+                'bg-raised opacity-0 transition-opacity duration-(--duration-quick) hover:text-ink',
                 'focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100',
               )}
             >
