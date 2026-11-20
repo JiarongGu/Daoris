@@ -422,6 +422,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.Decision is { } decision) writer.WriteString("decision", decision);
         if (attempt.Link is { } link) writer.WriteString("link", link);
         if (attempt.Note is { } note) writer.WriteString("note", note);
+        if (attempt.Tail is { } tail) writer.WriteString("tail", tail);
         if (attempt.LinkChecked is { } linkChecked) writer.WriteString("linkChecked", Moments.Write(linkChecked));
         // Who the outside system credits with the settled act: a property an older build passes over, as `link` is.
         if (attempt.By is { } by) writer.WriteString("by", by);
@@ -748,6 +749,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             Decision = Text(element, "decision"),
             Link = Text(element, "link"),
             Note = Text(element, "note"),
+            Tail = Text(element, "tail"),
             LinkChecked = Moments.Read(element, "linkChecked"),
             By = Text(element, "by"),
             Progress = StepProgress.Read(element),

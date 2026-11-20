@@ -11,6 +11,7 @@ public sealed class CheckExecution(
     public async Task SendAsync(string unit, NodeAttempt attempt, NodeDeclaration node, CancellationToken ct)
     {
         var send = sendOf(unit, attempt, node) ?? throw new DriverException($"{unit} names no repository and commit to verify");
+        send = send with { Delivery = attempt.Deliveries + 1 };
         if (scoped is not null) send = await scoped(send, ct).ConfigureAwait(false);
         await executor.SendAsync(send).ConfigureAwait(false);
     }
