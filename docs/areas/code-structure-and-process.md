@@ -172,7 +172,10 @@ finishes first and the whole set runs once.
     the run's base handed in: HEAD for a merge in place, the candidate's base in the queue's committed scope tree and the merge base in
     a preflight's committed branch (REACHEDCOMMITTED1), runs the unit classes the census says the paths reach in the driver's, modules', service's, page's, CLI's and tools' suites, nearest the
     change first, bounded per suite by `tools/merge/reached.ts`, the rest counted: a bound never leaves out a unit within two reads of a changed file, a page test two imports from it or a .NET class that names a type a changed file declares, and spends its room on the rest by fewest reads, so an integration of many branches runs the tests that read what changed and cuts only the wide tail), so a list, census or structure red never lands. A census that reads sources by text names its reads as `// reaches: <glob> — <why>` lines (the home and provider censuses name `tools/**`), so a diff under those paths reaches it in a builder's `--base main` run and the merge's gate; the table of censuses a change owed is gone.
-    The whole CLI and tool unit tests and the `tools/*.test.mjs` files are the CI's gate `cli-tests` (`npm run verify:tests`); `npm run verify` is both. The heavy tier
+    Which tests a gate runs and a change reaches is declared once, as sets of file patterns per runner in `daoris.gates.json`'s
+    `tests` (`tools/test-sets.mjs`): a test file is in the first set whose pattern holds it, so a new one is run, censused and
+    reached with no list to edit, and no script or gate command names a test file (`tools/tool-test-census.mjs`). The sets of
+    `cli-tests` (the CLI's tests, the merge tool's `unit` project, the `tools/*.test.mjs` files; `npm run verify:tests`) are the CI's gate; `npm run verify` is both. The heavy tier
     (`tools/merge/heavy-tier.ts`: the classes of a suite whose gate runs with the Process settings, the rehearsals' classes) is never
     run by a merge: it counts them deferred (the merge record's `heavy.deferred`), and every way a merge lands starts
     `tools/heavy-run.mjs` in the background on the new tip (`merge/heavy-after.ts`): the queue's promotion, and `--commit`, which
