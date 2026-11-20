@@ -293,15 +293,25 @@ export function signatureOf(failure, read = null, root = null) {
 }
 
 const PASSED = /^\s*(?:reached: [^:\n]+: )?(?:[✔✓ℹ]|ok \d|# )/;
-const TALLY = /(?<![A-Za-z0-9_])(?:\d+\s+(?:Error|Warning)\(s\)|(?:0|no)\s+(?:errors?|failed|failures?)|(?:fail|failed|errors?)\s*:?\s*0)(?![A-Za-z0-9_])/i;
+const COUNT_LINE = /^\s*(?:[ℹ#]\s*)?(?:(?:\d+|no)\s+(?:Error|Warning)\(s\)|(?:0|no)\s+(?:errors?|failed|failures?)|(?:fail|failed|errors?)\s*:?\s*0|Build FAILED\.?|Passed!.*)\s*$/i;
 const WARNED = /:\s*warning\s|(?<![A-Za-z0-9_])warning\s+[A-Za-z]+\d+/i;
+const NAMES_NO_TEST = /^\s*[✖✗]\s+(?:\d+\s+problems?\b|failing tests:?\s*$)|(?:^|\s)not ok \d+\b.*#\s*(?:TODO|SKIP)\b/i;
 const FAILED_TEST = /(?:^|\s)(?:not ok \d+|[✖✗])\s+\S|(?<![A-Za-z0-9_])failed test '/;
 const ERROR_LINE = /(?<![A-Za-z0-9_])error(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])failed(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])error:/i;
 const BUILD_ERROR_LINE = /(?<![A-Za-z0-9_])error(?![A-Za-z0-9_])/i;
+const RED_ALONE = /^\s*reached: RED: \S.* failed again alone\s*$/;
 
-export const notAFailure = (line) => PASSED.test(line) || TALLY.test(line) || WARNED.test(line);
+export const notAFailure = (line) => PASSED.test(line) || COUNT_LINE.test(line) || WARNED.test(line) || NAMES_NO_TEST.test(line);
 
-export const failingTestLine = (line) => FAILED_TEST.test(line) && !PASSED.test(line);
+/** Whether a line names a failing test (`not ok`, `✖`), not a summary, a header or a todo. */
+export const failingTestLine = (line) => FAILED_TEST.test(line) && !PASSED.test(line) && !NAMES_NO_TEST.test(line);
+
+export const testOfLine = (line) => {
+  const found = /(?:not ok \d+\s*(?:-\s*)?|[✖✗]\s+)(.+?)\s*(?:\(\d+(?:\.\d+)?m?s\)|#.*)?\s*$/.exec(line) ?? /failed test '(.+?)'/.exec(line);
+  return found ? found[1] : null;
+};
+
+export const redAloneLine = (line) => RED_ALONE.test(line);
 
 export const noneFailed = (exit = null) => (Number.isInteger(exit) ? `ended without a failing test, exit ${exit}` : 'ended without a failing test');
 
@@ -321,7 +331,7 @@ export function gateSignature(gate, step, output, root = null, exit = null) {
   }
   for (const [, file, code] of String(output ?? '').matchAll(/^(.+?\.tsx?)\(\d+,\d+\): error (TS\d+)/gm)) errors.add(`${code} ${repositoryPath(file.trim(), root) ?? file.trim()}`);
   if (step === 'build' && errors.size) return { gate, step, errors: [...errors].sort() };
-  const first = (step === 'build' ? null : firstLineOf(output, FAILED_TEST)) ?? firstLineOf(output, step === 'build' ? BUILD_ERROR_LINE : ERROR_LINE);
+  const first = (step === 'build' ? null : firstLineOf(output, RED_ALONE) ?? firstLineOf(output, FAILED_TEST)) ?? firstLineOf(output, step === 'build' ? BUILD_ERROR_LINE : ERROR_LINE);
   if (first !== null) return { gate, step, message: normalise(first) };
   return { gate, step, message: noneFailed(exit) };
 }

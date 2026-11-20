@@ -32,7 +32,7 @@ export const BRIEF_FILE = 'brief.md';
 export const BRIEF_FAILURES = 12;
 export const BRIEF_LINES = 4;
 const WIDTH = 160;
-const { failingTestLine, notAFailure, noneFailed } = untyped as { failingTestLine: (line: string) => boolean; notAFailure: (line: string) => boolean; noneFailed: (exit?: number | null) => string };
+const { failingTestLine, notAFailure, noneFailed, redAloneLine, testOfLine } = untyped as { failingTestLine: (line: string) => boolean; notAFailure: (line: string) => boolean; noneFailed: (exit?: number | null) => string; redAloneLine: (line: string) => boolean; testOfLine: (line: string) => string | null };
 
 // eslint-disable-next-line no-control-regex
 const plain = (text: string): string => text.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/\r\n?/g, '\n');
@@ -131,14 +131,17 @@ export function failuresInLog(text: string, exit: number | null = null): BriefFa
     const found = read(lines);
     if (found.length) return found;
   }
-  const named = lines.findIndex((line) => failingTestLine(line));
+  const red = lines.findIndex((line) => redAloneLine(line));
+  const crossed = lines.findIndex((line) => failingTestLine(line));
+  const named = red >= 0 ? red : crossed;
   const first = named >= 0 ? named : lines.findIndex((line) => ERROR.test(line) && !NOISE.test(line.trim()) && !notAFailure(line));
   if (first < 0) {
     const tail = lines.filter((line) => line.trim()).slice(-BRIEF_LINES).map(clip);
     return [{ test: null, file: null, line: null, lines: [noneFailed(exit), ...tail] }];
   }
   const place = placeIn(lines[first] as string) ?? placeAfter(lines, first + 1, 8);
-  return [{ test: null, file: place?.file ?? null, line: place?.line ?? null, lines: errorLines(lines, first) }];
+  const test = first === crossed && first !== red ? testOfLine(lines[first] as string) : null;
+  return [{ test, file: place?.file ?? null, line: place?.line ?? null, lines: errorLines(lines, first) }];
 }
 
 /** A failure the trx names (`readTrx`'s shape), as the brief says it: the first frame with a line is its place. */

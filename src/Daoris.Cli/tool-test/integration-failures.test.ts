@@ -95,7 +95,7 @@ describe('INTEGRATE1f: the failure reader, row for row with the driver', () => {
   });
 
   test('the table holds its rows', () => {
-    assert.ok(TABLE.normalise.length >= 6 && TABLE.signatures.length >= 10 && TABLE.gates.length >= 13);
+    assert.ok(TABLE.normalise.length >= 6 && TABLE.signatures.length >= 10 && TABLE.gates.length >= 21);
     assert.equal(TABLE.reports.map((report) => report.kind).join(), 'trx,vitest,tap');
   });
 });

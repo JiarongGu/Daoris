@@ -597,17 +597,27 @@ internal static class FailureReader
 
     private static readonly Regex PassedLine = Rx("^[" + Space + @"]*(?:reached: [^:\n]+: )?(?:[✔✓ℹ]|ok [0-9]|# )");
 
-    private static readonly Regex Tally = Rx(
-        NotAfterWord + @"(?:[0-9]+[" + Space + @"]+(?:Error|Warning)\(s\)|(?:0|no)[" + Space + @"]+(?:errors?|failed|failures?)|(?:fail|failed|errors?)[" + Space + "]*:?[" + Space + "]*0)" + NotWord,
+    // A line that is nothing but a count or a summary: a build's `0 Error(s)` and `Build FAILED.`, a runner's `fail 0`.
+    private static readonly Regex CountLine = Rx(
+        "^[" + Space + @"]*(?:[ℹ#][" + Space + "]*)?(?:(?:[0-9]+|no)[" + Space + @"]+(?:Error|Warning)\(s\)|(?:0|no)[" + Space + @"]+(?:errors?|failed|failures?)|(?:fail|failed|errors?)[" + Space + "]*:?[" + Space + @"]*0|Build FAILED\.?|Passed!" + Dot + @"*)[" + Space + "]*$",
         ignoreCase: true);
+
+    // A cross or `not ok` that names no test: a linter's summary, node's failing-tests header, a TAP todo or skip.
+    private static readonly Regex NamesNoTest = Rx(
+        "^[" + Space + @"]*[✖✗][" + Space + @"]+(?:[0-9]+[" + Space + @"]+problems?" + NotWord + "|failing tests:?[" + Space + "]*$)|(?:^|[" + Space + @"])not ok [0-9]+\b" + Dot + @"*#[" + Space + "]*(?:TODO|SKIP)" + NotWord,
+        ignoreCase: true);
+
+    private static readonly Regex RedAlone = Rx("^[" + Space + @"]*reached: RED: \S" + Dot + @"* failed again alone[" + Space + "]*$");
 
     private static readonly Regex WarnedLine = Rx(":[" + Space + "]*warning[" + Space + "]|" + NotAfterWord + "warning[" + Space + "]+[A-Za-z]+[0-9]+", ignoreCase: true);
 
     private static readonly Regex FailedTestLine = Rx(
         "(?:^|[" + Space + @"])(?:not ok [0-9]+|[✖✗])[" + Space + @"]+\S|" + NotAfterWord + "failed test '");
 
+    private static bool NotAFailure(string line) => PassedLine.IsMatch(line) || CountLine.IsMatch(line) || WarnedLine.IsMatch(line) || NamesNoTest.IsMatch(line);
+
     private static string? FirstLineOf(string text, Regex pattern) =>
-        NewLine.Split(text).FirstOrDefault(line => pattern.IsMatch(line) && !PassedLine.IsMatch(line) && !Tally.IsMatch(line) && !WarnedLine.IsMatch(line));
+        NewLine.Split(text).FirstOrDefault(line => pattern.IsMatch(line) && !NotAFailure(line));
 
     /// <summary>
     /// A gate that names no failing test, signed by its step: a build by the set of its compiler errors' codes and files (<c>src/.../X.cs</c>),
@@ -628,7 +638,7 @@ internal static class FailureReader
             return new FailureSignature { Gate = gate, Step = step, Errors = sorted };
         }
 
-        var first = (step == "build" ? null : FirstLineOf(text, FailedTestLine)) ?? FirstLineOf(text, step == "build" ? BuildErrorLine : ErrorLine);
+        var first = (step == "build" ? null : FirstLineOf(text, RedAlone) ?? FirstLineOf(text, FailedTestLine)) ?? FirstLineOf(text, step == "build" ? BuildErrorLine : ErrorLine);
         if (first is not null) return new FailureSignature { Gate = gate, Step = step, Message = Normalise(first) };
         return new FailureSignature { Gate = gate, Step = step, Message = exit is { } code ? $"ended without a failing test, exit {code}" : "ended without a failing test" };
     }

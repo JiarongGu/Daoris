@@ -63,6 +63,20 @@ test('a log whose first error-like line is a pass line, a count or a warning nam
   assert.deepEqual(build.map((each) => [each.test, each.file, each.line]), [[null, 'src/B/B.cs', 9]]);
 });
 
+test('a log whose cross or not ok names no test, or whose count line is an error, is read as the failure it is', () => {
+  const lint = failuresInLog(['src/a.ts', '  3:5  error  no-unused-vars', '', '✖ 1 problem (1 error, 0 warnings)'].join('\n'));
+  assert.match(lint[0]!.lines[0]!, /no-unused-vars/);
+  const todo = failuresInLog(['not ok 1 - later # TODO not done', 'not ok 2 - breaks the page'].join('\n'));
+  assert.equal(todo[0]!.test, 'breaks the page');
+  const spec = failuresInLog(['✖ failing tests:', '✖ breaks the page (1.5ms)', '  AssertionError: x'].join('\n'));
+  assert.equal(spec[0]!.test, 'breaks the page');
+  const filter = failuresInLog(['    0 Error(s)', 'Error: 0 tests matched the filter'].join('\n'));
+  assert.equal(filter[0]!.lines[0], 'Error: 0 tests matched the filter');
+  assert.equal(failuresInLog('✖ reports no errors (2ms)')[0]!.test, 'reports no errors');
+  const reached = failuresInLog(['✖ flaky thing (1ms)', 'reached: RED: suite/unit failed again alone'].join('\n'));
+  assert.equal(reached[0]!.lines[0], 'reached: RED: suite/unit failed again alone');
+});
+
 test('a planted failure in two gates gives one brief with both, each marked by its run on main', async () => {
   const { dir, remove } = fixtureFolder('red-brief');
   try {
