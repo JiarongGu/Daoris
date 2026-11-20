@@ -114,16 +114,16 @@ public sealed class WorkflowRoutes(DriverContext context)
                     : null,
             },
             Verifications = start.Verifications.Select(each => new { each.Id, each.Name }).ToArray(),
-            Integration = repository is null ? null : await IntegrationAsync(config, repository, root, read, readProblem, ct).ConfigureAwait(false),
+            Integration = repository is null ? null : await IntegrationAsync(config, repository, workspace, root, read, readProblem, ct).ConfigureAwait(false),
         };
     }
 
     /// <summary>
-    /// Where a repository's integration acceptance stands, from the tip read once for the start node: the blob accepted, its
-    /// state, the tip, the declaration's text where it is changed or unaccepted, and why the tip could not be read.
+    /// Where a repository's integration acceptance stands, from the tip read once for the start node: the blob accepted, its state, the
+    /// tip, the declaration's text where it is changed or unaccepted, why the tip could not be read, and its <see cref="DeclarationMode"/>.
     /// </summary>
     private static async Task<object> IntegrationAsync(
-        DriverConfig config, string repository, string? root, LandedTip? tip, string? problem, CancellationToken ct)
+        DriverConfig config, string repository, string? workspace, string? root, LandedTip? tip, string? problem, CancellationToken ct)
     {
         var accepted = IntegrationAcceptance.Of(config, repository);
         var state = IntegrationAcceptance.StateOf(accepted, tip?.Gates);
@@ -141,6 +141,7 @@ public sealed class WorkflowRoutes(DriverContext context)
             Problem = problem,
             Declaration = declaration,
             Change = change?.Wire(),
+            Mode = DeclarationMode.Of(config, repository, workspace),
         };
     }
 

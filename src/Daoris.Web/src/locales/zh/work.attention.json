@@ -123,6 +123,7 @@
   "work.attention.integrationDeclarationOther_one": "改动了它的 {{keys}} 部分",
   "work.attention.integrationDeclarationOther_other": "改动了它的 {{keys}} 部分",
   "work.attention.integrationDeclarationUnreadWhy": "{{line}} 上的 `daoris.gates.json` 已改动，但不能按严格的 JSON 读出（某个成员写了两次、有注释或有多余的逗号），所以说不出它改了什么；工作仍按你采纳过的检查项验证。请在配置里读一读它。",
+  "work.attention.integrationDeclarationRestricted": "受限：等你。{{why}}",
   "work.attention.integrationDeclarationJoin": "、",
   "work.attention.integrationDeclarationParts": "；",
   "work.attention.hand-over": "智能体请求转交",

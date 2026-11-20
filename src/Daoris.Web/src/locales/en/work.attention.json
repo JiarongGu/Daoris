@@ -123,6 +123,7 @@
   "work.attention.integrationDeclarationOther_one": "changed its {{keys}} part",
   "work.attention.integrationDeclarationOther_other": "changed its {{keys}} parts",
   "work.attention.integrationDeclarationUnreadWhy": "`daoris.gates.json` on {{line}} changed and does not read as strict JSON (a member written twice, a comment or a trailing comma), so what it changes cannot be said; work is checked under the checks you accepted. Read it on Setup.",
+  "work.attention.integrationDeclarationRestricted": "Restricted: waits for you. {{why}}",
   "work.attention.integrationDeclarationJoin": ", ",
   "work.attention.integrationDeclarationParts": "; ",
   "work.attention.hand-over": "an agent asks to hand over",

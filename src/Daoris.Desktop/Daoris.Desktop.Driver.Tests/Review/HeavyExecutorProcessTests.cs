@@ -358,6 +358,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal((commands.Blob, engine.Blob), (held.Declaration, held.Accepted));
         Assert.Contains("this work's own change to daoris.gates.json", held.Why);
         Assert.Contains("changed `unit`", held.Why);
+        Assert.Contains("(restricted: waits for you)", held.Why);
         Assert.Contains("once the change lands, accept it on its repository's Setup page", held.Why);
         Assert.Contains("It happened", held.Why);
         Assert.False(File.Exists(At("intervals.log")), "nothing ran");
@@ -368,6 +369,25 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.True(kept.Verdict == VerifyVerdicts.Reached, kept.Why);
         Assert.Equal(engine.Blob, kept.Declaration);
         Assert.Equal([("start", "a"), ("end", "a")], Intervals());
+    }
+
+    [Fact]
+    public async Task Under_full_access_a_work_whose_own_change_alters_a_command_runs_its_own_declaration_with_no_hold()
+    {
+        var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "exit-0"), true, false)));
+        var commands = await CommitOnAsync(engine.Checkout, "commands", "main",
+            ("daoris.gates.json", JsonSerializer.Serialize(Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)))));
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var executor = Executor();
+
+        await executor.SendAsync(Send("v-0000000000000001", "i-a", engine) with { Commit = commands.Commit });
+        var ran = await SettledAsync("v-0000000000000001", "i-a");
+
+        Assert.True(ran.Verdict == VerifyVerdicts.Reached, ran.Why);
+        Assert.Null(ran.Code);
+        Assert.Equal(commands.Blob, ran.Declaration);
+        Assert.Equal([("start", "b"), ("end", "b")], Intervals());
     }
 
     [Fact]

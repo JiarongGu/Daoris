@@ -1,5 +1,13 @@
 import i18n from '../../locales/i18n';
-import type { DeclarationCommandsChange } from './attentionPushed';
+import type { DeclarationCommandsChange, IntegrationWait } from './attentionPushed';
+
+/** A declaration owed the person's acceptance, said with the mode that decided: only restricted access owes one. */
+export function declarationOwedWhy(wait: Pick<IntegrationWait, 'state' | 'line' | 'tip' | 'change'>): string {
+  const why = wait.state === 'changed'
+    ? declarationChangedWhy(wait.line ?? '', wait.change)
+    : i18n.t('work.attention.integrationDeclarationUnacceptedWhy', { line: wait.line ?? '', tip: (wait.tip ?? '').slice(0, 7) });
+  return i18n.t('work.attention.integrationDeclarationRestricted', { why });
+}
 
 /**
  * A line's declaration changed since its acceptance, in the reader's words: the checks added, removed and changed by name and the other
