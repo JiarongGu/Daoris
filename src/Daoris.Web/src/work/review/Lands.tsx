@@ -115,7 +115,7 @@ export function Lands({ session, lands, landing, onReview, onReviewRun, onSayReb
       {onReviewRun && conflict && onSayRebase && <RebaseAsk key={session.id} conflict={conflict} onSay={onSayRebase} />}
       {/* The Accept is kept on it, carried on to clear its tree: carried on, never shown as finished work. */}
       {landing?.carried && (
-        <p className="m-0 border-l-[3px] border-st-open pl-2 text-small text-ink-soft">{t('work.head.carriedOn')}</p>
+        <p className="m-0 text-small text-ink-soft">{t('work.head.carriedOn')}</p>
       )}
       {workflow && <WorkflowHold gate={workflow} />}
       {second && (

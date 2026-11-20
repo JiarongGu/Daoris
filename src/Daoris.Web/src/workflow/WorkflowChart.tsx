@@ -187,7 +187,7 @@ function RunLimit({ limit }: { limit: { text: string; recorded: boolean } | null
   const { t } = useTranslation();
   if (!limit) return null;
   return (
-    <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-raised px-2.5 py-1 text-caption text-ink-soft">
+    <p className="m-0 mt-1.5 bg-raised px-2.5 py-1 text-caption text-ink-soft">
       <Inline text={limit.text} />
       {limit.recorded && <span className="ml-1.5 text-ink-faint">{t('workflow.limit.recorded')}</span>}
     </p>
@@ -234,7 +234,7 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
         )}
       </p>
       {limit && (
-        <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
+        <p className="m-0 mt-2 bg-raised px-3 py-1.5 text-small text-ink-soft">
           <Inline text={limit.text} />
           {limit.recorded && <span className="ml-1.5 text-caption text-ink-faint">{t('workflow.limit.recorded')}</span>}
         </p>

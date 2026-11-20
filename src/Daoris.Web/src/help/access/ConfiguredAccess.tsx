@@ -165,7 +165,7 @@ function Grant({ spec, choice, agent, open: openAtFirst, busy, built, onChoose, 
         </p>
       )}
       {spec.id === 'browser' && (
-        <p className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink">{t('help.grants.signedIn')}</p>
+        <p className="m-0 text-small text-ink">{t('help.grants.signedIn')}</p>
       )}
       {spec.onPlugin && (
         <>

@@ -215,7 +215,7 @@ export function ToolCard({
 
       {/* The way set cannot run, in the driver's own words: it never falls back to PATH. */}
       {tool.refused && tool.problem && (
-        <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-2 bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={tool.problem} />
         </p>
       )}
@@ -500,7 +500,7 @@ export function ToolLocations({
           <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={look.sentence} /></p>
         )}
         {list.problem && (
-          <p className="m-0 mt-1 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-small text-ink-soft">
+          <p className="m-0 mt-1 bg-page/60 px-3.5 py-2 text-small text-ink-soft">
             <Inline text={list.problem} />
           </p>
         )}

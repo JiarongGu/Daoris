@@ -37,7 +37,7 @@ export function RingNode({ node, x, y, state, words, back = false }: {
       {there && <SessionRing there={there} inset="-inset-[6px]" radius="rounded-full" />}
       <span className={cn(
         'flex h-full w-full items-center justify-center rounded-full border bg-raised font-mono text-small tabular-nums text-ink',
-        state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong',
+        state.selected ? 'border-2 border-accent' : 'border border-line-strong',
       )}
       >
         {state.tier === 'dot' ? null : node.open}
@@ -72,7 +72,7 @@ export function LayerCard({ node, state, words, back = false }: { node: MapNode;
     <span
       className={cn(
         'relative flex h-full w-full items-center justify-between gap-2 rounded-card border bg-raised px-3.5',
-        state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong', back && 'opacity-40',
+        state.selected ? 'border-2 border-accent' : 'border border-line-strong', back && 'opacity-40',
       )}
     >
       {there && <SessionRing there={there} inset="-inset-[5px]" radius="rounded-[12px]" />}

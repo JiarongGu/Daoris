@@ -453,7 +453,7 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
     >
       {space.run && <SpaceRunLine run={space.run} />}
       {space.held && !running && (
-        <p className="m-0 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
+        <p className="m-0 bg-page/60 px-3.5 py-2 text-body text-ink-soft" role="status">
           {t(space.held.gone ? 'settings.daoris.space.stopped' : 'settings.daoris.space.held', { door: door(space.held.door), when: clockOf(space.held.since) })}
         </p>
       )}

@@ -23,7 +23,7 @@ export { PageHead, PageSection };
  */
 export function Lead({ text }: { text: string }) {
   return (
-    <p className="m-0 mb-4 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+    <p className="m-0 mb-4 bg-page/60 px-3.5 py-2 text-body text-ink-soft">
       <Inline text={text} />
     </p>
   );

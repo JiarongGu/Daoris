@@ -25,7 +25,7 @@ export function Refused({ sentence, id, className }: { sentence: string; id?: st
       id={id}
       role="alert"
       className={cn(
-        'm-0 min-w-0 basis-full whitespace-pre-wrap wrap-anywhere border-l-[3px] border-warn pl-2.5 text-small text-ink-soft',
+        'm-0 min-w-0 basis-full whitespace-pre-wrap wrap-anywhere text-small text-ink-soft',
         className,
       )}
     >
@@ -346,7 +346,6 @@ export function InlineConfirm({
       onKeyDown={onKeyDown}
       className={cn(
         'rounded-control border border-line bg-sunken',
-        tone === 'warn' && 'border-l-[3px] border-l-warn',
         block ? 'grid gap-3 px-3 py-2.5' : 'flex flex-wrap items-center gap-2 px-2.5 py-2',
         className,
       )}

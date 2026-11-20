@@ -104,7 +104,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data && !data.edgeFound && (
-          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.which.noEdge')}
           </p>
         )}
@@ -149,7 +149,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data?.favoritesProblem && (
-          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.unreadable', { file: data.favoritesPath, problem: data.favoritesProblem })}
           </p>
         )}
@@ -235,7 +235,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         />
         </SettingList>
         {data?.settingsProblem && (
-          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
             {t('settings.browser.unreadable', { file: data.settingsPath, problem: data.settingsProblem })}
           </p>
         )}

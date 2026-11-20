@@ -149,13 +149,13 @@ function PlanLines({ t, plan, name, leaving, onLeave, held, refused }: {
               )}
               {part.conflict && <span><Inline text={t('work.accept.conflict', { part: part_, says: part.conflict.says })} /></span>}
               {part.held && (
-                <span className="border-l-[3px] border-warn pl-2"><Inline text={t('work.accept.held', { part: part_, says: part.held })} /></span>
+                <span><Inline text={t('work.accept.held',{ part: part_, says: part.held })} /></span>
               )}
               {part.problem && (
-                <span className="border-l-[3px] border-warn pl-2"><Inline text={t('work.accept.problem', { part: part_, says: part.problem })} /></span>
+                <span><Inline text={t('work.accept.problem',{ part: part_, says: part.problem })} /></span>
               )}
               {part.clash && (
-                <span className="border-l-[3px] border-warn pl-2">
+                <span>
                   <Inline text={t('work.accept.clash', { part: part_, by: name(part.clash.by), says: part.clash.says })} />
                 </span>
               )}
@@ -180,8 +180,8 @@ function PlanLines({ t, plan, name, leaving, onLeave, held, refused }: {
           );
         })}
       </ul>
-      {held && <p className="m-0 border-l-[3px] border-warn pl-2">{t('work.accept.heldAsk', { repository: plan.repository })}</p>}
-      {refused && <p className="m-0 border-l-[3px] border-warn pl-2">{t('work.accept.problemAsk', { repository: plan.repository })}</p>}
+      {held && <p className="m-0">{t('work.accept.heldAsk', { repository: plan.repository })}</p>}
+      {refused && <p className="m-0">{t('work.accept.problemAsk', { repository: plan.repository })}</p>}
     </div>
   );
 }

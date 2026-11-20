@@ -69,7 +69,7 @@ export function Acceptances({ rows, ticked, onTick, disabled = false, title, fol
         ))}
       </ul>
       {cleared.length > 0 && (
-        <div role="status" className="grid gap-0.5 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+        <div role="status" className="grid gap-0.5 text-small text-ink-soft">
           {cleared.map((each) => <p key={each} className="m-0 [overflow-wrap:anywhere]">{each}</p>)}
         </div>
       )}

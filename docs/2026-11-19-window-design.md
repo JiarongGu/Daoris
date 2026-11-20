@@ -438,7 +438,8 @@ drawn as SVG, never font glyphs; Chinese means Simplified, in the console regist
 ### 7.4 Radii, borders, elevation, layers, motion
 
 - Radii: `control` 4, `card` 6, `overlay` 8, `full` for badges and tags; rows have none. Borders 1, 2 (the focus ring, a
-  selected row's rail) and 3 (a focused wait card's or a failed card's edge); no other width; cards lose today's default left edge.
+  selected row's rail) and 3 (a focused wait card's or a failed card's edge, `Card`'s `edge` alone); no other width
+  (`design/edges.test.ts`); a card wears no left edge otherwise (UIDS19).
 - Borders separate; shadows only on overlays: `shadow-popover` and `shadow-sheet`, a value per theme.
 - Layers `--z-sticky` 1, `--z-sheet` 10, `--z-palette` 20, `--z-popover` 30, `--z-toast` 40, `--z-tooltip` 50.
 - Motion: `--duration-quick` 120 ms (hover, press), `--duration-move` 180 ms (expand, a card leaving, a wait arriving),

@@ -142,7 +142,7 @@ export function HitList({
           {/* Found, but by words alone on a deployment that matches meaning too: said beside the list, or it reads as
               complete when a conclusion reached in other words may be missing. */}
           {semantic && !answer.byMeaning && answer.hits.length > 0 && (
-            <p className="mx-2 mb-1.5 mt-0.5 border-l-[3px] border-warn bg-raised px-2.5 py-1.5 text-small text-ink-soft">
+            <p className="mx-2 mb-1.5 mt-0.5 bg-raised px-2.5 py-1.5 text-small text-ink-soft">
               {t('search.meaningDown')}
             </p>
           )}

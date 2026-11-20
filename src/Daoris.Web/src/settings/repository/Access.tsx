@@ -165,7 +165,7 @@ function fromSays(t: TFunction, source: string | null, owner: AccessOwner, works
   return source === null ? t('settings.access.from.mixed') : '';
 }
 
-const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink';
+const WARN_LINE = 'm-0 bg-raised px-3 py-1.5 text-small text-ink';
 
 /**
  * **A level's access rows**: the full-access switch, then each pause with what it means, its

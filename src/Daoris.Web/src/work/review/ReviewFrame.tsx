@@ -102,7 +102,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
         </p>
       )}
       {past && (
-        <p className="m-0 mt-1 border-l-[3px] border-warn pl-2 text-caption text-ink-soft">
+        <p className="m-0 mt-1 text-caption text-ink-soft">
           <Inline text={t('work.review.behind', { line: past.line, count: past.commits })} />
         </p>
       )}

@@ -67,7 +67,7 @@ function PartRefusals({ refusals, doorFor }: { refusals: readonly PlaceRefusal[]
       {refusals.map((each) => {
         const go = doorFor?.(each) ?? null;
         return (
-          <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
+          <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-ink-soft [overflow-wrap:anywhere]">
             <span>
               {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
               <Inline text={each.sentence} />

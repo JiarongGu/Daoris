@@ -153,7 +153,7 @@ export function ProjectPage({
       {adopted && !summary && (
         /* Addressable regardless — adoption gates addressing, declaration does not — but an asker deserves to
            know they would be guessing. */
-        <p className="m-0 mb-4 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <p className="m-0 mb-4 bg-raised px-3.5 py-2 text-body text-ink-soft">
           <Inline text={t('projects.undeclared')} />
         </p>
       )}

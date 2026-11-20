@@ -503,7 +503,7 @@ export function Wiring({ workspace, wiring, busy, startOpen }: {
         )
         : <p className="m-0 text-small text-ink-soft">{t('projects.workspace.says.local')}</p>}
       {wiring.fromEnvironment && (
-        <p className="m-0 mt-2 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink-soft">
+        <p className="m-0 mt-2 bg-raised px-3 py-1.5 text-small text-ink-soft">
           <Inline text={t('settings.wiring.fromEnvironment')} />
         </p>
       )}

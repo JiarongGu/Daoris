@@ -445,11 +445,12 @@ describe("a plugin's page", () => {
   });
 
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try. */
-  it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
+  it('leads with the driver\'s sentence for a refused plugin, a line of its own with no edge (the window design §7.4)', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });
 
     const sentence = screen.getByText('needs plugin API 99, and this build speaks 1.');
-    expect(sentence.closest('p')!.className).toMatch(/\bborder-warn\b/);
+    expect(sentence.closest('p')!.className).toMatch(/\bbg-page\/60\b/);
+    expect(sentence.closest('p')!.className).not.toMatch(/\bborder-(?:l-|warn)/);
     expect(within(header()).getByText('refused').className).toMatch(/\bborder-st-open\b/);
     expect(acts()).not.toContain('Try');
   });

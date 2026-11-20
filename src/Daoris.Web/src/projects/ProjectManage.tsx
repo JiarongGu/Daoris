@@ -215,7 +215,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify, initialWorkspace }:
           )}
 
           {!found.git && (
-            <p className="mt-3 border-l-[3px] border-line-strong bg-raised px-3.5 py-2 text-body text-ink-soft">
+            <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
               {t('projects.manage.folderNote')}
             </p>
           )}
@@ -461,7 +461,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
       <div className="mt-6">
         <SectionTitle>{t('projects.manage.retire')}</SectionTitle>
         <p className="text-body text-ink-soft">{t('projects.manage.retireBody')}</p>
-        <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-2 bg-raised px-3.5 py-2 text-body text-ink-soft">
           {t('projects.manage.retireNotDelete')}
         </p>
         {confirming ? (

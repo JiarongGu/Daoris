@@ -41,7 +41,7 @@ export function IntakeAbout({ agent, starts, nameOf }: {
               </span>
               {/* The driver's sentence, verbatim: it names what to run. */}
               {start.refusal && (
-                <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-ink-soft">{start.refusal}</p>
+                <p className="m-0 whitespace-pre-wrap text-ink-soft">{start.refusal}</p>
               )}
             </li>
           ))}

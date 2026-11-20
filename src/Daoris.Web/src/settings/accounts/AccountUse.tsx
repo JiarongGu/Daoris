@@ -217,7 +217,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
         </ol>
         {/* A hand-edited file read with the order winning: a kept account the order does not hold, or held alone. */}
         {scope.problem && scope.problem.kind !== 'default' && (
-          <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
+          <p className="m-0 mt-1.5 bg-page/60 px-3 py-1.5 text-small text-ink-soft">
             {t(`harness.use.problem.${scope.problem.kind}`, { account: labelOf(scope.problem.account) })}
           </p>
         )}

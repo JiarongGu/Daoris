@@ -66,7 +66,7 @@ export function StartWiringList({ starts, nameOf }: {
           {start.refusal && (
             // The driver's sentence, whole, at the card's width with every block of the page: it
             // wore a 65ch measure once, which gave the page two edges.
-            <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+            <p className="m-0 whitespace-pre-wrap text-small text-ink-soft">
               {start.refusal}
             </p>
           )}

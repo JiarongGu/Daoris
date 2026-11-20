@@ -14,7 +14,7 @@ const HEADER = <PageHeader title="Expose a streaming budget" description="game â
 
 function Split() {
   return (
-    <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
+    <div className="grid items-start gap-4 @4xl/main:grid-cols-2">
       <Card><p className="m-0 text-body text-ink-soft">World streaming needs a per-frame cap, read from the level file.</p></Card>
       <Card><p className="m-0 text-body text-ink-soft">Two cards side by side where the main area is 56rem or wider, and one above the other where it is not.</p></Card>
     </div>

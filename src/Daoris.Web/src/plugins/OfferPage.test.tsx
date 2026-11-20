@@ -91,7 +91,8 @@ describe("an offer's page", () => {
     render(<OfferPage offer={{ ...OFFER, problem: 'needs plugin API 2, and this build speaks 1.' }} kitPoints={KIT} onInstall={vi.fn()} />);
 
     expect(within(header()).queryByRole('button')).toBeNull();
-    expect(screen.getByText('needs plugin API 2, and this build speaks 1.').closest('p')!.className).toMatch(/\bborder-warn\b/);
+    expect(screen.getByText('needs plugin API 2, and this build speaks 1.').closest('p')!.className).toMatch(/\bbg-page\/60\b/);
+    expect(screen.getByText('needs plugin API 2, and this build speaks 1.').closest('p')!.className).not.toMatch(/\bborder-(?:l-|warn)/);
   });
 
   it('holds Install while an install is on its way', () => {

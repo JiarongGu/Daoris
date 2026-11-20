@@ -153,7 +153,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
         </label>
         {caution && (
           /* The same caution the service gives an agent, before the person relies on it. */
-          <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          <p className="m-0 bg-raised px-3.5 py-2 text-body text-ink-soft">
             <Inline text={t('quests.compose.caution', { repository: caution })} />
           </p>
         )}

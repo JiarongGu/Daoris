@@ -231,7 +231,7 @@ export function GitIdentityRow({ identity, acts, testing = false, answer = null 
       {refusal && <Refused sentence={refusal} />}
 
       {tested && panel === 'trust' && (
-        <div className="mt-1 grid gap-1.5 border-l-[3px] border-warn pl-2.5" role="group" aria-label={t('settings.git.trustTitle', { host: identity.host })}>
+        <div className="mt-1 grid gap-1.5" role="group" aria-label={t('settings.git.trustTitle', { host: identity.host })}>
           <p className="m-0 text-small text-ink-soft">
             <Inline text={tested.result === 'host-changed'
               ? t('settings.git.trustChanged', { host: identity.host })

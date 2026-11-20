@@ -238,7 +238,7 @@ export function RoundCard({ plugin, pluginName, command, given, place, send, onE
       )}
       {stage === 'cancelled' && <p className="m-0 text-small text-ink-soft" role="status">{t('plugin.round.cancelled')}</p>}
       {stage === 'refused' && refusal && (
-        <p className="m-0 border-l-[3px] border-warn pl-3 text-small text-ink-soft" role="status"><Inline text={refusal} /></p>
+        <p className="m-0 text-small text-ink-soft" role="status"><Inline text={refusal} /></p>
       )}
 
       {(stage === 'ended' || stage === 'cancelled' || stage === 'refused') && (

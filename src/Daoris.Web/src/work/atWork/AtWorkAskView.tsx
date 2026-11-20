@@ -81,7 +81,7 @@ function Entries({ answer, onOpenEntry, channel }: { answer: AtWorkAskA; onOpenE
             <button
               type="button"
               onClick={() => onOpenEntry?.(entry.opens)}
-              className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-[3px] border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
+              className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-control border-l-2 border-l-transparent px-2 py-1 text-left text-small text-ink-soft hover:bg-accent-soft/50"
             >
               <span className="min-w-0 text-ink [overflow-wrap:anywhere]">{entry.repository}</span>
               {/* A word this page has none for is said as the driver wrote it. */}

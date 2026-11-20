@@ -291,8 +291,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     and a second run changes nothing. (from D330, D41)
 42. One scale of six named type steps for Latin and Han: caption 12, small 13 (rows), body 14, heading 16, display 20,
     mono 13, none under 12 px, each line height a variable that `:lang(zh)` sets taller. Every size is a step and every
-    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport.
-    (from D330, D56, D185)
+    colour a declared token, held by `tokens.test.ts`. Hit targets are at least 28 px. No region varies by viewport. A card
+    pads 12 by 16 and wears no left edge (`Card`, `cardFrame`); cards stack 16 apart and queue 8 apart. A border is 1 or 2 px
+    (the focus ring, a selected row's rail), and 3 only as `Card`'s `edge`, a wait's or a failure's (`design/edges.test.ts`);
+    a note says its tone in words. (from D330, D56, D185)
 43. The libraries are headless, under the language: Tailwind v4 themed by `tokens.css`, Radix, lucide, TanStack Query,
     react-i18next, Storybook and Playwright. (from D42)
 44. A card's rows share one label track. A refusal is said where its action started; a toast is used only where that

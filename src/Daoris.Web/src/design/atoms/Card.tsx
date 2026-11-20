@@ -1,43 +1,45 @@
 import { type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
-/* ---------------------------------------------------------------- cards, tiles, headers */
+export type CardEdge = 'wait' | 'failed';
 
-export function Card({ id, warn, accent, className, children }: {
+const EDGE: Record<CardEdge, string> = {
+  wait: 'border-l-[3px] border-l-you',
+  failed: 'border-l-[3px] border-l-fail',
+};
+
+export function cardEdge(edge?: CardEdge): string | undefined {
+  return edge && EDGE[edge];
+}
+
+export function cardFrame(edge?: CardEdge): string {
+  return cn('rounded-card border border-line bg-raised px-4 py-3', cardEdge(edge));
+}
+
+export function Card({ id, edge, className, children }: {
   /** What a link or a menu item brings into view. */
   id?: string;
-  warn?: boolean; accent?: boolean; className?: string; children: ReactNode;
+  edge?: CardEdge;
+  className?: string; children: ReactNode;
 }) {
-  return (
-    <article id={id} className={cn(
-      'rounded-card border border-line border-l-[3px] bg-raised px-[1.15rem] py-4',
-      accent && 'border-l-accent',
-      warn && 'border-l-st-open',
-      className,
-    )}
-    >
-      {children}
-    </article>
-  );
+  return <article id={id} className={cn(cardFrame(edge), className)}>{children}</article>;
 }
 
 /**
- * A domain's cards, 16 px apart: the spacing is the container's, set once, and a card
- * sets no outer margin of its own (`tokens.test.ts`). A per-card `mt-3.5` would be 14 px, off the scale's step, and
- * two cards that forgot it would touch.
+ * A domain's cards, 16 px apart: the spacing is the container's, set once, and a card sets no outer margin of its own
+ * (`tokens.test.ts`); a per-card `mt-3.5` would be 14 px, off the scale's step, and two that forgot it would touch.
  */
 export function CardStack({ className, children }: { className?: string; children: ReactNode }) {
   return <div data-card-stack="" className={cn('grid min-w-0 gap-4', className)}>{children}</div>;
 }
 
 /**
- * Something waiting on the person — a parked session, a parked intake, a folder to trust. The one
- * frame each such card wears: the waiting tone on its left edge and on its heading. Four cards
- * wrote it out, so a change of that tone is now one change.
+ * Something waiting on the person — a parked session, a parked intake, a folder to trust — in the card's wait edge and
+ * the waiting tone on its heading. Four cards wrote it out, so a change of that tone is now one change.
  */
 export function WaitingCard({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
-    <section className="rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-[1.15rem] py-3.5">
+    <section className={cardFrame('wait')}>
       <h3 className="m-0 text-small font-semibold text-ink-open">{title}</h3>
       {children}
     </section>
@@ -53,22 +55,13 @@ export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNo
   );
 }
 
-/**
- * The stat-tile contract: label · value · context. Values wear proportional figures, deliberately. A value not known yet is null:
- * static placeholders on the value's and the context's lines, never a zero.
- */
+/** The stat tile: label · value · context in proportional figures; a value not known yet is null, drawn as placeholders, never 0. */
 export function Tile({ label, value, note, warn }: {
   label: string; value: ReactNode | null; note: string; warn?: boolean;
 }) {
   const known = value !== null;
   return (
-    <div
-      aria-busy={!known || undefined}
-      className={cn(
-        'grid content-start gap-0.5 rounded-card border border-line bg-raised px-4 pb-3.5 pt-3',
-        warn && known && 'border-l-[3px] border-l-st-open',
-      )}
-    >
+    <div aria-busy={!known || undefined} className={cn('grid content-start gap-0.5', cardFrame())}>
       <span className="text-small text-ink-soft">{label}</span>
       {known
         ? <span className="text-display font-semibold leading-[1.15] tracking-[-0.01em]">{value}</span>

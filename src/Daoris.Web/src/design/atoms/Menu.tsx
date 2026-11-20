@@ -78,7 +78,7 @@ function MenuContent({ highlight = 'raised', className, children, ...props }: Co
         sideOffset={4}
         collisionPadding={8}
         {...props}
-        className={cn(menuCap(held), 'rounded-control border border-line bg-overlay p-1 text-small shadow-lg', className)}
+        className={cn(menuCap(held), 'rounded-overlay border border-line bg-overlay p-1 text-small shadow-lg', className)}
       >
         <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
       </DropdownMenu.Content>
@@ -158,7 +158,7 @@ function MenuSubContent({ className, children, ...props }: ComponentProps<typeof
         sideOffset={4}
         collisionPadding={8}
         {...props}
-        className={cn(menuCap(held), 'rounded-control border border-line bg-overlay p-1 text-small shadow-lg', className)}
+        className={cn(menuCap(held), 'rounded-overlay border border-line bg-overlay p-1 text-small shadow-lg', className)}
       >
         <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
       </DropdownMenu.SubContent>

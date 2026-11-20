@@ -124,7 +124,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
 
     await pick('full');
     const asks = screen.getByRole('group', { name: i18n.t('help.mode.confirm.label') });
-    expect(asks.className).toContain('border-l-warn');
+    expect(asks.className).not.toMatch(/\bborder-l-/);
     const enable = within(asks).getByRole('button', { name: i18n.t('help.mode.confirm.enable') });
     expect(enable.className).toContain('border-warn');
     await userEvent.click(enable);

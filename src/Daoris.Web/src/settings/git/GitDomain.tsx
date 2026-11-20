@@ -88,7 +88,7 @@ export function GitDomain({ notify, host: openHost, onClosed }: { notify: Notify
       <Prose className="mb-1"><Inline text={t('settings.git.intro')} /></Prose>
       <Prose className="text-small"><Inline text={t('settings.git.terminal')} /></Prose>
       {page.problem && (
-        <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-3 bg-raised px-3.5 py-2 text-body text-ink-soft">
           <Inline text={t('settings.git.fileProblem', { problem: page.problem })} />
         </p>
       )}

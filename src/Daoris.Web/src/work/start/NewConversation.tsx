@@ -429,7 +429,7 @@ export function NewConversation({
       {/* The driver's own sentence, whole, where Start is pressed: it names what to do, and a paraphrase of an
           instruction is a different instruction. */}
       {refusal && (
-        <p role="alert" className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+        <p role="alert" className="m-0 whitespace-pre-wrap text-small text-ink-soft">
           <Inline text={refusal} />
         </p>
       )}

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SectionTitle, Tip } from '../../design/ui';
+import { cardFrame, SectionTitle, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import type { StepHoldBridge } from '../../workflow/wait/StepHold';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
@@ -69,9 +69,9 @@ export function AttentionList({
 }) {
   const { t } = useTranslation();
   return (
-    <div className={bare ? 'border-l-[3px] border-l-st-open pb-1' : 'rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-0 pb-2 pt-3.5'}>
+    <div className={bare ? 'pb-1' : cn(cardFrame('wait'), 'px-0 pb-2')}>
       {!bare && (
-        <header className="flex items-baseline justify-between gap-4 px-[1.15rem] pb-1">
+        <header className="flex items-baseline justify-between gap-4 px-4 pb-1">
           <Tip content={t('work.attention.hint')}>
             <h2 className="m-0 text-heading font-semibold">{t('work.attention.title')}</h2>
           </Tip>

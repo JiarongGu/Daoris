@@ -475,7 +475,7 @@ export function AttentionRow({ item, onOpen: handed, onRun, acts = {}, busy = fa
       // The row's key, by which the UX trail names a press made in it (`uxTrail.ts`).
       data-attention-row={`${item.kind}:${item.id}`}
       className={cn(
-        'grid gap-x-4 gap-y-1.5 border-l-[3px] border-l-st-open px-3 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
+        'grid gap-x-4 gap-y-1.5 px-4 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
         doorOnly && offered.length === 0 && 'grid-cols-[minmax(0,1fr)_auto] items-center',
       )}
     >

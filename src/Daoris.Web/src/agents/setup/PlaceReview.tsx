@@ -131,7 +131,7 @@ export function PlaceReview({
                 <Section id={`${own}-stops`} title={t('agents.setup.set.stops')}>
                   <ul className="m-0 grid list-none gap-2 p-0">
                     {refused.map((each: PlaceRefusal) => (
-                      <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft [overflow-wrap:anywhere]">
+                      <li key={`${each.repository ?? ''}${each.code}${each.sentence}`} data-refusal={each.code} className="m-0 grid min-w-0 justify-items-start gap-1 text-small text-ink-soft [overflow-wrap:anywhere]">
                         <span>
                           {each.repository && <span className="mr-1.5 font-mono text-caption text-ink">{each.repository}</span>}
                           <Inline text={each.sentence} />
@@ -170,7 +170,7 @@ export function PlaceReview({
               {lowers.length > 0 && (
                 <Section id={`${own}-yours`} title={t('agents.setup.set.yours')}>
                   {lowers.map((each) => (
-                    <p key={`${each.repository}${each.said}`} className="m-0 border-l-[3px] border-warn pl-2.5 text-small text-ink [overflow-wrap:anywhere]">
+                    <p key={`${each.repository}${each.said}`} className="m-0 text-small text-ink [overflow-wrap:anywhere]">
                       {several && <span className="font-mono text-caption">{each.repository}: </span>}
                       <Inline text={each.said} />
                     </p>
@@ -260,7 +260,7 @@ export function PlaceReview({
 
       {result && (result.done
         ? (
-          <div role="status" className="grid min-w-0 gap-1.5 border-l-[3px] border-accent pl-2.5 text-small text-ink">
+          <div role="status" className="grid min-w-0 gap-1.5 text-small text-ink">
             <p className="m-0 [overflow-wrap:anywhere]"><Inline text={result.message} /></p>
             <ul aria-label={t('agents.setup.set.operations')} className="m-0 grid list-none gap-0.5 p-0 text-ink-soft">
               {result.operations.map((each) => (

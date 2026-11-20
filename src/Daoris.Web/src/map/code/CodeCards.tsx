@@ -28,7 +28,7 @@ export function CodeCard({ id, group, state, back = false }: { id: string; group
     return (
       <span
         className={cn(
-          'relative flex h-full w-full items-center justify-between gap-2 rounded-card border-[1.5px] border-dashed bg-raised px-2.5',
+          'relative flex h-full w-full items-center justify-between gap-2 rounded-card border border-dashed bg-raised px-2.5',
           state.selected ? 'border-accent' : 'border-line-strong', back && 'opacity-40',
         )}
       >
@@ -48,7 +48,7 @@ export function CodeCard({ id, group, state, back = false }: { id: string; group
     <span
       className={cn(
         'relative flex h-full w-full items-center justify-center rounded-card border bg-raised px-2',
-        state.selected ? 'border-[3px] border-accent' : 'border-[1.5px] border-line-strong', back && 'opacity-40',
+        state.selected ? 'border-2 border-accent' : 'border border-line-strong', back && 'opacity-40',
       )}
     >
       {tier !== 'dot' && <span className="truncate font-mono text-caption text-ink">{tier === 'full' ? cutId(id) : lastSegment(id)}</span>}

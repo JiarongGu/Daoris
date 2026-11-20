@@ -429,7 +429,7 @@ describe('the liveness dot', () => {
     expect(mark('parked')).toContain('bg-st-open');
     expect(mark('failed')).toContain('bg-fail');
     const card = render(<WaitingCard title="waiting" />).container.querySelector('section')!;
-    expect(card.className).toContain('border-l-st-open');
+    expect(card.className).toContain('border-l-you');
   });
 });
 

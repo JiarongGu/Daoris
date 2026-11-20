@@ -27,7 +27,7 @@ export function RebaseAsk({ conflict, onSay }: { conflict: LandingConflict; onSa
     );
   };
   return (
-    <div className="grid gap-1 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+    <div className="grid gap-1 text-small text-ink-soft">
       <p className="m-0"><Inline text={t('work.review.conflict', { says: conflict.says })} /></p>
       <p className="m-0 text-ink-faint">{t('work.review.rebaseWords')}</p>
       <blockquote className="m-0 whitespace-pre-wrap border-l border-line pl-2"><Inline text={conflict.words} /></blockquote>

@@ -190,14 +190,15 @@ describe("a level's access rows", () => {
     act(() => (onChange.mock.calls[0]![1] as Answered).done());
   });
 
-  it('wears the warning colour while on, and turning it off clears the level where the level above is not full', async () => {
+  it('says it is on in a line of its own, with no edge (the window design §7.4), and turning it off clears the level where the level above is not full', async () => {
     const onChange = draw(OPEN('repository'));
 
     const full = row('Full access');
     expect(within(full).getByRole('checkbox', { name: 'Full access' })).toBeChecked();
     const on = within(full).getByText(/^On: sessions start with every pause below off\./);
     expect(on).toHaveTextContent('On: sessions start with every pause below off. Set for this repository.');
-    expect(on).toHaveClass('border-warn');
+    expect(on).toHaveClass('bg-raised');
+    expect(on.className).not.toMatch(/\bborder-(?:l-|warn)/);
     await userEvent.click(within(full).getByRole('checkbox', { name: 'Full access' }));
     expect(onChange).toHaveBeenLastCalledWith({ access: null }, expect.anything());
   });
