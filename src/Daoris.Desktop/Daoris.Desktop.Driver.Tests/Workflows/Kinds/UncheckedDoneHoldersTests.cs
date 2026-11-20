@@ -156,9 +156,9 @@ public sealed class UncheckedDoneHoldersTests : IDisposable
         var another = RunNodeWords.Word(Records, Run, "holds", NodeWordActs.Skip, "Read against the ask: done.", () => _now,
             settle: new SettleBy("agent:claude", 1) { Session = "s-other" }, workers: ["s-helper", "s-worker"]);
 
-        Assert.Equal(RunNodeWords.OwnDone, worker.Refused);
-        Assert.Contains("never passes", RunNodeWords.Said(worker), StringComparison.Ordinal);
-        Assert.Equal(RunNodeWords.OwnDone, unread.Refused);
+        Assert.Equal(SettleDoor.OwnWork, worker.Refused);
+        Assert.Contains("never answers its own gate", RunNodeWords.Said(worker), StringComparison.Ordinal);
+        Assert.Equal(SettleDoor.OwnWork, unread.Refused);
         Assert.True(another.Done, another.Refused);
     }
 

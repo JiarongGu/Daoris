@@ -22,7 +22,7 @@ public static class StepSettles
     public const string MissingEvidence = "missing-evidence";
 
     /// <summary>Keeps the settle <paramref name="ask"/> on the run's record for the next pass, as <paramref name="by"/> speaks, or refuses it.</summary>
-    public static NodeWorded Settle(NodeRecordFiles records, StepSettleAsk ask, SettleBy by, Func<DateTimeOffset> clock)
+    public static NodeWorded Settle(NodeRecordFiles records, StepSettleAsk ask, SettleBy by, Func<DateTimeOffset> clock, IReadOnlyCollection<string>? makers = null)
     {
         var run = ask.Run.Trim().TrimStart('#');
         var node = ask.Node.Trim();
@@ -48,7 +48,8 @@ public static class StepSettles
             return new(run, node, act, MissingEvidence) { Detail = string.Join(", ", missing), State = status.State };
         }
 
-        return RunNodeWords.Word(records, run, node, act, TaskEvidence.Words(ask.Words, ask.Evidence), clock, outcome: decision ? outcome : null, epoch: by.Epoch, settle: by);
+        return RunNodeWords.Word(records, run, node, act, TaskEvidence.Words(ask.Words, ask.Evidence), clock, outcome: decision ? outcome : null, epoch: by.Epoch, settle: by,
+            workers: makers);
     }
 
     /// <summary>What the settle came to, as its session is told it: kept, or refused and why.</summary>

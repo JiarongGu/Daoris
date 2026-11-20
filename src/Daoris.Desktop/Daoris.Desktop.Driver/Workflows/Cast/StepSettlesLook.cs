@@ -13,7 +13,7 @@ internal sealed class StepSettlesLook(ILookWiring wiring) : ILookPass
                 new NodeRecordFiles(wiring.Home), wiring.Processes.Delegates.AgentOf,
                 async (session, text, key, token) => (await WordsHead.FollowAsync(session, at => wiring.Service.SayAsync(at, text, ct: token, from: DaorisWords.From, key: key))
                     .ConfigureAwait(false)).Said,
-                () => wiring.Clock.GetUtcNow(), ct)
+                () => wiring.Clock.GetUtcNow(), ct, wiring.RunWorkers)
             .ConfigureAwait(false);
         if (taken.Count > 0) round.Events.Add($"{taken.Count(each => each.Done)} of {taken.Count} step settle(s) from working sessions kept.");
     }
