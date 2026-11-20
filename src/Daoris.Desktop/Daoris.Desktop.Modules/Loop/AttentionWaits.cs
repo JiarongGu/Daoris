@@ -174,7 +174,7 @@ public static class AttentionWaits
     /// The integration's waits on the owner, oldest first by kind: each standing candidate
     /// whose judge the policy held for a decide no one has recorded yet, with its members' branches and the judge's words; each superseded
     /// commit no one has answered; each landing the runtime last found waiting for the owner's card; and each repository whose committed
-    /// declaration the look found waiting for the owner's acceptance, <c>unaccepted</c> or <c>changed</c>. A read of the home's
+    /// declaration the look found waiting for the owner's acceptance, <c>unaccepted</c> or <c>changed</c> (with its commands' change). A read of the home's
     /// integration record, which a store from before the family answers with none.
     /// </summary>
     public static IReadOnlyList<object> IntegrationWaits(string home, IReadOnlyList<IntegrationCardWait> cards, IReadOnlyList<DeclarationOwed>? declarations = null)
@@ -217,7 +217,7 @@ public static class AttentionWaits
             waits.Add(new
             {
                 Wait = "declaration", Id = $"declaration:{owed.Repository}", owed.Repository, owed.Workspace, owed.Line, Tip = owed.Blob, State = owed.State,
-                Since = Moments.Write(owed.Since),
+                Change = owed.Change?.Wire(), Since = Moments.Write(owed.Since),
             });
         }
 

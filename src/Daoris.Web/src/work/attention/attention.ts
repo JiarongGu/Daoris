@@ -19,6 +19,7 @@ import { placedFact } from '../rail/SessionRow';
 import { acceptRunOf } from './attentionRun';
 import { workCutFor } from './attentionCounts';
 import { planQuestionDetail } from './planQuestionDetail';
+import { declarationChangedWhy } from './declarationWords';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
 /** *What needs you*'s three groups, in the order a person acts on them: what holds work up until they act, what waits for their word, and what is ready for them to look at. */
@@ -518,10 +519,11 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
           ? i18n.t('work.attention.integrationSupersededWhy', { commit: short(wait.commit), subject: wait.subject ?? '', line: wait.line ?? '' })
           : wait?.wait === 'card'
             ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) })
-            // A declaration never accepted runs nothing; one changed since goes on under the last accepted blob.
+            // A declaration never accepted runs nothing; one changed since checks work under the last accepted blob, said with its commands.
             : wait?.wait === 'declaration'
-              ? i18n.t(wait.state === 'changed' ? 'work.attention.integrationDeclarationChangedWhy' : 'work.attention.integrationDeclarationUnacceptedWhy',
-                { line: wait.line ?? '', tip: short(wait.tip) })
+              ? wait.state === 'changed'
+                ? declarationChangedWhy(wait.line ?? '', wait.change)
+                : i18n.t('work.attention.integrationDeclarationUnacceptedWhy', { line: wait.line ?? '', tip: short(wait.tip) })
               : null;
       return { ...base, title, detail, stands: row.stands === true, ...(wait ? { integration: wait } : {}) };
     }

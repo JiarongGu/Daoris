@@ -128,7 +128,7 @@ public sealed class LineRunReaderTests : NodeRuntimeFixture
         var run = Assert.Single(Read().Runs);
         Assert.Equal((LineVerdicts.Unknown, VerifyResult.Changed), (run.Line!.Verdict, run.Line.Why));
         Assert.NotNull(Assert.Single(run.Steps, step => step.Node == NodeKinds.Check).Held);
-        Assert.Contains("· not known: the gates changed since they were accepted", WorkflowRunWords.Say(Read().Runs, null));
+        Assert.Contains("· not known: its own change to the gates' commands waits for your acceptance", WorkflowRunWords.Say(Read().Runs, null));
     }
 
     [Fact]

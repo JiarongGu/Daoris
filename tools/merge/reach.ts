@@ -8,6 +8,7 @@ import { isLongGate } from './plan.ts';
 import type { Planned } from './plan.ts';
 import { pad } from './format.ts';
 import type { Lane } from './lanes.ts';
+import type { Reach } from './verification.ts';
 
 // test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
@@ -99,6 +100,14 @@ const namedGates = (reach: readonly Rule[]): Set<string> => new Set(reach.flatMa
 
 /** One gate of the plan as a merge reads it: whether it runs, whether the table reaches it, and why. */
 export type Selection = { gate: Planned; run: boolean; reached: boolean; why: string };
+
+/** A change's reach at a merge: of the gates the lane table can skip, those reached; the rest reach every change, so are not counted. */
+export function gateReach(selection: readonly Selection[], reach: readonly Rule[] = REACH): Reach {
+  const named = namedGates(reach);
+  const always = new Set([...BLOCKING, ...BASELINE, ...MERGE_SUITES]);
+  const skippable = selection.filter((entry) => named.has(entry.gate.name) && !always.has(entry.gate.name));
+  return { reached: skippable.filter((entry) => entry.reached).length, of: skippable.length, what: 'gates the lane table can skip' };
+}
 
 type Reading = { lanes?: Placing; reach?: readonly Rule[]; pathChecks?: readonly PathCheck[] };
 

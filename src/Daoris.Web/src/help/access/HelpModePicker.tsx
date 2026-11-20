@@ -90,7 +90,7 @@ export function HelpModeChip({ selected, running = null, busy = false, open, onP
           aria-label={t('help.mode.trigger', { mode: says })}
           className={cn(
             'inline-flex h-7 min-w-0 shrink items-center gap-1.5 rounded-control border px-2 text-small',
-            'transition-colors duration-(--duration-quick) disabled:opacity-60',
+            'transition-colors duration-(--duration-quick) disabled:border-line disabled:text-ink-disabled',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             warn
               ? 'border-warn bg-warn/10 text-ink'

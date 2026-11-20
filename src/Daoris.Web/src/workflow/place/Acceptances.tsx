@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CheckField, Inline } from '../../design/ui';
+import { CheckField, Inline, Note } from '../../design/ui';
 
 /** One acceptance of a declaration: its words, its standing and consequence, and whether the person can tick it now. */
 export type AcceptanceRow = {
@@ -69,9 +69,11 @@ export function Acceptances({ rows, ticked, onTick, disabled = false, title, fol
         ))}
       </ul>
       {cleared.length > 0 && (
-        <div role="status" className="grid gap-0.5 border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
-          {cleared.map((each) => <p key={each} className="m-0 [overflow-wrap:anywhere]">{each}</p>)}
-        </div>
+        <Note as="div" tone="caution" role="status">
+          <span className="grid gap-0.5">
+            {cleared.map((each) => <span key={each} className="[overflow-wrap:anywhere]">{each}</span>)}
+          </span>
+        </Note>
       )}
     </div>
   );

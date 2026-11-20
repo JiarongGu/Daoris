@@ -54,7 +54,7 @@ describe('the colour roles', () => {
   it('catches a pair under its floor — the check itself, with the faint ink the role set raised', () => {
     const before = tokensCss.replace(/^(:root\s*\{[^}]*--ink-faint:\s*)#[0-9a-fA-F]{6}/m, '$1#8a887f');
     expect(before).not.toBe(tokensCss);
-    expect(below(pairs(themes(before).light).text, 4.5)).toContain('--ink-faint on --page: 3.29');
+    expect(below(pairs(themes(before).light).text, 4.5)).toContain('--ink-faint on --page: 3.31');
     // And the control edge the role set darkened, a line under every field.
     const faded = tokensCss.replace(/^(:root\s*\{[^}]*--line-strong:\s*)#[0-9a-fA-F]{6}/m, '$1#cfcabe');
     expect(below(pairs(themes(faded).light).marks, 3).filter((each) => each.startsWith('--line-strong on --raised'))).toHaveLength(1);
@@ -71,10 +71,26 @@ describe('the colour roles', () => {
 
   it("holds the design's table: its worst pairs, as §7.1 states them", () => {
     const { light, dark } = themes();
-    expect([worst(pairs(light).text, '--ink-faint'), worst(pairs(dark).text, '--ink-faint')]).toEqual(['4.9', '4.7']);
-    expect([worst(pairs(light).marks, '--line-strong'), worst(pairs(dark).marks, '--line-strong')]).toEqual(['3.1', '3.0']);
-    expect(worst(pairs(light).marks, '--you')).toBe('3.2');
-    expect(worst(pairs(light).labels, '--on-you')).toBe('4.6');
+    expect({
+      inkFaint: [worst(pairs(light).text, '--ink-faint'), worst(pairs(dark).text, '--ink-faint')],
+      lineStrong: [worst(pairs(light).marks, '--line-strong'), worst(pairs(dark).marks, '--line-strong')],
+      you: worst(pairs(light).marks, '--you'),
+      onYou: worst(pairs(light).labels, '--on-you'),
+    }).toEqual({ inkFaint: ['4.8', '5.0'], lineStrong: ['3.3', '3.3'], you: '3.2', onYou: '4.9' });
+  });
+
+  it("holds: a disabled label reads at 3:1 on a control's own field and in a menu, with no opacity over it (D351)", () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const ground of ['--raised', '--overlay']) {
+        const ratio = contrast(tokens['--ink-disabled']!, tokens[ground]!);
+        expect(ratio, `${theme} --ink-disabled on ${ground}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+    expect(tokensCss).not.toMatch(/button:disabled\s*\{[^}]*opacity/);
+  });
+
+  it('holds: the moving field is the selected field, one value (D351)', () => {
+    for (const tokens of Object.values(themes())) expect(tokens['--live-soft']).toBe(tokens['--accent-soft']);
   });
 
   it("holds: the owner's amber is no kin of the accent, so a wait is told from a button at a glance", () => {

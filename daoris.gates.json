@@ -20,6 +20,23 @@
 
   "reached": { "run": "node tools/reached-checks.mjs --base {base}", "clock": true, "outcome": "reached-classes: " },
 
+  "verifyBudget": {
+    "_why": "This workspace's own rule (D349, VERIFY10), not a product rule and not canon: one task's verification (a builder's checks, a run's check, a merge's gates for one branch) takes under budgetMinutes of wall time, scoped to what its paths reach, the heavy tier after the landing. A full run needs a reason the tools check against the change: a path of widePaths (the gates and the test tools, the dependency files and lockfiles, the build files, the shared contracts, and what is tracked, its line endings and the file and git helpers every rehearsal imports: the lane table's every-gate rule reads this list, its one source, apart from the budget, and fails at load where it is missing), a reach of reachShare or more of what the run could leave out (the gates the lane table can skip at a merge, not those every merge runs or no rule names; the census's classes in the reached run), or a run whose kind is one (the run after a landing, a release). A verification past the budget is said in its summary with where its time went and filed in overruns, which the steward reads.",
+    "budgetMinutes": 10,
+    "overruns": "local/verify-overruns.jsonl",
+    "fullRunReasons": {
+      "widePaths": [
+        "daoris.gates.json", "daoris.lanes.json", "tools/test-sets.mjs", "tools/test-map.mjs", "tools/test-map/**",
+        "package.json", "package-lock.json", "src/Daoris.Web/package-lock.json", "daoris.packages.lock",
+        "Directory.Build.props", "src/Daoris.Desktop/Directory.Packages.props", "src/Daoris.Service/Directory.Packages.props",
+        "src/Daoris.Contracts/**",
+        ".gitattributes", ".gitignore", "tools/fsx.mjs", "src/Daoris.Cli/src/tools/gitforwindows.ts"
+      ],
+      "reachShare": 0.5,
+      "runs": ["after-landing", "release"]
+    }
+  },
+
   "gates": [
     { "name": "universal", "run": "node tools/orient-index.mjs && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify:checks", "clock": true, "handback": true, "regenerate": "node tools/contracts.mjs --if-stale" },

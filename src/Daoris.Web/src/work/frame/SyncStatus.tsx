@@ -112,7 +112,7 @@ export function SyncStatus({
         {(onSyncNow || onRemotes) && <Menu.Separator />}
         {onSyncNow && (
           // A pass already running is the row in its own ink, dimmed while its arrows turn.
-          <Menu.Item disabled={syncing} onSelect={onSyncNow} className="data-[disabled]:text-ink-soft data-[disabled]:opacity-60">
+          <Menu.Item disabled={syncing} onSelect={onSyncNow} className="data-[disabled]:text-ink-disabled">
             <Icon name="refresh" size={12} className={cn('shrink-0', syncing && 'animate-spin')} />
             {syncing ? t('work.sync.syncing') : t('work.sync.now')}
           </Menu.Item>

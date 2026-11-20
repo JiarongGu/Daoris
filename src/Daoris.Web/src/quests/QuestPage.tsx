@@ -4,7 +4,7 @@ import { type Quest, type Session, type SubmissionRef } from '../data/api';
 import { type ChainStep } from '../map/chain';
 import { type AccountNamer } from '../agents/tools';
 import { type Consideration, type TrustHold } from '../data/signals';
-import { Button, Icon, Inline, Menu, personsSaid, Pill, Prose, QUEST_TONE, SectionTitle } from '../design/ui';
+import { Button, cardFrame, Icon, Inline, Menu, personsSaid, Pill, Prose, QUEST_TONE, SectionTitle } from '../design/ui';
 import { type SessionGrouping, shownOf } from '../work/groups';
 import { placedFact } from '../work/rail/SessionRow';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing/pausing';
@@ -487,7 +487,7 @@ export function QuestPage({
            go on once the source is ready again or abandon, which is their decline. Daoris never chooses, and no yes lifts it. */
         <section
           aria-label={t('quests.reopened.title')}
-          className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
+          className={`mb-4 ${cardFrame('wait')}`}
         >
           <SectionTitle>{t('quests.reopened.title')}</SectionTitle>
           <p className="m-0 text-body">

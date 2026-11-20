@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SystemWiring, WiringFolder } from '../../data/wiring';
-import { Button, MiddlePath, Pill } from '../../design/ui';
+import { Button, MiddlePath, Note, Pill } from '../../design/ui';
 import { moment, size } from '../../locales/format';
 import { Unread, WiringCard } from './WiringParts';
 
@@ -68,7 +68,9 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
     ? <Button variant="ghost" onClick={() => onOpen(id)}>{t('settings.daoris.button.openFolder')}</Button>
     : null);
   const note = (text: string, tone?: 'accent' | 'warn') => (
-    <p className={tone ? `m-0 border-l-[3px] bg-page/60 px-3.5 py-2 text-small text-ink-soft ${tone === 'warn' ? 'border-warn' : 'border-accent'}` : 'm-0 text-small text-ink-faint'}>{text}</p>
+    tone === 'warn'
+      ? <Note tone="caution" className="bg-page/60 px-3.5 py-2">{text}</Note>
+      : <p className={tone ? 'm-0 bg-page/60 px-3.5 py-2 text-small text-ink-soft' : 'm-0 text-small text-ink-faint'}>{text}</p>
   );
   return (
     <WiringCard id="settings-daoris-folders" title={t('settings.daoris.card.folders')} aside={{ label: t('settings.daoris.button.measure'), busy: busy || measuring, onPress: onMeasure }}>

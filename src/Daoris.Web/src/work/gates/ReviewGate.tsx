@@ -5,7 +5,7 @@ import { ago } from '../../locales/format';
 import { cn } from '../../lib/cn';
 import { ExternalLink } from '../../design/links';
 import { shellWord } from '../../lib/shellWord';
-import { Button, CodeText, Inline, Pill } from '../../design/ui';
+import { Button, cardFrame, CodeText, Inline, Pill } from '../../design/ui';
 import { type Answered, InlineConfirm, Refused } from '../InlineConfirm';
 import {
   newestSetUp, REVIEW_TONE, type ReviewPress, reviewPresses, type ReviewState, setUpRef, shortCommit, verdictOn,
@@ -141,8 +141,7 @@ export function ReviewGate({
     <section
       aria-labelledby={headingId}
       className={cn(
-        'grid min-w-0 gap-2 rounded-card border border-line border-l-[3px] bg-raised px-3 py-2.5',
-        REVIEW_TONE[state] === 'open' ? 'border-l-st-open' : REVIEW_TONE[state] === 'done' ? 'border-l-ok' : 'border-l-line-strong',
+        'grid min-w-0 gap-2', cardFrame(REVIEW_TONE[state] === 'open' ? 'wait' : undefined),
         className,
       )}
     >
@@ -161,7 +160,7 @@ export function ReviewGate({
         <p className="m-0 text-caption text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('review.driverSaid', { said })} /></p>
       )}
       {proposal && state === 'not-shown' && (
-        <p className="m-0 border-l-[3px] border-line-strong pl-2 text-small text-ink-soft">
+        <p className="m-0 text-small text-ink-soft">
           <Inline text={t('review.proposal', { choice: choiceWords(t, proposal.choice), reason: proposal.reason })} />
         </p>
       )}

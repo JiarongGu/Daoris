@@ -45,7 +45,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         aria-label={ariaLabel}
         className={bar
           ? 'flex h-full items-center gap-1.5 px-2 text-caption text-ink transition-colors duration-[var(--duration-quick)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
-          : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
+          : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:data-[placeholder]:text-ink-disabled data-[disabled]:cursor-default data-[disabled]:border-line data-[disabled]:text-ink-disabled'}
       >
         {bar && <Layers size={glyphSize(12)} aria-hidden className="shrink-0 text-ink-soft" />}
         <span className="min-w-0 truncate"><RadixSelect.Value placeholder={placeholder} /></span>
@@ -57,7 +57,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         <RadixSelect.Content
           position="popper" sideOffset={4} collisionPadding={8}
           className={cn(
-            'z-30 overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]',
+            'z-30 overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_17_20/0.12)]',
             // Opened from the frame, it keeps the frame's size; the room the popper measured is the window's, so it is
             // read back through the frame's zoom.
             held
@@ -153,12 +153,12 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
   className?: string;
 }) {
   return (
-    <label className={cn('flex cursor-pointer items-center gap-2 whitespace-nowrap text-body text-ink-soft', className)}>
+    <label className={cn('flex cursor-pointer items-center gap-2 whitespace-nowrap text-body text-ink-soft', className, disabled && 'cursor-default text-ink-disabled')}>
       <Checkbox.Root
         checked={checked}
         disabled={disabled}
         onCheckedChange={(state) => onChange(state === true)}
-        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-on-accent"
+        className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-line-strong bg-raised data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-on-accent disabled:border-line disabled:data-[state=checked]:border-ink-disabled disabled:data-[state=checked]:bg-ink-disabled"
       >
         <Checkbox.Indicator><Check size={glyphSize(12)} strokeWidth={2.2} aria-hidden /></Checkbox.Indicator>
       </Checkbox.Root>

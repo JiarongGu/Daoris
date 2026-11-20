@@ -34,7 +34,7 @@ export function ReconcileNoteView({ plan, busy = false, onReconcile }: {
     : [];
 
   return (
-    <section aria-label={t('agents.setup.reconcile.label')} data-reconcile="" className="mb-3 grid min-w-0 gap-1 border-l-[3px] border-accent pl-2.5 text-small text-ink-soft">
+    <section aria-label={t('agents.setup.reconcile.label')} data-reconcile="" className="mb-3 grid min-w-0 gap-1 text-small text-ink-soft">
       <p className="m-0 text-ink [overflow-wrap:anywhere]">{lead}</p>
       {counts.length > 0 && <p className="m-0">{counts.join(t('agents.setup.reconcile.join'))}</p>}
       {!plan.pressable && plan.refusals.map((each) => (

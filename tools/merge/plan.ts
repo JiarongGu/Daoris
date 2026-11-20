@@ -468,6 +468,8 @@ export type PlanSeams = {
   laneReport: (root: string, branch: string) => string[];
   /** The gates the branch's paths reach, and the lines that say why each runs or is skipped. */
   reaches: (root: string, branch: string, plan: Planned[], options: { full: boolean; gated: boolean }) => { runs: string[]; lines: string[] };
+  /** Why the merge would refuse `--full` on these branches, judged as one batch, or null where it would take it. */
+  fullRefused: (root: string, branches: readonly string[]) => string | null;
   /** Prints what the prune would remove, the branches held back. */
   prune: (root: string, hold: string[]) => void;
   /** The line that says the full set is still owed when `skipped` gates were left out, or null. */
@@ -482,8 +484,12 @@ export function planOnly(root: string, options: Options, seams: PlanSeams): numb
   const reachedAny = new Set<string>();
   console.log(`plan (nothing is merged; the current branch is ${treeState(root).branch || 'a detached HEAD'}):`);
   for (const line of seams.heavy(root)) console.log(line);
+  for (const branch of options.branches) requireBranch(root, branch);
+  // `--full` is judged on the batch, as the merge judges it; refused, the plan is the merge without it.
+  const refused = options.full ? seams.fullRefused(root, options.branches) : null;
+  if (refused) console.log(`--full would be refused: ${refused}`);
+  const full = options.full && !refused;
   options.branches.forEach((branch, i) => {
-    requireBranch(root, branch);
     const commits = parseCommits(git(root, ['log', COMMIT_FORMAT, `HEAD..${branch}`]).out);
     console.log('');
     console.log(`${i + 1}. ${branch}: ${count(commits.length, 'commit')} ${MAIN} lacks`);
@@ -491,8 +497,8 @@ export function planOnly(root: string, options: Options, seams: PlanSeams): numb
     const problems = options.commitCheck ? commitProblems(root, branch, commits) : [];
     console.log(problems.length ? `  commit check would refuse it:\n${problems.map((problem) => `    ${problem}`).join('\n')}` : '  commit check: nothing to refuse');
     // What this branch's paths reach, each gate with why it runs or is skipped.
-    const reached = seams.reaches(root, branch, plan, { full: options.full, gated: options.gated });
-    console.log(`  gates it reaches: ${reached.runs.length} of ${plan.length}${options.full ? ' (--full)' : ''}`);
+    const reached = seams.reaches(root, branch, plan, { full, gated: options.gated });
+    console.log(`  gates it reaches: ${reached.runs.length} of ${plan.length}${full ? ' (--full)' : ''}`);
     for (const line of reached.lines) console.log(`  ${line}`);
     for (const name of reached.runs) reachedAny.add(name);
   });

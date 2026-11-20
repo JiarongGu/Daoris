@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- The window's colours suit its blue: the greys are near-neutral instead of warm, so the amber of what waits on you and the
+  red of a failure are the only warm colours left; red is a crimson further from amber, green a little deeper, and a selected
+  row, a live band and selected text share one blue field. A disabled button keeps its frame and greys its label instead of
+  fading whole. The taskbar's count is amber with dark figures in either theme, since it counts what waits on you.
+
 - `daoris home purge --history --plan` lists, and `--yes` moves out, a home's history for a clean start: its sessions, quests, asks, runs, notices and the other records of work done, and the history tables of its stores (each store is copied whole first), into `purged/<UTC stamp>/` beside the install. Accounts, settings, roles, casts, workflows, plugins and sign-ins stay. It refuses while a desktop, a `daoris drive` or the service holds the home, and says how to close Daoris.
 - A session's conversation shows its subagents and background tasks where they happened: a subagent is a row under the call that started it, with its task, how it stands, its calls, how long it ran and its closing words, and opens in place to its own turns; one it started opens in the conversation's place with a breadcrumb back. A background task is a row where it started and one where it ended, with its last lines, each a press to the other. *At work* no longer lists subagents.
 - A tool call a subagent asks you to allow now says which subagent asked (*From subagent find expiry tests*), with *Open* to read that subagent where it works; a subagent started by another subagent stands right under it in the list of what runs now, and *Since you left* counts the ones other subagents started. `daoris session at-work` no longer prints subagents: they are in the session's conversation.

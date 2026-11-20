@@ -18,7 +18,7 @@ function Row({ row, chosen, focused, onPress }: { row: TreeRow; chosen: boolean;
       tabIndex={focused ? 0 : -1}
       onClick={onPress}
       className={cn(
-        'flex w-full min-w-0 cursor-pointer items-center gap-1 border-l-[3px] py-1.5 pr-2.5 outline-none transition-colors duration-(--duration-quick)',
+        'flex w-full min-w-0 cursor-pointer items-center gap-1 border-l-2 py-1.5 pr-2.5 outline-none transition-colors duration-(--duration-quick)',
         row.level === 1 ? 'pl-1.5' : row.level === 2 ? 'pl-5' : 'pl-9',
         'hover:bg-accent-soft/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent',
         chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
@@ -88,7 +88,7 @@ export function MapTree({ label, groups, selected, onPick, onRelease, detail }: 
         <Fragment key={row.id}>
           <Row row={row} chosen={row.kind === 'item' && row.id === selected} focused={tabbable === row.id} onPress={() => press(row)} />
           {detail !== undefined && row.kind === 'item' && row.id === selected && (
-            <div role="none" data-tree-detail="" className="border-l-[3px] border-l-accent bg-page px-3 py-2">{detail}</div>
+            <div role="none" data-tree-detail="" className="border-l-2 border-l-accent bg-page px-3 py-2">{detail}</div>
           )}
         </Fragment>
       ))}

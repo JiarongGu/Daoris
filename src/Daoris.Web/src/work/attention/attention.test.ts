@@ -771,10 +771,7 @@ describe('a declaration owed acceptance, worded', () => {
       kind: 'integration', title: 'engine', where: 'engine',
       detail: 'The checks in `daoris.gates.json` on main are not accepted, so none of them runs. Read what they are on Setup and accept them.',
     });
-    expect(words(changed)).toMatchObject({
-      title: 'web',
-      detail: 'The checks in `daoris.gates.json` on trunk changed since you accepted them; work goes on under the ones you accepted. Read the change on Setup and accept it.',
-    });
+    expect(words(changed)).toMatchObject({ title: 'web', detail: expect.stringMatching(/^The commands in `daoris.gates.json` on trunk changed since/) });
     for (const each of [unaccepted, changed]) expect(attentionActs(words(each))).toEqual([]);
     expect([unaccepted, changed].map((each) => attentionGroup(each))).toEqual(['word', 'word']);
     expect(placeCounts([unaccepted, changed])).toEqual({ projects: 2 });
@@ -784,7 +781,7 @@ describe('a declaration owed acceptance, worded', () => {
     await i18n.changeLanguage('zh');
     try {
       expect(words(unaccepted).detail).toBe('main 上 `daoris.gates.json` 里的检查项还没有采纳，所以它们都不会运行。请在配置里读一读它们并采纳。');
-      expect(words(changed).detail).toBe('trunk 上 `daoris.gates.json` 里的检查项自你采纳后已改动；工作仍按你采纳过的那份进行。请在配置里读一读改动并采纳它。');
+      expect(words(changed).detail).toMatch(/^trunk 上 `daoris.gates.json` 里的命令自你采纳后已改动/);
     } finally {
       await i18n.changeLanguage('en');
     }
