@@ -32,7 +32,7 @@ describe("a repository's integration declaration on its Setup", () => {
     const onAccept = vi.fn();
     render(<IntegrationDeclaration repository="engine" integration={INTEGRATION_CHANGED} onAccept={onAccept} />);
 
-    expect(screen.getByText(/changed since you accepted them/)).toBeInTheDocument();
+    expect(screen.getByText(/changed their commands since you accepted them\. Until you accept these, work that does not change them itself is checked under the ones you accepted/)).toBeInTheDocument();
     expect(screen.getByLabelText('daoris.gates.json on main')).toHaveTextContent('"scratch": ["dist/", "coverage/"]');
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
     expect(onAccept).toHaveBeenCalledWith({ gates: INTEGRATION_CHANGED.tip!.gates }, expect.anything());

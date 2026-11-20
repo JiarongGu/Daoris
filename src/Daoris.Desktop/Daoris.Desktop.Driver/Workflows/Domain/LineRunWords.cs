@@ -31,7 +31,7 @@ public static class LineRunWords
     /// <summary>Why a check is not known, by <see cref="VerifyResult"/>'s code; any other said as nothing establishing it.</summary>
     public static string Why(string? code) => code switch
     {
-        VerifyResult.Changed => "the gates changed since they were accepted",
+        VerifyResult.Changed => "its own change to the gates' commands waits for your acceptance",
         VerifyResult.Bound => "it ran past its bound",
         VerifyResult.Stopped => "it was stopped",
         VerifyResult.Busy => "the runner stayed busy",

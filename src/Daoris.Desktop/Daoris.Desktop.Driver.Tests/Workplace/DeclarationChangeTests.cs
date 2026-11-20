@@ -16,9 +16,35 @@ public sealed class DeclarationChangeTests
 
         Assert.Equal([new DeclaredCheck("comments", "node tools/comment-gate.mjs")], change.Added);
         Assert.Equal([new DeclaredCheck("old", "echo old")], change.Removed);
-        Assert.Equal([new DeclaredCheck("tools", "npm test")], change.Changed);
+        Assert.Empty(change.Changed);
         Assert.Equal(["integration"], change.Other);
-        Assert.Equal("added `comments`; removed `old`; changed `tools`; changed its `integration` part", change.Said());
+        Assert.Equal("added `comments`; removed `old`; changed its `integration` part", change.Said());
+    }
+
+    [Fact]
+    public void A_change_of_only_what_is_set_aside_is_no_change()
+    {
+        const string Was = """{ "_why": "a", "gates": [ { "name": "b", "run": "npm test", "paths": ["a/"], "timeoutMinutes": 5, "_why": "x" } ], "tests": { "sets": [] }, "tiers": {} }""";
+        const string Now = """{ "_why": "b", "gates": [ { "name": "b", "run": "npm test", "paths": ["b/"], "timeoutMinutes": 9, "_why": "y" } ], "tests": { "sets": [ { "name": "s" } ] }, "tiers": { "fast": [] } }""";
+
+        var change = DeclarationChange.Between(Was, Now);
+
+        Assert.True(change.IsEmpty, change.Said());
+    }
+
+    [Fact]
+    public void A_run_that_is_not_a_string_or_a_text_that_does_not_read_never_throws()
+    {
+        const string Was = """{ "gates": [ { "name": "a", "run": "one" } ] }""";
+
+        var numeric = DeclarationChange.Between(Was, """{ "gates": [ { "name": "a", "run": 2 } ] }""");
+        Assert.Equal([new DeclaredCheck("a", "", "one")], numeric.Changed);
+
+        var twice = DeclarationChange.Between(Was, """{ "gates": [ { "name": "a", "run": "one", "run": "two" } ] }""");
+        Assert.True(twice.Unread);
+        Assert.False(twice.IsEmpty);
+        Assert.Empty(twice.Removed);
+        Assert.Equal("its text does not read as strict JSON (a member written twice, a comment or a trailing comma)", twice.Said());
     }
 
     [Fact]

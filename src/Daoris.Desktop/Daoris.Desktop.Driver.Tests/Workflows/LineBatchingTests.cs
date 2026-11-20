@@ -249,7 +249,7 @@ public sealed class LineBatchingTests : IDisposable
         var held = Assert.Single(HeldAttempts.Read(Files));
 
         Assert.Equal((run.Run, (string?)null, VerifyResult.Changed), (held.Verification!.Run, held.Verification.Base, held.Verification.Why));
-        Assert.Contains("(its line main, its first verification) is not known (the gates changed since they were accepted), and holds its line main",
+        Assert.Contains("(its line main, its first verification) is not known (its own change to the gates' commands waits for your acceptance), and holds its line main",
             HeldAttempts.WhySaid(held), StringComparison.Ordinal);
     }
 
