@@ -21,7 +21,49 @@ public sealed class RiskStepGatesTests : NodeRunFixture
                   {"id":"r>h","kind":"after","from":"review","to":"handed"}]}
         """;
 
+    private static string Signed(string act = "") => $$"""
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["approved"],"role":"approver"{{act}}},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
+                  {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"approved"}]}
+        """;
+
     private PlaceCastFiles Casts => new(_home, () => true);
+
+    [Fact]
+    public async Task With_nothing_configured_an_approval_passes_approved_by_the_policy()
+    {
+        OnBranch(Signed());
+        await RunPassAsync(Runtime(), Seed);
+
+        var sign = RunStatus("sign");
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy, "approved"), (sign.State, sign.By, sign.Acceptance?.Outcome));
+    }
+
+    [Fact]
+    public async Task Classed_role_an_approval_waits_on_the_cast_approver_and_refuses_its_author()
+    {
+        Casts.Cast("machine", StepRoles.Approver, "agent:reviewer", "the reviewer signs", _now);
+        OnBranch(Signed());
+        await RunPassAsync(Runtime());
+        Assert.Equal(NodeStates.Active, RunStatus("sign").State);
+
+        Assert.Equal(SettleDoor.OwnWork, Settle("sign", "s-worker", "approved").Refused);
+        Assert.True(Settle("sign", "s-reviewer", "approved").Done);
+    }
+
+    [Fact]
+    public async Task An_approval_spending_a_destination_classed_owner_waits_on_the_owner()
+    {
+        OnBranch(Signed(""","options":{"act":"release.start/production"}"""));
+        await RunPassAsync(Runtime(), """{"risk":{"machine":[{"kind":"release.start/production","class":"owner"}]}}""");
+
+        Assert.Equal(NodeStates.Active, RunStatus("sign").State);
+        var held = new StepTenureFiles(_home, () => true).Current(RunUnit, "sign", RunStatus("sign").Attempt);
+        Assert.Equal((CastHolders.Person, TenureWhy.Marked), (held?.Holder, held?.Why));
+    }
 
     private void OnBranch(string graph)
     {

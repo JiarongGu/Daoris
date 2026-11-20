@@ -16,8 +16,9 @@ public static class RiskStepHolds
     {
         PersonWaits.Pass => RiskActs.WorkDone,
         PersonWaits.Accept => RiskActs.WorkAccept,
-        PersonWaits.Approval => RiskActs.TaskApprove,
-        PersonWaits.GoAhead => node.Options.GetValueOrDefault("act") is { } act && Named(act) ? act : RiskActs.TaskApprove,
+        PersonWaits.Approval or PersonWaits.GoAhead => node.Options.GetValueOrDefault("act") is { } written && NodeOptions.Value(written) is string act && Named(act)
+            ? act
+            : RiskActs.TaskApprove,
         PersonWaits.Choose or PersonWaits.Vacant or PersonWaits.Held or PersonWaits.Left => RiskActs.WorkRecover,
         _ => null,
     };

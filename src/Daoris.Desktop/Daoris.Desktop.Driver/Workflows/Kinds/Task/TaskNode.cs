@@ -28,7 +28,7 @@ internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole
 
     public override RunSubject Subject(NodeDeclaration node, IReadOnlySet<string> afterHanded) => RunSubject.Run;
 
-    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Names(TaskEvidence.Option)];
+    public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Names(TaskEvidence.Option), NodeOptionFields.Text("act")];
 
     /// <summary>Its outcomes are a task's, an approval's or a decision's own; one declaring none is a task reached with no outcome.</summary>
     public override bool TakesOutcomes(IReadOnlyList<string> outcomes) =>
@@ -63,9 +63,10 @@ internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole
     /// <summary>Begun on a run alone, as a go-ahead is: the run then waits on the person. On a unit it waits ready.</summary>
     public bool Begins(GovernedUnit governed) => governed.Scope is not null;
 
-    /// <summary>Nothing but the person's press reaches it, applied from the run's record by the pass: no record says more.</summary>
+    /// <summary>Its holder's press reaches it, applied from the run's record by the pass; an approval the risk policy passes is reached by the policy.</summary>
     public NodeObservation Observe(NodeReading reading) =>
-        new(reading.Unit.Id, reading.Node.Id, reading.Node.Kind, null, "it waits for your press") { Attempt = reading.Binding.Attempt };
+        (reading.Node.Outcomes.SequenceEqual(Approval) ? RiskStepGates.Passed(reading, PersonWaits.Approval, Approved) : null)
+        ?? new(reading.Unit.Id, reading.Node.Id, reading.Node.Kind, null, "it waits for your press") { Attempt = reading.Binding.Attempt };
 
     public IReadOnlyList<string> Takes { get; } = [NodeWordActs.Done, NodeWordActs.Approve, NodeWordActs.Reject, NodeWordActs.Decide];
 

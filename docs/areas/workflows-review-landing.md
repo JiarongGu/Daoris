@@ -386,7 +386,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     run's place (`RiskStepGates`, the judge the pass reads from the look's config, D354): with nothing configured (the seed, `none`) the
     review is reached by the policy (`policy`, its words the verdict's rule and revision) and no one is asked; classed `role` it waits on
     its own role (`acceptor` where it names none) as the place casts it; classed `owner` the owner role holds it from its start, as a marked
-    approver is. A graph with no `land` is work in place and refuses a
+    approver is. A `task`'s approval reads `task.approve`, or the act its `act` option names (an approval spending a destination,
+    `release.start/production`), alike, reached `approved` where it passes; one naming no role is still the owner role's. A graph with no `land` is work in place and refuses a
     landing's press. A flow with no `review` lands with no press, its authority judged again before the first effect. A run is over
     when no node can move, nothing is pending and no failure is kept for the person, its end `completed`, `failed` or `stopped`
     (with whose). Each review attempt reads the run's work into one record, written as it begins and never edited
@@ -737,8 +738,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     you* reads "waiting on `<role>`: <agent>" with *Take* its only press. Any other wait an agent holds that only a press settles (any but
     a plugin's actor and a go-ahead, `AgentSettles.Wait`) stays a `step` row, "waiting on `<role>`: <holder>" with *Take*, an Accept and
     an approval among them, the agents' row (*With the agents*), never counted or announced as the owner's (`AttentionOwnership`'s
-    `step`), and the person's press still takes and settles it. A review's Accept waits only where the risk policy
-    gates it (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
+    `step`), and the person's press still takes and settles it. A review's Accept and a task's approval wait only where the risk policy
+    gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
     `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node
     door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads and whose
     pass of it is refused `own-work`. No worker answers its own gate (D354 point 5): at the settle door (`SettleDoor.Own`, asked by the
