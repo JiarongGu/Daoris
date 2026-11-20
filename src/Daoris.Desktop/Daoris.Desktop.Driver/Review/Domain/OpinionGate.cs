@@ -63,7 +63,22 @@ public static class OpinionGate
             };
         }
 
-        return judged;
+        return judged.PressAnswers && facts.Risk is { } judge ? Judged(judged, judge(RiskAct.Of(RiskActs.WorkAccept)), facts.Tip) : judged;
+    }
+
+    private static OpinionGateState Judged(OpinionGateState gate, RiskVerdict verdict, string? tip)
+    {
+        if (verdict.Outcome != RiskVerdict.Pass) return gate with { Risk = verdict };
+        // Stamped when the hold opened, so the answer reads the same at every look.
+        var opened = gate.RecheckToPersonAt ?? gate.ToPersonAt ?? gate.Answers?.At ?? DateTimeOffset.UnixEpoch;
+        return gate with
+        {
+            State = OpinionGateStates.Answered, Answered = gate.State, Risk = verdict,
+            Person = new OpinionPersonWord(OpinionPersonSaid.Policy, tip ?? "", opened)
+            {
+                Words = $"{RiskStepGates.Passes}: {verdict.Reason} (rule {verdict.Source} at {verdict.Revision})",
+            },
+        };
     }
 
     /// <summary>

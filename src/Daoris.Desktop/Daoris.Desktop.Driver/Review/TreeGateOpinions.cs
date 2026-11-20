@@ -28,9 +28,14 @@ internal static class TreeGateOpinions
         this TreeGates gates, string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
         string occasion, CancellationToken ct = default, IWorkplaceProcess? process = null, string? at = null, string? run = null)
     {
-        var rule = process is null ? OpinionRules.Resolve(gates.Context.Config(), repository, workspace) : process.Opinion;
+        var config = gates.Context.Config();
+        var rule = process is null ? OpinionRules.Resolve(config, repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
-        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
+        // The judge at the work's place answers a dispute or commits nobody read, as `work.accept`.
+        var facts = new OpinionGateFacts(repository, rule)
+        {
+            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = RiskStepGates.At(config, workspace, repository)?.Act,
+        };
         var chatRun = quest is null && WorkplaceRunFiles.IsChatRun(run) ? run : null;
         if ((quest is null && chatRun is null) || !OpinionGate.Reads(rule, cannot, occasion))
         {

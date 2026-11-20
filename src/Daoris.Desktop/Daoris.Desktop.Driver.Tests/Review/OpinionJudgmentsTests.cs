@@ -295,6 +295,7 @@ public sealed class OpinionJudgmentsTests : IDisposable
                 ["reports"] = new OpinionRule(["codex-acp"], [OpinionRules.Landing], false),
             },
         }).Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        OpinionRiskFixture.ClassAccept(_home);
 
         var root = Path.Combine(_scratch, "reports");
         Directory.CreateDirectory(root);
