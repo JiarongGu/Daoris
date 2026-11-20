@@ -81,7 +81,7 @@ describe("the session's run, opened from its track", () => {
 
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
     // The session's record, which the side bar follows, is pushed in as the window holds it: the tabs are pressed once it is here.
-    await screen.findByRole('heading', { level: 1, name: 'Fix the header' });
+    await screen.findByRole('heading', { level: 2, name: 'Fix the header' });
     const tabs = within(side).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
     expect(tabs).not.toContain('Workflow');
     expect(asked()).toHaveLength(0);
@@ -135,7 +135,7 @@ describe("the session's run, opened from its track", () => {
 
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
     // The session attended, its head drawn, the side bar on the timeline it opens on.
-    await screen.findByRole('heading', { level: 1 });
+    await screen.findByRole('heading', { level: 2, name: 'Fix the header' });
     expect(within(side).getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
     act(() => ask('workflow'));
 

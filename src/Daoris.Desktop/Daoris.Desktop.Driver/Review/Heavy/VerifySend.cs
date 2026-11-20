@@ -32,4 +32,7 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
 
     /// <summary>Whether the check runs the full set, every gate the accepted declaration names, as a one-scope ask's end does (<see cref="ScopeLanding"/>).</summary>
     public bool Full { get; init; }
+
+    /// <summary>The number of this send of the attempt (its first is 1), which its start and close marks carry; 0 where nothing counts sends.</summary>
+    public int Delivery { get; init; }
 }

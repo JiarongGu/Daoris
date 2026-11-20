@@ -230,6 +230,137 @@ public sealed class CheckPerformTests : IDisposable
         Assert.Equal(NodeStates.Active, Status().State);
     }
 
+    private string Folder(NodeAttempt attempt) => VerifyFiles.AttemptFolder(_home, CheckExecution.RunOf(Unit), attempt.Call.Invocation);
+
+    private void Began(NodeAttempt attempt, int send) =>
+        AttemptMarks.Write(AttemptMarks.Began(_home, CheckExecution.RunOf(Unit), attempt.Call.Invocation, send), send, _now);
+
+    private void Closed(NodeAttempt attempt, int send) =>
+        AttemptMarks.Write(AttemptMarks.Closed(_home, CheckExecution.RunOf(Unit), attempt.Call.Invocation, send), send, _now);
+
+    private async Task<WorkPerformed> LostAsync()
+    {
+        _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.NotStarted));
+        return Assert.Single(await Performer().ReconcileAsync(Declared, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_check_lost_to_a_restart_is_run_again_once_and_lost_again_is_held_with_its_log_s_tail()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Assert.Equal((2, 2), (_checks.Sent.Count, Attempt().Deliveries));
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Assert.Equal(3, _checks.Sent.Count);
+
+        Began(sent, 3);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Began(sent, 4);
+        var log = Path.Combine(Folder(sent), "gate-01-suite.log");
+        File.WriteAllText(log, string.Join('\n', Enumerable.Range(1, 40).Select(line => $"line {line}")) + "\n");
+        var held = await LostAsync();
+
+        Assert.Equal((PerformedWhat.Held, LostChecks.Code), (held.What, held.Code));
+        Assert.Equal(4, _checks.Sent.Count);
+        Assert.Equal((NodeStates.Unknown, AttemptStates.Held, LostChecks.Code), (Status().State, Attempt().State, Attempt().Code));
+        Assert.StartsWith($"line {40 - LostChecks.TailLines + 1}\n", Attempt().Tail);
+        Assert.EndsWith("line 40", Attempt().Tail);
+        Assert.Null(Attempt().Note);
+        Assert.Equal([HeldResolutions.Again, HeldResolutions.Stop], HeldResolutions.Of(Attempt()));
+        Assert.Equal(Attempt().Tail, Files.Read(Unit)!.Attempts.Single().Tail);
+    }
+
+    [Fact]
+    public async Task A_check_the_executor_ended_by_its_own_close_is_sent_again_each_time_and_never_held()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+
+        for (var send = 1; send <= 4; send++)
+        {
+            Began(sent, send);
+            Closed(sent, send);
+            Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        }
+
+        Assert.Equal((AttemptStates.Sent, 5), (Attempt().State, Attempt().Deliveries));
+        Assert.Equal(5, _checks.Sent.Count);
+    }
+
+    [Fact]
+    public async Task A_check_whose_process_vanished_with_no_word_of_why_is_held_at_its_second_such_loss_whatever_closed_between()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+
+        Began(sent, 1);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Began(sent, 2);
+        Closed(sent, 2);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Began(sent, 3);
+        var held = await LostAsync();
+
+        Assert.Equal((PerformedWhat.Held, LostChecks.Code), (held.What, held.Code));
+        Assert.Equal(3, _checks.Sent.Count);
+    }
+
+    [Fact]
+    public async Task A_rerun_cut_off_while_still_queued_is_sent_again_though_the_first_send_made_the_folder()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+
+        Began(sent, 1);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+
+        Assert.Equal((AttemptStates.Sent, 4), (Attempt().State, Attempt().Deliveries));
+    }
+
+    [Fact]
+    public async Task A_held_checks_run_again_stops_its_old_invocation_at_the_executor()
+    {
+        await StartAsync(Performer());
+        var sent = Attempt();
+        Began(sent, 1);
+        Began(sent, 2);
+        Assert.Equal(PerformedWhat.Redelivered, (await LostAsync()).What);
+        Assert.Equal(PerformedWhat.Held, (await LostAsync()).What);
+        _checks.Stopped.Clear();
+
+        var performer = Performer();
+        Assert.Equal(PerformedWhat.Worded, performer.Word(Unit, Check.Id, Attempt().Attempt, HeldResolutions.Again).What);
+        Assert.Equal(PerformedWhat.Resolved, Assert.Single(performer.Resolve(Declared)).What);
+        Assert.Equal([sent.Call.Invocation], _checks.Stopped);
+    }
+
+    [Fact]
+    public void A_tail_cut_inside_a_line_and_inside_a_character_starts_at_a_whole_line()
+    {
+        var run = CheckExecution.RunOf(Unit);
+        var folder = VerifyFiles.AttemptFolder(_home, run, "i-tail");
+        Directory.CreateDirectory(folder);
+
+        // 20000 bytes in one line, then three: the read starts inside the long line, which is dropped whole.
+        File.WriteAllText(Path.Combine(folder, "a.log"), new string('a', 20000) + "\nlast 1\nlast 2\nlast 3\n");
+        Assert.Equal("last 1\nlast 2\nlast 3", LostChecks.Tail(_home, Unit, "i-tail"));
+
+        File.Delete(Path.Combine(folder, "a.log"));
+        File.WriteAllText(Path.Combine(folder, "b.log"), new string('界', 7000) + "\nend\n");
+        Assert.Equal("end", LostChecks.Tail(_home, Unit, "i-tail"));
+
+        File.Delete(Path.Combine(folder, "b.log"));
+        File.WriteAllText(Path.Combine(folder, "c.log"), string.Concat(Enumerable.Repeat("😀", 3000)) + "y");
+        var tail = LostChecks.Tail(_home, Unit, "i-tail")!;
+        Assert.False(char.IsLowSurrogate(tail[0]));
+        Assert.True(tail.Length <= LostChecks.TailChars);
+        Assert.EndsWith("y", tail);
+    }
+
     [Fact]
     public async Task No_completion_is_heard_for_a_check()
     {

@@ -5,10 +5,11 @@ import '../../locales/i18n';
 import type { Quest } from '../../data/api';
 import type { SessionEvent } from '../conversation/conversationTypes';
 import { toTurns } from '../conversation/conversation';
-import { ConversationView } from '../conversation/ConversationView';
-import { lineRowsOf, rowsWithin } from './rows';
+import { storyOf } from '../session/story';
+import { StoryStream } from '../session/StoryStream';
+import { type LineRow as LineRowData, lineRowsOf } from './rows';
 import { CHANNEL_WORDS, HELPER, OPINION, PIECE, at } from './rows.fixtures';
-import { LineRows, type LineRowsProps } from './LineRows';
+import { LineRow, type LineRowHome } from './LineRows';
 
 // A session of two turns whose line asked a helper, had its work read by a reviewer and took a message on its channel: all three
 // read in its one timeline, each where it fell.
@@ -20,19 +21,19 @@ const SESSION: SessionEvent[] = [
   { seq: 4, at: at(8), kind: 'message', id: 'm-b', text: 'Done; the reviewer read it.' },
 ];
 
-const draw = (over: Partial<LineRowsProps> = {}, exchanges = [HELPER, OPINION]) => {
+const draw = (over: Partial<LineRowHome> = {}, exchanges = [HELPER, OPINION]) => {
   const rows = lineRowsOf({ exchanges, messages: CHANNEL_WORDS });
-  const props: LineRowsProps = { rows: [], attended: 's1', docked: [], onToDock: vi.fn(), ...over };
+  const home: LineRowHome = { attended: 's1', docked: [], onToDock: vi.fn(), ...over };
   render(
     <Tooltip.Provider>
-      <ConversationView
-        turns={toTurns(SESSION).turns}
-        beneath={(ask, until, first) => <LineRows {...props} rows={rowsWithin(rows, first ? undefined : ask.at, until)} />}
+      <StoryStream
+        story={storyOf({ turns: toTurns(SESSION).turns, steps: [], exchanges: [], rows })} actor={{ maker: 'Claude', model: null }} home={home}
       />
     </Tooltip.Provider>,
   );
-  return props;
+  return home;
 };
+const listed = (rows: LineRowData[], home: LineRowHome) => render(<>{rows.map((row) => <LineRow key={row.key} row={row} {...home} />)}</>);
 
 const rowOf = (id: string, side: 'asked' | 'back') => document.querySelector<HTMLElement>(`[data-exchange-row="${id}"][data-side="${side}"]`)!;
 
@@ -49,15 +50,10 @@ describe("a line's helper, second opinion and channel message in its one timelin
     expect(message.textContent).toContain('The schema moved');
 
     // The helper's asking falls in the first turn; its answer, the message and the opinion in the second.
-    const [first, second] = [...document.querySelectorAll('[data-exchange-row], [data-channel-row]')].reduce<Element[][]>((turns, row) => {
-      const turn = row.closest('ol')!.parentElement!;
-      const index = turns.findIndex((each) => each[0]!.closest('ol')!.parentElement === turn);
-      if (index < 0) turns.push([row]); else turns[index]!.push(row);
-      return turns;
-    }, []);
-    expect(first!.map((row) => row.getAttribute('data-exchange-row') ?? row.getAttribute('data-channel-row'))).toEqual(['helper:h1']);
-    expect(second!.map((row) => row.getAttribute('data-exchange-row') ?? row.getAttribute('data-channel-row')))
-      .toEqual(['m1', 'helper:h1', 'opinion:o1', 'opinion:o1']);
+    const order = [...document.querySelectorAll('[data-part="owner"], [data-exchange-row], [data-channel-row]')]
+      .map((row) => row.getAttribute('data-exchange-row') ?? row.getAttribute('data-channel-row') ?? 'turn');
+    expect(order.slice(0, 3)).toEqual(['turn', 'helper:h1', 'turn']);
+    expect([...order.slice(3)].sort()).toEqual(['helper:h1', 'm1', 'opinion:o1', 'opinion:o1']);
   });
 
   it('opens the session that took a request up: a piece its own, a reviewer its own', () => {
@@ -73,7 +69,7 @@ describe("a line's helper, second opinion and channel message in its one timelin
     const onPost = vi.fn();
     const onForward = vi.fn();
     const rows = lineRowsOf({ messages: [{ ...CHANNEL_WORDS[0]!, receipts: [{ repository: 'web', state: 'waiting' }] }] });
-    render(<LineRows rows={rows} attended="s1" docked={[]} onToDock={vi.fn()} channel={{ onPost, onForward }} />);
+    listed(rows, { attended: 's1', docked: [], onToDock: vi.fn(), channel: { onPost, onForward } });
     const row = document.querySelector<HTMLElement>('[data-channel-row="m1"]')!;
 
     fireEvent.click(within(row).getByRole('button', { name: 'Reply' }));
@@ -90,7 +86,7 @@ describe('a line that resumed after a question came back', () => {
   it('says so where it resumed and opens the quest that was answered', () => {
     const onOpenQuest = vi.fn();
     const question = { id: 'q9', to: 'docs', status: 'Done', filed: at(1), updated: at(7) } as Quest;
-    render(<LineRows rows={lineRowsOf({ resumedAfter: question })} attended="s1" docked={[]} onToDock={vi.fn()} onOpenQuest={onOpenQuest} />);
+    listed(lineRowsOf({ resumedAfter: question }), { attended: 's1', docked: [], onToDock: vi.fn(), onOpenQuest });
     const row = document.querySelector<HTMLElement>('[data-exchange-row="resumed:q9"]')!;
     expect(row.textContent).toContain('Resumed after #q9 came back');
     fireEvent.click(within(row).getByRole('button', { name: 'Open the quest' }));

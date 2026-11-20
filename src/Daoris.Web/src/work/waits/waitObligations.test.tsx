@@ -5,7 +5,7 @@ import type { GoAhead, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { bellCount, needsListed, obligationOf, placeCounts } from '../attention/attention';
 import type { PushedAttention } from '../attention/attentionPushed';
-import { WaitStrip } from './WaitStrip';
+import { SessionDock } from '../session/SessionDock';
 import { waitObligation, waitObligations } from './waitObligations';
 import { type Wait, waitsOf } from './waits';
 
@@ -34,11 +34,8 @@ const RULE: RuleProposal = {
 const pushed = (kind: PushedAttention['kind'], id: string, over: Partial<PushedAttention> = {}): PushedAttention =>
   ({ kind, id, since: AT, session: 's1a2b3c4', ...over });
 
-/** The foot's count, read from its region's name: one wait is said with no number. */
-const footCount = () => {
-  const name = screen.getByRole('region', { name: /waiting on you|等你处理/i }).getAttribute('aria-label') ?? '';
-  return Number(/^(\d+)/.exec(name)?.[1] ?? 1);
-};
+/** The dock's count, read from its heading. */
+const dockCount = () => Number(/(\d+)$/.exec(document.querySelector('[data-dock-count]')?.textContent ?? '')?.[1] ?? 0);
 
 /** Every place's count of the rows: *Notifications*' list, the bell with no press, and the places' sum. */
 const counted = (rows: PushedAttention[]) => ({
@@ -47,7 +44,7 @@ const counted = (rows: PushedAttention[]) => ({
   places: Object.values(placeCounts(rows)).reduce((sum, each) => sum + each, 0),
 });
 
-describe('COMMS1j each wait of a session is the obligation What needs you keys it by', () => {
+describe('each wait of a session is the obligation What needs you keys it by', () => {
   it('keys every kind of wait as the row .NET pushes for it', () => {
     const on = { session: 's1a2b3c4', ask: '7c1e9a04b2d5', quest: '7a82cc' };
     const pairs: [Wait, PushedAttention][] = [
@@ -94,31 +91,31 @@ describe('COMMS1j each wait of a session is the obligation What needs you keys i
   });
 });
 
-describe('COMMS1j one wait counted once on the foot, the bell and Notifications', () => {
+describe('one wait counted once on the dock, the bell and Notifications', () => {
   it('says one wait where a park waits on the go-ahead it asked, as the bell and What needs you count it', () => {
     render(
-      <WaitStrip
+      <SessionDock
         session={session()} onResolve={vi.fn()} goAheads={[goAhead(1, 'approved'), goAhead(2, 'asked')]} goAheadsOn="7c1e9a04b2d5"
-        onGoAhead={vi.fn()}      />,
+        onGoAhead={vi.fn()}
+      />,
     );
     // .NET pushes the go-ahead's row alone: the park waits on it.
     const rows = [pushed('go-ahead', '7c1e9a04b2d5#2', { obligation: 'go-ahead:7c1e9a04b2d5/2' })];
-    expect(screen.getByRole('region', { name: 'Waiting on you' })).toBeInTheDocument();
-    expect(footCount()).toBe(1);
+    expect(dockCount()).toBe(1);
     expect(counted(rows)).toEqual({ listed: 1, bell: 1, places: 1 });
   });
 
   it('says two where the park and a rule it proposed wait, as the bell and What needs you count them, in Chinese too', async () => {
     const rows = [pushed('parked', 's1a2b3c4'), pushed('rule', 'r1')];
-    const strip = <WaitStrip session={session()} onResolve={vi.fn()} rules={{ proposals: [RULE], onAnswer: vi.fn() }} />;
-    render(strip);
-    expect(screen.getByRole('region', { name: '2 waiting on you' })).toBeInTheDocument();
+    const dock = <SessionDock session={session()} onResolve={vi.fn()} rules={{ proposals: [RULE], onAnswer: vi.fn() }} />;
+    render(dock);
+    expect(dockCount()).toBe(2);
     expect(counted(rows)).toEqual({ listed: 2, bell: 2, places: 2 });
     cleanup();
 
     await i18n.changeLanguage('zh');
-    render(strip);
-    expect(screen.getByRole('region', { name: '2 项等你处理' })).toBeInTheDocument();
-    expect(footCount()).toBe(counted(rows).bell);
+    render(dock);
+    expect(screen.getByText('等你处理 2')).toBeInTheDocument();
+    expect(dockCount()).toBe(counted(rows).bell);
   });
 });

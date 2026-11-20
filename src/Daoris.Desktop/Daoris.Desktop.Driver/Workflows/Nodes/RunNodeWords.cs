@@ -208,6 +208,13 @@ public static class RunNodeWords
                 }
             }
 
+            // A check not known is asked again on its attempt, as its held Run again: the table moves no unknown on the person's word.
+            if (act == NodeWordActs.Again && UnknownChecks.Takes(declared, status))
+            {
+                var (again, notAgain) = UnknownChecks.Again(record, status, now);
+                return again is null ? (null, Refuse(notAgain!) with { State = status.State }) : Kept(word, _ => again, new NodeWorded(run, node, act, null));
+            }
+
             if (act == NodeWordActs.Again && PluginFailureHeld.Of(record, declared, status) is { Words.Count: > 0 }) return (null, Refuse(HeldAgain) with { State = status.State });
             if (act == NodeWordActs.DoneOutside)
             {
@@ -464,6 +471,9 @@ public static class RunNodeWords
             $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to pass over.",
         (NodeRefusal.NotInTable, NodeWordActs.Again) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, not failed, so there is nothing to try again.",
         (NodeRefusal.NotInTable, _) => $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, so there is nothing to stop.",
+        (NodeRefusal.NotCause, _) =>
+            $"workflow: `{done.Node}` on run {done.Run} is {done.State} now, and only Daoris moves it from there, not your {done.Act}: "
+            + "`daoris workflow run` says what it waits for and what you may say of it.",
         (var code, _) => $"workflow: your {done.Act} of `{done.Node}` on run {done.Run} was not kept ({code}).",
     };
 

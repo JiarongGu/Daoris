@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Quest, Session } from '../../data/api';
 import { useLineChannel, usePostLineChannel } from '../../bridge/sessions/asks';
 import type { useSessionAtWork } from '../../bridge/sessions/atWork';
@@ -9,13 +9,15 @@ import type { OpinionGate } from '../gates/opinion';
 import { relationsOf } from '../head/relations';
 import type { useAttendedRecord } from '../head/useAttendedRecord';
 import type { HelperAskRow } from '../waits/HelperAsks';
-import { LineRows } from './LineRows';
-import { lineRowsOf, rowsWithin } from './rows';
+import type { LineRowHome } from './LineRows';
+import { type LineRow, lineRowsOf } from './rows';
+
+export type LineRowsRead = { rows: LineRow[]; home: LineRowHome };
 
 /**
- * The organism of a line's rows: the requests of the attended session's line, each way (`AtWorkA.exchanges`), the quests its session
- * published and the one that published its own (`relationsOf`), its ask's channel kept to its line of work or, on no ask held here,
- * its own channel, and the presses each row makes; answered as the `beneath` its conversation draws between its turns.
+ * The organism of a line's rows, oldest first: the requests of the attended session's line, each way (`AtWorkA.exchanges`), the
+ * quests its session published and the one that published its own (`relationsOf`), its ask's channel kept to its line of work or,
+ * on no ask held here, its own channel, and what each row's presses reach.
  */
 export function useLineRows({
   session, quest, quests, sessions, atWork, helperAsks, channelAsk, only, record, docked, opinion, onToDock, onOpenSession, onOpenQuest, nameOf,
@@ -39,7 +41,7 @@ export function useLineRows({
   onOpenSession: (session: string) => void;
   onOpenQuest?: (quest: string) => void;
   nameOf: (agent: string) => string;
-}): ((ask: { at?: string }, until: string | undefined, first: boolean) => ReactNode) | undefined {
+}): LineRowsRead | undefined {
   // A line on no ask held here has a channel of its own, read for its rows.
   const lineChannel = useLineChannel(channelAsk || !session ? null : session.id);
   const postLine = usePostLineChannel();
@@ -77,17 +79,11 @@ export function useLineRows({
     }
   }
 
-  return (ask, until, first) => (
-    <LineRows
-      rows={rowsWithin(rows, first ? undefined : ask.at, until)}
-      attended={session!.id}
-      docked={docked}
-      onToDock={onToDock}
-      onOpenSession={onOpenSession}
-      onOpenQuest={onOpenQuest}
-      nameOf={nameOf}
-      findings={findings}
-      channel={messages ? { onPost, onForward } : undefined}
-    />
-  );
+  return {
+    rows,
+    home: {
+      attended: session.id, docked, onToDock, onOpenSession, onOpenQuest, nameOf, findings,
+      channel: messages ? { onPost, onForward } : undefined,
+    },
+  };
 }

@@ -317,7 +317,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check that came back unknown with the code `unrun` (Daoris could not run it) settles with no verdict and is asked again as a new
-    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
+    attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass; its spent asks hold the step for the person.
+    A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
+    same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
+    that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
+    that closed, is sent again each time and counts for nothing; the second send lost with a start mark and no close mark is held for the
+    person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
+    the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
+    never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
+    slots are its process's and went with it. A plugin's outcome sent again for a settled attempt under another plugin id (a rename since) is a replay, not a
     counted refusal. A word names its author; a second on a node is
     refused `worded`, but the person's replaces a supervisor's pending one, and a supervisor's on a lapsed attempt or a dead
     decision is dropped `stale`. The Accept names its review record by attempt and revision, or binds the one standing, and is
@@ -560,7 +568,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 40. A verification pipeline's `check` is Daoris's, off the pass under the heavy slots, with no agent session, never skipped; a gate
     that would not start makes it unknown, named. Where the landed route names a pipeline with accepted gates, each whole look binds
     a line run, based on the line's newest verdict, once the tip passed it and none is in flight. A run holds the line until every
-    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt; *Not now* settles an unknown with
+    check reached, failed or was stopped, is never superseded, and keeps its files until a newer run has a verdict. *Run again* is a new attempt,
+    and the run's `again` on a check not known is that word (`daoris workflow again <run> <check>`, `UnknownChecks`: kept on its current
+    attempt, which is held with it where Daoris still asked after it), named on the run's terminal line beside its stop; a not-known check
+    says it holds nothing as passed, never that Daoris asks after it; *Not now* settles an unknown with
     no verdict, or a failure's held row. *Ask for a fix…* publishes one ask per failed gate with its last 256 KiB, never twice;
     `failed: ask`, only in a version the person saved, asks at each look, `wait` waits for the press, `stop` asks nothing.
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
@@ -722,11 +733,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and *After the Accept*; a newer revision is a banner naming the outputs that moved, never swapped in. A folder's file is drawn at
     the record's hash, or from the place only while it still hashes so, else refused `moved`; a Markdown file opens on its changes,
     rendered one press away. *Viewed* marks stay on this machine by path and content. Accepting, sending back and stopping a run are
-    the **Accept card**'s alone (`ReviewCard`), under the session's conversation, bound to the attempt and revision it draws: a newer
+    the **Accept card**'s alone (`ReviewCard`), under the session panel's story (`ReviewCards`), bound to the attempt and revision it draws: a newer
     revision supersedes it and appends a new card, and a stale press is said `moved`. A session's own changes (`DiffPane`) keep the
-    tree's discard and draw no Accept; the head, the strip and an entry's part draw an outputs door, *What needs you* and the run view
-    open the outputs by run (their presses read *Open outputs*, 打开产出), and the head's *To the Accept card* leads to the newest card
-    drawn in the conversation (`seekReviewCard`), offered, as the head's *next: Accept…* is, only once the run's review has begun and
+    tree's discard and draw no Accept; the dock's work card and an entry's part draw an outputs door, *What needs you* and the run view
+    open the outputs by run (their presses read *Open outputs*, 打开产出), and the work card's *To the Accept card* leads to the newest card
+    drawn under the story (`seekReviewCard`), offered, as its *next: Accept…* is, only once the run's review has begun and
     its card is drawn (`landingStands`, the landing's `accept` with its attempt); the one press left outside the card is the ask-level *Accept the ask's parts…* in Sessions' list by ask.
 58. A landing's replay settles the declared backlog by its rows' ids: a row one side changed takes that side, one changed alike is
     kept once, any other is left for a person with both texts, and a result losing a side's words or covering an id twice is

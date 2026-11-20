@@ -39,7 +39,8 @@ import { stateLineOf, stateLineSaid } from './stateLine';
 import type { HeadLink } from './headRows';
 import type { AskOrigin } from './startedFrom';
 import { RenameAsk } from './RenameAsk';
-import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
+import { DeleteAsk, StopAsk } from './EndAsks';
+import { HeadActs } from './HeadActs';
 import type { StepWaitRow } from '../attention/attentionPushed';
 import { stepHolder } from '../attention/taskRead';
 import { RunTrack } from '../track/RunTrack';
@@ -294,27 +295,7 @@ export function useAttendedHead({
       onFlowchart={() => onFlowchart?.()}
     />
   );
-  const pageHead = attended && attendedFacts && attendedShown && headFactsOf && (
-    <SessionPageHead
-      session={attended}
-      title={attendedTitle}
-      shown={attendedShown}
-      track={track}
-      state={stateLine ? {
-        line: stateLine,
-        said: stateLineSaid(t, stateLine),
-        onWait: oldest ? () => goToWait(oldest) : undefined,
-      } : null}
-      line={attendedLine ? { said: lineWords(t, attendedLine), onOpen: attend && (() => attend(attendedLine.by)) } : null}
-      facts={sessionFacts(t, headFactsOf)}
-      // The line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
-      factsTip={sessionFactsTip(t, headFactsOf)}
-      chip={supervisionChip(t, supervision)}
-      acts={headActs}
-      primary={headPrimary}
-      busy={actions.busy}
-      onAct={(act) => actions.run(act, attendedFacts)}
-      asking={stopAsking === attended.id && live && asked ? (
+  const asking = attended && attendedFacts && (stopAsking === attended.id && live && asked ? (
         <StopAsk
           // Keyed by the session: an ask open on one session, with its wait or its refusal, is never another's.
           key={attended.id}
@@ -405,9 +386,22 @@ export function useAttendedHead({
           }}
           onDismiss={() => setOfferDismissed((was) => new Set(was).add(attended.id))}
         />
-      ) : null}
-    />
-  );
+      ) : null);
+  const panelHead = attended && attendedFacts && attendedShown && headFactsOf ? {
+    line: stateLine,
+    said: stateLine ? stateLineSaid(t, stateLine) : null,
+    onWait: oldest ? () => goToWait(oldest) : undefined,
+    title: attendedTitle,
+    acts: headActs.length > 0
+      ? <HeadActs session={attended} acts={headActs} primary={headPrimary} busy={actions.busy} onAct={(act) => actions.run(act, attendedFacts)} />
+      : null,
+    asking,
+    lineOf: attendedLine ? { said: lineWords(t, attendedLine), onOpen: attend && (() => attend(attendedLine.by)) } : null,
+    facts: sessionFacts(t, headFactsOf),
+    factsTip: sessionFactsTip(t, headFactsOf),
+    chip: supervisionChip(t, supervision),
+    track,
+  } : null;
 
-  return { setChatHeld, limitLine, headLink, continues, helps, originAsk, pageMenu, pageHead };
+  return { setChatHeld, limitLine, headLink, continues, helps, originAsk, pageMenu, panelHead };
 }
