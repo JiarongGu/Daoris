@@ -118,6 +118,28 @@ public sealed class HomeStraysTests : IDisposable
     }
 
     [Fact]
+    public void A_bare_daoris_home_is_routed_to_the_listing_not_to_the_usage_and_lists_the_stray()
+    {
+        Put("data/old/thing.bin", 2048);
+
+        var route = CommandTree.Route(["home"]);
+
+        Assert.Equal(TreeRouteKind.Run, route.Kind);
+        var code = HomePurgeCommand.Run([.. route.Words.Skip(1)], _home, () => default, null, null, out var said);
+        Assert.Equal(0, code);
+        Assert.Contains("Not in the table: 1 paths", said);
+        Assert.Contains("data/old", said);
+        Assert.DoesNotContain("usage:", said);
+        Assert.True(File.Exists(Path.Combine(_home, "data", "old", "thing.bin")), "the listing changes nothing");
+    }
+
+    [Fact]
+    public void A_bare_daoris_home_is_routed_with_no_group_word_left_over()
+    {
+        Assert.Equal(["home"], CommandTree.Route(["home"]).Words);
+    }
+
+    [Fact]
     public void A_home_with_none_says_so()
     {
         Put("data/driver.json", 1);

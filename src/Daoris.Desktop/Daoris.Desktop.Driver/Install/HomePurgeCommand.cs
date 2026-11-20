@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// or a purge stopped, said with what moved · 2 a word it does not answer.</para>
 /// </remarks>
 // The group's other verb, `account-ids`, is AccountIdsCommand's, which the host hands its words before these.
-[CommandGroup("home", "purge", "account-ids")]
+[CommandGroup("home", "purge", "account-ids", Bare = true)]
 public static class HomePurgeCommand
 {
     public const string Usage =
