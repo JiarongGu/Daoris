@@ -30,8 +30,6 @@ internal sealed class TaskNode : BuiltInNode, IObserves, IPressed, IWaitsOnRole
 
     public override IReadOnlyList<NodeOptionField> Options { get; } = [NodeOptionFields.Names(TaskEvidence.Option), NodeOptionFields.Text("act")];
 
-    public override string? Problem(NodeDeclaration node) => RiskStepHolds.BadAct(node) is null ? null : "act";
-
     /// <summary>Its outcomes are a task's, an approval's or a decision's own; one declaring none is a task reached with no outcome.</summary>
     public override bool TakesOutcomes(IReadOnlyList<string> outcomes) =>
         outcomes.SequenceEqual(Task) || outcomes.SequenceEqual(Approval) || TaskDecisions.Takes(outcomes);

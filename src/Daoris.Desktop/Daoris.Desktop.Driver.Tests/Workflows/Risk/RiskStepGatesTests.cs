@@ -106,6 +106,20 @@ public sealed class RiskStepGatesTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_stored_version_whose_task_act_names_no_act_still_reads_and_its_approval_waits_on_the_owner()
+    {
+        var stored = Signed(""","options":{"act":"whatever"}""");
+        Assert.Empty(NodeGraphs.ReadSaved(stored).Problems);
+
+        OnBranch(stored);
+        await RunPassAsync(Runtime(), Seed);
+
+        Assert.Equal(NodeStates.Active, RunStatus("sign").State);
+        var held = new StepTenureFiles(_home, () => true).Current(RunUnit, "sign", RunStatus("sign").Attempt);
+        Assert.Equal((CastHolders.Person, TenureWhy.Marked), (held?.Holder, held?.Why));
+    }
+
+    [Fact]
     public async Task At_a_place_marked_for_production_releases_an_approvers_approval_waits_on_the_owner_with_nothing_configured()
     {
         OnBranch(Signed());
@@ -237,15 +251,18 @@ public sealed class RiskStepGatesTests : NodeRunFixture
     [InlineData("\"task.approve/x\"")]
     [InlineData("5")]
     [InlineData("[\"release.start/production\"]")]
-    public void An_act_option_that_names_no_act_of_the_census_is_refused_in_the_graph_and_judged_owner_at_runtime(string written)
+    public void An_act_option_that_names_no_act_of_the_census_is_refused_on_a_save_alone_and_judged_owner_at_runtime(string written)
     {
         var node = new NodeDeclaration("sign", NodeKinds.Task, 1, NodeReach.Pressed)
         {
             Outcomes = ["approved"], Role = StepRoles.Approver, Options = new Dictionary<string, string> { ["act"] = written },
         };
         var judge = RiskStepGates.At(DriverConfig.Parse("""{"risk":{}}"""), null, "engine");
+        var graph = NodeGraphs.Read(Signed(",\"options\":{\"act\":" + System.Text.Json.JsonSerializer.Serialize(written) + "}")).Graph!;
 
-        Assert.Equal("act", NodeDeclarations.Problem(node));
+        Assert.Null(NodeDeclarations.Problem(node));
+        Assert.Contains(NodeGraphs.Problems(graph), problem => problem.Node == "sign" && problem.Words.Contains("`act`", StringComparison.Ordinal));
+        Assert.DoesNotContain(NodeGraphs.Problems(graph, onSave: false), problem => problem.Node == "sign");
         var verdict = RiskStepGates.Verdict(node, PersonWaits.Approval, judge);
         Assert.Equal(RiskVerdict.OwnerOutcome, verdict?.Outcome);
         Assert.Contains("names no act of the census", verdict?.Reason, StringComparison.Ordinal);
