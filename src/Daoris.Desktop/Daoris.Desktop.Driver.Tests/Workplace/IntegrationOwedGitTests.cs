@@ -118,11 +118,38 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
 
         var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, byMode, CancellationToken.None);
 
-        Assert.Equal("engine's checks changed on main: added `comments`; they run from now on.", said);
+        Assert.Equal("engine's checks changed on main: added `comments`; they run from now on (full access: taken without asking).", said);
         Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
         var restricted = Choices(first);
         Assert.Single(owed.Under(restricted));
         Assert.Empty(owed.ByMode(restricted));
+    }
+
+    [Fact]
+    public async Task A_landed_command_change_under_unrestricted_permissions_is_accepted_without_a_row_and_under_asking_waits()
+    {
+        const string Command = """{ "gates": [ { "name": "build", "run": "dotnet build -c Release" } ], "integration": { "by": "daoris" } }""";
+        var first = await CommitAsync(Build);
+        var second = await CommitAsync(Command);
+        var unrestricted = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] });
+        var asking = Choices(first).WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Asking)] });
+        var configPath = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(unrestricted, Registry, _now, CancellationToken.None);
+
+        Assert.Equal(IntegrationAcceptance.Changed, Assert.Single(owed.Under(asking)).State);
+        Assert.Empty(owed.ByMode(asking));
+        Assert.Empty(owed.Under(unrestricted));
+        var taken = Assert.Single(owed.ByMode(unrestricted));
+
+        asking.Save(configPath);
+        Assert.Null(await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, taken, CancellationToken.None));
+        Assert.Equal(first, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
+
+        unrestricted.Save(configPath);
+        var said = await DeclarationAcceptance.AcceptByModeAsync(_home, configPath, taken, CancellationToken.None);
+        Assert.Equal("engine's checks changed on main: changed `build`; they run from now on (full access: taken without asking).", said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(configPath), "engine"));
     }
 
     [Fact]

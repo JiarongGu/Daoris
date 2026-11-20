@@ -182,16 +182,39 @@ public sealed class CheckPerformTests : IDisposable
         var path = VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), invocation);
         (Result(VerifyVerdicts.Unknown, invocation) with { Accepted = Held }).Write(path);
 
-        Assert.Empty(ChangedChecks.Again(Files, _ => Held, _now));
+        Assert.Empty(ChangedChecks.Again(Files, _ => new ChecksStanding(Held, true), _now));
+        Assert.Empty(ChangedChecks.Again(Files, _ => new ChecksStanding(null, true), _now));
         Assert.Empty(ChangedChecks.Again(Files, _ => null, _now));
         Assert.Null(Attempt().Resolution);
 
-        var again = Assert.Single(ChangedChecks.Again(Files, _ => Newer, _now));
+        var again = Assert.Single(ChangedChecks.Again(Files, _ => new ChecksStanding(Newer, true), _now));
         Assert.Equal((Unit, Check.Id, PerformedWhat.Worded), (again.Unit, again.Node, again.What));
         Assert.Equal(HeldResolutions.Again, Attempt().Resolution);
-        Assert.Empty(ChangedChecks.Again(Files, _ => Newer, _now));
+        Assert.Empty(ChangedChecks.Again(Files, _ => new ChecksStanding(Newer, true), _now));
         performer.Resolve(Declared);
 
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
+    }
+
+    [Fact]
+    public async Task A_check_held_for_a_changed_declaration_is_run_again_by_itself_once_its_repository_takes_full_access()
+    {
+        const string Held = "1111111111111111111111111111111111111111";
+        var performer = Performer();
+        await StartAsync(performer);
+        var invocation = Attempt().Call.Invocation;
+        _checks.Answers.Add(invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation));
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        (Result(VerifyVerdicts.Unknown, invocation) with { Accepted = Held }).Write(VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), invocation));
+        Assert.Empty(ChangedChecks.Again(Files, _ => new ChecksStanding(Held, true), _now));
+        Assert.Empty(ChangedChecks.Again(Files, _ => new ChecksStanding(null, false), _now));
+
+        var again = Assert.Single(ChangedChecks.Again(Files, _ => new ChecksStanding(Held, false), _now));
+
+        Assert.Equal((Unit, Check.Id, PerformedWhat.Worded), (again.Unit, again.Node, again.What));
+        Assert.Equal(HeldResolutions.Again, Attempt().Resolution);
+        performer.Resolve(Declared);
         Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Attempt().State));
     }
 
@@ -206,7 +229,7 @@ public sealed class CheckPerformTests : IDisposable
         await performer.ReconcileAsync(Declared, CancellationToken.None);
         Result(VerifyVerdicts.Unknown, invocation).Write(VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), invocation));
 
-        Assert.Single(ChangedChecks.Again(Files, _ => "3333333333333333333333333333333333333333", _now));
+        Assert.Single(ChangedChecks.Again(Files, _ => new ChecksStanding("3333333333333333333333333333333333333333", true), _now));
         Assert.Equal(HeldResolutions.Again, Attempt().Resolution);
     }
 
