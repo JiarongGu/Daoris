@@ -22,7 +22,8 @@ public static class HomePurgeCommand
 {
     public const string Usage =
         "usage: daoris home purge --history --plan     what a purge would move out of the home, with sizes and counts\n"
-        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays";
+        + "       daoris home purge --history --yes      move the home's history into purged/<UTC stamp>/ in the install; configuration stays\n"
+        + "       daoris home                            the paths no entry of the home's table names, with sizes (Not in the table)";
 
     /// <param name="args">The words after <c>home</c>.</param>
     /// <param name="home">The Daoris home.</param>
@@ -44,6 +45,12 @@ public static class HomePurgeCommand
     private static int Run(
         string[] args, string home, Func<DateTimeOffset> clock, MachineLog? log, string? session, string? knowledgeDb, StringBuilder output)
     {
+        if (args.Length == 0)
+        {
+            Strays(home, output);
+            return 0;
+        }
+
         if (args is not ["purge", .. var words] || !words.Contains("--history") || words.Any(word => word is not ("--history" or "--plan" or "--yes"))
             || words.Contains("--plan") == words.Contains("--yes"))
         {
@@ -122,6 +129,25 @@ public static class HomePurgeCommand
         foreach (var path in plan.Paths) output.AppendLine($"  move  {path.Relative}  {Size(path.Bytes)}, {path.Files} files");
         foreach (var table in plan.Tables) output.AppendLine($"  empty {table.Relative} {table.Table}  {table.Rows} rows");
         output.AppendLine("  `daoris home purge --history --yes` does it, once Daoris is closed.");
+    }
+
+    /// <summary>The section <i>Not in the table</i>: each path no entry names, with its size, or that there is none.</summary>
+    private static void Strays(string home, StringBuilder output)
+    {
+        var strays = HomeStrays.Read(home, WiringBudget.Default, sizeEntries: true);
+        var totals = strays.Walked.Where(path => path.Entry is not null).GroupBy(path => path.Entry!)
+            .Select(group => (Entry: group.Key, Bytes: group.Sum(path => path.Bytes))).OrderByDescending(total => total.Bytes).ToList();
+        output.AppendLine($"Entries: {totals.Count} of the table hold something{(strays.Partial is null ? "" : " (counted in part)")}:");
+        foreach (var (entry, bytes) in totals) output.AppendLine($"  {entry}  {Size(bytes)}");
+        if (strays.Paths.Count == 0)
+        {
+            output.AppendLine("Not in the table: nothing. Every path under the home is an entry's.");
+            return;
+        }
+
+        output.AppendLine(
+            $"Not in the table: {strays.Paths.Count} paths ({Size(strays.Bytes)}{(strays.Partial is null ? "" : ", counted in part")}) that no entry names, so no reader finds them:");
+        foreach (var stray in strays.Paths) output.AppendLine($"  {stray.Path}  {Size(stray.Bytes)}");
     }
 
     private static string Size(long bytes) => ByteSizes.Said(bytes);

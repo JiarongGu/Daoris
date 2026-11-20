@@ -93,7 +93,6 @@ Gap patterns (the owner, 2026-11-16: a discrepancy found is a pattern; each row 
 
 ## Install, home and update
 
-- [ ] **HOMEORPHAN1 — the home names every file in a place no entry names, and an old reader cannot go while the install holds files there** (driver, cli; 2026-11-20): NOCOMPAT2 (1f5aa03e71) removed the old-place reader while the install kept three accounts' homes at `data/harnesses/claude-code/<id>`, and they vanished from Daoris until the steward moved them (FIX-LOG 2026-11-20). At start and in `daoris home`, list the paths under the home that no `DaorisHome` entry names, with their size, in the machine log and the window's Disk space; a change that drops a place from the table carries a one-time move of what the install holds there (or refuses until it is moved). Sweep the install now for other such files. Proof: a fixture home with a file at a dropped place is named; the dropped place's move runs once.
 
 
 ## Driving

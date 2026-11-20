@@ -89,6 +89,8 @@ internal static class DriveUsageRecords
               clear would take, and what it keeps and why.
           history clear --workspace <name> [--yes]
               list what clearing a workspace's finished history would take and keep; with --yes, clear it.
+          home
+              the paths under the home that no entry of the home's table names, with their sizes; changes nothing.
           home purge --history --plan | --yes
               a home's history (sessions, quests, asks, runs, notices and the records of work done) moved into
               purged/<UTC stamp>/ beside the install, its configuration kept; --plan lists every path and table it

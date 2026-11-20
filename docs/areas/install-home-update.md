@@ -251,6 +251,15 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 54. What is history and what is configuration is `HomeHistory`'s lists, one side or the other for every `HomeEntry` and every table
     of the desktop store and the service store (`HomePurgeTests` and `HomePurgeProcessTests` fail a new one named on neither), and the
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
+55. The home names every path in it. `HomeStrays` walks the Daoris folder down the folders an entry's place passes through, bounded and
+    never into a junction, and names each path no `HomeEntry` matches (an entry's pattern covers its children; the install's `app/`,
+    marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), `daoris home` lists them
+    under *Not in the table* after each entry's total size, and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
+    entry it falls under, none for a stray, for any reader of sizes per entry; Disk space shows them (`strays` of `SYSTEM_SPACE`, kept five minutes). A reader of an older place is
+    not kept for the files an install holds there (51): the table's place that goes is moved in `home-places.json`
+    (`test/fixtures`) from `places` to `dropped` with its declared one-time move, and `home-census.test.ts` refuses a place gone with no
+    move, and a place in the table not recorded. The move is run by the steward on the install, never by a build at a start.
+    (from HOMEORPHAN1, FIX-LOG 2026-11-20)
 
 | Kind | History (moved or emptied) | Configuration (stays) |
 |---|---|---|

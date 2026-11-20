@@ -542,6 +542,19 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
           </div>
         </SettingRow>
       ))}
+      {space.strays && space.strays.paths.length > 0 && (
+        <SettingRow label={t('settings.daoris.space.strays.label')} control={<span className="text-small text-ink-soft">{size(space.strays.paths.reduce((sum, stray) => sum + stray.bytes, 0))}</span>}>
+          <div className="grid gap-1">
+            <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.strays.hint')}</p>
+            <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-soft" data-strays>
+              {space.strays.paths.map((stray) => (
+                <li key={stray.path} className="flex flex-wrap gap-x-2"><code>{stray.path}</code><span>{size(stray.bytes)}</span></li>
+              ))}
+            </ul>
+            {space.strays.partial && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.space.strays.partial')}</p>}
+          </div>
+        </SettingRow>
+      )}
     </WiringCard>
   );
 }
