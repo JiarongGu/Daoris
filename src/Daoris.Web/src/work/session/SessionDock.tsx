@@ -23,7 +23,6 @@ export function SessionDock({ answerBelow = false, workAsk, ruleAsk, seek, runWa
   seek?: Seek | null;
   runWaits?: RunWaitDoors | null;
   quest?: Quest | null;
-  /** What the conversation told of what runs beside the session: names a subagent's wait and opens its focus. */
   beside?: BandTold | null;
   /** Who asks, as the head names the session's agent; its role alone where the page knows no more. */
   asker?: Asker;
