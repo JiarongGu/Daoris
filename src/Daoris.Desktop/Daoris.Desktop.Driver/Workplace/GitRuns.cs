@@ -100,7 +100,8 @@ internal static class GitRuns
         // Within a landing or a judgement a read is asked of git once; a call with a variable, a bound or an input of its own never is.
         Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run = token => RunGitAsync(root, arguments, environment, timeout, input, token);
         if (environment is not null || timeout is not null || input is not null) return run(ct);
-        return GitFacts.Asked(root, arguments, run, ct) ?? RefSnapshot.Asked(root, arguments, run, ct) ?? GitReadOnce.Asked(root, arguments, run, ct) ?? run(ct);
+        return GitFacts.Asked(root, arguments, run, ct) ?? RefSnapshot.Asked(root, arguments, run, ct) ?? GitReadOnce.Asked(root, arguments, run, ct)
+            ?? AddressedReads.Asked(root, arguments, run, ct) ?? run(ct);
     }
 
     private static async Task<(int Code, string Stdout, string Stderr)> RunGitAsync(
@@ -127,8 +128,12 @@ internal static class GitRuns
         GitBytesAsync(root, arguments, limit, input: null, ct);
 
     internal static Task<(byte[] Bytes, int Count)?> GitBytesAsync(
-        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct) =>
-        BytesAsync(MachinePorts.Git.ReadBytesAsync(AskOf(root, arguments, GitBounds.Of(arguments), input), limit, ct));
+        string root, IReadOnlyList<string> arguments, int limit, string? input, CancellationToken ct)
+    {
+        Func<CancellationToken, Task<(byte[] Bytes, int Count)?>> read =
+            token => BytesAsync(MachinePorts.Git.ReadBytesAsync(AskOf(root, arguments, GitBounds.Of(arguments), input), limit, token));
+        return AddressedReads.AskedBytes(root, arguments, limit, input, read, ct) ?? read(ct);
+    }
 
     private static async Task<(byte[] Bytes, int Count)?> BytesAsync(Task<GitBytes> reading) =>
         await reading.ConfigureAwait(false) is { Read: true } bytes ? (bytes.Content, bytes.Content.Length) : null;

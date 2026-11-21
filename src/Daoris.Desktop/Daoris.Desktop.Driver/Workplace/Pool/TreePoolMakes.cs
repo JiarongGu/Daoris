@@ -12,6 +12,7 @@ internal sealed class TreePoolMakes(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> MakeAsync(PoolMake make, CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         var site = make.Site;
         var branch = $"{TreeFollows.SessionPrefix}{make.Line}";
         if (await PoolSubmodules.TrackedAsync(site.Root, "HEAD", ct).ConfigureAwait(false) is { } submodule)

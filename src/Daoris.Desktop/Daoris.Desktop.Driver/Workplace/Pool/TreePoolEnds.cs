@@ -12,6 +12,7 @@ internal sealed class TreePoolEnds(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> EndAsync(PoolEnd end, CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         var site = end.Site;
         if (pool.Slot(site.Workspace, site.Repository, end.Number) is not { Line.Length: > 0 } slot) return PoolDone.Not("no line holds that slot");
 
