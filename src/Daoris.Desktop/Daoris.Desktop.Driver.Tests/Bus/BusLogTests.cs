@@ -261,7 +261,7 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
 
         object?[] refused =
         [
-            double.NaN, double.PositiveInfinity, "a\uD800b", "\uDC00", @"C:\Users\someone", "c:/work/x", "/home/someone/x", @"\\server\share",
+            double.NaN, double.PositiveInfinity, "a\uD800b", "\uDC00", @"D:\work\x", "d:/work/x", "/srv/x", @"\\server\share",
             "src/Daoris.Cli/test/version.test.ts", "../up", "someone@example.com", "the check failed because", "two\twords", "https://host/x",
         ];
         foreach (var value in refused)
