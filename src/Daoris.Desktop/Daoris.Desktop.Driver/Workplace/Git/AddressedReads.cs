@@ -80,19 +80,34 @@ internal sealed class AddressedReads
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
         string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> ask, CancellationToken ct)
     {
-        if (Live is not { } reads || !Addressed(arguments)) return null;
+        if (Live is not { } reads || !Addressed(arguments) || !Stands(root)) return null;
         // A search that found nothing exits 1: git's answer, not a failure.
         var searches = GitLaunch.Command(arguments)[0] == "grep";
         return GitMemoAsks.Joined(
-            Kept(reads._gate, reads._text, KeyOf(root, arguments, null), GitMemoAsks.Under(ask, reads._flow), done => done.Code == 0 || searches && done.Code == 1), ct);
+            Kept(reads._gate, reads._text, KeyOf(root, arguments, null), GitMemoAsks.Under(ask, reads._flow), done => (done.Code == 0 || searches && done.Code == 1) && Stands(root)), ct);
     }
 
     /// <summary>The bytes <paramref name="ask"/> read, or the ones this act already holds for the same question and limit.</summary>
     internal static Task<(byte[] Bytes, int Count)?>? AskedBytes(
         string root, IReadOnlyList<string> arguments, int limit, string? input, Func<CancellationToken, Task<(byte[] Bytes, int Count)?>> ask, CancellationToken ct)
     {
-        if (Live is not { } reads || !AddressedBytes(arguments, input)) return null;
-        return GitMemoAsks.Joined(Kept(reads._gate, reads._bytes, KeyOf(root, arguments, $"{limit}\n{input}"), GitMemoAsks.Under(ask, reads._flow), done => done is not null), ct);
+        if (Live is not { } reads || !AddressedBytes(arguments, input) || !Stands(root)) return null;
+        return GitMemoAsks.Joined(
+            Kept(reads._gate, reads._bytes, KeyOf(root, arguments, $"{limit}\n{input}"), GitMemoAsks.Under(ask, reads._flow), done => done is { } read && Answered(read, root) && Stands(root)), ct);
+    }
+
+    private static bool Stands(string root) => GitLibraryAdmission.RefusalOf(root, GitLibraryQuestion.Walks) is null;
+
+    private static bool Answered((byte[] Bytes, int Count) read, string root)
+    {
+        var at = 0;
+        while (at < read.Count)
+        {
+            if (GitObjectAnswer.Parse(read.Bytes, read.Count, at) is not { } answer || answer.Missing && GitLazyFetch.Promisor(root)) return false;
+            at = answer.Start + (answer.Missing ? 0 : answer.Count + 1);
+        }
+
+        return read.Count > 0;
     }
 
     private static string KeyOf(string root, IReadOnlyList<string> arguments, string? input) =>

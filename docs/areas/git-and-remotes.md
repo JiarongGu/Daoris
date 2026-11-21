@@ -250,7 +250,8 @@ which runs only in the adapter's own development (`node tools/merge/packages.ts 
   between two folders only where its context is one (`GitStamp.ContextOf`).
 - A pool act (a make, a take, a return, an end, a retirement, a finish) and the files stage ask git once for what full ids alone name
   (`AddressedReads`: a commit's `ls-tree -r -z`, a `grep` of it, a `cat-file --batch` of ids and paths at them), whatever writes come between,
-  since an id names the same object; a read naming HEAD, a ref, the working tree or an index is never kept, nor an answer git did not give.
+  since an id names the same object; a read naming HEAD, a ref, the working tree or an index is never kept, nor an answer git did not give,
+  nor anything while a replacement can be in force (`GitReplacements`), nor a missing object in a repository with a promisor (its fetching retry asks git).
   A take reads the file rules up to four times (the judgement, the plan, the toolchain's key, the check) and each reading's ignored tops
   are the slot's files', so those are read each time; `TreePoolStartsGitTests` holds an end and a take to one listing, search and pair of
   file reads each.
