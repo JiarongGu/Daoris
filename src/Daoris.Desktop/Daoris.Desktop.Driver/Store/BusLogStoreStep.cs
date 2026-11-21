@@ -35,4 +35,26 @@ internal static class BusLogStoreStep
           PRIMARY KEY (day, measure, name)
         ) WITHOUT ROWID;
         """));
+
+    /// <summary>
+    /// The step that makes the watchdog's timers (<see cref="BusTimers"/>): one row for each obliged entry not yet ended, its due time and its
+    /// stalls so far, read by due time and cleared by kind with a subject or an effect key. A new table an older build never opens.
+    /// </summary>
+    public static StoreMigration Timers { get; } = new(DesktopStore.BusTimersVersion, DesktopStore.PolicyWriter, write => write.Execute(
+        """
+        CREATE TABLE bus_timers (
+          entry   TEXT PRIMARY KEY,
+          seq     INTEGER NOT NULL,
+          kind    TEXT NOT NULL,
+          subject TEXT NOT NULL,
+          effect  TEXT,
+          obliged TEXT NOT NULL,
+          armed   INTEGER NOT NULL,
+          due     INTEGER NOT NULL,
+          retry   INTEGER NOT NULL
+        ) WITHOUT ROWID;
+        CREATE INDEX bus_timers_due ON bus_timers (due);
+        CREATE INDEX bus_timers_subject ON bus_timers (kind, subject);
+        CREATE INDEX bus_timers_effect ON bus_timers (kind, effect);
+        """));
 }

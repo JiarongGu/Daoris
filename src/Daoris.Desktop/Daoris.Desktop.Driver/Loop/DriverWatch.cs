@@ -414,9 +414,11 @@ public sealed class DriverWatch(
         Action<TickReport>? said = null)
     {
         using var tee = Bus is null ? null : new OpinionBusTee(service, Bus);
+        // The watchdog runs in shadow beside the looks, the opinion's record its look's reading, and stops before the log closes.
+        await using var watchdog = Bus is null ? null : BusWatchdog.Start(Bus, new OpinionRecordLook(service.Opinions.ReadAsync));
         await new WatchRun(this, _wakes, _doors, onReport, onError, ct, said).RunAsync().ConfigureAwait(false);
     }
 
-    /// <summary>The lease holder's bus log, which the looks, the checks and the opinions' lines are teed into; null tees nothing.</summary>
+    /// <summary>The lease holder's bus log, which the looks, the checks and the opinions' lines are teed into, and its watchdog reads; null tees nothing.</summary>
     public BusLog? Bus { get; init; }
 }

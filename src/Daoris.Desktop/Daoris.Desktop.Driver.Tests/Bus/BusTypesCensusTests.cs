@@ -46,6 +46,8 @@ public sealed partial class BusTypesCensusTests
             (sound with { Name = "passed", Version = 0 }, "namespace.name"),
             (sound with { Fields = [new("invocation", BusShapes.Id), new("invocation", BusShapes.Code)] }, "`invocation` twice"),
             (sound with { Fields = [new("words", "sentence")] }, "`words` has no shape"),
+            (sound with { Name = "check.orphaned" }, "names nothing that ends it"),
+            (BusTypes.Stalled with { GiveUp = BusGiveUps.Held }, "names nothing that ends it"),
         ];
 
         foreach (var (type, says) in cases)
@@ -125,6 +127,16 @@ public sealed partial class BusTypesCensusTests
             if (!BusGiveUps.All.Contains(type.GiveUp))
             {
                 faults.Add($"{at}: its give-up `{type.GiveUp}` is outside the list ({string.Join(", ", BusGiveUps.All)}): a chain ends at the owner's final exit, never a silent give-up");
+            }
+
+            var ends = BusTypes.Ends(type);
+            if (BusTypes.Obliges(type) && ends.Count == 0) faults.Add($"{at}: it obliges its handler and names nothing that ends it: declare its ends in BusTypes.cs");
+            if (!BusTypes.Obliges(type) && ends.Count > 0) faults.Add($"{at}: it obliges no one and names ends");
+            foreach (var end in ends)
+            {
+                if (!BusEnds.All.Contains(end.By)) faults.Add($"{at}: an end matches by `{end.By}`, no {string.Join(", ", BusEnds.All)}");
+                if ((end.Type is null) != (end.By == BusEnds.Acknowledgement)) faults.Add($"{at}: an end by `{end.By}` names {(end.Type is null ? "no" : "a")} type");
+                if (end.Type is { } ending && !BusTypes.Declares(ending)) faults.Add($"{at}: it is ended by `{ending.Kind}`, which the registry does not declare");
             }
 
             foreach (var twice in type.Fields.GroupBy(field => field.Name).Where(group => group.Count() > 1)) faults.Add($"{at}: it declares `{twice.Key}` twice");

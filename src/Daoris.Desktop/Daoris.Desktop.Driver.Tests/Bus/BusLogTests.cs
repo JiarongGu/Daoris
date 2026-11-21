@@ -659,6 +659,8 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
 
         public IReadOnlyList<BusMeasureRow> Measures(string fromDay) => [];
 
+        public IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit) => [];
+
         public void Dispose()
         {
         }
@@ -717,6 +719,8 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         public IReadOnlyList<BusEnvelope> Read(long after, int limit) => [];
 
         public IReadOnlyList<BusMeasureRow> Measures(string fromDay) => [];
+
+        public IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit) => [];
 
         public void Dispose() => Held?.Dispose();
     }

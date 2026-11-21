@@ -111,6 +111,10 @@ internal static class DriveUsageRecords
               the bus log's measures by day (UTC): events by kind, flushes and their time, the rows' bytes and the
               disk's pages, misses, handling and look stage times, as the home's lease holder measured them; changes
               nothing.
+          bus stalls [--compare]
+              the watchdog's stalls, in shadow: each obliged entry past due, since when, who is obliged, which retry
+              and the give-up it would apply (what it would hand to whom); --compare sets the look's reading beside
+              each, agreements and disagreements by type; changes nothing.
           notices [--json] [--show <subject> | --set-aside <kind>]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed (never the rows you set aside), as the running

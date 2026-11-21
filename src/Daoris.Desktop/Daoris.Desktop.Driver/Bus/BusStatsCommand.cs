@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// flushes with their entries and time, the rows' own bytes and retention's cut, the pages and bytes the writes put on disk, the misses by
 /// reason, the values dropped, each kind's handling time and each look stage's time: what the budget and the deadlines are set from.
 /// </summary>
-/// <remarks>Exit codes: 0 read, or the home keeps no log yet, said · 2 a word it does not answer.</remarks>
-[CommandGroup("bus", "stats")]
+/// <remarks>The <c>bus</c> group's runner, <c>stalls</c> handed on. Exit codes: 0 read, or no log yet, said · 2 a word it does not answer.</remarks>
+[CommandGroup("bus", "stats", "stalls")]
 public static class BusStatsCommand
 {
     public const string Usage =
@@ -25,6 +25,7 @@ public static class BusStatsCommand
     /// <param name="said">What the verb said, for the caller to print.</param>
     public static int Run(string[] args, string home, Func<DateTimeOffset> clock, out string said)
     {
+        if (args is ["stalls", ..]) return BusStallsCommand.Run(args, home, clock, out said);
         var output = new StringBuilder();
         var code = Run(args, home, clock, output);
         said = output.ToString();
@@ -35,8 +36,9 @@ public static class BusStatsCommand
     {
         if (DaysOf(args) is not { } days)
         {
-            output.AppendLine("bus: name what to read (stats), and at most --days <1-90>.");
+            output.AppendLine("bus: name what to read (stats, or stalls), and for stats at most --days <1-90>.");
             output.AppendLine(Usage);
+            output.AppendLine(BusStallsCommand.Usage);
             return 2;
         }
 

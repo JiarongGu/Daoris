@@ -122,6 +122,23 @@ public sealed class BusLog : IAsyncDisposable
     public static BusLog Open(string home, MachineLog? log, TimeProvider clock) =>
         Over(new DesktopBusLogStore(home), new BusLogOptions { Clock = clock, Log = log, Writer = () => HomeLease.HeldHereRead(home) });
 
+    /// <summary>The clock its entries are stamped by, which its watchdog reads due times on.</summary>
+    public TimeProvider Clock => _clock;
+
+    /// <summary>The store's armed timers due by <paramref name="by"/> (null: all); none where it cannot be read now, counted, never thrown.</summary>
+    public IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit)
+    {
+        try
+        {
+            return _store.Timers(by, limit);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Store, error.Message, counted: false);
+            return [];
+        }
+    }
+
     /// <summary>What it has done since it opened.</summary>
     public BusTally Tally
     {
@@ -156,8 +173,9 @@ public sealed class BusLog : IAsyncDisposable
                 if (_pending.Count >= MostPending) return MissLocked(BusMisses.Full, draft.Kind);
                 var at = _clock.GetUtcNow();
                 var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
+                var deadline = BusTypes.Obliges(draft.Type) ? at + draft.Type.Deadline.Within : (DateTimeOffset?)null;
                 var envelope = new BusEnvelope(
-                    Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, draft.Deadline,
+                    Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, deadline,
                     draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause],
                     admitted.Kept, at);
                 foreach (var (field, reason) in admitted.Dropped) DropLocked(draft.Kind, field, reason, at);

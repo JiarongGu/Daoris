@@ -76,6 +76,37 @@ public sealed record BusDeadline(TimeSpan Within, string Basis, bool Provisional
     public static BusDeadline Stated(TimeSpan within, string why) => new(within, why, Provisional: true);
 }
 
+/// <summary>
+/// One thing that ends an obliged entry's timer (<see cref="BusTypes.Ends"/>): a later fact of <see cref="Type"/> on the same subject or the
+/// same effect key, or, with no type, the obliged handler's own acknowledgement, which its subscription gives.
+/// </summary>
+public sealed record BusEnd(BusType? Type, string By)
+{
+    /// <summary>The handler's acknowledgement: until its subscription comes, nothing on the log clears it, and the comparer reads the look.</summary>
+    public static readonly BusEnd Acknowledged = new(null, BusEnds.Acknowledgement);
+
+    /// <summary>A later fact of <paramref name="type"/> on the same subject.</summary>
+    public static BusEnd OnSubject(BusType type) => new(type, BusEnds.Subject);
+
+    /// <summary>A later fact of <paramref name="type"/> with the same effect key: the same attempt.</summary>
+    public static BusEnd OnEffect(BusType type) => new(type, BusEnds.Effect);
+}
+
+/// <summary>How an end matches the timer it clears.</summary>
+public static class BusEnds
+{
+    /// <summary>The same subject.</summary>
+    public const string Subject = "subject";
+
+    /// <summary>The same effect key.</summary>
+    public const string Effect = "effect";
+
+    /// <summary>The obliged handler's acknowledgement, given by its subscription.</summary>
+    public const string Acknowledgement = "acknowledgement";
+
+    public static readonly IReadOnlyList<string> All = [Subject, Effect, Acknowledgement];
+}
+
 /// <summary>Whether a type is a fact, a request or a response.</summary>
 public static class BusClasses
 {
