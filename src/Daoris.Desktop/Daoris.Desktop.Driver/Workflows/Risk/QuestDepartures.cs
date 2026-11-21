@@ -17,9 +17,9 @@ internal static class QuestDepartures
     /// <summary>The act <paramref name="quest"/>'s departure is, or null where nothing but a departure's yes holds its done.</summary>
     public static RiskAct? ActOf(QuestView quest)
     {
-        if (quest is not { Held: true, Hold: null or EvidenceCodes.Departed, AwaitsEvidence: false } || !QuestResults.Judged(quest)) return null;
-        var left = quest.Answers.Count(answer => string.IsNullOrWhiteSpace(answer.Met) && !string.IsNullOrWhiteSpace(answer.Departed));
-        return RiskAct.Of(left > 0 && left >= quest.Requirements.Count ? RiskActs.DirectionSet : RiskActs.WorkDone);
+        if (quest is not { Held: true, Hold: EvidenceCodes.Departed, AwaitsEvidence: false } || !QuestResults.Judged(quest)) return null;
+        var left = quest.Answers.Where(answer => string.IsNullOrWhiteSpace(answer.Met) && !string.IsNullOrWhiteSpace(answer.Departed)).Select(answer => answer.Requirement).Distinct().Count();
+        return RiskAct.Of(quest.Requirements.Count > 0 && left >= quest.Requirements.Count ? RiskActs.DirectionSet : RiskActs.WorkDone);
     }
 
     /// <summary>The judge at <paramref name="quest"/>'s place, its workspace and the repository it is asked of.</summary>
@@ -34,18 +34,25 @@ internal static class QuestDepartures
 
     /// <summary>
     /// Each held departure of <paramref name="quests"/> the policy passes, posted through <paramref name="accept"/> as its yes and, once the
-    /// service kept it, journaled; what each pass says. A yes the service refused is asked again at the next look.
+    /// service kept it, journaled; what each pass says. A yes the service refused is asked again at the next look and said once, as
+    /// <paramref name="told"/> keeps for the quest and the policy's revision.
     /// </summary>
     public static async Task<IReadOnlyList<string>> AnswerAsync(
         string home, DriverConfig config, IEnumerable<QuestView> quests, Func<string, RiskPassWire, CancellationToken, Task<(bool Ok, string Message)>> accept,
-        DateTimeOffset now, CancellationToken ct)
+        ISet<string> told, DateTimeOffset now, CancellationToken ct)
     {
         var said = new List<string>();
         foreach (var quest in quests)
         {
             if (Verdict(quest, JudgeAt(config, quest)) is not { Outcome: RiskVerdict.Pass } verdict) continue;
-            var (ok, _) = await accept(quest.Id, new RiskPassWire(verdict.Kind, verdict.Source, verdict.Revision), ct).ConfigureAwait(false);
-            if (!ok) continue;
+            var (ok, message) = await accept(quest.Id, new RiskPassWire(verdict.Kind, verdict.Source, verdict.Revision), ct).ConfigureAwait(false);
+            if (!ok)
+            {
+                if (told.Add($"{quest.Id}@{verdict.Revision}")) said.Add($"quest #{quest.Id}: the service refused the risk policy's yes to its departure, and it is asked again at each look: {message}");
+                continue;
+            }
+
+            told.Remove($"{quest.Id}@{verdict.Revision}");
             var place = RiskPlace.Of(config, quest.Workspace, quest.To);
             try
             {

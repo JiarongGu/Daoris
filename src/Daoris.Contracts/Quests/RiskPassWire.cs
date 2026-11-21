@@ -8,8 +8,11 @@ namespace Daoris.Contracts.Quests;
 public sealed record RiskPassWire(string Act, string Rule, string Revision)
 {
     /// <summary>Why the form is refused as it stands: a part left blank, which would name no rule's pass; null where it reads.</summary>
-    public string? Malformed => string.IsNullOrWhiteSpace(Act) || string.IsNullOrWhiteSpace(Rule) || string.IsNullOrWhiteSpace(Revision)
-        ? "policy names the act, the rule that passed it and the policy's revision, none blank: a pass names what decided it"
+    public string? Malformed =>
+        string.IsNullOrWhiteSpace(Act) || string.IsNullOrWhiteSpace(Rule) || string.IsNullOrWhiteSpace(Revision)
+            ? "policy names the act, the rule that passed it and the policy's revision, none blank: a pass names what decided it"
+        : Act is not ("work.done" or "direction.set") ? "policy's act is `work.done` or `direction.set`, the two acts a done's departure is judged as"
+        : Rule.Contains('\n') || Rule.Contains('\r') || Revision.Contains('\n') || Revision.Contains('\r') ? "policy's rule and revision are one line each"
         : null;
 
     /// <summary>The yes's author as the quest's log keeps it: <c>policy:&lt;act&gt; · rule &lt;rule&gt; at &lt;revision&gt;</c>.</summary>

@@ -16,6 +16,7 @@ internal static class QuestHoldsReading
     private const string Roles = "its done is held for the yes of the role";
     private const string Policy = "its done is held for the risk policy's yes";
 
+    // The Yours and Roles words are read for records written before the policy's yes: they end when no record holds them (history's 30-day clear).
     public static bool YesLifts(string? holds) =>
         holds is not null && (new[] { Yours, Roles, Policy }.Any(lead => holds.Contains(lead, StringComparison.Ordinal)) || UncheckedDones.Says(holds));
 

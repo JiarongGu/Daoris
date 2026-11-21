@@ -27,12 +27,53 @@ public sealed class QuestDeparturesTests : TestHome
 
     private readonly List<(string Quest, RiskPassWire Pass)> _posted = [];
 
+    private readonly HashSet<string> _told = [];
+    private bool _accepts = true;
+
     private Task<IReadOnlyList<string>> AnswerAsync(string config, params QuestView[] quests) =>
         QuestDepartures.AnswerAsync(Home, DriverConfig.Parse(config), quests, (quest, pass, _) =>
         {
             _posted.Add((quest, pass));
-            return Task.FromResult((true, "Accepted."));
-        }, Now, CancellationToken.None);
+            return Task.FromResult((_accepts, _accepts ? "Accepted." : "the quest is no longer departed."));
+        }, _told, Now, CancellationToken.None);
+
+    [Fact]
+    public void Duplicate_answer_rows_for_one_requirement_count_once_and_a_quest_with_no_requirements_is_work_done()
+    {
+        var twice = Departed(every: true) with
+        {
+            Answers = [new(1, null, "It writes no report.", Report.Quote), new(1, null, "It writes no report, said again.", Report.Quote), new(2, null, "Opens elsewhere.", Bridge.Quote)],
+        };
+        Assert.Equal(RiskActs.DirectionSet, QuestDepartures.ActOf(twice)!.Kind);
+        Assert.Equal(RiskActs.WorkDone, QuestDepartures.ActOf(twice with { Answers = [twice.Answers[0], twice.Answers[1]] })!.Kind);
+        Assert.Equal(RiskActs.WorkDone, QuestDepartures.ActOf(twice with { Requirements = [] })!.Kind);
+        Assert.Null(QuestDepartures.ActOf(twice with { Hold = null }));
+    }
+
+    [Fact]
+    public async Task A_refusal_of_the_services_is_said_once_for_the_quest_and_revision_and_asked_again_at_every_look()
+    {
+        _accepts = false;
+
+        var first = await AnswerAsync("""{"risk":{}}""", Departed());
+        var second = await AnswerAsync("""{"risk":{}}""", Departed());
+
+        Assert.Equal(2, _posted.Count);
+        Assert.Single(first);
+        Assert.Contains("no longer departed", first[0], StringComparison.Ordinal);
+        Assert.Empty(second);
+        Assert.Empty(RiskJournal.Read(Home));
+    }
+
+    [Theory]
+    [InlineData("work.done", "seed", "r1", true)]
+    [InlineData("direction.set", "row", "r1", true)]
+    [InlineData("work.accept", "seed", "r1", false)]
+    [InlineData("work.done", "seed", "r1\nr2", false)]
+    [InlineData("work.done", "se\ned", "r1", false)]
+    [InlineData("work.done", "seed", "", false)]
+    public void A_policy_body_names_one_of_the_two_acts_and_no_line_break_in_its_rule_or_revision(string act, string rule, string revision, bool reads) =>
+        Assert.Equal(reads, new RiskPassWire(act, rule, revision).Malformed is null);
 
     [Fact]
     public async Task With_nothing_configured_a_departure_passes_posted_as_the_policys_yes_with_its_rule_journaled_and_said()
