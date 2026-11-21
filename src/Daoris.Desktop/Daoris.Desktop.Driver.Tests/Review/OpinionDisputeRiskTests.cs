@@ -180,6 +180,32 @@ public sealed class OpinionDisputeRiskTests
         }
     }
 
+    /// <summary>A pass is journaled once for each tip it is given at: the same tip read again writes nothing, new commits passed again write one line more.</summary>
+    [Fact]
+    public async Task A_pass_at_a_new_tip_is_journaled_again_once()
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-dispute-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var gate = await DisputedAsync(Nothing);
+            var at = new PolicyPassAt("q1", "work", "web-app", "q1", "opinion");
+            var moved = gate with { Tip = "f00d", Answered = OpinionGateStates.CommitsSince };
+
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered);
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, moved, Answered.AddHours(1));
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, moved, Answered.AddHours(2));
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered.AddHours(3));
+
+            var lines = RiskJournal.Read(home);
+            Assert.Equal(2, lines.Count);
+            Assert.Equal([$"opinion:q1@{gate.Tip}/{OpinionGateStates.Disputed}", $"opinion:q1@f00d/{OpinionGateStates.CommitsSince}"], lines.Select(line => line.Key));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, true);
+        }
+    }
+
     private const string OpinionGraph = """
         {"schemaVersion":2,"entries":["claimed"],"end":"handed",
          "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"second","kind":"opinion","version":1,"reach":"observed"},

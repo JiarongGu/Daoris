@@ -25,6 +25,9 @@ public static class OpinionStepWaits
     /// </summary>
     public const string CommitsSince = "commits-since";
 
+    /// <summary>Not a wait: a hold its record keeps whose gate the risk policy now passes, said with the pass's line (<c>why</c>) on nobody's answer.</summary>
+    public const string Passed = "passed";
+
     /// <summary>Every wait the opinion kind declares.</summary>
     public static IReadOnlyList<string> Codes { get; } = [Answer, Disputed, CommitsSince];
 
@@ -57,6 +60,14 @@ public static class OpinionStepWaits
             var session = gate?.Opinion?.HandedTo ?? gate?.Opinion?.Working ?? gate?.Session;
             if (session is { Length: > 0 }) values["session"] = session;
             return new WorkflowRunWait(Answer, values, status.Since);
+        }
+
+        if (OpinionGateReading.PassedLine(gate) is { } passed)
+        {
+            values["held"] = gate!.Answered ?? "";
+            values["count"] = (gate.Answered == OpinionGateStates.Disputed ? gate.Disputes?.Count ?? 0 : gate.Since ?? 0).ToString(CultureInfo.InvariantCulture);
+            values["why"] = passed;
+            return new WorkflowRunWait(Passed, values, status.Since);
         }
 
         // A gate that holds for the person's answer is said as their wait, never a silent `working`.
@@ -95,6 +106,8 @@ public static class OpinionStepWaits
         var count = int.TryParse(wait.Values.GetValueOrDefault("count"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var read) ? read : 0;
         return wait.Code switch
         {
+            Passed => $"The risk policy passed {(wait.Values.GetValueOrDefault("held") == Disputed ? Plural(count, "disputed finding") : Plural(count, "commit") + " no other agent read")} "
+                      + $"of the second opinion: {wait.Values.GetValueOrDefault("why")?.TrimEnd('.')}. Daoris's next look reaches the step.",
             Disputed or CommitsSince when OnRole(wait) =>
                 $"Waits on the role's answer to {(wait.Code == Disputed ? Plural(count, "disputed finding") : Plural(count, "commit") + " no other agent read")} of the second "
                 + $"opinion: `daoris session opinion show {session}` lists them. The risk policy asks the `{wait.Values[RoleKey]}` role, not you, for the answer: {wait.Values.GetValueOrDefault("why")}.",

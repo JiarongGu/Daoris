@@ -46,6 +46,15 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'acme/deploy', { code: 'approval' })).toBe('Waits: approval');
   });
 
+  it('says a second opinion hold the risk policy passed as passed, with its line, on nobody', async () => {
+    const passed = { code: 'passed', values: { count: '2', held: 'disputed', why: 'no risk declared: it passes (rule seed at 0e80e115d1ce)' } };
+    expect(waitSaid(t, 'opinion', passed)).toBe(
+      "The risk policy passed what the second opinion held (2): no risk declared: it passes (rule seed at 0e80e115d1ce). Daoris's next look reaches the step.");
+    await i18n.changeLanguage('zh');
+    expect(waitSaid(t, 'opinion', passed)).toContain('no risk declared: it passes (rule seed at 0e80e115d1ce)');
+    await i18n.changeLanguage('en');
+  });
+
   it('words every wait the kit declares, in both languages', () => {
     const declared = NODE_KINDS.flatMap((row) => row.waits.map((code) => `workflow.wait.${row.kind}.${code}`));
     expect(declared.length).toBeGreaterThan(10);

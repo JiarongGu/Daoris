@@ -260,7 +260,8 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
-                NodeKinds.Opinion when step.Wait is { } answer && OpinionStepWaits.Codes.Contains(answer.Code) => OpinionStepWaits.Said(answer),
+                NodeKinds.Opinion when step.Wait is { } answer && (OpinionStepWaits.Codes.Contains(answer.Code) || answer.Code == OpinionStepWaits.Passed) =>
+                    OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
@@ -272,6 +273,8 @@ public static class WorkflowRunWords
                 _ => on is null ? "Under way." : $"Observed on {on}.",
             },
             WorkflowGraphDetails.Reached when node == NodeKinds.Land && step.Words is { Length: > 0 } reached => reached,
+            WorkflowGraphDetails.Reached when node == NodeKinds.Opinion && step.Words is { Length: > 0 } passed =>
+                $"{(on is null ? "Reached" : $"Reached on {on}")}, its hold passed by the risk policy: {passed.TrimEnd('.')}.",
             WorkflowGraphDetails.Reached when node == NodeKinds.QuestHolds && step.Code == UncheckedDones.NoReader =>
                 $"{char.ToUpperInvariant(UncheckedDones.GoesOn[0])}{UncheckedDones.GoesOn[1..]}.",
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
