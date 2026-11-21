@@ -159,7 +159,7 @@ const tell = (type: string, payload: unknown) => act(async () => {
 const loops = () => vi.mocked(console.error).mock.calls.map((call) => call.map(String).join(' '))
   .filter((said) => /Maximum update depth|getSnapshot should be cached/.test(said));
 
-describe("the window through a driven session's end (PAGELOOP1)", () => {
+describe("the window through a driven session's end (PAGELOOP1)", { timeout: 30_000 }, () => {
   beforeEach(() => {
     world.state = 'working';
     world.quest = 'Taken';

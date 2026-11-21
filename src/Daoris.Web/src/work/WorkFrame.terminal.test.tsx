@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The terminal as a view of the Work frame's regions — in the panel beside the console
-// by default, opened where the frame says a terminal starts. The bridge is mocked as present, as the rest
-// of the frame's suite mocks it; the renderer is stood in for, as the view's own suite does.
+// The terminal as a view of the Work frame's regions, and what opens the panel it stands in: the menu's *New terminal* starts
+// one where the frame says it starts. The bridge is mocked as present, as the rest of the frame's suite mocks it; the renderer
+// is stood in for, as the view's own suite does.
 
 const { invoke, eventHandlers, createScreen } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -42,15 +42,26 @@ const IN_A_TREE = { ...DRIVEN, id: 'tr33tr33', tree: 'C:/somewhere/.daoris/trees
 
 let SESSIONS: unknown[] = [];
 
-function frame(selected: string | null, terminal = true) {
+function tree(selected: string | null, terminal: boolean, intent: 'newTerminal' | 'console' | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  return (
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <WorkFrame selected={selected} onSelect={vi.fn()} notify={() => {}} terminal={terminal} />
+        <WorkFrame selected={selected} onSelect={vi.fn()} notify={() => {}} terminal={terminal} intent={intent} />
       </Tooltip.Provider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+}
+
+/** The frame as it starts, and the menu's *New terminal* pressed once what it reads has arrived. */
+function frame(selected: string | null, terminal = true) {
+  const view = render(tree(selected, terminal, null));
+  return {
+    ...view,
+    newTerminal: () => view.rerender(tree(selected, terminal, 'newTerminal')),
+    console: () => view.rerender(tree(selected, terminal, 'console')),
+    attend: (next: string | null) => view.rerender(tree(next, terminal, null)),
+  };
 }
 
 const opens = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.TERMINAL' && type === 'OPEN');
@@ -78,36 +89,81 @@ describe('the terminal in the Work frame (CONSOLE4b)', () => {
     window.localStorage.clear();
   });
 
-  it('stands in the panel beside the console, and opens nothing until it is shown', async () => {
-    frame(null);
+  it('has no panel at a start and opens nothing', async () => {
+    frame('s1a2b3c4');
 
-    const panel = await screen.findByRole('tablist', { name: 'views in the panel' });
-    expect(within(panel).getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Console', 'Terminal']);
+    await screen.findAllByText(/zeta/);
+    expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
     expect(opens()).toEqual([]);
   });
 
-  it('is not a view at all where no shell handed it in', async () => {
-    frame(null, false);
-
-    await screen.findByRole('region', { name: 'the panel' });
-    expect(screen.queryByRole('tab', { name: 'Terminal' })).toBeNull();
-  });
-
-  it('opens in the attended session\'s repository when its record names no tree of its own', async () => {
-    frame('s1a2b3c4');
+  it('opens with its first terminal at the height last kept, and its last closing shuts it', async () => {
+    window.localStorage.setItem('daoris.panelHeight', '320');
+    const { newTerminal } = frame('s1a2b3c4');
     await screen.findAllByText(/zeta/);
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Terminal' }));
+    newTerminal();
+
+    expect(await screen.findByRole('separator', { name: 'panel height' })).toHaveAttribute('aria-valuenow', '320');
+    expect(within(screen.getByRole('tablist', { name: 'views in the panel' })).getAllByRole('tab').map((tab) => tab.textContent))
+      .toEqual(['Console', 'Terminal']);
+    await userEvent.click(await screen.findByRole('button', { name: /^Close / }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull());
+    expect(window.localStorage.getItem('daoris.panelHeight')).toBe('320');
+  });
+
+  it('has no panel and starts nothing where no shell handed it in', async () => {
+    const { newTerminal } = frame(null, false);
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).startsWith('/api/registry'))).toBe(true));
+
+    newTerminal();
+
+    expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
+    expect(opens()).toEqual([]);
+  });
+
+  it('shuts with its last terminal wherever the terminal stands', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const { newTerminal } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    newTerminal();
+    await userEvent.pointer({ keys: '[MouseRight]', target: await screen.findByRole('tab', { name: 'Terminal' }) });
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Terminal to the right side bar' }));
+    // The console is left in the panel, which stays open for it until the last terminal, now in the side bar, closes.
+    expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+
+    await userEvent.click(within(screen.getByRole('complementary', { name: 'right side bar' })).getByRole('button', { name: /^Close PowerShell/ }));
+
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull());
+  });
+
+  it('shuts a console that goes away instead of showing the terminal, which would start a shell nobody asked for', async () => {
+    const { console: openConsole, attend } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    openConsole();
+    expect(await screen.findByRole('tab', { name: 'Console', selected: true })).toBeInTheDocument();
+
+    attend(null);
+
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull());
+    expect(opens()).toEqual([]);
+  });
+
+  it("opens in the attended session's repository when its record names no tree of its own", async () => {
+    const { newTerminal } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+
+    newTerminal();
 
     await waitFor(() => expect(opens()).toEqual([['DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/zeta' } }]]));
   });
 
-  it('opens in the attended session\'s own tree when it has one', async () => {
-    frame('tr33tr33');
-    // The record must have arrived before the tab is pressed, as it has on the window.
+  it("opens in the attended session's own tree when it has one", async () => {
+    const { newTerminal } = frame('tr33tr33');
+    // The record must have arrived before the terminal is asked for, as it has on the window.
     await screen.findAllByText(/zeta/);
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Terminal' }));
+    newTerminal();
 
     await waitFor(() => expect(opens()).toEqual([
       ['DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/.daoris/trees/zeta/q1' } }],
@@ -115,20 +171,21 @@ describe('the terminal in the Work frame (CONSOLE4b)', () => {
   });
 
   it('opens in the first repository with a checkout here when nothing is attended', async () => {
-    frame(null);
-    // The registry must have answered before the tab is pressed, as it has on the window.
+    const { newTerminal } = frame(null);
+    // The registry must have answered before the terminal is asked for, as it has on the window.
     await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).startsWith('/api/registry'))).toBe(true));
     await new Promise((resolve) => { setTimeout(resolve, 50); });
 
-    await userEvent.click(await screen.findByRole('tab', { name: 'Terminal' }));
+    newTerminal();
 
     await waitFor(() => expect(opens()).toEqual([['DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/engine' } }]]));
   });
 
   it('moves to the right side bar from its tab\'s menu, and keeps its shell', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
-    frame('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Terminal' }));
+    const { newTerminal } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    newTerminal();
     await waitFor(() => expect(opens()).toHaveLength(1));
 
     await userEvent.pointer({ keys: '[MouseRight]', target: screen.getByRole('tab', { name: 'Terminal' }) });

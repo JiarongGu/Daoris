@@ -658,8 +658,6 @@ describe('a session’s page header and its acts', () => {
       if (module === 'DAORIS.TERMINAL' && type === 'SHELLS') return { shells: [{ shell: 'pwsh' }], default: 'pwsh' };
       return DRIVER_STATE;
     });
-    // A viewer who hid the panel: the press shows it again, on the terminal.
-    window.localStorage.setItem('daoris.panelClosed', '1');
     attending('s1a2b3c4', true);
 
     const user = userEvent.setup();
@@ -670,7 +668,6 @@ describe('a session’s page header and its acts', () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/engine' } }));
     expect(await screen.findByRole('tab', { name: 'Terminal', selected: true })).toBeInTheDocument();
-    window.localStorage.removeItem('daoris.panelClosed');
   });
 
   /** *Open folder* names the session alone: the module names its folder (§3.5). */
