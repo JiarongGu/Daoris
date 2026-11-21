@@ -9,6 +9,7 @@ internal sealed class TreePoolRetires(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> RetireAsync(PoolSite site, int number, string holder, CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         if (pool.Slot(site.Workspace, site.Repository, number) is not { State: KeptStates.Kept or KeptStates.Retiring } slot) return PoolDone.Not("the pool has no kept or retiring slot with that number");
 
         var head = await WorkingTree.HeadAsync(slot.Path, ct).ConfigureAwait(false) ?? "";

@@ -8,6 +8,7 @@ internal sealed class TreePoolTakes(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> TakeAsync(PoolTake take, CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         var site = take.Site;
         if (pool.Slot(site.Workspace, site.Repository, take.Number) is not { State: KeptStates.Kept } slot) return PoolDone.Not("the pool has no kept slot with that number");
 

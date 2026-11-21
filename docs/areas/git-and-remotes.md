@@ -248,6 +248,13 @@ which runs only in the adapter's own development (`node tools/merge/packages.ts 
   includes, the replacements, grafts, shallow and reftable lists, the variables), each file a `FileStamp`. `GitReadCache` keeps a
   graph page, a commit's fields and a compare's commits under it while its fence is unchanged; the flow memos share an answer
   between two folders only where its context is one (`GitStamp.ContextOf`).
+- A pool act (a make, a take, a return, an end, a retirement, a finish) and the files stage ask git once for what full ids alone name
+  (`AddressedReads`: a commit's `ls-tree -r -z`, a `grep` of it, a `cat-file --batch` of ids and paths at them), whatever writes come between,
+  since an id names the same object; a read naming HEAD, a ref, the working tree or an index is never kept, nor an answer git did not give,
+  nor anything while a replacement can be in force (`GitReplacements`), nor a missing object in a repository with a promisor (its fetching retry asks git).
+  A take reads the file rules up to four times (the judgement, the plan, the toolchain's key, the check) and each reading's ignored tops
+  are the slot's files', so those are read each time; `TreePoolStartsGitTests` holds an end and a take to one listing, search and pair of
+  file reads each.
 - The declarations' store (`Workplace/Declarations/`) answers a declaration present, absent or unread, by `FileStamp`,
   `ContentKey`, or a commit's listing kept only where each object's bytes hash to its id; while a replacement can stand it asks
   git and keeps nothing. Names are fields of `DeclarationNames`; the banned-name analyzer (`BannedSymbols.txt`) and the
