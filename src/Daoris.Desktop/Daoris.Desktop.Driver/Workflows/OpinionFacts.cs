@@ -11,6 +11,11 @@ internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits,
 
     public bool Unread { get; init; }
 
+    public bool Begun { get; init; }
+
+    /// <summary>A delivery it found owed waits for an update's drain to end.</summary>
+    public bool Drained { get; init; }
+
     IEnumerable<string> IOpinionFact.SatQuests => Sits.Keys;
 
     IOpinionAct? IOpinionFact.Act => Act;

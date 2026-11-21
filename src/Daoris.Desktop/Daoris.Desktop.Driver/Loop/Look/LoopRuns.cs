@@ -10,9 +10,20 @@ namespace Daoris.Driver;
 /// <param name="look">One look, handed what it had said when it fails or is closed.</param>
 /// <param name="beside">The watch's pace, which the sync beside working sessions keeps.</param>
 /// <param name="passes">The look's passes, of which the sync, the lost-claim stop and the endings are asked directly.</param>
+/// <param name="gates">The opinion's gate started for the run, judging at the bus's facts as it looks, drained before it ends.</param>
 internal sealed class LoopRuns(
-    ILookStagesWiring wiring, Func<CancellationToken, Action<TickReport>?, Task<TickReport>> look, TimeSpan beside, Func<PartSet<ILookPass>> passes)
+    ILookStagesWiring wiring, Func<CancellationToken, Action<TickReport>?, Task<TickReport>> look, TimeSpan beside, Func<PartSet<ILookPass>> passes,
+    Func<CancellationToken, Task<OpinionGateRun?>>? gates = null)
 {
+    private Task<OpinionGateRun?> GatesAsync(CancellationToken ct) => gates?.Invoke(ct) ?? Task.FromResult<OpinionGateRun?>(null);
+
+    /// <summary>The watcher's look while a drain waits on what the gate began, said as <see cref="SettleAsync"/> says it.</summary>
+    private Action Watched(Action<TickReport>? said) => () =>
+    {
+        List<string> lines = [.. wiring.LookIn(wiring.Lines)];
+        if (lines.Count > 0) said?.Invoke(new TickReport([], lines, Progressed: false, Concluded: []));
+    };
+
     /// <summary>
     /// Look until nothing runs and a look starts nothing: a queue that is empty, held, or waiting on the person, with no session of this
     /// driver's still working and no ending left unreported. A failure or a close lets go only once every session has written how it
@@ -26,6 +37,7 @@ internal sealed class LoopRuns(
     public async Task<IReadOnlyList<TickReport>> UntilIdleAsync(CancellationToken ct, Action<TickReport>? said)
     {
         var reports = new List<TickReport>();
+        await using var gate = await GatesAsync(ct).ConfigureAwait(false);
         try
         {
             while (true)
@@ -33,7 +45,12 @@ internal sealed class LoopRuns(
                 var report = await look(ct, said).ConfigureAwait(false);
                 reports.Add(report);
                 said?.Invoke(report);
-                if (!report.Progressed && wiring.Runs.Idle) return reports;
+                if (!report.Progressed && wiring.Runs.Idle)
+                {
+                    // Idle once the gate's facts are drained too: a drain that judged or ran anything is looked at again.
+                    if (gate is null || !await gate.DrainAsync(wiring.Runs, ct, beside, Watched(said)).ConfigureAwait(false)) return reports;
+                    continue;
+                }
 
                 await wiring.Runs.NextAsync(beside, ct).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
@@ -61,6 +78,7 @@ internal sealed class LoopRuns(
     /// </param>
     public async Task<TickReport> OnceAsync(CancellationToken ct, Action<TickReport>? said)
     {
+        await using var gate = await GatesAsync(ct).ConfigureAwait(false);
         TickReport first;
         try
         {
@@ -76,6 +94,8 @@ internal sealed class LoopRuns(
 
         said?.Invoke(first);
         var settled = await SettleAsync(ct, said).ConfigureAwait(false);
+        // The facts its endings wrote are judged before it ends, and what the gate began beside them ends and is said.
+        if (gate is not null && await gate.DrainAsync(wiring.Runs, ct, beside, Watched(said)).ConfigureAwait(false)) await LetGoAsync(said).ConfigureAwait(false);
         return first with
         {
             Events = [.. first.Events, .. settled.Events],

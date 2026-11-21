@@ -3,6 +3,26 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
+/// <summary>The gate's rule over every owed opinion, as its bus consumer judges each at a fact (<see cref="OpinionGateJudge.JudgeDueAsync"/>).</summary>
+internal static class GateJudging
+{
+    internal static async Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
+        this Daoris.Driver.Driver driver, Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null)
+    {
+        var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
+        var passes = 0;
+        foreach (var due in new OpinionDues(driver.Context.Home).Open())
+        {
+            if (await driver.Gate.JudgeDueAsync(due, ct, events) is not { } fact) continue;
+            if (fact.Begun) passes++;
+            if (fact.Judged is { } kept) judged?.Add(kept);
+            foreach (var (quest, why) in fact.Sits) sits[quest] = why;
+        }
+
+        return (sits, passes);
+    }
+}
+
 /// <summary>
 /// The second opinions owed at a look and the
 /// person's presses, over real git. A done in a tree of its own under a rule that reads it is owed one; the look asks the pass

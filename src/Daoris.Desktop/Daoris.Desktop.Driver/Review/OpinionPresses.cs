@@ -80,7 +80,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         if (!gate.Answers(token) || tree is null || (quest is null && !WorkplaceRunFiles.IsChatRun(run)) || gate.Opinion.Tip is not { } tip) return gate;
         var (work, _) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return gate;
-        new OpinionGates(home).Said(work.Chain, work.Repository, new OpinionPersonWord(OpinionPersonSaid.Press, tip, DateTimeOffset.UtcNow)
+        new OpinionGates(home).Said(work.Chain, work.Repository, session, new OpinionPersonWord(OpinionPersonSaid.Press, tip, DateTimeOffset.UtcNow)
         {
             Door = door,
         });
@@ -193,7 +193,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         }
 
         if (before.Opinion.Tip is not { } tip) return new(false, "git could not read the commit that would land, so nothing was kept.") { Gate = before };
-        new OpinionGates(home).Said(work.Chain, work.Repository, new OpinionPersonWord(said, tip, DateTimeOffset.UtcNow) { Words = Words(words), Door = door });
+        new OpinionGates(home).Said(work.Chain, work.Repository, session, new OpinionPersonWord(said, tip, DateTimeOffset.UtcNow) { Words = Words(words), Door = door });
         var after = await GateOfAsync(work, ct).ConfigureAwait(false);
         return new(true, after.Opinion.Says) { Gate = after };
     }

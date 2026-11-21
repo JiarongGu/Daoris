@@ -673,11 +673,11 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output) 
             + string.Join('\n', into.Select(edge => $"{edge.File}: {edge.Type}")));
 
 
-        // The look's executors, DESIGN §14.1 (O4-1): each is built from LoopContext, and none sits outside Loop's folder.
+        // The look's executors, DESIGN §14.1: each is built from LoopContext, and none sits outside Loop's folder.
         string[] executors =
         [
             "DriverContinuations", "DriverHandOvers", "DriverHelpers", "DriverPartners", "DriverIntakes",
-            "DriverBrainstorms", "DriverMeetings", "DriverOpinions", "OpinionDeliverer", "OpinionGateLook",
+            "DriverBrainstorms", "DriverMeetings", "DriverOpinions", "OpinionDeliverer", "OpinionGateJudge",
         ];
         Assert.Equal(10, executors.Length);
         foreach (var executor in executors)

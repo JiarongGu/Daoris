@@ -4,11 +4,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinions owed on this machine, looked at beside the look: what <see cref="OpinionLook"/>
-/// made owed is closed, asked, delivered and sat here, over the loop's context. The gate delivers, so it holds the delivery, and
-/// the delivery passes.
+/// The opinion's gate, its rule over one owed opinion at a time: what <see cref="OpinionLook"/> made owed is closed, asked, delivered and
+/// sat here, over the loop's context, as the bus's consumer hands it each fact (<see cref="OpinionGateConsumer"/>). The gate delivers, so
+/// it holds the delivery, and the delivery passes. What each judgment found is kept in the facts (<see cref="LookFacts"/>), the gate's
+/// view, which the look's plan reads (<see cref="Sits"/>, <see cref="Judged"/>) and never judges.
 /// </summary>
-internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinions, OpinionDeliverer deliverer)
+internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opinions, OpinionDeliverer deliverer)
 {
     private readonly LoopContext _context = context;
 
@@ -22,106 +23,57 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
 
     private DriverConfig Config => _context.Config;
 
+    /// <summary>Told when a pass or a delivery begun beside ends, its owed opinion's subject named: the consumer judges it again.</summary>
+    internal Action<string>? BesideEnded { get; set; }
+
     /// <summary>
-    /// The second opinions owed on this machine, at a look: each closed once
-    /// past, each asked where nothing is yet and the chain's last step here is done and not held, asked again once a cool-off
-    /// resets, the person's asks started, and each delivered until answered; each pass and delivery beside the look, one
-    /// per chain's work at a time. Returns the quests the opinions sit, and how many passes this look starts, which take slots
-    /// before any quest's first start. A service that does not answer is said, and everything is looked at again
-    /// at the next look.
+    /// One owed opinion judged now, by the gate's rule: closed once past; asked where nothing is yet and the chain's last step here is
+    /// done and not held, asked again once a cool-off resets, the person's asks started; delivered until answered; passed by the policy;
+    /// or waiting, named. A pass or a delivery it finds owed is begun beside under the chain's claim, so a second judgment meanwhile owes
+    /// no second; a draining update holds a pass, said once, and a delivery. What it found is kept in the gate's view, the look's plan woken where it moved
+    /// what the plan reads. Null where it closed.
     /// </summary>
-    /// <param name="judged">
-    /// Where each owed landing opinion's gate is kept, as the attention band's route reads it: oldest first, one per
-    /// session, the review's own answer read with it as every landing door reads it. A look that could not read leaves none.
-    /// </param>
-    internal async Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
-        Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null)
+    /// <exception cref="HttpRequestException">The service did not answer: the consumer's entry is tried again.</exception>
+    internal async Task<OpinionFact?> JudgeDueAsync(OpinionDue due, CancellationToken ct, List<string>? events = null)
     {
-        var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
+        var facts = _context.Runs.Facts;
         var dues = new OpinionDues(Home);
-        var open = dues.Open();
-        if (open.Count == 0) return (sits, 0);
-
-        var passes = 0;
-        try
-        {
-            var world = new ServiceReviewWorld(Service);
-            var quests = await world.QuestsAsync(ct).ConfigureAwait(false);
-            foreach (var due in open)
-            {
-                if (await JudgeAsync(due, dues, world, quests, keep: judged is not null, beside: false, ct).ConfigureAwait(false) is not { } fact)
-                {
-                    continue;
-                }
-
-                if (fact.Judged is { } kept) judged!.Add(kept);
-                if (fact.Act is { } act && !HeldByDrain(act, events) && Begin(act, ct)) passes++;
-                foreach (var (quest, why) in fact.Sits) sits[quest] = why;
-            }
-
-            if (judged is not null) Order(judged);
-        }
-        catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
-                                          or UnauthorizedAccessException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            events.Add(_context.Said.Retry(
-                "opinion", $"opinion  the second opinions owed could not be looked at this look, and are looked at again at the next: {error.Message}"));
-            judged?.Clear();
-        }
-
-        return (sits, passes);
+        var world = new ServiceReviewWorld(Service);
+        var subject = Subject(due);
+        var fact = await JudgeAsync(due, dues, world, await world.QuestsAsync(ct).ConfigureAwait(false), keep: true, beside: true, ct).ConfigureAwait(false);
+        var begun = fact?.Act is { } act && !HeldByDrain(act, events) && Begin(act, ct);
+        facts.KeepOpinionsOf(dues.Open().Select(Subject));
+        if (fact is not null && facts.KeepOpinion(subject, ((IOpinionFact)fact).WithoutAct())) _context.Runs.FactsMoved();
+        return fact is null ? null : fact with { Begun = begun };
     }
 
-    /// <summary>How many owed opinions are judged at once beside the looks; a topic bounded.</summary>
-    internal const int OpinionsAtOnce = 2;
-
     /// <summary>
-    /// The second opinions owed, at a look under the watch: each judged as the <c>opinion</c> topic's judge
-    /// beside the look, one judgement per owed opinion and <see cref="OpinionsAtOnce"/> at a time, and only where what it reads moved
-    /// (<see cref="OpinionJudgments"/>), every judgment of the look sharing one read of the service (<see cref="OpinionLookWorld"/>); the
-    /// look plans over what each last found, so a gate, a review or a chain slow to read holds its own chain alone. One no judgment has answered for yet holds what it
-    /// could sit (<see cref="NotJudged"/>), never started early. A pass a judgment found owed is begun here, before the plan, so it takes
-    /// its slot; begun before the next judgment is asked, so that one reads its claim held and owes no second. Nothing here
-    /// waits on the service, git or a reviewer.
+    /// The quests the owed opinions sit, as the gate's view holds them: each owed opinion's last judgment's, and where none has answered
+    /// yet, what it could sit (<see cref="NotJudged"/>), never a start before the opinion. A read of the view: nothing here judges.
     /// </summary>
-    /// <param name="judged">Where each owed landing opinion's gate is kept, as its last judgment read it.</param>
-    internal (IReadOnlyDictionary<string, OpinionSit> Sits, int Passes) OpinionsBeside(
-        Snapshot snapshot, List<OpinionJudged> judged, LookStages stages, CancellationToken ct, List<string>? events = null)
+    internal IReadOnlyDictionary<string, OpinionSit> Sits(Snapshot snapshot)
     {
         var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
-        var facts = _context.Runs.Facts;
-        var open = new OpinionDues(Home).Open();
-        facts.KeepOpinionsOf(open.Select(Subject));
-        var world = new OpinionLookWorld(Service, ct);
-        var passes = 0;
-        foreach (var due in open)
+        foreach (var due in new OpinionDues(Home).Open())
         {
-            var subject = Subject(due);
-            // A draining look leaves the act the judgment found where it is kept, never taken, so the first look that does not
-            // drain begins it; what is said of it is said once.
-            if (Config.Draining && facts.PeekAct(subject) is OpinionAct held) HeldByDrain(held, events);
-            else if (facts.TakeAct(subject) is OpinionAct act)
-            {
-                if (Begin(act, ct)) passes++;
-                // Not begun, it is owed still; begun, its pass may write what the look's read does not hold.
-                facts.Unstamped(subject);
-            }
-            if (facts.Opinion(subject) is OpinionFact fact)
-            {
-                foreach (var (quest, why) in fact.Sits) sits[quest] = why;
-                if (fact.Judged is { } kept) judged.Add(kept);
-            }
-            else
-            {
-                foreach (var (quest, why) in NotJudged(due, snapshot)) sits[quest] = why;
-            }
+            var found = _context.Runs.Facts.Opinion(Subject(due)) is OpinionFact fact ? fact.Sits.Select(pair => (pair.Key, pair.Value)) : NotJudged(due, snapshot);
+            foreach (var (quest, why) in found) sits[quest] = why;
+        }
 
-            Judging(due, subject, world, stages, ct);
+        return sits;
+    }
+
+    /// <summary>Each owed landing opinion's gate as its last judgment kept it, oldest first and one per session, as the attention band reads it.</summary>
+    internal IReadOnlyList<OpinionJudged> Judged()
+    {
+        var judged = new List<OpinionJudged>();
+        foreach (var due in new OpinionDues(Home).Open())
+        {
+            if (_context.Runs.Facts.Opinion(Subject(due)) is OpinionFact { Judged: { } kept }) judged.Add(kept);
         }
 
         Order(judged);
-        return (sits, passes);
+        return judged;
     }
 
     /// <summary>
@@ -140,45 +92,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     }
 
     /// <summary>An owed opinion's subject: its session's at its occasion, one owed each (<see cref="OpinionDues.Close"/>).</summary>
-    private static string Subject(OpinionDue due) => $"{due.Session}/{due.Occasion}";
-
-    /// <summary>What a judgment that closed its opinion found: nothing sat, nothing owed.</summary>
-    private static readonly OpinionFact Settled = new(new Dictionary<string, OpinionSit>(), null, null);
-
-    /// <summary>
-    /// One owed opinion judged as the <c>opinion</c> topic's judge beside the look: kept, and the plan woken where what it
-    /// found moves what the plan reads. A judgment that fails leaves the last one standing, or the opinion not judged yet, and is said.
-    /// </summary>
-    private void Judging(OpinionDue due, string subject, OpinionLookWorld world, LookStages stages, CancellationToken ct) =>
-        _context.Runs.Judge("opinion", subject, OpinionsAtOnce, async token =>
-        {
-            var facts = _context.Runs.Facts;
-            try
-            {
-                var named = due.Run ?? $"#{due.Quest}";
-                var mark = facts.Mark();
-                var stamp = await stages.TimeAsync("opinions.inputs", () => OpinionJudgments.StampAsync(Home, due, world, _context.Trees, Config, token), named, beside: true)
-                    .ConfigureAwait(false);
-                if (facts.Stands(subject, stamp)) return [];
-                var fact = await stages.TimeAsync("opinions", async () =>
-                    await JudgeAsync(due, new OpinionDues(Home), world, await world.QuestsAsync(token).ConfigureAwait(false), keep: true, beside: true, token)
-                        .ConfigureAwait(false), named, beside: true).ConfigureAwait(false);
-                facts.Judged($"opinion/{subject}");
-                if (facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
-                if (fact is { Unread: true }) facts.Unstamped(subject);
-                else facts.Stamped(subject, stamp, fact?.Turns ?? [], mark);
-                return [];
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
-                                              or UnauthorizedAccessException
-                                              || (error is OperationCanceledException && !token.IsCancellationRequested))
-            {
-                facts.Unstamped(subject);
-                return facts.Failed($"opinion/{subject}")
-                    ? [$"opinion  the second opinion owed on session {due.Session}'s work could not be judged this time, and is judged again at a later look: {error.Message}"]
-                    : [];
-            }
-        }, ct);
+    internal static string Subject(OpinionDue due) => OpinionBusFacts.Owed(due.Session, due.Occasion);
 
     /// <summary>
     /// What an owed opinion no judgment has answered for yet holds, read from the look's open quests as the planner holds a
@@ -271,11 +185,12 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 Ended = gate.Opinion?.Id,
             };
         }
-        // A delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
-        else if ((gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first && !Config.Draining
-                 && _context.Runs.TryOpinion(claim))
+        // A delivery goes a session on in a turn, which the drain does not count; it waits for the drain's end, which its turn judges again.
+        var drained = false;
+        if (act is null && (gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first)
         {
-            OpinionBeside(Subject(due), claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
+            drained = Config.Draining;
+            if (!drained && _context.Runs.TryOpinion(claim)) OpinionBeside(Subject(due), claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
         }
 
         var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
@@ -284,6 +199,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             Turns = Turns(gate),
             Unread = gate.State == OpinionGateStates.Unread || review?.State == ReviewStates.Unread,
+            Drained = drained,
         };
     }
 
@@ -386,13 +302,13 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                                               or UnauthorizedAccessException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                return new StartRun($"opinion  the second opinion on {claim} stopped, and is looked at again at the next look: {error.Message}", Opened: true);
+                return new StartRun($"opinion  the second opinion on {claim} stopped, and its gate judges it again: {error.Message}", Opened: true);
             }
             finally
             {
-                // The claim is let go first, so a judgment marked after the stamp goes reads no pass in flight and owes the next.
+                // The claim is let go first, so the judgment it wakes reads no pass in flight and owes the next.
                 _context.Runs.OpinionDone(claim);
-                _context.Runs.Facts.Unstamped(subject);
+                BesideEnded?.Invoke(subject);
             }
         });
 

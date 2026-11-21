@@ -17,17 +17,13 @@ internal sealed class LookState(List<SessionEnded> concluded)
     private IReadOnlyList<StartReservation>? _reservedBefore;
     private AnswersAloneHold? _alone;
     private Snapshot? _looked;
-    private int? _passes;
     private IReadOnlyList<Consideration>? _plan;
     private StartsOutcome? _outcome;
     private IReadOnlyList<Consideration>? _starts;
     private IReadOnlyList<AskView>? _intakes;
     private IReadOnlyList<IJudgedOpinion>? _judgedOpinions;
 
-    /// <summary>
-    /// The quests, sessions and records the plan reads: read by the <c>snapshot</c> pass, and set again by each pass that shapes it,
-    /// so a pass reads it as the passes before it left it.
-    /// </summary>
+    /// <summary>The quests, sessions and records the plan reads, set again by each pass that shapes it.</summary>
     public Snapshot Snapshot
     {
         get => _snapshot ?? throw Unwritten(nameof(Snapshot), "snapshot");
@@ -68,17 +64,13 @@ internal sealed class LookState(List<SessionEnded> concluded)
         set => _looked = value;
     }
 
-    /// <summary>The slots the look's passes started, counted under the cap: the opinions' write it, and each pass after them adds.</summary>
-    public int Passes
-    {
-        get => _passes ?? throw Unwritten(nameof(Passes), "opinions");
-        set => _passes = value;
-    }
+    /// <summary>The slots the look's passes started, counted under the cap: none at the look's start, each pass adding its own.</summary>
+    public int Passes { get; set; }
 
-    /// <summary>What the second opinions judged this look, for its report.</summary>
+    /// <summary>The second opinions' gates as their view held them at the plan, for the look's report.</summary>
     public IReadOnlyList<IJudgedOpinion> JudgedOpinions
     {
-        get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "opinions");
+        get => _judgedOpinions ?? throw Unwritten(nameof(JudgedOpinions), "plan");
         set => _judgedOpinions = value;
     }
 

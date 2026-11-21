@@ -222,11 +222,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     trees once a look until one of its stages writes, a branch's end judgement is three starts, and a repository whose last pass did nothing and said nothing starts no git while the stamp of git's own
     files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
-    (`JudgedOnce`); an owed opinion is judged again only where an input its judgment reads moved, past its gate's reset or a
-    reading pass's minutes, or five minutes on (`OpinionJudgments`), its stamp kept with its fact on the watch's running sessions
-    across the looks' drivers and let go where its gate or review read unread, a pass is begun for it, or a pass or a delivery for
-    it ends (`LookFacts`), every judgment of a look sharing one read of the quests and the records (`OpinionLookWorld`),
-    and reads its tree's work kept while the tree and its refs stand (`TreeReadMemo`);
+    (`JudgedOnce`); no look judges an owed opinion: its gate is the bus's consumer, judging it at its facts (rule 30a,
+    `workflows-review-landing` rule 26), and the plan reads the gate's view (`LookFacts`), each look taking the view's wake before its
+    passes read it, so only a judgment landing after wakes the next; a judgment reads its tree's work kept
+    while the tree and its refs stand (`TreeReadMemo`);
     a look reads the open records and every record once each, and every graph run and its record once
     (`RunOutcomeNotices`, a workflow file decoded once a read); the overlaps read a running tree's changes only
     where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
@@ -242,8 +241,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     logged with `synchronous = NORMAL` and its log file bounded as the store engine bounds it. An append is taken in memory, given
     its id, order and time at once, and written behind: plain entries a second after the first of them, a commit-class entry at
     once, grouped with whatever waits; nothing is written while nothing is appended, and a look stage timed or a miss counted while
-    idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Teed in beside
-    today's writes, with no consumer: an opinion asked, given and answered (the landing line's channel), its findings delivered,
+    idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Several drafts
+    appended as one (`AppendAll`) ride one write, kept or lost together. A writer holding no log tees through the home's open one
+    (`BusLog.Of`). Teed in beside today's writes: an opinion owed (a due kept, a person's ask of its gate), asked, given and
+    answered (the landing line's channel), its findings delivered, the person's word at its gate, and what else its gate's verdict
+    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote),
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
@@ -284,22 +286,48 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `dropped`) arms a timer row (`bus_timers`, made by the store's step 34) in the write that keeps it, due at its envelope's
     deadline, which the log stamps from the registry alone (a draft names none). The registry declares what ends each obliged type
     (`BusTypes.Ends`, the census holding that every one has its ends): a later fact on the same subject or effect key, or the
-    handler's acknowledgement, which its subscription gives (BUS2d's opinion gate first). A check's start ends by its own
-    attempt's verdict, requeue or end; a requeue and an end by that attempt's next start; a red or an unknown by the run's next
-    start or the step's acknowledgement; a pass by the step's acknowledgement alone; a pass asked by its given; a given by its
-    delivery or its answers; a delivery by its answers; the answers by the gate's acknowledgement alone. Every 30 seconds, and at
-    once at its start (so a restart reads every armed timer), the watchdog appends a `bus.stalled` for each timer past due: its
-    entry, type, obliged one, since, due time, which stall of its retries plus one, the next due time, and the look's reading of
-    the same subject at that moment. Past the last it appends the `bus.give-up` it would apply, `applied` false, with what it
-    hands to whom: a `final-exit` hands the step to its holder chain (the obliged one's holder, then the vacancy path, then the
-    owner's exit, CASTCHAIN1's executors and manager joining before the vacancy), a `refused` request is answered to its requester
-    and a `held` gate stays shut, both left a wait the vacancy bounds and the exit ends; never the owner straight from a missed
-    deadline. A stall moves its timer in its own write and a give-up drops it, so a kill and a restart keep every due time and
-    neither loses a stall nor makes one twice; one appended and not yet written holds back the same one for five minutes. The
+    obliged handler's acknowledgement, which only its consumer gives (below). A check's start ends by its own attempt's verdict,
+    requeue or end; a requeue and an end by that attempt's next start; a red or an unknown by the run's next start or the step's
+    acknowledgement; a pass by the step's acknowledgement alone (BUS2e1's consumer); an owed opinion by the gate's
+    acknowledgement; a pass asked by its given; a given by its delivery, its answers, or, clean, the gate's acknowledgement, a clean
+    pass leaving nothing to deliver; a delivery by its answers; the answers by the gate's acknowledgement. Every 30 seconds, the
+    first an interval after its start, the watchdog first asks whether this process still holds the lease (reading no look where
+    it does not), drops the timers of a kind the registry no longer declares, and appends a `bus.stalled` for each timer past due:
+    its entry, type, obliged one, since, due time, which stall of its retries plus one, the next due time, and the look's reading of
+    the same subject at that moment. Past the last it appends, in the same write as that last stall, the `bus.give-up` it would
+    apply, `applied` false, with what it hands to whom: a `final-exit` hands the step to its holder chain (the obliged one's holder,
+    then the vacancy path, then the owner's exit, CASTCHAIN1's executors and manager joining before the vacancy), a `refused` request
+    is answered to its requester and a `held` gate stays shut, both left a wait the vacancy bounds and the exit ends; never the owner
+    straight from a missed deadline. In shadow none of it is commit-class, so a give-up applied to nothing costs no full sync. A
+    tick that fails is said once in the machine log and tried at the next. A stall moves its timer in its own write and a give-up
+    drops it, so a kill and a restart keep every due time and neither loses a stall nor makes one twice; one appended and not yet
+    written holds back the same one for five minutes. The
     comparer is the look's reading kept on each stall (`IBusLook`): open (the look holds it unmet too: agree), handled (the look
     says it was met: disagree, the bus missing its acknowledgement or its deadline or ends wrong) or unknown (no reading, counted
     apart). Today's reading is the opinion's record (a pass asked is open while read; a given until answered, unless clean; a
-    delivery until answered); the gate's judging, the run's step and the checks are unknown until their jobs bring a reader.
+    delivery until answered); the run's step and the checks are unknown until their jobs bring a reader.
+    The queue (D356 points 5 and 6, BUS2d) is the log's delivery, in the lease holder's process on .NET channels, with no broker:
+    each write of the log wakes it with the entries it kept, at their kept orders, and it hands them in frames at most 60 a
+    second through an ordered middleware chain (`IBusMiddleware`, registered once in `BusMiddlewares`: today the delivery measures,
+    each frame and each kind's hand-ons by the day) into each consumer subscribed to their types. A middleware passes, transforms,
+    drops (counted against its name) or observes a frame; one that throws is counted and said once, and the frame goes on as it was
+    handed to it. The registry's check at emit, the emit measures and the timers' arming stay in the write: they ride the entry's
+    own transaction, and the chain runs only after it. A consumer (`IBusConsumer`) is a durable row (`bus_consumers`, made by the
+    store's step 35): its types, its cursor (a new one's the log's newest, so it starts from now) and an epoch each claim raises.
+    Its entries go one at a time per subject, in order, and a few subjects at once (entries of a kind it folds, waiting in a row on
+    one subject, are acknowledged into the last, which stays open while it is handled); each is acknowledged after it is handled, in one
+    transaction with the cursor, its parked row and, where its handler says the acknowledgement ends it, the timer obliged to that
+    consumer, so an acknowledgement means handled. A restart resumes each from its cursor, its parked entries first: at least once.
+    A handler that throws is said once and its entry parked (`bus_parked`) and tried again with backoff, its subject held alone;
+    past its type's retries the queue appends the `bus.give-up` naming the consumer and what it hands to whom, and the subject
+    goes on. A claim's epoch is read before each handling and inside each acknowledgement, so a later claim fences the earlier off
+    and two processes never both execute one consumer; the lease is asked inside each write too. Retention cuts no entry a cursor
+    or a parked row still needs; a park the store did not keep leaves its entries open, so no cursor passes them. An outside effect
+    runs once by its key, kept in the act journal's family (`act_effects`, beside `git_acts`, not a journal of its own): a word to a
+    harness is begun before it is sent and ended after, so a crash between reads `uncertain` and it is never sent again, and a send
+    that throws reads failed, its key let go for the next try (`OnceWords`). A run that must return drains it (`QuietAsync`: the log
+    written, each write framed, every consumer's entries acknowledged or parked, its start's rebuild ended, within a bound). Its first
+    consumer is the opinion's gate (`workflows-review-landing` rule 26), started by the watch and the headless runs alike.
     `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
     bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
     its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,

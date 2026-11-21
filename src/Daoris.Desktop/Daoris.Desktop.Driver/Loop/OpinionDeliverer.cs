@@ -274,11 +274,11 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             Answered = steered => FrozenAsync(view, newest.Id, newest.Tree, steered),
         };
 
-        SentBack sent;
+        Func<Task<SentBack>> send;
         if (ChatRuns.Live(newest))
         {
             if (_context.SendsBack is not { } runner) return Waiting(view, named, newest.Id, WaitingWhy.Headless);
-            sent = await runner.SendBackAsync(ask, ct).ConfigureAwait(false);
+            send = () => runner.SendBackAsync(ask, ct);
         }
         else
         {
@@ -286,8 +286,19 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             var waiting = (await Service.RecordAsync(newest.Id, ct).ConfigureAwait(false))?.Waiting.Count(word => word.Persons) ?? 0;
             if (ChatPresses.TurnsOf(_context.Events, ids, waiting) > pressed) return ToPersonKept(view, named, OpinionToPerson.PersonWentOn);
             if (_context.SendsBack is not { } runner) return Waiting(view, named, newest.Id, WaitingWhy.Headless);
-            sent = await runner.GoOnWithFindingsAsync(ask, ct).ConfigureAwait(false);
+            send = () => runner.GoOnWithFindingsAsync(ask, ct);
         }
+
+        // 🔴 Once by its effect key: a word a crash left begun is uncertain and goes to the person, never to the harness a second time.
+        var (before, taken) = await OnceWords.SendAsync(
+            new ActJournal(_context.Home), $"opinion-word:{view.Id}:{newest.Id}", "opinion-word", send, each => each.Outcome == SendBack.Reserved).ConfigureAwait(false);
+        if (before == ActEffects.Uncertain) return ToPersonKept(view, named, OpinionToPerson.Uncertain);
+        if (before == ActEffects.Done)
+        {
+            return new OpinionDelivery(view.Id, OpinionDeliveryStates.Handed, $"handed  {named}: its findings already went to session {newest.Id}.") { Session = newest.Id };
+        }
+
+        var sent = taken!;
 
         switch (sent.Outcome)
         {

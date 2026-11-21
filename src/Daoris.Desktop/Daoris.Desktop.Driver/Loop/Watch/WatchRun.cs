@@ -131,6 +131,10 @@ internal sealed class WatchRun(
         _staffing?.Check(StaffingCheckAt.Start);
         _beside = new WatchBeside(watch, Service, Home);
 
+        // The opinion's gate is the bus's first consumer: woken by each fact the log writes, resumed from its cursor, never by a
+        // look. Stopped before the watchdog and the log close; the ledger's moves reach it through the change stream below.
+        await using var gates = await OpinionGateRun.StartAsync(watch.Bus, GateDriver, Service, Home, ct).ConfigureAwait(false);
+
         // The session branches tidied beside the looks: a pass once each pace, its lines joining the report of the
         // look that finds it done, as the following's do.
         // The downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
@@ -196,7 +200,11 @@ internal sealed class WatchRun(
         // The ledger heard, not found at the pace: one wait on the service's change stream for the loop's life, each
         // family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
         using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var ledger = LedgerChanges.RunAsync(Service, watch.Nudge, Log, listening.Token);
+        var ledger = LedgerChanges.RunAsync(Service, (topic, families) =>
+        {
+            watch.Nudge(topic, families);
+            OpinionGateRun.Heard(watch.Bus, families);
+        }, Log, listening.Token);
 
         // The start's reconciliation: every pending tidy found from the persisted facts and tried once, beside the first looks.
         var recovering = Task.Run(async () =>
@@ -501,6 +509,26 @@ internal sealed class WatchRun(
         {
             WatchNodes.Due(_supervisorDue, Supervisor.NextGoesOn());
         }
+    }
+
+    /// <summary>
+    /// A driver for the opinion's gate between the looks: the configuration read as it judges (drained where an update drains), and the
+    /// look's own doors, so a pass or a delivery it begins runs as one the look began.
+    /// </summary>
+    private Driver GateDriver()
+    {
+        var config = Load(ConfigPath);
+        var driver = new Driver(
+                Service, Draining?.Invoke() == true ? InstallUpdate.Drained(config) : config, watch.Adapters, Home, watch.Processes, watch.Sync, watch.Output,
+                watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
+            {
+                Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed,
+                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath,
+            };
+        driver.Context.Supervisor = Supervisor;
+        driver.Context.Roles = Roles?.Invoke();
+        driver.Context.Supervising = watch.Supervising?.Invoke();
+        return driver;
     }
 
     /// <summary>

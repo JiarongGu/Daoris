@@ -210,7 +210,8 @@ public sealed class BusWatchdogTests(ITestOutputHelper output) : IDisposable
         Assert.Equal([1L, 2L, 3L], stalls.Select(stall => (long)stall.Payload.Single(pair => pair.Key == "retry").Value!));
         Assert.Equal(t0 + within, DateTimeOffset.FromUnixTimeMilliseconds((long)stalls[0].Payload.Single(pair => pair.Key == "due").Value!));
         var gaveUp = Assert.Single(logged, entry => entry.Kind == BusTypes.GiveUp.Kind);
-        Assert.Equal(["holder:driver/opinions", BusChains.Vacancy, BusChains.OwnerExit], (IReadOnlyList<string>)gaveUp.Payload.Single(pair => pair.Key == "to").Value!);
+        // A given pass is the opinion's gate's to deliver or pass so its give-up hands the step to the gate's holder chain.
+        Assert.Equal(["holder:driver/opinion-gate", BusChains.Vacancy, BusChains.OwnerExit], (IReadOnlyList<string>)gaveUp.Payload.Single(pair => pair.Key == "to").Value!);
         Assert.Empty(Armed());
     }
 
@@ -315,6 +316,75 @@ public sealed class BusWatchdogTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(BusCompare.Agree, BusCompare.Verdict(BusLookStates.Open));
         Assert.Equal(BusCompare.Disagree, BusCompare.Verdict(BusLookStates.Handled));
         Assert.Equal(BusCompare.Unknown, BusCompare.Verdict(null));
+    }
+
+    /// <summary>
+    /// 🔴 A timer of a kind the registry no longer declares is dropped, never left to hide the rest; the last stall and its
+    /// give-up are one write and neither is commit-class in shadow; a process that does not hold the lease reads no look.
+    /// </summary>
+    [Fact]
+    public async Task An_undeclared_kind_is_dropped_the_last_stall_and_its_give_up_are_one_write_and_no_lease_reads_no_look()
+    {
+        var clock = new MovedClock();
+        var passes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var batches = new List<BusBatch>();
+        var reads = 0;
+        var look = new ReadLook(_ =>
+        {
+            Interlocked.Increment(ref reads);
+            return new BusLookReading(BusLookStates.Open, "working");
+        });
+        await using (var bus = Open(clock, new RecordingStore(new DesktopBusLogStore(_home), batches)))
+        {
+            bus.Append(Line(Asked("op-1"), passes));
+            await bus.FlushAsync();
+            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DesktopStore.LocationIn(_home)}"))
+            {
+                connection.Open();
+                using var insert = connection.CreateCommand();
+                insert.CommandText = "INSERT INTO bus_timers (entry, seq, kind, subject, effect, obliged, armed, due, retry) VALUES ('gone', 1, 'gone.kind/1', 's', NULL, 'x', 0, 0, 0)";
+                insert.ExecuteNonQuery();
+            }
+
+            var watchdog = new BusWatchdog(bus, look);
+            for (var retry = 0; retry <= BusTypes.OpinionAsked.Retries; retry++)
+            {
+                clock.Advance(BusTypes.OpinionAsked.Deadline.Within + TimeSpan.FromMinutes(1));
+                await watchdog.TickAsync();
+                await bus.FlushAsync();
+            }
+        }
+
+        Assert.DoesNotContain(Armed(), timer => timer.Entry == "gone");
+        var last = Assert.Single(batches, batch => batch.Entries.Any(entry => entry.Kind == BusTypes.GiveUp.Kind));
+        Assert.Contains(last.Entries, entry => entry.Kind == BusTypes.Stalled.Kind);
+        Assert.False(last.Commit);
+        Assert.Equal(BusTypes.OpinionAsked.Retries + 1, reads);
+
+        await using var other = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = clock, Writer = () => false });
+        clock.Advance(TimeSpan.FromDays(2));
+        Assert.Equal(0, await new BusWatchdog(other, look).TickAsync());
+        Assert.Equal(BusTypes.OpinionAsked.Retries + 1, reads);
+    }
+
+    /// <summary>A store that keeps each batch it is handed, then writes it.</summary>
+    private sealed class RecordingStore(DesktopBusLogStore inner, List<BusBatch> batches) : IBusLogStore
+    {
+        public BusWritten Write(BusBatch batch)
+        {
+            lock (batches) batches.Add(batch);
+            return inner.Write(batch);
+        }
+
+        public IReadOnlyList<BusEnvelope> Read(long after, int limit) => inner.Read(after, limit);
+
+        public IReadOnlyList<BusMeasureRow> Measures(string fromDay) => inner.Measures(fromDay);
+
+        public IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit) => inner.Timers(by, limit);
+
+        public void DropTimers(IReadOnlyList<string> entries) => inner.DropTimers(entries);
+
+        public void Dispose() => inner.Dispose();
     }
 
     private sealed class ReadLook(Func<BusTimer, BusLookReading> read) : IBusLook

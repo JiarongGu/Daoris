@@ -455,8 +455,33 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     earlier one there. `TOGETHER_PRESS` lands nothing. (D167, D227, D232, D259)
 25. The look is the person's verdict in a review environment; no agent or card gives it. Under a saved graph the `look` node says
     whether one is needed, the environment still the `reviews` rule's, and `SET_REVIEW required` is refused. (D154, D227)
-26. A second opinion is another maker's read-only reading before the landing; its findings reach the working session once, as its next
-    turn: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
+26. A second opinion is another maker's read-only reading before the landing. Its gate is the bus's first consumer (`opinion-gate`,
+    `OpinionGateConsumer`, D356 step 3, `driving` rule 30a), never a look: each opinion fact it is handed (`opinion.owed` as a due is
+    kept or the person asks its gate, then `opinion.asked`, `opinion.given`, `opinion.delivered`, `opinion.answered`, and the person's
+    word at the gate, `opinion.said`, as *Go on anyway*, *I looked myself* or an Accept's answer is kept) judges that owed opinion at
+    once by the gate's rule (`OpinionGateJudge`), reading the opinion's record at the fact for its session and occasion: it delivers,
+    rechecks, passes by the policy, or waits, named, one judgment of an owed opinion at a time. A person's ask (*Try again*, *Ask
+    again*, the same agent fresh, a named reviewer, *Ask another agent for help*) carries its own occasion, which no owed opinion has,
+    so it reaches every owed opinion of its session. Every other input its verdict reads is a fact too, and each judges every owed
+    opinion: the quests' move as the service's change stream names it (`quest.moved`: a hold lifted, a later step declined or
+    published), a node a run's record began (`node.begun`, written where the record is: a graph's opinion node holds the ask until it
+    begins, and one begun while a judgment read before it waits for that judgment, so the next reads it), and the standing choices this
+    process wrote (`choices.written`: a reviewer added to a rule, a workflow, the policy). A burst of moves folds: those waiting in a
+    row on one subject into the last, whose handling stands for them, and those of several subjects into one round of judgments, a
+    move heard before a round began being judged by it. What it found is the
+    gate's view (`LookFacts`), which the look's plan reads for the quests it sits and the attention band's gates and never judges;
+    no look stage judges an opinion. Its acknowledgement ends what is owed it: an owed opinion, a word or a move judged, the answers
+    judged, and a clean pass, which leaves nothing to deliver. A turn ahead (a cool-off's reset, a reading pass's end) judges it
+    again then, a pass or a delivery a drain held a minute on until the drain ends, and a pass or delivery begun beside that ends with
+    no fact (a turn in flight, a busy conversation) after a backoff from half a minute to ten; a judgment that throws keeps the turn it
+    found set. These live in memory, and a start judges every owed opinion once, which rebuilds the view and its turns, the watchdog's
+    timers the net under all of it. The watch, `drive --once` and `drive --until-idle` each start it beside their looks
+    (`OpinionGateRun`); a run that must return also hears the change stream for it and drains it before it ends, its queue quiet and
+    what the gate began beside ended, within the gate's ten minutes, the watcher looking at the pace meanwhile so `--quiet-end` ends a
+    quiet pass, and a run until idle looks again after a drain that judged, ran or moved the plan's view. The author's answers reach it as the go-on reads them at the
+    turn's end; the service journals none of its own yet (BUS2b2). Its findings reach the working session once, as its next
+    turn, a word into a conversation sent once by its effect key and never again after a crash left it uncertain (the findings then
+    the person's, `word-uncertain`), a send that throws read as failed and tried again: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's
     `opinion` step then waits on that session's answer (`waiting`, its wait `answer` naming the session, held by that agent:
     `OpinionStepWaits`), never *working*. Answers the session gives after its answers were read (a turn a restart cut off is read as it
     ends, before it answered, and the line goes on and answers) are read again before any recheck is asked, once the answering turn
@@ -469,7 +494,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     step, `PolicyPasses.Gate`, counted only once it appended, one line for each tip it passes at) and the work goes on to its landing:
     the `opinion` step is reached with the pass's line, which its run says under it (`OpinionGateReading.PassedLine`); a step its record
     still holds on the dispute until the runtime's next pass judges it says it passed, with that line and on nobody's answer (its wait
-    `passed`), never *working*; judged again at every look and at each new tip, so a raise opens it, a lowering releases it and new
+    `passed`), never *working*; judged again at each of its facts and at each new tip a fact brings, so a raise opens it, a lowering releases it and new
     commits are passed again at their own tip (OPINIONPASS1). Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
     `role-commits-since`, read as the Accept's wait, its wait naming that role, never the row's `by`): no agent's tool answers it, so an
     agent holder makes it a vacancy, listed, announced once and at the owner's final exit past its bound, and a person the place casts

@@ -37,7 +37,7 @@ public sealed class BusWatchdog : IAsyncDisposable
         _look = look;
     }
 
-    /// <summary>A watchdog over <paramref name="bus"/>, ticking at once and every <paramref name="every"/> (<see cref="Every"/>) on the log's clock.</summary>
+    /// <summary>A watchdog over <paramref name="bus"/>, ticking every <paramref name="every"/> (<see cref="Every"/>) on the log's clock, the first an interval after its start.</summary>
     public static BusWatchdog Start(BusLog bus, IBusLook look, TimeSpan? every = null)
     {
         var watchdog = new BusWatchdog(bus, look);
@@ -51,47 +51,52 @@ public sealed class BusWatchdog : IAsyncDisposable
         await _ticking.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (!_bus.Writing) return 0;
             var now = _bus.Clock.GetUtcNow();
             foreach (var old in _made.Where(pair => now - pair.Value >= Remembered).Select(pair => pair.Key).ToList()) _made.Remove(old);
             var appended = 0;
-            foreach (var timer in _bus.Timers(now, MostDue))
+            var due = _bus.Timers(now, MostDue);
+            var undeclared = due.Where(timer => BusTypes.Of(timer.Kind) is null).Select(timer => timer.Entry).ToList();
+            if (undeclared.Count > 0) _bus.DropTimers(undeclared);
+            foreach (var timer in due)
             {
                 if (BusTypes.Of(timer.Kind) is not { } type) continue;
                 var retry = timer.Retry + 1;
                 if (_made.ContainsKey((timer.Entry, retry))) continue;
                 var reading = await ReadAsync(timer, ct).ConfigureAwait(false);
                 var last = timer.Retry >= type.Retries;
-                var stalled = _bus.Append(new BusDraft(BusTypes.Stalled, timer.Subject)
+                var drafts = new List<BusDraft>
                 {
-                    Effect = $"stall:{timer.Entry}:{retry}",
-                    Causes = [timer.Entry],
-                    Commit = last,
-                    Payload =
-                    [
-                        ("entry", timer.Entry), ("kind", timer.Kind), ("obliged", timer.Obliged), ("since", timer.Armed), ("due", timer.Due),
-                        ("retry", (long)retry), ("retries", (long)type.Retries), ("next", last ? null : timer.Due + type.Deadline.Within),
-                        ("look", reading.State), ("says", reading.Says),
-                    ],
-                });
-                if (!stalled) continue;
-                appended++;
-                _made[(timer.Entry, retry)] = now;
-                if (!last) continue;
-                var (hands, to) = BusChains.Of(type, timer.Obliged);
-                if (_bus.Append(new BusDraft(BusTypes.GiveUp, timer.Subject)
+                    new(BusTypes.Stalled, timer.Subject)
+                    {
+                        Effect = $"stall:{timer.Entry}:{retry}",
+                        Causes = [timer.Entry],
+                        Payload =
+                        [
+                            ("entry", timer.Entry), ("kind", timer.Kind), ("obliged", timer.Obliged), ("since", timer.Armed), ("due", timer.Due),
+                            ("retry", (long)retry), ("retries", (long)type.Retries), ("next", last ? null : timer.Due + type.Deadline.Within),
+                            ("look", reading.State), ("says", reading.Says),
+                        ],
+                    },
+                };
+                if (last)
+                {
+                    var (hands, to) = BusChains.Of(type, timer.Obliged);
+                    drafts.Add(new BusDraft(BusTypes.GiveUp, timer.Subject)
                     {
                         Effect = $"give-up:{timer.Entry}",
                         Causes = [timer.Entry],
-                        Commit = true,
                         Payload =
                         [
                             ("entry", timer.Entry), ("kind", timer.Kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands),
                             ("to", to), ("since", timer.Armed),
                         ],
-                    }))
-                {
-                    appended++;
+                    });
                 }
+
+                if (!_bus.AppendAll(drafts)) continue;
+                appended += drafts.Count;
+                _made[(timer.Entry, retry)] = now;
             }
 
             return appended;
@@ -135,8 +140,8 @@ public sealed class BusWatchdog : IAsyncDisposable
         {
             try
             {
-                await TickAsync(ct).ConfigureAwait(false);
                 await Task.Delay(every, _bus.Clock, ct).ConfigureAwait(false);
+                await TickAsync(ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -144,9 +149,8 @@ public sealed class BusWatchdog : IAsyncDisposable
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
-                // A tick that failed is tried again at the next; its timers stay armed.
-                System.Diagnostics.Debug.WriteLine($"bus watchdog: a tick failed ({error.Message})");
-                await Task.Delay(every, _bus.Clock, ct).ConfigureAwait(false);
+                // A tick that failed is tried again at the next, its timers armed still; said once in the machine log.
+                _bus.Warn("watchdog:tick", "bus.watchdog-failed", ("why", error.Message));
             }
         }
     }

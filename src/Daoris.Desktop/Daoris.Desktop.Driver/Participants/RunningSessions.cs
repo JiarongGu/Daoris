@@ -155,10 +155,19 @@ public sealed class RunningSessions
         moved.TrySetResult();
     }
 
-    /// <summary>Taken by the look that reads the facts, before it reads them: one that moves after is the next look's.</summary>
+    /// <summary>Taken by each look before its passes read the facts: one that moves after is the next look's.</summary>
     internal void TakeFactsMoved()
     {
         lock (_gate) _factsMoved = false;
+    }
+
+    /// <summary>Whether a judgment moved a fact the plan reads since the last look took them.</summary>
+    internal bool FactsAhead
+    {
+        get
+        {
+            lock (_gate) return _factsMoved;
+        }
     }
 
     // The starts of this loop's not yet open, each reserved by the look that began it until its record opens or it comes

@@ -197,14 +197,13 @@ public sealed class Driver(
 
     private DriverOpinions? _opinions;
     private OpinionDeliverer? _deliverer;
-    private OpinionGateLook? _gate;
+    private OpinionGateJudge? _gate;
 
     private DriverOpinions Opinions => LazyInitializer.EnsureInitialized(ref _opinions, () => new DriverOpinions(Context, this));
 
-    /// <summary>The second opinion's delivery, which the go-on also asks to read the answers and to send findings to the person.</summary>
     internal OpinionDeliverer Deliverer => LazyInitializer.EnsureInitialized(ref _deliverer, () => new OpinionDeliverer(Context, Opinions));
 
-    internal OpinionGateLook Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateLook(Context, Opinions, Deliverer));
+    internal OpinionGateJudge Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateJudge(Context, Opinions, Deliverer));
 
     private DriverContinuations? _continuations;
     private DriverHandOvers? _handOvers;
@@ -328,10 +327,6 @@ public sealed class Driver(
     public Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default) =>
         Deliverer.DeliverAsync(opinion, asked, ct);
 
-    internal Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
-        Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null) =>
-        Gate.OpinionsAsync(snapshot, events, ct, judged);
-
     internal Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
         StartBinding.StepRoleAsync(Context, quest, workspace, ct);
 
@@ -408,6 +403,8 @@ public sealed class Driver(
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
         using var facts = GitFacts.Within(ct);
+        // The facts' wake is taken before any pass reads the facts, so only a judgment landing after it wakes the next look.
+        Context.Runs.TakeFactsMoved();
         var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
         {
@@ -443,9 +440,28 @@ public sealed class Driver(
     public Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null) => Looping.OnceAsync(ct, said);
 
     private LoopRuns Looping =>
-        LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(LookWiring, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses));
+        LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(
+            LookWiring, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses,
+            Gates ?? (ct => OpinionGateRun.StartAsync(Bus, Beside, service, home, ct, listens: true))));
 
     private LoopRuns? _looping;
+
+    /// <summary>A test's stand-in for the opinion's gate a run that must return starts: the real one judges with git and the service.</summary>
+    internal Func<CancellationToken, Task<OpinionGateRun?>>? Gates { get; init; }
+
+    /// <summary>A driver for the opinion's gate beside a run's looks: its own context over the same sessions, as the watch's gate's is.</summary>
+    private Driver Beside()
+    {
+        var driver = new Driver(service, config, adapters, home, processes, Sync, output, harnesses, usage, hooks, Context.Events, browser, Running)
+        {
+            Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log,
+            Noticed = Noticed, Stages = Stages, Reviews = Reviews, Bus = Bus, ConfigPath = ConfigPath, Passes = Passes,
+        };
+        driver.Context.Supervisor = Context.Supervisor;
+        driver.Context.Roles = Context.Roles;
+        driver.Context.Supervising = Context.Supervising;
+        return driver;
+    }
 
     /// <summary>One quest's start, run through the stages of each phase in turn; a stage may hold the start, which ends the run there.</summary>
     /// <returns>

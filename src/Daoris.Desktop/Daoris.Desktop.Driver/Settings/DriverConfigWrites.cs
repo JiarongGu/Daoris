@@ -21,10 +21,29 @@ internal static class DriverConfigWrites
         {
             using var held = KeepLock.Take(file, within: null, seams?.Clock);
             held.Write(path, write(Current(path, file)), seams);
+            Told(file);
         }
         finally
         {
             FileStamp.Forget(file);
+        }
+    }
+
+    /// <summary>Told each file this process wrote, by its full path, once written; a listener that throws is passed over.</summary>
+    internal static event Action<string>? Wrote;
+
+    private static void Told(string file)
+    {
+        foreach (var listener in Wrote?.GetInvocationList().Cast<Action<string>>() ?? [])
+        {
+            try
+            {
+                listener(file);
+            }
+            catch (Exception error) when (error is not OutOfMemoryException)
+            {
+                System.Diagnostics.Debug.WriteLine($"choices: a listener of a write failed ({error.Message})");
+            }
         }
     }
 

@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 /// write-ahead log's frames, at least one page a flush, a checkpoint's copy into the file aside. The log file is bounded after a checkpoint
 /// as the engine bounds it (<see cref="JournalLimit"/>).</para>
 /// </remarks>
-public sealed class DesktopBusLogStore : IBusLogStore
+public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
 {
     /// <summary>
     /// The rows kept: about 13 MiB of rows at the 270 bytes a row a check's facts measured (BusLogTests), fifty days at a thousand
@@ -51,8 +51,9 @@ public sealed class DesktopBusLogStore : IBusLogStore
     private long _pageSize;
     private string? _measuresCutOn;
 
-    // Whether the store keeps the timers (its step 34 ran); a writer's store always does, migrated as it opens.
+    // Whether the store keeps the timers (its step 34 ran), and the queue's consumers (its step 35); a writer's store always does, migrated as it opens.
     private bool _timers = true;
+    private bool _queued = true;
 
     /// <param name="home">The home whose store holds the log.</param>
     /// <param name="cap">The rows kept; <see cref="Cap"/> unless a test bounds it lower.</param>
@@ -76,14 +77,15 @@ public sealed class DesktopBusLogStore : IBusLogStore
     /// </summary>
     public static DesktopBusLogStore? Reading(string home)
     {
-        bool timers;
+        bool timers, queued;
         using (var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(home)))
         {
             if (reader is not { Version: >= DesktopStore.BusLogVersion }) return null;
             timers = reader.Version >= DesktopStore.BusTimersVersion;
+            queued = reader.Version >= DesktopStore.BusQueueVersion;
         }
 
-        return new DesktopBusLogStore(home, Cap, null, reading: true) { _timers = timers };
+        return new DesktopBusLogStore(home, Cap, null, reading: true) { _timers = timers, _queued = queued };
     }
 
     /// <inheritdoc />
@@ -114,7 +116,14 @@ public sealed class DesktopBusLogStore : IBusLogStore
                     var cut = 0;
                     if (batch.Entries.Count > 0)
                     {
-                        cut = Execute(connection, transaction, "DELETE FROM bus_log WHERE seq <= $floor", ("$floor", batch.Entries[^1].Seq + shift - _cap));
+                        // Never past what a consumer still needs: its cursor, or an entry it parked.
+                        cut = Execute(connection, transaction,
+                            """
+                            DELETE FROM bus_log WHERE seq <= MIN($floor,
+                              COALESCE((SELECT MIN(cursor) FROM bus_consumers), $floor),
+                              COALESCE((SELECT MIN(seq) - 1 FROM bus_parked), $floor))
+                            """,
+                            ("$floor", batch.Entries[^1].Seq + shift - _cap));
                     }
 
                     var today = batch.Entries.Count > 0 ? Day(batch.Entries[^1].At) : batch.Measures.Count > 0 ? batch.Measures[^1].Day : null;
@@ -153,16 +162,21 @@ public sealed class DesktopBusLogStore : IBusLogStore
     }
 
     /// <summary>The envelopes a select of the log's columns, in their order, reads.</summary>
-    private static List<BusEnvelope> Entries(DbCommand command)
+    private static List<BusEnvelope> Entries(DbCommand command) => Entries(command, out _);
+
+    /// <summary>The envelopes, and a twelfth column's count beside each where the select carries one (a parked entry's tries).</summary>
+    private static List<BusEnvelope> Entries(DbCommand command, out List<int> extra)
     {
         using var reader = command.ExecuteReader();
         var entries = new List<BusEnvelope>();
+        extra = [];
         while (reader.Read())
         {
             entries.Add(new BusEnvelope(
                 reader.GetString(1), reader.GetInt64(0), reader.GetString(2), reader.GetString(3), reader.GetString(4),
                 Text(reader, 5), reader.IsDBNull(6) ? null : DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)), Text(reader, 7),
                 Ids(Text(reader, 8)), PayloadOf(Text(reader, 9)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(10))));
+            if (reader.FieldCount > 11) extra.Add(reader.GetInt32(11));
         }
 
         return entries;
@@ -242,6 +256,151 @@ public sealed class DesktopBusLogStore : IBusLogStore
                 }
 
                 return timers;
+            });
+        }
+    }
+
+    /// <inheritdoc />
+    public void DropTimers(IReadOnlyList<string> entries)
+    {
+        if (entries.Count == 0) return;
+        lock (_gate)
+        {
+            Guarded(connection =>
+            {
+                using var transaction = connection.BeginTransaction();
+                foreach (var entry in entries) Execute(connection, transaction, "DELETE FROM bus_timers WHERE entry = $entry", ("$entry", entry));
+                transaction.Commit();
+                return 0;
+            });
+        }
+    }
+
+    /// <inheritdoc />
+    public BusClaim Claim(string consumer, IReadOnlyList<string> kinds, Func<bool?>? writer, DateTimeOffset at) => Queued(writer, (connection, transaction) =>
+    {
+        var now = at.ToUnixTimeMilliseconds();
+        var kept = Consumer(connection, transaction, consumer);
+        if (kept is null)
+        {
+            Execute(connection, transaction,
+                "INSERT INTO bus_consumers (consumer, kinds, cursor, epoch, at) VALUES ($consumer, $kinds, (SELECT COALESCE(MAX(seq), 0) FROM bus_log), 1, $at)",
+                ("$consumer", consumer), ("$kinds", JsonSerializer.Serialize(kinds)), ("$at", now));
+        }
+        else
+        {
+            Execute(connection, transaction, "UPDATE bus_consumers SET epoch = epoch + 1, kinds = $kinds, at = $at WHERE consumer = $consumer",
+                ("$consumer", consumer), ("$kinds", JsonSerializer.Serialize(kinds)), ("$at", now));
+        }
+
+        // A parked entry retention cut (an older build's write) is gone with its row.
+        Execute(connection, transaction, "DELETE FROM bus_parked WHERE consumer = $consumer AND seq NOT IN (SELECT seq FROM bus_log)", ("$consumer", consumer));
+        var (cursor, epoch, _) = Consumer(connection, transaction, consumer)!.Value;
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            """
+            SELECT b.seq, b.id, b.kind, b.subject, b.emitter, b.answerer, b.deadline, b.effect, b.causes, b.payload, b.at, p.tries
+            FROM bus_parked p JOIN bus_log b ON b.seq = p.seq WHERE p.consumer = $consumer ORDER BY p.seq
+            """;
+        command.Bind("$consumer", consumer);
+        var entries = Entries(command, out var tries);
+        return new BusClaim(cursor, epoch, [.. entries.Select((entry, n) => new BusParkedEntry(entry, tries[n]))]);
+    });
+
+    /// <inheritdoc />
+    public void Acknowledge(BusAck ack) => Queued(ack.Writer, (connection, transaction) =>
+    {
+        Fence(connection, transaction, ack.Consumer, ack.Epoch);
+        Execute(connection, transaction, "UPDATE bus_consumers SET cursor = MAX(cursor, $cursor) WHERE consumer = $consumer",
+            ("$consumer", ack.Consumer), ("$cursor", ack.Cursor));
+        if (ack.Ends is { } obliged)
+        {
+            Execute(connection, transaction, "DELETE FROM bus_timers WHERE entry = $entry AND obliged = $obliged", ("$entry", ack.Entry.Id), ("$obliged", obliged));
+        }
+
+        if (ack.Unpark)
+        {
+            Execute(connection, transaction, "DELETE FROM bus_parked WHERE consumer = $consumer AND seq = $seq", ("$consumer", ack.Consumer), ("$seq", ack.Entry.Seq));
+        }
+
+        return 0;
+    });
+
+    /// <inheritdoc />
+    public void Park(BusPark park) => Queued(park.Writer, (connection, transaction) =>
+    {
+        Fence(connection, transaction, park.Consumer, park.Epoch);
+        foreach (var (seq, tries) in park.Rows)
+        {
+            Execute(connection, transaction, "INSERT OR REPLACE INTO bus_parked (consumer, seq, tries) VALUES ($consumer, $seq, $tries)",
+                ("$consumer", park.Consumer), ("$seq", seq), ("$tries", tries));
+        }
+
+        Execute(connection, transaction, "UPDATE bus_consumers SET cursor = MAX(cursor, $cursor) WHERE consumer = $consumer",
+            ("$consumer", park.Consumer), ("$cursor", park.Cursor));
+        return 0;
+    });
+
+    /// <inheritdoc />
+    public IReadOnlyList<BusEnvelope> Read(long after, IReadOnlyList<string> kinds, int limit)
+    {
+        if (kinds.Count == 0) return [];
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    $"SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE seq > $after AND kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq LIMIT $limit";
+                command.Bind([("$after", after), .. kinds.Select((kind, n) => ($"$k{n}", (object?)kind)), ("$limit", Math.Max(0, limit))]);
+                return Entries(command);
+            });
+        }
+    }
+
+    /// <inheritdoc />
+    public (long Cursor, long Epoch, int Parked)? Consumer(string consumer)
+    {
+        if (!_queued) return null;
+        lock (_gate)
+        {
+            return Guarded(connection => Consumer(connection, null, consumer));
+        }
+    }
+
+    private static (long Cursor, long Epoch, int Parked)? Consumer(DbConnection connection, DbTransaction? transaction, string consumer)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            "SELECT cursor, epoch, (SELECT count(*) FROM bus_parked WHERE consumer = $consumer) FROM bus_consumers WHERE consumer = $consumer";
+        command.Bind("$consumer", consumer);
+        using var reader = command.ExecuteReader();
+        return reader.Read() ? (reader.GetInt64(0), reader.GetInt64(1), reader.GetInt32(2)) : null;
+    }
+
+    /// <summary>The consumer's epoch read inside the write: an older one's is refused.</summary>
+    private static void Fence(DbConnection connection, DbTransaction transaction, string consumer, long epoch)
+    {
+        var current = Consumer(connection, transaction, consumer)?.Epoch ?? 0;
+        if (current != epoch) throw new BusFencedException(consumer, epoch, current);
+    }
+
+    /// <summary>One queue write: the store's stamp and the lease asked inside its transaction, as every write of the log's.</summary>
+    private T Queued<T>(Func<bool?>? writer, Func<DbConnection, DbTransaction, T> work)
+    {
+        if (_reading) throw new InvalidOperationException("this log was opened for reading only.");
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var transaction = connection.BeginTransaction();
+                Admit(connection, transaction);
+                new BusBatch([], [], false) { Writer = writer }.AskWriter();
+                var done = work(connection, transaction);
+                transaction.Commit();
+                return done;
             });
         }
     }
@@ -333,7 +492,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
             // Made and migrated by the store's own steps, as every family's tables are, once for this store: a connection let go after a
             // failure connects again without them.
             using var store = DesktopStore.Open(location, StoreProcess.Options(_settled ?? StartConfirmation.Read));
-            if (store.Stamp.Version < DesktopStore.BusTimersVersion)
+            if (store.Stamp.Version < DesktopStore.BusQueueVersion)
             {
                 throw new DesktopStoreException($"the desktop's store keeps no bus log yet: {store.Held ?? "its step has not run"}.");
             }
@@ -377,7 +536,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
             if (!reader.Read()) throw new DesktopStoreException("the desktop's store has no schema yet.");
             var (version, writer) = (reader.GetInt32(0), reader.GetInt32(1));
             if (writer > DesktopStore.WriterStamp) throw new DesktopStoreNewerException(writer, DesktopStore.WriterStamp);
-            if (version < DesktopStore.BusTimersVersion) throw new DesktopStoreException("the desktop's store keeps no bus log or timers yet.");
+            if (version < DesktopStore.BusQueueVersion) throw new DesktopStoreException("the desktop's store keeps no bus log, timers or queue yet.");
         }
 
         return Scalar(connection, transaction, "SELECT COALESCE(MAX(seq), 0) FROM bus_log");

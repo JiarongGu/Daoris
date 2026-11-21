@@ -6,8 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The Participants cuts of the three families above it (Review, Work orders and Workflows): the behaviour they
 /// keep, written against the surface that exists on both sides of them (what the looks' judges keep for the plan, a loop's reserved and
-/// bound starts, a conversation's chat run read at a turn's end and at a spawn, and the helper pass's opening line), so the same cases
-/// pass on the base and after it. The seams the cuts add are <c>ParticipantsAbovePortsTests</c>'.
+/// bound starts, a conversation's chat run read at a turn's end and at a spawn, and the helper pass's opening line), so the same cases pass on the base and after it.
 /// </summary>
 public sealed class ParticipantsWorkBoundaryTests : IDisposable
 {
@@ -39,22 +38,7 @@ public sealed class ParticipantsWorkBoundaryTests : IDisposable
 
         Assert.False(facts.KeepOpinion("due-1", Found(Sits("Q1"))));
         Assert.True(facts.KeepOpinion("due-1", Found(Sits("q1", "q2"))));
-        Assert.True(facts.KeepOpinion("due-1", Found(Sits("q1", "q2"), Owed())));
-    }
-
-    [Fact]
-    public void A_pass_found_owed_is_taken_once_and_what_else_the_judgment_found_stays()
-    {
-        var facts = new LookFacts(new Daoris.Testing.MovedClock());
-        var act = Owed();
-        facts.KeepOpinion("due-1", Found(Sits("q1"), act));
-
-        Assert.Same(act, facts.TakeAct("due-1"));
-        Assert.Null(facts.TakeAct("due-1"));
-        Assert.Null(facts.TakeAct("due-2"));
-        var kept = Assert.IsType<OpinionFact>(facts.Opinion("due-1"));
-        Assert.Equal(["q1"], kept.Sits.Keys);
-        Assert.Null(kept.Act);
+        Assert.False(facts.KeepOpinion("due-1", Found(Sits("q1", "q2"), Owed())));
     }
 
     [Fact]

@@ -16,7 +16,11 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
         IReadOnlyList<Consideration> plan;
         using (wiring.Stages.Begin("plan"))
         {
-            snapshot = snapshot with { Starting = [.. state.ReservedBefore.Union(wiring.Runs.Reserved)], HeldStarts = wiring.Runs.HeldStarts.Quests };
+            snapshot = snapshot with
+            {
+                Starting = [.. state.ReservedBefore.Union(wiring.Runs.Reserved)], HeldStarts = wiring.Runs.HeldStarts.Quests, Opinions = wiring.Gate.Sits(snapshot),
+            };
+            state.JudgedOpinions = wiring.Gate.Judged();
             // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here.
             plan = Planner.Plan(
                 snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config,

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// a pass does, and each answer handed to the session that asked. Under the watch an asker's record, an answer's handing
 /// and a restart's settling are the <c>helper</c> topic's judge's; the verdict and its start stay here.
 /// </summary>
-[LookPass("helpers", LookPhase.Read, "opinions")]
+[LookPass("helpers", LookPhase.Read, "reviews")]
 internal sealed class HelpersLook(ILookStagesWiring wiring) : ILookPass
 {
     public async Task RunAsync(LookRound round, CancellationToken ct)

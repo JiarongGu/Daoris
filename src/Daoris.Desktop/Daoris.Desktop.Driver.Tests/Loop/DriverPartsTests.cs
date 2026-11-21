@@ -31,13 +31,13 @@ public sealed class DriverPartsTests : IDisposable
         Assert.Equal(
             ["kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
-                "reviews", "opinions", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
+                "reviews", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
                 "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "door-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
                 "stored-sign-ins", "sign-outs", "browser-sign-ins",
                 "through-notices", "step-settles", "departures"],
             order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 22),
+            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
                 .. Enumerable.Repeat(LookPhase.Planned, 8), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 10)],
             order.Select(part => (LookPhase)part.Phase));
 
@@ -72,7 +72,6 @@ public sealed class DriverPartsTests : IDisposable
             pass => Assert.IsType<ChannelLook>(pass),
             pass => Assert.IsType<ReopensLook>(pass),
             pass => Assert.IsType<ReviewsLook>(pass),
-            pass => Assert.IsType<OpinionsLook>(pass),
             pass => Assert.IsType<HelpersLook>(pass),
             pass => Assert.IsType<ChecksLook>(pass),
             pass => Assert.IsType<PartnersLook>(pass),
@@ -120,8 +119,8 @@ public sealed class DriverPartsTests : IDisposable
         Assert.Contains("written by the snapshot pass", Assert.Throws<InvalidOperationException>(() => state.ReservedBefore).Message);
         Assert.Contains("written by the supervisor pass", Assert.Throws<InvalidOperationException>(() => state.Alone).Message);
         Assert.Contains("written by the roster pass", Assert.Throws<InvalidOperationException>(() => state.Looked).Message);
-        Assert.Contains("written by the opinions pass", Assert.Throws<InvalidOperationException>(() => state.Passes).Message);
-        Assert.Contains("written by the opinions pass", Assert.Throws<InvalidOperationException>(() => state.JudgedOpinions).Message);
+        Assert.Equal(0, state.Passes);
+        Assert.Contains("written by the plan pass", Assert.Throws<InvalidOperationException>(() => state.JudgedOpinions).Message);
         Assert.Contains("written by the plan pass", Assert.Throws<InvalidOperationException>(() => state.Plan).Message);
         Assert.Contains("written by the start pass", Assert.Throws<InvalidOperationException>(() => state.Outcome).Message);
         Assert.Same(concluded, state.Concluded);

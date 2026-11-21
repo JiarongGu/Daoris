@@ -820,5 +820,6 @@ internal static class DesktopStoreSteps
         ReadMarksStoreStep.Migration,
         BusLogStoreStep.Migration,
         BusLogStoreStep.Timers,
+        BusLogStoreStep.Queue,
     ];
 }

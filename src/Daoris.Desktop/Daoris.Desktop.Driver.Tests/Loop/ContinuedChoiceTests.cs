@@ -100,10 +100,10 @@ public sealed class ContinuedChoiceTests : IDisposable
         var press = new OpinionRequest(Now, "s1", OpinionRules.Landing) { SameAgent = true };
         var ran = new PriorSession("s1", null, "completed") { Adapter = "second", Asked = new ActorEffective("second", "sonnet", null, "2").Asked };
 
-        Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran, rule, Config));
-        Assert.Equal(["second"], OpinionGateLook.Reviewers(press, ran with { Adapter = null }, rule, Config));
-        Assert.Equal(["first"], OpinionGateLook.Reviewers(press, null, rule, Config));
-        Assert.Equal(["dsh"], OpinionGateLook.Reviewers(press with { SameAgent = false, Reviewer = "dsh" }, ran, rule, Config));
-        Assert.Equal(["codex-acp"], OpinionGateLook.Reviewers(null, ran, rule, Config));
+        Assert.Equal(["second"], OpinionGateJudge.Reviewers(press, ran, rule, Config));
+        Assert.Equal(["second"], OpinionGateJudge.Reviewers(press, ran with { Adapter = null }, rule, Config));
+        Assert.Equal(["first"], OpinionGateJudge.Reviewers(press, null, rule, Config));
+        Assert.Equal(["dsh"], OpinionGateJudge.Reviewers(press with { SameAgent = false, Reviewer = "dsh" }, ran, rule, Config));
+        Assert.Equal(["codex-acp"], OpinionGateJudge.Reviewers(null, ran, rule, Config));
     }
 }
