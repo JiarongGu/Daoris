@@ -38,10 +38,8 @@ public sealed class Driver(
     /// <summary>Told each answer the course gave a driven path as it is decided: a test's, no person's.</summary>
     internal Action<LineCourse>? Decided { get; set; }
 
-    /// <summary>
-    /// The driven carry-on's move record: the one store the limit move writes, handed the lease holder's scope, or a shared loop's
-    /// lines alone. Made on first use, since the watch builds a driver for each look; a test hands one of its own.
-    /// </summary>
+    /// <summary>The driven carry-on's move record: the one store the limit move writes, handed the lease holder's scope, or a shared
+    /// loop's lines alone. Made on first use, since the watch builds a driver for each look; a test hands one of its own.</summary>
     internal ConversationMoves Moves
     {
         get => _moves ??= new ConversationMoves(
@@ -76,6 +74,9 @@ public sealed class Driver(
 
     /// <summary>The machine log, where a failure nothing else awaits is written with its place; null where nothing keeps one.</summary>
     public MachineLog? Log { get => Context.Log; init => Context.Log = value; }
+
+    /// <summary>The lease holder's bus log, which the opinions' deliveries are teed into; null tees nothing.</summary>
+    public BusLog? Bus { get => Context.Bus; init => Context.Bus = value; }
 
     /// <summary>What each quest's and ask's walk last passed, so <c>actor.passed</c> is written when a pass is new, not at every look.</summary>
     internal PassMemory Passed { get; } = new();

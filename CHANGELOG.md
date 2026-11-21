@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- The first step of the Daoris bus: the driver holding the home keeps a log of each second opinion asked, given, answered and
+  delivered, and each check started and settled, with no reader yet, beside today's records and never failing them. `daoris bus
+  stats` reads what it measures by the day: events by kind, how long each took, the log's writes, the rows' bytes beside the pages
+  written to disk, and each look stage's time, from which the bus's budgets and deadlines are set. An entry a busy store refuses
+  is tried again, in its order, before it is ever dropped.
 - A vacant step's loose ends are tied. How long Daoris lets one stand before giving it up is a setting you can change
   (`daoris settings vacancy <hours>`, or its row beside the checks setting), its toast now reads as something waiting on
   somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its

@@ -38,7 +38,7 @@ internal static class ReachedVerdict
         if (exit != 0 && seen.Red.Count > 0) said += "\n" + Failures(log, seen.Red, logPath);
         return exit == 0
             ? new VerifyResult(invocation, commit, VerifyVerdicts.Reached, said, [new VerifyGate(Gate, RunnerVerdicts.Pass, 0) { Log = logPath }])
-            : new VerifyResult(invocation, commit, VerifyVerdicts.Failed, said, [new VerifyGate(Gate, RunnerVerdicts.Fail, exit) { Log = logPath }]) { Failed = Gate };
+            : new VerifyResult(invocation, commit, VerifyVerdicts.Failed, said, [new VerifyGate(Gate, RunnerVerdicts.Fail, exit) { Log = logPath }]) { Failed = Gate, Red = seen.Red };
     }
 
     /// <summary>A reached command's outcome, null with no outcome line: each red class first, its failure lines where <paramref name="path"/> is given.</summary>

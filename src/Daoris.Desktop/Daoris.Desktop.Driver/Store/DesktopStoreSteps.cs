@@ -818,5 +818,6 @@ internal static class DesktopStoreSteps
 
         HeldDecisionsStoreStep.Migration,
         ReadMarksStoreStep.Migration,
+        BusLogStoreStep.Migration,
     ];
 }

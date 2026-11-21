@@ -85,6 +85,9 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public double? WallSeconds { get; init; }
 
+    /// <summary>The red classes a reached run's outcome named, for the bus's settle and never written to the file; null where no gate named them, which is unknown.</summary>
+    public IReadOnlyList<string>? Red { get; init; }
+
     public void Write(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -185,10 +188,8 @@ public sealed record VerifyJudged(VerifyResult? Result, bool Busy)
     public static readonly VerifyJudged WasBusy = new(null, true);
 }
 
-/// <summary>
-/// A check's verdict from what its runner said: a runner that answers by file is judged from its
-/// gates alone, against the accepted declaration and the gates the check names; an opaque runner is one check, by its exit.
-/// </summary>
+/// <summary>A check's verdict from what its runner said: a runner that answers by file is judged from its gates alone, against the
+/// accepted declaration and the gates the check names; an opaque runner is one check, by its exit.</summary>
 public static class VerifyJudge
 {
     /// <summary>The name an opaque runner's one check carries: the declaration's key for it.</summary>

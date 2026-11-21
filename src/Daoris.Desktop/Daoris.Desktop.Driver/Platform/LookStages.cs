@@ -51,6 +51,9 @@ public sealed class LookStages
 
     private static readonly long Origin = Stopwatch.GetTimestamp();
 
+    /// <summary>Told each span that ends, its stage and held milliseconds (the bus log's measures); a throw never fails the span.</summary>
+    public Action<string, long>? Timed { get; init; }
+
     /// <summary>Begin a span of <paramref name="stage"/>, for <paramref name="subject"/> where it has one; it ends when disposed.</summary>
     /// <param name="beside">Whether it runs beside the look rather than in it: marked <c>~</c> on the line.</param>
     public StageSpan Begin(string stage, string? subject = null, bool beside = false)
@@ -137,6 +140,14 @@ public sealed class LookStages
     private void Keep(Ended span)
     {
         lock (_gate) _ended.Add(span);
+        try
+        {
+            Timed?.Invoke((span.Beside ? "~" : "") + span.Stage, span.Held);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Debug.WriteLine($"look stages: a span's time was not told ({error.Message})");
+        }
     }
 
     private void Slow(StageSpan span) =>

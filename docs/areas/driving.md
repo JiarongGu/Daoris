@@ -26,6 +26,7 @@ the run's stages and the quest log's operations in their order.
 | `Loop/Session/` | What every start shares: `SessionEquipment`, `SessionRules`, `QuestWalk`, `AccountEndings`, `SessionWatching`, `SessionWaits`, `PartsHanded`, `StartSentence` |
 | `Loop/Watch/`, `Loop/` | When a look runs (`WatchRun`); intakes, continuations (`Loop/Continue/`), helpers, partners, brainstorms, `DriverCommand`, how this Daoris is wired (`SystemWiring`, `Loop/Setup/`) |
 | `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
+| `Bus/` | The bus's log in its first form (D356 step 1, rule 30a): `BusLog` writes envelopes behind into the desktop store through one port (`IBusLogStore`, today `DesktopBusLogStore`), the opinion and check facts teed in from their own subdomain (`Review/OpinionBusFacts`, `OpinionBusTee`, `Review/Heavy/CheckBusFacts`), its measures read by `daoris bus stats` (`BusStatsCommand`) |
 | `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
 | `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
 | `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
@@ -229,8 +230,34 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent
     closed is read within a pass, never another ledger change, reading tips from git's ref files (`NodeTips`) and a run's record
     once while its file stands. Each look pass is a stage of its part's name in `watch.looked` unless it times itself, so a look's
-    own stages add up to its milliseconds. The budgets are the bench tests' (below) and the git area's *Git's starts, counted*.
-    (D68, D181)
+    own stages add up to its milliseconds, and each stage's time is measured by the day into the bus log's measures (rule 30a). The
+    budgets are the bench tests' (below) and the git area's *Git's starts, counted*. (D68, D181)
+30a. The bus's log (D356 step 1) is the lease holder's: the desktop's loop and `daoris drive` open it once they hold the home's lease
+    and close it before they let it go; a loop beside an instance keeps none. It is two tables of the desktop store (`bus_log`,
+    `bus_measures`, made by the store's step 33), each entry one envelope (id, seq, kind as `name/version`, subject, emitter,
+    answerer, deadline, effect key, causes, and a payload of ids, codes, counts and times), on a connection of its own, write-ahead
+    logged with `synchronous = NORMAL` and its log file bounded as the store engine bounds it. An append is taken in memory, given
+    its id, order and time at once, and written behind: plain entries a second after the first of them, a commit-class entry at
+    once, grouped with whatever waits; nothing is written while nothing is appended, and a look stage timed or a miss counted while
+    idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Teed in beside
+    today's writes, with no consumer: an opinion asked, given and answered (the landing line's channel), its findings delivered,
+    and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
+    ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
+    its effect starts again. Red classes no gate named stay unknown, never a count of zero.
+    A shadow append never fails the write it rides beside: a refusal (the store's, a payload that is no id, code, count or time, a
+    process not holding the lease) is counted by its reason and said once as `bus.refused`. A payload's number is finite and its
+    text well-formed; until a registry declares each field, an id or code carries no whitespace and nothing shaped like a path or an
+    e-mail address (a red class keeps its suite and its test file's name, never its path). The lease is asked on the writers' path
+    at most every two seconds, an unreadable lease keeping the last answer, and afresh before each write, so what was taken while
+    it was lost is dropped, never written by the old holder. The bus waits on the store's lock as long as the engine does; a batch
+    a busy store refused goes back ahead of the next, its order kept, tried again five seconds later at most six times running and
+    counted, then dropped. Measured by the day: entries by kind,
+    each kind's handling time where known, the flushes' count, entries and time, the rows' own bytes beside the pages each write
+    put on disk (the write-ahead log's frames, as the engine counts them), the misses and each look stage's time, which
+    `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
+    measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and keeps
+    `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
+    said at the close, which still writes what waited.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)
@@ -540,7 +567,7 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
 - **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
-- **BUS2a to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its rows move the
-  looks of rule 30 to reducers over it one job at a time, the opinion gate first.
+- **BUS2b to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first step stands
+  (rule 30a), and its rows move the looks of rule 30 to reducers over it one job at a time, the opinion gate first.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
 - D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.

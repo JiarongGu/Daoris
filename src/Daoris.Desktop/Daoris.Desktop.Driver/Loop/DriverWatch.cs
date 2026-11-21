@@ -215,7 +215,7 @@ public sealed class DriverWatch(
     /// </summary>
     internal LookStages Stages
     {
-        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log));
+        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log) { Timed = Bus is null ? null : Bus.Staged });
         init => _stages = value;
     }
 
@@ -407,10 +407,16 @@ public sealed class DriverWatch(
     /// the next look's report instead, as the orphan sweep's lines are: a part handed to <paramref name="onReport"/> would
     /// replace a screen's standing answers with nothing, and a look that failed returns no report.
     /// </param>
-    public Task RunAsync(
+    public async Task RunAsync(
         Func<TickReport, DriverConfig, Task> onReport,
         Func<Exception, Task>? onError,
         CancellationToken ct,
-        Action<TickReport>? said = null) =>
-        new WatchRun(this, _wakes, _doors, onReport, onError, ct, said).RunAsync();
+        Action<TickReport>? said = null)
+    {
+        using var tee = Bus is null ? null : new OpinionBusTee(service, Bus);
+        await new WatchRun(this, _wakes, _doors, onReport, onError, ct, said).RunAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>The lease holder's bus log, which the looks, the checks and the opinions' lines are teed into; null tees nothing.</summary>
+    public BusLog? Bus { get; init; }
 }

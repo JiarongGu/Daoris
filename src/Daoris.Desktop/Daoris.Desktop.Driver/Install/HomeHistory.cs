@@ -64,15 +64,15 @@ public static class HomeHistory
         "integration_parts", "integration_epochs", "integration_candidates", "integration_requests", "delivery_phases", "deliveries",
         "binding_roles", "binding_picks", "bindings", "role_moves", "role_starts", "continuation_admissions", "continuation_made",
         "continuation_epochs", "continuation_lines", "held_decisions", "notices", "news_said", "journal_cursors", "conversation_facts",
-        "session_event_offsets", "session_event_heads", "read_marks",
+        "session_event_offsets", "session_event_heads", "read_marks", "bus_log",
     ];
 
-    /// <summary>The desktop store's tables that stay: its own bookkeeping, the roles and their policies, the workspaces, the trees, the act journal.</summary>
+    /// <summary>The desktop store's tables that stay: its own bookkeeping, the roles and their policies, the workspaces, the trees, the act journal, and the bus's measures, which are evidence.</summary>
     public static IReadOnlyList<string> DesktopKept { get; } =
     [
         "store_version", "store_revisions", "store_runs", "imports", "roles", "role_revisions", "role_staffing",
         "role_policy", "role_policy_revisions", "supervisor_rules", "supervisor_rule_revisions", "repository_workspaces",
-        "kept_trees", "tree_claims", "tree_visits", "line_ends", "tree_hand_offs", "git_acts", "git_act_steps",
+        "kept_trees", "tree_claims", "tree_visits", "line_ends", "tree_hand_offs", "git_acts", "git_act_steps", "bus_measures",
     ];
 
     /// <summary>
