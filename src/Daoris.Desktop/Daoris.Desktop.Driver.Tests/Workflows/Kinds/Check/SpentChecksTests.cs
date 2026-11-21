@@ -72,4 +72,18 @@ public sealed class SpentChecksTests : NodeRunFixture
         Assert.False(SpentChecks.Passes(Config("""{"risk":{"machine":[{"kind":"work.recover","class":"owner"}]}}"""), "default", RunHome.Repository));
         Assert.Contains("nobody is asked", SpentChecks.Words("check", null, null, 3), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Classed_role_the_spent_red_names_the_role_and_its_holder_or_its_vacancy_never_the_person()
+    {
+        var verdict = SpentChecks.Verdict(Config("""{"risk":{"machine":[{"kind":"work.recover","class":"role","by":"supervisor"}]}}"""), "default", RunHome.Repository)!;
+
+        var held = SpentChecks.RoleWords("check", null, null, 3, verdict, new CastNow("supervisor", "claude", "cast", "machine"));
+        var vacant = SpentChecks.RoleWords("check", null, null, 3, verdict, new CastNow("supervisor", "supervisor", CastWhy.Default, "default"));
+
+        Assert.Equal(RiskVerdict.Gate, verdict.Outcome);
+        Assert.Contains("the role `supervisor` sees it too, held by claude", held, StringComparison.Ordinal);
+        Assert.Contains("which no one is cast to, so it stands vacant", vacant, StringComparison.Ordinal);
+        Assert.DoesNotContain("the person", held + vacant, StringComparison.Ordinal);
+    }
 }

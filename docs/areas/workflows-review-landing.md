@@ -256,7 +256,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
     red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354): with nothing configured the
     seed passes it, so Daoris gives the run's check up as its own stop with what was tried, the run ending as gave up, one `risk.judged`
-    line kept and the pass said, and nobody is asked (`SpentChecks`); a row classing it `owner`, or no policy read, keeps its failure for
+    line kept and the pass said, and nobody is asked (`SpentChecks`); a row classing it `role` tells the work the role that sees it, held by
+    its holder as the place casts it or vacant where no one is cast to it; a row classing it `owner`, or no policy read, keeps its failure for
     the person as one row (What needs you), never one per red. Its words still reach the work's session, once, with its round and the bound
     (`NodeRunKeeping.SpentRedsAsync`), saying which of the two it came to. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
     failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached

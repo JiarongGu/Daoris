@@ -334,8 +334,14 @@ internal sealed class NodeRunKeeping(
         {
             var code = record.Statuses.GetValueOrDefault(node)?.Code;
             var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
-            var passes = SpentChecks.Passes(config, workspace, repository);
-            var text = passes ? SpentChecks.Words(node, code, found, reds) : CheckRounds.SpentWords(node, code, found, reds);
+            var verdict = SpentChecks.Verdict(config, workspace, repository);
+            var passes = verdict is { Outcome: RiskVerdict.Pass };
+            var text = verdict switch
+            {
+                { Outcome: RiskVerdict.Pass } => SpentChecks.Words(node, code, found, reds),
+                { Outcome: RiskVerdict.Gate, By: { } role } => SpentChecks.RoleWords(node, code, found, reds, verdict, CastReading.Now(records.Home, workspace, repository)(role)),
+                _ => CheckRounds.SpentWords(node, code, found, reds),
+            };
             await TellWorkAsync(governed, scope, node, attempt, text, said, ct, spent: true).ConfigureAwait(false);
             if (passes) SpentChecks.Decide(records, scope.Run.Run, node, reds, config, repository, workspace, found, clock(), said);
         }

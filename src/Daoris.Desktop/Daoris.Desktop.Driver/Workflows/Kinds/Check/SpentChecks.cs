@@ -19,6 +19,16 @@ internal static class SpentChecks
         + $"\n\nThis is its red round {reds}, past the {CheckRounds.Bound} Daoris sends back on its own, and no risk is declared for its recovery "
         + "here, so Daoris gives the run's check up with what was tried: the run ends as given up, and nobody is asked.";
 
+    /// <summary>
+    /// The red told where the policy gates its recovery on a role: who sees it is that role, held by its holder as the place casts it, or
+    /// vacant where no one is cast to it; never the person by default.
+    /// </summary>
+    public static string RoleWords(string node, string? code, string? found, int reds, RiskVerdict verdict, CastNow? holder) =>
+        NodeRunKeeping.FailedWords(node, code, found)
+        + $"\n\nThis is its red round {reds}, past the {CheckRounds.Bound} Daoris sends back on its own, so the role `{verdict.By}` sees it too, "
+        + (holder is { Why: not CastWhy.Default } ? $"held by {holder.Holder}" : "which no one is cast to, so it stands vacant")
+        + $" ({verdict.Why}): commit a fix and it is checked again, or, if you cannot make it pass, say so and give up with what you tried.";
+
     public static string Tried(int reds, string? found) =>
         $"its {reds} red rounds are spent, past the {CheckRounds.Bound} Daoris sends back on its own, and no risk is declared for its recovery here. "
         + $"Tried: each red sent back to the work's session as its next turn, {reds} times"
