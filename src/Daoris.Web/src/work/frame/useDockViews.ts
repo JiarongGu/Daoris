@@ -72,8 +72,10 @@ export function useDockViews({
   const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
   const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
   // A console that goes away would leave the terminal showing, which starts a shell: the panel shuts instead, in this render.
+  // Only one that went: the person picking Terminal beside a console still there asks for its shell.
   const shown = useRef<ViewId | undefined>(undefined);
-  const consoleGone = !collapsed && shown.current === 'console' && panelView === 'terminal' && terminalCount === 0;
+  const consoleGone = !collapsed && shown.current === 'console' && !panelViews.includes('console') && panelView === 'terminal'
+    && terminalCount === 0;
   useEffect(() => {
     shown.current = collapsed || consoleGone ? undefined : panelView;
     if (consoleGone) closed.setPanel(true);

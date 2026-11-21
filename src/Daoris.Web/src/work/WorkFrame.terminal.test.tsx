@@ -149,6 +149,18 @@ describe('the terminal in the Work frame (CONSOLE4b)', () => {
     expect(opens()).toEqual([]);
   });
 
+  it('starts a shell when the person picks Terminal beside an open console with none running, and keeps the panel', async () => {
+    const { console: openConsole } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    openConsole();
+    expect(await screen.findByRole('tab', { name: 'Console', selected: true })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Terminal' }));
+
+    await waitFor(() => expect(opens()).toHaveLength(1));
+    expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+  });
+
   it("opens in the attended session's repository when its record names no tree of its own", async () => {
     const { newTerminal } = frame('s1a2b3c4');
     await screen.findAllByText(/zeta/);
