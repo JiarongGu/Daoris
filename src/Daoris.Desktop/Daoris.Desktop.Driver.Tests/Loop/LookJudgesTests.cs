@@ -92,55 +92,18 @@ public sealed class LookJudgesTests : IDisposable
             Assert.Contains("not judged yet", held.Reason);
             Assert.DoesNotContain("q2", runs.Started);
 
+            // No look judges an opinion: with no bus here, no consumer judges q1's, and every look keeps holding q2.
             judging.Release();
-            await Poll.Until(() => runs.Started.Contains("q2"), () => "q2 never started once q1's opinion was judged", Poll.Patience);
-            Assert.Empty(new OpinionDues(_home).Open());
-        }
-        finally
-        {
-            judging.Release();
-            await _closing.CancelAsync();
-            await Settled(watching);
-        }
-    }
-
-    /// <summary>
-    /// 🔴 A judgment that keeps failing says so once and spins no look: its line wakes the next look, whose judgment fails again and says
-    /// nothing, so the loop waits for whatever wakes it next. The chain stays held, not judged yet.
-    /// </summary>
-    [Fact]
-    public async Task A_judgment_that_keeps_failing_says_so_once_and_spins_no_look()
-    {
-        Owed();
-        var asked = 0;
-        // It fails after the look that asked it has ended, as git refusing a tree does, so its line is a later look's to say.
-        _ledger.Before = async (request, token) =>
-        {
-            if (request.RequestUri!.AbsolutePath != "/api/quests" || !request.RequestUri.Query.Contains("includeClosed=true", StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            Interlocked.Increment(ref asked);
-            await Task.Delay(TimeSpan.FromMilliseconds(300), token);
-            throw new HttpRequestException("the stand-in will not read every quest");
-        };
-        var (watch, runs) = Watch();
-        var reports = new List<TickReport>();
-
-        var watching = Task.Run(() => watch.RunAsync(Into(reports), onError: null, _closing.Token));
-        try
-        {
-            await Poll.Until(() => Volatile.Read(ref asked) >= 2, () => "the failed judgment was never asked again", Poll.Patience);
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            Assert.InRange(Volatile.Read(ref asked), 2, 3);
-            Assert.Single(Snapshot(reports).SelectMany(report => report.Events),
-                line => line.StartsWith("opinion  the second opinion owed on session s1's work could not be judged", StringComparison.Ordinal));
+            var before = Count(reports);
+            watch.Nudge(ChangeTopics.Ledger, "quests");
+            await Poll.Until(() => Count(reports) > before, () => "the look after the release never came", Poll.Patience);
+            Assert.Equal(StartVerdict.WaitsForOpinion, Snapshot(reports)[^1].Considerations.Single(c => c.Quest.Id == "q2").Verdict);
             Assert.DoesNotContain("q2", runs.Started);
+            Assert.NotEmpty(new OpinionDues(_home).Open());
         }
         finally
         {
+            judging.Release();
             await _closing.CancelAsync();
             await Settled(watching);
         }

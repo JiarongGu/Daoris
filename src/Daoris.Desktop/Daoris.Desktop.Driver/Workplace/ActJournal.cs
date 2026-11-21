@@ -27,6 +27,32 @@ public static class ActPhases
     public static IReadOnlyList<string> All { get; } = [Judged, Prepared, Started, Ended, Reconciled, Closed];
 }
 
+public static class ActEffects
+{
+    public const string Fresh = "fresh";
+
+    public const string Done = "done";
+
+    public const string Uncertain = "uncertain";
+}
+
+/// <summary>A word to a harness taken once by its effect key; a crash between its begin and end reads <see cref="ActEffects.Uncertain"/> and it is never sent again.</summary>
+public static class OnceWords
+{
+    /// <summary>
+    /// Send <paramref name="send"/> under <paramref name="key"/> unless a word under it went out or is uncertain, which is returned without
+    /// sending; <paramref name="went"/> says whether what the send answered went out.
+    /// </summary>
+    public static async Task<(string Before, T? Sent)> SendAsync<T>(ActJournal journal, string key, string kind, Func<Task<T>> send, Func<T, bool> went)
+    {
+        var before = journal.BeginEffect(key, kind);
+        if (before != ActEffects.Fresh) return (before, default);
+        var sent = await send().ConfigureAwait(false);
+        journal.EndEffect(key, went(sent));
+        return (before, sent);
+    }
+}
+
 /// <summary>What an act's postconditions said, read after its effect and never from an exit code.</summary>
 public static class ActOutcomes
 {
@@ -477,6 +503,43 @@ public sealed class ActJournal(
     {
         var at = row.GetOrdinal(column);
         return row.IsDBNull(at) ? null : row.GetInt64(at);
+    }
+
+
+    /// <summary>
+    /// Begin the outside effect <paramref name="key"/> (a word to a harness): <see cref="ActEffects.Fresh"/> where none has begun, and it is
+    /// begun now; <see cref="ActEffects.Done"/> where one went out; <see cref="ActEffects.Uncertain"/> where one began and never ended,
+    /// a crash between its begin and its end, which is never run again.
+    /// </summary>
+    public string BeginEffect(string key, string kind)
+    {
+        using var store = Writer();
+        return store.Write(Family, write =>
+        {
+            var kept = write.Query("SELECT ended_at FROM act_effects WHERE key = $key", row => (Found: true, Ended: !row.IsDBNull(0)), ("$key", key)).FirstOrDefault();
+            if (kept.Found) return kept.Ended ? ActEffects.Done : ActEffects.Uncertain;
+            write.Execute("INSERT INTO act_effects (key, kind, begun_at) VALUES ($key, $kind, $at)", ("$key", key), ("$kind", kind), ("$at", Now()));
+            return ActEffects.Fresh;
+        });
+    }
+
+    /// <summary>End the effect <paramref name="key"/>: <paramref name="went"/> keeps it done; not, its key is let go so a later try may go.</summary>
+    public void EndEffect(string key, bool went)
+    {
+        using var store = Writer();
+        store.Write(Family, write =>
+        {
+            if (went)
+            {
+                write.Execute("UPDATE act_effects SET ended_at = $at, outcome = $outcome WHERE key = $key", ("$key", key), ("$at", Now()), ("$outcome", ActEffects.Done));
+            }
+            else
+            {
+                write.Execute("DELETE FROM act_effects WHERE key = $key AND ended_at IS NULL", ("$key", key));
+            }
+
+            return 0;
+        });
     }
 
     private static ActRecord MapAct(DbDataReader row) =>

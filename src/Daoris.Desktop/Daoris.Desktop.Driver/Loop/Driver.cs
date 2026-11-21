@@ -197,14 +197,13 @@ public sealed class Driver(
 
     private DriverOpinions? _opinions;
     private OpinionDeliverer? _deliverer;
-    private OpinionGateLook? _gate;
+    private OpinionGateJudge? _gate;
 
     private DriverOpinions Opinions => LazyInitializer.EnsureInitialized(ref _opinions, () => new DriverOpinions(Context, this));
 
-    /// <summary>The second opinion's delivery, which the go-on also asks to read the answers and to send findings to the person.</summary>
     internal OpinionDeliverer Deliverer => LazyInitializer.EnsureInitialized(ref _deliverer, () => new OpinionDeliverer(Context, Opinions));
 
-    internal OpinionGateLook Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateLook(Context, Opinions, Deliverer));
+    internal OpinionGateJudge Gate => LazyInitializer.EnsureInitialized(ref _gate, () => new OpinionGateJudge(Context, Opinions, Deliverer));
 
     private DriverContinuations? _continuations;
     private DriverHandOvers? _handOvers;
@@ -327,10 +326,6 @@ public sealed class Driver(
 
     public Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default) =>
         Deliverer.DeliverAsync(opinion, asked, ct);
-
-    internal Task<(IReadOnlyDictionary<string, OpinionSit> Sits, int Passes)> OpinionsAsync(
-        Snapshot snapshot, List<string> events, CancellationToken ct, List<OpinionJudged>? judged = null) =>
-        Gate.OpinionsAsync(snapshot, events, ct, judged);
 
     internal Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
         StartBinding.StepRoleAsync(Context, quest, workspace, ct);

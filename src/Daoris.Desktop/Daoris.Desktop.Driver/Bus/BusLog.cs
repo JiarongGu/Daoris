@@ -22,6 +22,9 @@ public sealed record BusLogOptions
     /// Asked at most every <see cref="BusLog.WriterEvery"/> on the writers' path, and afresh before each write.
     /// </summary>
     public Func<bool?> Writer { get; init; } = () => true;
+
+    /// <summary>The home whose log this is, where writers that hold no log find it (<see cref="BusLog.Of"/>); null registers none.</summary>
+    public string? Home { get; init; }
 }
 
 /// <summary>What a log has done since it opened, in memory: what a test and the stats read.</summary>
@@ -106,12 +109,15 @@ public sealed class BusLog : IAsyncDisposable
     private DateTimeOffset _dirtySince;
     private readonly Task _loop;
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, BusLog> Homes = new(StringComparer.OrdinalIgnoreCase);
+
     private BusLog(IBusLogStore store, BusLogOptions options)
     {
         _store = store;
         _options = options;
         _clock = options.Clock;
         _lastWrite = _clock.GetUtcNow();
+        if (options.Home is { } home) Homes[Path.GetFullPath(home)] = this;
         _loop = Task.Run(() => LoopAsync(_closing.Token));
     }
 
@@ -120,7 +126,72 @@ public sealed class BusLog : IAsyncDisposable
 
     /// <summary>The home's own log, written while this process holds the home's lease.</summary>
     public static BusLog Open(string home, MachineLog? log, TimeProvider clock) =>
-        Over(new DesktopBusLogStore(home), new BusLogOptions { Clock = clock, Log = log, Writer = () => HomeLease.HeldHereRead(home) });
+        Over(new DesktopBusLogStore(home), new BusLogOptions { Clock = clock, Log = log, Writer = () => HomeLease.HeldHereRead(home), Home = home });
+
+    /// <summary>The log this process keeps open for <paramref name="home"/>, or null where none is: a writer with no log in hand tees through it.</summary>
+    public static BusLog? Of(string home) => Homes.GetValueOrDefault(Path.GetFullPath(home));
+
+    /// <summary>
+    /// Told the entries each write kept, in order, at their kept orders, once they are written: the queue's wake (<see cref="BusQueue"/>).
+    /// A listener that throws is said once and the others are told.
+    /// </summary>
+    public event Action<IReadOnlyList<BusEnvelope>>? Written;
+
+    public IBusQueueStore? Queue => _store as IBusQueueStore;
+
+    public bool? WriterRead() => Ask();
+
+    public bool Writing => Holder();
+
+    /// <summary>A warning said once for <paramref name="once"/> in this process's life, in the machine log the log holds.</summary>
+    public void Warn(string once, string @event, params (string Key, object? Value)[] data)
+    {
+        try
+        {
+            lock (_gate)
+            {
+                if (!_said.Add("warn:" + once)) return;
+            }
+
+            _options.Log?.Warn(@event, data);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Debug.WriteLine($"bus: a warning could not be said ({error.Message})");
+        }
+    }
+
+    /// <summary>One measure added by the day (<see cref="BusMeasures"/>), written with the next write as a stage's time is.</summary>
+    public void Measured(string measure, string name, long total)
+    {
+        try
+        {
+            lock (_gate)
+            {
+                if (_closed) return;
+                var owed = _measures.Owed;
+                _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), measure, Cut(name)!, total);
+                WakeLocked(owed);
+            }
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Append, error.GetType().Name);
+        }
+    }
+
+    /// <summary>The armed timers of <paramref name="entries"/> taken away; a store that cannot is counted, never thrown.</summary>
+    public void DropTimers(IReadOnlyList<string> entries)
+    {
+        try
+        {
+            _store.DropTimers(entries);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Store, error.Message, counted: false);
+        }
+    }
 
     /// <summary>The clock its entries are stamped by, which its watchdog reads due times on.</summary>
     public TimeProvider Clock => _clock;
@@ -158,42 +229,30 @@ public sealed class BusLog : IAsyncDisposable
     /// Append one envelope behind: given its id, order and time now and written by the loop. Never throws and never waits on the store;
     /// false where refused (an undeclared type among the reasons), which is counted and said.
     /// </summary>
-    public bool Append(BusDraft draft)
+    public bool Append(BusDraft draft) => AppendAll([draft]);
+
+    /// <summary>
+    /// Append <paramref name="drafts"/> as one: each given its order under one hold, so they ride one write and are kept or lost together
+    /// (a last stall and its give-up). None is appended where any is refused; never throws and never waits on the store.
+    /// </summary>
+    public bool AppendAll(IReadOnlyList<BusDraft> drafts)
     {
+        if (drafts.Count == 0) return true;
         try
         {
-            if (!BusTypes.Declares(draft.Type)) return Miss(BusMisses.Unknown, draft.Kind);
-            if (!Fits(draft)) return Miss(BusMisses.Shape, draft.Kind);
-            if (!Holder()) return Miss(BusMisses.NotHolder, draft.Kind);
-            var admitted = draft.Type.Admit(draft.Payload);
+            foreach (var each in drafts)
+            {
+                if (!BusTypes.Declares(each.Type)) return Miss(BusMisses.Unknown, each.Kind);
+                if (!Fits(each)) return Miss(BusMisses.Shape, each.Kind);
+            }
+
+            if (!Holder()) return Miss(BusMisses.NotHolder, drafts[0].Kind);
             TaskCompletionSource? pulse = null;
             lock (_gate)
             {
-                if (_closed) return MissLocked(BusMisses.Closed, draft.Kind);
-                if (_pending.Count >= MostPending) return MissLocked(BusMisses.Full, draft.Kind);
-                var at = _clock.GetUtcNow();
-                var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
-                var deadline = BusTypes.Obliges(draft.Type) ? at + draft.Type.Deadline.Within : (DateTimeOffset?)null;
-                var envelope = new BusEnvelope(
-                    Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, deadline,
-                    draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause],
-                    admitted.Kept, at);
-                foreach (var (field, reason) in admitted.Dropped) DropLocked(draft.Kind, field, reason, at);
-                if (draft.Key is { } key)
-                {
-                    // Bounded: a key from long ago is forgotten with the rest, and its follower's causes stay empty, as after a restart.
-                    if (_keys.Count >= MostKeys && !_keys.ContainsKey(key)) _keys.Clear();
-                    _keys[key] = envelope.Id;
-                }
-
-                _pending.Add(envelope);
-                _appended++;
-                var day = DesktopBusLogStore.Day(at);
-                _measures.Add(day, BusMeasures.Kind, draft.Kind, 1);
-                if (draft.Took is { } took) _measures.Add(day, BusMeasures.Took, draft.Kind, (long)took.TotalMilliseconds);
-                if (draft.Commit) _urgent = true;
-                if (_pending.Count == 1) _dirtySince = at;
-                if (_pending.Count == 1 || draft.Commit) pulse = _pulse;
+                if (_closed) return MissLocked(BusMisses.Closed, drafts[0].Kind);
+                if (_pending.Count + drafts.Count > MostPending) return MissLocked(BusMisses.Full, drafts[0].Kind);
+                foreach (var draft in drafts) pulse = AppendLocked(draft) ?? pulse;
             }
 
             pulse?.TrySetResult();
@@ -203,6 +262,35 @@ public sealed class BusLog : IAsyncDisposable
         {
             return Miss(BusMisses.Append, error.GetType().Name);
         }
+    }
+
+    /// <summary>One draft given its id, order and time and kept to be written; the pulse to give where it wakes the loop.</summary>
+    private TaskCompletionSource? AppendLocked(BusDraft draft)
+    {
+        var admitted = draft.Type.Admit(draft.Payload);
+        var at = _clock.GetUtcNow();
+        var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
+        var deadline = BusTypes.Obliges(draft.Type) ? at + draft.Type.Deadline.Within : (DateTimeOffset?)null;
+        var envelope = new BusEnvelope(
+            Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, deadline,
+            draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause],
+            admitted.Kept, at);
+        foreach (var (field, reason) in admitted.Dropped) DropLocked(draft.Kind, field, reason, at);
+        if (draft.Key is { } key)
+        {
+            // Bounded: a key from long ago is forgotten with the rest, and its follower's causes stay empty, as after a restart.
+            if (_keys.Count >= MostKeys && !_keys.ContainsKey(key)) _keys.Clear();
+            _keys[key] = envelope.Id;
+        }
+
+        _pending.Add(envelope);
+        _appended++;
+        var day = DesktopBusLogStore.Day(at);
+        _measures.Add(day, BusMeasures.Kind, draft.Kind, 1);
+        if (draft.Took is { } took) _measures.Add(day, BusMeasures.Took, draft.Kind, (long)took.TotalMilliseconds);
+        if (draft.Commit) _urgent = true;
+        if (_pending.Count == 1) _dirtySince = at;
+        return _pending.Count == 1 || draft.Commit ? _pulse : null;
     }
 
     /// <summary>
@@ -293,6 +381,7 @@ public sealed class BusLog : IAsyncDisposable
 
     private async Task CloseAsync()
     {
+        if (_options.Home is { } home) Homes.TryRemove(new KeyValuePair<string, BusLog>(Path.GetFullPath(home), this));
         await _closing.CancelAsync().ConfigureAwait(false);
         try
         {
@@ -536,6 +625,25 @@ public sealed class BusLog : IAsyncDisposable
             {
                 _measures.Add(day, BusMeasures.Disk, BusMeasures.Pages, pages, owing: entries.Count > 0);
                 _measures.Add(day, BusMeasures.Disk, BusMeasures.Bytes, pages * written.PageSize, owing: entries.Count > 0);
+            }
+        }
+
+        if (entries.Count > 0) Tell(written.Shift > 0 ? [.. entries.Select(entry => entry with { Seq = entry.Seq + written.Shift })] : entries);
+    }
+
+    /// <summary>The kept entries told to each listener (<see cref="Written"/>), one that throws said once and passed.</summary>
+    private void Tell(IReadOnlyList<BusEnvelope> kept)
+    {
+        if (Written is not { } listeners) return;
+        foreach (var listener in listeners.GetInvocationList().Cast<Action<IReadOnlyList<BusEnvelope>>>())
+        {
+            try
+            {
+                listener(kept);
+            }
+            catch (Exception error) when (error is not OutOfMemoryException)
+            {
+                Warn("written:" + error.GetType().Name, "bus.listener-threw", ("why", Cut(error.Message)));
             }
         }
     }

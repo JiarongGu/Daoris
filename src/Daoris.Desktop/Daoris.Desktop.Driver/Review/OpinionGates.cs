@@ -29,8 +29,12 @@ public sealed class OpinionGates(string home)
         Edit(chain, repository, kept => kept with { Asks = [.. kept.Asks, ask] });
 
     /// <summary>A pass the person asked for, kept until the next look starts it.</summary>
-    public void Requested(string chain, string repository, OpinionRequest request) =>
+    public void Requested(string chain, string repository, OpinionRequest request)
+    {
         Edit(chain, repository, kept => kept with { Requests = [.. kept.Requests, request] });
+        // The gate is the bus's consumer: the person's ask reaches it as a fact, not at a look.
+        BusLog.Of(home)?.Tee(() => OpinionBusFacts.OpinionOwed(request.Session, null, request.Occasion, "press"));
+    }
 
     /// <summary>One session's requests, taken by the look, which starts the newest; the others stay for their own sessions.</summary>
     public IReadOnlyList<OpinionRequest> Take(string chain, string repository, string session)

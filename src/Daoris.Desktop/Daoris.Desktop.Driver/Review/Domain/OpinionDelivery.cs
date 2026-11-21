@@ -139,6 +139,9 @@ public static class OpinionToPerson
     /// </summary>
     public const string PersonWentOn = "person-went-on";
 
+    /// <summary>The findings' word began before a crash and never ended, so whether it went out is unknown: it is never sent again.</summary>
+    public const string Uncertain = "word-uncertain";
+
     /// <summary>
     /// The line for <paramref name="code"/>, this list's or <see cref="ContinueWhy"/>'s for a session that could not go on, in
     /// the driver's English.
@@ -149,6 +152,7 @@ public static class OpinionToPerson
         Recheck => "a recheck's findings are the person's to read, never sent back to the working session by themselves; whether they hold the work is the risk policy's verdict at the opinion's gate",
         Conversation => "the work was a conversation's, which another agent's findings do not reach by themselves",
         PersonWentOn => "you went on in the conversation after you asked for them, so your words went first",
+        Uncertain => "their word to the conversation began before Daoris stopped and may not have arrived, and it is never sent twice",
         // The record they went to went on in another, which could not take them again.
         WordsNever.Continued => "the conversation they went to went on in another, which could not take them",
         // The person's *Not now* to findings the answers-alone bound held for them.

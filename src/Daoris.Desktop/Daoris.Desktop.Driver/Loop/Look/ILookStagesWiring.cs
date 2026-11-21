@@ -14,7 +14,7 @@ internal interface ILookStagesWiring : ILookWiring
 
     DriverHandOvers HandOvers { get; }
 
-    OpinionGateLook Gate { get; }
+    OpinionGateJudge Gate { get; }
 
     DriverHelpers Helpers { get; }
 

@@ -360,7 +360,7 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Loop/OpinionGateLook.cs": {
+    "Loop/OpinionGateJudge.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
@@ -444,10 +444,6 @@
     "Workflows/Kinds/Opinion/OpinionGateReading.cs": {
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
-    },
-    "Workflows/OpinionJudgments.cs": {
-      "reads": "other",
-      "note": "a join key: the reviewers' records found by the opinions an owed opinion's gate asked, stamped, not a record's kind"
     },
     "Workflows/Nodes/WorkflowRunNodes.cs": {
       "reads": "other",

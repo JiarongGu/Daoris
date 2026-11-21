@@ -24,7 +24,68 @@ public interface IBusLogStore : IDisposable
 
     /// <summary>The armed timers due by <paramref name="by"/> (null: all), earliest first; each write moves them (<see cref="BusTimers.Of"/>).</summary>
     IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit);
+
+    /// <summary>The timers of <paramref name="entries"/> taken away: a kind the registry no longer declares, which no fact can end.</summary>
+    void DropTimers(IReadOnlyList<string> entries)
+    {
+    }
 }
+
+/// <summary>
+/// The queue's half of the log's store (<see cref="BusQueue"/>): each consumer's row (its types, its cursor, its fenced epoch) and the
+/// entries it parked, each write one transaction under the home's lease (<see cref="BusBatch.AskWriter"/>) and the consumer's epoch.
+/// </summary>
+public interface IBusQueueStore
+{
+    /// <summary>
+    /// The consumer claimed for this process: its epoch raised (an older one's writes are refused from now), its cursor (a new consumer's
+    /// the log's newest order, so it starts from now) and its parked entries still in the log, in order.
+    /// </summary>
+    BusClaim Claim(string consumer, IReadOnlyList<string> kinds, Func<bool?>? writer, DateTimeOffset at);
+
+    /// <summary>One entry acknowledged: the cursor moved up, the timer it ends cleared and its parked row taken, in one transaction.</summary>
+    /// <exception cref="BusFencedException">A later claim raised the consumer's epoch.</exception>
+    void Acknowledge(BusAck ack);
+
+    /// <summary>Entries parked with their tries, the cursor moved past them, in one transaction.</summary>
+    /// <exception cref="BusFencedException">A later claim raised the consumer's epoch.</exception>
+    void Park(BusPark park);
+
+    /// <summary>The entries of <paramref name="kinds"/> after <paramref name="after"/>, in order: a consumer's replay.</summary>
+    IReadOnlyList<BusEnvelope> Read(long after, IReadOnlyList<string> kinds, int limit);
+
+    /// <summary>A consumer's kept cursor, epoch and parked count; null where it never claimed.</summary>
+    (long Cursor, long Epoch, int Parked)? Consumer(string consumer);
+}
+
+/// <summary>A consumer's claim: its cursor, its epoch and its parked entries with their tries.</summary>
+public sealed record BusClaim(long Cursor, long Epoch, IReadOnlyList<BusParkedEntry> Parked);
+
+/// <summary>An entry a consumer parked, and how many times it threw.</summary>
+public sealed record BusParkedEntry(BusEnvelope Entry, int Tries);
+
+/// <summary>A consumer's acknowledgement of <paramref name="Entry"/>, under its epoch, its cursor after it.</summary>
+public sealed record BusAck(string Consumer, long Epoch, long Cursor, BusEnvelope Entry)
+{
+    /// <summary>The obliged handler whose timer on the entry this ends; null ends none.</summary>
+    public string? Ends { get; init; }
+
+    /// <summary>Whether the entry sits parked, its row taken with this.</summary>
+    public bool Unpark { get; init; }
+
+    /// <summary>The home's lease, asked inside the transaction (<see cref="BusBatch.Writer"/>).</summary>
+    public Func<bool?>? Writer { get; init; }
+}
+
+/// <summary>A consumer's parked entries, each order with its tries, under its epoch, its cursor after them.</summary>
+public sealed record BusPark(string Consumer, long Epoch, long Cursor, IReadOnlyList<(long Seq, int Tries)> Rows)
+{
+    public Func<bool?>? Writer { get; init; }
+}
+
+/// <summary>A later claim raised the consumer's epoch: this one's write is refused, so two processes never both execute it.</summary>
+public sealed class BusFencedException(string consumer, long epoch, long current)
+    : Exception($"`{consumer}` was claimed again (epoch {current}), so epoch {epoch}'s write is refused");
 
 /// <summary>The store could not be written this moment (its lock held past the wait, its file held): a later try may pass, so its batch is kept.</summary>
 public sealed class BusStoreBusyException(Exception inner) : Exception($"the bus log's store is busy ({inner.Message})", inner);

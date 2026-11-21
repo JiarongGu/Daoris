@@ -159,7 +159,8 @@ public sealed class PullRequestOccasionTests
             // The loop's classes that are not named Driver*, so the code moved out of its parts stays scanned.
             .Append(SourceFiles.Driver("LoopContext.cs"))
             .Append(SourceFiles.Driver("OpinionDeliverer.cs"))
-            .Append(SourceFiles.Driver("OpinionGateLook.cs"))
+            .Append(SourceFiles.Driver("OpinionGateJudge.cs"))
+            .Append(SourceFiles.Driver("OpinionGateConsumer.cs"))
             .Append(SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"))
             // The modules' loop's run and what it makes of each look.
             .Append(SourceFiles.Find("Daoris.Desktop.Modules", "LoopRun.cs"))

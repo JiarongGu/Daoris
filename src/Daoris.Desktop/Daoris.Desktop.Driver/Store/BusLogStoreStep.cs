@@ -57,4 +57,33 @@ internal static class BusLogStoreStep
         CREATE INDEX bus_timers_subject ON bus_timers (kind, subject);
         CREATE INDEX bus_timers_effect ON bus_timers (kind, effect);
         """));
+
+    /// <summary>
+    /// The step that makes the queue's rows (<see cref="BusQueue"/>): each durable consumer's types, cursor and fenced epoch, the entries
+    /// it parked with their tries, and the run-once keys of outside effects (<see cref="ActJournal.BeginEffect"/>), which join the act
+    /// journal's family rather than make a journal of their own. New tables an older build never opens.
+    /// </summary>
+    public static StoreMigration Queue { get; } = new(DesktopStore.BusQueueVersion, DesktopStore.PolicyWriter, write => write.Execute(
+        """
+        CREATE TABLE bus_consumers (
+          consumer TEXT PRIMARY KEY,
+          kinds    TEXT NOT NULL,
+          cursor   INTEGER NOT NULL,
+          epoch    INTEGER NOT NULL,
+          at       INTEGER NOT NULL
+        ) WITHOUT ROWID;
+        CREATE TABLE bus_parked (
+          consumer TEXT NOT NULL,
+          seq      INTEGER NOT NULL,
+          tries    INTEGER NOT NULL,
+          PRIMARY KEY (consumer, seq)
+        ) WITHOUT ROWID;
+        CREATE TABLE act_effects (
+          key      TEXT PRIMARY KEY,
+          kind     TEXT NOT NULL,
+          begun_at INTEGER NOT NULL,
+          ended_at INTEGER,
+          outcome  TEXT
+        ) WITHOUT ROWID;
+        """));
 }

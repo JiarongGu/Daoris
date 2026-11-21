@@ -11,6 +11,8 @@ internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits,
 
     public bool Unread { get; init; }
 
+    public bool Begun { get; init; }
+
     IEnumerable<string> IOpinionFact.SatQuests => Sits.Keys;
 
     IOpinionAct? IOpinionFact.Act => Act;

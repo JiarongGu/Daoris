@@ -50,7 +50,7 @@
     { "file": "Loop/DriverHelpers.cs", "member": "DriverHelpers.LeadWaits", "after": "Participants" },
     { "file": "Loop/DriverHelpers.cs", "member": "DriverHelpers.Wait", "after": "Participants" },
     { "file": "Loop/OpinionDeliverer.cs", "member": "OpinionDeliverer.ChatRunOf", "after": "Loop" },
-    { "file": "Loop/OpinionGateLook.cs", "member": "OpinionGateLook.Same", "after": "Loop" },
+    { "file": "Loop/OpinionGateJudge.cs", "member": "OpinionGateJudge.Same", "after": "Loop" },
     { "file": "Loop/SystemWiring.cs", "member": "SystemWiring.SamePath", "after": "Loop" },
     { "file": "Loop/SystemWiring.cs", "member": "SystemWiring.Under", "after": "Loop" },
     { "file": "Loop/SystemWiring.cs", "member": "SystemWiring.SameAddress", "after": "Loop" },

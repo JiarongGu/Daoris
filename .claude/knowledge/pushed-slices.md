@@ -90,8 +90,8 @@ the loop's close) and keep in `LookFacts` only what the next look's plan reads.
 
 | Part | The shape | Where it is |
 |---|---|---|
-| Not judged yet | A subject no judgment has answered for holds what it could hold (a chain's next steps, an ask that begins nothing), never read as a let-go | `OpinionGateLook.NotJudged` |
-| A slot | What takes a place under the cap is begun by the look before its plan, from an act the judgment kept and one look takes; the next judgment is asked after it, so it reads the claim held | `LookFacts.TakeAct`, `OpinionGateLook.Begin` |
+| Not judged yet | A subject no judgment has answered for holds what it could hold (a chain's next steps, an ask that begins nothing), never read as a let-go | `OpinionGateJudge.NotJudged` |
+| A slot | A second opinion's pass is begun by its gate's bus consumer at the fact, under the chain's claim, so the next judgment reads the claim held; the plan counts it where its session is (BUS2d) | `OpinionGateJudge.Begin`, `OpinionGateConsumer` |
 | The wake | A judgment wakes the loop only where it moved what the plan reads, so a hold never spins it | `RunningSessions.FactsMoved`, `LookFacts.KeepOpinion` |
 | A failure | Said once until its subject is judged again: its line wakes the next look, whose judgment fails again | `LookFacts.Failed` |
 | One look whole | A one-look run and a gate's run-until-idle judge in the look (`LoopContext.Beside` false), so the rehearsals read each look whole | `Driver.Wanted` |

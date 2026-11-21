@@ -87,9 +87,17 @@ public static class BusTypes
         1, BusGiveUps.Refused,
         [new("session", BusShapes.Id), new("occasion", BusShapes.Code), new("pass", BusShapes.Code)]);
 
-    /// <summary>A pass given, its findings counted by weight: the deliverer must hand them to the working session.</summary>
+    private const string AtTheGate =
+        Unmeasured + "; the gate is the queue's consumer and judges at the fact (BUS2d), so ten minutes covers a judgment's reads of the service, git and the run's process with room";
+
+    /// <summary>A session's work owed a second opinion, or a person's ask of the gate: the opinion's gate must judge it. Its subject is <c>session/occasion</c>.</summary>
+    public static readonly BusType OpinionOwed = new(
+        "opinion.owed", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
+        [new("session", BusShapes.Id), new("quest", BusShapes.Id), new("occasion", BusShapes.Code), new("by", BusShapes.Code)]);
+
+    /// <summary>A pass given, its findings counted by weight: the opinion's gate must deliver them, or pass it by the policy where clean.</summary>
     public static readonly BusType OpinionGiven = new(
-        "opinion.given", 1, BusClasses.Fact, Opinions, Opinions, StepLook, 2, BusGiveUps.FinalExit,
+        "opinion.given", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.FinalExit,
         [
             new("pass", BusShapes.Code), new("must", BusShapes.Count), new("should", BusShapes.Count), new("note", BusShapes.Count),
             new("seconds", BusShapes.Count), new("tier", BusShapes.Code),
@@ -104,7 +112,7 @@ public static class BusTypes
 
     /// <summary>The working session's answers to a pass's findings, counted as its turn's end read them: the opinion's gate must judge them.</summary>
     public static readonly BusType OpinionAnswered = new(
-        "opinion.answered", 1, BusClasses.Fact, Opinions, OpinionGate, StepLook, 2, BusGiveUps.Held,
+        "opinion.answered", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("fixed", BusShapes.Count), new("rejected", BusShapes.Count), new("unresolved", BusShapes.Count), new("notAnswered", BusShapes.Count)]);
 
     private const string Observed = "an observation the Stalls view shows when it is read: no one must act on it, so it arms no timer";
@@ -123,20 +131,18 @@ public static class BusTypes
         "bus.give-up", 1, BusClasses.Fact, Watchdog, Stalls, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
         [
             new("entry", BusShapes.Id), new("kind", BusShapes.Code), new("consequence", BusShapes.Code), new("applied", BusShapes.Flag),
-            new("hands", BusShapes.Code), new("to", BusShapes.Ids), new("since", BusShapes.Time),
+            new("hands", BusShapes.Code), new("to", BusShapes.Ids), new("since", BusShapes.Time), new("tries", BusShapes.Count),
+            new("consumer", BusShapes.Code),
         ]);
 
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, CheckStarted, CheckPassed, CheckFailed, CheckUnknown, CheckRequeued, CheckEnded,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, CheckStarted, CheckPassed, CheckFailed, CheckUnknown, CheckRequeued, CheckEnded,
         Stalled, GiveUp,
     ];
 
-    /// <summary>
-    /// What ends each obliged type's timer (<see cref="BusEnd"/>); an acknowledgement only a subscription gives, so until one subscribes such
-    /// a timer runs out in shadow and the comparer reads the look. <c>BusTypesCensusTests</c> holds that every obliged type has its ends.
-    /// </summary>
+    /// <summary>What ends each obliged type's timer (<see cref="BusEnd"/>); until its handler subscribes, such a timer runs out in shadow. <c>BusTypesCensusTests</c> holds that every obliged type has its ends.</summary>
     private static readonly Dictionary<string, IReadOnlyList<BusEnd>> Ending = new(StringComparer.Ordinal)
     {
         [CheckStarted.Kind] =
@@ -145,14 +151,15 @@ public static class BusTypes
             BusEnd.OnEffect(CheckEnded),
         ],
 
-        // The step settling on a pass, and the gate judging answers, are on no fact: only their subscriptions acknowledge them.
+        // The step settling on a check is on no fact: only its subscription acknowledges it.
         [CheckPassed.Kind] = [BusEnd.Acknowledged],
         [CheckFailed.Kind] = [BusEnd.OnSubject(CheckStarted), BusEnd.Acknowledged],
         [CheckUnknown.Kind] = [BusEnd.OnSubject(CheckStarted), BusEnd.Acknowledged],
         [CheckRequeued.Kind] = [BusEnd.OnEffect(CheckStarted)],
         [CheckEnded.Kind] = [BusEnd.OnEffect(CheckStarted)],
+        [OpinionOwed.Kind] = [BusEnd.Acknowledged],
         [OpinionAsked.Kind] = [BusEnd.OnSubject(OpinionGiven)],
-        [OpinionGiven.Kind] = [BusEnd.OnSubject(OpinionDelivered), BusEnd.OnSubject(OpinionAnswered)],
+        [OpinionGiven.Kind] = [BusEnd.OnSubject(OpinionDelivered), BusEnd.OnSubject(OpinionAnswered), BusEnd.Acknowledged],
         [OpinionDelivered.Kind] = [BusEnd.OnSubject(OpinionAnswered)],
         [OpinionAnswered.Kind] = [BusEnd.Acknowledged],
     };
@@ -189,7 +196,7 @@ public static class BusTypes
     }
 }
 
-/// <summary>A consumer's named subscription: the declared types it reads; its cursor and acknowledgement come with the first consumer.</summary>
+/// <summary>A consumer's named subscription: the declared types it reads; its cursor and acknowledgements are the queue's (<see cref="BusQueue"/>).</summary>
 public sealed record BusSubscription(string Consumer, IReadOnlyList<BusType> Types);
 
 /// <summary>A subscription named a type no registry entry declares, so it never registers.</summary>

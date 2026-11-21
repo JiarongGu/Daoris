@@ -26,12 +26,16 @@ public sealed class OpinionDues(string home)
     /// <summary>The entries still owed.</summary>
     public IReadOnlyList<OpinionDue> Open() => [.. All().Where(entry => entry.Closed is null)];
 
-    /// <summary>A session's work owed an opinion: one owed before for the same session and occasion is opened again.</summary>
-    public void Due(OpinionDue entry) => Edit(all =>
+    /// <summary>A session's work owed an opinion: one owed before for the same session and occasion is opened again, and its owed fact teed into the home's bus.</summary>
+    public void Due(OpinionDue entry)
     {
-        all.RemoveAll(each => Same(each.Session, entry.Session) && each.Occasion == entry.Occasion);
-        all.Add(entry);
-    });
+        Edit(all =>
+        {
+            all.RemoveAll(each => Same(each.Session, entry.Session) && each.Occasion == entry.Occasion);
+            all.Add(entry);
+        });
+        BusLog.Of(home)?.Tee(() => OpinionBusFacts.OpinionOwed(entry.Session, entry.Quest, entry.Occasion, "due"));
+    }
 
     /// <summary>Close a session's entries for an occasion, with why.</summary>
     public void Close(string session, string occasion, string why, DateTimeOffset at) => Edit(all =>

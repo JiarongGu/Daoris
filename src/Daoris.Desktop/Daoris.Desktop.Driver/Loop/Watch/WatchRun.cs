@@ -131,6 +131,11 @@ internal sealed class WatchRun(
         _staffing?.Check(StaffingCheckAt.Start);
         _beside = new WatchBeside(watch, Service, Home);
 
+        // The opinion's gate is the bus's first consumer: woken by each fact the log writes, resumed from its cursor, never by a
+        // look. Stopped before the watchdog and the log close.
+        using var gate = watch.Bus is null ? null : OpinionGateConsumer.Over(GateDriver, Service, Home, watch.Bus);
+        await using var gates = gate is null ? null : await BusQueue.StartAsync(watch.Bus!, [gate], new BusQueueOptions { Clock = watch.Bus!.Clock }, ct: ct).ConfigureAwait(false);
+
         // The session branches tidied beside the looks: a pass once each pace, its lines joining the report of the
         // look that finds it done, as the following's do.
         // The downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
@@ -501,6 +506,26 @@ internal sealed class WatchRun(
         {
             WatchNodes.Due(_supervisorDue, Supervisor.NextGoesOn());
         }
+    }
+
+    /// <summary>
+    /// A driver for the opinion's gate between the looks: the configuration read as it judges (drained where an update drains), and the
+    /// look's own doors, so a pass or a delivery it begins runs as one the look began.
+    /// </summary>
+    private Driver GateDriver()
+    {
+        var config = Load(ConfigPath);
+        var driver = new Driver(
+                Service, Draining?.Invoke() == true ? InstallUpdate.Drained(config) : config, watch.Adapters, Home, watch.Processes, watch.Sync, watch.Output,
+                watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
+            {
+                Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed,
+                Stages = Stages, Reviews = Reviews, Bus = watch.Bus, ConfigPath = ConfigPath,
+            };
+        driver.Context.Supervisor = Supervisor;
+        driver.Context.Roles = Roles?.Invoke();
+        driver.Context.Supervising = watch.Supervising?.Invoke();
+        return driver;
     }
 
     /// <summary>

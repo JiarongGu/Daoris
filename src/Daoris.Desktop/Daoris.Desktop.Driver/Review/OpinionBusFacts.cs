@@ -19,6 +19,30 @@ public static class OpinionBusFacts
         ["opinion.answered"] = BusTypes.OpinionAnswered,
     };
 
+    /// <summary>Whether the gate's acknowledgement of <paramref name="entry"/> ends its obligation: an owed opinion or answers judged, a given pass only when clean.</summary>
+    public static bool EndsAtTheGate(BusEnvelope entry)
+    {
+        if (entry.Kind == BusTypes.OpinionOwed.Kind || entry.Kind == BusTypes.OpinionAnswered.Kind) return true;
+        if (entry.Kind != BusTypes.OpinionGiven.Kind) return false;
+        long? Count(string key) => entry.Payload.FirstOrDefault(pair => pair.Key == key).Value switch
+        {
+            int number => number,
+            long number => number,
+            _ => null,
+        };
+
+        return Count("must") is 0 && Count("should") is 0 && Count("note") is 0;
+    }
+
+    public static string Owed(string session, string occasion) => $"{session}/{occasion}";
+
+    /// <summary>A session's work owed a second opinion, or a person's ask of its gate (<paramref name="by"/>): commit-class, the gate's acknowledgement waits on it.</summary>
+    public static BusDraft OpinionOwed(string session, string? quest, string occasion, string by) => new(BusTypes.OpinionOwed, Owed(session, occasion))
+    {
+        Commit = true,
+        Payload = [("session", session), ("quest", string.IsNullOrEmpty(quest) ? null : quest), ("occasion", occasion), ("by", by)],
+    };
+
     /// <summary>The findings handed to <paramref name="session"/>: how (<c>claims</c>, <c>send-back</c>) and how many.</summary>
     public static BusDraft OpinionDelivered(string opinion, string session, int findings, string how) => new(BusTypes.OpinionDelivered, opinion)
     {
