@@ -491,7 +491,8 @@ The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a dr
 reviewer, and the passes of a brainstorm and a meeting, never a conversation the person holds, which spends nothing resting between
 turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries
 (`ask`, `serves`, `opinion`), and `Snapshot.SlotsHeld` is the one count every site that spends a slot reads: the planner's starts and
-a look's intakes, helpers, brainstorms and meetings. `Snapshot.Active` still lists every active session, for a busy tree and a
+a look's intakes, helpers, brainstorms and meetings. A session awaiting its workflow's step holds no place until the step answers, and takes one again, first in line, when it goes on
+(SLOTWAIT1). `Snapshot.Active` still lists every active session, for a busy tree and a
 repository's holder. The same rule over a record's fields is what the Sessions badge and the status bar count (SESSBADGE1).
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`

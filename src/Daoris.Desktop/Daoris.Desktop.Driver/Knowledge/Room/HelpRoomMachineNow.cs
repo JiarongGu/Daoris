@@ -32,7 +32,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         text.Append(machine.Adapter is { Length: > 0 } adapter
             ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once. The cap counts what the driver starts (a quest's "
               + "session, an intake, a helper, a second opinion, a brainstorm's pass) and never a conversation the person holds, so an Ask Daoris "
-              + "conversation or a chat takes no slot, idle or not. A session is never stopped for running long: it runs as long as it works. "
+              + "conversation or a chat takes no slot, idle or not, and a session waiting on its workflow's step holds none until the step answers. A session is never stopped for running long: it runs as long as it works. "
               + $"Daoris looks in on one that says nothing and runs nothing for {machine.QuietMinutes} minutes, with a word to it and then your choice.\n"
             : "- The driver: no agent is set for quests.\n");
         text.Append(machine.Intake is { Length: > 0 } intake
