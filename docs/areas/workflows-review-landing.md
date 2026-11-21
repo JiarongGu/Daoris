@@ -235,7 +235,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session of this machine still waits on is governed at each look while one waits, the first after a start included, for its end alone: nothing else on it is judged, and the same end ends that session again (`RunReEnds`), whatever answered its first. A submission held for a departure
     or its evidence takes the person's one accept while its quest stays Taken (`daoris quest accept`, *Accept the departure* in What needs
     you), and `quest.holds` reaches on it; `quest.holds` reads a departure as the yes's hold (its `yes` option), never its evidence's
-    verdict, and a refused yes names what waits (DEPARTLOCK1). A held quest is
+    verdict, and a refused yes names what waits (DEPARTLOCK1). Whose yes a departure waits for is the risk policy's at the quest's place
+    (`QuestDepartures`, D354): the act is `work.done`, or `direction.set` where the done departs from every requirement, so its target moved.
+    Where the judge passes it the look (`departures`, after `step-settles`) posts the policy's yes to the service's accept door, its author
+    `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`), journals one `risk.judged` line and says it, so with nothing configured a
+    departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
+    `owner`, or no policy is read, the person's yes and press as before. The service keeps the yes and judges nothing; like a role's, the
+    policy's yes takes a departure alone, so evidence still awaited beside it waits on its check. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
     the quest through the one accept before the close (`RunEndQuests`); any other held quest is left as the person left it, and the
     sessions still end. An end that closes and ends nothing, a run a session waits on that a look skips anyway, and session records that do not read each say why once in the machine log (`run.end.empty`). Every shipped development graph that holds

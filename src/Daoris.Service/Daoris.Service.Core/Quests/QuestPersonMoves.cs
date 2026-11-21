@@ -1,3 +1,5 @@
+using Daoris.Contracts.Quests;
+
 namespace Daoris.Knowledge;
 
 /// <summary>
@@ -44,6 +46,8 @@ internal sealed class QuestPersonMoves(QuestStore quests, QuestReviews reviews)
             var standing = move.Quest;
             return new(QuestRespondRefusal.NotHeld, standing switch
             {
+                { Hold: not null } when by?.StartsWith(RiskPassWire.Prefix, StringComparison.Ordinal) == true && !QuestAcceptOperation.RolesToAccept(standing) =>
+                    $"Quest `#{standing.Id}` is held for its evidence or review, which the risk policy's yes does not lift: it waits on its check.",
                 // A role's yes accepts a departure alone: evidence awaited, beside a departure or not, is the person's to accept.
                 { Hold: not null } when by is not null && !QuestAcceptOperation.RolesToAccept(standing) =>
                     $"Quest `#{standing.Id}` is held for its evidence or review, which a role's yes does not accept: it waits for you.",

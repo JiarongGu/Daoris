@@ -41,10 +41,11 @@ public sealed class QuestRoutes(HostWiring host) : IRouteModule
         if (host.Mode != ServiceMode.Local) return;
 
         routes.Map<AcceptQuest, QuestActionResponse>(async (request, http, ct) =>
-            host.Gate.Refused(http, RoleAnswerDoors.Accept, form: request.Role is not null) is { } refused ? refused
-            : request.Role?.Malformed is { } malformed ? Refusal.BadRequest(malformed)
+            host.Gate.Refused(http, RoleAnswerDoors.Accept, form: request.Role is not null || request.Policy is not null) is { } refused ? refused
+            : request is { Role: not null, Policy: not null } ? Refusal.BadRequest("a yes is a role's or the risk policy's, never both")
+            : (request.Role?.Malformed ?? request.Policy?.Malformed) is { } malformed ? Refusal.BadRequest(malformed)
             : await StateAsync(http, await Service.Exchange.AcceptAsync(
-                request.Id, DateTimeOffset.UtcNow, ct, request.Role is { } role ? MemoryDesk.ApproverOf(role.Role, role.Agent) : null), ct));
+                request.Id, DateTimeOffset.UtcNow, ct, request.Role is { } role ? MemoryDesk.ApproverOf(role.Role, role.Agent) : request.Policy?.By), ct));
         routes.Map<MarkQuestDone, QuestActionResponse>(async (request, http, ct) =>
             await StateAsync(http, await Service.Exchange.PersonDoneAsync(request.Id, request.Note, DateTimeOffset.UtcNow, ct), ct));
         routes.Map<ReopenQuest, QuestActionResponse>(ReopenAsync);

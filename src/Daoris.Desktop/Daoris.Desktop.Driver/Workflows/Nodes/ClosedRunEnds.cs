@@ -44,7 +44,7 @@ public static class ClosedRunEnds
         var after = RunSubjects.AfterHanded(graph);
         if (standing.All(node => RunSubjects.Of(node, after) == RunSubject.Quest))
         {
-            return standing.Any(node => QuestHoldsReading.PersonLifts(WorkPerformer.StatusOf(record, node.Id).Holds)) ? null : QuestClosed;
+            return standing.Any(node => QuestHoldsReading.YesLifts(WorkPerformer.StatusOf(record, node.Id).Holds)) ? null : QuestClosed;
         }
 
         if (standing.Any(node => RunSubjects.Of(node, after) is not (RunSubject.Branch or RunSubject.Landing))) return null;

@@ -61,6 +61,6 @@ internal sealed class QuestAcceptOperation : IQuestOperation
         return new QuestMove(accepted, Moved: true, accepted.Held ? null : await tx.PublishNextAsync(accepted, now).ConfigureAwait(false));
     }
 
-    /// <summary>Whether an appointed role's yes may accept <paramref name="quest"/>: a done held by its departure alone, no evidence awaited beside it.</summary>
+    /// <summary>Whether an appointed role's or the risk policy's yes may accept <paramref name="quest"/>: a done held by its departure alone, no evidence awaited beside it.</summary>
     internal static bool RolesToAccept(Quest quest) => quest.Hold == QuestHold.Departed && !quest.AwaitsEvidence;
 }
