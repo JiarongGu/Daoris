@@ -10,11 +10,13 @@ public static class SqliteDesktopStores
     /// <summary>How long a read-only connection waits on the file's lock, in seconds: a reader never waits on a writer for long.</summary>
     private const int ReadBusySeconds = 5;
 
-    /// <summary>The engines: open a store, connect to any file of the home, release the pooled connections, and a connection's pages written.</summary>
+    /// <summary>The engines: open a store, connect to any file of the home, release the pooled connections, a connection's pages written and a busy failure.</summary>
     public static DesktopStoreEngines Engines { get; } = new(SqliteDesktopStoreEngine.Open, Connect, SqliteConnection.ClearAllPools)
     {
-        PagesWritten = PagesWritten,
+        PagesWritten = PagesWritten, Busy = Busy,
     };
+
+    internal static bool Busy(Exception error) => error is StoreLockBusyException or SqliteException { SqliteErrorCode: 5 or 6 };
 
     internal static long? PagesWritten(DbConnection connection) =>
         connection is SqliteConnection { Handle: { } handle }

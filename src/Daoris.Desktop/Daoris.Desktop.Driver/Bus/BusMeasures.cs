@@ -32,6 +32,9 @@ internal sealed class BusMeasures
     /// <summary>The entries refused, by reason (<see cref="BusMisses"/>).</summary>
     public const string Miss = "miss";
 
+    /// <summary>The batches a busy store sent back (<see cref="Entries"/>): count the batches, total their entries.</summary>
+    public const string Retry = "retry";
+
     /// <summary>A look stage's time, in milliseconds, by the stage.</summary>
     public const string Stage = "stage";
 

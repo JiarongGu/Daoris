@@ -50,6 +50,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
     private readonly Func<StoreSettled>? _settled;
     private readonly Lock _gate = new();
     private DbConnection? _connection;
+    private bool _stepped;
     private long _pageSize;
     private string? _measuresCutOn;
 
@@ -206,19 +207,52 @@ public sealed class DesktopBusLogStore : IBusLogStore
     public static string Day(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// Whether <paramref name="value"/> is a payload's: a short id or code with no line in it, a number, a flag, a time, null, or a list
-    /// of such ids.
+    /// Whether <paramref name="value"/> is a payload's, so that it encodes: an id or code (<see cref="Short"/>), a whole number, a finite
+    /// number, a flag, a time, null, or a list of such ids.
     /// </summary>
     public static bool Fits(object? value) => value switch
     {
-        null or bool or int or long or double or DateTimeOffset => true,
+        null or bool or int or long or DateTimeOffset => true,
+        double number => double.IsFinite(number),
         string text => Short(text),
         IReadOnlyList<string> ids => ids.Count <= MostListed && ids.All(Short),
         _ => false,
     };
 
-    /// <summary>A short id or code: no longer than <see cref="Longest"/> and with no control character.</summary>
-    public static bool Short(string? text) => text is null || (text.Length <= Longest && !text.Any(char.IsControl));
+    /// <summary>
+    /// An id or code, as this guard can tell one until a registry declares each field: well-formed UTF-16 no longer than
+    /// <see cref="Longest"/>, with no control character and no whitespace (so no sentence, whose words have spaces between them), not
+    /// shaped like a path (a backslash, <c>:/</c> as a drive or an address has, a leading <c>/</c> or <c>~</c>, two or more <c>/</c>, or a
+    /// <c>.</c> or <c>..</c> step) and not like an e-mail address (a name, <c>@</c>, then a dotted host). Machine paths, addresses and
+    /// words stay in their records, referenced by id.
+    /// </summary>
+    public static bool Short(string? text) =>
+        text is null
+        || (text.Length <= Longest && WellFormed(text) && !text.Any(letter => char.IsControl(letter) || char.IsWhiteSpace(letter)) && !PathShaped(text)
+            && !MailShaped(text));
+
+    private static bool WellFormed(string text)
+    {
+        for (var at = 0; at < text.Length; at++)
+        {
+            if (char.IsHighSurrogate(text[at]) && at + 1 < text.Length && char.IsLowSurrogate(text[at + 1])) at++;
+            else if (char.IsSurrogate(text[at])) return false;
+        }
+
+        return true;
+    }
+
+    private static bool PathShaped(string text) =>
+        text.Contains('\\') || text.Contains(":/", StringComparison.Ordinal) || text.StartsWith('/') || text.StartsWith('~')
+        || text.Count(letter => letter == '/') >= 2 || text.Split('/').Any(step => step is "." or "..");
+
+    private static bool MailShaped(string text)
+    {
+        var at = text.IndexOf('@');
+        if (at <= 0 || at + 2 >= text.Length) return false;
+        var dot = text.IndexOf('.', at + 2);
+        return dot > 0 && dot < text.Length - 1;
+    }
 
     public void Dispose()
     {
@@ -229,33 +263,44 @@ public sealed class DesktopBusLogStore : IBusLogStore
         }
     }
 
-    /// <summary>The work on the kept connection, opened at first use; a failure lets the connection go, so the next use opens afresh.</summary>
+    /// <summary>
+    /// The work on the kept connection, opened at first use; a failure lets the connection go, so the next use connects afresh, and one a
+    /// later try may pass (<see cref="Transient"/>) is said as <see cref="BusStoreBusyException"/>.
+    /// </summary>
     private T Guarded<T>(Func<DbConnection, T> work)
     {
-        var connection = _connection ??= Open();
+        DbConnection? connection = null;
         try
         {
+            connection = _connection ??= Open();
             return work(connection);
         }
-        catch
+        catch (Exception error)
         {
             _connection = null;
-            connection.Dispose();
+            connection?.Dispose();
+            if (Transient(error)) throw new BusStoreBusyException(error);
             throw;
         }
     }
 
+    /// <summary>The lock held past the wait, or the file held by another process this moment.</summary>
+    private static bool Transient(Exception error) => error is IOException or UnauthorizedAccessException || StoreEngineSource.Busy(error);
+
     private DbConnection Open()
     {
         var location = DesktopStore.LocationIn(_home);
-        if (!_reading)
+        if (!_reading && !_stepped)
         {
-            // Made and migrated by the store's own steps, as every family's tables are.
+            // Made and migrated by the store's own steps, as every family's tables are, once for this store: a connection let go after a
+            // failure connects again without them.
             using var store = DesktopStore.Open(location, StoreProcess.Options(_settled ?? StartConfirmation.Read));
             if (store.Stamp.Version < DesktopStore.BusLogVersion)
             {
                 throw new DesktopStoreException($"the desktop's store keeps no bus log yet: {store.Held ?? "its step has not run"}.");
             }
+
+            _stepped = true;
         }
 
         var connection = StoreEngineSource.Connect(location, _reading ? DesktopOpen.ReadOnly : DesktopOpen.ReadWrite);
@@ -263,7 +308,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
         {
             if (!_reading)
             {
-                Pragma(connection, "PRAGMA busy_timeout = 2000");
+                Pragma(connection, $"PRAGMA busy_timeout = {(int)DesktopStoreEngineOptions.DefaultBusyWait.TotalMilliseconds}");
                 Pragma(connection, "PRAGMA synchronous = NORMAL");
                 Pragma(connection, $"PRAGMA journal_size_limit = {JournalLimit}");
                 _pageSize = Scalar(connection, null, "PRAGMA page_size");

@@ -54,13 +54,13 @@ public sealed record BusDraft(string Kind, string Subject, string Emitter)
 /// <summary>The reasons a shadow append is refused, each counted by the day and said once in the machine log.</summary>
 public static class BusMisses
 {
-    /// <summary>The log's store would not take a flush; its entries are dropped, never retried into a later order.</summary>
+    /// <summary>The log's store would not take a flush, for a reason no later try passes or busy past the tries; its entries are dropped.</summary>
     public const string Store = "store";
 
     /// <summary>A payload that is no id, code, count or time, or an envelope missing its kind, subject or emitter.</summary>
     public const string Shape = "shape";
 
-    /// <summary>This process does not hold the home's lease, so it is not the log's writer.</summary>
+    /// <summary>This process does not hold the home's lease, at the append or afresh before the write, so it is not the log's writer.</summary>
     public const string NotHolder = "not-holder";
 
     /// <summary>Appended after the log closed.</summary>

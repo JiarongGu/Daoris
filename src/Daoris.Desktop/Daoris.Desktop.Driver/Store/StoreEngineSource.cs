@@ -18,4 +18,6 @@ internal static class StoreEngineSource
     internal static DbConnection Connect(string path, DesktopOpen mode) => Current.Connect(path, mode);
 
     internal static long? PagesWritten(DbConnection connection) => Current.PagesWritten(connection);
+
+    internal static bool Busy(Exception error) => Current.Busy(error);
 }

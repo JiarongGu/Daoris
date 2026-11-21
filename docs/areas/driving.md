@@ -245,7 +245,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
     A shadow append never fails the write it rides beside: a refusal (the store's, a payload that is no id, code, count or time, a
-    process not holding the lease) is counted by its reason and said once as `bus.refused`. Measured by the day: entries by kind,
+    process not holding the lease) is counted by its reason and said once as `bus.refused`. A payload's number is finite and its
+    text well-formed; until a registry declares each field, an id or code carries no whitespace and nothing shaped like a path or an
+    e-mail address (a red class keeps its suite and its test file's name, never its path). The lease is asked on the writers' path
+    at most every two seconds, an unreadable lease keeping the last answer, and afresh before each write, so what was taken while
+    it was lost is dropped, never written by the old holder. The bus waits on the store's lock as long as the engine does; a batch
+    a busy store refused goes back ahead of the next, its order kept, tried again five seconds later at most six times running and
+    counted, then dropped. Measured by the day: entries by kind,
     each kind's handling time where known, the flushes' count, entries and time, the rows' own bytes beside the pages each write
     put on disk (the write-ahead log's frames, as the engine counts them), the misses and each look stage's time, which
     `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts

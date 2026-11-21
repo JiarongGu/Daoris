@@ -99,7 +99,9 @@ public static class BusStatsCommand
             : Invariant($"  disk {pages.Total} pages, {written?.Total ?? 0} bytes written in {pages.Count} writes: {pages.Total / (double)Math.Max(1, pages.Count):0.0} pages a write, most {pages.Most}"));
 
         var missed = Of(BusMeasures.Miss).ToList();
-        output.AppendLine(missed.Count == 0 ? "  missed none" : $"  missed {string.Join(", ", missed.Select(row => Invariant($"{row.Name} {row.Count}")))}");
+        var retried = One(BusMeasures.Retry, BusMeasures.Entries);
+        output.AppendLine((missed.Count == 0 ? "  missed none" : $"  missed {string.Join(", ", missed.Select(row => Invariant($"{row.Name} {row.Count}")))}")
+                          + (retried is null ? "" : Invariant($"; a busy store sent back {retried.Count} batches, {retried.Total} entries")));
 
         Timed("took", Of(BusMeasures.Took).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);

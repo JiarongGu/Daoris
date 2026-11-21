@@ -69,7 +69,7 @@ public static class CheckBusFacts
             Payload =
             [
                 ("invocation", send.Invocation), ("commit", result.Commit), ("verdict", result.Verdict), ("code", result.Code), ("failed", result.Failed),
-                ("red", red is not { Count: > 0 } ? null : (IReadOnlyList<string>)[.. red.Take(DesktopBusLogStore.MostListed).Select(Bounded)]),
+                ("red", red is not { Count: > 0 } ? null : (IReadOnlyList<string>)[.. red.Take(DesktopBusLogStore.MostListed).Select(RedId)]),
                 ("redCount", red is null ? null : (long)red.Count), ("gates", result.Gates.Count),
             ],
         };
@@ -106,5 +106,13 @@ public static class CheckBusFacts
     /// <summary>A check attempt's effect: its invocation at its commit, the one run the executor makes of it.</summary>
     private static string EffectOf(VerifySend send) => $"{send.Invocation}|{send.Commit}";
 
-    private static string Bounded(string id) => id.Length <= DesktopBusLogStore.Longest ? id : id[..DesktopBusLogStore.Longest];
+    /// <summary>A red class as its suite and its unit's last name (a test file's name, never its path), bounded.</summary>
+    private static string RedId(string id)
+    {
+        var bar = id.IndexOf('|', StringComparison.Ordinal);
+        var unit = id[(bar + 1)..];
+        var named = (bar < 0 ? "" : id[..(bar + 1)]) + unit[(unit.LastIndexOfAny(['/', '\\']) + 1)..];
+        if (named.Length <= DesktopBusLogStore.Longest) return named;
+        return named[..(char.IsHighSurrogate(named[DesktopBusLogStore.Longest - 1]) ? DesktopBusLogStore.Longest - 1 : DesktopBusLogStore.Longest)];
+    }
 }

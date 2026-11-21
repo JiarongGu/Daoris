@@ -164,6 +164,131 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.Contains(none.Payload, pair => pair.Key == "redCount" && Equals(pair.Value, 0L));
     }
 
+    /// <summary>
+    /// 🔴 The lease is asked off the writer's path: once for a burst, again only after its period; an unreadable lease keeps the last
+    /// answer; asked afresh before each write, so entries taken while the lease is lost are never written by the old holder; and a stage
+    /// is timed only by the holder.
+    /// </summary>
+    [Fact]
+    public async Task The_lease_is_asked_off_the_writers_path_and_again_before_each_write()
+    {
+        var clock = new MovedClock();
+        var store = new CountingStore();
+        bool? holder = true;
+        var asked = 0;
+        await using var bus = BusLog.Over(store, new BusLogOptions
+        {
+            Clock = clock, Writer = () =>
+            {
+                Interlocked.Increment(ref asked);
+                return holder;
+            },
+        });
+
+        for (var n = 0; n < 100; n++) Assert.True(bus.Append(Plain("run-1", n)));
+        Assert.Equal(1, asked);
+        holder = null;
+        clock.Advance(BusLog.WriterEvery);
+        Assert.True(bus.Append(Plain("run-1", 100)), "an unreadable lease keeps the last answer");
+
+        holder = false;
+        await bus.FlushAsync();
+        Assert.Empty(store.All);
+        Assert.Equal(101, bus.Tally.Missed[BusMisses.NotHolder]);
+
+        bus.Staged("opinions", 5200);
+        clock.Advance(BusLog.WriterEvery);
+        Assert.False(bus.Append(Plain("run-1", 101)));
+        holder = true;
+        clock.Advance(BusLog.WriterEvery);
+        await bus.FlushAsync();
+        Assert.DoesNotContain(store.All.SelectMany(batch => batch.Measures), row => row.Measure == BusMeasures.Stage);
+    }
+
+    /// <summary>
+    /// 🔴 A store busy past its wait drops nothing: the batch goes back ahead of the next, in its order, tried again after a pause and
+    /// counted; past the tries it is dropped and counted. The bus waits on the lock as long as the store's engine does.
+    /// </summary>
+    [Fact]
+    public async Task A_busy_store_puts_the_batch_back_in_its_order_and_drops_it_only_past_the_tries()
+    {
+        var clock = new MovedClock();
+        var store = new CountingStore { Busy = 2 };
+        await using (var bus = BusLog.Over(store, new BusLogOptions { Clock = clock }))
+        {
+            Assert.True(bus.Append(Commit("run-1")));
+            await Poll.Until(() => store.Refused == 1, () => $"{store.Refused} refusals");
+            Assert.True(bus.Append(Plain("run-1", 1)));
+            await Poll.Until(() => clock.Waiting, () => "the loop never paused");
+            clock.Advance(BusLog.RetryAfter);
+            await Poll.Until(() => store.Refused == 2, () => $"{store.Refused} refusals");
+            await Poll.Until(() => clock.Waiting, () => "the loop never paused again");
+            clock.Advance(BusLog.RetryAfter);
+            await Poll.Until(() => store.Writes == 1, () => $"{store.Writes} writes");
+
+            Assert.Equal([1L, 2], store.Batches.Single(batch => batch.Entries.Count > 0).Entries.Select(entry => entry.Seq));
+            Assert.Equal(2, bus.Tally.Retried);
+            Assert.False(bus.Tally.Missed.ContainsKey(BusMisses.Store));
+        }
+
+        var stuck = new CountingStore { Busy = int.MaxValue };
+        var later = new MovedClock();
+        await using var lost = BusLog.Over(stuck, new BusLogOptions { Clock = later });
+        Assert.True(lost.Append(Commit("run-1")));
+        for (var tried = 1; tried <= BusLog.MostRetries; tried++)
+        {
+            var refused = tried;
+            await Poll.Until(() => stuck.Refused == refused && later.Waiting, () => $"{stuck.Refused} refusals");
+            later.Advance(BusLog.RetryAfter);
+        }
+
+        await Poll.Until(() => lost.Tally.Missed.GetValueOrDefault(BusMisses.Store) == 1, () => "the batch was never dropped past its tries");
+        Assert.Equal(BusLog.MostRetries, lost.Tally.Retried);
+
+        using var real = new DesktopBusLogStore(_home);
+        Assert.Equal((long)Daoris.Ports.Store.DesktopStoreEngineOptions.DefaultBusyWait.TotalMilliseconds, real.Setting("busy_timeout"));
+    }
+
+    /// <summary>
+    /// 🔴 A value the payload cannot carry is refused at emit, never dropping the batch beside it: a number that is not finite, text
+    /// that is not well-formed UTF-16, and (until the registry declares each field) whitespace, a path, an e-mail or a sentence.
+    /// </summary>
+    [Fact]
+    public async Task A_value_the_payload_cannot_carry_is_refused_at_emit_and_the_batch_is_written()
+    {
+        var store = new CountingStore();
+        await using var bus = BusLog.Over(store, Options());
+
+        object?[] refused =
+        [
+            double.NaN, double.PositiveInfinity, "a\uD800b", "\uDC00", @"C:\Users\someone", "c:/work/x", "/home/someone/x", @"\\server\share",
+            "src/Daoris.Cli/test/version.test.ts", "../up", "someone@example.com", "the check failed because", "two\twords", "https://host/x",
+        ];
+        foreach (var value in refused)
+        {
+            Assert.False(DesktopBusLogStore.Fits(value), $"{value} fits");
+            Assert.False(bus.Append(Plain("run-1") with { Payload = [("value", value)] }), $"{value} was taken");
+        }
+
+        Assert.False(bus.Append(Plain("run 1")), "a subject with a space was taken");
+        Assert.Equal(refused.Length + 1, bus.Tally.Missed[BusMisses.Shape]);
+
+        object?[] kept = ["check.started/1", "driver/checks", "web|ask.spec", "inv-1|0123456789abcdef", "Daoris.Desktop.Driver.Tests|BusLogTests", 2.5, "", "v-0000000000000001"];
+        foreach (var value in kept) Assert.True(DesktopBusLogStore.Fits(value), $"{value} does not fit");
+        Assert.True(bus.Append(Commit("run-1") with { Payload = [.. kept.Select((value, n) => ($"k{n}", value))] }));
+        await bus.FlushAsync();
+        Assert.Equal(1, store.Writes);
+
+        // A red class named by its test file's path is kept by its suite and the file's name.
+        var send = new VerifySend("run-7", "inv-1", "Engine", "c:/x", "0123456789abcdef", "none");
+        var settled = CheckBusFacts.CheckSettled(send, new VerifyResult("inv-1", send.Commit, VerifyVerdicts.Failed, "red", [])
+        {
+            Red = ["cli|src/Daoris.Cli/test/version.test.ts", "Daoris.Desktop.Driver.Tests|BusLogTests"],
+        });
+        Assert.Equal(["cli|version.test.ts", "Daoris.Desktop.Driver.Tests|BusLogTests"], (IReadOnlyList<string>)settled.Payload.Single(pair => pair.Key == "red").Value!);
+        Assert.True(bus.Append(settled));
+    }
+
     /// <summary>🔴 A burst of commit-class entries flushes at once and grouped: one write in flight, the rest in the next.</summary>
     [Fact]
     public async Task A_burst_of_commit_class_entries_flushes_at_once_and_grouped()
@@ -353,10 +478,23 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
 
         public int Entered => Volatile.Read(ref _entered);
 
+        /// <summary>How many writes are refused as busy before one is taken.</summary>
+        public int Busy { get; init; }
+
+        public int Refused => Volatile.Read(ref _refused);
+
+        private int _refused;
+
         public long Newest() => 0;
 
         public BusWritten Write(BusBatch batch)
         {
+            if (Volatile.Read(ref _refused) < Busy)
+            {
+                Interlocked.Increment(ref _refused);
+                throw new BusStoreBusyException(new IOException("the store's lock is held"));
+            }
+
             if (batch.Entries.Count > 0) Interlocked.Increment(ref _entered);
             Held?.Wait(TimeSpan.FromMinutes(1));
             lock (_gate) Batches.Add(batch);

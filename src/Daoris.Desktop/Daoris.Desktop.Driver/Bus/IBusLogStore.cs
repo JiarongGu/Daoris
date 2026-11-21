@@ -11,6 +11,7 @@ public interface IBusLogStore : IDisposable
     long Newest();
 
     /// <summary>Write one batch in one transaction, retention's cut with it; what it wrote.</summary>
+    /// <exception cref="BusStoreBusyException">The store could not be written this moment, and nothing of the batch is.</exception>
     BusWritten Write(BusBatch batch);
 
     /// <summary>The entries after <paramref name="after"/>, in order, at most <paramref name="limit"/>: a replay.</summary>
@@ -19,6 +20,9 @@ public interface IBusLogStore : IDisposable
     /// <summary>Every measure row from <paramref name="fromDay"/> (UTC, <c>yyyy-MM-dd</c>) on, by day.</summary>
     IReadOnlyList<BusMeasureRow> Measures(string fromDay);
 }
+
+/// <summary>The store could not be written this moment (its lock held past the wait, its file held): a later try may pass, so its batch is kept.</summary>
+public sealed class BusStoreBusyException(Exception inner) : Exception($"the bus log's store is busy ({inner.Message})", inner);
 
 /// <summary>One flush: its entries in order, the measures owed since the last write, and whether a commit-class entry asked for it.</summary>
 public sealed record BusBatch(IReadOnlyList<BusEnvelope> Entries, IReadOnlyList<BusMeasureRow> Measures, bool Commit);

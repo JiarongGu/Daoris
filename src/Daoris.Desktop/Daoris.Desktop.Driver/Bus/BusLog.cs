@@ -17,15 +17,19 @@ public sealed record BusLogOptions
     /// <summary>How often the measures alone are written while no entry is: the looks' stage times between entries.</summary>
     public TimeSpan MeasureEvery { get; init; } = BusLog.MeasureEvery;
 
-    /// <summary>Whether this process holds the home's lease, asked at each append: only the lease holder writes the log.</summary>
-    public Func<bool> Writer { get; init; } = () => true;
+    /// <summary>
+    /// Whether this process holds the home's lease (null: its file could not be read this moment): only the lease holder writes the log.
+    /// Asked at most every <see cref="BusLog.WriterEvery"/> on the writers' path, and afresh before each write.
+    /// </summary>
+    public Func<bool?> Writer { get; init; } = () => true;
 }
 
 /// <summary>What a log has done since it opened, in memory: what a test and the stats read.</summary>
 /// <param name="Appended">The entries taken.</param>
 /// <param name="Flushes">The writes that carried entries.</param>
 /// <param name="Missed">The entries refused, by reason (<see cref="BusMisses"/>).</param>
-public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<string, long> Missed);
+/// <param name="Retried">The batches a busy store sent back to wait for the next try.</param>
+public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<string, long> Missed, long Retried = 0);
 
 /// <summary>
 /// The bus's log in its first form: an envelope appended in memory, given its id, order and time at once, and
@@ -36,8 +40,10 @@ public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<s
 /// <remarks>
 /// <para><b>A shadow append never fails the write it rides beside</b>: <see cref="Append"/> never throws and never waits on the store. A
 /// refusal (the store's, a payload that is no id, code, count or time, a process that is not the lease holder) is counted by its reason,
-/// by the day, and said once in the machine log as <c>bus.refused</c>. A batch the store refused is dropped, never written later out of
-/// its order; the measures it carried wait for the next write.</para>
+/// by the day, and said once in the machine log as <c>bus.refused</c>. A batch a busy store refused goes back ahead of the next (each
+/// entry's order is fixed at its append, so the order holds), tried again after <see cref="RetryAfter"/> and counted, at most
+/// <see cref="MostRetries"/> times running; past them, or refused for any other reason, it is dropped. The lease is asked afresh before
+/// each write, so entries taken while it is lost are dropped, never written by the old holder.</para>
 /// <para><b>Measured</b> into the store's measures by the day (UTC): entries by kind, each kind's handling time where its writer knows it,
 /// the flushes' count, entries and time, the rows' own bytes and the pages each write put on disk, retention's cuts, the misses, and each
 /// look stage's time (<see cref="Staged"/>). <c>daoris bus stats</c> reads them.</para>
@@ -57,7 +63,22 @@ public sealed class BusLog : IAsyncDisposable
     /// <summary>The most keys held for the causes of later entries (<see cref="BusDraft.Key"/>).</summary>
     public const int MostKeys = 4096;
 
+    /// <summary>How long the writers' path keeps the lease's answer before asking it again.</summary>
+    public static readonly TimeSpan WriterEvery = TimeSpan.FromSeconds(2);
+
+    /// <summary>The pause before a batch a busy store sent back is tried again.</summary>
+    public static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(5);
+
+    /// <summary>The tries running a busy store's batch is sent back for before it is dropped.</summary>
+    public const int MostRetries = 6;
+
     private readonly Dictionary<string, string> _keys = new(StringComparer.Ordinal);
+    private readonly Lock _leaseGate = new();
+    private bool _holder = true;
+    private DateTimeOffset _askedAt = DateTimeOffset.MinValue;
+    private int _retries;
+    private long _retried;
+    private DateTimeOffset _retryAt = DateTimeOffset.MinValue;
 
     private readonly IBusLogStore _store;
     private readonly BusLogOptions _options;
@@ -94,14 +115,14 @@ public sealed class BusLog : IAsyncDisposable
 
     /// <summary>The home's own log, written while this process holds the home's lease.</summary>
     public static BusLog Open(string home, MachineLog? log, TimeProvider clock) =>
-        Over(new DesktopBusLogStore(home), new BusLogOptions { Clock = clock, Log = log, Writer = () => HomeLease.HeldHere(home) });
+        Over(new DesktopBusLogStore(home), new BusLogOptions { Clock = clock, Log = log, Writer = () => HomeLease.HeldHereRead(home) });
 
     /// <summary>What it has done since it opened.</summary>
     public BusTally Tally
     {
         get
         {
-            lock (_gate) return new BusTally(_appended, _flushes, new Dictionary<string, long>(_missed, StringComparer.Ordinal));
+            lock (_gate) return new BusTally(_appended, _flushes, new Dictionary<string, long>(_missed, StringComparer.Ordinal), _retried);
         }
     }
 
@@ -114,7 +135,7 @@ public sealed class BusLog : IAsyncDisposable
         try
         {
             if (!Fits(draft)) return Miss(BusMisses.Shape, draft.Kind);
-            if (!_options.Writer()) return Miss(BusMisses.NotHolder, draft.Kind);
+            if (!Holder()) return Miss(BusMisses.NotHolder, draft.Kind);
             TaskCompletionSource? pulse = null;
             lock (_gate)
             {
@@ -175,6 +196,7 @@ public sealed class BusLog : IAsyncDisposable
     {
         try
         {
+            if (!Holder()) return;
             lock (_gate)
             {
                 if (_closed) return;
@@ -221,15 +243,83 @@ public sealed class BusLog : IAsyncDisposable
         {
         }
 
-        await FlushAsync().ConfigureAwait(false);
+        await LastFlushAsync().ConfigureAwait(false);
         // The last write's own cost and cut, kept with the rest.
-        await FlushAsync().ConfigureAwait(false);
+        await LastFlushAsync().ConfigureAwait(false);
         _store.Dispose();
         _closing.Dispose();
         _flushing.Dispose();
     }
 
     private static TaskCompletionSource Pulse() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>The close's write: nothing tries again after it, so a busy store's batch is dropped and counted.</summary>
+    private async Task LastFlushAsync()
+    {
+        await _flushing.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            Flush(measuresAlone: true, last: true);
+        }
+        finally
+        {
+            _flushing.Release();
+        }
+    }
+
+    /// <summary>The lease's answer on the writers' path, asked at most every <see cref="WriterEvery"/>.</summary>
+    private bool Holder()
+    {
+        lock (_leaseGate)
+        {
+            if (_clock.GetUtcNow() - _askedAt < WriterEvery) return _holder;
+        }
+
+        Ask();
+        lock (_leaseGate) return _holder;
+    }
+
+    /// <summary>The lease asked now; an answer that cannot be read this moment (null) keeps the last one standing.</summary>
+    private bool? Ask()
+    {
+        bool? read;
+        try
+        {
+            read = _options.Writer();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            read = null;
+        }
+
+        lock (_leaseGate)
+        {
+            _askedAt = _clock.GetUtcNow();
+            if (read is { } held) _holder = held;
+        }
+
+        return read;
+    }
+
+    /// <summary>
+    /// A busy store's batch sent back ahead of the next, its order kept, to be tried after <see cref="RetryAfter"/>; false past
+    /// <see cref="MostRetries"/> tries running, or where it would hold more than <see cref="MostPending"/> entries.
+    /// </summary>
+    private bool PutBack(List<BusEnvelope> entries, bool commit)
+    {
+        lock (_gate)
+        {
+            if (_retries >= MostRetries || entries.Count + _pending.Count > MostPending) return false;
+            var now = _clock.GetUtcNow();
+            _retries++;
+            _retried++;
+            _measures.Add(DesktopBusLogStore.Day(now), BusMeasures.Retry, BusMeasures.Entries, entries.Count);
+            if (entries.Count > 0) _pending = [.. entries, .. _pending];
+            _urgent |= commit;
+            _retryAt = now + RetryAfter;
+            return true;
+        }
+    }
 
     /// <summary>
     /// Wakes an idle loop at the first measure owing a write since the last (<paramref name="owed"/>: whether one owed it before), so the
@@ -242,7 +332,8 @@ public sealed class BusLog : IAsyncDisposable
 
     /// <summary>
     /// The writer behind: waits for the first entry, then out the interval from it (a commit-class entry cuts the wait short), and writes;
-    /// with no entry, waits for one, or out the measures' period where a look's stages were timed since the last write.
+    /// with no entry, waits for one, or out the measures' period where a look's stages were timed since the last write; and after a busy
+    /// store's refusal, out the pause before the next try.
     /// </summary>
     private async Task LoopAsync(CancellationToken ct)
     {
@@ -252,7 +343,7 @@ public sealed class BusLog : IAsyncDisposable
         {
             Task pulsed;
             bool dirty, urgent, measured;
-            DateTimeOffset dirtySince;
+            DateTimeOffset dirtySince, retryAt;
             lock (_gate)
             {
                 if (_pulse.Task.IsCompleted) _pulse = Pulse();
@@ -261,6 +352,7 @@ public sealed class BusLog : IAsyncDisposable
                 urgent = _urgent;
                 measured = _measures.Owed;
                 dirtySince = _dirtySince;
+                retryAt = _retryAt;
             }
 
             var now = _clock.GetUtcNow();
@@ -282,6 +374,7 @@ public sealed class BusLog : IAsyncDisposable
                 continue;
             }
 
+            if (retryAt - now > wait) wait = retryAt - now;
             if (wait > TimeSpan.Zero)
             {
                 await Task.WhenAny(pulsed, Task.Delay(wait, _clock, ct)).ConfigureAwait(false);
@@ -300,8 +393,11 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
-    /// <summary>One write of whatever waits: the entries, and the measures owed with them; with none, the measures alone where asked.</summary>
-    private void Flush(bool measuresAlone)
+    /// <summary>
+    /// One write of whatever waits: the entries, and the measures owed with them; with none, the measures alone where asked. The
+    /// <paramref name="last"/> write sends nothing back to be tried again.
+    /// </summary>
+    private void Flush(bool measuresAlone, bool last = false)
     {
         List<BusEnvelope> entries;
         bool commit;
@@ -316,10 +412,24 @@ public sealed class BusLog : IAsyncDisposable
             measures = _measures.Take();
         }
 
+        var holder = Ask();
+        if (holder is false)
+        {
+            lock (_gate)
+            {
+                _measures.Return(measures);
+                _lastWrite = _clock.GetUtcNow();
+            }
+
+            foreach (var entry in entries) Miss(BusMisses.NotHolder, entry.Kind);
+            return;
+        }
+
         BusWritten written;
         TimeSpan took;
         try
         {
+            if (holder is null) throw new BusStoreBusyException(new IOException("the home's lease could not be read"));
             // The store's first open (its steps run there) is the order's read, outside the flush's time.
             if (entries.Count > 0) Order(entries);
             var began = Stopwatch.GetTimestamp();
@@ -328,12 +438,15 @@ public sealed class BusLog : IAsyncDisposable
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
+            var kept = error is BusStoreBusyException && !last && PutBack(entries, commit);
             lock (_gate)
             {
                 _measures.Return(measures);
                 _lastWrite = _clock.GetUtcNow();
+                if (!kept) _retries = 0;
             }
 
+            if (kept) return;
             foreach (var entry in entries) Miss(BusMisses.Store, error.Message);
             if (entries.Count == 0) Miss(BusMisses.Store, error.Message, counted: false);
             return;
@@ -341,6 +454,7 @@ public sealed class BusLog : IAsyncDisposable
 
         lock (_gate)
         {
+            _retries = 0;
             _lastWrite = _clock.GetUtcNow();
             var day = DesktopBusLogStore.Day(_lastWrite);
             if (entries.Count > 0)

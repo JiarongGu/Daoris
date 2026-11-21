@@ -33,7 +33,10 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
     }
 
     /// <summary>The engines a unit test's root hands the application: this fake over files and memory, and a plain connection for the rest.</summary>
-    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, SqliteConnection.ClearAllPools) { PagesWritten = PagesWritten };
+    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, SqliteConnection.ClearAllPools)
+    {
+        PagesWritten = PagesWritten, Busy = error => error is StoreLockBusyException || (error is SqliteException sqlite && Busy(sqlite)),
+    };
 
     private static long? PagesWritten(DbConnection connection) =>
         connection is SqliteConnection { Handle: { } handle }
@@ -60,7 +63,7 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
     /// <summary>The store at <paramref name="location"/>, made if there is none.</summary>
     public static IDesktopStoreEngine Open(string location, DesktopStoreEngineOptions options)
     {
-        var wait = options.BusyWait ?? TimeSpan.FromSeconds(5);
+        var wait = options.BusyWait ?? DesktopStoreEngineOptions.DefaultBusyWait;
         var memory = location.StartsWith(MemoryPrefix, StringComparison.Ordinal);
         if (!memory && Path.GetDirectoryName(Path.GetFullPath(location)) is { Length: > 0 } folder) Directory.CreateDirectory(folder);
         var text = memory
