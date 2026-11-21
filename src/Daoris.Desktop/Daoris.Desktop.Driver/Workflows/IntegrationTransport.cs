@@ -233,7 +233,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
 
             var now = _world.Clock.GetUtcNow();
             var integrating = $"integration of {send.Line}";
-            var ask = new HeavyAsk(key, send.Repository, root,
+            var ask = new HeavyAsk(key, send.Repository, await AcceptedSlots.OfRepositoryAsync(home, send.Repository, root, ct).ConfigureAwait(false),
                 () => new HeavyHolder(Environment.ProcessId, Started, root, [], now, null, null) { Run = integrating })
             {
                 Check = () => new VerifyHolder(Environment.ProcessId, Started, integrating, $"integration-{send.Repository}-{send.Line}", send.Repository, now),

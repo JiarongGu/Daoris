@@ -57,8 +57,8 @@ public sealed record HeavyWaiting(TimeSpan Poll, TimeSpan SayEvery, Func<DateTim
     public static HeavyWaiting Default { get; } = new(TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(30), () => DateTimeOffset.UtcNow);
 }
 
-/// <summary>What admits a run waiting for its repository's slot: the rules, read at each look, the checkout whose file may say how many at once, and its record.</summary>
-public sealed record HeavyAdmit(Func<CheckRules> Rules, string Checkout, Func<HeavyHolder> Holder);
+/// <summary>What admits a run waiting for its repository's slot: the rules and the repository's accepted slots (<see cref="AcceptedSlots"/>), read at each look, and its record.</summary>
+public sealed record HeavyAdmit(Func<CheckRules> Rules, Func<CancellationToken, Task<int?>> Declared, Func<HeavyHolder> Holder);
 
 /// <summary>A wait for a repository's slot as it ended: the slot, or none and why the admission refused it (null where none judged).</summary>
 public sealed record HeavyTake(HeavySlot? Slot, CheckWait? Wait);
@@ -222,7 +222,7 @@ public sealed class HeavySlot : IDisposable
                 }
                 else
                 {
-                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, admit.Checkout, admit.Holder));
+                    (var taken, wait) = CheckAdmission.TryTake(home, admit.Rules(), new HeavyAsk(key, repository, await admit.Declared(ct).ConfigureAwait(false), admit.Holder));
                     slot = taken?.Repository;
                 }
 
@@ -532,12 +532,12 @@ public sealed class HeavySlot : IDisposable
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     /// <summary>Why the run waits: behind its repository's holders, or for the machine's memory or slots, beside them where there are any.</summary>
-    private static string Waiting(string repository, IReadOnlyList<HeavyHolder> holders, CheckWait? wait, DateTimeOffset now, TimeSpan waited)
+    internal static string Waiting(string repository, IReadOnlyList<HeavyHolder> holders, CheckWait? wait, DateTimeOffset now, TimeSpan waited)
     {
         var who = holders.Count == 0 ? "a run that has not said what it runs yet" : string.Join("; ", holders.Select(holder =>
             (holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session} (process {holder.Pid})" : $"process {holder.Pid}")
             + $", running {(holder.Gates.Count == 0 ? "its gates" : string.Join(", ", holder.Gates))} for {Took(now - holder.Since)} in {holder.Checkout}"));
-        var why = wait?.Code is CheckWait.Memory or CheckWait.Slots
+        var why = wait?.Code is CheckWait.Memory or CheckWait.Slots or CheckWait.Admitting
             ? $"waits for {wait.Sentence}{(holders.Count > 0 ? $", beside {who}" : "")}"
             : $"is held by {who}";
         return $"run-heavy: `{repository}`'s heavy-run slot {why}; this run waits for it ({Took(waited)} so far).";
