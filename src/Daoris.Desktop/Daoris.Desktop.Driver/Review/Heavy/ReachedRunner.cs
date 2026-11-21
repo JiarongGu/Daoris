@@ -37,8 +37,13 @@ internal sealed record ReachedRunner(string Run, string? Cwd, bool Clock, string
         }
     }
 
-    /// <summary>The command with its <c>{base}</c> given <paramref name="baseRef"/>; null where the ref is not a plain one, which is never put in a command.</summary>
-    internal string? CommandFor(string baseRef) => PlainRef.IsMatch(baseRef) ? Run.Replace("{base}", baseRef, StringComparison.Ordinal) : null;
+    internal const string FastTier = "fast";
+
+    internal const string EveryTier = "all";
+
+    /// <summary>The command with its <c>{base}</c> and <c>{tier}</c> given; null where the ref is not a plain one, which is never put in a command.</summary>
+    internal string? CommandFor(string baseRef, string tier) =>
+        PlainRef.IsMatch(baseRef) ? Run.Replace("{base}", baseRef, StringComparison.Ordinal).Replace("{tier}", tier, StringComparison.Ordinal) : null;
 
     private static readonly Regex PlainRef = new(@"^[A-Za-z0-9][A-Za-z0-9._/-]*$", RegexOptions.CultureInvariant);
 }

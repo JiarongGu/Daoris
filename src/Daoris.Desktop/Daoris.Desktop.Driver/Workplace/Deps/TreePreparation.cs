@@ -81,12 +81,13 @@ internal static class TreePreparation
 
     /// <summary>
     /// Runs each of <paramref name="commands"/> in <paramref name="tree"/> in order, the first that does not finish ending the run, since a
-    /// later one may read what it makes: that one, or null where each finished. Cheap where nothing it makes is stale (<c>--if-stale</c>).
+    /// later one may read what it makes: that one, or null where each finished. Cheap where nothing it makes is stale (<c>--if-stale</c>); a caller that holds a place says <c>inPlace</c>.
     /// </summary>
-    internal static async Task<RegenerateFailed?> RegenerateAsync(string home, string repository, IReadOnlyList<string> commands, string tree, CancellationToken ct)
+    internal static async Task<RegenerateFailed?> RegenerateAsync(
+        string home, string repository, IReadOnlyList<string> commands, string tree, CancellationToken ct, bool inPlace = false)
     {
         if (commands.Count == 0) return null;
-        using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
+        using var admitted = inPlace ? null : await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
         var environment = InstallRunner.Current.GateEnvironment();
         foreach (var command in commands)
         {

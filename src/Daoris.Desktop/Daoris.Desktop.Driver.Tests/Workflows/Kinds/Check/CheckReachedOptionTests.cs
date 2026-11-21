@@ -23,6 +23,17 @@ public sealed class CheckReachedOptionTests
         Assert.Equal(reached, CheckNode.ReachedChoice(Check(gates)));
     }
 
+    [Theory]
+    [InlineData("\"heavy\"", true)]
+    [InlineData("\"reached\"", false)]
+    [InlineData("[\"heavy\"]", false)]
+    [InlineData("[\"web-types\"]", false)]
+    [InlineData(null, false)]
+    public void Only_the_word_heavy_alone_asks_the_heavy_tier_and_any_other_step_runs_the_fast_one(string? gates, bool heavy)
+    {
+        Assert.Equal(heavy, CheckNode.NamesHeavy(Check(gates)));
+    }
+
     [Fact]
     public void The_reached_choice_names_no_gate_to_run_and_a_list_with_the_word_still_names_the_gate()
     {

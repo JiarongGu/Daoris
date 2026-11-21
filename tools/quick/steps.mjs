@@ -3,7 +3,7 @@
  * judges no test time: the merge's gates and the full set judge it, on classes measured again alone, so load never reddens quick. */
 import { CHECK_STEPS } from '../verify-checks/steps.mjs';
 
-export const WRITERS = ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale'];
+export const WRITERS = CHECK_STEPS.filter((step) => step.writes).map((step) => step.run);
 
 /** The gate's steps that judge test time, which quick leaves out. */
 export const TIME_JUDGED = ['node tools/time-ratchet.mjs'];
