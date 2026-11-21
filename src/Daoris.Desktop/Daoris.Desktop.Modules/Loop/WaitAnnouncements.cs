@@ -23,10 +23,13 @@ namespace Daoris.Desktop;
 /// kept is the rows held now, so it is bounded by what is held, and a call answered or released is forgotten with its row.</para>
 ///
 /// <para><b>Nothing older than this run.</b> What a session holds is the driver's memory of this process (<c>HeldPermissions</c>), so a
-/// row seen at the first judgement is held in this run, and a restart holds none to say again.
+/// row seen at the first judgement is held in this run, and a restart holds none to say again.</para>
+/// <para><b>An exit is the home's to remember</b> (<paramref name="exits"/>): it stands across restarts, so its announcement is claimed durably
+/// before it is said and forgotten once this process has seen it stop standing (<see cref="News.ClaimStanding"/>, <see cref="News.Forget"/>).</para>
 /// </remarks>
 /// <param name="steps">Whether a run's step waiting on a role the person holds is said, a park's switch; null says none.</param>
-public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<bool>? steps = null)
+/// <param name="exits">The home's news, where an exit's announcement is claimed durably; null remembers it in this process alone.</param>
+public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<bool>? steps = null, News? exits = null)
 {
     /// <summary>The kind of attention a held tool call is told as.</summary>
     public const string AttentionKind = "Holding";
@@ -52,6 +55,7 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
 
     private readonly Lock _gate = new();
     private HashSet<string> _seen = new(StringComparer.Ordinal);
+    private HashSet<string> _standing = new(StringComparer.Ordinal);
 
     /// <summary>One judgement: each held call's or step's row of the owner's not seen at the last is said, while the switch is on.</summary>
     public void Judged(IReadOnlyList<SliceJudged> judged)
@@ -69,10 +73,25 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
             ? exit
             : $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";
         List<JsonObject> arrived;
+        List<string> standing;
         lock (_gate)
         {
             arrived = [.. held.Where(row => !_seen.Contains(Key(row)))];
             _seen = new HashSet<string>(held.Select(Key), StringComparer.Ordinal);
+            standing = [.. held.Where(HumanTaskRows.Exited).Select(Key)];
+        }
+
+        if (exits is not null)
+        {
+            arrived = [.. arrived.Where(row => !HumanTaskRows.Exited(row) || exits.ClaimStanding(News.Announced, Key(row), DateTimeOffset.UtcNow))];
+            HashSet<string> ended;
+            lock (_gate)
+            {
+                ended = [.. _standing.Except(standing)];
+                _standing = [.. standing];
+            }
+
+            exits.Forget(News.Announced, ended);
         }
 
         if (arrived.Count == 0) return;

@@ -9,12 +9,12 @@ namespace Daoris.Driver;
 /// <list type="bullet">
 /// <item><b>The interruption</b> is the row's: the desktop's announcements say it once under its key (<c>WaitAnnouncements.ExitKind</c>),
 /// a toast in a window in front and the OS balloon behind it, naming the run, the step, the story's short form and the one answer. Its memory
-/// is the process's, so a restart says an exit still standing again.</item>
+/// is the home's (<see cref="Daoris.Driver.News.ClaimStanding"/>), so a restart says an exit still standing never again.</item>
 /// <item><b>The record</b> is a notice of <i>Done and failed</i> under its own key (<see cref="Key"/>), naming the run and the step, which no
 /// window says aloud: the whole story (what it is, who held it and for how long, why each could not, and the one answer) is the look's line
 /// said once, as the exit is kept (<see cref="Line"/>), and the notice is handed up again at each look while the exit stands
 /// (<see cref="News"/>, <see cref="NodeRuntimePass.Standing"/>), so a look a later failure ended loses none, and a write of a key held
-/// keeps one.</item>
+/// keeps one; one the owner dismissed is not kept again, whatever restarts.</item>
 /// </list>
 /// </summary>
 public static class FinalExits

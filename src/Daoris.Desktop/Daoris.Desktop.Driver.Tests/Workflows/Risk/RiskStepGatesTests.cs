@@ -30,7 +30,40 @@ public sealed class RiskStepGatesTests : NodeRunFixture
                   {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"approved"}]}
         """;
 
+    private const string Worked = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"sign","kind":"task","version":1,"reach":"pressed","outcomes":["done"],"role":"release-manager"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>s","kind":"after","from":"claimed","to":"sign"},
+                  {"id":"s>h","kind":"when","from":"sign","to":"handed","outcome":"done"}]}
+        """;
+
     private PlaceCastFiles Casts => new(_home, () => true);
+
+    [Fact]
+    public async Task A_task_its_agent_holds_that_no_session_settles_reaches_the_final_exit_past_its_bound()
+    {
+        const string Bound = """{"vacancyHours":2}""";
+        Assert.Null(AgentSettles.CastAt(Casts, "machine", "release-manager", "agent:x", "x releases", _now));
+        OnBranch(Worked);
+        var runtime = Runtime();
+        runtime.Serving = (_, _) => false;
+
+        await RunPassAsync(runtime, Bound);
+        var held = Assert.Single(runtime.HeldSteps(), step => step.Node == "sign");
+        Assert.Equal((PersonWaits.Task, true, null), (held.Why, held.Handed, held.Exit));
+
+        _now = _now.AddHours(1);
+        Assert.Empty((await RunPassAsync(runtime, Bound)).Noticed);
+        _now = _now.AddHours(2);
+        var past = await RunPassAsync(runtime, Bound);
+
+        Assert.Contains("stood unanswered", Assert.Single(past.Noticed).Text, StringComparison.Ordinal);
+        var row = Assert.Single(runtime.HeldSteps(), step => step.Node == "sign");
+        Assert.Equal((FinalExits.Unanswered, StepHolders.Person, false), (row.Exit?.Kind, row.Holder, row.Handed));
+        Assert.Empty((await RunPassAsync(runtime, Bound)).Noticed);
+    }
 
     [Fact]
     public async Task With_nothing_configured_an_approval_passes_approved_by_the_policy()

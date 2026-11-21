@@ -180,6 +180,40 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
         Assert.Equal(AttentionOwnership.OwnersClass, AttentionOwnership.Of(row, new AttentionTakers((_, _, _) => true, steward: true)).Class);
     }
 
+    [Fact]
+    public async Task A_restarted_desktop_does_not_say_a_standing_final_exit_again()
+    {
+        var home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "exit-said", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var facts = new AttentionFacts { Sessions = [Session("s1a2b3c4", "engine")], Steps = [StepRow(ExitStep())] };
+            News Desk() => new(home, () => StoreSettled.Yes);
+            var first = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => true, Desk()));
+            await first.JudgeAsync();
+            Assert.Single(Said());
+
+            var loaded = facts;
+            facts = facts with { Steps = [] };
+            var restarted = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => true, Desk()));
+            await restarted.JudgeAsync();
+            facts = loaded;
+            await restarted.JudgeAsync();
+            await restarted.JudgeAsync();
+            Assert.Single(Said());
+
+            facts = facts with { Steps = [] };
+            await restarted.JudgeAsync();
+            facts = facts with { Steps = [StepRow(ExitStep())] };
+            await restarted.JudgeAsync();
+            Assert.Equal(2, Said().Length);
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
+
     /// <summary>A vacancy said once, then past its bound at the final exit: the exit is said under its own key, once, though its row's id is the vacancy's.</summary>
     [Fact]
     public async Task A_vacancy_that_reaches_the_final_exit_is_said_again_once_as_the_exit()

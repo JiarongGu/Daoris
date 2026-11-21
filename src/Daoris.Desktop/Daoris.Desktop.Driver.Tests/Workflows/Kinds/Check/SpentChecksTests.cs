@@ -150,6 +150,25 @@ public sealed class SpentChecksTests : NodeRunFixture
         Assert.Empty(Notices.Read(_home, _now)!);
     }
 
+    [Fact]
+    public async Task A_final_exits_notice_the_owner_dismissed_is_not_kept_again_after_a_restart()
+    {
+        Spent();
+        var first = await RunPassAsync(Runtime(), Seed);
+        var look = new LookSaid(_home, () => null, clock: () => _now);
+        foreach (var line in first.Noticed) look.Say(line);
+        look.Stands("work", first.Standing);
+        var kept = Assert.Single(Notices.Read(_home, _now)!);
+        Assert.Null(Notices.Dismiss(_home, [kept.Id], _now));
+
+        var restarted = await RunPassAsync(Runtime(), Seed);
+        var again = new LookSaid(_home, () => null, clock: () => _now);
+        Assert.Single(restarted.Standing);
+        again.Stands("work", restarted.Standing);
+
+        Assert.Empty(Notices.Read(_home, _now)!);
+    }
+
     /// <summary>At the exit the step is the person's own row with the presses that answer it, and the readers the window uses read it as the person's.</summary>
     [Fact]
     public async Task At_the_final_exit_the_spent_red_is_the_persons_own_row_with_its_presses()
@@ -253,6 +272,62 @@ public sealed class SpentChecksTests : NodeRunFixture
 
         Assert.Contains("stood unanswered", Story(Assert.Single(past.Noticed)), StringComparison.Ordinal);
         Assert.Equal(FinalExits.Unanswered, Assert.Single(runtime.HeldSteps(), step => step.Node == "check").Exit?.Kind);
+    }
+
+    [Fact]
+    public async Task A_holder_whose_session_comes_and_goes_reaches_the_final_exit_at_its_bound_from_the_first_look()
+    {
+        Spent();
+        Assert.Null(AgentSettles.CastAt(Casts, "machine", SpentChecks.HeldOn, CastHolders.AgentPrefix + "x", "x supervises", _now));
+        var runtime = Runtime();
+        var serving = false;
+        runtime.Serving = (agent, _) => serving && agent == "x";
+
+        await RunPassAsync(runtime, RoleBound);
+        _now = _now.AddHours(1);
+        serving = true;
+        await RunPassAsync(runtime, RoleBound);
+        _now = _now.AddMinutes(30);
+        serving = false;
+        var back = await RunPassAsync(runtime, RoleBound);
+        Assert.Empty(back.Noticed);
+
+        _now = _now.AddHours(1);
+        var past = await RunPassAsync(runtime, RoleBound);
+
+        Assert.Contains("held it for 2 hours", Story(Assert.Single(past.Noticed)), StringComparison.Ordinal);
+        Assert.NotNull(Assert.Single(runtime.HeldSteps(), step => step.Node == "check").Exit);
+    }
+
+    [Fact]
+    public async Task A_final_exit_keeps_its_row_when_the_cast_moves_the_step_to_the_person()
+    {
+        Spent();
+        Assert.Null(AgentSettles.CastAt(Casts, "machine", SpentChecks.HeldOn, CastHolders.AgentPrefix + "x", "x supervises", _now));
+        var runtime = Runtime();
+        runtime.Serving = (_, _) => false;
+        await RunPassAsync(runtime, RoleBound);
+        _now = _now.AddHours(3);
+        Assert.Single((await RunPassAsync(runtime, RoleBound)).Noticed);
+        Assert.Equal(FinalExits.Vacant, Assert.Single(runtime.HeldSteps(), step => step.Node == "check").Exit?.Kind);
+
+        Assert.Null(AgentSettles.CastAt(Casts, "machine", SpentChecks.HeldOn, CastHolders.Person, "the owner takes it", _now));
+        var moved = await RunPassAsync(runtime, RoleBound);
+
+        Assert.Empty(moved.Noticed);
+        var row = Assert.Single(runtime.HeldSteps(), step => step.Node == "check");
+        Assert.Equal((FinalExits.Vacant, FinalExits.Key(RunId, "check", 3), StepHolders.Person), (row.Exit?.Kind, row.Exit?.Key, row.Holder));
+        Assert.True(Assert.Single(runtime.PersonWaits(), each => each.Node == "check").Exit);
+    }
+
+    [Fact]
+    public async Task A_person_wait_at_the_final_exit_says_so()
+    {
+        Spent();
+        var runtime = Runtime();
+        await RunPassAsync(runtime, Seed);
+
+        Assert.True(Assert.Single(runtime.PersonWaits(), each => each.Node == "check").Exit);
     }
 
     [Fact]

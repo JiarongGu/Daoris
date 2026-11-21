@@ -15,6 +15,9 @@ public sealed record PersonWait(string Run, string Node, string Why, string Repo
     public bool Ended { get; init; }
 
     public bool Vacant { get; init; }
+
+    /// <summary>Whether it stands at the owner's final exit (<see cref="FinalExits"/>): the step's own row is the one row of it, so the session's <c>left</c> row is not made beside it.</summary>
+    public bool Exit { get; init; }
 }
 
 /// <summary>

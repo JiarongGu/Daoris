@@ -1,3 +1,5 @@
+using HomeNews = Daoris.Driver.News;
+
 namespace Daoris.Driver;
 
 /// <summary>What a line the look says is, and so where it goes.</summary>
@@ -228,30 +230,41 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     public string News(string family, LookNews news, string line)
     {
         Said(LookClass.News, family, line);
-        Keep(news);
+        if (Keep(news) && news.Code == FinalExit && home is not null) new HomeNews(home).ClaimStanding(HomeNews.Noticed, Id(news), _clock());
         return line;
     }
 
     /// <summary>
     /// The notices of what stands now, kept again at each look and said by no line (<see cref="NodeRuntimePass.Standing"/>, the owner's final
-    /// exits): one a look never kept, a later failure having ended it or a refused write, is kept at the next; one kept, or seen held, in this
-    /// process is never written again, so a notice the person dismissed stays dismissed while this process runs. What is remembered is what
-    /// stands, so it is bounded by it.
+    /// exits): one a look never kept, a later failure having ended it or a refused write, is kept at the next; one kept, or seen held, is
+    /// never written again, so a notice the person dismissed stays dismissed, across a restart too: what is remembered is the home's
+    /// (<see cref="HomeNews.ClaimStanding"/>), and it is forgotten once this process has seen its exit stop standing.
     /// </summary>
     public void Stands(string family, IReadOnlyList<LookNews> standing)
     {
+        if (home is null) return;
         var ids = standing.Select(Id).ToHashSet(StringComparer.Ordinal);
+        var desk = new HomeNews(home);
         lock (_standing)
         {
+            var ended = _standing.Except(ids).ToList();
             _standing.IntersectWith(ids);
             foreach (var news in standing.Where(news => !_standing.Contains(Id(news))))
             {
-                if (Keep(news)) _standing.Add(Id(news));
+                if (desk.Stood(HomeNews.Noticed, Id(news)) || (Keep(news) && Claimed(desk, news))) _standing.Add(Id(news));
             }
+
+            desk.Forget(HomeNews.Noticed, ended);
         }
     }
 
     private readonly HashSet<string> _standing = new(StringComparer.Ordinal);
+
+    private bool Claimed(HomeNews desk, LookNews news)
+    {
+        desk.ClaimStanding(HomeNews.Noticed, Id(news), _clock());
+        return true;
+    }
 
     private static string Id(LookNews news) => $"look-{news.Code}-{news.Subject}";
 

@@ -64,7 +64,7 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
                 {
                     // A baseline's key is the branch's one first run and never expires with the horizon.
                     write.Execute(
-                        "DELETE FROM news_said WHERE at < $before AND key NOT LIKE 'baseline:%'",
+                        "DELETE FROM news_said WHERE at < $before AND key NOT LIKE 'baseline:%' AND key NOT LIKE 'standing:%'",
                         ("$before", (now - Horizon).UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture)));
                     var claimed = new List<NewsOccurrence>();
                     foreach (var each in occurrences.Where(each => now - each.At < Horizon).OrderByDescending(each => each.At))
@@ -124,6 +124,73 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
         catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
             return false;
+        }
+    }
+
+    /// <summary>A standing claim of the kind: the owner's final exit's announcement, said once whatever restarts while the exit stands.</summary>
+    public const string Announced = "announced";
+
+    /// <summary>A standing claim of the kind: the owner's final exit's notice, kept once whatever the owner dismisses and whatever restarts.</summary>
+    public const string Noticed = "noticed";
+
+    private static string StandingKey(string kind, string key) => $"standing:{kind}:{key}";
+
+    /// <summary>
+    /// Whether this call claimed <paramref name="key"/> for <paramref name="kind"/>: true once, in any process, and false for every call after
+    /// while the claim stands. A standing claim outlives the horizon, since what it remembers (an exit still standing) is not old news, and goes
+    /// only with <see cref="Forget"/> when its exit no longer stands. A store that will not take the
+    /// claim answers true, so the exit is said by this process once rather than lost.
+    /// </summary>
+    public bool ClaimStanding(string kind, string key, DateTimeOffset now)
+    {
+        try
+        {
+            using var store = Open();
+            return store.Write(
+                Family,
+                write => write.Execute(
+                    "INSERT OR IGNORE INTO news_said (key, at) VALUES ($key, $at)",
+                    ("$key", StandingKey(kind, key)), ("$at", now.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture))) == 1);
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>Whether <paramref name="key"/> is claimed standing for <paramref name="kind"/>; a store that will not read says it is not.</summary>
+    public bool Stood(string kind, string key)
+    {
+        try
+        {
+            using var store = DesktopStoreReader.Open(DesktopStore.LocationIn(home));
+            return store is { Version: >= 9 }
+                && store.Query("SELECT 1 FROM news_said WHERE key = $key", row => row.GetInt32(0), ("$key", StandingKey(kind, key))).Any();
+        }
+        catch (Exception error) when (error is SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// The standing claims of <paramref name="kind"/> for <paramref name="keys"/> forgotten: exits this process saw stand and then stop standing. Never
+    /// forgotten for want of being seen, since a reading taken before the runtime loaded its steps is empty and proves no exit ended.
+    /// </summary>
+    public void Forget(string kind, IReadOnlyCollection<string> keys)
+    {
+        if (keys.Count == 0) return;
+        try
+        {
+            using var store = Open();
+            store.Write(Family, write =>
+            {
+                foreach (var key in keys) write.Execute("DELETE FROM news_said WHERE key = $key", ("$key", StandingKey(kind, key)));
+            });
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            // A claim not forgotten says its exit once fewer if it stands again, never more.
         }
     }
 
