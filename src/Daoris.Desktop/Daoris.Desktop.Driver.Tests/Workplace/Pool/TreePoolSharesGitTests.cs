@@ -32,10 +32,7 @@ public sealed class TreePoolSharesGitTests : IDisposable
 
     private async Task<PoolGitFixture> FixtureAsync()
     {
-        var fixture = _fixture = await PoolGitFixture.CreateAsync(Rules);
-        await File.AppendAllTextAsync(Path.Combine(fixture.Root, ".gitignore"), "local/\nsettings/\n");
-        await GitAsync(fixture.Root, "commit", "--quiet", "-am", "ignore the shared places");
-        fixture.Start = (await GitAsync(fixture.Root, "rev-parse", "HEAD")).Trim();
+        var fixture = _fixture = await PoolGitFixture.CreateAsync(Rules, ignored: "local/\nsettings/\n");
         Directory.CreateDirectory(Place(fixture, "local/rules"));
         Directory.CreateDirectory(Place(fixture, "settings/shared"));
         await File.WriteAllTextAsync(Place(fixture, "local/rules/house.md"), "the house rule\n");

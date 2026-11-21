@@ -19,6 +19,13 @@ export const userEvent = {
   ...realUserEvent,
   type: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['type']>) => realUserEvent.setup({ delay: null }).type(...args),
   keyboard: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['keyboard']>) => realUserEvent.setup({ delay: null }).keyboard(...args),
+  // Words put in at once, one paste, then Enter where they end in `{Enter}`: each typed key re-renders the whole frame.
+  say: async (element: Element, text: string) => {
+    const user = realUserEvent.setup({ delay: null });
+    await user.click(element);
+    await user.paste(text.replace(/\{Enter\}$/, ''));
+    if (text.endsWith('{Enter}')) await user.keyboard('{Enter}');
+  },
 };
 
 /**
