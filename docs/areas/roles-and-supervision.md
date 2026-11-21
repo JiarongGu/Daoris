@@ -317,7 +317,8 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
 49b. One judge (`RiskGate.Judge`, `Workflows/Risk/`) reads one risk policy and decides nothing yet: it runs in shadow. The policy is `risk` in
     the home's `driver.json` (`RiskPolicy`), rows keyed by place (`machine`, `workspace/<name>`, `repository/<name>`), each a list of
     `{ kind[/qualifier], class none|role|owner, by?, mode? full|restricted }` over a closed census of sixteen act kinds (`RiskActs`;
-    a door naming another is refused). For an act the narrowest place with a row decides, a qualified row over its kind's and a row keyed
+    a door naming another is refused). The census, its classes and the verdict's shape (`RiskVerdict`) are the settings' vocabulary
+    (`Settings/`), so the review's second opinion speaks them and reaches the judge through a port Workflows installs (`IOpinionRisk`). For an act the narrowest place with a row decides, a qualified row over its kind's and a row keyed
     by the place's access mode over one keyed by none; then `placeRisk` read through (a place whose level stands at `high` reads every
     kind at `owner`, a `release.production` mark `release.start/production` at `owner`); then the seed: `none`, but `reach.widen` (`role`
     by the place's approver under restricted access), `command.change` (`owner` under restricted access), `history.rewrite`, `data.delete`

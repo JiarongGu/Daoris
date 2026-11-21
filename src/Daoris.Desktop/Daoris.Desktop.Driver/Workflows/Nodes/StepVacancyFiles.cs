@@ -29,7 +29,7 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
                 if (each.ValueKind == JsonValueKind.Object && Text(each, "node") is { } node && each.TryGetProperty("attempt", out var number)
                     && number.TryGetInt32(out var attempt) && Moments.Read(each, "since") is { } since)
                 {
-                    read.Add(new StepVacancy(node, attempt, since, Flag(each, "told"), Flag(each, "refused")));
+                    read.Add(new StepVacancy(node, attempt, since, Flag(each, "told"), Flag(each, "exited")) { Served = Flag(each, "served") });
                 }
             }
 
@@ -85,7 +85,8 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
             ["unit"] = unit,
             ["vacancies"] = new JsonArray([.. vacancies.Select(each => (JsonNode)new JsonObject
             {
-                ["node"] = each.Node, ["attempt"] = each.Attempt, ["since"] = Moments.Write(each.Since), ["told"] = each.Told, ["refused"] = each.Refused,
+                ["node"] = each.Node, ["attempt"] = each.Attempt, ["since"] = Moments.Write(each.Since), ["told"] = each.Told, ["exited"] = each.Exited,
+                ["served"] = each.Served,
             })]),
         };
         Directory.CreateDirectory(FolderOf(home));

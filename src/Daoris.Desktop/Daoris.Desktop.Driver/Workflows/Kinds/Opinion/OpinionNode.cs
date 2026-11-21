@@ -9,7 +9,12 @@ public sealed class OpinionNode : BuiltInNode, IObserves, IAsksReads, IWaitsOnRo
 {
     public PassRead Asks => PassRead.Gates;
 
-    string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => status.Holds == OpinionGateReading.Vacant ? PersonWaits.Vacant : null;
+    string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => status.Holds switch
+    {
+        OpinionGateReading.Vacant => PersonWaits.Vacant,
+        OpinionGateReading.RoleDisputed or OpinionGateReading.RoleCommitsSince => PersonWaits.Accept,
+        _ => null,
+    };
 
     public NodeObservation Observe(NodeReading reading) => OpinionGateReading.Observe(reading);
 

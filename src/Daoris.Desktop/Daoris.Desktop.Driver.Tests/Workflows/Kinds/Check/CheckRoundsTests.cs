@@ -72,7 +72,8 @@ public sealed class CheckRoundsTests
         Assert.Empty(CheckRounds.SpentOwed(Failed(2, Of(1), Of(2)), graph.Wires, declared));
         var spent = Failed(3, Of(1), Of(2), Of(3));
         Assert.Equal([(check, 3, 3)], CheckRounds.SpentOwed(spent, graph.Wires, declared));
-        var told = spent with { Told = [new NodeTold(check, 3, "s1", null, Asked) { Spent = true }] };
+        Assert.Equal([(check, 3, 3)], CheckRounds.SpentOwed(spent with { Told = [new NodeTold(check, 3, "s1", null, Asked) { Spent = true }] }, graph.Wires, declared));
+        var told = spent with { Told = [new NodeTold(check, 3, "s1", null, Asked) { Spent = true, Decided = NodeTold.Exit }] };
         Assert.Empty(CheckRounds.SpentOwed(told, graph.Wires, declared));
         Assert.Empty(CheckRounds.SpentOwed(Failed(3, Of(1), Of(2), Of(3) with { State = AttemptStates.Sent }), graph.Wires, declared));
         Assert.Equal([(check, 4, 4)], CheckRounds.SpentOwed(told with { Attempts = [Of(1), Of(2), Of(3), Of(4)],

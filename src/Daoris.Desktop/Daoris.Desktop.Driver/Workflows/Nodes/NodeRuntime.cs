@@ -104,7 +104,7 @@ public sealed class NodeRuntime(
         set => _performer.Doors = value;
     }
 
-    /// <summary>The transport an open request's line is sent to: none by default, and an admitted request then waits queued. The watch sets it.</summary>
+    /// <summary>The transport an open request's line is sent to: none by default, and an admitted request then waits queued.</summary>
     public IIntegrationLines? Lines { get; set; }
 
     public ITrainPlans? Plans { get; set; }
@@ -119,8 +119,7 @@ public sealed class NodeRuntime(
 
     /// <summary>
     /// The say door a run's work is told what its steps sent back through: Daoris's words on the work's session as its next turn, under their
-    /// key, so a say again is answered with the word kept. Handed the session, the words and the key. None by default: nobody is told, and
-    /// the pass says so.
+    /// key. None by default: nobody is told.
     /// </summary>
     public Func<string, string, string, CancellationToken, Task<SayAnswer>>? Say { get; set; }
 
@@ -129,6 +128,8 @@ public sealed class NodeRuntime(
     public RiskShadow? Risk { get; set; }
 
     public Func<string?, string?, bool>? Serving { get; set; }
+
+    private readonly PassNotices _noticed = new();
 
     /// <summary>This machine's session records, read at each run's end to find the sessions waiting on it; null where unread.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<SessionRecord>?>>? SessionsRead { get; set; }
@@ -330,6 +331,7 @@ public sealed class NodeRuntime(
         {
             if (!_holdsLease()) return new NodeRuntimePass(true, [], [], []);
             _config = look.Config;
+            _noticed.Begin();
 
             // Governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the ones it is judged
             // under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged. A word on a
@@ -487,10 +489,10 @@ public sealed class NodeRuntime(
             }
 
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
-            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, Serving);
+            PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, _noticed, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
-            return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
+            return _noticed.Onto(new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed }, HeldSteps());
         }
         finally
         {
@@ -567,7 +569,7 @@ public sealed class NodeRuntime(
                 done.AddRange(_performer.Keep(before, evaluated));
             }
 
-            await Keeping.SpentRedsAsync(governed, said, ct).ConfigureAwait(false);
+            await Keeping.SpentRedsAsync(governed, _config, said, _noticed, ct).ConfigureAwait(false);
 
             // Each node whose wires fired starts as its kind says. A start that dropped what this pass governs (a fence that found the
             // unit moved) ends its judgement here: the next pass reads it again, and no further round reads git only to find the same revision.

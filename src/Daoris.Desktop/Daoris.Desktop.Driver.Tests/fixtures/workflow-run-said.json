@@ -75,6 +75,7 @@
     { "kind": "opinion", "detail": "myself", "said": "You looked at it yourself in place of another agent's reading." },
     { "kind": "opinion", "detail": "answered", "said": "Your Accept answered the second opinion." },
     { "kind": "opinion", "detail": "answered", "code": "reviewed", "said": "Your Reviewed answered the second opinion." },
+    { "kind": "opinion", "detail": "answered", "code": "policy", "said": "The risk policy answered the second opinion." },
     { "kind": "opinion", "detail": "landed", "said": "It let the work go when the work landed." },
     { "kind": "opinion", "state": "waiting", "detail": "chat-at-accept", "agent": "codex-acp", "said": "A second opinion from `codex-acp` is asked when you press Accept." },
     { "kind": "opinion", "state": "waiting", "detail": "chat-at-accept", "said": "A second opinion is asked when you press Accept." },

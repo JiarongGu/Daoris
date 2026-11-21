@@ -67,6 +67,23 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'daoris-azure-devops/release', approver)).toBe(`等待 \`approver\`：你。${words}`);
   });
 
+  it('says a second opinion\'s dispute by whoever holds it: a role\'s agent never reads as you, and your own holding as before', async () => {
+    const disputed = { code: 'disputed', values: { count: '2', session: 's1', role: 'opinion', why: 'classed role at the machine' } };
+    const since = { code: 'commits-since', values: { count: '3', session: 's1', role: 'opinion' } };
+    const agent = { kind: 'agent', name: 'reviewer' };
+    expect(waitSaid(t, 'opinion', disputed, 'en', agent)).toBe(
+      "Waiting on `opinion`: `reviewer`, for its answer to the second opinion's disputed findings (2). The risk policy asks this role, not you.");
+    expect(waitSaid(t, 'opinion', since, 'en', agent)).toContain('Waiting on `opinion`: `reviewer`, for its answer to the commits no other agent read (3)');
+    expect(waitSaid(t, 'opinion', disputed, 'en', agent)).not.toMatch(/your answer|Your Accept/);
+    expect(waitSaid(t, 'opinion', disputed, 'en', { kind: 'person' })).toContain('Waits on your answer');
+    render(<StepWait step={{ ...step('opinion', disputed), state: 'waiting', holder: agent } as RunStep} />);
+    expect(screen.getByText(/Waiting on/)).toBeTruthy();
+    expect(screen.queryByText(/your answer/)).toBeNull();
+    await i18n.changeLanguage('zh');
+    expect(waitSaid(t, 'opinion', disputed, 'zh', agent)).toContain('`reviewer`');
+    expect(waitSaid(t, 'opinion', disputed, 'zh', agent)).not.toContain('等待你');
+  });
+
   it('draws the wait under the step, and nothing for a step that waits on none', () => {
     const { rerender } = render(<StepWait step={step('merge', { code: 'root-dirty', since: '2026-11-09T14:02:00Z' })} />);
     expect(screen.getByText(/Waits for the repository's checkout to be clean/)).toBeTruthy();

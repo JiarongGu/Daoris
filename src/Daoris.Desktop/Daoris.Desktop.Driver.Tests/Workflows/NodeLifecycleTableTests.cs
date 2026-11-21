@@ -24,7 +24,7 @@ public sealed class NodeLifecycleTableTests
             "ready>skipped:person", "blocked>skipped:person", "active>skipped:person",
             // A declined request is gone on without, a request node alone.
             "failed>skipped:person",
-            "failed>stopped:person",
+            "failed>stopped:person", "failed>stopped:daoris",
             // A failed delivery step whose branch the line holds has nothing left to deliver.
             "failed>skipped:daoris", "active>skipped:daoris", "unknown>skipped:daoris",
             // An opinion's gate passes it over where nothing is asked of it.

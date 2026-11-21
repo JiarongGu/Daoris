@@ -28,16 +28,21 @@ internal static class TreeGateOpinions
         this TreeGates gates, string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
         string occasion, CancellationToken ct = default, IWorkplaceProcess? process = null, string? at = null, string? run = null)
     {
-        var rule = process is null ? OpinionRules.Resolve(gates.Context.Config(), repository, workspace) : process.Opinion;
+        var config = gates.Context.Config();
+        var rule = process is null ? OpinionRules.Resolve(config, repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
-        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
+        // The judge at the work's place answers a dispute or commits nobody read, as `work.accept`.
+        var facts = new OpinionGateFacts(repository, rule)
+        {
+            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = OpinionRisk.Current.JudgeAt(config, workspace, repository, process),
+        };
         var chatRun = quest is null && WorkplaceRunFiles.IsChatRun(run) ? run : null;
         if ((quest is null && chatRun is null) || !OpinionGate.Reads(rule, cannot, occasion))
         {
             return new OpinionGateState(OpinionGateStates.None, repository) { Rule = rule, Session = session, Run = chatRun };
         }
 
-        if (chatRun is not null) return await ChatOpinionAsync(gates, tree, repository, chatRun, facts, world, ct, at).ConfigureAwait(false);
+        if (chatRun is not null) return await ChatOpinionAsync(gates, tree, repository, workspace, chatRun, facts, world, ct, at, process).ConfigureAwait(false);
 
         try
         {
@@ -57,7 +62,7 @@ internal static class TreeGateOpinions
             };
 
             var deliveries = new OpinionDeliveries(gates.Context.Home);
-            return await OpinionGate.JudgeAsync(facts, new OpinionReads(
+            var judged = await OpinionGate.JudgeAsync(facts, new OpinionReads(
                 each => world.OpinionAsync(each, ct),
                 deliveries.Read,
                 commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
@@ -66,6 +71,7 @@ internal static class TreeGateOpinions
                 // A limited pass's reset is its cool-off's, read by its session; none left names a ready account.
                 Ready = reviewer => AccountCooling.OfSession(gates.Context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
             }).ConfigureAwait(false);
+            return Told(gates, TreeGates.OpinionChain(chain, id), workspace, repository, null, process, judged);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -83,7 +89,8 @@ internal static class TreeGateOpinions
     /// on the run with no ask kept after it fell owed, nor a request the look has still to take.
     /// </summary>
     private static async Task<OpinionGateState> ChatOpinionAsync(
-        TreeGates gates, string tree, string repository, string run, OpinionGateFacts facts, IOpinionWorld world, CancellationToken ct, string? at)
+        TreeGates gates, string tree, string repository, string workspace, string run, OpinionGateFacts facts, IOpinionWorld world, CancellationToken ct, string? at,
+        IWorkplaceProcess? process)
     {
         try
         {
@@ -99,7 +106,7 @@ internal static class TreeGateOpinions
                 Asked = kept.Requests.Count > 0 || (due is not null && !kept.Asks.Any(ask => ask.At >= due.At)),
             };
 
-            return await OpinionGate.JudgeAsync(facts, new OpinionReads(
+            var judged = await OpinionGate.JudgeAsync(facts, new OpinionReads(
                 each => world.OpinionAsync(each, ct),
                 new OpinionDeliveries(gates.Context.Home).Read,
                 commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
@@ -107,6 +114,7 @@ internal static class TreeGateOpinions
             {
                 Ready = reviewer => AccountCooling.OfSession(gates.Context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
             }).ConfigureAwait(false);
+            return Told(gates, run, workspace, repository, run, process, judged);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -116,5 +124,20 @@ internal static class TreeGateOpinions
                 Rule = facts.Rule, Session = facts.Session, Run = run, Problem = error.Message.TrimEnd().TrimEnd('.'),
             };
         }
+    }
+
+    private static OpinionGateState Told(
+        TreeGates gates, string subject, string workspace, string repository, string? chatRun, IWorkplaceProcess? process, OpinionGateState gate)
+    {
+        try
+        {
+            OpinionRisk.Current.Passed(gates.Context.Home, gates.Context.Config(), subject, workspace, repository, chatRun, process, gate, gates.Context.Clock());
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The journal is a record of the pass, never a reason to fail the gate: one that did not append is written at the next read.
+        }
+
+        return gate;
     }
 }

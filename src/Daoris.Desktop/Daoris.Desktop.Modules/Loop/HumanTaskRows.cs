@@ -12,7 +12,9 @@ namespace Daoris.Desktop;
 internal static class HumanTaskRows
 {
     /// <summary>The fields a step's row carries, as the slice pushes them (<see cref="AttentionStateSlice.Fields"/>).</summary>
-    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work", "held", "epoch", "holds", "vacant", "givesUp"];
+    public static readonly IReadOnlyList<string> Fields = ["run", "node", "why", "role", "holder", "holderName", "presses", "words", "url", "opens", "work", "held", "epoch", "holds", "vacant", "givesUp", "exit"];
+
+    public static bool Exited(JsonObject row) => row["step"] is JsonObject step && step["exit"] is JsonObject;
 
     /// <param name="groups">Sessions' placings, by which a row names the session its run's waits placed in Needs you: what its notification opens.</param>
     public static IEnumerable<JsonObject> Of(IReadOnlyList<JsonObject> steps, IReadOnlyList<JsonObject>? groups = null)
@@ -34,6 +36,8 @@ internal static class HumanTaskRows
 
             carried["presses"] ??= new JsonArray();
             if (carried["vacant"] is JsonValue vacant && vacant.TryGetValue<bool>(out var yes) && !yes) carried.Remove("vacant");
+            if (carried["exit"] is not JsonObject) carried.Remove("exit");
+            else if (Text(carried["exit"] as JsonObject, "key") is { } key) row["obligation"] = key;
             row["step"] = carried;
             yield return row;
         }

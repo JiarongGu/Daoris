@@ -25,7 +25,9 @@ public enum LookClass
 /// </summary>
 /// <param name="Code">One of <see cref="LookSaid"/>'s news codes.</param>
 /// <param name="Subject">What makes it one: a session's id, a quest's, a meeting's or a brainstorm's request.</param>
-public sealed record LookNews(string Code, string Subject, string? Session = null, string? Quest = null, string? Workspace = null);
+/// <param name="Quest">The quest it is about, or the run, for a run's step (<see cref="FinalExits"/>), as a step's outcome names it.</param>
+/// <param name="Act">The run's step it is about, by its id, where it names a run.</param>
+public sealed record LookNews(string Code, string Subject, string? Session = null, string? Quest = null, string? Workspace = null, string? Act = null);
 
 /// <summary>
 /// A line's class as its producer judges it, carried with a line said later where it enters the look: a pass beside the
@@ -177,11 +179,14 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// </summary>
     public const string OpinionSettled = "opinion-settled";
 
+    /// <summary>A step every holder failed, at the owner's final exit (<see cref="FinalExits"/>): one notice, keyed by <see cref="FinalExits.Key"/>.</summary>
+    public const string FinalExit = "final-exit";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled];
+         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled, FinalExit];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 
@@ -223,15 +228,49 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     public string News(string family, LookNews news, string line)
     {
         Said(LookClass.News, family, line);
-        if (home is null) return line;
+        Keep(news);
+        return line;
+    }
+
+    /// <summary>
+    /// The notices of what stands now, kept again at each look and said by no line (<see cref="NodeRuntimePass.Standing"/>, the owner's final
+    /// exits): one a look never kept, a later failure having ended it or a refused write, is kept at the next; one kept, or seen held, in this
+    /// process is never written again, so a notice the person dismissed stays dismissed while this process runs. What is remembered is what
+    /// stands, so it is bounded by it.
+    /// </summary>
+    public void Stands(string family, IReadOnlyList<LookNews> standing)
+    {
+        var ids = standing.Select(Id).ToHashSet(StringComparer.Ordinal);
+        lock (_standing)
+        {
+            _standing.IntersectWith(ids);
+            foreach (var news in standing.Where(news => !_standing.Contains(Id(news))))
+            {
+                if (Keep(news)) _standing.Add(Id(news));
+            }
+        }
+    }
+
+    private readonly HashSet<string> _standing = new(StringComparer.Ordinal);
+
+    private static string Id(LookNews news) => $"look-{news.Code}-{news.Subject}";
+
+    /// <summary>The news's notice kept, or held already; false where the write is refused, which is logged and dropped.</summary>
+    private bool Keep(LookNews news)
+    {
+        if (home is null) return false;
         var now = _clock();
-        var notice = new Notice($"look-{news.Code}-{news.Subject}", Notices.Look, now, Workspace: news.Workspace, Session: news.Session,
-            Quest: news.Quest, Code: news.Code);
+        var notice = new Notice(Id(news), Notices.Look, now, Workspace: news.Workspace, Session: news.Session, Quest: news.Quest, Act: news.Act, Code: news.Code);
         // A write refused is logged and dropped; one kept is told, so the windows' slice reads it again, since a write this process
         // marked wakes nothing on its own watch; a notice kept already is told too, and the slice pushes only what moved.
-        if (Notices.Add(home, notice, now) is { } why) log()?.Warn("notices.refused", ("why", why));
-        else noticed?.Invoke();
-        return line;
+        if (Notices.Add(home, notice, now) is { } why)
+        {
+            log()?.Warn("notices.refused", ("why", why));
+            return false;
+        }
+
+        noticed?.Invoke();
+        return true;
     }
 
     /// <summary>The class's word, as the event names it.</summary>

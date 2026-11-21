@@ -325,15 +325,17 @@ internal sealed class NodeRunKeeping(
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
         + " and commit, and what you commit goes through the workflow again.";
 
-    /// <summary>A check's red past its rounds' bound (<see cref="CheckRounds.SpentOwed"/>) told to the work's session all the same, once.</summary>
-    public async Task SpentRedsAsync(GovernedUnit governed, List<string> said, CancellationToken ct)
+    /// <summary>A check's red past its rounds' bound decided by the risk policy, then told to the work's session all the same, once (<see cref="SpentChecks"/>).</summary>
+    public async Task SpentRedsAsync(GovernedUnit governed, DriverConfig? config, List<string> said, List<LookLine> noticed, CancellationToken ct)
     {
         if (governed.Scope is not { } scope || records.Read(governed.Unit.Id) is not { } record) return;
+        var (workspace, repository) = (governed.Unit.Owner.Workspace, governed.Unit.Owner.Repository);
         foreach (var (node, attempt, reds) in CheckRounds.SpentOwed(record, governed.Graph.Wires, governed.Declared))
         {
             var code = record.Statuses.GetValueOrDefault(node)?.Code;
-            var text = CheckRounds.SpentWords(node, code, CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why, reds);
-            await TellWorkAsync(governed, scope, node, attempt, text, said, ct, spent: true).ConfigureAwait(false);
+            var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
+            await SpentChecks.SettleAsync(records, governed.Unit.Id, scope.Run.Run, node, attempt, reds, code, found, config, workspace, repository, clock(),
+                text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said, noticed, governed.Declared.GetValueOrDefault(node)).ConfigureAwait(false);
         }
     }
 
@@ -352,8 +354,16 @@ internal sealed class NodeRunKeeping(
     /// Tell the run's work, its newest session here, <paramref name="text"/> under its key: through the say door, which keeps one word per key.
     /// The session told, or why none is, goes on the run's record (<see cref="NodeTold"/>) and in the pass's words.
     /// </summary>
-    private async Task TellWorkAsync(
-        GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct, bool spent = false)
+    private async Task TellWorkAsync(GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
+    {
+        var (session, why) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct).ConfigureAwait(false);
+        var kept = new NodeTold(node, attempt, session, why, clock());
+        records.Edit(governed.Unit.Id, record => (record with { Told = [.. record.Told.TakeLast(NodeRecord.ToldKept - 1), kept] }, true));
+    }
+
+    /// <summary>The run's work told <paramref name="text"/> under its key, said in the pass's words: the session told, or why none is.</summary>
+    private async Task<(string? Session, string? Why)> SayWorkAsync(
+        GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
         // The part the person's changes name is told, by the session that made it; else the newest part's.
@@ -364,8 +374,7 @@ internal sealed class NodeRunKeeping(
             ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
             : session is null ? $"work  {unit}: nobody is told what `{node}` sent back: {why}; the words stay on its record."
             : $"work  {unit}: session {session} was not told what `{node}` sent back: {why}");
-        var kept = new NodeTold(node, attempt, told ? session : null, told ? null : why, clock()) { Spent = spent };
-        records.Edit(unit, record => (record with { Told = [.. record.Told.TakeLast(NodeRecord.ToldKept - 1), kept] }, true));
+        return told ? (session, null) : (null, why);
     }
 
     private async Task<(bool Told, string? Why)> SayAsync(string? session, RunScope scope, string node, int attempt, string text, CancellationToken ct)

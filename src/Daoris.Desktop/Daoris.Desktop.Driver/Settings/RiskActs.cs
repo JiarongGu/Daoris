@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The closed census of act kinds the risk policy classes: each named by the door or tool the act comes through, never by an
 /// actor's words, with its seed class. A door naming a kind outside it is refused (<see cref="RiskAct.Of"/>), so no unknown kind reaches the
-/// judge (<see cref="RiskGate"/>).
+/// judge (Workflows' <c>RiskGate</c>); a subdomain below the judge speaks it through a port the judge's side installs.
 /// </summary>
 public static class RiskActs
 {

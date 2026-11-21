@@ -320,7 +320,9 @@ internal sealed class WatchNodes
             }
         }
 
-        return [.. lines, .. NodeRuntimeLines(pass)];
+        string[] noticed = [.. pass.Noticed.Select(_watch.Lines.Say)];
+        _watch.Lines.Stands("work", pass.Standing);
+        return [.. lines, .. NodeRuntimeLines(pass), .. noticed];
     }
 
     /// <summary>

@@ -40,7 +40,7 @@ internal static class TenureRejudge
 
     private static void Journal(string home, string unit, NodeDeclaration node, NodeStatus status, string why, StepTenure next, bool raised, RiskStepJudge judge, DateTimeOffset now)
     {
-        var verdict = RiskStepGates.Verdict(node, why, judge) ?? judge.Act(RiskAct.Of(RiskStepHolds.KindOf(why, node)!));
+        var verdict = RiskStepGates.Verdict(node, why, judge) ?? RiskStepGates.Verdict(judge, RiskStepHolds.KindOf(why, node)!, node)!;
         var run = RunUnits.Is(unit) ? unit[RunUnits.Prefix.Length..] : unit;
         var place = judge.Place;
         // The hold's key with the epoch it moved to, so the shadow's own open and release of the hold are never read as this line's.

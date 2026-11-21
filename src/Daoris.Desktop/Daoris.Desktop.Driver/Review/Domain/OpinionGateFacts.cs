@@ -43,6 +43,9 @@ public sealed record OpinionGateFacts(string Repository, ResolvedOpinion? Rule)
 
     /// <summary>Why the run's named workflow's opinion step cannot start (<see cref="IWorkplaceProcess.OpinionCannot"/>); else null.</summary>
     public string? Cannot { get; init; }
+
+    /// <summary>The risk policy's judge at the work's place, which answers a dispute as <c>work.accept</c>; null reads none, and the gate waits for the person.</summary>
+    public Func<RiskAct, RiskVerdict>? Risk { get; init; }
 }
 
 /// <summary>What the judgement reads beyond the facts: the host's opinions, what the driver did with each, and git's ancestry.</summary>

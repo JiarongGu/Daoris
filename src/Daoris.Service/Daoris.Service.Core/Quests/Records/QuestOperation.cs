@@ -67,7 +67,7 @@ namespace Daoris.Knowledge;
 /// <param name="Choice">For a <see cref="QuestOperationKind.Chosen"/>: the person's kind and workflow. Null on every other kind.</param>
 /// <param name="Revision">For a <see cref="QuestOperationKind.Revised"/>: the part's words and scope as the plan now says them. Null on every other kind.</param>
 /// <param name="By">For a <see cref="QuestOperationKind.Accepted"/>: the appointed role that said the yes and its agent, as
-/// <c>role:&lt;role&gt; · &lt;agent&gt;</c>, never the owner's mark. Null for the person's own yes, and on every other kind.</param>
+/// <c>role:&lt;role&gt; · &lt;agent&gt;</c>, or the risk policy's (<c>RiskPassWire.By</c>); never the owner's mark. Null for the person's own yes.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,

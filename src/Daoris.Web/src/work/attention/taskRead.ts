@@ -10,11 +10,13 @@ export const stepHolder = (step: Pick<StepWaitRow, 'holder' | 'holderName'>) =>
 
 export const stepRead = (step: StepWaitRow, title?: string) => ({
   title: title ?? `#${step.run}`,
-  detail: i18n.t('work.attention.stepWhy', {
-    role: step.role,
-    holder: stepHolder(step),
-    node: step.node,
-    words: step.words ?? '',
-  }).trim(),
+  detail: step.exit
+    ? i18n.t(`work.attention.stepExit.${step.exit.kind}`, { node: step.node, role: step.role })
+    : i18n.t('work.attention.stepWhy', {
+      role: step.role,
+      holder: stepHolder(step),
+      node: step.node,
+      words: step.words ?? '',
+    }).trim(),
   step,
 });

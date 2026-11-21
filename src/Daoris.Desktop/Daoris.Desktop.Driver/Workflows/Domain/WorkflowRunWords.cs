@@ -173,9 +173,12 @@ public static class WorkflowRunWords
                 : "Settled: another agent read it, with nothing left disputed.",
             (WorkflowKinds.Opinion, OpinionGateStates.Anyway) => "You went on without a settled second opinion.",
             (WorkflowKinds.Opinion, OpinionGateStates.Myself) => "You looked at it yourself in place of another agent's reading.",
-            (WorkflowKinds.Opinion, OpinionGateStates.Answered) => step.Code == ReviewVerdicts.Reviewed
-                ? "Your Reviewed answered the second opinion."
-                : "Your Accept answered the second opinion.",
+            (WorkflowKinds.Opinion, OpinionGateStates.Answered) => step.Code switch
+            {
+                ReviewVerdicts.Reviewed => "Your Reviewed answered the second opinion.",
+                OpinionPersonSaid.Policy => "The risk policy answered the second opinion.",
+                _ => "Your Accept answered the second opinion.",
+            },
             (WorkflowKinds.Opinion, WorkflowRunDetails.Landed) => "It let the work go when the work landed.",
             // A chat run's opinion is asked by the person's Accept, never at a look.
             (WorkflowKinds.Opinion, WorkflowRunDetails.ChatAtAccept) => step.Agent is { } asks

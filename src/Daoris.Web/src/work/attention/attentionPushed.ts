@@ -197,6 +197,7 @@ export type StepWaitRow = {
   words?: string | null; url?: string | null; opens?: string | null; work?: string | null;
   epoch?: number | null; holds?: string[] | null;
   held?: { unit: string; attempt: number; words: string[]; resolution?: string | null } | null;
+  exit?: { key: string; kind: 'spent' | 'vacant' | 'unanswered' } | null;
 };
 
 /**

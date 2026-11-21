@@ -4,12 +4,9 @@ namespace Daoris.Driver;
 /// The judge deciding a run step's own hold: a review's Accept (<c>work.accept</c>) and a task's approval (<c>task.approve</c>, or the
 /// destination its <c>act</c> option names), read through <see cref="RiskStepHolds.KindOf"/>. Where the judge passes the act at the run's
 /// place the step reaches by the policy with the verdict's rule on its words, and no one is asked; where it gates the step waits on its own
-/// role as the place casts it, and where it classes the act <c>owner</c> the owner role holds it from its start (<see cref="Owned"/>).
-/// </summary>
+/// role as the place casts it, and where it classes the act <c>owner</c> the owner role holds it from its start (<see cref="Owned"/>).</summary>
 public static class RiskStepGates
 {
-    public const string Passes = "no risk is declared for it here, so it passes";
-
     /// <summary>The judge at a place as <paramref name="config"/> holds its policy and access, or null where no config is read.</summary>
     public static RiskStepJudge? At(DriverConfig? config, string? workspace, string? repository)
     {
@@ -27,13 +24,19 @@ public static class RiskStepGates
     public static RiskVerdict? Verdict(NodeDeclaration node, string? why, RiskStepJudge? judge)
     {
         if (judge is null || why is not (PersonWaits.Accept or PersonWaits.Approval) || RiskStepHolds.KindOf(why, node) is not { } kind) return null;
-        var verdict = judge.Act(RiskAct.Of(kind));
-        if (RiskStepHolds.BadAct(node) is { } bad) return Owners(verdict, $"its `act` option {bad} names no act of the census, which no policy row can class");
-        var role = StepRoles.Of(node);
-        if (verdict.Outcome == RiskVerdict.OwnerOutcome) return verdict;
-        if (role == StepRoles.Owner) return Owners(verdict, $"the step's role is `{StepRoles.Owner}`, which is the owner's own");
-        return judge.Marked && why == PersonWaits.Approval && role == StepRoles.Approver
+        if (RiskStepHolds.BadAct(node) is { } bad) return Owners(judge.Act(RiskAct.Of(kind)), $"its `act` option {bad} names no act of the census, which no policy row can class");
+        var verdict = Verdict(judge, kind, node)!;
+        return verdict.Outcome != RiskVerdict.OwnerOutcome && judge.Marked && why == PersonWaits.Approval && StepRoles.Of(node) == StepRoles.Approver
             ? Owners(verdict, $"its place is marked `{PlaceMarks.ProductionReleases}`, which keeps its approver's approval the owner's")
+            : verdict;
+    }
+
+    /// <summary>The one verdict path every hold reads: the judge on <paramref name="kind"/>, the step it stands at keeping the owner role's step the owner's.</summary>
+    public static RiskVerdict? Verdict(RiskStepJudge? judge, string kind, NodeDeclaration? node)
+    {
+        if (judge?.Act(RiskAct.Of(kind)) is not { } verdict) return null;
+        return node is not null && verdict.Outcome != RiskVerdict.OwnerOutcome && StepRoles.Of(node) == StepRoles.Owner
+            ? Owners(verdict, $"the step's role is `{StepRoles.Owner}`, which is the owner's own")
             : verdict;
     }
 
@@ -44,9 +47,9 @@ public static class RiskStepGates
     public static NodeObservation? Passed(NodeReading reading, string why, string? outcome = null)
     {
         if (Verdict(reading.Node, why, reading.Git?.Risk) is not { Outcome: RiskVerdict.Pass } verdict) return null;
-        return NodeObserving.Seen(reading, NodeStates.Reached, Passes) with
+        return NodeObserving.Seen(reading, NodeStates.Reached, RiskVerdict.Passes) with
         {
-            Source = NodeSource.Policy, Words = $"{Passes}: {verdict.Reason} (rule {verdict.Source} at {verdict.Revision})",
+            Source = NodeSource.Policy, Words = verdict.Passed,
             Acceptance = reading.Binding with
             {
                 Outcome = outcome,

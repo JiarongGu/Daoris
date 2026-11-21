@@ -47,10 +47,10 @@ public static class QuestViews
         this ServiceClient service, string id, string reason, bool whileOpen, CancellationToken ct = default) =>
         service.MovedAsync(new RespondQuest(id.TrimStart('#'), "decline", reason, WhileOpen: whileOpen ? true : null), "respond", ct);
 
-    /// <summary>The person's yes to a done's departure from what they required, or a role's (<paramref name="role"/>): what it held goes on.</summary>
+    /// <summary>The person's yes to a departure, a role's (<paramref name="role"/>) or the risk policy's (<paramref name="policy"/>): what it held goes on.</summary>
     public static Task<(bool Ok, string Message)> AcceptDepartureAsync(
-        this ServiceClient service, string id, CancellationToken ct = default, RoleAnswerWire? role = null) =>
-        service.MovedAsync(new AcceptQuest(id.TrimStart('#'), role), "accept", ct);
+        this ServiceClient service, string id, CancellationToken ct = default, RoleAnswerWire? role = null, RiskPassWire? policy = null) =>
+        service.MovedAsync(new AcceptQuest(id.TrimStart('#'), role, policy), "accept", ct);
 
     /// <summary>
     /// The person marks a quest done: their words, to the service's own door for it, which says the done is theirs and answers none

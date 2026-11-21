@@ -80,6 +80,12 @@ public sealed record OpinionGateState(string State, string Repository)
         or OpinionGateStates.Myself or OpinionGateStates.Answered
         || (State == OpinionGateStates.Unavailable && !Required);
 
+    /// <summary>The risk policy's verdict on a dispute or commits unread (<c>work.accept</c>); null when none is judged.</summary>
+    public RiskVerdict? Risk { get; init; }
+
+    /// <summary>Whether what waits for an answer is the owner's: classed <c>owner</c>, or no policy read; never one the policy gates on a role.</summary>
+    public bool OwnerHolds => PressAnswers && Risk is not { Outcome: RiskVerdict.Gate };
+
     /// <summary>Whether a press that shows what is unsettled answers it by being made: a dispute, or commits unread.</summary>
     public bool PressAnswers => State is OpinionGateStates.Disputed or OpinionGateStates.CommitsSince;
 

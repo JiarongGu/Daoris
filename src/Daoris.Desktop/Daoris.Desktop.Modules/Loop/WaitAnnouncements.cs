@@ -8,7 +8,9 @@ namespace Daoris.Desktop;
 /// The waits that come to the person: a tool call a session holds for their answer, and a run's step waiting on a role they hold (its
 /// notification opening the session its run placed in Needs you, whose head carries the step's presses), each announced as a park is: on
 /// <c>SESSION_ATTENTION</c>, in the shape the shell's notifier and the page's toast read, once, where the attention slice first sees
-/// its row, while the notify switch is on.
+/// its row, while the notify switch is on. A step at the owner's final exit is said here too, once under the exit's own key
+/// (<see cref="ExitKind"/>), so a vacancy said before it is said again as the exit: this is the exit's one interruption, its notice in
+/// <i>Done and failed</i> the record no window says aloud (<see cref="FinalExits"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Why here.</b> Its bound refuses a held call by itself, so it waits on the person with a clock, as a park waits
@@ -35,6 +37,13 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
     /// <summary>The kind of attention a vacancy is told as, once (<see cref="AttentionOwnership.VacantClass"/>): a step nobody's session answers.</summary>
     public const string VacantKind = "Vacant";
 
+    /// <summary>
+    /// The kind of attention a step at the owner's final exit is told as, once (<see cref="FinalExits"/>): its run, its step and how every
+    /// holder failed (<see cref="FinalExits.Spent"/>, <see cref="FinalExits.Vacant"/>, <see cref="FinalExits.Unanswered"/>), whose words carry the
+    /// story's short form and the one answer.
+    /// </summary>
+    public const string ExitKind = "Exit";
+
     /// <summary>The kind of <i>What needs you</i>'s row a held tool call is (<see cref="NeedsAPerson"/>).</summary>
     private const string RowKind = "permission";
 
@@ -55,7 +64,10 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
                 && Json.Text(row, "class") != AttentionOwnership.AgentsClass)
             .ToList();
 
-        static string Key(JsonObject row) => $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";
+        // A step at the exit by the exit's key, its row's obligation, so a vacancy said under the row's id does not hide it.
+        static string Key(JsonObject row) => HumanTaskRows.Exited(row) && Json.Text(row, "obligation") is { } exit
+            ? exit
+            : $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";
         List<JsonObject> arrived;
         lock (_gate)
         {
@@ -85,6 +97,26 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
         {
             var step = row["step"] as JsonObject;
             var role = step is null ? null : Json.Text(step, "role");
+            // At the owner's final exit: the run, the step and how every holder failed, the words the balloon and the toast are filled from.
+            if (HumanTaskRows.Exited(row) && step?["exit"] is JsonObject exit)
+            {
+                var (run, node, how) = (Json.Text(step, "run"), Json.Text(step, "node"), Json.Text(exit, "kind"));
+                return new
+                {
+                    Kind = ExitKind,
+                    Id = Json.Text(exit, "key"),
+                    Session = session,
+                    Repository = repository,
+                    Role = role,
+                    Run = run,
+                    Step = node,
+                    Exit = how,
+                    Headline = SessionBalloon.Words(new BalloonFacts(ExitKind) { Repository = repository, Run = run, Step = node, Exit = how }).Title,
+                    Detail = (string?)null,
+                };
+            }
+
+
             // A vacancy is told as its own kind: no agent's session answers it, and it is listed under Vacant, not under Needs you.
             var kind = Json.Text(row, "class") == AttentionOwnership.VacantClass ? VacantKind : StepKind;
             return new

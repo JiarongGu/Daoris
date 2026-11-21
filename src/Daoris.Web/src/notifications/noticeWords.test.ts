@@ -58,6 +58,12 @@ describe('the notices\' words (NOTIFY2d)', () => {
       'engine: a step waits on `approver`, and no agent\'s session answers it'],
     ['zh', { kind: 'Vacant', repository: 'engine', role: 'approver', headline: 'x', session: 's1' },
       'engine：一个步骤在等 `approver`，却没有智能体的会话来应答'],
+    ['en', { kind: 'Exit', repository: 'engine', run: 'q7', step: 'check', exit: 'spent', headline: 'x', id: 'exit:q7/check#3' },
+      'engine: run #q7, step `check`, reached you as Daoris\'s final exit — Red past the rounds Daoris sends back, and nobody else holds it. Your one answer: mend it and check it again, or end this work.'],
+    ['en', { kind: 'Exit', repository: 'engine', run: 'q7', step: 'sign', exit: 'a-later-kind', headline: 'x' },
+      'engine: run #q7, step `sign`, reached you as Daoris\'s final exit — A session served it and never answered within its bound. Your one answer: settle it with its own press, or end this work.'],
+    ['zh', { kind: 'Exit', repository: 'engine', run: 'q7', step: 'sign', exit: 'vacant', headline: 'x' },
+      'engine：进展 #q7 的步骤 `sign` 作为道衍的最终出口交到你手上——智能体没有会话应答它，空缺列表里也没人接手。你只需回答一件事：用它自己的按钮处理，或结束这项工作。'],
     ['zh', { kind: 'Later', headline: 'engine — something new', detail: 'As it said.' }, 'engine — something new: As it said.'],
   ] as const)('a %s window toasts %j in its own words', async (language, item, said) => {
     await i18n.changeLanguage(language);
@@ -65,7 +71,7 @@ describe('the notices\' words (NOTIFY2d)', () => {
   });
 
   it.each([
-    ['Parked', 'error'], ['QuestParked', 'error'], ['Holding', 'error'], ['Step', 'error'], ['Vacant', 'error'],
+    ['Parked', 'error'], ['QuestParked', 'error'], ['Holding', 'error'], ['Step', 'error'], ['Vacant', 'error'], ['Exit', 'error'],
     ['Ended', 'ok'], ['Answered', 'ok'], ['Waiting', 'ok'], ['Later', 'ok'], [undefined, 'ok'],
   ] as const)('a %s attention is toasted in the %s tone', (kind, tone) => {
     expect(attentionTone(kind)).toBe(tone);

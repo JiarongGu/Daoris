@@ -536,13 +536,13 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
     /// <summary>
     /// Whether the second opinion's gate waits on the person's answer (*What needs you*): a dispute, a
-    /// required opinion none could be had for, or commits nobody read where the work lands by itself (<paramref name="auto"/>).
+    /// required opinion none could be had for, or commits nobody read where the work lands by itself (<paramref name="auto"/>); a dispute and commits only where the policy leaves them the owner's.
     /// </summary>
     public static bool WaitsOnPerson(OpinionGateState gate, bool auto) => gate.State switch
     {
-        OpinionGateStates.Disputed => true,
+        OpinionGateStates.Disputed => gate.OwnerHolds,
         OpinionGateStates.Unavailable => gate.Required,
-        OpinionGateStates.CommitsSince => auto,
+        OpinionGateStates.CommitsSince => auto && gate.OwnerHolds,
         _ => false,
     };
 

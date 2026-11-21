@@ -138,6 +138,10 @@ public sealed class SessionNotifier : IDisposable
             State = Read(payload, "State"),
             Quest = quest,
             Role = Read(payload, "Role"),
+            // A step at the owner's final exit: its run, its step and how every holder failed.
+            Run = Read(payload, "Run"),
+            Step = Read(payload, "Step"),
+            Exit = Read(payload, "Exit"),
             Strikes = payload.GetType().GetProperty("Strikes")?.GetValue(payload) as int?,
             Module = Read(payload, "Module"),
             Route = Read(payload, "Route"),

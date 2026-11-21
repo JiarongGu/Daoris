@@ -72,6 +72,7 @@
   "workflow.run.said.opinion.myself": "你亲自看过它，代替了另一个智能体的阅读。",
   "workflow.run.said.opinion.answered": "你的采纳回应了第二意见。",
   "workflow.run.said.opinion.answeredReviewed": "你的已审阅回应了第二意见。",
+  "workflow.run.said.opinion.answeredPolicy": "风险策略回应了第二意见。",
   "workflow.run.said.opinion.landed": "工作落地时，它已放行。",
   "workflow.run.said.opinion.chat-at-accept": "你按下采纳时，会征询 `{{agent}}` 的第二意见。",
   "workflow.run.said.opinion.chat-at-acceptAnyone": "你按下采纳时，会征询第二意见。",

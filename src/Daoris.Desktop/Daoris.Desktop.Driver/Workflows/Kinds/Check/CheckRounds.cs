@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rounds a red <c>check</c> goes back to the work before the person hears: each failed verdict on a run's record is a round, a
-/// <c>back</c> wire from the check carries the reading's words to the work's open session for the first rounds, and the round that reaches
-/// <see cref="Bound"/> is not sent back, so its failure is kept for the person as one row, never one per red.
+/// The rounds a red <c>check</c> goes back to the work: each failed verdict on a run's record is a round, a <c>back</c> wire from the check
+/// carries the reading's words to the work's open session for the first rounds, and the round that reaches <see cref="Bound"/> is not sent
+/// back: the risk policy decides it (<see cref="SpentChecks"/>), kept for its holder or at the owner's final exit as one row, never one per red.
 /// </summary>
 public static class CheckRounds
 {
@@ -43,8 +43,9 @@ public static class CheckRounds
         source?.Kind != NodeKinds.Check || reds.GetValueOrDefault(source.Id) < Bound;
 
     /// <summary>
-    /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not told yet
-    /// (<see cref="NodeRecord.ToldOf"/>): each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
+    /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not at the owner's
+    /// final exit yet: not told (<see cref="NodeRecord.ToldOf"/>), told by an older build that kept no decision, or decided for a holder, which
+    /// is judged again at each look. Each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
     /// <c>claimed</c> step, with its count of reds.
     /// </summary>
     public static IReadOnlyList<(string Node, int Attempt, int Reds)> SpentOwed(
@@ -59,7 +60,7 @@ public static class CheckRounds
             if (SendsBack(check, reds) || record.Statuses.GetValueOrDefault(source) is not { State: NodeStates.Failed } status) continue;
             if (record.Attempts.LastOrDefault(attempt => attempt.Node == source && attempt.Attempt == status.Attempt)
                     is not { State: AttemptStates.Settled, Outcome: WorkStates.Failed }
-                || record.ToldOf(source, status.Attempt) is not null || owed.Any(each => each.Node == source))
+                || record.ToldOf(source, status.Attempt) is { } told && (!told.Spent || told.Decided == NodeTold.Exit) || owed.Any(each => each.Node == source))
             {
                 continue;
             }
@@ -70,9 +71,4 @@ public static class CheckRounds
         return owed;
     }
 
-    /// <summary>A check's red past its rounds' bound, told all the same: its words, and that the person sees it too.</summary>
-    public static string SpentWords(string node, string? code, string? found, int reds) =>
-        NodeRunKeeping.FailedWords(node, code, found)
-        + $"\n\nThis is its red round {reds}, past the {Bound} Daoris sends back on its own, so the person sees it too: commit a fix and it "
-        + "is checked again, or, if you cannot make it pass, say so and give up with what you tried.";
 }
