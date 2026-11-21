@@ -242,6 +242,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, run is null ? due.Quest : null, due.Session, world, review,
                 due.Occasion, ct, process, run: run)
             .ConfigureAwait(false);
+        if (gate.Recheck is { Given: true } rechecked) new OpinionDeliveries(Home).RecheckConsulted(rechecked);
         // A chat's work never lands by itself: its kept gate says so to the attention band.
         var kept = review is null
             ? null
@@ -517,10 +518,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         return $"opinion  {run.Line}";
     }
 
-    /// <summary>
-    /// Deliver an owed opinion as far as the facts let it go (<see cref="OpinionDeliverer.DeliverAsync"/>): its findings handed to the
-    /// working session at its turn's end, its answers read, its one recheck asked; asked with what the first pass read.
-    /// </summary>
+    /// <summary>Deliver an owed opinion as far as the facts let it go (<see cref="OpinionDeliverer.DeliverAsync"/>), asked with what the
+    /// first pass read; a recheck it asks says its own lines, and its consultation is kept, also here for one an older build left without.</summary>
     private async Task<string> DeliverBesideAsync(
         OpinionDue due, IReadOnlyList<QuestView> chain, OpinionView first, WorkflowProcess process, CancellationToken ct)
     {
@@ -541,13 +540,6 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             Turns = due.OnRun ? due.Turns : null,
         };
         var delivered = await _deliverer.DeliverAsync(first.Id, ask, ct).ConfigureAwait(false);
-        if (delivered.Recheck is { Opinion: { } recheck })
-        {
-            var view = await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false);
-            Service.LandingSaid(OpinionLines.Asked(recheck, first.Working, first.Occasion, view?.Label ?? first.Label, view?.Door ?? first.Door, OpinionViews.RecheckPass));
-            if (view is { Given: true } given) Service.LandingSaid(OpinionLines.Given(given, null));
-        }
-
         return $"opinion  {delivered.Line}";
     }
 

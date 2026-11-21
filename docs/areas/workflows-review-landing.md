@@ -432,7 +432,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
     never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under
-    `commits-since`, each with its count, held by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    `commits-since`, each with its count, held by the person), never *working*: the run's view reads the gate in the work's tree here
+    wherever its step stands on it (`IWorkflowRunRecords.OpinionAsync`), as every landing door does, so the wait carries the gate's
+    count and session. The one recheck is a pass of its own: `opinion.asked` said as the host opens it, `opinion.given` with the seconds
+    from its open, and its consultation kept beside it once given (`OpinionDeliveries.RecheckConsulted`); one kept with its diff alone
+    gets it at the next look, read as given and never asked again. Its findings go to the person, never back to the working session:
+    the gate holds them as disputes, and `opinion show` lists the recheck, its word on each first-pass finding and its own (OPINIONQUIET1). The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
     recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the
