@@ -3,8 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The one registry of the bus's types: each declared once here with its payload's fields, its emitter, its obliged handler
 /// or answerer, its deadline, its retries and its give-up. Checked at emit (<see cref="BusLog.Append"/> refuses a type not here and drops a
-/// field or value it does not declare) and at subscribe (<see cref="Subscribe"/>); <c>BusTypesCensusTests</c> reads it, and the page's
-/// list is written from it (<c>tools/contracts/PageBusTypes.cs</c>).
+/// field or value it does not declare) and at subscribe (<see cref="Subscribe"/>); <c>BusTypesCensusTests</c> reads it.
 /// </summary>
 /// <remarks>
 /// <para><b>Deadlines.</b> A deadline is set from the handling times <c>daoris bus stats</c> reads where they are measured; where none are,

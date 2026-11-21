@@ -257,8 +257,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     provisional with what it stands on (a check's bound, a busy runner's offer, a pass's bound, about one look a minute) and the
     watchdog runs against it in shadow first. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
     is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
-    emitted; the page's list of the types and their payloads is written from the registry with its other contracts
-    (`BUS_TYPES`, `tools/contracts/PageBusTypes.cs`). A subscription naming a type the registry lacks fails as it registers.
+    emitted; the page gets the types' list with its first reader (the Stalls view, BUS2c), not before. A subscription naming
+    a type the registry lacks fails as it registers.
     A shadow append never fails the write it rides beside: a refusal (the store's, a type the registry does not declare, an
     envelope whose subject, answerer, effect or causes are no ids, a process not holding the lease) is counted by its reason and
     said once as `bus.refused`. A payload's field its type does not declare, one named twice, or a value not of its field's shape

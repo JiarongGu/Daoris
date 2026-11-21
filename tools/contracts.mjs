@@ -2,8 +2,8 @@
 /**
  * The page's types, written by `tools/contracts/` from what `src/Daoris.Contracts` declares (the service's routes) and from the
  * window routes' marks in the desktop modules, so a route's name, path and wire names are written once, beside its handler, and
- * the page's typecheck finds one that is gone. The service types' file also carries the node kinds, the provider censuses' table and the
- * bus's types, read off the driver's kit, its provider registrations and its bus registry.
+ * the page's typecheck finds one that is gone. The service types' file also carries the node kinds and the provider censuses' table, read
+ * off the driver's kit and its provider registrations.
  *
  *   node tools/contracts.mjs              build and run the generator, writing both OUTPUTS
  *   node tools/contracts.mjs --if-stale   the same, only where a file is missing or stale (the web's pre-scripts)
@@ -42,16 +42,14 @@ export const PROVIDER_FOLDERS = Object.freeze([
   'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/', 'src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/',
 ]);
 const PROVIDER_FILE = /^src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\/Agents\/(?:Providers\/[^/]+\/[^/]+|Registry\/Providers|Registry\/ProviderVocabulary)\.cs$/;
-export const BUS_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Bus/';
-const BUS_FILE = /^src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\/Bus\/Bus(?:Types|Type|Shapes)\.cs$/;
 const GENERATOR = 'tools/contracts';
 const SOURCE_FILE = /\.(?:cs|csproj)$/;
 const SKIPPED = new Set(['bin', 'obj']);
 
-/** Whether a repository path is a declaring source: under a source folder, or a kind's, a provider's or the bus registry's declaring file by its name. */
+/** Whether a repository path is a declaring source: under a source folder, or a kind's or a provider's declaring file by its name. */
 export const declares = (file) => !file.split('/').some((part) => SKIPPED.has(part))
   && (SOURCES.some((folder) => file.startsWith(folder)) && SOURCE_FILE.test(file) || file.startsWith(KINDS_FOLDER) && KIND_FILE.test(file)
-    || PROVIDER_FILE.test(file) || BUS_FILE.test(file));
+    || PROVIDER_FILE.test(file));
 const STAMP = /^\/\/ contracts: ([0-9a-f]{64})\r?$/;
 const WRITE = 'node tools/contracts.mjs';
 
@@ -74,7 +72,7 @@ export function sourceFiles(root) {
       }
     }
   };
-  for (const folder of [...SOURCES, KINDS_FOLDER, ...PROVIDER_FOLDERS, BUS_FOLDER]) walk(folder);
+  for (const folder of [...SOURCES, KINDS_FOLDER, ...PROVIDER_FOLDERS]) walk(folder);
   return files;
 }
 
