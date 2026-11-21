@@ -45,12 +45,12 @@ export type PathCheck = { gate: string; paths: readonly string[]; why: string };
 export const PATH_CHECKS: readonly PathCheck[] = Object.freeze([
   {
     gate: 'web-types',
-    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
+    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/scripts/**', 'src/Daoris.Web/.storybook/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
     why: "the web's typecheck: the page's sources, what configures its compiler, or what changes how every gate runs (MERGETSC1)",
   },
   {
     gate: 'web-rules',
-    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
+    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/scripts/**', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
     why: "the web's design and structure checks: the page's sources, what configures its tests, or what changes how every gate runs (MERGEWEBRULES1)",
   },
   {
