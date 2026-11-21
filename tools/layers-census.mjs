@@ -2,7 +2,8 @@
  * The layers' census: what holds the application apart from its infrastructure by construction (the ports-and-adapters design,
  * `docs/2026-11-13-layers-design.md` §6), the checks that cost no test time.
  *   node tools/layers-census.mjs            check the tree (exit 0 clean, 1 a breach, 2 tool error)
- *   node tools/layers-census.mjs --write    write tools/layers-census.json from the tree, the first list or after a shrink
+ *   node tools/layers-census.mjs --write    write tools/layers-census.json from the tree, the first list (it also fills `slowTests` from this machine's last run)
+ *   node tools/layers-census.mjs --shrink   lower the allowances the tree fell under, each said, and write nothing else (the merge's and the commit hook's writer)
  *   node tools/layers-census.mjs --boundary <lane>   a lane's references across its boundary today, held to the list where it names the
  *                                                     lane; with --write, the lane joins the list
  * 1. The reference graph: read from the project files, so it holds before any adapter exists.
@@ -27,6 +28,7 @@ import { sayBreach, sourceReader } from './time-why.mjs';
 import { loadWorld } from './time-reach.mjs';
 import { checkGit, scanGit } from './layers-census/git.mjs';
 import { checkMemory } from './layers-census/memory.mjs';
+import { shrinkFile } from './layers-census/shrink.mjs';
 import { checkProcesses, scanProcesses } from './layers-census/processes.mjs';
 import { checkReferences, packagesOutside } from './layers-census/references.mjs';
 import { checkBoundaries, sayBoundary, scanBoundary } from './layers-census/boundary.mjs';
@@ -61,6 +63,16 @@ export async function census({ root, argv = [], tree = null }) {
       const problems = checkBoundaries(tree, { [lane]: listed[lane] });
       for (const problem of problems) console.error(`layers-census: ${problem}`);
       return problems.length === 0 ? 0 : 1;
+    }
+    if (argv.includes('--shrink')) {
+      const lowered = shrinkFile(listFile, tree, EMPTY);
+      if (lowered.length === 0) {
+        console.log('layers-census: no allowance fell, so the list is as it was');
+        return 0;
+      }
+      console.log(`layers-census: lowered ${lowered.length} allowance${lowered.length === 1 ? '' : 's'} of ${listFile.slice(root.length + 1).replace(/\\/g, '/')}`);
+      for (const line of lowered) console.log(`  ${line}`);
+      return 0;
     }
     const records = readRecords(recordsAt);
     if (argv.includes('--write')) {

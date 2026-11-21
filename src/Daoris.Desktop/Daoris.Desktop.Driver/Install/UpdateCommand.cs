@@ -154,7 +154,21 @@ public static class UpdateCommand
         return code;
     }
 
-    /// <summary>The version of the build in <c>app/</c> of <paramref name="install"/>, from its library's version resource as the launcher reads it; null where it does not read.</summary>
+    /// <summary>The installed build in a sentence: its version and commit, or that it is a development build.</summary>
+    public static string Installed(string? running)
+    {
+        if (HomeLastBuild.Numbered(running) is not { } version) return "update: the installed build does not say its version.";
+        var plus = running!.IndexOf('+', StringComparison.Ordinal);
+        var commit = plus < 0 ? null : running[(plus + 1)..];
+        return commit switch
+        {
+            null or "" => $"update: Daoris {version} is the installed build.",
+            "dev" => $"update: Daoris {version} is the installed build, a development build.",
+            _ => $"update: Daoris {version} ({commit}) is the installed build.",
+        };
+    }
+
+    /// <summary>The version the build in <c>app/</c> of <paramref name="install"/> carries, from its library's version resource as the launcher reads it, never the driver that asks; null where it is not there or does not read.</summary>
     internal static string? InstalledVersion(string install)
     {
         var library = Path.Combine(install, StagedBuild.AppFolder, "Daoris.Desktop.App.dll");
@@ -162,7 +176,7 @@ public static class UpdateCommand
         {
             return File.Exists(library) && System.Diagnostics.FileVersionInfo.GetVersionInfo(library).ProductVersion is { Length: > 0 } version ? version : null;
         }
-        catch (IOException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             return null;
         }
@@ -170,6 +184,7 @@ public static class UpdateCommand
 
     private static void Status(string install, StagedManifest? manifest, UpdateRequest? request, StringBuilder output)
     {
+        output.AppendLine(Installed(InstalledVersion(install)));
         if (!StagedBuild.IsStaged(install))
         {
             output.AppendLine($"update: nothing is staged beside {install}.");

@@ -18,6 +18,7 @@ import { checkChange } from './comment-gate.mjs';
 import { declares } from './contracts.mjs';
 import { execGit, isMain, writeAtomic } from './fsx.mjs';
 import { EMPTY, LIST_FILE, countProblems, treeAt } from './layers-census/counts.mjs';
+import { shrinkFile } from './layers-census/shrink.mjs';
 import { baseList, settleStaged, sized, sizeOf } from './size-ratchet.mjs';
 
 const SIZE_LIST = 'tools/size-ratchet.json';
@@ -39,6 +40,18 @@ export function layersCounts(root) {
   return { code: problems.length ? 1 : 0, problems };
 }
 
+/** The layers list lowered to the tree (`--shrink`), only where both of `read`'s git reads say the work tree is the index for what the census reads; the lines saying each. */
+export function layersShrink(root, { read = gitOrNull } = {}) {
+  const file = join(root, LIST_FILE);
+  if (!existsSync(file)) return [];
+  const changed = read(root, ['--no-optional-locks', 'diff', '--name-only', '-z', '--no-renames']);
+  const untracked = read(root, ['--no-optional-locks', 'ls-files', '-z', '--others', '--exclude-standard']);
+  if (changed === null || untracked === null) return [];
+  const apart = [changed, untracked].flatMap((out) => out.split(String.fromCharCode(0)).filter(Boolean));
+  if (apart.some((path) => CODE.test(path) || path === LIST_FILE.split(String.fromCharCode(92)).join('/') || path.endsWith('daoris.lanes.json'))) return [];
+  return shrinkFile(file, treeAt(root), EMPTY);
+}
+
 /** The contracts' writer run where they are stale (`tools/contracts.mjs --if-stale`); a repository without it has none to write. */
 export function contractsIfStale(root) {
   const tool = join(root, 'tools', 'contracts.mjs');
@@ -48,7 +61,7 @@ export function contractsIfStale(root) {
 }
 
 /** Runs the checks on what is staged at `root`; the exit code. The steps are injectable (`counts`, `contracts`) for tests. */
-export function runCommitChecks({ root, env = process.env, say = console.log, err = console.error, counts = layersCounts, contracts = contractsIfStale, now = Date.now }) {
+export function runCommitChecks({ root, env = process.env, say = console.log, err = console.error, counts = layersCounts, shrink = layersShrink, contracts = contractsIfStale, now = Date.now }) {
   if (env.DAORIS_COMMIT_HOOK === '0' || gitOrNull(root, ['rev-parse', '-q', '--verify', 'MERGE_HEAD']) !== null) return 0;
   const staged = (gitOrNull(root, ['--no-optional-locks', 'diff', '--cached', '--name-only', '-z', '--no-renames']) ?? '').split('\0').filter(Boolean);
   if (staged.length === 0) return 0;
@@ -111,6 +124,12 @@ export function runCommitChecks({ root, env = process.env, say = console.log, er
   }
 
   if (staged.some((path) => CODE.test(path))) {
+    step('layers shrink', () => {
+      const lowered = shrink(root);
+      if (lowered.length === 0) return;
+      git(root, ['add', '--', LIST_FILE.replace(/\\/g, '/')]);
+      done.push(`layers list lowered (${lowered.length})`);
+    });
     step('layers counts', () => {
       const { code, problems } = counts(root);
       for (const problem of problems) err(`layers-census: ${problem}`);

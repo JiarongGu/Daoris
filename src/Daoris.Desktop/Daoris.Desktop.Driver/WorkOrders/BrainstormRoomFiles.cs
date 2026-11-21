@@ -15,7 +15,7 @@ public static class BrainstormRoomFiles
         var laid = BrainstormRoomProbe.Plan(room, outside, token);
         Directory.CreateDirectory(room);
         Directory.CreateDirectory(outside);
-        File.WriteAllText(Path.Combine(room, BrainstormInstruction.PacketFile), BrainstormRoomProbe.PacketText(laid));
+        File.WriteAllText(Path.Combine(room, BrainstormRoomPacket.IndexFile), BrainstormRoomProbe.PacketText(laid));
         File.WriteAllText(laid.Absolute, laid.Tokens[BrainstormRoomProbe.Absolute] + "\n");
         File.WriteAllText(laid.Parent, laid.Tokens[BrainstormRoomProbe.Parent] + "\n");
         File.WriteAllText(Path.Combine(Path.GetDirectoryName(room)!, laid.ListingName), "");

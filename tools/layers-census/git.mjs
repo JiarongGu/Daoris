@@ -44,7 +44,7 @@ export function checkGit(found, list) {
   }
   for (const [path, allowed] of Object.entries(list)) {
     const count = found[path] ?? 0;
-    if (count < allowed) problems.push(`${path} fell to ${count} from its allowance of ${allowed}: write the list again (node tools/layers-census.mjs --write)`);
+    if (count < allowed) problems.push(`${path} fell to ${count} from its allowance of ${allowed}: lower the list (node tools/layers-census.mjs --shrink)`);
   }
   return problems;
 }

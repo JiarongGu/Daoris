@@ -50,6 +50,8 @@ export const builtInto = (command, artifacts = null) => (artifacts ? `${command}
  */
 export const STAMPED = '-p:DaorisStamp=true';
 
+export const stamped = (version = null) => (version ? `${STAMPED} -p:Version=${version}` : STAMPED);
+
 /**
  * The recipe: the `dotnet publish` that makes `host` a self-contained single-file executable in `folder`, run from the
  * workspace root; its builds into `artifacts` when one is given (`builtInto`).
@@ -58,18 +60,18 @@ export const STAMPED = '-p:DaorisStamp=true';
  * installed copy that took only the exe dies on first store open with a DllNotFound. Found by running the installed
  * binary, not by reading the docs.
  */
-export function publishCommand(host, rid, folder, artifacts = null) {
+export function publishCommand(host, rid, folder, artifacts = null, version = null) {
   return builtInto(`dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
-    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ${STAMPED} -o "${folder}"`, artifacts);
+    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ${stamped(version)} -o "${folder}"`, artifacts);
 }
 
 /**
  * Publish one host by the recipe, answering whether it is built. stdout is KEPT and shown when the publish fails:
  * MSBuild writes its errors to stdout, and a publish that discards it fails with nothing but an exit code to read.
  */
-export function publishHost(repoRoot, host, rid, folder, said = 'service-publish', artifacts = null) {
+export function publishHost(repoRoot, host, rid, folder, said = 'service-publish', artifacts = null, version = null) {
   try {
-    execSync(publishCommand(host, rid, folder, artifacts), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024, windowsHide: true });
+    execSync(publishCommand(host, rid, folder, artifacts, version), { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024, windowsHide: true });
     return true;
   } catch (error) {
     process.stdout.write(error.stdout ?? '');

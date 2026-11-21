@@ -63,7 +63,7 @@ test('the lane\'s own package, which its build holds to its ports, is neither si
   assert.deepEqual(found.files, { inside: 2, outside: 4 });
 });
 
-test('a planted new reference across the boundary is red either way, and a fall is told to write the list', () => {
+test('a planted new reference across the boundary is red either way, and a fall is told to lower the list', () => {
   const held = scanBoundary(tree(sources()), 'assistant');
   const list = { assistant: { inbound: held.inbound, outbound: held.outbound } };
   assert.deepEqual(checkBoundaries(tree(sources()), list), []);
@@ -76,7 +76,7 @@ test('a planted new reference across the boundary is red either way, and a fall 
     'lane assistant: it names the outside type PluginCatalog 1 times, over the ratchet\'s 0: reach it through a port of the boundary instead',
   ]);
   const fell = sources({ 'src/App/Help/HelpRoom.cs': 'public sealed class HelpRoom { RoleCatalog roles; }' });
-  assert.match(checkBoundaries(tree(fell), list).join('\n'), /names the outside type Driver 0 times, under the ratchet's 1: write the list again/);
+  assert.match(checkBoundaries(tree(fell), list).join('\n'), /names the outside type Driver 0 times, under the ratchet's 1: lower the list/);
 });
 
 test('the census takes any lane as its argument, and holds each lane its list names on its own', async () => {

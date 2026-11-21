@@ -62,9 +62,9 @@ public sealed class DesignPassTests
     [Fact]
     public void A_design_pass_tells_its_designers_and_its_comparison_reader_their_jobs_and_a_brainstorm_is_unchanged()
     {
-        Assert.Equal(BrainstormInstruction.Generator("sha256:x"), DesignPasses.Generator(Request(null), "sha256:x"));
+        Assert.Equal(BrainstormInstruction.Generator("sha256:x", 10), DesignPasses.Generator(Request(null), "sha256:x", 10));
         Assert.Equal(BrainstormInstruction.Synthesizer("sha256:x"), DesignPasses.Synthesizer(Request(null), "sha256:x"));
-        Assert.Contains("purpose brief", DesignPasses.Generator(Request("design"), "sha256:x"), StringComparison.Ordinal);
+        Assert.Contains("purpose brief", DesignPasses.Generator(Request("design"), "sha256:x", 20), StringComparison.Ordinal);
         var comparer = DesignPasses.Synthesizer(Request("design"), "sha256:x");
         Assert.Contains("`comparison`", comparer, StringComparison.Ordinal);
         Assert.Contains("written now, before any trial", comparer, StringComparison.Ordinal);

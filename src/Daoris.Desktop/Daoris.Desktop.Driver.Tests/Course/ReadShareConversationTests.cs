@@ -279,7 +279,7 @@ public sealed class ReadShareConversationTests : IDisposable
         var files = new BrainstormFiles(_home);
         files.WritePacket("b1", [1, 2, 3]);
 
-        var packet = Held(files.PathOf("b1", BrainstormInstruction.PacketFile), () => files.PacketBytes("b1"));
+        var packet = Held(files.PathOf("b1", BrainstormFiles.PacketRecord), () => files.PacketBytes("b1"));
 
         Assert.Equal([1, 2, 3], packet!);
     }

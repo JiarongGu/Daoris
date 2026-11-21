@@ -66,7 +66,7 @@ public sealed class BrainstormRoomMeasureProcessTests : IDisposable
               const absolute = /read the file at `([^`]+)`/.exec(asked)[1];
               const outside = /create the file `([^`]+)` holding/.exec(asked)[1];
               const room = process.cwd();
-              const packet = read(join(room, 'packet.json'));
+              const packet = read(join(room, 'index.md'));
               const report = (words) => Object.entries(words).forEach(([step, word]) => say(frame, 'probe ' + step + ': ' + word));
               if ('{{mode}}' === 'keeps') {
                 say(frame, 'my packet: ' + packet);
