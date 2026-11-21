@@ -185,6 +185,24 @@ test('the layers list is lowered only where the working tree is the index, so an
   assert.equal(readFileSync(join(dir, LIST), 'utf8'), listOf({}));
 });
 
+test('a guard read that fails lowers nothing, since it cannot tell the working tree is the index', () => {
+  const LIST = 'tools/layers-census.json';
+  const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
+  const A = `${DRIVER}/A.cs`;
+  const listOf = (clock) => `${JSON.stringify({ clock, slowTests: {} }, null, 2)}\n`;
+  const dir = repository({
+    [`${DRIVER}/Daoris.Desktop.Driver.csproj`]: '<Project Sdk="Microsoft.NET.Sdk"></Project>',
+    [A]: 'var a = DateTime.UtcNow;\n',
+    [LIST]: listOf({ [A]: 1 }),
+  });
+  put(dir, { [A]: 'var a = 1;\n' });
+  git(dir, 'add', '--', A);
+  const failing = (root, args) => (args.includes('diff') || args.includes('--others') ? null : git(root, ...args).stdout);
+  assert.deepEqual(layersShrink(dir, { read: failing }), [], 'the diff read failed, so nothing says A is the index');
+  assert.equal(readFileSync(join(dir, LIST), 'utf8'), listOf({ [A]: 1 }));
+  assert.deepEqual(layersShrink(dir), [`clock ${A}: 1 to none`], 'read, the same staged removal lowers it');
+});
+
 test('a tool error never blocks a commit, and the opt-out runs nothing', () => {
   const dir = repository({ 'src/a.ts': plain });
   put(dir, { 'src/B.cs': 'namespace Daoris;\n' });

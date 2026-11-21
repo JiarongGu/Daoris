@@ -40,15 +40,14 @@ export function layersCounts(root) {
   return { code: problems.length ? 1 : 0, problems };
 }
 
-/** The layers list lowered to the tree (`layers-census.mjs --shrink`), only where the work tree is the index for what the census reads; the lines saying each. */
-export function layersShrink(root) {
+/** The layers list lowered to the tree (`--shrink`), only where both of `read`'s git reads say the work tree is the index for what the census reads; the lines saying each. */
+export function layersShrink(root, { read = gitOrNull } = {}) {
   const file = join(root, LIST_FILE);
   if (!existsSync(file)) return [];
-  const names = (out) => (out ?? '').split(String.fromCharCode(0)).filter(Boolean);
-  const apart = [
-    ...names(gitOrNull(root, ['--no-optional-locks', 'diff', '--name-only', '-z', '--no-renames'])),
-    ...names(gitOrNull(root, ['--no-optional-locks', 'ls-files', '-z', '--others', '--exclude-standard'])),
-  ];
+  const changed = read(root, ['--no-optional-locks', 'diff', '--name-only', '-z', '--no-renames']);
+  const untracked = read(root, ['--no-optional-locks', 'ls-files', '-z', '--others', '--exclude-standard']);
+  if (changed === null || untracked === null) return [];
+  const apart = [changed, untracked].flatMap((out) => out.split(String.fromCharCode(0)).filter(Boolean));
   if (apart.some((path) => CODE.test(path) || path === LIST_FILE.split(String.fromCharCode(92)).join('/') || path.endsWith('daoris.lanes.json'))) return [];
   return shrinkFile(file, treeAt(root), EMPTY);
 }
