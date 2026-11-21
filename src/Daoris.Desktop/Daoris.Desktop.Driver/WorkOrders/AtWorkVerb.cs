@@ -127,7 +127,7 @@ public static class AtWorkVerb
         return 0;
     }
 
-    /// <summary>The answer in words: each part, then the attended part's subagents as a tree.</summary>
+    /// <summary>The answer in words: each part, then the quests it asked, what the line waits on and its co-workers.</summary>
     public static IReadOnlyList<string> Lines(AtWorkAnswer answer)
     {
         var lines = new List<string>();
@@ -165,13 +165,6 @@ public static class AtWorkVerb
         }
 
         if (answer.Unread is { Count: > 0 } unread) lines.Add($"not read: {string.Join(", ", unread)}, so what the line waits on may be more");
-        lines.Add($"subagents: {answer.Subagents.Working} working");
-        foreach (var child in answer.Subagents.Children)
-        {
-            var seen = child.LastSeen is { } at ? $" · last seen {at:HH:mm}" : "";
-            lines.Add($"{new string(' ', 2 * (child.Depth ?? 1))}{child.Label?.Text ?? child.Type ?? child.Key} · {Words(child.State)}{seen}");
-        }
-
         return lines;
     }
 
@@ -262,14 +255,4 @@ public static class AtWorkVerb
             var other => $"`{other}`, shown as recorded",
         };
     }
-
-    private static string Words(string state) => state switch
-    {
-        "uncertain" => "not known whether it still runs",
-        "agentEnded" => "its agent ended",
-        "ended" => "ended with its agent",
-        "lost" => "lost when its agent ended",
-        "unrecorded" => "ended, its end not recorded",
-        _ => state,
-    };
 }

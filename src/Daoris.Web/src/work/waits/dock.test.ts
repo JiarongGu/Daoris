@@ -54,4 +54,13 @@ describe('dockOf', () => {
     expect(lines.map((line) => line.key)).toEqual(['step:r1/accept', 'step:r1/deploy', 'permission:p1']);
     expect(lines[1]!.since).toBe(session.updated);
   });
+
+  it('tags a wait a subagent raised with its subagent, and the session\'s own agent\'s with none', () => {
+    const held = (request: string, child?: string | null) =>
+      ({ session: 's1', request, call: null, title: 'Bash', kind: null, choices: [], since: '2026-11-18T09:50:00Z', until: null, child });
+    const lines = dockOf({ session, permissions: { onAnswer: () => {}, waits: [held('p1', 'child-7'), held('p2', null), held('p3')] } });
+    expect(lines.map((line) => [line.key, line.child])).toEqual([
+      ['permission:p1', 'child-7'], ['permission:p2', undefined], ['permission:p3', undefined],
+    ]);
+  });
 });

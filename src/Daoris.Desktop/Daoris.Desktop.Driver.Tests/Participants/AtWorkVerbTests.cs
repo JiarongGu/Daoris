@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// <c>daoris session at-work</c>. With no Daoris window running the verb composes the same answer by
-/// the same function, issuing no token, so an open child reads <i>not known whether it still runs</i> and never <i>working</i>.
+/// the same function, issuing no token, so an open child is counted and never <i>working</i>.
 /// </summary>
 public sealed class AtWorkVerbTests : IDisposable
 {
@@ -60,7 +60,7 @@ public sealed class AtWorkVerbTests : IDisposable
     }
 
     [Fact]
-    public async Task With_no_window_an_open_child_is_not_known_whether_it_still_runs_and_never_working()
+    public async Task With_no_window_the_words_list_the_parts_and_no_subagent()
     {
         OpenChild();
         var output = new StringWriter();
@@ -68,13 +68,13 @@ public sealed class AtWorkVerbTests : IDisposable
         Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1"), World(), output));
 
         var text = output.ToString();
-        Assert.Contains("a1 · not known whether it still runs", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("working with", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("a1 · working", text, StringComparison.Ordinal);
+        Assert.Contains("s1 (attended) · ", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("subagents:", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("a1 · ", text, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Json_prints_the_answer_whole_with_the_child_s_state_uncertain()
+    public async Task Json_prints_the_answer_whole_its_open_child_counted_and_never_working()
     {
         OpenChild();
         var output = new StringWriter();
@@ -83,19 +83,21 @@ public sealed class AtWorkVerbTests : IDisposable
 
         var answer = JsonDocument.Parse(output.ToString()).RootElement.GetProperty("answer");
         Assert.Equal("s1", answer.GetProperty("attended").GetString());
-        Assert.Equal("uncertain", answer.GetProperty("subagents").GetProperty("children")[0].GetProperty("state").GetString());
+        var children = answer.GetProperty("parts")[0].GetProperty("children");
+        Assert.Equal((1, 0), (children.GetProperty("count").GetInt32(), children.GetProperty("working").GetInt32()));
+        Assert.False(answer.TryGetProperty("subagents", out _));
     }
 
     [Fact]
-    public async Task With_no_window_a_codex_child_is_marked_seen_by_calls_as_the_window_marks_it()
+    public async Task With_no_window_a_codex_part_names_its_agent_which_says_its_children_appear_only_by_their_calls()
     {
         OpenChild("codex-acp");
         var output = new StringWriter();
 
         Assert.Equal(0, await SessionsCommand.RunAsync(Read("at-work", "s1", "--json"), World(), output));
 
-        var subagents = JsonDocument.Parse(output.ToString()).RootElement.GetProperty("answer").GetProperty("subagents");
-        Assert.True(subagents.GetProperty("seenByCalls").GetBoolean());
+        var part = JsonDocument.Parse(output.ToString()).RootElement.GetProperty("answer").GetProperty("parts")[0];
+        Assert.Equal("codex-acp", part.GetProperty("agent").GetString());
     }
 
     [Fact]
@@ -346,7 +348,6 @@ public sealed class AtWorkVerbTests : IDisposable
                 {
                     of = new { session = "s1" }, attended = "s1",
                     parts = new[] { new { key = "s1", state = "working", children = new { count = 0, working = 0 } } },
-                    subagents = new { read = "read", working = 0, children = Array.Empty<object>() },
                 },
             };
         var clock = new MovedClock();
@@ -358,7 +359,6 @@ public sealed class AtWorkVerbTests : IDisposable
 
         Assert.Equal(0, await run.WaitAsync(Poll.Patience));
         Assert.Contains("s1 (attended) · working", output.ToString(), StringComparison.Ordinal);
-        Assert.Contains("subagents: 0 working", output.ToString(), StringComparison.Ordinal);
         Assert.Equal(2, Asked(standIn));
     }
 

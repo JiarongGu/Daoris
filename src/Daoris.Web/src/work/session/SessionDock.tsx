@@ -1,6 +1,7 @@
 import { useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest } from '../../data/api';
+import type { BandTold } from '../band/bandRows';
 import type { WorkAsk } from '../review/Lands';
 import type { RuleAsk } from '../waits/ProposedRules';
 import { leftFor, type Seek, useSought } from '../waits/WaitAnchor';
@@ -14,7 +15,7 @@ import { Dock } from './SessionPanel';
  * what its run waits on below them. The only place a wait is pressed on the session's page. A raising block's *To the wait* or the
  * head's state line leads here (`seek`): the card takes the focus, outlined, until the person moves on. Nothing waits, nothing is drawn.
  */
-export function SessionDock({ answerBelow = false, workAsk, ruleAsk, seek, runWaits = null, quest = null, asker, narrow: given, now = Date.now(), onRefused, ...props }: WaitProps & {
+export function SessionDock({ answerBelow = false, workAsk, ruleAsk, seek, runWaits = null, quest = null, beside = null, asker, narrow: given, now = Date.now(), onRefused, ...props }: WaitProps & {
   /** The foot's box takes the park's answer: a driven park's answer box, or a parked chat's composer. */
   answerBelow?: boolean;
   workAsk?: WorkAsk;
@@ -22,6 +23,7 @@ export function SessionDock({ answerBelow = false, workAsk, ruleAsk, seek, runWa
   seek?: Seek | null;
   runWaits?: RunWaitDoors | null;
   quest?: Quest | null;
+  beside?: BandTold | null;
   /** Who asks, as the head names the session's agent; its role alone where the page knows no more. */
   asker?: Asker;
   /** Whether the panel is narrow; absent, as the panel it stands in says (`PanelNarrow`). */
@@ -35,7 +37,7 @@ export function SessionDock({ answerBelow = false, workAsk, ruleAsk, seek, runWa
   const inNarrow = useContext(PanelNarrow);
   const narrow = given ?? inNarrow;
   const { cards, onAnswer, foot, count } = dockCardsOf({
-    t, props, answerBelow, workAsk, ruleAsk, runWaits, quest, refused: onRefused ?? (() => {}),
+    t, props, answerBelow, workAsk, ruleAsk, runWaits, quest, beside, refused: onRefused ?? (() => {}),
     asker: asker ?? { role: props.session.repository, agent: props.session.door, model: null },
   });
   // The sought card is looked for again only as the cards change, never on every render.

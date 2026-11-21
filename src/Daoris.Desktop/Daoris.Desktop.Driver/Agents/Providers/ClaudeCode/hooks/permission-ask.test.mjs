@@ -79,3 +79,8 @@ test('the request names the harness id of the call it asks about, so an answered
   assert.equal(request.call, 'toolu_01');
   assert.equal('call' in requestOf('s1', 'a1b2c3d4e5f6', call('Bash', 'default', { command: 'npm test' })), false);
 });
+
+test('a subagent\'s call names its subagent by the hook\'s agent id, and the session\'s own agent\'s names none', () => {
+  assert.equal(requestOf('s1', 'a1b2c3d4e5f6', { ...call('Bash', 'default', { command: 'npm test' }), agent_id: 'a7f3' }).child, 'a7f3');
+  assert.equal('child' in requestOf('s1', 'a1b2c3d4e5f6', call('Bash', 'default', { command: 'npm test' })), false);
+});

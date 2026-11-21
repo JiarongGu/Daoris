@@ -13,15 +13,15 @@ const key = atWorkKey('s1');
 const held = hashKey(key);
 
 const answer = (rows: number, n: number, epoch = 'e1') => ({
-  answer: { of: { session: 's1' }, attended: 's1', parts: [], subagents: { read: 'read', working: rows, children: [] } },
+  answer: { of: { session: 's1' }, attended: 's1', parts: Array.from({ length: rows }, (_, i) => ({ key: `p${i}`, children: {} })) },
   at: { epoch, n },
 });
 
 const fetch = (client: QueryClient) => client.fetchQuery({ queryKey: key, queryFn: () => askAtWork(client, key, 's1'), retry: false });
 
-const working = (client: QueryClient) => {
+const partsHeld = (client: QueryClient) => {
   const data = client.getQueryData<AtWorkHeld>(key);
-  return data && 'answer' in data ? data.answer.subagents.working : null;
+  return data && 'answer' in data ? data.answer.parts.length : null;
 };
 
 describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
@@ -36,7 +36,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     answered(client, { held, answer: answer(2, 6) });
     answered(client, { held, answer: answer(9, 7) });
 
-    expect(working(client)).toBe(3);
+    expect(partsHeld(client)).toBe(3);
   });
 
   it('never writes an older direct reply over a newer event, nor an old failure over a recovery', async () => {
@@ -48,7 +48,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     invoke.mockResolvedValue({ failed: { why: 'refused' }, at: { epoch: 'e1', n: 6 } });
     await fetch(client);
 
-    expect(working(client)).toBe(4);
+    expect(partsHeld(client)).toBe(4);
   });
 
   it('holds an event beside its first fetch and writes the reply first, so E1’s answer is never drawn after E2’s', async () => {
@@ -60,7 +60,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     const mounted = new QueryObserver(client, { queryKey: key, queryFn: () => askAtWork(client, key, 's1'), retry: false });
     const drawn: (number | null)[] = [];
     const stop = mounted.subscribe(({ data }) => {
-      const now = data && 'answer' in data ? data.answer.subagents.working : null;
+      const now = data && 'answer' in data ? data.answer.parts.length : null;
       if (now !== null && drawn.at(-1) !== now) drawn.push(now);
     });
 
@@ -84,7 +84,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     reply(answer(5, 5));
     await first;
 
-    expect(working(client)).toBe(7);
+    expect(partsHeld(client)).toBe(7);
   });
 
   it('reads a failure with its words, a stale answer over its rows, and the composition’s pending answer numbered', async () => {
@@ -107,13 +107,13 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     const mount = () => new QueryObserver(client, { queryKey: key, queryFn: () => askAtWork(client, key, 's1'), retry: false, gcTime: 0 });
     const first = mount();
     const stopFirst = first.subscribe(() => {});
-    await vi.waitFor(() => expect(working(client)).toBe(4));
+    await vi.waitFor(() => expect(partsHeld(client)).toBe(4));
     stopFirst();
     await vi.waitFor(() => expect(client.getQueryData(key)).toBeUndefined());
 
     const second = mount();
     const stop = second.subscribe(() => {});
-    await vi.waitFor(() => expect(working(client)).toBe(4));
+    await vi.waitFor(() => expect(partsHeld(client)).toBe(4));
     expect(client.getQueryData<AtWorkHeld>(key)).not.toHaveProperty('failed');
     stop();
   });
@@ -130,7 +130,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     refuse(new Error('refused'));
 
     expect(await first).toBeInstanceOf(Error);
-    expect(working(client)).toBe(6);
+    expect(partsHeld(client)).toBe(6);
   });
 
   it('keeps what it holds when the shell has nothing held yet, which carries no number', async () => {
@@ -140,7 +140,7 @@ describe('who is at work, a numbered read (COWORKVIEW1a)', () => {
     invoke.mockResolvedValue({ pending: true });
     await fetch(client);
 
-    expect(working(client)).toBe(1);
+    expect(partsHeld(client)).toBe(1);
   });
 });
 

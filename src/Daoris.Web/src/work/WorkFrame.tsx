@@ -243,7 +243,8 @@ export function WorkFrame({
   const atWork = useSessionAtWork(following?.id ?? null);
   const atWorkHeld = atWork.data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
-    ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
+    ? (atWorkHeld.answer.parts.find((part) => part.key === atWorkHeld.answer.attended)?.children.working ?? 0)
+      + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
   // The person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
@@ -463,6 +464,7 @@ export function WorkFrame({
                     seek={seekAt('foot')}
                     runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
                     quest={quest}
+                    beside={waitsState.beside}
                     // Who asks, as the head names the session's agent: its repository, its maker and the model that ran.
                     asker={{
                       role: attended.repository,

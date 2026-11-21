@@ -9,7 +9,7 @@ public sealed class AtWorkRoutes(DriverContext context)
     private readonly DriverLoop _loop = context.Loop;
 
     /// <summary>
-    /// Who is at work on a session: its entry's parts and the attended part's subagents, composed from
+    /// Who is at work on a session: its entry's parts, each with its subagents counted, composed from
     /// the groups, sessions and quests slices in memory and each part's lineage file, this window's tokens read where it issued them, and
     /// what its line waits on and its co-workers from the home's helper, piece and hand-over files. Numbered,
     /// so a failure is answered with its words and an older delivery never replaces a newer one.
