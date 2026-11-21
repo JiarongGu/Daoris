@@ -29,6 +29,23 @@ public sealed class OpinionDisputeRiskTests
     private static ResolvedOpinion Rule() => new(new OpinionRule(["codex-acp"], [OpinionRules.Landing], false, Recheck: false), OpinionSource.Repository);
 
     [Fact]
+    public void Every_hold_reads_the_one_verdict_path_so_an_opinion_step_declared_role_owner_is_never_passed_by_the_seed_and_an_unwired_port_passes_nothing()
+    {
+        const string Graph = """
+            {"schemaVersion":2,"entries":["opinion"],"end":"opinion",
+             "nodes":[{"id":"opinion","kind":"opinion","version":1,"reach":"observed","options":{"role":"owner"}}],"wires":[]}
+            """;
+        var step = Assert.Single(NodeGraphs.Read(Graph, onSave: false).Graph!.Nodes);
+        var judge = RiskStepGates.At(DriverConfig.Parse("""{"risk":{}}"""), "default", "web-app");
+
+        Assert.Equal(RiskVerdict.Pass, RiskStepGates.Verdict(judge, RiskActs.WorkAccept, null)?.Outcome);
+        Assert.Equal(RiskVerdict.OwnerOutcome, RiskStepGates.Verdict(judge, RiskActs.WorkAccept, step)?.Outcome);
+        Assert.Equal(RiskVerdict.OwnerOutcome, SpentChecks.Verdict(DriverConfig.Parse("""{"risk":{}}"""), "default", "web-app", step)?.Outcome);
+        Assert.Null(RiskStepGates.Verdict(null, RiskActs.WorkAccept, step));
+        Assert.Null(OpinionRisk.Unwired.JudgeAt(DriverConfig.Empty, "default", "web-app", null));
+    }
+
+    [Fact]
     public void An_opinion_step_its_gate_reached_after_the_policy_passed_its_dispute_counts_as_a_policy_pass_so_a_wait_the_person_held_is_told()
     {
         var opinion = new NodeDeclaration("opinion", NodeKinds.Opinion, 1, NodeReach.Observed);

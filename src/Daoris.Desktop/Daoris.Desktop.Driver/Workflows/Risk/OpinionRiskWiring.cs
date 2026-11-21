@@ -8,8 +8,11 @@ internal sealed class OpinionRiskOperations : IOpinionRisk
     [ModuleInitializer]
     internal static void Install() => OpinionRisk.Current = new OpinionRiskOperations();
 
-    public Func<RiskAct, RiskVerdict>? JudgeAt(DriverConfig config, string? workspace, string? repository) =>
-        RiskStepGates.At(config, workspace, repository)?.Act;
+    public Func<RiskAct, RiskVerdict>? JudgeAt(DriverConfig config, string? workspace, string? repository, IWorkplaceProcess? process)
+    {
+        var step = (process as WorkflowProcess)?.Graph?.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Opinion);
+        return RiskStepGates.At(config, workspace, repository) is { } judge ? act => RiskStepGates.Verdict(judge, act.Kind, step)! : null;
+    }
 
     public void Passed(
         string home, DriverConfig config, string subject, string? workspace, string? repository, string? chatRun, IWorkplaceProcess? process,

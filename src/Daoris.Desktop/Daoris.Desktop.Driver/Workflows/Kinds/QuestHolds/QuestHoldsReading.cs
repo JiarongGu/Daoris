@@ -20,7 +20,7 @@ internal static class QuestHoldsReading
         holds is not null && (new[] { Yours, Roles, Policy }.Any(lead => holds.Contains(lead, StringComparison.Ordinal)) || UncheckedDones.Says(holds));
 
     /// <summary>Why the quest's own holds hold the work, or null where they let it go; a departure waits for the yes <paramref name="judge"/> names.</summary>
-    public static string? Held(QuestView? quest, bool yes = true, bool evidence = true, Func<RiskAct, RiskVerdict>? judge = null) => quest switch
+    public static string? Held(QuestView? quest, bool yes = true, bool evidence = true, Func<RiskAct, RiskVerdict?>? judge = null) => quest switch
     {
         null => "its quest was not read",
         { Status: "Declined" } => "its quest was declined",
@@ -44,7 +44,8 @@ internal static class QuestHoldsReading
         if (BranchOnLine.Observe(reading) is { } onLine) return onLine;
         var (unit, node) = (reading.Unit, reading.Node);
         if (unit.Kind != WorkUnitKind.Quest) return HoldReading.Seen(reading, null, "its door judges the quest's holds where it lands");
-        var why = Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence), reading.Git?.Risk?.Act);
+        var risk = reading.Git?.Risk;
+        var why = Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence), risk is null ? null : act => RiskStepGates.Verdict(risk, act.Kind, node));
         if (UncheckedDones.Says(why) && UncheckedDones.Unread(node, reading.Git?.Cast))
         {
             return HoldReading.Reached(reading, WorkRecord.Quests, reading.Binding.SubjectRevision, UncheckedDones.GoesOn) with { Words = UncheckedDones.GoesOn };

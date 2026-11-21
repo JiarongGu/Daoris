@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 /// </summary>
 internal static class SpentChecks
 {
-    public static RiskVerdict? Verdict(DriverConfig? config, string? workspace, string? repository) =>
-        RiskStepGates.At(config, workspace, repository)?.Act(RiskAct.Of(RiskActs.WorkRecover));
+    public static RiskVerdict? Verdict(DriverConfig? config, string? workspace, string? repository, NodeDeclaration? check = null) =>
+        RiskStepGates.Verdict(RiskStepGates.At(config, workspace, repository), RiskActs.WorkRecover, check);
 
     /// <summary>The role a spent red's failure is kept on, which a role class names and its holder holds: the left attempt's (<see cref="StepWaiting.RoleOf"/>).</summary>
     public static string HeldOn => StepWaiting.RoleOf(PersonWaits.Left);
@@ -57,9 +57,9 @@ internal static class SpentChecks
     /// <returns>Whether the decision is kept; a refused write keeps neither, and both are tried again at the next look.</returns>
     public static async Task<bool> SettleAsync(
         NodeRecordFiles records, string unit, string run, string node, int attempt, int reds, string? code, string? found, DriverConfig? config, string? workspace,
-        string? repository, DateTimeOffset now, Func<string, Task<(string? Session, string? Why)>> tell, List<string> said)
+        string? repository, DateTimeOffset now, Func<string, Task<(string? Session, string? Why)>> tell, List<string> said, NodeDeclaration? check = null)
     {
-        var verdict = Verdict(config, workspace, repository);
+        var verdict = Verdict(config, workspace, repository, check);
         var holder = verdict is { Outcome: RiskVerdict.Gate } ? CastReading.Now(records.Home, workspace, repository)(HeldOn) : null;
         var decided = Decide(verdict, holder);
         var record = records.Read(unit);

@@ -335,7 +335,7 @@ internal sealed class NodeRunKeeping(
             var code = record.Statuses.GetValueOrDefault(node)?.Code;
             var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
             await SpentChecks.SettleAsync(records, governed.Unit.Id, scope.Run.Run, node, attempt, reds, code, found, config, workspace, repository, clock(),
-                text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said).ConfigureAwait(false);
+                text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said, governed.Declared.GetValueOrDefault(node)).ConfigureAwait(false);
         }
     }
 

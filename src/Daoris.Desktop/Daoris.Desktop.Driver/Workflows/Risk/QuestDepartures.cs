@@ -23,15 +23,14 @@ internal static class QuestDepartures
     }
 
     /// <summary>The judge at <paramref name="quest"/>'s place, its workspace and the repository it is asked of.</summary>
-    public static Func<RiskAct, RiskVerdict> JudgeAt(DriverConfig config, QuestView quest)
+    public static Func<RiskAct, RiskVerdict?> JudgeAt(DriverConfig config, QuestView quest)
     {
-        var policy = RiskPolicy.Of(config);
-        var place = RiskPlace.Of(config, quest.Workspace, quest.To);
-        return act => RiskGate.Judge(policy, act, "", place, $"quest {quest.Id}");
+        var judge = RiskStepGates.At(config, quest.Workspace, quest.To);
+        return act => RiskStepGates.Verdict(judge, act.Kind, null);
     }
 
     /// <summary>The verdict on <paramref name="quest"/>'s departure, or null where none holds it or no judge is read.</summary>
-    public static RiskVerdict? Verdict(QuestView quest, Func<RiskAct, RiskVerdict>? judge) => judge is not null && ActOf(quest) is { } act ? judge(act) : null;
+    public static RiskVerdict? Verdict(QuestView quest, Func<RiskAct, RiskVerdict?>? judge) => judge is not null && ActOf(quest) is { } act ? judge(act) : null;
 
     /// <summary>
     /// Each held departure of <paramref name="quests"/> the policy passes, posted through <paramref name="accept"/> as its yes and, once the

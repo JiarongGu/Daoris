@@ -34,7 +34,7 @@ internal static class TreeGateOpinions
         // The judge at the work's place answers a dispute or commits nobody read, as `work.accept`.
         var facts = new OpinionGateFacts(repository, rule)
         {
-            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = OpinionRisk.Current.JudgeAt(config, workspace, repository),
+            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = OpinionRisk.Current.JudgeAt(config, workspace, repository, process),
         };
         var chatRun = quest is null && WorkplaceRunFiles.IsChatRun(run) ? run : null;
         if ((quest is null && chatRun is null) || !OpinionGate.Reads(rule, cannot, occasion))
