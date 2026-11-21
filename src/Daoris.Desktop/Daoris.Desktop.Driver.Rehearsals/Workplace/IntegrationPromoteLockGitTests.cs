@@ -74,4 +74,35 @@ public sealed class IntegrationPromoteLockGitTests : IntegrationPromoteFixture
         Assert.Equal(candidate.Tip, await CommitOfAsync(candidate.Root, "main"));
         Assert.False(File.Exists(MergeToolLock(candidate.Root)));
     }
+
+    /// <summary>
+    /// 🔴 The lock is the one of the checkout the line is moved in: with the registered root detached and the line out in a linked worktree, a merge
+    /// tool run in that worktree holds the landing, and one in the root (which has no line to merge) does not.
+    /// </summary>
+    [Fact]
+    public async Task A_run_in_the_worktree_that_has_the_line_out_holds_the_landing_and_one_in_the_root_does_not()
+    {
+        var candidate = await FormedAsync(
+            [Member("feature/a", ("a.txt", "a\n"))], beforeFormed: root => CommitAsync(root, ".gitignore", "local/\n", "local is ignored"));
+        Green();
+        var worktree = Path.Combine(Scratch, "line-worktree");
+        await GitAsync(candidate.Root, "worktree", "add", "--quiet", worktree, "main");
+        Directory.CreateDirectory(Path.Combine(candidate.Root, "local"));
+        Directory.CreateDirectory(Path.Combine(worktree, "local"));
+        HeldByTheTool(candidate.Root, Environment.ProcessId, StartOfThisProcess());
+        HeldByTheTool(worktree, Environment.ProcessId, StartOfThisProcess());
+        var promotes = Promotes(candidate);
+
+        var held = await promotes.RunAsync(candidate.Claim, candidate.Ask);
+
+        Assert.Equal(IntegrationPromoteRuns.Held, held.Kind);
+        Assert.Equal(candidate.Base, await CommitOfAsync(candidate.Root, "main"));
+
+        File.Delete(MergeToolLock(worktree));
+        var run = await promotes.RunAsync(candidate.Claim, candidate.Ask);
+
+        Assert.Equal(IntegrationPromoteRuns.Settled, run.Kind);
+        Assert.Equal(candidate.Tip, await CommitOfAsync(candidate.Root, "main"));
+        Assert.Contains("\"verb\":\"merge\"", File.ReadAllText(MergeToolLock(candidate.Root)), StringComparison.Ordinal);
+    }
 }

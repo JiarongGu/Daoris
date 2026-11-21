@@ -110,10 +110,42 @@ public sealed class MergeRunLockTests : IDisposable
 
         Assert.True(File.Exists(MergeRunLock.PathOf(_root)));
     }
-
-    /// <summary>A checkout with no <c>local</c> folder has no tool's lock to meet: nothing is taken, and no folder is made in it.</summary>
+    /// <summary>A holder with no start time whose pid no process has is no run's: it is taken back, as the tool takes it.</summary>
     [Fact]
-    public void A_checkout_with_no_local_folder_takes_nothing_and_makes_none()
+    public void A_holder_with_no_start_time_and_no_process_is_taken_back()
+    {
+        Write(int.MaxValue - 1, null, "merge");
+        using var taken = MergeRunLock.TryTake(_root, At, out var held);
+        Assert.NotNull(taken);
+        Assert.Null(held);
+    }
+
+    /// <summary>A stale lock is removed only under the reclaim guard: a guard a live holder keeps blocks it, and a dead holder's guard is cleared.</summary>
+    [Fact]
+    public void A_stale_lock_is_reclaimed_only_by_the_one_holding_the_guard()
+    {
+        var elsewhen = StartOfThisProcess() - (60 * 60 * 1000);
+        Write(Environment.ProcessId, elsewhen, "merge");
+        var guard = MergeRunLock.PathOf(_root) + ".reclaim";
+        File.WriteAllText(guard, $$"""{"pid":{{Environment.ProcessId}},"started":{{StartOfThisProcess()}},"at":"x","verb":"landing"}""");
+
+        using (var blocked = MergeRunLock.TryTake(_root, At, out var held))
+        {
+            Assert.Null(blocked);
+            Assert.NotNull(held);
+            Assert.Contains("\"started\":" + elsewhen, File.ReadAllText(MergeRunLock.PathOf(_root)), StringComparison.Ordinal);
+        }
+
+        File.WriteAllText(guard, $$"""{"pid":{{int.MaxValue - 1}},"started":null,"at":"x","verb":"landing"}""");
+        using var taken = MergeRunLock.TryTake(_root, At, out var heldAgain);
+        Assert.NotNull(taken);
+        Assert.Null(heldAgain);
+        Assert.False(File.Exists(guard), "the guard is let go");
+    }
+
+    /// <summary>With no <c>local</c> folder and no merge tool in the checkout there is no run to meet: nothing is taken and no folder is made.</summary>
+    [Fact]
+    public void A_checkout_with_no_tool_and_no_local_folder_takes_nothing_and_makes_none()
     {
         Directory.Delete(Path.Combine(_root, "local"));
 
@@ -122,5 +154,22 @@ public sealed class MergeRunLockTests : IDisposable
         Assert.NotNull(taken);
         Assert.Null(held);
         Assert.False(Directory.Exists(Path.Combine(_root, "local")));
+    }
+
+    /// <summary>A checkout with the merge tool and no <c>local</c> folder yet gets the folder and a real lock: the tool's first run would make the folder and meet it.</summary>
+    [Fact]
+    public void A_checkout_with_the_tool_and_no_local_folder_gets_a_real_lock()
+    {
+        Directory.Delete(Path.Combine(_root, "local"));
+        Directory.CreateDirectory(Path.Combine(_root, "tools"));
+        File.WriteAllText(Path.Combine(_root, "tools", "merge-branch.mjs"), "");
+
+        using (var taken = MergeRunLock.TryTake(_root, At, out _))
+        {
+            Assert.NotNull(taken);
+            Assert.True(File.Exists(MergeRunLock.PathOf(_root)));
+        }
+
+        Assert.False(File.Exists(MergeRunLock.PathOf(_root)));
     }
 }

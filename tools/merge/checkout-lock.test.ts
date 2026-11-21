@@ -131,3 +131,25 @@ test('a landing whose process was killed is taken back at once, with no wait', a
     remove();
   }
 });
+
+test('a stale lock is removed only by the one holding the reclaim guard: a live guard blocks it, a dead guard is cleared', () => {
+  const { dir, remove } = fixtureFolder('checkout-lock');
+  try {
+    const file = join(dir, 'merge-run.lock');
+    const guard = `${file}.reclaim`;
+    const runs = (held: Holder) => held.pid !== me.pid;
+    takeCheckout(file, me, { runs: () => true });
+    writeFileSync(guard, JSON.stringify(other));
+
+    const blocked = takeCheckout(file, landing, { runs });
+    assert.equal(blocked.taken, false, 'another reclaimer is at work: nothing is removed under it');
+    assert.equal(JSON.parse(readFileSync(file, 'utf8')).pid, me.pid);
+
+    writeFileSync(guard, JSON.stringify(me));
+    assert.deepEqual(takeCheckout(file, landing, { runs }), { taken: true }, 'a guard whose holder is dead is cleared and the lock reclaimed');
+    assert.equal(JSON.parse(readFileSync(file, 'utf8')).pid, landing.pid);
+    assert.equal(existsSync(guard), false, 'the guard is let go');
+  } finally {
+    remove();
+  }
+});

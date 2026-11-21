@@ -1,22 +1,28 @@
-/**
- * One lock per checkout for any run that touches an open merge, and for Daoris's landing's move of the line (, verb ):
- * a second merge run is refused naming who holds it, a run that finds a landing waits for it. The lock is put in place complete, and let go
- * only while it still says what this run wrote.
- */
+/** One lock per checkout for a run that touches an open merge and for Daoris's landing (verb `landing`): a second run is refused, a run that finds a landing waits. */
 import { linkSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 export type Holder = { pid: number; started: number | null; at: string; verb: string };
 export const CHECKOUT_LOCK = 'local/merge-run.lock';
 
-const read = (file: string): Holder | null => {
+const textOf = (file: string): string | null => {
   try {
-    const parsed = JSON.parse(readFileSync(file, 'utf8')) as Holder;
+    return readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+};
+
+const parse = (text: string | null): Holder | null => {
+  try {
+    const parsed = JSON.parse(text ?? '') as Holder;
     return Number.isFinite(parsed?.pid) ? parsed : null;
   } catch {
     return null;
   }
 };
+
+const read = (file: string): Holder | null => parse(textOf(file));
 
 const put = (file: string, holder: Holder): boolean => {
   const beside = `${file}.${holder.pid}.tmp`;
@@ -31,14 +37,31 @@ const put = (file: string, holder: Holder): boolean => {
   }
 };
 
+/** Remove `seen`, a lock judged dead, only under the guard beside it: puts never overwrite, so one remover is the only one who can change it. */
+function reclaim(file: string, seen: string, me: Holder, runs: (holder: Holder) => boolean): void {
+  const guard = `${file}.reclaim`;
+  if (!put(guard, me)) {
+    const other = textOf(guard);
+    const holder = parse(other);
+    if (other !== null && (holder === null || !runs(holder)) && textOf(guard) === other) rmSync(guard, { force: true });
+    return;
+  }
+  try {
+    if (textOf(file) === seen) rmSync(file, { force: true });
+  } finally {
+    if (textOf(guard) === JSON.stringify(me)) rmSync(guard, { force: true });
+  }
+}
+
 /** Take the lock, or answer who holds it. `runs` says whether a holder is still the run it names (pid alive and started when it says). */
 export function takeCheckout(file: string, me: Holder, { runs }: { runs: (holder: Holder) => boolean }): { taken: true } | { taken: false; holder: Holder | null } {
   mkdirSync(dirname(file), { recursive: true });
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
     if (put(file, me)) return { taken: true };
-    const held = read(file);
+    const seen = textOf(file);
+    const held = parse(seen);
     if (held !== null && runs(held)) return { taken: false, holder: held };
-    if (JSON.stringify(read(file)) === JSON.stringify(held)) rmSync(file, { force: true });
+    if (seen !== null) reclaim(file, seen, me, runs);
   }
   return { taken: false, holder: read(file) };
 }
