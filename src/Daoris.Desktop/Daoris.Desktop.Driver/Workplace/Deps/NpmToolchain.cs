@@ -54,7 +54,8 @@ internal static partial class NpmToolchain
 
     /// <summary>
     /// The first file <paramref name="name"/> names as the shell finds it, in the order it tries its extensions; null where a file of that
-    /// name stands in the tree (the shell looks there first) or a path entry is relative (it moves with the tree), which no cross-tree reading may stand on.
+    /// name stands in the tree (the shell looks there first) or a path entry is not whole (a relative one, a drive's own folder such as <c>D:bin</c>
+    /// or the drive's root such as <c>\bin</c>, each read from the tree), which no cross-tree reading may stand on.
     /// </summary>
     internal static string? OnPath(string name, IReadOnlyDictionary<string, string> environment, string tree)
     {
@@ -64,7 +65,7 @@ internal static partial class NpmToolchain
         foreach (var folder in path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
         {
             var entry = folder.Trim('"');
-            if (!Path.IsPathRooted(entry)) return null;
+            if (!Path.IsPathFullyQualified(entry)) return null;
             foreach (var extension in extensions)
             {
                 var file = Path.Combine(entry, name + extension);

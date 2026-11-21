@@ -116,6 +116,14 @@ public sealed class NpmToolchainMemoTests : IDisposable
         var relative = new Dictionary<string, string>(environment) { ["PATH"] = "bin;" + environment["PATH"] };
         Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NodeVersion, relative, Tree("c")));
 
+        // A drive's own folder (`D:bin`) and the current drive's root (`\bin`) are rooted but not whole: cmd.exe reads them from the session tree.
+        var drive = Path.GetPathRoot(_scratch)![..2];
+        foreach (var partial in new[] { $"{drive}bin", @"\bin" })
+        {
+            var moving = new Dictionary<string, string>(environment) { ["PATH"] = partial + ";" + environment["PATH"] };
+            Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NodeVersion, moving, Tree("c")));
+        }
+
         var redirected = Tree("d");
         File.WriteAllText(Path.Combine(redirected, ".npmrc"), "userconfig=elsewhere.npmrc\n");
         Assert.Null(NpmToolchain.Fingerprint(NpmToolchain.NpmConfig, environment, redirected));

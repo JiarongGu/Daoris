@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 
@@ -72,15 +71,12 @@ public sealed class ToolchainReadsTests : IDisposable
     {
         var one = await TreeAsync("t1");
 
-        var listings = 0;
         TreeFilesOutcome installed;
-        using (ProcessStarts.Within(info =>
-        {
-            if (info.ArgumentList.Contains("ls-tree") && info.ArgumentList.Contains("--full-tree")) Interlocked.Increment(ref listings);
-            return Process.Start(info);
-        }))
+        int listings;
+        using (var tally = GitStartTally.Open(_scratch))
         {
             installed = await new TreeFilesStage(Home, Root, one, "engine").RunAsync(CancellationToken.None);
+            listings = tally.Starts.Count(start => start.StartsWith("ls-tree ", StringComparison.Ordinal) && start.Contains("--full-tree", StringComparison.Ordinal));
         }
 
         Assert.Equal(1, listings);
