@@ -97,6 +97,8 @@ public static class VerbLeases
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),
             "history" => next == "clear",
+            // A bare `home` lists the paths no entry names and changes nothing; its purge and account-ids moves hold the lease from the top.
+            "home" => args.Count > 1,
             "trees" => next is not (null or "list" or "state" or "build"),
             "plugins" => next is "install" or "new" or "try",
             "sync" => next != "status",

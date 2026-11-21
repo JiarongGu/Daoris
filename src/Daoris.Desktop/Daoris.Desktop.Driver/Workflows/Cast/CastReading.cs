@@ -16,6 +16,9 @@ public static class CastReading
     public static Func<string, string> Home(string home, string? workspace, string? repository) =>
         At(new PlaceCastFiles(home).Book(), DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk, workspace, repository);
 
+    public static Func<string, bool> ServesHome(string home, string? workspace, string? repository) =>
+        StepVacancies.ServesAt(new PlaceCastFiles(home).Book(), DriverConfig.Load(DriverConfig.ResolvePath(home)).PlaceRisk, workspace, repository);
+
     /// <summary>Each role's cast at the place and why, the files read once at the first role asked.</summary>
     public static Func<string, CastNow> Now(string home, string? workspace, string? repository)
     {

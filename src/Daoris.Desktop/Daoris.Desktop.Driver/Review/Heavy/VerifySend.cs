@@ -18,6 +18,9 @@ public sealed record VerifySend(string Run, string Invocation, string Repository
     /// <summary>The ref the change is judged against where the declaration names a reached runner (the line's base or its branch); null where there is none, so the gates run.</summary>
     public string? Base { get; init; }
 
+    /// <summary>Whether the check's step names <c>heavy</c>: a reached runner runs every tier, else the fast one a merge runs.</summary>
+    public bool Heavy { get; init; }
+
     /// <summary>The check's bound, counted from both slots held.</summary>
     public TimeSpan Bound { get; init; } = HeavyExecutor.DefaultBound;
 

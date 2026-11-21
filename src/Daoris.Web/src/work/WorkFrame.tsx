@@ -231,19 +231,20 @@ export function WorkFrame({
   const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
 
   const views = useDockViews({
-    attended, elsewhere, here, ask, notifications, terminal, placed, closed: frame.closed, collapsed, dockClosed, closeDock, askFocus,
+    attended, elsewhere, here, ask, notifications, terminal, terminalCount: terminals.list.length, placed, closed: frame.closed, collapsed, dockClosed, closeDock, askFocus,
     notificationsShow, notificationsToggle,
   });
   const {
     setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
-    openPreview, closePreview, openView, moveView,
+    openPreview, closePreview, openView, moveView, panelCollapsed,
   } = views;
   // Who is at work on the followed session, asked whatever its state and whether *At work* shows: the head's
   // *Waiting on* is this read's line, and *working with it* its count, at its mount and each `atWork` wake.
   const atWork = useSessionAtWork(following?.id ?? null);
   const atWorkHeld = atWork.data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
-    ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
+    ? (atWorkHeld.answer.parts.find((part) => part.key === atWorkHeld.answer.attended)?.children.working ?? 0)
+      + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
   // The person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
@@ -463,6 +464,7 @@ export function WorkFrame({
                     seek={seekAt('foot')}
                     runWaits={here || sessionOrigin(attended) !== null ? runWaitDoors : null}
                     quest={quest}
+                    beside={waitsState.beside}
                     // Who asks, as the head names the session's agent: its repository, its maker and the model that ran.
                     asker={{
                       role: attended.repository,
@@ -497,13 +499,13 @@ export function WorkFrame({
         </ViewMain>
         </>)}
 
-        {/* An emptied panel that is hidden is not drawn at all, unless a view is being dragged to it;
-            opened, it says how to fill it. */}
-        {(panelViews.length > 0 || !collapsed || dragging !== null) && (
+        {/* The panel is drawn while it is open, which a terminal opens and its last closing ends, or while a view is being dragged
+            to it: closed, the page has its height and no bar stands in it. */}
+        {(!panelCollapsed || dragging !== null) && (
           <OutputPanel
             console={consoleView ? withWhose(consoleView, true) : null}
             height={Math.max(PANEL_MIN, frame.height)}
-            collapsed={collapsed}
+            collapsed={panelCollapsed}
             onResize={frame.resize}
             onToggle={frame.toggle}
             views={panelViews}

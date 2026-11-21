@@ -28,7 +28,7 @@ public static class AttemptTenures
         var book = new PlaceCastFiles(records.Home).Book();
         var place = (risk ?? PlaceRiskBook.Unwritten).At(workspace, repository);
         var judged = TenureRejudge.Apply(tenures, unit, standing.Where(each => held.ContainsKey(each.Node.Id)), held,
-            node => book.At(StepRoles.Of(node), workspace, repository, place), judge, now);
+            node => book.At(StepRoles.Of(node), workspace, repository, place), judge, now, records.Home);
         if (unheld.Count == 0) return judged;
         return [.. judged, .. tenures.Begin(unit, [.. unheld.Select(each =>
         {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeBuildStamp } from '../../src/Daoris.Cli/src/platform/build-stamp.ts';
 import { copyTree, renameHeld } from '../fsx.mjs';
@@ -38,12 +38,20 @@ function cliProblem(folder) {
   return null;
 }
 
+/** Say `version` in the package.json of the folder at `packageRoot`, as `daoris --version` reads it. */
+function stampPackageVersion(packageRoot, version) {
+  const path = join(packageRoot, 'package.json');
+  const manifest = JSON.parse(readFileSync(path, 'utf8'));
+  writeFileSync(path, `${JSON.stringify({ ...manifest, version }, null, 2)}
+`);
+}
+
 /**
  * Lay the doctrine tool out in an install: the folder `bundleCli` made, copied to `<install>/app/cli/` with the build's stamp, and
  * `<install>/app/bin/` made empty for the programs laid out in it after (the command, the git doors, the partner's launcher:
  * `layBinPrograms`). Both folders are staged beside and swapped in whole, so a file an earlier publish wrote
  * does not survive a republish, and a refused tool leaves the last one standing. Nothing is written
- * under the home. Fresh folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries.
+ * under the home. Fresh folders use `renameHeld`'s bounded wait; unrelated errors still throw. `build` is the stamp it carries, with the version the build takes.
  *
  * @returns the tool's version, which is the canon's.
  * @throws naming the folder and what is wrong, when it is not the bundle `bundleCli` makes, before anything is replaced.
@@ -65,7 +73,11 @@ export async function layCli(source, install, renameOptions = {}, build = null) 
     if (problem) throw new Error(problem);
     version = JSON.parse(readFileSync(join(source, 'package.json'), 'utf8')).version;
     copyTree(source, stagedCli);
-    if (build) writeBuildStamp(stagedCli, build);
+    if (build) {
+      writeBuildStamp(stagedCli, build);
+      // The build's own version is the package's; the canon beside it keeps the release's, which every synced file's header names.
+      if (build.version) stampPackageVersion(stagedCli, build.version);
+    }
     mkdirSync(stagedBin, { recursive: true });
   } catch (error) {
     unstage();

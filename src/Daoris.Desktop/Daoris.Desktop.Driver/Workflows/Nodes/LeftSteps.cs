@@ -14,10 +14,11 @@ public static class LeftSteps
         run.Line is null && FailedHeldRuns.Step(record) is { } node && !record!.Pending.Any(word => word.Node == node) ? node : null;
 
     /// <summary>The steps waiting on a role the person holds in the runs last governed (none before a pass), and each run's left step.</summary>
-    internal static IReadOnlyList<HeldStep> With(IEnumerable<GovernedUnit>? governed, NodeRecordFiles records, GraphRuns runs, DriverConfig? config) =>
+    internal static IReadOnlyList<HeldStep> With(
+        IEnumerable<GovernedUnit>? governed, NodeRecordFiles records, GraphRuns runs, DriverConfig? config, Func<string?, string?, bool>? live = null) =>
     [
         .. governed is null ? [] : HeldSteps.Of(governed, records.Read, new StepTenureFiles(records.Home, records.HoldsLease), new PlaceCastFiles(records.Home).Book(),
-            config?.PlaceRisk, new StepVacancyFiles(records.Home), VacancySetting.Of(config)),
+            config?.PlaceRisk, new StepVacancyFiles(records.Home), VacancySetting.Of(config), live),
         .. Of(runs.Read(), records.Read),
     ];
 
@@ -41,15 +42,21 @@ public static class LeftSteps
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
         var held = PluginFailureHeld.Of(record, node, status) is { Words.Count: > 0 } attempt ? attempt : null;
+        var ended = record.Ended!;
+        return new HeldStep(run, node.Id, repository, workspace, PersonWaits.Left, StepWaiting.RoleOf(PersonWaits.Left), Presses(node, status, held), ended.Quest, ended.At)
+        {
+            Held = held, Words = status.Words ?? status.Code,
+        };
+    }
+
+    /// <summary>The presses a part left offers its holder: its held attempt's words, else try again, done outside Daoris, and stop.</summary>
+    public static IReadOnlyList<string> Presses(NodeDeclaration node, NodeStatus status, WorkflowRunHeld? held)
+    {
+        held = held is { Words.Count: > 0 } ? held : null;
         List<string> presses = held is not null ? [.. held.Words] : node.Reach == NodeReach.Performed ? [NodeWordActs.Again] : [];
         // A claim already kept is watched for at each look: it is not offered again.
         if (held is null && status.Holds != NodeWordActs.DoneOutside && RunNodeWords.Outside(node, status)) presses.Add(NodeWordActs.DoneOutside);
         presses.Add(NodeWordActs.Stop);
-        var ended = record.Ended!;
-        return new HeldStep(run, node.Id, repository, workspace, PersonWaits.Left, StepWaiting.RoleOf(PersonWaits.Left),
-            [.. presses.Distinct(StringComparer.Ordinal)], ended.Quest, ended.At)
-        {
-            Held = held, Words = status.Words ?? status.Code,
-        };
+        return [.. presses.Distinct(StringComparer.Ordinal)];
     }
 }

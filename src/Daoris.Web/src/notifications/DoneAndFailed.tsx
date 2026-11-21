@@ -57,14 +57,19 @@ export function noticeWords(notice: Notice, t: TFunction): string {
   }
   if (notice.kind === 'look') {
     // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
-    return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
+    return notice.code
+      ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other'), run: notice.quest ?? '', step: notice.act ?? '' })
+      : t('notifications.done.other');
   }
   return t('notifications.done.other');
 }
 
-/** The run a notice of a run's step opens the review of (a step's outcome, a step passed on the person's words); null for any other. */
+const RUN_LOOKS = new Set(['final-exit']);
+
+/** The run a notice of a run's step opens the review of (its outcome, one passed on the person's words, one at the final exit); null for any other. */
 export function runOfNotice(notice: Notice): string | null {
-  return (notice.kind === 'outcome' || notice.kind === 'through') && notice.quest ? notice.quest : null;
+  const ofRun = notice.kind === 'outcome' || notice.kind === 'through' || (notice.kind === 'look' && !!notice.code && RUN_LOOKS.has(notice.code));
+  return ofRun && notice.quest ? notice.quest : null;
 }
 
 /**

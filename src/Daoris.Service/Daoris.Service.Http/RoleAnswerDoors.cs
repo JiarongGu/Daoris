@@ -25,10 +25,12 @@ public static class RoleAnswerDoors
         Form = new DoorForm(Field, DoorClass.Driver, "a role's approval of a memory end"),
     };
 
+    public const string PolicyField = "policy";
+
     public static readonly Door Accept = new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure")
     {
         Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:accepted"),
-        Form = new DoorForm(Field, DoorClass.Driver, "a role's yes to a departure"),
+        Form = new DoorForm(Field, DoorClass.Driver, "a role's or the risk policy's yes to a departure"),
     };
 
     public static readonly Door GoAhead = new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer")
@@ -40,8 +42,11 @@ public static class RoleAnswerDoors
     /// <summary>The four, in the table's order.</summary>
     public static IReadOnlyList<Door> All { get; } = [Accept, GoAhead, Decide, Keep];
 
-    /// <summary>Whether <paramref name="body"/> makes <paramref name="door"/>'s role form: a <c>role</c> that is an object.</summary>
+    /// <summary>Whether <paramref name="body"/> makes <paramref name="door"/>'s driver form: a <c>role</c>, or at the departure a <c>policy</c>, that is an object.</summary>
     public static bool Makes(Door door, JsonElement? body) =>
         All.Contains(door) && body is { ValueKind: JsonValueKind.Object } found
-        && found.EnumerateObject().LastOrDefault(each => string.Equals(each.Name, Field, StringComparison.OrdinalIgnoreCase)) is { Value.ValueKind: JsonValueKind.Object };
+        && (Names(found, Field) || (door == Accept && Names(found, PolicyField)));
+
+    private static bool Names(JsonElement body, string field) =>
+        body.EnumerateObject().LastOrDefault(each => string.Equals(each.Name, field, StringComparison.OrdinalIgnoreCase)) is { Value.ValueKind: JsonValueKind.Object };
 }

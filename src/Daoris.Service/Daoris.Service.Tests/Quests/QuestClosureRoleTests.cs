@@ -107,4 +107,38 @@ public sealed class QuestClosureRoleTests : IAsyncLifetime
         Assert.Null(standing.Accepted);
         Assert.Equal(QuestRespondRefusal.None, (await _exchange.AcceptAsync(id, Now)).Refusal);
     }
+
+    /// <summary>The driver's judge passed the departure: the service keeps the policy's yes with its rule and revision, judging nothing of it.</summary>
+    [Fact]
+    public async Task The_risk_policys_yes_accepts_a_departure_alone_kept_with_its_rule_and_never_lifts_evidence_still_awaited()
+    {
+        const string policy = "policy:work.done · rule seed at r1";
+        var alone = await DoneAsync([Bridge], [new QuestAnswer(1, null, Departed: "It opens on its own page.", Quote: Bridge.Quote)]);
+        var beside = await DoneAsync([Report, Bridge],
+            [new QuestAnswer(1, Met: "Done as the check says."), new QuestAnswer(2, null, Departed: "It opens on its own page.", Quote: Bridge.Quote)]);
+
+        var passed = await _exchange.AcceptAsync(alone, Now, by: policy);
+        Assert.Equal(QuestRespondRefusal.None, passed.Refusal);
+        Assert.Contains($"by {policy}", passed.Message, StringComparison.Ordinal);
+        Assert.Null((await _quests.FindAsync(alone))!.Hold);
+        Assert.Equal(policy, (await _quests.HistoryAsync(alone)).Last(each => each.Kind == QuestOperationKind.Accepted).By);
+
+        var waits = await _exchange.AcceptAsync(beside, Now, by: policy);
+        Assert.Equal(QuestRespondRefusal.NotHeld, waits.Refusal);
+        Assert.Contains("the risk policy's yes does not lift: it waits on its check", waits.Message, StringComparison.Ordinal);
+        Assert.Null((await _quests.FindAsync(beside))!.Accepted);
+    }
+
+    private async Task<string> DoneAsync(QuestRequirement[] requirements, QuestAnswer[] answers)
+    {
+        var ask = (await _desk.AskAsync(new AskRequest("work", "write the bridge report into docs/report-bridge.md through the v3 bridge"), Now)).Ask!;
+        var published = await _desk.PublishAsync(ask.Id, "reports", Now, draft: new AskDraft("Write the bridge report", "Through the bridge.")
+        {
+            Requirements = requirements,
+        });
+        var id = published.Quest!.Id;
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(id, "take", null, Now)).Refusal);
+        Assert.Equal(QuestHold.Departed, (await _exchange.RespondAsync(id, "done", "Built.", Now, answers: answers)).Quest!.Hold);
+        return id;
+    }
 }

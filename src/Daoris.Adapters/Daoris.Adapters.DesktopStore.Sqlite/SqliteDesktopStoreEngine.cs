@@ -13,8 +13,6 @@ namespace Daoris.Adapters.DesktopStore.Sqlite;
 /// </summary>
 public sealed class SqliteDesktopStoreEngine : IDesktopStoreEngine
 {
-    private const int BusySeconds = 5;
-
     private readonly SemaphoreSlim _turn = new(1, 1);
     private readonly SqliteConnection _connection;
     private readonly DesktopStoreEngineOptions _options;
@@ -35,7 +33,7 @@ public sealed class SqliteDesktopStoreEngine : IDesktopStoreEngine
     public static IDesktopStoreEngine Open(string location, DesktopStoreEngineOptions options)
     {
         if (Path.GetDirectoryName(Path.GetFullPath(location)) is { Length: > 0 } folder) Directory.CreateDirectory(folder);
-        var wait = options.BusyWait ?? TimeSpan.FromSeconds(BusySeconds);
+        var wait = options.BusyWait ?? DesktopStoreEngineOptions.DefaultBusyWait;
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = location,

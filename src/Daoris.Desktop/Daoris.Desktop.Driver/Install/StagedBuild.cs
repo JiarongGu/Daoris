@@ -235,10 +235,10 @@ public static class StagedBuild
     public static bool IsStaged(string install) => File.Exists(Path.Combine(StagedOf(install), Manifest));
 
     /// <summary>The staged build's manifest, or null when none is staged or it does not read; <paramref name="problem"/> says which.</summary>
-    public static StagedManifest? Read(string install, out StagedProblem? problem)
+    public static StagedManifest? Read(string install, out StagedProblem? problem, string? folder = null)
     {
         problem = null;
-        var path = Path.Combine(StagedOf(install), Manifest);
+        var path = Path.Combine(folder ?? StagedOf(install), Manifest);
         if (!File.Exists(path)) return null;
 
         try
@@ -296,13 +296,13 @@ public static class StagedBuild
     /// is there with its size and SHA-256, nothing is there it does not name, it carries <see cref="Required"/>,
     /// and the host when the install carries one. Null when it may be installed, or when nothing is staged.
     /// </summary>
-    public static StagedProblem? Check(string install)
+    public static StagedProblem? Check(string install, string? folder = null)
     {
-        var manifest = Read(install, out var problem);
+        var manifest = Read(install, out var problem, folder);
         if (problem is not null) return problem;
         if (manifest is null) return null;
 
-        var staged = StagedOf(install);
+        var staged = folder ?? StagedOf(install);
         var named = new HashSet<string>(StringComparer.FromComparison(PathCase));
         foreach (var file in manifest.Files)
         {

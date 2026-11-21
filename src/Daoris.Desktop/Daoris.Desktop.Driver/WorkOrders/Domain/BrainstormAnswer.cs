@@ -18,8 +18,8 @@ public sealed record BrainstormProposal(
     ];
 }
 
-/// <summary>A generator's whole answer, validated: its proposals, what it would need that the packet lacks, or why it has none.</summary>
-public sealed record BrainstormAnswer(IReadOnlyList<BrainstormProposal> Proposals, IReadOnlyList<string> Needs, string? None);
+/// <summary>A generator's answer, validated: its proposals, what it would need, or why it has none; <c>partial: true</c> marks it its answer so far.</summary>
+public sealed record BrainstormAnswer(IReadOnlyList<BrainstormProposal> Proposals, IReadOnlyList<string> Needs, string? None, bool Partial = false);
 
 /// <summary>What the validator made of an answer: the answer, or the codes it failed on. Never both, and never part of one.</summary>
 public sealed record BrainstormChecked(BrainstormAnswer? Answer, IReadOnlyList<string> Codes)
@@ -133,7 +133,8 @@ public static class BrainstormAnswers
             proposals.Add(new BrainstormProposal(idea, rationale, effort, risk, reversible, undo, confidence, assumptions, named));
         }
 
-        return codes.Count > 0 ? new(null, codes) : new(new BrainstormAnswer(proposals, needs, none), []);
+        var partial = root.TryGetProperty("partial", out var marked) && marked.ValueKind == JsonValueKind.True;
+        return codes.Count > 0 ? new(null, codes) : new(new BrainstormAnswer(proposals, needs, none, partial), []);
     }
 
     /// <summary>An idea's text as two answers' are compared: trimmed, spaces folded, case ignored.</summary>

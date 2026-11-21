@@ -383,4 +383,25 @@ describe('SessionDock, what its run\'s parts wait on', () => {
     const { container } = render(<SessionDock session={stepping()} runWaits={parts([{ ...WAITING_PART, graph: { ...WAITING_PART.graph!, partWaits: null } }])} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('tags a subagent\'s wait with its subagent, nested ones by the way to them, and opens its focus from the tag', () => {
+    const open = vi.fn();
+    const lifetimes = [
+      { seq: 1, kind: 'child' as const, at: '2026-09-21T09:40:00Z', id: 'c1', call: 'c1', name: 'find tests', depth: 1 },
+      { seq: 2, kind: 'child' as const, at: '2026-09-21T09:45:00Z', id: 'c2', parent: 'c1', name: 'read fixtures', depth: 2 },
+    ];
+    const { container } = render(
+      <SessionDock
+        session={session({ state: 'working' })}
+        permissions={{ waits: [{ ...HELD, child: 'c2' }, { ...HELD, request: 'p2', child: 'gone' }, { ...HELD, request: 'p3' }], onAnswer: vi.fn(), busy: false }}
+        beside={{ session: 's1a2b3c4', lifetimes, act: null, open }}
+      />,
+    );
+    expect(within(card(container, 'permission:900')).getByText('From subagent read fixtures')).toBeInTheDocument();
+    within(card(container, 'permission:900')).getByRole('button', { name: 'Open read fixtures' }).click();
+    expect(open).toHaveBeenCalledWith({ child: ['c1', 'c2'] });
+    expect(within(card(container, 'permission:p2')).getByText('From a subagent')).toBeInTheDocument();
+    expect(within(card(container, 'permission:p2')).queryByRole('button', { name: /^Open/ })).toBeNull();
+    expect(card(container, 'permission:p3')).not.toHaveTextContent(/subagent/i);
+  });
 });

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import {
-  useDriver, usePlugins, useSetAccess, useSetCap, useSetChecks, useSetCoolOff, useSetDrain, useSetGitAccess, useSetManifest, useSetNotify,
+  useDriver, usePlugins, useSetAccess, useSetCap, useSetChecks, useSetCoolOff, useSetDrain, useSetGitAccess, useSetManifest, useSetNotify, useSetVacancy,
   useSetQuiet, useSetTerminal,
 } from '../bridge/shell';
 import { terminalTierOf } from './machine/TerminalTierSetting';
@@ -49,6 +49,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setQuiet = useSetQuiet();
   const setDrain = useSetDrain();
   const setChecks = useSetChecks();
+  const setVacancy = useSetVacancy();
   const setCap = useSetCap();
   const setManifest = useSetManifest();
   const setTerminal = useSetTerminal();
@@ -61,7 +62,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   return (
     <DriverCards
       uxTrail={{ on: trail.on, pending: trail.set.isPending, onChange: (on) => trail.set.mutate(on) }}
-      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks') }}
+      minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks'), vacancy: settingOf('vacancy') }}
       facts={{
         pluginsFolder,
         plugins: plugins.data?.plugins ?? null,
@@ -71,6 +72,7 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
         drain: driver.data?.drain,
         // Null is auto; a state answer lacking the field leaves it undefined, and the row absent.
         checks: driver.data && 'checks' in driver.data ? driver.data.checks ?? null : undefined,
+        vacancy: driver.data?.vacancy,
         manifestFiles: driver.data?.manifestFiles,
         manifestMinutes: driver.data?.manifestMinutes,
         manifestCopy: driver.data?.manifestCopy,
@@ -105,6 +107,10 @@ export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
       })}
       onChecks={(value) => setChecks.mutate({ checks: value }, {
         onSuccess: () => notify(value === null ? t('settings.checks.setAuto') : t('settings.checks.set', { count: value })),
+        onError,
+      })}
+      onVacancy={(value) => setVacancy.mutate({ hours: value }, {
+        onSuccess: () => notify(t('settings.vacancy.set', { count: value })),
         onError,
       })}
       onManifest={(bound) => setManifest.mutate(bound, {

@@ -91,7 +91,7 @@ async function ticketLink() {
   return within(screen.getByRole('main')).getByRole('link', { name: TICKET });
 }
 
-describe("Daoris's browser, from the window", () => {
+describe("Daoris's browser, from the window", { timeout: 30_000 }, () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

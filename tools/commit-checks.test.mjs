@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { runCommitChecks } from './commit-checks.mjs';
+import { layersShrink, runCommitChecks } from './commit-checks.mjs';
 import { install } from './index-hook.mjs';
 import { BUDGET } from './size-ratchet.mjs';
 
@@ -139,6 +139,68 @@ test('the layers counts run for a staged .cs or .csproj only, and a breach refus
   assert.equal(runCommitChecks({ root: dir, env: env(), say() {}, err: (line) => said.push(line), ...checks(['the ambient count rose']) }), 1);
   assert.deepEqual(ran, ['counts']);
   assert.match(said.join('\n'), /layers-census: the ambient count rose/);
+});
+
+test('a layers shrink is written and staged into the commit before the counts judge, for a staged .cs or .csproj only', () => {
+  const LIST = 'tools/layers-census.json';
+  const dir = repository({ 'src/a.ts': plain, [LIST]: '{\n  "clock": {\n    "src/B.cs": 3\n  },\n  "slowTests": {}\n}\n' });
+  const order = [];
+  const checks = {
+    shrink: (root) => {
+      order.push('shrink');
+      writeFileSync(join(root, LIST), '{\n  "clock": {\n    "src/B.cs": 1\n  },\n  "slowTests": {}\n}\n');
+      return ['clock src/B.cs: 3 to 1'];
+    },
+    counts: () => { order.push('counts'); return { code: 0, problems: [] }; },
+  };
+  put(dir, { 'src/a.ts': `${plain}export const more = 1;\n` });
+  git(dir, 'add', '-A');
+  assert.equal(runCommitChecks({ root: dir, env: env(), say() {}, err() {}, ...checks }), 0);
+  assert.deepEqual(order, [], 'a commit with no .cs runs neither');
+  put(dir, { 'src/B.cs': 'namespace Daoris;\n' });
+  git(dir, 'add', '-A');
+  const said = [];
+  assert.equal(runCommitChecks({ root: dir, env: env(), say: (line) => said.push(line), err() {}, ...checks }), 0);
+  assert.deepEqual(order, ['shrink', 'counts']);
+  assert.match(said.join('\n'), /layers list lowered \(1\)/);
+  assert.equal(git(dir, 'show', `:${LIST}`).stdout, '{\n  "clock": {\n    "src/B.cs": 1\n  },\n  "slowTests": {}\n}\n', 'the lowered list is staged');
+});
+
+test('the layers list is lowered only where the working tree is the index, so an unstaged removal never lowers what a staged source needs', () => {
+  const LIST = 'tools/layers-census.json';
+  const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
+  const A = `${DRIVER}/A.cs`;
+  const listOf = (clock) => `${JSON.stringify({ clock, slowTests: {} }, null, 2)}\n`;
+  const dir = repository({
+    [`${DRIVER}/Daoris.Desktop.Driver.csproj`]: '<Project Sdk="Microsoft.NET.Sdk"></Project>',
+    [A]: 'var a = DateTime.UtcNow;\n',
+    [LIST]: listOf({ [A]: 1 }),
+  });
+  put(dir, { [A]: 'var a = 1;\n', [`${DRIVER}/B.cs`]: 'var b = 1;\n' });
+  git(dir, 'add', '--', `${DRIVER}/B.cs`);
+  assert.deepEqual(layersShrink(dir), [], 'A is changed and not staged, so the list is not lowered to it');
+  assert.equal(readFileSync(join(dir, LIST), 'utf8'), listOf({ [A]: 1 }));
+  git(dir, 'add', '--', A);
+  assert.deepEqual(layersShrink(dir), [`clock ${A}: 1 to none`], 'staged, the same removal lowers it');
+  assert.equal(readFileSync(join(dir, LIST), 'utf8'), listOf({}));
+});
+
+test('a guard read that fails lowers nothing, since it cannot tell the working tree is the index', () => {
+  const LIST = 'tools/layers-census.json';
+  const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver';
+  const A = `${DRIVER}/A.cs`;
+  const listOf = (clock) => `${JSON.stringify({ clock, slowTests: {} }, null, 2)}\n`;
+  const dir = repository({
+    [`${DRIVER}/Daoris.Desktop.Driver.csproj`]: '<Project Sdk="Microsoft.NET.Sdk"></Project>',
+    [A]: 'var a = DateTime.UtcNow;\n',
+    [LIST]: listOf({ [A]: 1 }),
+  });
+  put(dir, { [A]: 'var a = 1;\n' });
+  git(dir, 'add', '--', A);
+  const failing = (root, args) => (args.includes('diff') || args.includes('--others') ? null : git(root, ...args).stdout);
+  assert.deepEqual(layersShrink(dir, { read: failing }), [], 'the diff read failed, so nothing says A is the index');
+  assert.equal(readFileSync(join(dir, LIST), 'utf8'), listOf({ [A]: 1 }));
+  assert.deepEqual(layersShrink(dir), [`clock ${A}: 1 to none`], 'read, the same staged removal lowers it');
 });
 
 test('a tool error never blocks a commit, and the opt-out runs nothing', () => {

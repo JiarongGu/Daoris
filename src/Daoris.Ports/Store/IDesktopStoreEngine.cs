@@ -5,8 +5,11 @@ namespace Daoris.Ports.Store;
 /// <summary>The schema version and the oldest-writer stamp a store file holds; (0, 0) for a file nobody has written.</summary>
 public readonly record struct StoreStamp(int Version, int Writer);
 
-/// <summary>What a store is opened by an engine with: the writer stamp this process writes with, its clock, the build it records, and how long a write waits on the lock (five seconds where null).</summary>
-public sealed record DesktopStoreEngineOptions(int Writer, TimeProvider Clock, string Build, TimeSpan? BusyWait = null);
+/// <summary>What a store is opened by an engine with: the writer stamp this process writes with, its clock, the build it records, and how long a write waits on the lock (<see cref="DefaultBusyWait"/> where null).</summary>
+public sealed record DesktopStoreEngineOptions(int Writer, TimeProvider Clock, string Build, TimeSpan? BusyWait = null)
+{
+    public static TimeSpan DefaultBusyWait { get; } = TimeSpan.FromSeconds(5);
+}
 
 /// <summary>How a file is opened by <see cref="DesktopStoreEngines.Connect"/>.</summary>
 public enum DesktopOpen
@@ -80,4 +83,12 @@ public interface IDesktopStoreEngine : IDesktopUnitOfWork, IDisposable
 public sealed record DesktopStoreEngines(
     Func<string, DesktopStoreEngineOptions, IDesktopStoreEngine> Open,
     Func<string, DesktopOpen, DbConnection> Connect,
-    Action ReleaseConnections);
+    Action ReleaseConnections)
+{
+    /// <summary>The pages a connection of <see cref="Connect"/> put on disk since the last ask, which starts the count again: under write-ahead
+    /// logging the log's frames, a checkpoint's copy into the file aside; null where the engine cannot say.</summary>
+    public Func<DbConnection, long?> PagesWritten { get; init; } = _ => null;
+
+    /// <summary>Whether a failure of a connection of <see cref="Connect"/> is the file's lock held past the wait, which a later try may pass.</summary>
+    public Func<Exception, bool> Busy { get; init; } = error => error is StoreLockBusyException;
+}

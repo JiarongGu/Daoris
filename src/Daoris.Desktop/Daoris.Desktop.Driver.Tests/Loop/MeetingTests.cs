@@ -72,7 +72,7 @@ public sealed class MeetingTests : IDisposable
                 Most = Math.Max(Most, ++_now);
                 Rooms[turn.Turn] = string.Join("\n", Directory.EnumerateFiles(turn.Room, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal)
                     .Select(file => Path.GetFileName(file) + "\n" + File.ReadAllText(file)));
-                Packets[turn.Turn] = File.ReadAllBytes(Path.Combine(turn.Room, BrainstormInstruction.PacketFile));
+                Packets[turn.Turn] = File.ReadAllBytes(Path.Combine(turn.Room, MeetingInstruction.PacketFile));
             }
 
             try

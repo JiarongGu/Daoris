@@ -46,6 +46,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     public static string KeyOf(string unit) => WorkplaceRunFiles.UnitKey(unit);
 
+    public bool Exists(string unit) => File.Exists(PathOf(home, unit));
+
     /// <summary>The unit's record: an empty one where it has none, null where its file does not read.</summary>
     public NodeRecord? Read(string unit)
     {
@@ -300,6 +302,28 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         }
 
         RunMoveJson.Write(writer, record.Moves);
+
+        // What came of telling the work what a step sent back, written only where a telling stands.
+        if (record.Told.Count > 0)
+        {
+            writer.WriteStartArray("told");
+            foreach (var told in record.Told.Skip(Math.Max(0, record.Told.Count - NodeRecord.ToldKept)))
+            {
+                writer.WriteStartObject();
+                writer.WriteString("node", told.Node);
+                writer.WriteNumber("attempt", told.Attempt);
+                if (told.Session is { } session) writer.WriteString("session", session);
+                if (told.Why is { } why) writer.WriteString("why", why);
+                if (told.Spent) writer.WriteBoolean("spent", true);
+                if (told.Decided is { } decided) writer.WriteString("decided", decided);
+                if (told.Role is { } role) writer.WriteString("role", role);
+                writer.WriteString("at", Moments.Write(told.At));
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
         writer.WriteEndObject();
     });
 
@@ -583,11 +607,32 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             }
 
             if (RunMoveJson.Read(root) is not { } moves) return null;
+
+            // Each telling, absent where none stands; an entry that does not read is left out, never the record.
+            var tellingsRead = new List<NodeTold>();
+            if (root.TryGetProperty("told", out var tellings) && tellings.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var each in tellings.EnumerateArray())
+                {
+                    if (each.ValueKind != JsonValueKind.Object || Text(each, "node") is not { } node || Moments.Read(each, "at") is not { } at
+                        || !each.TryGetProperty("attempt", out var attempt) || !attempt.TryGetInt32(out var number))
+                    {
+                        continue;
+                    }
+
+                    tellingsRead.Add(new NodeTold(node, number, Text(each, "session"), Text(each, "why"), at)
+                    {
+                        Spent = each.TryGetProperty("spent", out var spent) && spent.ValueKind == JsonValueKind.True,
+                        Decided = Text(each, "decided"), Role = Text(each, "role"),
+                    });
+                }
+            }
+
             return Consistent(unit, statuses, attempts)
                 ? new NodeRecord(unit)
                 {
                     Statuses = statuses.ToImmutableSortedDictionary(StringComparer.Ordinal), Attempts = attempts, Fired = fired, History = history,
-                    Observations = observations, Ended = ended, Pending = pending, Repairs = repairs, Moves = moves,
+                    Observations = observations, Ended = ended, Pending = pending, Repairs = repairs, Moves = moves, Told = tellingsRead,
                 }
                 : null;
         }

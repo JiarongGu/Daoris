@@ -8,6 +8,8 @@ import { sessionOrigin } from '../identity';
 import type { Answered } from '../InlineConfirm';
 import { AwaitingPerson } from '../waits/AwaitingPerson';
 import { ConversationSignIn } from '../waits/ConversationSignIn';
+import type { BandTold } from '../band/bandRows';
+import { lifetimeOf, pathTo } from '../beside/besides';
 import { type DockLine, dockName, dockOf, type DockWait } from '../waits/dock';
 import { HelperAsks } from '../waits/HelperAsks';
 import { HandOverAgentAsk } from '../waits/HandOverAgentAsk';
@@ -44,7 +46,7 @@ export type DockCards = {
  * what its run waits on that no press of the person's settles
  * (`RunParts`). A teammate's session draws its waits as one line with no press, since nothing this window sends reaches it.
  */
-export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits, quest, asker, refused }: {
+export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits, quest, beside = null, asker, refused }: {
   t: TFunction;
   props: WaitProps;
   answerBelow: boolean;
@@ -52,6 +54,7 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
   ruleAsk?: RuleAsk;
   runWaits: RunWaitDoors | null;
   quest: Quest | null;
+  beside?: BandTold | null;
   asker: Asker;
   /** Where a press's refusal is said: the page's notice. */
   refused: (sentence: string) => void;
@@ -85,10 +88,16 @@ export function dockCardsOf({ t, props, answerBelow, workAsk, ruleAsk, runWaits,
     send({ done: () => settle(), refused: (said) => { refused(said); settle(); } });
   });
   const card = (line: DockLine, fields: Partial<WaitCardFacts>): WaitCardFacts => ({
-    id: line.key, title: dockName(t, line.wait), kind: line.wait.kind, since: line.since, what: '', look: [], known: [],
+    id: line.key, by: byOf(line, beside), title: dockName(t, line.wait), kind: line.wait.kind, since: line.since, what: '', look: [], known: [],
     from: { ...asker, at: line.since }, ...fields,
   });
   let worked = false;
+  const byOf = (of: DockLine, told: BandTold | null): WaitCardFacts['by'] => {
+    if (!of.child) return undefined;
+    const held = told ? lifetimeOf(told.lifetimes, of.child) : null;
+    const name = held ? held.name ?? held.task ?? held.id : null;
+    return { name, open: name && told ? () => told.open({ child: pathTo(told.lifetimes, of.child!) }) : undefined };
+  };
   const cards = drawn.flatMap((line): WaitCardFacts[] => {
     const { wait } = line;
     const inConversation = (to: (() => void) | undefined) => (to ? [{ label: t('work.wait.inConversation'), onOpen: to }] : []);

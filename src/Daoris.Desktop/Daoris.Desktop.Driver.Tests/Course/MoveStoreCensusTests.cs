@@ -207,7 +207,7 @@ public sealed class MoveStoreCensusTests
         Assert.Matches(@"new Driver\([^;]*\)\s*\{\s*Share = Share,", watch);
 
         var host = CourseCensusTests.WithoutComments(HostProgramSource.Read(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Host")));
-        Assert.Matches(@"new DriverWatch\([^;]*\)\s*\{\s*Log = log, Share = held\.Beside is not null \}", host);
+        Assert.Matches(@"new DriverWatch\([^;]*\)\s*\{\s*Log = log, Share = held\.Beside is not null, Bus = bus \}", host);
     }
 
     [Fact]

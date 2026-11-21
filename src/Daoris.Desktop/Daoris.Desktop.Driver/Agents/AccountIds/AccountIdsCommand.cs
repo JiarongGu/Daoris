@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <c>daoris home account-ids</c>: the one-time move of every agent account id an earlier build named by a counter or a word to the hash
 /// form (<see cref="AccountIdMoves"/>). <c>--plan</c> says each move, the account's name beside it, and every reference it would change,
 /// changing nothing; <c>--yes</c> does it, only while nothing of Daoris runs on the home, and says what it changed. Run again, it finds
-/// nothing.
+/// nothing. An account whose folder a process holds is said with that process (name and id), left whole and moved by the next <c>--yes</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Refused while Daoris runs</b>, as <c>home purge</c> is (<see cref="HomeAtRest"/>): a running instance holds the stores open

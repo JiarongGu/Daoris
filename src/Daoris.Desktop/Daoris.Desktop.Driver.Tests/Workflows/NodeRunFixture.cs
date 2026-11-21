@@ -39,6 +39,8 @@ public abstract class NodeRunFixture : NodeRuntimeFixture
 
     protected int _gatesRead;
 
+    protected OpinionGateState? _opinionGate;
+
     /// <summary>A look over the run's home: the units the test sets, the branches' tips, and the gates counted.</summary>
     protected NodeRuntimeLook RunLook(string config = "{}", bool whole = true) => Look(config, whole) with
     {
@@ -56,7 +58,7 @@ public abstract class NodeRunFixture : NodeRuntimeFixture
         Gates = (_, _, _) =>
         {
             Interlocked.Increment(ref _gatesRead);
-            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((null, null));
+            return Task.FromResult<(OpinionGateState?, ReviewGateState?)>((_opinionGate, null));
         },
     };
 

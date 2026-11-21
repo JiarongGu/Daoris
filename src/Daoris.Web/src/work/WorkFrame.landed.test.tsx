@@ -12,7 +12,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 
 import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
-  CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, show, userEvent,
+  CHAT, DRIVEN, DRIVER_STATE, PARKED, PARKED_INTAKE, QUESTS, REGISTRY, ROSTER, STRUCTURED_ROSTER, openTab, show, userEvent,
 } from '../test/workFrameKit';
 import { DiffPane } from './review/DiffPane';
 import { BRANCH_OUTPUTS } from './review/run/runReviewFixtures';
@@ -658,8 +658,6 @@ describe('a session’s page header and its acts', () => {
       if (module === 'DAORIS.TERMINAL' && type === 'SHELLS') return { shells: [{ shell: 'pwsh' }], default: 'pwsh' };
       return DRIVER_STATE;
     });
-    // A viewer who hid the panel: the press shows it again, on the terminal.
-    window.localStorage.setItem('daoris.panelClosed', '1');
     attending('s1a2b3c4', true);
 
     const user = userEvent.setup();
@@ -670,7 +668,6 @@ describe('a session’s page header and its acts', () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/engine' } }));
     expect(await screen.findByRole('tab', { name: 'Terminal', selected: true })).toBeInTheDocument();
-    window.localStorage.removeItem('daoris.panelClosed');
   });
 
   /** *Open folder* names the session alone: the module names its folder (§3.5). */
@@ -737,7 +734,7 @@ describe('reviewing what a session landed', () => {
    */
   it('lays the changes out unified or side by side, and remembers which', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
     await userEvent.click(await screen.findByText('src/chunk.ts'));
 
     const layout = screen.getByRole('radiogroup', { name: 'Layout' });
@@ -754,7 +751,7 @@ describe('reviewing what a session landed', () => {
 
   it('reads the landed work off the checkout when the review tab is opened', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
 
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
     // Within the review's own bound: the bridge's 30 seconds would give up on a diff git takes most of a minute over.
@@ -780,7 +777,7 @@ describe('reviewing what a session landed', () => {
       (type === 'SESSION_DIFF' ? new Promise(() => {}) : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
 
     expect(await screen.findByText('Reading the changes in engine…')).toBeTruthy();
     expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
@@ -798,7 +795,7 @@ describe('reviewing what a session landed', () => {
       : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
 
     expect(await screen.findByText(/9 more files changed/)).toBeTruthy();
   });
@@ -816,7 +813,7 @@ describe('reviewing what a session landed', () => {
     });
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
 
     expect(await screen.findByText(/work is not on this machine/)).toBeTruthy();
   });
@@ -828,7 +825,7 @@ describe('reviewing what a session landed', () => {
       (type === 'SESSION_DIFF' ? { ...DIFF, files: [], uncommitted } : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
 
     expect(await screen.findByText('src/draft.ts')).toBeTruthy();
     expect(screen.queryByText('Nothing landed')).toBeNull();
@@ -869,7 +866,7 @@ describe('acting on what a session landed', () => {
 
   const review = async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
     await screen.findByText('src/chunk.ts');
   };
 
@@ -1013,7 +1010,7 @@ describe('acting on what a session landed', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ENTRY_LANDING', expect.anything());
 
     // Its changes draw no press of their own either: accepting is the card's.
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
     const review = within(await screen.findByRole('tabpanel'));
     await review.findByText('src/chunk.ts');
     expect(review.queryByRole('button', { name: /Accept/ })).toBeNull();
@@ -1228,7 +1225,7 @@ describe('acting on what a session landed', () => {
     const notify = vi.fn();
 
     show('s1a2b3c4', notify);
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
     const review = await screen.findByRole('tabpanel');
     await within(review).findByText('src/chunk.ts');
     await within(review).findByRole('button', { name: 'Discard branch…' });
@@ -1370,7 +1367,7 @@ describe('acting on what a session landed', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await userEvent.click(await screen.findByRole('tab', { name: 'Outputs' }));
+    await openTab('Outputs');
     await screen.findByText('src/chunk.ts');
 
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();

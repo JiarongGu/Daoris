@@ -757,7 +757,7 @@ test('told an output of its own, every publish builds and stages there; untold, 
   for (const recipe of ['launcherPublishCommand', 'appPublishCommand', 'driverPublishCommand', 'publishHost']) {
     const calls = [...main.matchAll(new RegExp(`\\b${recipe}\\(([^)]*)\\)`, 'g'))].map((call) => call[1]!);
     assert.ok(calls.length >= 1, `the publish no longer runs ${recipe}`);
-    for (const args of calls) assert.match(args, /,\s*artifacts$/, `${recipe}(${args}) builds into the projects' own folders`);
+    for (const args of calls) assert.match(args, /, artifacts, version$/, `${recipe}(${args}) builds in the project folders`);
   }
   assert.match(main, /\bpublishStages\(repoRoot, artifacts\)/);
 });

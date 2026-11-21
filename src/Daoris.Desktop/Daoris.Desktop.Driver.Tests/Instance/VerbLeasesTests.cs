@@ -9,6 +9,8 @@ public sealed class VerbLeasesTests
     [Theory]
     // The mutations a verb makes alone, for its run.
     [InlineData("trees land s-1")]
+    [InlineData("home purge --history --yes")]
+    [InlineData("home account-ids --yes")]
     [InlineData("trees remove some-branch --force")]
     [InlineData("trees clean --yes")]
     [InlineData("trees sync --all --yes")]
@@ -126,6 +128,8 @@ public sealed class VerbLeasesTests
     [Theory]
     // Reads.
     [InlineData("trace commit abc")]
+    [InlineData("home")]
+    [InlineData("home purge --history --plan")]
     [InlineData("git branches")]
     [InlineData("logs --since 2h")]
     [InlineData("workflow run --session s-1")]

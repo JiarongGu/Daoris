@@ -25,6 +25,22 @@ public static class OpinionGateReading
 
     public const string Vacant = "vacant";
 
+    /// <summary>The holds of a dispute, or of commits nobody read, that the risk policy gates on the step's role.</summary>
+    public const string RoleDisputed = "role-disputed", RoleCommitsSince = "role-commits-since";
+
+    private static string? RoleHold(OpinionGateState gate) => gate.Risk is { Outcome: RiskVerdict.Gate } ? gate.State switch
+    {
+        OpinionGateStates.Disputed => RoleDisputed,
+        OpinionGateStates.CommitsSince => RoleCommitsSince,
+        _ => null,
+    } : null;
+
+    /// <summary>The line of a hold the risk policy passed at the gate (<c>OpinionGate.JudgeAsync</c>'s answer by the policy); null for every other gate.</summary>
+    public static string? PassedLine(OpinionGateState? gate) =>
+        gate is { State: OpinionGateStates.Answered, Person.Said: OpinionPersonSaid.Policy, Risk: { Outcome: RiskVerdict.Pass } verdict }
+            ? gate.Person.Words is { Length: > 0 } words ? words : verdict.Passed
+            : null;
+
     /// <summary>What the gate says of the reading's node on its binding, for its unit's work: an outcome by the gate's authority, or none, which is pending.</summary>
     public static NodeObservation Observe(NodeReading reading)
     {
@@ -75,13 +91,17 @@ public static class OpinionGateReading
 
         return gate.State switch
         {
+            // A hold the risk policy passed reaches it with the pass's line, which the run's step says under it.
+            OpinionGateStates.Answered when PassedLine(gate) is { } passed =>
+                Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person!.Said}", tip, $"its gate's {gate.Answered} passed by the risk policy: {passed}")
+                    with { Words = passed },
             OpinionGateStates.Settled or OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered =>
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
             OpinionGateStates.Unavailable when OpinionStepWaits.EndedSaid(gate.Code) is { } ended =>
                 Seen(NodeStates.Failed, ended) with { Source = NodeSource.Opinion, Code = gate.Code },
             OpinionGateStates.Unavailable when !gate.Required => Skipped("none could be had, and its rule does not require one"),
-            _ => Seen(null, $"its gate says {gate.State}") with { Holds = gate.Required && OpinionVacancy.Of(gate) is not null ? Vacant : gate.State },
+            _ => Seen(null, $"its gate says {gate.State}") with { Holds = gate.Required && OpinionVacancy.Of(gate) is not null ? Vacant : RoleHold(gate) ?? gate.State },
         };
     }
 }

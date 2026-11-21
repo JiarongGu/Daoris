@@ -297,25 +297,31 @@ public static class WorkflowRunReader
             ? new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository })
             : await ReviewGate.ReadAsync(reads.World, sources.Config, tree, repository, workspace, null, reads.Ct, process, tip.Head, run, sources.Home, newest.Id)
                 .ConfigureAwait(false);
+        // A run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
+        var record = reads.Records.Record(RunUnits.IdOf(bound));
+        var opinion = tip is not null && OpinionStands(graph, record)
+            ? await reads.Records.OpinionAsync(
+                new RunOpinionRead(tree, repository, workspace, null, newest.Id, reads.World, review, process) { At = tip.Head, Run = run }, reads.Ct).ConfigureAwait(false)
+            : null;
         var facts = new WorkflowRunFacts(repository, current)
         {
             Sessions = line,
             Review = review,
+            Opinion = opinion,
             Process = process,
             WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => ids.Any(entry.Names))],
             Accepted = reads.Records.Acceptances(line),
             Chat = new ChatRunFacts(run) { Tip = tip?.Head, Beyond = tip?.Beyond, Between = reads.Records.Between(newest.Id) },
         };
-        // A run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
-        var record = reads.Records.Record(RunUnits.IdOf(bound));
         return WorkflowGraphRuns.Derive(
             new WorkflowGraphRunFacts(facts, bound, graph, record)
             {
                 Branches = reads.Branches, Failures = CheckResults.Failures(sources.Home, bound, graph, record), Integration = IntegrationOf(sources.Home, graph, record),
                 Slots = CheckSlotWaits.Read(sources.Home, graph, record),
                 Needs = RunNeeds.Of(sources.Home, record), Holding = StepTenureFiles.HoldingOf(sources.Home, bound, record),
-                Cast = CastReading.Home(sources.Home, workspace, repository), Vacancies = new StepVacancyFiles(sources.Home).Of(RunUnits.IdOf(bound)), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
+                Cast = CastReading.Home(sources.Home, workspace, repository), ServesRole = CastReading.ServesHome(sources.Home, workspace, repository),
+                Vacancies = new StepVacancyFiles(sources.Home).Of(RunUnits.IdOf(bound)), Acts = StepActFiles.Journal(sources.Home, RunUnits.IdOf(bound)),
             },
             workspace) with { Session = newest.Id, ChatRun = run, ChatChecks = checks };
     }
@@ -338,6 +344,11 @@ public static class WorkflowRunReader
             .OrderBy(session => session.Created ?? DateTimeOffset.MinValue)
             .LastOrDefault(session => reads.Records.Stands(session.Tree!));
         var review = await ReviewAsync(chain, repository, ask, askUnread, standing?.Tree, reads, process with { Review = null, Look = null }).ConfigureAwait(false);
+        var record = reads.Records.Record(RunUnits.IdOf(run));
+        var opinion = standing is not null && OpinionStands(graph, record)
+            ? await reads.Records.OpinionAsync(
+                new RunOpinionRead(standing.Tree!, repository, workspace, standing.Quest, standing.Id, reads.World, review, process), reads.Ct).ConfigureAwait(false)
+            : null;
         var facts = new WorkflowRunFacts(repository, current)
         {
             Quests = part,
@@ -345,11 +356,11 @@ public static class WorkflowRunReader
             Sessions = mine,
             GoAheads = ask?.GoAheads ?? [],
             Review = review,
+            Opinion = opinion,
             Process = process,
             Requests = RequestsOf(part, mine, sessions, reads),
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
         };
-        var record = reads.Records.Record(RunUnits.IdOf(run));
         // What the integration record says promoted, asked only where the run's graph holds an `integrate`.
         var promoted = record is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
             ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
@@ -360,7 +371,8 @@ public static class WorkflowRunReader
                 Branches = reads.Branches, Promoted = promoted, Failures = CheckResults.Failures(reads.Sources.Home, run, graph, record),
                 Slots = CheckSlotWaits.Read(reads.Sources.Home, graph, record),
                 Integration = IntegrationOf(reads.Sources.Home, graph, record), Needs = RunNeeds.Of(reads.Sources.Home, record),
-                Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository), Vacancies = new StepVacancyFiles(reads.Sources.Home).Of(RunUnits.IdOf(run)),
+                Holding = StepTenureFiles.HoldingOf(reads.Sources.Home, run, record), Cast = CastReading.Home(reads.Sources.Home, workspace, repository), ServesRole = CastReading.ServesHome(reads.Sources.Home, workspace, repository),
+                Vacancies = new StepVacancyFiles(reads.Sources.Home).Of(RunUnits.IdOf(run)),
                 Acts = StepActFiles.Journal(reads.Sources.Home, RunUnits.IdOf(run)),
                 // What its part waits on and its joint checks hold, read from its ask's plan and the parts' journals as the pass reads them.
                 Parts = PartViews.Read(reads.Sources.Home, askId is null ? null : await reads.PartsAsync(askId).ConfigureAwait(false), run,
@@ -422,6 +434,11 @@ public static class WorkflowRunReader
             ? Task.FromResult<bool?>(null)
             : ReviewGit.HoldsAsync(tree, tip, commit, reads.Ct)).ConfigureAwait(false);
     }
+
+    /// <summary>Whether the run's <c>opinion</c> step stands on its gate, which is then read so its wait carries the gate's count and
+    /// session (<see cref="OpinionStepWaits.WaitOf"/>); a step not standing asks no git.</summary>
+    private static bool OpinionStands(NodeGraph graph, NodeRecord? record) =>
+        graph.Nodes.Any(node => node.Kind == NodeKinds.Opinion && record?.Statuses.GetValueOrDefault(node.Id) is { State: NodeStates.Active });
 
     /// <summary>A read the service did not answer: unreachable, refused, unparsable, or a client's own time-out, never the person's cancel.</summary>
     private static bool Unanswered(Exception error, CancellationToken ct) =>

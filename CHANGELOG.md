@@ -5,10 +5,38 @@ with the version and date at release.
 
 ## Unreleased
 
+- The first step of the Daoris bus: the driver holding the home keeps a log of each second opinion asked, given, answered and
+  delivered, and each check started and settled, with no reader yet, beside today's records and never failing them. `daoris bus
+  stats` reads what it measures by the day: events by kind, how long each took, the log's writes, the rows' bytes beside the pages
+  written to disk, and each look stage's time, from which the bus's budgets and deadlines are set. An entry a busy store refuses
+  is tried again, in its order, before it is ever dropped.
+- Every kind of entry on the bus is declared once, with who must act on it, by when, how many times it is tried again and what
+  happens if nobody does, which always ends at your final notice, never a silent give-up. A value an entry cannot carry (a
+  repository named with a space, a test class with arguments) is left out and counted in `daoris bus stats`, and the entry is kept.
+  A driver that loses the home and takes it back no longer loses every later entry.
+- The bus watches its own deadlines, still only looking: each entry someone must act on starts a timer that survives a restart,
+  and past its deadline the bus records a stall for each retry and then what it would do, handing the step to whoever holds it
+  before your final notice. `daoris bus stalls` lists what is overdue, since when, who should act, which retry and what would
+  happen; `--compare` sets what today's views say beside each stall, so the bus's verdicts can be checked before it acts on any.
+- A vacant step's loose ends are tied. How long Daoris lets one stand before giving it up is a setting you can change
+  (`daoris settings vacancy <hours>`, or its row beside the checks setting), its toast now reads as something waiting on
+  somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its
+  line in the risk journal, and Daoris's give-up reads as its own only for a vacancy.
+
+- A folder registered inside another repository is read as a folder everywhere: the clean-up no longer lists that repository's session branches as the folder's own or waits on you for each, and the folder's page draws Details, Files and Workflow alone, with no Branches, History, Changes or Integration tab.
 - A second opinion no longer stalls at its landing after a restart. Findings a restart cut off before the working session answered
   them are read again once it answers, so a fix it commits gets its one recheck; a recheck whose first reviewer cannot run goes to
   the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no
   other agent read) says so on its step, with the count, instead of reading as working.
+- Every published build carries its own version: each publish (or stage) takes the next one above anything its install has carried, staged, tried or run (0.0.2, 0.0.3, …), where every build said 0.0.1. The window's System page, the machine log, `daoris --version` and the staged build's manifest name it, and `daoris update` says the version and commit the install's own application carries before what is staged.
+- A brainstorm's passes get minutes that fit what it asks: a design pass twice the policy's, a question naming whole sources half
+  as long again. Each pass is told its minutes and asked to give its answer so far early; a pass cut at its deadline keeps the last
+  answer it gave, marked partial on its record and in the document, and the synthesis reads it with the others instead of losing it.
+
+- A brainstorm's pass reads its packet as files instead of one large JSON: an index naming the question and each source's file,
+  where it came from, its size, how many of the question's terms it holds and why it is in, and one Markdown file per source. A
+  source the search matched by words alone that holds few of the question's terms is listed apart, so a pass opens only what it
+  needs.
 
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood
@@ -24,8 +52,10 @@ with the version and date at release.
 - A run's check no longer fails on a generated file that is out of date: before its checks, it runs the commands the repository declares to regenerate such files (`regenerate` in `daoris.gates.json`) at the commit it checks, every time, where it used to run them only when it first set up its working copy. A regenerate that fails leaves the check unknown, naming the command and its output, and never sends the work back. A failed check now tells the session the failing step's own lines and where its log is, not only the exit code.
 - The machine runs several run checks at once instead of one: by default (`auto`) another heavy run starts while the machine keeps 8 GB of free memory and commit for it, and 8 GB more for each run still in its first step, up to a quarter of its processors, and `daoris settings checks <n>|auto` (Settings → Agents and sessions, *Checks at once*) pins a number, never more than the machine's heavy-run admission holds. Checks, sessions' `run-heavy` runs and integrations' gated lines are judged together, so none starts unseen beside another. One repository's go side by side, each check in a verification tree of its own slot, unless its `daoris.gates.json` says `"heavySlots": 1` (or another count). A check that waits says why on its step: every slot running, memory (how much is free and needed), or every slot of its repository held. The web gate's host listens on a port of its own per checkout, so two checks of this repository no longer collide on 5196.
 - `daoris workflow list` names each saved workflow version that still spells the former `human` step kind (read as a `task`), so you can see which versions keep the older reader in use.
+- `daoris home account-ids --plan` and `--yes` name each process holding an account’s folder (a browser’s Claude native host, a session’s working folder) by name and id, never stopping one, and leave that account whole for the next `--yes`; the browser’s native-messaging manifest follows a moved account to its new folder instead of naming one that is gone.
 - `daoris home purge --history --plan` lists, and `--yes` moves out, a home's history for a clean start: its sessions, quests, asks, runs, notices and the other records of work done, and the history tables of its stores (each store is copied whole first), into `purged/<UTC stamp>/` beside the install. Accounts, settings, roles, casts, workflows, plugins and sign-ins stay. It refuses while a desktop, a `daoris drive` or the service holds the home, and says how to close Daoris.
 - A session's conversation shows its subagents and background tasks where they happened: a subagent is a row under the call that started it, with its task, how it stands, its calls, how long it ran and its closing words, and opens in place to its own turns; one it started opens in the conversation's place with a breadcrumb back. A background task is a row where it started and one where it ended, with its last lines, each a press to the other. *At work* no longer lists subagents.
+- A tool call a subagent asks you to allow now says which subagent asked (*From subagent find expiry tests*), with *Open* to read that subagent where it works; a subagent started by another subagent stands right under it in the list of what runs now, and *Since you left* counts the ones other subagents started. `daoris session at-work` no longer prints subagents: they are in the session's conversation.
 - A release the Azure DevOps plugin (4.2.0) follows says when its stage waits on someone: a pending approval reads as waiting on `approver`, a stage the step observes that nothing started as waiting on `deployer`, each with who holds it and the release's page, in the run's view, in *What needs you* and in Sessions' Needs you, where before the step showed working with nothing said. The approval stays yours, in Azure DevOps. A release the step did not find names the definition's newest releases and the build each carries.
 - Paired acts in the window read as pairs in Chinese: the four notes in Notifications that said 显示 and 收起 now say 显示 and 隐藏, the curve editor's rows are 添加一行 and 移除, and a workspace's unwire is 解除接线 beside 接线 (it was 断开). The glossary names its pairs, and a test holds each to both languages.
 - `daoris place line <repository>|--workspace <name>` takes the line policy's keys, `--commit`, `--batch`, `--order`, `--gates`, `--unreached`, `--reached` and `--integrate-line`, and `--no-policy` to withdraw it: the terminal's door to what the window's press edits beside the line, judged by the same rules, so a line's gates can be set to `declared` without the window. The keys merge into the policy the place already holds, and with no branch named the line stays as it is.

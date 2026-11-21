@@ -209,7 +209,7 @@ export function useRegionSurfaces({
     if (view === 'console' && where === 'right') {
       return withWhose(
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
-          {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
+          {consoleView}
         </div>,
       );
     }

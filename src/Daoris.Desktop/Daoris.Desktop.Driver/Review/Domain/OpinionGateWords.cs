@@ -44,12 +44,12 @@ public static class OpinionGateWords
                 $"{Plural(gate.Disputes!.Count, "finding")} by {who} {(gate.Disputes.Count == 1 ? "is" : "are")} disputed: a `must` the working "
                 + "session did not fix and no recheck withdrew" + SinceSaid(gate) + $". {Verb(gate, "show")} lists them with their answers; your "
                 + $"Accept, or your Reviewed where a look is required, answers them; {anyway} lands it over them, or "
-                + $"`daoris session say {gate.Opinion!.Working} \"…\"` sends it back.",
+                + $"`daoris session say {gate.Opinion!.Working} \"…\"` sends it back." + RoleSaid(gate),
             OpinionGateStates.CommitsSince =>
                 $"{Plural(gate.Since ?? 0, "commit")} since {(gate.Since == 1 ? "was" : "were")} not read by another agent: {who} read it at "
                 + $"`{Short(gate.Recheck is { Given: true } recheck ? recheck.Tip : gate.Opinion!.Tip)}`, and one pass and one recheck are "
                 + $"spent for this work. Your Accept, or your Reviewed where a look is required, answers them; {anyway} lands them, or "
-                + $"{Verb(gate, "ask")} asks again.",
+                + $"{Verb(gate, "ask")} asks again." + RoleSaid(gate),
             OpinionGateStates.Unavailable => $"No second opinion: {UnavailableWhy(gate)}. " + (gate.Required
                 ? $"The rule requires one, so the work waits for you: {Verb(gate, "ask")} tries again, with `--same-agent` asks the same "
                   + $"agent in a fresh conversation, {Verb(gate, "myself", "\"…\"")} records your own reading, or {anyway} lets it land without one."
@@ -57,9 +57,12 @@ public static class OpinionGateWords
             OpinionGateStates.Settled => Settled(gate),
             OpinionGateStates.Anyway => $"You went on without a settled second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
             OpinionGateStates.Myself => $"You looked at it yourself in place of another agent's reading{WordsSaid(gate.Person)}.",
-            OpinionGateStates.Answered => gate.Person?.Said == ReviewVerdicts.Reviewed
-                ? $"Your Reviewed answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}."
-                : $"Your Accept answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
+            OpinionGateStates.Answered => gate.Person?.Said switch
+            {
+                ReviewVerdicts.Reviewed => $"Your Reviewed answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
+                OpinionPersonSaid.Policy => $"The risk policy answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
+                _ => $"Your Accept answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
+            },
             // The named workflow's step sits, saying what declares it; the person's own answers
             // are the floor, as they are where no opinion can be had.
             OpinionGateStates.CannotStart => $"Waits for a second opinion, and it cannot start: {gate.Problem} {anyway} lets it land "
@@ -81,6 +84,11 @@ public static class OpinionGateWords
     /// </summary>
     public static string AskedAtPress(OpinionGateState gate) =>
         $"A second opinion is asked: {Reviewer(gate)} reads it from the driver's next look; press Accept again once it settles.";
+
+    /// <summary>The policy gating the dispute on the opinion step's own role (its run step names it), never the row's <c>by</c>, and its rule.</summary>
+    private static string RoleSaid(OpinionGateState gate) => gate.Risk is { Outcome: RiskVerdict.Gate } verdict
+        ? $" The risk policy asks the role holding the second opinion's step, not you, for the answer: {verdict.Why}."
+        : "";
 
     /// <summary>What the person's answer answered: the disputes, or the commits nobody read, as the gate stood beneath it.</summary>
     private static string Answering(OpinionGateState gate) => gate.Answered switch

@@ -48,8 +48,8 @@ public static class DesignPasses
     public static BrainstormPacket Packet(BrainstormRequest request) =>
         BrainstormPackets.Freeze(request.Question, null, null, null, [], BrainstormBounds.First);
 
-    public static string Generator(BrainstormRequest request, string digest) =>
-        Is(request) ? BrainstormInstruction.Designer(digest) : BrainstormInstruction.Generator(digest);
+    public static string Generator(BrainstormRequest request, string digest, int minutes) =>
+        Is(request) ? BrainstormInstruction.Designer(digest, minutes) : BrainstormInstruction.Generator(digest, minutes);
 
     public static string Synthesizer(BrainstormRequest request, string digest) =>
         Is(request) ? BrainstormInstruction.Comparer(digest) : BrainstormInstruction.Synthesizer(digest);

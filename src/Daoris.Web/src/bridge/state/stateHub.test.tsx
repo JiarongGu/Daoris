@@ -235,7 +235,7 @@ describe('the state hub (who is at work, COWORKVIEW1a)', () => {
   it('a change naming atWork during the first fetch joins it and asks once more after it', async () => {
     let first: (answer: unknown) => void = () => undefined;
     let reads = 0;
-    const reply = (n: number) => ({ answer: { of: { session: 's1' }, attended: 's1', parts: [], subagents: { read: 'read', working: n, children: [] } }, at: { epoch: 'e', n } });
+    const reply = (n: number) => ({ answer: { of: { session: 's1' }, attended: 's1', parts: Array.from({ length: n }, (_, i) => ({ key: `p${i}`, children: {} })) }, at: { epoch: 'e', n } });
     invoke.mockReset();
     invoke.mockImplementation(async (_module: string, route: string) => {
       if (route !== 'SESSION_AT_WORK') return {};
@@ -256,7 +256,7 @@ describe('the state hub (who is at work, COWORKVIEW1a)', () => {
     await act(async () => first(reply(1)));
 
     await waitFor(() => expect(reads).toBe(2));
-    await waitFor(() => expect(client.getQueryData<{ answer: { subagents: { working: number } } }>(['atWork', 's1'])?.answer.subagents.working).toBe(2));
+    await waitFor(() => expect(client.getQueryData<{ answer: { parts: unknown[] } }>(['atWork', 's1'])?.answer.parts.length).toBe(2));
   });
 });
 

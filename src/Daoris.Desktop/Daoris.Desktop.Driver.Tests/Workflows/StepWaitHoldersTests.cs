@@ -122,6 +122,24 @@ public sealed class StepWaitHoldersTests
     }
 
     [Fact]
+    public void A_kept_vacancy_of_a_step_served_again_is_no_row_when_it_is_read()
+    {
+        var release = Release with { Role = StepRoles.ReleaseManager };
+        var record = Standing("release", Active("release") with { Unreconciled = 1 }, SignIn().Attempts[0] with
+        {
+            Progress = new StepProgress(StepRoles.ReleaseManager, "Moving to Production.", "https://dev.azure.com/acme", null, Now.AddDays(-3)),
+        });
+        var held = HeldBy("release", StepRoles.ReleaseManager, CastHolders.Agent);
+        StepVacancy[] kept = [new("release", record.Statuses["release"].Attempt, Now, true, false)];
+
+        var still = HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, vacancies: kept, serves: _ => false);
+        var served = HeldSteps.Step(Run, "engine", "aurora", Run, release, record, held, vacancies: kept, serves: role => role == StepRoles.ReleaseManager);
+
+        Assert.True(still?.Vacant);
+        Assert.Null(served);
+    }
+
+    [Fact]
     public void A_plugin_actor_cast_to_an_agent_with_no_live_session_is_a_vacancy()
     {
         var home = Path.Combine(AppContext.BaseDirectory, "_vacancy-" + Guid.NewGuid().ToString("N")[..8]);

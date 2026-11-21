@@ -1458,6 +1458,9 @@ literally one, for every node.** What differs between kinds is only **evidence a
 | skipped → blocked | the person withdraws their skip; it is judged again | the person |
 | skipped → invalidated | its graph or run is another: a skip holds for its own alone | Daoris |
 | any live state → stopped | the person stops this node | the person |
+| any live state → stopped | a step stood vacant past its bound is given up (`StepVacancies`) | Daoris |
+| failed → stopped | the person stops a failed node, which ends it and its run as stopped | the person |
+| failed → stopped | a check red past its rounds is given up where the risk policy passes `work.recover` (`SpentChecks`, D354) | Daoris |
 | any bound state → invalidated | its binding changed. History is kept, and unresolved attempts are superseded (§D3) | Daoris |
 | invalidated → blocked or ready | judged again on a fresh binding | Daoris |
 

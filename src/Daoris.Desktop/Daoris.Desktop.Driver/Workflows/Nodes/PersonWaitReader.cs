@@ -6,7 +6,8 @@ namespace Daoris.Driver;
 /// </summary>
 public static class PersonWaitReader
 {
-    public static IReadOnlyList<PersonWait> Of(IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record, string? home = null, PlaceRiskBook? risk = null)
+    public static IReadOnlyList<PersonWait> Of(
+        IEnumerable<GraphRun> runs, Func<string, NodeRecord?> record, string? home = null, PlaceRiskBook? risk = null, Func<string?, string?, bool>? live = null)
     {
         var waits = new List<PersonWait>();
         var casts = home is null ? null : new PlaceCastFiles(home).Book();
@@ -26,16 +27,19 @@ public static class PersonWaitReader
             var holding = home is null ? null : StepTenureFiles.HoldingOf(home, run.Run, kept);
             var cast = casts is null ? null : CastReading.At(casts, risk, run.Binding.Workspace, run.Binding.Repository);
             var vacancies = home is null ? null : new StepVacancyFiles(home).Of(run.Unit);
+            var serves = casts is null ? null : StepVacancies.ServesAt(casts, risk, run.Binding.Workspace, run.Binding.Repository, live);
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);
-                if (StepWaiting.Read(kept, node, status, holding?.GetValueOrDefault(node.Id), cast) is not { } wait
+                if (StepWaiting.Read(kept, node, status, holding?.GetValueOrDefault(node.Id), cast) is not { } read
                     || kept.Pending.Any(word => word.Node == node.Id))
                 {
                     continue;
                 }
 
-                var vacant = StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt) is not null;
+                var vacancy = StepVacancies.Kept(vacancies, read, node.Id, status.Attempt, serves);
+                var wait = StepWaiting.Exited(read, vacancy);
+                var vacant = vacancy is { Exited: false };
                 if (wait.Holder.Kind != StepHolders.Person && !vacant) continue;
                 waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role, Vacant = vacant });
             }

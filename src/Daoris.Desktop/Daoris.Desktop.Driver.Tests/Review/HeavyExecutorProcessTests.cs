@@ -333,7 +333,8 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
             verification = new { run = Node(At("runner.mjs"), "busy", _folder) },
         });
         var clock = new MovedClock();
-        var executor = Executor(new VerifyWorld { Clock = clock });
+        var bus = BusLog.Over(new DesktopBusLogStore(Home), new BusLogOptions { Clock = new MovedClock() });
+        var executor = Executor(new VerifyWorld { Clock = clock, Bus = bus });
 
         await executor.SendAsync(Send("v-0000000000000001", "i-a", engine));
         for (var offered = 1; offered <= HeavyExecutor.BusyTries; offered++)
@@ -352,6 +353,25 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal(VerifyVerdicts.Unknown, result.Verdict);
         Assert.Contains("the runner's own run held its lock", result.Why);
         Assert.Equal(HeavyExecutor.BusyTries + 1, File.ReadAllLines(At("runner-calls.log")).Length);
+
+        Assert.Equal(
+            [.. Enumerable.Repeat<string[]>([BusTypes.CheckStarted.Kind, BusTypes.CheckRequeued.Kind], HeavyExecutor.BusyTries).SelectMany(pair => pair),
+                BusTypes.CheckStarted.Kind, BusTypes.CheckUnknown.Kind],
+            await KindsAsync(bus, "i-a"));
+    }
+
+    private async Task<IReadOnlyList<string>> KindsAsync(BusLog bus, string invocation)
+    {
+        await bus.DisposeAsync();
+        using var store = new DesktopBusLogStore(Home);
+        var kinds = store.Read(0, 500).Where(entry => entry.Payload.Any(pair => pair is { Key: "invocation" } && Equals(pair.Value, invocation))).ToList();
+        foreach (var effect in kinds.GroupBy(entry => entry.Effect))
+        {
+            var starts = effect.Select(entry => entry.Kind == BusTypes.CheckStarted.Kind).ToList();
+            Assert.True(starts.Where((_, n) => n % 2 == 0).All(start => start) && starts.Where((_, n) => n % 2 == 1).All(start => !start), $"{effect.Key}'s starts and settles alternate");
+        }
+
+        return [.. kinds.Select(entry => entry.Kind)];
     }
 
     private static async Task<(string Commit, string Blob)> CommitOnAsync(string checkout, string branch, string? from, params (string Path, string Text)[] files)
@@ -597,7 +617,8 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         var engine = await RepositoryAsync("engine", Gates(("unit", Node(At("gate.mjs"), "a", _folder, "go"), true, false)));
         var game = await RepositoryAsync("game", Gates(("unit", Node(At("gate.mjs"), "b", _folder, "exit-0"), true, false)));
 
-        var before = Executor();
+        var bus = BusLog.Over(new DesktopBusLogStore(Home), new BusLogOptions { Clock = new MovedClock() });
+        var before = Executor(new VerifyWorld { Bus = bus });
         await before.SendAsync(Send("v-0000000000000001", "i-a", engine));
         await Poll.Until(() => File.Exists(At("beat-a.txt")) && File.Exists(At("child-a.txt")));
         var child = int.Parse(File.ReadAllText(At("child-a.txt")));
@@ -609,7 +630,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.True(File.Exists(AttemptMarks.Closed(Home, "v-0000000000000001", "i-a", 0)), "the executor's own close said why it ended");
         Assert.False(Alive(child), "what its gate left was ended with it");
         Assert.Empty(VerifySlot.Look(Home).Holders);
-        var after = Executor();
+        var after = Executor(new VerifyWorld { Bus = bus });
         Assert.Equal(VerifyAnswers.NotStarted, (await after.ReconcileAsync("v-0000000000000001", "i-a")).State);
 
         await after.SendAsync(Send("v-0000000000000002", "i-b", game, "game"));
@@ -617,6 +638,10 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         await File.WriteAllTextAsync(At("go-a"), "");
         await after.SendAsync(Send("v-0000000000000001", "i-a", engine));
         Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
+
+        Assert.Equal(
+            [BusTypes.CheckStarted.Kind, BusTypes.CheckEnded.Kind, BusTypes.CheckStarted.Kind, BusTypes.CheckPassed.Kind],
+            await KindsAsync(bus, "i-a"));
     }
 
     [Fact]

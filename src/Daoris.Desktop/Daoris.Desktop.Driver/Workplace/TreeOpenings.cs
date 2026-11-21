@@ -28,6 +28,8 @@ internal static class TreeOpenings
 
     internal static string[] HooksHeld(string home) => ["-c", $"core.hooksPath={HooksPath(home)}"];
 
+    internal static string[] CheckoutSpread => ["-c", "checkout.workers=0"];
+
     /// <summary>The process an opening's lock names; null where the reason is no opening's.</summary>
     internal static int? OpenerOf(string? reason) =>
         reason is { } said && said.StartsWith(Opening, StringComparison.Ordinal) && said.EndsWith(')')

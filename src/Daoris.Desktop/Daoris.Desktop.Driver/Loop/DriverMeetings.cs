@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// nothing and writes into no repository.
 /// </summary>
 /// <remarks>
-/// <para><b>A turn is a brainstorm's pass</b> (<see cref="DriverBrainstorms.PassAsync{T}"/>): its slot under the cap, its own minutes
+/// <para><b>A turn is a brainstorm's pass</b> (<see cref="BrainstormPasses.PassAsync{T}"/>): its slot under the cap, its own minutes
 /// and the round's deadline (the policy's pass and request minutes), its one repair, a limit's restart on the next
 /// account, a crash, the person's stop and its record written as it starts. The turns go in sequence, never side by side, so a
 /// meeting's account runs one of its turns at a time.</para>
@@ -260,8 +260,8 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             {
                 var turn = MeetingFiles.Turn(round, participant.Id);
                 Refuse(id, files, refused, said);
-                var (record, text) = await _brainstorms.PassAsync<string>(
-                    id, turn, participant.Adapter, MeetingPackets.Say, bytes, MeetingInstruction.Say(digest, participant, round), null,
+                var (record, text) = await _brainstorms.Passes.PassAsync<string>(
+                    id, turn, participant.Adapter, MeetingPackets.Say, MeetingInstruction.Room(bytes), MeetingInstruction.Say(digest, participant, round), null,
                     answer =>
                     {
                         var check = MeetingMessages.Check(answer);

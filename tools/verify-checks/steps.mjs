@@ -20,19 +20,22 @@ const DRIVER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const TESTS = ['src/Daoris.Cli/', 'tools/'];
 const PARTIALS = ['tools/partials.mjs', 'tools/partials.json'];
 
+const CONTRACTS = [
+  ...NODE, 'tools/contracts.mjs', 'tools/contracts/', 'tools/run-lock.mjs', 'src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/',
+  `${DRIVER}Settings/List/`, `${DRIVER}Workflows/Kinds/`, `${DRIVER}Agents/Providers/`, `${DRIVER}Agents/Registry/`,
+  'src/Daoris.Web/src/data/generated/', 'src/Daoris.Web/src/bridge/generated/',
+];
+
 const step = (run, reads, more = {}) => Object.freeze({ run, reads: reads === '*' ? '*' : Object.freeze([...new Set(reads)]), ...more });
 
 export const CHECK_STEPS = Object.freeze([
   step('node tools/orient-index.mjs', '*', { writes: true }),
+  step('node tools/contracts.mjs --if-stale', CONTRACTS, { writes: true }),
   step('npm run typecheck -w daoris', ['src/Daoris.Cli/', 'tools/', 'package.json', 'package-lock.json']),
   step('npm run typecheck:tools', ['tools/', 'src/Daoris.Cli/', 'package.json', 'package-lock.json']),
   step('node src/Daoris.Cli/bin/daoris.mjs check', '*'),
   step('node tools/orient-index.mjs --check', '*'),
-  step('node tools/contracts.mjs --check', [
-    ...NODE, 'tools/contracts.mjs', 'tools/contracts/', 'tools/run-lock.mjs', 'src/Daoris.Contracts/', 'src/Daoris.Desktop/Daoris.Desktop.Modules/',
-    `${DRIVER}Settings/List/`, `${DRIVER}Workflows/Kinds/`, `${DRIVER}Agents/Providers/`, `${DRIVER}Agents/Registry/`,
-    'src/Daoris.Web/src/data/generated/', 'src/Daoris.Web/src/bridge/generated/',
-  ]),
+  step('node tools/contracts.mjs --check', CONTRACTS),
   step('node tools/doc-budgets.mjs', [...NODE, ...DOCUMENTS, 'tools/doc-budgets.mjs', 'tools/doc-budgets.json', 'tools/doc-budgets/']),
   // It holds what the present records say against every source file's names.
   step('node tools/doc-current.mjs', '*'),

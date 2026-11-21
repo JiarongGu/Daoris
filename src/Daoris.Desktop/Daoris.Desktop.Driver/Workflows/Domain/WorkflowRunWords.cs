@@ -173,9 +173,12 @@ public static class WorkflowRunWords
                 : "Settled: another agent read it, with nothing left disputed.",
             (WorkflowKinds.Opinion, OpinionGateStates.Anyway) => "You went on without a settled second opinion.",
             (WorkflowKinds.Opinion, OpinionGateStates.Myself) => "You looked at it yourself in place of another agent's reading.",
-            (WorkflowKinds.Opinion, OpinionGateStates.Answered) => step.Code == ReviewVerdicts.Reviewed
-                ? "Your Reviewed answered the second opinion."
-                : "Your Accept answered the second opinion.",
+            (WorkflowKinds.Opinion, OpinionGateStates.Answered) => step.Code switch
+            {
+                ReviewVerdicts.Reviewed => "Your Reviewed answered the second opinion.",
+                OpinionPersonSaid.Policy => "The risk policy answered the second opinion.",
+                _ => "Your Accept answered the second opinion.",
+            },
             (WorkflowKinds.Opinion, WorkflowRunDetails.Landed) => "It let the work go when the work landed.",
             // A chat run's opinion is asked by the person's Accept, never at a look.
             (WorkflowKinds.Opinion, WorkflowRunDetails.ChatAtAccept) => step.Agent is { } asks
@@ -257,7 +260,8 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Task => "Waits for its holder to do the task.",
                 NodeKinds.Review => "Waits for your Accept.",
-                NodeKinds.Opinion when step.Wait is { } answer && OpinionStepWaits.Codes.Contains(answer.Code) => OpinionStepWaits.Said(answer),
+                NodeKinds.Opinion when step.Wait is { } answer && (OpinionStepWaits.Codes.Contains(answer.Code) || answer.Code == OpinionStepWaits.Passed) =>
+                    OpinionStepWaits.Said(answer),
                 // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
@@ -269,6 +273,8 @@ public static class WorkflowRunWords
                 _ => on is null ? "Under way." : $"Observed on {on}.",
             },
             WorkflowGraphDetails.Reached when node == NodeKinds.Land && step.Words is { Length: > 0 } reached => reached,
+            WorkflowGraphDetails.Reached when node == NodeKinds.Opinion && step.Words is { Length: > 0 } passed =>
+                $"{(on is null ? "Reached" : $"Reached on {on}")}, its hold passed by the risk policy: {passed.TrimEnd('.')}.",
             WorkflowGraphDetails.Reached when node == NodeKinds.QuestHolds && step.Code == UncheckedDones.NoReader =>
                 $"{char.ToUpperInvariant(UncheckedDones.GoesOn[0])}{UncheckedDones.GoesOn[1..]}.",
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
@@ -282,7 +288,8 @@ public static class WorkflowRunWords
                 "Its branch no longer stands and the line's remote does not hold its work, so nothing was pushed: restore the branch, or go on without this step if the work is delivered.",
             WorkflowGraphDetails.Failed when node == NodeKinds.Push && step.Code == PushLineRead.LineUnread =>
                 "Its branch no longer stands and the line's remote could not be read, so whether it holds the work is not known: fetch the line once origin can be reached, or go on without this step if the work is delivered.",
-            WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate => $"Failed: the gate `{gate}` failed; its words went to the work.",
+            WorkflowGraphDetails.Failed when node == NodeKinds.Check && step.Gate is { Length: > 0 } gate =>
+                $"Failed: the gate `{gate}` failed; {(step.Told ?? new WorkflowRunTold(null, null)).Said}",
             WorkflowGraphDetails.Failed when node == NodeKinds.Opinion && OpinionStepWaits.EndedSaid(step.Code) is { } ended => ended,
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
             // A review's rejection is the person's changes, which went to the work.

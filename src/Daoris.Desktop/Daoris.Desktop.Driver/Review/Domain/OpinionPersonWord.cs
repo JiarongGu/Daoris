@@ -11,6 +11,8 @@ public static class OpinionPersonSaid
 
     /// <summary>A press that showed what is unsettled and is made with it shown: <i>Accept…</i> on the screen.</summary>
     public const string Press = "press";
+
+    public const string Policy = "policy";
 }
 
 /// <summary>

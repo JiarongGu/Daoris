@@ -55,9 +55,9 @@ public sealed record RespondQuest(
     public static string Path => "/api/quests/{id}/respond";
 }
 
-/// <summary>The person's yes to a done's departure from what they required, or with <c>Role</c> an appointed role's: what it held goes on.</summary>
+/// <summary>The person's yes to a departure, with <c>Role</c> an appointed role's, with <c>Policy</c> the risk policy's: what it held goes on.</summary>
 [OptionalBody]
-public sealed record AcceptQuest(string Id, RoleAnswerWire? Role = null) : IRoute<QuestActionResponse>
+public sealed record AcceptQuest(string Id, RoleAnswerWire? Role = null, RiskPassWire? Policy = null) : IRoute<QuestActionResponse>
 {
     public static string Method => "POST";
     public static string Path => "/api/quests/{id}/accept";

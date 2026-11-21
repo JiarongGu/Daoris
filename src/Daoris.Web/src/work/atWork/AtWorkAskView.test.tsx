@@ -68,7 +68,7 @@ describe('what is read, what is empty and what failed', () => {
   });
 
   it('draws nothing for a session’s answer: the branches are apart', () => {
-    const { container } = render(<AtWorkAskView held={{ answer: { of: { session: 's1' }, attended: 's1', parts: [], subagents: { read: 'none', working: 0, children: [] } } }} />);
+    const { container } = render(<AtWorkAskView held={{ answer: { of: { session: 's1' }, attended: 's1', parts: [] } }} />);
 
     expect(container.textContent).toBe('');
   });

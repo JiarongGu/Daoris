@@ -84,7 +84,7 @@ public sealed class BrainstormProcessTests : IDisposable
         return $$"""
             const see = () => {
               const turn = process.env.DAORIS_BRAINSTORM_TURN;
-              const packet = readFileSync(join(process.cwd(), 'packet.json'));
+              const packet = readFileSync(join(process.cwd(), 'index.md'));
               mkdirSync('{{home}}/saw', { recursive: true });
               writeFileSync('{{home}}/saw/' + turn + '.json', JSON.stringify({
                 cwd: process.cwd(), packet: createHash('sha256').update(packet).digest('hex'),
@@ -254,14 +254,15 @@ public sealed class BrainstormProcessTests : IDisposable
         Assert.All(passTurns, turn => Assert.Equal(id, turn.Brainstorm));
 
         // One packet, byte for byte, in every room; each room the packet and its instruction (and the synthesis's proposals) alone.
-        var frozen = Convert.ToHexStringLower(SHA256.HashData(files.PacketBytes(id)!));
+        var index = BrainstormRoomPacket.Lay(BrainstormPackets.Read(files.PacketBytes(id)!)!)[0].Text;
+        var frozen = Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(index)));
         var saw = Directory.EnumerateFiles(Path.Combine(_home, "saw")).Select(path => JsonNode.Parse(File.ReadAllText(path))!).ToList();
         Assert.Equal(3, saw.Count);
         Assert.All(saw, each => Assert.Equal(frozen, each["packet"]!.GetValue<string>()));
         Assert.All(saw, each => Assert.Null(each["quest"]));
         Assert.All(saw, each => Assert.Null(each["repository"]));
         Assert.All(saw, each => Assert.StartsWith(files.Rooms(id), each["cwd"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(saw, each => each["files"]!.AsArray().Select(name => name!.GetValue<string>()).SequenceEqual(["instruction.md", "packet.json", "proposals.json"]));
+        Assert.Contains(saw, each => each["files"]!.AsArray().Select(name => name!.GetValue<string>()).SequenceEqual(["index.md", "instruction.md", "proposals.json"]));
 
         // The document: ranked by the stub synthesis, each member's provenance re-attached, and no maker diversity claimed.
         var document = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "document.json")))!;

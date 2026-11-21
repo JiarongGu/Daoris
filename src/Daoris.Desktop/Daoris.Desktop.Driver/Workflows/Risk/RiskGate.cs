@@ -29,35 +29,6 @@ public sealed record RiskPlace(string? Workspace, string? Repository, bool Full)
 }
 
 /// <summary>
-/// The judge's answer for one act: <see cref="Pass"/>, a <see cref="Gate"/> on a role (<see cref="By"/>), or the
-/// <see cref="OwnerOutcome"/>; the class it read, the rule that decided (<see cref="Source"/>: a place's row, the seed, the fixed root, an
-/// unreadable record, or a level carried from <c>placeRisk</c>), at the policy's revision, and why in a sentence.
-/// </summary>
-public sealed record RiskVerdict(string Kind, string? Qualifier, string Outcome, string Class, string? By, string Source, string Revision, string Reason)
-{
-    public const string Pass = "pass";
-    public const string Gate = "gate";
-    public const string OwnerOutcome = "owner";
-
-    /// <summary>The source of a verdict the seed decided.</summary>
-    public const string Seed = "seed";
-
-    /// <summary>The source of <c>policy.change</c>'s verdict: the governance root, fixed at the owner.</summary>
-    public const string Fixed = "fixed";
-
-    /// <summary>The source of every verdict while the record does not read.</summary>
-    public const string Unreadable = "unreadable";
-
-    /// <summary>What a class gives: none passes, a role gates, the owner holds.</summary>
-    public static string OutcomeOf(string riskClass) => riskClass switch
-    {
-        RiskClasses.None => Pass,
-        RiskClasses.Role => Gate,
-        _ => OwnerOutcome,
-    };
-}
-
-/// <summary>
 /// The one judge of every hold: model-free and pure, act, actor, place and subject against the policy give a verdict with the
 /// rule that decided. A <c>release.production</c> mark anywhere on the place's chain keeps every <c>release.*</c> act at the owner, over every
 /// row. Otherwise the narrowest place with a row for the act decides (repository, workspace, machine), a qualified row standing over its

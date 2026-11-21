@@ -59,7 +59,7 @@ public static class AttentionWaits
     [
         .. holds.Now().Select(held => (object)new
         {
-            held.Session, held.Request, held.Call, held.Title, held.Kind,
+            held.Session, held.Request, held.Call, held.Title, held.Kind, held.Child,
             Choices = held.Choices.Select(choice => new { choice.Id, choice.Name, choice.Kind }),
             Since = Moments.Write(held.Since),
             Until = Moments.Write(held.Until),

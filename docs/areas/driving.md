@@ -26,13 +26,14 @@ the run's stages and the quest log's operations in their order.
 | `Loop/Session/` | What every start shares: `SessionEquipment`, `SessionRules`, `QuestWalk`, `AccountEndings`, `SessionWatching`, `SessionWaits`, `PartsHanded`, `StartSentence` |
 | `Loop/Watch/`, `Loop/` | When a look runs (`WatchRun`); intakes, continuations (`Loop/Continue/`), helpers, partners, brainstorms, `DriverCommand`, how this Daoris is wired (`SystemWiring`, `Loop/Setup/`) |
 | `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
+| `Bus/` | The bus's log (D356 steps 1 and 2, rule 30a): `BusLog` writes envelopes behind into the desktop store through one port (`IBusLogStore`, today `DesktopBusLogStore`), the opinion and check facts teed in from their own subdomain (`Review/OpinionBusFacts`, `OpinionBusTee`, `Review/Heavy/CheckBusFacts`), its measures read by `daoris bus stats` (`BusStatsCommand`); the timers each write arms and clears (`BusTimers`), the shadow watchdog (`BusWatchdog`) with the look's reading beside each stall (`BusLook`'s port, today `Review/OpinionRecordLook`), read by `daoris bus stalls` (`BusStallsCommand`) |
 | `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
 | `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
 | `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
 | `Departments/` | A place's manifests and turns (`Manifest/`), a folder turn's review (`Review/`), a system's plans (`Systems/`), `PlaceHomeMarker` |
 | `Service/Quests/`, `Service/Sessions/`, `Service/Asks/` | `QuestStore` and `QuestExchange` (every door's judgement, the log's operations, `QuestLog`, `QuestTransitions`), `SessionStore` and `SessionLedger` (opens, moves, says, the tree lock and the place lease), `AskStore` and `AskDesk`, each a root wiring parts of its own |
 
-A folder that is no git checkout is a place of its own (`daoris repository add <folder>`), its manifest every file but the
+A folder that is no git checkout is a place of its own (`daoris repository add <folder>`); one decides git or folder, `PlaceKind.At`, by the folder's own `.git` (a linked worktree's file too), never an enclosing repository's, so a folder inside a checkout reads none of that checkout's branches, recovery refs or session-branch waits, the composer's tree chip and the workspace's branch list name none for it, and its page draws Details, Files and Workflow alone. Its manifest is every file but the
 excludes with size, time and SHA-256, too large to follow past 250,000 files or five minutes (the `manifest` setting). A system
 place is never changed by a session: it plans through the connector's `system_plan`. The kept slots (`Workplace/Pool/`, D214) are
 built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers where a record's line stands.
@@ -134,7 +135,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`, the
     run's `files` stage handing its steps to the stage) and the hand's own preparation, its plugins' servers apart as `hand.servers`, are
     timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
-20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
+20. A fresh tree is a linked git worktree, its files written by git's parallel checkout on every core (`TreeOpenings.CheckoutSpread`, about half the `tree` stage of one worker, SESSIONOPEN3), at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
@@ -146,7 +147,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys
     run each `toolchain` read once per stage for each environment, every dependency that names it sharing the output
     (`ToolchainReads`), since run per `package.json` folder the npm signature's three reads were most of a large web repository's
-    `files.read`. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
+    `files.read`. The npm signature's three alone (`node --version`, `npm --version`, `npm config list --json`) are also held in the
+    driver's memory for ten minutes under a fingerprint of what decides them (`NpmToolchain`: the node program, the npm launcher and
+    package, and the content of the project, user, global and bundled `.npmrc`), so an opening after another starts no npm unless a
+    program or file moved; a read that failed or printed nothing is never held, nor one where the fingerprint cannot place its inputs (an `npm_config_*` variable in the environment, a node or npm file in the tree, a path entry that is not whole (relative, `D:bin`, `\bin`), an `.npmrc` that names a `userconfig`, `globalconfig` or `prefix`), and nothing is written (SESSIONOPEN3). The kept orientation index is put only in a clean tree. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); the keys list the commit's files once for every dependency; a folder the
     store will not take (unstored, a group's, a companion) is recorded by size and write time, unhashed, a moved write time read as
     a change (FILESSLOW1); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
@@ -229,8 +233,77 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent
     closed is read within a pass, never another ledger change, reading tips from git's ref files (`NodeTips`) and a run's record
     once while its file stands. Each look pass is a stage of its part's name in `watch.looked` unless it times itself, so a look's
-    own stages add up to its milliseconds. The budgets are the bench tests' (below) and the git area's *Git's starts, counted*.
-    (D68, D181)
+    own stages add up to its milliseconds, and each stage's time is measured by the day into the bus log's measures (rule 30a). The
+    budgets are the bench tests' (below) and the git area's *Git's starts, counted*. (D68, D181)
+30a. The bus's log (D356 step 1) is the lease holder's: the desktop's loop and `daoris drive` open it once they hold the home's lease
+    and close it before they let it go; a loop beside an instance keeps none. It is two tables of the desktop store (`bus_log`,
+    `bus_measures`, made by the store's step 33), each entry one envelope (id, seq, kind as `name/version`, subject, emitter,
+    answerer, deadline, effect key, causes, and a payload of ids, codes, counts and times), on a connection of its own, write-ahead
+    logged with `synchronous = NORMAL` and its log file bounded as the store engine bounds it. An append is taken in memory, given
+    its id, order and time at once, and written behind: plain entries a second after the first of them, a commit-class entry at
+    once, grouped with whatever waits; nothing is written while nothing is appended, and a look stage timed or a miss counted while
+    idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Teed in beside
+    today's writes, with no consumer: an opinion asked, given and answered (the landing line's channel), its findings delivered,
+    and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
+    ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
+    its effect starts again. Red classes no gate named stay unknown, never a count of zero.
+    Every type is declared once, in one registry (`BusTypes`, D356 step 2): its name and version, whether it is a fact, a request
+    or a response, its payload's fields and their shapes (id, code, count, number, time, flag, a list of at most 16 ids), its
+    emitter, its obliged handler or a request's answerer, a deadline and what set it, a retry budget, and a give-up from a closed
+    list: `refused` (the bus answers the request itself), `held` (the gate stays shut), `dropped` (an observation counted) or
+    `final-exit` (the subject reaches the owner's final exit, D354 point 4). No silent give-up is in the list: a `refused` request
+    or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. No measure set a deadline yet (the
+    install's `daoris bus stats` at cddcdac313 held one check start and no handling time, its quests paused), so each is stated
+    provisional with what it stands on (a check's bound, a busy runner's offer, a pass's bound, about one look a minute) and the
+    watchdog runs against it in shadow (below) before any give-up acts. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
+    is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
+    emitted; the page gets the types' list with its first reader in the window (BUS2f), not before. A subscription naming
+    a type the registry lacks fails as it registers.
+    A shadow append never fails the write it rides beside: a refusal (the store's, a type the registry does not declare, an
+    envelope whose subject, answerer, effect or causes are no ids, a process not holding the lease) is counted by its reason and
+    said once as `bus.refused`. A payload's field its type does not declare, one named twice, or a value not of its field's shape
+    is dropped and the fact kept: the field left unknown, a list keeping the ids that fit, each drop counted by reason, type and
+    field and said once as `bus.dropped`. An id or code is well-formed text with no whitespace and nothing shaped like a path or
+    an e-mail address (a red class keeps its suite and its test file's name, never its path; a repository named with a space, or a
+    parameterized test class, loses that value, never the fact). The lease is asked on the writers' path at most every two
+    seconds, an unreadable lease keeping the last answer, and afresh inside each write's transaction, which takes the store for
+    writing at its start, so what was taken while it was lost is dropped, never written by the old holder, and no other holder
+    writes between the lease's answer and the rows. The write seats its batch after the newest order the store keeps and the log
+    moves what waits with it, so a log opened again goes on after its last entry, and one that lost the lease and regained it goes
+    on after the other holder's, no batch colliding. The bus waits on the store's lock as long as the engine does; a batch
+    a busy store refused goes back ahead of the next, its order kept, tried again five seconds later at most six times running and
+    counted, then dropped. Measured by the day: entries by kind,
+    each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
+    flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
+    them), the misses, the dropped values and each look stage's time, which `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
+    measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and `bus_timers` and
+    keeps `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
+    said at the close, which still writes what waited.
+    The watchdog (D356 step 2) runs in shadow beside the looks, started with the lease holder's watch and stopped before the log
+    closes; nothing it records changes a run, a session or a notice. An entry whose type obliges someone (every give-up but
+    `dropped`) arms a timer row (`bus_timers`, made by the store's step 34) in the write that keeps it, due at its envelope's
+    deadline, which the log stamps from the registry alone (a draft names none). The registry declares what ends each obliged type
+    (`BusTypes.Ends`, the census holding that every one has its ends): a later fact on the same subject or effect key, or the
+    handler's acknowledgement, which its subscription gives (BUS2d's opinion gate first). A check's start ends by its own
+    attempt's verdict, requeue or end; a requeue and an end by that attempt's next start; a red or an unknown by the run's next
+    start or the step's acknowledgement; a pass by the step's acknowledgement alone; a pass asked by its given; a given by its
+    delivery or its answers; a delivery by its answers; the answers by the gate's acknowledgement alone. Every 30 seconds, and at
+    once at its start (so a restart reads every armed timer), the watchdog appends a `bus.stalled` for each timer past due: its
+    entry, type, obliged one, since, due time, which stall of its retries plus one, the next due time, and the look's reading of
+    the same subject at that moment. Past the last it appends the `bus.give-up` it would apply, `applied` false, with what it
+    hands to whom: a `final-exit` hands the step to its holder chain (the obliged one's holder, then the vacancy path, then the
+    owner's exit, CASTCHAIN1's executors and manager joining before the vacancy), a `refused` request is answered to its requester
+    and a `held` gate stays shut, both left a wait the vacancy bounds and the exit ends; never the owner straight from a missed
+    deadline. A stall moves its timer in its own write and a give-up drops it, so a kill and a restart keep every due time and
+    neither loses a stall nor makes one twice; one appended and not yet written holds back the same one for five minutes. The
+    comparer is the look's reading kept on each stall (`IBusLook`): open (the look holds it unmet too: agree), handled (the look
+    says it was met: disagree, the bus missing its acknowledgement or its deadline or ends wrong) or unknown (no reading, counted
+    apart). Today's reading is the opinion's record (a pass asked is open while read; a given until answered, unless clean; a
+    delivery until answered); the gate's judging, the run's step and the checks are unknown until their jobs bring a reader.
+    `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
+    bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
+    its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,
+    disagreements and unknowns by type and the newest twenty disagreements with both sides.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)
@@ -504,7 +577,7 @@ are roots that wire and grow by a one-line door at most.
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
-| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a bench under `OPENING_SHAPE_BENCH=1`: a second opening of a repository of this one's shape, its tree and files stages timed) |
+| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a second opening of a repository of this one's shape, its tree and files stages timed and held to 30 s), `NpmToolchainMemoTests`, `TreeCheckoutSpreadTests` |
 | rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
 | a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |
@@ -540,5 +613,8 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
 - **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
+- **BUS2b2, BUS2d to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first two
+  steps stand (rule 30a: the log, and the watchdog in shadow), and its rows move the looks of rule 30 to reducers over it one job at
+  a time, the opinion gate first.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
 - D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.

@@ -171,7 +171,7 @@ function detailSaid(t: TFunction, step: RunStep): string | null {
     case 'opinion.settled': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.settledAnyone');
     // A chat run's opinion, asked by the person's Accept and naming the reviewer it asks.
     case 'opinion.chat-at-accept': return step.agent ? t(at, { agent: step.agent }) : t(`${at}Anyone`);
-    case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : at);
+    case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : step.code === 'policy' ? 'workflow.run.said.opinion.answeredPolicy' : at);
     case 'opinion.waits-chain': return t(at, { quest: step.quest ?? '' });
     // A named workflow's opinion step naming reviewers its repository does not declare.
     case 'opinion.unread':
@@ -261,7 +261,9 @@ function nodeSaid(t: TFunction, step: RunStep, node: string): string | null {
       return step.code ? t('workflow.run.graph.said.failed', { code: step.code }) : t('workflow.run.graph.said.failedNone');
     // A review's rejection is the person's changes, which go to the work.
     case 'rejected': return t(node === 'review' ? 'workflow.run.graph.said.changes' : 'workflow.run.graph.said.rejected');
-    case 'stopped': return t(step.code === 'daoris' ? 'workflow.run.graph.said.gaveUp' : 'workflow.run.graph.said.stopped');
+    case 'stopped':
+      if (step.code !== 'daoris') return t('workflow.run.graph.said.stopped');
+      return step.words ? t('workflow.run.graph.said.gaveUpWith', { words: step.words }) : t('workflow.run.graph.said.gaveUp');
     case 'unknown': return t('workflow.run.graph.said.unknown');
     case 'invalidated': return t('workflow.run.graph.said.invalidated');
     default: return t('workflow.run.said.recorded', { state: step.state, detail: step.detail || '—' });

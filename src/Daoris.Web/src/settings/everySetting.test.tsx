@@ -42,8 +42,8 @@ describe('every machine setting', () => {
     render(
       <Tooltip.Provider>
         <DriverCards
-          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, checks: null, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
-          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks') }}
+          facts={{ pluginsFolder: null, notify: true, coolOff: 60, quiet: 10, drain: 10, checks: null, vacancy: 24, manifestFiles: 250000, manifestMinutes: 5, cap: 2, terminal: 'ask' }}
+          minutes={{ cooloff: settingOf('cooloff'), quiet: settingOf('quiet'), drain: settingOf('drain'), manifest: settingOf('manifest'), checks: settingOf('checks'), vacancy: settingOf('vacancy') }}
           busy={{ access: false }}
           onGo={vi.fn()}
           onNotify={vi.fn()}
@@ -51,6 +51,7 @@ describe('every machine setting', () => {
           onQuiet={vi.fn()}
           onDrain={vi.fn()}
           onChecks={vi.fn()}
+          onVacancy={vi.fn()}
           onManifest={vi.fn()}
           onCap={vi.fn()}
           onTerminal={vi.fn()}
@@ -62,5 +63,10 @@ describe('every machine setting', () => {
     for (const setting of driver) {
       expect(screen.queryAllByText(en[`${setting.words}.label`]!).length, setting.key).toBeGreaterThan(0);
     }
+
+    const checks = screen.getAllByText(en['settings.checks.label']!)[0]!;
+    const vacancy = screen.getAllByText(en['settings.vacancy.label']!)[0]!;
+    expect(screen.getByText(en['settings.vacancy.hours']!)).toBeTruthy();
+    expect(checks.compareDocumentPosition(vacancy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

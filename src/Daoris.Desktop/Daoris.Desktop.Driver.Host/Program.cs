@@ -122,6 +122,22 @@ DaorisHome.Adopt(AppContext.BaseDirectory);
 // variable a process inherited.
 ProgramHome.Named = DaorisHome.Resolve();
 
+// The paths no entry of the home's table names: a read, routed before the staffing's wiring (naming data/driver.json makes the
+// category's folder), the lease (VerbLeases) and the machine log (whose open prunes old files), since listing changes nothing. A home
+// named nowhere is said as the catch below says it.
+if (args is ["home"])
+{
+    if (ProgramHome.Named is not { } listedHome)
+    {
+        Console.Error.WriteLine($"driver: {DaorisHome.Sentence}");
+        return 2;
+    }
+
+    var listed = HomePurgeCommand.Run([], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
+    Console.Out.Write(listedSaid);
+    return listed;
+}
+
 // The home's driver.json reads its staffing from the store, wired before any door or the
 // loop loads it.
 RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
@@ -637,6 +653,15 @@ try
     if (args is ["logs", .. var logsArgs])
     {
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
+    }
+
+    // The bus log's measures by day, and its watchdog's stalls, read from the home's store; needs no service and changes nothing.
+    if (args is ["bus", .. var busArgs])
+    {
+        var exit = BusStatsCommand.Run(
+            busArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => Daoris.Adapters.Clock.MachineClock.Time.GetUtcNow(), out var busSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(busSaid);
+        return exit;
     }
 
     // Plugins from a terminal: the kit's new and try, and a plugin's page and activity,

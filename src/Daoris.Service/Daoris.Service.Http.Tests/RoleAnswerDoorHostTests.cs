@@ -128,15 +128,18 @@ public sealed class RoleAnswerDoorHostTests(KeyedHost host) : IClassFixture<Keye
         Assert.Equal("role:daoris-landing · codex-acp", decided.Json.GetProperty("op").GetProperty("approver").GetString());
     }
 
-    /// <summary>🔴 A departure's yes naming a role is the driver's: keyless refused, and nothing is accepted.</summary>
+    /// <summary>🔴 A departure's yes naming a role or the risk policy is the driver's: keyless refused, and nothing is accepted.</summary>
     [Fact]
     public async Task A_roles_yes_to_a_departure_is_refused_without_the_key()
     {
-        AssertRefused(await host.PostAsync("/api/quests/7/accept", new { role = Role }),
-            PersonDoors.DriverOnly, "a role's yes to a departure", "a keyless yes naming a role");
+        const string form = "a role's or the risk policy's yes to a departure";
+        AssertRefused(await host.PostAsync("/api/quests/7/accept", new { role = Role }), PersonDoors.DriverOnly, form, "a keyless yes naming a role");
+        AssertRefused(await host.PostAsync("/api/quests/7/accept", new { policy = new { act = "work.done", rule = "seed", revision = "r1" } }),
+            PersonDoors.DriverOnly, form, "a keyless yes naming the risk policy");
         AssertRefused(await host.PostAsync("/api/quests/7/accept", new { }),
             PersonDoors.PersonOnly, "the yes to a departure", "a keyless yes");
-        Assert.Equal("a role's yes to a departure", PersonDoors.Wanted(RoleAnswerDoors.Accept, System.Text.Json.JsonDocument.Parse("""{"role":{}}""").RootElement));
+        Assert.Equal(form, PersonDoors.Wanted(RoleAnswerDoors.Accept, System.Text.Json.JsonDocument.Parse("""{"role":{}}""").RootElement));
+        Assert.Equal(form, PersonDoors.Wanted(RoleAnswerDoors.Accept, System.Text.Json.JsonDocument.Parse("""{"policy":{}}""").RootElement));
     }
 
     /// <summary>A quest of Keeper's closed done departing from its second requirement, held for a yes.</summary>

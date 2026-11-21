@@ -7,7 +7,8 @@ category folders beside it. The install's `data/` is the Daoris home. Every mach
 through one table of entries, held by three twins (driver, service, CLI). The driver also decides which file each tool is (git,
 Node, PowerShell), and downloads managed versions into the home. `publish:desktop` writes an install, or stages a build
 in `update/staged/` beside a running one. The application drains its work, holding new work for a bound at most, closes, and the launcher swaps `app/`, confirms the
-new build, or rolls back. A release that changes a stored shape converts nothing: the home's history is purged, and nothing
+new build, or rolls back. A build comes from `publish:desktop --stage`, or from Daoris's own GitHub releases, which `daoris update --fetch`
+stages (rule 48a). A release that changes a stored shape converts nothing: the home's history is purged, and nothing
 reads an older shape (rule 51). The build's own plugins (`app/plugin-offers/`) that are installed older update
 at that start, before any hook runs (plugins area, rule 18a).
 
@@ -26,7 +27,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 | `Drv/Workflows/` | Going back refused below the saved workflows' floor and while a delivery is unresolved (`InstallRollback`, `DeliveryGoingBack`), installed into Install's port; the floor's rule is `Workflows/Domain/WorkflowRolesSince`, its file `WorkflowRolesSinceStore` |
 | `Drv/Store/` | `data/desktop.db` and its numbered steps (`DesktopStore` over the port's engine, `DesktopStoreSteps`) |
 | `Drv/Service/`, `Drv/Knowledge/` | Which HTTP host and connector run: the install's, then the home's `bin` |
+| `Drv/Install/` (`DaorisReleases`, `DaorisReleaseDownloads`, `DaorisReleaseSource`, `UpdateFetch`) | Daoris's own releases as Install's source, and the fetch that stages the newest one |
 | `tools/desktop-publish.mjs`, `service-publish.mjs`, `deployment-rehearsal.mjs` | Lay out or stage an install; build the two service hosts; publish to scratch and drive the artefact, update phase included |
+| `.github/workflows/desktop-release.yml` | Run only by a version tag the owner pushes: zips the staged build and publishes the GitHub release with it and its checksum attached |
 
 ## Its rules
 
@@ -38,7 +41,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
    home and every program. (from D60, D93)
 3. `app/` holds everything a build ships: `Daoris.Desktop.exe` beside its Chromium, both service hosts, the driver's program
    (`daoris-driver/`), the doctrine tool (`cli/`: one bundled file, `daoris.mjs`, with `canon/`, a `package.json` of its name and
-   version and a `build.json` stamped with the build's id and commit, which `daoris --version` says beside the version; the driver
+   version (the build's own, point 36) and a `build.json` stamped with the build's id and commit, which `daoris --version` says beside the version; the driver
    and the set-up run the file by its own path, and the set-up refuses only where the file is not there), the command and Daoris's
    git doors (`bin/`), `resources.json` and `plugin-offers/`.
    An update replaces it whole. The command is `daoris.exe`, a program and never a batch file: it starts the driver's program with
@@ -116,7 +119,7 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     first, so an agent typing `daoris` gets the install's command, then each managed or named tool's folders, and
     `GIT_CONFIG_GLOBAL` when git carries a setting. The application's environment and the account's `PATH`
     are never rewritten. (from D121, D124)
-29. Agents stay on their makers' channels, each Install's own `IReleaseSource` (`ClaudeReleaseSource`, `CodexReleaseSource`) found
+29. Agents stay on their makers' channels, each Install's own `IReleaseSource` (`ClaudeReleaseSource`, `CodexReleaseSource`, and Daoris's own `DaorisReleaseSource`, rule 48a) found
     by the channel a program names in `ReleaseChannels.Sources`, never by a switch on ids. A pinned agent lives in `cache/toolchain/<agent>/<version>/` and runs with its own
     updates switched off. A session's server's package lives beside them, under its name with a scope's slash made `+`
     (`cache/toolchain/@playwright+mcp/0.0.82/`). The binary is the explicit command, else the pin, else `PATH`; a pin with nothing installed refuses.
@@ -148,9 +151,16 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     verbs are refused there too: a stage drains the install, so it is the person's. (from D115, D180)
 36. `--stage` builds the same build into `update/staged/`, with `build.json` (schema 1: id, version, commit, time, every file's
     size and SHA-256). It refuses a non-install, a swap under way, and a missing `--service` where the install carries its HTTP
-    host. A running install is never refused. A publish in place removes anything staged. A build's version is the release's,
-    `canon/canon.json`'s: the desktop's `Directory.Build.props` stamps it on every assembly and `build.json` names it, so the running
-    build, the launcher's read of `app/` and a stage's manifest read one number. The commit follows it (`0.0.1+<commit>`) only where
+    host. A running install is never refused. A publish in place removes anything staged. Every publish takes its own version
+    (`tools/desktop-publish/version.mjs`): the patch above the highest of the release's (`canon/canon.json`'s) and every version
+    the install has carried, staged, tried or run (its doctrine tool's `package.json`, the stage's `build.json`, `update/swap.json`,
+    `data/last-build.json`), so two publishes in a row say two versions, and one never falls below the newest that ran, which the
+    launcher would refuse. It is passed to every publish recipe as `-p:Version=`, so every assembly (the window's System page and the
+    machine log's `app.started`), the doctrine tool's package (`daoris --version`) and the stage's `build.json` name it; the canon
+    beside the tool keeps the release's version, which every synced file's header names, and `daoris update` says the version and commit the
+    target install's own `app/Daoris.Desktop.App.dll` carries (never the driver that asks) before what is staged. A development build carries the release's version (the desktop's
+    `Directory.Build.props`). The running
+    build, the launcher's read of `app/` and a stage's manifest read one number. The commit follows it (`0.0.2+<commit>`) only where
     a publish builds: every publish recipe passes `-p:DaorisStamp=true`, which the root `Directory.Build.props`, imported by each
     tree's, reads. A development build reads no git, writes no source link and carries `+dev`, so the System page's build fact
     reads `dev`, and the instance hello and the store's recorded build (`store_version.build`) name one build for every development
@@ -212,6 +222,17 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     `update.refused`), and every state carries `last` from the journal. Log lines name things and count them, never a path or
     a command line. (from D94, D139)
 48. A build that confirms and fails later is not rolled back. A launcher refuses a `build.json` schema it does not read. (from D139)
+48a. Daoris publishes its own releases: GitHub releases of its public repository, each carrying `Daoris-<version>-win-x64.zip`, one staged build
+    (the launcher, `app/`, `INSTALLED.md`, `build.json`), and `Daoris-<version>-win-x64.zip.sha256` beside it. `desktop-release.yml` makes them and runs only
+    on a `vX.Y.Z` tag the owner pushes (no dispatch, no schedule); it publishes the release only once both files are attached. `daoris update --fetch`
+    (`UpdateFetch`, over `DaorisReleaseSource` in `ReleaseChannels.Sources`) reads the list of releases for the newest published one that carries both files
+    (a draft, a prerelease and an incomplete release are passed over), refuses one that is not one exact `X.Y.Z` or is no newer than the build in the install's
+    own `app/` (not the program asking), and fetches the package: the checksum file must list it, the asset's own digest must agree where the API states
+    one, the download is held to the hash and unpacked into a staging beside `update/staged/` (`ToolArchives`' zip, which refuses a link, an escaping name and an
+    encrypted entry), and `StagedBuild.Check` of a folder and the manifest's version, which must be the release's, hold the build there. Only a build that passed is
+    moved into `update/staged/`, so the application never meets one that fails; a build staged meanwhile is kept, and nothing this fetch did not publish is removed. It
+    stages and installs nothing: the application installs by the one path of rules 37 to 46. It refuses while a swap is under way or a build is staged,
+    from a session's terminal (rule 35's), and on a machine that is not `win-x64`. (from D329)
 
 **The store**
 
@@ -253,8 +274,11 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     place a new one is classified when it is added. Where it was unclear it is kept, and the table says so. (from D322)
 55. The home names every path in it. `HomeStrays` walks the Daoris folder down the folders an entry's place passes through, bounded and
     never into a junction, and names each path no `HomeEntry` matches (an entry's pattern covers its children; the install's `app/`,
-    marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), `daoris home` lists them
-    under *Not in the table* after each entry's total size, and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
+    marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), a bare `daoris home` (the
+    group is `Bare`, so the tree routes it to the command, not the usage; `HomeStraysTests`) lists them under *Not in the table* after each
+    entry's total size and changes nothing (the host routes it before the staffing's wiring, which would make a missing `data/`, and
+    before the machine log opens, whose open prunes old logs, and `VerbLeases` classes it a read: no lease, no `home.json` written;
+    `HomeBareProcessTests`), and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
     entry it falls under, none for a stray, for any reader of sizes per entry; Disk space shows them (`strays` of `SYSTEM_SPACE`, kept five minutes). A reader of an older place is
     not kept for the files an install holds there (51): the table's place that goes is moved in `home-places.json`
     (`test/fixtures`) from `places` to `dropped` with its declared one-time move, and `home-census.test.ts` refuses a place gone with no
@@ -285,8 +309,10 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
 - **A store table or column:** a new numbered step in `DesktopStoreSteps.All` (`Store/DesktopStoreSteps.cs`). Raise the writer stamp only when older builds must
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
+- **Daoris's own releases:** `Drv/Install/DaorisReleases.cs` (what the channel says), `DaorisReleaseDownloads.cs` (the fetch), `UpdateFetch.cs` (the staging) and the
+  `desktop-release.yml`; the package's name is spelled in both `DaorisReleases.Package` and the workflow.
 
-**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit,
+**Tests that pin the area.** Driver: the `Install/`, `Platform/` and `Store/` tests beside each unit (`DaorisReleasesTests` and `UpdateFetchTests` for rule 48a),
 `ServiceHostLocatorTests`, `PinnedUpdatesTests`, `PluginStepsInFlightTests`. Modules: the `Update/` tests, `TaskbarIdentityTests`,
 `EveryModuleChildIsHandedTheToolsTests`. Service: `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`,
 `home-census.test.ts`, `tool-test/desktop-publish.test.ts` and `desktop-publish-not-now.test.ts`, `test/deployment-rehearsal.test.ts`.
@@ -316,3 +342,4 @@ drains, swaps, rolls back and refuses.
   state in one place and the banner goes (D344, UISH11, UIST5, UIST12); the first release's go and the running app's own look
   for a release are UIST14's, after RELEASEFEED1 (D329). Today the rules below stand.
 - The trees' links repaired after a person moves the whole Daoris folder (the install layout design §7.4): designed, not built.
+- The running application looking for a newer Daoris release by itself (RELEASEFEED1's left): today a person runs `daoris update --fetch`.

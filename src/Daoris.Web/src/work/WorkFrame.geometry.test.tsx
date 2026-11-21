@@ -266,12 +266,12 @@ describe('the frame\'s geometry', () => {
       return render(<QueryClientProvider client={client}><Tooltip.Provider><Quests /></Tooltip.Provider></QueryClientProvider>);
     };
 
-    it('draws its list beside its main area, with the side bar and the panel, and no session rail', async () => {
+    it('draws its list beside its main area, with the side bar and no panel until a terminal opens it, and no session rail', async () => {
       frame();
       expect(await screen.findByRole('separator', { name: 'quest list width' })).toHaveAttribute('aria-valuenow', '280');
       expect(screen.getByRole('heading', { level: 1, name: 'Nothing chosen' })).toBeInTheDocument();
       expect(screen.getByRole('complementary', { name: 'right side bar' })).toBeInTheDocument();
-      expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
       expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
 
       await userEvent.click(screen.getByRole('button', { name: 'Read the budget from the level file' }));

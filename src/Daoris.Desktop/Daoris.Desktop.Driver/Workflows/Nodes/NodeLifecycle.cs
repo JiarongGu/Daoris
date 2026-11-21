@@ -332,8 +332,13 @@ public static class NodeLifecycle
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
 
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
-        foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, daoris, "Daoris gives up a step that stood vacant past its bound (StepVacancies)"));
+        foreach (var from in NodeStates.Live)
+        {
+            rows.Add(new(from, NodeStates.Stopped, daoris, "Daoris's stop of a step vacant past its bound, as a build before the owner's final exit wrote it: applied as written"));
+        }
+
         rows.Add(new(NodeStates.Failed, NodeStates.Stopped, person, "the person stops a failed node, which ends it and its run as stopped"));
+        rows.Add(new(NodeStates.Failed, NodeStates.Stopped, daoris, "Daoris's stop of a check red past its rounds, as a build before the owner's final exit wrote it: applied as written"));
         foreach (var from in NodeStates.Bound)
         {
             rows.Add(new(from, NodeStates.Invalidated, daoris, "its binding changed: history is kept, and unresolved attempts are superseded"));

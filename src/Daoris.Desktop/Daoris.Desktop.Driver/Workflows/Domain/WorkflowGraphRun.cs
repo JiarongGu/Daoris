@@ -159,6 +159,8 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     public IReadOnlyList<StepVacancy>? Vacancies { get; init; }
 
+    public Func<string, bool>? ServesRole { get; init; }
+
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
 
     public RunPartsView Parts { get; init; } = RunPartsView.None;
@@ -221,7 +223,8 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
-            var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(status, run.Opinion) : null;
+            var said = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(node, status, run.Opinion) : null;
+            var answers = said is { Code: not OpinionStepWaits.Passed } ? said : null;
             if (answers is not null && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.
@@ -231,10 +234,12 @@ public static class WorkflowGraphRuns
             var acts = open && asked is null ? RunNodeWords.Acts(node, status, facts.Promoted.Contains(node.Id)) : [];
             // A waiting step reads the role it waits on and its holder where its wait is one StepWaiting reads; else its own role's.
             var tenure = facts.Holding.GetValueOrDefault(node.Id) is { } kept && kept.Attempt == status.Attempt ? kept : null;
-            var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
+            var read = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
             var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             // A step handed to the agent holding its role offers the person Take alone, as its row in What needs you does.
-            var vacant = waits is not null && StepVacancies.Kept(facts.Vacancies, waits, node.Id, status.Attempt) is not null;
+            var vacancy = read is null ? null : StepVacancies.Kept(facts.Vacancies, read, node.Id, status.Attempt, facts.ServesRole);
+            var waits = read is null ? null : StepWaiting.Exited(read, vacancy);
+            var vacant = vacancy is { Exited: false };
             var toAgent = !vacant && waits is not null && AgentSettles.Handed(node, status, waits);
             var step = new WorkflowRunStep(cell, state, detail)
             {
@@ -256,11 +261,12 @@ public static class WorkflowGraphRuns
                 Acts = acts.Count > 0 && !toAgent ? acts : null,
                 Asked = asked,
                 Gate = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? facts.Failures.GetValueOrDefault(node.Id) : null,
+                Told = node.Kind == NodeKinds.Check && status.State == NodeStates.Failed ? WorkflowRunTold.Of(facts.Record, node.Id, status.Attempt) : null,
                 Held = checkHeld?.Held ?? PluginFailureHeld.Of(facts.Record, node, status),
                 Through = ThroughAccepts.On(status),
                 Integration = node.Kind == NodeKinds.Integrate ? facts.Integration : null,
                 Wait = progress is not null ? StepWaiting.WaitOf(progress, waits?.Holder)
-                    : answers ?? facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
+                    : said ?? facts.Slots.GetValueOrDefault(node.Id) ?? (NodeKit.Of(node.Kind) is BuiltInNode built ? built.WaitOf(status) : null),
             };
             steps.Add(Observing(step, node, Bound(status), RunSubjects.Of(node, afterHanded)));
         }
@@ -368,7 +374,7 @@ public static class WorkflowGraphRuns
 
     private static string? WordsOf(NodeDeclaration node, NodeStatus status) =>
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
-        : node.Kind == NodeKinds.Land && status.State == NodeStates.Reached ? status.Words
+        : node.Kind is NodeKinds.Land or NodeKinds.Opinion && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
         : node.Kind == NodeKinds.Opinion && status.Holds == OpinionGateStates.WithSession ? null
         : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Failed ? OpinionStepWaits.EndedSaid(status.Code)

@@ -84,6 +84,16 @@ describe("a run's English, as the driver's table holds it", () => {
     expect(runSaid(zh, stepOf(handed))).toBe('在 `daoris/q2-work` 的 `11111111` 上观察中。');
   });
 
+  it('says a step Daoris gave up with what it tried, in Chinese too, and a step the person stopped as their stop', () => {
+    const stopped = (code: string | undefined, words?: string) => stepOf({ node: 'review', kind: 'review', state: 'stopped', detail: 'stopped', code, words, said: null } as Row);
+    const zh = i18n.getFixedT('zh');
+    expect(runSaid(t, stopped('daoris', 'nobody could answer it in 24 hours. Tried: the cast'))).toBe('Daoris gave it up: nobody could answer it in 24 hours. Tried: the cast');
+    expect(runSaid(zh, stopped('daoris', 'nobody could answer it in 24 hours. Tried: the cast'))).toBe('Daoris 放弃了它：nobody could answer it in 24 hours. Tried: the cast');
+    expect(runSaid(t, stopped('daoris'))).toBe('Daoris gave it up: nobody could answer it.');
+    expect(runSaid(zh, stopped('daoris'))).toMatch(/放弃/);
+    expect(runSaid(t, stopped(undefined, 'not wanted'))).toBe('You stopped it.');
+  });
+
   it('says an unchecked done no one is set to read goes on by itself, in Chinese too', () => {
     const goesOn = TABLE.rows.find((row) => row.node === 'quest.holds' && row.code === 'no-reader')!;
     expect(runSaid(i18n.getFixedT('zh'), stepOf(goesOn))).toBe('没有人负责按需求核对这次完成，所以它自行继续。');

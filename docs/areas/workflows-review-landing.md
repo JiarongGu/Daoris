@@ -235,7 +235,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session of this machine still waits on is governed at each look while one waits, the first after a start included, for its end alone: nothing else on it is judged, and the same end ends that session again (`RunReEnds`), whatever answered its first. A submission held for a departure
     or its evidence takes the person's one accept while its quest stays Taken (`daoris quest accept`, *Accept the departure* in What needs
     you), and `quest.holds` reaches on it; `quest.holds` reads a departure as the yes's hold (its `yes` option), never its evidence's
-    verdict, and a refused yes names what waits (DEPARTLOCK1). A held quest is
+    verdict, and a refused yes names what waits (DEPARTLOCK1). Whose yes a departure waits for is the risk policy's at the quest's place
+    (`QuestDepartures`, D354): a quest held as `Departed` has the act `work.done`, or `direction.set` where its done departs from every requirement
+    (distinct requirement ids, never answer rows; a quest with no requirements is `work.done`), so its target moved.
+    Where the judge passes it the look (`departures`, after `step-settles`) posts the policy's yes to the service's accept door, its author
+    `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`, whose act is one of those two and whose rule and revision are one line each, refused
+    otherwise by the door), journals one `risk.judged` line and says it, a refusal of the service said once per quest and revision and asked again at each look, so with nothing configured a
+    departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
+    `owner`, or no policy is read, the person's yes and press as before. The service keeps the yes and judges nothing; like a role's, the
+    policy's yes takes a departure alone, so evidence still awaited beside it waits on its check. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
     the quest through the one accept before the close (`RunEndQuests`); any other held quest is left as the person left it, and the
     sessions still end. An end that closes and ends nothing, a run a session waits on that a look skips anyway, and session records that do not read each say why once in the machine log (`run.end.empty`). Every shipped development graph that holds
@@ -248,7 +256,29 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
     `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
-    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red.
+    red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354), its failure kept on the
+    left attempt's role, the place's supervisor (`SpentChecks.HeldOn`): a row classing it `role` gives it to that role's holder as the place
+    casts it, or to the role's agent where nothing casts it, the words naming that role and holder, and it is held like any agent's wait:
+    a holder no live session serves makes it a vacancy (`StepVacancies`, below), and one a live session serves but never answers reaches the
+    final exit past the same bound; a row classing it `owner`, or no policy read, gives it to the person; where the policy asks nobody (the
+    seed passes it) it reaches the owner's final exit (`FinalExits`) at once: one notice with the rounds, the red classes, what the session
+    tried and for how long, one `risk.judged` line, and the person's row in What needs you until the owner looks, never stopped by Daoris and
+    never one row per red. Who it went to is kept on its telling (`NodeTold.Decided`, and the role) in the same write, and only then is the
+    decision done: its words reach the work's session, once, with its round and the bound (`NodeRunKeeping.SpentRedsAsync`), saying who
+    holds it. A decision kept for a holder is judged again at each look (`CheckRounds.SpentOwed`, D354 point 4): a policy lowered or raised
+    moves it without telling the session again, and one at the exit stays there. A final exit's row is a `step` row carrying `exit`
+    (`StepExit`, its kind `spent`, `vacant` or `unanswered`), held by the person and counted by its own key as its obligation
+    (`exit:<run>/<node>#<attempt>`, `FinalExits.Key`), with the presses that answer it, never the steward's; it is the exit's one
+    interruption, announced once under that key (`WaitAnnouncements.ExitKind`: a toast in a window in front, the OS balloon behind it),
+    naming the run, the step, the story's short form by its kind and the one answer, so a vacancy said before it is said again as the exit.
+    Its record is a notice of Done and failed under the same key (`LookSaid.FinalExit` news naming the run and the step, whose *Open* opens
+    the run), which no window says aloud: the whole story is the look's line, said once as the exit is kept (`NodeRuntimePass.Noticed`), and
+    the notice is kept again at each look while the exit stands (`NodeRuntimePass.Standing`, `LookSaid.Stands`), so a look a later failure
+    ended or a refused write loses none, and one held, or dismissed while the process runs, is never written again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
+    command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
+    flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
+    blocks and last lines (`GateLogExcerpt`).
 
 **Runs**
 
@@ -430,9 +460,26 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     has ended (a chat run's read by its turn state, as its hand is), the gate standing with the session until then; an answer counts as
     new where its word differs, or a fix's commit does, as the reading keeps them, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
-    dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under
-    `commits-since`, each with its count, held by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    dispute and commits since that no other agent read are the act `work.accept` at the work's place, which the gate asks the judge
+    (`OpinionGateFacts.Risk`, read from the look's config, D354): with nothing configured the seed passes it, the gate `answered` by the
+    policy (`policy`, its words the verdict's rule and revision, journaled once as a `risk.judged` pass line on the run and its `opinion`
+    step, `PolicyPasses.Gate`, counted only once it appended, one line for each tip it passes at) and the work goes on to its landing:
+    the `opinion` step is reached with the pass's line, which its run says under it (`OpinionGateReading.PassedLine`); a step its record
+    still holds on the dispute until the runtime's next pass judges it says it passed, with that line and on nobody's answer (its wait
+    `passed`), never *working*; judged again at every look and at each new tip, so a raise opens it, a lowering releases it and new
+    commits are passed again at their own tip (OPINIONPASS1). Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
+    `role-commits-since`, read as the Accept's wait, its wait naming that role, never the row's `by`): no agent's tool answers it, so an
+    agent holder makes it a vacancy, listed, announced once and at the owner's final exit past its bound, and a person the place casts
+    holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
+    the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
+    waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
+    by the person), never *working*: the run's view reads the gate in the work's tree here wherever its step stands on it
+    (`IWorkflowRunRecords.OpinionAsync`), as every landing door does, so the wait carries the gate's count and session. The one recheck is
+    a pass of its own: `opinion.asked` said as the host opens it, `opinion.given` with the seconds from its open, and its consultation kept
+    beside it once given (`OpinionDeliveries.RecheckConsulted`); one kept with its diff alone gets it at the next look, read as given and
+    never asked again. Its findings never go back to the working session: the gate holds them as disputes, and `opinion show` lists the
+    recheck, its word on each first-pass finding and its own (OPINIONQUIET1). The person's word at it holds at the tip it covers; only a
+    newer commit asks again, and it stands before the policy is asked. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
     recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the
@@ -630,12 +677,18 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
     verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. A failed gate's
-    why carries the failing step's own lines with its log's path: the log's red blocks (an `== RED <step>` line to the next `== `) and
-    its last lines, within about 40 lines and 4 KB (`GateLogExcerpt`), so the work reads why without asking for the log. The
+    why carries the failing step's own lines with its log's path, said relative to the home: the log's red blocks (an `== RED <step>`
+    header line, matched as a step's header only, to the next `== `) and its last lines, within about 40 lines and 4 KB
+    (`GateLogExcerpt`), so the work reads why without asking for the log. The log is a child's words and passes `GitWords.Redact` first:
+    a line holding a secret's shape (every token and key shape the sensitive scan's built-ins name, an API secret key and an AWS access key
+    among them, a key block, an Authorization or Cookie header) is withheld whole, so what a verdict's why
+    keeps and says never carries one. The same excerpt follows a `regenerate` that did not finish, its `regenerate.log` written in a
+    try of its own (a log that cannot be kept leaves the command and its output said without a path), and a check cancelled in the
+    preparation or a regenerate ends as ended (`it was ended before its verdict`, each gate not run), never as an exception. The
     runner keeps each group's passes as the group ends, so a check asked again at a new commit (a merge of the line's tip included), or
     after one stood down or stopped, replays every class whose inputs that commit left unchanged; Daoris keeps no class verdict of its own.
-    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy), or a verification pipeline's check, which runs
-    the declaration's `reached` runner over every tier. The machine runs as many heavy runs at once as its one admission admits
+    A step wanting the heavy tier names it: `heavy` (the gates the declaration marks heavy, and the `reached` runner given `{tier}` `all`); any other
+    verification pipeline's check runs the runner given `{tier}` `fast`, never the Process half the run after the landing owes. The machine runs as many heavy runs at once as its one admission admits
     (`CheckAdmission`), judging every heavy run on it together from the records beside the slots: the checks' and gated integration
     lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
@@ -666,7 +719,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     gates for a check whose run has a base (its batch's base, else its line's branch): the runner runs in the verification tree
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
-    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A run's check (`RunChecks`, `AsMerged`) judges the work
+    run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A check holds one place in the machine's admission, taken
+    after its tree is prepared and held while its regeneration and each of its gates or its runner run, never one place for each; the
+    regeneration's commands are told it as each gate's are (`DAORIS_ADMISSION_HOLD`), so a child that asks the admission takes none. A run's check (`RunChecks`, `AsMerged`) judges the work
     as merged onto its line's tip (the remote's head, else `main` or `master`): the verification tree takes the work where it holds that tip,
     else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
     session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands
@@ -781,12 +836,22 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
     handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
     the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
-    (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the step as its own (`NodeSource.Daoris`, never the
-    person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
-    up, never asked of the owner; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts again if it
-    becomes one. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
-    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
-    passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
+    (`vacancyHours` in `driver.json`, a day by default, 1 to 720, `VacancySetting`; `daoris settings vacancy <hours>` or the window's `SET_VACANCY`, its row beside `checks` at Settings → Agents and sessions) it reaches the owner's final exit (`FinalExits`, D354 point 4): one notice
+    naming the cast, the role's agent and the Vacant list, how long each held it and why none answered it, and the one answer asked, and its
+    `risk.judged` line, kept as exited (`StepVacancy.Exited`) so it is never said again whoever serves it later; every reader then says it as
+    the person's row (`StepWaiting.Exited`), no longer vacant, until the owner settles it. A plugin's actor or a spent red's role that a live
+    session serves is kept too (`StepVacancy.Served`, never listed) and, never answered past the same bound from when it was first served,
+    reaches the final exit the same way. A vacancy's line, notice and journal line are said only once its record is kept. Daoris never stops it as its own; a give-up a build before the final exit wrote
+    (`NodeWord.GaveUp`, `NodeSource.Daoris`) is read and said as it stands. A step no longer vacant drops its
+    vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
+    serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
+    cast alone, does not), so a step served again leaves *Vacant* at once and
+    not when the pass next drops it; a vacancy file that will not write is said once and never ends the pass; and one whose run's record is gone is
+    swept by the pass with it. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
+    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says: `RiskStepGates.Verdict(judge, kind, node)` is the one verdict path every hold reads (a spent red, a quest's departure, the quest's holds, the opinion's gate; an unwired opinion port reads no judge). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), a raise to the owner or a lowering where a hold would release
+    writes its own at release (`TenureRejudge`, its `today` saying which, its key the hold's with the epoch it moved to), and a run whose
+    passed step the person held is told so once in its lines, with that step's first pass line, so never again after a restart; an
+    `opinion` step its gate's pass let go journals its own line the same way. A review's Accept and a task's approval wait only where the risk policy
     gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
     `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node
     door as itself (`workflow skip` from its own channel, D352), never handed to the run's working session, whose done it reads and whose

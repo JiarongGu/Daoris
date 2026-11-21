@@ -29,7 +29,7 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
                 if (each.ValueKind == JsonValueKind.Object && Text(each, "node") is { } node && each.TryGetProperty("attempt", out var number)
                     && number.TryGetInt32(out var attempt) && Moments.Read(each, "since") is { } since)
                 {
-                    read.Add(new StepVacancy(node, attempt, since, Flag(each, "told"), Flag(each, "refused")));
+                    read.Add(new StepVacancy(node, attempt, since, Flag(each, "told"), Flag(each, "exited")) { Served = Flag(each, "served") });
                 }
             }
 
@@ -39,6 +39,33 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
         {
             return [];
         }
+    }
+
+    public IReadOnlyList<string> Units()
+    {
+        if (!Directory.Exists(FolderOf(home))) return [];
+        var units = new List<string>();
+        try
+        {
+            foreach (var path in Directory.GetFiles(FolderOf(home), "*.json"))
+            {
+                try
+                {
+                    using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+                    if (document.RootElement.ValueKind == JsonValueKind.Object && Text(document.RootElement, "unit") is { Length: > 0 } unit && PathOf(home, unit) == path) units.Add(unit);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+                {
+                    // A file that does not read names no run; the next look reads it again.
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return units;
+        }
+
+        return units;
     }
 
     /// <summary>The vacancy of <paramref name="node"/>'s attempt <paramref name="attempt"/>, or null where the pass judged none.</summary>
@@ -58,7 +85,8 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
             ["unit"] = unit,
             ["vacancies"] = new JsonArray([.. vacancies.Select(each => (JsonNode)new JsonObject
             {
-                ["node"] = each.Node, ["attempt"] = each.Attempt, ["since"] = Moments.Write(each.Since), ["told"] = each.Told, ["refused"] = each.Refused,
+                ["node"] = each.Node, ["attempt"] = each.Attempt, ["since"] = Moments.Write(each.Since), ["told"] = each.Told, ["exited"] = each.Exited,
+                ["served"] = each.Served,
             })]),
         };
         Directory.CreateDirectory(FolderOf(home));

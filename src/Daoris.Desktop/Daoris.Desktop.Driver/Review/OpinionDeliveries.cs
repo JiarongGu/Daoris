@@ -43,6 +43,7 @@ public sealed class OpinionDeliveries(string home)
         if (PathOf(view.Id) is not { } path) return;
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             AtomicFile.WriteBytes(Path.Combine(Path.GetDirectoryName(path)!, ConsultationFile), Consultations.Json(OpinionConsultations.Of(view, answered)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -52,6 +53,15 @@ public sealed class OpinionDeliveries(string home)
     }
 
     public const string ConsultationFile = "consultation.json";
+
+    /// <summary>A recheck's consultation, kept once it is given, as a first pass's is once answered; one kept with its diff alone gets it
+    /// at the next look that reads it.</summary>
+    public void RecheckConsulted(OpinionView recheck)
+    {
+        if (recheck.First || !recheck.Given || PathOf(recheck.Id) is not { } path) return;
+        if (File.Exists(Path.Combine(Path.GetDirectoryName(path)!, ConsultationFile))) return;
+        Consulted(recheck, null);
+    }
 
     /// <summary>The recheck asked, by its opinion's id, or why none is: kept once.</summary>
     public OpinionDelivered Rechecked(string opinion, string? recheck, string? why) =>

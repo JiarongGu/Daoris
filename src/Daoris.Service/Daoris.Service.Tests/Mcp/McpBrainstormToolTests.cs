@@ -25,15 +25,16 @@ public sealed class McpBrainstormToolTests : IDisposable
 
     private string Answer(string turn) => Path.Combine(_root, "brainstorms", "b1", "answers", $"{turn}.json");
 
-    /// <summary>A turn's room as the driver opens it: the packet with its sources, and for a synthesis the anonymous proposals.</summary>
+    /// <summary>A turn's room as the driver opens it: the packet's index and source files, and for a synthesis the anonymous proposals.</summary>
     private string Room(string turn, bool packet = true)
     {
         var room = Directory.CreateDirectory(Path.Combine(_root, "brainstorm-rooms", "b1", turn)).FullName;
         if (packet)
         {
-            File.WriteAllText(Path.Combine(room, "packet.json"), """
-                { "packet": 1, "digest": "sha256:00", "question": "Why?", "sources": [{ "id": "S1", "kind": "decision" }, { "id": "S2", "kind": "document" }] }
-                """);
+            File.WriteAllText(Path.Combine(room, "index.md"), "# Packet `sha256:00`\n\n## The question\n\nWhy?\n");
+            Directory.CreateDirectory(Path.Combine(room, "sources"));
+            File.WriteAllText(Path.Combine(room, "sources", "S1.md"), "# S1: `docs/decisions/D1.md`\n");
+            File.WriteAllText(Path.Combine(room, "sources", "S2.md"), "# S2: `docs/design.md`\n");
         }
 
         if (turn.StartsWith('s'))
@@ -113,6 +114,27 @@ public sealed class McpBrainstormToolTests : IDisposable
         Assert.DoesNotContain("Another", File.ReadAllText(Answer("g1")));
     }
 
+    [Fact]
+    public void An_answer_so_far_is_kept_marked_partial_and_replaced_until_one_is_given_whole()
+    {
+        var tools = Turn("g4");
+
+        Assert.Contains("answer so far is kept", tools.Give([Proposal("First thought")], partial: true));
+        Assert.True(JsonNode.Parse(File.ReadAllText(Answer("g4")))!["partial"]!.GetValue<bool>());
+        Assert.Contains("answer so far is kept", tools.Give([Proposal("Second thought")], partial: true));
+        Assert.Contains("Second thought", File.ReadAllText(Answer("g4")));
+
+        var refused = tools.Give([Proposal("Broken thought", effort: "tiny")]);
+        Assert.Contains("field:effort", refused);
+        Assert.Contains("stays kept", refused);
+        Assert.Contains("Second thought", File.ReadAllText(Answer("g4")));
+
+        Assert.Contains("kept: 1 proposal", tools.Give([Proposal("Whole thought")]));
+        Assert.Null(JsonNode.Parse(File.ReadAllText(Answer("g4")))!["partial"]);
+        Assert.Contains("already kept", tools.Give([Proposal("Late thought")], partial: true));
+        Assert.Contains("Whole thought", File.ReadAllText(Answer("g4")));
+    }
+
     /// <summary>An answer with no proposal is valid only with why, and is kept as such.</summary>
     [Fact]
     public void No_proposal_is_an_answer_only_with_why()
@@ -149,7 +171,7 @@ public sealed class McpBrainstormToolTests : IDisposable
     [Fact]
     public void A_room_with_no_packet_keeps_nothing()
     {
-        Assert.Contains("packet.json", Turn("g3", packet: false).Give([Proposal()]));
+        Assert.Contains("index.md", Turn("g3", packet: false).Give([Proposal()]));
         Assert.False(File.Exists(Answer("g3")));
     }
 

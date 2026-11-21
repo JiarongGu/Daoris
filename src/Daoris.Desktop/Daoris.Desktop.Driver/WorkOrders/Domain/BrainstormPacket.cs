@@ -289,16 +289,18 @@ public static class BrainstormWordings
 {
     public static IReadOnlyList<string> Of(string question)
     {
-        var words = question
-            .Split([' ', '\t', '\r', '\n', ',', '.', '?', '!', ';', ':', '"', '\'', '(', ')', '`'], StringSplitOptions.RemoveEmptyEntries)
-            .Where(word => word.Length >= 5)
-            .Select(word => word.ToLowerInvariant())
-            .Distinct(StringComparer.Ordinal)
-            .Take(12)
-            .ToList();
+        var words = Terms(question);
         if (words.Count == 0) return [question.Trim()];
         if (words.Count < 4) return [string.Join(' ', words)];
         var half = words.Count / 2;
         return [string.Join(' ', words), string.Join(' ', words.Take(half)), string.Join(' ', words.Skip(half))];
     }
+
+    public static IReadOnlyList<string> Terms(string question) =>
+        [.. question
+            .Split([' ', '\t', '\r', '\n', ',', '.', '?', '!', ';', ':', '"', '\'', '(', ')', '`'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(word => word.Length >= 5)
+            .Select(word => word.ToLowerInvariant())
+            .Distinct(StringComparer.Ordinal)
+            .Take(12)];
 }

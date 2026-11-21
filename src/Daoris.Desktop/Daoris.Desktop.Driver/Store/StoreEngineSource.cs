@@ -16,4 +16,8 @@ internal static class StoreEngineSource
 
     /// <summary>A connection to <paramref name="path"/>, for a one-off read of a store file (<see cref="DesktopStoreReader"/>).</summary>
     internal static DbConnection Connect(string path, DesktopOpen mode) => Current.Connect(path, mode);
+
+    internal static long? PagesWritten(DbConnection connection) => Current.PagesWritten(connection);
+
+    internal static bool Busy(Exception error) => Current.Busy(error);
 }

@@ -3,10 +3,9 @@ namespace Daoris.Driver;
 /// <summary>What the executor runs with: its clocks, the environment its jobs are composed from, the admission's seams, and who it tells.</summary>
 public sealed record VerifyWorld
 {
-    /// <summary>The clock the bound and a busy runner's ten minutes are read on: the machine's unless a test holds it.</summary>
+    /// <summary>The clock the bound and a busy runner's ten minutes are read on, the machine's unless a test holds it; <see cref="Poll"/> spaces the looks at slots another run holds.</summary>
     public TimeProvider Clock { get; init; } = TimeProvider.System;
 
-    /// <summary>Between two looks at slots another run holds.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromSeconds(1);
 
     /// <summary>The environment every job is composed from (<see cref="GateEnvironment.Compose"/>): the driver's own, never a shell's.</summary>
@@ -39,6 +38,9 @@ public sealed record VerifyWorld
 
     /// <summary>Told once an attempt's result is written: the runtime asks a pass, which reconciles it.</summary>
     public Action<string, string>? Answered { get; init; }
+
+    /// <summary>The lease holder's bus log, which each attempt's start and settle are teed into; null tees nothing.</summary>
+    public BusLog? Bus { get; init; }
 
     private static IReadOnlyList<KeyValuePair<string, string>> Own() =>
         [.. Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()

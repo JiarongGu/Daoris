@@ -35,6 +35,8 @@ export type WaitCardFacts = {
    * presses, drawn in place of the yes and no, and beside a question's options.
    */
   presses?: ReactNode;
+  /** The subagent that raised it: its name where the record holds it, and the way into its focus. */
+  by?: { name: string | null; open?: () => void };
 };
 
 /** What a press answered: yes, no, or an option by its place. */
@@ -103,6 +105,16 @@ export function WaitCard({ wait, now, onAnswer, layout = 'whole', onOpen }: {
         <h3 className="m-0 min-w-0 flex-1 text-heading font-semibold text-ink">{wait.title}</h3>
         <span className="shrink-0 text-caption text-ink-faint">{facts}</span>
       </header>
+      {wait.by && (
+        <p data-wait-child className="m-0 flex min-w-0 items-center gap-x-2 text-small text-ink-faint">
+          <span className="min-w-0 truncate">{wait.by.name ? t('work.wait.child', { name: wait.by.name }) : t('work.wait.childUnheld')}</span>
+          {wait.by.open && (
+            <button type="button" aria-label={t('work.wait.childOpen', { name: wait.by.name })} onClick={wait.by.open} className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-small text-accent-ink underline">
+              {t('work.band.open')}
+            </button>
+          )}
+        </p>
+      )}
       <p className="m-0 whitespace-pre-line text-body text-ink">{wait.what}</p>
       <dl className="m-0 grid gap-1">
         {options.length > 0

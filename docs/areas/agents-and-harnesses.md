@@ -149,7 +149,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     refuse, or for the allow supervisor at the session's repository; only the hold's bound (`HeldPermissions.Bound`, 15 minutes)
     refuses it, said as such. The protocol door holds on its wire (`ChatHolds`); the native door, which refuses under `-p` what
     its rules do not allow, is handed a `PreToolUse` hook (`permission-ask.mjs`, `ClaudeAskHook`) that writes a `permit` request
-    for a call its mode and rules would ask about and answers from the loop's hold (`NativePermits`). A session shaped for one job
+    for a call its mode and rules would ask about and answers from the loop's hold (`NativePermits`). A hold names the subagent that
+    asked where its door says (`HeldPermission.Child`: the protocol door's subagent session on the wire, the hook's `agent_id`),
+    by the id the record keeps its lifetime under. A session shaped for one job
     (review, helper, intake, brainstorm, partner, supervise) is handed none. (D81, D184, D253)
     `daoris brainstorm "…" --agents <adapter,adapter>` reads each name against the adapters the home answers (the build's and its
     plugins') and refuses an unknown one at the terminal, naming the adapters, before the desk writes a request; no role's word
@@ -168,7 +170,13 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     an id derived from the agent and the old id, with every reference it has (the folder, `accounts.json`, the wiring's defaults,
     orders, kept account and fold receipts, `cooling.json`, `windows.json`, `reads.json`, `keys.json`, `agent-offers.json`,
     `usage.json`, the usage history, the service's `sessions.profile` and the desktop store's `binding_picks`):
-    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A word id stays
+    `daoris home account-ids --plan` lists each, `--yes` does it while nothing of Daoris runs (`AccountIdMoves`). A folder a process
+    holds (a browser's native host, which the harness registers inside the account's own folder, `chrome/chrome-native-host.bat`,
+    or a session's working folder) is named in both by process name and id, never stopped, and its account is left whole, every
+    reference kept; the next `--yes` moves it once nothing holds it (`HeldFiles`, where Windows can tell; a move the system refuses
+    is left the same way). The browser's native-messaging manifest (`com.anthropic.claude_code_browser_extension`, one per browser,
+    outside every account folder, found in the registry on Windows and the browsers' folders elsewhere) has its `path` moved with
+    the account, every other key kept; one naming no moving folder is left, and one that cannot be written is said with the path to set, never stopping the move (`AccountIdNativeHostStore`). A word id stays
     the account's name where it had none; a counter never does. An entry in `accounts.json` named like a lock's folder is no
     account's: never read as a name, and the move drops it. `agent list` says an account by its name, never its id beside it;
     a command in a sentence takes the id. Removing an account deletes the folder. (D347) An API key is an account too: kept in `keys.json`, sealed by the

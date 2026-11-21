@@ -16,20 +16,22 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
 {
     [McpServerTool(Name = "brainstorm_give")]
     [Description(
-        "Only for a turn Daoris started to propose answers to a brainstorm's question: give your proposals, once, before you end, "
-        + "at most eight, no idea twice (unknown is an answer on a scale: never guess the best value). With none, say why in `none`. "
-        + "A refusal says why by code: give it again, whole. Your proposals are claims a person reads; this changes nothing, "
-        + "and nobody can ask you anything after.")]
+        "Only for a turn Daoris started to propose answers to a brainstorm's question: give your proposals before you end, "
+        + "at most eight, no idea twice (unknown is an answer: never guess the best value). With none, say why in `none`. "
+        + "`partial: true` marks your answer so far, replaceable; a whole answer is kept once. A refusal says why by code: give "
+        + "it again, whole. Your proposals are claims a person reads; this changes nothing, and nobody can ask you anything after.")]
     public string Give(
         [Description("Your proposals, at most eight, the strongest first; none where you have no proposal.")]
         BrainstormProposalInput[]? proposals,
         [Description("What you would need that the packet lacks, at most five of 200 characters each.")]
         string[]? needs = null,
         [Description("Only with no proposal: why there is none, in at most 200 characters.")]
-        string? none = null)
+        string? none = null,
+        bool? partial = null)
     {
         var text = Composed(writer =>
         {
+            if (partial == true) writer.WriteBoolean("partial", true);
             writer.WriteStartArray("proposals");
             foreach (var proposal in proposals ?? [])
             {

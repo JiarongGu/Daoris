@@ -146,7 +146,7 @@ public static class OpinionToPerson
     public static string Said(string code) => code switch
     {
         NotFound => "there is no session of this machine's by its id",
-        Recheck => "a recheck's findings go to the person, never back to the working session by themselves",
+        Recheck => "a recheck's findings are the person's to read, never sent back to the working session by themselves; whether they hold the work is the risk policy's verdict at the opinion's gate",
         Conversation => "the work was a conversation's, which another agent's findings do not reach by themselves",
         PersonWentOn => "you went on in the conversation after you asked for them, so your words went first",
         // The record they went to went on in another, which could not take them again.
