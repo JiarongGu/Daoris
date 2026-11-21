@@ -170,7 +170,7 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
     It has no Undo: its record keeps the commit and `git stash store -m <message> <id>`. (D204)
 38. Every act takes one checkout lock, keyed by the common directory and held alone, and runs through the act journal; an act
     inside a flow already holding that lock runs under it; an act refused only because another holds the checkout answers `Busy`
-    (`ActRun`), which a workflow's `push` waits out and tries again at a later pass. A reconciler settles an open act; nothing is re-run. Every branch
+    (`ActRun`), which a workflow's `push` waits out and tries again at a later pass. The integration's move of the line (the promotion's effect) also takes `local/merge-run.lock` of the checkout the line is moved in (the one that has it out, else the registered root), the merge tool's own file (verb `landing`, its pid and start), so the line never moves under a merge the tool has open: a live run holds the move, said, for the next look, and a lock a killed holder left is taken back by its process check, removed only under a reclaim guard beside it (`MergeRunLock`, `checkout-lock.ts`). A checkout with neither the folder nor the tool has no run to meet and takes none. A reconciler settles an open act; nothing is re-run. Every branch
     delete is the journal's `ref.delete` act with its *Undo*: the person's `GIT_REF_DELETE` and every door of Daoris's
     (`DISCARD_SESSION_BRANCH`, `WITHDRAW_LANDING_BRANCH`, `SWEEP`, the look's clean-up, a removal, a run's `tidy`) through
     `ContentHolds.DeleteJudgedAsync` and `JournaledDeletes`, pressed by `daoris`, listed from the journal alone (`GIT_DELETES`).

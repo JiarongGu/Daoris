@@ -393,6 +393,13 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         }
 
         var checkout = entries.FirstOrDefault(each => string.Equals(each.Branch, ask.Line, StringComparison.Ordinal));
+        // The line's one lock with the merge tool, in the checkout the line is moved in; a live run holds this move for the next look.
+        using var onTheLine = MergeRunLock.TryTake(checkout?.Path ?? ask.Root, store.Now(), out var running);
+        if (onTheLine is null)
+        {
+            return Held($"the merge tool is running on the checkout `{ask.Line}` is moved in ({running}), so it is not moved under it: nothing was moved, and it is tried again at the next look.");
+        }
+
         string how;
         if (Seam is { } beforeMove) await beforeMove("before-move").ConfigureAwait(false);
         if (checkout is not null)

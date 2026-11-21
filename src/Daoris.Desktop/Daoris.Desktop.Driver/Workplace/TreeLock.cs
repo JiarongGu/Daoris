@@ -174,8 +174,7 @@ public sealed class TreeLock : IDisposable
         alone._held = RepositoryHolds.Hold(home, repository);
         try
         {
-            using var self = Process.GetCurrentProcess();
-            AtomicFile.WriteText(ByOf(path), $"{by}\n{Environment.ProcessId}\n{self.StartTime.ToUniversalTime().Ticks}\n");
+            AtomicFile.WriteText(ByOf(path), $"{by}\n{Environment.ProcessId}\n{SelfStarted()}\n");
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -184,6 +183,13 @@ public sealed class TreeLock : IDisposable
 
         LockWaits.Holding = alone;
         return alone;
+    }
+
+    /// <summary>This process's start, as UTC ticks: how it names itself to a lock that is judged by pid and start.</summary>
+    internal static long SelfStarted()
+    {
+        using var self = Process.GetCurrentProcess();
+        return self.StartTime.ToUniversalTime().Ticks;
     }
 
     /// <summary>

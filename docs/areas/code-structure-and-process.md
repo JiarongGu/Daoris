@@ -139,7 +139,7 @@ finishes first and the whole set runs once.
     the writer. Every lock (the verdict store's, the gate tree's, the CI watch's) is put in place complete (`locks.mjs` over
     `run-lock.mjs`), names its holder by pid and creation time, and is taken over only from a holder judged dead and still the one
     judged; a take-over ends only that holder's children. One run at a time holds a checkout's open merge
-    (`local/merge-run.lock`): a second is refused naming the holder's pid and start, never let to collide. A queue entry whose
+    (`local/merge-run.lock`): a second is refused naming the holder's pid and start, never let to collide; Daoris's landing holds the same file for its move of the line (verb `landing`), which a run waits for, said once and for five minutes at most, and which holds off while a run has it. A queue entry whose
     process is gone is never left stuck: `--queue` names a candidate that says it runs while neither its run nor the runner is
     alive, and `--queue --recheck` starts the runner, which resumes it, and clears a request or candidate whose tips main already
     holds into the landed record. New merge behaviour is typed

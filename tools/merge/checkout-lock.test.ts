@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixtureFolder } from './fixture-home.ts';
-import { holderLine, holdingCheckout, releaseCheckout, takeCheckout, type Holder } from './checkout-lock.ts';
+import { LANDING_VERB, holderLine, holdingCheckout, releaseCheckout, takeCheckout, type Holder, type Waiting } from './checkout-lock.ts';
 
 const me: Holder = { pid: 100, started: 1000, at: '2026-11-13T10:00:00Z', verb: 'rerun' };
 const other: Holder = { pid: 200, started: 2000, at: '2026-11-13T10:01:00Z', verb: 'merge' };
@@ -53,6 +53,102 @@ test('a lock that does not read is no run\'s, and is replaced', () => {
     const file = join(dir, 'merge-run.lock');
     writeFileSync(file, 'garbage');
     assert.deepEqual(takeCheckout(file, me, { runs: () => true }), { taken: true });
+  } finally {
+    remove();
+  }
+});
+
+const landing: Holder = { pid: 300, started: 3000, at: '2026-11-21T10:00:00Z', verb: LANDING_VERB };
+
+const waitingWith = (over: Partial<Waiting> = {}): Waiting => ({ ms: 60_000, pollMs: 1000, sleep: async () => {}, now: () => 0, say: () => {}, ...over });
+
+test('a run that finds a landing in flight waits, said once, and runs when the landing ends', async () => {
+  const { dir, remove } = fixtureFolder('checkout-lock');
+  try {
+    const file = join(dir, 'merge-run.lock');
+    const refuse = (message: string) => new Error(message);
+    assert.deepEqual(takeCheckout(file, landing, { runs: () => true }), { taken: true });
+    let clock = 0;
+    const said: string[] = [];
+    const slept: number[] = [];
+    const sleep = async (ms: number) => {
+      slept.push(ms);
+      clock += ms;
+      if (slept.length === 3) releaseCheckout(file, landing);
+    };
+    const ran: string[] = [];
+    await holdingCheckout(file, me, () => true, async () => { ran.push('merge'); }, refuse, waitingWith({ sleep, now: () => clock, say: (line) => said.push(line) }));
+    assert.deepEqual(ran, ['merge']);
+    assert.deepEqual(slept, [1000, 1000, 1000]);
+    assert.equal(said.length, 1, 'said once, not at each look');
+    assert.match(said[0] ?? '', /a landing is moving the line \(pid 300, started 2026-11-21T10:00:00Z\): waiting for it to end/);
+    assert.equal(existsSync(file), false, 'the run let its lock go');
+  } finally {
+    remove();
+  }
+});
+
+test('a landing that outlasts the wait refuses the run, naming it, and a merge holder is never waited for', async () => {
+  const { dir, remove } = fixtureFolder('checkout-lock');
+  try {
+    const file = join(dir, 'merge-run.lock');
+    const refuse = (message: string) => new Error(message);
+    takeCheckout(file, landing, { runs: () => true });
+    let clock = 0;
+    await assert.rejects(
+      holdingCheckout(file, me, () => true, async () => { throw new Error('ran'); }, refuse, waitingWith({ ms: 2500, sleep: async (ms) => { clock += ms; }, now: () => clock })),
+      /holds this checkout \(pid 300, started 2026-11-21T10:00:00Z, running a landing\)/,
+    );
+    assert.ok(clock >= 2500 && clock < 5000, 'waited the deadline, no longer');
+
+    releaseCheckout(file, landing);
+    takeCheckout(file, other, { runs: () => true });
+    let slept = 0;
+    await assert.rejects(
+      holdingCheckout(file, me, () => true, async () => {}, refuse, waitingWith({ sleep: async () => { slept += 1; } })),
+      /running a merge/,
+    );
+    assert.equal(slept, 0, 'a second merge run is refused at once, as it always was');
+  } finally {
+    remove();
+  }
+});
+
+test('a landing whose process was killed is taken back at once, with no wait', async () => {
+  const { dir, remove } = fixtureFolder('checkout-lock');
+  try {
+    const file = join(dir, 'merge-run.lock');
+    takeCheckout(file, landing, { runs: () => true });
+    let slept = 0;
+    const ran: string[] = [];
+    await holdingCheckout(file, me, (held) => held.pid !== landing.pid, async () => {
+      ran.push('merge');
+      assert.equal(JSON.parse(readFileSync(file, 'utf8')).pid, me.pid);
+    }, (message) => new Error(message), waitingWith({ sleep: async () => { slept += 1; } }));
+    assert.deepEqual(ran, ['merge']);
+    assert.equal(slept, 0);
+  } finally {
+    remove();
+  }
+});
+
+test('a stale lock is removed only by the one holding the reclaim guard: a live guard blocks it, a dead guard is cleared', () => {
+  const { dir, remove } = fixtureFolder('checkout-lock');
+  try {
+    const file = join(dir, 'merge-run.lock');
+    const guard = `${file}.reclaim`;
+    const runs = (held: Holder) => held.pid !== me.pid;
+    takeCheckout(file, me, { runs: () => true });
+    writeFileSync(guard, JSON.stringify(other));
+
+    const blocked = takeCheckout(file, landing, { runs });
+    assert.equal(blocked.taken, false, 'another reclaimer is at work: nothing is removed under it');
+    assert.equal(JSON.parse(readFileSync(file, 'utf8')).pid, me.pid);
+
+    writeFileSync(guard, JSON.stringify(me));
+    assert.deepEqual(takeCheckout(file, landing, { runs }), { taken: true }, 'a guard whose holder is dead is cleared and the lock reclaimed');
+    assert.equal(JSON.parse(readFileSync(file, 'utf8')).pid, landing.pid);
+    assert.equal(existsSync(guard), false, 'the guard is let go');
   } finally {
     remove();
   }
