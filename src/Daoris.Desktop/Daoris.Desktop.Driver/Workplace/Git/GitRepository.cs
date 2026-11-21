@@ -218,7 +218,7 @@ public sealed class GitRepository : IGitRepository
 
     public async Task<GitDone> AddWorktreeAsync(string folder, GitWorktreeAdd add, CancellationToken ct)
     {
-        List<string> ask = add.HooksPath is { } hooks ? ["-c", $"core.hooksPath={hooks}", "worktree", "add"] : ["worktree", "add"];
+        List<string> ask = add.HooksPath is { } hooks ? ["-c", $"core.hooksPath={hooks}", .. TreeOpenings.CheckoutSpread, "worktree", "add"] : [.. TreeOpenings.CheckoutSpread, "worktree", "add"];
         if (add.LockReason is { } reason) ask.AddRange(["--lock", "--reason", reason]);
         ask.AddRange(add.Branch is { } branch ? (string[])["-b", branch, add.Path, add.Start] : ["--detach", add.Path, add.Start]);
         var (code, _, stderr) = await RunGitAsync(folder, ask, ct).ConfigureAwait(false);
