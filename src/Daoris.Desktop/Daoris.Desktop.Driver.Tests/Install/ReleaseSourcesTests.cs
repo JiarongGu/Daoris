@@ -11,10 +11,11 @@ public sealed class ReleaseSourcesTests
     [Fact]
     public void The_channels_are_the_sources_in_their_order()
     {
-        Assert.Equal([ClaudeReleases.Channel, CodexReleases.Channel], ReleaseChannels.Known);
+        Assert.Equal([ClaudeReleases.Channel, CodexReleases.Channel, DaorisReleases.Channel], ReleaseChannels.Known);
         Assert.Equal(ReleaseChannels.Known, ReleaseChannels.Sources.Select(source => source.Channel));
         Assert.IsType<ClaudeReleaseSource>(ReleaseChannels.Of(ClaudeReleases.Channel));
         Assert.IsType<CodexReleaseSource>(ReleaseChannels.Of(CodexReleases.Channel));
+        Assert.IsType<DaorisReleaseSource>(ReleaseChannels.Of(DaorisReleases.Channel));
     }
 
     [Fact]
