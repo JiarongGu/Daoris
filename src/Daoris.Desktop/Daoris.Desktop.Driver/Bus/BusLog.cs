@@ -79,6 +79,7 @@ public sealed class BusLog : IAsyncDisposable
     private int _retries;
     private long _retried;
     private DateTimeOffset _retryAt = DateTimeOffset.MinValue;
+    private Task? _disposed;
 
     private readonly IBusLogStore _store;
     private readonly BusLogOptions _options;
@@ -145,7 +146,8 @@ public sealed class BusLog : IAsyncDisposable
                 var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
                 var envelope = new BusEnvelope(
                     Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, draft.Deadline,
-                    draft.Effect, cause is null || draft.Causes.Contains(cause) ? draft.Causes : [.. draft.Causes, cause], draft.Payload, at);
+                    draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= DesktopBusLogStore.MostListed ? draft.Causes : [.. draft.Causes, cause],
+                    draft.Payload, at);
                 if (draft.Key is { } key)
                 {
                     // Bounded: a key from long ago is forgotten with the rest, and its follower's causes stay empty, as after a restart.
@@ -225,15 +227,41 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
-    /// <summary>Stop the loop, write what waits, and let the store go.</summary>
+    /// <summary>Stop the loop, write what waits, and let the store go; a second caller waits for the first's close, and none throws.</summary>
     public async ValueTask DisposeAsync()
     {
+        TaskCompletionSource? mine = null;
+        Task closed;
         lock (_gate)
         {
-            if (_closed) return;
-            _closed = true;
+            if (_disposed is null)
+            {
+                _closed = true;
+                mine = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                _disposed = mine.Task;
+            }
+
+            closed = _disposed;
         }
 
+        if (mine is null)
+        {
+            await closed.ConfigureAwait(false);
+            return;
+        }
+
+        try
+        {
+            await CloseAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            mine.SetResult();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
         await _closing.CancelAsync().ConfigureAwait(false);
         try
         {
@@ -241,6 +269,10 @@ public sealed class BusLog : IAsyncDisposable
         }
         catch (OperationCanceledException)
         {
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Loop, error.Message);
         }
 
         await LastFlushAsync().ConfigureAwait(false);

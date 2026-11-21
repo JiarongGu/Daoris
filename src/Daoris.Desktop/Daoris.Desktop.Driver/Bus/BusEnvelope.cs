@@ -71,4 +71,7 @@ public static class BusMisses
 
     /// <summary>More waited unflushed than the log keeps in memory (<see cref="BusLog.MostPending"/>).</summary>
     public const string Full = "full";
+
+    /// <summary>The writer's loop failed; the close wrote what waited.</summary>
+    public const string Loop = "loop";
 }

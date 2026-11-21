@@ -289,6 +289,64 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.True(bus.Append(settled));
     }
 
+    /// <summary>
+    /// 🔴 The close holds: a second close waits for the first's write; a loop that failed never makes the close throw, its failure
+    /// counted and said, and what waited is written; an added cause never takes the causes past their bound; and the history reset
+    /// keeps the measures, which are evidence.
+    /// </summary>
+    [Fact]
+    public async Task The_close_waits_once_survives_a_failed_loop_and_the_reset_keeps_the_measures()
+    {
+        var store = new CountingStore { Held = new ManualResetEventSlim(false) };
+        var bus = BusLog.Over(store, Options());
+        Assert.True(bus.Append(Plain("run-1")));
+        var first = bus.DisposeAsync().AsTask();
+        await Poll.Until(() => store.Entered == 1, () => "the close never wrote");
+        var second = bus.DisposeAsync().AsTask();
+        Assert.False(second.IsCompleted, "a second close ended before the first's write");
+        store.Held.Set();
+        await Task.WhenAll(first, second);
+        Assert.Equal(1, store.Writes);
+
+        var failing = new CountingStore();
+        var timerless = new TimerlessClock();
+        var failed = BusLog.Over(failing, new BusLogOptions { Clock = timerless });
+        Assert.True(failed.Append(Plain("run-1")));
+        await Poll.Until(() => timerless.Asked, () => "the loop never waited");
+        await failed.DisposeAsync();
+        Assert.Equal(1, failed.Tally.Missed[BusMisses.Loop]);
+        Assert.Equal(1, failing.Writes);
+
+        var listed = new CountingStore();
+        await using (var causes = BusLog.Over(listed, Options()))
+        {
+            Assert.True(causes.Append(Plain("run-1") with { Key = "first" }));
+            Assert.True(causes.Append(Plain("run-1", 1) with { Causes = [.. Enumerable.Range(0, DesktopBusLogStore.MostListed).Select(n => $"c-{n}")], After = ["first"] }));
+        }
+
+        Assert.Equal(DesktopBusLogStore.MostListed, listed.Batches.SelectMany(batch => batch.Entries).Last().Causes.Count);
+
+        Assert.Contains("bus_measures", HomeHistory.DesktopKept);
+        Assert.DoesNotContain("bus_measures", HomeHistory.DesktopTables);
+        Assert.Contains("bus_log", HomeHistory.DesktopTables);
+    }
+
+    /// <summary>A clock whose timers cannot be made: the writer's loop fails at its first wait.</summary>
+    private sealed class TimerlessClock : TimeProvider
+    {
+        private int _asked;
+
+        public bool Asked => Volatile.Read(ref _asked) > 0;
+
+        public override DateTimeOffset GetUtcNow() => new(2026, 10, 20, 9, 0, 0, TimeSpan.Zero);
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            Interlocked.Increment(ref _asked);
+            throw new InvalidOperationException("this clock makes no timer");
+        }
+    }
+
     /// <summary>🔴 A burst of commit-class entries flushes at once and grouped: one write in flight, the rest in the next.</summary>
     [Fact]
     public async Task A_burst_of_commit_class_entries_flushes_at_once_and_grouped()

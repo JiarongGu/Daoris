@@ -255,7 +255,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     each kind's handling time where known, the flushes' count, entries and time, the rows' own bytes beside the pages each write
     put on disk (the write-ahead log's frames, as the engine counts them), the misses and each look stage's time, which
     `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
-    measure) and 90 days of measures; nothing reads behind the cut yet.
+    measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and keeps
+    `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
+    said at the close, which still writes what waited.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)
