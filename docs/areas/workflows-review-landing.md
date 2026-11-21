@@ -236,9 +236,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     or its evidence takes the person's one accept while its quest stays Taken (`daoris quest accept`, *Accept the departure* in What needs
     you), and `quest.holds` reaches on it; `quest.holds` reads a departure as the yes's hold (its `yes` option), never its evidence's
     verdict, and a refused yes names what waits (DEPARTLOCK1). Whose yes a departure waits for is the risk policy's at the quest's place
-    (`QuestDepartures`, D354): the act is `work.done`, or `direction.set` where the done departs from every requirement, so its target moved.
+    (`QuestDepartures`, D354): a quest held as `Departed` has the act `work.done`, or `direction.set` where its done departs from every requirement
+    (distinct requirement ids, never answer rows; a quest with no requirements is `work.done`), so its target moved.
     Where the judge passes it the look (`departures`, after `step-settles`) posts the policy's yes to the service's accept door, its author
-    `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`), journals one `risk.judged` line and says it, so with nothing configured a
+    `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`, whose act is one of those two and whose rule and revision are one line each, refused
+    otherwise by the door), journals one `risk.judged` line and says it, a refusal of the service said once per quest and revision and asked again at each look, so with nothing configured a
     departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
     `owner`, or no policy is read, the person's yes and press as before. The service keeps the yes and judges nothing; like a role's, the
     policy's yes takes a departure alone, so evidence still awaited beside it waits on its check. A held quest is
@@ -817,7 +819,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     cast alone, does not), so a step served again leaves *Vacant* at once and
     not when the pass next drops it; a vacancy file that will not write is said and never ends the pass; and one whose run's record is gone is
     swept by the pass with it. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
-    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), a raise to the owner or a lowering where a hold would release
+    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says: `RiskStepGates.Verdict(judge, kind, node)` is the one verdict path every hold reads (a spent red, a quest's departure, the quest's holds, the opinion's gate; an unwired opinion port reads no judge). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), a raise to the owner or a lowering where a hold would release
     writes its own at release (`TenureRejudge`, its `today` saying which, its key the hold's with the epoch it moved to), and a run whose
     passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
     gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
