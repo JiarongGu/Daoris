@@ -46,8 +46,9 @@ public static class StepWaiting
         };
         if (why is null) return null;
         var role = OnOwnRole(why) ? StepRoles.Of(node) : RoleOf(why);
-        var owners = why == PersonWaits.Left && record?.ToldOf(node.Id, status.Attempt)?.Decided is NodeTold.Exit or NodeTold.OwnerHeld;
-        return new RoleWait(why, role, owners ? new StepHolder(StepHolders.Person) : HolderOf(role), status.Since);
+        var decided = why == PersonWaits.Left ? record?.ToldOf(node.Id, status.Attempt) is { Spent: true } spent ? spent.Decided : null : null;
+        var owners = decided is NodeTold.Exit or NodeTold.OwnerHeld;
+        return new RoleWait(why, role, owners ? new StepHolder(StepHolders.Person) : HolderOf(role), status.Since) { Decided = decided };
     }
 
     /// <summary>A wait as its readers say it: a vacancy at the owner's final exit is the person's, no longer vacant.</summary>
@@ -141,6 +142,9 @@ public sealed record RoleWait(string Why, string Role, StepHolder Holder, DateTi
 
     /// <summary>The page where the act is taken, as its plugin names it; null where none.</summary>
     public string? Url { get; init; }
+
+    /// <summary>A spent red's decision (<see cref="NodeTold.Decided"/>) on a part left; null on every other wait.</summary>
+    public string? Decided { get; init; }
 }
 
 /// <summary>A run step waiting on a role the person holds, as <i>What needs you</i> rows it: the wait, its presses and its page.</summary>
@@ -187,6 +191,9 @@ public sealed record HeldStep(
     public bool Vacant { get; init; }
 
     public DateTimeOffset? GivesUp { get; init; }
+
+    /// <summary>The owner's final exit this row stands at (<see cref="FinalExits"/>): the person's row, announced by its notice.</summary>
+    public StepExit? Exit { get; init; }
 }
 
 /// <summary>
@@ -229,10 +236,17 @@ public static class HeldSteps
         if (StepWaiting.Read(record, node, status, held, cast) is not { } read || record.Pending.Any(word => word.Node == node.Id)) return null;
         var kept = StepVacancies.Kept(vacancies, read, node.Id, status.Attempt, serves);
         var wait = StepWaiting.Exited(read, kept);
-        var carried = wait.Why is PersonWaits.Left or PersonWaits.Held
-                      || (wait.Why == PersonWaits.Accept && node.Kind == NodeKinds.Review && wait.Holder.Kind == StepHolders.Person);
         var tenure = held is { } own && own.Node == node.Id && own.Attempt == status.Attempt ? own : null;
-        var vacancy = carried || kept is { Exited: true } ? null : kept;
+        var exit = ExitOf(run, node.Id, status.Attempt, read, kept);
+        if (exit is not null && wait.Why == PersonWaits.Left)
+        {
+            return new HeldStep(run, node.Id, repository, workspace, wait.Why, wait.Role, LeftSteps.Presses(node, status, PluginFailureHeld.Of(record, node, status)), work,
+                wait.Since) { Holder = StepHolders.Person, Epoch = tenure?.Epoch, Exit = exit };
+        }
+
+        var carried = exit is null && (wait.Why is PersonWaits.Left or PersonWaits.Held
+                      || (wait.Why == PersonWaits.Accept && node.Kind == NodeKinds.Review && wait.Holder.Kind == StepHolders.Person));
+        var vacancy = carried || exit is not null ? null : kept;
         var vacant = vacancy is not null;
 
         // A step its agent's working session settles by its tool or its acts is handed to that session: the person's one press is Take.
@@ -255,9 +269,15 @@ public static class HeldSteps
         {
             Holder = wait.Holder.Kind, HolderName = wait.Holder.Name, Words = wait.Words, Url = wait.Url, Opens = StepWaiting.OpensAt(wait.Why),
             Held = outside, Epoch = tenure?.Epoch, Holds = HoldsOn(node, wait, tenure),
-            Vacant = vacant, GivesUp = vacancy is { } standing ? standing.Since +(bound ?? VacancySetting.Of(null)) : null,
+            Vacant = vacant, GivesUp = vacancy is { } standing ? standing.Since +(bound ?? VacancySetting.Of(null)) : null, Exit = exit,
         };
     }
+
+    /// <summary>The final exit a step's wait stands at: a spent red the policy sent there, or a vacancy or a served wait kept past its bound; else null.</summary>
+    public static StepExit? ExitOf(string run, string node, int attempt, RoleWait read, StepVacancy? kept) =>
+        kept is { Exited: true } ? new(FinalExits.Key(run, node, attempt), kept.Served ? FinalExits.Unanswered : FinalExits.Vacant)
+        : read is { Why: PersonWaits.Left, Decided: NodeTold.Exit } ? new(FinalExits.Key(run, node, attempt), FinalExits.Spent)
+        : null;
 
     /// <summary>The hold acts a row offers: they pass the step's own tenure on, so never on a go-ahead, which the grants answer.</summary>
     public static IReadOnlyList<string>? HoldsOn(NodeDeclaration node, RoleWait? wait, StepTenure? tenure) =>

@@ -8,7 +8,7 @@ namespace Daoris.Desktop;
 /// The waits that come to the person: a tool call a session holds for their answer, and a run's step waiting on a role they hold (its
 /// notification opening the session its run placed in Needs you, whose head carries the step's presses), each announced as a park is: on
 /// <c>SESSION_ATTENTION</c>, in the shape the shell's notifier and the page's toast read, once, where the attention slice first sees
-/// its row, while the notify switch is on.
+/// its row, while the notify switch is on. A final exit's notice says it, not this.
 /// </summary>
 /// <remarks>
 /// <para><b>Why here.</b> Its bound refuses a held call by itself, so it waits on the person with a clock, as a park waits
@@ -52,7 +52,7 @@ public sealed class WaitAnnouncements(IEventBus bus, Func<bool> notifying, Func<
             .Select(each => each.Value as JsonObject)
             .OfType<JsonObject>()
             .Where(row => Json.Text(row, "kind") is RowKind or StepRowKind && Json.Text(row, "id") is not null
-                && Json.Text(row, "class") != AttentionOwnership.AgentsClass)
+                && Json.Text(row, "class") != AttentionOwnership.AgentsClass && !HumanTaskRows.Exited(row))
             .ToList();
 
         static string Key(JsonObject row) => $"{Json.Text(row, "kind")}:{Json.Text(row, "id")}";

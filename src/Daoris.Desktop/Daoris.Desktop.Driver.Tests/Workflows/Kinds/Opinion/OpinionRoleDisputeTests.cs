@@ -50,8 +50,9 @@ public sealed class OpinionRoleDisputeTests : NodeRunFixture
 
         _now = _now.AddHours(2);
         var past = await RunPassAsync(runtime, Bound);
-        Assert.Single(past.Said, line => line.Contains("step `opinion`", StringComparison.Ordinal) && line.Contains("final exit, to you:", StringComparison.Ordinal));
+        Assert.Single(past.Noticed, line => line.Text.Contains("step `opinion`", StringComparison.Ordinal) && line.Text.Contains("final exit, to you:", StringComparison.Ordinal));
         var after = await RunPassAsync(runtime, Bound);
+        Assert.Empty(after.Noticed);
         Assert.DoesNotContain(after.Said, line => line.Contains("final exit", StringComparison.Ordinal) || line.Contains("gave it up", StringComparison.Ordinal));
         Assert.Equal(NodeStates.Active, RunStatus("opinion").State);
         Assert.True(new StepVacancyFiles(_home).Current(RunUnit, "opinion", RunStatus("opinion").Attempt)?.Exited);

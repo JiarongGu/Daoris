@@ -147,6 +147,28 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
         Assert.Equal("engine: a step waits on `worker`, which you fill", told.GetProperty("Headline").GetString());
     }
 
+    [Fact]
+    public async Task A_step_at_the_owners_final_exit_is_the_persons_own_row_and_only_its_notice_announces_it()
+    {
+        var exit = new HeldStep("q7", "check", "engine", "default", PersonWaits.Left, "supervisor", [NodeWordActs.Again, NodeWordActs.Stop], "w1",
+            DateTimeOffset.Parse("2026-11-16T09:51:00Z", System.Globalization.CultureInfo.InvariantCulture)) { Exit = new StepExit(FinalExits.Key("q7", "check", 3), FinalExits.Spent) };
+        var facts = new AttentionFacts
+        {
+            Sessions = [Session("s1a2b3c4", "engine")],
+            Steps = [System.Text.Json.JsonSerializer.SerializeToNode(exit, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+        };
+
+        await AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true, () => true)).JudgeAsync();
+        await AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true, () => true)).JudgeAsync();
+
+        Assert.Empty(Said());
+        var row = Assert.Single(NeedsAPerson.Rows(facts), each => Json.Text(each, "kind") == "step");
+        Assert.Equal(("step", "exit:q7/check#3", FinalExits.Spent, StepHolders.Person), (Json.Text(row, "kind"), Json.Text(row, "obligation"),
+            Json.Text(row["step"]!["exit"]!.AsObject(), "kind"), Json.Text(row["step"]!.AsObject(), "holder")));
+        Assert.Equal([NodeWordActs.Again, NodeWordActs.Stop], row["step"]!["presses"]!.AsArray().Select(press => press!.GetValue<string>()));
+        Assert.Equal(AttentionOwnership.OwnersClass, AttentionOwnership.Of(row, new AttentionTakers((_, _, _) => true, steward: true)).Class);
+    }
+
     /// <summary>A step a role's agent holds, the default where no cast names another, is the agents' row: never announced as the owner's.</summary>
     [Fact]
     public async Task A_step_its_role_s_agent_holds_is_not_announced()

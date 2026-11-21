@@ -43,8 +43,9 @@ public static class CheckRounds
         source?.Kind != NodeKinds.Check || reds.GetValueOrDefault(source.Id) < Bound;
 
     /// <summary>
-    /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not told yet
-    /// (<see cref="NodeRecord.ToldOf"/>) or told by an older build that kept no decision: each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
+    /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not at the owner's
+    /// final exit yet: not told (<see cref="NodeRecord.ToldOf"/>), told by an older build that kept no decision, or decided for a holder, which
+    /// is judged again at each look. Each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
     /// <c>claimed</c> step, with its count of reds.
     /// </summary>
     public static IReadOnlyList<(string Node, int Attempt, int Reds)> SpentOwed(
@@ -59,7 +60,7 @@ public static class CheckRounds
             if (SendsBack(check, reds) || record.Statuses.GetValueOrDefault(source) is not { State: NodeStates.Failed } status) continue;
             if (record.Attempts.LastOrDefault(attempt => attempt.Node == source && attempt.Attempt == status.Attempt)
                     is not { State: AttemptStates.Settled, Outcome: WorkStates.Failed }
-                || record.ToldOf(source, status.Attempt) is { } told && (!told.Spent || told.Decided is not null) || owed.Any(each => each.Node == source))
+                || record.ToldOf(source, status.Attempt) is { } told && (!told.Spent || told.Decided == NodeTold.Exit) || owed.Any(each => each.Node == source))
             {
                 continue;
             }

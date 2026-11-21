@@ -12,9 +12,10 @@ internal sealed record PolicyPassAt(string Subject, string? Workspace, string? R
 
 /// <summary>
 /// Every step a pass reached by the risk policy (<see cref="NodeSource.Policy"/>) is journaled once as a <c>risk.judged</c> release, its rule and
-/// revision with it, since the pass reaches it inside its rounds where the shadow never sees it wait. A run whose passed step held a person's
-/// tenure (a wait opened before the policy decided it) is told so in one line, once. Only a pass line counts as journaled, and only once
-/// appended: the shadow keys a step's open and release alike, and an append that fails is tried again at the next read.
+/// revision with it, since the pass reaches it inside its rounds where the shadow never sees it wait; an <c>opinion</c> step its gate's pass let
+/// go is one of them. A run whose passed step held a person's tenure (a wait opened before the policy decided it) is told so in one line, with
+/// that step's first line, so once across restarts too. Only a pass line counts as journaled, and only once appended: the shadow keys a step's
+/// open and release alike, and an append that fails is tried again at the next read. Every verdict here is <see cref="RiskStepGates.Verdict(RiskStepJudge?, string, NodeDeclaration?)"/>'s.
 /// </summary>
 internal static class PolicyPasses
 {
@@ -37,8 +38,6 @@ internal static class PolicyPasses
     }
 
     private static readonly ConcurrentDictionary<string, HashSet<string>> OpinionSteps = new(StringComparer.OrdinalIgnoreCase);
-
-    private static readonly ConcurrentDictionary<string, byte> GateTold = new(StringComparer.OrdinalIgnoreCase);
 
     private static HashSet<string> OpinionPassed(string home) => OpinionSteps.GetOrAdd(home, path =>
         new HashSet<string>(RiskJournal.Read(path).Where(line => line.Today == Today && line.Key.StartsWith("opinion:", StringComparison.Ordinal)
@@ -66,29 +65,22 @@ internal static class PolicyPasses
 
     public static void Look(NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig config, DateTimeOffset now, List<string> said)
     {
-        var policy = RiskPolicy.Of(config);
         var tenures = new StepTenureFiles(records.Home, records.HoldsLease);
         foreach (var each in governed)
         {
             if (records.Read(each.Unit.Id) is not { } record) continue;
             var place = RiskPlace.Of(config, each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
+            var judge = RiskStepGates.At(config, each.Unit.Owner.Workspace, each.Unit.Owner.Repository);
             var told = new SortedSet<string>(StringComparer.Ordinal);
             foreach (var node in each.Graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(record, node.Id);
                 bool passed;
                 lock (OpinionPassed(records.Home)) passed = OpinionPassed(records.Home).Contains($"{each.Run}/{node.Id}");
-                if (PassedKind(node, status, passed) is not null && node.Kind == NodeKinds.Opinion)
-                {
-                    if (GateTold.TryAdd($"{records.Home}|{each.Run}/{node.Id}#{status.Attempt}", 0)
-                        && tenures.Current(each.Unit.Id, node.Id, status.Attempt)?.Holder == CastHolders.Person) told.Add(RiskActs.WorkAccept);
-                    continue;
-                }
-
-                var why = node.Kind == NodeKinds.Review ? PersonWaits.Accept : PersonWaits.Approval;
-                if (PassedKind(node, status, false) is not { } kind) continue;
+                // An opinion step its gate's pass let go is a step the policy passed too: its own line once, and its person told once with it.
+                var why = node.Kind is NodeKinds.Review or NodeKinds.Opinion ? PersonWaits.Accept : PersonWaits.Approval;
+                if (PassedKind(node, status, passed) is not { } kind || RiskStepGates.Verdict(judge, kind, node) is not { } verdict) continue;
                 var key = $"{RiskStepHolds.Domain}:{each.Run}/{node.Id}#{status.Attempt}:{why}";
-                var verdict = RiskGate.Judge(policy, RiskAct.Of(kind), "", place, "");
                 if (!Once(records.Home, key, () => new RiskJudged(now, RiskJudged.Released, key, why, verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace,
                         place.Repository, place.Mode, each.Run, node.Id, $"run {each.Run}, step {node.Id}, attempt {status.Attempt}", verdict.Outcome, verdict.Class,
                         verdict.By, verdict.Source, verdict.Revision, verdict.Reason, Today, false)))

@@ -91,6 +91,7 @@
   "notifications.done.look.limit-went-on": "因账户额度用尽而中断的工作已作为会话的新一段继续，并附上 Daoris 的简报",
   "notifications.done.look.limit-resumed": "因账户额度用尽而中断的工作已在账户重新可用后于原对话中继续",
   "notifications.done.look.opinion-settled": "聊天工作的第二意见已定：再按一次采纳即可落地",
+  "notifications.done.look.final-exit": "一个运行步骤的所有担任者都未能完成，它作为道衍的最终出口交到你手上：经过与该给的回答都在“等你处理”里",
   "notifications.nothingUnread": "没有未读内容。",
   "notifications.markRead": "标为已读",
   "notifications.group.messages": "消息",

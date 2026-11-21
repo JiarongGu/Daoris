@@ -326,7 +326,7 @@ internal sealed class NodeRunKeeping(
         + " and commit, and what you commit goes through the workflow again.";
 
     /// <summary>A check's red past its rounds' bound decided by the risk policy, then told to the work's session all the same, once (<see cref="SpentChecks"/>).</summary>
-    public async Task SpentRedsAsync(GovernedUnit governed, DriverConfig? config, List<string> said, CancellationToken ct)
+    public async Task SpentRedsAsync(GovernedUnit governed, DriverConfig? config, List<string> said, List<LookLine> noticed, CancellationToken ct)
     {
         if (governed.Scope is not { } scope || records.Read(governed.Unit.Id) is not { } record) return;
         var (workspace, repository) = (governed.Unit.Owner.Workspace, governed.Unit.Owner.Repository);
@@ -335,7 +335,7 @@ internal sealed class NodeRunKeeping(
             var code = record.Statuses.GetValueOrDefault(node)?.Code;
             var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
             await SpentChecks.SettleAsync(records, governed.Unit.Id, scope.Run.Run, node, attempt, reds, code, found, config, workspace, repository, clock(),
-                text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said, governed.Declared.GetValueOrDefault(node)).ConfigureAwait(false);
+                text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said, noticed, governed.Declared.GetValueOrDefault(node)).ConfigureAwait(false);
         }
     }
 

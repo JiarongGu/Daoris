@@ -342,10 +342,13 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         _now = _now.AddHours(2);
         var past = await RunPassAsync(runtime, Bound);
-        var notice = Assert.Single(past.Said, line => line.Contains("final exit, to you:", StringComparison.Ordinal));
-        Assert.Contains("held it for 3 hours and could not: no session of it answers it", notice, StringComparison.Ordinal);
-        Assert.Contains("your one answer:", notice, StringComparison.Ordinal);
+        var notice = Assert.Single(past.Noticed, line => line.Text.Contains("final exit, to you:", StringComparison.Ordinal));
+        Assert.Equal((LookSaid.FinalExit, FinalExits.Key(RunId, "review", RunStatus("review").Attempt)), (notice.Look.News?.Code, notice.Look.News?.Subject));
+        Assert.Contains("held it for 3 hours and could not: no session of it answers it", notice.Text, StringComparison.Ordinal);
+        Assert.Contains("your one answer:", notice.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain(past.Said, line => line.Contains("final exit", StringComparison.Ordinal));
         var after = await RunPassAsync(runtime, Bound);
+        Assert.Empty(after.Noticed);
         Assert.DoesNotContain(after.Said, line => line.Contains("final exit", StringComparison.Ordinal) || line.Contains("gave it up", StringComparison.Ordinal));
         Assert.Equal(NodeStates.Active, RunStatus("review").State);
         var vacancy = new StepVacancyFiles(_home).Current(RunUnit, "review", RunStatus("review").Attempt);
@@ -373,7 +376,25 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         _now = _now.AddHours(1);
         var past = await RunPassAsync(Runtime(), Lowered);
-        Assert.Contains(past.Said, line => line.Contains("final exit, to you:", StringComparison.Ordinal) && line.Contains("for 2 hours", StringComparison.Ordinal));
+        Assert.Contains(past.Noticed, line => line.Text.Contains("final exit, to you:", StringComparison.Ordinal) && line.Text.Contains("for 2 hours", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_vacancy_whose_file_will_not_write_is_not_announced_until_it_is_kept()
+    {
+        OnBranch(Reviewed);
+        var file = StepVacancyFiles.PathOf(_home, RunUnit);
+        Directory.CreateDirectory(file);
+        var runtime = Runtime();
+
+        var refused = await RunPassAsync(runtime);
+        var again = await RunPassAsync(runtime);
+
+        Assert.DoesNotContain(refused.Said.Concat(again.Said), line => line.Contains("is vacant:", StringComparison.Ordinal));
+        Assert.Single(refused.Said.Concat(again.Said), line => line.Contains("its vacancies could not be kept", StringComparison.Ordinal));
+        Directory.Delete(file);
+        var kept = await RunPassAsync(runtime);
+        Assert.Single(kept.Said, line => line.Contains("is vacant:", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -404,7 +425,6 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         var pass = await RunPassAsync(runtime);
 
         Assert.Equal(NodeStates.Active, RunStatus("review").State);
-        Assert.Contains(pass.Said, line => line.Contains("is vacant:", StringComparison.Ordinal));
         Assert.Contains(pass.Said, line => line.Contains("its vacancies could not be kept", StringComparison.Ordinal));
         Directory.Delete(StepVacancyFiles.PathOf(_home, RunUnit));
         await RunPassAsync(runtime);

@@ -319,7 +319,7 @@ internal sealed class WatchNodes
             }
         }
 
-        return [.. lines, .. NodeRuntimeLines(pass)];
+        return [.. lines, .. NodeRuntimeLines(pass), .. pass.Noticed.Select(_watch.Lines.Say)];
     }
 
     /// <summary>

@@ -14,4 +14,7 @@ public sealed record NodeRuntimePass(bool Armed, IReadOnlyList<WorkPerformed> Pe
     /// by the look's supervision and its start made, rather than at the look's deadline. The same set told again wakes nothing.
     /// </summary>
     public bool AwaitedChanged { get; init; }
+
+    /// <summary>The notices the pass gives: the owner's final exits (<see cref="FinalExits"/>), said by the look in <i>Done and failed</i>.</summary>
+    public IReadOnlyList<LookLine> Noticed { get; init; } = [];
 }

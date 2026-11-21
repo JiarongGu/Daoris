@@ -18,7 +18,9 @@ internal static class QuestDepartures
     public static RiskAct? ActOf(QuestView quest)
     {
         if (quest is not { Held: true, Hold: EvidenceCodes.Departed, AwaitsEvidence: false } || !QuestResults.Judged(quest)) return null;
-        var left = quest.Answers.Where(answer => string.IsNullOrWhiteSpace(answer.Met) && !string.IsNullOrWhiteSpace(answer.Departed)).Select(answer => answer.Requirement).Distinct().Count();
+        // Counted among the quest's requirements as they stand: an answer naming one the brief no longer holds departs from nothing.
+        var left = quest.Answers.Where(answer => string.IsNullOrWhiteSpace(answer.Met) && !string.IsNullOrWhiteSpace(answer.Departed)
+                && answer.Requirement >= 1 && answer.Requirement <= quest.Requirements.Count).Select(answer => answer.Requirement).Distinct().Count();
         return RiskAct.Of(quest.Requirements.Count > 0 && left >= quest.Requirements.Count ? RiskActs.DirectionSet : RiskActs.WorkDone);
     }
 
