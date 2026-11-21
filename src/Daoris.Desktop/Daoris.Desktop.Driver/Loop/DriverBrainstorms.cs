@@ -257,8 +257,12 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         foreach (var pass in passes.Where(pass => pass is { Role: BrainstormPassRecord.Generate, State: BrainstormPassRecord.Answered })
                      .OrderBy(pass => pass.By.Pass, StringComparer.Ordinal))
         {
-            var turn = pass.Turns > 1 ? $"{pass.By.Pass}r" : pass.By.Pass;
-            if (BrainstormAnswers.Check(files.ReadAnswer(id, turn), sources).Answer is { } answer) answered.Add((pass.By, answer));
+            // A retry that ended with none keeps the answer its first turn gave before its limit, in that turn's file.
+            string[] turns = pass.Turns > 1 ? [$"{pass.By.Pass}r", pass.By.Pass] : [pass.By.Pass];
+            if (turns.Select(turn => BrainstormAnswers.Check(files.ReadAnswer(id, turn), sources).Answer).FirstOrDefault(each => each is not null) is { } answer)
+            {
+                answered.Add((pass.By, answer));
+            }
         }
 
         return answered;
