@@ -132,7 +132,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 var startedFor = asks.Count(other => other.Id != ask.Id && string.Equals(other.Asker, ask.Asker, StringComparison.OrdinalIgnoreCase)
                                                      && states[other.Id] is { State: HelperStates.Started })
                                  + begunFor.GetValueOrDefault(ask.Asker);
-                var slot = config.Cap - snapshot.SlotsHeld - taken - begun > 0;
+                var slot = config.Cap - snapshot.SlotsClaimed - taken - begun > 0;
                 var verdict = HelperJudge.Judge(ask, state, record, rule, startedFor, slot, Between(ask.Asker, record, snapshot));
                 switch (verdict.Kind)
                 {

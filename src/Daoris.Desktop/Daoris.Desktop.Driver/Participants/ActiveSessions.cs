@@ -23,9 +23,11 @@ public static class ActiveSessions
     /// of four for hours (2026-10-20). The list keeps them: a busy tree and a repository's holder read every active session, and so do the
     /// reads that need the whole list (<see cref="Snapshot.Active"/>).</para>
     /// </remarks>
-    public static bool HoldsSlot(SessionView session) =>
-        !WaitsOnItsStep(session.State)
-        && ParticipantWork.HoldsSlot(ParticipantWork.Of(
+    public static bool HoldsSlot(SessionView session) => !WaitsOnItsStep(session.State) && TakesSlot(session);
+
+    /// <summary>Whether the work the record's marks tell is one the driver starts, whatever state it stands in.</summary>
+    internal static bool TakesSlot(SessionView session) =>
+        ParticipantWork.HoldsSlot(ParticipantWork.Of(
             new WorkMarks(Mirror: false, session.Kind, session.Repository, session.Ask, session.Serves, session.Piece, session.Opinion, session.Decides, session.Performs)));
 
     /// <summary>

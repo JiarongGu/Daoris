@@ -79,7 +79,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                             break;
                         }
 
-                        if (_context.Config.Cap - snapshot.SlotsHeld - taken - begun <= 0) break;
+                        if (_context.Config.Cap - snapshot.SlotsClaimed - taken - begun <= 0) break;
                         if (!_context.Runs.TryOpinion(Claim(request.Id))) break;
                         begun++;
                         files.WriteState(state with { State = BrainstormStates.Running, At = DateTimeOffset.UtcNow });

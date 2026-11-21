@@ -106,6 +106,36 @@ public sealed class SlotWaitTests
         Assert.Equal(StartVerdict.AtCapacity, plan.Single(c => c.Quest.Id == "q3").Verdict);
     }
 
+    /// <summary>
+    /// A resume that is opening holds the place its record will, though the record still reads awaiting-step: the planner and the
+    /// passes both see it, so no other start takes the place in between.
+    /// </summary>
+    [Fact]
+    public void A_resume_that_is_opening_holds_its_place_for_the_planner_and_the_passes()
+    {
+        var snapshot = Snapshot([Taken("q1", "A"), Open("q3", "C")], [Waiting("s1", "A", "q1")]) with
+        {
+            Starting = [new StartReservation("q1", null, "A", "D:/trees/s1")],
+        };
+
+        Assert.Equal(1, snapshot.SlotsHeld);
+        Assert.Equal(1, snapshot.SlotsClaimed);
+        Assert.Equal(StartVerdict.AtCapacity, Planner.Plan(snapshot, Config(cap: 1)).Single(c => c.Quest.Id == "q3").Verdict);
+    }
+
+    /// <summary>An answered step is claimed for the passes, not counted as held: the planner spends its place as it plans the resume.</summary>
+    [Fact]
+    public void A_session_whose_step_answered_is_claimed_for_the_passes_and_not_held()
+    {
+        var lastRun = new Dictionary<string, PriorSession> { ["q1"] = Record("s1", "A", answered: true) };
+        var snapshot = Snapshot([Taken("q1", "A")], [Waiting("s1", "A", "q1")], lastRun);
+
+        Assert.Equal((0, 1), (snapshot.SlotsHeld, snapshot.SlotsClaimed));
+
+        var quiet = Snapshot([Taken("q1", "A")], [Waiting("s1", "A", "q1")], new Dictionary<string, PriorSession> { ["q1"] = Record("s1", "A", answered: false) });
+        Assert.Equal((0, 0), (quiet.SlotsHeld, quiet.SlotsClaimed));
+    }
+
     /// <summary>A park the person answered still holds its place among the active: going on, it starts no second session.</summary>
     [Fact]
     public void An_answered_park_still_holds_its_own_slot()
