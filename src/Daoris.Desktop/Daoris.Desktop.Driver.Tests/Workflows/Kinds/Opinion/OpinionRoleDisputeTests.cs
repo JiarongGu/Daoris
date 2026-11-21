@@ -77,6 +77,74 @@ public sealed class OpinionRoleDisputeTests : NodeRunFixture
         Assert.Empty(new StepVacancyFiles(_home).Of(RunUnit));
     }
 
+    private static readonly RiskVerdict Seeded = new(RiskActs.WorkAccept, null, RiskVerdict.Pass, RiskClasses.None, null, RiskVerdict.Seed, "0e80e115d1ce", "no risk declared: it passes");
+
+    private OpinionGateState PassedBySeed(string held, string tip) => new(OpinionGateStates.Answered, RunHome.Repository)
+    {
+        Session = "s-worker", Tip = tip, Answered = held, Risk = Seeded,
+        Disputes = held == OpinionGateStates.Disputed ? new OpinionDisputes([1, 2], []) : new OpinionDisputes([], []),
+        Since = held == OpinionGateStates.CommitsSince ? 3 : 0,
+        Person = new OpinionPersonWord(OpinionPersonSaid.Policy, tip, _now) { Words = Seeded.Passed },
+    };
+
+    /// <summary>A dispute and commits nobody read, each passed by the seed, reach the step with the pass's line, and the landing is let go.</summary>
+    [Theory]
+    [InlineData(OpinionGateStates.Disputed)]
+    [InlineData(OpinionGateStates.CommitsSince)]
+    public async Task A_hold_passed_by_the_seed_reaches_the_opinion_step_with_the_passes_line_and_the_run_goes_on_to_its_landing(string held)
+    {
+        OnBranch();
+        _opinionGate = PassedBySeed(held, Tip1);
+
+        await RunPassAsync(Runtime(), """{"risk":{}}""");
+
+        var opinion = RunStatus("opinion");
+        Assert.Equal((NodeStates.Reached, Tip1), (opinion.State, opinion.Binding?.SubjectRevision));
+        Assert.Equal(Seeded.Passed, opinion.Words);
+        Assert.NotEqual(NodeStates.Blocked, WorkPerformer.StatusOf(Files.Read(RunUnit)!, "handed").State);
+        var said = WorkflowGraphRuns.Said(Node(), opinion);
+        Assert.Contains("risk policy", said, StringComparison.Ordinal);
+        Assert.Contains(Seeded.Passed, said, StringComparison.Ordinal);
+    }
+
+    /// <summary>A pass at one tip binds that tip alone: new commits rebind the step, judged again at the new tip, and the seed's pass there reaches it again with its own line.</summary>
+    [Fact]
+    public async Task A_pass_at_one_tip_and_then_new_commits_are_judged_again_at_the_new_tip_and_passed_again()
+    {
+        OnBranch();
+        _opinionGate = PassedBySeed(OpinionGateStates.Disputed, Tip1);
+        var runtime = Runtime();
+        await RunPassAsync(runtime, """{"risk":{}}""");
+        Assert.Equal((NodeStates.Reached, Tip1), (RunStatus("opinion").State, RunStatus("opinion").Binding?.SubjectRevision));
+
+        _branchTips["daoris/s1"] = Tip2;
+        _opinionGate = PassedBySeed(OpinionGateStates.CommitsSince, Tip2);
+        await RunPassAsync(runtime, """{"risk":{}}""");
+        await RunPassAsync(runtime, """{"risk":{}}""");
+
+        var again = RunStatus("opinion");
+        Assert.Equal((NodeStates.Reached, Tip2), (again.State, again.Binding?.SubjectRevision));
+        Assert.Equal(Seeded.Passed, again.Words);
+    }
+
+    /// <summary>A step its record holds on a hold the seed now passes says so with the line, never a silent <i>working</i>, on nobody.</summary>
+    [Theory]
+    [InlineData(OpinionGateStates.Disputed)]
+    [InlineData(OpinionGateStates.CommitsSince)]
+    public void A_step_held_on_a_hold_the_seed_now_passes_says_so_and_waits_on_nobody(string held)
+    {
+        var status = new NodeStatus(RunUnit, "opinion", NodeStates.Active) { Attempt = 1, Holds = held, Since = _now };
+
+        var wait = OpinionStepWaits.WaitOf(Node(), status, PassedBySeed(held, Tip1));
+
+        Assert.Equal(OpinionStepWaits.Passed, wait?.Code);
+        Assert.False(OpinionStepWaits.OnPerson(wait!));
+        var said = OpinionStepWaits.Said(wait!);
+        Assert.Contains("risk policy passed", said, StringComparison.Ordinal);
+        Assert.Contains(Seeded.Passed, said, StringComparison.Ordinal);
+        Assert.Contains("next look", said, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task No_agent_tool_takes_the_role_disputes_answer_so_none_is_offered()
     {

@@ -55,6 +55,7 @@
   "workflow.wait.opinion.answer": "等待 `{{session}}` 回应第二意见。",
   "workflow.wait.opinion.disputed": "等待你回应第二意见中有争议的发现（{{count}} 条）：你的采纳即回应它们，「仍然继续」越过它们落地这项工作，或略过此步。",
   "workflow.wait.opinion.commits-since": "等待你回应没有被另一个智能体读过的提交（{{count}} 个），这项工作的一次阅读和一次再读已经用完：你的采纳即回应它们，「仍然继续」让它们落地，或再请求一次。",
+  "workflow.wait.opinion.passed": "风险策略已放行第二意见扣住的内容（{{count}} 项）：{{why}}。Daoris 的下一次查看会让这一步到达。",
   "workflow.wait.opinion.role-disputed": "等待 `{{role}}`：{{holder}}，回应第二意见中有争议的发现（{{count}} 条）。风险策略请这个角色回应，而不是你。",
   "workflow.wait.opinion.role-commits-since": "等待 `{{role}}`：{{holder}}，回应没有被另一个智能体读过的提交（{{count}} 个）。风险策略请这个角色回应，而不是你。",
   "workflow.wait.return.place-busy": "等待：有会话正在这个文件夹里工作。",

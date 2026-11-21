@@ -463,8 +463,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     dispute and commits since that no other agent read are the act `work.accept` at the work's place, which the gate asks the judge
     (`OpinionGateFacts.Risk`, read from the look's config, D354): with nothing configured the seed passes it, the gate `answered` by the
     policy (`policy`, its words the verdict's rule and revision, journaled once as a `risk.judged` pass line on the run and its `opinion`
-    step, `PolicyPasses.Gate`, counted only once it appended) and the work goes on to its landing; judged again at every look, so a raise
-    opens it and a lowering releases it. Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
+    step, `PolicyPasses.Gate`, counted only once it appended, one line for each tip it passes at) and the work goes on to its landing:
+    the `opinion` step is reached with the pass's line, which its run says under it (`OpinionGateReading.PassedLine`); a step its record
+    still holds on the dispute until the runtime's next pass judges it says it passed, with that line and on nobody's answer (its wait
+    `passed`), never *working*; judged again at every look and at each new tip, so a raise opens it, a lowering releases it and new
+    commits are passed again at their own tip (OPINIONPASS1). Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
     `role-commits-since`, read as the Accept's wait, its wait naming that role, never the row's `by`): no agent's tool answers it, so an
     agent holder makes it a vacancy, listed, announced once and at the owner's final exit past its bound, and a person the place casts
     holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by

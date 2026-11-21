@@ -35,6 +35,12 @@ public static class OpinionGateReading
         _ => null,
     } : null;
 
+    /// <summary>The line of a hold the risk policy passed at the gate (<c>OpinionGate.JudgeAsync</c>'s answer by the policy); null for every other gate.</summary>
+    public static string? PassedLine(OpinionGateState? gate) =>
+        gate is { State: OpinionGateStates.Answered, Person.Said: OpinionPersonSaid.Policy, Risk: { Outcome: RiskVerdict.Pass } verdict }
+            ? gate.Person.Words is { Length: > 0 } words ? words : verdict.Passed
+            : null;
+
     /// <summary>What the gate says of the reading's node on its binding, for its unit's work: an outcome by the gate's authority, or none, which is pending.</summary>
     public static NodeObservation Observe(NodeReading reading)
     {
@@ -85,6 +91,10 @@ public static class OpinionGateReading
 
         return gate.State switch
         {
+            // A hold the risk policy passed reaches it with the pass's line, which the run's step says under it.
+            OpinionGateStates.Answered when PassedLine(gate) is { } passed =>
+                Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person!.Said}", tip, $"its gate's {gate.Answered} passed by the risk policy: {passed}")
+                    with { Words = passed },
             OpinionGateStates.Settled or OpinionGateStates.Anyway or OpinionGateStates.Myself or OpinionGateStates.Answered =>
                 Reached(GateRecord, $"{gate.Repository}:{gate.Opinion?.Id ?? gate.Person?.Said ?? gate.State}", tip, $"its gate says {gate.State}"),
             OpinionGateStates.None => Skipped("its rule asks no second opinion here"),
