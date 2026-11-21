@@ -76,6 +76,8 @@ export type DriverState = {
   drain?: number;
   /** How many checks the machine runs at once: the pinned number, or null for auto (as many as its memory admits). */
   checks?: number | null;
+  /** How long a step nobody's session answers stands before Daoris gives it up, in hours: the file's, or the default. */
+  vacancy?: number;
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;
@@ -372,6 +374,9 @@ export const useSetTerminal = () => useDriverChange('SET_TERMINAL');
 
 /** How many checks the machine runs at once, a number or null for auto: the same `checks` `daoris settings checks <n>|auto` edits. */
 export const useSetChecks = () => useDriverChange('SET_CHECKS');
+
+/** How long a step nobody's session answers stands before Daoris gives it up, in hours: the same `vacancyHours` `daoris settings vacancy <hours>` edits. */
+export const useSetVacancy = () => useDriverChange('SET_VACANCY');
 
 /**
  * One kind's keep rule: the same `keep` `daoris settings keep` edits. A value out of its

@@ -213,6 +213,7 @@
   "workflow.run.graph.said.rejected": "你拒绝了它。",
   "workflow.run.graph.said.stopped": "你停止了它。",
   "workflow.run.graph.said.gaveUp": "Daoris 放弃了它：没有人能回应它。",
+  "workflow.run.graph.said.gaveUpWith": "Daoris 放弃了它：{{words}}",
   "workflow.run.graph.said.unknown": "它的结果还无法确定；Daoris 会先查问清楚，再开始任何新的事。",
   "workflow.run.graph.said.invalidated": "它所依据的已变动，所以 Daoris 会在下次查看时重新判断它。",
   "workflow.run.graph.said.requests": "等工作的会话在此发布的委托：每一个都要完成，被谢绝的由你选择略过。",

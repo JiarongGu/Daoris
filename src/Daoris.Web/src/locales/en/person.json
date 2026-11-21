@@ -451,6 +451,7 @@
   "person.route.SET_QUIET":"change how long a session may be quiet before Daoris looks in",
   "person.route.SET_DRAIN": "change how long an update may hold new work",
   "person.route.SET_CHECKS": "change how many checks the machine runs at once",
+  "person.route.SET_VACANCY": "change how long a vacant step stands before Daoris gives it up",
   "person.route.SET_TERMINAL": "change whether a terminal's press waits for your Confirm",
   "person.route.SET_READ_ACROSS": "change what a repository's sessions may read elsewhere",
   "person.route.SET_REVIEW": "change how work is reviewed before it lands",

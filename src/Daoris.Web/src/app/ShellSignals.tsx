@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from '../locales/format';
-import { type AttentionTold, attentionToast } from '../notifications/noticeWords';
+import { type AttentionTold, attentionToast, attentionTone } from '../notifications/noticeWords';
 import { keys } from '../data/queries';
 import {
   accountsSlice, asksSlice, attentionSlice, callsSlice, considerationsSlice, driverSlice, groupsSlice, linesSlice, noticeOf, noticesSlice, notPushed,
@@ -150,10 +150,8 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
         && typeof document !== 'undefined' && document.visibilityState === 'visible';
       const said = reading ? null : attentionToast(t, item);
       if (said) {
-        notify(
-          said,
-          // A park is the one that is WAITING on somebody, as a held tool call is; an ending, or an answer, is news.
-          item.kind === 'Parked' || item.kind === 'QuestParked' || item.kind === 'Holding' || item.kind === 'Step' ? 'error' : 'ok');
+        // A park is the one that is WAITING on somebody, as a held tool call and a vacancy are; an ending, or an answer, is news.
+        notify(said, attentionTone(item.kind));
       }
       void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     });

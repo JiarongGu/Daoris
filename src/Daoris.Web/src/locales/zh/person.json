@@ -451,6 +451,7 @@
   "person.route.SET_QUIET":"更改会话无动静多久后 Daoris 去查看",
   "person.route.SET_DRAIN": "更改更新最多让新工作等待多久",
   "person.route.SET_CHECKS": "更改本机同时运行多少个检查",
+  "person.route.SET_VACANCY": "更改空缺的步骤在 Daoris 放弃它之前停留多久",
   "person.route.SET_TERMINAL": "更改终端发来的操作是否等你确认",
   "person.route.SET_READ_ACROSS": "更改一个仓库的会话可以在别处读取什么",
   "person.route.SET_REVIEW": "更改工作落地前如何审阅",

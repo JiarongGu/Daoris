@@ -787,7 +787,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
     handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
     the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
-    (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the step as its own (`NodeSource.Daoris`, never the
+    (`vacancyHours` in `driver.json`, a day by default, 1 to 720, `VacancySetting`; `daoris settings vacancy <hours>` or the window's `SET_VACANCY`, its row beside `checks` at Settings → Agents and sessions) Daoris stops the step as its own (`NodeSource.Daoris`, never the
     person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
     up, never asked of the owner; a refused stop is said once. Its stop is spoken as `SettleBy.Vacancy`, the one speaker whose stop is recorded
     as gave up (`NodeWord.GaveUp`): any other observation's stop reads as a stop and never as Daoris giving up. A step no longer vacant drops its
