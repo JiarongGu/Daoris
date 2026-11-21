@@ -248,7 +248,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
     `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
-    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red.
+    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red; its words
+    still reach the work's session, once, with its round and the bound (`NodeRunKeeping.SpentRedsAsync`), so a fix it commits is checked
+    again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
+    command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
+    flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
+    blocks and last lines (`GateLogExcerpt`).
 
 **Runs**
 

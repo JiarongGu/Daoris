@@ -113,6 +113,9 @@ public sealed record WorkflowRunStep(WorkflowStep Step, string State, string Det
     /// <summary>The gate a failed check named, read from the attempt's result by the reader; null on any other step.</summary>
     public string? Gate { get; init; }
 
+    /// <summary>Where a failed check's words went (<see cref="NodeTold"/>); null on any other step.</summary>
+    public WorkflowRunTold? Told { get; init; }
+
     /// <summary>A check's newest attempt held unknown for the person, or settled by their stop; null on any other step.</summary>
     public WorkflowRunHeld? Held { get; init; }
 
