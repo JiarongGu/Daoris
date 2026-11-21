@@ -315,7 +315,9 @@ default one, or for a tree the line holds by content the proof's (every untracke
 are then its count. The declared output that proof read is kept with the read, not read again. The proof's last comparison lists
 the repository's branches newest first (`BranchesByDate`): one listing per repository and version of its counted refs, shared by
 every walk that asks for it while it runs as after, so the look's stages walking one repository's trees at once (the tidy, the owed
-opinions, the nodes' reads) start it once when a branch of the person's moves, not once per tree.
+opinions, the nodes' reads) start it once when a branch of the person's moves, not once per tree. Each asker says the listing's wait
+for a place as its own stage's queue; one leaving ends only its own wait, and the last leaving ends git's read, as the scheduler ends
+a read nobody waits on (`BranchListingAskersTests`).
 
 A held reader per repository does not earn its place: a view asks at most three object questions, and a landing reads its line
 commit and head again because another process can move either. The measurements behind these figures are D147's note of

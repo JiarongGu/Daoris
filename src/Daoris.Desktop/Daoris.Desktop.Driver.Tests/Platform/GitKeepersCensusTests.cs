@@ -16,8 +16,8 @@ public sealed class GitKeepersCensusTests
 
     private static readonly Dictionary<string, string> Holders = new(StringComparer.Ordinal)
     {
-        ["BranchesByDate.cs Kept"] = "its stamp: the refs' version (CountedRefs) read before and after the listing, keyed by the common directory; "
-            + "one listing in flight shared by every walk asking at that version",
+        ["BranchesByDate.cs _answer"] = "its stamp: the refs' version (CountedRefs) read before and after the listing, its listing kept by the "
+            + "common directory; one listing in flight shared by every walk asking at that version",
         ["GitReads.cs _cache"] = "its stamp: each answer keyed by the asker's GitStamp and kept only where the stamp's fence held across the read, "
             + "and only an answer git read from objects alone (a graph page, a commit's fields, a compare's commits)",
         ["GitReadOnce.cs Current"] = "the read-only flow's listings, one pass's; dropped by any git that may move a ref",
