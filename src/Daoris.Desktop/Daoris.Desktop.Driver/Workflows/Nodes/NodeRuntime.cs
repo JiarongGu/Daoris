@@ -155,7 +155,7 @@ public sealed class NodeRuntime(
     public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run, records.Home);
 
     /// <inheritdoc cref="LeftSteps.With"/>
-    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config);
+    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config, Serving);
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed

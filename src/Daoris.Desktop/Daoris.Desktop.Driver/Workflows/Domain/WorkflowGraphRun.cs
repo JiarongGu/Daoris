@@ -159,7 +159,7 @@ public sealed record WorkflowGraphRunFacts(WorkflowRunFacts Run, string RunId, N
 
     public IReadOnlyList<StepVacancy>? Vacancies { get; init; }
 
-    public Func<string, bool>? Serves { get; init; }
+    public Func<string, bool>? ServesRole { get; init; }
 
     public IReadOnlyList<StepActRow> Acts { get; init; } = [];
 
@@ -236,7 +236,7 @@ public static class WorkflowGraphRuns
             var waits = state == WorkflowRunStates.Waiting ? StepWaiting.Read(facts.Record, node, status, tenure, facts.Cast) : null;
             var standing = open && asked is null && status.State is NodeStates.Active or NodeStates.Unknown && status.Attempt >= 1;
             // A step handed to the agent holding its role offers the person Take alone, as its row in What needs you does.
-            var vacant = waits is not null && StepVacancies.Kept(facts.Vacancies, waits, node.Id, status.Attempt, facts.Serves) is not null;
+            var vacant = waits is not null && StepVacancies.Kept(facts.Vacancies, waits, node.Id, status.Attempt, facts.ServesRole) is not null;
             var toAgent = !vacant && waits is not null && AgentSettles.Handed(node, status, waits);
             var step = new WorkflowRunStep(cell, state, detail)
             {

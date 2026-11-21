@@ -14,10 +14,11 @@ public static class LeftSteps
         run.Line is null && FailedHeldRuns.Step(record) is { } node && !record!.Pending.Any(word => word.Node == node) ? node : null;
 
     /// <summary>The steps waiting on a role the person holds in the runs last governed (none before a pass), and each run's left step.</summary>
-    internal static IReadOnlyList<HeldStep> With(IEnumerable<GovernedUnit>? governed, NodeRecordFiles records, GraphRuns runs, DriverConfig? config) =>
+    internal static IReadOnlyList<HeldStep> With(
+        IEnumerable<GovernedUnit>? governed, NodeRecordFiles records, GraphRuns runs, DriverConfig? config, Func<string?, string?, bool>? live = null) =>
     [
         .. governed is null ? [] : HeldSteps.Of(governed, records.Read, new StepTenureFiles(records.Home, records.HoldsLease), new PlaceCastFiles(records.Home).Book(),
-            config?.PlaceRisk, new StepVacancyFiles(records.Home), VacancySetting.Of(config)),
+            config?.PlaceRisk, new StepVacancyFiles(records.Home), VacancySetting.Of(config), live),
         .. Of(runs.Read(), records.Read),
     ];
 

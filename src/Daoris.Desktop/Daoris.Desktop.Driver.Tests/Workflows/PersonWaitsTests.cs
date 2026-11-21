@@ -182,6 +182,53 @@ public sealed class PersonWaitsTests : NodeRunFixture
         Assert.Empty(served);
     }
 
+    private const string DeployThenHanded = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"deploy","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>r","kind":"after","from":"claimed","to":"deploy"},{"id":"r>h","kind":"after","from":"deploy","to":"handed"}]}
+        """;
+
+    [Fact]
+    public async Task The_runtimes_held_steps_judge_a_stored_vacancy_again_by_its_live_sessions_and_a_step_served_again_leaves_at_once()
+    {
+        var digest = RunHome.SaveGraph(_home, DeployThenHanded);
+        RunHome.Bind(_home, RunId, digest, _now);
+        var bound = new NodeAcceptance(RunUnit, Tip1, digest, "deploy", 1, 1) { Subject = "unit-b1" };
+        var call = new WorkPerformCall("unit-b1", "acme.deploy/deploy", 1, "i-1", "k-1", Tip1, [], _now.AddHours(1));
+        Files.Write(new NodeRecord(RunUnit)
+        {
+            Statuses = new Dictionary<string, NodeStatus>
+            {
+                ["deploy"] = new(RunUnit, "deploy", NodeStates.Active) { Attempt = 1, Tries = 1, Binding = bound, Scope = new NodeScope(digest, RunId) },
+            },
+            Attempts =
+            [
+                new NodeAttempt("deploy", 1, "acme.deploy", call, AttemptStates.Sent)
+                {
+                    RecordedAt = _now, Generation = 1, Deliveries = 1,
+                    Progress = new StepProgress("deployer", "Approve Production in Azure DevOps.", "https://dev.azure.com/acme/Proj/_releaseProgress?releaseId=90", "Production", _now.AddMinutes(-3)),
+                },
+            ],
+        });
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")), RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+        _port.Answer = _ => new(ReconcileStates.Running);
+        var runtime = Runtime();
+        runtime.Serving = (_, _) => false;
+        await RunPassAsync(runtime);
+        // The role is cast to an agent and its vacancy kept after the pass, as a later pass keeps it; the readers judge it as they read.
+        new PlaceCastFiles(_home, () => true).Cast("machine", "deployer", "agent:bob", "bob deploys", _now);
+        new StepVacancyFiles(_home).Keep(RunUnit, [new("deploy", 1, _now, true, false)]);
+        Assert.Contains(runtime.HeldSteps(), step => step.Node == "deploy" && step.Vacant);
+        Assert.Contains(runtime.PersonWaits(), wait => wait.Node == "deploy" && wait.Vacant);
+
+        runtime.Serving = (agent, _) => agent == "bob";
+
+        Assert.DoesNotContain(runtime.HeldSteps(), step => step.Node == "deploy");
+        Assert.DoesNotContain(runtime.PersonWaits(), wait => wait.Node == "deploy");
+    }
+
     [Theory]
     [InlineData(RunOutcomes.Failed, "return", PersonWaits.Left)]
     [InlineData(RunOutcomes.Failed, null, null)]

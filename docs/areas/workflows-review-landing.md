@@ -792,7 +792,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     up, never asked of the owner; a refused stop is said once. Its stop is spoken as `SettleBy.Vacancy`, the one speaker whose stop is recorded
     as gave up (`NodeWord.GaveUp`): any other observation's stop reads as a stop and never as Daoris giving up. A step no longer vacant drops its
     vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
-    serving: a staffing, or a live session of a cast agent where the reader knows the sessions), so a step served again leaves *Vacant* at once and
+    serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
+    cast alone, does not), so a step served again leaves *Vacant* at once and
     not when the pass next drops it; a vacancy file that will not write is said and never ends the pass; and one whose run's record is gone is
     swept by the pass with it. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
     approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), a raise to the owner or a lowering where a hold would release
