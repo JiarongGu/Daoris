@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
 /// session's terminal · 2 the usage, a refusal of the words, the operation or the route.</para>
 /// </remarks>
-[CommandGroup("settings", "notify", "cooloff", "quiet", "drain", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", "checks", Bare = true)]
+[CommandGroup("settings", "notify", "cooloff", "quiet", "drain", "keep", "cap", "manifest", "handover", "growth", "brainstorms", "terminal", "risk", "cast", "checks", "vacancy", Bare = true)]
 [CommandGroup("role", "set", "remove", "default", "policy", "rules", "brief", Takes = "[<id>]")]
 public static class DriverChoicesCommand
 {
@@ -26,16 +26,17 @@ public static class DriverChoicesCommand
     public static IReadOnlyList<string> Verbs { get; } =
     [
         "list", "drive", "undrive", "hold", "resume", "notify", "cap", "retry", "cooloff", "quiet", "drain", "manifest", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "growth", "commits",
-        "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", "checks", MachineSettingsSaid.Every,
+        "brainstorms", "workflow", "keep", "role", "terminal", "risk", "cast", "checks", "vacancy", MachineSettingsSaid.Every,
     ];
 
     public const string Usage =
         """
         usage: daoris place list
                daoris place drive|undrive|hold|resume <repository>
-               daoris settings [notify|cap|cooloff|quiet|drain|manifest|terminal|keep|checks]  (no verb says each setting; a verb with no value, that one)
+               daoris settings [notify|cap|cooloff|quiet|drain|manifest|terminal|keep|checks|vacancy]  (no verb says each setting; a verb with no value, that one)
                daoris settings notify on|off · cap <n> · cooloff <minutes> · quiet <minutes> · drain <minutes> · manifest files <n>|minutes <n>|copy <megabytes> · terminal ask|act
                daoris settings checks <n>|auto  (how many checks the machine runs at once; auto, the default, as many as its memory admits)
+               daoris settings vacancy <hours>  (how long a step nobody's session answers stands before Daoris gives it up; 24 by default)
                daoris settings risk [<workspace>|machine] [--repository <name>] [low|medium|high] [--mark <marks>] [--unmark <marks>]
                daoris settings risk why <run> [<step>]  (what the risk policy said at each hold of a run, beside what happened)
                daoris settings cast [<workspace>|machine] [--repository <name>] [<role> person|agent|agent:<name>|default] [--why "…"]

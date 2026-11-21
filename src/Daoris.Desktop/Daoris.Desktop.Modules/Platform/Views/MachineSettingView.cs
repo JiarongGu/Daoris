@@ -60,6 +60,13 @@ public sealed class MachineSettingView : IPressView
         return Shown("checks", new() { ["checks"] = text }, $"daoris settings checks {text}");
     });
 
+    public static MachineSettingView Vacancy() => new("SET_VACANCY", payload =>
+    {
+        if (Number(payload, "hours") is not { } hours || !VacancySetting.Takes(hours)) return PressViewed.Refused(VacancySetting.Refusal);
+        var text = hours.ToString(CultureInfo.InvariantCulture);
+        return Shown("vacancy", new() { ["hours"] = text }, $"daoris settings vacancy {text}");
+    });
+
     public static MachineSettingView Terminal() => new("SET_TERMINAL", payload =>
     {
         var tier = payload is { ValueKind: JsonValueKind.Object } body && body.TryGetProperty("tier", out var value) && value.ValueKind == JsonValueKind.String
