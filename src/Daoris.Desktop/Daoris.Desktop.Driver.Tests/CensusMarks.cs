@@ -24,7 +24,7 @@ internal static class CensusMarks
     /// </summary>
     internal static readonly string[] Whole =
     [
-        "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
+        "AccountSetupTests", "ActorChoicesTests", "BuildDoorConsolesCensusTests", "BusTypesCensusTests", "CategoryTests", "CensusScopeTests", "CensusTraitTests",
         "CensusReachTests", "CensusWarmTests", "ChildRecordsCensusTests", "ConfigSeamTests", "ContinuedReadersCensusTests", "ConversationMembersCensusTests",
         "ConversationRunCensusTests", "CourseCensusTests", "DaorisDriverWordsTests", "DeclarationFileCensusTests",
         "DeclarationGitCensusTests", "DeclarationParsesCensusTests",

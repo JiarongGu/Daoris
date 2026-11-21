@@ -247,17 +247,35 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
-    A shadow append never fails the write it rides beside: a refusal (the store's, a payload that is no id, code, count or time, a
-    process not holding the lease) is counted by its reason and said once as `bus.refused`. A payload's number is finite and its
-    text well-formed; until a registry declares each field, an id or code carries no whitespace and nothing shaped like a path or an
-    e-mail address (a red class keeps its suite and its test file's name, never its path). The lease is asked on the writers' path
-    at most every two seconds, an unreadable lease keeping the last answer, and afresh before each write, so what was taken while
-    it was lost is dropped, never written by the old holder. The bus waits on the store's lock as long as the engine does; a batch
+    Every type is declared once, in one registry (`BusTypes`, D356 step 2): its name and version, whether it is a fact, a request
+    or a response, its payload's fields and their shapes (id, code, count, number, time, flag, a list of at most 16 ids), its
+    emitter, its obliged handler or a request's answerer, a deadline and what set it, a retry budget, and a give-up from a closed
+    list: `refused` (the bus answers the request itself), `held` (the gate stays shut), `dropped` (an observation counted) or
+    `final-exit` (the subject reaches the owner's final exit, D354 point 4). No silent give-up is in the list: a `refused` request
+    or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. No measure set a deadline yet (the
+    install's `daoris bus stats` at cddcdac313 held one check start and no handling time, its quests paused), so each is stated
+    provisional with what it stands on (a check's bound, a busy runner's offer, a pass's bound, about one look a minute) and the
+    watchdog runs against it in shadow first. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
+    is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
+    emitted; the page's list of the types and their payloads is written from the registry with its other contracts
+    (`BUS_TYPES`, `tools/contracts/PageBusTypes.cs`). A subscription naming a type the registry lacks fails as it registers.
+    A shadow append never fails the write it rides beside: a refusal (the store's, a type the registry does not declare, an
+    envelope whose subject, answerer, effect or causes are no ids, a process not holding the lease) is counted by its reason and
+    said once as `bus.refused`. A payload's field its type does not declare, one named twice, or a value not of its field's shape
+    is dropped and the fact kept: the field left unknown, a list keeping the ids that fit, each drop counted by reason, type and
+    field and said once as `bus.dropped`. An id or code is well-formed text with no whitespace and nothing shaped like a path or
+    an e-mail address (a red class keeps its suite and its test file's name, never its path; a repository named with a space, or a
+    parameterized test class, loses that value, never the fact). The lease is asked on the writers' path at most every two
+    seconds, an unreadable lease keeping the last answer, and afresh inside each write's transaction, which takes the store for
+    writing at its start, so what was taken while it was lost is dropped, never written by the old holder, and no other holder
+    writes between the lease's answer and the rows. The write seats its batch after the newest order the store keeps and the log
+    moves what waits with it, so a log opened again goes on after its last entry, and one that lost the lease and regained it goes
+    on after the other holder's, no batch colliding. The bus waits on the store's lock as long as the engine does; a batch
     a busy store refused goes back ahead of the next, its order kept, tried again five seconds later at most six times running and
     counted, then dropped. Measured by the day: entries by kind,
-    each kind's handling time where known, the flushes' count, entries and time, the rows' own bytes beside the pages each write
-    put on disk (the write-ahead log's frames, as the engine counts them), the misses and each look stage's time, which
-    `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
+    each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
+    flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
+    them), the misses, the dropped values and each look stage's time, which `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
     measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and keeps
     `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
     said at the close, which still writes what waited.

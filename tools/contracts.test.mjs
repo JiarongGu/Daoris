@@ -57,6 +57,17 @@ test('AGENTPROVIDER1t: a provider\'s own files and the registration list stale t
   }), hash);
 });
 
+test('the bus registry and the words of its shapes stale the page, whose types list they declare; the log, its store and its stats stale nothing', () => {
+  const bus = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Bus/';
+  const hash = hashOf(sources);
+  assert.notEqual(hashOf({ ...sources, [`${bus}BusTypes.cs`]: 'class BusTypes;\n' }), hash);
+  assert.notEqual(hashOf({ ...sources, [`${bus}BusType.cs`]: 'record BusType;\n' }), hash);
+  assert.notEqual(hashOf({ ...sources, [`${bus}BusShapes.cs`]: 'class BusShapes;\n' }), hash);
+  assert.equal(hashOf({
+    ...sources, [`${bus}BusLog.cs`]: 'x', [`${bus}DesktopBusLogStore.cs`]: 'x', [`${bus}BusStatsCommand.cs`]: 'x', [`${bus}obj/BusTypes.cs`]: 'x',
+  }), hash);
+});
+
 test('CODESHAPE1: a file whose stamp is the hash is fresh; one missing, unstamped or stamped otherwise names itself and the command', () => {
   const hash = hashOf(sources);
   for (const output of Object.values(OUTPUTS)) {

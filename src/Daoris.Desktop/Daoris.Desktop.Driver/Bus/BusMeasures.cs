@@ -29,8 +29,10 @@ internal sealed class BusMeasures
     /// <summary>The rows retention cut.</summary>
     public const string Cut = "cut";
 
-    /// <summary>The entries refused, by reason (<see cref="BusMisses"/>).</summary>
+    /// <summary>The entries refused, by reason (<see cref="BusMisses"/>); and <see cref="Drop"/>, the values dropped, as <c>reason|kind|field</c>.</summary>
     public const string Miss = "miss";
+
+    public const string Drop = "drop";
 
     /// <summary>The batches a busy store sent back (<see cref="Entries"/>): count the batches, total their entries.</summary>
     public const string Retry = "retry";

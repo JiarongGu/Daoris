@@ -16,6 +16,9 @@ namespace Daoris.Driver;
 /// <para><b>Under the store's own rules.</b> The tables come from the store's numbered steps, and each write reads the writer stamp
 /// inside its transaction, as the store's engine does: a store a newer Daoris stamped is written by no one here. A write moves no
 /// family's revision and touches no wake, since nothing reads the log yet.</para>
+/// <para><b>One writer, one order.</b> The transaction takes the store for writing at its start; inside it the batch's writer (the
+/// home's lease) is asked, and the batch is seated after the newest order kept (<see cref="BusWritten.Shift"/>), so a log opened again
+/// goes on after its last, and one that lost the lease and regained it goes on after what the other holder wrote, never colliding.</para>
 /// <para><b>Retention</b>: the newest <see cref="Cap"/> rows, the older cut in the write that passes the cap, and the measures of the last
 /// <see cref="MeasureDays"/> days. Nothing reads behind the cap yet; the cursors and snapshots that will hold the cut at
 /// their floor when they come.</para>
@@ -34,12 +37,6 @@ public sealed class DesktopBusLogStore : IBusLogStore
 
     /// <summary>The days of measures kept.</summary>
     public const int MeasureDays = 90;
-
-    /// <summary>The ids of one payload list kept, the rest counted by its writer.</summary>
-    public const int MostListed = 16;
-
-    /// <summary>The longest id or code a payload or an envelope's field carries.</summary>
-    public const int Longest = 200;
 
     /// <summary>The bytes the write-ahead log is cut back to after a checkpoint: the store engine's own bound.</summary>
     public const long JournalLimit = 33_554_432;
@@ -85,33 +82,29 @@ public sealed class DesktopBusLogStore : IBusLogStore
     }
 
     /// <inheritdoc />
-    public long Newest()
-    {
-        lock (_gate)
-        {
-            return Guarded(connection => Scalar(connection, null, "SELECT COALESCE(MAX(seq), 0) FROM bus_log"));
-        }
-    }
-
-    /// <inheritdoc />
     public BusWritten Write(BusBatch batch)
     {
         if (_reading) throw new InvalidOperationException("this log was opened for reading only.");
         lock (_gate)
         {
+            var opened = _connection is null;
             return Guarded(connection =>
             {
                 if (batch.Commit) Pragma(connection, "PRAGMA synchronous = FULL");
                 try
                 {
+                    // Taken for writing at its start (BEGIN IMMEDIATE, the provider's default), so no other holder writes between the lease's answer and
+                    // the rows, and the newest order read is the one the rows follow.
                     using var transaction = connection.BeginTransaction();
-                    Admit(connection, transaction);
-                    var (bytes, most) = Append(connection, transaction, batch.Entries);
+                    var newest = Admit(connection, transaction);
+                    batch.AskWriter();
+                    var shift = batch.Entries.Count > 0 && batch.Entries[0].Seq <= newest ? newest + 1 - batch.Entries[0].Seq : 0;
+                    var (bytes, most) = Append(connection, transaction, batch.Entries, shift);
                     foreach (var row in batch.Measures) Measure(connection, transaction, row);
                     var cut = 0;
                     if (batch.Entries.Count > 0)
                     {
-                        cut = Execute(connection, transaction, "DELETE FROM bus_log WHERE seq <= $floor", ("$floor", batch.Entries[^1].Seq - _cap));
+                        cut = Execute(connection, transaction, "DELETE FROM bus_log WHERE seq <= $floor", ("$floor", batch.Entries[^1].Seq + shift - _cap));
                     }
 
                     var today = batch.Entries.Count > 0 ? Day(batch.Entries[^1].At) : batch.Measures.Count > 0 ? batch.Measures[^1].Day : null;
@@ -123,7 +116,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
 
                     transaction.Commit();
                     if (today is not null) _measuresCutOn = today;
-                    return new BusWritten(bytes, cut, most) { Pages = StoreEngineSource.PagesWritten(connection), PageSize = _pageSize };
+                    return new BusWritten(bytes, cut, most) { Pages = StoreEngineSource.PagesWritten(connection), PageSize = _pageSize, Shift = shift, Opened = opened };
                 }
                 finally
                 {
@@ -206,54 +199,6 @@ public sealed class DesktopBusLogStore : IBusLogStore
     /// <summary>The UTC day of <paramref name="at"/>, as the measures key it.</summary>
     public static string Day(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    /// <summary>
-    /// Whether <paramref name="value"/> is a payload's, so that it encodes: an id or code (<see cref="Short"/>), a whole number, a finite
-    /// number, a flag, a time, null, or a list of such ids.
-    /// </summary>
-    public static bool Fits(object? value) => value switch
-    {
-        null or bool or int or long or DateTimeOffset => true,
-        double number => double.IsFinite(number),
-        string text => Short(text),
-        IReadOnlyList<string> ids => ids.Count <= MostListed && ids.All(Short),
-        _ => false,
-    };
-
-    /// <summary>
-    /// An id or code, as this guard can tell one until a registry declares each field: well-formed UTF-16 no longer than
-    /// <see cref="Longest"/>, with no control character and no whitespace (so no sentence, whose words have spaces between them), not
-    /// shaped like a path (a backslash, <c>:/</c> as a drive or an address has, a leading <c>/</c> or <c>~</c>, two or more <c>/</c>, or a
-    /// <c>.</c> or <c>..</c> step) and not like an e-mail address (a name, <c>@</c>, then a dotted host). Machine paths, addresses and
-    /// words stay in their records, referenced by id.
-    /// </summary>
-    public static bool Short(string? text) =>
-        text is null
-        || (text.Length <= Longest && WellFormed(text) && !text.Any(letter => char.IsControl(letter) || char.IsWhiteSpace(letter)) && !PathShaped(text)
-            && !MailShaped(text));
-
-    private static bool WellFormed(string text)
-    {
-        for (var at = 0; at < text.Length; at++)
-        {
-            if (char.IsHighSurrogate(text[at]) && at + 1 < text.Length && char.IsLowSurrogate(text[at + 1])) at++;
-            else if (char.IsSurrogate(text[at])) return false;
-        }
-
-        return true;
-    }
-
-    private static bool PathShaped(string text) =>
-        text.Contains('\\') || text.Contains(":/", StringComparison.Ordinal) || text.StartsWith('/') || text.StartsWith('~')
-        || text.Count(letter => letter == '/') >= 2 || text.Split('/').Any(step => step is "." or "..");
-
-    private static bool MailShaped(string text)
-    {
-        var at = text.IndexOf('@');
-        if (at <= 0 || at + 2 >= text.Length) return false;
-        var dot = text.IndexOf('.', at + 2);
-        return dot > 0 && dot < text.Length - 1;
-    }
-
     public void Dispose()
     {
         lock (_gate)
@@ -274,6 +219,11 @@ public sealed class DesktopBusLogStore : IBusLogStore
         {
             connection = _connection ??= Open();
             return work(connection);
+        }
+        catch (BusNotWriterException)
+        {
+            // Its transaction rolled back; the connection is sound and stays.
+            throw;
         }
         catch (Exception error)
         {
@@ -325,20 +275,28 @@ public sealed class DesktopBusLogStore : IBusLogStore
         }
     }
 
-    /// <summary>The writer stamp read inside the write, as the store's engine reads it: a newer Daoris's store is written by no one here.</summary>
-    private static void Admit(DbConnection connection, DbTransaction transaction)
+    /// <summary>
+    /// The writer stamp read inside the write, as the store's engine reads it (a newer Daoris's store is written by no one here), and the
+    /// newest order the log keeps, which the batch is seated after.
+    /// </summary>
+    private static long Admit(DbConnection connection, DbTransaction transaction)
     {
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = "SELECT version, writer FROM store_version WHERE one = 1";
-        using var reader = command.ExecuteReader();
-        if (!reader.Read()) throw new DesktopStoreException("the desktop's store has no schema yet.");
-        var (version, writer) = (reader.GetInt32(0), reader.GetInt32(1));
-        if (writer > DesktopStore.WriterStamp) throw new DesktopStoreNewerException(writer, DesktopStore.WriterStamp);
-        if (version < DesktopStore.BusLogVersion) throw new DesktopStoreException("the desktop's store keeps no bus log yet.");
+        using (var command = connection.CreateCommand())
+        {
+            command.Transaction = transaction;
+            command.CommandText = "SELECT version, writer FROM store_version WHERE one = 1";
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) throw new DesktopStoreException("the desktop's store has no schema yet.");
+            var (version, writer) = (reader.GetInt32(0), reader.GetInt32(1));
+            if (writer > DesktopStore.WriterStamp) throw new DesktopStoreNewerException(writer, DesktopStore.WriterStamp);
+            if (version < DesktopStore.BusLogVersion) throw new DesktopStoreException("the desktop's store keeps no bus log yet.");
+        }
+
+        return Scalar(connection, transaction, "SELECT COALESCE(MAX(seq), 0) FROM bus_log");
     }
 
-    private static (long Bytes, long Most) Append(DbConnection connection, DbTransaction transaction, IReadOnlyList<BusEnvelope> entries)
+    /// <summary>The entries inserted in order, each order moved by <paramref name="shift"/> to follow the newest kept.</summary>
+    private static (long Bytes, long Most) Append(DbConnection connection, DbTransaction transaction, IReadOnlyList<BusEnvelope> entries, long shift)
     {
         if (entries.Count == 0) return (0, 0);
         using var command = connection.CreateCommand();
@@ -355,7 +313,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
             var payload = entry.Payload.Count == 0 ? null : Encode(entry.Payload);
             command.Parameters.Clear();
             command.Bind(
-                ("$seq", entry.Seq), ("$id", entry.Id), ("$kind", entry.Kind), ("$subject", entry.Subject), ("$emitter", entry.Emitter),
+                ("$seq", entry.Seq + shift), ("$id", entry.Id), ("$kind", entry.Kind), ("$subject", entry.Subject), ("$emitter", entry.Emitter),
                 ("$answerer", entry.Answerer), ("$deadline", entry.Deadline?.ToUnixTimeMilliseconds()), ("$effect", entry.Effect),
                 ("$causes", causes), ("$payload", payload), ("$at", entry.At.ToUnixTimeMilliseconds()));
             command.ExecuteNonQuery();

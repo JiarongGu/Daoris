@@ -10,6 +10,10 @@ with the version and date at release.
   stats` reads what it measures by the day: events by kind, how long each took, the log's writes, the rows' bytes beside the pages
   written to disk, and each look stage's time, from which the bus's budgets and deadlines are set. An entry a busy store refuses
   is tried again, in its order, before it is ever dropped.
+- Every kind of entry on the bus is declared once, with who must act on it, by when, how many times it is tried again and what
+  happens if nobody does, which always ends at your final notice, never a silent give-up. A value an entry cannot carry (a
+  repository named with a space, a test class with arguments) is left out and counted in `daoris bus stats`, and the entry is kept.
+  A driver that loses the home and takes it back no longer loses every later entry.
 - A vacant step's loose ends are tied. How long Daoris lets one stand before giving it up is a setting you can change
   (`daoris settings vacancy <hours>`, or its row beside the checks setting), its toast now reads as something waiting on
   somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its

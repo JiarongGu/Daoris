@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris bus stats</c>: the bus log's measures by day, read from the home's store and changing nothing: entries by kind, the
 /// flushes with their entries and time, the rows' own bytes and retention's cut, the pages and bytes the writes put on disk, the misses by
-/// reason, each kind's handling time and each look stage's time. What the bus's byte budget and its obligations' deadlines are set from.
+/// reason, the values dropped, each kind's handling time and each look stage's time: what the budget and the deadlines are set from.
 /// </summary>
 /// <remarks>Exit codes: 0 read, or the home keeps no log yet, said · 2 a word it does not answer.</remarks>
 [CommandGroup("bus", "stats")]
@@ -80,10 +80,11 @@ public static class BusStatsCommand
         var micros = One(BusMeasures.Flush, BusMeasures.Micros);
         var commit = One(BusMeasures.Flush, BusMeasures.CommitClass);
         var alone = One(BusMeasures.Flush, BusMeasures.MeasuresAlone);
-        output.AppendLine(entries is null || micros is null
+        output.AppendLine(entries is null
             ? Invariant($"  flushes 0{(alone is null ? "" : $"; the measures alone {alone.Count}")}")
             : Invariant($"  flushes {entries.Count}: {entries.Total} entries, {entries.Total / (double)entries.Count:0.0} a flush, most {entries.Most}; ")
-              + Invariant($"mean {micros.Total / (double)micros.Count / 1000:0.00} ms, most {micros.Most / 1000.0:0.00} ms; commit class {commit?.Count ?? 0}")
+              + (micros is null ? "time not measured" : Invariant($"mean {micros.Total / (double)micros.Count / 1000:0.00} ms, most {micros.Most / 1000.0:0.00} ms"))
+              + Invariant($"; commit class {commit?.Count ?? 0}")
               + (alone is null ? "" : Invariant($"; the measures alone {alone.Count}, mean {alone.Total / (double)alone.Count / 1000:0.00} ms")));
 
         var bytes = One(BusMeasures.Bytes, BusMeasures.Rows);
@@ -102,6 +103,8 @@ public static class BusStatsCommand
         var retried = One(BusMeasures.Retry, BusMeasures.Entries);
         output.AppendLine((missed.Count == 0 ? "  missed none" : $"  missed {string.Join(", ", missed.Select(row => Invariant($"{row.Name} {row.Count}")))}")
                           + (retried is null ? "" : Invariant($"; a busy store sent back {retried.Count} batches, {retried.Total} entries")));
+        var dropped = Of(BusMeasures.Drop).ToList();
+        if (dropped.Count > 0) output.AppendLine($"  dropped values, their facts kept: {string.Join(", ", dropped.Select(row => Invariant($"{row.Name} {row.Count}")))}");
 
         Timed("took", Of(BusMeasures.Took).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
