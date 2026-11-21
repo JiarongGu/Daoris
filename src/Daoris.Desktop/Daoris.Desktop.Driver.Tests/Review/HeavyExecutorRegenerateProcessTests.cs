@@ -128,6 +128,66 @@ public sealed class HeavyExecutorRegenerateProcessTests : IAsyncLifetime
         Assert.Equal("cli", result.Failed);
         Assert.StartsWith("the gate 'cli' failed with exit 1", result.Why);
         Assert.Contains("== RED node tools/contracts.mjs --check (0.4s)\ngenerated/out.txt is stale: the contracts changed since it was written", result.Why);
-        Assert.Contains(result.Gates.Single(gate => gate.Name == "cli").Log!, result.Why);
+        var log = result.Gates.Single(gate => gate.Name == "cli").Log!;
+        Assert.Contains($"its log, {Path.GetRelativePath(Home, log).Replace('\\', '/')}, says:", result.Why);
+        Assert.DoesNotContain(Home, result.Why);
+    }
+
+    [Fact]
+    public async Task A_regenerate_whose_log_cannot_be_kept_still_says_its_command_and_its_output()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_folder, "broken.cjs"), "console.log('contracts would not build: tsc is not recognized'); process.exit(3);");
+        var commit = await CommitAsync("contracts one", $"node \"{Path.Combine(_folder, "broken.cjs")}\"");
+        // A folder where the log goes: writing it fails.
+        Directory.CreateDirectory(Path.Combine(VerifyFiles.AttemptFolder(Home, "v-0000000000000001", "i-1"), "regenerate.log"));
+
+        var result = await CheckAsync(commit, 1);
+
+        Assert.Equal((VerifyVerdicts.Unknown, VerifyResult.Unprepared), (result.Verdict, result.Code));
+        Assert.Contains("exited 3", result.Why);
+        Assert.Contains("tsc is not recognized", result.Why);
+        Assert.Contains("its output says:", result.Why);
+    }
+
+    [Fact]
+    public async Task A_regenerates_line_holding_a_token_pattern_is_withheld_from_the_why()
+    {
+        var token = string.Concat("ghp", "_", new string('a', 30), "0123");
+        await File.WriteAllTextAsync(Path.Combine(_folder, "broken.cjs"), $"console.log('remote: token {token} was refused'); console.log('and then it stopped'); process.exit(3);");
+        var commit = await CommitAsync("contracts one", $"node \"{Path.Combine(_folder, "broken.cjs")}\"");
+
+        var result = await CheckAsync(commit, 1);
+
+        Assert.DoesNotContain(token, result.Why);
+        Assert.DoesNotContain("was refused", result.Why);
+        Assert.Contains(GateLogExcerpt.Withheld, result.Why);
+        Assert.Contains("and then it stopped", result.Why);
+    }
+
+    [Fact]
+    public async Task A_cancel_in_the_middle_of_a_regenerate_ends_the_check_as_ended_with_every_gate_not_run()
+    {
+        var started = Path.Combine(_folder, "regenerate-started");
+        await File.WriteAllTextAsync(
+            Path.Combine(_folder, "slow.cjs"), $"require('fs').writeFileSync({JsonSerializer.Serialize(started)}, 'x'); setTimeout(() => {{}}, 120000);");
+        var commit = await CommitAsync("contracts one", $"node \"{Path.Combine(_folder, "slow.cjs")}\"");
+        var blob = (await GitFixture.GitAsync(Checkout, "rev-parse", $"{commit}:daoris.gates.json")).Trim();
+        var send = new VerifySend("v-0000000000000001", "i-1", "engine", Checkout, commit, blob) { Tree = Checkout + "-verify" };
+        await using var candidate = await CandidateJob.OpenAsync(HeavyExecutor.JobName(Home, send.Invocation));
+        var execution = new VerifyExecution(Home, send, candidate, new VerifyWorld { Poll = TimeSpan.FromMilliseconds(50), Preparation = new Prepared() }, HeavySlot.KeyOf(Checkout)!, "engine", _ => { });
+        using var stop = new CancellationTokenSource();
+
+        var running = execution.ExecuteAsync(stop.Token);
+        await Poll.Until(() => File.Exists(started), () => "the regenerate did not start");
+        await stop.CancelAsync();
+        var (result, busy) = await running.WaitAsync(Poll.Patience);
+
+        Assert.False(busy);
+        Assert.NotNull(result);
+        Assert.Equal(VerifyVerdicts.Unknown, result.Verdict);
+        Assert.Equal("it was ended before its verdict", result.Why);
+        Assert.NotEqual(VerifyResult.Unprepared, result.Code);
+        Assert.Equal(("cli", RunnerVerdicts.NotRun), (result.Gates.Single().Name, result.Gates.Single().Verdict));
+        Assert.False(File.Exists(Called));
     }
 }
