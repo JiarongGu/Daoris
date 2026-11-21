@@ -158,6 +158,7 @@ describe('a file\'s preview in the side bar', () => {
     SESSIONS = [DRIVEN];
     window.localStorage.setItem('daoris.dockClosed', '0');
     frame('s1a2b3c4');
+    await screen.findByRole('region', { name: 'Session' });
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
     await userEvent.click(await within(side).findByRole('tab', { name: 'Outputs' }));
 

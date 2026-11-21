@@ -11,6 +11,8 @@ public interface IStepVacancyStore
 
     /// <summary><paramref name="vacancies"/> kept as the whole set of <paramref name="unit"/>'s run; an empty set keeps nothing.</summary>
     void Keep(string unit, IReadOnlyList<StepVacancy> vacancies);
+
+    IReadOnlyList<string> Units();
 }
 
 /// <summary>
@@ -31,9 +33,13 @@ public static class StepVacancies
     public static bool Is(RoleWait wait, Func<string, bool> serves) =>
         wait.Holder.Kind == StepHolders.Agent && wait.Why is not (PersonWaits.Left or PersonWaits.Held) && !Served(wait, serves);
 
-    /// <summary>The vacancy <paramref name="vacancies"/> keep for the step's attempt now, where its holder is still an agent.</summary>
-    public static StepVacancy? Kept(IReadOnlyList<StepVacancy>? vacancies, RoleWait wait, string node, int attempt) =>
-        wait.Holder.Kind == StepHolders.Agent ? vacancies?.FirstOrDefault(each => each.Node == node && each.Attempt == attempt) : null;
+    /// <summary>The vacancy kept for the step's attempt, judged again as it is read: its holder an agent and, where <paramref name="serves"/> is given, nothing serving it now.</summary>
+    public static StepVacancy? Kept(IReadOnlyList<StepVacancy>? vacancies, RoleWait wait, string node, int attempt, Func<string, bool>? serves = null) =>
+        wait.Holder.Kind == StepHolders.Agent && (serves is null || Is(wait, serves)) ? vacancies?.FirstOrDefault(each => each.Node == node && each.Attempt == attempt) : null;
+
+    /// <summary>Whether a role's wait is served, for a reader; one that knows no live session passes none, and only a staffing serves, so the pass alone ends a cast agent's vacancy.</summary>
+    public static Func<string, bool> ServesAt(PlaceCastBook book, PlaceRiskBook? risk, string? workspace, string? repository, Func<string?, string?, bool>? live = null) =>
+        CastReading.Serves(book, risk, workspace, repository, live ?? ((_, _) => false));
 
     public static string Said(RoleWait wait, TimeSpan bound) =>
         $"vacant: `{wait.Role}` is its agent's{Named(wait)}, and no agent session answers its {wait.Why}; listed under Vacant for anyone to take, Daoris gives "
@@ -89,7 +95,7 @@ public static class StepVacancies
                 else if (vacancy.Since + bound <= now)
                 {
                     var words = Tried(wait, bound);
-                    var stopped = RunNodeWords.Word(records, each.Run, node.Id, NodeWordActs.Stop, words, () => now, settle: SettleBy.Observation);
+                    var stopped = RunNodeWords.Word(records, each.Run, node.Id, NodeWordActs.Stop, words, () => now, settle: SettleBy.Vacancy);
                     if (stopped.Done)
                     {
                         said.Add($"{step}: Daoris gave it up: {words}. Its run ends there.");
@@ -103,8 +109,30 @@ public static class StepVacancies
                 next.Add(vacancy);
             }
 
-            if (!next.SequenceEqual(kept)) vacancies.Keep(each.Unit.Id, next);
+            if (!next.SequenceEqual(kept)) Keep(vacancies, each.Unit.Id, next, said);
         }
+
+        Sweep(records, vacancies, governed, said);
+    }
+
+    /// <summary>A file that will not write never ends the pass: it is said, and the vacancies are judged again at the next look.</summary>
+    private static void Keep(IStepVacancyStore vacancies, string unit, IReadOnlyList<StepVacancy> next, List<string> said)
+    {
+        try
+        {
+            vacancies.Keep(unit, next);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            said.Add($"work  {unit}: its vacancies could not be kept ({error.Message}), so Daoris says them again at its next look.");
+        }
+    }
+
+    /// <summary>Drops the vacancies kept for a run no pass governs whose record is gone; a run that stands keeps its own.</summary>
+    private static void Sweep(NodeRecordFiles records, IStepVacancyStore vacancies, IEnumerable<GovernedUnit> governed, List<string> said)
+    {
+        var standing = governed.Select(each => each.Unit.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var unit in vacancies.Units().Where(unit => !standing.Contains(unit) && !records.Exists(unit))) Keep(vacancies, unit, [], said);
     }
 
     private static string Named(RoleWait wait) => wait.Holder.Name is { } name ? $" (`{name}`)" : "";

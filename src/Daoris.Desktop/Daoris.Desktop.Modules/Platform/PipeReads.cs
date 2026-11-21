@@ -204,6 +204,8 @@ internal static class PipeReads
 
     public static PipeGround Checks() => State(["checks"], (a, _) => Raw(At(a, "checks")) ?? "", p => Raw(Field(p, "checks")));
 
+    public static PipeGround Vacancy() => State(["hours"], (a, _) => Raw(At(a, "vacancy")) ?? "", p => Raw(Field(p, "hours")));
+
     public static PipeGround Manifest() => State(["files", "minutes", "copy"],
         (a, p) => Raw(At(a, Field(p, "files") is not null ? "manifestFiles" : Field(p, "copy") is not null ? "manifestCopy" : "manifestMinutes")) ?? "",
         p => Raw(Field(p, "files") ?? Field(p, "copy") ?? Field(p, "minutes")));

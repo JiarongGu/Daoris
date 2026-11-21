@@ -374,7 +374,57 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         Assert.Contains(past.Said, line => line.Contains("Daoris gave it up:", StringComparison.Ordinal));
     }
 
-    private const string AcceptOwner = """{"risk":{"machine":[{"kind":"work.accept","class":"owner"}]}}""";
+    [Fact]
+    public async Task A_vacancy_file_whose_run_is_gone_is_swept_and_one_whose_run_stands_stays()
+    {
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        var vacancies = new StepVacancyFiles(_home);
+        Assert.NotEmpty(vacancies.Of(RunUnit));
+        var gone = RunUnits.IdOf("q-gone");
+        vacancies.Keep(gone, [new("review", 1, _now, true, false)]);
+        Assert.True(File.Exists(StepVacancyFiles.PathOf(_home, gone)));
+
+        await RunPassAsync(runtime);
+
+        Assert.False(File.Exists(StepVacancyFiles.PathOf(_home, gone)));
+        Assert.NotEmpty(vacancies.Of(RunUnit));
+    }
+
+    [Fact]
+    public async Task A_vacancy_file_that_will_not_write_never_ends_the_pass_and_is_said()
+    {
+        OnBranch(Reviewed);
+        Directory.CreateDirectory(StepVacancyFiles.PathOf(_home, RunUnit));
+        var runtime = Runtime();
+
+        var pass = await RunPassAsync(runtime);
+
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+        Assert.Contains(pass.Said, line => line.Contains("is vacant:", StringComparison.Ordinal));
+        Assert.Contains(pass.Said, line => line.Contains("its vacancies could not be kept", StringComparison.Ordinal));
+        Directory.Delete(StepVacancyFiles.PathOf(_home, RunUnit));
+        await RunPassAsync(runtime);
+        Assert.NotEmpty(new StepVacancyFiles(_home).Of(RunUnit));
+    }
+
+    [Fact]
+    public async Task Only_a_vacancys_stop_reads_as_Daoris_giving_up_not_another_stop_an_observation_makes()
+    {
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+
+        Assert.True(RunNodeWords.Word(Files, RunId, "review", NodeWordActs.Stop, "seen released", () => _now, settle: SettleBy.Observation).Done);
+        await RunPassAsync(runtime);
+
+        var review = RunStatus("review");
+        Assert.Equal(NodeStates.Stopped, review.State);
+        Assert.NotEqual(NodeSource.Daoris, review.By);
+    }
+
+    private const string AcceptOwner ="""{"risk":{"machine":[{"kind":"work.accept","class":"owner"}]}}""";
 
     private StepTenure? ReviewHolder() => new StepTenureFiles(_home, () => true).Current(RunUnit, "review", RunStatus("review").Attempt);
 
@@ -408,6 +458,30 @@ public sealed class RiskStepGatesTests : NodeRunFixture
         await RunPassAsync(runtime);
         Assert.Equal(("agent:reviewer", TenureWhy.Cast, 3), (ReviewHolder()?.Holder, ReviewHolder()?.Why, ReviewHolder()?.Epoch));
         Assert.Equal(NodeStates.Active, RunStatus("review").State);
+    }
+
+    [Fact]
+    public async Task A_raise_to_owner_and_a_lowering_to_role_at_release_each_write_one_risk_judged_line()
+    {
+        Casts.Cast("machine", StepRoles.Acceptor, "agent:reviewer", "the reviewer accepts", _now);
+        OnBranch(Reviewed);
+        var runtime = Runtime();
+        await RunPassAsync(runtime);
+        Assert.DoesNotContain(RiskJournal.Read(_home), each => each.Today == TenureRejudge.Raised || each.Today == TenureRejudge.Lowered);
+
+        await RunPassAsync(runtime, AcceptOwner);
+        await RunPassAsync(runtime, AcceptOwner);
+        var raised = Assert.Single(RiskJournal.Read(_home), each => each.Today == TenureRejudge.Raised);
+        Assert.Equal(
+            (RiskJudged.Released, RiskActs.WorkAccept, RiskVerdict.OwnerOutcome, CastHolders.Person, "review", RunId),
+            (raised.Stage, raised.Kind, raised.Outcome, raised.Actor, raised.Step, raised.Run));
+
+        await RunPassAsync(runtime);
+        await RunPassAsync(runtime);
+        var lowered = Assert.Single(RiskJournal.Read(_home), each => each.Today == TenureRejudge.Lowered);
+        Assert.Equal((RiskJudged.Released, RiskActs.WorkAccept, "agent:reviewer", "review", RunId), (lowered.Stage, lowered.Kind, lowered.Actor, lowered.Step, lowered.Run));
+        Assert.NotEqual(raised.Key, lowered.Key);
+        Assert.Equal(2, RiskJournal.Read(_home).Count(each => each.Today == TenureRejudge.Raised || each.Today == TenureRejudge.Lowered));
     }
 
     [Fact]

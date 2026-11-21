@@ -16,7 +16,7 @@ public static class RiskStepGates
         if (config is null) return null;
         var policy = RiskPolicy.Of(config);
         var place = RiskPlace.Of(config, workspace, repository);
-        return new(act => RiskGate.Judge(policy, act, "", place, ""), config.PlaceRisk.At(workspace, repository).Marked(PlaceMarks.ProductionReleases));
+        return new(act => RiskGate.Judge(policy, act, "", place, ""), config.PlaceRisk.At(workspace, repository).Marked(PlaceMarks.ProductionReleases)) { Place = place };
     }
 
     /// <summary>The pass's reads of <paramref name="governed"/> with the judge at its place.</summary>
@@ -62,4 +62,7 @@ public static class RiskStepGates
 }
 
 /// <summary>The judge at a run's place, and whether the place carries the production-releases mark.</summary>
-public sealed record RiskStepJudge(Func<RiskAct, RiskVerdict> Act, bool Marked);
+public sealed record RiskStepJudge(Func<RiskAct, RiskVerdict> Act, bool Marked)
+{
+    public RiskPlace? Place { get; init; }
+}

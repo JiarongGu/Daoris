@@ -9,6 +9,11 @@ with the version and date at release.
   delivered, and each check started and settled, with no reader yet, beside today's records and never failing them. `daoris bus
   stats` reads what it measures by the day: events by kind, how long each took, the log's writes and bytes, and each look stage's
   time, from which the bus's budgets and deadlines are set.
+- A vacant step's loose ends are tied. How long Daoris lets one stand before giving it up is a setting you can change
+  (`daoris settings vacancy <hours>`, or its row beside the checks setting), its toast now reads as something waiting on
+  somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its
+  line in the risk journal, and Daoris's give-up reads as its own only for a vacancy.
+
 - A second opinion no longer stalls at its landing after a restart. Findings a restart cut off before the working session answered
   them are read again once it answers, so a fix it commits gets its one recheck; a recheck whose first reviewer cannot run goes to
   the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no

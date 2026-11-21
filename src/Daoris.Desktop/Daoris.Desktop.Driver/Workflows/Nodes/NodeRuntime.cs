@@ -155,7 +155,7 @@ public sealed class NodeRuntime(
     public IReadOnlyList<string>? Workers(string run) => RunWorkers.Of(_governed, run, records.Home);
 
     /// <inheritdoc cref="LeftSteps.With"/>
-    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config);
+    public IReadOnlyList<HeldStep> HeldSteps() => LeftSteps.With(_governed?.Values, records, _graphRuns, _config, Serving);
 
     /// <summary>The plugin steps in flight on the runs the last fresh read governed, kept through a drop, their plugin up: what an update waits on.</summary>
     public int PluginStepsInFlight() => _lastRead is { } governed
@@ -164,7 +164,7 @@ public sealed class NodeRuntime(
 
     private readonly UnknownAttempts _unknown = new();
 
-    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read, records.Home, _config?.PlaceRisk);
+    public IReadOnlyList<PersonWait> PersonWaits() => PersonWaitReader.Of(_graphRuns.Read(), records.Read, records.Home, _config?.PlaceRisk, Serving);
 
     /// <summary>Where each run not ended stands in its bound workflow version (<see cref="RunPassageReader"/>).</summary>
     public IReadOnlyList<RunPassage> Passages() => RunPassageReader.Of(_graphRuns.Read(), records.Read);
