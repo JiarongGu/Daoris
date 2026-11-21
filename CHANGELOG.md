@@ -15,6 +15,14 @@ with the version and date at release.
   the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no
   other agent read) says so on its step, with the count, instead of reading as working.
 - Every published build carries its own version: each publish (or stage) takes the next one above anything its install has carried, staged, tried or run (0.0.2, 0.0.3, …), where every build said 0.0.1. The window's System page, the machine log, `daoris --version` and the staged build's manifest name it, and `daoris update` says the version and commit the install's own application carries before what is staged.
+- A brainstorm's passes get minutes that fit what it asks: a design pass twice the policy's, a question naming whole sources half
+  as long again. Each pass is told its minutes and asked to give its answer so far early; a pass cut at its deadline keeps the last
+  answer it gave, marked partial on its record and in the document, and the synthesis reads it with the others instead of losing it.
+
+- A brainstorm's pass reads its packet as files instead of one large JSON: an index naming the question and each source's file,
+  where it came from, its size, how many of the question's terms it holds and why it is in, and one Markdown file per source. A
+  source the search matched by words alone that holds few of the question's terms is listed apart, so a pass opens only what it
+  needs.
 
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood

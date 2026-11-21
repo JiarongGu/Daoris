@@ -44,7 +44,7 @@ public sealed record BrainstormKept(bool Kept, IReadOnlyList<string> Codes, stri
 /// may give it again within its turn, and stays the file's until a valid one replaces it: a turn that ends refused is the driver's to
 /// judge, and its one repair is handed the same codes. A valid answer is kept once; Daoris never repairs, trims or keeps part of one.</para>
 ///
-/// <para><b>Judged against what the turn is handed</b>, read from its room: a generator's sources from <c>packet.json</c>, a
+/// <para><b>Judged against what the turn is handed</b>, read from its room: a generator's sources from the files its packet's index names under <c>sources/</c>, a
 /// synthesis's anonymous ids from <c>proposals.json</c>. A room that holds neither judges nothing, and nothing is written.</para>
 /// </remarks>
 public sealed class BrainstormBox(BrainstormScope scope)
@@ -74,10 +74,10 @@ public sealed class BrainstormBox(BrainstormScope scope)
             return new(false, [], $"This turn is a brainstorm's {(Scope.Synthesis ? "synthesis" : "generator")}: answer through `{own}`. Nothing was kept.");
         }
 
-        var handed = synthesis ? Handed(Scope.Room!, "proposals.json", "proposals") : Handed(Scope.Room!, "packet.json", "sources");
+        var handed = synthesis ? Handed(Scope.Room!, "proposals.json", "proposals") : Sources(Scope.Room!);
         if (handed is null)
         {
-            var file = synthesis ? "proposals.json" : "packet.json";
+            var file = synthesis ? "proposals.json" : IndexFile;
             return new(false, [], $"This turn's room holds no readable `{file}`, so the answer cannot be judged. Nothing was kept.");
         }
 
@@ -85,12 +85,21 @@ public sealed class BrainstormBox(BrainstormScope scope)
             ? BrainstormChecks.Synthesize(answer, handed)
             : BrainstormChecks.Give(answer, handed.ToHashSet(StringComparer.Ordinal));
 
-        if (Read(Scope.Answer!) is { } before && Judge(before).Count == 0)
+        var before = Read(Scope.Answer!);
+        var keptSoFar = before is not null && Judge(before).Count == 0;
+        if (keptSoFar && !Partial(before!))
         {
             return new(false, [], "Your answer is already kept for this turn, and an answer is kept once. You can end now.");
         }
 
         var codes = Judge(text);
+        if (codes.Count > 0 && keptSoFar)
+        {
+            return new(false, codes,
+                $"Daoris's validator refused this answer, with these codes: {string.Join(", ", codes)}. Your answer so far stays kept; give "
+                + "this one again, whole, before your minutes end.");
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(Scope.Answer!)!);
         // As composed, byte for byte: the driver judges the same text, and a newline added here would count against its bound.
         AtomicFile.WriteText(Scope.Answer!, text);
@@ -101,8 +110,28 @@ public sealed class BrainstormBox(BrainstormScope scope)
                 + "this tool before you end: an answer still refused when your turn ends fails the turn.");
         }
 
+        if (Partial(text))
+        {
+            return new(true, [], $"Your answer so far is kept: {Counted(text, synthesis)}. Give it again, whole and without `partial`, "
+                + "before your minutes end; if your pass is cut first, this one is kept, said as partial.");
+        }
+
         return new(true, [], $"Your {(synthesis ? "synthesis" : "answer")} is kept: {Counted(text, synthesis)}. It is a claim the person "
             + "reads, and nobody can ask you anything after. You can end now.");
+    }
+
+    private static bool Partial(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("partial", out var marked)
+                && marked.ValueKind == JsonValueKind.True;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     /// <summary>What a kept answer holds, in words: its proposals, or its groups and what it left out.</summary>
@@ -118,6 +147,25 @@ public sealed class BrainstormBox(BrainstormScope scope)
 
         var proposals = Count("proposals");
         return proposals == 0 ? "no proposal, and why" : $"{proposals} {(proposals == 1 ? "proposal" : "proposals")}";
+    }
+
+    public const string IndexFile = "index.md";
+
+    /// <summary>A generator's source ids, its room's <c>sources/</c> files as the driver's <c>BrainstormRoomPacket</c> names them; null with no index.</summary>
+    private static IReadOnlyList<string>? Sources(string room)
+    {
+        try
+        {
+            if (!File.Exists(Path.Combine(room, IndexFile))) return null;
+            var folder = Path.Combine(room, "sources");
+            return Directory.Exists(folder)
+                ? [.. Directory.EnumerateFiles(folder, "*.md").Select(Path.GetFileNameWithoutExtension).OfType<string>().Order(StringComparer.Ordinal)]
+                : [];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The ids a room's file lists under <paramref name="list"/>, or null where it does not read.</summary>

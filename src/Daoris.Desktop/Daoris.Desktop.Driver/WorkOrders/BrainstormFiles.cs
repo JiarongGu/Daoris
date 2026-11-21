@@ -40,8 +40,8 @@ public static class BrainstormStates
 /// <summary>
 /// A brainstorm's records under <c>&lt;home&gt;/brainstorms/&lt;id&gt;/</c>, each file written
 /// atomically by one writer: <c>request.json</c>, <c>sent.json</c> and <c>stop.json</c> by the service's desk, <c>state.json</c>,
-/// <c>packet.json</c>, <c>passes/</c> and the document by the driver, and <c>answers/&lt;turn&gt;.json</c> by the pass's result tool.
-/// The rooms are under <c>brainstorm-rooms/&lt;id&gt;/</c>, and go when the brainstorm ends.
+/// <c>packet.json</c> (no pass's), <c>passes/</c> and the document by the driver, and <c>answers/&lt;turn&gt;.json</c> by the pass's result tool.
+/// The rooms are under <c>brainstorm-rooms/&lt;id&gt;/</c>, the packet laid out as files in each, and go when the brainstorm ends.
 /// </summary>
 public sealed class BrainstormFiles(string home)
 {
@@ -125,10 +125,12 @@ public sealed class BrainstormFiles(string home)
             writer.WriteEndObject();
         });
 
-    /// <summary>The packet, frozen: written once, and never changed after (a new packet is a new brainstorm).</summary>
-    public void WritePacket(string id, byte[] bytes) => Bytes(PathOf(id, BrainstormInstruction.PacketFile), bytes);
+    public const string PacketRecord = "packet.json";
 
-    public byte[]? PacketBytes(string id) => ReadBytes(PathOf(id, BrainstormInstruction.PacketFile));
+    /// <summary>The packet, frozen: written once, and never changed after (a new packet is a new brainstorm).</summary>
+    public void WritePacket(string id, byte[] bytes) => Bytes(PathOf(id, PacketRecord), bytes);
+
+    public byte[]? PacketBytes(string id) => ReadBytes(PathOf(id, PacketRecord));
 
     /// <summary>The digest the person sent, or null where they have not.</summary>
     public string? Sent(string id)
@@ -206,15 +208,21 @@ public sealed class BrainstormFiles(string home)
     public string? DocumentText(string id) => ReadText(PathOf(id, "document.md"));
 
     /// <summary>
-    /// A turn's room: the packet, byte for byte the frozen file, its instruction, and for a synthesis the anonymous proposals; nothing
-    /// else, no checkout and no repository path.
+    /// A turn's room: the packet's files as laid for it (a brainstorm's index and sources, a meeting's packet), the same in every room,
+    /// its instruction, and for a synthesis the anonymous proposals; nothing else, no checkout and no repository path.
     /// </summary>
-    public string OpenRoom(string id, string turn, byte[] packet, string instruction, byte[]? proposals = null)
+    public string OpenRoom(string id, string turn, IReadOnlyList<RoomFile> packet, string instruction, byte[]? proposals = null)
     {
         var room = Path.Combine(Rooms(id), turn);
         if (Directory.Exists(room)) Directory.Delete(room, recursive: true);
         Directory.CreateDirectory(room);
-        File.WriteAllBytes(Path.Combine(room, BrainstormInstruction.PacketFile), packet);
+        foreach (var file in packet)
+        {
+            var path = Path.Combine(room, file.Path.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, file.Text);
+        }
+
         File.WriteAllText(Path.Combine(room, BrainstormInstruction.InstructionFile), instruction);
         if (proposals is not null) File.WriteAllBytes(Path.Combine(room, BrainstormInstruction.ProposalsFile), proposals);
         return room;

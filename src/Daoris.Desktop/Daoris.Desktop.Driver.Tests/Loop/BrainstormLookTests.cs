@@ -45,17 +45,21 @@ public sealed class BrainstormLookTests : IDisposable
     {
         public List<(BrainstormTurn Turn, string Packet, string Instruction, string? Proposals)> Seen { get; } = [];
 
+        public List<string> Listed { get; } = [];
+
         /// <summary>The answer each turn writes, by turn id; a turn with none writes nothing.</summary>
         public Dictionary<string, string> Answers { get; } = [];
 
         public Task<BrainstormTurnRun> RunAsync(BrainstormTurn turn, CancellationToken ct)
         {
-            var packet = File.ReadAllBytes(Path.Combine(turn.Room, BrainstormInstruction.PacketFile));
+            var index = File.ReadAllBytes(Path.Combine(turn.Room, BrainstormRoomPacket.IndexFile));
             var proposals = Path.Combine(turn.Room, BrainstormInstruction.ProposalsFile);
             lock (Seen)
             {
-                // The packet's digest as it reads, and its file's own bytes' hash: the same file, byte for byte, in every room.
-                Seen.Add((turn, $"{BrainstormPackets.Read(packet)?.Digest} {Convert.ToHexStringLower(SHA256.HashData(packet))}",
+                Listed.Add(string.Join(" ", Directory.EnumerateFiles(turn.Room, "*", SearchOption.AllDirectories)
+                    .Select(file => Path.GetRelativePath(turn.Room, file).Replace('\\', '/')).Order(StringComparer.Ordinal)));
+                // The index's own bytes' hash: the same index, byte for byte, in every room.
+                Seen.Add((turn, Convert.ToHexStringLower(SHA256.HashData(index)),
                     File.ReadAllText(Path.Combine(turn.Room, BrainstormInstruction.InstructionFile)),
                     File.Exists(proposals) ? File.ReadAllText(proposals) : null));
             }
@@ -273,8 +277,11 @@ public sealed class BrainstormLookTests : IDisposable
 
         // One packet digest in every room, the synthesis's too: what the person saw is what every pass read.
         Assert.Equal(["g1", "g2", "s1"], turns.Seen.Select(seen => seen.Turn.Turn));
-        var frozen = $"{digest} {Convert.ToHexStringLower(SHA256.HashData(Files.PacketBytes(id)!))}";
+        var index = BrainstormRoomPacket.Lay(BrainstormPackets.Read(Files.PacketBytes(id)!)!)[0].Text;
+        Assert.Contains(digest, index, StringComparison.Ordinal);
+        var frozen = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(index)));
         Assert.All(turns.Seen, seen => Assert.Equal(frozen, seen.Packet));
+        Assert.Equal(["index.md instruction.md", "index.md instruction.md", "index.md instruction.md proposals.json"], turns.Listed);
         Assert.Equal(["stub", "acp-stub", "stub"], turns.Seen.Select(seen => seen.Turn.Agent));
         Assert.All(turns.Seen, seen => Assert.Contains(digest, seen.Instruction, StringComparison.Ordinal));
 

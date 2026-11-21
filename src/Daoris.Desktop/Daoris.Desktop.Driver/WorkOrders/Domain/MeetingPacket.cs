@@ -198,8 +198,12 @@ public static class MeetingMessages
 /// </summary>
 public static class MeetingInstruction
 {
+    public const string PacketFile = "packet.json";
+
+    public static IReadOnlyList<RoomFile> Room(byte[] packet) => [new RoomFile(PacketFile, System.Text.Encoding.UTF8.GetString(packet))];
+
     public static string Say(string digest, MeetingParticipant you, int round) =>
-        $"Daoris holds a meeting, and its context packet `{BrainstormInstruction.PacketFile}` in this folder is packet `{digest}`, for "
+        $"Daoris holds a meeting, and its context packet `{PacketFile}` in this folder is packet `{digest}`, for "
         + $"round {round}. Read the packet first: its question, its sources, its participants in their order, and its transcript, each "
         + "message with who said it as Daoris relayed it.\n\n"
         + $"You are participant `{you.Id}`. Your job: say your one message of this round to the person and the other participants, "

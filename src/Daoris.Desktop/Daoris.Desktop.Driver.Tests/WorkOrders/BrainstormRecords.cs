@@ -11,7 +11,7 @@ internal static class BrainstormRecords
 {
     public static string WriteRequest(
         this BrainstormFiles files, string question, string? repository, IReadOnlyList<string> agents, DateTimeOffset at, string? named = null,
-        IReadOnlyList<string>? sources = null)
+        IReadOnlyList<string>? sources = null, string? pass = null)
     {
         var id = named ?? Guid.NewGuid().ToString("N")[..8];
         if (named is not null && File.Exists(files.PathOf(id, "request.json"))) return id;
@@ -34,6 +34,7 @@ internal static class BrainstormRecords
                 writer.WriteEndArray();
             }
 
+            if (pass is not null) writer.WriteString("pass", pass);
             writer.WriteEndObject();
         });
         return id;
