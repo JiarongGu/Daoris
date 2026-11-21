@@ -355,8 +355,8 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal(HeavyExecutor.BusyTries + 1, File.ReadAllLines(At("runner-calls.log")).Length);
 
         Assert.Equal(
-            [.. Enumerable.Repeat<string[]>([CheckBusFacts.CheckStartedKind, CheckBusFacts.CheckRequeuedKind], HeavyExecutor.BusyTries).SelectMany(pair => pair),
-                CheckBusFacts.CheckStartedKind, CheckBusFacts.CheckUnknownKind],
+            [.. Enumerable.Repeat<string[]>([BusTypes.CheckStarted.Kind, BusTypes.CheckRequeued.Kind], HeavyExecutor.BusyTries).SelectMany(pair => pair),
+                BusTypes.CheckStarted.Kind, BusTypes.CheckUnknown.Kind],
             await KindsAsync(bus, "i-a"));
     }
 
@@ -367,7 +367,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         var kinds = store.Read(0, 500).Where(entry => entry.Payload.Any(pair => pair is { Key: "invocation" } && Equals(pair.Value, invocation))).ToList();
         foreach (var effect in kinds.GroupBy(entry => entry.Effect))
         {
-            var starts = effect.Select(entry => entry.Kind == CheckBusFacts.CheckStartedKind).ToList();
+            var starts = effect.Select(entry => entry.Kind == BusTypes.CheckStarted.Kind).ToList();
             Assert.True(starts.Where((_, n) => n % 2 == 0).All(start => start) && starts.Where((_, n) => n % 2 == 1).All(start => !start), $"{effect.Key}'s starts and settles alternate");
         }
 
@@ -640,7 +640,7 @@ public sealed class HeavyExecutorProcessTests : IAsyncLifetime
         Assert.Equal(VerifyVerdicts.Reached, (await SettledAsync("v-0000000000000001", "i-a")).Verdict);
 
         Assert.Equal(
-            [CheckBusFacts.CheckStartedKind, CheckBusFacts.CheckEndedKind, CheckBusFacts.CheckStartedKind, CheckBusFacts.CheckPassedKind],
+            [BusTypes.CheckStarted.Kind, BusTypes.CheckEnded.Kind, BusTypes.CheckStarted.Kind, BusTypes.CheckPassed.Kind],
             await KindsAsync(bus, "i-a"));
     }
 

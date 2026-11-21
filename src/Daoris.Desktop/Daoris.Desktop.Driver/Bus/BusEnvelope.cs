@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// words, diffs and output stay in their records, referenced by id.
 /// </summary>
 /// <param name="Id">The entry's identity, minted at its append, never reused: what a later entry's <see cref="Causes"/> names.</param>
-/// <param name="Seq">The log's order: one more than the entry before it, given at the append by the lease holder, the log's one writer.</param>
+/// <param name="Seq">The log's order: given at the append by the lease holder, and seated after the store's newest by the write that keeps it.</param>
 /// <param name="Kind">Its type and version, <c>name/version</c> (<c>check.started/1</c>): a fact, a request or a response.</param>
 /// <param name="Subject">The key its order is kept by: an opinion, a run.</param>
 /// <param name="Emitter">Who appended it (<c>driver/checks</c>).</param>
@@ -20,11 +20,14 @@ public sealed record BusEnvelope(
     IReadOnlyList<string> Causes, IReadOnlyList<(string Key, object? Value)> Payload, DateTimeOffset At);
 
 /// <summary>What a writer hands the log to append (<see cref="BusLog.Append"/>): an envelope without the id, order and time the log gives it.</summary>
-/// <param name="Kind">Its type and version, <c>name/version</c>.</param>
+/// <param name="Type">Its type, as the registry declares it (<see cref="BusTypes"/>), whose kind and emitter it carries: one made elsewhere is refused.</param>
 /// <param name="Subject">The key its order is kept by.</param>
-/// <param name="Emitter">Who appends it.</param>
-public sealed record BusDraft(string Kind, string Subject, string Emitter)
+public sealed record BusDraft(BusType Type, string Subject)
 {
+    public string Kind => Type.Kind;
+
+    public string Emitter => Type.Emitter;
+
     public string? Answerer { get; init; }
 
     public DateTimeOffset? Deadline { get; init; }
@@ -57,8 +60,11 @@ public static class BusMisses
     /// <summary>The log's store would not take a flush, for a reason no later try passes or busy past the tries; its entries are dropped.</summary>
     public const string Store = "store";
 
-    /// <summary>A payload that is no id, code, count or time, or an envelope missing its kind, subject or emitter.</summary>
+    /// <summary>An envelope whose subject, answerer, effect or causes are no ids; a payload's value is dropped instead (<see cref="BusDrops"/>).</summary>
     public const string Shape = "shape";
+
+    /// <summary>A type the registry does not declare (<see cref="BusTypes"/>).</summary>
+    public const string Unknown = "unknown-type";
 
     /// <summary>This process does not hold the home's lease, at the append or afresh before the write, so it is not the log's writer.</summary>
     public const string NotHolder = "not-holder";

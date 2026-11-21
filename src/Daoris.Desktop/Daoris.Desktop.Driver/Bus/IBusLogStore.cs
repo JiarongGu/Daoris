@@ -4,14 +4,16 @@ namespace Daoris.Driver;
 /// The bus log's store: one port, so the store can change without its writers. Today's is
 /// <see cref="DesktopBusLogStore"/>, two tables of the desktop store under the home's lease.
 /// </summary>
-/// <remarks>A write is one transaction: the batch's entries and the measures with them, all or none.</remarks>
+/// <remarks>
+/// A write is one transaction: the batch's entries and the measures with them, all or none. Inside it the store asks the batch's writer
+/// (<see cref="BusBatch.AskWriter"/>) and seats the batch's orders after the newest it keeps, so no other holder's write comes between the
+/// lease's answer and the rows, and a log that lost the lease and regained it never collides with the entries written meanwhile.
+/// </remarks>
 public interface IBusLogStore : IDisposable
 {
-    /// <summary>The highest order the log keeps, 0 where it keeps none: the next append's order is one more.</summary>
-    long Newest();
-
     /// <summary>Write one batch in one transaction, retention's cut with it; what it wrote.</summary>
-    /// <exception cref="BusStoreBusyException">The store could not be written this moment, and nothing of the batch is.</exception>
+    /// <exception cref="BusStoreBusyException">The store could not be written this moment, or the lease not read, and nothing of the batch is.</exception>
+    /// <exception cref="BusNotWriterException">This process does not hold the home's lease, asked inside the write, and nothing of the batch is written.</exception>
     BusWritten Write(BusBatch batch);
 
     /// <summary>The entries after <paramref name="after"/>, in order, at most <paramref name="limit"/>: a replay.</summary>
@@ -24,8 +26,28 @@ public interface IBusLogStore : IDisposable
 /// <summary>The store could not be written this moment (its lock held past the wait, its file held): a later try may pass, so its batch is kept.</summary>
 public sealed class BusStoreBusyException(Exception inner) : Exception($"the bus log's store is busy ({inner.Message})", inner);
 
+/// <summary>Asked inside the write, this process does not hold the home's lease: its batch is dropped, never written by an old holder.</summary>
+public sealed class BusNotWriterException() : Exception("this process does not hold the home's lease, so it does not write the bus's log");
+
 /// <summary>One flush: its entries in order, the measures owed since the last write, and whether a commit-class entry asked for it.</summary>
-public sealed record BusBatch(IReadOnlyList<BusEnvelope> Entries, IReadOnlyList<BusMeasureRow> Measures, bool Commit);
+public sealed record BusBatch(IReadOnlyList<BusEnvelope> Entries, IReadOnlyList<BusMeasureRow> Measures, bool Commit)
+{
+    /// <summary>Whether this process holds the home's lease (null: its file could not be read this moment); null asks nothing.</summary>
+    public Func<bool?>? Writer { get; init; }
+
+    /// <summary>The lease asked, inside the write's transaction: a store's one call before it writes a row.</summary>
+    /// <exception cref="BusNotWriterException">Another process holds the lease.</exception>
+    /// <exception cref="BusStoreBusyException">The lease could not be read this moment.</exception>
+    public void AskWriter()
+    {
+        if (Writer is null) return;
+        switch (Writer())
+        {
+            case false: throw new BusNotWriterException();
+            case null: throw new BusStoreBusyException(new IOException("the home's lease could not be read"));
+        }
+    }
+}
 
 /// <summary>
 /// What one write wrote: the rows' own bytes it appended and the largest row's, how many old rows retention cut, and the pages it wrote
@@ -38,6 +60,15 @@ public sealed record BusWritten(long Bytes, int Cut, long Most = 0)
 
     /// <summary>The bytes of one page.</summary>
     public long PageSize { get; init; }
+
+    /// <summary>
+    /// How far the batch's orders moved to follow the newest the store kept (0 where they did): the log moves what waits by as much. A
+    /// log's first write after it opens moves by the log's length; a later one only where another holder wrote meanwhile.
+    /// </summary>
+    public long Shift { get; init; }
+
+    /// <summary>Whether the write opened the store first (its steps run there), whose time is not a flush's.</summary>
+    public bool Opened { get; init; }
 }
 
 /// <summary>

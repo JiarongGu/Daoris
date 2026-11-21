@@ -29,7 +29,11 @@ public sealed record BusLogOptions
 /// <param name="Flushes">The writes that carried entries.</param>
 /// <param name="Missed">The entries refused, by reason (<see cref="BusMisses"/>).</param>
 /// <param name="Retried">The batches a busy store sent back to wait for the next try.</param>
-public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<string, long> Missed, long Retried = 0);
+public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<string, long> Missed, long Retried = 0)
+{
+    /// <summary>The payloads' fields and values dropped at emit, their facts kept, by reason (<see cref="BusDrops"/>).</summary>
+    public IReadOnlyDictionary<string, long> Dropped { get; init; } = new Dictionary<string, long>(StringComparer.Ordinal);
+}
 
 /// <summary>
 /// The bus's log in its first form: an envelope appended in memory, given its id, order and time at once, and
@@ -39,11 +43,11 @@ public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<s
 /// </summary>
 /// <remarks>
 /// <para><b>A shadow append never fails the write it rides beside</b>: <see cref="Append"/> never throws and never waits on the store. A
-/// refusal (the store's, a payload that is no id, code, count or time, a process that is not the lease holder) is counted by its reason,
-/// by the day, and said once in the machine log as <c>bus.refused</c>. A batch a busy store refused goes back ahead of the next (each
-/// entry's order is fixed at its append, so the order holds), tried again after <see cref="RetryAfter"/> and counted, at most
-/// <see cref="MostRetries"/> times running; past them, or refused for any other reason, it is dropped. The lease is asked afresh before
-/// each write, so entries taken while it is lost are dropped, never written by the old holder.</para>
+/// refusal (the store's, an undeclared type, a subject that is no id, a process not the lease holder) is counted by reason and said once
+/// as <c>bus.refused</c>; a payload's value its type does not declare is dropped, the fact kept (<see cref="BusType.Admit"/>), and said
+/// once as <c>bus.dropped</c>. A busy store's batch goes back ahead of the next, tried again after <see cref="RetryAfter"/>, at most
+/// <see cref="MostRetries"/> times running, then dropped. The lease is asked inside each write's transaction, and the write seats its
+/// batch after the store's newest order, what waits moving with it, so a log that regained the lease goes on after the other holder's.</para>
 /// <para><b>Measured</b> into the store's measures by the day (UTC): entries by kind, each kind's handling time where its writer knows it,
 /// the flushes' count, entries and time, the rows' own bytes and the pages each write put on disk, retention's cuts, the misses, and each
 /// look stage's time (<see cref="Staged"/>). <c>daoris bus stats</c> reads them.</para>
@@ -88,6 +92,7 @@ public sealed class BusLog : IAsyncDisposable
     private readonly BusMeasures _measures = new();
     private readonly HashSet<string> _said = new(StringComparer.Ordinal);
     private readonly Dictionary<string, long> _missed = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, long> _dropped = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _closing = new();
     private readonly SemaphoreSlim _flushing = new(1, 1);
     private List<BusEnvelope> _pending = [];
@@ -95,7 +100,6 @@ public sealed class BusLog : IAsyncDisposable
     private bool _urgent;
     private bool _closed;
     private long _next;
-    private bool _ordered;
     private long _appended;
     private long _flushes;
     private DateTimeOffset _lastWrite;
@@ -123,20 +127,28 @@ public sealed class BusLog : IAsyncDisposable
     {
         get
         {
-            lock (_gate) return new BusTally(_appended, _flushes, new Dictionary<string, long>(_missed, StringComparer.Ordinal), _retried);
+            lock (_gate)
+            {
+                return new BusTally(_appended, _flushes, new Dictionary<string, long>(_missed, StringComparer.Ordinal), _retried)
+                {
+                    Dropped = new Dictionary<string, long>(_dropped, StringComparer.Ordinal),
+                };
+            }
         }
     }
 
     /// <summary>
     /// Append one envelope behind: given its id, order and time now and written by the loop. Never throws and never waits on the store;
-    /// false where refused, which is counted and said.
+    /// false where refused (an undeclared type among the reasons), which is counted and said.
     /// </summary>
     public bool Append(BusDraft draft)
     {
         try
         {
+            if (!BusTypes.Declares(draft.Type)) return Miss(BusMisses.Unknown, draft.Kind);
             if (!Fits(draft)) return Miss(BusMisses.Shape, draft.Kind);
             if (!Holder()) return Miss(BusMisses.NotHolder, draft.Kind);
+            var admitted = draft.Type.Admit(draft.Payload);
             TaskCompletionSource? pulse = null;
             lock (_gate)
             {
@@ -146,8 +158,9 @@ public sealed class BusLog : IAsyncDisposable
                 var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
                 var envelope = new BusEnvelope(
                     Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, draft.Deadline,
-                    draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= DesktopBusLogStore.MostListed ? draft.Causes : [.. draft.Causes, cause],
-                    draft.Payload, at);
+                    draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause],
+                    admitted.Kept, at);
+                foreach (var (field, reason) in admitted.Dropped) DropLocked(draft.Kind, field, reason, at);
                 if (draft.Key is { } key)
                 {
                     // Bounded: a key from long ago is forgotten with the rest, and its follower's causes stay empty, as after a restart.
@@ -444,8 +457,15 @@ public sealed class BusLog : IAsyncDisposable
             measures = _measures.Take();
         }
 
-        var holder = Ask();
-        if (holder is false)
+        BusWritten written;
+        TimeSpan took;
+        try
+        {
+            var began = Stopwatch.GetTimestamp();
+            written = _store.Write(new BusBatch(entries, measures, commit) { Writer = Ask });
+            took = Stopwatch.GetElapsedTime(began);
+        }
+        catch (BusNotWriterException)
         {
             lock (_gate)
             {
@@ -455,18 +475,6 @@ public sealed class BusLog : IAsyncDisposable
 
             foreach (var entry in entries) Miss(BusMisses.NotHolder, entry.Kind);
             return;
-        }
-
-        BusWritten written;
-        TimeSpan took;
-        try
-        {
-            if (holder is null) throw new BusStoreBusyException(new IOException("the home's lease could not be read"));
-            // The store's first open (its steps run there) is the order's read, outside the flush's time.
-            if (entries.Count > 0) Order(entries);
-            var began = Stopwatch.GetTimestamp();
-            written = _store.Write(new BusBatch(entries, measures, commit));
-            took = Stopwatch.GetElapsedTime(began);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -488,17 +496,18 @@ public sealed class BusLog : IAsyncDisposable
         {
             _retries = 0;
             _lastWrite = _clock.GetUtcNow();
+            if (written.Shift > 0) Seat(written.Shift);
             var day = DesktopBusLogStore.Day(_lastWrite);
             if (entries.Count > 0)
             {
                 _flushes++;
                 _measures.Add(day, BusMeasures.Flush, BusMeasures.Entries, entries.Count);
-                _measures.Add(day, BusMeasures.Flush, BusMeasures.Micros, (long)(took.TotalMilliseconds * 1000));
+                if (!written.Opened) _measures.Add(day, BusMeasures.Flush, BusMeasures.Micros, (long)(took.TotalMilliseconds * 1000));
                 if (commit) _measures.Add(day, BusMeasures.Flush, BusMeasures.CommitClass, 1);
                 _measures.Add(day, BusMeasures.Bytes, BusMeasures.Rows, written.Bytes, entries.Count, written.Most);
                 if (written.Cut > 0) _measures.Add(day, BusMeasures.Cut, BusMeasures.Rows, written.Cut);
             }
-            else
+            else if (!written.Opened)
             {
                 // A write of the measures alone owes no write of its own cost: it rides the next.
                 _measures.Add(day, BusMeasures.Flush, BusMeasures.MeasuresAlone, (long)(took.TotalMilliseconds * 1000), owing: false);
@@ -514,29 +523,27 @@ public sealed class BusLog : IAsyncDisposable
     }
 
     /// <summary>
-    /// The first batch's orders follow the newest the store keeps, so a log opened again goes on after it; read once, at the first flush,
-    /// off the writer's path.
+    /// What waits, and the orders still to give, moved by <paramref name="shift"/> after a write the store seated after its newest: a log
+    /// opened again goes on after its last entry, and one that regained the lease after the other holder's, every later batch with it.
     /// </summary>
-    private void Order(List<BusEnvelope> entries)
+    private void Seat(long shift)
     {
-        if (_ordered) return;
-        var newest = _store.Newest();
-        _ordered = true;
-        if (newest == 0) return;
-        lock (_gate)
-        {
-            for (var n = 0; n < entries.Count; n++) entries[n] = entries[n] with { Seq = entries[n].Seq + newest };
-            _next += newest;
-            foreach (var each in _pending.Select((entry, n) => (entry, n)).ToList()) _pending[each.n] = each.entry with { Seq = each.entry.Seq + newest };
-        }
+        _next += shift;
+        for (var n = 0; n < _pending.Count; n++) _pending[n] = _pending[n] with { Seq = _pending[n].Seq + shift };
     }
 
     private static bool Fits(BusDraft draft) =>
-        draft.Kind is { Length: > 0 } && draft.Subject is { Length: > 0 } && draft.Emitter is { Length: > 0 }
-        && DesktopBusLogStore.Short(draft.Kind) && DesktopBusLogStore.Short(draft.Subject) && DesktopBusLogStore.Short(draft.Emitter)
-        && DesktopBusLogStore.Short(draft.Answerer) && DesktopBusLogStore.Short(draft.Effect)
-        && draft.Causes.Count <= DesktopBusLogStore.MostListed && draft.Causes.All(DesktopBusLogStore.Short)
-        && draft.Payload.All(pair => pair.Key is { Length: > 0 } && DesktopBusLogStore.Short(pair.Key) && DesktopBusLogStore.Fits(pair.Value));
+        draft.Subject is { Length: > 0 } && BusShapes.Short(draft.Subject) && BusShapes.Short(draft.Answerer) && BusShapes.Short(draft.Effect)
+        && draft.Causes.Count <= BusShapes.MostListed && draft.Causes.All(cause => BusShapes.Short(cause));
+
+    /// <summary>A payload's field or value dropped at emit: counted by reason, and by the day as reason, type and field; said once for each.</summary>
+    private void DropLocked(string kind, string field, string reason, DateTimeOffset at)
+    {
+        var named = Cut($"{reason}|{kind}|{field}")!;
+        _dropped[reason] = _dropped.GetValueOrDefault(reason) + 1;
+        _measures.Add(DesktopBusLogStore.Day(at), BusMeasures.Drop, named, 1);
+        if (_said.Add("drop:" + named)) _options.Log?.Warn("bus.dropped", ("reason", reason), ("kind", kind), ("field", Cut(field)));
+    }
 
     private bool Miss(string reason, string? what, bool counted = true)
     {

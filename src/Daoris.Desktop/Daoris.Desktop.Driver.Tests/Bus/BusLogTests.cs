@@ -29,9 +29,9 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
     private static DateTimeOffset Today() => new MovedClock().GetUtcNow();
 
     private static BusDraft Plain(string subject, int n = 0) =>
-        new(CheckBusFacts.CheckStartedKind, subject, "test") { Payload = [("invocation", $"i-{n.ToString(CultureInfo.InvariantCulture)}")] };
+        new(BusTypes.CheckStarted, subject) { Payload = [("invocation", $"i-{n.ToString(CultureInfo.InvariantCulture)}")] };
 
-    private static BusDraft Commit(string subject, int n = 0) => Plain(subject, n) with { Kind = CheckBusFacts.CheckPassedKind, Commit = true };
+    private static BusDraft Commit(string subject, int n = 0) => Plain(subject, n) with { Type = BusTypes.CheckPassed, Commit = true };
 
     /// <summary>
     /// 🔴 A log whose store throws keeps today's write green: the opinion's machine-log line is written, the append answers at once,
@@ -61,9 +61,158 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.True(bus.Tally.Missed.GetValueOrDefault(BusMisses.Store) >= 1, "the store's refusal is counted");
         Assert.Equal(2, bus.Tally.Appended);
 
-        // A payload that is no id, code, count or time is refused at emit and counted, the writer told nothing.
-        Assert.False(bus.Append(Plain("run-1") with { Payload = [("words", "a sentence\nwith a line")] }));
-        Assert.Equal(1, bus.Tally.Missed[BusMisses.Shape]);
+        // A field its type does not declare is dropped at emit and counted, the fact kept and the writer told nothing.
+        Assert.True(bus.Append(Plain("run-1") with { Payload = [("words", "a sentence\nwith a line")] }));
+        Assert.Equal(1, bus.Tally.Dropped[BusDrops.Undeclared]);
+        Assert.False(bus.Tally.Missed.ContainsKey(BusMisses.Shape));
+    }
+
+    /// <summary>🔴 A type the registry does not declare is refused at emit and counted: one named nowhere, and a look-alike made elsewhere.</summary>
+    [Fact]
+    public async Task A_type_the_registry_does_not_declare_is_refused_and_counted()
+    {
+        var store = new CountingStore();
+        await using var bus = BusLog.Over(store, Options());
+        var nowhere = BusTypes.CheckStarted with { Name = "check.forged" };
+        var lookAlike = BusTypes.CheckStarted with { };
+
+        Assert.False(bus.Append(new BusDraft(nowhere, "run-1")));
+        Assert.False(bus.Append(new BusDraft(lookAlike, "run-1")));
+        Assert.Equal(2, bus.Tally.Missed[BusMisses.Unknown]);
+        Assert.True(bus.Append(Plain("run-1")));
+        await bus.FlushAsync();
+        Assert.Equal([BusTypes.CheckStarted.Kind], store.All.SelectMany(batch => batch.Entries).Select(entry => entry.Kind));
+    }
+
+    /// <summary>
+    /// 🔴 A value not of its field's shape is dropped at emit and the fact kept, so a repository named with a space, or a parameterized
+    /// test class among the red, costs that value and never the fact: the field left unknown, a list keeping the ids that fit, each drop
+    /// counted by reason, type and field, said once, and read by the stats.
+    /// </summary>
+    [Fact]
+    public async Task A_value_not_of_its_fields_shape_is_dropped_and_the_fact_kept()
+    {
+        var clock = new MovedClock();
+        using var log = new MachineLog(_home, "driver-test", () => clock.GetUtcNow());
+        await using (var bus = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = clock, Log = log }))
+        {
+            var send = new VerifySend("run-7", "inv-1", "My Engine", "c:/x", "0123456789abcdef", "none");
+            Assert.True(bus.Append(CheckBusFacts.CheckStarted(send)));
+            Assert.True(bus.Append(CheckBusFacts.CheckSettled(send, new VerifyResult("inv-1", send.Commit, VerifyVerdicts.Failed, "red", [])
+            {
+                Failed = "unit", Red = ["Engine.Tests|PlayerTests(speed: 2)", "Engine.Tests|MapTests"],
+            })));
+            Assert.True(bus.Append(Plain("run-7") with { Payload = [("gates", "three")] }));
+            Assert.Equal(3, bus.Tally.Dropped[BusDrops.Shape]);
+            Assert.False(bus.Tally.Missed.ContainsKey(BusMisses.Shape));
+        }
+
+        using var store = new DesktopBusLogStore(_home);
+        var read = store.Read(0, 10);
+        Assert.Equal(3, read.Count);
+        Assert.Contains(read[0].Payload, pair => pair is { Key: "repository", Value: null });
+        Assert.Contains(read[0].Payload, pair => pair.Key == "commit" && Equals(pair.Value, "0123456789abcdef"));
+        Assert.Equal(["Engine.Tests|MapTests"], (IReadOnlyList<string>)read[1].Payload.Single(pair => pair.Key == "red").Value!);
+        Assert.Contains(read[1].Payload, pair => pair.Key == "redCount" && Equals(pair.Value, 2L));
+        Assert.Contains(read[2].Payload, pair => pair is { Key: "gates", Value: null });
+
+        Assert.Equal(0, BusStatsCommand.Run(["stats"], _home, Today, out var said));
+        output.WriteLine(said);
+        Assert.Contains("dropped values, their facts kept: ", said, StringComparison.Ordinal);
+        Assert.Contains("shape|check.started/1|repository 1", said, StringComparison.Ordinal);
+        Assert.Contains("shape|check.failed/1|red 1", said, StringComparison.Ordinal);
+        Assert.Contains("shape|check.started/1|gates 1", said, StringComparison.Ordinal);
+
+        using var file = new FileStream(
+            Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").Single(), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        Assert.Equal(3, new StreamReader(file).ReadToEnd().Split('\n').Count(line => line.Contains("\"bus.dropped\"", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// 🔴 A log that lost the lease and regained it seats its batch after what the other holder wrote meanwhile, and every later batch
+    /// goes on after it: no order collides, nothing is dropped as the store's refusal, and the replay keeps each log's entries in order.
+    /// </summary>
+    [Fact]
+    public async Task A_log_that_regained_the_lease_seats_its_batch_after_the_other_holders()
+    {
+        bool? first = true;
+        await using var regained = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = new MovedClock(), Writer = () => first });
+        for (var n = 0; n < 3; n++) Assert.True(regained.Append(Plain("run-a", n)));
+        await regained.FlushAsync();
+
+        first = false;
+        await using (var other = BusLog.Over(new DesktopBusLogStore(_home), Options()))
+        {
+            for (var n = 0; n < 2; n++) Assert.True(other.Append(Plain("run-b", n)));
+        }
+
+        first = true;
+        Assert.True(regained.Append(Plain("run-a", 3)));
+        await regained.FlushAsync();
+        Assert.True(regained.Append(Plain("run-a", 4)));
+        await regained.FlushAsync();
+
+        Assert.False(regained.Tally.Missed.ContainsKey(BusMisses.Store));
+        using var store = new DesktopBusLogStore(_home);
+        var read = store.Read(0, 20);
+        Assert.Equal([1L, 2, 3, 4, 5, 6, 7], read.Select(entry => entry.Seq));
+        Assert.Equal(["run-a", "run-a", "run-a", "run-b", "run-b", "run-a", "run-a"], read.Select(entry => entry.Subject));
+        Assert.Equal(["i-3", "i-4"], read.Skip(5).Select(entry => (string)entry.Payload.Single(pair => pair.Key == "invocation").Value!));
+    }
+
+    /// <summary>🔴 The lease is asked inside the write's transaction, which holds the store for writing (another connection cannot take it), and a lost lease drops the batch.</summary>
+    [Fact]
+    public async Task The_lease_is_asked_inside_the_writes_transaction()
+    {
+        var locked = new System.Collections.Concurrent.ConcurrentQueue<bool>();
+        var holder = true;
+        var location = DesktopStore.LocationIn(_home);
+        await using (var made = BusLog.Over(new DesktopBusLogStore(_home), Options()))
+        {
+            Assert.True(made.Append(Plain("run-0")));
+        }
+
+        await using var bus = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions
+        {
+            Clock = new MovedClock(),
+            Writer = () =>
+            {
+                using var probe = StoreEngineSource.Connect(location, Daoris.Ports.Store.DesktopOpen.ReadWrite);
+                void Run(string sql)
+                {
+                    using var command = probe.CreateCommand();
+                    command.CommandText = sql;
+                    command.CommandTimeout = 1;
+                    command.ExecuteNonQuery();
+                }
+
+                Run("PRAGMA busy_timeout = 0");
+                try
+                {
+                    Run("BEGIN IMMEDIATE");
+                    Run("ROLLBACK");
+                    locked.Enqueue(false);
+                }
+                catch (Exception error) when (StoreEngineSource.Busy(error))
+                {
+                    locked.Enqueue(true);
+                }
+
+                return holder;
+            },
+        });
+
+        Assert.True(bus.Append(Plain("run-1")));
+        Assert.Equal([false], locked);
+        await bus.FlushAsync();
+        Assert.Equal([false, true], locked);
+
+        holder = false;
+        Assert.True(bus.Append(Plain("run-1", 1)));
+        await bus.FlushAsync();
+        Assert.Equal(1, bus.Tally.Missed[BusMisses.NotHolder]);
+        using var store = new DesktopBusLogStore(_home);
+        Assert.Equal(["run-0", "run-1"], store.Read(0, 10).Select(entry => entry.Subject));
     }
 
     /// <summary>🔴 An idle minute writes nothing; a plain entry is written behind, at most about once a second.</summary>
@@ -250,34 +399,43 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A value the payload cannot carry is refused at emit, never dropping the batch beside it: a number that is not finite, text
-    /// that is not well-formed UTF-16, and (until the registry declares each field) whitespace, a path, an e-mail or a sentence.
+    /// 🔴 A value its field's shape cannot carry is dropped at emit, the fact and the batch beside it written: a number that is not
+    /// finite, text that is not well-formed UTF-16, whitespace, a path, an e-mail or a sentence where an id is declared; an envelope whose
+    /// subject is no id is refused whole.
     /// </summary>
     [Fact]
-    public async Task A_value_the_payload_cannot_carry_is_refused_at_emit_and_the_batch_is_written()
+    public async Task A_value_its_shape_cannot_carry_is_dropped_at_emit_and_the_batch_is_written()
     {
         var store = new CountingStore();
         await using var bus = BusLog.Over(store, Options());
 
-        object?[] refused =
+        object?[] misfits =
         [
-            double.NaN, double.PositiveInfinity, "a\uD800b", "\uDC00", @"D:\work\x", "d:/work/x", "/srv/x", @"\\server\share",
-            "src/Daoris.Cli/test/version.test.ts", "../up", "someone@example.com", "the check failed because", "two\twords", "https://host/x",
+            "a\uD800b", "\uDC00", @"D:\work\x", "d:/work/x", "/srv/x", @"\\server\share", "src/Daoris.Cli/test/version.test.ts", "../up",
+            "someone@example.com", "the check failed because", "two\twords", "https://host/x", 2.5, 3L,
         ];
-        foreach (var value in refused)
+        foreach (var value in misfits)
         {
-            Assert.False(DesktopBusLogStore.Fits(value), $"{value} fits");
-            Assert.False(bus.Append(Plain("run-1") with { Payload = [("value", value)] }), $"{value} was taken");
+            Assert.False(BusShapes.Fits(BusShapes.Id, value), $"{value} fits an id");
+            Assert.True(bus.Append(Plain("run-1") with { Payload = [("repository", value)] }), $"{value} refused the fact");
         }
 
+        Assert.False(BusShapes.Fits(BusShapes.Number, double.NaN));
+        Assert.False(BusShapes.Fits(BusShapes.Number, double.PositiveInfinity));
+        Assert.False(BusShapes.Fits(BusShapes.Count, 2.5));
+        Assert.Equal(misfits.Length, bus.Tally.Dropped[BusDrops.Shape]);
         Assert.False(bus.Append(Plain("run 1")), "a subject with a space was taken");
-        Assert.Equal(refused.Length + 1, bus.Tally.Missed[BusMisses.Shape]);
+        Assert.Equal(1, bus.Tally.Missed[BusMisses.Shape]);
 
-        object?[] kept = ["check.started/1", "driver/checks", "web|ask.spec", "inv-1|0123456789abcdef", "Daoris.Desktop.Driver.Tests|BusLogTests", 2.5, "", "v-0000000000000001"];
-        foreach (var value in kept) Assert.True(DesktopBusLogStore.Fits(value), $"{value} does not fit");
-        Assert.True(bus.Append(Commit("run-1") with { Payload = [.. kept.Select((value, n) => ($"k{n}", value))] }));
+        string[] ids = ["check.started/1", "driver/checks", "web|ask.spec", "inv-1|0123456789abcdef", "Daoris.Desktop.Driver.Tests|BusLogTests", "", "v-0000000000000001"];
+        foreach (var value in ids) Assert.True(BusShapes.Fits(BusShapes.Id, value), $"{value} does not fit an id");
+        Assert.True(BusShapes.Fits(BusShapes.Number, 2.5));
+        Assert.True(bus.Append(Commit("run-1") with { Payload = [("invocation", ids[3]), ("redCount", 2L), ("red", (IReadOnlyList<string>)[.. ids])] }));
         await bus.FlushAsync();
         Assert.Equal(1, store.Writes);
+        var written = store.All.SelectMany(batch => batch.Entries).ToList();
+        Assert.Equal(misfits.Length + 1, written.Count);
+        Assert.All(written.Take(misfits.Length), entry => Assert.Contains(entry.Payload, pair => pair is { Key: "repository", Value: null }));
 
         // A red class named by its test file's path is kept by its suite and the file's name.
         var send = new VerifySend("run-7", "inv-1", "Engine", "c:/x", "0123456789abcdef", "none");
@@ -321,10 +479,10 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         await using (var causes = BusLog.Over(listed, Options()))
         {
             Assert.True(causes.Append(Plain("run-1") with { Key = "first" }));
-            Assert.True(causes.Append(Plain("run-1", 1) with { Causes = [.. Enumerable.Range(0, DesktopBusLogStore.MostListed).Select(n => $"c-{n}")], After = ["first"] }));
+            Assert.True(causes.Append(Plain("run-1", 1) with { Causes = [.. Enumerable.Range(0, BusShapes.MostListed).Select(n => $"c-{n}")], After = ["first"] }));
         }
 
-        Assert.Equal(DesktopBusLogStore.MostListed, listed.Batches.SelectMany(batch => batch.Entries).Last().Causes.Count);
+        Assert.Equal(BusShapes.MostListed, listed.Batches.SelectMany(batch => batch.Entries).Last().Causes.Count);
 
         Assert.Contains("bus_measures", HomeHistory.DesktopKept);
         Assert.DoesNotContain("bus_measures", HomeHistory.DesktopTables);
@@ -390,7 +548,7 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         using var store = new DesktopBusLogStore(_home);
         var read = store.Read(0, 100);
         Assert.Equal(
-            [OpinionBusFacts.OpinionAskedKind,CheckBusFacts.CheckStartedKind, CheckBusFacts.CheckFailedKind, OpinionBusFacts.OpinionAnsweredKind],
+            [BusTypes.OpinionAsked.Kind, BusTypes.CheckStarted.Kind, BusTypes.CheckFailed.Kind, BusTypes.OpinionAnswered.Kind],
             read.Select(entry => entry.Kind));
         Assert.Equal([1L, 2, 3, 4], read.Select(entry => entry.Seq));
         Assert.Equal("op-1", read[0].Subject);
@@ -495,8 +653,6 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
 
     private sealed class ThrowingStore : IBusLogStore
     {
-        public long Newest() => throw new IOException("the log's store cannot be opened");
-
         public BusWritten Write(BusBatch batch) => throw new IOException("the log's store cannot be written");
 
         public IReadOnlyList<BusEnvelope> Read(long after, int limit) => [];
@@ -543,10 +699,9 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
 
         private int _refused;
 
-        public long Newest() => 0;
-
         public BusWritten Write(BusBatch batch)
         {
+            batch.AskWriter();
             if (Volatile.Read(ref _refused) < Busy)
             {
                 Interlocked.Increment(ref _refused);
