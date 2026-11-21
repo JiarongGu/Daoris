@@ -6,7 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Over real git, the promotion and the merge tool's one lock on the line: a landing that comes while a run holds the checkout moves nothing
 /// and says whose run it is; it takes the same lock for its move, in the tool's shape, and lets it go after; a lock a killed run left is taken back.
 /// </summary>
-public sealed partial class IntegrationPromoteGitTests
+public sealed class IntegrationPromoteLockGitTests : IntegrationPromoteFixture
 {
     private static string MergeToolLock(string root) => MergeRunLock.PathOf(root);
 

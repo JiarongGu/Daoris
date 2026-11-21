@@ -81,7 +81,7 @@ test('a run that finds a landing in flight waits, said once, and runs when the l
     assert.deepEqual(ran, ['merge']);
     assert.deepEqual(slept, [1000, 1000, 1000]);
     assert.equal(said.length, 1, 'said once, not at each look');
-    assert.match(said[0], /a landing is moving the line \(pid 300, started 2026-11-21T10:00:00Z\): waiting for it to end/);
+    assert.match(said[0] ?? '', /a landing is moving the line \(pid 300, started 2026-11-21T10:00:00Z\): waiting for it to end/);
     assert.equal(existsSync(file), false, 'the run let its lock go');
   } finally {
     remove();
