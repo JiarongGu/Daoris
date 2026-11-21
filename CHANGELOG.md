@@ -10,6 +10,7 @@ with the version and date at release.
   somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its
   line in the risk journal, and Daoris's give-up reads as its own only for a vacancy.
 
+- A folder registered inside another repository is read as a folder everywhere: the clean-up no longer lists that repository's session branches as the folder's own or waits on you for each, and the folder's page draws Details, Files and Workflow alone, with no Branches, History, Changes or Integration tab.
 - A second opinion no longer stalls at its landing after a restart. Findings a restart cut off before the working session answered
   them are read again once it answers, so a fix it commits gets its one recheck; a recheck whose first reviewer cannot run goes to
   the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no

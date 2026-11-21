@@ -25,10 +25,10 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         return root;
     }
 
-    private async Task<DriverModule> UpAsync(string? root)
+    private async Task<DriverModule> UpAsync(string? root, string? folder = null)
     {
         var loop = Loop();
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(root))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandIn(root, folder))));
         return new DriverModule(Bus, loop);
     }
 
@@ -79,6 +79,31 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
         var module = await UpAsync(null);
 
         Assert.Contains(Refusals.GitNoCheckout, await RefusalAsync(module, "CHECKOUT_BRANCH", new { repository = "engine" }));
+    }
+
+    [Fact]
+    public async Task The_checkouts_branch_of_a_folder_inside_a_repository_is_refused_and_asks_git_nothing()
+    {
+        var above = Checkout("above", git: true);
+        var inside = Path.Combine(above, "notes");
+        Directory.CreateDirectory(inside);
+        var module = await UpAsync(null, inside);
+
+        Assert.Contains(Refusals.GitNoCheckout, await RefusalAsync(module, "CHECKOUT_BRANCH", new { repository = "notes" }));
+    }
+
+    [Fact]
+    [Trait(Category.Name, Category.Process)]
+    public async Task The_list_leaves_out_a_registered_folder_beside_a_checkout()
+    {
+        var root = await InitAsync();
+        var inside = Path.Combine(root, "notes");
+        Directory.CreateDirectory(inside);
+        var module = await UpAsync(root, inside);
+
+        var answer = await AnswerAsync(module, "GIT_BRANCHES", new { all = true });
+
+        Assert.Equal(["engine"], answer.GetProperty("repositories").EnumerateArray().Select(each => each.GetProperty("repository").GetString()));
     }
 
     /// <summary>The checkout's head: its branch's short name, or null where detached; no path in the answer.</summary>
@@ -615,13 +640,14 @@ public sealed class DriverModuleGitTests : DriverModuleBridge
     }
 
     /// <summary>The service: the registry with <c>engine</c>'s checkout at <paramref name="root"/> (none where null), and no sessions.</summary>
-    private sealed class StandIn(string? root) : HttpMessageHandler
+    private sealed class StandIn(string? root, string? folder = null) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
-            object body = request.RequestUri!.AbsolutePath == "/api/registry" && root is not null
-                ? new object[] { new { repository = "engine", workspace = "aurora", root } }
-                : Array.Empty<object>();
+            List<object> rows = [];
+            if (root is not null) rows.Add(new { repository = "engine", workspace = "aurora", root });
+            if (folder is not null) rows.Add(new { repository = "notes", workspace = "aurora", root = folder, kind = "folder" });
+            object body = request.RequestUri!.AbsolutePath == "/api/registry" ? rows : Array.Empty<object>();
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"),

@@ -85,6 +85,8 @@ public static class WorkInventories
                 continue;
             }
 
+            if (PlaceKind.At(root) == PlaceKind.Folder) continue;
+
             // Each with its commit, its date and whether a branch or a tag of the person's holds it, which its retention reads.
             // The same listing names the repository's daoris/* branches, so they cost no further git start.
             var (listed, err, branchesHere) = await RecoveryRetention.ReadWithBranchesAsync(

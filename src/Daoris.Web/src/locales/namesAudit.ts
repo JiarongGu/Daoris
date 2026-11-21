@@ -22,7 +22,7 @@ export const STRAY_AUDITED = [
   // 主目录 is a home's word, the Daoris home's and an agent's own, never a folder's.
   'person.view.plugin-add:zh',
   // 改动 is the diff's changes, which review's own reason names as another thing.
-  'projects.folder.noGit:zh', 'projects.manage.folderNote:zh',
+  'projects.manage.folderNote:zh',
   // 远端 is the glossary's own word for a Daoris remote, which this sentence means; git remote's entry avoids it (FABRIC-CLOSE1i2).
   'projects.workspace.machines.none:zh',
   'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',

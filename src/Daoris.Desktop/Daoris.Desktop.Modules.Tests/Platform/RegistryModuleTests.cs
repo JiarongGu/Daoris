@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Modules.Tests;
 
@@ -50,6 +51,18 @@ public sealed class RegistryModuleTests : Bridge
         Assert.False(found.GetProperty("adopted").GetBoolean());
         Assert.True(found.GetProperty("exists").GetBoolean());
         Assert.Equal("stranger", found.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task A_folder_inside_a_repository_is_a_folder_and_a_repository_of_its_own_is_a_checkout()
+    {
+        var above = Repository("above");
+        CheckoutMarks.Mark(above);
+        _picked = Repository(Path.Combine("above", "notes"));
+        Assert.False((await AnswerAsync(Module(), "PICK_FOLDER")).GetProperty("git").GetBoolean());
+
+        _picked = above;
+        Assert.True((await AnswerAsync(Module(), "PICK_FOLDER")).GetProperty("git").GetBoolean());
     }
 
     /// <summary>
