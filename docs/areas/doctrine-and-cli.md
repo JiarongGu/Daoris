@@ -68,7 +68,8 @@ skill, and `co-working` as a pack.
    anything is planned. (from D61, PLUG1)
 8. A pack may offer to switch a core row off, with a reason (`switchesOff`). Only the manifest's `switchedOff` confirms it.
    It is never silent: `sync` names it, `check` prints it every run, `status` gives the reason, the region lists it. (from D71)
-9. The canon's version is `canon/canon.json` (0.0.1 through every 0.0.x build), stamped by the release. Each change is
+9. The canon's version is `canon/canon.json` (0.0.1 through every 0.0.x build), stamped by the release; a published build's own version is the install's to take and
+   never the canon's. Each change is
    written under `## Unreleased` in `canon/CHANGELOG.md`; `status` prints the entries between the locked and carried
    versions. (from D11)
 

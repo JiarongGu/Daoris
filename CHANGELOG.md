@@ -14,6 +14,7 @@ with the version and date at release.
   them are read again once it answers, so a fix it commits gets its one recheck; a recheck whose first reviewer cannot run goes to
   the next declared reviewer that can, named in its line; and a run whose opinion holds on your answer (a dispute, or commits no
   other agent read) says so on its step, with the count, instead of reading as working.
+- Every published build carries its own version: each publish (or stage) takes the next one above anything its install has carried, staged, tried or run (0.0.2, 0.0.3, …), where every build said 0.0.1. The window's System page, the machine log, `daoris --version` and the staged build's manifest name it, and `daoris update` says the version and commit the install's own application carries before what is staged.
 
 - `daoris settings risk` now also prints each act's class at the place it names (no approval, a role's yes, or the owner's), by
   the one risk policy that will decide every hold, and `daoris settings risk why <run> [<step>]` says, for each hold a run stood

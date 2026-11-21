@@ -21,8 +21,8 @@
   </PropertyGroup>
 
   <!--
-    A build's version is the release's: canon/canon.json's, which the release stamps and the publish writes into a stage's
-    build.json. Every desktop assembly carries it, so the launcher's product version, the rollback's running build and a stage's
+    A development build's version is the release's: canon/canon.json's, which the release stamps. A publish passes its own
+    (-p:Version=, which wins over this) and writes it into a stage's build.json. Every desktop assembly carries it, so the launcher's product version, the rollback's running build and a stage's
     manifest read one number. Unstamped, an assembly says the SDK's 1.0.0, above every release, and every stage reads as a going back.
   -->
   <PropertyGroup>

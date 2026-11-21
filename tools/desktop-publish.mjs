@@ -87,6 +87,7 @@ import { CLI_BIN, CLI_HOME, CLI_LAUNCHERS, DRIVER_EXE, DRIVER_HOME } from './des
 import { layCli } from './desktop-publish/cli.mjs';
 import { bundleCli } from './desktop-publish/cli-bundle.mjs';
 import { installedNote } from './desktop-publish/install-note.mjs';
+import { buildVersion } from './desktop-publish/version.mjs';
 export { MARKER, MARKER_HEADER, LAUNCHER, SHELL_HOME, SHELL_EXE, SHELL_FILES, HOST_HOME, HOST_EXE, CONNECTOR_HOME, CONNECTOR_EXE, servicePlan, carriedHosts, isInstall } from './desktop-publish/names.mjs';
 export { KEPT_LOCALES, HOME, PLUGIN_OFFERS, OFFERED_PLUGINS, layOffers, RESOURCES, RESOURCES_SOURCE, layResources } from './desktop-publish/lay.mjs';
 export { CLI_HOME, CLI_BUNDLE, CLI_BIN, CLI_LAUNCHERS, DRIVER_PROJECT, DRIVER_HOME, DRIVER_EXE } from './desktop-publish/launchers.mjs';
@@ -95,6 +96,7 @@ export { layCli } from './desktop-publish/cli.mjs';
 export { bundleCli } from './desktop-publish/cli-bundle.mjs';
 export { STAGE, STAGED, BUILD_MANIFEST, SWAP_JOURNAL, MANIFEST_SCHEMA, STAGED_REQUIRED, OWN, UPDATE_REQUEST, NOT_NOW, buildId, stagedManifest, writeManifest, stageRefusal, promoteStage, holdNotNow, unstage, recordedShellFiles, refusal } from './desktop-publish/staging.mjs';
 export { installedNote } from './desktop-publish/install-note.mjs';
+export { buildVersion, nextVersion, seenVersions } from './desktop-publish/version.mjs';
 export { insideFixtures, ungatedRefusal } from './desktop-publish/gates.mjs';
 export { askTiers } from './desktop-publish/tier-evidence.mjs';
 export { SESSION_VARIABLE, sessionRefusal } from './desktop-publish/session.mjs';
@@ -195,6 +197,9 @@ async function main() {
     process.exit(2);
   }
   if (gated.note) console.log(gated.note);
+  // Read before anything is written: a publish in place removes what is staged.
+  const version = buildVersion(repoRoot, to);
+  console.log(`desktop-publish: this build is version ${version}.`);
   const root = stage ? join(to, ...STAGE, '.staging') : to;
   if (stage) {
     rmSync(root, { recursive: true, force: true });
@@ -235,9 +240,9 @@ async function main() {
 
   // The programs of `app/bin/`, published while the install is untouched and laid after `layCli` empties the folder.
   console.log(`desktop-publish: publishing the command, the git doors and the partner's launcher for ${CLI_BIN.join('/')}/…`);
-  run(commandPublishCommand(join(stages, BIN_STAGES.command), artifacts));
-  run(gitDoorPublishCommand(join(stages, BIN_STAGES.doors), artifacts));
-  run(pieceStartPublishCommand(join(stages, BIN_STAGES.pieceStart), artifacts));
+  run(commandPublishCommand(join(stages, BIN_STAGES.command), artifacts, version));
+  run(gitDoorPublishCommand(join(stages, BIN_STAGES.doors), artifacts, version));
+  run(pieceStartPublishCommand(join(stages, BIN_STAGES.pieceStart), artifacts, version));
 
   // The doctrine tool: `src/Daoris.Cli` bundled into one file with the canon beside it, in a stage of its own. Bundled before
   // anything is published, so a tool that will not bundle stops the publish while the install is still untouched.
@@ -253,7 +258,7 @@ async function main() {
 
   console.log('desktop-publish: publishing the launcher…');
   const launcherStage = join(stages, 'launcher');
-  run(launcherPublishCommand(launcherStage, artifacts));
+  run(launcherPublishCommand(launcherStage, artifacts, version));
 
   // The application on its own Chromium: CEF's launcher beside the engine and the app's
   // libraries, and Daoris's browser too, which is the same executable started with
@@ -263,7 +268,7 @@ async function main() {
   // them. `DebugType=none` drops the symbols an installed app has no use for.
   console.log('desktop-publish: publishing the application…');
   const shellStage = join(stages, 'shell');
-  run(appPublishCommand(shellStage, artifacts));
+  run(appPublishCommand(shellStage, artifacts, version));
   // The kit lays out only the languages the app project names, each with three 18-byte
   // grammatical-gender stubs beside it (`zh-CN_FEMININE.pak`, …); the install keeps the two plain
   // files, and refuses to ship without them.
@@ -301,7 +306,7 @@ async function main() {
   cpSync(join(launcherStage, LAUNCHER), join(root, LAUNCHER));
 
   // The doctrine tool: the package under `app/cli/`, and `app/bin/` made empty for its programs, laid below.
-  const build = { id: buildId(), commit: commitOf(repoRoot) };
+  const build = { id: buildId(), commit: commitOf(repoRoot), version };
   try {
     const tool = await layCli(cliStage, root, {}, build);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
@@ -314,7 +319,7 @@ async function main() {
   console.log(`desktop-publish: publishing ${DRIVER_HOME.at(-1)} under ${DRIVER_HOME.join('/')}/…`);
   const driverFolder = join(root, ...DRIVER_HOME);
   rmSync(driverFolder, { recursive: true, force: true });
-  run(`${driverPublishCommand(driverFolder, INSTALL_RID, artifacts)} --nologo`);
+  run(`${driverPublishCommand(driverFolder, INSTALL_RID, artifacts, version)} --nologo`);
   if (!existsSync(join(driverFolder, DRIVER_EXE))) {
     console.error(`desktop-publish: the publish of ${DRIVER_HOME.at(-1)} made no ${DRIVER_EXE}.`);
     process.exit(1);
@@ -352,7 +357,7 @@ async function main() {
       // and listing it gave a wrong answer about which build is live. `service-publish.mjs` does this too.
       rmSync(step.folder, { recursive: true, force: true });
 
-      if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish', artifacts)) process.exit(1);
+      if (!publishHost(repoRoot, step.host, INSTALL_RID, step.folder, 'desktop-publish', artifacts, version)) process.exit(1);
       if (!existsSync(step.executable)) {
         console.error(`desktop-publish: the publish of ${step.host.binary} made no ${step.executable}.`);
         process.exit(1);
@@ -376,7 +381,7 @@ async function main() {
     // the folder swapped into `update/staged/` whole, so the desktop never meets half a stage.
     const identity = {
       id: build.id,
-      version: JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version,
+      version,
       commit: build.commit,
       at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
     };
