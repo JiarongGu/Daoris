@@ -7,12 +7,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Over real git: a verified candidate promoted onto
 /// its line only on a passing verdict for its exact tip, base and blob, and only if the line has not moved under it; the fence read from the
 /// line's committed declaration inside the effect; the line moved by one <c>update-ref</c> verifying its old value, or by a fast-forward in a
-/// clean checkout that has it out; a held member never promoted; each member settled; the candidate's one job closed at each of its ends. Called
+/// clean checkout that has it out; a held member never promoted; each member settled; its job closed at each end. Called
 /// from no production path. The verdict port is the test's stub (<see cref="IntegrationVerdicts.Current"/>), as Review installs the real one.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class IntegrationPromoteGitTests : LandedFixture
+public sealed partial class IntegrationPromoteGitTests : LandedFixture
 {
     private sealed class Killed() : Exception("the process died here");
 

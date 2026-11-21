@@ -368,6 +368,13 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
             return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
         }
 
+        // The line's one lock with the merge tool: a live run holds this move for the next look, and it waits for this one.
+        using var onTheLine = MergeRunLock.TryTake(ask.Root, store.Now(), out var running);
+        if (onTheLine is null)
+        {
+            return Held($"the merge tool is running on `{ask.Repository}`'s checkout ({running}), so `{ask.Line}` is not moved under it: nothing was moved, and it is tried again at the next look.");
+        }
+
         // The checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.
         if (await ActReconciler.ForWriterAsync(ask.Home, ask.Root, ct).ConfigureAwait(false) is { } acting)
         {
