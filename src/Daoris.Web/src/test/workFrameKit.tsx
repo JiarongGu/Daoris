@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import realUserEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -117,6 +117,11 @@ export function carried() {
 export function Hub() {
   useStateHub();
   return null;
+}
+
+export async function openTab(name: string) {
+  await screen.findByRole('region', { name: 'Session' });
+  await realUserEvent.click(await screen.findByRole('tab', { name }));
 }
 
 /** The frame with the application's selection held for it, as `App` holds it. */

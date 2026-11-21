@@ -90,7 +90,7 @@
   "src/Daoris.Web/src/quests/QuestsView.test.tsx": 75791,
   "src/Daoris.Web/src/settings/WiringDomain.test.tsx": 61585,
   "src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx": 61461,
-  "src/Daoris.Web/src/work/WorkFrame.landed.test.tsx": 79325,
+  "src/Daoris.Web/src/work/WorkFrame.landed.test.tsx": 78834,
   "src/Daoris.Web/src/work/WorkFrame.test.tsx": 78423,
   "src/Daoris.Web/src/work/WorkFrame.words.test.tsx": 49882,
   "src/Daoris.Web/src/work/attention/AttentionBand.test.tsx": 54788,
