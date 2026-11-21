@@ -24,13 +24,13 @@ public sealed class OpinionGateFactsTests : IDisposable
 
     private readonly ConcurrentQueue<string> _judged = new();
 
-    /// <summary>Two owed opinions: session `s-1`'s step under `steps`, and session `s-2`'s landing, each of its own chain.</summary>
+    /// <summary>Two owed opinions: session `s-1`'s step under `steps`, and session `s-2`'s landing, each of its own chain and repository.</summary>
     public OpinionGateFactsTests()
     {
         Directory.CreateDirectory(_home);
         var dues = new OpinionDues(_home);
         dues.Due(new OpinionDue("s-1", "q-1", "engine", "", "tree-1", OpinionRules.Steps, At));
-        dues.Due(new OpinionDue("s-2", "q-2", "engine", "", "tree-2", OpinionRules.Landing, At));
+        dues.Due(new OpinionDue("s-2", "q-2", "game", "", "tree-2", OpinionRules.Landing, At));
     }
 
     public void Dispose() => GitSeed.Discard(_home);
@@ -122,6 +122,33 @@ public sealed class OpinionGateFactsTests : IDisposable
 
         await Unarmed(bus);
         Assert.InRange(Judged("s-1"), 3, 5);
+    }
+
+    /// <summary>🔴 A round judges one repository's owed opinions one at a time, the repositories beside each other.</summary>
+    [Fact]
+    public async Task A_round_judges_one_repository_one_opinion_at_a_time()
+    {
+        var dues = new OpinionDues(_home);
+        for (var each = 3; each <= 6; each++) dues.Due(new OpinionDue($"s-{each}", $"q-{each}", "engine", "", $"tree-{each}", OpinionRules.Landing, At));
+        dues.Due(new OpinionDue("s-7", "q-7", "game", "", "tree-7", OpinionRules.Landing, At));
+        var inside = new ConcurrentDictionary<string, int>();
+        var most = new ConcurrentDictionary<string, int>();
+        await using var bus = Open();
+        using var gate = Gate(async due =>
+        {
+            var now = inside.AddOrUpdate(due.Repository, 1, (_, was) => was + 1);
+            most.AddOrUpdate(due.Repository, now, (_, was) => Math.Max(was, now));
+            await Task.Yield();
+            inside.AddOrUpdate(due.Repository, 0, (_, was) => was - 1);
+            return Waits();
+        });
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick);
+        await Poll.Until(() => Judged("s-7") >= 1 && Judged("s-6") >= 1, () => "the start did not judge them all", Soon);
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"]));
+        await Poll.Until(() => Judged("s-6") >= 2, () => "the move was not judged", Soon);
+
+        Assert.Equal(1, most["engine"]);
+        Assert.Equal(1, most["game"]);
     }
 
     /// <summary>🔴 The quests' move heard on the service's change stream (a hold lifted, a later step declined) judges every owed opinion.</summary>

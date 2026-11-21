@@ -21,8 +21,9 @@ namespace Daoris.Driver;
 /// every owed opinion once (<see cref="ResumedAsync"/>), which rebuilds the gate's view and its turns. The watchdog's timers are the net
 /// under all of it.</para>
 /// <para><b>One judgment of an owed opinion at a time.</b> Facts of one opinion arrive in order; facts of several that name one owed
-/// opinion are judged one after another, never two judgments of one at once, and the owed opinions one fact names are judged beside each
-/// other.</para>
+/// opinion are judged one after another, never two judgments of one at once. Each judgment runs git's content proof, so the owed opinions
+/// of one repository are judged one at a time (a round's nine at once queued behind one another and every other git, which held a
+/// restart's first look for an hour); those of several repositories go beside each other.</para>
 /// </remarks>
 internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 {
@@ -43,6 +44,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     private readonly TimeProvider _clock;
     private readonly Action<string, string> _warn;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _dues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _places = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _again = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, int> _quiet = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _closing = new();
@@ -194,7 +196,19 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         {
             // The turn set before stands until this judgment answers, so one that throws keeps it.
             _again.TryGetValue(subject, out var pending);
-            var fact = await _judge(due, Ended, ct).ConfigureAwait(false);
+            // One judgment of a repository at a time: each runs git's content proof, so those begun together only queue behind one another.
+            var place = _places.GetOrAdd(due.Repository, _ => new SemaphoreSlim(1, 1));
+            await place.WaitAsync(ct).ConfigureAwait(false);
+            OpinionFact? fact;
+            try
+            {
+                fact = await _judge(due, Ended, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                place.Release();
+            }
+
             if (pending is not null && _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, pending))) pending.Cancel();
             if (fact is null) return;
             var now = _clock.GetUtcNow();
