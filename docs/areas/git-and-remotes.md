@@ -78,7 +78,8 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
     remotes is named the repository or runs unrouted. (D198)
 14. Below git 2.31 the doors cannot stand: Daoris's fetches and the push act refuse as `old-git`. Below 2.32 a git setting
     refuses as `git-too-old`. (D198)
-15. Every text from git, ssh, a door or a plugin passes `GitWords.Redact` before it is kept, said or answered. (D198)
+15. Every text from git, ssh, a door or a plugin passes `GitWords.Redact` before it is kept, said or answered; it cuts every token and key
+    shape the sensitive scan's built-ins name (`SensitiveGate`), an address's user, a key block and an Authorization or Cookie header. (D198)
 
 **The move and the holds**
 

@@ -18,7 +18,7 @@ const scratch = () => {
 };
 
 test('the steps are the index, the contracts, and each check of the cli gate once but the time ratchet, the census\'s counts among them', () => {
-  const checks = CHECK_STEPS.map((step) => step.run).filter((run) => run !== 'node tools/orient-index.mjs' && run !== 'node tools/time-ratchet.mjs');
+  const checks = CHECK_STEPS.map((step) => step.run).filter((run) => run !== 'node tools/orient-index.mjs' && run !== 'node tools/contracts.mjs --if-stale' && run !== 'node tools/time-ratchet.mjs');
   assert.deepEqual(quickSteps(), ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale', ...checks]);
   assert.ok(checks.includes('node tools/layers-census/counts.mjs'));
 });

@@ -1,0 +1,86 @@
+name: Desktop release
+
+# Runs only on a tag the owner pushes (`git push origin vX.Y.Z`): no dispatch, no schedule, and the release workflow's own tag,
+# which it pushes with the repository's token, starts nothing here. Nothing is built or published until the owner pushes one.
+#
+# The package an install's update reads (`daoris update --fetch`): the staged build `desktop-publish --stage` writes (the
+# launcher, `app/`, `INSTALLED.md` and the `build.json` that lists every file's size and hash), zipped, and the checksum file beside
+# it. The updater holds the zip to that checksum, then the unpacked build to its manifest, before anything is staged.
+#
+# The release is made as a draft with both files attached, and published only then, so no release is ever public without them. A
+# release the release workflow already made for the tag gets the two files added and stays as it is.
+#
+# The tag's commit is the one the release workflow's gates passed, so the build is made ungated here (`--force-ungated`).
+on:
+  push:
+    tags: ['v[0-9]*.[0-9]*.[0-9]*']
+
+permissions:
+  contents: write
+
+jobs:
+  desktop-package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # The build's version is canon's, so a tag that names another is no release of this tree.
+      - name: The tag names this tree's version
+        shell: bash
+        run: |
+          version=$(node -p "require('./canon/canon.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME is not v$version, the version of canon/canon.json at this commit" >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Web dependencies
+        run: npm --prefix src/Daoris.Web ci
+
+      # `--stage` stages beside an install, so an empty one is made for it.
+      - name: Stage the build
+        shell: bash
+        run: |
+          mkdir -p publish/install
+          printf '# Daoris — installed desktop\n' > publish/install/INSTALLED.md
+          node tools/desktop-publish.mjs --to publish/install --service --stage --force-ungated
+
+      # Forward slashes in the entries and no folder above them: the updater unpacks the zip straight into `update/staged/`.
+      - name: Zip the build and write its checksum
+        shell: pwsh
+        run: |
+          $name = "Daoris-$env:VERSION-win-x64.zip"
+          New-Item -ItemType Directory -Force publish/desktop | Out-Null
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path publish/install/update/staged).Path, (Join-Path (Resolve-Path publish/desktop).Path $name), 'Optimal', $false)
+          $hash = (Get-FileHash (Join-Path publish/desktop $name) -Algorithm SHA256).Hash.ToLower()
+          "$hash  $name" | Out-File -Encoding ascii (Join-Path publish/desktop "$name.sha256")
+          Get-Content (Join-Path publish/desktop "$name.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-package
+          path: publish/desktop/Daoris-*
+          if-no-files-found: error
+
+      - name: Publish the release with the package attached
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" publish/desktop/Daoris-* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" publish/desktop/Daoris-* --verify-tag --draft --title "Daoris $VERSION" \
+              --notes "What changed: https://github.com/JiarongGu/Daoris/blob/$GITHUB_REF_NAME/CHANGELOG.md"
+            gh release edit "$GITHUB_REF_NAME" --draft=false
+          fi

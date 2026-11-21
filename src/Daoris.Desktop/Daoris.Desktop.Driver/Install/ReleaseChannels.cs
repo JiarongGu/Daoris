@@ -21,7 +21,7 @@ public static class ReleaseChannels
     public const string Staging = ".part";
 
     /// <summary>The release sources this build installs from, Install's own (<see cref="IReleaseSource"/>).</summary>
-    public static IReadOnlyList<IReleaseSource> Sources { get; } = [new ClaudeReleaseSource(), new CodexReleaseSource()];
+    public static IReadOnlyList<IReleaseSource> Sources { get; } = [new ClaudeReleaseSource(), new CodexReleaseSource(), new DaorisReleaseSource()];
 
     /// <summary>The channels this build installs from.</summary>
     public static IReadOnlyList<string> Known { get; } = [.. Sources.Select(source => source.Channel)];

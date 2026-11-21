@@ -59,7 +59,10 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
         if (send.Reached) return await HandbackAsync(declared, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
-        if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from) is { } command) return (await ReachedAsync(reached, command, ct).ConfigureAwait(false), false);
+        if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from, send.Heavy ? ReachedRunner.EveryTier : ReachedRunner.FastTier) is { } command)
+        {
+            return (await ReachedAsync(reached, command, declared, ct).ConfigureAwait(false), false);
+        }
 
         var runner = VerifyRunner.Of(text);
         if (send.Gates is null && runner is not null && !send.Full) return await RunnerAsync(runner, declared, ct).ConfigureAwait(false);
@@ -158,7 +161,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             : new Dictionary<string, string>();
         var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(send.Checkout, cwd)) : send.Checkout;
         keep(holder => holder with { Gates = [VerifyJudge.RunnerGate], Now = new HeavyGateNow(VerifyJudge.RunnerGate, 0, world.Clock.GetUtcNow()) });
-        var exit = await StepAsync(runner.Run, folder, [VerifyJudge.RunnerGate], inputs, log, runner.Clock, ct).ConfigureAwait(false);
+        using var place = await PlaceAsync(folder, ct).ConfigureAwait(false);
+        var exit = place is null ? null : await StepAsync(place.Hold, runner.Run, folder, [VerifyJudge.RunnerGate], inputs, log, runner.Clock, ct).ConfigureAwait(false);
         if (exit is null) return (Ended([new VerifyGate(VerifyJudge.RunnerGate, RunnerVerdicts.Ended) { Log = log }]), false);
         var judged = runner.Result
             ? VerifyJudge.ByFile(send.Invocation, send.Commit, exit.Value, ReadText(answer), [.. declared.Select(gate => gate.Name)],
@@ -168,18 +172,23 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     }
 
     /// <summary>The repository's reached runner in the verification tree at the commit, in place of the gates, under the step's one admission hold.</summary>
-    private async Task<VerifyResult> ReachedAsync(ReachedRunner runner, string command, CancellationToken ct)
+    private async Task<VerifyResult> ReachedAsync(ReachedRunner runner, string command, IReadOnlyList<DeclaredGate> declared, CancellationToken ct)
     {
         var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
         try
         {
-            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
+            IReadOnlyList<VerifyGate> unrun = [new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.NotRun)];
+            if (await UnpreparedAsync(tree, unrun, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
             var log = Path.Combine(_folder, "reached.log");
             var folder = runner.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
+            var ended = Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log }]);
+            using var place = await PlaceAsync(tree, ct).ConfigureAwait(false);
+            if (place is null) return ended;
+            if (await UnregeneratedAsync(tree, place, unrun, ct).ConfigureAwait(false) is { } regenerated) return regenerated;
             keep(holder => holder with { Gates = [ReachedVerdict.Gate], Now = new HeavyGateNow(ReachedVerdict.Gate, 0, world.Clock.GetUtcNow()) });
             var wall = Stopwatch.StartNew();
-            var exit = await StepAsync(command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
+            var exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
             return ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, ReadText(log) ?? "", log, runner.Outcome) with { Declaration = _ran, WallSeconds = wall.Elapsed.TotalSeconds };
         }
@@ -197,7 +206,12 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var ran = new List<VerifyGate>();
         try
         {
-            if (await UnpreparedAsync(tree, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
+            IReadOnlyList<VerifyGate> unrun = [.. gates.Select(each => new VerifyGate(each.Name, RunnerVerdicts.NotRun)), .. kept];
+            if (await UnpreparedAsync(tree, unrun, ct).ConfigureAwait(false) is { } unprepared) return unprepared;
+            using var place = await PlaceAsync(tree, ct).ConfigureAwait(false);
+            if (place is null) return Ended(unrun);
+            if (await UnregeneratedAsync(tree, place, unrun, ct).ConfigureAwait(false) is { } regenerated) return regenerated;
+
             for (var at = 0; at < gates.Count; at++)
             {
                 var gate = gates[at];
@@ -210,7 +224,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 int? exit;
                 try
                 {
-                    exit = Directory.Exists(folder) ? await StepAsync(gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
+                    exit = Directory.Exists(folder) ? await StepAsync(place.Hold, gate.Run, folder, [gate.Name], new Dictionary<string, string>(), log, gate.Clock, ct).ConfigureAwait(false) : Missing(log, gate);
                 }
                 catch (DriverException error)
                 {
@@ -231,7 +245,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 };
                 return Told(failed, ReadText(log) is not { } text ? null
                     : marker is not null && ReachedVerdict.Told(text, marker, log) is { } classes ? classes
-                    : GateLogExcerpt.Told(text, log));
+                    : GateLogExcerpt.Told(text, log, home));
             }
 
             return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran };
@@ -265,13 +279,22 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await WorkingTree.GitAsync(send.Checkout, ["worktree", "lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), tree], ct).ConfigureAwait(false);
     }
 
-    private async Task<VerifyResult?> UnpreparedAsync(string tree, CancellationToken ct)
+    private async Task<VerifyResult?> UnpreparedAsync(string tree, IReadOnlyList<VerifyGate> pending, CancellationToken ct) =>
+        await UnfinishedAsync(() => VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct), pending, ct).ConfigureAwait(false);
+
+    private async Task<VerifyResult?> UnregeneratedAsync(string tree, CheckPlace place, IReadOnlyList<VerifyGate> pending, CancellationToken ct) =>
+        await UnfinishedAsync(() => RegeneratedAsync(tree, place.Hold?.Id, ct), pending, ct).ConfigureAwait(false);
+
+    private async Task<VerifyResult?> UnfinishedAsync(Func<Task<string?>> step, IReadOnlyList<VerifyGate> pending, CancellationToken ct)
     {
         string? failed;
         try
         {
-            failed = await VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct).ConfigureAwait(false)
-                ?? await RegeneratedAsync(tree, ct).ConfigureAwait(false);
+            failed = await step().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Ended(pending);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -284,25 +307,31 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return Unknown(why) with { Code = VerifyResult.Unprepared };
     }
 
-    private async Task<string?> RegeneratedAsync(string tree, CancellationToken ct)
+    private async Task<string?> RegeneratedAsync(string tree, string? place, CancellationToken ct)
     {
-        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct).ConfigureAwait(false) is not { } failed) return null;
+        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct, place).ConfigureAwait(false) is not { } failed) return null;
         var log = Path.Combine(_folder, "regenerate.log");
-        AtomicFile.WriteText(log, failed.Ran.Output);
-        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log) is { } told ? $"\n{told}" : "");
-    }
-
-    /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>
-    private async Task<int?> StepAsync(
-        string run, string folder, IReadOnlyList<string> running, IReadOnlyDictionary<string, string> inputs, string log, bool clock, CancellationToken ct)
-    {
-        if (ct.IsCancellationRequested) return null;
-        AdmissionHold? hold = null;
+        string? kept = log;
         try
         {
-            hold = await MachineAdmission.TakeAsync(
+            AtomicFile.WriteText(log, failed.Ran.Output);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            kept = null;
+        }
+
+        return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, kept, home) is { } told ? $"\n{told}" : "");
+    }
+
+    private async Task<CheckPlace?> PlaceAsync(string folder, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested) return null;
+        try
+        {
+            return new CheckPlace(await MachineAdmission.TakeAsync(
                 home, new AdmissionRequest($"verification of {send.Repository} at {TextBounds.ShortCommit(send.Commit, 7)}") { Repository = send.Repository, Tree = folder },
-                world.Said, ct, world.Admission, world.Capacity, world.Variable).ConfigureAwait(false);
+                world.Said, ct, world.Admission, world.Capacity, world.Variable).ConfigureAwait(false));
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -311,42 +340,53 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             world.Said.WriteLine($"verify: the machine's admission could not be kept ({error.Message}); the check goes on without a place in it.");
+            return new CheckPlace(null);
+        }
+    }
+
+    private sealed class CheckPlace(AdmissionHold? hold) : IDisposable
+    {
+        internal AdmissionHold? Hold { get; } = hold;
+
+        public void Dispose() => Hold?.Dispose();
+    }
+
+    /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>
+    private async Task<int?> StepAsync(
+        AdmissionHold? hold, string run, string folder, IReadOnlyList<string> running, IReadOnlyDictionary<string, string> inputs, string log, bool clock, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested) return null;
+        var environment = GateEnvironment.Compose(world.Start, null, hold is { IsInside: false } held ? held.Id : null)
+            .ToDictionary(each => each.Key, each => each.Value, StringComparer.OrdinalIgnoreCase);
+        environment[HeavyRun.Variable] = HeavyRun.Marker(key, running);
+        foreach (var (name, value) in inputs) environment[name] = value;
+        HeavyStep step;
+        try
+        {
+            step = HeavyStep.Start(job.Job, run, folder, new Dictionary<string, string>(), new StepOptions(environment, log) { BelowNormal = !clock });
+        }
+        catch (DriverException error)
+        {
+            await File.WriteAllTextAsync(log, $"error: it would not start: {error.Message}\n", new UTF8Encoding(false), CancellationToken.None).ConfigureAwait(false);
+            throw new DriverException(error.Message);
         }
 
-        using (hold)
+        using (step)
         {
-            var environment = GateEnvironment.Compose(world.Start, null, hold is { IsInside: false } held ? held.Id : null)
-                .ToDictionary(each => each.Key, each => each.Value, StringComparer.OrdinalIgnoreCase);
-            environment[HeavyRun.Variable] = HeavyRun.Marker(key, running);
-            foreach (var (name, value) in inputs) environment[name] = value;
-            HeavyStep step;
             try
             {
-                step = HeavyStep.Start(job.Job, run, folder, new Dictionary<string, string>(), new StepOptions(environment, log) { BelowNormal = !clock });
+                return await step.ExitAsync(ct).ConfigureAwait(false);
             }
-            catch (DriverException error)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
-                await File.WriteAllTextAsync(log, $"error: it would not start: {error.Message}\n", new UTF8Encoding(false), CancellationToken.None).ConfigureAwait(false);
-                throw new DriverException(error.Message);
+                job.Job?.Terminate();
+                step.Stop();
+                return null;
             }
-
-            using (step)
+            finally
             {
-                try
-                {
-                    return await step.ExitAsync(ct).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
-                {
-                    job.Job?.Terminate();
-                    step.Stop();
-                    return null;
-                }
-                finally
-                {
-                    // Nothing it left runs past its place in the admission.
-                    await job.EndLeftAsync().ConfigureAwait(false);
-                }
+                // Nothing it left runs past its place in the admission.
+                await job.EndLeftAsync().ConfigureAwait(false);
             }
         }
     }

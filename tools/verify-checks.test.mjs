@@ -34,6 +34,12 @@ test('a docs-only change runs the documents\' checks and what reads every path, 
   assert.ok(!chosen.includes(DEVKIT), 'the universal gate runs the devkit\'s check in the merge');
 });
 
+test('the gate makes the generated contracts current itself before it checks them, whichever driver runs it', () => {
+  const writers = CHECK_STEPS.filter((step) => step.writes).map((step) => step.run);
+  assert.deepEqual(writers, ['node tools/orient-index.mjs', 'node tools/contracts.mjs --if-stale']);
+  assert.ok(runs(selectSteps(CHECK_STEPS, ['src/Daoris.Contracts/a.cs'], { gates: GATES }).run).includes('node tools/contracts.mjs --if-stale'));
+});
+
 test('a web-only change runs the source checks that read the page, and leaves the typechecks and the documents\' checks', () => {
   const chosen = runs(selectSteps(CHECK_STEPS, ['src/Daoris.Web/src/pages/Home.tsx'], { gates: GATES }).run);
   for (const reads of ['comment-gate.mjs', 'size-ratchet', 'console-windows', 'test-patience', 'orient-index', 'doc-current', 'tool-test-census']) {

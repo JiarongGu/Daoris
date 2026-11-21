@@ -80,14 +80,15 @@ internal static class TreePreparation
     internal static readonly TimeSpan Bound = TimeSpan.FromMinutes(30);
 
     /// <summary>
-    /// Runs each of <paramref name="commands"/> in <paramref name="tree"/> in order, the first that does not finish ending the run, since a
-    /// later one may read what it makes: that one, or null where each finished. Cheap where nothing it makes is stale (<c>--if-stale</c>).
+    /// Runs each of <paramref name="commands"/> in <paramref name="tree"/> in order, the first that does not finish ending the run, since a later one may read
+    /// what it makes: that one, or null where each finished. Cheap where nothing it makes is stale (<c>--if-stale</c>); a <paramref name="place"/> held is told its children.
     /// </summary>
-    internal static async Task<RegenerateFailed?> RegenerateAsync(string home, string repository, IReadOnlyList<string> commands, string tree, CancellationToken ct)
+    internal static async Task<RegenerateFailed?> RegenerateAsync(
+        string home, string repository, IReadOnlyList<string> commands, string tree, CancellationToken ct, string? place = null)
     {
         if (commands.Count == 0) return null;
-        using var admitted = await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
-        var environment = InstallRunner.Current.GateEnvironment();
+        using var admitted = place is not null ? null : await InstallRunner.Current.AdmitAsync(home, "tree preparation", repository, tree, ct).ConfigureAwait(false);
+        var environment = InstallRunner.Current.GateEnvironment(place);
         foreach (var command in commands)
         {
             var ran = await DependencyCommands.RunAsync(home, tree, command, tree, environment, Bound, ct).ConfigureAwait(false);

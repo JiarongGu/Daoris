@@ -18,6 +18,12 @@ public sealed class GitWordsTests
 
     private static string GitLab() => string.Concat("glpat", "-", new string('e', 20));
 
+    private static string ApiKey() => string.Concat("sk", "-", new string('f', 24));
+
+    private static string ProjectApiKey() => string.Concat("sk", "-proj-", new string('g', 24), "_", new string('h', 8));
+
+    private static string AwsKey() => string.Concat("AK", "IA", new string('J', 16));
+
     private static string KeyBlock() =>
         string.Concat("-----BEGIN ", "OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmU\n-----END ", "OPENSSH PRIVATE KEY-----");
 
@@ -32,6 +38,10 @@ public sealed class GitWordsTests
         { "a classic GitHub token", "remote: token " + Classic() + " was refused", "remote: token [cut] was refused" },
         { "a fine-grained GitHub token", "password " + FineGrained(), "password [cut]" },
         { "a GitLab token", "glpat? " + GitLab() + ".", "glpat? [cut]." },
+        { "an API secret key", "OPENAI_API_KEY=" + ApiKey() + " was rejected", "OPENAI_API_KEY=[cut] was rejected" },
+        { "a project API secret key, its dashes and underscores whole", "key " + ProjectApiKey() + ".", "key [cut]." },
+        { "an AWS access key id", "aws_access_key_id = " + AwsKey(), "aws_access_key_id = [cut]" },
+        { "a word that only holds the shapes' letters", "the task-runner and AKIA-like names", "the task-runner and AKIA-like names" },
         { "a private key block, whole", "before\n" + KeyBlock() + "\nafter", "before\n[cut]\nafter" },
         { "a private key block cut short", "before\n" + KeyBlock()[..60], "before\n[cut]" },
         { "words with nothing in them", "fatal: Could not read from remote repository.", "fatal: Could not read from remote repository." },
