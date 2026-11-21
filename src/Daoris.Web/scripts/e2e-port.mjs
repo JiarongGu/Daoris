@@ -6,7 +6,8 @@
 // check's 5200 to 5899, the rehearsals' 20000 to 31999, the dev loop's 5188 and 9333, and every port a browser refuses
 // to load (`tools/listen-port.mjs`'s `BAD_PORTS`, which put 6566 and 6665 to 6697 out of an earlier band). `DAORIS_E2E_PORT`
 // names one by hand (the driver hands a gate no `DAORIS_` variable of its own, so there the probe chooses). The hash only
-// starts the walk: `freeE2ePort` binds the first free port from it, so two checkouts hashing to one port both bind.
+// starts the walk: `freeE2ePort` takes the first free port from it and leases it (a socket on the port plus 1000, held while the
+// process lives), so two checkouts hashing to one port both bind, even when both choose before either host starts.
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:net';
 import { dirname } from 'node:path';
@@ -38,20 +39,48 @@ export async function portIsFree(port) {
   return (await free('127.0.0.1')) && (await free('::1'));
 }
 
+/** Where a port's lease is taken: the port plus this, in a band of its own (8200 to 8899), clear of every port the suites use. */
+const LEASE_OFFSET = 1000;
+
+const leases = new Map();
+
 /**
- * The port the suite's host binds: `DAORIS_E2E_PORT` where it names one, else the first free port from the one the folder's path
- * hashes to, walking the band and wrapping, so two checkouts whose paths hash to one port both bind (the hash alone chose the same
- * one for both and the second's host failed to bind). The choice is written to `env.DAORIS_E2E_PORT`, so the config read again (by
- * each worker) and the host it starts keep it, never probing past their own server. Fails naming the band where every port is taken.
+ * Lease `port`: bind its paired lease port and hold it for this process. Only one process can hold a lease port, so a second checkout
+ * that picks while the first host is still starting finds the port leased and moves on. Resolves true when it holds the lease.
  */
-export async function freeE2ePort(root = webRoot, env = process.env, isFree = portIsFree) {
+export function leasePort(port) {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once('error', () => resolve(false));
+    server.listen(port + LEASE_OFFSET, '127.0.0.1', () => {
+      server.unref();
+      leases.set(port, server);
+      resolve(true);
+    });
+  });
+}
+
+/** Let go of every lease this process holds (a suite that chose ports of its own; a gate keeps them until its process ends). */
+export function releaseE2eLeases() {
+  for (const server of leases.values()) server.close();
+  leases.clear();
+}
+
+/**
+ * The port the suite's host binds: `DAORIS_E2E_PORT` where it names one, else the first free, unleased port from the one the folder's path
+ * hashes to, walking the band and wrapping, so two checkouts whose paths hash to one port both bind, even where both choose before either
+ * host starts (the lease, held through the process, keeps the second off the first's choice). The choice is written to
+ * `env.DAORIS_E2E_PORT`, so the config read again (by each worker) and the host it starts keep it, never probing past their own server.
+ * Fails naming the band where every port is taken.
+ */
+export async function freeE2ePort(root = webRoot, env = process.env, isFree = portIsFree, lease = leasePort) {
   if (Number.isInteger(Number(env.DAORIS_E2E_PORT)) && Number(env.DAORIS_E2E_PORT) > 0 && Number(env.DAORIS_E2E_PORT) < 65536) {
     return Number(env.DAORIS_E2E_PORT);
   }
   const first = e2ePort(root, {}) - E2E_BAND.from;
   for (let step = 0; step < E2E_BAND.size; step++) {
     const port = E2E_BAND.from + ((first + step) % E2E_BAND.size);
-    if (await isFree(port)) {
+    if ((await isFree(port)) && (await lease(port))) {
       env.DAORIS_E2E_PORT = String(port);
       return port;
     }

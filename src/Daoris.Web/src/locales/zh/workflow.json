@@ -60,6 +60,7 @@
   "workflow.wait.check.slot": "等待检查位：{{slots}} 个检查位已有 {{running}} 个在运行；排在队列第 {{position}} 位，共 {{of}} 位。",
   "workflow.wait.check.slot-memory": "等待内存：空闲 {{free}} GB，下一个检查需要 {{need}} GB；排在队列第 {{position}} 位，共 {{of}} 位。",
   "workflow.wait.check.slot-repository": "等待 `{{repository}}` 的重型运行位，每个都被它的另一个重型运行占用；排在队列第 {{position}} 位，共 {{of}} 位。",
+  "workflow.wait.check.slot-admitting": "等待准入锁，它被另一个启动占用；排在队列第 {{position}} 位，共 {{of}} 位。",
   "workflow.wait.check.slot-queued": "等待检查位：排在队列第 {{position}} 位，共 {{of}} 位。",
   "workflow.step.monitor": "等待拉取请求合并",
   "workflow.step.tidy": "清理委托链",

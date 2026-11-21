@@ -336,7 +336,7 @@ public static class HeavyRun
     {
         var why = wait?.Code switch
         {
-            CheckWait.Memory or CheckWait.Slots =>
+            CheckWait.Memory or CheckWait.Slots or CheckWait.Admitting =>
                 $"this session's run is not admitted now (it would wait for {wait.Sentence}), and the verification run {run} holds one of `{repository}`'s heavy-run slots",
             CheckWait.Repository => $"`{repository}`'s heavy-run slots are held by {wait.Sentence}",
             _ => $"`{repository}`'s heavy-run slot is held by its verification run {run}",

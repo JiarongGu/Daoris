@@ -1,14 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { E2E_BAND, e2ePort, freeE2ePort, webRoot } from '../../scripts/e2e-port.mjs';
+import { afterEach, describe, expect, it } from 'vitest';
+import { E2E_BAND, e2ePort, freeE2ePort, releaseE2eLeases, webRoot } from '../../scripts/e2e-port.mjs';
 
 /**
  * The web gate's port is the checkout's own: two checks of one repository run in two verification trees at once,
  * and on one fixed port the second tree's host failed to bind, a red its change did not make.
  */
 describe('the web gate port', () => {
+  afterEach(releaseE2eLeases);
+
   const inBand = (port: number) => port >= E2E_BAND.from && port < E2E_BAND.from + E2E_BAND.size;
 
   it('gives two checkouts of one repository two ports, each in the band', () => {
@@ -46,6 +48,26 @@ describe('the web gate port', () => {
       expect(second).not.toBe(first);
       expect(inBand(first)).toBe(true);
       expect(inBand(second)).toBe(true);
+    } finally {
+      await Promise.all(servers.map((server) => new Promise((done) => server.close(done))));
+    }
+  });
+
+  it('gives two checkouts that both select before either host binds two ports, and both bind', async () => {
+    const root = 'D:/trees/verify/race/src/Daoris.Web';
+    const first = await freeE2ePort(root, {});
+    // The first's host has not bound yet, so its port still looks free: its lease alone keeps the second off it.
+    const second = await freeE2ePort(root, {});
+    const servers: Server[] = [];
+    try {
+      for (const port of [first, second]) {
+        servers.push(await new Promise<Server>((resolve, reject) => {
+          const server = createServer();
+          server.once('error', reject);
+          server.listen(port, '127.0.0.1', () => resolve(server));
+        }));
+      }
+      expect(second).not.toBe(first);
     } finally {
       await Promise.all(servers.map((server) => new Promise((done) => server.close(done))));
     }

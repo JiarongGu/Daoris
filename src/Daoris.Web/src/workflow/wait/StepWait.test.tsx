@@ -34,6 +34,7 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'check', full)).toBe('Waits for a check slot: 2 of 2 run; 2 of 3 in its queue.');
     expect(waitSaid(t, 'check', memory)).toBe('Waits for memory: 4.1 GB free, the next check needs 6 GB; 1 of 1 in its queue.');
     expect(waitSaid(t, 'check', repository)).toBe('Waits for `Daoris`\'s heavy-run slots, each held by another of its heavy runs; 1 of 2 in its queue.');
+    expect(waitSaid(t, 'check', { code: 'slot-admitting', values: { position: '1', of: '2' } })).toBe("Waits for the admission's lock, which another start holds; 1 of 2 in its queue.");
     expect(waitSaid(t, 'check', { code: 'slot-queued', values: { position: '1', of: '2' } })).toBe('Waits for a check slot: 1 of 2 in its queue.');
     await i18n.changeLanguage('zh');
     expect(waitSaid(t, 'check', memory, 'zh')).toContain('4.1 GB');

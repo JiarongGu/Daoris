@@ -19,11 +19,13 @@ public static class CheckSlotWaits
     /// <summary>The wait's code where a heavy run of its own repository runs: <c>repository</c>, and its place.</summary>
     public const string Repository = "slot-repository";
 
+    public const string Admitting = "slot-admitting";
+
     /// <summary>The wait's code where nothing is said yet (the next look takes a slot): its place in the queue.</summary>
     public const string Queued = "slot-queued";
 
     /// <summary>Every code a check's slots wait under, as the check kind declares them.</summary>
-    public static IReadOnlyList<string> Codes { get; } = [Full, Memory, Repository, Queued];
+    public static IReadOnlyList<string> Codes { get; } = [Full, Memory, Repository, Admitting, Queued];
 
     /// <summary>The slots' waits of a run's graph, read from the home's slots only where a check of its record is under way.</summary>
     public static IReadOnlyDictionary<string, WorkflowRunWait> Read(string home, NodeGraph graph, NodeRecord? record) =>
@@ -57,6 +59,7 @@ public static class CheckSlotWaits
                 CheckWait.Slots => Full,
                 CheckWait.Memory => Memory,
                 CheckWait.Repository => Repository,
+                CheckWait.Admitting => Admitting,
                 _ => Queued,
             };
             if (code == Full)
@@ -90,6 +93,7 @@ public static class CheckSlotWaits
             Full => $"Waits for a check slot: {Value("running")} of {Value("slots")} run; {queue}.",
             Memory => $"Waits for memory: {Value("free")} GB free, the next check needs {Value("need")} GB; {queue}.",
             Repository => $"Waits for a heavy-run slot of {Value("repository")}: its other heavy runs hold every one it has; {queue}.",
+            Admitting => $"Waits for the admission's lock, which another start holds; {queue}.",
             _ => $"Waits for a check slot: {queue}.",
         };
     }
