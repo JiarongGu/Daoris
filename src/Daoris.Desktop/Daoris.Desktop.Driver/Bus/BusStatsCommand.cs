@@ -109,6 +109,7 @@ public static class BusStatsCommand
         if (dropped.Count > 0) output.AppendLine($"  dropped values, their facts kept: {string.Join(", ", dropped.Select(row => Invariant($"{row.Name} {row.Count}")))}");
 
         Timed("took", Of(BusMeasures.Took).ToList(), output);
+        Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
     }
 

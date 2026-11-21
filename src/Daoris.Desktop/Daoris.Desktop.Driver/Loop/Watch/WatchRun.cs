@@ -259,6 +259,8 @@ internal sealed class WatchRun(
         });
         _nodes?.Bind(chain, nodesDue, doors, ct);
 
+        await using var steps = _nodes is null ? null : await RunStepRun.StartAsync(watch.Bus, watch, Service, Home, ct).ConfigureAwait(false);
+
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure ends it, so no session outlives the
         // loop that watches it.
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);

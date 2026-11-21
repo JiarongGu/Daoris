@@ -11,7 +11,16 @@ public static class LandOutcomes
 {
     private static readonly ConcurrentDictionary<string, TreeLanding> Landed = new(StringComparer.Ordinal);
 
-    internal static void Kept(string unit, string tip, TreeLanding landed) => Landed[$"{unit}\n{tip}"] = landed;
+    /// <summary>Keeps the end of a try and tees it as the bus's <c>land.outcome</c>, which the run's progression goes on from.</summary>
+    internal static void Kept(string home, string unit, string tip, TreeLanding landed)
+    {
+        Landed[$"{unit}\n{tip}"] = landed;
+        BusLog.Of(home)?.Tee(() => new BusDraft(BusTypes.LandOutcome, unit)
+        {
+            Commit = true,
+            Payload = [("landed", landed.Landed), ("code", landed.Landed ? "landed" : landed.Refusal ?? "refused"), ("tip", tip)],
+        });
+    }
 
     /// <summary>The end the performer's last try of <paramref name="unit"/> at <paramref name="tip"/> came to; null where none is kept.</summary>
     public static TreeLanding? Of(string unit, string tip) => Landed.GetValueOrDefault($"{unit}\n{tip}");

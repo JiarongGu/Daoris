@@ -19,8 +19,11 @@ public static class BusTypes
     /// <summary>The opinion facts' emitter, and the deliverer that hands a pass's findings on.</summary>
     public const string Opinions = "driver/opinions";
 
-    /// <summary>The run's step that reads a check's result: it settles, sends a red back or holds.</summary>
+    /// <summary>The run's step that reads a check's result: it settles, sends a red back or holds. Its consumer is the run's progression (<c>RunStepConsumer</c>).</summary>
     public const string Step = "driver/step";
+
+    /// <summary>The emitter of the facts a step's ending is: a settle taken, a session's turn ended, a landing's try ended.</summary>
+    public const string Steps = "driver/steps";
 
     /// <summary>The opinion's gate, which judges the answers to a pass's findings.</summary>
     public const string OpinionGate = "driver/opinion-gate";
@@ -128,10 +131,35 @@ public static class BusTypes
         "quest.moved", 1, BusClasses.Fact, Ledger, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("families", BusShapes.Ids)]);
 
-    /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge every owed opinion, which a graph's opinion node holds until begun.</summary>
+    /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge every owed opinion, which a graph's opinion node holds until begun. Its subject is the unit.</summary>
     public static readonly BusType NodeBegun = new(
         "node.begun", 1, BusClasses.Fact, Nodes, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("nodes", BusShapes.Ids)]);
+
+    private const string AtTheRun =
+        Unmeasured + "; the run's step consumer asks one pass for the run at the fact (BUS2e1), which reads the units afresh and judges that run first, so ten minutes covers a pass held behind another or a drain with room";
+
+    private static readonly BusDeadline StepFact = BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheRun);
+
+    /// <summary>A working session's step settle taken from its box: the run's step must go on from it. Its subject is the run's unit.</summary>
+    public static readonly BusType StepSettled = new(
+        "step.settled", 1, BusClasses.Fact, Steps, Step, StepFact, 2, BusGiveUps.Held,
+        [new("session", BusShapes.Id), new("run", BusShapes.Id), new("node", BusShapes.Id)]);
+
+    /// <summary>The session that performs a plugin step ended its turn, its answer kept or not: the run's step must go on from it. Its subject is the run's unit.</summary>
+    public static readonly BusType StepTurnEnded = new(
+        "step.turn-ended", 1, BusClasses.Fact, Steps, Step, StepFact, 2, BusGiveUps.FinalExit,
+        [new("invocation", BusShapes.Id), new("node", BusShapes.Id)]);
+
+    /// <summary>The risk policy passed a second opinion at its gate: the run's opinion step must go on to the step it holds. Its subject is the run's unit.</summary>
+    public static readonly BusType PolicyPassed = new(
+        "policy.passed", 1, BusClasses.Fact, Opinions, Step, StepFact, 2, BusGiveUps.Held,
+        [new("step", BusShapes.Id), new("tip", BusShapes.Id)]);
+
+    /// <summary>A landing's try ended (landed or refused, its code says): the run's landing step must go on from it. Its subject is the landed unit.</summary>
+    public static readonly BusType LandOutcome = new(
+        "land.outcome", 1, BusClasses.Fact, Steps, Step, StepFact, 2, BusGiveUps.FinalExit,
+        [new("landed", BusShapes.Flag), new("code", BusShapes.Code), new("tip", BusShapes.Id)]);
 
     /// <summary>This process wrote the standing choices (a rule's reviewers, a workflow, the policy): the opinion's gate must judge every owed opinion.</summary>
     public static readonly BusType ChoicesWritten = new(
@@ -160,7 +188,7 @@ public static class BusTypes
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, CheckStarted, CheckPassed,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, CheckStarted, CheckPassed,
         CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp,
     ];
 
@@ -188,6 +216,12 @@ public static class BusTypes
         [QuestMoved.Kind] = [BusEnd.Acknowledged],
         [NodeBegun.Kind] = [BusEnd.Acknowledged],
         [ChoicesWritten.Kind] = [BusEnd.Acknowledged],
+
+        // The run's step goes on at the fact: the consumer's acknowledgement, written once its pass judged the run, is what ends each.
+        [StepSettled.Kind] = [BusEnd.Acknowledged],
+        [StepTurnEnded.Kind] = [BusEnd.Acknowledged],
+        [PolicyPassed.Kind] = [BusEnd.Acknowledged],
+        [LandOutcome.Kind] = [BusEnd.Acknowledged],
     };
 
     private static readonly Dictionary<string, BusType> ByKind = All.ToDictionary(type => type.Kind, StringComparer.Ordinal);

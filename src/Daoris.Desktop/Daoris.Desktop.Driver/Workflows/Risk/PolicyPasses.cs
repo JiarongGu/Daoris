@@ -34,6 +34,7 @@ internal static class PolicyPasses
                 verdict.Revision, verdict.Reason, Today, false)) && at.Run is not null && at.Step is not null)
         {
             lock (OpinionPassed(home)) OpinionPassed(home).Add($"{at.Run}/{at.Step}");
+            StepBusFacts.Teed(home, () => StepBusFacts.PolicyPassed(at.Run, at.Step, gate.Tip));
         }
     }
 

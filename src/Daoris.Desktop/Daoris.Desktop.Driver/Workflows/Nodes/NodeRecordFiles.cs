@@ -163,7 +163,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             AtomicFile.WriteText(path, ToJson(Trimmed(next)));
             Kept.TryRemove(path, out _);
             HomeWrites.Mine(path);
-            if (BegunIn(record, next) is { Count: > 0 } begun) BusLog.Of(home)?.Tee(() => OpinionBusFacts.NodeBegun(KeyOf(unit), begun));
+            if (BegunIn(record, next) is { Count: > 0 } begun) BusLog.Of(home)?.Tee(() => OpinionBusFacts.NodeBegun(RunUnits.Is(unit) ? unit : KeyOf(unit), begun));
             return (null, result);
         }
     }

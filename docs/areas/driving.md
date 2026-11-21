@@ -254,6 +254,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
+    A run's progression is the queue's second consumer (`run-step`, `RunStepConsumer`, BUS2e1), started by the watching loop once link 8 is
+    bound (`RunStepRun`; a headless `drive` runs no node pass and starts none): each fact that ends a step of a run (`check.passed`,
+    `check.failed`, `check.unknown`; `step.settled`, a working session's settle taken from its box; `step.turn-ended`, the session of a
+    plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending),
+    its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks`: the units read afresh, that run judged
+    first) and waits for it, so the next step begins at the fact and not at a look's rotation. A pass that did not judge the run in time
+    throws and the queue tries the fact again with its backoff; the acknowledgement, written after the pass, ends the facts' obligations.
+    The sessions' settle boxes are heard as they are written (a watch on the sessions folder) and swept once a minute as the net; the look
+    no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
+    each node begun as the consumer's (in a pass it asked) or the look's, with its lag from the ending fact.
     Every type is declared once, in one registry (`BusTypes`, D356 step 2): its name and version, whether it is a fact, a request
     or a response, its payload's fields and their shapes (id, code, count, number, time, flag, a list of at most 16 ids), its
     emitter, its obliged handler or a request's answerer, a deadline and what set it, a retry budget, and a give-up from a closed

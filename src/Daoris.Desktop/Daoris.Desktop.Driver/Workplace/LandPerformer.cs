@@ -449,7 +449,7 @@ public sealed class LandPerformer(
 
     private void Ended(TreeLanding end)
     {
-        if (_start is { } start) LandOutcomes.Kept(start.Unit, start.Tip, end);
+        if (_start is { } start) LandOutcomes.Kept(home, start.Unit, start.Tip, end);
     }
 
     /// <summary>A judgement that starts and says nothing: null, its reason written to the machine log once per change (<see cref="LandWaits"/>).</summary>

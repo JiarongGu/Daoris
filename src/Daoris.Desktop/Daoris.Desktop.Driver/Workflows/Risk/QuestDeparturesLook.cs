@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>The quests' departures the risk policy passes, each given the policy's yes at the look (<see cref="QuestDepartures"/>).</summary>
-[LookPass("departures", LookPhase.After, "step-settles")]
+[LookPass("departures", LookPhase.After, "through-notices")]
 internal sealed class QuestDeparturesLook(ILookWiring wiring) : ILookPass
 {
     private readonly HashSet<string> _told = [];

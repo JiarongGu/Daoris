@@ -238,7 +238,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     verdict, and a refused yes names what waits (DEPARTLOCK1). Whose yes a departure waits for is the risk policy's at the quest's place
     (`QuestDepartures`, D354): a quest held as `Departed` has the act `work.done`, or `direction.set` where its done departs from every requirement
     (distinct requirement ids, never answer rows; a quest with no requirements is `work.done`), so its target moved.
-    Where the judge passes it the look (`departures`, after `step-settles`) posts the policy's yes to the service's accept door, its author
+    Where the judge passes it the look (`departures`, after `through-notices`) posts the policy's yes to the service's accept door, its author
     `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`, whose act is one of those two and whose rule and revision are one line each, refused
     otherwise by the door), journals one `risk.judged` line and says it, a refusal of the service said once per quest and revision and asked again at each look, so with nothing configured a
     departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
@@ -850,7 +850,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     take (D318): once the pass keeps its tenure, the run's newest session of this machine (awaiting the run's step, else the work's own,
     resumed where it ended) is told it through the say door, once per attempt and epoch (`StepHandOffs`), with its outcomes, the evidence
     its `evidence` option names and the tool that settles it, `step_settle`; the session's settle is a file under the home's sessions
-    folder the next look takes (`StepSettleAsks`) through the run's node door at the settle door as the agent its start ran, refused with
+    folder the run's progression takes at once, as its fact (`step.settled`, `StepSettleAsks`, driving rule 30a), through the run's node door at the settle door as the agent its start ran, refused with
     nothing kept where the step does not wait on its holder's word, its outcome or a named evidence is missing (`TaskEvidence`), or the door
     refuses it, a refusal told to the session as its next turn; where it cannot do the step it asks up its line. Its row in *What needs
     you* reads "waiting on `<role>`: <agent>" with *Take* its only press. A plugin's actor whose role a staffing gives an agent, or a cast
@@ -891,7 +891,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the risk census (`RiskStepHolds.KindOf`) from a working session the run's makers hold (`NodeRuntime.Workers`: those serving its quests
     and those that worked its branch, with every helper session a maker started and theirs in turn, read from the home's helper asks, ids compared without case; handed to the look as `ILookWiring.RunWorkers`) is refused `own-work`, read from the word's channel
     and its proved session, never its words, whatever holder it speaks as; while the makers are not read such a yes from a working session
-    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the next look takes it; a task's own Done, which is work and not a hold, stays its worker's. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
+    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the box's sweep, once a minute, takes it again; a task's own Done, which is work and not a hold, stays its worker's. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
@@ -921,7 +921,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     agent is still at the second opinion is read off the step's detail (`with-session`, `AgentAt`), never off the holder. (ONEWAIT1)
 56. A pass judges at most 32 units: the run a door asked for, a held event's unit and a record the pass moved first, then in
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
-    keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new.
+    keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new. A fact that ends a step (a check's
+    verdict, a settle taken, a session's turn end, a policy pass at the opinion's gate, a landing's try) asks the pass for its run at
+    once through the bus (`run-step`, driving rule 30a), so that run is judged first on a fresh read and no step waits for a turn; the
+    look's whole pass remains for the inputs no fact names.
 57. A run's review is read by its run alone (`RUN_REVIEW`): the record, its outputs (`ReviewOutputs`: each handback a document, the
     changes a change set, a plan a resource plan, each with a stable id and a digest), a branch's or a checkout's commits with the
     uncommitted paths apart (`ReviewBranchCommits`) and the patch per file between the record's commits, the steps before it, presses
