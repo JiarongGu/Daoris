@@ -105,6 +105,7 @@ internal sealed class LoopRun(
         // One live driver per home: everything above carries on while another holds it.
         using var held = await loop.HoldHomeAsync(ct).ConfigureAwait(false);
         if (held is null) return;
+        await using var bus = BusLog.Open(homeDirectory, log, Daoris.Adapters.Clock.MachineClock.Time);
 
         // The driven work's news is the lease holder's, told from its own cursor on a wait of its own.
         _ = Task.Run(
@@ -129,7 +130,7 @@ internal sealed class LoopRun(
         var moves = new ConversationMoves(homeDirectory, service, loop.Events, loop.Output);
         // A fresh home is seeded once with the copy of the merge workflow, which a place then follows.
         HomeSeed.Once(loop.ConfigPath, homeDirectory);
-        var watch = NewWatch(service, homeDirectory, sync, chat, moves);
+        var watch = NewWatch(service, homeDirectory, sync, chat, moves, bus);
         shared.Watch = watch;
         // A word said while a conversation move stands is held until it ends, read from the move record.
         loop.Words.TakeStanding = moves.Stands;
@@ -303,9 +304,10 @@ internal sealed class LoopRun(
     /// carries on among them (a hand-over its agent asked for, a chat run's second-opinion findings, a lost session going on as a
     /// conversation in its tree, and the conversations waiting for an account, woken beside each look after the take-up).
     /// </summary>
-    private DriverWatch NewWatch(ServiceClient service, string homeDirectory, RemoteSyncSet sync, ChatRunner chat, ConversationMoves moves) =>
+    private DriverWatch NewWatch(ServiceClient service, string homeDirectory, RemoteSyncSet sync, ChatRunner chat, ConversationMoves moves, BusLog bus) =>
         new DriverWatch(service, loop.ConfigPath, homeDirectory, loop.Processes, sync, loop.Output, loop.Harnesses, loop.Usage, shared.Hooks, loop.Events, browser)
         {
+            Bus = bus,
             // Asked at every look, so an update staged or put off between looks holds or frees the next one.
             Draining = () => loop.Draining?.Invoke() == true,
             Noticed = () => loop.Notices.Slice.Wake(),

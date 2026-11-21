@@ -222,6 +222,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                                         + "to check, at the driver's next look.");
         }
 
+        _context.Bus?.Tee(() => OpinionBusFacts.OpinionDelivered(view.Id, to, view.Findings!.Count, "claims"));
         return new OpinionDelivery(
             view.Id, OpinionDeliveryStates.Handed,
             $"handed  {named}: its {Plural(view.Findings!.Count, "finding")} went to session {to} as another agent's claims, "
@@ -298,6 +299,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                 var line2 = $"— {view.Who}'s {Plural(view.Findings!.Count, "finding")} on this work are its next turn, as another agent's claims to "
                             + "check, taken between turns.";
                 _context.Output?.Append(newest.Id, line2);
+                _context.Bus?.Tee(() => OpinionBusFacts.OpinionDelivered(view.Id, newest.Id, view.Findings.Count, "send-back"));
                 return new OpinionDelivery(
                     view.Id, OpinionDeliveryStates.Handed,
                     $"handed  {named}: its {Plural(view.Findings.Count, "finding")} went to session {newest.Id} as another agent's claims, its "

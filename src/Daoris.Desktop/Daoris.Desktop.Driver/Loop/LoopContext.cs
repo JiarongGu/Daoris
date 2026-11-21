@@ -17,6 +17,9 @@ internal sealed class LoopContext(
     /// <summary>The plugins that speak, shared across ticks; null where no plugin is read at all.</summary>
     public HookSet? Hooks { get; } = hooks;
 
+    /// <summary>The lease holder's bus log the loop's facts are teed into; null tees nothing. Set once, before a look.</summary>
+    public BusLog? Bus { get; set; }
+
     /// <summary>Daoris's own browser, asked for by a plugin server that drives it; null where no shell carries one.</summary>
     public IInAppBrowser? Browser { get; } = browser;
 

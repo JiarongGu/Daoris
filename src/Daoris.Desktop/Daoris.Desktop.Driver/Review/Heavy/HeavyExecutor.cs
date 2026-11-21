@@ -337,6 +337,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         VerifyResult? result = null;
         var busy = false;
         var ran = Stopwatch.StartNew();
+        _world.Bus?.Tee(() => CheckBusFacts.CheckStarted(send));
         try
         {
             VerifySlot.Forget(home, send.Invocation);
@@ -444,6 +445,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         lock (_gate) _answered.Add(send.Invocation);
+        _world.Bus?.Tee(() => CheckBusFacts.CheckSettled(send, result));
         // The result stands on disk: a writer or a callback that throws must not end the loop, which nothing starts again.
         try
         {

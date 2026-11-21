@@ -5,6 +5,7 @@
     { "name": "Settings", "folder": "Settings", "domain": true },
     { "name": "Service", "folder": "Service", "domain": true },
     { "name": "Install", "folder": "Install", "domain": true },
+    { "name": "Bus", "folder": "Bus", "domain": false },
     { "name": "Instance", "folder": "Instance", "domain": false },
     { "name": "Events", "folder": "Events", "domain": true },
     { "name": "Knowledge", "folder": "Knowledge", "domain": true },

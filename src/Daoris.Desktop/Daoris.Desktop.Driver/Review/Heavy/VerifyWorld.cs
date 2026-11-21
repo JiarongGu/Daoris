@@ -40,6 +40,8 @@ public sealed record VerifyWorld
     /// <summary>Told once an attempt's result is written: the runtime asks a pass, which reconciles it.</summary>
     public Action<string, string>? Answered { get; init; }
 
+    public BusLog? Bus { get; init; }
+
     private static IReadOnlyList<KeyValuePair<string, string>> Own() =>
         [.. Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
             .Where(entry => entry.Key is string && entry.Value is string)

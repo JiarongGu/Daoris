@@ -85,6 +85,8 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public double? WallSeconds { get; init; }
 
+    public IReadOnlyList<string>? Red { get; init; }
+
     public void Write(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);

@@ -61,6 +61,7 @@ internal static class DriveConsole
         }
 
         using var leaseHeld = held;
+        await using var bus = held.Beside is null ? BusLog.Open(home, log, Daoris.Adapters.Clock.MachineClock.Time) : null;
 
         if (held.Beside is { } beside)
         {
@@ -201,7 +202,7 @@ internal static class DriveConsole
             // stop among it, is printed first.
             // The machine log rides each look, where a run's failure nothing else awaits is written with its place.
             HomeSeed.Once(configPath, home);
-            watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log, Share = held.Beside is not null };
+            watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events) { Log = log, Share = held.Beside is not null, Bus = bus };
             await watching.RunAsync(
                 async (report, ticked) =>
                 {

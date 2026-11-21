@@ -77,6 +77,8 @@ public sealed class Driver(
     /// <summary>The machine log, where a failure nothing else awaits is written with its place; null where nothing keeps one.</summary>
     public MachineLog? Log { get => Context.Log; init => Context.Log = value; }
 
+    public BusLog? Bus { get => Context.Bus; init => Context.Bus = value; }
+
     /// <summary>What each quest's and ask's walk last passed, so <c>actor.passed</c> is written when a pass is new, not at every look.</summary>
     internal PassMemory Passed { get; } = new();
 

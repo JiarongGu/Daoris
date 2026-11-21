@@ -475,6 +475,7 @@ internal sealed class WatchRun(
                 watch.Harnesses, watch.Usage, watch.Hooks, watch.Events, watch.Browser, Running)
             {
                 Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
+                Bus = watch.Bus,
                 Part = part, Wanted = token => WantedAsync(part, token), Makers = run => doors.Nodes?.Workers(run),
                 // An ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
                 RunReturned = run =>

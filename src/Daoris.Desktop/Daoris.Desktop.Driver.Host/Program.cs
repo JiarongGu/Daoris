@@ -639,6 +639,15 @@ try
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
     }
 
+    // The bus log's measures by day, read from the home's store; needs no service and changes nothing.
+    if (args is ["bus", .. var busArgs])
+    {
+        var exit = BusStatsCommand.Run(
+            busArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => Daoris.Adapters.Clock.MachineClock.Time.GetUtcNow(), out var busSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(busSaid);
+        return exit;
+    }
+
     // Plugins from a terminal: the kit's new and try, and a plugin's page and activity,
     // the Plugins view's twins. None needs a service; try a home only to try an installed plugin by its id.
     if (args is ["plugins", .. var pluginsArgs])

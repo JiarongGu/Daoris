@@ -99,6 +99,7 @@ internal sealed class WatchNodes
             Answered = (run, _) => watch.NodesWoken(RunUnits.IdOf(run)),
             Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
             Checks = () => ChecksSetting.At(DriverConfig.ResolvePath(home)),
+            Bus = watch.Bus,
         });
 
         // Each starting kind builds its door from this loop's wiring, starting only where the loop holds the home's lease and never
