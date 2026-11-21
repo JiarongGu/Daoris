@@ -23,6 +23,8 @@ public sealed class GitKeepersCensusTests
         ["GitFacts.cs Current"] = "the flow's facts, one judgement's; dropped by any git that may move a ref (GitFacts.Ran)",
         ["GitFacts.cs _asked"] = "a join of a running read within one flow, asked under the flow's token and keyed by the asker's context",
         ["GitReadOnce.cs _asked"] = "a join of a running read within one read-only flow, keyed by the asker's context",
+        ["AddressedReads.cs _text"] = "a join of a running read of a commit's files by id within one act, keyed by the asker's folder",
+        ["AddressedReads.cs _bytes"] = "a join of a running read of objects by id within one act, keyed by the asker's folder and question",
         ["RefSnapshot.cs Held"] = "the flow's listings, one landing's; dropped by any git that may move a ref",
         ["RefSnapshot.cs _facts"] = "a join of a running read within one flow, keyed by the asker's context",
     };

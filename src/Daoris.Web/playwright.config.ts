@@ -1,10 +1,10 @@
 import { defineConfig } from '@playwright/test';
-import { e2ePort } from './scripts/e2e-port.mjs';
+import { freeE2ePort } from './scripts/e2e-port.mjs';
 
 // The example family is the UI's fixture: the suite boots the REAL HTTP host over examples/
 // with a scratch store, and drives the same bundle a person uses — the host serves wwwroot — not a
 // dev server with different behaviour. Build first; `npm run test:web` at the workspace root does.
-const port = e2ePort();
+const port = await freeE2ePort();
 
 export default defineConfig({
   testDir: './e2e',

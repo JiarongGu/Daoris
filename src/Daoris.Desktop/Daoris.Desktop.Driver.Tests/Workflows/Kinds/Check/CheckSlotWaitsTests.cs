@@ -67,6 +67,18 @@ public sealed class CheckSlotWaitsTests
     }
 
     [Fact]
+    public void A_check_waiting_for_the_admission_s_lock_says_so_never_a_slot_count()
+    {
+        var look = new VerifyLook([], [Waiter("mine", "i-mine", 1, CheckWait.Held)]);
+
+        var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
+
+        Assert.Equal(CheckSlotWaits.Admitting, wait.Code);
+        Assert.Contains(CheckSlotWaits.Admitting, CheckSlotWaits.Codes);
+        Assert.Equal("Waits for the admission's lock, which another start holds; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
+    }
+
+    [Fact]
     public void A_check_waiting_where_nothing_is_said_yet_reads_its_place_in_the_queue()
     {
         var look = new VerifyLook([], [Waiter("first", "i-first", 1), Waiter("mine", "i-mine", 2), Waiter("last", "i-last", 3)]);

@@ -63,6 +63,7 @@
   "workflow.wait.check.slot": "Waits for a check slot: {{running}} of {{slots}} run; {{position}} of {{of}} in its queue.",
   "workflow.wait.check.slot-memory": "Waits for memory: {{free}} GB free, the next check needs {{need}} GB; {{position}} of {{of}} in its queue.",
   "workflow.wait.check.slot-repository": "Waits for `{{repository}}`'s heavy-run slots, each held by another of its heavy runs; {{position}} of {{of}} in its queue.",
+  "workflow.wait.check.slot-admitting": "Waits for the admission's lock, which another start holds; {{position}} of {{of}} in its queue.",
   "workflow.wait.check.slot-queued": "Waits for a check slot: {{position}} of {{of}} in its queue.",
   "workflow.step.monitor": "The pull request's watch",
   "workflow.step.tidy": "The chain's clean-up",

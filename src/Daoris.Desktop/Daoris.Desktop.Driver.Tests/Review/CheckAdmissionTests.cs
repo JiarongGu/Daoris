@@ -24,10 +24,10 @@ public sealed class CheckAdmissionTests : IDisposable
     private static readonly HeavyGateNow Past = new("build", 1, Now);
 
     /// <summary>A check's ask: a check slot and a slot of the repository at <paramref name="checkout"/>, its first gate ended unless <paramref name="starting"/>.</summary>
-    private HeavyAsk Check(string run, string? checkout = null, bool starting = false)
+    private HeavyAsk Check(string run, string? checkout = null, bool starting = false, int? declared = null)
     {
         var at = checkout ?? _fixture.Checkout;
-        return new HeavyAsk(HeavySlot.KeyOf(at)!, "Daoris", at,
+        return new HeavyAsk(HeavySlot.KeyOf(at)!, "Daoris", declared,
             () => new HeavyHolder(Environment.ProcessId, 1, at, ["reached"], Now, null, null) { Run = run, Now = starting ? null : Past })
         {
             Check = () => new VerifyHolder(Environment.ProcessId, 1, run, "i-" + run, "Daoris", Now),
@@ -35,8 +35,8 @@ public sealed class CheckAdmissionTests : IDisposable
     }
 
     /// <summary>A session's ask: a slot of the repository at <paramref name="checkout"/> alone, no check slot.</summary>
-    private static HeavyAsk Session(string session, string checkout, bool starting = false) =>
-        new(HeavySlot.KeyOf(checkout)!, "engine", checkout,
+    private static HeavyAsk Session(string session, string checkout, bool starting = false, int? declared = null) =>
+        new(HeavySlot.KeyOf(checkout)!, "engine", declared,
             () => new HeavyHolder(Environment.ProcessId, 1, checkout, ["build"], Now, session, null) { Now = starting ? null : Past });
 
     private (HeavyTaken? Taken, CheckWait? Wait) Take(CheckRules rules, HeavyAsk ask) => CheckAdmission.TryTake(_fixture.Home, rules, ask, (_, _) => true);
@@ -209,11 +209,10 @@ public sealed class CheckAdmissionTests : IDisposable
     [Fact]
     public void A_repository_that_declares_one_slot_runs_one_heavy_run_at_a_time()
     {
-        File.WriteAllText(Path.Combine(_fixture.Checkout, "daoris.gates.json"), """{ "heavySlots": 1, "gates": [] }""");
         var plenty = new CheckRules(4, 16, 4, () => null);
 
-        var (first, _) = Take(plenty, Check("r-1"));
-        var (second, wait) = Take(plenty, Check("r-2"));
+        var (first, _) = Take(plenty, Check("r-1", declared: 1));
+        var (second, wait) = Take(plenty, Check("r-2", declared: 1));
         var (other, _) = Take(plenty, Session("s-1", _fixture.Other));
         using (first)
         using (other)
@@ -226,18 +225,19 @@ public sealed class CheckAdmissionTests : IDisposable
         }
     }
 
-    [Theory]
-    [InlineData(null, null)]
-    [InlineData("""{ "gates": [] }""", null)]
-    [InlineData("""{ "heavySlots": 2 }""", 2)]
-    [InlineData("""{ "heavySlots": 0 }""", 1)]
-    [InlineData("""{ "heavySlots": "two" }""", 1)]
-    [InlineData("not json", null)]
-    public void A_repository_s_declared_slots_read_from_its_checkout(string? file, int? slots)
+    [Fact]
+    public void A_lock_timeout_at_the_admission_says_the_lock_is_held_not_a_slot_count()
     {
-        if (file is not null) File.WriteAllText(Path.Combine(_fixture.Checkout, "daoris.gates.json"), file);
+        var path = CheckAdmission.AdmittingPath(_fixture.Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var holding = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
 
-        Assert.Equal(slots, HeavyGates.SlotsOf(_fixture.Checkout));
+        var (taken, wait) = Take(Auto(12), Check("r-1"));
+
+        Assert.Null(taken);
+        Assert.Equal(CheckWait.Admitting, wait!.Code);
+        Assert.Equal("the admission's lock, which another start holds", wait.Sentence);
+        Assert.Empty(VerifySlot.Look(_fixture.Home, (_, _) => true).Holders);
     }
 
     /// <summary>

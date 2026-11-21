@@ -278,6 +278,17 @@ public sealed class HeavyRunCommandTests : IDisposable
         Assert.StartsWith("`engine`'s heavy-run slots are held by session s-2's heavy run:", HeavyRun.NotAdmitted(CheckWait.OfRepository("engine", "session s-2's heavy run"), "engine", "v-1"));
     }
 
+    [Fact]
+    public void A_session_s_run_that_cannot_have_the_admission_s_lock_is_told_so_on_every_wording()
+    {
+        var said = HeavyRun.NotAdmitted(CheckWait.Held, "engine", "v-1");
+        var waiting = HeavySlot.Waiting("engine", [], CheckWait.Held, DateTimeOffset.UnixEpoch, TimeSpan.FromSeconds(3));
+
+        Assert.StartsWith("this session's run is not admitted now (it would wait for the admission's lock, which another start holds)", said);
+        Assert.Contains("waits for the admission's lock, which another start holds;", waiting);
+        Assert.DoesNotContain("has not said what it runs", waiting);
+    }
+
     /// <summary>A person's run behind a verification waits as today, saying behind which run, and they may stop it.</summary>
     [Fact]
     public async Task A_person_s_run_behind_a_verification_waits_and_says_it()

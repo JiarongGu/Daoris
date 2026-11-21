@@ -13,6 +13,7 @@ internal sealed class TreePoolFinishes(TreePool pool, PoolSeams seams)
 {
     internal async Task<PoolDone> FinishAsync(PoolFinish finish, CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         var site = finish.Site;
         var branch = $"{TreeFollows.SessionPrefix}{finish.Line}";
         if (pool.LastEnd(site.Workspace, site.Repository, finish.Line) is not { } end) return PoolDone.Not("no let-go of the line is recorded, so its tip is not known");

@@ -42,6 +42,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
     internal async Task<TreeFilesOutcome> RunAsync(CancellationToken ct)
     {
+        using var objects = AddressedReads.Within(ct);
         try
         {
             return await StagesAsync(ct).ConfigureAwait(false);

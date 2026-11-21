@@ -33,7 +33,7 @@ public sealed record CheckRules(int? Setting, int Processors, int Machine, Func<
 }
 
 /// <summary>What a run waits for before it takes a slot, by code, with the values its words name.</summary>
-/// <param name="Code"><see cref="Slots"/>, <see cref="Memory"/> or <see cref="Repository"/>.</param>
+/// <param name="Code"><see cref="Slots"/>, <see cref="Memory"/>, <see cref="Repository"/> or <see cref="Admitting"/>.</param>
 public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> Values)
 {
     /// <summary>Every slot runs a heavy run: <c>running</c> of <c>of</c>.</summary>
@@ -45,14 +45,20 @@ public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> 
     /// <summary>Heavy runs of its own repository hold every slot the repository has: <c>what</c> names them.</summary>
     public const string Repository = "repository";
 
+    /// <summary>The admission's own lock, which judges every heavy run together, is held by another start past the tries: said as that, never as a slot count.</summary>
+    public const string Admitting = "admitting";
+
     /// <summary>The wait as the driver's log and the waiter's file say it, after "waiting for".</summary>
     public string Sentence => Code switch
     {
         Slots => $"a slot: {Values["running"]} of {Values["of"]} run",
+        Admitting => "the admission's lock, which another start holds",
         Memory => $"memory: {Values["free"]} GB free, a check needs {Values["need"]} GB"
                   + (Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : ""),
         _ => Values.GetValueOrDefault("what") ?? "a heavy run of its repository",
     };
+
+    public static CheckWait Held { get; } = new(Admitting, new Dictionary<string, string>(StringComparer.Ordinal));
 
     public static CheckWait OfSlots(int running, int of) => new(Slots, new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -74,9 +80,9 @@ public sealed record HeavyHeld(DateTimeOffset Since, string? Key, bool Starting,
 
 /// <summary>
 /// What a heavy run asks the admission for: the repository's slot it runs under (<paramref name="Key"/>, its repository's name and the
-/// checkout whose <c>daoris.gates.json</c> may say how many at once, <see cref="HeavyGates.SlotsOf"/>), and the record it says itself in.
+/// slots the repository's accepted declaration says, <see cref="AcceptedSlots"/>, null where it says none), and the record it says itself in.
 /// </summary>
-public sealed record HeavyAsk(string Key, string Repository, string Checkout, Func<HeavyHolder> Holder)
+public sealed record HeavyAsk(string Key, string Repository, int? Declared, Func<HeavyHolder> Holder)
 {
     /// <summary>The check slot's record, where the run takes one (a check, an integration's gated line); null for a session's or a terminal's run.</summary>
     public Func<VerifyHolder>? Check { get; init; }
@@ -185,8 +191,8 @@ public static class CheckAdmission
         return new CheckWait(CheckWait.Memory, values);
     }
 
-    /// <summary>The slots a repository has: the machine's, or fewer where its checkout's file says so.</summary>
-    public static int SlotsOf(CheckRules rules, string checkout) => Math.Min(rules.Slots, HeavyGates.SlotsOf(checkout) ?? int.MaxValue);
+    /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>
+    public static int SlotsOf(CheckRules rules, int? declared) => Math.Min(rules.Slots, declared ?? int.MaxValue);
 
     /// <summary>
     /// A run's slots and records, or why it has none: under the admission's lock, its repository's own slots judged, then the machine's
@@ -197,9 +203,9 @@ public static class CheckAdmission
     {
         using var admitting = Admitting(home);
         var held = Holding(home, alive);
-        if (admitting is null) return (null, Judge(held, rules) ?? CheckWait.OfSlots(held.Count, rules.Slots));
+        if (admitting is null) return (null, CheckWait.Held);
 
-        var mine = SlotsOf(rules, ask.Checkout);
+        var mine = SlotsOf(rules, ask.Declared);
         var ours = held.Where(one => one.Key == ask.Key).ToList();
         if (ours.Count >= mine) return (null, CheckWait.OfRepository(ask.Repository, string.Join(", ", ours.Select(one => one.Who))));
         if (Judge(held, rules) is { } wait) return (null, wait);

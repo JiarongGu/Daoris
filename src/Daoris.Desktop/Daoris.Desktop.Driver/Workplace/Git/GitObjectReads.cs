@@ -39,6 +39,8 @@ internal static class GitObjectReads
     internal static async Task<GitObjectAnswer?> InfoAsync(string root, GitObjectName name, CancellationToken ct) =>
         (await NamedAsync(root, name, Small, ct).ConfigureAwait(false))?.Answer;
 
+    internal static bool IsBatch(IReadOnlyList<string> arguments) => arguments.SequenceEqual(["cat-file", "--batch"], StringComparer.Ordinal);
+
     /// <summary>The blob's first <paramref name="limit"/> bytes as text; null where it is missing, not a blob, or git failed.</summary>
     internal static async Task<string?> TextAsync(string root, GitObjectName name, int limit, CancellationToken ct) =>
         await ReadAsync(root, name, limit, ct).ConfigureAwait(false) is ({ Missing: false, Type: "blob" } answer, var bytes) ? Text(bytes, answer) : null;

@@ -211,7 +211,7 @@ public static class AttentionStateSlice
                 wake => HearQuiet(SessionWatch.Of(loop.Events), wake), wake => AttentionSecondCheckRows.Hear(loop.Home, wake),
             ],
             loop.Log, new WaitAnnouncements(bus, () => NotifyRule.Tells(NewsKind.HeldCall, loop.Notifying()),
-                () => NotifyRule.Tells(NewsKind.Parked, loop.Notifying())));
+                () => NotifyRule.Tells(NewsKind.Parked, loop.Notifying()), new News(loop.Home)));
 
     /// <summary>The slice over <paramref name="facts"/>, read at each judgement, woken where <paramref name="hears"/> hear a move.</summary>
     public static StateSlice Of(

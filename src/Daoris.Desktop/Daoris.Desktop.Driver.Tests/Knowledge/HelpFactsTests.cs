@@ -1060,22 +1060,20 @@ public sealed class HelpFactsTests : IDisposable
     public async Task One_repository_s_work_judgement_starts_git_in_its_own_trees_and_checkout_alone()
     {
         var trees = new SessionTrees(_home).TreesRoot;
-        string Tree(string workspace, string repository, string name)
+        string Linked(string dir)
         {
-            var tree = Path.Combine(trees, workspace, repository, name);
-            Directory.CreateDirectory(tree);
-            // Linked as git links a worktree, so its branch is asked of git.
-            File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
-            return tree;
+            Directory.CreateDirectory(dir);
+            // Linked as git links a worktree, so git is asked of it; a folder with no link starts none.
+            File.WriteAllText(Path.Combine(dir, ".git"), "gitdir: elsewhere\n");
+            return dir;
         }
 
+        string Tree(string workspace, string repository, string name) => Linked(Path.Combine(trees, workspace, repository, name));
         string[] engineTrees = [Tree("default", "engine", "s-1"), Tree("alpha", "engine", "s-2")];
         Tree("default", "site", "s-3");
         Tree("default", "docs", "s-4");
-        var engine = new RepoView("engine", Adopted: true, Root: Path.Combine(_home, "checkouts", "engine"));
-        var site = new RepoView("site", Adopted: true, Root: Path.Combine(_home, "checkouts", "site"));
-        Directory.CreateDirectory(engine.Root!);
-        Directory.CreateDirectory(site.Root!);
+        var engine = new RepoView("engine", Adopted: true, Root: Linked(Path.Combine(_home, "checkouts", "engine")));
+        var site = new RepoView("site", Adopted: true, Root: Linked(Path.Combine(_home, "checkouts", "site")));
         var starts = new List<string>();
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(engine, site, Docs)) with { Work = async (part, ct) => await HelpFacts.ReadWorkAsync(_home, part, ct) });

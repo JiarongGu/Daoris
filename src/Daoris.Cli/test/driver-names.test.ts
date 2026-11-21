@@ -104,6 +104,7 @@ test('each name a reader reads a desktop source by is one file under its project
 const FIXED = new Map([
   ['resources.json', "a resource, not a source: the driver's project file copies it from the driver's top, and desktop-publish.test.ts holds the two together"],
   ['Daoris.Desktop.Driver.csproj', "the driver's project file, at its project's top"],
+  ['Daoris.Desktop.Driver.Tests.csproj', "the driver's test project's file, at its project's top (layers-census-shrink.test.mjs names it in a tree of its own)"],
 ]);
 
 /**

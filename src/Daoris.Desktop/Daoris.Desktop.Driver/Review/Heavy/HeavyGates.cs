@@ -176,22 +176,21 @@ public static class HeavyGates
     public const string SlotsKey = "heavySlots";
 
     /// <summary>
-    /// How many of its heavy runs at once (checks, sessions' runs, gated integration lines) the checkout's file declares, within what the
-    /// machine admits; null where it declares none or the file does not read. A value that is no whole number from 1 reads as 1: "cannot
-    /// tell" is never more at once. Read from the checkout's file, never a tree's, as <see cref="TreePrepDeclared.Read"/> reads its commands.
+    /// How many of its heavy runs at once (checks, sessions' runs, gated integration lines) a declaration's <paramref name="text"/>
+    /// declares, within what the machine admits; null where it declares none or does not read. A value that is no whole number from 1
+    /// reads as 1: "cannot tell" is never more at once. The text is the repository's accepted declaration (<see cref="AcceptedSlots"/>), never a branch's own file.
     /// </summary>
-    public static int? SlotsOf(string checkout)
+    public static int? SlotsIn(string? text)
     {
+        if (text is null) return null;
         try
         {
-            var file = Path.Combine(checkout, DeclarationNames.Gates);
-            if (!File.Exists(file)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllBytes(file));
+            using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty(SlotsKey, out var slots)) return null;
             return slots.ValueKind == JsonValueKind.Number && slots.TryGetInt32(out var count) && count >= 1 ? count : 1;
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        catch (JsonException)
         {
             return null;
         }

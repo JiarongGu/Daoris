@@ -24,7 +24,17 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
     {
         Directory.CreateDirectory(Home);
         const string note = "import { appendFileSync } from 'node:fs'; import { join } from 'node:path'; const note = (words) => appendFileSync(join(process.argv[2], 'calls.log'), `${words} ${process.env.DAORIS_ADMISSION_HOLD ?? 'none'}\\n`);";
-        await File.WriteAllTextAsync(At("regen.mjs"), note + " note('regen');");
+        var admission = new Uri(Path.Combine(WorkspaceRoot.Folder, "tools", "machine-admission.mjs")).AbsoluteUri;
+        await File.WriteAllTextAsync(At("regen.mjs"), $$"""
+            import { appendFileSync } from 'node:fs'; import { join } from 'node:path';
+            import { createAdmission } from '{{admission}}';
+            const deadline = Date.now() + 20000;
+            const asked = createAdmission({ daorisHome: process.argv[3], kind: 'session', capacity: 1, say: () => {}, pollMs: 200 });
+            const hold = await asked.take({ what: 'regenerate asks', halted: () => Date.now() > deadline });
+            const answer = hold ? (hold.inside ? 'inside' : 'took') : 'waited';
+            appendFileSync(join(process.argv[2], 'calls.log'), `regen ${process.env.DAORIS_ADMISSION_HOLD ?? 'none'} ${answer}\n`);
+            hold?.release();
+            """);
         await File.WriteAllTextAsync(At("gate.mjs"), note + " note(`gate:${process.argv[3]}`);");
         await File.WriteAllTextAsync(At("reached.mjs"), note + " note(`reached:${process.argv[3]}:${process.argv[4]}`); console.log('reached-classes: {\"ran\":1,\"replayed\":0,\"flaked\":[],\"mainRed\":[],\"red\":[]}');");
     }
@@ -43,6 +53,8 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         ? [.. File.ReadAllLines(At("calls.log")).Select(line => line.Split(' ')).Select(words => (words[0], words[1]))]
         : [];
 
+    private string RegenerateAnswer() => File.ReadAllLines(At("calls.log")).First(line => line.StartsWith("regen ")).Split(' ')[2];
+
     private async Task<(string Checkout, string Commit, string Blob)> RepositoryAsync(bool reached)
     {
         var checkout = At("engine");
@@ -50,7 +62,7 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         await GitFixture.GitAsync(checkout, "init", "-q", "-b", "main");
         await GitFixture.GitAsync(checkout, "config", "user.email", "test@example.com");
         await GitFixture.GitAsync(checkout, "config", "user.name", "Test");
-        var regenerate = Node(At("regen.mjs"), _folder);
+        var regenerate = Node(At("regen.mjs"), _folder, Home);
         var declaration = new
         {
             gates = new[]
@@ -93,6 +105,7 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         Assert.NotEqual("none", calls[1].Hold);
         Assert.Equal(calls[1].Hold, calls[2].Hold);
         Assert.Equal(calls[1].Hold, calls[0].Hold);
+        Assert.Equal("inside", RegenerateAnswer());
     }
 
     [Theory]
@@ -107,5 +120,6 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         Assert.Equal(["regen", $"reached:main:{tier}"], calls.Select(call => call.What));
         Assert.NotEqual("none", calls[1].Hold);
         Assert.Equal(calls[1].Hold, calls[0].Hold);
+        Assert.Equal("inside", RegenerateAnswer());
     }
 }

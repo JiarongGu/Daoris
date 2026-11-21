@@ -41,7 +41,10 @@ public static class PersonWaitReader
                 var wait = StepWaiting.Exited(read, vacancy);
                 var vacant = vacancy is { Exited: false };
                 if (wait.Holder.Kind != StepHolders.Person && !vacant) continue;
-                waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role, Vacant = vacant });
+                waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since)
+                {
+                    Role = wait.Role, Vacant = vacant, Exit = HeldSteps.ExitOf(run.Run, node.Id, status.Attempt, read, vacancy) is not null,
+                });
             }
         }
 

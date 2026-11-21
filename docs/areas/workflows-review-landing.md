@@ -274,7 +274,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Its record is a notice of Done and failed under the same key (`LookSaid.FinalExit` news naming the run and the step, whose *Open* opens
     the run), which no window says aloud: the whole story is the look's line, said once as the exit is kept (`NodeRuntimePass.Noticed`), and
     the notice is kept again at each look while the exit stands (`NodeRuntimePass.Standing`, `LookSaid.Stands`), so a look a later failure
-    ended or a refused write loses none, and one held, or dismissed while the process runs, is never written again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    ended or a refused write loses none, and one kept, or dismissed, is never written again, across a restart too: the memory of both the
+    announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
+    forgotten by `News.Forget` only for an exit this process saw stand and stop standing, never for a reading taken before the runtime loaded its steps). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
+    the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
     failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
@@ -724,8 +727,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     are as many as the admission's, so one repository's checks, its sessions' heavy runs and its integration's gated lines run side by
     side, each check in its slot's verification tree (`lines/trees/<key>`, `<key>-n`; a tree past the slots there are now, left by a
     larger `checks`, stays as it is, kept for when they grow again). A repository whose gates share what two trees cannot declares
-    `"heavySlots": <n>` in its `daoris.gates.json`, read from its checkout at each look: its heavy runs then run that many at once, 1
-    for one at a time, within the machine's admission (D349: the framework is Daoris's, the count the repository's). A check judged as
+    `"heavySlots": <n>` in its `daoris.gates.json`, read for every caller (a check, a gated integration line, a session's `run-heavy`) from
+    the declaration the person accepted for it, by git's object store at each look (`AcceptedSlots`), never from a branch's, tree's or
+    checkout's own file: a branch that raises `heavySlots` gets the line's count, and where nothing is accepted the machine's count
+    stands. Its heavy runs then run that many at once, 1 for one at a time, within the machine's admission (D349: the framework is
+    Daoris's, the count the repository's); a change to `heavySlots` is a change of the declaration like any other part the person has not
+    accepted, so it holds a restricted work's runs and is said by its key. A start that cannot have the admission's lock in its tries
+    waits saying the lock is held (`CheckWait.Admitting`, `slot-admitting` on a check's step, and in a session's `run-heavy` words), never a slot count. A check judged as
     merged reads its line's tip once and merges from objects alone, so an integration landing beside it never shows it a half-moved
     line. A session's `run-heavy` that is not admitted while its verification holds a slot of the repository says the true reason
     (its repository's slots, memory or the machine's slots) and does not wait. A sent check the executor
@@ -857,10 +865,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     naming the cast, the role's agent and the Vacant list, how long each held it and why none answered it, and the one answer asked, and its
     `risk.judged` line, kept as exited (`StepVacancy.Exited`) so it is never said again whoever serves it later; every reader then says it as
     the person's row (`StepWaiting.Exited`), no longer vacant, until the owner settles it. A plugin's actor or a spent red's role that a live
-    session serves is kept too (`StepVacancy.Served`, never listed) and, never answered past the same bound from when it was first served,
-    reaches the final exit the same way. A vacancy's line, notice and journal line are said only once its record is kept. Daoris never stops it as its own; a give-up a build before the final exit wrote
+    session serves, or a task handed to the run's working session (`StepVacancies.Bounded`; no live session need serve a task), is kept too
+    (`StepVacancy.Served`, never listed) and, never answered past the same bound from when it was first served, reaches the final exit the same way.
+    The bound runs from when the step first stood unanswered: a holder whose session comes and goes changes only whether the kept record is served
+    (`StepVacancies.Look`), never its `Since`. A vacancy's line, notice and journal line are said only once its record is kept. Daoris never stops it as its own; a give-up a build before the final exit wrote
     (`NodeWord.GaveUp`, `NodeSource.Daoris`) is read and said as it stands. A step no longer vacant drops its
-    vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
+    vacancy, so its clock starts again if it becomes one. An exit is kept by its record whoever holds the step now (`StepVacancies.Kept`): a cast or a policy that moves the holder to the person keeps its row.
+    A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
     serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
     cast alone, does not), so a step served again leaves *Vacant* at once and
     not when the pass next drops it; a vacancy file that will not write is said once and never ends the pass; and one whose run's record is gone is

@@ -106,6 +106,26 @@ public sealed class NewsTests : IDisposable
         Assert.Equal("failed", kept.Single(notice => notice.Id == "ended-s1").State);
     }
 
+    [Fact]
+    public void A_standing_claim_is_won_once_outlives_the_horizon_and_is_forgotten_only_when_told_to()
+    {
+        Assert.True(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));
+        Assert.False(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));
+        Assert.True(Desk().ClaimStanding(News.Noticed, "exit:q7/check#3", Now));
+        Assert.True(Desk().Stood(News.Announced, "exit:q7/check#3"));
+
+        Desk().Claim("lease", [Said("a")], null, Now.AddDays(30));
+        Assert.True(Desk().Stood(News.Announced, "exit:q7/check#3"));
+
+        Desk().Forget(News.Announced, []);
+        Assert.True(Desk().Stood(News.Announced, "exit:q7/check#3"));
+
+        Desk().Forget(News.Announced, ["exit:q7/check#3"]);
+        Assert.False(Desk().Stood(News.Announced, "exit:q7/check#3"));
+        Assert.True(Desk().Stood(News.Noticed, "exit:q7/check#3"));
+        Assert.True(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));
+    }
+
     // ---- m-iv: the said-set in place of each first-read baseline ----
 
     /// <summary>Only a home with no said-set yet takes what stands as said: the first look of a branch is its baseline, once, and every later one tells.</summary>
