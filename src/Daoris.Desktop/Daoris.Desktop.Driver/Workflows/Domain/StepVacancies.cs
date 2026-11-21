@@ -28,7 +28,7 @@ public interface IStepVacancyStore
 /// never the owner's: judged by the pass alone, which keeps it (<see cref="StepVacancyFiles"/>) from the moment it became vacant, so every
 /// row, view and list reads the one judgement; listed under <i>Vacant</i>, announced once, and past its bound (<see cref="VacancySetting"/>) at
 /// the owner's final exit (<see cref="FinalExits"/>), the person's row from then on, never stopped by Daoris. Served are a task's Done
-/// or decision, handed to the run's working session, and a plugin's actor or a spent red's role (<see cref="SpentChecks"/>) whose holder a cast
+/// or decision, handed to the run's working session (bounded all the same: <see cref="Bounded"/>), and a plugin's actor or a spent red's role (<see cref="SpentChecks"/>) whose holder a cast
 /// or a staffing gives an agent that a live session of serves (<see cref="CastReading.Serves"/>). An actor or a spent red a live session serves
 /// is bounded all the same: one it never answers reaches the final exit past the same bound. No dispatcher hands a role-classed Accept,
 /// approval or opinion dispute to a session yet, so one an agent holds is a vacancy, though an Accept's or approval's agent may still answer it
@@ -46,17 +46,17 @@ public static class StepVacancies
     public static bool Is(RoleWait wait, Func<string, bool> serves) =>
         wait.Holder.Kind == StepHolders.Agent && Holdable(wait) && !Served(wait, serves);
 
-    /// <summary>A wait a live session serves that no tool of Daoris's settles for it (an actor's, a spent red's): bounded as a vacancy is, never listed.</summary>
+    /// <summary>A served wait nothing may ever settle (an actor's, a spent red's, a task's, whether or not a session lives): bounded as a vacancy is, never listed.</summary>
     public static bool Bounded(RoleWait wait, Func<string, bool> serves) =>
-        wait.Holder.Kind == StepHolders.Agent && Holdable(wait) && wait.Why is PersonWaits.Actor or PersonWaits.Left && Served(wait, serves);
+        wait.Holder.Kind == StepHolders.Agent && Holdable(wait) && wait.Why is PersonWaits.Actor or PersonWaits.Left or PersonWaits.Task && Served(wait, serves);
 
     /// <summary>
-    /// The vacancy kept for the step's attempt, judged again as it is read: one at the final exit whoever serves it now, else one kept vacant
-    /// whose holder is an agent and, where <paramref name="serves"/> is given, nothing serving it now.
+    /// The vacancy kept for the step's attempt, judged again as it is read: one at the final exit whoever holds or serves it now, else one kept
+    /// vacant whose holder is an agent and, where <paramref name="serves"/> is given, nothing serving it now.
     /// </summary>
     public static StepVacancy? Kept(IReadOnlyList<StepVacancy>? vacancies, RoleWait wait, string node, int attempt, Func<string, bool>? serves = null) =>
-        wait.Holder.Kind == StepHolders.Agent && vacancies?.FirstOrDefault(each => each.Node == node && each.Attempt == attempt) is { } kept
-        && (kept.Exited || (!kept.Served && (serves is null || Is(wait, serves))))
+        vacancies?.FirstOrDefault(each => each.Node == node && each.Attempt == attempt) is { } kept
+        && (kept.Exited || (wait.Holder.Kind == StepHolders.Agent && !kept.Served && (serves is null || Is(wait, serves))))
             ? kept
             : null;
 
@@ -81,7 +81,10 @@ public static class StepVacancies
 
     public static string Unanswered(string step, RoleWait wait, DateTimeOffset since, DateTimeOffset now) =>
         FinalExits.Notice($"{step} stood unanswered", [
-            new($"the role `{wait.Role}`'s agent{Named(wait)}", since, $"a live session of it serves the place and never answered its {wait.Why}"),
+            new($"the role `{wait.Role}`'s agent{Named(wait)}", since,
+                wait.Why == PersonWaits.Task
+                    ? "the run's working session was handed it and never settled it"
+                    : $"a live session of it serves the place and never answered its {wait.Why}"),
         ], FinalExits.Answer, now);
 
     /// <summary>
@@ -121,7 +124,7 @@ public static class StepVacancies
 
                 var vacant = Is(wait, serves);
                 if (!vacant && !Bounded(wait, serves)) continue;
-                var vacancy = was is not null && was.Served == !vacant ? was : new StepVacancy(node.Id, status.Attempt, now, false, false) { Served = !vacant };
+                var vacancy = was is null ? new StepVacancy(node.Id, status.Attempt, now, false, false) { Served = !vacant } : was with { Served = !vacant };
                 var step = $"work  {each.Unit.Id}: step `{node.Id}` of #{each.Run}";
                 if (vacant && !vacancy.Told)
                 {

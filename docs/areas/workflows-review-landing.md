@@ -274,7 +274,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     Its record is a notice of Done and failed under the same key (`LookSaid.FinalExit` news naming the run and the step, whose *Open* opens
     the run), which no window says aloud: the whole story is the look's line, said once as the exit is kept (`NodeRuntimePass.Noticed`), and
     the notice is kept again at each look while the exit stands (`NodeRuntimePass.Standing`, `LookSaid.Stands`), so a look a later failure
-    ended or a refused write loses none, and one held, or dismissed while the process runs, is never written again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    ended or a refused write loses none, and one kept, or dismissed, is never written again, across a restart too: the memory of both the
+    announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
+    forgotten by `News.Retain` when their exit no longer stands). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
+    the session's `left` row is not made beside the step's own. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
     failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
@@ -835,10 +838,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     naming the cast, the role's agent and the Vacant list, how long each held it and why none answered it, and the one answer asked, and its
     `risk.judged` line, kept as exited (`StepVacancy.Exited`) so it is never said again whoever serves it later; every reader then says it as
     the person's row (`StepWaiting.Exited`), no longer vacant, until the owner settles it. A plugin's actor or a spent red's role that a live
-    session serves is kept too (`StepVacancy.Served`, never listed) and, never answered past the same bound from when it was first served,
-    reaches the final exit the same way. A vacancy's line, notice and journal line are said only once its record is kept. Daoris never stops it as its own; a give-up a build before the final exit wrote
+    session serves, or a task handed to the run's working session (`StepVacancies.Bounded`; no live session need serve a task), is kept too
+    (`StepVacancy.Served`, never listed) and, never answered past the same bound from when it was first served, reaches the final exit the same way.
+    The bound runs from when the step first stood unanswered: a holder whose session comes and goes changes only whether the kept record is served
+    (`StepVacancies.Look`), never its `Since`. A vacancy's line, notice and journal line are said only once its record is kept. Daoris never stops it as its own; a give-up a build before the final exit wrote
     (`NodeWord.GaveUp`, `NodeSource.Daoris`) is read and said as it stands. A step no longer vacant drops its
-    vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
+    vacancy, so its clock starts again if it becomes one. An exit is kept by its record whoever holds the step now (`StepVacancies.Kept`): a cast or a policy that moves the holder to the person keeps its row.
+    A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
     serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
     cast alone, does not), so a step served again leaves *Vacant* at once and
     not when the pass next drops it; a vacancy file that will not write is said once and never ends the pass; and one whose run's record is gone is

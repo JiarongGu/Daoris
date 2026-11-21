@@ -126,6 +126,27 @@ public sealed class StepWaitCensusTests
     };
 
     [Fact]
+    public void A_left_step_at_the_final_exit_is_one_row_and_the_sessions_left_row_does_not_stand_beside_it()
+    {
+        var step = new HeldStep(Run, "push", "engine", "aurora", PersonWaits.Left, "lead", [NodeWordActs.Again, NodeWordActs.Stop], "w1", Now)
+        {
+            Exit = new StepExit(FinalExits.Key(Run, "push", 1), FinalExits.Spent),
+        };
+        AttentionFacts At(string wait) => new()
+        {
+            Steps = [JsonSerializer.SerializeToNode(step, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
+            Sessions = [Session("""{"id":"s1","quest":"q7","state":"completed","updated":"2026-11-16T09:51:00Z"}""")],
+            Groups = [With("""{"session":"s1","group":"needs-you","reason":"left","shown":"completed","archived":false,"teammate":false}""", wait)],
+        };
+
+        var exited = Rows(At("""{"reason":"left","waits":[{"run":"q7","node":"push","why":"left","repository":"engine","role":"lead","exit":true}]}"""));
+        var standing = Rows(At("""{"reason":"left","waits":[{"run":"q7","node":"push","why":"left","repository":"engine","role":"lead"}]}"""));
+
+        Assert.Equal(["step"], exited.Select(row => row["kind"]!.GetValue<string>()));
+        Assert.Contains(standing, row => row["kind"]!.GetValue<string>() == "left");
+    }
+
+    [Fact]
     public void A_run_ended_failed_waits_on_its_left_step_alone()
     {
         var graph = new NodeGraph([Push, new("sign", NodeKinds.Task, 1, NodeReach.Pressed) { Outcomes = ["done"] }], [], ["push"], "push");

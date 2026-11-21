@@ -518,7 +518,9 @@ public static class NeedsAPerson
     /// <summary>Whether a session placed for a part left is placed only by steps its runs ended failed at, each a `step` row of its own.</summary>
     private static bool LeftByEndedRuns(JsonObject placed) =>
         placed["waits"] is JsonArray waits && waits.OfType<JsonObject>().Where(wait => Text(wait, "why") == PersonWaits.Left).ToList() is { Count: > 0 } left
-        && left.All(wait => wait["ended"] is JsonValue ended && ended.TryGetValue<bool>(out var yes) && yes);
+        && left.All(wait => Flag(wait, "ended") || Flag(wait, "exit"));
+
+    private static bool Flag(JsonObject wait, string name) => wait[name] is JsonValue value && value.TryGetValue<bool>(out var yes) && yes;
 
     /// <summary>A teammate's session, keyed by its machine's origin: a local id never carries a separator.</summary>
     private static bool Elsewhere(string id) => id.IndexOf('/') > 0;
