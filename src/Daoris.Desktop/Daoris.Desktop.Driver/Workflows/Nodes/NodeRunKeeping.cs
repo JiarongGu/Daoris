@@ -325,6 +325,18 @@ internal sealed class NodeRunKeeping(
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
         + " and commit, and what you commit goes through the workflow again.";
 
+    /// <summary>A check's red past its rounds' bound (<see cref="CheckRounds.SpentOwed"/>) told to the work's session all the same, once.</summary>
+    public async Task SpentRedsAsync(GovernedUnit governed, List<string> said, CancellationToken ct)
+    {
+        if (governed.Scope is not { } scope || records.Read(governed.Unit.Id) is not { } record) return;
+        foreach (var (node, attempt, reds) in CheckRounds.SpentOwed(record, governed.Graph.Wires, governed.Declared))
+        {
+            var code = record.Statuses.GetValueOrDefault(node)?.Code;
+            var text = CheckRounds.SpentWords(node, code, CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why, reds);
+            await TellWorkAsync(governed, scope, node, attempt, text, said, ct, spent: true).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>What a run's work is told of the person's changes: Daoris's own sentence, then their words quoted, as a reopen's are.</summary>
     private static string ChangesWords(string node, string words)
     {
@@ -338,36 +350,37 @@ internal sealed class NodeRunKeeping(
 
     /// <summary>
     /// Tell the run's work, its newest session here, <paramref name="text"/> under its key: through the say door, which keeps one word per key.
-    /// Where no session is known, no say door is wired, or the door refuses, the pass says so and the words stay on the record.
+    /// The session told, or why none is, goes on the run's record (<see cref="NodeTold"/>) and in the pass's words.
     /// </summary>
-    private async Task TellWorkAsync(GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
+    private async Task TellWorkAsync(
+        GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct, bool spent = false)
     {
         var unit = governed.Unit.Id;
         // The part the person's changes name is told, by the session that made it; else the newest part's.
-        if ((ChangesParts.SessionOf(scope, ChangesParts.Of(records.Read(unit), node, attempt))
-             ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault()) is not { } session)
-        {
-            said.Add($"work  {unit}: no session of its work is known here, so nobody is told what `{node}` sent back; the words stay on its record.");
-            return;
-        }
+        var session = ChangesParts.SessionOf(scope, ChangesParts.Of(records.Read(unit), node, attempt))
+                      ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();
+        var (told, why) = await SayAsync(session, scope, node, attempt, text, ct).ConfigureAwait(false);
+        said.Add(told
+            ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
+            : session is null ? $"work  {unit}: nobody is told what `{node}` sent back: {why}; the words stay on its record."
+            : $"work  {unit}: session {session} was not told what `{node}` sent back: {why}");
+        var kept = new NodeTold(node, attempt, told ? session : null, told ? null : why, clock()) { Spent = spent };
+        records.Edit(unit, record => (record with { Told = [.. record.Told.TakeLast(NodeRecord.ToldKept - 1), kept] }, true));
+    }
 
-        if (say() is not { } door)
-        {
-            said.Add($"work  {unit}: session {session} is not told what `{node}` sent back, since this Daoris holds no say door; the words stay on its record.");
-            return;
-        }
-
+    private async Task<(bool Told, string? Why)> SayAsync(string? session, RunScope scope, string node, int attempt, string text, CancellationToken ct)
+    {
+        if (session is null) return (false, "no session of its work is known here");
+        if (say() is not { } door) return (false, "this Daoris holds no say door");
         try
         {
             var answer = await door(session, text, ChangesKey(scope.Run.Run, node, attempt), ct).ConfigureAwait(false);
-            said.Add(answer.Kept
-                ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
-                : $"work  {unit}: session {session} was not told what `{node}` sent back: {answer.Message}");
+            return answer.Kept ? (true, null) : (false, answer.Message);
         }
         catch (Exception error) when (!ct.IsCancellationRequested
                                       && error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or InvalidOperationException)
         {
-            said.Add($"work  {unit}: session {session} was not told what `{node}` sent back: {error.Message}");
+            return (false, error.Message);
         }
     }
 }

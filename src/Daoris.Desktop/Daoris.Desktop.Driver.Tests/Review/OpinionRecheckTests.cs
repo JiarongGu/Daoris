@@ -304,6 +304,53 @@ public sealed class OpinionRecheckTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 The recheck is a pass of its own, kept like a first pass: its <c>opinion.asked</c> said as the host opens it, its
+    /// <c>opinion.given</c> once it ends with the seconds between, and its consultation kept beside it, a giver that saw the first pass's
+    /// findings. A recheck kept with its diff alone (an older build kept no consultation for one) has it kept at the next look's delivery,
+    /// read as given, never asked again.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_is_said_as_it_opens_and_ends_and_its_consultation_kept_beside_it()
+    {
+        var (host, git, tip, fix, _) = Answered("must");
+        var client = host.Client();
+        var said = new List<LandingLine>();
+        client.LandingLined += said.Add;
+        var driver = Driver(client, git, (ask, choice) =>
+        {
+            ask.Opened?.Invoke("op2", "r-op2");
+            Assert.Equal("opinion.asked", said[^1].Event);
+            host.Opinion("op2", "s1", weights: ["must"], pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base);
+            host.Rechecked("op2", 1, "withdrawn");
+            return new OpinionPassRun("completed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "completed" };
+        });
+        await driver.DeliverAsync("op1", AskedAt(tip));
+        host.Take("s1");
+        host.Answer("op1", 1, "fixed", commit: fix);
+
+        await driver.DeliverAsync("op1", AskedAt(tip));
+
+        Assert.Equal(["opinion.answered", "opinion.asked", "opinion.given"], said.Select(line => line.Event));
+        var asked = said.Single(line => line.Event == "opinion.asked").Data.ToDictionary(pair => pair.Key, pair => pair.Value);
+        Assert.Equal(("op2", "s1", "recheck", (object?)"codex-acp"), (asked["opinion"], asked["session"], asked["pass"], asked["door"]));
+        var given = said.Single(line => line.Event == "opinion.given").Data.ToDictionary(pair => pair.Key, pair => pair.Value);
+        Assert.Equal(("op2", (object?)1), (given["opinion"], given["must"]));
+        Assert.IsType<long>(given["seconds"]);
+        var consultation = Path.Combine(OpinionPackets.Folder(_home, "op2"), OpinionDeliveries.ConsultationFile);
+        var kept = File.ReadAllText(consultation);
+        Assert.Contains("\"subject\": \"op2\"", kept);
+        Assert.Contains("\"pass\": \"recheck\"", kept);
+        Assert.Contains("\"sawAnother\": true", kept);
+
+        // Kept by an older build with its diff alone: the next look keeps its consultation, and asks no pass again.
+        File.Delete(consultation);
+        await driver.DeliverAsync("op1", AskedAt(tip));
+        Assert.Single(_passes);
+        Assert.Contains("\"pass\": \"recheck\"", File.ReadAllText(consultation));
+        Assert.Single(said, line => line.Event == "opinion.given");
+    }
+
+    /// <summary>
     /// 🔴 The first reviewer cannot read the recheck (here it is not installed, so no cool-off holds it): the rule's next
     /// ready holder reads it, chosen by its own label: another maker's where one is ready, else the same agent fresh.
     /// </summary>

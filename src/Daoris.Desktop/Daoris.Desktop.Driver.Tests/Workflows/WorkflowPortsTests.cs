@@ -231,6 +231,54 @@ public sealed class WorkflowPortsTests
             Assert.Equal("Observed on `daoris/q1-work` at `abcdef01`.", WorkflowRunWords.Said(run.Steps[1]));
             Assert.Equal(1, records.BranchesRead);
             Assert.Equal(before, Directory.GetFiles(home, "*", SearchOption.AllDirectories).Length);
+            Assert.Empty(records.OpinionsAsked);
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>🔴 An <c>opinion</c> step standing on its gate reads it through the port, so a hold on the person is their wait with its
+    /// count and session, never a silent <i>working</i>; a step not standing asks nothing.</summary>
+    [Theory]
+    [InlineData(NodeStates.Active, true)]
+    [InlineData(NodeStates.Reached, false)]
+    public async Task A_runs_opinion_step_on_its_gate_reads_the_gate_through_the_port_and_names_its_wait(string state, bool asked)
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-graph-opinion-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            RunHome.Bind(home, "q1", RunHome.SaveGraph(home, """
+                {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+                 "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"opinion","kind":"opinion","version":1,"reach":"observed"},
+                          {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+                 "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"opinion"},{"id":"o>h","kind":"after","from":"opinion","to":"handed"}]}
+                """), At);
+            using var service = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(new StandInService())));
+            var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora");
+            var unit = RunUnits.IdOf("q1");
+            var records = new MemoryRecords();
+            records.Trees.Add("no-such-tree");
+            records.Gate = new OpinionGateState(OpinionGateStates.CommitsSince, "engine") { Session = "s1", Tip = "abcdef0123456789", Since = 25 };
+            records.Records[unit] = new NodeRecord(unit)
+            {
+                Statuses = new Dictionary<string, NodeStatus>
+                {
+                    ["claimed"] = new(unit, "claimed", NodeStates.Reached) { Attempt = 1 },
+                    ["opinion"] = new(unit, "opinion", state) { Attempt = 1, Holds = state == NodeStates.Active ? OpinionGateStates.CommitsSince : null },
+                },
+            };
+
+            var read = await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Quest: "q1"), sources, records);
+
+            var step = Assert.Single(read.Runs).Steps.Single(each => each.Step.Id == "opinion");
+            Assert.Equal(asked ? ["no-such-tree"] : [], records.OpinionsAsked);
+            if (!asked) return;
+            Assert.Equal(WorkflowRunStates.Waiting, step.State);
+            Assert.Equal((OpinionStepWaits.CommitsSince, "25", "s1"),
+                (step.Wait?.Code, step.Wait?.Values.GetValueOrDefault("count"), step.Wait?.Values.GetValueOrDefault("session")));
+            Assert.Equal(StepHolders.Person, step.Holder?.Kind);
         }
         finally
         {
@@ -494,7 +542,20 @@ public sealed class WorkflowPortsTests
         public bool Stands(string tree)
         {
             Asked.Add(tree);
-            return false;
+            return Trees.Contains(tree);
+        }
+
+        /// <summary>The trees that stand, the gate the port answers, and the trees it is asked in.</summary>
+        public HashSet<string> Trees { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public OpinionGateState? Gate { get; set; }
+
+        public List<string> OpinionsAsked { get; } = [];
+
+        public Task<OpinionGateState?> OpinionAsync(RunOpinionRead read, CancellationToken ct)
+        {
+            OpinionsAsked.Add(read.Tree);
+            return Task.FromResult(Gate);
         }
 
         public bool Holds(string tree) => false;

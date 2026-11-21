@@ -156,4 +156,32 @@ public sealed class OpinionCommandTests
         Assert.Equal("     answered: rejected: the twin test holds the bound", lines[5]);
         Assert.Equal("     answered: not answered", lines[^1]);
     }
+
+    /// <summary>🔴 The recheck its gate read is shown after the first pass: its word on each first-pass finding, and its own findings.</summary>
+    [Fact]
+    public void Show_says_the_recheck_its_gate_read_its_word_on_the_first_pass_and_its_own_findings()
+    {
+        var opinion = Opinion("given", Read, OpinionViews.Must);
+        var recheck = Opinion("given", Later, OpinionViews.Must) with
+        {
+            Id = "o2", Pass = OpinionViews.RecheckPass, Session = "r-o2", Base = Read, Rechecks = "o1", Read = "the fix's commit",
+            Rechecked = new Dictionary<int, string> { [1] = OpinionViews.Withdrawn },
+        };
+        var gate = new OpinionGateState(OpinionGateStates.Disputed, "web-app")
+        {
+            Session = "s1", Rule = Rule(required: false), Tip = Later, Opinion = opinion, Recheck = recheck, Disputes = new([], [1]), Since = 0,
+            Answers = new OpinionReading("s1", Later, DateTimeOffset.UnixEpoch,
+                [new OpinionAnswerRead(1, OpinionViews.Must, OpinionViews.Fixed) { Said = OpinionViews.Fixed, Fix = Later }]),
+        };
+
+        var lines = OpinionCommand.Show(gate, opinion);
+
+        var at = lines.ToList().IndexOf("  recheck `o2`, by Codex (OpenAI), another maker's agent, on `web-app` at `33333333`: given.");
+        Assert.True(at > 0, string.Join("\n", lines));
+        Assert.Equal("  it read: the fix's commit", lines[at + 1]);
+        Assert.Equal("  on the first pass: 1 withdrawn.", lines[at + 2]);
+        Assert.Equal("  1. must, sure, at src/report.ts:12: The window's end is exclusive", lines[at + 3]);
+        Assert.Equal("     if so: a day is lost", lines[at + 4]);
+        Assert.Equal(at + 5, lines.Count);
+    }
 }

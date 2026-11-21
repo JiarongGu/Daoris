@@ -142,8 +142,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
         var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
         if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, seen.Words(), kept) { Declaration = _ran }, false);
-        var result = Told(await GatesAsync(chosen, kept, ct).ConfigureAwait(false), seen.Words());
-        var classes = result.Gates.Where(gate => gate is { Log: not null, Verdict: RunnerVerdicts.Pass or RunnerVerdicts.Fail })
+        var result = Told(await GatesAsync(chosen, kept, ct, marker).ConfigureAwait(false), seen.Words());
+        var classes = result.Gates.Where(gate => gate is { Log: not null, Verdict: RunnerVerdicts.Pass })
             .Select(gate => ReadText(gate.Log!) is { } log ? ReachedVerdict.Told(log, marker) : null).OfType<string>().ToList();
         return (classes.Count == 0 ? result : Told(result, string.Join("\n", classes)), false);
     }
@@ -189,8 +189,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
     }
 
-    /// <summary>The gates one after another in Daoris's verification tree at the commit, the first failure ending the sequence.</summary>
-    private async Task<VerifyResult> GatesAsync(IReadOnlyList<DeclaredGate> gates, IReadOnlyList<VerifyGate> kept, CancellationToken ct)
+    /// <summary>The gates one after another in Daoris's verification tree at the commit, the first failure ending the sequence and told by its log.</summary>
+    private async Task<VerifyResult> GatesAsync(IReadOnlyList<DeclaredGate> gates, IReadOnlyList<VerifyGate> kept, CancellationToken ct, string? marker = null)
     {
         var tree = send.Tree ?? Path.Combine(VerifyFiles.LinesFolder(home), "trees", slot);
         await TreeAtAsync(tree, ct).ConfigureAwait(false);
@@ -229,7 +229,9 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 {
                     Failed = gate.Name, Declaration = _ran,
                 };
-                return Told(failed, ReadText(log) is { } text ? GateLogExcerpt.Told(text, log) : null);
+                return Told(failed, ReadText(log) is not { } text ? null
+                    : marker is not null && ReachedVerdict.Told(text, marker, log) is { } classes ? classes
+                    : GateLogExcerpt.Told(text, log));
             }
 
             return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran };

@@ -94,4 +94,84 @@ public sealed class ReachedVerdictTests
             ReachedVerdict.Told(log, "reached-classes: "));
         Assert.Null(ReachedVerdict.Told("no outcome line\n", "reached-classes: "));
     }
+
+    /// <summary>The install's red of 2026-11-20 (run 5c0cb7bb0ac4), cut down: three flakes and one class red again alone, as vitest printed it.</summary>
+    private const string RedLog = """
+        reached: web-unit: node node_modules/vitest/vitest.mjs run …
+         FAIL  src/locales/names.test.ts > the real glossary > hold the role
+        Error: expected 角色
+         FAIL  src/app/listDoors.test.tsx > the list's doors > lays a strip
+        Error: Test timed out in 10000ms.
+
+        reached: web-unit: listDoors.test.tsx: failed test 'the list's doors lays a strip'
+        reached: web-unit: 2 failed, run again alone once: src/Daoris.Web/src/app/listDoors.test.tsx, src/Daoris.Web/src/locales/names.test.ts
+         ✓ src/locales/names.test.ts (4 tests) 900ms
+        ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+         FAIL  src/app/listDoors.test.tsx > the list's doors, on the window > lays a strip the window drew over the main area from a door
+        Error: Test timed out in 10000ms.
+        If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+         ❯ src/app/listDoors.test.tsx:123:3
+            123|   it('lays a strip the window drew over the main area from a door, and…
+
+        ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+        reached: FLAKE: web-unit|src/Daoris.Web/src/locales/names.test.ts failed, then passed alone; it is not recorded as a pass
+        reached: RED: web-unit|src/Daoris.Web/src/app/listDoors.test.tsx failed again alone
+        reached-classes: {"ran":164,"replayed":287,"flaked":["web-unit|src/Daoris.Web/src/locales/names.test.ts"],"mainRed":[],"red":["web-unit|src/Daoris.Web/src/app/listDoors.test.tsx"],"deferred":["tool-e2e|tools/merge/reached.e2e.ts"]}
+        """;
+
+    [Fact]
+    public void A_red_class_is_named_first_with_the_lines_its_log_failed_it_on_when_run_alone_and_the_flakes_after()
+    {
+        var told = ReachedVerdict.Told(RedLog, "reached-classes: ", "gate-02-reached.log")!;
+
+        Assert.StartsWith("the reached classes: 1 red, failed again alone: web-unit|src/Daoris.Web/src/app/listDoors.test.tsx; 164 run, 287 replayed", told);
+        var lines = told.Split('\n');
+        var failure = Array.IndexOf(lines, " FAIL  src/app/listDoors.test.tsx > the list's doors, on the window > lays a strip the window drew over the main area from a door");
+        Assert.True(failure > 0, told);
+        Assert.Equal("Error: Test timed out in 10000ms.", lines[failure + 1]);
+        Assert.Contains(" ❯ src/app/listDoors.test.tsx:123:3", lines);
+        Assert.DoesNotContain("⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯", lines);
+        Assert.DoesNotContain(lines, line => line.StartsWith("reached", StringComparison.Ordinal));
+        Assert.Contains("its log, gate-02-reached.log, fails them on:", lines);
+        Assert.True(told.IndexOf("listDoors", StringComparison.Ordinal) < told.IndexOf("passed on a second run alone", StringComparison.Ordinal));
+        Assert.Contains("passed on a second run alone: web-unit|src/Daoris.Web/src/locales/names.test.ts", lines[0]);
+    }
+
+    [Fact]
+    public void A_red_dotnet_class_is_told_by_its_failed_test_and_one_the_log_never_names_says_so()
+    {
+        const string log = """
+              Failed Daoris.Desktop.Driver.Tests.AlphaTests.It_holds [12 ms]
+              Error Message:
+               Assert.Equal() Failure
+              Stack Trace:
+                 at Daoris.Desktop.Driver.Tests.AlphaTests.It_holds()
+
+            reached: RED: driver|Daoris.Desktop.Driver.Tests.AlphaTests failed again alone
+            reached-classes: {"ran":2,"replayed":0,"flaked":[],"mainRed":[],"red":["driver|Daoris.Desktop.Driver.Tests.AlphaTests","driver|Daoris.Desktop.Driver.Tests.GoneTests"]}
+            """;
+
+        var told = ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!;
+        var result = Judge(1, log);
+
+        Assert.Contains("  Failed Daoris.Desktop.Driver.Tests.AlphaTests.It_holds [12 ms]\n  Error Message:\n   Assert.Equal() Failure", told);
+        Assert.Contains("driver|Daoris.Desktop.Driver.Tests.GoneTests: its log names no failure of it", told);
+        Assert.Contains("Assert.Equal() Failure", result.Why);
+    }
+
+    [Fact]
+    public void A_red_class_s_failure_lines_keep_within_the_excerpt_s_bounds()
+    {
+        var reds = Enumerable.Range(0, 30).Select(at => $"web-unit|src/f{at}.test.ts").ToList();
+        var log = string.Join("\n", reds.Select(id => $" FAIL  {id[9..]} > fails\n" + string.Join("\n", Enumerable.Range(0, 20).Select(line => $"Error line {line} " + new string('x', 300))) + "\n"))
+            + "\nreached-classes: " + System.Text.Json.JsonSerializer.Serialize(new { ran = 30, replayed = 0, flaked = Array.Empty<string>(), mainRed = Array.Empty<string>(), red = reds });
+
+        var told = ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!;
+        var failures = told[told.IndexOf("its log,", StringComparison.Ordinal)..];
+
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(failures) <= GateLogExcerpt.Bytes + 512, $"{System.Text.Encoding.UTF8.GetByteCount(failures)} bytes");
+        Assert.EndsWith("…", told);
+        Assert.Contains(reds[29], told[..told.IndexOf('\n')]);
+    }
 }

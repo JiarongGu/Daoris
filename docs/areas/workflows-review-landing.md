@@ -248,7 +248,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
     `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
-    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red.
+    red that reaches it is not sent back, so its failure is kept for the person as one row (What needs you), never one per red; its words
+    still reach the work's session, once, with its round and the bound (`NodeRunKeeping.SpentRedsAsync`), so a fix it commits is checked
+    again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
+    command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
+    flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
+    blocks and last lines (`GateLogExcerpt`).
 
 **Runs**
 
@@ -438,7 +444,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     in *Needs you*; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
     the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
     waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
-    by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again, and it stands before the policy is asked. A pass its reviewer's account
+    by the person), never *working*: the run's view reads the gate in the work's tree here wherever its step stands on it
+    (`IWorkflowRunRecords.OpinionAsync`), as every landing door does, so the wait carries the gate's count and session. The one recheck is
+    a pass of its own: `opinion.asked` said as the host opens it, `opinion.given` with the seconds from its open, and its consultation kept
+    beside it once given (`OpinionDeliveries.RecheckConsulted`); one kept with its diff alone gets it at the next look, read as given and
+    never asked again. Its findings never go back to the working session: the gate holds them as disputes, and `opinion show` lists the
+    recheck, its word on each first-pass finding and its own (OPINIONQUIET1). The person's word at it holds at the tip it covers; only a
+    newer commit asks again, and it stands before the policy is asked. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
     recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the

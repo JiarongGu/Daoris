@@ -117,5 +117,7 @@ public sealed class WorkflowsBoundaryTests : IDisposable
         public bool Between(string session) => false;
 
         public Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct) => Task.FromResult<ChatTreeTip?>(null);
+
+        public Task<OpinionGateState?> OpinionAsync(RunOpinionRead read, CancellationToken ct) => Task.FromResult<OpinionGateState?>(null);
     }
 }

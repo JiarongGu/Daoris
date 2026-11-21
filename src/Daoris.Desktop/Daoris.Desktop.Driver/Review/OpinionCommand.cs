@@ -187,7 +187,8 @@ public static class OpinionCommand
 
     /// <summary>
     /// What <c>opinion show</c> says: the gate's sentence, then the opinion it speaks of, its reviewer and how it stands
-    /// to the work, what it read and could not, and each finding with the working session's answer beside it. Claims, said as
+    /// to the work, what it read and could not, and each finding with the working session's answer beside it; then the recheck the gate
+    /// read, its word on the first pass and its own findings. Claims, said as
     /// such: nothing here calls a finding true.
     /// </summary>
     public static IReadOnlyList<string> Show(OpinionGateState gate, OpinionView? opinion)
@@ -207,7 +208,28 @@ public static class OpinionCommand
             lines.Add($"     answered: {Answer(opinion.AnswerTo(finding.Number), gate.Answers?.Findings.FirstOrDefault(row => row.Finding == finding.Number))}");
         }
 
+        // The recheck the gate read is the person's to see: its word on the first pass, and its own findings, which go to them alone.
+        if (gate.Recheck is { } recheck && !string.Equals(recheck.Id, opinion.Id, StringComparison.Ordinal)) Recheck(lines, recheck);
         return lines;
+    }
+
+    /// <summary>The recheck's lines: who read again and where, what it read and could not, its word on each first-pass finding, and its own.</summary>
+    private static void Recheck(List<string> lines, OpinionView recheck)
+    {
+        lines.Add($"  recheck `{recheck.Id}`, by {recheck.Who}, {Label(recheck.Label)}, on `{recheck.Repository}` at `{Short(recheck.Tip)}`: {recheck.State}.");
+        if (recheck.Read is { Length: > 0 } read) lines.Add($"  it read: {read}");
+        if (recheck.Limits is { Length: > 0 } limits) lines.Add($"  it could not tell: {limits}");
+        if (recheck.Rechecked.Count > 0)
+        {
+            lines.Add($"  on the first pass: {string.Join(", ", recheck.Rechecked.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key} {pair.Value}"))}.");
+        }
+
+        if (recheck.Findings is { Count: 0 }) lines.Add($"  {recheck.Who} raised nothing of its own in what it read again.");
+        foreach (var finding in recheck.Findings ?? [])
+        {
+            lines.Add($"  {finding.Number}. {finding.Weight}, {finding.Sure}, at {finding.Where}: {finding.Claim}");
+            if (finding.Consequence.Length > 0) lines.Add($"     if so: {finding.Consequence}");
+        }
     }
 
     private static string Answer(OpinionAnswerView? said, OpinionAnswerRead? read) => (said, read) switch
