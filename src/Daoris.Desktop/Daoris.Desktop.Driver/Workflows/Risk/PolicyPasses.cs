@@ -14,6 +14,23 @@ internal static class PolicyPasses
 
     private static readonly ConcurrentDictionary<string, HashSet<string>> Journaled = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>A dispute the policy passed (<c>work.accept</c>, answered at the opinion's gate) journaled once, as a step's pass is.</summary>
+    internal static void Gate(string home, DriverConfig config, string subject, string? workspace, string? repository, OpinionGateState gate, DateTimeOffset now)
+    {
+        if (gate is not { State: OpinionGateStates.Answered, Risk: { Outcome: RiskVerdict.Pass } verdict, Person.Said: OpinionPersonSaid.Policy }) return;
+        var key = $"opinion:{subject}@{gate.Tip}/{gate.Answered}";
+        var seen = Journaled.GetOrAdd(home, path => [.. RiskJournal.Read(path).Where(line => line.Today == Today).Select(line => line.Key)]);
+        lock (seen)
+        {
+            if (!seen.Add(key)) return;
+        }
+
+        var place = RiskPlace.Of(config, workspace, repository);
+        RiskJournal.Append(home, new RiskJudged(now, RiskJudged.Released, key, gate.Answered ?? "", verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace, place.Repository,
+            place.Mode, null, null, $"second opinion on {subject} at {gate.Tip}", verdict.Outcome, verdict.Class, verdict.By, verdict.Source, verdict.Revision, verdict.Reason,
+            Today, false));
+    }
+
     public static void Look(NodeRecordFiles records, IEnumerable<GovernedUnit> governed, DriverConfig config, DateTimeOffset now, List<string> said)
     {
         var policy = RiskPolicy.Of(config);

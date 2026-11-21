@@ -430,9 +430,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     has ended (a chat run's read by its turn state, as its hand is), the gate standing with the session until then; an answer counts as
     new where its word differs, or a fix's commit does, as the reading keeps them, and the one recheck is judged on them (`OpinionReading.Behind`, OPINIONSTALL1). A pass whose reviewer's session ended without an opinion, or whose minutes ran out first, fails
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
-    dispute is answered by the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them,
-    never before; until then the step waits on the person's answer (`disputed`, as commits since that no other agent read wait under
-    `commits-since`, each with its count, held by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again. A pass its reviewer's account
+    dispute and commits since that no other agent read are the act `work.accept` at the work's place, which the gate asks the judge
+    (`OpinionGateFacts.Risk`, read from the look's config, D354): with nothing configured the seed passes it, the gate `answered` by the
+    policy (`policy`, its words the verdict's rule and revision, journaled once as a `risk.judged` pass line, `PolicyPasses.Gate`) and the
+    work goes on; judged again at every look, so a raise opens it and a lowering releases it. Classed `role` the step holds on its own role
+    as the place casts it (`role-disputed`, `role-commits-since`, read as the Accept's wait, so an agent holder is the vacancy path's), never
+    in *Needs you*; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
+    the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
+    waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
+    by the person), never *working*. The person's word at it holds at the tip it covers; only a newer commit asks again, and it stands before the policy is asked. A pass its reviewer's account
     limit or spend cap ends is asked of the role's next holder that is ready at once (a new reviewer session, the same opinion, `opinion.handed-on`
     said once), in the pass's own call and, for one already asked, at the next look; with no holder ready it waits for the reset. A
     recheck goes the same way: where its first reviewer cannot read it (a cool-off, no account signed in, not installed, refused), the

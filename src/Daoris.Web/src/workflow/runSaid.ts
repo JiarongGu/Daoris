@@ -171,7 +171,7 @@ function detailSaid(t: TFunction, step: RunStep): string | null {
     case 'opinion.settled': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.settledAnyone');
     // A chat run's opinion, asked by the person's Accept and naming the reviewer it asks.
     case 'opinion.chat-at-accept': return step.agent ? t(at, { agent: step.agent }) : t(`${at}Anyone`);
-    case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : at);
+    case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : step.code === 'policy' ? 'workflow.run.said.opinion.answeredPolicy' : at);
     case 'opinion.waits-chain': return t(at, { quest: step.quest ?? '' });
     // A named workflow's opinion step naming reviewers its repository does not declare.
     case 'opinion.unread':

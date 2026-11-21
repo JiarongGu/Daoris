@@ -123,6 +123,28 @@ public sealed class OpinionDisputeRiskTests
     }
 
     [Fact]
+    public async Task A_pass_by_the_policy_is_journaled_once_with_its_rule_and_revision()
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-dispute-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var gate = await DisputedAsync(Nothing);
+
+            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", gate, Answered);
+            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", gate, Answered.AddHours(1));
+            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", await DisputedAsync(Classed("owner")), Answered);
+
+            var line = Assert.Single(RiskJournal.Read(home));
+            Assert.Equal((RiskActs.WorkAccept, RiskVerdict.Pass, RiskVerdict.Seed, PolicyPasses.Today), (line.Kind, line.Outcome, line.Source, line.Today));
+            Assert.Equal((RiskJudged.Released, "web-app", false), (line.Stage, line.Repository, line.TodayHeld));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, true);
+        }
+    }
+
+    [Fact]
     public async Task A_policy_lowered_after_the_gate_opened_releases_it_and_a_raise_opens_it_again()
     {
         Assert.Equal(OpinionGateStates.Disputed, (await DisputedAsync(Classed("owner"))).State);

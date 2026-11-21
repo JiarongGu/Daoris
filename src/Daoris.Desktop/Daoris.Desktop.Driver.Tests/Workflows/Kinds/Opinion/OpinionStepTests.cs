@@ -93,6 +93,49 @@ public sealed class OpinionStepTests
         Assert.Contains(code, NodeKit.Of(NodeKinds.Opinion) is BuiltInNode built ? built.Waits : []);
     }
 
+    private static RiskVerdict Verdict(string riskClass) =>
+        new(RiskActs.WorkAccept, null, RiskVerdict.OutcomeOf(riskClass), riskClass, riskClass == RiskClasses.Role ? "reviewer" : null, "repository/engine", "r1", "classed");
+
+    /// <summary>
+    /// 🔴 A dispute the risk policy classes <c>role</c> waits on the step's role as the place casts it, never the person's: its holder is the
+    /// role's agent, said with the policy's reason; one classed <c>owner</c>, or none judged, stays the person's.
+    /// </summary>
+    [Theory]
+    [InlineData(OpinionGateStates.Disputed, OpinionGateReading.RoleDisputed, OpinionStepWaits.Disputed)]
+    [InlineData(OpinionGateStates.CommitsSince, OpinionGateReading.RoleCommitsSince, OpinionStepWaits.CommitsSince)]
+    public void A_dispute_the_policy_gates_on_a_role_waits_on_that_role_and_not_the_person(string state, string holds, string code)
+    {
+        var gate = new OpinionGateState(state, "engine")
+        {
+            Session = "s1", Tip = Tip, Disputes = new OpinionDisputes([1], [2]), Since = 2, Risk = Verdict(RiskClasses.Role),
+        };
+
+        var run = Derive(Opinion(NodeStates.Active, holds), gate);
+
+        var step = run.Steps.Single(each => each.Step.Id == "opinion");
+        Assert.Equal((WorkflowRunStates.Waiting, code, StepHolders.Agent), (step.State, step.Wait?.Code, step.Holder?.Kind));
+        Assert.Equal(StepRoles.Opinion, step.Role);
+        Assert.Contains("The risk policy asks the `reviewer` role, not you", WorkflowRunWords.Say([run], null));
+        Assert.True(OpinionStepWaits.OnRole(step.Wait!));
+        Assert.False(OpinionStepWaits.OnPerson(step.Wait!));
+    }
+
+    /// <summary>🔴 What the gate holds for the owner keeps its plain hold, and one the policy gates on a role says so in the step's hold.</summary>
+    [Fact]
+    public void An_opinion_holds_for_a_role_only_where_the_policy_gates_the_dispute_on_one()
+    {
+        var node = Node(NodeKinds.Opinion);
+        string? HoldOf(RiskVerdict? verdict) =>
+            Reads.Opinion(Branch(), node, Binding(NodeKinds.Opinion),
+                new OpinionGateState(OpinionGateStates.Disputed, "engine") { Tip = Tip, Disputes = new OpinionDisputes([1], []), Risk = verdict }).Holds;
+
+        Assert.Equal(OpinionGateReading.RoleDisputed, HoldOf(Verdict(RiskClasses.Role)));
+        Assert.Equal(OpinionGateStates.Disputed, HoldOf(Verdict(RiskClasses.Owner)));
+        Assert.Equal(OpinionGateStates.Disputed, HoldOf(null));
+        Assert.Equal(PersonWaits.Accept, ((IWaitsOnRole)NodeKit.Of(NodeKinds.Opinion)!).Waits(node, Opinion(NodeStates.Active, OpinionGateReading.RoleDisputed)));
+        Assert.Null(((IWaitsOnRole)NodeKit.Of(NodeKinds.Opinion)!).Waits(node, Opinion(NodeStates.Active, OpinionGateStates.Disputed)));
+    }
+
     /// <summary>
     /// 🔴 A pass whose reviewer's session ended without giving an opinion, or whose minutes ran out first, fails the step with that said, its
     /// code kept; a gate with nobody free to read it is no failed pass and stands as before.

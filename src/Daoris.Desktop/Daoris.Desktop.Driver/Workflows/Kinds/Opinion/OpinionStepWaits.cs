@@ -61,19 +61,31 @@ public static class OpinionStepWaits
         // A gate that holds for the person's answer is said as their wait, never a silent `working`.
         var (code, count) = (status.Holds, gate) switch
         {
-            (OpinionGateStates.Disputed, { State: OpinionGateStates.Disputed, Disputes: { } disputes }) => (Disputed, disputes.Count),
-            (OpinionGateStates.CommitsSince, { State: OpinionGateStates.CommitsSince, Since: { } since }) => (CommitsSince, since),
+            (OpinionGateStates.Disputed or OpinionGateReading.RoleDisputed, { State: OpinionGateStates.Disputed, Disputes: { } disputes }) => (Disputed, disputes.Count),
+            (OpinionGateStates.CommitsSince or OpinionGateReading.RoleCommitsSince, { State: OpinionGateStates.CommitsSince, Since: { } since }) => (CommitsSince, since),
             _ => ((string?)null, 0),
         };
         if (code is null) return null;
         values["count"] = count.ToString(CultureInfo.InvariantCulture);
+        if (status.Holds is OpinionGateReading.RoleDisputed or OpinionGateReading.RoleCommitsSince && gate!.Risk is { } verdict)
+        {
+            values[RoleKey] = verdict.By ?? "";
+            values["why"] = $"{verdict.Reason} (rule {verdict.Source} at {verdict.Revision})";
+        }
+
         var working = gate!.Session ?? gate.Opinion?.Working;
         if (working is { Length: > 0 }) values["session"] = working;
         return new WorkflowRunWait(code, values, status.Since);
     }
 
+    /// <summary>The wait's value naming the role the risk policy gates a dispute on.</summary>
+    public const string RoleKey = "role";
+
+    /// <summary>Whether <paramref name="wait"/> is the answer of the role the risk policy gates the dispute on.</summary>
+    public static bool OnRole(WorkflowRunWait wait) => wait.Code is Disputed or CommitsSince && wait.Values.ContainsKey(RoleKey);
+
     /// <summary>Whether <paramref name="wait"/> is the person's answer to the gate, never an agent's.</summary>
-    public static bool OnPerson(WorkflowRunWait wait) => wait.Code is Disputed or CommitsSince;
+    public static bool OnPerson(WorkflowRunWait wait) => wait.Code is Disputed or CommitsSince && !OnRole(wait);
 
     /// <summary>The terminal's words for the wait: on whose answer, and for a person's wait the doors that answer it.</summary>
     public static string Said(WorkflowRunWait wait)
@@ -82,6 +94,9 @@ public static class OpinionStepWaits
         var count = int.TryParse(wait.Values.GetValueOrDefault("count"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var read) ? read : 0;
         return wait.Code switch
         {
+            Disputed or CommitsSince when OnRole(wait) =>
+                $"Waits on the role's answer to {(wait.Code == Disputed ? Plural(count, "disputed finding") : Plural(count, "commit") + " no other agent read")} of the second "
+                + $"opinion: `daoris session opinion show {session}` lists them. The risk policy asks the `{wait.Values[RoleKey]}` role, not you, for the answer: {wait.Values.GetValueOrDefault("why")}.",
             Disputed => $"Waits on your answer to {Plural(count, "disputed finding")} of the second opinion: `daoris session opinion show {session}` "
                         + $"lists them; your Accept answers them, `daoris session opinion anyway {session} \"…\"` lands it over them, or "
                         + $"`daoris session say {session} \"…\"` sends it back.",

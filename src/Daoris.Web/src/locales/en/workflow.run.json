@@ -72,6 +72,7 @@
   "workflow.run.said.opinion.myself": "You looked at it yourself in place of another agent's reading.",
   "workflow.run.said.opinion.answered": "Your Accept answered the second opinion.",
   "workflow.run.said.opinion.answeredReviewed": "Your Reviewed answered the second opinion.",
+  "workflow.run.said.opinion.answeredPolicy": "The risk policy answered the second opinion.",
   "workflow.run.said.opinion.landed": "It let the work go when the work landed.",
   "workflow.run.said.opinion.chat-at-accept": "A second opinion from `{{agent}}` is asked when you press Accept.",
   "workflow.run.said.opinion.chat-at-acceptAnyone": "A second opinion is asked when you press Accept.",
