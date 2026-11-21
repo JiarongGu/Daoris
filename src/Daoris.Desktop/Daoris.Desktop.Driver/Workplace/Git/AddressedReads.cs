@@ -71,7 +71,7 @@ internal sealed class AddressedReads
 
     /// <summary>Whether a <c>cat-file --batch</c> question is lines that each name an object by its full id, or a path at one.</summary>
     internal static bool AddressedBytes(IReadOnlyList<string> arguments, string? input) =>
-        arguments.SequenceEqual(["cat-file", "--batch"], StringComparer.Ordinal) && !string.IsNullOrEmpty(input)
+        GitObjectReads.IsBatch(arguments) && !string.IsNullOrEmpty(input)
         && input.Split('\n', StringSplitOptions.RemoveEmptyEntries).All(line => Question.IsMatch(line));
 
     /// <summary>
