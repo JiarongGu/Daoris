@@ -4,3 +4,12 @@
 export const webRoot: string;
 export const E2E_BAND: { from: number; size: number };
 export function e2ePort(root?: string, env?: Record<string, string | undefined>): number;
+export function portIsFree(port: number): Promise<boolean>;
+export function leasePort(port: number): Promise<boolean>;
+export function releaseE2eLeases(): void;
+export function freeE2ePort(
+  root?: string,
+  env?: Record<string, string | undefined>,
+  isFree?: (port: number) => Promise<boolean>,
+  lease?: (port: number) => Promise<boolean>,
+): Promise<number>;
