@@ -26,7 +26,7 @@ the run's stages and the quest log's operations in their order.
 | `Loop/Session/` | What every start shares: `SessionEquipment`, `SessionRules`, `QuestWalk`, `AccountEndings`, `SessionWatching`, `SessionWaits`, `PartsHanded`, `StartSentence` |
 | `Loop/Watch/`, `Loop/` | When a look runs (`WatchRun`); intakes, continuations (`Loop/Continue/`), helpers, partners, brainstorms, `DriverCommand`, how this Daoris is wired (`SystemWiring`, `Loop/Setup/`) |
 | `Course/`, `Events/` | How a line goes on (`LineCourse.Decide`, `LimitCourse`), the driven inbox, `MoveStore`; a run's end (`Observation`, `PartEnds`), `SessionWatch` |
-| `Bus/` | The bus's log in its first form (D356 step 1, rule 30a): `BusLog` writes envelopes behind into the desktop store through one port (`IBusLogStore`, today `DesktopBusLogStore`), the opinion and check facts teed in from their own subdomain (`Review/OpinionBusFacts`, `OpinionBusTee`, `Review/Heavy/CheckBusFacts`), its measures read by `daoris bus stats` (`BusStatsCommand`) |
+| `Bus/` | The bus's log (D356 steps 1 and 2, rule 30a): `BusLog` writes envelopes behind into the desktop store through one port (`IBusLogStore`, today `DesktopBusLogStore`), the opinion and check facts teed in from their own subdomain (`Review/OpinionBusFacts`, `OpinionBusTee`, `Review/Heavy/CheckBusFacts`), its measures read by `daoris bus stats` (`BusStatsCommand`); the timers each write arms and clears (`BusTimers`), the shadow watchdog (`BusWatchdog`) with the look's reading beside each stall (`BusLook`'s port, today `Review/OpinionRecordLook`), read by `daoris bus stalls` (`BusStallsCommand`) |
 | `Settings/` | `driver.json` (`DriverConfig` and its one writer), every machine setting declared once (`MachineSettings`), `QuietSetting`, `ManifestSetting`, the standing choices |
 | `Workplace/` | Trees (`SessionTrees` over `TreeContext`), dependencies (`Deps/`), the kept slots (`Pool/`), rooms (`LaneRooms`, `RoomCheck`), the files rules (`Files/`), the tidy (`AutoTidies`, `TreeSetAside`, `EndJudgement`, `Orphans`) |
 | `Setup/Create/`, `Setup/Room/`, `Setup/Growth/` | A department made by one press (rule 51: `RepositoryCreates`, `RepositoryCreatePlans`, `CreateJudge`, `CreateReceipts`, `RepositoryCreateWork`, `RepositoryCreateCommand`); a room asked of an adopted repository (rule 53: `PlaceRooms`, `PlaceRoomApplies`, `RoomBrief` in `Setup/Domain/`); the growth switch's one resolver (`GrowthRules`) |
@@ -255,9 +255,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     or a `held` gate leaves its step a wait, which a vacancy bounds and the final exit ends. No measure set a deadline yet (the
     install's `daoris bus stats` at cddcdac313 held one check start and no handling time, its quests paused), so each is stated
     provisional with what it stands on (a check's bound, a busy runner's offer, a pass's bound, about one look a minute) and the
-    watchdog runs against it in shadow first. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
+    watchdog runs against it in shadow (below) before any give-up acts. `BusTypesCensusTests` holds that every type names its obligations, that its give-up
     is in the list, and that no desktop source builds a type elsewhere or spells a kind, so a type the registry lacks is never
-    emitted; the page gets the types' list with its first reader (the Stalls view, BUS2c), not before. A subscription naming
+    emitted; the page gets the types' list with its first reader in the window (BUS2f), not before. A subscription naming
     a type the registry lacks fails as it registers.
     A shadow append never fails the write it rides beside: a refusal (the store's, a type the registry does not declare, an
     envelope whose subject, answerer, effect or causes are no ids, a process not holding the lease) is counted by its reason and
@@ -276,9 +276,34 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     each kind's handling time where known, the flushes' count, entries and time (a write that first opened the store is no
     flush's time), the rows' own bytes beside the pages each write put on disk (the write-ahead log's frames, as the engine counts
     them), the misses, the dropped values and each look stage's time, which `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
-    measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and keeps
-    `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
+    measure) and 90 days of measures; nothing reads behind the cut yet. The history reset empties `bus_log` and `bus_timers` and
+    keeps `bus_measures`, which are evidence. A second close waits for the first's write, and a writer's loop that failed is counted and
     said at the close, which still writes what waited.
+    The watchdog (D356 step 2) runs in shadow beside the looks, started with the lease holder's watch and stopped before the log
+    closes; nothing it records changes a run, a session or a notice. An entry whose type obliges someone (every give-up but
+    `dropped`) arms a timer row (`bus_timers`, made by the store's step 34) in the write that keeps it, due at its envelope's
+    deadline, which the log stamps from the registry alone (a draft names none). The registry declares what ends each obliged type
+    (`BusTypes.Ends`, the census holding that every one has its ends): a later fact on the same subject or effect key, or the
+    handler's acknowledgement, which its subscription gives (BUS2d's opinion gate first). A check's start ends by its own
+    attempt's verdict, requeue or end; a requeue and an end by that attempt's next start; a red or an unknown by the run's next
+    start or the step's acknowledgement; a pass by the step's acknowledgement alone; a pass asked by its given; a given by its
+    delivery or its answers; a delivery by its answers; the answers by the gate's acknowledgement alone. Every 30 seconds, and at
+    once at its start (so a restart reads every armed timer), the watchdog appends a `bus.stalled` for each timer past due: its
+    entry, type, obliged one, since, due time, which stall of its retries plus one, the next due time, and the look's reading of
+    the same subject at that moment. Past the last it appends the `bus.give-up` it would apply, `applied` false, with what it
+    hands to whom: a `final-exit` hands the step to its holder chain (the obliged one's holder, then the vacancy path, then the
+    owner's exit, CASTCHAIN1's executors and manager joining before the vacancy), a `refused` request is answered to its requester
+    and a `held` gate stays shut, both left a wait the vacancy bounds and the exit ends; never the owner straight from a missed
+    deadline. A stall moves its timer in its own write and a give-up drops it, so a kill and a restart keep every due time and
+    neither loses a stall nor makes one twice; one appended and not yet written holds back the same one for five minutes. The
+    comparer is the look's reading kept on each stall (`IBusLook`): open (the look holds it unmet too: agree), handled (the look
+    says it was met: disagree, the bus missing its acknowledgement or its deadline or ends wrong) or unknown (no reading, counted
+    apart). Today's reading is the opinion's record (a pass asked is open while read; a given until answered, unless clean; a
+    delivery until answered); the gate's judging, the run's step and the checks are unknown until their jobs bring a reader.
+    `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
+    bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
+    its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,
+    disagreements and unknowns by type and the newest twenty disagreements with both sides.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)
@@ -588,7 +613,8 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
 - **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
-- **BUS2b to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first step stands
-  (rule 30a), and its rows move the looks of rule 30 to reducers over it one job at a time, the opinion gate first.
+- **BUS2b2, BUS2d to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its first two
+  steps stand (rule 30a: the log, and the watchdog in shadow), and its rows move the looks of rule 30 to reducers over it one job at
+  a time, the opinion gate first.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
 - D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.

@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Subject">The key its order is kept by: an opinion, a run.</param>
 /// <param name="Emitter">Who appended it (<c>driver/checks</c>).</param>
 /// <param name="Answerer">Who must answer it, for a request; null for a fact.</param>
-/// <param name="Deadline">By when it must be answered or handled; null where its type names none yet.</param>
+/// <param name="Deadline">By when it must be handled: its append and its type's deadline (the registry's alone); null where none is obliged.</param>
 /// <param name="Effect">The key of the outside act it records, which runs once by it; null where it records none.</param>
 /// <param name="Causes">The ids of the entries it follows from, where they are known; empty is not known, never none.</param>
 /// <param name="Payload">Its small values: ids and codes (short strings), counts and times (numbers), flags, short lists of ids.</param>
@@ -29,8 +29,6 @@ public sealed record BusDraft(BusType Type, string Subject)
     public string Emitter => Type.Emitter;
 
     public string? Answerer { get; init; }
-
-    public DateTimeOffset? Deadline { get; init; }
 
     public string? Effect { get; init; }
 

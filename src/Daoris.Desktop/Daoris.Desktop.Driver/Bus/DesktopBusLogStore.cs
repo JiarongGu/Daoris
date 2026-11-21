@@ -51,6 +51,9 @@ public sealed class DesktopBusLogStore : IBusLogStore
     private long _pageSize;
     private string? _measuresCutOn;
 
+    // Whether the store keeps the timers (its step 34 ran); a writer's store always does, migrated as it opens.
+    private bool _timers = true;
+
     /// <param name="home">The home whose store holds the log.</param>
     /// <param name="cap">The rows kept; <see cref="Cap"/> unless a test bounds it lower.</param>
     /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
@@ -73,12 +76,14 @@ public sealed class DesktopBusLogStore : IBusLogStore
     /// </summary>
     public static DesktopBusLogStore? Reading(string home)
     {
+        bool timers;
         using (var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(home)))
         {
             if (reader is not { Version: >= DesktopStore.BusLogVersion }) return null;
+            timers = reader.Version >= DesktopStore.BusTimersVersion;
         }
 
-        return new DesktopBusLogStore(home, Cap, null, reading: true);
+        return new DesktopBusLogStore(home, Cap, null, reading: true) { _timers = timers };
     }
 
     /// <inheritdoc />
@@ -100,6 +105,11 @@ public sealed class DesktopBusLogStore : IBusLogStore
                     batch.AskWriter();
                     var shift = batch.Entries.Count > 0 && batch.Entries[0].Seq <= newest ? newest + 1 - batch.Entries[0].Seq : 0;
                     var (bytes, most) = Append(connection, transaction, batch.Entries, shift);
+                    foreach (var entry in batch.Entries)
+                    {
+                        foreach (var op in BusTimers.Of(entry, entry.Seq + shift)) Time(connection, transaction, op);
+                    }
+
                     foreach (var row in batch.Measures) Measure(connection, transaction, row);
                     var cut = 0;
                     if (batch.Entries.Count > 0)
@@ -137,18 +147,53 @@ public sealed class DesktopBusLogStore : IBusLogStore
                 command.CommandText =
                     "SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE seq > $after ORDER BY seq LIMIT $limit";
                 command.Bind(("$after", after), ("$limit", Math.Max(0, limit)));
-                using var reader = command.ExecuteReader();
-                var entries = new List<BusEnvelope>();
-                while (reader.Read())
-                {
-                    entries.Add(new BusEnvelope(
-                        reader.GetString(1), reader.GetInt64(0), reader.GetString(2), reader.GetString(3), reader.GetString(4),
-                        Text(reader, 5), reader.IsDBNull(6) ? null : DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)), Text(reader, 7),
-                        Ids(Text(reader, 8)), PayloadOf(Text(reader, 9)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(10))));
-                }
-
-                return entries;
+                return Entries(command);
             });
+        }
+    }
+
+    /// <summary>The envelopes a select of the log's columns, in their order, reads.</summary>
+    private static List<BusEnvelope> Entries(DbCommand command)
+    {
+        using var reader = command.ExecuteReader();
+        var entries = new List<BusEnvelope>();
+        while (reader.Read())
+        {
+            entries.Add(new BusEnvelope(
+                reader.GetString(1), reader.GetInt64(0), reader.GetString(2), reader.GetString(3), reader.GetString(4),
+                Text(reader, 5), reader.IsDBNull(6) ? null : DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)), Text(reader, 7),
+                Ids(Text(reader, 8)), PayloadOf(Text(reader, 9)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(10))));
+        }
+
+        return entries;
+    }
+
+    /// <summary>One timer operation, in the write's transaction (<see cref="BusTimers"/>).</summary>
+    private static void Time(DbConnection connection, DbTransaction transaction, BusTimerOp op)
+    {
+        switch (op)
+        {
+            case BusTimerOp.Arm(var timer):
+                Execute(connection, transaction,
+                    """
+                    INSERT OR IGNORE INTO bus_timers (entry, seq, kind, subject, effect, obliged, armed, due, retry)
+                    VALUES ($entry, $seq, $kind, $subject, $effect, $obliged, $armed, $due, 0)
+                    """,
+                    ("$entry", timer.Entry), ("$seq", timer.Seq), ("$kind", timer.Kind), ("$subject", timer.Subject), ("$effect", timer.Effect),
+                    ("$obliged", timer.Obliged), ("$armed", timer.Armed.ToUnixTimeMilliseconds()), ("$due", timer.Due.ToUnixTimeMilliseconds()));
+                break;
+            case BusTimerOp.ClearTimers(var kind, var by, var key):
+                Execute(connection, transaction,
+                    by == BusEnds.Effect ? "DELETE FROM bus_timers WHERE kind = $kind AND effect = $key" : "DELETE FROM bus_timers WHERE kind = $kind AND subject = $key",
+                    ("$kind", kind), ("$key", key));
+                break;
+            case BusTimerOp.Advance(var entry, var retry, var due):
+                Execute(connection, transaction, "UPDATE bus_timers SET retry = $retry, due = $due WHERE entry = $entry AND retry < $retry",
+                    ("$entry", entry), ("$retry", retry), ("$due", due.ToUnixTimeMilliseconds()));
+                break;
+            case BusTimerOp.Drop(var entry):
+                Execute(connection, transaction, "DELETE FROM bus_timers WHERE entry = $entry", ("$entry", entry));
+                break;
         }
     }
 
@@ -170,6 +215,49 @@ public sealed class DesktopBusLogStore : IBusLogStore
                 }
 
                 return rows;
+            });
+        }
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit)
+    {
+        if (!_timers) return [];
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    "SELECT entry, seq, kind, subject, effect, obliged, armed, due, retry FROM bus_timers WHERE $by IS NULL OR due <= $by ORDER BY due, seq LIMIT $limit";
+                command.Bind(("$by", by?.ToUnixTimeMilliseconds()), ("$limit", Math.Max(0, limit)));
+                using var reader = command.ExecuteReader();
+                var timers = new List<BusTimer>();
+                while (reader.Read())
+                {
+                    timers.Add(new BusTimer(
+                        reader.GetString(0), reader.GetInt64(1), reader.GetString(2), reader.GetString(3), Text(reader, 4), reader.GetString(5),
+                        DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(7)),
+                        reader.GetInt32(8)));
+                }
+
+                return timers;
+            });
+        }
+    }
+
+    /// <summary>The newest entries of <paramref name="kinds"/>, newest first, at most <paramref name="limit"/>: what the Stalls view reads.</summary>
+    public IReadOnlyList<BusEnvelope> Newest(IReadOnlyList<string> kinds, int limit)
+    {
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    $"SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq DESC LIMIT $limit";
+                command.Bind([.. kinds.Select((kind, n) => ($"$k{n}", (object?)kind)), ("$limit", Math.Max(0, limit))]);
+                return Entries(command);
             });
         }
     }
@@ -245,7 +333,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
             // Made and migrated by the store's own steps, as every family's tables are, once for this store: a connection let go after a
             // failure connects again without them.
             using var store = DesktopStore.Open(location, StoreProcess.Options(_settled ?? StartConfirmation.Read));
-            if (store.Stamp.Version < DesktopStore.BusLogVersion)
+            if (store.Stamp.Version < DesktopStore.BusTimersVersion)
             {
                 throw new DesktopStoreException($"the desktop's store keeps no bus log yet: {store.Held ?? "its step has not run"}.");
             }
@@ -289,7 +377,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
             if (!reader.Read()) throw new DesktopStoreException("the desktop's store has no schema yet.");
             var (version, writer) = (reader.GetInt32(0), reader.GetInt32(1));
             if (writer > DesktopStore.WriterStamp) throw new DesktopStoreNewerException(writer, DesktopStore.WriterStamp);
-            if (version < DesktopStore.BusLogVersion) throw new DesktopStoreException("the desktop's store keeps no bus log yet.");
+            if (version < DesktopStore.BusTimersVersion) throw new DesktopStoreException("the desktop's store keeps no bus log or timers yet.");
         }
 
         return Scalar(connection, transaction, "SELECT COALESCE(MAX(seq), 0) FROM bus_log");

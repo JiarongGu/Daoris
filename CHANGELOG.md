@@ -14,6 +14,10 @@ with the version and date at release.
   happens if nobody does, which always ends at your final notice, never a silent give-up. A value an entry cannot carry (a
   repository named with a space, a test class with arguments) is left out and counted in `daoris bus stats`, and the entry is kept.
   A driver that loses the home and takes it back no longer loses every later entry.
+- The bus watches its own deadlines, still only looking: each entry someone must act on starts a timer that survives a restart,
+  and past its deadline the bus records a stall for each retry and then what it would do, handing the step to whoever holds it
+  before your final notice. `daoris bus stalls` lists what is overdue, since when, who should act, which retry and what would
+  happen; `--compare` sets what today's views say beside each stall, so the bus's verdicts can be checked before it acts on any.
 - A vacant step's loose ends are tied. How long Daoris lets one stand before giving it up is a setting you can change
   (`daoris settings vacancy <hours>`, or its row beside the checks setting), its toast now reads as something waiting on
   somebody, and a step that is served again leaves the Vacant list at once. A raise or lowering of a hold's class writes its

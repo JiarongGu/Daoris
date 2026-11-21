@@ -21,6 +21,9 @@ public interface IBusLogStore : IDisposable
 
     /// <summary>Every measure row from <paramref name="fromDay"/> (UTC, <c>yyyy-MM-dd</c>) on, by day.</summary>
     IReadOnlyList<BusMeasureRow> Measures(string fromDay);
+
+    /// <summary>The armed timers due by <paramref name="by"/> (null: all), earliest first; each write moves them (<see cref="BusTimers.Of"/>).</summary>
+    IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit);
 }
 
 /// <summary>The store could not be written this moment (its lock held past the wait, its file held): a later try may pass, so its batch is kept.</summary>

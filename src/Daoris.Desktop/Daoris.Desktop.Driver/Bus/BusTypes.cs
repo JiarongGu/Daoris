@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Deadlines.</b> A deadline is set from the handling times <c>daoris bus stats</c> reads where they are measured; where none are,
-/// it is stated provisional with what it stands on, and the watchdog runs against it in shadow before any give-up acts.</para>
+/// it is stated provisional with what it stands on, and the watchdog runs against it in shadow before any give-up acts; a draft names none.</para>
 /// <para><b>Give-ups.</b> Every chain ends at the owner's final exit: a request the bus answers itself (<c>refused</c>) or
 /// a gate that stays shut (<c>held</c>) leaves its step a wait, which a vacancy bounds and the final exit ends, never a silent give-up.</para>
 /// </remarks>
@@ -30,6 +30,9 @@ public static class BusTypes
 
     /// <summary>The working session the payload's <c>session</c> names.</summary>
     public const string Session = "session";
+
+    /// <summary>The watchdog's stalls and give-ups, and the Stalls view that shows them.</summary>
+    public const string Watchdog = "driver/watchdog", Stalls = "driver/stalls";
 
     private const string Unmeasured = "no handling time measured yet: the install's `daoris bus stats` at cddcdac313 (2026-11-21) holds one check start, no settle and no pass, its quests paused";
 
@@ -104,16 +107,73 @@ public static class BusTypes
         "opinion.answered", 1, BusClasses.Fact, Opinions, OpinionGate, StepLook, 2, BusGiveUps.Held,
         [new("fixed", BusShapes.Count), new("rejected", BusShapes.Count), new("unresolved", BusShapes.Count), new("notAnswered", BusShapes.Count)]);
 
+    private const string Observed = "an observation the Stalls view shows when it is read: no one must act on it, so it arms no timer";
+
+    /// <summary>An obliged entry past its due time, its retry counted, the look's reading of its subject beside it (<see cref="BusLookStates"/>).</summary>
+    public static readonly BusType Stalled = new(
+        "bus.stalled", 1, BusClasses.Fact, Watchdog, Stalls, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
+        [
+            new("entry", BusShapes.Id), new("kind", BusShapes.Code), new("obliged", BusShapes.Code), new("since", BusShapes.Time),
+            new("due", BusShapes.Time), new("retry", BusShapes.Count), new("retries", BusShapes.Count), new("next", BusShapes.Time),
+            new("look", BusShapes.Code), new("says", BusShapes.Code),
+        ]);
+
+    /// <summary>The give-up past an entry's last retry and what it hands to whom (<see cref="BusChains"/>); in shadow, <c>applied</c> false.</summary>
+    public static readonly BusType GiveUp = new(
+        "bus.give-up", 1, BusClasses.Fact, Watchdog, Stalls, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
+        [
+            new("entry", BusShapes.Id), new("kind", BusShapes.Code), new("consequence", BusShapes.Code), new("applied", BusShapes.Flag),
+            new("hands", BusShapes.Code), new("to", BusShapes.Ids), new("since", BusShapes.Time),
+        ]);
+
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
         OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, CheckStarted, CheckPassed, CheckFailed, CheckUnknown, CheckRequeued, CheckEnded,
+        Stalled, GiveUp,
     ];
+
+    /// <summary>
+    /// What ends each obliged type's timer (<see cref="BusEnd"/>); an acknowledgement only a subscription gives, so until one subscribes such
+    /// a timer runs out in shadow and the comparer reads the look. <c>BusTypesCensusTests</c> holds that every obliged type has its ends.
+    /// </summary>
+    private static readonly Dictionary<string, IReadOnlyList<BusEnd>> Ending = new(StringComparer.Ordinal)
+    {
+        [CheckStarted.Kind] =
+        [
+            BusEnd.OnEffect(CheckPassed), BusEnd.OnEffect(CheckFailed), BusEnd.OnEffect(CheckUnknown), BusEnd.OnEffect(CheckRequeued),
+            BusEnd.OnEffect(CheckEnded),
+        ],
+
+        // The step settling on a pass, and the gate judging answers, are on no fact: only their subscriptions acknowledge them.
+        [CheckPassed.Kind] = [BusEnd.Acknowledged],
+        [CheckFailed.Kind] = [BusEnd.OnSubject(CheckStarted), BusEnd.Acknowledged],
+        [CheckUnknown.Kind] = [BusEnd.OnSubject(CheckStarted), BusEnd.Acknowledged],
+        [CheckRequeued.Kind] = [BusEnd.OnEffect(CheckStarted)],
+        [CheckEnded.Kind] = [BusEnd.OnEffect(CheckStarted)],
+        [OpinionAsked.Kind] = [BusEnd.OnSubject(OpinionGiven)],
+        [OpinionGiven.Kind] = [BusEnd.OnSubject(OpinionDelivered), BusEnd.OnSubject(OpinionAnswered)],
+        [OpinionDelivered.Kind] = [BusEnd.OnSubject(OpinionAnswered)],
+        [OpinionAnswered.Kind] = [BusEnd.Acknowledged],
+    };
 
     private static readonly Dictionary<string, BusType> ByKind = All.ToDictionary(type => type.Kind, StringComparer.Ordinal);
 
+    private static readonly Dictionary<string, IReadOnlyList<(BusType Armed, string By)>> Ended = Ending
+        .SelectMany(pair => pair.Value.Where(end => end.Type is not null).Select(end => (End: end.Type!.Kind, Armed: ByKind[pair.Key], end.By)))
+        .GroupBy(row => row.End, StringComparer.Ordinal)
+        .ToDictionary(group => group.Key, group => (IReadOnlyList<(BusType, string)>)[.. group.Select(row => (row.Armed, row.By))], StringComparer.Ordinal);
+
     /// <summary>The type of <paramref name="kind"/> (<c>name/version</c>), or null where none is declared.</summary>
     public static BusType? Of(string kind) => ByKind.GetValueOrDefault(kind);
+
+    /// <summary>Whether its entries oblige someone, so each arms a timer: every give-up but <c>dropped</c>.</summary>
+    public static bool Obliges(BusType type) => type.GiveUp != BusGiveUps.Dropped;
+
+    public static IReadOnlyList<BusEnd> Ends(BusType type) => Ending.GetValueOrDefault(type.Kind) ?? [];
+
+    /// <summary>The obliged types a fact of <paramref name="kind"/> ends, each with how it matches them.</summary>
+    public static IReadOnlyList<(BusType Armed, string By)> EndedBy(string kind) => Ended.GetValueOrDefault(kind) ?? [];
 
     /// <summary>Whether <paramref name="type"/> is the one declared here, not a look-alike made elsewhere.</summary>
     public static bool Declares(BusType type) => Of(type.Kind) is { } declared && ReferenceEquals(declared, type);

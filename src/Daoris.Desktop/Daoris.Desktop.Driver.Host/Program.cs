@@ -655,7 +655,7 @@ try
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
     }
 
-    // The bus log's measures by day, read from the home's store; needs no service and changes nothing.
+    // The bus log's measures by day, and its watchdog's stalls, read from the home's store; needs no service and changes nothing.
     if (args is ["bus", .. var busArgs])
     {
         var exit = BusStatsCommand.Run(
