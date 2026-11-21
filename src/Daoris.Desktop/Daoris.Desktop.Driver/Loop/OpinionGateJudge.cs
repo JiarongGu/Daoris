@@ -30,7 +30,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
     /// One owed opinion judged now, by the gate's rule: closed once past; asked where nothing is yet and the chain's last step here is
     /// done and not held, asked again once a cool-off resets, the person's asks started; delivered until answered; passed by the policy;
     /// or waiting, named. A pass or a delivery it finds owed is begun beside under the chain's claim, so a second judgment meanwhile owes
-    /// no second; a draining update holds a pass, said once. What it found is kept in the gate's view, the look's plan woken where it moved
+    /// no second; a draining update holds a pass, said once, and a delivery. What it found is kept in the gate's view, the look's plan woken where it moved
     /// what the plan reads. Null where it closed.
     /// </summary>
     /// <exception cref="HttpRequestException">The service did not answer: the consumer's entry is tried again.</exception>
@@ -185,11 +185,12 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
                 Ended = gate.Opinion?.Id,
             };
         }
-        // A delivery goes a session on in a turn, which the drain does not count; it waits for a look that does not drain.
-        else if ((gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first && !Config.Draining
-                 && _context.Runs.TryOpinion(claim))
+        // A delivery goes a session on in a turn, which the drain does not count; it waits for the drain's end, which its turn judges again.
+        var drained = false;
+        if (act is null && (gate.State is OpinionGateStates.WithSession or OpinionGateStates.ReadAgain || recheckCapped) && gate.Opinion is { } first)
         {
-            OpinionBeside(Subject(due), claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
+            drained = Config.Draining;
+            if (!drained && _context.Runs.TryOpinion(claim)) OpinionBeside(Subject(due), claim, token => DeliverBesideAsync(due, chain, first, process, token), ct);
         }
 
         var sits = new Dictionary<string, OpinionSit>(StringComparer.OrdinalIgnoreCase);
@@ -198,6 +199,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         {
             Turns = Turns(gate),
             Unread = gate.State == OpinionGateStates.Unread || review?.State == ReviewStates.Unread,
+            Drained = drained,
         };
     }
 

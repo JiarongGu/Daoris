@@ -36,12 +36,39 @@ public static class OpinionBusFacts
 
     public static string Owed(string session, string occasion) => $"{session}/{occasion}";
 
+    /// <summary>The <c>by</c> of an owed fact a person's ask tees: its occasion is the ask's (<c>asked</c>, <c>failure</c>), so it names every owed opinion of its session.</summary>
+    public const string Pressed = "press";
+
     /// <summary>A session's work owed a second opinion, or a person's ask of its gate (<paramref name="by"/>): commit-class, the gate's acknowledgement waits on it.</summary>
     public static BusDraft OpinionOwed(string session, string? quest, string occasion, string by) => new(BusTypes.OpinionOwed, Owed(session, occasion))
     {
         Commit = true,
         Payload = [("session", session), ("quest", string.IsNullOrEmpty(quest) ? null : quest), ("occasion", occasion), ("by", by)],
     };
+
+    /// <summary>The person's word at <paramref name="session"/>'s gate, kept: commit-class, so the gate judges it at once.</summary>
+    public static BusDraft OpinionSaid(string session, string said, string? door) => new(BusTypes.OpinionSaid, session)
+    {
+        Commit = true,
+        Payload = [("session", session), ("said", said), ("door", door)],
+    };
+
+    /// <summary>The service's quests moved, the families its change stream named.</summary>
+    public static BusDraft QuestMoved(IReadOnlyList<string> families) => new(BusTypes.QuestMoved, "quests")
+    {
+        Commit = true,
+        Payload = [("families", families)],
+    };
+
+    /// <summary>The unit keyed <paramref name="unit"/> began <paramref name="nodes"/>.</summary>
+    public static BusDraft NodeBegun(string unit, IReadOnlyList<string> nodes) => new(BusTypes.NodeBegun, unit)
+    {
+        Commit = true,
+        Payload = [("nodes", nodes)],
+    };
+
+    /// <summary>The standing choices written by this process.</summary>
+    public static BusDraft ChoicesWritten() => new(BusTypes.ChoicesWritten, "choices") { Commit = true };
 
     /// <summary>The findings handed to <paramref name="session"/>: how (<c>claims</c>, <c>send-back</c>) and how many.</summary>
     public static BusDraft OpinionDelivered(string opinion, string session, int findings, string how) => new(BusTypes.OpinionDelivered, opinion)

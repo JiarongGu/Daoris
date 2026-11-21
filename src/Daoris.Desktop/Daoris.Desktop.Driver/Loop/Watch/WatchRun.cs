@@ -132,9 +132,8 @@ internal sealed class WatchRun(
         _beside = new WatchBeside(watch, Service, Home);
 
         // The opinion's gate is the bus's first consumer: woken by each fact the log writes, resumed from its cursor, never by a
-        // look. Stopped before the watchdog and the log close.
-        using var gate = watch.Bus is null ? null : OpinionGateConsumer.Over(GateDriver, Service, Home, watch.Bus);
-        await using var gates = gate is null ? null : await BusQueue.StartAsync(watch.Bus!, [gate], new BusQueueOptions { Clock = watch.Bus!.Clock }, ct: ct).ConfigureAwait(false);
+        // look. Stopped before the watchdog and the log close; the ledger's moves reach it through the change stream below.
+        await using var gates = await OpinionGateRun.StartAsync(watch.Bus, GateDriver, Service, Home, ct).ConfigureAwait(false);
 
         // The session branches tidied beside the looks: a pass once each pace, its lines joining the report of the
         // look that finds it done, as the following's do.
@@ -201,7 +200,11 @@ internal sealed class WatchRun(
         // The ledger heard, not found at the pace: one wait on the service's change stream for the loop's life, each
         // family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
         using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var ledger = LedgerChanges.RunAsync(Service, watch.Nudge, Log, listening.Token);
+        var ledger = LedgerChanges.RunAsync(Service, (topic, families) =>
+        {
+            watch.Nudge(topic, families);
+            OpinionGateRun.Heard(watch.Bus, families);
+        }, Log, listening.Token);
 
         // The start's reconciliation: every pending tidy found from the persisted facts and tried once, beside the first looks.
         var recovering = Task.Run(async () =>

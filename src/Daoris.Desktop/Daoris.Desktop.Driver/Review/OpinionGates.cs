@@ -33,7 +33,7 @@ public sealed class OpinionGates(string home)
     {
         Edit(chain, repository, kept => kept with { Requests = [.. kept.Requests, request] });
         // The gate is the bus's consumer: the person's ask reaches it as a fact, not at a look.
-        BusLog.Of(home)?.Tee(() => OpinionBusFacts.OpinionOwed(request.Session, null, request.Occasion, "press"));
+        BusLog.Of(home)?.Tee(() => OpinionBusFacts.OpinionOwed(request.Session, null, request.Occasion, OpinionBusFacts.Pressed));
     }
 
     /// <summary>One session's requests, taken by the look, which starts the newest; the others stay for their own sessions.</summary>
@@ -48,9 +48,12 @@ public sealed class OpinionGates(string home)
         return taken;
     }
 
-    /// <summary>An answer of the person's at the gate.</summary>
-    public void Said(string chain, string repository, OpinionPersonWord word) =>
+    /// <summary>An answer of the person's at <paramref name="session"/>'s gate, which reaches the gate as a fact.</summary>
+    public void Said(string chain, string repository, string session, OpinionPersonWord word)
+    {
         Edit(chain, repository, kept => kept with { Person = [.. kept.Person, word] });
+        BusLog.Of(home)?.Tee(() => OpinionBusFacts.OpinionSaid(session, word.Said, word.Door));
+    }
 
     /// <summary>Each repository's part of a chain's record, by name in any case; none where the name is no id or nothing reads.</summary>
     private IReadOnlyDictionary<string, OpinionGateKept> ReadAll(string chain) =>

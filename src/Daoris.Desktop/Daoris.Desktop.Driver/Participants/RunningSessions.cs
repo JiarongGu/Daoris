@@ -161,6 +161,15 @@ public sealed class RunningSessions
         lock (_gate) _factsMoved = false;
     }
 
+    /// <summary>Whether a judgment moved a fact the plan reads since the last look took them.</summary>
+    internal bool FactsAhead
+    {
+        get
+        {
+            lock (_gate) return _factsMoved;
+        }
+    }
+
     // The starts of this loop's not yet open, each reserved by the look that began it until its record opens or it comes
     // to nothing; and what a start came to after the look that began it let go of it, for a later look's report.
     private readonly List<StartReservation> _reserved = [];

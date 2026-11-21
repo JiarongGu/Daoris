@@ -243,7 +243,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Several drafts
     appended as one (`AppendAll`) ride one write, kept or lost together. A writer holding no log tees through the home's open one
     (`BusLog.Of`). Teed in beside today's writes: an opinion owed (a due kept, a person's ask of its gate), asked, given and
-    answered (the landing line's channel), its findings delivered,
+    answered (the landing line's channel), its findings delivered, the person's word at its gate, and what else its gate's verdict
+    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote),
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
@@ -319,10 +320,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     past its type's retries the queue appends the `bus.give-up` naming the consumer and what it hands to whom, and the subject
     goes on. A claim's epoch is read before each handling and inside each acknowledgement, so a later claim fences the earlier off
     and two processes never both execute one consumer; the lease is asked inside each write too. Retention cuts no entry a cursor
-    or a parked row still needs. An outside effect runs once by its key, kept in the act journal's family (`act_effects`, beside
-    `git_acts`, not a journal of its own): a word to a harness is begun before it is sent and ended after, so a crash between reads
-    `uncertain` and it is never sent again (`OnceWords`). Its first consumer is the opinion's gate (`workflows-review-landing`
-    rule 26).
+    or a parked row still needs; a park the store did not keep leaves its entries open, so no cursor passes them. An outside effect
+    runs once by its key, kept in the act journal's family (`act_effects`, beside `git_acts`, not a journal of its own): a word to a
+    harness is begun before it is sent and ended after, so a crash between reads `uncertain` and it is never sent again, and a send
+    that throws reads failed, its key let go for the next try (`OnceWords`). A run that must return drains it (`QuietAsync`: the log
+    written, each write framed, every consumer's entries acknowledged or parked, its start's rebuild ended, within a bound). Its first
+    consumer is the opinion's gate (`workflows-review-landing` rule 26), started by the watch and the headless runs alike.
     `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
     bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
     its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,

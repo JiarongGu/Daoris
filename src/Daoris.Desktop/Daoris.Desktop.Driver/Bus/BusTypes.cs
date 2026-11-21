@@ -34,6 +34,9 @@ public static class BusTypes
     /// <summary>The watchdog's stalls and give-ups, and the Stalls view that shows them.</summary>
     public const string Watchdog = "driver/watchdog", Stalls = "driver/stalls";
 
+    /// <summary>Where the service's ledger is heard (its change stream), the node runtime's records, and this process's standing choices.</summary>
+    public const string Ledger = "driver/ledger", Nodes = "driver/nodes", Choices = "driver/choices";
+
     private const string Unmeasured = "no handling time measured yet: the install's `daoris bus stats` at cddcdac313 (2026-11-21) holds one check start, no settle and no pass, its quests paused";
 
     private const string AtALook =
@@ -115,6 +118,25 @@ public static class BusTypes
         "opinion.answered", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("fixed", BusShapes.Count), new("rejected", BusShapes.Count), new("unresolved", BusShapes.Count), new("notAnswered", BusShapes.Count)]);
 
+    /// <summary>The person's word at a session's gate (<i>Go on anyway</i>, <i>I looked myself</i>, an Accept's answer): the opinion's gate must judge that session's owed opinions.</summary>
+    public static readonly BusType OpinionSaid = new(
+        "opinion.said", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
+        [new("session", BusShapes.Id), new("said", BusShapes.Code), new("door", BusShapes.Code)]);
+
+    /// <summary>The service's quests moved, as its change stream named them (a hold lifted, a step declined): the opinion's gate must judge every owed opinion.</summary>
+    public static readonly BusType QuestMoved = new(
+        "quest.moved", 1, BusClasses.Fact, Ledger, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
+        [new("families", BusShapes.Ids)]);
+
+    /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge every owed opinion, which a graph's opinion node holds until begun.</summary>
+    public static readonly BusType NodeBegun = new(
+        "node.begun", 1, BusClasses.Fact, Nodes, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
+        [new("nodes", BusShapes.Ids)]);
+
+    /// <summary>This process wrote the standing choices (a rule's reviewers, a workflow, the policy): the opinion's gate must judge every owed opinion.</summary>
+    public static readonly BusType ChoicesWritten = new(
+        "choices.written", 1, BusClasses.Fact, Choices, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held, []);
+
     private const string Observed = "an observation the Stalls view shows when it is read: no one must act on it, so it arms no timer";
 
     /// <summary>An obliged entry past its due time, its retry counted, the look's reading of its subject beside it (<see cref="BusLookStates"/>).</summary>
@@ -138,8 +160,8 @@ public static class BusTypes
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, CheckStarted, CheckPassed, CheckFailed, CheckUnknown, CheckRequeued, CheckEnded,
-        Stalled, GiveUp,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, CheckStarted, CheckPassed,
+        CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp,
     ];
 
     /// <summary>What ends each obliged type's timer (<see cref="BusEnd"/>); until its handler subscribes, such a timer runs out in shadow. <c>BusTypesCensusTests</c> holds that every obliged type has its ends.</summary>
@@ -162,6 +184,10 @@ public static class BusTypes
         [OpinionGiven.Kind] = [BusEnd.OnSubject(OpinionDelivered), BusEnd.OnSubject(OpinionAnswered), BusEnd.Acknowledged],
         [OpinionDelivered.Kind] = [BusEnd.OnSubject(OpinionAnswered)],
         [OpinionAnswered.Kind] = [BusEnd.Acknowledged],
+        [OpinionSaid.Kind] = [BusEnd.Acknowledged],
+        [QuestMoved.Kind] = [BusEnd.Acknowledged],
+        [NodeBegun.Kind] = [BusEnd.Acknowledged],
+        [ChoicesWritten.Kind] = [BusEnd.Acknowledged],
     };
 
     private static readonly Dictionary<string, BusType> ByKind = All.ToDictionary(type => type.Kind, StringComparer.Ordinal);

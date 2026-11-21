@@ -163,8 +163,15 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             AtomicFile.WriteText(path, ToJson(Trimmed(next)));
             Kept.TryRemove(path, out _);
             HomeWrites.Mine(path);
+            if (BegunIn(record, next) is { Count: > 0 } begun) BusLog.Of(home)?.Tee(() => OpinionBusFacts.NodeBegun(KeyOf(unit), begun));
             return (null, result);
         }
+    }
+
+    internal static IReadOnlyList<string> BegunIn(NodeRecord record, NodeRecord next)
+    {
+        static bool Begun(NodeStatus? status) => status?.State is { } state && state is not (NodeStates.Blocked or NodeStates.Ready);
+        return [.. next.Statuses.Where(pair => Begun(pair.Value) && !Begun(record.Statuses.GetValueOrDefault(pair.Key))).Select(pair => pair.Key).Take(BusShapes.MostListed)];
     }
 
     /// <summary>

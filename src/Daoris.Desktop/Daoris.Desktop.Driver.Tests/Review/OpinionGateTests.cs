@@ -594,7 +594,7 @@ public sealed class OpinionGateTests
             gates.Asked("q1", "web-app", AskOf(null, ReviewerUnavailable.Cooling, until: Answered) with { By = OpinionAskers.Person });
             gates.Requested("q1", "web-app", new OpinionRequest(Asked, "s1", "asked") { SameAgent = true, Words = "fresh eyes" });
             gates.Requested("q1", "web-app", new OpinionRequest(Asked, "s2", "failure") { Reviewer = "dsh" });
-            gates.Said("q1", "Web-App", new OpinionPersonWord(OpinionPersonSaid.Anyway, Read, Answered) { Words = "fine", Door = ReviewDoors.Screen });
+            gates.Said("q1", "Web-App", "s1", new OpinionPersonWord(OpinionPersonSaid.Anyway, Read, Answered) { Words = "fine", Door = ReviewDoors.Screen });
 
             var kept = gates.Read("q1", "web-app");
             Assert.Equal(2, kept.Asks.Count);

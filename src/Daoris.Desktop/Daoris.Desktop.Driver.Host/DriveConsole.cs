@@ -175,14 +175,14 @@ internal static class DriveConsole
             // single run that let go of them would leave them working with nothing watching. Each part is printed
             // as it is said, each pass beside the sessions as it ends, so a stop or an ending already
             // made is never lost with the process.
-            await new Driver(service, config, ProviderRegistry.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log }
+            await new Driver(service, config, ProviderRegistry.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log, Bus = bus }
                 .RunOnceAsync(closing.Token, said: report => Print(report));
         }
         else if (untilIdle)
         {
             // Each look is printed as it ends, and what ended before a failure or a close lets go; a look that
             // failed still prints what it had said.
-            await new Driver(service, config, ProviderRegistry.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log }
+            await new Driver(service, config, ProviderRegistry.Built(), home, processes, sync, hooks: hooks, events: events) { Log = log, Bus = bus }
                 .RunUntilIdleAsync(closing.Token, said: report => Print(report));
         }
         else

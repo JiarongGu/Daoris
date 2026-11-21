@@ -438,9 +438,28 @@ public sealed class Driver(
     public Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null) => Looping.OnceAsync(ct, said);
 
     private LoopRuns Looping =>
-        LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(LookWiring, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses));
+        LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(
+            LookWiring, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses,
+            ct => OpinionGateRun.StartAsync(Bus, Beside, service, home, ct, listens: true)));
 
     private LoopRuns? _looping;
+
+    /// <summary>
+    /// A driver for the opinion's gate beside a run's looks: its own context over the same sessions, as the watch's gate's is, so a pass or
+    /// a delivery it begins runs as one the look began.
+    /// </summary>
+    private Driver Beside()
+    {
+        var driver = new Driver(service, config, adapters, home, processes, Sync, output, harnesses, usage, hooks, Context.Events, browser, Running)
+        {
+            Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log,
+            Noticed = Noticed, Stages = Stages, Reviews = Reviews, Bus = Bus, ConfigPath = ConfigPath, Passes = Passes,
+        };
+        driver.Context.Supervisor = Context.Supervisor;
+        driver.Context.Roles = Context.Roles;
+        driver.Context.Supervising = Context.Supervising;
+        return driver;
+    }
 
     /// <summary>One quest's start, run through the stages of each phase in turn; a stage may hold the start, which ends the run there.</summary>
     /// <returns>

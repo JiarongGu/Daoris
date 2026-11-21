@@ -41,13 +41,24 @@ public static class OnceWords
 {
     /// <summary>
     /// Send <paramref name="send"/> under <paramref name="key"/> unless a word under it went out or is uncertain, which is returned without
-    /// sending; <paramref name="went"/> says whether what the send answered went out.
+    /// sending; <paramref name="went"/> says whether what the send answered went out. A send that throws read as failed: its key is let
+    /// go and the throw goes on, so a later try sends it; only a crash between the begin and the end leaves it uncertain.
     /// </summary>
     public static async Task<(string Before, T? Sent)> SendAsync<T>(ActJournal journal, string key, string kind, Func<Task<T>> send, Func<T, bool> went)
     {
         var before = journal.BeginEffect(key, kind);
         if (before != ActEffects.Fresh) return (before, default);
-        var sent = await send().ConfigureAwait(false);
+        T sent;
+        try
+        {
+            sent = await send().ConfigureAwait(false);
+        }
+        catch
+        {
+            journal.EndEffect(key, false);
+            throw;
+        }
+
         journal.EndEffect(key, went(sent));
         return (before, sent);
     }

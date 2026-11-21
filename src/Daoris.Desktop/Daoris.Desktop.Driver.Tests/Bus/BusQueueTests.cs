@@ -335,7 +335,10 @@ public sealed class BusQueueTests : IDisposable
             armed.Where(timer => timer.Kind == BusTypes.OpinionDelivered.Kind).Select(timer => timer.Subject).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>🔴 A word to a harness goes once by its effect key: a crash between its begin and its end reads uncertain and it is never sent again.</summary>
+    /// <summary>
+    /// 🔴 A word to a harness goes once by its effect key: a crash between its begin and its end reads uncertain and it is never sent again;
+    /// a send that throws reads failed, its key let go, so a later try sends it.
+    /// </summary>
     [Fact]
     public async Task No_word_is_sent_twice_across_a_crash()
     {
@@ -347,17 +350,21 @@ public sealed class BusQueueTests : IDisposable
             return Task.FromResult(true);
         }
 
-        // Crashed after the begin, before the end: the send threw out of the process's hands.
-        await Assert.ThrowsAsync<IOException>(() => OnceWords.SendAsync<bool>(journal, "opinion-word:op-1:s-1", "opinion-word", () => throw new IOException("killed"), went => went));
+        // Crashed after the begin, before the end: nothing in the process ended it.
+        Assert.Equal(ActEffects.Fresh, journal.BeginEffect("opinion-word:op-1:s-1", "opinion-word"));
         var (before, _) = await OnceWords.SendAsync(journal, "opinion-word:op-1:s-1", "opinion-word", Send, went => went);
         Assert.Equal((ActEffects.Uncertain, 0), (before, sent));
+
+        // A send that threw in the process's hands failed: its key is free again, and the next try goes.
+        await Assert.ThrowsAsync<IOException>(() => OnceWords.SendAsync<bool>(journal, "opinion-word:op-4:s-1", "opinion-word", () => throw new IOException("refused"), went => went));
+        Assert.Equal(ActEffects.Fresh, (await OnceWords.SendAsync(journal, "opinion-word:op-4:s-1", "opinion-word", Send, went => went)).Before);
 
         // One that went out is done; one refused lets its key go, so a later try goes.
         Assert.Equal(ActEffects.Fresh, (await OnceWords.SendAsync(journal, "opinion-word:op-2:s-1", "opinion-word", Send, went => went)).Before);
         Assert.Equal(ActEffects.Done, (await OnceWords.SendAsync(journal, "opinion-word:op-2:s-1", "opinion-word", Send, went => went)).Before);
         Assert.Equal(ActEffects.Fresh, (await OnceWords.SendAsync(journal, "opinion-word:op-3:s-1", "opinion-word", Send, _ => false)).Before);
         Assert.Equal(ActEffects.Fresh, (await OnceWords.SendAsync(journal, "opinion-word:op-3:s-1", "opinion-word", Send, went => went)).Before);
-        Assert.Equal(3, sent);
+        Assert.Equal(4, sent);
     }
 
     /// <summary>The gate's consumer over the home's owed opinions, its rule a stand-in, each opinion's record naming its run's session.</summary>

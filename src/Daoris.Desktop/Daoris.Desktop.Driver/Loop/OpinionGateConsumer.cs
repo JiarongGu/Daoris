@@ -4,20 +4,25 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The opinion's gate as the bus's first consumer : each opinion fact it is handed (owed, asked, given, delivered,
-/// answered) judges that owed opinion's gate at once by its rule (<see cref="OpinionGateJudge.JudgeDueAsync"/>): deliver, recheck, pass
-/// by the policy, or wait named. Its acknowledgement ends what is owed it: an owed opinion judged, answers judged, and a clean pass, which
-/// leaves nothing to deliver. No look judges an opinion.
+/// answered, the person's word) judges that owed opinion's gate at once by its rule (<see cref="OpinionGateJudge.JudgeDueAsync"/>): deliver,
+/// recheck, pass by the policy, or wait named. A move of the quests, of a run's nodes or of the standing choices judges every owed opinion,
+/// since its holds, its chain, its graph's opinion node, its rule and its process are read from them. Its acknowledgement ends what is owed
+/// it: an owed opinion judged, answers or a word judged, a move judged, and a clean pass, which leaves nothing to deliver. No look judges an
+/// opinion.
 /// </summary>
 /// <remarks>
 /// <para><b>What it reads, it reads at the fact.</b> A fact names an opinion by its id; the opinion's record names its session and occasion,
 /// read as the fact is handled, so nothing waits on a look's read. The author's answers reach it as the go-on's <c>opinion.answered</c>;
-/// the service journals none of its own yet (BUS2b2).</para>
-/// <para><b>Time as timer events.</b> A judgment that finds a turn ahead (a cool-off's reset, a reading pass's end) or a pass a drain held
-/// judges that opinion again then; a pass or a delivery begun beside that ends without a fact (a turn in flight, a busy conversation) is
-/// judged again after a backoff. These live in memory: a start judges every owed opinion once (<see cref="ResumedAsync"/>), which rebuilds
-/// the gate's view and its turns. The watchdog's timers are the net under all of it.</para>
-/// <para><b>One owed opinion at a time.</b> Facts of one opinion arrive in order; facts of several that name one owed opinion are judged
-/// one after another, never two judgments of one at once.</para>
+/// the service journals none of its own yet. A move judged after a judgment that read before it waits for that judgment, so the later
+/// one reads the move.</para>
+/// <para><b>Time as timer events.</b> A judgment that finds a turn ahead (a cool-off's reset, a reading pass's end), or a pass or a delivery
+/// a drain held, judges that opinion again then; a pass or a delivery begun beside that ends without a fact (a turn in flight, a busy
+/// conversation) is judged again after a backoff; a judgment that throws keeps the turn it found. These live in memory: a start judges
+/// every owed opinion once (<see cref="ResumedAsync"/>), which rebuilds the gate's view and its turns. The watchdog's timers are the net
+/// under all of it.</para>
+/// <para><b>One judgment of an owed opinion at a time.</b> Facts of one opinion arrive in order; facts of several that name one owed
+/// opinion are judged one after another, never two judgments of one at once, and the owed opinions one fact names are judged beside each
+/// other.</para>
 /// </remarks>
 internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 {
@@ -69,18 +74,27 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         service.Opinions.ReadAsync, () => new OpinionDues(home).Open(), bus.Clock,
         (once, why) => bus.Warn("gate:" + once, "opinion.gate-unjudged", ("why", why)));
 
+    /// <summary>The facts every owed opinion's judgment reads: its quests' holds and chains, its run's nodes, its rule and process.</summary>
+    private static readonly HashSet<string> Everyone = new([BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind], StringComparer.Ordinal);
+
     public BusSubscription Subscription { get; } = BusTypes.Subscribe(
-        Name, [.. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered }.Select(type => type.Kind)]);
+        Name,
+        [
+            .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
+                .Select(type => type.Kind),
+            .. Everyone,
+        ]);
 
     public string Obliged => BusTypes.OpinionGate;
 
     public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
     {
-        foreach (var due in await DuesOfAsync(entry, ct).ConfigureAwait(false))
+        // Each owed opinion it names is judged beside the others: one whose judgment is slow holds none of the rest.
+        await Task.WhenAll((await DuesOfAsync(entry, ct).ConfigureAwait(false)).Select(due =>
         {
             _quiet.TryRemove(OpinionGateJudge.Subject(due), out _);
-            await JudgeAsync(due, ct).ConfigureAwait(false);
-        }
+            return JudgeAsync(due, ct);
+        })).ConfigureAwait(false);
 
         return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;
     }
@@ -112,7 +126,10 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         _closing.Dispose();
     }
 
-    /// <summary>The owed opinions <paramref name="entry"/> names: an owed fact by its session and occasion, an opinion's by its record's.</summary>
+    /// <summary>
+    /// The owed opinions <paramref name="entry"/> names: an owed fact by its session and occasion (a person's ask, by its session alone), the
+    /// person's word by its session, a quest's, a node's or the choices' move every one, an opinion's by its record's.
+    /// </summary>
     private async Task<IReadOnlyList<OpinionDue>> DuesOfAsync(BusEnvelope entry, CancellationToken ct)
     {
         var open = _open();
@@ -121,8 +138,18 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         {
             var session = Text(entry, "session");
             var occasion = Text(entry, "occasion");
-            return [.. open.Where(due => Ids.Equals(due.Session, session) && (occasion is null || due.Occasion == occasion))];
+            // A person's ask carries its own occasion (asked, failure), which no owed opinion has: it reaches each of its session's.
+            var pressed = Text(entry, "by") == OpinionBusFacts.Pressed;
+            return [.. open.Where(due => Ids.Equals(due.Session, session) && (pressed || occasion is null || due.Occasion == occasion))];
         }
+
+        if (entry.Kind == BusTypes.OpinionSaid.Kind)
+        {
+            var session = Text(entry, "session") ?? entry.Subject;
+            return [.. open.Where(due => Ids.Equals(due.Session, session))];
+        }
+
+        if (Everyone.Contains(entry.Kind)) return open;
 
         if (await _read(entry.Subject, ct).ConfigureAwait(false) is not { } view) return [];
         // The opinion reads its working session's work: that session's owed opinion at its occasion, or at any where its occasion moved.
@@ -139,12 +166,15 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            if (_again.TryRemove(subject, out var pending)) pending.Cancel();
+            // The turn set before stands until this judgment answers, so one that throws keeps it.
+            _again.TryGetValue(subject, out var pending);
             var fact = await _judge(due, Ended, ct).ConfigureAwait(false);
+            if (pending is not null && _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, pending))) pending.Cancel();
             if (fact is null) return;
             var now = _clock.GetUtcNow();
             DateTimeOffset? next = fact.Turns.Where(turn => turn > now).Select(turn => (DateTimeOffset?)turn).Min();
-            if (fact.Act is not null && !fact.Begun && (next is null || next > now + Drained)) next = now + Drained;
+            // A pass or a delivery a drain held is judged again once a minute, so the drain's end reaches it.
+            if (((fact.Act is not null && !fact.Begun) || fact.Drained) && (next is null || next > now + Drained)) next = now + Drained;
             if (next is { } at) Again(due, at);
         }
         finally

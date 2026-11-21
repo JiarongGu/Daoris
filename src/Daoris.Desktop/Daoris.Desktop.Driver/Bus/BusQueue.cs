@@ -129,6 +129,7 @@ public sealed class BusQueue : IAsyncDisposable
     private readonly Channel<IReadOnlyList<BusEnvelope>> _written = Channel.CreateUnbounded<IReadOnlyList<BusEnvelope>>(new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource _closing = new();
     private long _frames;
+    private long _unframed;
     private Task _pump = Task.CompletedTask;
 
     private BusQueue(BusLog log, IBusQueueStore store, IReadOnlyList<IBusMiddleware> middleware, BusQueueOptions options)
@@ -199,7 +200,35 @@ public sealed class BusQueue : IAsyncDisposable
         _closing.Dispose();
     }
 
-    private void OnWritten(IReadOnlyList<BusEnvelope> entries) => _written.Writer.TryWrite(entries);
+    private void OnWritten(IReadOnlyList<BusEnvelope> entries)
+    {
+        Interlocked.Increment(ref _unframed);
+        if (!_written.Writer.TryWrite(entries)) Interlocked.Decrement(ref _unframed);
+    }
+
+    /// <summary>
+    /// Wait until nothing written waits to be handled: what the log holds written, each write framed, and every consumer's entries
+    /// acknowledged or parked, its start's rebuild ended. A run that must return drains it before it ends; false where
+    /// <paramref name="most"/> ran out first.
+    /// </summary>
+    public async Task<bool> QuietAsync(TimeSpan most, CancellationToken ct)
+    {
+        await _log.FlushAsync().ConfigureAwait(false);
+        var began = _options.Clock.GetTimestamp();
+        while (!Quiet)
+        {
+            if (_options.Clock.GetElapsedTime(began) >= most) return false;
+            await Task.Delay(Settle, _options.Clock, ct).ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    /// <summary>Whether every write it is told of is framed and every consumer is quiet (<see cref="BusConsumerRun.Quiet"/>), at this moment.</summary>
+    public bool Quiet => Volatile.Read(ref _unframed) == 0 && _runs.Values.All(run => run.Quiet);
+
+    /// <summary>The step a drain waits between two readings of whether its queue is quiet.</summary>
+    private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(20);
 
     /// <summary>The frames: whatever the writes kept since the last, routed to the consumers of their types, at most one each <see cref="BusQueueOptions.Frame"/>.</summary>
     private async Task PumpAsync(CancellationToken ct)
@@ -209,12 +238,26 @@ public sealed class BusQueue : IAsyncDisposable
         {
             var began = _options.Clock.GetTimestamp();
             var entries = new List<BusEnvelope>();
-            while (reader.TryRead(out var batch)) entries.AddRange(batch);
+            var batches = 0;
+            while (reader.TryRead(out var batch))
+            {
+                entries.AddRange(batch);
+                batches++;
+            }
+
             var deliveries = entries
                 .Select(entry => new BusDelivery(entry, [.. _runs.Values.Where(run => run.Reads(entry.Kind)).Select(run => run.Name)]))
                 .Where(delivery => delivery.To.Count > 0)
                 .ToList();
-            if (deliveries.Count > 0) await ChainAsync(new BusFrame(Interlocked.Increment(ref _frames), deliveries), ct).ConfigureAwait(false);
+            try
+            {
+                if (deliveries.Count > 0) await ChainAsync(new BusFrame(Interlocked.Increment(ref _frames), deliveries), ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                Interlocked.Add(ref _unframed, -batches);
+            }
+
             var wait = _options.Frame - _options.Clock.GetElapsedTime(began);
             if (wait > TimeSpan.Zero) await Task.Delay(wait, _options.Clock, ct).ConfigureAwait(false);
         }
@@ -289,6 +332,7 @@ internal sealed class BusConsumerRun
     private long _cursor;
     private bool _live;
     private bool _fenced;
+    private Task? _resumed;
     private IReadOnlyList<BusParkedEntry> _claimedParked;
 
     public BusConsumerRun(BusQueue queue, IBusConsumer consumer, BusClaim claim)
@@ -316,6 +360,15 @@ internal sealed class BusConsumerRun
 
     /// <summary>Whether a later claim fenced it off: it handles nothing more.</summary>
     public bool Fenced => Volatile.Read(ref _fenced);
+
+    /// <summary>Whether it holds nothing handed and unhandled (a parked entry waits durably) and its start's rebuild ended.</summary>
+    public bool Quiet
+    {
+        get
+        {
+            lock (_gate) return Fenced || (_open.Count == 0 && _waiting.Count == 0 && _resumed is { IsCompleted: true });
+        }
+    }
 
     public bool Reads(string kind) => _kinds.Contains(kind);
 
@@ -362,7 +415,11 @@ internal sealed class BusConsumerRun
                 _queue.Log.Warn($"queue:resumed:{Name}", "bus.consumer-threw", ("consumer", Name), ("kind", "resumed"), ("why", error.Message));
             }
         }, CancellationToken.None);
-        lock (_gate) _running.Add(resumed);
+        lock (_gate)
+        {
+            _running.Add(resumed);
+            _resumed = resumed;
+        }
     }
 
     /// <summary>An entry handed by a frame: a live one waits until the replay is done; one at or below what it holds is not handed again.</summary>
@@ -530,13 +587,17 @@ internal sealed class BusConsumerRun
         }
 
         var ended = ends && BusTypes.Of(entry.Kind) is { } type && BusTypes.Ends(type).Contains(BusEnd.Acknowledged) ? _consumer.Obliged : null;
-        return Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = ended, Unpark = parked, Writer = _queue.Log.WriterRead }), cursor);
+        return Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = ended, Unpark = parked, Writer = _queue.Log.WriterRead }), cursor) is not false;
     }
 
-    /// <summary>The lane's head and every entry behind it parked durably with their tries, so the cursor passes them while they wait.</summary>
+    /// <summary>
+    /// The lane's head and every entry behind it parked durably with their tries, so the cursor passes them while they wait; false where the
+    /// store fenced this run off. A park the store did not keep leaves the entries it would have parked open, so no cursor passes them.
+    /// </summary>
     private bool Park(string subject, int tries)
     {
         List<(long Seq, int Tries)> rows;
+        List<long> fresh = [];
         long cursor;
         lock (_gate)
         {
@@ -549,18 +610,33 @@ internal sealed class BusConsumerRun
             rows = [.. lane.Select(each => (each.Entry.Seq, each.Tries))];
             foreach (var (seq, _) in rows)
             {
-                _open.Remove(seq);
-                _parked.Add(seq);
+                if (_open.Remove(seq) && _parked.Add(seq)) fresh.Add(seq);
             }
 
             cursor = CursorLocked();
         }
 
-        return Written(() => _queue.Store.Park(new BusPark(Name, _epoch, cursor, rows) { Writer = _queue.Log.WriterRead }), cursor);
+        var written = Written(() => _queue.Store.Park(new BusPark(Name, _epoch, cursor, rows) { Writer = _queue.Log.WriterRead }), cursor);
+        if (written is null)
+        {
+            lock (_gate)
+            {
+                foreach (var seq in fresh)
+                {
+                    _parked.Remove(seq);
+                    _open.Add(seq);
+                }
+            }
+        }
+
+        return written is not false;
     }
 
-    /// <summary>A write of this run's, its cursor kept once written; a fence or a lost lease stops it, said once; a busy store is said and passed.</summary>
-    private bool Written(Action write, long cursor)
+    /// <summary>
+    /// A write of this run's, its cursor kept once written (true); a fence or a lost lease stops it, said once (false); a busy store is said
+    /// and passed, nothing kept (null).
+    /// </summary>
+    private bool? Written(Action write, long cursor)
     {
         try
         {
@@ -579,7 +655,7 @@ internal sealed class BusConsumerRun
             // Not kept: the entry is handled again after a restart (at least once), never lost.
             _queue.Log.Warn($"queue:unwritten:{Name}", "bus.consumer-unwritten", ("consumer", Name), ("why", error.Message));
             Debug.WriteLine($"bus queue: {Name}'s write failed ({error.Message})");
-            return true;
+            return null;
         }
     }
 
