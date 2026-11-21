@@ -223,7 +223,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     files, its trees' folders and its branch records stands, read again after thirty minutes whatever moved (`TidyIdleness`); a reader of the session or
     quest list reads it by its change since its mark (`SessionListKept`, `QuestListKept`), judged once while it is the same
     (`JudgedOnce`); no look judges an owed opinion: its gate is the bus's consumer, judging it at its facts (rule 30a,
-    `workflows-review-landing` rule 26), and the plan reads the gate's view (`LookFacts`); a judgment reads its tree's work kept
+    `workflows-review-landing` rule 26), and the plan reads the gate's view (`LookFacts`), each look taking the view's wake before its
+    passes read it, so only a judgment landing after wakes the next; a judgment reads its tree's work kept
     while the tree and its refs stand (`TreeReadMemo`);
     a look reads the open records and every record once each, and every graph run and its record once
     (`RunOutcomeNotices`, a workflow file decoded once a read); the overlaps read a running tree's changes only
@@ -313,7 +314,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     handed to it. The registry's check at emit, the emit measures and the timers' arming stay in the write: they ride the entry's
     own transaction, and the chain runs only after it. A consumer (`IBusConsumer`) is a durable row (`bus_consumers`, made by the
     store's step 35): its types, its cursor (a new one's the log's newest, so it starts from now) and an epoch each claim raises.
-    Its entries go one at a time per subject, in order, and a few subjects at once; each is acknowledged after it is handled, in one
+    Its entries go one at a time per subject, in order, and a few subjects at once (entries of a kind it folds, waiting in a row on
+    one subject, are acknowledged into the last, which stays open while it is handled); each is acknowledged after it is handled, in one
     transaction with the cursor, its parked row and, where its handler says the acknowledgement ends it, the timer obliged to that
     consumer, so an acknowledgement means handled. A restart resumes each from its cursor, its parked entries first: at least once.
     A handler that throws is said once and its entry parked (`bus_parked`) and tried again with backoff, its subject held alone;

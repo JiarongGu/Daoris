@@ -155,7 +155,7 @@ public sealed class RunningSessions
         moved.TrySetResult();
     }
 
-    /// <summary>Taken by the look that reads the facts, before it reads them: one that moves after is the next look's.</summary>
+    /// <summary>Taken by each look before its passes read the facts: one that moves after is the next look's.</summary>
     internal void TakeFactsMoved()
     {
         lock (_gate) _factsMoved = false;

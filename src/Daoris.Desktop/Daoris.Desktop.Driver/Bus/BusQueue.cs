@@ -23,6 +23,9 @@ public interface IBusConsumer
 
     /// <summary>Told once the consumer resumed from its cursor, its parked and missed entries handed back: where it rebuilds its view.</summary>
     Task ResumedAsync(CancellationToken ct) => Task.CompletedTask;
+
+    /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject fold into the last: its handling stands for them all.</summary>
+    bool Folds(string kind) => false;
 }
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
@@ -480,6 +483,7 @@ internal sealed class BusConsumerRun
         {
             BusEnvelope entry;
             int tries;
+            List<BusEnvelope> folded = [];
             lock (_gate)
             {
                 if (_fenced || !_lanes.TryGetValue(subject, out var lane) || lane.Count == 0)
@@ -489,10 +493,21 @@ internal sealed class BusConsumerRun
                 }
 
                 (entry, tries) = lane.Peek();
+                while (_consumer.Folds(entry.Kind) && lane.Count > 1 && lane.ElementAt(1).Entry.Kind == entry.Kind)
+                {
+                    folded.Add(lane.Dequeue().Entry);
+                    (entry, tries) = lane.Peek();
+                }
             }
 
             // Its ownership read before it acts: a later claim (another process's) fences this one off, so the two never both execute it.
             if (!Owned()) return;
+            // The last of a row stays open while it is handled, so a crash hands it again and it stands for those folded into it.
+            foreach (var each in folded)
+            {
+                if (!Acknowledge(each, ends: true)) return;
+            }
+
             BusHandled? handled = null;
             Exception? thrown = null;
             await _atOnce.WaitAsync(ct).ConfigureAwait(false);

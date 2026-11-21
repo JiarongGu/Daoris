@@ -75,24 +75,40 @@ internal sealed class OpinionGateRun : IAsyncDisposable
     /// for the facts those ends wrote, until both stand. Whether it handled or ran anything, or a judgment moved what the plan reads, so a
     /// run looks again; a queue not quiet within <see cref="Most"/> is said once and left to the next start, which resumes from its cursor.
     /// </summary>
-    public async Task<bool> DrainAsync(RunningSessions runs, CancellationToken ct)
+    /// <param name="pace">How often <paramref name="watched"/> is told while what the gate began runs: the watcher's look, which ends a quiet one as <c>--quiet-end</c> asks.</param>
+    public async Task<bool> DrainAsync(RunningSessions runs, CancellationToken ct, TimeSpan pace, Action? watched = null)
     {
         var worked = false;
+        var began = _bus.Clock.GetTimestamp();
         while (true)
         {
             await _bus.FlushAsync().ConfigureAwait(false);
             worked |= !_queue.Quiet;
-            if (!await _queue.QuietAsync(Most, ct).ConfigureAwait(false))
-            {
-                _bus.Warn("gate:drain", "opinion.gate-undrained", ("why", $"its queue was not quiet within {Most.TotalMinutes:0} minutes"));
-                return worked;
-            }
+            if (!await _queue.QuietAsync(Most, ct).ConfigureAwait(false)) return Undrained(worked, "its queue was not quiet");
 
             var settled = runs.SettledAsync();
             if (settled.IsCompleted) return worked || runs.FactsAhead;
             worked = true;
-            await settled.WaitAsync(ct).ConfigureAwait(false);
+            while (!settled.IsCompleted)
+            {
+                if (_bus.Clock.GetElapsedTime(began) >= Most) return Undrained(worked, "what it began beside did not end");
+                using (var paced = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    await Task.WhenAny(settled, Task.Delay(pace, _bus.Clock, paced.Token)).ConfigureAwait(false);
+                    await paced.CancelAsync().ConfigureAwait(false);
+                }
+
+                ct.ThrowIfCancellationRequested();
+                if (!settled.IsCompleted) watched?.Invoke();
+            }
         }
+    }
+
+    /// <summary>A drain past its bound, said once and left to the next start, which resumes from the cursor and judges every owed opinion.</summary>
+    private bool Undrained(bool worked, string why)
+    {
+        _bus.Warn("gate:drain", "opinion.gate-undrained", ("why", $"{why} within {Most.TotalMinutes:0} minutes"));
+        return worked;
     }
 
     public async ValueTask DisposeAsync()

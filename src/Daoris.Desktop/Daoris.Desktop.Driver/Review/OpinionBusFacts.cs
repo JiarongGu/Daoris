@@ -19,10 +19,15 @@ public static class OpinionBusFacts
         ["opinion.answered"] = BusTypes.OpinionAnswered,
     };
 
-    /// <summary>Whether the gate's acknowledgement of <paramref name="entry"/> ends its obligation: an owed opinion or answers judged, a given pass only when clean.</summary>
+    /// <summary>The kinds the gate's acknowledgement always ends: an owed opinion, answers, the person's word, and a move it judged.</summary>
+    private static readonly HashSet<string> Judged = new(
+        [BusTypes.OpinionOwed.Kind, BusTypes.OpinionAnswered.Kind, BusTypes.OpinionSaid.Kind, BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind],
+        StringComparer.Ordinal);
+
+    /// <summary>Whether the gate's acknowledgement of <paramref name="entry"/> ends its obligation: one of <see cref="Judged"/>, a given pass only when clean.</summary>
     public static bool EndsAtTheGate(BusEnvelope entry)
     {
-        if (entry.Kind == BusTypes.OpinionOwed.Kind || entry.Kind == BusTypes.OpinionAnswered.Kind) return true;
+        if (Judged.Contains(entry.Kind)) return true;
         if (entry.Kind != BusTypes.OpinionGiven.Kind) return false;
         long? Count(string key) => entry.Payload.FirstOrDefault(pair => pair.Key == key).Value switch
         {

@@ -62,8 +62,7 @@ public sealed class OpinionGateFactsTests : IDisposable
         await Poll.Until(() => Judged("s-1") == 2, () => $"the ask was not judged: {string.Join(", ", _judged)}", Soon);
         Assert.Equal([0, 1], requests);
         Assert.Equal(1, Judged("s-2"));
-        await bus.FlushAsync();
-        await Poll.Until(() => !Armed().Any(timer => timer.Obliged == BusTypes.OpinionGate), () => "an owed fact stayed armed", Soon);
+        await Unarmed(bus);
     }
 
     /// <summary>🔴 The person's word at the gate (<i>Go on anyway</i>, <i>I looked myself</i>, an Accept's answer) judges that session's owed opinion at once.</summary>
@@ -82,6 +81,47 @@ public sealed class OpinionGateFactsTests : IDisposable
 
         await Poll.Until(() => Judged("s-1") == 2, () => $"the word was not judged: {string.Join(", ", _judged)}", Soon);
         Assert.Equal(1, Judged("s-2"));
+        await Unarmed(bus);
+    }
+
+    /// <summary>
+    /// 🔴 A burst of moves folds: those waiting in a row on one subject into the last, and those of several subjects into one round of
+    /// judgments, so nine facts cost at most four rounds, and none stays armed.
+    /// </summary>
+    [Fact]
+    public async Task A_burst_of_moves_folds_into_few_rounds()
+    {
+        var reading = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var bus = Open();
+        using var gate = Gate(async due =>
+        {
+            if (due.Session == "s-2" && Judged("s-2") == 2)
+            {
+                reading.TrySetResult();
+                await release.Task;
+            }
+
+            return Waits();
+        });
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick);
+        await Started();
+
+        try
+        {
+            bus.Append(OpinionBusFacts.QuestMoved(["quests"]));
+            await reading.Task.WaitAsync(Soon);
+            for (var each = 0; each < 5; each++) bus.Append(OpinionBusFacts.QuestMoved(["quests"]));
+            for (var each = 0; each < 3; each++) bus.Append(OpinionBusFacts.ChoicesWritten());
+            await bus.FlushAsync();
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+
+        await Unarmed(bus);
+        Assert.InRange(Judged("s-1"), 3, 5);
     }
 
     /// <summary>🔴 The quests' move heard on the service's change stream (a hold lifted, a later step declined) judges every owed opinion.</summary>
@@ -94,6 +134,7 @@ public sealed class OpinionGateFactsTests : IDisposable
         await Started();
 
         await Poll.Until(() => Judged("s-1") >= 2 && Judged("s-2") >= 2, () => $"the move was not judged: {string.Join(", ", _judged)}", Soon);
+        await Unarmed(bus);
     }
 
     /// <summary>
@@ -145,6 +186,7 @@ public sealed class OpinionGateFactsTests : IDisposable
 
         await Poll.Until(() => reads.LastOrDefault(), () => $"the opinion read the node only before it began: {string.Join(", ", reads)}", Soon);
         Assert.Equal([false, false, true], reads);
+        await Unarmed(bus);
     }
 
     /// <summary>🔴 The standing choices written (a reviewer added to a rule among them) judge every owed opinion.</summary>
@@ -161,6 +203,7 @@ public sealed class OpinionGateFactsTests : IDisposable
         }));
 
         await Poll.Until(() => Judged("s-1") == 2 && Judged("s-2") == 2, () => $"the choices were not judged: {string.Join(", ", _judged)}", Soon);
+        await Unarmed(bus);
     }
 
     /// <summary>🔴 A judgment that throws keeps the turn a judgment before it set (a cool-off's reset): the opinion is judged again then.</summary>
@@ -207,6 +250,15 @@ public sealed class OpinionGateFactsTests : IDisposable
     private static OpinionFact Waits() => new(new Dictionary<string, OpinionSit>(), null, null);
 
     private int Judged(string session) => _judged.Count(subject => subject.StartsWith(session + "/", StringComparison.Ordinal));
+
+    /// <summary>Nothing owed to the gate left armed once what is written is acknowledged.</summary>
+    private async Task Unarmed(BusLog bus)
+    {
+        await bus.FlushAsync();
+        await Poll.Until(
+            () => !Armed().Any(timer => timer.Obliged == BusTypes.OpinionGate),
+            () => "armed: " + string.Join(", ", Armed().Where(timer => timer.Obliged == BusTypes.OpinionGate).Select(timer => timer.Kind)), Soon);
+    }
 
     private Task Started() => Poll.Until(() => Judged("s-1") >= 1 && Judged("s-2") >= 1, () => "the start did not judge both owed opinions", Soon);
 

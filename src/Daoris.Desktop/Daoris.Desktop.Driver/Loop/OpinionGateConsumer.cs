@@ -46,6 +46,9 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _again = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, int> _quiet = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _closing = new();
+    private readonly SemaphoreSlim _round = new(1, 1);
+    private long _heard;
+    private long _rounded;
 
     /// <param name="judge">One owed opinion judged by the gate's rule, told where a pass or a delivery it began beside ends.</param>
     /// <param name="read">An opinion's record by its id; null where none is.</param>
@@ -89,14 +92,39 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
     public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
     {
-        // Each owed opinion it names is judged beside the others: one whose judgment is slow holds none of the rest.
-        await Task.WhenAll((await DuesOfAsync(entry, ct).ConfigureAwait(false)).Select(due =>
-        {
-            _quiet.TryRemove(OpinionGateJudge.Subject(due), out _);
-            return JudgeAsync(due, ct);
-        })).ConfigureAwait(false);
-
+        if (Everyone.Contains(entry.Kind)) await RoundAsync(ct).ConfigureAwait(false);
+        else await JudgeAllAsync(await DuesOfAsync(entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;
+    }
+
+    public bool Folds(string kind) => Everyone.Contains(kind);
+
+    /// <summary>Each owed opinion judged beside the others: one whose judgment is slow holds none of the rest.</summary>
+    private Task JudgeAllAsync(IEnumerable<OpinionDue> dues, CancellationToken ct) => Task.WhenAll(dues.Select(due =>
+    {
+        _quiet.TryRemove(OpinionGateJudge.Subject(due), out _);
+        return JudgeAsync(due, ct);
+    }));
+
+    /// <summary>
+    /// A move's round: every owed opinion judged once, one round at a time; a move heard before a round began is judged by it, so a burst of
+    /// moves on several subjects costs one round for those that waited.
+    /// </summary>
+    private async Task RoundAsync(CancellationToken ct)
+    {
+        var heard = Interlocked.Increment(ref _heard);
+        await _round.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (Interlocked.Read(ref _rounded) >= heard) return;
+            var upto = Interlocked.Read(ref _heard);
+            await JudgeAllAsync(_open(), ct).ConfigureAwait(false);
+            Interlocked.Exchange(ref _rounded, upto);
+        }
+        finally
+        {
+            _round.Release();
+        }
     }
 
     /// <summary>Every owed opinion judged once at the start: the gate's view and its turns rebuilt, nothing owed left to a look.</summary>
@@ -128,7 +156,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
     /// <summary>
     /// The owed opinions <paramref name="entry"/> names: an owed fact by its session and occasion (a person's ask, by its session alone), the
-    /// person's word by its session, a quest's, a node's or the choices' move every one, an opinion's by its record's.
+    /// person's word by its session, an opinion's by its record's.
     /// </summary>
     private async Task<IReadOnlyList<OpinionDue>> DuesOfAsync(BusEnvelope entry, CancellationToken ct)
     {
@@ -148,8 +176,6 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
             var session = Text(entry, "session") ?? entry.Subject;
             return [.. open.Where(due => Ids.Equals(due.Session, session))];
         }
-
-        if (Everyone.Contains(entry.Kind)) return open;
 
         if (await _read(entry.Subject, ct).ConfigureAwait(false) is not { } view) return [];
         // The opinion reads its working session's work: that session's owed opinion at its occasion, or at any where its occasion moved.

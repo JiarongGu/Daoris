@@ -466,7 +466,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     opinion: the quests' move as the service's change stream names it (`quest.moved`: a hold lifted, a later step declined or
     published), a node a run's record began (`node.begun`, written where the record is: a graph's opinion node holds the ask until it
     begins, and one begun while a judgment read before it waits for that judgment, so the next reads it), and the standing choices this
-    process wrote (`choices.written`: a reviewer added to a rule, a workflow, the policy). What it found is the
+    process wrote (`choices.written`: a reviewer added to a rule, a workflow, the policy). A burst of moves folds: those waiting in a
+    row on one subject into the last, whose handling stands for them, and those of several subjects into one round of judgments, a
+    move heard before a round began being judged by it. What it found is the
     gate's view (`LookFacts`), which the look's plan reads for the quests it sits and the attention band's gates and never judges;
     no look stage judges an opinion. Its acknowledgement ends what is owed it: an owed opinion, a word or a move judged, the answers
     judged, and a clean pass, which leaves nothing to deliver. A turn ahead (a cool-off's reset, a reading pass's end) judges it
@@ -475,7 +477,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     found set. These live in memory, and a start judges every owed opinion once, which rebuilds the view and its turns, the watchdog's
     timers the net under all of it. The watch, `drive --once` and `drive --until-idle` each start it beside their looks
     (`OpinionGateRun`); a run that must return also hears the change stream for it and drains it before it ends, its queue quiet and
-    what the gate began beside ended, and a run until idle looks again after a drain that judged or ran anything. The author's answers reach it as the go-on reads them at the
+    what the gate began beside ended, within the gate's ten minutes, the watcher looking at the pace meanwhile so `--quiet-end` ends a
+    quiet pass, and a run until idle looks again after a drain that judged, ran or moved the plan's view. The author's answers reach it as the go-on reads them at the
     turn's end; the service journals none of its own yet (BUS2b2). Its findings reach the working session once, as its next
     turn, a word into a conversation sent once by its effect key and never again after a crash left it uncertain (the findings then
     the person's, `word-uncertain`), a send that throws read as failed and tried again: a session awaiting its run's step takes them as an ended record does, through the one door and the one go-on, and the graph's

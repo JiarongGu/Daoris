@@ -17,6 +17,13 @@ internal sealed class LoopRuns(
 {
     private Task<OpinionGateRun?> GatesAsync(CancellationToken ct) => gates?.Invoke(ct) ?? Task.FromResult<OpinionGateRun?>(null);
 
+    /// <summary>The watcher's look while a drain waits on what the gate began, said as <see cref="SettleAsync"/> says it.</summary>
+    private Action Watched(Action<TickReport>? said) => () =>
+    {
+        List<string> lines = [.. wiring.LookIn(wiring.Lines)];
+        if (lines.Count > 0) said?.Invoke(new TickReport([], lines, Progressed: false, Concluded: []));
+    };
+
     /// <summary>
     /// Look until nothing runs and a look starts nothing: a queue that is empty, held, or waiting on the person, with no session of this
     /// driver's still working and no ending left unreported. A failure or a close lets go only once every session has written how it
@@ -41,7 +48,7 @@ internal sealed class LoopRuns(
                 if (!report.Progressed && wiring.Runs.Idle)
                 {
                     // Idle once the gate's facts are drained too: a drain that judged or ran anything is looked at again.
-                    if (gate is null || !await gate.DrainAsync(wiring.Runs, ct).ConfigureAwait(false)) return reports;
+                    if (gate is null || !await gate.DrainAsync(wiring.Runs, ct, beside, Watched(said)).ConfigureAwait(false)) return reports;
                     continue;
                 }
 
@@ -88,7 +95,7 @@ internal sealed class LoopRuns(
         said?.Invoke(first);
         var settled = await SettleAsync(ct, said).ConfigureAwait(false);
         // The facts its endings wrote are judged before it ends, and what the gate began beside them ends and is said.
-        if (gate is not null && await gate.DrainAsync(wiring.Runs, ct).ConfigureAwait(false)) await LetGoAsync(said).ConfigureAwait(false);
+        if (gate is not null && await gate.DrainAsync(wiring.Runs, ct, beside, Watched(said)).ConfigureAwait(false)) await LetGoAsync(said).ConfigureAwait(false);
         return first with
         {
             Events = [.. first.Events, .. settled.Events],

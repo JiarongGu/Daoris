@@ -403,6 +403,8 @@ public sealed class Driver(
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
         using var facts = GitFacts.Within(ct);
+        // The facts' wake is taken before any pass reads the facts, so only a judgment landing after it wakes the next look.
+        Context.Runs.TakeFactsMoved();
         var round = new LookRound(Part, events, new LookState(concluded));
         foreach (var phase in new[] { LookPhase.Before, LookPhase.Local, LookPhase.Read, LookPhase.Planned, LookPhase.Begun, LookPhase.After })
         {
@@ -440,14 +442,14 @@ public sealed class Driver(
     private LoopRuns Looping =>
         LazyInitializer.EnsureInitialized(ref _looping, () => new LoopRuns(
             LookWiring, (ct, failed) => TickAsync(ct, failed), _syncBeside, () => LookPasses,
-            ct => OpinionGateRun.StartAsync(Bus, Beside, service, home, ct, listens: true)));
+            Gates ?? (ct => OpinionGateRun.StartAsync(Bus, Beside, service, home, ct, listens: true))));
 
     private LoopRuns? _looping;
 
-    /// <summary>
-    /// A driver for the opinion's gate beside a run's looks: its own context over the same sessions, as the watch's gate's is, so a pass or
-    /// a delivery it begins runs as one the look began.
-    /// </summary>
+    /// <summary>A test's stand-in for the opinion's gate a run that must return starts: the real one judges with git and the service.</summary>
+    internal Func<CancellationToken, Task<OpinionGateRun?>>? Gates { get; init; }
+
+    /// <summary>A driver for the opinion's gate beside a run's looks: its own context over the same sessions, as the watch's gate's is.</summary>
     private Driver Beside()
     {
         var driver = new Driver(service, config, adapters, home, processes, Sync, output, harnesses, usage, hooks, Context.Events, browser, Running)
