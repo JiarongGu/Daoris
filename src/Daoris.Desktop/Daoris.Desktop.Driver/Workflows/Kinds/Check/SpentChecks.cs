@@ -64,7 +64,10 @@ internal static class SpentChecks
         var decided = Decide(verdict, holder);
         var record = records.Read(unit);
         var first = record?.Told.FirstOrDefault(each => each.Node == node)?.At;
-        var (session, why) = await tell(Words(node, code, found, reds, decided, holder)).ConfigureAwait(false);
+        // An older build told the session and kept no decision: decided now, never told twice.
+        var (session, why) = record?.ToldOf(node, attempt) is { Spent: true, Decided: null } older
+            ? (older.Session, older.Why)
+            : await tell(Words(node, code, found, reds, decided, holder)).ConfigureAwait(false);
         var told = new NodeTold(node, attempt, session, why, now) { Spent = true, Decided = decided, Role = decided == NodeTold.RoleHeld ? HeldOn : null };
         var (refused, _) = records.Edit(unit, kept => (kept with { Told = [.. kept.Told.Where(each => each.Node != node || each.Attempt != attempt).TakeLast(NodeRecord.ToldKept - 1), told] }, true));
         var key = $"{records.Home}|{unit}/{node}#{attempt}";

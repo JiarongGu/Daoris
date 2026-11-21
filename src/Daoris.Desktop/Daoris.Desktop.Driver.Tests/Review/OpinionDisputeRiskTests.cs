@@ -28,6 +28,20 @@ public sealed class OpinionDisputeRiskTests
 
     private static ResolvedOpinion Rule() => new(new OpinionRule(["codex-acp"], [OpinionRules.Landing], false, Recheck: false), OpinionSource.Repository);
 
+    [Fact]
+    public void An_opinion_step_its_gate_reached_after_the_policy_passed_its_dispute_counts_as_a_policy_pass_so_a_wait_the_person_held_is_told()
+    {
+        var opinion = new NodeDeclaration("opinion", NodeKinds.Opinion, 1, NodeReach.Observed);
+        var review = new NodeDeclaration("review", NodeKinds.Review, 1, NodeReach.Pressed);
+        var reached = new NodeStatus("run:q7", "opinion", NodeStates.Reached) { By = NodeSource.Opinion, Attempt = 1 };
+
+        Assert.Equal(RiskActs.WorkAccept, PolicyPasses.PassedKind(opinion, reached, gatePassed: true));
+        Assert.Null(PolicyPasses.PassedKind(opinion, reached, gatePassed: false));
+        Assert.Null(PolicyPasses.PassedKind(opinion, reached with { State = NodeStates.Active }, gatePassed: true));
+        Assert.Equal(RiskActs.WorkAccept, PolicyPasses.PassedKind(review, new NodeStatus("run:q7", "review", NodeStates.Reached) { By = NodeSource.Policy }, false));
+        Assert.Null(PolicyPasses.PassedKind(review, new NodeStatus("run:q7", "review", NodeStates.Reached) { By = NodeSource.Person }, false));
+    }
+
     private static OpinionView Opinion(params string[] weights) =>
         new("o1", "landing", "first", "s1", "r-o1", "web-app", "0000000000000000000000000000000000000000", Read, "codex-acp", ReviewerLabels.AnotherMaker, "given")
         {

@@ -28,10 +28,29 @@ internal static class PolicyPasses
         if (gate is not { State: OpinionGateStates.Answered, Risk: { Outcome: RiskVerdict.Pass } verdict, Person.Said: OpinionPersonSaid.Policy }) return;
         var key = $"opinion:{at.Subject}@{gate.Tip}/{gate.Answered}";
         var place = RiskPlace.Of(config, at.Workspace, at.Repository);
-        Once(home, key, () => new RiskJudged(now, RiskJudged.Released, key, gate.Answered ?? "", verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace,
-            place.Repository, place.Mode, at.Run, at.Step, $"second opinion on {at.Subject} at {gate.Tip}", verdict.Outcome, verdict.Class, verdict.By, verdict.Source,
-            verdict.Revision, verdict.Reason, Today, false));
+        if (Once(home, key, () => new RiskJudged(now, RiskJudged.Released, key, gate.Answered ?? "", verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace,
+                place.Repository, place.Mode, at.Run, at.Step, $"second opinion on {at.Subject} at {gate.Tip}", verdict.Outcome, verdict.Class, verdict.By, verdict.Source,
+                verdict.Revision, verdict.Reason, Today, false)) && at.Run is not null && at.Step is not null)
+        {
+            lock (OpinionPassed(home)) OpinionPassed(home).Add($"{at.Run}/{at.Step}");
+        }
     }
+
+    private static readonly ConcurrentDictionary<string, HashSet<string>> OpinionSteps = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<string, byte> GateTold = new(StringComparer.OrdinalIgnoreCase);
+
+    private static HashSet<string> OpinionPassed(string home) => OpinionSteps.GetOrAdd(home, path =>
+        new HashSet<string>(RiskJournal.Read(path).Where(line => line.Today == Today && line.Key.StartsWith("opinion:", StringComparison.Ordinal)
+            && line is { Run: not null, Step: not null }).Select(line => $"{line.Run}/{line.Step}"), StringComparer.Ordinal));
+
+    /// <summary>The act the policy let a reached step go on by: its own pass, or an <c>opinion</c> step's gate pass; else null.</summary>
+    internal static string? PassedKind(NodeDeclaration node, NodeStatus? status, bool gatePassed) => status switch
+    {
+        { State: NodeStates.Reached } when node.Kind == NodeKinds.Opinion => gatePassed ? RiskActs.WorkAccept : null,
+        { State: NodeStates.Reached, By: NodeSource.Policy } => RiskStepHolds.KindOf(node.Kind == NodeKinds.Review ? PersonWaits.Accept : PersonWaits.Approval, node),
+        _ => null,
+    };
 
     private static bool Once(string home, string key, Func<RiskJudged> line)
     {
@@ -57,8 +76,17 @@ internal static class PolicyPasses
             foreach (var node in each.Graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(record, node.Id);
+                bool passed;
+                lock (OpinionPassed(records.Home)) passed = OpinionPassed(records.Home).Contains($"{each.Run}/{node.Id}");
+                if (PassedKind(node, status, passed) is not null && node.Kind == NodeKinds.Opinion)
+                {
+                    if (GateTold.TryAdd($"{records.Home}|{each.Run}/{node.Id}#{status.Attempt}", 0)
+                        && tenures.Current(each.Unit.Id, node.Id, status.Attempt)?.Holder == CastHolders.Person) told.Add(RiskActs.WorkAccept);
+                    continue;
+                }
+
                 var why = node.Kind == NodeKinds.Review ? PersonWaits.Accept : PersonWaits.Approval;
-                if (status is not { State: NodeStates.Reached, By: NodeSource.Policy } || RiskStepHolds.KindOf(why, node) is not { } kind) continue;
+                if (PassedKind(node, status, false) is not { } kind) continue;
                 var key = $"{RiskStepHolds.Domain}:{each.Run}/{node.Id}#{status.Attempt}:{why}";
                 var verdict = RiskGate.Judge(policy, RiskAct.Of(kind), "", place, "");
                 if (!Once(records.Home, key, () => new RiskJudged(now, RiskJudged.Released, key, why, verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace,

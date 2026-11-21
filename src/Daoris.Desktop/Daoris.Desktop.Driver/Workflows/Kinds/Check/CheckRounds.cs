@@ -44,7 +44,7 @@ public static class CheckRounds
 
     /// <summary>
     /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not told yet
-    /// (<see cref="NodeRecord.ToldOf"/>): each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
+    /// (<see cref="NodeRecord.ToldOf"/>) or told by an older build that kept no decision: each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
     /// <c>claimed</c> step, with its count of reds.
     /// </summary>
     public static IReadOnlyList<(string Node, int Attempt, int Reds)> SpentOwed(
@@ -59,7 +59,7 @@ public static class CheckRounds
             if (SendsBack(check, reds) || record.Statuses.GetValueOrDefault(source) is not { State: NodeStates.Failed } status) continue;
             if (record.Attempts.LastOrDefault(attempt => attempt.Node == source && attempt.Attempt == status.Attempt)
                     is not { State: AttemptStates.Settled, Outcome: WorkStates.Failed }
-                || record.ToldOf(source, status.Attempt) is not null || owed.Any(each => each.Node == source))
+                || record.ToldOf(source, status.Attempt) is { } told && (!told.Spent || told.Decided is not null) || owed.Any(each => each.Node == source))
             {
                 continue;
             }

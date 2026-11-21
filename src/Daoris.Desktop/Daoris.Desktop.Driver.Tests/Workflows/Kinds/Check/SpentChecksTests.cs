@@ -124,6 +124,23 @@ public sealed class SpentChecksTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_red_spent_and_told_before_this_build_is_decided_at_its_next_look_noticed_and_journaled_never_told_twice()
+    {
+        Spent();
+        Files.Edit(RunUnit, record => (record with { Told = [.. record.Told, new NodeTold("check", 3, "s1", null, _now.AddHours(-1)) { Spent = true }] }, true));
+        var said = new List<string>();
+        var told = new List<string>();
+
+        Assert.True(await SettleAsync("""{"risk":{}}""", said, told));
+
+        Assert.Empty(told);
+        var kept = Files.Read(RunUnit)!.ToldOf("check", 3)!;
+        Assert.Equal((NodeTold.Exit, "s1"), (kept.Decided, kept.Session));
+        Assert.Single(said, line => line.StartsWith("final exit, to you:", StringComparison.Ordinal));
+        Assert.Equal(SpentChecks.Today, Assert.Single(RiskJournal.Read(_home)).Today);
+    }
+
+    [Fact]
     public async Task A_journal_that_will_not_append_never_keeps_the_final_exit_from_the_owner()
     {
         Spent();
