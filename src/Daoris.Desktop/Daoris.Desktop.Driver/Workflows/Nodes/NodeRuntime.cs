@@ -567,7 +567,7 @@ public sealed class NodeRuntime(
                 done.AddRange(_performer.Keep(before, evaluated));
             }
 
-            await Keeping.SpentRedsAsync(governed, said, ct).ConfigureAwait(false);
+            await Keeping.SpentRedsAsync(governed, _config, said, ct).ConfigureAwait(false);
 
             // Each node whose wires fired starts as its kind says. A start that dropped what this pass governs (a fence that found the
             // unit moved) ends its judgement here: the next pass reads it again, and no further round reads git only to find the same revision.

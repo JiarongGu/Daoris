@@ -334,6 +334,7 @@ public static class NodeLifecycle
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, person, "the person stops this node"));
         foreach (var from in NodeStates.Live) rows.Add(new(from, NodeStates.Stopped, daoris, "Daoris gives up a step that stood vacant past its bound (StepVacancies)"));
         rows.Add(new(NodeStates.Failed, NodeStates.Stopped, person, "the person stops a failed node, which ends it and its run as stopped"));
+        rows.Add(new(NodeStates.Failed, NodeStates.Stopped, daoris, "Daoris gives up a check red past its rounds where the risk policy passes it (SpentChecks)"));
         foreach (var from in NodeStates.Bound)
         {
             rows.Add(new(from, NodeStates.Invalidated, daoris, "its binding changed: history is kept, and unresolved attempts are superseded"));

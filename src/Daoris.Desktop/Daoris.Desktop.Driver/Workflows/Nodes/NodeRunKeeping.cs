@@ -325,15 +325,19 @@ internal sealed class NodeRunKeeping(
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
         + " and commit, and what you commit goes through the workflow again.";
 
-    /// <summary>A check's red past its rounds' bound (<see cref="CheckRounds.SpentOwed"/>) told to the work's session all the same, once.</summary>
-    public async Task SpentRedsAsync(GovernedUnit governed, List<string> said, CancellationToken ct)
+    /// <summary>A check's red past its rounds' bound told to the work's session all the same, once, and given up where the policy passes it.</summary>
+    public async Task SpentRedsAsync(GovernedUnit governed, DriverConfig? config, List<string> said, CancellationToken ct)
     {
         if (governed.Scope is not { } scope || records.Read(governed.Unit.Id) is not { } record) return;
+        var (workspace, repository) = (governed.Unit.Owner.Workspace, governed.Unit.Owner.Repository);
         foreach (var (node, attempt, reds) in CheckRounds.SpentOwed(record, governed.Graph.Wires, governed.Declared))
         {
             var code = record.Statuses.GetValueOrDefault(node)?.Code;
-            var text = CheckRounds.SpentWords(node, code, CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why, reds);
+            var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
+            var passes = SpentChecks.Passes(config, workspace, repository);
+            var text = passes ? SpentChecks.Words(node, code, found, reds) : CheckRounds.SpentWords(node, code, found, reds);
             await TellWorkAsync(governed, scope, node, attempt, text, said, ct, spent: true).ConfigureAwait(false);
+            if (passes) SpentChecks.Decide(records, scope.Run.Run, node, reds, config, repository, workspace, found, clock(), said);
         }
     }
 

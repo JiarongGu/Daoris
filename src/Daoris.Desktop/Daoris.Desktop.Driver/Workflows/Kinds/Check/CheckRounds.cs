@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rounds a red <c>check</c> goes back to the work before the person hears: each failed verdict on a run's record is a round, a
-/// <c>back</c> wire from the check carries the reading's words to the work's open session for the first rounds, and the round that reaches
-/// <see cref="Bound"/> is not sent back, so its failure is kept for the person as one row, never one per red.
+/// The rounds a red <c>check</c> goes back to the work: each failed verdict on a run's record is a round, a <c>back</c> wire from the check
+/// carries the reading's words to the work's open session for the first rounds, and the round that reaches <see cref="Bound"/> is not sent
+/// back: the risk policy decides it (<see cref="SpentChecks"/>), given up or kept for its holder as one row, never one per red.
 /// </summary>
 public static class CheckRounds
 {
