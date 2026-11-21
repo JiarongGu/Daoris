@@ -282,7 +282,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await UnfinishedAsync(() => VerifyTreeReady.EnsureAsync(home, send, tree, world.Preparation, ct)).ConfigureAwait(false);
 
     private async Task<VerifyResult?> UnregeneratedAsync(string tree, CheckPlace place, CancellationToken ct) =>
-        await UnfinishedAsync(() => RegeneratedAsync(tree, place.Hold is not null, ct)).ConfigureAwait(false);
+        await UnfinishedAsync(() => RegeneratedAsync(tree, place.Hold?.Id, ct)).ConfigureAwait(false);
 
     private async Task<VerifyResult?> UnfinishedAsync(Func<Task<string?>> step)
     {
@@ -302,9 +302,9 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         return Unknown(why) with { Code = VerifyResult.Unprepared };
     }
 
-    private async Task<string?> RegeneratedAsync(string tree, bool inPlace, CancellationToken ct)
+    private async Task<string?> RegeneratedAsync(string tree, string? place, CancellationToken ct)
     {
-        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct, inPlace).ConfigureAwait(false) is not { } failed) return null;
+        if (await TreePreparation.RegenerateAsync(home, send.Repository, _regenerate, tree, ct, place).ConfigureAwait(false) is not { } failed) return null;
         var log = Path.Combine(_folder, "regenerate.log");
         AtomicFile.WriteText(log, failed.Ran.Output);
         return $"`{failed.Command}` exited {failed.Ran.Code}" + (GateLogExcerpt.Told(failed.Ran.Output, log) is { } told ? $"\n{told}" : "");

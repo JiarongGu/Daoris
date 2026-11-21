@@ -673,7 +673,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     under the step's one place in the machine's admission, a clean exit is reached, a red class fails it naming the class, any other
     exit is unknown, and the result's why says the classes run, replayed and red and names a flake; a declaration with none, or a
     run with no base, runs its gates as before (`ReachedRunner`, `ReachedVerdict`). A check holds one place in the machine's admission, taken
-    after its tree is prepared and held while its regeneration and each of its gates or its runner run, never one place for each. A run's check (`RunChecks`, `AsMerged`) judges the work
+    after its tree is prepared and held while its regeneration and each of its gates or its runner run, never one place for each; the
+    regeneration's commands are told it as each gate's are (`DAORIS_ADMISSION_HOLD`), so a child that asks the admission takes none. A run's check (`RunChecks`, `AsMerged`) judges the work
     as merged onto its line's tip (the remote's head, else `main` or `master`): the verification tree takes the work where it holds that tip,
     else a merge made from objects alone (`LineMerge`: `merge-tree --write-tree`, then `commit-tree`, the tip its first parent), never the
     session's branch rebased or moved. The verdict names the work's commit, which the landing lands, merging it onto the line as it stands

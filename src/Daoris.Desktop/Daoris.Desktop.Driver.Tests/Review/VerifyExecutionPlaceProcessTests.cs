@@ -5,8 +5,9 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// A check holds one place in the machine's admission for its regeneration and every gate (or the reached runner) it runs, which a machine
-/// that admits one run at a time proves: a second place would wait on the first for ever. A reached runner runs the fast tier unless the
-/// step names <c>heavy</c>.
+/// that admits one run at a time proves: a second place would wait on the first for ever. The regeneration's children are told the place,
+/// as each gate's are, so one that asks the admission takes none of its own. A reached runner runs the fast tier unless the step names
+/// <c>heavy</c>.
 /// </summary>
 /// <remarks>Real git, node and job processes: the Process half's.</remarks>
 [Trait(Category.Name, Category.Process)]
@@ -91,6 +92,7 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         Assert.Equal(["regen", "gate:a", "gate:b"], calls.Select(call => call.What));
         Assert.NotEqual("none", calls[1].Hold);
         Assert.Equal(calls[1].Hold, calls[2].Hold);
+        Assert.Equal(calls[1].Hold, calls[0].Hold);
     }
 
     [Theory]
@@ -104,5 +106,6 @@ public sealed class VerifyExecutionPlaceProcessTests : IAsyncLifetime
         var calls = Calls();
         Assert.Equal(["regen", $"reached:main:{tier}"], calls.Select(call => call.What));
         Assert.NotEqual("none", calls[1].Hold);
+        Assert.Equal(calls[1].Hold, calls[0].Hold);
     }
 }
