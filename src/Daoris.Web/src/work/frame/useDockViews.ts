@@ -71,6 +71,13 @@ export function useDockViews({
   // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
   const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
   const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
+  // A console that goes away would leave the terminal showing, which starts a shell: the panel shuts instead, in this render.
+  const shown = useRef<ViewId | undefined>(undefined);
+  const consoleGone = !collapsed && shown.current === 'console' && panelView === 'terminal' && terminalCount === 0;
+  useEffect(() => {
+    shown.current = collapsed || consoleGone ? undefined : panelView;
+    if (consoleGone) closed.setPanel(true);
+  });
   // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
     setDock(tab);
@@ -132,9 +139,8 @@ export function useDockViews({
   useEffect(() => {
     const was = terminalsWere.current;
     terminalsWere.current = terminalCount;
-    if (placed.places.terminal !== 'panel') return;
-    if (was === 0 && terminalCount > 0) openView('terminal');
-    else if (was > 0 && terminalCount === 0 && panelView === 'terminal') closed.setPanel(true);
+    if (was > 0 && terminalCount === 0) closed.setPanel(true);
+    else if (was === 0 && terminalCount > 0 && placed.places.terminal === 'panel') openView('terminal');
   }, [terminalCount]);
 
   // The person asked for Ask Daoris — the right side bar's toggle, `F1`, the palette: its region opens on it.
@@ -191,6 +197,6 @@ export function useDockViews({
 
   return {
     setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
-    openPreview, closePreview, openView, moveView,
+    panelCollapsed: collapsed || consoleGone, openPreview, closePreview, openView, moveView,
   };
 }

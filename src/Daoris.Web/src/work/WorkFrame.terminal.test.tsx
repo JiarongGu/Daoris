@@ -42,7 +42,7 @@ const IN_A_TREE = { ...DRIVEN, id: 'tr33tr33', tree: 'C:/somewhere/.daoris/trees
 
 let SESSIONS: unknown[] = [];
 
-function tree(selected: string | null, terminal: boolean, intent: 'newTerminal' | null) {
+function tree(selected: string | null, terminal: boolean, intent: 'newTerminal' | 'console' | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
     <QueryClientProvider client={client}>
@@ -56,7 +56,12 @@ function tree(selected: string | null, terminal: boolean, intent: 'newTerminal' 
 /** The frame as it starts, and the menu's *New terminal* pressed once what it reads has arrived. */
 function frame(selected: string | null, terminal = true) {
   const view = render(tree(selected, terminal, null));
-  return { ...view, newTerminal: () => view.rerender(tree(selected, terminal, 'newTerminal')) };
+  return {
+    ...view,
+    newTerminal: () => view.rerender(tree(selected, terminal, 'newTerminal')),
+    console: () => view.rerender(tree(selected, terminal, 'console')),
+    attend: (next: string | null) => view.rerender(tree(next, terminal, null)),
+  };
 }
 
 const opens = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.TERMINAL' && type === 'OPEN');
@@ -114,6 +119,33 @@ describe('the terminal in the Work frame (CONSOLE4b)', () => {
     newTerminal();
 
     expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
+    expect(opens()).toEqual([]);
+  });
+
+  it('shuts with its last terminal wherever the terminal stands', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const { newTerminal } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    newTerminal();
+    await userEvent.pointer({ keys: '[MouseRight]', target: await screen.findByRole('tab', { name: 'Terminal' }) });
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Terminal to the right side bar' }));
+    // The console is left in the panel, which stays open for it until the last terminal, now in the side bar, closes.
+    expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+
+    await userEvent.click(within(screen.getByRole('complementary', { name: 'right side bar' })).getByRole('button', { name: /^Close PowerShell/ }));
+
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull());
+  });
+
+  it('shuts a console that goes away instead of showing the terminal, which would start a shell nobody asked for', async () => {
+    const { console: openConsole, attend } = frame('s1a2b3c4');
+    await screen.findAllByText(/zeta/);
+    openConsole();
+    expect(await screen.findByRole('tab', { name: 'Console', selected: true })).toBeInTheDocument();
+
+    attend(null);
+
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull());
     expect(opens()).toEqual([]);
   });
 
