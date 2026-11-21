@@ -101,6 +101,42 @@ public sealed class SpentChecksTests : NodeRunFixture
     }
 
     [Fact]
+    public async Task A_decision_whose_write_is_refused_tells_and_keeps_nothing_is_said_once_and_is_decided_again_until_kept()
+    {
+        Spent();
+        var unleased = new NodeRecordFiles(_home, () => false);
+        var said = new List<string>();
+        var told = new List<string>();
+
+        Assert.False(await SpentChecks.SettleAsync(unleased, RunUnit, RunId, "check", 3, 3, null, null, Config("""{"risk":{}}"""), "default", RunHome.Repository, _now,
+            text => { told.Add(text); return Task.FromResult<(string?, string?)>(("s1", null)); }, said));
+        Assert.False(await SpentChecks.SettleAsync(unleased, RunUnit, RunId, "check", 3, 3, null, null, Config("""{"risk":{}}"""), "default", RunHome.Repository, _now,
+            text => { told.Add(text); return Task.FromResult<(string?, string?)>(("s1", null)); }, said));
+
+        Assert.Null(Files.Read(RunUnit)!.ToldOf("check", 3));
+        Assert.Single(said, line => line.Contains("could not be kept", StringComparison.Ordinal));
+        Assert.DoesNotContain(said, line => line.Contains("final exit, to you:", StringComparison.Ordinal));
+        Assert.Empty(RiskJournal.Read(_home));
+
+        Assert.True(await SettleAsync("""{"risk":{}}""", said));
+        Assert.Equal(NodeTold.Exit, Files.Read(RunUnit)!.ToldOf("check", 3)!.Decided);
+        Assert.Single(said, line => line.Contains("final exit, to you:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_journal_that_will_not_append_never_keeps_the_final_exit_from_the_owner()
+    {
+        Spent();
+        Directory.CreateDirectory(RiskJournal.PathOf(_home));
+        var said = new List<string>();
+
+        Assert.True(await SettleAsync("""{"risk":{}}""", said));
+
+        Assert.Equal(NodeTold.Exit, Files.Read(RunUnit)!.ToldOf("check", 3)!.Decided);
+        Assert.Single(said, line => line.Contains("final exit, to you:", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Classed_owner_or_with_no_policy_read_the_person_holds_it_and_no_final_exit_is_noticed()
     {
         Spent();

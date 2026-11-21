@@ -67,20 +67,37 @@ internal static class SpentChecks
         var (session, why) = await tell(Words(node, code, found, reds, decided, holder)).ConfigureAwait(false);
         var told = new NodeTold(node, attempt, session, why, now) { Spent = true, Decided = decided, Role = decided == NodeTold.RoleHeld ? HeldOn : null };
         var (refused, _) = records.Edit(unit, kept => (kept with { Told = [.. kept.Told.Where(each => each.Node != node || each.Attempt != attempt).TakeLast(NodeRecord.ToldKept - 1), told] }, true));
+        var key = $"{records.Home}|{unit}/{node}#{attempt}";
         if (refused is not null)
         {
-            said.Add($"run #{run}: step `{node}` is past its red rounds, and its decision could not be kept ({refused}), so Daoris decides it again at its next look.");
+            if (Refusals.TryAdd(key, 0))
+            {
+                said.Add($"run #{run}: step `{node}` is past its red rounds, and its decision could not be kept ({refused}), so Daoris decides it again at each look.");
+            }
+
             return false;
         }
 
+        Refusals.TryRemove(key, out _);
         if (decided != NodeTold.Exit || verdict is null) return true;
         var place = RiskPlace.Of(config, workspace, repository);
-        RiskJournal.Append(records.Home, new RiskJudged(now, RiskJudged.Released, $"spent:{run}/{node}#{reds}", PersonWaits.Left, verdict.Kind, verdict.Qualifier,
-            RiskPolicy.Key, place.Workspace, place.Repository, place.Mode, run, node, $"run {run}, step {node}, red round {reds}", verdict.Outcome, verdict.Class,
-            verdict.By, verdict.Source, verdict.Revision, verdict.Reason, Today, true));
+        try
+        {
+            RiskJournal.Append(records.Home, new RiskJudged(now, RiskJudged.Released, $"spent:{run}/{node}#{reds}", PersonWaits.Left, verdict.Kind, verdict.Qualifier,
+                RiskPolicy.Key, place.Workspace, place.Repository, place.Mode, run, node, $"run {run}, step {node}, red round {reds}", verdict.Outcome, verdict.Class,
+                verdict.By, verdict.Source, verdict.Revision, verdict.Reason, Today, true));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The journal records the exit, never a reason to keep it from the owner: the decision is kept.
+        }
+
         said.Add(Notice(run, node, reds, code, found, verdict, first, now));
         return true;
     }
+
+    /// <summary>The spent reds whose decision a refused write left unkept, each said once until it is kept.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> Refusals = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>What today's gate did with a spent red at the final exit, as its <c>risk.judged</c> line says it.</summary>
     public const string Today = "the owner's final exit";
