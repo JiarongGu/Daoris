@@ -221,7 +221,8 @@ public static class HeldSteps
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
         if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
-        var carried = wait.Why is PersonWaits.Left or PersonWaits.Held || (wait.Why == PersonWaits.Accept && wait.Holder.Kind == StepHolders.Person);
+        var carried = wait.Why is PersonWaits.Left or PersonWaits.Held
+                      || (wait.Why == PersonWaits.Accept && node.Kind == NodeKinds.Review && wait.Holder.Kind == StepHolders.Person);
         var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
         var vacancy = carried ? null : StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt);
         var vacant = vacancy is not null;

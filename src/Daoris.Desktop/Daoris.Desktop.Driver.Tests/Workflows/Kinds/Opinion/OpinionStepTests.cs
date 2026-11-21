@@ -94,11 +94,12 @@ public sealed class OpinionStepTests
     }
 
     private static RiskVerdict Verdict(string riskClass) =>
-        new(RiskActs.WorkAccept, null, RiskVerdict.OutcomeOf(riskClass), riskClass, riskClass == RiskClasses.Role ? "reviewer" : null, "repository/engine", "r1", "classed");
+        new(RiskActs.WorkAccept, null, RiskVerdict.OutcomeOf(riskClass), riskClass, riskClass == RiskClasses.Role ? "supervisor" : null, "repository/engine", "r1", "classed");
 
     /// <summary>
     /// 🔴 A dispute the risk policy classes <c>role</c> waits on the step's role as the place casts it, never the person's: its holder is the
-    /// role's agent, said with the policy's reason; one classed <c>owner</c>, or none judged, stays the person's.
+    /// role's agent, said with the policy's reason; one classed <c>owner</c>, or none judged, stays the person's. The terminal names the role
+    /// the wait is held on, the step's own, never the row's <c>by</c>.
     /// </summary>
     [Theory]
     [InlineData(OpinionGateStates.Disputed, OpinionGateReading.RoleDisputed, OpinionStepWaits.Disputed)]
@@ -115,7 +116,9 @@ public sealed class OpinionStepTests
         var step = run.Steps.Single(each => each.Step.Id == "opinion");
         Assert.Equal((WorkflowRunStates.Waiting, code, StepHolders.Agent), (step.State, step.Wait?.Code, step.Holder?.Kind));
         Assert.Equal(StepRoles.Opinion, step.Role);
-        Assert.Contains("The risk policy asks the `reviewer` role, not you", WorkflowRunWords.Say([run], null));
+        Assert.Equal(StepRoles.Opinion, step.Wait!.Values[OpinionStepWaits.RoleKey]);
+        Assert.Contains("The risk policy asks the `opinion` role, not you", WorkflowRunWords.Say([run], null));
+        Assert.DoesNotContain("`supervisor`", WorkflowRunWords.Say([run], null));
         Assert.True(OpinionStepWaits.OnRole(step.Wait!));
         Assert.False(OpinionStepWaits.OnPerson(step.Wait!));
     }

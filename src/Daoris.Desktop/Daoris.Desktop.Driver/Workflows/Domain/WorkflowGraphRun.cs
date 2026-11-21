@@ -221,7 +221,7 @@ public static class WorkflowGraphRuns
             if (cannot is not null) state = WorkflowRunStates.CannotStart;
             var progress = StepWaiting.Of(facts.Record, node, status);
             if (progress is { Actor: not null } && cannot is null) state = WorkflowRunStates.Waiting;
-            var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(status, run.Opinion) : null;
+            var answers = node.Kind == NodeKinds.Opinion ? OpinionStepWaits.WaitOf(node, status, run.Opinion) : null;
             if (answers is not null && cannot is null) state = WorkflowRunStates.Waiting;
             if (facts.Record?.Ended is not null) (state, detail) = EndedSteps.Read(status.State, state, detail);
             // A check's newest attempt, held unknown for the person or settled by their stop, says why it is unknown.

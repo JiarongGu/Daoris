@@ -47,7 +47,8 @@ public static class OpinionStepWaits
     /// findings went to, as the gate read it; disputed or with commits since nobody read, the person's answer, with its count and the
     /// session whose work it is; null for any other state, and where no gate is read.
     /// </summary>
-    public static WorkflowRunWait? WaitOf(NodeStatus status, OpinionGateState? gate)
+    /// <remarks>A dispute the policy gates on a role names the step's own role (<see cref="StepRoles.Of"/>), the one its wait is held on, never the row's <c>by</c>.</remarks>
+    public static WorkflowRunWait? WaitOf(NodeDeclaration node, NodeStatus status, OpinionGateState? gate)
     {
         if (status.State != NodeStates.Active) return null;
         var values = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -69,7 +70,7 @@ public static class OpinionStepWaits
         values["count"] = count.ToString(CultureInfo.InvariantCulture);
         if (status.Holds is OpinionGateReading.RoleDisputed or OpinionGateReading.RoleCommitsSince && gate!.Risk is { } verdict)
         {
-            values[RoleKey] = verdict.By ?? "";
+            values[RoleKey] = StepRoles.Of(node);
             values["why"] = $"{verdict.Reason} (rule {verdict.Source} at {verdict.Revision})";
         }
 

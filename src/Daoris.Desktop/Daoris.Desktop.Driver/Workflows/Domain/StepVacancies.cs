@@ -19,8 +19,8 @@ public interface IStepVacancyStore
 /// row, view and list reads the one judgement; listed under <i>Vacant</i>, announced once, and stopped by Daoris (<see cref="NodeSource.Daoris"/>)
 /// once it has been announced and has stood vacant past its bound (<see cref="VacancySetting"/>), with what it tried. Served are a task's Done
 /// or decision, handed to the run's working session, and a plugin's actor whose role a cast or a staffing gives an agent that a live session
-/// of serves (<see cref="CastReading.Serves"/>). No dispatcher hands a role-classed Accept or approval to a session yet, so one an agent holds
-/// is a vacancy, though that agent may still answer it by <c>step_settle</c>.
+/// of serves (<see cref="CastReading.Serves"/>). No dispatcher hands a role-classed Accept, approval or opinion dispute to a session yet, so one
+/// an agent holds is a vacancy, though an Accept's or approval's agent may still answer it by <c>step_settle</c>.
 /// </summary>
 public static class StepVacancies
 {

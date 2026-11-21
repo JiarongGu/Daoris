@@ -438,10 +438,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the step saying so (`ended`, `out-of-time`), and the next pass that settles reaches it; a gate nobody is free to read is no failure. A
     dispute and commits since that no other agent read are the act `work.accept` at the work's place, which the gate asks the judge
     (`OpinionGateFacts.Risk`, read from the look's config, D354): with nothing configured the seed passes it, the gate `answered` by the
-    policy (`policy`, its words the verdict's rule and revision, journaled once as a `risk.judged` pass line, `PolicyPasses.Gate`) and the
-    work goes on; judged again at every look, so a raise opens it and a lowering releases it. Classed `role` the step holds on its own role
-    as the place casts it (`role-disputed`, `role-commits-since`, read as the Accept's wait, so an agent holder is the vacancy path's), never
-    in *Needs you*; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
+    policy (`policy`, its words the verdict's rule and revision, journaled once as a `risk.judged` pass line on the run and its `opinion`
+    step, `PolicyPasses.Gate`, counted only once it appended) and the work goes on to its landing; judged again at every look, so a raise
+    opens it and a lowering releases it. Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
+    `role-commits-since`, read as the Accept's wait, its wait naming that role, never the row's `by`): no agent's tool answers it, so an
+    agent holder makes it a vacancy, listed, announced once and given up past its bound with what was tried, and a person the place casts
+    holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
     the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
     waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
     by the person), never *working*: the run's view reads the gate in the work's tree here wherever its step stands on it

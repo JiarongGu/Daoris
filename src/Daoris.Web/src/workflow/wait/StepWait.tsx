@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Inline } from '../../design/ui';
 import { ExternalLink } from '../../design/links';
-import type { RunStep, RunWait } from '../run';
+import type { RunHolder, RunStep, RunWait } from '../run';
 
 // What a run's step waits on, said under it: its kind's declared wait (`NODE_KINDS`' `waits`) in the reader's words, with the facts the
 // record names and, where it has them, since when and until when. The driver says which wait it is; the words are the page's.
@@ -13,14 +13,24 @@ const clock = (iso: string | null | undefined, language: string): string | null 
   return Number.isNaN(at.getTime()) ? null : at.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' });
 };
 
+// A second opinion's hold the risk policy gives a role keeps the gate's code, said by the role's holder, never as the person's answer.
+const OPINION_ROLE_WAITS: Record<string, string> = {
+  disputed: 'workflow.wait.opinion.role-disputed',
+  'commits-since': 'workflow.wait.opinion.role-commits-since',
+};
+
 /** A wait in words: `workflow.wait.<kind>.<code>` with its values, its since and until; one with no words is said as recorded. */
-export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en'): string {
+export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = 'en', holder?: RunHolder | null): string {
   const values: Record<string, string> = {
     ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '',  };
   // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
   if (wait.code === 'actor' || wait.code === 'progress') {
-    const holder = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
-    return t(`workflow.wait.${wait.code === 'actor' ? 'role' : wait.code}`, { ...values, role: values.actor ?? '', holder, words: values.words ?? '' }).trim();
+    const held = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
+    return t(`workflow.wait.${wait.code === 'actor' ? 'role' : wait.code}`, { ...values, role: values.actor ?? '', holder: held, words: values.words ?? '' }).trim();
+  }
+  const onRole = kind === 'opinion' ? OPINION_ROLE_WAITS[wait.code] : undefined;
+  if (onRole && values.role && holder && holder.kind !== 'person') {
+    return t(onRole, { ...values, holder: t('workflow.wait.holder.agent', { name: holder.name ?? '' }) });
   }
   return t(`workflow.wait.${kind}.${wait.code}`, { ...values, defaultValue: t('workflow.wait.recorded', { code: wait.code }) });
 }
@@ -32,7 +42,7 @@ export function StepWait({ step }: { step: RunStep }) {
   const since = clock(step.wait.since, i18n.language);
   return (
     <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-      <Inline text={waitSaid(t, step.step.kind, step.wait, i18n.language)} />
+      <Inline text={waitSaid(t, step.step.kind, step.wait, i18n.language, step.holder)} />
       {since && <span className="text-caption text-ink-faint"> · {t('workflow.wait.since', { since })}</span>}
       {step.wait.values?.url && <> · <ExternalLink href={step.wait.values.url}>{t('workflow.wait.open')}</ExternalLink></>}
     </p>

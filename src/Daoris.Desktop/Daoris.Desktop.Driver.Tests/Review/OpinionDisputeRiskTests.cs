@@ -89,7 +89,9 @@ public sealed class OpinionDisputeRiskTests
         Assert.Equal((OpinionGateStates.Disputed, false, true), (gate.State, gate.LetsGo, gate.PressAnswers));
         Assert.Equal((RiskVerdict.Gate, "reviewer"), (gate.Risk!.Outcome, gate.Risk.By));
         Assert.False(gate.OwnerHolds);
-        Assert.Contains("asks the `reviewer` role, not you, for the answer", gate.Says);
+        // The gate names no role of its own: the opinion step's own role holds it (OpinionStepWaits), never the row's `by`.
+        Assert.Contains("asks the role holding the second opinion's step, not you, for the answer", gate.Says);
+        Assert.DoesNotContain("`reviewer`", gate.Says);
     }
 
     [Fact]
@@ -129,14 +131,63 @@ public sealed class OpinionDisputeRiskTests
         try
         {
             var gate = await DisputedAsync(Nothing);
+            var at = new PolicyPassAt("q1", "work", "web-app", "q1", "opinion");
 
-            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", gate, Answered);
-            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", gate, Answered.AddHours(1));
-            PolicyPasses.Gate(home, DriverConfig.Empty, "q1", "work", "web-app", await DisputedAsync(Classed("owner")), Answered);
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered);
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered.AddHours(1));
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, await DisputedAsync(Classed("owner")), Answered);
 
             var line = Assert.Single(RiskJournal.Read(home));
             Assert.Equal((RiskActs.WorkAccept, RiskVerdict.Pass, RiskVerdict.Seed, PolicyPasses.Today), (line.Kind, line.Outcome, line.Source, line.Today));
             Assert.Equal((RiskJudged.Released, "web-app", false), (line.Stage, line.Repository, line.TodayHeld));
+            Assert.Equal(("q1", "opinion"), (line.Run, line.Step));
+            Assert.Contains(line, RiskWhy.Rows(home, "q1", "opinion"));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, true);
+        }
+    }
+
+    private const string OpinionGraph = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},{"id":"second","kind":"opinion","version":1,"reach":"observed"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed","options":{"method":"merge"}}],
+         "wires":[{"id":"c>o","kind":"after","from":"claimed","to":"second"},{"id":"o>h","kind":"after","from":"second","to":"handed"}]}
+        """;
+
+    /// <summary>A pass line names the run the gate is read for and its opinion step: a chat run's key, else the process's bound run and step.</summary>
+    [Fact]
+    public void A_pass_line_is_placed_on_the_run_and_the_opinion_step_the_process_binds()
+    {
+        var (graph, _) = NodeGraphs.Read(OpinionGraph);
+        var process = WorkflowProcess.Declared(DriverConfig.Empty, "web-app", "work") with
+        {
+            Graph = graph, Binding = new WorkflowRunBinding("q1", "web-app", "work", "docs", WorkflowLevels.Repository, Answered),
+        };
+
+        Assert.Equal(new PolicyPassAt("q1", "work", "web-app", "q1", "second"), PolicyPassAt.Of("q1", "work", "web-app", null, process));
+        Assert.Equal(new PolicyPassAt("chat-a", "work", "web-app", "chat-a", "second"), PolicyPassAt.Of("chat-a", "work", "web-app", "chat-a", process));
+        Assert.Equal(new PolicyPassAt("q1", "work", "web-app", null, null), PolicyPassAt.Of("q1", "work", "web-app", null, null));
+    }
+
+    /// <summary>A pass whose line would not append is not counted as journaled: the next read of the gate writes it.</summary>
+    [Fact]
+    public async Task A_pass_whose_line_did_not_append_is_journaled_at_the_next_read()
+    {
+        var home = Path.Combine(TestHomes.Root, "daoris-dispute-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var gate = await DisputedAsync(Nothing);
+            var at = new PolicyPassAt("q1", "work", "web-app", "q1", "opinion");
+            // A folder where the journal's file goes: the append fails.
+            Directory.CreateDirectory(RiskJournal.PathOf(home));
+
+            Assert.ThrowsAny<Exception>(() => PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered));
+            Directory.Delete(RiskJournal.PathOf(home));
+            PolicyPasses.Gate(home, DriverConfig.Empty, at, gate, Answered.AddMinutes(1));
+
+            Assert.Single(RiskJournal.Read(home));
         }
         finally
         {
