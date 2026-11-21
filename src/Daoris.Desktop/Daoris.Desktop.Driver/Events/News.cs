@@ -138,7 +138,7 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
     /// <summary>
     /// Whether this call claimed <paramref name="key"/> for <paramref name="kind"/>: true once, in any process, and false for every call after
     /// while the claim stands. A standing claim outlives the horizon, since what it remembers (an exit still standing) is not old news, and goes
-    /// only with <see cref="Retain"/> when its exit no longer stands, so what is kept is bounded by what stands. A store that will not take the
+    /// only with <see cref="Forget"/> when its exit no longer stands. A store that will not take the
     /// claim answers true, so the exit is said by this process once rather than lost.
     /// </summary>
     public bool ClaimStanding(string kind, string key, DateTimeOffset now)
@@ -173,25 +173,24 @@ public sealed class News(string home, Func<StoreSettled>? settled = null)
         }
     }
 
-    /// <summary>The standing claims of <paramref name="kind"/> that are not among <paramref name="standing"/> forgotten: their exits no longer stand.</summary>
-    public void Retain(string kind, IReadOnlyCollection<string> standing)
+    /// <summary>
+    /// The standing claims of <paramref name="kind"/> for <paramref name="keys"/> forgotten: exits this process saw stand and then stop standing. Never
+    /// forgotten for want of being seen, since a reading taken before the runtime loaded its steps is empty and proves no exit ended.
+    /// </summary>
+    public void Forget(string kind, IReadOnlyCollection<string> keys)
     {
+        if (keys.Count == 0) return;
         try
         {
-            var prefix = StandingKey(kind, "");
-            var keep = standing.Select(key => StandingKey(kind, key)).ToHashSet(StringComparer.Ordinal);
             using var store = Open();
-            var held = store.Query("SELECT key FROM news_said WHERE substr(key, 1, length($prefix)) = $prefix", row => row.GetString(0), ("$prefix", prefix));
-            var gone = held.Where(key => !keep.Contains(key)).ToList();
-            if (gone.Count == 0) return;
             store.Write(Family, write =>
             {
-                foreach (var key in gone) write.Execute("DELETE FROM news_said WHERE key = $key", ("$key", key));
+                foreach (var key in keys) write.Execute("DELETE FROM news_said WHERE key = $key", ("$key", StandingKey(kind, key)));
             });
         }
         catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
-            // A claim not forgotten is forgotten at the next judgement: a claim kept too long says an exit once fewer, never more.
+            // A claim not forgotten says its exit once fewer if it stands again, never more.
         }
     }
 

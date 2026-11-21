@@ -238,7 +238,7 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// The notices of what stands now, kept again at each look and said by no line (<see cref="NodeRuntimePass.Standing"/>, the owner's final
     /// exits): one a look never kept, a later failure having ended it or a refused write, is kept at the next; one kept, or seen held, is
     /// never written again, so a notice the person dismissed stays dismissed, across a restart too: what is remembered is the home's
-    /// (<see cref="HomeNews.ClaimStanding"/>), and it is forgotten when its exit no longer stands, so it is bounded by what stands.
+    /// (<see cref="HomeNews.ClaimStanding"/>), and it is forgotten once this process has seen its exit stop standing.
     /// </summary>
     public void Stands(string family, IReadOnlyList<LookNews> standing)
     {
@@ -247,23 +247,18 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
         var desk = new HomeNews(home);
         lock (_standing)
         {
+            var ended = _standing.Except(ids).ToList();
             _standing.IntersectWith(ids);
             foreach (var news in standing.Where(news => !_standing.Contains(Id(news))))
             {
                 if (desk.Stood(HomeNews.Noticed, Id(news)) || (Keep(news) && Claimed(desk, news))) _standing.Add(Id(news));
             }
 
-            if (_retained is null || !_retained.SetEquals(ids))
-            {
-                desk.Retain(HomeNews.Noticed, ids);
-                _retained = ids;
-            }
+            desk.Forget(HomeNews.Noticed, ended);
         }
     }
 
     private readonly HashSet<string> _standing = new(StringComparer.Ordinal);
-
-    private HashSet<string>? _retained;
 
     private bool Claimed(HomeNews desk, LookNews news)
     {

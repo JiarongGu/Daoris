@@ -108,7 +108,7 @@ export type SessionGrouping = {
    * Daoris told the session this call ran past its pipeline's bound.
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
-  waits?: { run: string; node: string; why: string; role?: string | null; since?: string | null }[] | null;
+  waits?: { run: string; node: string; why: string; role?: string | null; since?: string | null; ended?: boolean; exit?: boolean }[] | null;
   /** Its line's state (`LineStandings`): `by` the part or co-worker it is read from, `role` `part` or which co-worker. */
   line?: { state: SessionStateName; group: SessionGroupName; reason: string; by: string; role: string } | null;
 };

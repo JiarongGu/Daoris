@@ -107,7 +107,7 @@ public sealed class NewsTests : IDisposable
     }
 
     [Fact]
-    public void A_standing_claim_is_won_once_outlives_the_horizon_and_is_forgotten_with_its_exit()
+    public void A_standing_claim_is_won_once_outlives_the_horizon_and_is_forgotten_only_when_told_to()
     {
         Assert.True(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));
         Assert.False(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));
@@ -117,7 +117,10 @@ public sealed class NewsTests : IDisposable
         Desk().Claim("lease", [Said("a")], null, Now.AddDays(30));
         Assert.True(Desk().Stood(News.Announced, "exit:q7/check#3"));
 
-        Desk().Retain(News.Announced, ["exit:q7/other#1"]);
+        Desk().Forget(News.Announced, []);
+        Assert.True(Desk().Stood(News.Announced, "exit:q7/check#3"));
+
+        Desk().Forget(News.Announced, ["exit:q7/check#3"]);
         Assert.False(Desk().Stood(News.Announced, "exit:q7/check#3"));
         Assert.True(Desk().Stood(News.Noticed, "exit:q7/check#3"));
         Assert.True(Desk().ClaimStanding(News.Announced, "exit:q7/check#3", Now));

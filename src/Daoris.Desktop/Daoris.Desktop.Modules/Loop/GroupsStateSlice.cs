@@ -63,7 +63,7 @@ public static class GroupsStateSlice
         ],
         ["line"] = ["state", "group", "reason", "by", "role"],
         ["coworker"] = ["session", "role", "serves", "shown", "state"],
-        ["waits"] = ["run", "node", "why", "role", "since"],
+        ["waits"] = ["run", "node", "why", "role", "since", "ended", "exit"],
         ["passage"] = ["run", "workflow", "version", "steps"],
         ["steps"] = ["node", "kind", "mark", "role", "attempt", "since", "code", "earlier"],
         ["earlier"] = ["attempt", "at", "outcome", "code"],

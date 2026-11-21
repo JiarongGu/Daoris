@@ -193,7 +193,11 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
             await first.JudgeAsync();
             Assert.Single(Said());
 
+            var loaded = facts;
+            facts = facts with { Steps = [] };
             var restarted = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => true, Desk()));
+            await restarted.JudgeAsync();
+            facts = loaded;
             await restarted.JudgeAsync();
             await restarted.JudgeAsync();
             Assert.Single(Said());

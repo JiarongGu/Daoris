@@ -146,6 +146,19 @@ public sealed class StepWaitCensusTests
         Assert.Contains(standing, row => row["kind"]!.GetValue<string>() == "left");
     }
 
+    /// <summary>The flags the one-row rule reads survive the route and the slice's allow-list, not only a hand-written fact.</summary>
+    [Fact]
+    public void A_waits_exit_and_ended_flags_pass_the_groups_route_and_its_allow_list()
+    {
+        var wait = new PersonWait(Run, "push", PersonWaits.Left, "engine", Now) { Role = "lead", Exit = true, Ended = true };
+        var row = new SessionGrouping("s1", SessionGroup.NeedsYou, "completed") { Waits = [wait] };
+
+        var written = JsonSerializer.SerializeToNode(SessionsGroupsWires.Grouped(row), Shenora.Core.Ipc.IpcJson.Options)!["waits"]!.AsArray().Single()!.AsObject();
+
+        Assert.Equal((true, true), (written["exit"]!.GetValue<bool>(), written["ended"]!.GetValue<bool>()));
+        Assert.All(written.Select(field => field.Key), field => Assert.Contains(field, GroupsStateSlice.Fields["waits"]));
+    }
+
     [Fact]
     public void A_run_ended_failed_waits_on_its_left_step_alone()
     {
