@@ -1,0 +1,202 @@
+using Daoris.Driver;
+using Daoris.Testing;
+using Xunit.Abstractions;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// A run's next step begins from the fact that ended its last, through the bus's queue and a real runtime's pass for that one unit, with no look
+/// running: a step's answer heard, a session's <c>step_settle</c> taken from its box, a restart with facts queued, and a fact redelivered.
+/// The unit's pass reads no units (a wake's cost), against the whole pass's one read. Homes under <c>_fixtures/</c>.
+/// </summary>
+public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixture
+{
+    private const string Chain = """
+        {"schemaVersion":2,"entries":["work"],"end":"config",
+         "nodes":[{"id":"work","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"release","kind":"acme.deploy/deploy","version":1,"reach":"performed"},
+                  {"id":"config","kind":"task","version":1,"reach":"pressed"}],
+         "wires":[{"id":"a","kind":"after","from":"work","to":"release"},{"id":"e","kind":"after","from":"release","to":"config"}]}
+        """;
+
+    private const string Decision = """
+        {"schemaVersion":2,"entries":["claimed"],"end":"handed",
+         "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},
+                  {"id":"config-needed","kind":"task","version":1,"reach":"pressed","outcomes":["needed","not-needed"],"role":"release-manager"},
+                  {"id":"config-change","kind":"task","version":1,"reach":"pressed","outcomes":["done"],"role":"config-changer"},
+                  {"id":"handed","kind":"land","version":1,"reach":"performed"}],
+         "wires":[{"id":"c>n","kind":"after","from":"claimed","to":"config-needed"},
+                  {"id":"n>g","kind":"when","from":"config-needed","to":"config-change","outcome":"needed"},
+                  {"id":"g>h","kind":"after","from":"config-change","to":"handed"}]}
+        """;
+
+    private const string Work = "s-work";
+
+    private static readonly TimeSpan Soon = Poll.Patience;
+
+    private static readonly TimeProvider Machine = TimeProvider.System;
+
+    private static readonly BusQueueOptions Quick = new() { Clock = Machine, RetryFirst = TimeSpan.FromMilliseconds(20), RetryMost = TimeSpan.FromMilliseconds(60) };
+
+    private int _tipsRead;
+
+    private int _passes;
+
+    private IReadOnlyList<SessionRecord> _sessions = [];
+
+    protected new void Dispose() => base.Dispose();
+
+    private void Read()
+    {
+        _branchTips["daoris/s1"] = Tip1;
+        _units = [RunHome.QuestUnit(RunHome.Quest(RunId, "Done")) with { Executors = [Work] }, RunHome.Branch("unit-b1", "daoris/s1", Opened, [RunId])];
+    }
+
+    private NodeRuntimeLook Counted(bool whole)
+    {
+        var look = RunLook(whole: whole);
+        var tips = look.Tips;
+        return look with
+        {
+            Tips = (root, branches, ct) =>
+            {
+                Interlocked.Increment(ref _tipsRead);
+                return tips(root, branches, ct);
+            },
+        };
+    }
+
+    private NodeRuntime Telling()
+    {
+        var runtime = Runtime();
+        runtime.Say = (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept"));
+        runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(_sessions);
+        return runtime;
+    }
+
+    /// <summary>The pass the consumer asks for one unit: no read of the units, that unit judged first.</summary>
+    private async Task<bool> OneAsync(NodeRuntime runtime, string unit, CancellationToken ct)
+    {
+        Interlocked.Increment(ref _passes);
+        Read();
+        await runtime.PassAsync(Counted(whole: false) with { Asked = new HashSet<string>([unit]), Judged = _ => { } }, ct);
+        return true;
+    }
+
+    private RunStepConsumer Consumer(BusLog bus, NodeRuntime runtime, IReadOnlyList<string>? open = null) => new(
+        (unit, ct) => OneAsync(runtime, unit, ct),
+        async ct => (await StepSettleAsks.TakeAsync(Files, _ => "claude", (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept")), () => _now, ct)).Count,
+        () => open ?? [], bus, (_, _) => { });
+
+    private BusLog Open() =>
+        BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = Machine, Interval = TimeSpan.FromMilliseconds(20), Home = _home });
+
+    /// <summary>Run <c>q7</c> bound to the chain, its release sent at the first whole pass and its answer heard, not yet judged.</summary>
+    private async Task<(NodeRuntime Runtime, string Invocation)> SentAsync()
+    {
+        BoundTo(Chain);
+        Read();
+        var runtime = Telling();
+        await RunPassAsync(runtime);
+        Assert.Equal(NodeStates.Active, RunStatus("release").State);
+        return (runtime, Assert.Single(_port.Sent).Invocation);
+    }
+
+    private void Answer(string invocation) =>
+        _port.Heard.Enqueue(new(Plugin, 1, new WorkStepFrame("deploy", new WorkOutcome(WorkStates.Reached), _now, "e1", Invocation: invocation)));
+
+    /// <summary>🔴 A step's answer ends it, a check's fact says so, and the run's next node begins from the fact: no look, no read of the units.</summary>
+    [Fact]
+    public async Task A_passed_check_begins_the_next_node_from_its_fact_with_no_look_and_no_read_of_the_units()
+    {
+        var (runtime, invocation) = await SentAsync();
+        var (read, tips) = (_unitsRead, _tipsRead);
+        Assert.NotEqual(NodeStates.Active, RunStatus("config").State);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick);
+
+        Answer(invocation);
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+
+        await Poll.Until(() => RunStatus("config").State == NodeStates.Active, () => $"config stayed {RunStatus("config").State}", Soon);
+        Assert.Equal(NodeStates.Reached, RunStatus("release").State);
+        Assert.Equal(read, _unitsRead);
+        Assert.Single(_port.Sent);
+        output.WriteLine($"one fact's handling: units read {_unitsRead - read}, tip reads {_tipsRead - tips}, passes {_passes}");
+    }
+
+    /// <summary>🔴 The unit's pass beside a whole pass over the same fixture: the whole one reads the units, the unit's none.</summary>
+    [Fact]
+    public async Task A_units_pass_reads_no_units_where_a_whole_pass_reads_them_all()
+    {
+        var (runtime, invocation) = await SentAsync();
+        var (read, tips, gates) = (_unitsRead, _tipsRead, _gatesRead);
+        await OneAsync(runtime, RunUnit, CancellationToken.None);
+        var one = (_unitsRead - read, _tipsRead - tips, _gatesRead - gates);
+        (read, tips, gates) = (_unitsRead, _tipsRead, _gatesRead);
+        Read();
+        await runtime.PassAsync(Counted(whole: true), CancellationToken.None);
+        var whole = (_unitsRead - read, _tipsRead - tips, _gatesRead - gates);
+
+        output.WriteLine($"a unit's pass (units, tips, gates): {one}; a whole pass: {whole}");
+        Assert.Equal(0, one.Item1);
+        Assert.Equal(1, whole.Item1);
+        Assert.True(one.Item2 <= whole.Item2);
+        Assert.NotNull(invocation);
+    }
+
+    /// <summary>🔴 A session's <c>step_settle</c> is taken from its box at its fact and the run's next node begins, with no look to take it.</summary>
+    [Fact]
+    public async Task A_session_settle_is_taken_at_its_fact_and_begins_the_next_node()
+    {
+        new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.ReleaseManager, CastHolders.Agent, "the release path", _now);
+        _sessions = [new SessionRecord(Work, RunHome.Repository, SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId).Note().Parts }];
+        BoundTo(Decision);
+        Read();
+        var runtime = Telling();
+        await RunPassAsync(runtime);
+        Read();
+        await RunPassAsync(runtime, whole: false);
+        Assert.Equal(NodeStates.Active, RunStatus("config-needed").State);
+        var read = _unitsRead;
+
+        var path = DaorisHome.Entry(_home, HomeEntry.Sessions, Work + StepSettleAsks.AskSuffix);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, $$"""
+            {"id":"a1","session":"{{Work}}","run":"{{RunId}}","node":"config-needed","outcome":"needed","words":"a setting","epoch":1,"evidence":{},"at":"2026-11-18T10:00:00Z"}
+            """);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick);
+        bus.Append(StepBusFacts.StepSettled(Work, "#" + RunId, "config-needed"));
+
+        await Poll.Until(() => RunStatus("config-change").State == NodeStates.Active, () => $"config-change stayed {RunStatus("config-change").State}", Soon);
+        Assert.Equal(NodeStates.Reached, RunStatus("config-needed").State);
+        Assert.Equal(read, _unitsRead);
+        Assert.Equal("a1", StepSettleAsks.AnsweredId(_home, Work));
+    }
+
+    /// <summary>🔴 Facts queued while no queue ran begin the node at the next start, and a fact delivered again begins nothing twice.</summary>
+    [Fact]
+    public async Task A_restart_resumes_queued_facts_and_a_redelivered_fact_begins_nothing_twice()
+    {
+        var (runtime, invocation) = await SentAsync();
+        await using var bus = Open();
+        await (await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick)).DisposeAsync();
+        Answer(invocation);
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        await bus.FlushAsync();
+
+        await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime, [RunUnit])], Quick);
+        await Poll.Until(() => RunStatus("config").State == NodeStates.Active, () => $"config stayed {RunStatus("config").State}", Soon);
+        var (before, sent) = (RunStatus("config"), _port.Sent.Count);
+
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        var passes = _passes;
+        await Poll.Until(() => _passes > passes, () => "the redelivered fact asked no pass", Soon);
+
+        var after = RunStatus("config");
+        Assert.Equal((before.State, before.Attempt), (after.State, after.Attempt));
+        Assert.Equal(sent, _port.Sent.Count);
+    }
+}

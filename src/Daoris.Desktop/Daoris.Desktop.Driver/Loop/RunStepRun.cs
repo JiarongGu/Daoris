@@ -3,13 +3,16 @@ namespace Daoris.Driver;
 /// <summary>
 /// The run's progression as a loop runs it: its consumer (<see cref="RunStepConsumer"/>) and the bus's queue that hands it the facts, over the
 /// lease holder's log, started once link 8 is bound and stopped before it closes. Beside it, the sessions' settle boxes are heard as they are
-/// written (a watch on the sessions folder), each settle waiting teed as <see cref="BusTypes.StepSettled"/>, which no look takes any more; a
-/// sweep once a minute tees those still waiting (a lost event, a settle the runtime is not ready to take), and the start takes them first.
+/// written (a watch on the sessions folder), each settle waiting teed as <see cref="BusTypes.StepSettled"/>, which no look takes any more. The
+/// sweep is only the watcher's overflow net, not a look: the operating system drops events without an error where its buffer is full or a
+/// share is remote, so the boxes are read once a minute for a settle no event told, and counted by how the sweep found it (<see cref="BusMeasures.Sweep"/>).
 /// </summary>
 internal sealed class RunStepRun : IAsyncDisposable
 {
-    /// <summary>How often the boxes are swept for a settle no event told: the net under the watch.</summary>
+    /// <summary>The watcher's overflow guard: how long an event the system dropped silently waits for the sweep.</summary>
     public static readonly TimeSpan Sweep = TimeSpan.FromMinutes(1);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Id, DateTimeOffset At)> _teed = new(StringComparer.Ordinal);
 
     private readonly BusQueue _queue;
     private readonly BusLog _bus;
@@ -30,7 +33,7 @@ internal sealed class RunStepRun : IAsyncDisposable
         bus is null
             ? Task.FromResult<RunStepRun?>(null)
             : StartAsync(bus, new RunStepConsumer(
-                (unit, token) => watch.PassWholeAsync(unit, RunStepConsumer.Bound, token),
+                (unit, token) => watch.PassUnitAsync(unit, RunStepConsumer.Bound, token),
                 async token => (await StepSettleAsks.TakeAsync(
                         new NodeRecordFiles(home), watch.Processes.Delegates.AgentOf,
                         async (session, text, key, said) => (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, ct: said, from: DaorisWords.From, key: key))
@@ -64,7 +67,7 @@ internal sealed class RunStepRun : IAsyncDisposable
             watcher.Created += (_, e) => Heard(e.Name);
             watcher.Changed += (_, e) => Heard(e.Name);
             watcher.Renamed += (_, e) => Heard(e.Name);
-            watcher.Error += (_, _) => TeeWaiting();
+            watcher.Error += (_, _) => TeeWaiting(overflow: true);
             watcher.EnableRaisingEvents = true;
             _watcher = watcher;
         }
@@ -83,14 +86,30 @@ internal sealed class RunStepRun : IAsyncDisposable
         Tee(kept);
     }
 
-    private void Tee(StepSettleKept kept) => _bus.Tee(() => StepBusFacts.StepSettled(kept.Session, kept.Ask.Run, kept.Ask.Node));
+    private void Tee(StepSettleKept kept)
+    {
+        _teed[kept.Session] = (kept.Id, _bus.Clock.GetUtcNow());
+        _bus.Tee(() => StepBusFacts.StepSettled(kept.Session, kept.Ask.Run, kept.Ask.Node));
+    }
 
-    /// <summary>Every settle waiting in a box, teed.</summary>
-    internal void TeeWaiting()
+    /// <summary>
+    /// The watcher's overflow net: every settle waiting in a box that no event told, teed and counted <c>found</c>; one the watcher told that
+    /// stays open past <see cref="Sweep"/> (the runtime is not ready to take it) teed again and counted <c>retried</c>; all of them, counted
+    /// <c>overflow</c>, where the watcher said it lost events.
+    /// </summary>
+    internal void TeeWaiting(bool overflow = false)
     {
         try
         {
-            foreach (var kept in StepSettleAsks.Waiting(_home)) Tee(kept);
+            var now = _bus.Clock.GetUtcNow();
+            foreach (var kept in StepSettleAsks.Waiting(_home))
+            {
+                var told = _teed.TryGetValue(kept.Session, out var was) && was.Id == kept.Id;
+                var how = overflow ? BusMeasures.Overflow : !told ? BusMeasures.Found : now - was.At >= Sweep ? BusMeasures.Retried : null;
+                if (how is null) continue;
+                _bus.Measured(BusMeasures.Sweep, how, 1);
+                Tee(kept);
+            }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

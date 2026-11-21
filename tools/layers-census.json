@@ -72,6 +72,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Bus/BusQueueTests.cs": 9,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Bus/OpinionGateFactsTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Bus/RunStepFactsTests.cs": 3,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/RunStepProgressTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Context/SessionEventsTests.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/BriefedMoveTests.cs": 4,
     "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Course/ChatGoOnTests.cs": 16,

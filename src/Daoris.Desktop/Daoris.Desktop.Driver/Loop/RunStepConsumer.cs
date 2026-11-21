@@ -5,13 +5,14 @@ namespace Daoris.Driver;
 /// <summary>
 /// A run's progression as the bus's second consumer: each fact that ends a step of a run (a check passed, failed or unknown; a working session's
 /// settle taken from its box; the session of a plugin step ending its turn; the policy passing a second opinion at its gate; a landing's try
-/// ending) asks the one pass of the evaluation runtime for that run at once, which reads the units afresh and judges that run first, so the
-/// next step begins at the fact and not at a look's rotation. The pass is the existing one (<see cref="PassAsks"/>); this consumer is its wake
-/// by fact, never a second way to progress a run. Its acknowledgement, written once the pass judged the run, ends the facts' obligations.
+/// ending) asks the one pass of the evaluation runtime for that run at once, which judges that run first, so the next step begins at the fact
+/// and not at a look's rotation. The pass is the existing one (<see cref="PassAsks.WaitUnitAsync"/>); this consumer is its wake by fact, never
+/// a second way to progress a run. Its acknowledgement, written once the pass judged the run, ends the facts' obligations.
 /// </summary>
 /// <remarks>
-/// <para><b>What the pass reads.</b> An ask names the unit and reads the units afresh, so the pass judges the run on the record and the
-/// governance as they stand, never on the last look's cache. A pass that did not judge it in time (a drain, a busy pass, a closing loop) throws, so
+/// <para><b>What the pass reads.</b> It reads no units: the run's record, its tips and its gates are read at the pass, as a plugin step's wake
+/// reads them, and the governance (its graph, its scope, its quests) is the last whole read's, which none of these facts changes. A run the
+/// last read did not govern yet is left to the whole pass the look makes. A pass that did not judge the run in time (a drain, a busy pass, a closing loop) throws, so
 /// the queue tries the fact again with its backoff and the acknowledgement is never written before the run is judged. Handling is idempotent: a
 /// fact redelivered after a crash asks a pass that finds nothing owed and begins nothing twice.</para>
 /// <para><b>Facts of one run</b> are handled one after another in order, and those of several runs beside each other, at most the queue's
@@ -98,7 +99,7 @@ internal sealed class RunStepConsumer : IBusConsumer
         try
         {
             await _take(ct).ConfigureAwait(false);
-            // One ask: the pass reads every unit afresh whichever it names, so a start never fans out over the open runs.
+            // One ask: its pass judges the asked run and every run the records moved, so a start never fans out over the open runs.
             if (_open().FirstOrDefault() is { } first) await _pass(first, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException and not OperationCanceledException)

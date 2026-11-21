@@ -923,7 +923,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     rotation those owing a start or a rebinding, then the unchanged, which keep a quarter of the turn. A unit's resource record
     keeps 32 receipts and a guard of 256 dropped keys, so a replayed completion owes nothing new. A fact that ends a step (a check's
     verdict, a settle taken, a session's turn end, a policy pass at the opinion's gate, a landing's try) asks the pass for its run at
-    once through the bus (`run-step`, driving rule 30a), so that run is judged first on a fresh read and no step waits for a turn; the
+    once through the bus (`run-step`, driving rule 30a), so that run is judged first, on its record, tips and gates read at that pass, and no step waits for a turn; the
     look's whole pass remains for the inputs no fact names.
 57. A run's review is read by its run alone (`RUN_REVIEW`): the record, its outputs (`ReviewOutputs`: each handback a document, the
     changes a change set, a plan a resource plan, each with a stable id and a digest), a branch's or a checkout's commits with the

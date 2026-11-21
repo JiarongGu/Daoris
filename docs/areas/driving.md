@@ -258,11 +258,13 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     bound (`RunStepRun`; a headless `drive` runs no node pass and starts none): each fact that ends a step of a run (`check.passed`,
     `check.failed`, `check.unknown`; `step.settled`, a working session's settle taken from its box; `step.turn-ended`, the session of a
     plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending),
-    its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks`: the units read afresh, that run judged
-    first) and waits for it, so the next step begins at the fact and not at a look's rotation. A pass that did not judge the run in time
-    throws and the queue tries the fact again with its backoff; the acknowledgement, written after the pass, ends the facts' obligations.
-    The sessions' settle boxes are heard as they are written (a watch on the sessions folder) and swept once a minute as the net; the look
-    no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
+    its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks.WaitUnitAsync`: that run judged
+    first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
+    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. A pass that
+    did not judge the run in time throws and the queue tries the fact again with its backoff; the acknowledgement, written after the pass,
+    ends the facts' obligations. The sessions' settle boxes are heard as they are written (a watch on the sessions folder); a sweep once a
+    minute is only the watcher's overflow net, not a look: it tees a box no event told or one that stays open, and `daoris bus stats` counts
+    each (`found`, `retried`, `overflow`). The look no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
     each node begun as the consumer's (in a pass it asked) or the look's, with its lag from the ending fact.
     Every type is declared once, in one registry (`BusTypes`, D356 step 2): its name and version, whether it is a fact, a request
     or a response, its payload's fields and their shapes (id, code, count, number, time, flag, a list of at most 16 ids), its
