@@ -40,10 +40,17 @@ export type AttentionTold = {
   strikes?: number | null;
   session?: string | null;
   role?: string | null;
+  /** A step at the owner's final exit: its run, its step and how every holder failed. */
+  run?: string | null;
+  step?: string | null;
+  exit?: string | null;
   id?: string;
 };
 
-const WAITING = new Set(['Parked', 'QuestParked', 'Holding', 'Step', 'Vacant']);
+const WAITING = new Set(['Parked', 'QuestParked', 'Holding', 'Step', 'Vacant', 'Exit']);
+
+/** A final exit's body by how its holders failed; one this build does not name reads as unanswered, as the shell's balloon reads it. */
+const EXITS = new Set(['spent', 'vacant']);
 
 /** The tone a toast for an attention of this kind takes: `error` where it waits on somebody (a vacancy among them), else `ok`. */
 export function attentionTone(kind: string | undefined): 'error' | 'ok' {
@@ -79,9 +86,15 @@ export function attentionToast(t: TFunction, item: AttentionTold): string | null
         ? t('notifications.system.step.title', { repository, role: item.role })
         : t('notifications.system.step.titleNoRole', { repository });
       case 'Vacant': return t('notifications.system.vacant.title', { repository, role: item.role ?? '' });
+      case 'Exit': return t('notifications.system.exit.title', { repository, run: item.run ?? '', step: item.step ?? '' });
       default: return null;
     }
   })();
+  // The owner's final exit: the run and the step, then the story's short form and the one answer, all the window's own words.
+  if (item.kind === 'Exit' && head !== null) {
+    const body = t(`notifications.system.exit.${item.exit && EXITS.has(item.exit) ? item.exit : 'unanswered'}`);
+    return t('notifications.toast.with', { title: head, detail: body });
+  }
   if (head === null) {
     if (!item.headline) return null;
     return written ? `${item.headline}: ${written}` : item.headline;

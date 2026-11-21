@@ -492,7 +492,7 @@ public sealed class NodeRuntime(
             PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, _noticed, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
-            return new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed, Noticed = _noticed.Handed() };
+            return _noticed.Onto(new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed }, HeldSteps());
         }
         finally
         {

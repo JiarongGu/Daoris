@@ -32,6 +32,15 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
     /// <summary>The role a run's step waits on, as its workflow names it: an id, said as written.</summary>
     public string? Role { get; init; }
 
+    /// <summary>The run a step at the owner's final exit is in, by its id, said as written.</summary>
+    public string? Run { get; init; }
+
+    /// <summary>The step at the owner's final exit, by its id in its run, said as written.</summary>
+    public string? Step { get; init; }
+
+    /// <summary>How every holder of a step at the owner's final exit failed (<see cref="FinalExits.Spent"/>, <see cref="FinalExits.Vacant"/>, <see cref="FinalExits.Unanswered"/>).</summary>
+    public string? Exit { get; init; }
+
     /// <summary>How many sessions failed before a quest parked; null where unsaid.</summary>
     public int? Strikes { get; init; }
 
@@ -112,6 +121,10 @@ public static partial class SessionBalloon
         [Prefix + "step.titleNoRole"] = "{{repository}}: a step waits",
         [Prefix + "vacant.title"] = "{{repository}}: a step waits on `{{role}}`, and no agent's session answers it",
         [Prefix + "vacant.body"] = "It is listed under Vacant: cast the role or take the step, or it gives up past its bound.",
+        [Prefix + "exit.title"] = "{{repository}}: run #{{run}}, step `{{step}}`, reached you as Daoris's final exit",
+        [Prefix + "exit.spent"] = "Red past the rounds Daoris sends back, and nobody else holds it. Your one answer: mend it and check it again, or end this work.",
+        [Prefix + "exit.vacant"] = "No agent's session answered it, and nobody took it from Vacant. Your one answer: settle it with its own press, or end this work.",
+        [Prefix + "exit.unanswered"] = "A session served it and never answered within its bound. Your one answer: settle it with its own press, or end this work.",
         // The tray menu's one item: said in the window's language like the balloons, English before a page hands words.
         [Prefix + "reloadPage"] = "Reload the page of every window",
     };
@@ -135,7 +148,7 @@ public static partial class SessionBalloon
         var repository = facts.Repository ?? "";
         var named = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["repository"] = repository, ["quest"] = facts.Quest ?? "", ["role"] = facts.Role ?? "",
+            ["repository"] = repository, ["quest"] = facts.Quest ?? "", ["role"] = facts.Role ?? "", ["run"] = facts.Run ?? "", ["step"] = facts.Step ?? "",
         };
 
         var (title, body) = facts.Kind switch
@@ -162,6 +175,7 @@ public static partial class SessionBalloon
             // A step whose wait names no role says no role, never an empty one.
             WaitAnnouncements.StepKind => (Fill(Word(Prefix + (string.IsNullOrWhiteSpace(facts.Role) ? "step.titleNoRole" : "step.title")), named), Word(Prefix + "step.body")),
             WaitAnnouncements.VacantKind => (Fill(Word(Prefix + "vacant.title"), named), Word(Prefix + "vacant.body")),
+            WaitAnnouncements.ExitKind => (Fill(Word(Prefix + "exit.title"), named), Word(Prefix + Exited(facts.Exit))),
             // A terminal's press: its act by its route's words, never the route; the event's English is not said.
             PipeConfirmations.AttentionKind => (Word(Prefix + "confirming.title"), Act(facts, handed) is { } act
                 ? Fill(Word(Prefix + "confirming.body"), new Dictionary<string, string>(StringComparer.Ordinal) { ["act"] = act })
@@ -192,9 +206,11 @@ public static partial class SessionBalloon
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
         kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or PipeConfirmations.RestoredKind
-            or WaitAnnouncements.AttentionKind or WaitAnnouncements.StepKind or WaitAnnouncements.VacantKind
+            or WaitAnnouncements.AttentionKind or WaitAnnouncements.StepKind or WaitAnnouncements.VacantKind or WaitAnnouncements.ExitKind
             ? BalloonIcon.Warning
             : BalloonIcon.Info;
+
+    private static string Exited(string? how) => how is FinalExits.Spent or FinalExits.Vacant ? $"exit.{how}" : "exit.unanswered";
 
     /// <summary>An ending's key by its state: a state no words name is an ending, never its code in a sentence.</summary>
     private static string Ending(string? state) =>

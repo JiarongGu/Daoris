@@ -266,11 +266,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     never one row per red. Who it went to is kept on its telling (`NodeTold.Decided`, and the role) in the same write, and only then is the
     decision done: its words reach the work's session, once, with its round and the bound (`NodeRunKeeping.SpentRedsAsync`), saying who
     holds it. A decision kept for a holder is judged again at each look (`CheckRounds.SpentOwed`, D354 point 4): a policy lowered or raised
-    moves it without telling the session again, and one at the exit stays there. A final exit's notice goes through the look's one notice
-    path (`NodeRuntimePass.Noticed`, said by the look as `LookSaid.FinalExit` news): kept in Done and failed under its own key
-    (`exit:<run>/<node>#<attempt>`, `FinalExits.Key`), which the window toasts once and a restart never repeats; its row is a `step` row
-    carrying `exit` (`StepExit`, its kind `spent`, `vacant` or `unanswered`), held by the person and counted by that key as its obligation,
-    with the presses that answer it, never the steward's and never announced again as a wait (`WaitAnnouncements`). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    moves it without telling the session again, and one at the exit stays there. A final exit's row is a `step` row carrying `exit`
+    (`StepExit`, its kind `spent`, `vacant` or `unanswered`), held by the person and counted by its own key as its obligation
+    (`exit:<run>/<node>#<attempt>`, `FinalExits.Key`), with the presses that answer it, never the steward's; it is the exit's one
+    interruption, announced once under that key (`WaitAnnouncements.ExitKind`: a toast in a window in front, the OS balloon behind it),
+    naming the run, the step, the story's short form by its kind and the one answer, so a vacancy said before it is said again as the exit.
+    Its record is a notice of Done and failed under the same key (`LookSaid.FinalExit` news naming the run and the step, whose *Open* opens
+    the run), which no window says aloud: the whole story is the look's line, said once as the exit is kept (`NodeRuntimePass.Noticed`), and
+    the notice is kept again at each look while the exit stands (`NodeRuntimePass.Standing`, `LookSaid.Stands`), so a look a later failure
+    ended or a refused write loses none, and one held, or dismissed while the process runs, is never written again. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
     failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red

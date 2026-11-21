@@ -97,7 +97,7 @@ public sealed class SpentChecksTests : NodeRunFixture
         Assert.Equal((PersonWaits.Left, SpentChecks.HeldOn, StepHolders.Person), (wait?.Why, wait?.Role, wait?.Holder.Kind));
     }
 
-    /// <summary>The exit's notice goes through the look's one notice path, kept once under its own key; a restarted driver says it never again.</summary>
+    /// <summary>The exit's notice goes through the look's one notice path, kept once under its own key, naming its run and step; a restarted driver's story is said never again.</summary>
     [Fact]
     public async Task The_final_exits_notice_reaches_the_owner_in_done_and_failed_once_across_a_restart()
     {
@@ -105,15 +105,49 @@ public sealed class SpentChecksTests : NodeRunFixture
         var first = await RunPassAsync(Runtime(), Seed);
         var look = new LookSaid(_home, () => null, clock: () => _now);
         foreach (var line in first.Noticed) look.Say(line);
+        look.Stands("work", first.Standing);
 
         var restarted = await RunPassAsync(Runtime(), Seed);
-        foreach (var line in restarted.Noticed) new LookSaid(_home, () => null, clock: () => _now).Say(line);
+        var again = new LookSaid(_home, () => null, clock: () => _now);
+        foreach (var line in restarted.Noticed) again.Say(line);
+        again.Stands("work", restarted.Standing);
 
         Assert.Single(first.Noticed);
         Assert.Empty(restarted.Noticed);
         Assert.DoesNotContain(first.Said.Concat(restarted.Said), line => line.Contains("final exit", StringComparison.Ordinal));
         var notice = Assert.Single(Notices.Read(_home, _now)!);
-        Assert.Equal((Notices.Look, LookSaid.FinalExit, $"look-{LookSaid.FinalExit}-{FinalExits.Key(RunId, "check", 3)}"), (notice.Kind, notice.Code, notice.Id));
+        Assert.Equal((Notices.Look, LookSaid.FinalExit, $"look-{LookSaid.FinalExit}-{FinalExits.Key(RunId, "check", 3)}", RunId, "check"),
+            (notice.Kind, notice.Code, notice.Id, notice.Quest, notice.Act));
+    }
+
+    /// <summary>
+    /// A notice the look never kept (a later unit's failure ended the look after the exit's keep, or the notices refused the write) is handed
+    /// up again at each look while the exit stands, kept then, and never doubled; one the person dismissed is not brought back.
+    /// </summary>
+    [Fact]
+    public async Task A_final_exits_notice_dropped_once_is_kept_at_the_next_look_and_never_doubled()
+    {
+        Spent();
+        var runtime = Runtime();
+        var dropped = await RunPassAsync(runtime, Seed);
+        Assert.Single(dropped.Noticed);
+        Assert.Null(Notices.Read(_home, _now) is { Count: > 0 } ? "kept" : null);
+
+        var look = new LookSaid(_home, () => null, clock: () => _now);
+        var next = await RunPassAsync(runtime, Seed);
+        Assert.Empty(next.Noticed);
+        var standing = Assert.Single(next.Standing);
+        Assert.Equal((LookSaid.FinalExit, FinalExits.Key(RunId, "check", 3), RunId, "check"), (standing.Code, standing.Subject, standing.Quest, standing.Act));
+        look.Stands("work", next.Standing);
+        var kept = Assert.Single(Notices.Read(_home, _now)!);
+
+        foreach (var line in dropped.Noticed) look.Say(line);
+        look.Stands("work", (await RunPassAsync(runtime, Seed)).Standing);
+        Assert.Equal([kept.Id], Notices.Read(_home, _now)!.Select(each => each.Id));
+
+        Assert.Null(Notices.Dismiss(_home, [kept.Id], _now));
+        look.Stands("work", (await RunPassAsync(runtime, Seed)).Standing);
+        Assert.Empty(Notices.Read(_home, _now)!);
     }
 
     /// <summary>At the exit the step is the person's own row with the presses that answer it, and the readers the window uses read it as the person's.</summary>

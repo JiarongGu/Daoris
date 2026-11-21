@@ -147,26 +147,56 @@ public sealed class WaitAnnouncementsTests : DriverModuleBridge
         Assert.Equal("engine: a step waits on `worker`, which you fill", told.GetProperty("Headline").GetString());
     }
 
+    private static JsonObject StepRow(HeldStep step) => JsonSerializer.SerializeToNode(step, Shenora.Core.Ipc.IpcJson.Options)!.AsObject();
+
+    private static HeldStep ExitStep(string kind = FinalExits.Spent) =>
+        new("q7", "check", "engine", "default", PersonWaits.Left, "supervisor", [NodeWordActs.Again, NodeWordActs.Stop], "w1",
+            DateTimeOffset.Parse("2026-11-16T09:51:00Z", System.Globalization.CultureInfo.InvariantCulture)) { Exit = new StepExit(FinalExits.Key("q7", "check", 3), kind) };
+
+    /// <summary>The final exit interrupts once: its run, step, story's short form and answer, read by the balloon and the toast; its row stands.</summary>
     [Fact]
-    public async Task A_step_at_the_owners_final_exit_is_the_persons_own_row_and_only_its_notice_announces_it()
+    public async Task A_step_at_the_owners_final_exit_is_the_persons_own_row_announced_once_with_its_run_step_and_answer()
     {
-        var exit = new HeldStep("q7", "check", "engine", "default", PersonWaits.Left, "supervisor", [NodeWordActs.Again, NodeWordActs.Stop], "w1",
-            DateTimeOffset.Parse("2026-11-16T09:51:00Z", System.Globalization.CultureInfo.InvariantCulture)) { Exit = new StepExit(FinalExits.Key("q7", "check", 3), FinalExits.Spent) };
-        var facts = new AttentionFacts
-        {
-            Sessions = [Session("s1a2b3c4", "engine")],
-            Steps = [System.Text.Json.JsonSerializer.SerializeToNode(exit, Shenora.Core.Ipc.IpcJson.Options)!.AsObject()],
-        };
+        var facts = new AttentionFacts { Sessions = [Session("s1a2b3c4", "engine")], Steps = [StepRow(ExitStep())] };
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => true));
 
-        await AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true, () => true)).JudgeAsync();
-        await AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => true, () => true)).JudgeAsync();
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
 
-        Assert.Empty(Said());
+        var told = Assert.Single(Said());
+        Assert.Equal(
+            (WaitAnnouncements.ExitKind, FinalExits.Key("q7", "check", 3), "engine", "q7", "check", FinalExits.Spent),
+            (told.GetProperty("Kind").GetString(), told.GetProperty("Id").GetString(), told.GetProperty("Repository").GetString(),
+                told.GetProperty("Run").GetString(), told.GetProperty("Step").GetString(), told.GetProperty("Exit").GetString()));
+        Assert.Equal("engine: run #q7, step `check`, reached you as Daoris's final exit", told.GetProperty("Headline").GetString());
+        var balloon = SessionBalloon.Words(new BalloonFacts(WaitAnnouncements.ExitKind) { Repository = "engine", Run = "q7", Step = "check", Exit = FinalExits.Spent });
+        Assert.Equal((told.GetProperty("Headline").GetString(), BalloonIcon.Warning), (balloon.Title, balloon.Icon));
+        Assert.Equal("Red past the rounds Daoris sends back, and nobody else holds it. Your one answer: mend it and check it again, or end this work.", balloon.Body);
+
         var row = Assert.Single(NeedsAPerson.Rows(facts), each => Json.Text(each, "kind") == "step");
         Assert.Equal(("step", "exit:q7/check#3", FinalExits.Spent, StepHolders.Person), (Json.Text(row, "kind"), Json.Text(row, "obligation"),
             Json.Text(row["step"]!["exit"]!.AsObject(), "kind"), Json.Text(row["step"]!.AsObject(), "holder")));
         Assert.Equal([NodeWordActs.Again, NodeWordActs.Stop], row["step"]!["presses"]!.AsArray().Select(press => press!.GetValue<string>()));
         Assert.Equal(AttentionOwnership.OwnersClass, AttentionOwnership.Of(row, new AttentionTakers((_, _, _) => true, steward: true)).Class);
+    }
+
+    /// <summary>A vacancy said once, then past its bound at the final exit: the exit is said under its own key, once, though its row's id is the vacancy's.</summary>
+    [Fact]
+    public async Task A_vacancy_that_reaches_the_final_exit_is_said_again_once_as_the_exit()
+    {
+        var vacant = ExitStep() with { Why = PersonWaits.Task, Role = "worker", Presses = [], Exit = null };
+        var facts = new AttentionFacts { Sessions = [Session("s1a2b3c4", "engine")], Steps = [StepRow(vacant with { Holder = StepHolders.Agent, Vacant = true })] };
+        var slice = AttentionStateSlice.Of(() => facts, Bus, [], held: new WaitAnnouncements(Bus, () => false, () => true));
+        await slice.JudgeAsync();
+
+        facts = facts with { Steps = [StepRow(ExitStep(FinalExits.Vacant) with { Why = PersonWaits.Task, Role = "worker" })] };
+        await slice.JudgeAsync();
+        await slice.JudgeAsync();
+
+        Assert.Equal([WaitAnnouncements.VacantKind, WaitAnnouncements.ExitKind], Said().Select(each => each.GetProperty("Kind").GetString()));
+        Assert.Equal(
+            "No agent's session answered it, and nobody took it from Vacant. Your one answer: settle it with its own press, or end this work.",
+            SessionBalloon.Words(new BalloonFacts(WaitAnnouncements.ExitKind) { Run = "q7", Step = "check", Exit = FinalExits.Vacant }).Body);
     }
 
     /// <summary>A step a role's agent holds, the default where no cast names another, is the agents' row: never announced as the owner's.</summary>
