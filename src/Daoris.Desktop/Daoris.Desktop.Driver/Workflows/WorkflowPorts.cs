@@ -98,10 +98,32 @@ public interface IWorkflowRunRecords
     /// offer counts them (<see cref="LandOffer.Of"/>), those the line holds by content counting none; null where the tree does not stand.
     /// </summary>
     Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct);
+
+    /// <summary>
+    /// The second opinion's gate for a run's work, read in its tree here as every landing door reads it
+    /// (<see cref="SessionTreeGates.OpinionAsync"/>); null where the tree does not stand or the read did not answer, so the step stays as
+    /// its record holds it.
+    /// </summary>
+    Task<OpinionGateState?> OpinionAsync(RunOpinionRead read, CancellationToken ct);
 }
 
 /// <summary>Where a chat's tree stands: its <c>HEAD</c>, and the commits beyond the line, each null where git could not say.</summary>
 public sealed record ChatTreeTip(string? Head, int? Beyond);
+
+/// <summary>
+/// What a run's second-opinion gate is read with (<see cref="IWorkflowRunRecords.OpinionAsync"/>): the work's tree, whose session and
+/// quest, the review read beside it, the run's process, and for a chat run the tip its press pinned and its run.
+/// </summary>
+public sealed record RunOpinionRead(
+    string Tree, string Repository, string Workspace, string? Quest, string Session, IOpinionWorld World, ReviewGateState? Review,
+    WorkflowProcess Process)
+{
+    /// <summary>The commit the gate judges; null reads the tree's <c>HEAD</c>.</summary>
+    public string? At { get; init; }
+
+    /// <summary>A chat run's key, which keys its gate in place of a quest; null for a quest's run.</summary>
+    public string? Run { get; init; }
+}
 
 /// <summary>
 /// The ports over a home's files, for a caller that holds only the home: the one place Workflows'

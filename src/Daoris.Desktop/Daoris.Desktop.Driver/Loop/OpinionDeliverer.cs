@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -372,6 +374,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         }
 
         var recheck = kept.Recheck is { } id ? await Service.Opinions.ReadAsync(id, ct).ConfigureAwait(false) : null;
+        // Its consultation kept beside it, as a first pass's is: at once, or at this look where an older build kept its diff alone.
+        if (recheck is { Given: true }) Deliveries.RecheckConsulted(recheck);
         var disputes = OpinionDisputes.Of(reading, recheck);
         var then = kept.Recheck is not null
             ? $" Recheck {kept.Recheck} reads the commits since."
@@ -445,18 +449,34 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             Service.LandingSaid(OpinionLines.HandedOn(first.Working, first.Occasion, capped.Id, capped.Session));
         }
 
+        // A pass of its own, said as a first pass is: asked as the host opens it, by the reviewer that took it, and given with the
+        // seconds from its open once it ends.
+        var took = choice;
+        Stopwatch? watch = null;
         var ask = asked with
         {
             Reask = Walk,
+            Replaced = next => took = next,
             Occasion = first.Occasion,
             Working = first.Working,
             Base = first.Tip,
             Tip = reading.Tip!,
             Rechecks = new OpinionRecheckOf(first, reading),
             // A recheck is no ask of the gate's: it is found through what the delivery keeps.
-            Opened = null,
+            Opened = (opinion, _) =>
+            {
+                watch = Stopwatch.StartNew();
+                Service.LandingSaid(OpinionLines.Asked(opinion, first.Working, first.Occasion, took.Label, took.Reviewer, OpinionViews.RecheckPass));
+            },
         };
-        return await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
+        var run = await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
+        if (run.Opinion is { } recheck && await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { } view)
+        {
+            if (view.Given) Service.LandingSaid(OpinionLines.Given(view, watch is null ? null : (long)watch.Elapsed.TotalSeconds));
+            else if (view.State == OpinionViews.Failed) Service.LandingSaid(OpinionLines.Unavailable(first.Working, first.Occasion, view.Why ?? "ended"));
+        }
+
+        return run;
     }
 
     /// <summary>

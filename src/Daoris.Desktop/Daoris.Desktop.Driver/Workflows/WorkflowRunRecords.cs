@@ -75,4 +75,23 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
         int? beyond = work is null || work.Commits is null ? null : LandOffer.Of(tree, work)?.Commits ?? 0;
         return new ChatTreeTip(head, beyond);
     }
+
+    /// <summary>The second opinion's gate, read in the work's tree as a landing door reads it; null where the tree is gone or a read failed.</summary>
+    public async Task<OpinionGateState?> OpinionAsync(RunOpinionRead read, CancellationToken ct)
+    {
+        if (!Directory.Exists(read.Tree)) return null;
+        try
+        {
+            return await new SessionTrees(home).OpinionAsync(
+                    read.Tree, read.Repository, read.Workspace, read.Quest, read.Session, read.World, read.Review, OpinionRules.Landing, ct, read.Process,
+                    read.At, read.Run)
+                .ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                                          or UnauthorizedAccessException)
+        {
+            // A gate that does not read says nothing: the step stays as its record holds it, never moved on a guess.
+            return null;
+        }
+    }
 }
