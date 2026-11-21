@@ -540,5 +540,7 @@ size ratchet. A changed driven loop also meets the family rehearsal (`npm run re
 - **LIMITRESUME1**, **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
 - **AGENTERRORS1**, **AGENTPROVIDER1**: the agents area's rows.
 - **TREEOPENERR1**: the next fresh-tree open that fails with no stderr, read and reported.
+- **BUS2a to BUS2g** (D356): the Daoris bus, one driver-owned log every fact, request and answer goes through; its rows move the
+  looks of rule 30 to reducers over it one job at a time, the opinion gate first.
 - **LINESTOGETHER1e**: the steward's forms for several lines in one repository.
 - D178's last clause, handing a lost take's work to the winner: no row until a way to reach it is asked for.
