@@ -46,6 +46,20 @@ public sealed class GateLogExcerptTests
     }
 
     [Fact]
+    public void A_line_holding_an_api_secret_key_or_an_aws_access_key_is_withheld_as_the_sensitive_scan_would_refuse_it()
+    {
+        var api = string.Concat("sk", "-", new string('f', 24));
+        var aws = string.Concat("AK", "IA", new string('J', 16));
+        var log = string.Join("\n", ["== RED node tools/deploy.mjs (0.4s)", "using key " + api, "aws_access_key_id = " + aws, "the last line"]);
+
+        var told = GateLogExcerpt.Told(log, Log, Home)!;
+
+        Assert.DoesNotContain(api, told);
+        Assert.DoesNotContain(aws, told);
+        Assert.Contains("== RED node tools/deploy.mjs (0.4s)\n" + GateLogExcerpt.Withheld + "\n" + GateLogExcerpt.Withheld + "\nthe last line", told);
+    }
+
+    [Fact]
     public void The_logs_path_is_said_relative_to_the_home_and_a_path_outside_it_by_its_file_name()
     {
         var inside = GateLogExcerpt.Told("a line", Log, Home)!;

@@ -27,7 +27,7 @@ public static partial class GitWords
     [GeneratedRegex(@"(?im)\b(?<name>(?:Proxy-)?Authorization|Cookie|Set-Cookie)(?<sep>\s*:\s*)[^\r\n]*")]
     private static partial Regex Header();
 
-    [GeneratedRegex(@"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_\-]{20,})")]
+    [GeneratedRegex(@"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_\-]{20,}|sk-[A-Za-z0-9_\-]{20,}|AKIA[0-9A-Z]{16}\b)")]
     private static partial Regex Token();
 
     [GeneratedRegex(@"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|\z)")]

@@ -644,7 +644,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     why carries the failing step's own lines with its log's path, said relative to the home: the log's red blocks (an `== RED <step>`
     header line, matched as a step's header only, to the next `== `) and its last lines, within about 40 lines and 4 KB
     (`GateLogExcerpt`), so the work reads why without asking for the log. The log is a child's words and passes `GitWords.Redact` first:
-    a line holding a secret's shape (a token, a key block, an Authorization or Cookie header) is withheld whole, so what a verdict's why
+    a line holding a secret's shape (every token and key shape the sensitive scan's built-ins name, an API secret key and an AWS access key
+    among them, a key block, an Authorization or Cookie header) is withheld whole, so what a verdict's why
     keeps and says never carries one. The same excerpt follows a `regenerate` that did not finish, its `regenerate.log` written in a
     try of its own (a log that cannot be kept leaves the command and its output said without a path), and a check cancelled in the
     preparation or a regenerate ends as ended (`it was ended before its verdict`, each gate not run), never as an exception. The
