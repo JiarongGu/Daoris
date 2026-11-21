@@ -41,4 +41,38 @@ public static class CheckRounds
     /// </summary>
     public static bool SendsBack(NodeDeclaration? source, IReadOnlyDictionary<string, int> reds) =>
         source?.Kind != NodeKinds.Check || reds.GetValueOrDefault(source.Id) < Bound;
+
+    /// <summary>
+    /// The reds a check's <c>back</c> wire to the work did not take because its rounds are spent (<see cref="SendsBack"/>), not told yet
+    /// (<see cref="NodeRecord.ToldOf"/>): each check's current failed attempt, settled failed, whose way back on <c>failed</c> goes to a
+    /// <c>claimed</c> step, with its count of reds.
+    /// </summary>
+    public static IReadOnlyList<(string Node, int Attempt, int Reds)> SpentOwed(
+        NodeRecord record, IReadOnlyList<Wire> wires, IReadOnlyDictionary<string, NodeDeclaration> declared)
+    {
+        var reds = Reds(record);
+        var owed = new List<(string Node, int Attempt, int Reds)>();
+        foreach (var wire in wires.Where(wire => wire is { Kind: WireKinds.Back, On: WireKinds.Failed, From.Node: not null }))
+        {
+            var source = wire.From!.Node;
+            if (declared.GetValueOrDefault(source) is not { Kind: NodeKinds.Check } check || declared.GetValueOrDefault(wire.To.Node)?.Kind != NodeKinds.Claimed) continue;
+            if (SendsBack(check, reds) || record.Statuses.GetValueOrDefault(source) is not { State: NodeStates.Failed } status) continue;
+            if (record.Attempts.LastOrDefault(attempt => attempt.Node == source && attempt.Attempt == status.Attempt)
+                    is not { State: AttemptStates.Settled, Outcome: WorkStates.Failed }
+                || record.ToldOf(source, status.Attempt) is not null || owed.Any(each => each.Node == source))
+            {
+                continue;
+            }
+
+            owed.Add((source, status.Attempt, reds.GetValueOrDefault(source)));
+        }
+
+        return owed;
+    }
+
+    /// <summary>A check's red past its rounds' bound, told all the same: its words, and that the person sees it too.</summary>
+    public static string SpentWords(string node, string? code, string? found, int reds) =>
+        NodeRunKeeping.FailedWords(node, code, found)
+        + $"\n\nThis is its red round {reds}, past the {Bound} Daoris sends back on its own, so the person sees it too: commit a fix and it "
+        + "is checked again, or, if you cannot make it pass, say so and give up with what you tried.";
 }
