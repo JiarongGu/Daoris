@@ -262,8 +262,9 @@ Each type is in a file of its name; `docs/index/README.md` says where a seam, ve
     never into a junction, and names each path no `HomeEntry` matches (an entry's pattern covers its children; the install's `app/`,
     marker and `purged/` are the install's), with its bytes. A start says each in the machine log (`home.stray`), a bare `daoris home` (the
     group is `Bare`, so the tree routes it to the command, not the usage; `HomeStraysTests`) lists them under *Not in the table* after each
-    entry's total size and changes nothing (the host routes it before the machine log opens, whose open prunes old logs, and `VerbLeases`
-    classes it a read: no lease, no `home.json` written; `HomeBareProcessTests`), and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
+    entry's total size and changes nothing (the host routes it before the staffing's wiring, which would make a missing `data/`, and
+    before the machine log opens, whose open prunes old logs, and `VerbLeases` classes it a read: no lease, no `home.json` written;
+    `HomeBareProcessTests`), and the one walk (`HomeStrays.Read`, `Walked`) yields every path with its bytes and the
     entry it falls under, none for a stray, for any reader of sizes per entry; Disk space shows them (`strays` of `SYSTEM_SPACE`, kept five minutes). A reader of an older place is
     not kept for the files an install holds there (51): the table's place that goes is moved in `home-places.json`
     (`test/fixtures`) from `places` to `dropped` with its declared one-time move, and `home-census.test.ts` refuses a place gone with no

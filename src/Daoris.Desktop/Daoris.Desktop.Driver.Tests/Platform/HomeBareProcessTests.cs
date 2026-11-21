@@ -36,6 +36,22 @@ public sealed class HomeBareProcessTests : IDisposable
         Assert.Equal(before, Snapshot());
     }
 
+    [Fact]
+    public async Task A_bare_home_makes_no_category_folder_a_home_lacks()
+    {
+        // No data/ here: the staffing's wiring names data/driver.json, and naming an entry makes its category's folder.
+        Put("odd/thing.bin", 2048);
+        Put("logs/2000-01-01.driver.jsonl", 10);
+        var before = Snapshot();
+
+        var (code, said) = await RunAsync("home");
+
+        Assert.Equal(0, code);
+        Assert.Contains("odd", said);
+        Assert.Equal(before, Snapshot());
+        Assert.False(Directory.Exists(Path.Combine(_home, "data")), "a listing makes no data/ folder");
+    }
+
     private void Put(string relative, int bytes)
     {
         var path = Path.Combine(_home, relative);

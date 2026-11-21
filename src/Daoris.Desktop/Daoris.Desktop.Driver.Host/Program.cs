@@ -122,6 +122,22 @@ DaorisHome.Adopt(AppContext.BaseDirectory);
 // variable a process inherited.
 ProgramHome.Named = DaorisHome.Resolve();
 
+// The paths no entry of the home's table names: a read, routed before the staffing's wiring (naming data/driver.json makes the
+// category's folder), the lease (VerbLeases) and the machine log (whose open prunes old files), since listing changes nothing. A home
+// named nowhere is said as the catch below says it.
+if (args is ["home"])
+{
+    if (ProgramHome.Named is not { } listedHome)
+    {
+        Console.Error.WriteLine($"driver: {DaorisHome.Sentence}");
+        return 2;
+    }
+
+    var listed = HomePurgeCommand.Run([], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
+    Console.Out.Write(listedSaid);
+    return listed;
+}
+
 // The home's driver.json reads its staffing from the store, wired before any door or the
 // loop loads it.
 RoleStaffing.WireHome(Environment.GetEnvironmentVariable);
@@ -190,21 +206,6 @@ if (args is ["verify", .. var verifyArgs])
 if (args is ["integrate", .. var integrateArgs])
 {
     return await Daoris.Driver.Host.IntegrateConsole.RunAsync(integrateArgs, CancellationToken.None);
-}
-
-// The paths no entry of the home's table names: a read, routed before the machine log opens (whose open prunes old files) and
-// with no lease (VerbLeases), since listing changes nothing. A home named nowhere is said as the catch below says it.
-if (args is ["home"])
-{
-    if (DaorisHome.Resolve() is not { } listedHome)
-    {
-        Console.Error.WriteLine($"driver: {DaorisHome.Sentence}");
-        return 2;
-    }
-
-    var listed = HomePurgeCommand.Run([], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
-    Console.Out.Write(listedSaid);
-    return listed;
 }
 
 // The machine log: this host's watch and every exception nothing caught, in a file of its
