@@ -47,7 +47,34 @@ public sealed record Snapshot(
     /// every active session and is read as that for a busy tree and a repository's holder. A piece reserved and not yet opened holds
     /// one too (<see cref="Pieces"/>), each counted once, since an active record carrying its piece counts it instead.
     /// </summary>
-    public int SlotsHeld => ActiveSessions.Held(Active) + PartnerAdmission.Reserving(Pieces, Active);
+    public int SlotsHeld => ActiveSessions.Held(Active) + ResumesInFlight + PartnerAdmission.Reserving(Pieces, Active);
+
+    /// <summary>
+    /// <see cref="SlotsHeld"/> and the places of the sessions awaiting a step whose words are ready (<see cref="ResumesReady"/>): what a
+    /// new pass (a helper, a partner, a brainstorm, a meeting) leaves, so a resume is first in line for the place its wait freed. The
+    /// planner reads <see cref="SlotsHeld"/> instead, since it spends a resume's place as it plans it.
+    /// </summary>
+    public int SlotsClaimed => SlotsHeld + ResumesReady;
+
+    private IEnumerable<SessionView> StepWaiters => Active.Where(session => ActiveSessions.WaitsOnItsStep(session.State) && ActiveSessions.TakesSlot(session));
+
+    private bool Opening(SessionView session) =>
+        session.Quest is { Length: > 0 } quest && Starting.Any(start => string.Equals(start.Quest, quest, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// The sessions awaiting a step whose resume is opening: its start is reserved and its record not yet working, so the place it
+    /// took back is held as the record's will be, never given to another start in the meantime.
+    /// </summary>
+    internal int ResumesInFlight => StepWaiters.Count(Opening);
+
+    /// <summary>
+    /// The sessions awaiting a step whose answer is kept and whose resume is not yet reserved: it goes on at this look or the next, and
+    /// wants a place then. One the person paused or whose words could not be taken wants none.
+    /// </summary>
+    internal int ResumesReady => StepWaiters.Count(session =>
+        !Opening(session) && session.Quest is { Length: > 0 } quest
+        && LastRun.TryGetValue(quest, out var last) && string.Equals(last.Session, session.Id, StringComparison.Ordinal)
+        && last.WordsWaiting && !Unable.ContainsKey(session.Id) && !Paused.ContainsKey(quest));
 
     /// <summary>
     /// The session THIS machine last ran on each quest, by quest id — derived from the same records as the strikes, never kept. It

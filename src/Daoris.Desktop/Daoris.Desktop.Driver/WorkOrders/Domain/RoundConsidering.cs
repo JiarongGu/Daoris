@@ -234,9 +234,9 @@ internal sealed class RoundConsidering(PlanRound round)
             };
         }
 
-        // An answered park already holds its slot among the active: going on, it starts no second session. An ended record holds
-        // none, so going on takes one, as a start does; it is planned first, so it is first to.
-        if (!(continuing && snapshot.Active.Any(Itself)))
+        // An answered park already holds its slot: going on, it starts no second session. An ended record or one waiting on its step
+        // holds none, so going on takes one, as a start does; it is planned first, so it is first to.
+        if (!(continuing && snapshot.Active.Any(session => Itself(session) && !ActiveSessions.WaitsOnItsStep(session.State))))
         {
             if (round.Slots <= 0)
             {

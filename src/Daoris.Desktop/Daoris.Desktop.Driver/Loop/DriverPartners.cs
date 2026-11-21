@@ -214,7 +214,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         }
 
         var fromOf = await FromOfAsync(ask.Asker, lead, ct).ConfigureAwait(false);
-        switch (PartnerReservations.TryReserve(files, ask.Id, snapshot.Active, fromOf, _context.Config.Cap, taken, DateTimeOffset.UtcNow))
+        switch (PartnerReservations.TryReserve(files, ask.Id, snapshot.Active, fromOf, _context.Config.Cap, taken + snapshot.ResumesInFlight + snapshot.ResumesReady, DateTimeOffset.UtcNow))
         {
             case PieceAdmitted.Reserved:
                 Note(ask.Asker, PartnerNotes.Asked(choice.Reviewer!));

@@ -86,7 +86,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 10. Quests whose last session here has the person's words waiting are planned first; the rest in the service's order, oldest open
     first. (D46, D137)
 11. The cap counts what the driver started, passes included (helpers, partners, opinions, brainstorms), never a conversation the
-    person holds. It is at least one. (D130, D181)
+    person holds. It is at least one. A session awaiting its step (`awaiting-step`: its turn ended on a held check, a hold or an opinion,
+    running no process) holds no place: it stays in the active list for its tree and its quest, but the count is of the sessions that
+    run a turn or will within the look (`ActiveSessions.HoldsSlot`). When its step answers, the words the record keeps are a go-on,
+    planned before every new start, and it takes a place again as an ended record does, so it waits for one first in line: the passes
+    (helpers, partners, brainstorms, meetings) leave a place for each such resume (`Snapshot.SlotsClaimed`), and a resume whose start
+    is reserved and whose record is not yet working holds its place meanwhile (`Snapshot.ResumesInFlight`, counted in `SlotsHeld`). (D130, D181)
 12. Whether a repository's sessions work apart is its workflow's `isolate` step (*Open a tree*, closed by `release`'s *Close the tree*, `Workflows/Kinds/Isolate/`): its
     `kind` (`auto`, `worktree`, `copy`), its `at-once` (`2` to `24`, or `any` under the cap; a full count sits a start `apart`)
     and its `overlap` (`go`, `wait`: rule 14). A start carries the step it was planned under (`Consideration.Isolate`), so a save

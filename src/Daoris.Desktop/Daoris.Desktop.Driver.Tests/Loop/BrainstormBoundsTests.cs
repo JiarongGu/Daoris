@@ -230,6 +230,35 @@ public sealed class BrainstormBoundsTests : BrainstormBench
         Assert.Equal(1, script.Most);
     }
 
+    /// <summary>
+    /// A session awaiting its step frees its place, but one whose answer is kept or whose resume is opening wants it back first in
+    /// line: no pass begins into it.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, 2)]
+    [InlineData(true, false, 0)]
+    [InlineData(false, true, 0)]
+    public async Task A_session_whose_step_answered_or_whose_resume_is_opening_keeps_its_place_from_a_pass(bool answered, bool opening, int begun)
+    {
+        var (driver, script) = Start(cap: 1);
+        var id = await SentAsync(driver, "stub", "acp-stub");
+        script.Answers["g1"] = Give("Make the window inclusive");
+        script.Answers["g2"] = Give("Cache the report");
+        script.Answers["s1"] = Synthesize("P1", "P2");
+        var waiting = new SessionView("s1", "engine", "awaiting-step") { Kind = "driven", Quest = "q1" };
+        var record = new PriorSession("s1", "D:/trees/s1", "awaiting-step", null, "engine") { Said = answered ? PersonWords.Of("The check passed.") : [] };
+        var snapshot = new Snapshot([], [], [waiting])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = record },
+            Starting = opening ? [new StartReservation("q1", null, "engine", "D:/trees/s1")] : [],
+        };
+
+        await driver.BrainstormsAsync(snapshot, 0, [], CancellationToken.None);
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal(begun, script.Started.Count(turn => turn is "g1" or "g2"));
+    }
+
     /// <summary>🔴 A pass that finds no slot by the generators' deadline never starts, and is said as <c>cap-full</c>.</summary>
     [Fact]
     public async Task A_pass_that_finds_no_slot_by_the_deadline_is_said_as_cap_full()

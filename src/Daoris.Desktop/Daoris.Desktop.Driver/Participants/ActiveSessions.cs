@@ -23,7 +23,10 @@ public static class ActiveSessions
     /// of four for hours (2026-10-20). The list keeps them: a busy tree and a repository's holder read every active session, and so do the
     /// reads that need the whole list (<see cref="Snapshot.Active"/>).</para>
     /// </remarks>
-    public static bool HoldsSlot(SessionView session) =>
+    public static bool HoldsSlot(SessionView session) => !WaitsOnItsStep(session.State) && TakesSlot(session);
+
+    /// <summary>Whether the work the record's marks tell is one the driver starts, whatever state it stands in.</summary>
+    internal static bool TakesSlot(SessionView session) =>
         ParticipantWork.HoldsSlot(ParticipantWork.Of(
             new WorkMarks(Mirror: false, session.Kind, session.Repository, session.Ask, session.Serves, session.Piece, session.Opinion, session.Decides, session.Performs)));
 
@@ -32,8 +35,19 @@ public static class ActiveSessions
     /// the sessions the driver runs by, from the records every window holds, so the count a person reads is the one the cap spends.
     /// A null <paramref name="kind"/> is a host that answers none, read as driven work, as <see cref="SessionView.Kind"/> reads it.
     /// </summary>
-    public static bool HoldsSlot(string? kind, string? repository, string? ask, string? serves, string? opinion, string? decides = null, string? performs = null) =>
-        ParticipantWork.HoldsSlot(ParticipantWork.Of(new WorkMarks(Mirror: false, kind, repository, ask, serves, Piece: null, opinion, decides, performs)));
+    public static bool HoldsSlot(
+        string? kind, string? repository, string? ask, string? serves, string? opinion, string? decides = null, string? performs = null,
+        string? state = null) =>
+        !WaitsOnItsStep(state)
+        && ParticipantWork.HoldsSlot(ParticipantWork.Of(new WorkMarks(Mirror: false, kind, repository, ask, serves, Piece: null, opinion, decides, performs)));
+
+    /// <summary>
+    /// Whether a record's turn ended on its workflow's step, a held check, a hold or an opinion (<see cref="SessionStates.AwaitingStep"/>):
+    /// it runs no process and spends no tokens until the step's word wakes it, so it frees its place under the cap and takes one again,
+    /// planned first, when it resumes (<c>RoundConsidering</c>). The list keeps it, since it still holds its tree and its quest.
+    /// </summary>
+    internal static bool WaitsOnItsStep(string? state) =>
+        string.Equals(state, SessionStates.AwaitingStep, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>How many of the sessions take a place under the cap (<see cref="HoldsSlot"/>).</summary>
     public static int Held(IEnumerable<SessionView> sessions) => sessions.Count(HoldsSlot);
