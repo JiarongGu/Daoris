@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
-/// <summary>A step the pass judged vacant: its attempt, since when it is vacant, and whether it is announced and its refused stop said.</summary>
-public sealed record StepVacancy(string Node, int Attempt, DateTimeOffset Since, bool Told, bool Refused);
+/// <summary>A step the pass judged vacant: its attempt, since when it is vacant, whether it is announced, and whether it reached the owner's final exit.</summary>
+public sealed record StepVacancy(string Node, int Attempt, DateTimeOffset Since, bool Told, bool Exited);
 
 /// <summary>Where the pass keeps each run's vacancies, and every reader reads them: <see cref="StepVacancyFiles"/> on the machine.</summary>
 public interface IStepVacancyStore
@@ -18,8 +18,8 @@ public interface IStepVacancyStore
 /// <summary>
 /// A vacancy: a run's step waiting on a role an agent holds, that no agent's session serves with a tool that answers it. Never hidden and
 /// never the owner's: judged by the pass alone, which keeps it (<see cref="StepVacancyFiles"/>) from the moment it became vacant, so every
-/// row, view and list reads the one judgement; listed under <i>Vacant</i>, announced once, and stopped by Daoris (<see cref="NodeSource.Daoris"/>)
-/// once it has been announced and has stood vacant past its bound (<see cref="VacancySetting"/>), with what it tried. Served are a task's Done
+/// row, view and list reads the one judgement; listed under <i>Vacant</i>, announced once, and past its bound (<see cref="VacancySetting"/>) at
+/// the owner's final exit (<see cref="FinalExits"/>), the person's row from then on, never stopped by Daoris. Served are a task's Done
 /// or decision, handed to the run's working session, and a plugin's actor whose role a cast or a staffing gives an agent that a live session
 /// of serves (<see cref="CastReading.Serves"/>). No dispatcher hands a role-classed Accept, approval or opinion dispute to a session yet, so one
 /// an agent holds is a vacancy, though an Accept's or approval's agent may still answer it by <c>step_settle</c>.
@@ -42,23 +42,24 @@ public static class StepVacancies
         CastReading.Serves(book, risk, workspace, repository, live ?? ((_, _) => false));
 
     public static string Said(RoleWait wait, TimeSpan bound) =>
-        $"vacant: `{wait.Role}` is its agent's{Named(wait)}, and no agent session answers its {wait.Why}; listed under Vacant for anyone to take, Daoris gives "
-        + $"it up {VacancySetting.Said(bound)} after it became vacant";
+        $"vacant: `{wait.Role}` is its agent's{Named(wait)}, and no agent session answers its {wait.Why}; listed under Vacant for anyone to take, it goes "
+        + $"to the owner as Daoris's final exit {VacancySetting.Said(bound)} after it became vacant";
 
     /// <summary>What a run's view says of a step standing vacant: its role's agent holds it and no agent session answers it.</summary>
     public static string RunSaid(RoleWait wait) =>
         $"vacant: `{wait.Role}` is its agent's, and no agent session answers its {wait.Why}; it is listed under Vacant for anyone to take";
 
-    /// <summary>The words Daoris's stop keeps on the step, which its run view says after <i>Daoris gave it up:</i>.</summary>
-    public static string Tried(RoleWait wait, TimeSpan bound) =>
-        $"nobody could answer it in {VacancySetting.Said(bound)}. Tried: the place's cast (no cast names a holder whose session answers its {wait.Why}), "
-        + $"the role's agent{Named(wait)} (no session of it answers it), and listing it under Vacant, where nobody took it";
+    public static string Notice(string step, RoleWait wait, DateTimeOffset since, DateTimeOffset now) =>
+        FinalExits.Notice($"{step} stood vacant", [
+            new("the place's cast", null, $"no cast names a holder whose session answers its {wait.Why}"),
+            new($"the role `{wait.Role}`'s agent{Named(wait)}", since, "no session of it answers it"),
+            new("the Vacant list", since, "nobody took it"),
+        ], FinalExits.Answer, now);
 
     /// <summary>
-    /// Each run's vacancies judged now and kept: one first seen is kept from now and announced; one announced and past its bound is stopped as
-    /// Daoris's own, so its run ends as gave up; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts
-    /// again if it becomes one. <paramref name="live"/> says whether a live session of a cast agent serves the place (<see cref="CastReading.Serves"/>);
-    /// null reads the cast alone.
+    /// Each run's vacancies judged now and kept: one first seen is kept from now and announced; one announced and past its bound gives its
+    /// one notice and is kept as exited, never said again. A step no longer vacant drops its vacancy, so its clock starts again. <paramref name="live"/>
+    /// says whether a live session of a cast agent serves the place (<see cref="CastReading.Serves"/>); null reads the cast alone.
     /// </summary>
     internal static void Look(
         NodeRecordFiles records, IStepVacancyStore vacancies, IEnumerable<GovernedUnit> governed, DriverConfig? config, DateTimeOffset now, List<string> said,
@@ -92,18 +93,10 @@ public static class StepVacancies
                     said.Add($"{step} is {Said(wait, bound)}.");
                     vacancy = vacancy with { Told = true };
                 }
-                else if (vacancy.Since + bound <= now)
+                else if (!vacancy.Exited && vacancy.Since + bound <= now)
                 {
-                    var words = Tried(wait, bound);
-                    var stopped = RunNodeWords.Word(records, each.Run, node.Id, NodeWordActs.Stop, words, () => now, settle: SettleBy.Vacancy);
-                    if (stopped.Done)
-                    {
-                        said.Add($"{step}: Daoris gave it up: {words}. Its run ends there.");
-                        continue;
-                    }
-
-                    if (!vacancy.Refused) said.Add($"{step} is past its vacancy's bound, and Daoris's stop is refused ({stopped.Refused}).");
-                    vacancy = vacancy with { Refused = true };
+                    said.Add(Notice(step, wait, vacancy.Since, now));
+                    vacancy = vacancy with { Exited = true };
                 }
 
                 next.Add(vacancy);

@@ -26,11 +26,6 @@ public sealed record SettleBy(string Who, int? Epoch = null)
 
     public static SettleBy Observation { get; } = new(Observed);
 
-    /// <summary>Daoris's own stop of a step vacant past its bound (<see cref="StepVacancies"/>): the one observation whose stop is a give-up.</summary>
-    public static SettleBy Vacancy { get; } = new(Observed) { GaveUp = true };
-
-    public bool GaveUp { get; init; }
-
     /// <summary>The person's word at the window or the terminal, in the epoch their press read.</summary>
     public static SettleBy Person(int? epoch = null) => new(CastHolders.Person, epoch);
 

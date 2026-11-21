@@ -357,7 +357,7 @@ public sealed record NodeWord(string Node, string Act, string? Words, DateTimeOf
     /// </summary>
     public NodeWordEpoch? Epoch { get; init; }
 
-    /// <summary>Daoris's own stop of a step that stood vacant past its bound (<see cref="StepVacancies"/>), never the person's; false on an older record.</summary>
+    /// <summary>Daoris's give-up as a build before the final exit wrote it, read as written; ends when no supported home holds one (<c>compatible-builds</c>).</summary>
     public bool GaveUp { get; init; }
 
     /// <summary>The source its move carries to the node: Daoris's where it gave the step up, else the person's, or the landing supervisor's.</summary>
@@ -408,6 +408,17 @@ public sealed record NodeTold(string Node, int Attempt, string? Session, string?
 {
     /// <summary>Whether it is a check's red past its rounds' bound, which takes no way back.</summary>
     public bool Spent { get; init; }
+
+    /// <summary>Who the policy gave a spent red, kept with its telling: the final exit, the <see cref="Role"/> that holds it, or the owner; null on an older build's.</summary>
+    public string? Decided { get; init; }
+
+    public string? Role { get; init; }
+
+    public const string Exit = "exit";
+
+    public const string RoleHeld = "role";
+
+    public const string OwnerHeld = "owner";
 }
 
 /// <summary>

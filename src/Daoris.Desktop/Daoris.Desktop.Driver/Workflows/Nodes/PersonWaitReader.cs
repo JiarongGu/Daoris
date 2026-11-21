@@ -31,13 +31,15 @@ public static class PersonWaitReader
             foreach (var node in graph.Nodes)
             {
                 var status = WorkPerformer.StatusOf(kept, node.Id);
-                if (StepWaiting.Read(kept, node, status, holding?.GetValueOrDefault(node.Id), cast) is not { } wait
+                if (StepWaiting.Read(kept, node, status, holding?.GetValueOrDefault(node.Id), cast) is not { } read
                     || kept.Pending.Any(word => word.Node == node.Id))
                 {
                     continue;
                 }
 
-                var vacant = StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt, serves) is not null;
+                var vacancy = StepVacancies.Kept(vacancies, read, node.Id, status.Attempt, serves);
+                var wait = StepWaiting.Exited(read, vacancy);
+                var vacant = vacancy is { Exited: false };
                 if (wait.Holder.Kind != StepHolders.Person && !vacant) continue;
                 waits.Add(new PersonWait(run.Run, node.Id, wait.Why, run.Binding.Repository, wait.Since) { Role = wait.Role, Vacant = vacant });
             }

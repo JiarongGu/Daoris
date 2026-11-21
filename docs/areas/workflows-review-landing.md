@@ -254,12 +254,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     sent, no executor, a red not answered, sessions unread) is said once per change of reason in the machine log (`check.waits`,
     `CheckStartWaits`, the memory `NodeWaits` the landing's `landing.waits` shares). A check's reds are counted from its run's record
     (`CheckRounds.Reds`, each settled failed attempt a round); the way back is taken while they stay under `CheckRounds.Bound` (3), and the
-    red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354): with nothing configured the
-    seed passes it, so Daoris gives the run's check up as its own stop with what was tried, the run ending as gave up, one `risk.judged`
-    line kept and the pass said, and nobody is asked (`SpentChecks`); a row classing it `role` tells the work the role that sees it, held by
-    its holder as the place casts it or vacant where no one is cast to it; a row classing it `owner`, or no policy read, keeps its failure for
-    the person as one row (What needs you), never one per red. Its words still reach the work's session, once, with its round and the bound
-    (`NodeRunKeeping.SpentRedsAsync`), saying which of the two it came to. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
+    red that reaches it is not sent back. That red is a left attempt's recovery, the act `work.recover` (D354), its failure kept on the
+    left attempt's role, the place's supervisor (`SpentChecks.HeldOn`): a row classing it `role` gives it to that role's holder as the place
+    casts it, the words naming that role and holder; a row classing it `owner`, or no policy read, gives it to the person; where nobody else
+    holds it (the seed passes it, so nobody is asked, or the role is cast to no one) it reaches the owner's final exit (`FinalExits`): one
+    notice with the rounds, the red classes, what the session tried and for how long, one `risk.judged` line, and the person's row in What
+    needs you until the owner looks, never stopped by Daoris and never one row per red. Who it went to is kept on its telling
+    (`NodeTold.Decided`, and the role) in the same write, and only then is the decision done: its words reach the work's session, once,
+    with its round and the bound (`NodeRunKeeping.SpentRedsAsync`), saying who holds it. Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
     failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
     flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
@@ -451,7 +453,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     step, `PolicyPasses.Gate`, counted only once it appended) and the work goes on to its landing; judged again at every look, so a raise
     opens it and a lowering releases it. Classed `role` the step holds on its own role as the place casts it (`role-disputed`,
     `role-commits-since`, read as the Accept's wait, its wait naming that role, never the row's `by`): no agent's tool answers it, so an
-    agent holder makes it a vacancy, listed, announced once and given up past its bound with what was tried, and a person the place casts
+    agent holder makes it a vacancy, listed, announced once and at the owner's final exit past its bound, and a person the place casts
     holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
     the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
     waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
@@ -805,10 +807,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
     handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
     the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
-    (`vacancyHours` in `driver.json`, a day by default, 1 to 720, `VacancySetting`; `daoris settings vacancy <hours>` or the window's `SET_VACANCY`, its row beside `checks` at Settings → Agents and sessions) Daoris stops the step as its own (`NodeSource.Daoris`, never the
-    person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
-    up, never asked of the owner; a refused stop is said once. Its stop is spoken as `SettleBy.Vacancy`, the one speaker whose stop is recorded
-    as gave up (`NodeWord.GaveUp`): any other observation's stop reads as a stop and never as Daoris giving up. A step no longer vacant drops its
+    (`vacancyHours` in `driver.json`, a day by default, 1 to 720, `VacancySetting`; `daoris settings vacancy <hours>` or the window's `SET_VACANCY`, its row beside `checks` at Settings → Agents and sessions) it reaches the owner's final exit (`FinalExits`, D354 point 4): one notice
+    naming the cast, the role's agent and the Vacant list, how long each held it and why none answered it, and the one answer asked, kept
+    as exited (`StepVacancy.Exited`) so it is never said again; every reader then says it as the person's row (`StepWaiting.Exited`), no
+    longer vacant, until the owner settles it. Daoris never stops it as its own; a give-up a build before the final exit wrote
+    (`NodeWord.GaveUp`, `NodeSource.Daoris`) is read and said as it stands. A step no longer vacant drops its
     vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
     serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
     cast alone, does not), so a step served again leaves *Vacant* at once and

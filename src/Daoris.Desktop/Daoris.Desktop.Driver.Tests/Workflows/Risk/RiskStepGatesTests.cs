@@ -326,7 +326,7 @@ public sealed class RiskStepGatesTests : NodeRunFixture
     }
 
     [Fact]
-    public async Task Classed_role_a_review_its_agent_holds_by_default_is_said_vacant_once_and_gives_up_past_its_bound()
+    public async Task Classed_role_a_review_its_agent_holds_by_default_is_said_vacant_once_and_reaches_the_owners_final_exit_past_its_bound()
     {
         const string Bound = """{"vacancyHours":2}""";
         OnBranch(Reviewed);
@@ -342,16 +342,18 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         _now = _now.AddHours(2);
         var past = await RunPassAsync(runtime, Bound);
-        Assert.Contains(past.Said, line => line.Contains("Daoris gave it up:", StringComparison.Ordinal) && line.Contains("Tried:", StringComparison.Ordinal));
-        await RunPassAsync(runtime, Bound);
-        var review = RunStatus("review");
-        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (review.State, review.By));
-        Assert.StartsWith("nobody could answer it in 2 hours", review.Words, StringComparison.Ordinal);
-        Assert.Empty(new StepVacancyFiles(_home).Of(RunUnit));
+        var notice = Assert.Single(past.Said, line => line.Contains("final exit, to you:", StringComparison.Ordinal));
+        Assert.Contains("held it for 3 hours and could not: no session of it answers it", notice, StringComparison.Ordinal);
+        Assert.Contains("your one answer:", notice, StringComparison.Ordinal);
+        var after = await RunPassAsync(runtime, Bound);
+        Assert.DoesNotContain(after.Said, line => line.Contains("final exit", StringComparison.Ordinal) || line.Contains("gave it up", StringComparison.Ordinal));
+        Assert.Equal(NodeStates.Active, RunStatus("review").State);
+        var vacancy = new StepVacancyFiles(_home).Current(RunUnit, "review", RunStatus("review").Attempt);
+        Assert.Equal((true, true), (vacancy?.Told, vacancy?.Exited));
     }
 
     [Fact]
-    public async Task An_accept_that_waited_days_on_the_owner_and_is_lowered_to_role_is_announced_vacant_first_and_gives_up_its_bound_after_it_became_vacant()
+    public async Task An_accept_that_waited_days_on_the_owner_and_is_lowered_to_role_is_announced_vacant_first_and_reaches_the_final_exit_its_bound_after_it_became_vacant()
     {
         const string Lowered = """{"risk":{"machine":[{"kind":"work.accept","class":"role"}]},"vacancyHours":2}""";
         OnBranch(Reviewed);
@@ -371,7 +373,7 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         _now = _now.AddHours(1);
         var past = await RunPassAsync(Runtime(), Lowered);
-        Assert.Contains(past.Said, line => line.Contains("Daoris gave it up:", StringComparison.Ordinal));
+        Assert.Contains(past.Said, line => line.Contains("final exit, to you:", StringComparison.Ordinal) && line.Contains("for 2 hours", StringComparison.Ordinal));
     }
 
     [Fact]

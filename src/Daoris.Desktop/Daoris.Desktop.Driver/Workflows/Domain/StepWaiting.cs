@@ -46,8 +46,13 @@ public static class StepWaiting
         };
         if (why is null) return null;
         var role = OnOwnRole(why) ? StepRoles.Of(node) : RoleOf(why);
-        return new RoleWait(why, role, HolderOf(role), status.Since);
+        var owners = why == PersonWaits.Left && record?.ToldOf(node.Id, status.Attempt)?.Decided is NodeTold.Exit or NodeTold.OwnerHeld;
+        return new RoleWait(why, role, owners ? new StepHolder(StepHolders.Person) : HolderOf(role), status.Since);
     }
+
+    /// <summary>A wait as its readers say it: a vacancy at the owner's final exit is the person's, no longer vacant.</summary>
+    public static RoleWait Exited(RoleWait wait, StepVacancy? vacancy) =>
+        vacancy is { Exited: true } ? wait with { Holder = new StepHolder(StepHolders.Person) } : wait;
 
     /// <summary>Who holds the role a wait is on: the step's own role its tenure, any other role its place's cast, else the cast's rule (<see cref="PlaceCastBook.Uncast"/>).</summary>
     public static string HolderOf(NodeDeclaration node, NodeStatus status, string role, StepTenure? held, Func<string, string>? cast)
@@ -221,11 +226,13 @@ public static class HeldSteps
         IReadOnlyList<StepVacancy>? vacancies = null, TimeSpan? bound = null, Func<string, bool>? serves = null)
     {
         var status = WorkPerformer.StatusOf(record, node.Id);
-        if (StepWaiting.Read(record, node, status, held, cast) is not { } wait || record.Pending.Any(word => word.Node == node.Id)) return null;
+        if (StepWaiting.Read(record, node, status, held, cast) is not { } read || record.Pending.Any(word => word.Node == node.Id)) return null;
+        var kept = StepVacancies.Kept(vacancies, read, node.Id, status.Attempt, serves);
+        var wait = StepWaiting.Exited(read, kept);
         var carried = wait.Why is PersonWaits.Left or PersonWaits.Held
                       || (wait.Why == PersonWaits.Accept && node.Kind == NodeKinds.Review && wait.Holder.Kind == StepHolders.Person);
-        var tenure = held is { } kept && kept.Node == node.Id && kept.Attempt == status.Attempt ? kept : null;
-        var vacancy = carried ? null : StepVacancies.Kept(vacancies, wait, node.Id, status.Attempt, serves);
+        var tenure = held is { } own && own.Node == node.Id && own.Attempt == status.Attempt ? own : null;
+        var vacancy = carried || kept is { Exited: true } ? null : kept;
         var vacant = vacancy is not null;
 
         // A step its agent's working session settles by its tool or its acts is handed to that session: the person's one press is Take.

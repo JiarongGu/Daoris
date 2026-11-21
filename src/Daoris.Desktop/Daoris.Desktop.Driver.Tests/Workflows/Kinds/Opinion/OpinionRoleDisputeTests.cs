@@ -35,7 +35,7 @@ public sealed class OpinionRoleDisputeTests : NodeRunFixture
     }
 
     [Fact]
-    public async Task A_dispute_classed_role_its_agent_holds_is_said_vacant_once_and_given_up_past_its_bound()
+    public async Task A_dispute_classed_role_its_agent_holds_is_said_vacant_once_and_reaches_the_owners_final_exit_past_its_bound()
     {
         OnBranch();
         var runtime = Runtime();
@@ -50,11 +50,11 @@ public sealed class OpinionRoleDisputeTests : NodeRunFixture
 
         _now = _now.AddHours(2);
         var past = await RunPassAsync(runtime, Bound);
-        Assert.Contains(past.Said, line => line.Contains("step `opinion`", StringComparison.Ordinal) && line.Contains("Daoris gave it up:", StringComparison.Ordinal));
-        await RunPassAsync(runtime, Bound);
-        var opinion = RunStatus("opinion");
-        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (opinion.State, opinion.By));
-        Assert.StartsWith("nobody could answer it in 2 hours", opinion.Words, StringComparison.Ordinal);
+        Assert.Single(past.Said, line => line.Contains("step `opinion`", StringComparison.Ordinal) && line.Contains("final exit, to you:", StringComparison.Ordinal));
+        var after = await RunPassAsync(runtime, Bound);
+        Assert.DoesNotContain(after.Said, line => line.Contains("final exit", StringComparison.Ordinal) || line.Contains("gave it up", StringComparison.Ordinal));
+        Assert.Equal(NodeStates.Active, RunStatus("opinion").State);
+        Assert.True(new StepVacancyFiles(_home).Current(RunUnit, "opinion", RunStatus("opinion").Attempt)?.Exited);
     }
 
     /// <summary>With nothing configured the gate's dispute is answered by the policy, so the opinion step is reached and the run goes on to its landing.</summary>

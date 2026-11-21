@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The rounds a red <c>check</c> goes back to the work: each failed verdict on a run's record is a round, a <c>back</c> wire from the check
 /// carries the reading's words to the work's open session for the first rounds, and the round that reaches <see cref="Bound"/> is not sent
-/// back: the risk policy decides it (<see cref="SpentChecks"/>), given up or kept for its holder as one row, never one per red.
+/// back: the risk policy decides it (<see cref="SpentChecks"/>), kept for its holder or at the owner's final exit as one row, never one per red.
 /// </summary>
 public static class CheckRounds
 {
@@ -70,9 +70,4 @@ public static class CheckRounds
         return owed;
     }
 
-    /// <summary>A check's red past its rounds' bound, told all the same: its words, and that the person sees it too.</summary>
-    public static string SpentWords(string node, string? code, string? found, int reds) =>
-        NodeRunKeeping.FailedWords(node, code, found)
-        + $"\n\nThis is its red round {reds}, past the {Bound} Daoris sends back on its own, so the person sees it too: commit a fix and it "
-        + "is checked again, or, if you cannot make it pass, say so and give up with what you tried.";
 }

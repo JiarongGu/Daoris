@@ -25,6 +25,9 @@ public sealed class CheckWordsTests
         Assert.Equal("Failed: the gate `cli` failed; its words are not told to the work yet.", WorkflowRunWords.Said(Failed(null)));
         Assert.Equal("Failed: the gate `cli` failed; its rounds back to the work are spent, so it waits on you, and its words went to session `s1` as its next turn.",
             WorkflowRunWords.Said(Failed(new("s1", null) { Spent = true })));
+        Assert.Equal("Failed: the gate `cli` failed; its rounds back to the work are spent, so the role `supervisor` holds it, and its words went to session `s1` as its next turn.",
+            WorkflowRunWords.Said(Failed(new("s1", null) { Spent = true, Decided = NodeTold.RoleHeld, Role = "supervisor" })));
+        Assert.Contains("came to you as Daoris's final exit", WorkflowRunWords.Said(Failed(new("s1", null) { Spent = true, Decided = NodeTold.Exit })), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -42,7 +45,7 @@ public sealed class CheckWordsTests
     [Fact]
     public void A_red_past_the_bound_tells_the_work_its_words_and_that_the_person_sees_it_too()
     {
-        var words = CheckRounds.SpentWords("check", HeavyExecutor.GateFailed, "the gate 'reached' failed with exit 1", 3);
+        var words = SpentChecks.Words("check", HeavyExecutor.GateFailed, "the gate 'reached' failed with exit 1", 3, NodeTold.OwnerHeld, null);
 
         Assert.StartsWith("Daoris: `check` failed (`gate-failed`), so your work goes back to you: \n\nthe gate 'reached' failed with exit 1", words);
         Assert.Contains("red round 3, past the 3 Daoris sends back on its own", words);
