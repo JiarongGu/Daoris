@@ -74,11 +74,11 @@ internal static class DriveUsageSession
           settings  ·  settings notify on|off  ·  settings cooloff <minutes>  ·  settings cap <n>  ·  settings quiet <minutes>
           settings manifest files|minutes|copy <n>  ·  settings terminal ask|act  ·  settings keep [<kind> <rule>]
           settings handover …  ·  settings brainstorms …  ·  settings growth <workspace> [--repository <name>] [mode|asked|off]
-          settings risk …  ·  settings cast …  ·  settings drain <minutes>  ·  settings checks <n>|auto
+          settings risk …  ·  settings cast …  ·  settings drain <minutes>  ·  settings checks <n>|auto  ·  settings vacancy <hours>
               this machine's standing choices: whether a park or an end you did not ask for is said, how long an account
               cools, how long a silent session runs before it is looked in on, the cap, a folder's manifest bounds, whether a
-              terminal's press asks or acts, how many checks run at once (auto: as many as the memory admits), how long each
-              kind is kept, a hand-over's and a brainstorm's rules, the growth
+              terminal's press asks or acts, how many checks run at once (auto: as many as the memory admits), how long a
+              step nobody's session answers stands before Daoris gives it up, how long each kind is kept, a hand-over's and a brainstorm's rules, the growth
               switch on opening repositories and rooms (the person's alone), each place's risk and who holds each role; the agents each
               kind of work runs on are `role set`'s. With no verb, each machine setting and its value; a setting's verb with no
               value says that one.
