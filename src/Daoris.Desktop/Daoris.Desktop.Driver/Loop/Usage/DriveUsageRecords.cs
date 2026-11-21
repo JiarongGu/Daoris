@@ -108,8 +108,9 @@ internal static class DriveUsageRecords
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
           bus stats [--days <1-90>]
-              the bus log's measures by day (UTC): events by kind, flushes and their time, bytes, misses, handling
-              and look stage times, as the home's lease holder measured them; changes nothing.
+              the bus log's measures by day (UTC): events by kind, flushes and their time, the rows' bytes and the
+              disk's pages, misses, handling and look stage times, as the home's lease holder measured them; changes
+              nothing.
           notices [--json] [--show <subject> | --set-aside <kind>]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed (never the rows you set aside), as the running

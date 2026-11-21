@@ -19,8 +19,10 @@ namespace Daoris.Driver;
 /// <para><b>Retention</b>: the newest <see cref="Cap"/> rows, the older cut in the write that passes the cap, and the measures of the last
 /// <see cref="MeasureDays"/> days. Nothing reads behind the cap yet; the cursors and snapshots that will hold the cut at
 /// their floor when they come.</para>
-/// <para><b>Bytes</b> are the rows' own, as encoded: each text's UTF-8 length and eight for each number. A write also costs SQLite's pages
-/// (at least one 4 KiB frame of the write-ahead log for each flush), which this does not count.</para>
+/// <para><b>Two costs.</b> The rows' own bytes, as encoded (each text's UTF-8 length and eight for each number), and the pages each write
+/// put on disk, read from the engine after its commit (<see cref="DesktopStoreEngines.PagesWritten"/>, SQLite's cache-write count): the
+/// write-ahead log's frames, at least one page a flush, a checkpoint's copy into the file aside. The log file is bounded after a checkpoint
+/// as the engine bounds it (<see cref="JournalLimit"/>).</para>
 /// </remarks>
 public sealed class DesktopBusLogStore : IBusLogStore
 {
@@ -39,12 +41,16 @@ public sealed class DesktopBusLogStore : IBusLogStore
     /// <summary>The longest id or code a payload or an envelope's field carries.</summary>
     public const int Longest = 200;
 
+    /// <summary>The bytes the write-ahead log is cut back to after a checkpoint: the store engine's own bound.</summary>
+    public const long JournalLimit = 33_554_432;
+
     private readonly string _home;
     private readonly int _cap;
     private readonly bool _reading;
     private readonly Func<StoreSettled>? _settled;
     private readonly Lock _gate = new();
     private DbConnection? _connection;
+    private long _pageSize;
     private string? _measuresCutOn;
 
     /// <param name="home">The home whose store holds the log.</param>
@@ -116,7 +122,7 @@ public sealed class DesktopBusLogStore : IBusLogStore
 
                     transaction.Commit();
                     if (today is not null) _measuresCutOn = today;
-                    return new BusWritten(bytes, cut, most);
+                    return new BusWritten(bytes, cut, most) { Pages = StoreEngineSource.PagesWritten(connection), PageSize = _pageSize };
                 }
                 finally
                 {
@@ -186,6 +192,16 @@ public sealed class DesktopBusLogStore : IBusLogStore
         }
     }
 
+    /// <summary>A setting of the kept connection, as SQLite reads it (<c>PRAGMA name</c>): what a test reads of how the log is opened.</summary>
+    internal long Setting(string name)
+    {
+        if (!name.All(letter => letter is '_' or (>= 'a' and <= 'z'))) throw new ArgumentException($"`{name}` is no setting's name.", nameof(name));
+        lock (_gate)
+        {
+            return Guarded(connection => Scalar(connection, null, "PRAGMA " + name));
+        }
+    }
+
     /// <summary>The UTC day of <paramref name="at"/>, as the measures key it.</summary>
     public static string Day(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
@@ -249,6 +265,10 @@ public sealed class DesktopBusLogStore : IBusLogStore
             {
                 Pragma(connection, "PRAGMA busy_timeout = 2000");
                 Pragma(connection, "PRAGMA synchronous = NORMAL");
+                Pragma(connection, $"PRAGMA journal_size_limit = {JournalLimit}");
+                _pageSize = Scalar(connection, null, "PRAGMA page_size");
+                // The count starts with this connection's first write.
+                StoreEngineSource.PagesWritten(connection);
             }
 
             return connection;

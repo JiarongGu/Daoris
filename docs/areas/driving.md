@@ -236,16 +236,20 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     and close it before they let it go; a loop beside an instance keeps none. It is two tables of the desktop store (`bus_log`,
     `bus_measures`, made by the store's step 33), each entry one envelope (id, seq, kind as `name/version`, subject, emitter,
     answerer, deadline, effect key, causes, and a payload of ids, codes, counts and times), on a connection of its own, write-ahead
-    logged with `synchronous = NORMAL`. An append is taken in memory, given its id, order and time at once, and written behind: plain
-    entries a second after the first of them, a commit-class entry at once, grouped with whatever waits; nothing is written while
-    nothing is appended, and the measures alone at most every fifteen minutes while a look's stages were timed. Teed in beside
+    logged with `synchronous = NORMAL` and its log file bounded as the store engine bounds it. An append is taken in memory, given
+    its id, order and time at once, and written behind: plain entries a second after the first of them, a commit-class entry at
+    once, grouped with whatever waits; nothing is written while nothing is appended, and a look stage timed or a miss counted while
+    idle wakes the writer, which writes the measures alone within fifteen minutes of its last write, never sooner. Teed in beside
     today's writes, with no consumer: an opinion asked, given and answered (the landing line's channel), its findings delivered,
-    and a check started and settled (passed, failed with its red classes, or unknown with its code), a settle caused by its start.
+    and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
+    ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
+    its effect starts again. Red classes no gate named stay unknown, never a count of zero.
     A shadow append never fails the write it rides beside: a refusal (the store's, a payload that is no id, code, count or time, a
     process not holding the lease) is counted by its reason and said once as `bus.refused`. Measured by the day: entries by kind,
-    each kind's handling time where known, the flushes' count, entries and time, the rows' bytes, the misses and each look stage's
-    time, which `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a
-    check's facts measure) and 90 days of measures; nothing reads behind the cut yet.
+    each kind's handling time where known, the flushes' count, entries and time, the rows' own bytes beside the pages each write
+    put on disk (the write-ahead log's frames, as the engine counts them), the misses and each look stage's time, which
+    `daoris bus stats` reads. The log keeps its newest 50,000 rows (about 13 MiB of rows at the 270 bytes a row a check's facts
+    measure) and 90 days of measures; nothing reads behind the cut yet.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)

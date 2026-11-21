@@ -45,7 +45,7 @@ group.
 | `ask-daoris` | Ask Daoris's conversations: `list`, `rename`, `pin`, `unpin`, `delete`, and its access `mode` |
 | `brainstorm` | A question put to this machine's agents (D176): `brainstorm "<question>" [--repository R] [--agents A,B] [--source PATH]...`, then `show`, `send`, `stop`, `clear <id>` and `list`; `--kind meeting` makes it a meeting of agents of different makers; `measure <agent>` the account a pass would take |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`, `links system\|daoris`. **Edits files under the home** |
-| `bus` | The bus log's measures by day: `bus stats [--days <1-90>]`, events by kind, the log's flushes and bytes, misses, handling and look stage times. Reads only |
+| `bus` | The bus log's measures by day: `bus stats [--days <1-90>]`, events by kind, the log's flushes, the rows' bytes and the pages written to disk, misses, handling and look stage times. Reads only |
 | `chat` | A conversation of the running Daoris held at this terminal: `chat --repository <name> [--agent <name>] [--account <name>] [--own-tree]` starts one, `chat --session <id>` holds one that is open |
 | `drive` | The headless loop: `drive [--once \| --until-idle] [--quiet-end <minutes>] [--share]` |
 | `events` | The work cycle's events for a session outside Daoris, through the `event-relay` plugin: `events relay --where` lays the relay's copy out and prints its command; `events relay --once` prints one batch of fixed lines and ends |

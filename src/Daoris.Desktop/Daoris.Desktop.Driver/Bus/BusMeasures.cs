@@ -15,8 +15,16 @@ internal sealed class BusMeasures
     /// <summary>The flushes: <see cref="Entries"/>, <see cref="Micros"/>, <see cref="CommitClass"/>, <see cref="MeasuresAlone"/>.</summary>
     public const string Flush = "flush";
 
-    /// <summary>The rows' bytes appended (<see cref="Rows"/>): count the rows, total the bytes, most the largest row.</summary>
+    /// <summary>The rows' own bytes appended (<see cref="Rows"/>): count the rows, total the bytes, most the largest row.</summary>
     public const string Bytes = "bytes";
+
+    /// <summary>
+    /// What the writes cost the disk: <see cref="Pages"/> written (the write-ahead log's frames) and their <see cref="Bytes"/>, each counting
+    /// the writes, totalling the pages or bytes, most the largest write's.
+    /// </summary>
+    public const string Disk = "disk";
+
+    public const string Pages = "pages";
 
     /// <summary>The rows retention cut.</summary>
     public const string Cut = "cut";

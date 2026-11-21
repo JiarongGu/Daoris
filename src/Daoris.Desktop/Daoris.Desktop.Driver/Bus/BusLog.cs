@@ -39,8 +39,8 @@ public sealed record BusTally(long Appended, long Flushes, IReadOnlyDictionary<s
 /// by the day, and said once in the machine log as <c>bus.refused</c>. A batch the store refused is dropped, never written later out of
 /// its order; the measures it carried wait for the next write.</para>
 /// <para><b>Measured</b> into the store's measures by the day (UTC): entries by kind, each kind's handling time where its writer knows it,
-/// the flushes' count, entries and time, the rows' bytes, retention's cuts, the misses, and each look stage's time (<see cref="Staged"/>).
-/// <c>daoris bus stats</c> reads them.</para>
+/// the flushes' count, entries and time, the rows' own bytes and the pages each write put on disk, retention's cuts, the misses, and each
+/// look stage's time (<see cref="Staged"/>). <c>daoris bus stats</c> reads them.</para>
 /// <para>One log for each home, opened by the process that took the home's lease, after it took it, and closed before it lets it go.</para>
 /// </remarks>
 public sealed class BusLog : IAsyncDisposable
@@ -167,14 +167,20 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
-    /// <summary>A look stage's time, measured by the day (<see cref="LookStages"/> tells each span that ends).</summary>
+    /// <summary>
+    /// A look stage's time, measured by the day (<see cref="LookStages"/> tells each span that ends); the first since the last write wakes
+    /// an idle loop, which writes it within <see cref="BusLogOptions.MeasureEvery"/> of that write.
+    /// </summary>
     public void Staged(string stage, long milliseconds)
     {
         try
         {
             lock (_gate)
             {
-                if (!_closed) _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Stage, stage, Math.Max(0, milliseconds));
+                if (_closed) return;
+                var owed = _measures.Owed;
+                _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Stage, stage, Math.Max(0, milliseconds));
+                WakeLocked(owed);
             }
         }
         catch (Exception error) when (error is not OutOfMemoryException)
@@ -224,6 +230,15 @@ public sealed class BusLog : IAsyncDisposable
     }
 
     private static TaskCompletionSource Pulse() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>
+    /// Wakes an idle loop at the first measure owing a write since the last (<paramref name="owed"/>: whether one owed it before), so the
+    /// loop waits out the measures' period rather than only an entry. Its continuations run apart, so this is safe under the gate.
+    /// </summary>
+    private void WakeLocked(bool owed)
+    {
+        if (!owed && _measures.Owed && _pending.Count == 0) _pulse.TrySetResult();
+    }
 
     /// <summary>
     /// The writer behind: waits for the first entry, then out the interval from it (a commit-class entry cuts the wait short), and writes;
@@ -342,6 +357,13 @@ public sealed class BusLog : IAsyncDisposable
                 // A write of the measures alone owes no write of its own cost: it rides the next.
                 _measures.Add(day, BusMeasures.Flush, BusMeasures.MeasuresAlone, (long)(took.TotalMilliseconds * 1000), owing: false);
             }
+
+            // What the write cost the disk, every write's: its pages and their bytes, riding the next write as its time does.
+            if (written.Pages is { } pages)
+            {
+                _measures.Add(day, BusMeasures.Disk, BusMeasures.Pages, pages, owing: entries.Count > 0);
+                _measures.Add(day, BusMeasures.Disk, BusMeasures.Bytes, pages * written.PageSize, owing: entries.Count > 0);
+            }
         }
     }
 
@@ -382,7 +404,9 @@ public sealed class BusLog : IAsyncDisposable
             if (counted)
             {
                 _missed[reason] = _missed.GetValueOrDefault(reason) + 1;
+                var owed = _measures.Owed;
                 _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Miss, reason, 1);
+                if (!_closed) WakeLocked(owed);
             }
 
             // Said once for each reason in this process's life; the count says the rest.

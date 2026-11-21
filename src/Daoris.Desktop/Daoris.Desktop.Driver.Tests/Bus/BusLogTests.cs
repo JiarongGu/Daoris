@@ -91,6 +91,79 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(1, store.Writes);
     }
 
+    /// <summary>
+    /// 🔴 A look stage timed while nothing is appended is written within the measures' period, never left in memory: the measures alone
+    /// at most every fifteen minutes from the last write, and not before.
+    /// </summary>
+    [Fact]
+    public async Task A_stage_timed_while_idle_is_written_within_the_measures_period()
+    {
+        var clock = new MovedClock();
+        var store = new CountingStore();
+        await using var bus = BusLog.Over(store, new BusLogOptions { Clock = clock });
+
+        bus.Staged("opinions", 5200);
+        await Poll.Until(() => clock.Waiting, () => "the loop never waited out the measures' period");
+        clock.Advance(BusLog.MeasureEvery - TimeSpan.FromMinutes(1));
+        Assert.Empty(store.All);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        await Poll.Until(() => store.All.Count == 1, () => $"{store.All.Count} writes");
+        Assert.Contains(store.All[0].Measures, row => row is { Measure: BusMeasures.Stage, Name: "opinions", Total: 5200 });
+        Assert.Empty(store.All[0].Entries);
+
+        bus.Staged("opinions", 4800);
+        await Poll.Until(() => clock.Waiting, () => "the loop never waited out the next period");
+        clock.Advance(BusLog.MeasureEvery - TimeSpan.FromMinutes(1));
+        Assert.Single(store.All);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        await Poll.Until(() => store.All.Count == 2, () => $"{store.All.Count} writes");
+        Assert.Contains(store.All[1].Measures, row => row is { Measure: BusMeasures.Stage, Name: "opinions", Total: 4800 });
+    }
+
+    /// <summary>
+    /// 🔴 A flush measures the pages it wrote to disk (the write-ahead log's frames) beside the rows' own bytes, and the stats say both;
+    /// the bus's connection bounds its log file as the engine's does.
+    /// </summary>
+    [Fact]
+    public async Task A_flush_measures_the_pages_it_wrote_beside_the_rows_bytes()
+    {
+        await using (var bus = BusLog.Over(new DesktopBusLogStore(_home), Options()))
+        {
+            for (var n = 0; n < 40; n++) bus.Append(Plain("run-1", n));
+            await bus.FlushAsync();
+            bus.Append(Commit("run-1", 40));
+        }
+
+        using var store = new DesktopBusLogStore(_home);
+        var measures = store.Measures("2000-01-01");
+        var rows = measures.Single(row => row is { Measure: BusMeasures.Bytes, Name: BusMeasures.Rows });
+        var pages = measures.Single(row => row is { Measure: BusMeasures.Disk, Name: BusMeasures.Pages });
+        var written = measures.Single(row => row is { Measure: BusMeasures.Disk, Name: BusMeasures.Bytes });
+        Assert.Equal(41, rows.Count);
+        Assert.True(pages.Total >= 2, $"{pages.Total} pages for two flushes of entries");
+        Assert.True(pages.Count >= 2, $"{pages.Count} writes measured");
+        Assert.Equal(pages.Total * store.Setting("page_size"), written.Total);
+        Assert.Equal(DesktopBusLogStore.JournalLimit, store.Setting("journal_size_limit"));
+
+        Assert.Equal(0, BusStatsCommand.Run(["stats"], _home, Today, out var said));
+        output.WriteLine(said);
+        Assert.Contains($"rows {rows.Total} bytes", said, StringComparison.Ordinal);
+        Assert.Contains($"disk {pages.Total} pages", said, StringComparison.Ordinal);
+    }
+
+    /// <summary>🔴 A settle whose red classes are not known writes no count of them: absent evidence stays unknown, never zero.</summary>
+    [Fact]
+    public void A_settle_whose_red_classes_are_unknown_writes_no_count()
+    {
+        var send = new VerifySend("run-7", "inv-1", "Engine", "c:/x", "0123456789abcdef", "none");
+        var unknown = CheckBusFacts.CheckSettled(send, new VerifyResult("inv-1", send.Commit, VerifyVerdicts.Failed, "a gate failed", []) { Failed = "unit" });
+        Assert.Contains(unknown.Payload, pair => pair is { Key: "redCount", Value: null });
+        Assert.Contains(unknown.Payload, pair => pair is { Key: "red", Value: null });
+
+        var none = CheckBusFacts.CheckSettled(send, new VerifyResult("inv-1", send.Commit, VerifyVerdicts.Reached, null, []) { Red = [] });
+        Assert.Contains(none.Payload, pair => pair.Key == "redCount" && Equals(pair.Value, 0L));
+    }
+
     /// <summary>🔴 A burst of commit-class entries flushes at once and grouped: one write in flight, the rest in the next.</summary>
     [Fact]
     public async Task A_burst_of_commit_class_entries_flushes_at_once_and_grouped()
@@ -199,7 +272,8 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.Contains("check.started/1 1", said, StringComparison.Ordinal);
         Assert.Contains("check.passed/1 1", said, StringComparison.Ordinal);
         Assert.Contains("flushes ", said, StringComparison.Ordinal);
-        Assert.Contains("bytes ", said, StringComparison.Ordinal);
+        Assert.Contains("rows ", said, StringComparison.Ordinal);
+        Assert.Contains("disk ", said, StringComparison.Ordinal);
         Assert.Contains("opinions n=2 mean 5000 ms most 5200 ms", said, StringComparison.Ordinal);
         Assert.Contains("check.passed/1 n=1 mean 30000 ms", said, StringComparison.Ordinal);
 
@@ -259,6 +333,15 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         public ManualResetEventSlim? Held { get; init; }
 
         public List<BusBatch> Batches { get; } = [];
+
+        /// <summary>Every write, the measures' alone among them.</summary>
+        public IReadOnlyList<BusBatch> All
+        {
+            get
+            {
+                lock (_gate) return [.. Batches];
+            }
+        }
 
         public int Writes
         {

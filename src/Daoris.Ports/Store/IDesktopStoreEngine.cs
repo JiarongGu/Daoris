@@ -80,4 +80,9 @@ public interface IDesktopStoreEngine : IDesktopUnitOfWork, IDisposable
 public sealed record DesktopStoreEngines(
     Func<string, DesktopStoreEngineOptions, IDesktopStoreEngine> Open,
     Func<string, DesktopOpen, DbConnection> Connect,
-    Action ReleaseConnections);
+    Action ReleaseConnections)
+{
+    /// <summary>The pages a connection of <see cref="Connect"/> put on disk since the last ask, which starts the count again: under write-ahead
+    /// logging the log's frames, a checkpoint's copy into the file aside; null where the engine cannot say.</summary>
+    public Func<DbConnection, long?> PagesWritten { get; init; } = _ => null;
+}

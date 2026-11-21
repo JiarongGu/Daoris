@@ -407,6 +407,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
                 queued.For = RunnersOwnRun;
                 queued.Wait = null;
                 Waiting(queued);
+                _world.Bus?.Tee(() => CheckBusFacts.CheckRequeued(send, queued.Busy));
                 _world.Said.WriteLine($"verify: {send.Repository}'s runner is busy with its own run; offered again in {HeavySlot.Took(BusyAgain)}.");
                 return true;
             }
@@ -414,7 +415,13 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             result = Unknown(send, "the runner's own run held its lock through every offer") with { Code = VerifyResult.Busy };
         }
 
-        if (result is null) return false; // the driver ending: no result, so its restart sends the same attempt again.
+        if (result is null)
+        {
+            // The driver ending: no result, so its restart sends the same attempt again, after this settle of its start.
+            _world.Bus?.Tee(() => CheckBusFacts.CheckEnded(send, CheckBusFacts.Closing));
+            return false;
+        }
+
         Settle(send, result with { WallSeconds = ran.Elapsed.TotalSeconds });
         return false;
     }
@@ -441,6 +448,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
             _world.Said.WriteLine($"verify: the result of run {send.Run} could not be written ({error.Message}); its restart runs it again.");
+            _world.Bus?.Tee(() => CheckBusFacts.CheckEnded(send, CheckBusFacts.Unkept));
             return;
         }
 

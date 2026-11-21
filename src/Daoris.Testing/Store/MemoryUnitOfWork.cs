@@ -33,7 +33,13 @@ public sealed class MemoryUnitOfWork : IDesktopStoreEngine
     }
 
     /// <summary>The engines a unit test's root hands the application: this fake over files and memory, and a plain connection for the rest.</summary>
-    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, SqliteConnection.ClearAllPools);
+    public static DesktopStoreEngines Engines { get; } = new(Open, Connect, SqliteConnection.ClearAllPools) { PagesWritten = PagesWritten };
+
+    private static long? PagesWritten(DbConnection connection) =>
+        connection is SqliteConnection { Handle: { } handle }
+        && SQLitePCL.raw.sqlite3_db_status(handle, SQLitePCL.raw.SQLITE_DBSTATUS_CACHE_WRITE, out var written, out _, 1) == SQLitePCL.raw.SQLITE_OK
+            ? written
+            : null;
 
     /// <inheritdoc />
     public string Location { get; }

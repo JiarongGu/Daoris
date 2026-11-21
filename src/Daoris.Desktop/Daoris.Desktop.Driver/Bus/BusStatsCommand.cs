@@ -5,16 +5,16 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris bus stats</c>: the bus log's measures by day, read from the home's store and changing nothing: entries by kind, the
-/// flushes with their entries and time, the rows' bytes and retention's cut, the misses by reason, each kind's handling time and each
-/// look stage's time. What the bus's byte budget and its obligations' deadlines are set from.
+/// flushes with their entries and time, the rows' own bytes and retention's cut, the pages and bytes the writes put on disk, the misses by
+/// reason, each kind's handling time and each look stage's time. What the bus's byte budget and its obligations' deadlines are set from.
 /// </summary>
 /// <remarks>Exit codes: 0 read, or the home keeps no log yet, said · 2 a word it does not answer.</remarks>
 [CommandGroup("bus", "stats")]
 public static class BusStatsCommand
 {
     public const string Usage =
-        "usage: daoris bus stats [--days <1-90>]   the bus log's measures by day (UTC): events by kind, flushes and their time, bytes,\n"
-        + "                                         misses, handling and look stage times; changes nothing";
+        "usage: daoris bus stats [--days <1-90>]   the bus log's measures by day (UTC): events by kind, flushes and their time, the rows'\n"
+        + "                                         bytes and the disk's pages, misses, handling and look stage times; changes nothing";
 
     /// <summary>The days read where none are asked for.</summary>
     public const int Days = 7;
@@ -89,8 +89,14 @@ public static class BusStatsCommand
         var bytes = One(BusMeasures.Bytes, BusMeasures.Rows);
         var cut = One(BusMeasures.Cut, BusMeasures.Rows);
         output.AppendLine(bytes is null
-            ? "  bytes 0"
-            : Invariant($"  bytes {bytes.Total}: {bytes.Total / Math.Max(1, bytes.Count)} a row, most {bytes.Most}; cut {cut?.Total ?? 0} rows"));
+            ? "  rows 0 bytes"
+            : Invariant($"  rows {bytes.Total} bytes: {bytes.Total / Math.Max(1, bytes.Count)} a row, most {bytes.Most}; cut {cut?.Total ?? 0} rows"));
+
+        var pages = One(BusMeasures.Disk, BusMeasures.Pages);
+        var written = One(BusMeasures.Disk, BusMeasures.Bytes);
+        output.AppendLine(pages is null
+            ? "  disk not measured"
+            : Invariant($"  disk {pages.Total} pages, {written?.Total ?? 0} bytes written in {pages.Count} writes: {pages.Total / (double)Math.Max(1, pages.Count):0.0} pages a write, most {pages.Most}"));
 
         var missed = Of(BusMeasures.Miss).ToList();
         output.AppendLine(missed.Count == 0 ? "  missed none" : $"  missed {string.Join(", ", missed.Select(row => Invariant($"{row.Name} {row.Count}")))}");

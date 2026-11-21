@@ -23,8 +23,18 @@ public interface IBusLogStore : IDisposable
 /// <summary>One flush: its entries in order, the measures owed since the last write, and whether a commit-class entry asked for it.</summary>
 public sealed record BusBatch(IReadOnlyList<BusEnvelope> Entries, IReadOnlyList<BusMeasureRow> Measures, bool Commit);
 
-/// <summary>What one write wrote: the bytes of the rows it appended, and how many old rows retention cut.</summary>
-public sealed record BusWritten(long Bytes, int Cut, long Most = 0);
+/// <summary>
+/// What one write wrote: the rows' own bytes it appended and the largest row's, how many old rows retention cut, and the pages it wrote
+/// to disk with their size (null where the store cannot say).
+/// </summary>
+public sealed record BusWritten(long Bytes, int Cut, long Most = 0)
+{
+    /// <summary>The pages the write cost the disk: the write-ahead log's frames, a checkpoint's copy into the file aside; null where not known.</summary>
+    public long? Pages { get; init; }
+
+    /// <summary>The bytes of one page.</summary>
+    public long PageSize { get; init; }
+}
 
 /// <summary>
 /// One measure of one day, added into the day's row at each write: a count, a total and the most of one (milliseconds, microseconds,
