@@ -192,6 +192,21 @@ if (args is ["integrate", .. var integrateArgs])
     return await Daoris.Driver.Host.IntegrateConsole.RunAsync(integrateArgs, CancellationToken.None);
 }
 
+// The paths no entry of the home's table names: a read, routed before the machine log opens (whose open prunes old files) and
+// with no lease (VerbLeases), since listing changes nothing. A home named nowhere is said as the catch below says it.
+if (args is ["home"])
+{
+    if (DaorisHome.Resolve() is not { } listedHome)
+    {
+        Console.Error.WriteLine($"driver: {DaorisHome.Sentence}");
+        return 2;
+    }
+
+    var listed = HomePurgeCommand.Run([], listedHome, () => DateTimeOffset.UtcNow, null, null, out var listedSaid);
+    Console.Out.Write(listedSaid);
+    return listed;
+}
+
 // The machine log: this host's watch and every exception nothing caught, in a file of its
 // own beside the desktop's. With no home it writes nothing, and the sentence below still says why.
 using var log = MachineLog.Open("driver");
