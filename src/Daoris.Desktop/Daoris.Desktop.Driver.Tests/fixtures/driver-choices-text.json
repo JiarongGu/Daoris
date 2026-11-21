@@ -19,6 +19,7 @@
         "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -49,6 +50,7 @@
         "  notify     on — a session parking, or ending without you asking, is said  (the default — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
         "  drivable   nothing — this machine drives no repository, which is the default (D46 §2).",
         "             `daoris place drive <repository>` opts one in.",
         "  language   none set — sessions are asked for no language; `daoris place language <repository> en|zh` sets one",
@@ -85,6 +87,7 @@
         "  notify     off — a session parking, or ending without you asking, is not said  (set — `daoris settings notify on|off` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
         "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)",
         "  drivable   engine",
         "  drivable   game  (held by you — `daoris place resume` releases it)",
         "  line       engine  develop",
@@ -350,7 +353,8 @@
         "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
         "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
         "  terminal   ask  (a terminal's press waits for your Confirm in the window, the default — `daoris settings terminal act` runs it at once)",
-        "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)"
+        "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)"
       ],
       "err": [],
       "after": null,
@@ -379,7 +383,8 @@
         "  allowance  Daoris may use up to 48 GB in all; over it, it lets go of what can be made again, oldest first, only where that brings it within  (the default — `daoris settings keep allowance …` changes it)",
         "  floor      below the smaller of 10% of a volume and 100 GB free, Daoris tells you  (the default — `daoris settings keep floor …` changes it)",
         "  terminal   act  (a terminal's press runs at once as yours, listed in Notifications — `daoris settings terminal ask` asks again)",
-        "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)"
+        "  checks     auto  (as many at once as the memory admits, the default — `daoris settings checks <n>` pins a number)",
+        "  vacancy    24 hours before Daoris gives up a step nobody's session answers  (the default — `daoris settings vacancy <hours>` changes it)"
       ],
       "err": [],
       "after": "{\n  \"cap\": 3,\n  \"notify\": false,\n  \"cooloff\": 45,\n  \"quietMinutes\": 15,\n  \"drainMinutes\": 20,\n  \"manifest\": {\n    \"files\": 5000,\n    \"minutes\": 2\n  },\n  \"terminal\": \"act\"\n}\n",
@@ -711,6 +716,49 @@
       "out": [],
       "err": [
         "daoris: how many checks the machine runs at once is auto or a whole number from 1 to 16 — e.g. `daoris settings checks auto` or `daoris settings checks 2`."
+      ],
+      "after": null
+    },
+    {
+      "name": "vacancy",
+      "argv": [
+        "vacancy",
+        "12"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: a step nobody's session answers is given up 12 hours after it became vacant, with what Daoris tried.",
+        "  Written to <config> — read at the next look, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"vacancyHours\": 12\n}\n"
+    },
+    {
+      "name": "vacancy with no value says it",
+      "argv": [
+        "vacancy"
+      ],
+      "before": "{\n  \"vacancyHours\": 12\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  vacancy    12 hours before Daoris gives up a step nobody's session answers  (set — `daoris settings vacancy <hours>` changes it)"
+      ],
+      "err": [],
+      "after": "{\n  \"vacancyHours\": 12\n}\n"
+    },
+    {
+      "name": "vacancy 0",
+      "argv": [
+        "vacancy",
+        "0"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: how long a step may stand vacant is a whole number of hours from 1 to 720 — e.g. `daoris settings vacancy 24`."
       ],
       "after": null
     },

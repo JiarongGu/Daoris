@@ -38,6 +38,8 @@ public sealed record SetDrain(long? Minutes);
 
 public sealed record SetChecks(long? Checks);
 
+public sealed record SetVacancy(long? Hours);
+
 /// <summary>No count, or none whole, is the driver's refusal, as less than one is.</summary>
 public sealed record SetCap(long? Cap);
 

@@ -43,6 +43,13 @@ export type AttentionTold = {
   id?: string;
 };
 
+const WAITING = new Set(['Parked', 'QuestParked', 'Holding', 'Step', 'Vacant']);
+
+/** The tone a toast for an attention of this kind takes: `error` where it waits on somebody (a vacancy among them), else `ok`. */
+export function attentionTone(kind: string | undefined): 'error' | 'ok' {
+  return kind !== undefined && WAITING.has(kind) ? 'error' : 'ok';
+}
+
 /**
  * The toast a window says for an attention, in the reader's language: its kind's headline, as the shell's balloon says
  * it, and what a session wrote beside it as written (a park's question, an ending's conclusion, a held call's title). A wait for an

@@ -805,11 +805,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     list` (its `--json` carries the group as `vacant`), a run view's step saying it is vacant (`WorkflowRunStep.Vacant`, never shown as
     handed to an agent), never counted as the owner's and never hidden, announced once (`WaitAnnouncements.VacantKind`), and said once in
     the run's lines; the person's press still takes and settles it. Once announced and past its bound from when it became vacant
-    (`vacancyHours` in `driver.json`, a day by default, `VacancySetting`) Daoris stops the step as its own (`NodeSource.Daoris`, never the
+    (`vacancyHours` in `driver.json`, a day by default, 1 to 720, `VacancySetting`; `daoris settings vacancy <hours>` or the window's `SET_VACANCY`, its row beside `checks` at Settings → Agents and sessions) Daoris stops the step as its own (`NodeSource.Daoris`, never the
     person's stop), its run view saying "Daoris gave it up: nobody could answer it in N hours. Tried: …", so its run ends there as gave
-    up, never asked of the owner; a refused stop is said once. A step no longer vacant drops its vacancy, so its clock starts again if it
-    becomes one. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
-    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), and a run whose
+    up, never asked of the owner; a refused stop is said once. Its stop is spoken as `SettleBy.Vacancy`, the one speaker whose stop is recorded
+    as gave up (`NodeWord.GaveUp`): any other observation's stop reads as a stop and never as Daoris giving up. A step no longer vacant drops its
+    vacancy, so its clock starts again if it becomes one. A stored vacancy is judged again as it is read (`StepVacancies.Kept` with the place's
+    serving: a staffing, or a live session of a cast agent, which the runtime's readers for the window, its held steps and its person waits, know and a run's view, reading the
+    cast alone, does not), so a step served again leaves *Vacant* at once and
+    not when the pass next drops it; a vacancy file that will not write is said and never ends the pass; and one whose run's record is gone is
+    swept by the pass with it. A place's production-releases mark keeps every `release.*` act at the owner over every policy row (`RiskGate.Judge`), its
+    approver's approval is the owner's, and a step whose role is the owner's is the owner's whatever the policy says (`RiskStepGates.Verdict`). Every step the policy passes journals its `risk.judged` line once (`PolicyPasses`), a raise to the owner or a lowering where a hold would release
+    writes its own at release (`TenureRejudge`, its `today` saying which, its key the hold's with the epoch it moved to), and a run whose
     passed step the person held is told so once in its lines. A review's Accept and a task's approval wait only where the risk policy
     gates them (rule 22); where an Accept or an approval waits on an agent holder, that agent answers through its own session's `step_settle` (an Accept or
     `changes`, `approved` or `rejected`), never handed to the run's working session, whose answer is refused `own-work`; an unchecked done's pass is the one its agent holder settles itself, through the node

@@ -48,6 +48,7 @@ export * from './state/slices';
 export * from './state/stateHub';
 export * from './system';
 export * from './terminal';
+export * from './vacancy';
 export * from './agents/tools';
 export * from './repositories/git';
 export * from './repositories/gitPush';

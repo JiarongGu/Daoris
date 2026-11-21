@@ -194,7 +194,7 @@ public static class RunNodeWords
                 Part = act == NodeWordActs.Changes && !string.IsNullOrWhiteSpace(part) ? part.Trim().TrimStart('#') : null,
                 Revision = by is null ? null : revision?.Trim(), Outcome = outcome, Holder = holder,
                 Decider = act == NodeWordActs.Decide && holder is null && SettleDoor.Holds(CastHolders.Agent, speaker.Who) ? speaker.Who : null,
-                GaveUp = act == NodeWordActs.Stop && speaker.Who == SettleBy.Observed,
+                GaveUp = act == NodeWordActs.Stop && speaker.GaveUp,
             };
             if (act == NodeWordActs.Accept && by is null)
             {

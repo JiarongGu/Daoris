@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { en, zh } from '../locales/index';
-import { attentionToast, noticeWords } from './noticeWords';
+import { attentionToast, attentionTone, noticeWords } from './noticeWords';
 
 /**
  * The words the page hands the shell's notifier, and the toast a focused window
@@ -62,6 +62,13 @@ describe('the notices\' words (NOTIFY2d)', () => {
   ] as const)('a %s window toasts %j in its own words', async (language, item, said) => {
     await i18n.changeLanguage(language);
     expect(attentionToast(i18n.t, item)).toBe(said);
+  });
+
+  it.each([
+    ['Parked', 'error'], ['QuestParked', 'error'], ['Holding', 'error'], ['Step', 'error'], ['Vacant', 'error'],
+    ['Ended', 'ok'], ['Answered', 'ok'], ['Waiting', 'ok'], ['Later', 'ok'], [undefined, 'ok'],
+  ] as const)('a %s attention is toasted in the %s tone', (kind, tone) => {
+    expect(attentionTone(kind)).toBe(tone);
   });
 
   /** An end's state is said by its own words, never its code in a sentence (§6). */

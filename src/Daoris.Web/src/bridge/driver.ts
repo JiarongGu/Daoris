@@ -76,6 +76,8 @@ export type DriverState = {
   drain?: number;
   /** How many checks the machine runs at once: the pinned number, or null for auto (as many as its memory admits). */
   checks?: number | null;
+  /** How long a step nobody's session answers stands before Daoris gives it up, in hours: the file's, or the default. */
+  vacancy?: number;
   /** The most files, and the most minutes, a folder's manifest read spends: the file's, or the defaults. */
   manifestFiles?: number;
   manifestMinutes?: number;

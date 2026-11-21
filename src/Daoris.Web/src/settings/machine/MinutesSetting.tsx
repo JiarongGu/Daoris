@@ -10,12 +10,13 @@ export type MinutesDeclared = { words: string; least: number | null; most: numbe
  * `.body`, `.minutes`) and held to its bounds as the list declares them. Passing through is not a write, and the driver
  * refuses a value out of its bounds, so nothing typed, a value out of them, one not whole, or the one held puts the held value back.
  */
-export function MinutesSetting({ setting, held, onSet }: {
+export function MinutesSetting({ setting, held, onSet, unit = 'minutes' }: {
   /** The setting as the driver's list declares it, which the page that draws this reads from the list. */
   setting: MinutesDeclared;
   /** The minutes the shell answered: the file's, or the default. */
   held: number;
   onSet: (minutes: number) => void;
+  unit?: 'minutes' | 'hours';
 }) {
   const { t } = useTranslation();
   const { words, least, most } = setting;
@@ -44,7 +45,7 @@ export function MinutesSetting({ setting, held, onSet }: {
             }}
             className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
           />
-          <span className="text-small text-ink-soft">{t(`${words}.minutes`)}</span>
+          <span className="text-small text-ink-soft">{t(`${words}.${unit}`)}</span>
         </span>
       )}
     />

@@ -41,6 +41,33 @@ public sealed class StepVacancyFiles(string home) : IStepVacancyStore
         }
     }
 
+    public IReadOnlyList<string> Units()
+    {
+        if (!Directory.Exists(FolderOf(home))) return [];
+        var units = new List<string>();
+        try
+        {
+            foreach (var path in Directory.GetFiles(FolderOf(home), "*.json"))
+            {
+                try
+                {
+                    using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+                    if (document.RootElement.ValueKind == JsonValueKind.Object && Text(document.RootElement, "unit") is { Length: > 0 } unit && PathOf(home, unit) == path) units.Add(unit);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+                {
+                    // A file that does not read names no run; the next look reads it again.
+                }
+            }
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return units;
+        }
+
+        return units;
+    }
+
     /// <summary>The vacancy of <paramref name="node"/>'s attempt <paramref name="attempt"/>, or null where the pass judged none.</summary>
     public StepVacancy? Current(string unit, string node, int attempt) => Of(unit).FirstOrDefault(each => each.Node == node && each.Attempt == attempt);
 
