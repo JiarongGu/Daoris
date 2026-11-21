@@ -66,7 +66,7 @@ public sealed class OpinionDisputeRiskTests
 
         Assert.Equal((OpinionGateStates.Answered, true, OpinionGateStates.Disputed), (gate.State, gate.LetsGo, gate.Answered));
         Assert.Equal((OpinionPersonSaid.Policy, Read), (gate.Person!.Said, gate.Person.Tip));
-        Assert.Contains(RiskStepGates.Passes, gate.Person.Words);
+        Assert.Contains(RiskVerdict.Passes, gate.Person.Words);
         Assert.Contains("rule seed", gate.Person.Words);
         Assert.StartsWith("The risk policy answered the second opinion over 1 disputed finding", gate.Says);
         Assert.Equal((OpinionGateStates.Answered, OpinionPersonSaid.Policy, 1), (gate.Landing!.Said, gate.Landing.Person, gate.Landing.Disputes));

@@ -87,7 +87,7 @@ public static class OpinionGateWords
 
     /// <summary>The policy gating the dispute on the opinion step's own role (its run step names it), never the row's <c>by</c>, and its rule.</summary>
     private static string RoleSaid(OpinionGateState gate) => gate.Risk is { Outcome: RiskVerdict.Gate } verdict
-        ? $" The risk policy asks the role holding the second opinion's step, not you, for the answer: {verdict.Reason} (rule {verdict.Source} at {verdict.Revision})."
+        ? $" The risk policy asks the role holding the second opinion's step, not you, for the answer: {verdict.Why}."
         : "";
 
     /// <summary>What the person's answer answered: the disputes, or the commits nobody read, as the gate stood beneath it.</summary>

@@ -304,7 +304,7 @@ public sealed class RiskStepGatesTests : NodeRunFixture
 
         var review = RunStatus("review");
         Assert.Equal((NodeStates.Reached, NodeSource.Policy), (review.State, review.By));
-        Assert.Contains(RiskStepGates.Passes, review.Words, StringComparison.Ordinal);
+        Assert.Contains(RiskVerdict.Passes, review.Words, StringComparison.Ordinal);
         Assert.Contains("seed", review.Words, StringComparison.Ordinal);
     }
 

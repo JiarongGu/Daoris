@@ -74,10 +74,7 @@ public static class OpinionGate
         return gate with
         {
             State = OpinionGateStates.Answered, Answered = gate.State, Risk = verdict,
-            Person = new OpinionPersonWord(OpinionPersonSaid.Policy, tip ?? "", opened)
-            {
-                Words = $"{RiskStepGates.Passes}: {verdict.Reason} (rule {verdict.Source} at {verdict.Revision})",
-            },
+            Person = new OpinionPersonWord(OpinionPersonSaid.Policy, tip ?? "", opened) { Words = verdict.Passed },
         };
     }
 

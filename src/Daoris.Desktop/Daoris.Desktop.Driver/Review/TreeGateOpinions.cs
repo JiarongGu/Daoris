@@ -34,7 +34,7 @@ internal static class TreeGateOpinions
         // The judge at the work's place answers a dispute or commits nobody read, as `work.accept`.
         var facts = new OpinionGateFacts(repository, rule)
         {
-            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = RiskStepGates.At(config, workspace, repository)?.Act,
+            Session = session, Occasion = occasion, Review = review, Cannot = cannot, Risk = OpinionRisk.Current.JudgeAt(config, workspace, repository),
         };
         var chatRun = quest is null && WorkplaceRunFiles.IsChatRun(run) ? run : null;
         if ((quest is null && chatRun is null) || !OpinionGate.Reads(rule, cannot, occasion))
@@ -71,7 +71,7 @@ internal static class TreeGateOpinions
                 // A limited pass's reset is its cool-off's, read by its session; none left names a ready account.
                 Ready = reviewer => AccountCooling.OfSession(gates.Context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
             }).ConfigureAwait(false);
-            return Told(gates, PolicyPassAt.Of(TreeGates.OpinionChain(chain, id), workspace, repository, null, process), judged);
+            return Told(gates, TreeGates.OpinionChain(chain, id), workspace, repository, null, process, judged);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -114,7 +114,7 @@ internal static class TreeGateOpinions
             {
                 Ready = reviewer => AccountCooling.OfSession(gates.Context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
             }).ConfigureAwait(false);
-            return Told(gates, PolicyPassAt.Of(run, workspace, repository, run, process), judged);
+            return Told(gates, run, workspace, repository, run, process, judged);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
@@ -126,11 +126,12 @@ internal static class TreeGateOpinions
         }
     }
 
-    private static OpinionGateState Told(TreeGates gates, PolicyPassAt at, OpinionGateState gate)
+    private static OpinionGateState Told(
+        TreeGates gates, string subject, string workspace, string repository, string? chatRun, IWorkplaceProcess? process, OpinionGateState gate)
     {
         try
         {
-            PolicyPasses.Gate(gates.Context.Home, gates.Context.Config(), at, gate, gates.Context.Clock());
+            OpinionRisk.Current.Passed(gates.Context.Home, gates.Context.Config(), subject, workspace, repository, chatRun, process, gate, gates.Context.Clock());
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

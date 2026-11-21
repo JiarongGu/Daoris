@@ -71,7 +71,7 @@ public static class OpinionStepWaits
         if (status.Holds is OpinionGateReading.RoleDisputed or OpinionGateReading.RoleCommitsSince && gate!.Risk is { } verdict)
         {
             values[RoleKey] = StepRoles.Of(node);
-            values["why"] = $"{verdict.Reason} (rule {verdict.Source} at {verdict.Revision})";
+            values["why"] = verdict.Why;
         }
 
         var working = gate!.Session ?? gate.Opinion?.Working;

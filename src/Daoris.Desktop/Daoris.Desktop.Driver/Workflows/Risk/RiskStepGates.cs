@@ -8,8 +8,6 @@ namespace Daoris.Driver;
 /// </summary>
 public static class RiskStepGates
 {
-    public const string Passes = "no risk is declared for it here, so it passes";
-
     /// <summary>The judge at a place as <paramref name="config"/> holds its policy and access, or null where no config is read.</summary>
     public static RiskStepJudge? At(DriverConfig? config, string? workspace, string? repository)
     {
@@ -44,9 +42,9 @@ public static class RiskStepGates
     public static NodeObservation? Passed(NodeReading reading, string why, string? outcome = null)
     {
         if (Verdict(reading.Node, why, reading.Git?.Risk) is not { Outcome: RiskVerdict.Pass } verdict) return null;
-        return NodeObserving.Seen(reading, NodeStates.Reached, Passes) with
+        return NodeObserving.Seen(reading, NodeStates.Reached, RiskVerdict.Passes) with
         {
-            Source = NodeSource.Policy, Words = $"{Passes}: {verdict.Reason} (rule {verdict.Source} at {verdict.Revision})",
+            Source = NodeSource.Policy, Words = verdict.Passed,
             Acceptance = reading.Binding with
             {
                 Outcome = outcome,
