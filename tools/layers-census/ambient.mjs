@@ -30,7 +30,7 @@ export function checkAmbient(found, list) {
   }
   for (const [key, listed] of Object.entries(list)) {
     const reads = found[key] ?? 0;
-    if (reads < listed) problems.push(`${key} fell to ${reads} reads from the ratchet's ${listed}: write the list again (node tools/layers-census.mjs --write)`);
+    if (reads < listed) problems.push(`${key} fell to ${reads} reads from the ratchet's ${listed}: lower the list (node tools/layers-census.mjs --shrink)`);
   }
   return problems;
 }

@@ -43,7 +43,7 @@ test('LAYERS1: the wall clock and a real wait are counted, a clock handed or an 
   assert.equal(clockSites(text), 6);
 });
 
-test('LAYERS1: an application or unit-test file over its clock allowance, or named by none, is a breach; one that fell is told to write the list', () => {
+test('an application or unit-test file over its clock allowance, or named by none, is a breach; one that fell is told to lower it', () => {
   const found = tree({
     [at(DESKTOP, 'Daoris.Desktop.Driver')]: project(),
     [at(DESKTOP, 'Daoris.Desktop.Driver.Tests')]: project(),
