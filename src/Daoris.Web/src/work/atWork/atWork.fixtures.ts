@@ -1,82 +1,33 @@
 import type { Consideration } from '../../data/signals';
 import type { ChannelItem } from '../channel';
-import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkExchange, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
+import type { AtWorkA, AtWorkAsker, AtWorkExchange, AtWorkHeld, AtWorkHint, AtWorkPart } from './types';
 
 // Who is at work: the answers the view's stories and tests draw, each a state of the view.
 
 const AT = '2026-10-31T14:02:00Z';
 const LATER = '2026-10-31T14:05:00Z';
 
-export const child = (key: string, state: AtWorkChild['state'], extra: Partial<AtWorkChild> = {}): AtWorkChild => ({
-  key, state, startSaid: true, since: AT, depth: 1, parentKey: 'root', type: 'general-purpose', ...extra,
-});
-
-const subagents = (children: AtWorkChild[], extra: Partial<AtWorkSubagents> = {}): AtWorkSubagents => ({
-  read: 'read', harness: 'claude-code', working: children.filter((each) => each.state === 'working').length, children, ...extra,
-});
-
-export const answerOf = (sub: AtWorkSubagents, extra: Partial<AtWorkA> = {}): AtWorkHeld => ({
+/** A lone attended part `s1` of `agent`, its subagents counted as `children`; `extra` over the rest of the answer. */
+export const answerOf = (children: AtWorkPart['children'], extra: Partial<AtWorkA> = {}, agent = 'claude-code'): AtWorkHeld => ({
   answer: {
     of: { session: 's1' }, attended: 's1',
-    parts: [{ key: 's1', agent: 'claude-code', state: 'working', children: { count: sub.children.length, working: sub.working } }],
-    subagents: sub,
+    parts: [{ key: 's1', agent, state: 'working', children }],
     ...extra,
   },
   at: { epoch: 'e1', n: 1 },
 });
 
-/** A chat with three subagents: one working, one completed, one failed. */
-export const THREE = answerOf(subagents([
-  child('a1', 'working', { label: { text: 'Read the parser', claim: true } }),
-  child('a2', 'completed', { ended: AT }),
-  child('a3', 'failed', { ended: LATER }),
-]));
+/** A chat with three subagents, one of them working. */
+export const THREE = answerOf({ count: 3, working: 1 });
 
-/** On the protocol door, its turn waiting for the child working. */
-export const TURN_WAITS = answerOf({ ...subagents([child('a1', 'working')]), turnWaits: true });
-
-/** A nested child whose parent no harness said. */
-export const NO_PARENT = answerOf(subagents([child('a1', 'working'), child('a9', 'working', { depth: undefined, parentKey: undefined })]));
-
-/** A Codex lead: one child first seen, its end not said; and one with no lineage yet. */
-export const CODEX = answerOf({ ...subagents([child('t-1', 'unsaid', { startSaid: false })], { harness: 'codex' }), seenByCalls: true });
-export const CODEX_NONE = answerOf({ read: 'none', working: 0, children: [], seenByCalls: true });
-
-/** A lost child, and one whose agent's exit this window saw before its end said how. */
-export const LOST = answerOf(subagents([
-  child('a1', 'lost', { ended: LATER }),
-  child('a2', 'agentEnded', { lastSeen: LATER }),
-]));
-
-/** Not known whether it still runs: another Daoris process's run, beside one this window watches and one lost. */
-export const UNCERTAIN = answerOf(subagents([
-  child('a1', 'working'),
-  child('a2', 'uncertain', { lastSeen: LATER }),
-  child('a3', 'lost', { ended: LATER }),
-]));
+/** A Codex lead with no lineage yet: its subagents appear only when they call Daoris, so none counted is never *nobody*. */
+export const CODEX_NONE = answerOf({ count: 0, working: 0 }, {}, 'codex');
 
 /** Agent ids alone: unmatched and not tied to a process. */
-export const IDS_ONLY = answerOf({ read: 'read', working: 0, children: [], observed: 2, unplaced: 2 });
-
-/** A driven record's history: one child whose end is not recorded beside one its harness ended. */
-export const HISTORY = answerOf(subagents([
-  child('a1', 'unrecorded', { lastSeen: LATER }),
-  child('a2', 'completed', { ended: AT }),
-  child('a3', 'finished', { ended: AT }),
-  child('a4', 'stopped', { ended: AT }),
-]));
-
-/** An ended first process beside its working continuation. */
-export const CONTINUED = answerOf(subagents([child('a1', 'ended', { ended: AT }), child('a2', 'working')]));
-
-/** The bound: forty-one working, forty drawn, one more not drawn; and three ended folded. */
-export const BOUND = answerOf({
-  ...subagents(Array.from({ length: 40 }, (_, i) => child(`w${i}`, 'working'))),
-  working: 41, more: { working: 1 }, folded: 3,
-});
+export const IDS_ONLY = answerOf({ count: 0, working: 0, observed: 2, unplaced: 2 });
 
 /** An entry of three parts, the attended first, one a teammate's. */
-export const PARTS = answerOf(subagents([child('a1', 'working')]), {
+export const PARTS = answerOf({ count: 1, working: 1 }, {
   parts: [
     { key: 's1', agent: 'claude-code', state: 'working', children: { count: 1, working: 1 } },
     { key: 's0', agent: 'codex', state: 'completed', children: { count: 2, working: 0 } },
@@ -85,7 +36,7 @@ export const PARTS = answerOf(subagents([child('a1', 'working')]), {
   moreParts: { completed: 2 },
 });
 
-const quiet: AtWorkSubagents = { read: 'none', working: 0, children: [] };
+const quiet: AtWorkPart['children'] = { count: 0, working: 0 };
 
 /** A part of the routing half's entries: numbered, its children counted. */
 export const routedPart = (key: string, number: number, extra: Partial<AtWorkPart> = {}): AtWorkPart => ({
@@ -284,22 +235,18 @@ export const ASK_SAID: ChannelItem[] = [
 // The hint, where two subagents ran and the way to hand rows on is not open.
 
 /** Two subagents working in one generation, and the standing the driver's judge answered. */
-export const HINTED = (hint: AtWorkHint): AtWorkHeld => answerOf(
-  subagents([child('a1', 'working', { label: { text: 'Read the parser', claim: true } }), child('a2', 'working')]),
-  { hint },
-);
+export const HINTED = (hint: AtWorkHint): AtWorkHeld => answerOf({ count: 2, working: 2 }, { hint });
 
-export const EMPTY =answerOf({ read: 'none', working: 0, children: [] });
+export const EMPTY = answerOf({ count: 0, working: 0 });
 
-export const ELSEWHERE = answerOf({ read: 'elsewhere', working: 0, children: [] });
+/** An attended teammate's part: its subagents not visible on this machine. */
+export const ELSEWHERE = answerOf({ elsewhere: true });
 
-export const UNREADABLE = answerOf({ read: 'unreadable', unreadable: 'IOException', working: 0, children: [] });
+/** A part whose lineage could not be read. */
+export const UNREADABLE = answerOf({ count: 0, working: 0, unreadable: true });
 
 export const STALE: AtWorkHeld = { ...(THREE as { answer: AtWorkA }), stale: { why: 'the service timed out' } };
 
 export const FAILED: AtWorkHeld = { failed: { why: 'the sessions could not be read' } };
 
 export const READING: AtWorkHeld = { reading: true };
-
-/** The clock the fixtures' times are read against: the same day. */
-export const NOW = new Date('2026-10-31T15:00:00Z');

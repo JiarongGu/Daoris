@@ -29,6 +29,7 @@ export type PermissionWait = {
   choices: PermissionChoice[];
   since: string;
   until: string | null;
+  child?: string | null;
 };
 
 /** The person's answer as the driver took it (`SESSION_PERMISSION_ANSWER`): whether it stands, and where not, its code and sentence. */

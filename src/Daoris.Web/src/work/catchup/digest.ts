@@ -1,5 +1,6 @@
 import type { Block, SessionEvent, Turn } from '../conversation/conversationTypes';
 import type { Exchanges } from '../conversation/exchanges';
+import { pathTo } from '../beside/besides';
 import { isAfter, type MarkPlace, seqOf } from './readMark';
 import { callKind, failedCall, filesChanged } from './turnFold';
 
@@ -11,7 +12,7 @@ export type DigestLine =
   | { kind: 'turns'; count: number; to: string }
   | { kind: 'files'; count: number; to: string }
   | { kind: 'commands'; count: number; failed: string[]; to: string }
-  | { kind: 'children'; started: number; ended: number; failed: number; to?: string }
+  | { kind: 'children'; started: number; ended: number; failed: number; nested?: number; to?: string }
   | { kind: 'tasks'; started: number; ended: number; failed: number; to?: string }
   | { kind: 'steps'; passed: number; failed: string[] }
   | { kind: 'waits'; open: number; asked: number; answered: number; to?: string }
@@ -47,7 +48,7 @@ const quoted = (text: string): string => {
  * What happened in the attended part `part` after the person's mark, as the lines of *Since you left*; null where nothing came after
  * it. A turn counts where it holds anything of the agent's or the person's after the mark; files
  * are those its edits changed, each once; a command failed where its call did; subagents and tasks count their starts and ends the
- * record keeps after the mark; steps passed are those the run passed since the mark moved (`steps`, the mark's own count then);
+ * record keeps after the mark, the subagents another started among them counted too (`nested`); steps passed are those the run passed since the mark moved (`steps`, the mark's own count then);
  * waits are those open on the person now (`waiting`) and the helpers asked and answered since; the agent's last words are quoted as
  * its own where it said them after the mark.
  */
@@ -64,13 +65,13 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
   const after = (block: Pick<Block, 'key' | 'at'>) => isAfter(mark, part, timeOf(block));
   const rows = turns.map((turn) => ({ turn, rows: [...(turn.ask ? [{ ...turn.ask, kind: 'ask' as const }] : []), ...turn.items].filter(after) }));
   const first = rows.find((each) => each.rows.length > 0);
-  if (!first) return null;
+  if (!first && !lifetimes.some((event) => (event.kind === 'child' || event.kind === 'task') && isAfter(mark, part, event))) return null;
 
   const lines: DigestLine[] = [];
   const blocks = rows.flatMap((each) => each.rows.filter((row): row is Block => row.kind !== 'ask'));
   // A part's boundary, or a task's end after the turn that started it, is no turn; nor are words waiting at a session's foot.
   const turned = rows.filter((each) => !each.turn.waiting && each.rows.some((row) => row.kind !== 'note' && row.kind !== 'beside'));
-  if (turned.length > 0) lines.push({ kind: 'turns', count: turned.length, to: first.rows[0]!.key });
+  if (first && turned.length > 0) lines.push({ kind: 'turns', count: turned.length, to: first.rows[0]!.key });
 
   const edits = blocks.filter((block) => block.kind === 'tool' && callKind(block) === 'edit' && block.status !== 'failed');
   const files = filesChanged(edits);
@@ -87,12 +88,14 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
     const started = since.filter((event) => !event.end);
     const ended = since.filter((event) => event.end);
     if (since.length === 0) continue;
-    const id = (started[0] ?? ended[0])!.id;
+    const first = (started[0] ?? ended[0])!.id ?? '';
+    const id = kind === 'child' ? pathTo(lifetimes, first)[0] : first;
     const to = turns.flatMap((turn) => turn.items).find((block) => block.beside?.id === id && block.beside?.kind === kind)?.key;
+    const nested = kind === 'child' ? started.filter((event) => event.parent).length : 0;
     lines.push({
       kind: kind === 'child' ? 'children' : 'tasks', started: started.length, ended: ended.length,
-      failed: ended.filter((event) => FAILED_ENDS.has(event.end ?? '')).length, ...(to ? { to } : {}),
-    });
+      failed: ended.filter((event) => FAILED_ENDS.has(event.end ?? '')).length, ...(nested ? { nested } : {}), ...(to ? { to } : {}),
+    } as DigestLine);
   }
 
   const passed = steps && typeof mark.steps === 'number' ? Math.max(0, steps.passed - mark.steps) : 0;
@@ -108,5 +111,7 @@ export function digestOf({ turns, part, mark, lifetimes, exchanges, waiting = 0,
   const words = [...blocks].reverse().find((block) => block.kind === 'message' && block.text?.trim());
   if (words) lines.push({ kind: 'words', text: quoted(words.text!), to: words.key });
 
-  return { turn: first.turn.key, lines };
+  const jump = lines.flatMap((each) => ('to' in each && each.to ? [each.to] : []))[0];
+  const anchor = first?.turn ?? turns.find((turn) => turn.items.some((block) => block.key === jump)) ?? turns.at(-1);
+  return anchor ? { turn: anchor.key, lines } : null;
 }

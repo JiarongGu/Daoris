@@ -37,6 +37,9 @@ public sealed record HeldPermission(
     /// <summary>The call's kind as the wire names it (<c>execute</c>, <c>edit</c>, …), or null.</summary>
     public string? Kind { get; init; }
 
+    /// <summary>The subagent that asked, by its lifetime's id in the record, or null.</summary>
+    public string? Child { get; init; }
+
     /// <summary>
     /// When nobody's answer releases it, by this machine's clock: its door's bound from <see cref="Since"/>, so the page
     /// says the driver's bound rather than a copy of it.
@@ -178,12 +181,13 @@ public sealed class HeldPermissions
 
     /// <summary>Hold a request, or null where the same one is already held.</summary>
     internal Task<PermissionEnd>? Hold(
-        PermissionHolds door, string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind)
+        PermissionHolds door, string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind, string? child)
     {
         var since = DateTimeOffset.UtcNow;
         var seen = new HeldPermission(door.Session, request, call, title, [.. offered.Where(choice => choice.Choosable)], since)
         {
             Kind = kind,
+            Child = child,
             Until = since + door.Bound,
         };
         var hold = new Entry(door, seen, offered, new Timer(_ => End(door.Session, request, new PermissionEnd(null, PermissionWhy.Bound))));
@@ -299,8 +303,9 @@ public sealed class PermissionHolds
     /// </summary>
     /// <param name="offered">Every option the agent offered, in its order: what the person may choose is read from them.</param>
     /// <param name="kind">The call's kind as the wire names it, or null.</param>
-    public Task<PermissionEnd>? Hold(string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind = null) =>
-        _registry.Hold(this, request, call, title, offered, kind);
+    public Task<PermissionEnd>? Hold(
+        string request, string? call, string? title, IReadOnlyList<PermissionChoice> offered, string? kind = null, string? child = null) =>
+        _registry.Hold(this, request, call, title, offered, kind, child);
 
     /// <summary>End every request this door holds, saying why: one of <see cref="PermissionWhy"/>'s.</summary>
     public void ReleaseAll(string why) => _registry.ReleaseAll(this, why);

@@ -110,7 +110,7 @@ public sealed class StartTreeCloseTests : IDisposable
         {
             case ["rev-parse", "--show-toplevel"]:
                 return Said(_root);
-            case ["-c", var hooks, "worktree", "add", .., "-b", var branch, var path, _] when hooks.StartsWith("core.hooksPath=", StringComparison.Ordinal):
+            case ["-c", var hooks, "-c", "checkout.workers=0", "worktree", "add", .., "-b", var branch, var path, _] when hooks.StartsWith("core.hooksPath=", StringComparison.Ordinal):
                 Directory.CreateDirectory(path);
                 (_opened, _tree, _branch) = (path, path, branch);
                 return Said("");

@@ -469,6 +469,5 @@ of everything it handed, section by section.
   folder's watch for them are gone, so a window reads every conversation's queue from the instance alone.
   `TerminalConversationCensusTests` holds all of it.
 - **MSG1h, MSG1i:** next-step words on Codex's and the native doors, on what STEER3 measured (co-working and messages, rule 3).
-- **SESSIONVIEW1f** (D320), the rest: a child's wait raised to the dock tagged with it, the live band's indent of children and the
-  digest's count of them. The record's `child` and `task` kinds and a subagent's own record (rule 5) are rows of the timeline
-  (`work/beside/`, desktop-app's open rows).
+- **SESSIONVIEW1f** (D320) is built: the record's `child` and `task` kinds and a subagent's own record (rule 5) are rows of the
+  timeline (`work/beside/`), and a child's wait, the band's nesting and the digest's count read them too (desktop-app, rule 38).

@@ -107,7 +107,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         // Locked and its hooks held while it is made, as an opening is: a kill leaves it for the look (TreeStrays), a cancel undoes it.
         var ours = !Directory.Exists(full);
         var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)
+            root, [.. TreeOpenings.HooksHeld(context.Home), .. TreeOpenings.CheckoutSpread, "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)
             .ConfigureAwait(false);
         if (code != 0) return Unmade(branch, $"its tree at {full} is gone, and git would not make it again on `{branch}`: {Failure(stderr)}");
 

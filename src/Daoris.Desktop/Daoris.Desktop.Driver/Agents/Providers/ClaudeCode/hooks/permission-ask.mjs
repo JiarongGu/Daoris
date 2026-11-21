@@ -121,12 +121,13 @@ export function rulesOf(file) {
   }
 }
 
-/** The request the loop holds for the person: a `permit` for the session, keyed, naming the tool, the call and the harness's id of the call. */
+/** The request the loop holds for the person: a `permit` for the session, keyed, naming the tool, the call and the subagent. */
 export function requestOf(session, key, input, at = new Date()) {
   const command = input?.tool_input?.command ?? input?.tool_input?.file_path ?? input?.tool_input?.url;
   const title = `${input?.tool_name ?? 'a tool'}${typeof command === 'string' ? `: ${command}` : ''}`;
   const call = typeof input?.tool_use_id === 'string' && input.tool_use_id.length > 0 ? { call: input.tool_use_id } : {};
-  return { session, move: 'permit', parked: false, by: 'hook', at: at.toISOString(), text: title.slice(0, 160), key, operation: String(input?.tool_name ?? ''), ...call };
+  const child = typeof input?.agent_id === 'string' && input.agent_id.length > 0 ? { child: input.agent_id } : {};
+  return { session, move: 'permit', parked: false, by: 'hook', at: at.toISOString(), text: title.slice(0, 160), key, operation: String(input?.tool_name ?? ''), ...call, ...child };
 }
 
 /** The harness's decision on the answer the loop wrote, or a refusal saying nobody answered. */

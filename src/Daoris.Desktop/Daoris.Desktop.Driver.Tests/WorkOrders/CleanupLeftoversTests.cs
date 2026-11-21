@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -263,6 +264,7 @@ public sealed class CleanupLeftoversTests : IDisposable
     {
         var checkout = Path.Combine(_home, "checkouts", "engine");
         Directory.CreateDirectory(checkout);
+        CheckoutMarks.Mark(checkout);
         var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["engine"] = checkout,
@@ -285,6 +287,32 @@ public sealed class CleanupLeftoversTests : IDisposable
         }
 
         Assert.DoesNotContain(unread, said => said.Contains("`deck`", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_registered_folder_inside_a_repository_is_read_as_a_folder_and_asked_nothing_of_git()
+    {
+        var above = Path.Combine(_home, "checkouts", "engine");
+        var inside = Path.Combine(above, "notes");
+        Directory.CreateDirectory(inside);
+        CheckoutMarks.Mark(above);
+        var roots = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["engine"] = above, ["notes"] = inside };
+        var starts = 0;
+        var unread = new List<string>();
+
+        InventoryFacts facts;
+        using (ProcessStarts.Within(_ =>
+               {
+                   Interlocked.Increment(ref starts);
+                   return null;
+               }))
+        {
+            facts = await WorkInventories.GatherAsync(_home, roots, new HashSet<string>(), unread);
+        }
+
+        Assert.Equal(1, starts);
+        Assert.DoesNotContain(unread, said => said.Contains("`notes`", StringComparison.Ordinal));
+        Assert.DoesNotContain(facts.Standing, branch => string.Equals(branch.Repository, "notes", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>One whose name says no date is never purged by itself, so it stays a unit whose owner is unknown: it does need the person.</summary>

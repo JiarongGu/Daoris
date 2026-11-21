@@ -33,7 +33,7 @@ the run's stages and the quest log's operations in their order.
 | `Departments/` | A place's manifests and turns (`Manifest/`), a folder turn's review (`Review/`), a system's plans (`Systems/`), `PlaceHomeMarker` |
 | `Service/Quests/`, `Service/Sessions/`, `Service/Asks/` | `QuestStore` and `QuestExchange` (every door's judgement, the log's operations, `QuestLog`, `QuestTransitions`), `SessionStore` and `SessionLedger` (opens, moves, says, the tree lock and the place lease), `AskStore` and `AskDesk`, each a root wiring parts of its own |
 
-A folder that is no git checkout is a place of its own (`daoris repository add <folder>`), its manifest every file but the
+A folder that is no git checkout is a place of its own (`daoris repository add <folder>`); one decides git or folder, `PlaceKind.At`, by the folder's own `.git` (a linked worktree's file too), never an enclosing repository's, so a folder inside a checkout reads none of that checkout's branches, recovery refs or session-branch waits, the composer's tree chip and the workspace's branch list name none for it, and its page draws Details, Files and Workflow alone. Its manifest is every file but the
 excludes with size, time and SHA-256, too large to follow past 250,000 files or five minutes (the `manifest` setting). A system
 place is never changed by a session: it plans through the connector's `system_plan`. The kept slots (`Workplace/Pool/`, D214) are
 built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers where a record's line stands.
@@ -135,7 +135,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`, the
     run's `files` stage handing its steps to the stage) and the hand's own preparation, its plugins' servers apart as `hand.servers`, are
     timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
-20. A fresh tree is a linked git worktree at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
+20. A fresh tree is a linked git worktree, its files written by git's parallel checkout on every core (`TreeOpenings.CheckoutSpread`, about half the `tree` stage of one worker, SESSIONOPEN3), at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)
 21. A tree opens with its hooks held and is marked `unworked` in the home's files record (`work/files/trees/`); a failed open, like
@@ -147,7 +147,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     beside the folder, does not keep the install out of the store, SESSIONOPEN2). Its keys
     run each `toolchain` read once per stage for each environment, every dependency that names it sharing the output
     (`ToolchainReads`), since run per `package.json` folder the npm signature's three reads were most of a large web repository's
-    `files.read`. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); a folder the
+    `files.read`. The npm signature's three alone (`node --version`, `npm --version`, `npm config list --json`) are also held in the
+    driver's memory for ten minutes under a fingerprint of what decides them (`NpmToolchain`: the node program, the npm launcher and
+    package, and the content of the project, user, global and bundled `.npmrc`), so an opening after another starts no npm unless a
+    program or file moved; a read that failed or printed nothing is never held, nor one where the fingerprint cannot place its inputs (an `npm_config_*` variable in the environment, a node or npm file in the tree, a path entry that is not whole (relative, `D:bin`, `\bin`), an `.npmrc` that names a `userconfig`, `globalconfig` or `prefix`), and nothing is written (SESSIONOPEN3). The kept orientation index is put only in a clean tree. It seals only a fresh install that wrote nothing beside its folder (else `started.deps-unstored`); the keys list the commit's files once for every dependency; a folder the
     store will not take (unstored, a group's, a companion) is recorded by size and write time, unhashed, a moved write time read as
     a change (FILESSLOW1); it runs the owed
     `post-checkout` hook and each rule's `setup` commands (`per: repository` or `per: tree`), links each shared path and copies
@@ -531,7 +534,7 @@ are roots that wire and grow by a one-line door at most.
 trees: a warm tidy pass 0 starts, one repository moved only its own), `TidyIdlenessTests`, `SessionReadsBenchProcessTests` |
 | quiet sessions | `Events/SessionWatch.cs`, `Loop/Run/Conclude/QuietWord.cs`, `Settings/QuietSetting.cs` | `SessionWatchTests`, `QuietWordTests` |
 | a machine setting or a door onto one | an entry in `Settings/List/MachineSettings.cs`, each door spelled by its key | `MachineSettingsCensusTests`, `everySetting.test.tsx` |
-| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a bench under `OPENING_SHAPE_BENCH=1`: a second opening of a repository of this one's shape, its tree and files stages timed) |
+| opening, following or removing a tree | a class over `TreeContext` in `Workplace/`, wired in `SessionTrees` | `SessionTreesTests`, `DependencyStoreTests`, `InstallScriptsTests`, `OpeningShapeProcessTests` (a second opening of a repository of this one's shape, its tree and files stages timed and held to 30 s), `NpmToolchainMemoTests`, `TreeCheckoutSpreadTests` |
 | rooms, the files rules, the analysis | `Workplace/LaneRooms.cs`, `RoomCheck.cs`, `Workplace/Files/`, `Defaults/file-signatures.json` | `RoomCheckTests`, `FileRulesTests`, `FileAnalysisTests` |
 | the tidy and branch ends | `Workplace/EndJudgement.cs`, `TreeSetAside.cs`, `AutoTidies.cs` | `EndJudgementTests`, `TidyGitCountTests` |
 | a rule every door shares | `QuestExchange`, `SessionLedger`, `AskDesk` and their parts | `QuestExchangeTests`, `SessionLedgerTests`, `AskDeskTests` |

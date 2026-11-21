@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import realUserEvent from '@testing-library/user-event';
@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useStateHub } from '../bridge/state/stateHub';
 import type { OpenGroup } from '../app/opener';
+import { useFrameClosings } from '../work/frame/closings';
 import { WorkFrame } from '../work/WorkFrame';
 
 // What the parts of the Work frame's suite (`WorkFrame.*.test.tsx`) share besides the bridge: the typing, the records the
@@ -19,6 +20,13 @@ export const userEvent = {
   ...realUserEvent,
   type: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['type']>) => realUserEvent.setup({ delay: null }).type(...args),
   keyboard: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['keyboard']>) => realUserEvent.setup({ delay: null }).keyboard(...args),
+  // Words put in at once, one paste, then Enter where they end in `{Enter}`: each typed key re-renders the whole frame.
+  say: async (element: Element, text: string) => {
+    const user = realUserEvent.setup({ delay: null });
+    await user.click(element);
+    await user.paste(text.replace(/\{Enter\}$/, ''));
+    if (text.endsWith('{Enter}')) await user.keyboard('{Enter}');
+  },
 };
 
 /**
@@ -133,6 +141,28 @@ export function show(selected: string | null = null, notify: (text: string) => v
       <Hub />
       <Tooltip.Provider>
         <WorkFrame selected={selected} onSelect={onSelect} notify={notify} />
+      </Tooltip.Provider>
+    </QueryClientProvider>,
+  );
+  return { ...view, onSelect, client };
+}
+
+/** The frame with its panel open: it is closed at every start, so a test of what stands in it opens it first. */
+export function PanelOpenFrame(props: ComponentProps<typeof WorkFrame>) {
+  const closings = useFrameClosings();
+  const { setPanel } = closings;
+  useEffect(() => setPanel(false), []);
+  return <WorkFrame {...props} closings={closings} />;
+}
+
+export function showPanel(selected: string | null = null, notify: (text: string) => void = () => {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const onSelect = vi.fn();
+  const view = render(
+    <QueryClientProvider client={client}>
+      <Hub />
+      <Tooltip.Provider>
+        <PanelOpenFrame selected={selected} onSelect={onSelect} notify={notify} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );

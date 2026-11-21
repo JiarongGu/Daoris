@@ -18,15 +18,42 @@ export type BandTold = {
   open: (focus: BesideFocus) => void;
 };
 
-/** What the session runs beside itself now: each subagent and task whose start the record keeps and no end, in the order they started. */
+/**
+ * What the session runs beside itself now: each subagent and task whose start the record keeps and no end, in the order they
+ * started, a subagent another started drawn right under it, one deeper than it. One whose parent has ended, or whose parent the
+ * record does not hold, stands in its own place at the depth its door said.
+ */
 export function runningIn(lifetimes: readonly SessionEvent[]): Beside[] {
   const held = new Map<string, Beside>();
+  const parents = new Map<string, string>();
   for (const event of lifetimes) {
     if (!event.id) continue;
     const key = `${event.kind}:${event.id}`;
     held.set(key, besideOf(held.get(key), event));
+    if (event.kind === 'child' && event.parent && event.parent !== event.id) parents.set(event.id, event.parent);
   }
-  return [...held.values()].filter((beside) => !beside.end);
+  const running = [...held.values()].filter((beside) => !beside.end);
+  const children = new Set(running.filter((beside) => beside.kind === 'child').map((beside) => beside.id));
+  const under = new Map<string, Beside[]>();
+  const tops: Beside[] = [];
+  for (const beside of running) {
+    const parent = beside.kind === 'child' ? parents.get(beside.id) : undefined;
+    if (parent && children.has(parent)) under.set(parent, [...(under.get(parent) ?? []), beside]);
+    else tops.push(beside);
+  }
+  const drawn: Beside[] = [];
+  const placed = new Set<string>();
+  const place = (beside: Beside, depth?: number) => {
+    if (placed.has(`${beside.kind}:${beside.id}`)) return;
+    placed.add(`${beside.kind}:${beside.id}`);
+    const at = depth ?? beside.depth;
+    drawn.push(at ? { ...beside, depth: at } : beside);
+    if (beside.kind === 'child') for (const child of under.get(beside.id) ?? []) place(child, (at ?? 1) + 1);
+  };
+  for (const beside of tops) place(beside);
+  // A parent loop the record should never hold leaves its members unplaced: each stands in its own place rather than vanish.
+  for (const beside of running) place(beside);
+  return drawn;
 }
 
 /** A subagent's acts, oldest first, as its own record keeps them: each call by its title once, each message by its last line. */

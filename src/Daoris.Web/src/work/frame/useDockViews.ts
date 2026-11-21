@@ -11,7 +11,7 @@ import { dockOpensOn, type DockTab, followed } from './RightDock';
  * a view moved or dragged, and the doors that ask for Ask Daoris or *Notifications* where it stands.
  */
 export function useDockViews({
-  attended, elsewhere, here, ask, notifications, terminal, placed, closed, collapsed, dockClosed, closeDock, askFocus,
+  attended, elsewhere, here, ask, notifications, terminal, terminalCount, placed, closed, collapsed, dockClosed, closeDock, askFocus,
   notificationsShow, notificationsToggle,
 }: {
   attended: Session | null;
@@ -20,6 +20,8 @@ export function useDockViews({
   ask?: ReactNode;
   notifications?: ReactNode;
   terminal: boolean;
+  /** How many terminals are open: the panel opens with the first and closes with the last. */
+  terminalCount: number;
   placed: Placements;
   closed: FrameClosings;
   collapsed: boolean;
@@ -39,9 +41,9 @@ export function useDockViews({
   // off Sessions with none followed.
   const dockKey = following?.id ?? '';
   // What stands where: Ask Daoris only where a shell handed it in, and the terminal likewise.
-  // *Notifications* likewise: where the application handed it in.
+  // *Notifications* likewise; the console only with a session whose it is.
   const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal
-    : view === 'notifications' ? Boolean(notifications) : true);
+    : view === 'notifications' ? Boolean(notifications) : view === 'console' ? Boolean(following && attended) : true);
   const rightViews = viewsIn(placed.places, 'right', present);
   const panelViews = viewsIn(placed.places, 'panel', present);
   // Ask Daoris and *Notifications* are the machine's, not the attended session's: their tab stays whichever session is attended.
@@ -69,6 +71,15 @@ export function useDockViews({
   // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
   const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
   const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
+  // A console that goes away would leave the terminal showing, which starts a shell: the panel shuts instead, in this render.
+  // Only one that went: the person picking Terminal beside a console still there asks for its shell.
+  const shown = useRef<ViewId | undefined>(undefined);
+  const consoleGone = !collapsed && shown.current === 'console' && !panelViews.includes('console') && panelView === 'terminal'
+    && terminalCount === 0;
+  useEffect(() => {
+    shown.current = collapsed || consoleGone ? undefined : panelView;
+    if (consoleGone) closed.setPanel(true);
+  });
   // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
     setDock(tab);
@@ -95,6 +106,7 @@ export function useDockViews({
   // The person asking for a view by a door that does not know where it stands — the palette's review,
   // Ask Daoris's `F1` — opens whichever region holds it, on it.
   const openView = (view: ViewId) => {
+    if (!present(view)) return;
     if (placed.places[view] === 'panel') {
       setPanelPick(view);
       closed.setPanel(false);
@@ -123,6 +135,15 @@ export function useDockViews({
       else closeDock(true);
     }
   };
+
+  // The panel opens with a terminal and closes with the last, by the count, so every way one opens or closes reaches here.
+  const terminalsWere = useRef(terminalCount);
+  useEffect(() => {
+    const was = terminalsWere.current;
+    terminalsWere.current = terminalCount;
+    if (was > 0 && terminalCount === 0) closed.setPanel(true);
+    else if (was === 0 && terminalCount > 0 && placed.places.terminal === 'panel') openView('terminal');
+  }, [terminalCount]);
 
   // The person asked for Ask Daoris — the right side bar's toggle, `F1`, the palette: its region opens on it.
   useEffect(() => {
@@ -178,6 +199,6 @@ export function useDockViews({
 
   return {
     setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
-    openPreview, closePreview, openView, moveView,
+    panelCollapsed: collapsed || consoleGone, openPreview, closePreview, openView, moveView,
   };
 }

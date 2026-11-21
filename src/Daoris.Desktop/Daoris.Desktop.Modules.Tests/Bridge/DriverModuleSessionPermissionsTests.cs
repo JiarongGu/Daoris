@@ -38,6 +38,21 @@ public sealed class DriverModuleSessionPermissionsTests : DriverModuleBridge
         Assert.True(wait.TryGetProperty("since", out _));
     }
 
+    /// <summary>A subagent's request names its subagent, which the dock's reader tags its line with; the session's own agent's names none.</summary>
+    [Fact]
+    public async Task A_subagents_request_names_its_subagent()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        HeldPermissions.Of(loop.Events).For("d1").Hold("900", "c9", "npm start", Offered, "execute", child: "child-7");
+        HeldPermissions.Of(loop.Events).For("d1").Hold("901", "c10", "npm test", Offered, "execute");
+
+        var waits = (await AnswerAsync(module, "PERMISSION_WAITS")).GetProperty("waits").EnumerateArray()
+            .ToDictionary(wait => wait.GetProperty("request").GetString()!, wait => wait.GetProperty("child"));
+        Assert.Equal("child-7", waits["900"].GetString());
+        Assert.Equal(JsonValueKind.Null, waits["901"].ValueKind);
+    }
+
     /// <summary>Each hold says when its bound releases it, the driver's bound from its start, so the page keeps no copy.</summary>
     [Fact]
     public async Task Each_hold_says_when_its_bound_releases_it()

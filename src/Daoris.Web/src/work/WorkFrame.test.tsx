@@ -14,7 +14,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 import i18n from '../locales/i18n';
 import { eventHandlers, invoke, moved } from '../test/workFrameBridge';
 import {
-  CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, QUESTS, REGISTRY, carried, focus, going, show, userEvent,
+  CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, PanelOpenFrame, QUESTS, REGISTRY, carried, focus, going, show, showPanel, userEvent,
 } from '../test/workFrameKit';
 import { pushedOf } from '../bridge/state/slices';
 import { WorkFrame } from './WorkFrame';
@@ -316,7 +316,7 @@ describe('the Work frame', () => {
     render(
       <QueryClientProvider client={client}>
         <Tooltip.Provider>
-          <WorkFrame
+          <PanelOpenFrame
             selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}}
             ask={<p>the ask panel</p>}
             layout={{ main: <main><h1>Overview</h1></main> }}
@@ -516,7 +516,7 @@ describe('the Work frame', () => {
     it('adds from the picker, keeps the words, chooses the repository and puts the focus back in the prompt', async () => {
       show(null);
       const prompt = await promptBox();
-      await userEvent.type(prompt, 'Fix the cursor');
+      await userEvent.say(prompt, 'Fix the cursor');
 
       await openFoot('Add repository…');
       expect(screen.queryByRole('listbox')).toBeNull();
@@ -641,7 +641,7 @@ describe('the Work frame', () => {
     // is not drawn at all.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', outputs: 'panel', workflow: 'panel', atWork: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
     const tab = await screen.findByRole('tab', { name: 'Console' });
     expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
 
@@ -661,7 +661,6 @@ describe('the Work frame', () => {
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ ask: 'panel' }));
-    window.localStorage.setItem('daoris.panelClosed', '1');
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -674,12 +673,11 @@ describe('the Work frame', () => {
     const panel = await screen.findByRole('tablist', { name: 'views in the panel' });
     expect(within(panel).getByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
     expect(screen.getByText('the ask panel')).toBeInTheDocument();
-    expect(window.localStorage.getItem('daoris.panelClosed')).toBe('0');
   });
 
   it('closes a region a move leaves empty, and the reset puts every view back', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
 
     focus(screen.getByRole('button', { name: 'views in the panel' }));
     await userEvent.keyboard('{Enter}');
@@ -695,8 +693,8 @@ describe('the Work frame', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Reset view locations' }));
 
     expect(screen.queryByRole('tab', { name: 'Console' })).toBeNull();
-    // Back where it started, and still hidden: only the person opens it again.
-    expect(screen.getByRole('button', { name: 'Show the panel' })).toBeInTheDocument();
+    // Back where it started, and still hidden: only a terminal, or the person, opens it again.
+    expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
   });
 
@@ -824,7 +822,7 @@ describe('the Work frame', () => {
         }
       : DRIVER_STATE));
 
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
 
     expect(await screen.findByText(/ok 1337 passing/)).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', {
@@ -838,7 +836,7 @@ describe('the Work frame', () => {
       ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'first' }], sequence: 1, live: true, dropped: 0 }
       : DRIVER_STATE));
 
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
     await screen.findByText(/first/);
 
     await act(async () => {
@@ -862,7 +860,7 @@ describe('the Work frame', () => {
       ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'DONE' }], sequence: 1, live, dropped: 0 }
       : DRIVER_STATE));
 
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
     await screen.findByText(/DONE/);
     expect(screen.getByText('live')).toBeInTheDocument();
 
@@ -878,7 +876,7 @@ describe('the Work frame', () => {
       ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'a line printed' }], sequence: 1, live: true, dropped: 0 }
       : DRIVER_STATE));
 
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
     // A line only the console prints: `working` is also the session's state, drawn before the tail.
     await screen.findByText(/a line printed/);
     expect(await screen.findByText('live')).toBeInTheDocument();
@@ -899,7 +897,7 @@ describe('the Work frame', () => {
       ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'mine' }], sequence: 1, live: true, dropped: 0 }
       : DRIVER_STATE));
 
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
     await screen.findByText(/mine/);
 
     await act(async () => {
@@ -926,7 +924,7 @@ describe('the Work frame', () => {
 
   /** The panel is a region a person owns: it grows, it shrinks, and only they close it. */
   it('resizes the output panel from the keyboard and remembers the height', async () => {
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
 
     const handle = await screen.findByRole('separator', { name: 'panel height' });
     const before = Number(handle.getAttribute('aria-valuenow'));
@@ -940,11 +938,11 @@ describe('the Work frame', () => {
   });
 
   it('hides the panel when the person hides it, and nothing else reopens it', async () => {
-    show('s1a2b3c4');
+    showPanel('s1a2b3c4');
 
     await userEvent.click(await screen.findByRole('button', { name: 'Hide the panel' }));
     expect(screen.queryByRole('separator', { name: 'panel height' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Show the panel' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
   });
 });
 
@@ -1039,7 +1037,7 @@ describe('a park\'s go-aheads', () => {
     const [one, two, three] = ASK_WITH_GO_AHEADS.goAheads;
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [one, { ...two, state: 'approved' }, three] }];
 
-    await userEvent.type(screen.getByLabelText('Message'), 'dev first, then production');
+    await userEvent.say(screen.getByLabelText('Message'), 'dev first, then production');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
@@ -1114,7 +1112,7 @@ describe('a park\'s go-aheads', () => {
     show('g0ah3ad0', notify);
     const second = (await boxLines())[1]!;
 
-    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry');
+    await userEvent.say(screen.getByLabelText('Message'), 'only the menu entry');
     await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
 
     // The box says a refusal word for word, as it says every other.
@@ -1303,7 +1301,7 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
     expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your words, sent with “1,350” — or send it alone');
-    await userEvent.type(screen.getByLabelText('Message'), 'but only on the dashboard');
+    await userEvent.say(screen.getByLabelText('Message'), 'but only on the dashboard');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,350\n\nbut only on the dashboard', question: 'q5t10n00' }]));
@@ -1331,7 +1329,7 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
-    await userEvent.type(screen.getByLabelText('Message'), 'Neither yet.{Enter}');
+    await userEvent.say(screen.getByLabelText('Message'), 'Neither yet.{Enter}');
     await waitFor(() => expect(inputs()).toEqual([
       { id: 'g0ah3ad0', text: '1,200', question: 'q5t10n00' },
       { id: 'g0ah3ad0', text: 'Neither yet.' },
@@ -1359,7 +1357,7 @@ describe('a park\'s question', () => {
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
     await userEvent.click(within(ask).getByRole('radio', { name: /^1,200/ }));
-    await userEvent.type(screen.getByLabelText('Message'), 'and say so');
+    await userEvent.say(screen.getByLabelText('Message'), 'and say so');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
     await screen.findByRole('alert');
     expect(screen.getByLabelText('Message')).toHaveValue('and say so');
@@ -1390,7 +1388,7 @@ describe('a park\'s question', () => {
     const ask = await screen.findByRole('region', { name: 'It asks you' });
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
-    await userEvent.type(screen.getByLabelText('Message'), 'Neither: hold the tile until the review.');
+    await userEvent.say(screen.getByLabelText('Message'), 'Neither: hold the tile until the review.');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {

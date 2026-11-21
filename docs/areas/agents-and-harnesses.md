@@ -149,7 +149,9 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     refuse, or for the allow supervisor at the session's repository; only the hold's bound (`HeldPermissions.Bound`, 15 minutes)
     refuses it, said as such. The protocol door holds on its wire (`ChatHolds`); the native door, which refuses under `-p` what
     its rules do not allow, is handed a `PreToolUse` hook (`permission-ask.mjs`, `ClaudeAskHook`) that writes a `permit` request
-    for a call its mode and rules would ask about and answers from the loop's hold (`NativePermits`). A session shaped for one job
+    for a call its mode and rules would ask about and answers from the loop's hold (`NativePermits`). A hold names the subagent that
+    asked where its door says (`HeldPermission.Child`: the protocol door's subagent session on the wire, the hook's `agent_id`),
+    by the id the record keeps its lifetime under. A session shaped for one job
     (review, helper, intake, brainstorm, partner, supervise) is handed none. (D81, D184, D253)
     `daoris brainstorm "…" --agents <adapter,adapter>` reads each name against the adapters the home answers (the build's and its
     plugins') and refuses an unknown one at the terminal, naming the adapters, before the desk writes a request; no role's word
