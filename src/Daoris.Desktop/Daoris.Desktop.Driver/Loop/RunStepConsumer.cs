@@ -98,7 +98,8 @@ internal sealed class RunStepConsumer : IBusConsumer
         try
         {
             await _take(ct).ConfigureAwait(false);
-            await Task.WhenAll(_open().Select(unit => _pass(unit, ct))).ConfigureAwait(false);
+            // One ask: the pass reads every unit afresh whichever it names, so a start never fans out over the open runs.
+            if (_open().FirstOrDefault() is { } first) await _pass(first, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException and not OperationCanceledException)
         {

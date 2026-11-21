@@ -105,7 +105,7 @@ public sealed class RunStepFactsTests : IDisposable
         var consumer = Consumer(bus, _ => Task.FromResult(true), ["run:r-1", "run:r-2", "run:r-9"]);
         await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
-        await Poll.Until(() => _steps.Contains("pass run:r-9") && _steps.Count(each => each == "pass run:r-1") >= 2, () => string.Join(", ", _steps), Soon);
+        await Poll.Until(() => _steps.Count(each => each == "pass run:r-1") >= 2 && _steps.Contains("pass run:r-2"), () => string.Join(", ", _steps), Soon);
         Assert.Contains("take", _steps);
         await Unarmed(bus);
     }
