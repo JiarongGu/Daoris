@@ -216,28 +216,36 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
     /// again from the first, so attempts whose questions keep failing (an I/O error leaves one due at every pass) never spend the four at every
     /// pass while the rest wait.
     /// </remarks>
-    public async Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct)
+    public async Task<IReadOnlyList<WorkPerformed>> ReconcileAsync(Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct) =>
+        (await ReconcileAsync(declared, sends, null, ct).ConfigureAwait(false)).Done;
+
+    /// <summary>One unit's attempts due asked after within a pass's calls; <c>Whole</c> is false where the calls ran out or a process did not answer.</summary>
+    public Task<(IReadOnlyList<WorkPerformed> Done, bool Whole)> ReconcileUnitAsync(
+        string unit, Func<string, string, NodeDeclaration?> declared, WorkSends sends, CancellationToken ct) => ReconcileAsync(declared, sends, unit, ct);
+
+    private async Task<(IReadOnlyList<WorkPerformed> Done, bool Whole)> ReconcileAsync(
+        Func<string, string, NodeDeclaration?> declared, WorkSends sends, string? only, CancellationToken ct)
     {
         var done = new List<WorkPerformed>();
         var now = clock();
         // Daoris's own close is asked after by its closer, which sends the same close again; no plugin is asked about it.
         // Nor about a request, which its node publishes again under its key.
-        var due = records.All().Records
+        var due = records.All().Records.Where(record => only is null || record.Unit == only)
             .SelectMany(record => record.Attempts.Where(attempt => attempt.Plugin != QuestClosing.Sender && attempt.Plugin != RequestStart.Sender && Asked(attempt, now))
                 .Select(attempt => (record.Unit, Attempt: attempt, Key: $"{record.Unit}\n{attempt.Call.Invocation}")))
             .OrderBy(each => each.Key, StringComparer.Ordinal).ToList();
-        var next = _reconciled is null ? 0 : due.FindIndex(each => string.CompareOrdinal(each.Key, _reconciled) > 0);
+        var next = _reconciled is null || only is not null ? 0 : due.FindIndex(each => string.CompareOrdinal(each.Key, _reconciled) > 0);
         if (next < 0) next = 0;
         foreach (var (unit, attempt, key) in due.Skip(next).Concat(due.Take(next)))
         {
             // The pass's calls spent, the attempts left are asked at the next pass, still before any start there.
-            if (sends.Left <= 0) return done;
-            _reconciled = key;
+            if (sends.Left <= 0) return (done, false);
+            if (only is null) _reconciled = key;
             if (declared(unit, attempt.Node) is not { } node) continue;
             done.Add(await ReconcileOneAsync(unit, attempt.Call.Invocation, node, sends, ct).ConfigureAwait(false));
         }
 
-        return done;
+        return (done, done.TrueForAll(each => each.What != PerformedWhat.Unanswered));
     }
 
     /// <summary>The last attempt reconciliation reached, as its unit and invocation: the next pass begins after it.</summary>

@@ -446,7 +446,7 @@ public sealed class NodeRuntime(
             var owing = new List<GovernedUnit>();
             var moved = new HashSet<string>(StringComparer.Ordinal);
             var late = new LateUnits(look, governed);
-            Task LateAsync() => late.JudgeAsync(Keeping, tips, done, said, async each =>
+            Task LateAsync() => late.JudgeAsync(Keeping, tips, done, said, each => _performer.ReconcileUnitAsync(each.Unit.Id, Declared, sends, ct), async each =>
             {
                 if (each.Closes) Closing.Settle(each, done, said);
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);

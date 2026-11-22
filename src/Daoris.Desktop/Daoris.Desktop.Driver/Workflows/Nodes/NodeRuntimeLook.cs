@@ -61,11 +61,14 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// <summary>The units a press waits on, by id: judged first in the turn, however many units the pass governs.</summary>
     public IReadOnlySet<string> Asked { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
-    /// <summary>The units asked for since the pass began, each handed once, judged at its next unit boundary (<see cref="LatePasses"/>).</summary>
+    /// <summary>The units asked for since the pass began, each handed once, judged at its next unit boundary (<see cref="LateUnits"/>), at most <see cref="PassAsks.LatePerPass"/> in all.</summary>
     public Func<IReadOnlySet<string>> Late { get; init; } = () => new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>Told each late unit whose judgement failed.</summary>
     public Action<string> Failed { get; init; } = _ => { };
+
+    /// <summary>Told each late unit left unjudged at its ask because an attempt of it could not be asked after: its fact stays open.</summary>
+    public Action<string> NotJudged { get; init; } = _ => { };
 
     /// <summary>Told each unit asked for that the pass does not govern.</summary>
     public Action<string> Ungoverned { get; init; } = _ => { };

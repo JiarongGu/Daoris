@@ -25,10 +25,13 @@ internal sealed class LateUnits
 
     /// <summary>
     /// Judges each unit asked for since the last boundary, once, in the pass's own turn: its checkout read afresh in <paramref name="tips"/>, the
-    /// words kept on its record applied, then <paramref name="evaluate"/> within the pass's bounds. A failure fails that unit's door alone.
+    /// words kept on its record applied, its attempts reconciled (a check's or a plugin's answer is read only there), then
+    /// <paramref name="evaluate"/> within the pass's bounds. Where not every attempt could be asked, its door answers not judged and the turn
+    /// keeps it; a failure fails that door alone, and the unit is not marked judged.
     /// </summary>
     public async Task JudgeAsync(
-        NodeRunKeeping keeping, PassTips tips, List<WorkPerformed> done, List<string> said, Func<GovernedUnit, Task> evaluate, CancellationToken ct)
+        NodeRunKeeping keeping, PassTips tips, List<WorkPerformed> done, List<string> said,
+        Func<GovernedUnit, Task<(IReadOnlyList<WorkPerformed> Done, bool Whole)>> reconcile, Func<GovernedUnit, Task> evaluate, CancellationToken ct)
     {
         foreach (var each in Take())
         {
@@ -40,7 +43,17 @@ internal sealed class LateUnits
                 var worded = await keeping.WordedAsync([each], ct, (unit, at) => tips.TipAsync(at.Root, unit.Watched.Branch, ct)).ConfigureAwait(false);
                 done.AddRange(worded.Done);
                 said.AddRange(worded.Said);
+                var (reconciled, whole) = await reconcile(each).ConfigureAwait(false);
+                done.AddRange(reconciled);
+                if (!whole)
+                {
+                    _look.NotJudged(each.Unit.Id);
+                    said.Add($"work  {each.Unit.Id} has an attempt not asked after at its ask (the pass's calls are spent or its process did not answer), and is judged at the turn");
+                    continue;
+                }
+
                 await evaluate(each).ConfigureAwait(false);
+                _judged.Add(each.Unit.Id);
                 _look.Judged(each.Unit.Id);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException or UnauthorizedAccessException)
@@ -63,9 +76,7 @@ internal sealed class LateUnits
                 continue;
             }
 
-            taken.Add(each);
-            _judged.Add(unit);
-        }
+            taken.Add(each);        }
 
         return taken;
     }
