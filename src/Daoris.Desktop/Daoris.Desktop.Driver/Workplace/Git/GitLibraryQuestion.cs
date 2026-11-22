@@ -15,4 +15,6 @@ internal enum GitLibraryQuestion
     Revisions,
 
     Layout,
+
+    Status,
 }
