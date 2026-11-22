@@ -65,6 +65,10 @@ public sealed class MachineLog : IDisposable
     private string? _day;
     private bool _full;
     private bool _disposed;
+    private readonly DateTimeOffset _opened;
+    private string? _stopReason;
+    private (string Key, object? Value)[] _stopData = [];
+    private bool _stopSaid;
 
     /// <param name="home">The Daoris home, or null for none: nothing is written.</param>
     /// <param name="source">Which process kind this is: <c>desktop</c>, <c>driver</c>, <c>browser</c>.</param>
@@ -85,6 +89,7 @@ public sealed class MachineLog : IDisposable
         _source = source;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _cap = cap;
+        _opened = _clock();
     }
 
     /// <summary>A log that writes nothing, for code that runs where no log is handed in.</summary>
@@ -112,6 +117,40 @@ public sealed class MachineLog : IDisposable
     public void Warn(string @event, params (string Key, object? Value)[] data) => Write("warn", @event, data);
 
     public void Error(string @event, params (string Key, object? Value)[] data) => Write("error", @event, data);
+
+    /// <summary>
+    /// Tell why this process is stopping, before it does: a door of <see cref="StopReasons"/> and what it knows of the stop. The first
+    /// told is the reason, so a window closed from code for an update stays the update's; nothing is written until <see cref="Stopped"/>.
+    /// </summary>
+    public void StopBecause(string reason, params (string Key, object? Value)[] data)
+    {
+        lock (_gate)
+        {
+            if (_stopReason is not null) return;
+            _stopReason = reason;
+            _stopData = data;
+        }
+    }
+
+    /// <summary>
+    /// The <c>app.stopped</c> line, once: how long this log has been open, and why (<see cref="StopBecause"/>, or
+    /// <see cref="StopReasons.Unknown"/> where no door told), with what the door knew. A second call writes nothing, so every
+    /// way a stop can arrive may say it.
+    /// </summary>
+    public void Stopped()
+    {
+        string reason;
+        (string Key, object? Value)[] told;
+        lock (_gate)
+        {
+            if (_stopSaid) return;
+            _stopSaid = true;
+            reason = _stopReason ?? StopReasons.Unknown;
+            told = _stopData;
+        }
+
+        Info("app.stopped", [("uptimeSeconds", (long)(_clock() - _opened).TotalSeconds), ("reason", reason), .. told]);
+    }
 
     /// <summary>
     /// One line. <paramref name="data"/>'s values are strings, numbers, booleans or null; anything else is
@@ -259,6 +298,7 @@ public sealed class MachineLog : IDisposable
         {
             Failed("unhandled", error, terminating: true);
             Volatile.Write(ref _ended, error);
+            Terminated(error);
             throw;
         }
     }
@@ -268,6 +308,7 @@ public sealed class MachineLog : IDisposable
     {
         if (error is not null && ReferenceEquals(error, Volatile.Read(ref _ended))) return;
         Failed("unhandled", error, terminating);
+        if (terminating) Terminated(error);
     }
 
     /// <summary>
@@ -328,6 +369,13 @@ public sealed class MachineLog : IDisposable
             ("message", error?.Message),
             ("stack", error?.ToString()),
             ("terminating", terminating));
+
+    /// <summary>An exception ending the process is the reason it stops, and its stop is said now: the runtime may end the process before any host stop.</summary>
+    private void Terminated(Exception? error)
+    {
+        StopBecause(StopReasons.Failure, ("type", error?.GetType().FullName));
+        Stopped();
+    }
 
     public void Dispose()
     {

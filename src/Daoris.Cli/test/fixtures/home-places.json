@@ -93,6 +93,7 @@
     "run/sessions/*.pid",
     "run/spawn",
     "run/starts",
+    "run/stop-ask.json",
     "work/brainstorm-rooms/*",
     "work/deps/*",
     "work/evidence/*",

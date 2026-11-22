@@ -520,6 +520,7 @@ public sealed class InstallUpdater(
         log.Info("update.applying", ("build", id), ("version", staged?.Version), ("by", by), ("waitedSeconds", (long)waited));
         // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
         InstallUpdate.Clear(home);
+        log.StopBecause(StopReasons.Update, ("build", id), ("by", by));
         ClosingForUpdate?.Invoke(id);
         close();
         return applying;

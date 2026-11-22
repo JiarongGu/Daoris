@@ -55,7 +55,7 @@ reader skips a line it cannot parse and a field it does not know.
 
 | Event | Source | Data | Why it is kept |
 |---|---|---|---|
-| `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
+| `app.started` / `app.stopped` | every | version, installed, uptime on stop; the desktop's stop also says `reason` (the door it came by, or `unknown`) and what the door knew (`desktop-app` rule 18) | a period of use, a version to blame, and who or what ended it |
 | `error` | every | where, type, message, stack; a request's also method, route, inner (host, HOSTLOG1); terminating, and `where` `start` for an exception that ended the host before it served (host, HOSTSTART1; mcp and driver, HOSTSTART2) | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors; in the desktop, the information of the categories it names too, the kit's single-instance guard's and Chromium engine's, which say a later launch handed over (ONEINSTANCE2). A desktop log from before ONEINSTANCE2 holds none: its container made no loggers |
 | `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |

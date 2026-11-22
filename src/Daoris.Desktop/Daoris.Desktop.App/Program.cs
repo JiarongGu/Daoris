@@ -90,8 +90,8 @@ internal static class Program
         // nothing else catches is written before the process ends; with no home it writes nothing.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
+        using var signals = Daoris.Driver.StopReasons.Listen(log);
         stages.Log = log;
-        var started = DateTimeOffset.UtcNow;
 
         // 🔴 No home is a sentence, not a silent exit. A workspace build started with no
         // DAORIS_HOME throws from the loop's construction, before any window exists, and a windowed
@@ -266,7 +266,8 @@ internal static class Program
         // The application ends with its last main window, not its first: the first, whose form the
         // kit's loop runs on and as which the pickers, the taskbar's count, the tray and the update are resolved, is put away
         // on the person's close while another main window is open, and closed for good when the last of them closes.
-        builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
+        builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log,
+            () => Daoris.Driver.StopAsk.Read(Daoris.Driver.ProgramHome.Named, Environment.ProcessId, DateTimeOffset.UtcNow)));
         // A terminal's press waiting unshown lights the taskbar button of the main window last in front:
         // the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
         builder.Services.AddSingleton(sp => new PressFlash((window, on) =>
@@ -392,7 +393,7 @@ internal static class Program
         });
         builder.OnStopping(app =>
         {
-            log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
+            log.Stopped();
             Daoris.Driver.RunningProcessesLine.Write(log, Daoris.Driver.OwnedProcesses.Shared);
             // A start whose stages never all came (a host that never answered, a pipe another loop's lease kept) is said by now.
             stages.Write();

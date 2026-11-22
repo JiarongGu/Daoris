@@ -20,7 +20,9 @@ namespace Daoris.Desktop;
 /// </remarks>
 /// <param name="end">Closes the first main window for good, which ends the application: from any thread, never blocking.</param>
 /// <param name="log">The shell's machine log: the first put away, and the last main window closed. Null writes none.</param>
-public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? log = null)
+/// <param name="asked">The ask a terminal or a session left before it closed a window from outside, read as the application ends; null for none.</param>
+public sealed class MainWindows(
+    Action? end = null, Daoris.Driver.MachineLog? log = null, Func<(string By, string? Session)?>? asked = null)
 {
     /// <summary>The first main window's name in a log line or a launch's answer: no secondary window wears it (they are numbered from two).</summary>
     public const string First = "main";
@@ -61,7 +63,8 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
     /// The person's close (the caption's button, Alt+F4, the taskbar's), never one from code: the kit reports both as
     /// <c>UserClosing</c>, so the window says which (an update's close and the last main window's are for good).
     /// </param>
-    public bool FirstClosing(bool byPerson)
+    /// <param name="door">The <see cref="Daoris.Driver.StopReasons"/> door of a close that is not the person's; null for one from code.</param>
+    public bool FirstClosing(bool byPerson, string? door = null)
     {
         int others;
         lock (_gate)
@@ -69,6 +72,8 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
             if (!byPerson || _ending || _others.Count == 0)
             {
                 _ending = true;
+                if (byPerson) Because(Daoris.Driver.StopReasons.WindowClosed);
+                else if (door is not null) log?.StopBecause(door);
                 return false;
             }
 
@@ -79,6 +84,17 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
 
         log?.Info("window.away", ("others", others));
         return true;
+    }
+
+    private void Because(string reason, params (string Key, object? Value)[] data)
+    {
+        if (asked?.Invoke() is not { } ask)
+        {
+            log?.StopBecause(reason, data);
+            return;
+        }
+
+        log?.StopBecause(Daoris.Driver.StopReasons.TerminalAsk, [("by", ask.By), ("session", ask.Session), .. data]);
     }
 
     /// <summary>
@@ -93,6 +109,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
             _ending = true;
         }
 
+        Because(Daoris.Driver.StopReasons.LastWindowClosed, ("window", name));
         log?.Info("window.last", ("window", name));
         end?.Invoke();
         return true;

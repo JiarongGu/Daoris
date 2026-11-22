@@ -406,10 +406,58 @@ public sealed class MachineLogTests : IDisposable
 
         Assert.Same(thrown, caught);
         var lines = Lines("2026-09-30.desktop.jsonl");
-        Assert.Equal(2, lines.Length);
+        Assert.Equal(3, lines.Length);
         Assert.Contains("\"where\":\"unhandled\",\"type\":\"System.InvalidOperationException\",\"message\":\"the window's loop ended\"", lines[0]);
         Assert.Contains("\"terminating\":true", lines[0]);
-        Assert.Contains("\"type\":\"System.IO.IOException\"", lines[1]);
+        // The first terminating failure is the stop's reason and says it; the second is written and changes nothing.
+        Assert.Contains("\"event\":\"app.stopped\"", lines[1]);
+        Assert.Contains("\"reason\":\"unhandled-failure\",\"type\":\"System.InvalidOperationException\"", lines[1]);
+        Assert.Contains("\"type\":\"System.IO.IOException\"", lines[2]);
+        Assert.Contains("\"event\":\"error\"", lines[2]);
+    }
+
+    /// <summary>A stop no door told is said as unknown, and the stop is said once however many ways it arrives.</summary>
+    [Fact]
+    public void A_stop_no_door_told_says_unknown_and_is_written_once()
+    {
+        using var log = Log();
+
+        log.Stopped();
+        log.Stopped();
+
+        var line = Assert.Single(Lines("2026-09-30.desktop.jsonl"));
+        Assert.Contains("\"event\":\"app.stopped\",\"data\":{\"uptimeSeconds\":0,\"reason\":\"unknown\"}", line);
+    }
+
+    /// <summary>The first reason told is the stop's, with what its door knew and the uptime from the log's opening.</summary>
+    [Fact]
+    public void The_first_reason_told_is_the_stops_and_carries_what_its_door_knew()
+    {
+        using var log = Log();
+
+        log.StopBecause(StopReasons.Update, ("build", "b1"), ("by", "now"));
+        log.StopBecause(StopReasons.WindowClosed);
+        _now = _now.AddSeconds(6708);
+        log.Stopped();
+
+        var line = Assert.Single(Lines("2026-09-30.desktop.jsonl"));
+        Assert.Contains("\"data\":{\"uptimeSeconds\":6708,\"reason\":\"update\",\"build\":\"b1\",\"by\":\"now\"}", line);
+    }
+
+    /// <summary>A terminal's ask to end the process says its signal, and the stop at once, since the runtime may end the process after.</summary>
+    [Theory]
+    [InlineData(System.Runtime.InteropServices.PosixSignal.SIGTERM)]
+    [InlineData(System.Runtime.InteropServices.PosixSignal.SIGINT)]
+    [InlineData(System.Runtime.InteropServices.PosixSignal.SIGHUP)]
+    public void A_terminals_signal_is_told_as_the_reason_and_the_stop_said(System.Runtime.InteropServices.PosixSignal signal)
+    {
+        using var log = Log();
+
+        StopReasons.Told(log, signal);
+        log.Stopped();
+
+        var line = Assert.Single(Lines("2026-09-30.desktop.jsonl"));
+        Assert.Contains($"\"reason\":\"signal\",\"signal\":\"{signal}\"", line);
     }
 
     /// <summary>The desktop runs its application through that watch.</summary>

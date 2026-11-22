@@ -40,6 +40,7 @@
     <!-- Each refusal and each grant taken, a coded line in the driver's machine log of the day (GITAUTH1b, the git-auth design §11). -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitLog.cs" Link="GitLog.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\MachineLog.cs" Link="MachineLog.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\StopReasons.cs" Link="StopReasons.cs" />
     <!-- The identities, the pointers and their resolution, the folder's repository, and Daoris's ssh files (GITAUTH1c, the git-auth
          design §3.2 and §4.2): the door hands an identity's key from the files alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitIdentities.cs" Link="GitIdentities.cs" />

@@ -42,7 +42,7 @@ public static class HomeHistory
         HomeEntry.TreeFiles, HomeEntry.Places, HomeEntry.Plans, HomeEntry.Evidence,
         HomeEntry.Toolchain, HomeEntry.ToolVersions, HomeEntry.Bin,
         HomeEntry.HomeLease, HomeEntry.Running, HomeEntry.Locks, HomeEntry.Spawn, HomeEntry.Starts, HomeEntry.Hooks,
-        HomeEntry.Probing, HomeEntry.SessionPids, HomeEntry.Requests, HomeEntry.EdgeRecord, HomeEntry.Pipe,
+        HomeEntry.Probing, HomeEntry.SessionPids, HomeEntry.Requests, HomeEntry.EdgeRecord, HomeEntry.StopAsk, HomeEntry.Pipe,
         HomeEntry.GitHeld, HomeEntry.GitGrants, HomeEntry.GitUsed, HomeEntry.GitAsks, HomeEntry.GitCheckouts, HomeEntry.GitLibrary,
         HomeEntry.GitLibraryLeases, HomeEntry.GitHome, HomeEntry.GitSessions, HomeEntry.ClockMark, HomeEntry.Logs,
     ];

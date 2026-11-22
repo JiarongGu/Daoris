@@ -193,6 +193,7 @@ export const HOME_ENTRIES = [
   row('session-pids', 'run', 'run/sessions/*.pid'),
   row('requests', 'run', 'run/requests'),
   row('edge-record', 'run', 'run/edge.json'),
+  row('stop-ask', 'run', 'run/stop-ask.json'),
   row('pipe', 'run', 'run/pipe'),
   row('git-held', 'run', 'run/git/held.json'),
   row('git-grants', 'run', 'run/git/grants'),

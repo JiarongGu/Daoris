@@ -44,8 +44,10 @@ public sealed class InstallUpdaterTests : Bridge
 
     private string DataHome => Path.Combine(_install, "data");
 
+    private MachineLog _log = MachineLog.None;
+
     private InstallUpdater Updater(string? install = "") => new(
-        install == "" ? _install : install, DataHome, new MachineLog(DataHome, "desktop", () => Now),
+        install == "" ? _install : install, DataHome, _log = new MachineLog(DataHome, "desktop", () => Now),
         work: () => _reads?.Invoke() ?? _work,
         relaunch: _ =>
         {
@@ -201,6 +203,27 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(UpdateStates.Applying, now.State);
         Assert.Null(now.Since);
         Assert.True(updater.Applying);
+    }
+
+    /// <summary>The close an update ends in is the update's stop: the machine log says which build and what asked.</summary>
+    [Theory]
+    [InlineData(UpdateMode.Now, "now")]
+    [InlineData(UpdateMode.WhenIdle, "idle")]
+    public async Task The_close_an_update_ends_in_names_the_update_as_the_reason_and_what_asked(string mode, string by)
+    {
+        Stage("b1");
+        _work = new UpdateWork(Driven: 0, Turns: 0);
+        using var updater = Updater();
+
+        await updater.SayAsync(mode, "screen");
+        await updater.LookAsync();
+        _log.StopBecause(StopReasons.WindowClosed);
+        _log.Stopped();
+
+        var stopped = Logged("app.stopped").Single();
+        Assert.Equal("update", stopped["reason"]!.GetValue<string>());
+        Assert.Equal("b1", stopped["build"]!.GetValue<string>());
+        Assert.Equal(by, stopped["by"]!.GetValue<string>());
     }
 
     [Fact]

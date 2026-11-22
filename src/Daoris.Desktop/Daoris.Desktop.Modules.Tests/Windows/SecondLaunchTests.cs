@@ -177,12 +177,13 @@ public sealed class SecondLaunchTests
         var host = File.ReadAllText(Path.Combine(app, "SecondaryWindowHost.cs"));
         var tray = File.ReadAllText(Path.Combine(app, "SessionNotifier.cs"));
 
-        Assert.Contains("new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood()", program);
+        Assert.Contains("new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log,", program);
+        Assert.Contains("Daoris.Driver.StopAsk.Read(Daoris.Driver.ProgramHome.Named, Environment.ProcessId", program);
         Assert.Contains("close: () => sp.GetRequiredService<MainForm>().CloseForGood()", program);
         Assert.Contains("showFirst: () => sp.GetRequiredService<MainForm>().TakeBack()", program);
         Assert.DoesNotContain("form.BeginInvoke(form.Close)", program);
 
-        Assert.Contains("_mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood) == true", form);
+        Assert.Contains("_mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood, door) == true", form);
         Assert.Contains("_mains?.Shown()", form);
         Assert.Contains("mains?.Opened(name)", host);
         Assert.Contains("mains?.Closed(name)", host);

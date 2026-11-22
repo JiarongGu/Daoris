@@ -154,6 +154,103 @@ public sealed class MainWindowsTests : IDisposable
         Assert.False(MainWindows.IsMain("main:1"));
     }
 
+    /// <summary>
+    /// A close by each door names its door in the stop: the person's close of the only main window, the last of several, the
+    /// system's shutdown, the task manager; a close from code names none, so its own door's reason (an update's) stands.
+    /// </summary>
+    [Theory]
+    [InlineData("only", StopReasons.WindowClosed)]
+    [InlineData("last", StopReasons.LastWindowClosed)]
+    [InlineData(StopReasons.SystemShutdown, StopReasons.SystemShutdown)]
+    [InlineData(StopReasons.TaskManager, StopReasons.TaskManager)]
+    [InlineData("code", StopReasons.Unknown)]
+    public void A_close_names_the_door_it_came_by_in_the_stop(string how, string reason)
+    {
+        using (var log = new MachineLog(_home, "desktop"))
+        {
+            var windows = Windows(log);
+            switch (how)
+            {
+                case "only":
+                    Assert.False(windows.FirstClosing(byPerson: true));
+                    break;
+                case "last":
+                    windows.Opened("main:2");
+                    Assert.True(windows.FirstClosing(byPerson: true));
+                    Assert.True(windows.Closed("main:2"));
+                    break;
+                case "code":
+                    Assert.False(windows.FirstClosing(byPerson: false));
+                    break;
+                default:
+                    windows.Opened("main:2");
+                    Assert.False(windows.FirstClosing(byPerson: false, door: how));
+                    break;
+            }
+
+            log.Stopped();
+        }
+
+        var stopped = StoppedLine();
+        Assert.Contains($"\"reason\":\"{reason}\"", stopped);
+        if (how == "last") Assert.Contains("\"window\":\"main:2\"", stopped);
+    }
+
+    /// <summary>
+    /// The close the desktop tool makes (`kill`, `restart`) reaches the window as the person's; the ask it left in the home, in the shape the
+    /// tool writes, is what names its door, for the only window and for the last of several. An ask for another process, or a stale one, names none.
+    /// </summary>
+    [Theory]
+    [InlineData("only", 4242, 0, StopReasons.TerminalAsk)]
+    [InlineData("last", 4242, 0, StopReasons.TerminalAsk)]
+    [InlineData("only", 99, 0, StopReasons.WindowClosed)]
+    [InlineData("only", 4242, 600, StopReasons.WindowClosed)]
+    public void A_close_the_desktop_tool_made_names_the_terminal_ask_in_the_stop(string how, int pid, int ageSeconds, string reason)
+    {
+        var now = new DateTimeOffset(2026, 11, 23, 9, 0, 0, TimeSpan.Zero);
+        var at = now.AddSeconds(-ageSeconds).ToString("o");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.StopAsk), $$"""{"pids":[4242],"by":"desktop-tool","at":"{{at}}","session":"76cdd5db"}""");
+        using (var log = new MachineLog(_home, "desktop"))
+        {
+            var windows = new MainWindows(() => _ended++, log, () => StopAsk.Read(_home, pid, now));
+            if (how == "last")
+            {
+                windows.Opened("main:2");
+                Assert.True(windows.FirstClosing(byPerson: true));
+                Assert.True(windows.Closed("main:2"));
+            }
+            else
+            {
+                Assert.False(windows.FirstClosing(byPerson: true));
+            }
+
+            log.Stopped();
+        }
+
+        var stopped = StoppedLine();
+        Assert.Contains($"\"reason\":\"{reason}\"", stopped);
+        if (reason == StopReasons.TerminalAsk) Assert.Contains("\"by\":\"desktop-tool\",\"session\":\"76cdd5db\"", stopped);
+    }
+
+    /// <summary>The person's close that only puts the first window away stops nothing, and tells no reason.</summary>
+    [Fact]
+    public void A_window_put_away_is_no_stop_and_tells_no_reason()
+    {
+        using (var log = new MachineLog(_home, "desktop"))
+        {
+            var windows = Windows(log);
+            windows.Opened("main:2");
+            Assert.True(windows.FirstClosing(byPerson: true));
+            log.Stopped();
+        }
+
+        Assert.Contains("\"reason\":\"unknown\"", StoppedLine());
+    }
+
+    private string StoppedLine() => Assert.Single(
+        Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs)).SelectMany(File.ReadAllLines),
+        line => line.Contains("\"event\":\"app.stopped\""));
+
     [Fact]
     public void The_machine_log_says_the_first_put_away_and_the_last_main_window_closed()
     {
