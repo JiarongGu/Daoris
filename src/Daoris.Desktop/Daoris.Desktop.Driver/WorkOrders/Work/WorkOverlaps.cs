@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The look's half of rows that touch the same files: what each running unit of this machine has
-/// changed since it opened, for the planner's comparison at a start (<see cref="Snapshot.Changed"/>), and the observed overlap of two running
+/// changed since its own merge base (<see cref="BaseAsync"/>), for the planner's comparison at a start (<see cref="Snapshot.Changed"/>), and the observed overlap of two running
 /// units of one repository, each told once as an ordinary word.
 /// </summary>
 /// <remarks>
@@ -13,38 +13,65 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WorkOverlaps
 {
-    /// <summary>The paths a tree changed since <c>before</c>, committed or not, or null where git cannot say.</summary>
-    public delegate Task<IReadOnlyList<string>?> Diff(string tree, string before, CancellationToken ct);
+    /// <summary>The paths a tree changed since <c>before</c>, committed or not, or null where git cannot say; <c>line</c> is the line the person set, null to ask git's guess.</summary>
+    public delegate Task<IReadOnlyList<string>?> Diff(string tree, string before, string? line, CancellationToken ct);
 
     /// <summary>Says a word to a running session under its key.</summary>
     public delegate Task Say(string session, string text, string key, CancellationToken ct);
 
     private static string ToldPath(string home) => DaorisHome.Entry(home, HomeEntry.OverlapsTold);
 
-    /// <summary>The snapshot with each running unit's changed paths and the quests whose integration request is open.</summary>
-    public static async Task<Snapshot> LookAsync(Snapshot snapshot, IReadOnlySet<string> integrating, Diff diff, CancellationToken ct = default)
+    /// <summary>The snapshot with each running unit's changed paths and the quests whose integration request is open; <paramref name="lineOf"/> says the line set for a session's repository.</summary>
+    public static async Task<Snapshot> LookAsync(
+        Snapshot snapshot, IReadOnlySet<string> integrating, Diff diff, CancellationToken ct = default, Func<SessionView, string?>? lineOf = null)
     {
         var changed = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var session in Own(snapshot))
         {
             if (changed.ContainsKey(session.Quest!)) continue;
-            if (await diff(session.Tree!, session.BaseCommit!, ct).ConfigureAwait(false) is { } paths) changed[session.Quest!] = paths;
+            if (await diff(session.Tree!, session.BaseCommit!, lineOf?.Invoke(session), ct).ConfigureAwait(false) is { } paths) changed[session.Quest!] = paths;
         }
 
         return snapshot with { Changed = changed, Integrating = integrating };
     }
 
     /// <summary>git's names of the paths <c>before</c> differs from the tree in, where the tree is its own checkout's top level.</summary>
-    public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, CancellationToken ct) =>
-        !WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false) ? null : await NamesAsync(tree, before, ct).ConfigureAwait(false);
+    public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, string? line, CancellationToken ct) =>
+        !WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false) ? null : await NamesAsync(tree, before, line, ct).ConfigureAwait(false);
 
-    /// <summary>git's names of the paths <c>before</c> differs from <paramref name="tree"/> in, the tree known to be its checkout's top level.</summary>
-    internal static async Task<IReadOnlyList<string>?> NamesAsync(string tree, string before, CancellationToken ct)
+    /// <summary>git's names of the paths the tree changed since every one of <see cref="BasesAsync"/>, the tree known to be its checkout's top level.</summary>
+    internal static async Task<IReadOnlyList<string>?> NamesAsync(string tree, string before, string? line, CancellationToken ct)
     {
-        var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", before], ct).ConfigureAwait(false);
-        return code == 0
-            ? [.. stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)]
-            : null;
+        IReadOnlyList<string>? kept = null;
+        foreach (var from in await BasesAsync(tree, before, line, ct).ConfigureAwait(false))
+        {
+            var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", from], ct).ConfigureAwait(false);
+            if (code != 0) return null;
+            var names = stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            kept = kept is null ? [.. names.Order(StringComparer.Ordinal)] : [.. kept.Intersect(names, StringComparer.Ordinal)];
+        }
+
+        return kept;
+    }
+
+    /// <summary>The commits a tree's own changes are counted from: <paramref name="before"/> and its merge bases with the line's local and remote refs, those no other leads on to.</summary>
+    internal static async Task<IReadOnlyList<string>> BasesAsync(string tree, string before, string? line, CancellationToken ct)
+    {
+        var name = line is { Length: > 0 } ? line : await LineGuesses.Shared.GuessAsync(tree, ct).ConfigureAwait(false);
+        if (name is not { Length: > 0 }) return [before];
+        name = name.StartsWith("origin/", StringComparison.Ordinal) ? name["origin/".Length..] : name;
+        var bases = new List<string> { before };
+        foreach (var fork in new[] { $"refs/heads/{name}", $"refs/remotes/origin/{name}" })
+        {
+            var (code, shared, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "merge-base", "HEAD", fork], ct).ConfigureAwait(false);
+            if (code == 0 && WorkingTree.IsCommitId(shared.Trim()) && !bases.Contains(shared.Trim(), StringComparer.Ordinal)) bases.Add(shared.Trim());
+        }
+
+        if (bases.Count == 1) return bases;
+        var (independent, names, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "merge-base", "--independent", .. bases], ct).ConfigureAwait(false);
+        return independent == 0 && names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } latest
+            ? latest
+            : bases;
     }
 
     /// <summary>
@@ -53,9 +80,11 @@ public static class WorkOverlaps
     /// </summary>
     public static async Task TellAsync(string home, Snapshot snapshot, Say say, CancellationToken ct = default)
     {
-        var running = Own(snapshot).Where(s => snapshot.Changed.ContainsKey(s.Quest!)).ToList();
+        var own = Own(snapshot).ToList();
+        var running = own.Where(s => snapshot.Changed.ContainsKey(s.Quest!)).ToList();
         var told = Told(home);
-        var kept = told.Where(key => running.Any(s => key.StartsWith($"overlap/{s.Id}/", StringComparison.Ordinal))).ToHashSet(StringComparer.Ordinal);
+
+        var kept = told.Where(key => own.Any(s => key.StartsWith($"overlap/{s.Id}/", StringComparison.Ordinal))).ToHashSet(StringComparer.Ordinal);
         foreach (var one in running)
         {
             foreach (var other in running.Where(other => other.Quest != one.Quest

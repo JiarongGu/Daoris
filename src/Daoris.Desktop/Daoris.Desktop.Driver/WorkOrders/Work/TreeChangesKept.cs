@@ -30,7 +30,7 @@ internal sealed class TreeChangesKept
     internal static TreeChangesKept Of(string home) => Homes.GetOrAdd(Path.GetFullPath(home), _ => new TreeChangesKept(() => DateTimeOffset.UtcNow));
 
     /// <summary>The paths <paramref name="tree"/> changed since <paramref name="before"/> (<see cref="WorkOverlaps.Diff"/>): kept where nothing moved.</summary>
-    internal async Task<IReadOnlyList<string>?> ReadAsync(string tree, string before, CancellationToken ct)
+    internal async Task<IReadOnlyList<string>?> ReadAsync(string tree, string before, string? line, CancellationToken ct)
     {
         string key;
         try
@@ -39,34 +39,34 @@ internal sealed class TreeChangesKept
         }
         catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            return await WorkOverlaps.DiffAsync(tree, before, ct).ConfigureAwait(false);
+            return await WorkOverlaps.DiffAsync(tree, before, line, ct).ConfigureAwait(false);
         }
 
         var now = _clock();
         Sweep(now);
-        if (!WorkingTree.IsCommitId(before) || Stamp(key, before) is not { } stamp)
+        if (!WorkingTree.IsCommitId(before) || Stamp(key, before, line) is not { } stamp)
         {
             _trees.TryRemove(key, out _);
-            return await WorkOverlaps.DiffAsync(tree, before, ct).ConfigureAwait(false);
+            return await WorkOverlaps.DiffAsync(tree, before, line, ct).ConfigureAwait(false);
         }
 
         if (_trees.TryGetValue(key, out var kept) && kept.Stamp == stamp && now - kept.At < Again) return kept.Paths;
 
         // The tree's own .git is its top level, so the diff is the one start.
-        var paths = await WorkOverlaps.NamesAsync(tree, before, ct).ConfigureAwait(false);
+        var paths = await WorkOverlaps.NamesAsync(tree, before, line, ct).ConfigureAwait(false);
         if (paths is null) _trees.TryRemove(key, out _);
         else _trees[key] = new Kept(stamp, now, paths);
         return paths;
     }
 
     /// <summary>What a tree's read rests on, from git's files; null where the tree has no <c>.git</c> of its own or a file cannot be read.</summary>
-    private static string? Stamp(string tree, string before)
+    private static string? Stamp(string tree, string before, string? line)
     {
         try
         {
             if (GitBranches.GitDirectory(tree) is not { } own || TreeTips.Read(tree) is not { } head) return null;
             var index = new FileInfo(Path.Combine(own, "index"));
-            return string.Join('\n', before, head, index.Exists ? $"{index.Length}:{index.LastWriteTimeUtc.Ticks}" : "none");
+            return string.Join('\n', before, line ?? "", head, index.Exists ? $"{index.Length}:{index.LastWriteTimeUtc.Ticks}" : "none");
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

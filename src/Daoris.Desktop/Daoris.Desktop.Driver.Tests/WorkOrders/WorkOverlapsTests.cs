@@ -30,7 +30,7 @@ public sealed class WorkOverlapsTests : IDisposable
         var asked = new List<string>();
         var snapshot = new Snapshot([], [], [Running("s1", "q1"), Running("s2", "q2"), Running("origin/s3", "q3"), new SessionView("s4", "Game")]);
 
-        var looked = await WorkOverlaps.LookAsync(snapshot, new HashSet<string> { "q9" }, (tree, _, _) =>
+        var looked = await WorkOverlaps.LookAsync(snapshot, new HashSet<string> { "q9" }, (tree, _, _, _) =>
         {
             asked.Add(tree);
             return Task.FromResult<IReadOnlyList<string>?>([$"{tree[^2..]}/file.cs"]);
@@ -39,6 +39,21 @@ public sealed class WorkOverlapsTests : IDisposable
         Assert.Equal(["D:/trees/s1", "D:/trees/s2"], asked);
         Assert.Equal(["s1/file.cs"], looked.Changed["q1"]);
         Assert.Contains("q9", looked.Integrating);
+    }
+
+    [Fact]
+    public async Task The_look_hands_each_read_the_line_set_for_its_sessions_repository()
+    {
+        var lines = new List<string?>();
+        var snapshot = new Snapshot([], [], [Running("s1", "q1")]);
+
+        await WorkOverlaps.LookAsync(snapshot, new HashSet<string>(), (_, _, line, _) =>
+        {
+            lines.Add(line);
+            return Task.FromResult<IReadOnlyList<string>?>([]);
+        }, lineOf: session => $"line-of-{session.Repository}");
+
+        Assert.Equal(["line-of-Game"], lines);
     }
 
     [Fact]
@@ -80,6 +95,25 @@ public sealed class WorkOverlapsTests : IDisposable
         Assert.Equal(2, said.Count);
         Assert.Contains(said, word => word.Session == "s1" && word.Text.Contains("overlaps `#q2`: `src/b.cs`", StringComparison.Ordinal));
         Assert.Contains(said, word => word.Session == "s2" && word.Text.Contains("overlaps `#q1`: `src/b.cs`", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_notice_said_is_not_said_again_after_a_look_that_could_not_read_one_of_the_trees()
+    {
+        var said = 0;
+        Task Say(string session, string text, string key, CancellationToken ct)
+        {
+            said++;
+            return Task.CompletedTask;
+        }
+
+        var both = Two(["src/b.cs"], ["src/b.cs"]);
+        var unread = both with { Changed = new Dictionary<string, IReadOnlyList<string>> { ["q2"] = ["src/b.cs"] } };
+        await WorkOverlaps.TellAsync(_home, both, Say);
+        await WorkOverlaps.TellAsync(_home, unread, Say);
+        await WorkOverlaps.TellAsync(_home, both, Say);
+
+        Assert.Equal(2, said);
     }
 
     [Fact]

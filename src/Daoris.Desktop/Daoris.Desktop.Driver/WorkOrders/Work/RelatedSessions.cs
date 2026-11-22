@@ -93,7 +93,7 @@ public sealed class RelatedSessions(RelatedSessions.Reads reads, Func<DateTimeOf
         if (!session.Running && dirty == false && _clean.TryGetValue(session.Tree, out var kept) && kept.Key == key)
             return (kept.Paths, kept.At);
 
-        var paths = dirty is null ? null : await reads.Diff(session.Tree, session.BaseCommit, ct).ConfigureAwait(false);
+        var paths = dirty is null ? null : await reads.Diff(session.Tree, session.BaseCommit, null, ct).ConfigureAwait(false);
         if (paths is null)
         {
             _clean.Remove(session.Tree);

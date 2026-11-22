@@ -92,10 +92,10 @@ public sealed class RelatedSessionsTests : IDisposable
         var diffs = 0;
         var reads = RelatedSessions.GitReads with
         {
-            Diff = (tree, before, ct) =>
+            Diff = (tree, before, line, ct) =>
             {
                 if (tree == ended) diffs++;
-                return RelatedSessions.GitReads.Diff(tree, before, ct);
+                return RelatedSessions.GitReads.Diff(tree, before, line, ct);
             },
         };
         var related = new RelatedSessions(reads, () => DateTimeOffset.UtcNow);
@@ -153,7 +153,7 @@ public sealed class RelatedSessionsTests : IDisposable
         var fail = false;
         var reads = RelatedSessions.GitReads with
         {
-            Diff = (tree, before, ct) => fail && tree == chat ? Task.FromResult<IReadOnlyList<string>?>(null) : RelatedSessions.GitReads.Diff(tree, before, ct),
+            Diff = (tree, before, line, ct) => fail && tree == chat ? Task.FromResult<IReadOnlyList<string>?>(null) : RelatedSessions.GitReads.Diff(tree, before, line, ct),
         };
         var at = DateTimeOffset.Parse("2026-10-31T10:00:00Z");
         var related = new RelatedSessions(reads, () => at);
