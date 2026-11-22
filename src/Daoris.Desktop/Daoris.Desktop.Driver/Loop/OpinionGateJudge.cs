@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -383,7 +382,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
 
         var reading = choice;
 
-        var watch = Stopwatch.StartNew();
+        var started = _context.Clock.GetTimestamp();
         var ask = new OpinionPassAsk(occasion, due.Session, due.Repository, root, start ?? tip, tip, rule)
         {
             Workspace = due.Workspace,
@@ -429,7 +428,7 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         }
 
         var view = await Service.Opinions.ReadAsync(run.Opinion, ct).ConfigureAwait(false);
-        if (view is { Given: true }) Service.LandingSaid(OpinionLines.Given(view, (long)watch.Elapsed.TotalSeconds));
+        if (view is { Given: true }) Service.LandingSaid(OpinionLines.Given(view, (long)_context.Clock.GetElapsedTime(started).TotalSeconds));
         else if (view is { State: OpinionViews.Failed }) Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, view.Why ?? "ended"));
         return $"opinion  {run.Line}";
     }

@@ -517,8 +517,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
     the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
     waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
-    by the person), never *working*: the run's view reads the gate in the work's tree here wherever its step stands on it
-    (`IWorkflowRunRecords.OpinionAsync`), as every landing door does, so the wait carries the gate's count and session. The one recheck is
+    by the person; a dispute says whose musts it holds, the first pass's the session did not fix and the recheck's own), never *working*: so
+    is every other hold, each a wait of its own saying who holds it and why: a pass still reading (`reading`, `rechecking`, its reviewer's,
+    and `reading-until`, `rechecking-until` where its minutes name an end), one nothing has asked (`not-asked` for the driver's next look,
+    `not-asked-held` and `not-asked-press` the person's, `not-asked-recheck`), a gate git could not read (`unread`), the chain's later step
+    (`waits-chain`), a required one nobody is free to read (`vacant`, `vacant-until` where a cool-off names its reset) and a required one no
+    pass could settle for another reason, a provider that kept failing among them (`unavailable`, the person's). The run's view reads the
+    gate in the work's tree here wherever its step stands on it (`IWorkflowRunRecords.OpinionAsync`), at the occasion its rule reads at, so
+    the wait carries the gate's count and session; a read that failed for any cause but a cancel, or a folder with no git of its own (git
+    would answer with the repository around it), is a gate *unread* saying why, and a gate already unread keeps its own reason, never a
+    failed view. A pass's seconds are counted on the driver's clock (`LoopContext.Clock`). The one recheck is
     a pass of its own: `opinion.asked` said as the host opens it, `opinion.given` with the seconds from its open, and its consultation kept
     beside it once given (`OpinionDeliveries.RecheckConsulted`); one kept with its diff alone gets it at the next look, read as given and
     never asked again. Its findings never go back to the working session: the gate holds them as disputes, and `opinion show` lists the

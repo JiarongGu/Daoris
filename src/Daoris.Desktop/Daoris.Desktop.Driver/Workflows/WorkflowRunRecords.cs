@@ -76,22 +76,37 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
         return new ChatTreeTip(head, beyond);
     }
 
-    /// <summary>The second opinion's gate, read in the work's tree as a landing door reads it; null where the tree is gone or a read failed.</summary>
+    /// <summary>
+    /// The second opinion's gate, read in the work's tree at the occasion its rule reads at; null where the tree is gone. A read that
+    /// failed for any cause but the caller's own cancel, or that found no commit, is a gate <i>unread</i> saying why, never a failed view.
+    /// </summary>
     public async Task<OpinionGateState?> OpinionAsync(RunOpinionRead read, CancellationToken ct)
     {
         if (!Directory.Exists(read.Tree)) return null;
         try
         {
-            return await new SessionTrees(home).OpinionAsync(
-                    read.Tree, read.Repository, read.Workspace, read.Quest, read.Session, read.World, read.Review, OpinionRules.Landing, ct, read.Process,
+            var gate = await new SessionTrees(home).OpinionAsync(
+                    read.Tree, read.Repository, read.Workspace, read.Quest, read.Session, read.World, read.Review, OccasionOf(read.Process), ct, read.Process,
                     read.At, read.Run)
                 .ConfigureAwait(false);
+            if (gate.State is OpinionGateStates.None or OpinionGateStates.Unread) return gate;
+            if (PlaceKind.At(read.Tree) != PlaceKind.Git) return Unread(read, "the tree has no git of its own, so what would land is not known");
+            return gate.Tip is null ? Unread(read, "the tree's commit could not be read, so what would land is not known") : gate;
         }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
-                                          or UnauthorizedAccessException)
+        catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
         {
-            // A gate that does not read says nothing: the step stays as its record holds it, never moved on a guess.
-            return null;
+            return Unread(read, error.Message);
         }
     }
+
+    /// <summary>The occasion the run's rule reads at: landing, or only before each next step where the rule names no landing.</summary>
+    internal static string OccasionOf(IWorkplaceProcess process) =>
+        process.Opinion is { } rule && !rule.Rule.On.Contains(OpinionRules.Landing) && rule.Rule.On.Contains(OpinionRules.Steps)
+            ? OpinionRules.Steps
+            : OpinionRules.Landing;
+
+    private static OpinionGateState Unread(RunOpinionRead read, string problem) => new(OpinionGateStates.Unread, read.Repository)
+    {
+        Rule = read.Process.Opinion, Session = read.Session, Run = read.Quest is null ? read.Run : null, Problem = problem.TrimEnd().TrimEnd('.'),
+    };
 }

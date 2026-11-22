@@ -316,14 +316,17 @@ public sealed class OpinionRecheckTests : IDisposable
         var client = host.Client();
         var said = new List<LandingLine>();
         client.LandingLined += said.Add;
+        var clock = new SteppedClock();
         var driver = Driver(client, git, (ask, choice) =>
         {
             ask.Opened?.Invoke("op2", "r-op2");
             Assert.Equal("opinion.asked", said[^1].Event);
+            // The pass reads for 2 minutes 5 seconds on the clock the driver counts it by.
+            clock.Advance(TimeSpan.FromSeconds(125));
             host.Opinion("op2", "s1", weights: ["must"], pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base);
             host.Rechecked("op2", 1, "withdrawn");
             return new OpinionPassRun("completed  second opinion op2", true) { Opinion = "op2", Session = "r-op2", State = "completed" };
-        });
+        }, clock);
         await driver.DeliverAsync("op1", AskedAt(tip));
         host.Take("s1");
         host.Answer("op1", 1, "fixed", commit: fix);
@@ -335,7 +338,7 @@ public sealed class OpinionRecheckTests : IDisposable
         Assert.Equal(("op2", "s1", "recheck", (object?)"codex-acp"), (asked["opinion"], asked["session"], asked["pass"], asked["door"]));
         var given = said.Single(line => line.Event == "opinion.given").Data.ToDictionary(pair => pair.Key, pair => pair.Value);
         Assert.Equal(("op2", (object?)1), (given["opinion"], given["must"]));
-        Assert.IsType<long>(given["seconds"]);
+        Assert.Equal(125L, given["seconds"]);
         var consultation = Path.Combine(OpinionPackets.Folder(_home, "op2"), OpinionDeliveries.ConsultationFile);
         var kept = File.ReadAllText(consultation);
         Assert.Contains("\"subject\": \"op2\"", kept);
@@ -441,12 +444,13 @@ public sealed class OpinionRecheckTests : IDisposable
     }
 
     /// <summary>A driver over <paramref name="client"/> whose passes <paramref name="pass"/> answers once chosen, each kept in order.</summary>
-    private Daoris.Driver.Driver Driver(ServiceClient client, StandInGit git, Func<OpinionPassAsk, ReviewerChoice, OpinionPassRun> pass)
+    private Daoris.Driver.Driver Driver(ServiceClient client, StandInGit git, Func<OpinionPassAsk, ReviewerChoice, OpinionPassRun> pass, TimeProvider? clock = null)
     {
         var (adapters, roster) = Machine();
         return new Daoris.Driver.Driver(client, DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code-acp") }, adapters, _home, harnesses: roster)
         {
             OpinionGit = git.Read,
+            Clock = clock ?? new SteppedClock(),
             Passes = (ask, choice, _) =>
             {
                 if (!choice.Chosen) return Task.FromResult(OpinionPassRun.Unavailable(choice));
@@ -493,4 +497,16 @@ public sealed class OpinionRecheckTests : IDisposable
 
     /// <summary>The disputes as text, first pass's then the recheck's, so a comparison reads their numbers rather than the lists.</summary>
     private static string Disputes(OpinionDisputes disputes) => $"first [{string.Join(",", disputes.First)}] raised [{string.Join(",", disputes.Raised)}]";
+
+    /// <summary>A clock that moves only where the test moves it, which a pass's seconds are counted on.</summary>
+    private sealed class SteppedClock : TimeProvider
+    {
+        private long _ticks;
+
+        public void Advance(TimeSpan by) => _ticks += (long)(by.TotalSeconds * TimestampFrequency);
+
+        public override long GetTimestamp() => _ticks;
+
+        public override long TimestampFrequency => 1_000;
+    }
 }

@@ -41,8 +41,8 @@ public static class OpinionGateWords
                 $"Waits for a second opinion: the working session is answering {Plural(gate.Opinion!.Findings!.Count, "finding")} by {who}.",
             OpinionGateStates.ReadAgain => $"Waits for a second opinion: read again by {who}, the commits made in answer.",
             OpinionGateStates.Disputed =>
-                $"{Plural(gate.Disputes!.Count, "finding")} by {who} {(gate.Disputes.Count == 1 ? "is" : "are")} disputed: a `must` the working "
-                + "session did not fix and no recheck withdrew" + SinceSaid(gate) + $". {Verb(gate, "show")} lists them with their answers; your "
+                $"{Plural(gate.Disputes!.Count, "finding")} by {who} {(gate.Disputes.Count == 1 ? "is" : "are")} disputed: "
+                + Whose(gate.Disputes) + SinceSaid(gate) + $". {Verb(gate, "show")} lists them with their answers; your "
                 + $"Accept, or your Reviewed where a look is required, answers them; {anyway} lands it over them, or "
                 + $"`daoris session say {gate.Opinion!.Working} \"…\"` sends it back." + RoleSaid(gate),
             OpinionGateStates.CommitsSince =>
@@ -117,16 +117,18 @@ public static class OpinionGateWords
             : $"{(gate.Rule.Source == OpinionSource.Repository ? $"`{gate.Repository}`'s rule" : "the workspace's rule")} reads before each next "
               + "step, not before landing";
 
-    private static string UnavailableWhy(OpinionGateState gate) => gate.Code switch
+    private static string UnavailableWhy(OpinionGateState gate) => UnavailableWhy(gate.Code, gate.Until, gate.Opinion);
+
+    internal static string UnavailableWhy(string? code, DateTimeOffset? until, OpinionView? opinion) => code switch
     {
         ReviewerUnavailable.NoReviewer => "no listed reviewer of another maker is installed",
         ReviewerUnavailable.Cooling => "every listed reviewer of another maker is cooling"
-            + (gate.Until is { } until ? $" until {until.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC, when the driver asks again" : ""),
+            + (until is { } reset ? $" until {reset.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC, when the driver asks again" : ""),
         ReviewerUnavailable.SignedOut => "no listed reviewer of another maker has an account signed in",
         ReviewerUnavailable.NotIndependent => "no listed reviewer is another maker's agent",
-        "ended" => $"{gate.Opinion?.Who ?? "its reviewer"} ended without saying one",
-        OpinionViews.Transient => $"{gate.Opinion?.Who ?? "its reviewer"}'s provider kept failing before it said one",
-        "out-of-time" => $"{gate.Opinion?.Who ?? "its reviewer"} ran out of its minutes before it said one",
+        "ended" => $"{opinion?.Who ?? "its reviewer"} ended without saying one",
+        OpinionViews.Transient => $"{opinion?.Who ?? "its reviewer"}'s provider kept failing before it said one",
+        "out-of-time" => $"{opinion?.Who ?? "its reviewer"} ran out of its minutes before it said one",
         _ => "no listed reviewer of another maker could read it",
     };
 
@@ -135,6 +137,14 @@ public static class OpinionGateWords
         ReviewerLabels.AnotherMaker => "another maker's agent",
         ReviewerLabels.SameAgent => "the same agent in a fresh conversation, which is not an independent reading",
         _ => "an agent whose maker is not declared, whose reading is not counted as another maker's",
+    };
+
+    /// <summary>Whose <c>must</c> each dispute is: the first pass's the session did not fix, or the recheck's own.</summary>
+    private static string Whose(OpinionDisputes disputes) => (disputes.First.Count, disputes.Raised.Count) switch
+    {
+        (_, 0) => "a `must` the working session did not fix and no recheck withdrew",
+        (0, _) => "a `must` its recheck raised itself",
+        var (first, raised) => $"{first} the working session did not fix and no recheck withdrew, {raised} the recheck's own",
     };
 
     private static string SinceSaid(OpinionGateState gate) =>
