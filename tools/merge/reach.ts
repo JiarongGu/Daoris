@@ -1,6 +1,9 @@
 /**
  * Which gates a change's paths can reach, by the lane table, and why each gate runs or is skipped.
  */
+import { fileURLToPath } from 'node:url';
+import { readAdmission } from './admission.ts';
+import type { PathCheck } from './admission.ts';
 import { laneMatcher } from './lanes-file.ts';
 import { REACH } from './reach-table.ts';
 import type { Rule } from './reach-table.ts';
@@ -12,61 +15,30 @@ import type { Reach } from './verification.ts';
 
 // test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
-/**
- * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
- * maps all the code, the census of test units reads every suite's
- * sources, and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
- */
-export const BASELINE: readonly string[] = Object.freeze(['universal', 'code-map', 'test-map', 'cli']);
+// The line's admission is the declaration's one list: the driver's landing reads the same key, so the tool keeps none of its own.
+const ADMISSION = readAdmission(fileURLToPath(new URL('../..', import.meta.url)));
+
+export type { PathCheck };
+
+/** The gates every merge runs, whatever it changed: the blocking ones and the suites (`admission.always`, `admission.suites`). */
+export const BASELINE: readonly string[] = Object.freeze([...ADMISSION.always, ...ADMISSION.suites]);
 
 /**
- * What a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
- * commit), the code map, and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every
- * suite's sources and holds the lane table's hand rows, the whole-suite files and the skips to them. Every other gate is
- * listed and skipped, "in the CI beside" (`--ci`); `--gated` runs what the merge's paths reach, `--full` every gate,
- * `--rerun <gate>` a named one.
+ * What a merge blocks on by default (`admission.always`). Every other gate is listed and skipped, "in the CI beside" (`--ci`);
+ * `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  */
-export const BLOCKING: readonly string[] = Object.freeze(['universal', 'code-map', 'test-map']);
-
-/** A light check a merge blocks on when one of its paths reaches what it reads: the gate, the paths that reach it and why. */
-export type PathCheck = { gate: string; paths: readonly string[]; why: string };
+export const BLOCKING: readonly string[] = ADMISSION.always;
 
 /**
- * The light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides that each
- * typecheck may not together, and the CI beside finds that hours after the commit; the web's `tsc --noEmit` takes about a
- * minute. Each is reached by its own `paths`, and by a path the lane table's every-gate rule places (the gates, the
- * scripts, the lanes), never by the rest of the table: a path no rule of `REACH` places reaches every other gate, and a
- * typecheck stays a minute of the merges that change what it reads. `--gated` runs it where reached, `--full` always.
- *
- * The web's design and structure tests are a second such check, reached the same way: a story can break
- * `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's `web-unit` would run; the two
- * files run in a minute or two, most of it jsdom starting. The desktop's censuses are a third.
+ * The light checks a merge blocks on when one of its paths reaches what they read (`admission.byPaths`). Each is reached by its own
+ * `paths`, and by a path the lane table's every-gate rule places, never by the rest of the table: a path no rule of `REACH` places
+ * reaches every other gate, and a typecheck stays a minute of the merges that change what it reads. `--gated` runs it where
+ * reached, `--full` always.
  */
-export const PATH_CHECKS: readonly PathCheck[] = Object.freeze([
-  {
-    gate: 'web-types',
-    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/scripts/**', 'src/Daoris.Web/.storybook/**', 'src/Daoris.Web/tsconfig.json', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
-    why: "the web's typecheck: the page's sources, what configures its compiler, or what changes how every gate runs (MERGETSC1)",
-  },
-  {
-    gate: 'web-rules',
-    paths: ['src/Daoris.Web/src/**', 'src/Daoris.Web/scripts/**', 'src/Daoris.Web/vite.config.ts', 'src/Daoris.Web/package.json', 'src/Daoris.Web/package-lock.json'],
-    why: "the web's design and structure checks: the page's sources, what configures its tests, or what changes how every gate runs (MERGEWEBRULES1)",
-  },
-  {
-    gate: 'censuses',
-    paths: ['src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs', 'src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
-    why: 'the desktop\'s censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge',
-  },
-  {
-    gate: 'reached',
-    paths: ['src/**', 'tools/**', 'examples/**', 'canon/**', 'daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json'],
-    why: 'the test units the merge\'s paths reach in the suites a merge can run in minutes (the driver\'s, the modules\', the service\'s, the page\'s unit tests and the tool-tests, by the census of test units, bounded per suite, DEVCYCLE1): a list or a text a test holds the change to, which the CI beside found hours after it landed',
-  },
-]);
+export const PATH_CHECKS: readonly PathCheck[] = ADMISSION.pathChecks;
 
-/** The suites a merge runs whatever it changed: the CLI's verify holds the records, lists and documents, which no path places; about three minutes in a CI run. */
-export const MERGE_SUITES: readonly string[] = Object.freeze(['cli']);
+/** The suites a merge runs whatever it changed (`admission.suites`): the CLI's verify holds the records, lists and documents, which no path places. */
+export const MERGE_SUITES: readonly string[] = ADMISSION.suites;
 
 /** The lanes the table places by: each lane's id and its paths. */
 type Placing = readonly Pick<Lane, 'id' | 'paths'>[];

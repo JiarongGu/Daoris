@@ -257,6 +257,7 @@ test('a merge that changes the web\'s sources blocks on its typecheck, and one t
   assert.match(entry.why, /^blocks the merge: src\/Daoris\.Web\/src\/App\.tsx \(the web's typecheck/);
   assert.match(selectionLines(selected(page, false, false)).join('\n'), new RegExp(`4\\.\\s+${webTypes}\\s+check\\s+blocks the merge`));
   assert.deepEqual(mergeRuns(['src/Daoris.Web/tsconfig.json']), [...BLOCKING, webTypes, cli, reachedGate], 'what configures its compiler');
+  assert.deepEqual(mergeRuns(['src/Daoris.Web/scripts/e2e-port.d.mts']), [...BLOCKING, webTypes, cli, reachedGate], 'the typings of a script its tests import');
 
   // A merge that changes nothing it reads skips it, even a path the lane table places nowhere.
   for (const paths of [asks, ['src/Daoris.Web/e2e/rail.spec.ts'], ['src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs'], ['TASKS.md']]) {
