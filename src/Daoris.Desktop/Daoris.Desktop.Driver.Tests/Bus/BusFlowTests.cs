@@ -177,9 +177,17 @@ public sealed class BusFlowTests : IDisposable
     public async Task A_failure_costs_its_key_alone_even_on_the_same_subject_and_a_later_fact_naming_a_moved_key_is_worked()
     {
         var fail = 1;
-        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(key == "bad" && Interlocked.Exchange(ref fail, 0) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved));
+        var retryHeld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            if (key != "bad") return BusFlowOutcome.Moved;
+            if (Interlocked.Exchange(ref fail, 0) == 1) return BusFlowOutcome.Failed("refused");
+            // The retry is held in its pass while the facts behind it are worked.
+            await retryHeld.Task;
+            return BusFlowOutcome.Moved;
+        });
         await using var bus = Open();
-        await using var queue = await BusQueue.StartAsync(bus, [probe], Backoff);
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
 
         // One fact names a key that fails and one that moves.
         bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["bad", "good"], [])));
@@ -187,9 +195,9 @@ public sealed class BusFlowTests : IDisposable
         // Facts on the very subject, while the failed key waits its backoff, are worked at once: one names a moved key again, one another.
         bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["good", "next"], [])));
         await Poll.Until(() => probe.Moves.Count(move => move.Key == "good") == 2 && probe.Moves.Any(move => move.Key == "next"), () => "the lane was held by the failure: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
-        Assert.Equal(1, probe.Moves.Count(move => move.Key == "bad"));
         // The failed key is tried again alone, and what it held ends once it moves.
         await Poll.Until(() => probe.Moves.Count(move => move.Key == "bad") == 2, () => "the failed key was not tried again", Soon);
+        retryHeld.SetResult();
         await Unarmed(bus);
         Assert.Equal(2, probe.Moves.Count(move => move.Key == "good"));
     }
