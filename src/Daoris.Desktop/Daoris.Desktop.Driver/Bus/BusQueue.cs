@@ -35,9 +35,11 @@ public interface IBusConsumer
     }
 
     int? SubjectsAtOnce => null;
+
+    DateTimeOffset? NotBefore(BusEnvelope entry) => null;
 }
 
-public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, BusEnvelope?> Find);
+public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, string, BusEnvelope?> Find);
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
 public sealed record BusHandled(bool Ends)
@@ -340,6 +342,7 @@ internal sealed class BusConsumerRun
     private readonly SortedSet<long> _open = [];
     private readonly Dictionary<string, Queue<(BusEnvelope Entry, int Tries)>> _lanes = new(StringComparer.Ordinal);
     private readonly HashSet<long> _parked = [];
+    private readonly HashSet<long> _deferred = [];
     private readonly List<BusEnvelope> _waiting = [];
     private readonly SemaphoreSlim _atOnce;
     private readonly List<Task> _running = [];
@@ -382,7 +385,7 @@ internal sealed class BusConsumerRun
     {
         get
         {
-            lock (_gate) return Fenced || (_open.Count == 0 && _waiting.Count == 0 && _resumed is { IsCompleted: true });
+            lock (_gate) return Fenced || (_open.Count == _deferred.Count && _waiting.Count == 0 && _resumed is { IsCompleted: true });
         }
     }
 
@@ -477,6 +480,15 @@ internal sealed class BusConsumerRun
     /// <summary>Into its subject's lane; a lane not running starts. Under the gate.</summary>
     private void Enqueue(BusEnvelope entry, int tries)
     {
+        if (_consumer.NotBefore(entry) is { } at && at > _queue.Options.Clock.GetUtcNow() && !_fenced)
+        {
+            // Not handed before its time: held here, off every lane, and offered again then; a restart reads its time from the entry again.
+            _deferred.Add(entry.Seq);
+            _running.Add(Task.Run(() => OfferAtAsync(entry, tries, at)));
+            _running.RemoveAll(each => each.IsCompleted);
+            return;
+        }
+
         if (_lanes.TryGetValue(entry.Subject, out var lane))
         {
             lane.Enqueue((entry, tries));
@@ -487,6 +499,24 @@ internal sealed class BusConsumerRun
         var task = Task.Run(() => LaneAsync(entry.Subject, _queue.Closing));
         _running.Add(task);
         _running.RemoveAll(each => each.IsCompleted);
+    }
+
+    private async Task OfferAtAsync(BusEnvelope entry, int tries, DateTimeOffset at)
+    {
+        try
+        {
+            await Task.Delay(at - _queue.Options.Clock.GetUtcNow(), _queue.Options.Clock, _queue.Closing).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            _deferred.Remove(entry.Seq);
+            if (!_fenced) Enqueue(entry, tries);
+        }
     }
 
     /// <summary>One subject's entries, one at a time in order, until its lane is empty.</summary>
@@ -699,7 +729,7 @@ internal sealed class BusConsumerRun
         Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, stub) { Ends = _consumer.Obliged, Writer = _queue.Log.WriterRead }), cursor);
     }
 
-    public BusEnvelope? Find(long seq, string kind) => _queue.Store.Read(seq - 1, [kind], 1).FirstOrDefault(each => each.Seq == seq);
+    public BusEnvelope? Find(long seq, string kind, string id) => _queue.Store.Read(seq - 1, [kind], 1).FirstOrDefault(each => each.Seq == seq && each.Id == id);
 
     internal static void GiveUp(BusLog log, string name, string obliged, string id, string kind, string subject, DateTimeOffset since, BusType? type, int tries)
     {

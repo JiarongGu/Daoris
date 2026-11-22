@@ -348,6 +348,66 @@ public sealed class BusFlowTests : IDisposable
         Assert.Equal(["u-1"], Armed().Select(timer => timer.Subject));
     }
 
+    private static BusDraft Retry(string subject, string key) => new(BusTypes.FlowRetry, subject)
+    {
+        Causes = ["c-1"],
+        Payload =
+        [
+            ("consumer", "probe"), ("kind", BusTypes.NodeBegun.Kind), ("scope", "key"), ("seq", 0L), ("keys", (IReadOnlyList<string>)[key]), ("attempt", 1L),
+            ("due", Clock.GetUtcNow()), ("since", Clock.GetUtcNow()), ("settles", false), ("subject", "u-1"),
+        ],
+    };
+
+    [Fact]
+    public async Task Retries_waiting_in_a_row_on_one_subject_are_never_folded_so_each_runs()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Moved), foldAll: true);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Retry("retry:probe:x", "A"));
+        bus.Append(Retry("retry:probe:x", "B"));
+        await Poll.Until(() => probe.Moves.Select(move => move.Key).Order().SequenceEqual(["A", "B"]), () => "moves: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
+    }
+
+    [Fact]
+    public async Task An_entry_with_several_failed_keys_ends_only_when_every_key_has_moved_and_a_moved_key_is_not_run_again()
+    {
+        var calls = new ConcurrentDictionary<string, int>();
+        var armedAtLast = new List<string>();
+        var probe = new Probe(new BusFlowBounds(4), (key, _) =>
+        {
+            var n = calls.AddOrUpdate(key, 1, (_, was) => was + 1);
+            if (key == "a") return Task.FromResult(n == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved);
+            if (n < 3) return Task.FromResult(BusFlowOutcome.Failed("refused"));
+            // The key that moved first has had its retry; the entry still stands until this one moves.
+            armedAtLast.AddRange(Armed().Select(timer => timer.Kind));
+            return Task.FromResult(BusFlowOutcome.Moved);
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["a", "b"], [])));
+        await Poll.Until(() => calls.GetValueOrDefault("b") == 3, () => "calls: " + string.Join(", ", calls), Soon);
+        await Unarmed(bus);
+        Assert.Contains(BusTypes.QuestMoved.Kind, armedAtLast);
+        Assert.Equal(2, calls["a"]);
+    }
+
+    [Fact]
+    public async Task A_retry_whose_next_attempt_the_log_did_not_keep_is_not_acknowledged_and_is_handed_again()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")),
+            refuse: draft => draft.Payload.FirstOrDefault(pair => pair.Key == "attempt").Value is 2L);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A"));
+        // The first retry fails, cannot write the second, and is tried again by the queue (so the key is asked more than twice) instead of being lost.
+        await Poll.Until(() => probe.Moves.Count >= 3, () => $"moves {probe.Moves.Count}", Soon);
+        Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind && entry.Payload.Any(pair => pair.Key == "attempt" && pair.Value is 2L));
+    }
+
     private async Task Unarmed(BusLog bus)
     {
         await bus.FlushAsync();
@@ -355,9 +415,12 @@ public sealed class BusFlowTests : IDisposable
     }
 
     /// <summary>A consumer of the layer over the opinion's gate's node and quest facts: keyed by the node named first (a quest move, by each quest it names), its work the subjects that named it.</summary>
-    private sealed class Probe(BusFlowBounds bounds, Func<string, IReadOnlyList<string>, Task<BusFlowOutcome>> move, TimeSpan pause = default)
+    private sealed class Probe(
+        BusFlowBounds bounds, Func<string, IReadOnlyList<string>, Task<BusFlowOutcome>> move, TimeSpan pause = default, Func<BusDraft, bool>? refuse = null, bool foldAll = false)
         : BusFlowConsumer<IReadOnlyList<string>>("probe", [BusTypes.NodeBegun.Kind, BusTypes.QuestMoved.Kind], bounds, Clock, pause)
     {
+        protected override Task<bool> AppendAsync(BusLog log, BusDraft draft) => refuse?.Invoke(draft) == true ? Task.FromResult(false) : base.AppendAsync(log, draft);
+
         public ConcurrentQueue<(string Key, DateTimeOffset At)> Moves { get; } = new();
 
         protected override Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, CancellationToken ct) =>
@@ -365,7 +428,7 @@ public sealed class BusFlowTests : IDisposable
 
         public override string Obliged => BusTypes.OpinionGate;
 
-        protected override bool Coalesces(string kind) => kind == BusTypes.QuestMoved.Kind;
+        protected override bool Coalesces(string kind) => foldAll || kind == BusTypes.QuestMoved.Kind;
 
         protected override Task<IReadOnlyList<BusFlowPiece<IReadOnlyList<string>>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
         {

@@ -105,7 +105,10 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
 
     int? IBusConsumer.SubjectsAtOnce => 32;
 
-    bool IBusConsumer.Folds(string kind) => Coalesces(kind);
+    // A retry is never folded: each stands for one entry's work, so a row would run the first and acknowledge them all.
+    bool IBusConsumer.Folds(string kind) => kind != BusTypes.FlowRetry.Kind && Coalesces(kind);
+
+    DateTimeOffset? IBusConsumer.NotBefore(BusEnvelope entry) => entry.Kind == BusTypes.FlowRetry.Kind ? Moment(entry, "due") : null;
 
     Task<BusHandled> IBusConsumer.HandleAsync(BusEnvelope entry, CancellationToken ct) => HandleRowAsync([entry], ct);
 
@@ -147,21 +150,23 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         if (broken.Count == 0 && outcomes.Values.All(outcome => outcome.Result == BusFlowResult.Moved)) return row.All(Settles) ? BusHandled.Ended : BusHandled.Judged;
 
         // A failure costs its own entry's work alone: a retry fact for it, and what moved ends what it held.
-        foreach (var (entry, why) in broken) WriteRetry(Cause.Of(entry), BusFlowScope.Entry, entry.Subject, 1, why, Settles(entry));
+        var kept = true;
+        foreach (var (entry, why) in broken) kept &= await WriteRetryAsync(Cause.Of(entry), BusFlowScope.Entry, [], 1, why, Settles(entry)).ConfigureAwait(false);
         foreach (var (entry, keys) in reached)
         {
             var failed = keys.Where(key => outcomes[key].Result == BusFlowResult.Failed).ToList();
-            var open = keys.Any(key => outcomes[key].Result == BusFlowResult.NotMoved);
-            var settles = Settles(entry) && !open;
+            var settles = Settles(entry) && !keys.Any(key => outcomes[key].Result == BusFlowResult.NotMoved);
             if (failed.Count == 0)
             {
-                if (settles && !open) _host?.EndLate(entry.Id);
+                if (settles) _host?.EndLate(entry.Id);
                 continue;
             }
 
-            foreach (var key in failed) WriteRetry(Cause.Of(entry), BusFlowScope.Key, key, 1, outcomes[key].Why, settles);
+            kept &= await WriteRetryAsync(Cause.Of(entry), BusFlowScope.Key, failed, 1, outcomes[failed[0]].Why, settles).ConfigureAwait(false);
         }
 
+        // A retry fact the log did not keep leaves the row unacknowledged, so the queue hands it again rather than the failure being lost.
+        if (!kept) throw new IOException("a retry fact was not kept");
         return BusHandled.Judged;
     }
 
@@ -171,59 +176,84 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         public static Cause Of(BusEnvelope entry) => new(entry.Id, entry.Kind, entry.Subject, entry.At, entry.Seq);
     }
 
-    /// <summary>The retry fact for <paramref name="cause"/>'s work, due after its type's backoff for <paramref name="attempt"/>; the give-up where its type's retries are spent.</summary>
-    private void WriteRetry(Cause cause, string scope, string subject, int attempt, string why, bool settles)
+    /// <summary>
+    /// The retry fact for <paramref name="cause"/>'s work on <paramref name="keys"/>, due after its type's backoff for <paramref name="attempt"/>,
+    /// on a subject of its own so no fact's lane waits behind it; the give-up where its type's retries are spent. False where the log did not keep it.
+    /// </summary>
+    private async Task<bool> WriteRetryAsync(Cause cause, string scope, IReadOnlyList<string> keys, int attempt, string why, bool settles)
     {
-        if (_host is not { } host || !host.Owned()) return;
+        if (_host is not { } host || !host.Owned()) return true;
         host.Log.Measured(BusMeasures.Consumer, $"{Name}:threw", 1);
         host.Log.Warn($"queue:threw:{Name}:{cause.Kind}", "bus.consumer-threw", ("consumer", Name), ("kind", cause.Kind), ("why", why));
         var type = BusTypes.Of(cause.Kind);
         if (type is null || attempt > type.Retries)
         {
             BusConsumerRun.GiveUp(host.Log, Name, Obliged, cause.Id, cause.Kind, cause.Subject, cause.At, type, attempt);
-            return;
+            return true;
         }
 
         var wait = TimeSpan.FromTicks(Math.Min(host.Options.RetryMost.Ticks, host.Options.RetryFirst.Ticks << Math.Min(20, attempt - 1)));
-        host.Log.Append(new BusDraft(BusTypes.FlowRetry, subject)
+        // More failed keys than a fact lists are retried as the whole entry, its pieces named again.
+        var listed = keys.Count <= BusShapes.MostListed;
+        return await AppendAsync(host.Log, new BusDraft(BusTypes.FlowRetry, $"retry:{Name}:{cause.Id}")
         {
             Commit = true,
             Causes = [cause.Id],
             Payload =
             [
-                ("consumer", Name), ("kind", cause.Kind), ("scope", scope), ("seq", cause.Seq), ("attempt", (long)attempt),
-                ("due", host.Options.Clock.GetUtcNow() + wait), ("since", cause.At), ("settles", settles), ("subject", cause.Subject),
+                ("consumer", Name), ("kind", cause.Kind), ("scope", listed ? scope : BusFlowScope.Entry), ("seq", cause.Seq), ("keys", listed ? keys : (IReadOnlyList<string>)[]),
+                ("attempt", (long)attempt), ("due", host.Options.Clock.GetUtcNow() + wait), ("since", cause.At), ("settles", settles), ("subject", cause.Subject),
             ],
-        });
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>The write of a retry fact, waited on until the store has it: whether the log kept it.</summary>
+    protected virtual async Task<bool> AppendAsync(BusLog log, BusDraft draft)
+    {
+        if (!log.Append(draft)) return false;
+        await log.FlushAsync().ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>
-    /// A retry fact handed back: it waits for its due time (a restart finds it unacknowledged and waits again), then runs the failed work
-    /// through the same pass as any fact. Moved ends the failed entry's obligation; failed writes the next retry.
+    /// A retry fact handed back (the queue holds it until its due time): it runs its entry's failed keys through the same pass as any fact.
+    /// The entry's obligation ends once every key has moved, one that moved is not listed again; any that failed write the next attempt,
+    /// kept by the log before this one is acknowledged, so a crash repeats a retry and never loses one.
     /// </summary>
     private async Task<BusHandled> RetryAsync(BusEnvelope retry, CancellationToken ct)
     {
         if (Text(retry, "consumer") != Name || _host is not { } host) return BusHandled.Judged;
-        var due = Moment(retry, "due");
-        var wait = due - host.Options.Clock.GetUtcNow();
-        if (wait > TimeSpan.Zero) await Task.Delay(wait, host.Options.Clock, ct).ConfigureAwait(false);
         if (!host.Owned() || retry.Causes.Count == 0) return BusHandled.Judged;
         var cause = new Cause(retry.Causes[0], Text(retry, "kind") ?? "", Text(retry, "subject") ?? retry.Subject, Moment(retry, "since"), Number(retry, "seq"));
         var attempt = (int)Number(retry, "attempt");
         var scope = Text(retry, "scope") ?? BusFlowScope.Key;
         var settles = retry.Payload.FirstOrDefault(pair => pair.Key == "settles").Value is true;
-        BusFlowOutcome outcome;
+        var keys = retry.Payload.FirstOrDefault(pair => pair.Key == "keys").Value as IReadOnlyList<string> ?? [];
+        var outcomes = new List<(string Key, BusFlowOutcome Outcome)>();
         try
         {
-            outcome = scope == BusFlowScope.Key ? await RetryKeyAsync(retry.Subject, ct).ConfigureAwait(false) : await RetryEntryAsync(host, cause, ct).ConfigureAwait(false);
+            if (scope == BusFlowScope.Key)
+            {
+                foreach (var key in keys) outcomes.Add((key, await RetryKeyAsync(key, ct).ConfigureAwait(false)));
+            }
+            else outcomes.Add(("", await RetryEntryAsync(host, cause, ct).ConfigureAwait(false)));
         }
         catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException)
         {
-            outcome = BusFlowOutcome.Failed(error.Message);
+            outcomes.Add(("", BusFlowOutcome.Failed(error.Message)));
         }
 
-        if (outcome.Result == BusFlowResult.Moved && settles && host.Owned()) host.EndLate(cause.Id);
-        else if (outcome.Result == BusFlowResult.Failed) WriteRetry(cause, scope, retry.Subject, attempt + 1, outcome.Why, settles);
+        var failed = outcomes.Where(each => each.Outcome.Result == BusFlowResult.Failed).ToList();
+        var open = outcomes.Any(each => each.Outcome.Result == BusFlowResult.NotMoved);
+        if (failed.Count == 0)
+        {
+            if (!open && settles && host.Owned()) host.EndLate(cause.Id);
+            return BusHandled.Judged;
+        }
+
+        // Only the keys still failing are listed again; an entry-scope failure names none, so its pieces are named again.
+        var again = scope == BusFlowScope.Key && failed.All(each => each.Key.Length > 0) ? failed.Select(each => each.Key).ToList() : [];
+        if (!await WriteRetryAsync(cause, again.Count > 0 ? BusFlowScope.Key : BusFlowScope.Entry, again, attempt + 1, failed[0].Outcome.Why, settles && !open).ConfigureAwait(false)) throw new IOException("a retry fact was not kept");
         return BusHandled.Judged;
     }
 
@@ -233,7 +263,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     /// <summary>An entry whose pieces could not be named: named again from the entry as the log keeps it, each piece asked.</summary>
     private async Task<BusFlowOutcome> RetryEntryAsync(BusConsumerHost host, Cause cause, CancellationToken ct)
     {
-        if (host.Find(cause.Seq, cause.Kind) is not { } entry) return BusFlowOutcome.NotMoved("the entry is gone from the log");
+        if (host.Find(cause.Seq, cause.Kind, cause.Id) is not { } entry) return BusFlowOutcome.NotMoved("the entry is gone from the log");
         var named = await PiecesAsync(entry, ct).ConfigureAwait(false);
         var outcomes = await Task.WhenAll(named.Select(piece => AskAsync(piece, ct))).ConfigureAwait(false);
         return outcomes.FirstOrDefault(each => each.Result == BusFlowResult.Failed) is { Result: BusFlowResult.Failed } failed ? failed

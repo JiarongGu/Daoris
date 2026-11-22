@@ -368,15 +368,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     pass on a key at a time, in order, the facts that wait on it one piece of work for the next pass, the bounds in one lock order
     (key, group, overall), and turns the answer into the acknowledgement alone: moved ends the entries' obligations where their
     fact settles, not moved acknowledges them as handled with their timers armed, failed acknowledges them as handled too and
-    writes a retry fact (`flow.retry/1`, no timer of its own) for that work alone: its subject the key (the entry's subject where its
-    pieces could not be named), its cause the entry that failed, its due time the failed entry's type's backoff for its attempt. The
-    retry is handled like any fact once due, through the same key pass, bounds, epoch fence and lease (it waits for its due time in
-    its own lane, and a restart finds it unacknowledged and waits again, so nothing of a retry lives only in memory); if it moves it
-    ends the obligation of the entry that failed, if it fails it writes the next attempt, and past the type's retries the give-up
-    names the entry. A fenced process writes no retry and ends nothing. A pass that moved the key before the failure ends only its own
-    entries, so no lane, other key or other fact waits on a failure. Facts waiting on a key hold at most the consumer's 32 subject
-    slots, merge into the pass after the one running and never stall another key's. A due file that cannot be read is a failure of
-    the move that needed it (`OpinionDues.OpenStrict`), never an empty set owed. The opinion's gate (keyed by the owed opinion,
+    writes one retry fact (`flow.retry/1`, no timer of its own, never folded) for the failed entry: its own subject
+    (`retry:<consumer>:<entry id>`), its cause that entry, the keys still failing (all the entry's pieces where they could not be named
+    or are too many to list), its due time the entry's type's backoff for its attempt. The queue does not hand an entry before its
+    not-before time (`IBusConsumer.NotBefore`): it holds it off every lane and slot and offers it again then, a restart reading the time
+    from the entry again, and a drain does not wait for it. A retry runs through the same key pass, bounds, epoch fence and lease; the
+    entry ends once every key has moved (a key that moved is not listed in the next attempt), a failure writes the next attempt and the
+    log must keep it before this retry is acknowledged (else the queue hands this retry again), and past the type's retries the give-up
+    names the entry. A fenced process writes no retry and ends nothing, and a pass that moved a key before another entry's failure ends
+    only its own entries. Facts waiting on a key hold at most the consumer's 32 subject slots, merge into the pass after the one
+    running and never stall another key's. A due file that cannot be read or parsed is a failure of the move that needed it
+    (`OpinionDues.OpenStrict`), never an empty set owed. The gate's own turns (a cool-off's reset, a backoff after a pass ended beside)
+    are memory only, and `ResumedAsync`, which judges every owed opinion at a start, is their net. The opinion's gate (keyed by the owed opinion,
     grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
     run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.
     What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer

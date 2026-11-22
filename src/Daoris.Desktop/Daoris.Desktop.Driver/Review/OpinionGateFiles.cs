@@ -25,7 +25,7 @@ internal static class OpinionGateFiles
             if (!document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array) return [];
             return [.. due.EnumerateArray().Select(DueOf).OfType<OpinionDue>()];
         }
-        catch (Exception error) when (error is JsonException || (!strict && error is IOException or UnauthorizedAccessException))
+        catch (Exception error) when (!strict && error is JsonException or IOException or UnauthorizedAccessException)
         {
             return [];
         }

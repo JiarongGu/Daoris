@@ -190,9 +190,9 @@ public static class BusTypes
 
     /// <summary>A consumer's failed work as a fact the log keeps, due after the backoff; it arms no timer, the failed entry's own stays.</summary>
     public static readonly BusType FlowRetry = new(
-        "flow.retry", 1, BusClasses.Fact, Flow, Flow, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
+        "flow.retry", 1, BusClasses.Fact, Flow, Flow, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 5, BusGiveUps.Dropped,
         [
-            new("consumer", BusShapes.Code), new("kind", BusShapes.Code), new("scope", BusShapes.Code), new("seq", BusShapes.Count),
+            new("consumer", BusShapes.Code), new("kind", BusShapes.Code), new("scope", BusShapes.Code), new("seq", BusShapes.Count), new("keys", BusShapes.Ids),
             new("attempt", BusShapes.Count), new("due", BusShapes.Time), new("since", BusShapes.Time), new("settles", BusShapes.Flag),
             new("subject", BusShapes.Id),
         ]);

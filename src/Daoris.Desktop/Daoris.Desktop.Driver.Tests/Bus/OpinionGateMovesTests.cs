@@ -253,6 +253,27 @@ public sealed class OpinionGateMovesTests : IDisposable
         await Unarmed(bus);
     }
 
+    /// <summary>🔴 A due file that does not parse is a failure too: it never reads as nothing owed and ends the move.</summary>
+    [Fact]
+    public async Task A_due_file_that_does_not_parse_fails_the_move_and_the_retry_judges_it_once_it_does()
+    {
+        await using var bus = Open();
+        using var gate = Gate();
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick with { RetryFirst = TimeSpan.FromMilliseconds(400), RetryMost = TimeSpan.FromMilliseconds(400) });
+        await Started();
+        _judged.Clear();
+
+        var path = new OpinionDues(_home).FilePath;
+        var good = await File.ReadAllTextAsync(path);
+        await File.WriteAllTextAsync(path, "{ not json");
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["q-1"], ["engine"])));
+        await Poll.Until(() => Written().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "the failed move wrote no retry", Soon);
+        await File.WriteAllTextAsync(path, good);
+
+        await Poll.Until(() => Judged("s-1") >= 1, () => "the retry did not judge the opinion the move reached", Soon);
+        await Unarmed(bus);
+    }
+
     private IReadOnlyList<BusEnvelope> Written()
     {
         using var store = new DesktopBusLogStore(_home);
