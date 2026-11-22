@@ -270,7 +270,7 @@ is answered by `GitLibraryStatus` with no git started and never kept, since it r
 index read from its own file (`GitIndexFile`), the index against the tree as git reads it (a size moved is changed, a stat matching and
 not racy is unchanged, any other entry hashed), then the untracked paths, walked with the library's ignore rules and the personal ignore
 file. Its settings are read from every configuration file git reads (`GitStamp.ConfigurationFilesOf`), and two files disagreeing on one
-that changes the answer send it to git. Git's: a rename git may pair (a staged addition beside a deletion, or a change where copies are
+that changes the answer send it to git; so does a status asked before any stamp learned the system file's path, since it starts nothing to learn it. Git's: a rename git may pair (a staged addition beside a deletion, or a change where copies are
 asked), a submodule, a sparse, intent-to-add, assume-unchanged or unmerged entry, a split index, a content holding a carriage return or
 one an attribute file may filter, a link, `core.excludesFile` or `core.attributesFile`, `--ignored`, a path given, the `--porcelain=v2`
 forms, and in the newline form a name git would quote (`GitLibraryStatusTests`, on real git).

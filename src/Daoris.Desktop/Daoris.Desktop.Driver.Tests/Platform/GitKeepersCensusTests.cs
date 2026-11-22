@@ -42,7 +42,7 @@ public sealed class GitKeepersCensusTests
     private static readonly HashSet<string> Library = new(StringComparer.Ordinal)
     {
         "GitLibrary.cs", "GitLibraryCall.cs", "GitLibraryFaults.cs", "GitLibraryNames.cs", "GitLibraryReads.cs", "GitLibraryRefs.cs",
-        "GitLibraryRevisions.cs", "GitLibraryWalks.cs",
+        "GitLibraryRevisions.cs", "GitLibraryStatus.cs", "GitLibraryWalks.cs",
     };
 
     private static readonly Dictionary<string, string> Doors = new(StringComparer.Ordinal)

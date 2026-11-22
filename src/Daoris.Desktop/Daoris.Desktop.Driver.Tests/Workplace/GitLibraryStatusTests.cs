@@ -1,3 +1,4 @@
+using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.GitLibraryParity;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -28,7 +29,7 @@ public sealed class GitLibraryStatusTests : LandedFixture
     [GitLegFact]
     public async Task A_tree_s_changes_and_untracked_paths_are_git_s()
     {
-        var root = await RepositoryAsync("status-changes");
+        var root = await StampedAsync("status-changes");
         await AllFormsAsync(root);
 
         Directory.CreateDirectory(Path.Combine(root, "docs", "deep"));
@@ -70,7 +71,7 @@ public sealed class GitLibraryStatusTests : LandedFixture
     [GitLegFact]
     public async Task What_is_ignored_is_never_listed_as_untracked()
     {
-        var root = await RepositoryAsync("status-ignored");
+        var root = await StampedAsync("status-ignored");
         await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "*.log\nbuild/\n!keep.log\n");
         Directory.CreateDirectory(Path.Combine(root, "build", "out"));
         Directory.CreateDirectory(Path.Combine(root, "traces"));
@@ -98,7 +99,7 @@ public sealed class GitLibraryStatusTests : LandedFixture
     [GitLegFact]
     public async Task A_rename_git_may_pair_is_git_s_unless_renames_are_off()
     {
-        var root = await RepositoryAsync("status-renamed");
+        var root = await StampedAsync("status-renamed");
         await GitAsync(root, "mv", "shared.txt", "moved.txt");
         await GitsAsync(root, Forms[0]);
         await GitsAsync(root, Forms[2]);
@@ -119,7 +120,7 @@ public sealed class GitLibraryStatusTests : LandedFixture
     [GitLegFact]
     public async Task A_submodule_a_sparse_tree_and_an_intent_to_add_are_git_s()
     {
-        var root = await RepositoryAsync("status-entries");
+        var root = await StampedAsync("status-entries");
         var commit = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
 
         // A nested repository nobody tracks is one untracked folder.
@@ -149,7 +150,7 @@ public sealed class GitLibraryStatusTests : LandedFixture
     [GitLegFact]
     public async Task A_content_git_would_convert_is_git_s_to_compare()
     {
-        var root = await RepositoryAsync("status-converted");
+        var root = await StampedAsync("status-converted");
         await File.WriteAllTextAsync(Path.Combine(root, "crlf.txt"), "one\ntwo\n");
         await GitAsync(root, "add", "crlf.txt");
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-q", "-m", "crlf");
@@ -164,6 +165,14 @@ public sealed class GitLibraryStatusTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "*.txt filter=lfs\n");
         File.SetLastWriteTimeUtc(Path.Combine(root, "crlf.txt"), Earlier);
         await GitsAsync(root, Forms[0]);
+    }
+
+    // The settings are read from every file git reads, the system's among them, whose path a stamp learns of the git in use.
+    private async Task<string> StampedAsync(string name)
+    {
+        var root = await RepositoryAsync(name);
+        await GitStamp.OfAsync(root, CancellationToken.None);
+        return root;
     }
 
     private static async Task AllFormsAsync(string root, bool quoted = false)

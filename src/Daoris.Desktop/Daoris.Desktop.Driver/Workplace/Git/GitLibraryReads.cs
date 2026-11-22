@@ -18,12 +18,8 @@ internal static class GitLibraryReads
     private static readonly string[] NamesOptions = ["--name-only", "-z", "--no-renames", "--no-ext-diff", "--ignore-submodules=none"];
 
     /// <summary>The library's answer to the read <paramref name="arguments"/> in <paramref name="folder"/>; null where git answers it.</summary>
-    internal static async Task<GitLibraryAnswer?> AnswerAsync(string folder, IReadOnlyList<string> arguments, CancellationToken ct)
-    {
-        if (Asked(arguments) is not { } asked) return null;
-        if (asked.Question == GitLibraryQuestion.Status) await GitSystemFiles.Shared.LearnAsync(GitRuns.GitInUse(ProgramHome.Named) ?? "", folder, ct).ConfigureAwait(false);
-        return await GitLibrary.AskAsync(folder, asked.Question, asked.Answer, ct).ConfigureAwait(false);
-    }
+    internal static Task<GitLibraryAnswer?> AnswerAsync(string folder, IReadOnlyList<string> arguments, CancellationToken ct) =>
+        Asked(arguments) is { } asked ? GitLibrary.AskAsync(folder, asked.Question, asked.Answer, ct) : Task.FromResult<GitLibraryAnswer?>(null);
 
     internal static (GitLibraryQuestion Question, Func<GitLibraryCall, GitLibraryAnswer?> Answer)? Asked(IReadOnlyList<string> arguments)
     {
