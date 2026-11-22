@@ -27,7 +27,12 @@ internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)
     public string? Makes { get; init; }
 
     /// <summary>Its read kind (<see cref="GitReadKinds"/>), which the tally counts it under beside its caller.</summary>
-    public string Kind { get; init; } = GitReadKinds.Meta;
+    public string Kind { get; init; } = DefaultKind;
+
+    /// <summary>The kind of a start with no command (a version's question).</summary>
+    internal const string DefaultKind = "meta";
+
+    internal static GitRunAsk Plain(string folder, GitWait wait, string kind = DefaultKind) => new GitRunAsk(folder, folder, wait) { Kind = kind };
 
     public string? Input { get; init; }
 

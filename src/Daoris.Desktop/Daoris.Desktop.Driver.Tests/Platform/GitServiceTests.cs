@@ -12,7 +12,7 @@ public sealed class GitServiceTests
     private static readonly TimeSpan Soon = Poll.Patience;
 
     private static GitRunAsk Ask(string repository, params string[] arguments) =>
-        GitStartAsks.Plain(Path.GetFullPath(Path.Combine("_service", repository)), GitWait.Read, arguments);
+        GitRunAsk.Plain(Path.GetFullPath(Path.Combine("_service", repository)), GitWait.Read, GitReadKinds.Of(arguments));
 
     private static (GitService Service, GitScheduler Scheduler, GitAskTally Tally) Fixture(int places = 4, TimeSpan? allowance = null)
     {
@@ -24,9 +24,15 @@ public sealed class GitServiceTests
     [Fact]
     public async Task An_ask_past_its_deadline_is_answered_as_failed_naming_its_id_kind_asker_and_class()
     {
-        var (service, _, _) = Fixture(places: 1, allowance: TimeSpan.FromMilliseconds(150));
+        var (service, _, _) = Fixture(places: 1, allowance: TimeSpan.FromMilliseconds(500));
         var hold = new TaskCompletionSource<int>();
-        var holding = service.PlaceAsync(Ask("a", "status"), Bound, _ => hold.Task, CancellationToken.None);
+        var placed = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("a", "status"), Bound, _ =>
+        {
+            placed.SetResult();
+            return hold.Task;
+        }, CancellationToken.None);
+        await placed.Task.WaitAsync(Soon);
 
         GitUnplacedException late;
         using (GitAskers.Is(GitAskers.Facts))

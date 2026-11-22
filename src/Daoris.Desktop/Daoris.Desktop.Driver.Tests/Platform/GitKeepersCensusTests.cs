@@ -37,7 +37,9 @@ public sealed class GitKeepersCensusTests
 
     private static readonly Dictionary<string, string> Doors = new(StringComparer.Ordinal)
     {
-        ["GitService.cs"] = "the one service: every git ask is placed and every in-process read answered here (D357 point 1)",
+        ["GitService.cs"] = "the one service: every git ask is placed here",
+        ["GitServiceReads.cs"] = "the service's in-process half (an extension of it): every read of the library is answered here",
+        ["GitRunAsk.cs"] = "the ask's own record and its factory for a start no caller builds whole (a version's question)",
         ["GitCallers.cs"] = "which place a process's ancestor holds, told to a re-entry the service places: it asks no git",
         ["GitStartAsks.cs"] = "builds the ask a start places under (For, and Plain for a start not built whole): it asks no git",
     };

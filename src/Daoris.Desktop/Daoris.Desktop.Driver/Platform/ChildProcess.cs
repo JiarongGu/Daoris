@@ -65,7 +65,7 @@ public static class ChildProcess
             try
             {
                 return await GitService.Shared.PlaceAsync(
-                    GitStartAsks.Plain(folder, GitWait.Read, info.ArgumentList), patience, token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
+                    GitRunAsk.Plain(folder, GitWait.Read), patience, token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
             }
             catch (GitUnplacedException unplaced)
             {
