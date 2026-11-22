@@ -214,7 +214,13 @@ public sealed class MainForm : OptimizedForm, IReloadableWindow
     /// </summary>
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (!e.Cancel && _mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood) == true)
+        var door = e.CloseReason switch
+        {
+            CloseReason.WindowsShutDown => Daoris.Driver.StopReasons.SystemShutdown,
+            CloseReason.TaskManagerClosing => Daoris.Driver.StopReasons.TaskManager,
+            _ => null,
+        };
+        if (!e.Cancel && _mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood, door) == true)
         {
             e.Cancel = true;
             Hide();

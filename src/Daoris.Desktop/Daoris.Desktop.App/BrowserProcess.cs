@@ -51,7 +51,6 @@ internal static class BrowserProcess
         Directory.CreateDirectory(options.Profile);
         Prepare(options.Profile, log);
 
-        var started = DateTimeOffset.UtcNow;
         log.Info("app.started");
 
         // Started and not awaited, so observed: a failure is a line saying where, and a browser
@@ -81,7 +80,7 @@ internal static class BrowserProcess
         }
         finally
         {
-            log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
+            log.Stopped();
         }
     }
 
@@ -110,6 +109,7 @@ internal static class BrowserProcess
                 {
                     if (shell.HasExited)
                     {
+                        log.StopBecause(Daoris.Driver.StopReasons.ShellGone);
                         stop.Cancel();
                         return;
                     }

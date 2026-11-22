@@ -125,6 +125,11 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     beside the OS's change is the one worn. Daoris's browser follows the OS. (from D66, D41)
 18. A later launch opens a new main window of the running instance. The application ends with its last main window.
     One driver loop runs per home. (from D171, D104)
+    The desktop says why it stops: the `app.stopped` line's `reason` is the door the stop came by, told before the stop goes on
+    and the first told kept (`MachineLog.StopBecause`, `StopReasons`): `window-closed` (the person closed the only main
+    window), `last-window-closed`, `update` (with `build` and `by`: `now` or `idle`), `system-shutdown`, `task-manager`,
+    `signal` (a terminal's interrupt, quit, hang-up or terminate), `unhandled-failure` (with its `type`, the stop said as the
+    exception leaves). A stop no door told is `unknown`. A process ended from outside leaves no `app.stopped` at all.
 19. Each main window wears the count of what waits on the owner, every workspace's rows the census classes the owner's (rule 32), on
     its taskbar button (dark ink on the owner's amber in either theme, since what it counts waits on the owner and red is a
     failure's alone; *9+* past nine) and in its title, as its page tells it, and the install's identity Daoris chooses. A

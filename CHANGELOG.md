@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- The desktop's machine log now says why it stopped: `app.stopped` names the door (the person closing its window, an update's close
+  with its build, the system shutting down, a terminal's signal, an unhandled failure) or says `unknown`, so a stop is no longer a
+  line with a time and nothing else.
 - Marking a quest done yourself, or any session marking it, now ends its workflow's run as a stop does: no step starts after it, a
   check under way is told to stop, the sessions waiting on the run end with it, and its tree and branch are kept. The run's end says
   which commits its branch holds that the line does not, so what was left is named and never landed by a run nobody owns.

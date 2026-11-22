@@ -90,8 +90,8 @@ internal static class Program
         // nothing else catches is written before the process ends; with no home it writes nothing.
         using var log = Daoris.Driver.MachineLog.Open("desktop");
         log.WatchUnhandled();
+        using var signals = Daoris.Driver.StopReasons.Listen(log);
         stages.Log = log;
-        var started = DateTimeOffset.UtcNow;
 
         // 🔴 No home is a sentence, not a silent exit. A workspace build started with no
         // DAORIS_HOME throws from the loop's construction, before any window exists, and a windowed
@@ -392,7 +392,7 @@ internal static class Program
         });
         builder.OnStopping(app =>
         {
-            log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
+            log.Stopped();
             Daoris.Driver.RunningProcessesLine.Write(log, Daoris.Driver.OwnedProcesses.Shared);
             // A start whose stages never all came (a host that never answered, a pipe another loop's lease kept) is said by now.
             stages.Write();

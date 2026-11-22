@@ -61,7 +61,8 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
     /// The person's close (the caption's button, Alt+F4, the taskbar's), never one from code: the kit reports both as
     /// <c>UserClosing</c>, so the window says which (an update's close and the last main window's are for good).
     /// </param>
-    public bool FirstClosing(bool byPerson)
+    /// <param name="door">The <see cref="Daoris.Driver.StopReasons"/> door of a close that is not the person's; null for one from code.</param>
+    public bool FirstClosing(bool byPerson, string? door = null)
     {
         int others;
         lock (_gate)
@@ -69,6 +70,8 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
             if (!byPerson || _ending || _others.Count == 0)
             {
                 _ending = true;
+                if (byPerson) log?.StopBecause(Daoris.Driver.StopReasons.WindowClosed);
+                else if (door is not null) log?.StopBecause(door);
                 return false;
             }
 
@@ -93,6 +96,7 @@ public sealed class MainWindows(Action? end = null, Daoris.Driver.MachineLog? lo
             _ending = true;
         }
 
+        log?.StopBecause(Daoris.Driver.StopReasons.LastWindowClosed, ("window", name));
         log?.Info("window.last", ("window", name));
         end?.Invoke();
         return true;
