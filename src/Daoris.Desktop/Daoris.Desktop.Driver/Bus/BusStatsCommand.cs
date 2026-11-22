@@ -112,6 +112,8 @@ public static class BusStatsCommand
         var swept = Of(BusMeasures.Sweep).ToList();
         if (swept.Count > 0) output.AppendLine($"  settle boxes found by the sweep, not the watcher: {string.Join(", ", swept.Select(row => Invariant($"{row.Name} {row.Count}")))}");
         Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);
+        var steps = Of(BusMeasures.Step).ToList();
+        if (steps.Count > 0) output.AppendLine($"  run-step facts handled, by what their pass came to: {string.Join(", ", steps.Select(row => Invariant($"{row.Name} {row.Count}")))}");
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
     }
 

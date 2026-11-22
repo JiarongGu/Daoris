@@ -268,6 +268,8 @@ internal sealed class WatchNodes
             {
                 Asked = asked.Units,
                 Judged = asked.Judged,
+                Late = asked.Late,
+                Ungoverned = asked.Ungoverned,
                 Units = token => ReadNodeUnitsAsync(home, service, token),
                 Steps = () => [.. PluginCatalog.Load(home).Contributing.SelectMany(plugin => plugin.Manifest.Steps)],
                 // A receipt's role is what its plugin's manifest declares of its schema.

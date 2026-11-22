@@ -53,6 +53,8 @@ internal sealed class BusMeasures
 
     public const string Began = "began", ByConsumer = "consumer", ByLook = "look", ByOther = "other";
 
+    public const string Step = "step", StepBegan = "began";
+
     /// <summary>What each consumer threw, by its name.</summary>
     public const string Consumer = "consumer";
 

@@ -344,8 +344,8 @@ public sealed class DriverWatch(
         _doors.Asks is { } asks ? asks.WaitAsync(unit, bound, ct) : Task.FromResult(false);
 
     /// <summary>The pass <see cref="PassAsks.WaitUnitAsync"/> asks for one unit, with no read of the units; false where this loop runs no runtime.</summary>
-    internal Task<bool> PassUnitAsync(string unit, TimeSpan bound, CancellationToken ct) =>
-        _doors.Asks is { } asks ? asks.WaitUnitAsync(unit, bound, ct) : Task.FromResult(false);
+    internal Task<PassOutcome> PassUnitAsync(string unit, TimeSpan bound, CancellationToken ct) =>
+        _doors.Asks is { } asks ? asks.WaitUnitAsync(unit, bound, ct) : Task.FromResult(PassOutcome.Failed);
 
     /// <summary>
     /// Look now, because a terminal's words for <paramref name="session"/> were kept: the requests topic's wake,

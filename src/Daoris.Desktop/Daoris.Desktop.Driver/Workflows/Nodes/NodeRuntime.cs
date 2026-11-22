@@ -33,7 +33,7 @@ namespace Daoris.Driver;
 /// its performed nodes started, since its landing doors read its record; its end is kept there (<see cref="NodeRunKeeping"/>), and its chain
 /// coming back here arms it again (<see cref="Return"/>).</para>
 /// </remarks>
-public sealed class NodeRuntime(
+public sealed partial class NodeRuntime(
     NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
 {
     /// <summary>The units one pass evaluates at most, in id order; the rest are judged at the next.</summary>
@@ -262,76 +262,22 @@ public sealed class NodeRuntime(
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
 
     /// <summary>
-    /// Withdraws what the runtime holds once the choices no longer arm it: the awaited set told nothing, the timers and the governed units
-    /// cleared. Called before the plan's supervision, so a plugin the last graph awaited is not started again by the look that reads that
-    /// graph's removal. Returns whether the choices disarm the runtime.
-    /// </summary>
-    public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
-    {
-        if (KeepsClosures || ArmsRuns || OwesCleanup || new OwedRunEnds(records.Home).Any) return false;
-        if (!Telling.Holding && _governed is null) return true;
-        await _one.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            Withdraw();
-        }
-        finally
-        {
-            _one.Release();
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Whether a plugin is owed a cleanup of what a run created: an ended run's temporary resources stay owed until their plugin settles them,
-    /// so the runtime stays armed for the ask though no run is open.
-    /// </summary>
-    private bool OwesCleanup
-    {
-        get
-        {
-            var ended = _graphRuns.Read().Where(run => run.Ended is not null).Select(run => run.Unit).ToHashSet(StringComparer.Ordinal);
-            return _cleaner.Owed(unit => ended.Contains(unit) ? true : Ended(unit)).Count > 0;
-        }
-    }
-
-    /// <summary>
-    /// Whether this loop closes quests and its home keeps a closure graph a quest is bound to: it stays armed whatever the choices say, so a
-    /// close in flight is reconciled and a bound quest closed by its graph. One stat; a home that never bound a quest keeps none, and is
-    /// judged by its choices alone.
-    /// </summary>
-    private bool KeepsClosures => _closer is not null && ClosureGraphs.Any(records.Home);
-
-    /// <summary>
-    /// Disarmed: the plugins are told nothing is awaited where something is, so their processes stop, and everything cached is cleared
-    /// whatever is told, a pending retry's timer included, so nothing wakes the loop and a later arming reads the units afresh. Nothing is
-    /// read. Called holding <see cref="_one"/>.
-    /// </summary>
-    private void Withdraw()
-    {
-        Telling.Withdraw();
-        Owing.Forget();
-        (_governed, _lastRead, _choices) = (null, null, null);
-        _byTold = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
-        LastQuests = null;
-        QuestReads.Delete(records.Home);
-    }
-
-    /// <summary>
     /// One pass, at a look (<see cref="NodeRuntimeLook.Whole"/>) or a wake: completions heard, attempts due asked after before any new start,
     /// retries due made ready, the concerned units evaluated and their starts made within <see cref="SendsPerPass"/>, the awaited set told.
     /// </summary>
-    public async Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, CancellationToken ct)
+    public Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, CancellationToken ct) => PassAsync(look, nested: false, ct);
+
+    /// <param name="nested">Whether this is the unit pass a running pass makes for the units asked while it works (<see cref="NodeRuntimeLook.Late"/>), under the lock that pass holds.</param>
+    private async Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, bool nested, CancellationToken ct)
     {
         // Disarmed: whatever is told or cached is withdrawn, a pending retry's timer included; nothing is read.
-        if (await WithdrawAsync(look.Config, ct).ConfigureAwait(false)) return NodeRuntimePass.Idle;
-        await _one.WaitAsync(ct).ConfigureAwait(false);
+        if (!nested && await WithdrawAsync(look.Config, ct).ConfigureAwait(false)) return NodeRuntimePass.Idle;
+        if (!nested) await _one.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             if (!_holdsLease()) return new NodeRuntimePass(true, [], [], []);
             _config = look.Config;
-            _noticed.Begin();
+            if (!nested) _noticed.Begin();
 
             // Governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the ones it is judged
             // under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged. A word on a
@@ -464,8 +410,20 @@ public sealed class NodeRuntime(
             var named = done.Select(each => each.Unit).Concat(held).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
             var moved = new HashSet<string>(StringComparer.Ordinal);
+            // A unit asked for while this pass works is judged at its next unit boundary, never after the pass (LatePasses).
+            var late = new LatePasses(look, governed);
+            async Task LateAsync()
+            {
+                if (late.Take() is not { } taken) return;
+                var readThis = _readThisPass;
+                late.Merge(taken, await PassAsync(taken, nested: true, ct).ConfigureAwait(false), done, said);
+                _readThisPass = readThis;
+            }
+
+            await LateAsync().ConfigureAwait(false);
             foreach (var each in governed.Values)
             {
+                await LateAsync().ConfigureAwait(false);
                 var id = each.Unit.Id;
                 if (look.Asked.Contains(id) || named.Contains(id) || Owing.OwesStart(each) || await Owing.RebindsAsync(each, tips, ct).ConfigureAwait(false))
                 {
@@ -483,20 +441,25 @@ public sealed class NodeRuntime(
             var concerned = Owing.Turn(owing, [look.Asked, held, named], moved);
             foreach (var each in concerned)
             {
+                await LateAsync().ConfigureAwait(false);
+                if (late.Judged(each.Unit.Id)) continue;
                 if (each.Closes) Closing.Settle(each, done, said);
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
                 look.Judged(each.Unit.Id);
             }
 
+            await LateAsync().ConfigureAwait(false);
+
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, _noticed, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
-            return _noticed.Onto(new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed }, HeldSteps());
+            var passed = new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed || late.Told };
+            return nested ? passed : _noticed.Onto(passed, HeldSteps());
         }
         finally
         {
-            _one.Release();
+            if (!nested) _one.Release();
         }
     }
 

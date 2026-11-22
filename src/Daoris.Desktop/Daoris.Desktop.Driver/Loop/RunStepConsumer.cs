@@ -40,7 +40,7 @@ internal sealed class RunStepConsumer : IBusConsumer
         BusTypes.PolicyPassed.Kind, BusTypes.LandOutcome.Kind,
     ];
 
-    private readonly Func<string, CancellationToken, Task<bool>> _pass;
+    private readonly Func<string, CancellationToken, Task<PassOutcome>> _pass;
     private readonly Func<string?, CancellationToken, Task<int>> _take;
     private readonly BusLog _bus;
     private readonly Action<string, string> _warn;
@@ -48,13 +48,13 @@ internal sealed class RunStepConsumer : IBusConsumer
     private readonly ConcurrentDictionary<string, DateTimeOffset> _ending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, (DateTimeOffset Start, DateTimeOffset End)> _passed = new(StringComparer.Ordinal);
 
-    /// <param name="pass">Asks the evaluation runtime's pass for one unit and waits for it: true only where it judged the unit.</param>
+    /// <param name="pass">Asks the evaluation runtime's pass for one unit and waits for it: how it answered, judged only where it kept the unit's judgement.</param>
     /// <param name="take">Takes the step settle waiting in the box of the session named, or every box where none is; how many it took.</param>
     /// <param name="bus">The log it measures into, whose clock it reads.</param>
     /// <param name="warn">Where a start's failed take is said, once for each key.</param>
     /// <param name="slack">How long after a pass a begun node is still its own; <see cref="Slack"/> where none is given.</param>
     public RunStepConsumer(
-        Func<string, CancellationToken, Task<bool>> pass, Func<string?, CancellationToken, Task<int>> take, BusLog bus, Action<string, string> warn,
+        Func<string, CancellationToken, Task<PassOutcome>> pass, Func<string?, CancellationToken, Task<int>> take, BusLog bus, Action<string, string> warn,
         TimeSpan? slack = null)
     {
         _slack = slack ?? Slack;
@@ -86,7 +86,10 @@ internal sealed class RunStepConsumer : IBusConsumer
         if (entry.Kind == BusTypes.StepSettled.Kind) await _take(entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string, ct).ConfigureAwait(false);
         var start = _bus.Clock.GetUtcNow();
         // A unit the pass did not judge (a drain, a closing loop, no lease, a run it does not govern yet) leaves the obligation armed for the look's whole pass.
-        if (!await _pass(unit, ct).ConfigureAwait(false)) return BusHandled.Judged;
+        var outcome = await _pass(unit, ct).ConfigureAwait(false);
+        // One row a reason, in the log's next write with the other measures.
+        _bus.Measured(BusMeasures.Step, outcome.Name(), 1);
+        if (!outcome.IsAnswer()) return BusHandled.Judged;
         if (_passed.Count >= 1024) _passed.Clear();
         _passed[unit] = (start, _bus.Clock.GetUtcNow());
         return BusHandled.Ended;
@@ -116,5 +119,6 @@ internal sealed class RunStepConsumer : IBusConsumer
             : _ending.ContainsKey(unit) ? BusMeasures.ByLook : BusMeasures.ByOther;
         var lag = _ending.TryRemove(unit, out var since) ? Math.Max(0, (long)(at - since).TotalMilliseconds) : 0;
         _bus.Measured(BusMeasures.Began, by, lag);
+        if (by == BusMeasures.ByConsumer) _bus.Measured(BusMeasures.Step, BusMeasures.StepBegan, 1);
     }
 }
