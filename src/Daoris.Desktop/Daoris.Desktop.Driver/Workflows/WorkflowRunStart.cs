@@ -102,10 +102,20 @@ public static class WorkflowRunStart
     /// the binding already kept, read. A bind not made, or a binding that does not read, says why, and the start holds on it: a take that
     /// went on would name a graph its run may not be bound to. The machine log's line is written as a binding is made; the look says it.
     /// </summary>
-    public static Task<WorkflowBind> AtStartAsync(
+    /// <remarks>A run it binds to a graph is teed as its fact (<see cref="StepBusFacts.RunBound"/>, BUS2e2); one bound already, or under Current, tees none.</remarks>
+    public static async Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, string home, DriverConfig config, IReadOnlyList<WorkflowPlugin> plugins,
-        Func<DateTimeOffset> now, StartHold hold, CancellationToken ct) =>
-        BindOneAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, new Every(), () => RoleCatalog.ReadHome(home), hold, ct);
+        Func<DateTimeOffset> now, StartHold hold, CancellationToken ct)
+    {
+        var bound = await BindOneAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, new Every(), () => RoleCatalog.ReadHome(home), hold, ct)
+            .ConfigureAwait(false);
+        if (bound is { Came: WorkflowBindCame.Bound, Run: { } run, Binding: { IsCurrent: false, Workflow: { } workflow } binding })
+        {
+            BusLog.Of(home)?.Tee(() => StepBusFacts.RunBound(run, workflow, binding.Version));
+        }
+
+        return bound;
+    }
 
     /// <summary>The start's bind through the ports.</summary>
     /// <param name="roles">The role catalogue a step's role is judged by; null judges by the seed's.</param>

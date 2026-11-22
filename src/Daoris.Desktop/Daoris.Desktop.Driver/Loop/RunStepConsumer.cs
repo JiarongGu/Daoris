@@ -2,25 +2,25 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
-internal sealed record StepWork(IReadOnlyList<string?> Boxes);
+internal sealed record StepWork(IReadOnlyList<string?> Boxes, bool Bound = false);
 
 /// <summary>
 /// A run's progression as the dispatch's second consumer (<see cref="BusFlowConsumer{TWork}"/>, keyed by the run): each fact that ends a step of a run (a check passed, failed or unknown; a working session's
 /// settle taken from its box; the session of a plugin step ending its turn; the policy passing a second opinion at its gate; a landing's try
-/// ending) asks the one pass of the evaluation runtime for that run at once, which judges that run first, so the next step begins at the fact
+/// ending; a start binding the run to a graph, which begins its first step) asks the one pass of the evaluation runtime for that run at once, which judges that run first, so the next step begins at the fact
 /// and not at a look's rotation. The pass is the existing one (<see cref="PassAsks.WaitUnitAsync"/>); this consumer is its wake by fact, never
 /// a second way to progress a run. Its acknowledgement, written once the pass judged the run, ends the facts' obligations.
 /// </summary>
 /// <remarks>
 /// <para><b>What the pass reads.</b> It reads no units: the run's record, its tips and its gates are read at the pass, as a plugin step's wake
 /// reads them, and the governance (its graph, its scope, its quests) is the last whole read's, which none of these facts changes. A run the
-/// last read did not govern yet is left to the whole pass the look makes. A run the pass did not judge in time (a drain, a closing loop, no lease) is
+/// last read did not govern yet is left to the look, but a binding's (BUS2e2): it is asked the whole read (<see cref="PassAsks.WaitWholeAsync"/>). A run the pass did not judge in time (a drain, a closing loop, no lease) is
 /// acknowledged without ending the fact's obligation, so no retry is spent and the stall view keeps it until a look's pass reaches it. Handling is idempotent: a
 /// fact redelivered after a crash asks a pass that finds nothing owed and begins nothing twice.</para>
 /// <para><b>Facts of one run</b> are handled one after another in order, and those of several runs beside each other, at most the queue's
 /// subjects at once; the passes they ask coalesce, one pass judging every unit asked before it began. Facts of one kind waiting in a row on a run
 /// fold into the last.</para>
-/// <para><b>The net.</b> The look's whole pass stays: an ending no fact names (a tip, a timer, a binding, the configuration, an owed end) still
+/// <para><b>The net.</b> The look's whole pass stays: an ending no fact names (a tip, a timer, a ledger read, the configuration, an owed end) still
 /// reaches the run there. A node begun is told apart as the consumer's or the look's (<see cref="BusMeasures.Began"/>), with its lag from the
 /// ending fact, so <c>daoris bus stats</c> shows how many steps still wait for a look. A start takes the settles waiting in their boxes
 /// (<see cref="ResumedAsync"/>) and asks no pass: it runs after the first look, whose whole pass judges every run, so a restart loses nothing.</para>
@@ -41,10 +41,11 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     private static readonly string[] Ending =
     [
         BusTypes.CheckPassed.Kind, BusTypes.CheckFailed.Kind, BusTypes.CheckUnknown.Kind, BusTypes.StepSettled.Kind, BusTypes.StepTurnEnded.Kind,
-        BusTypes.PolicyPassed.Kind, BusTypes.LandOutcome.Kind,
+        BusTypes.PolicyPassed.Kind, BusTypes.LandOutcome.Kind, BusTypes.RunBound.Kind,
     ];
 
     private readonly Func<string, CancellationToken, Task<PassOutcome>> _pass;
+    private readonly Func<string, CancellationToken, Task<PassOutcome>>? _whole;
     private readonly Func<string?, CancellationToken, Task<int>> _take;
     private readonly BusLog _bus;
     private readonly Action<string, string> _warn;
@@ -58,20 +59,22 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     /// <param name="bus">The log it measures into, whose clock it reads.</param>
     /// <param name="warn">Where a start's failed take is said, once for each key.</param>
     /// <param name="slack">How long after a pass a begun node is still its own; <see cref="Slack"/> where none is given.</param>
+    /// <param name="whole">Asks the whole read judging one unit first, for a binding its pass does not govern; none leaves it to the look.</param>
     public RunStepConsumer(
         Func<string, CancellationToken, Task<PassOutcome>> pass, Func<string?, CancellationToken, Task<int>> take, BusLog bus, Action<string, string> warn,
-        TimeSpan? slack = null)
+        TimeSpan? slack = null, Func<string, CancellationToken, Task<PassOutcome>>? whole = null)
         : base(Name, [.. Ending, BusTypes.NodeBegun.Kind], Bounds, bus.Clock)
     {
         _slack = slack ?? Slack;
         _pass = pass;
+        _whole = whole;
         _take = take;
         _bus = bus;
         _warn = warn;
     }
 
-    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
-        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([])));
+    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, string kind, CancellationToken ct) =>
+        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([], Bound: kind == BusTypes.RunBound.Kind)));
 
     public override string Obliged => BusTypes.Step;
 
@@ -94,11 +97,12 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     protected override Task<IReadOnlyList<BusFlowPiece<StepWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
     {
         if (entry.Kind == BusTypes.NodeBegun.Kind) return Task.FromResult<IReadOnlyList<BusFlowPiece<StepWork>>>([]);
-        var boxes = entry.Kind == BusTypes.StepSettled.Kind ? new StepWork([entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string]) : new StepWork([]);
+        var boxes = entry.Kind == BusTypes.StepSettled.Kind ? new StepWork([entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string])
+            : new StepWork([], Bound: entry.Kind == BusTypes.RunBound.Kind);
         return Task.FromResult<IReadOnlyList<BusFlowPiece<StepWork>>>([new(UnitOf(entry), boxes)]);
     }
 
-    protected override StepWork Merge(StepWork earlier, StepWork later) => new([.. earlier.Boxes.Union(later.Boxes)]);
+    protected override StepWork Merge(StepWork earlier, StepWork later) => new([.. earlier.Boxes.Union(later.Boxes)], earlier.Bound || later.Bound);
 
     protected override async Task<BusFlowOutcome> MoveAsync(string unit, StepWork work, CancellationToken ct)
     {
@@ -115,6 +119,11 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
         try
         {
             outcome = await _pass(unit, ct).ConfigureAwait(false);
+            // A whole read that ended without judging the run moved nothing of it.
+            if (outcome == PassOutcome.NotGoverned && work.Bound && _whole is { } whole)
+            {
+                outcome = await whole(unit, ct).ConfigureAwait(false) is var read && read == PassOutcome.Ended ? PassOutcome.NotJudged : read;
+            }
             if (outcome.IsAnswer())
             {
                 if (_passed.Count >= 1024) _passed.Clear();

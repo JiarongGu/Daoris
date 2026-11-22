@@ -41,7 +41,8 @@ internal sealed class RunStepRun : IAsyncDisposable
                         async (said, text, key, told) => (await WordsHead.FollowAsync(said, at => service.SayAsync(at, text, ct: told, from: DaorisWords.From, key: key))
                             .ConfigureAwait(false)).Said,
                         bus.Clock.GetUtcNow, token, watch.RunWorkers, session).ConfigureAwait(false)).Count,
-                bus, (once, why) => bus.Warn("run-step:" + once, "run.step-unjudged", ("why", why))), home, ct).ConfigureAwait(false);
+                bus, (once, why) => bus.Warn("run-step:" + once, "run.step-unjudged", ("why", why)),
+                whole: (unit, token) => watch.PassWholeOutcomeAsync(unit, RunStepConsumer.Bound, token)), home, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException)
         {

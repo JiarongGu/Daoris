@@ -346,6 +346,10 @@ public sealed class DriverWatch(
     public Task<bool> PassWholeAsync(string unit, TimeSpan bound, CancellationToken ct) =>
         _doors.Asks is { } asks ? asks.WaitAsync(unit, bound, ct) : Task.FromResult(false);
 
+    /// <summary>The whole pass <see cref="PassWholeAsync"/> asks, as it came to (<see cref="PassAsks.WaitWholeAsync"/>); failed where this loop runs no runtime.</summary>
+    internal Task<PassOutcome> PassWholeOutcomeAsync(string unit, TimeSpan bound, CancellationToken ct) =>
+        _doors.Asks is { } asks ? asks.WaitWholeAsync(unit, bound, ct) : Task.FromResult(PassOutcome.Failed);
+
     /// <summary>The pass <see cref="PassAsks.WaitUnitAsync"/> asks for one unit, with no read of the units; false where this loop runs no runtime.</summary>
     internal Task<PassOutcome> PassUnitAsync(string unit, TimeSpan bound, CancellationToken ct) =>
         _doors.Asks is { } asks ? asks.WaitUnitAsync(unit, bound, ct) : Task.FromResult(PassOutcome.Failed);

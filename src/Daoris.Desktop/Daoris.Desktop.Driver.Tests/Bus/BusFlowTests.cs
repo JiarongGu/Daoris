@@ -563,7 +563,7 @@ public sealed class BusFlowTests : IDisposable
 
         public ConcurrentQueue<(string Key, DateTimeOffset At)> Moves { get; } = new();
 
-        protected override async Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, CancellationToken ct)
+        protected override async Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, string kind, CancellationToken ct)
         {
             // A process that is stopped while it works a retry: held here until its queue closes.
             if (blockRetries) await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);

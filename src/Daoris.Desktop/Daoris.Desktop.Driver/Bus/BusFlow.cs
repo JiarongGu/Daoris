@@ -85,8 +85,8 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     /// <summary>The pieces of work <paramref name="entry"/> names; none where nothing is owed it, which moves it. A throw fails that entry's work alone.</summary>
     protected abstract Task<IReadOnlyList<BusFlowPiece<TWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct);
 
-    /// <summary>The work now owed <paramref name="key"/> when its retry is due; null where none is owed any more, which moves it.</summary>
-    protected abstract Task<BusFlowPiece<TWork>?> RetryWorkAsync(string key, CancellationToken ct);
+    /// <summary>The work now owed <paramref name="key"/> when the retry of an entry of <paramref name="kind"/> is due; null where none is owed any more, which moves it.</summary>
+    protected abstract Task<BusFlowPiece<TWork>?> RetryWorkAsync(string key, string kind, CancellationToken ct);
 
     /// <summary>Two pieces of work on one key become one: what the entries waiting on it named, together.</summary>
     protected abstract TWork Merge(TWork earlier, TWork later);
@@ -271,7 +271,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         {
             if (scope == BusFlowScope.Key)
             {
-                foreach (var key in keys) outcomes.Add((key, await RetryKeyAsync(key, ct).ConfigureAwait(false)));
+                foreach (var key in keys) outcomes.Add((key, await RetryKeyAsync(key, cause.Kind, ct).ConfigureAwait(false)));
             }
             else outcomes.Add(("", await RetryEntryAsync(host, cause, ct).ConfigureAwait(false)));
         }
@@ -298,8 +298,8 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         return BusHandled.Judged;
     }
 
-    private async Task<BusFlowOutcome> RetryKeyAsync(string key, CancellationToken ct) =>
-        await RetryWorkAsync(key, ct).ConfigureAwait(false) is { } piece ? await AskAsync(piece, ct).ConfigureAwait(false) : BusFlowOutcome.Moved;
+    private async Task<BusFlowOutcome> RetryKeyAsync(string key, string kind, CancellationToken ct) =>
+        await RetryWorkAsync(key, kind, ct).ConfigureAwait(false) is { } piece ? await AskAsync(piece, ct).ConfigureAwait(false) : BusFlowOutcome.Moved;
 
     /// <summary>An entry whose pieces could not be named: named again from the entry as the log keeps it, each piece asked.</summary>
     private async Task<BusFlowOutcome> RetryEntryAsync(BusConsumerHost host, Cause cause, CancellationToken ct)

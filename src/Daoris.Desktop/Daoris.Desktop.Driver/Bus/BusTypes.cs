@@ -164,6 +164,11 @@ public static class BusTypes
         "land.outcome", 1, BusClasses.Fact, Steps, Step, StepFact, 2, BusGiveUps.FinalExit,
         [new("landed", BusShapes.Flag), new("code", BusShapes.Code), new("tip", BusShapes.Id)]);
 
+    /// <summary>A start bound its run to a graph's version (BUS2e2): the run's first step must begin from it, not from the next whole read. Its subject is the run's unit.</summary>
+    public static readonly BusType RunBound = new(
+        "run.bound", 1, BusClasses.Fact, Steps, Step, StepFact, 2, BusGiveUps.Held,
+        [new("run", BusShapes.Id), new("workflow", BusShapes.Id), new("version", BusShapes.Count)]);
+
     /// <summary>This process wrote the standing choices (a rule's reviewers, a workflow, the policy): the opinion's gate must judge every owed opinion.</summary>
     public static readonly BusType ChoicesWritten = new(
         "choices.written", 1, BusClasses.Fact, Choices, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held, []);
@@ -200,7 +205,7 @@ public static class BusTypes
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, CheckStarted, CheckPassed,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, RunBound, CheckStarted, CheckPassed,
         CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp, FlowRetry,
     ];
 
@@ -234,6 +239,7 @@ public static class BusTypes
         [StepTurnEnded.Kind] = [BusEnd.Acknowledged],
         [PolicyPassed.Kind] = [BusEnd.Acknowledged],
         [LandOutcome.Kind] = [BusEnd.Acknowledged],
+        [RunBound.Kind] = [BusEnd.Acknowledged],
     };
 
     private static readonly Dictionary<string, BusType> ByKind = All.ToDictionary(type => type.Kind, StringComparer.Ordinal);
