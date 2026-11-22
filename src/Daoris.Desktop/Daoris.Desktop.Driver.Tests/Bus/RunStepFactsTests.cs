@@ -36,7 +36,7 @@ public sealed class RunStepFactsTests : IDisposable
         var consumer = Consumer(bus, _ => Task.FromResult(true));
         await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
-        bus.Append(new BusDraft(BusTypes.CheckPassed, "run:r-1") { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, "r-1") { Commit = true });
         bus.Append(StepBusFacts.PolicyPassed("r-2", "opinion", "abc1234"));
         LandOutcomes.Kept(_home, "run:r-3", "abc1234", new TreeLanding(true, "merged"));
         bus.Append(StepBusFacts.StepTurnEnded("run:r-4", "build", "inv-1"));
@@ -62,51 +62,64 @@ public sealed class RunStepFactsTests : IDisposable
 
         await Poll.Until(() => _steps.Contains("pass run:r-1"), () => string.Join(", ", _steps), Soon);
         var order = _steps.ToList();
-        Assert.Equal("take", order[order.IndexOf("pass run:r-1") - 1]);
+        Assert.Equal("take s-worker", order[order.IndexOf("pass run:r-1") - 1]);
         await Unarmed(bus);
         Assert.Empty(typeof(RunStepConsumer).Assembly.GetTypes().Where(type => type.Name == "StepSettlesLook"));
     }
 
-    /// <summary>🔴 A pass that did not judge the run in time leaves the fact armed and asks again after the backoff; the acknowledgement comes after the pass that did.</summary>
+    /// <summary>🔴 A run the pass did not judge (a drain, a closing loop, no lease) is acknowledged with its obligation armed, and spends no retry.</summary>
     [Fact]
-    public async Task A_pass_that_did_not_judge_the_run_keeps_the_facts_timer_until_one_does()
+    public async Task A_run_the_pass_did_not_judge_keeps_the_facts_timer_and_spends_no_retry()
     {
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var bus = Open();
-        var consumer = Consumer(bus, async _ =>
+        var consumer = Consumer(bus, _ =>
         {
-            if (Interlocked.Increment(ref _tries) < 3) return false;
-            await release.Task;
-            return true;
+            Interlocked.Increment(ref _tries);
+            return Task.FromResult(false);
         });
         await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
-        bus.Append(new BusDraft(BusTypes.CheckPassed, "run:r-1") { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, "r-1") { Commit = true });
         await bus.FlushAsync();
-        await Poll.Until(() => Volatile.Read(ref _tries) >= 3, () => $"tries {_tries}", Soon);
+        await Poll.Until(() => Volatile.Read(ref _tries) >= 1, () => "no pass asked", Soon);
+        await Task.Delay(TimeSpan.FromMilliseconds(300));
+        await bus.FlushAsync();
         Assert.Contains(Armed(), timer => timer.Obliged == BusTypes.Step);
-        release.SetResult();
-        await Unarmed(bus);
-        Assert.Equal(3, Volatile.Read(ref _tries));
+        Assert.Equal(1, Volatile.Read(ref _tries));
     }
 
-    /// <summary>🔴 Facts queued while no queue ran are handled at the next start, which also takes the boxes and passes every open run once.</summary>
+    /// <summary>🔴 A settle's fact takes only the box its session named; a start takes every box and asks no pass.</summary>
     [Fact]
-    public async Task A_restart_resumes_the_queued_facts_and_passes_every_open_run()
+    public async Task A_settle_takes_its_own_box_and_a_start_takes_none_by_pass()
+    {
+        await using var bus = Open();
+        var consumer = Consumer(bus, _ => Task.FromResult(true));
+        await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+        bus.Append(StepBusFacts.StepSettled("s-a", "r-1", "build"));
+        await Poll.Until(() => _steps.Contains("take s-a"), () => string.Join(", ", _steps), Soon);
+        Assert.DoesNotContain("take s-b", _steps);
+        Assert.Contains("take", _steps);
+        Assert.DoesNotContain(_steps, each => each.StartsWith("pass", StringComparison.Ordinal) && !each.Contains("r-1", StringComparison.Ordinal));
+    }
+
+    /// <summary>🔴 Facts queued while no queue ran are handled at the next start, which takes the boxes and asks no pass of its own.</summary>
+    [Fact]
+    public async Task A_restart_resumes_the_queued_facts_and_asks_no_pass_of_its_own()
     {
         await using var bus = Open();
         // The consumer's first run claims its cursor; the facts below are written while no queue runs.
         await (await BusQueue.StartAsync(bus, [Consumer(bus, _ => Task.FromResult(true))], Quick)).DisposeAsync();
-        bus.Append(new BusDraft(BusTypes.CheckFailed, "run:r-1") { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckFailed, "r-1") { Commit = true });
         bus.Append(StepBusFacts.StepTurnEnded("run:r-2", "build", "inv-2"));
         await bus.FlushAsync();
         _steps.Clear();
 
-        var consumer = Consumer(bus, _ => Task.FromResult(true), ["run:r-1", "run:r-2", "run:r-9"]);
+        var consumer = Consumer(bus, _ => Task.FromResult(true));
         await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
-        await Poll.Until(() => _steps.Count(each => each == "pass run:r-1") >= 2 && _steps.Contains("pass run:r-2"), () => string.Join(", ", _steps), Soon);
+        await Poll.Until(() => _steps.Contains("pass run:r-1") && _steps.Contains("pass run:r-2"), () => string.Join(", ", _steps), Soon);
         Assert.Contains("take", _steps);
+        Assert.Equal(2, _steps.Count(each => each.StartsWith("pass", StringComparison.Ordinal)));
         await Unarmed(bus);
     }
 
@@ -125,12 +138,12 @@ public sealed class RunStepFactsTests : IDisposable
             });
             await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
-            bus.Append(new BusDraft(BusTypes.CheckPassed, "run:r-1") { Commit = true });
+            bus.Append(new BusDraft(BusTypes.CheckPassed, "r-1") { Commit = true });
             await Poll.Until(() => _steps.Contains("pass run:r-1"), () => string.Join(", ", _steps), Soon);
             await Unarmed(bus);
 
             // A node begun after the pass ended, with an ending fact standing before it that the pass began nothing for, is the look's.
-            bus.Append(new BusDraft(BusTypes.CheckFailed, "run:r-2") { Commit = true });
+            bus.Append(new BusDraft(BusTypes.CheckFailed, "r-2") { Commit = true });
             await Poll.Until(() => _steps.Contains("pass run:r-2"), () => string.Join(", ", _steps), Soon);
             await Unarmed(bus);
             await Task.Delay(TimeSpan.FromMilliseconds(50));
@@ -168,17 +181,16 @@ public sealed class RunStepFactsTests : IDisposable
         return store.Timers(null, 1000);
     }
 
-    private RunStepConsumer Consumer(BusLog bus, Func<string, Task<bool>> pass, IReadOnlyList<string>? open = null) => new(
+    private RunStepConsumer Consumer(BusLog bus, Func<string, Task<bool>> pass) => new(
         (unit, _) =>
         {
             _steps.Enqueue("pass " + unit);
             return pass(unit);
         },
-        _ =>
+        (session, _) =>
         {
-            _steps.Enqueue("take");
+            _steps.Enqueue(session is null ? "take" : "take " + session);
             return Task.FromResult(0);
         },
-        () => open ?? [],
         bus, (_, _) => { }, TimeSpan.Zero);
 }

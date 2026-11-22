@@ -29,18 +29,26 @@ internal sealed class RunStepRun : IAsyncDisposable
     }
 
     /// <summary>The progression over <paramref name="bus"/> for a watch's loop; none where no log is held here (a loop beside an instance).</summary>
-    public static Task<RunStepRun?> StartAsync(BusLog? bus, DriverWatch watch, ServiceClient service, string home, CancellationToken ct) =>
-        bus is null
-            ? Task.FromResult<RunStepRun?>(null)
-            : StartAsync(bus, new RunStepConsumer(
+    public static async Task<RunStepRun?> StartAsync(BusLog? bus, DriverWatch watch, ServiceClient service, string home, CancellationToken ct)
+    {
+        if (bus is null) return null;
+        try
+        {
+            return await StartAsync(bus, new RunStepConsumer(
                 (unit, token) => watch.PassUnitAsync(unit, RunStepConsumer.Bound, token),
-                async token => (await StepSettleAsks.TakeAsync(
+                async (session, token) => (await StepSettleAsks.TakeAsync(
                         new NodeRecordFiles(home), watch.Processes.Delegates.AgentOf,
-                        async (session, text, key, said) => (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, ct: said, from: DaorisWords.From, key: key))
+                        async (said, text, key, told) => (await WordsHead.FollowAsync(said, at => service.SayAsync(at, text, ct: told, from: DaorisWords.From, key: key))
                             .ConfigureAwait(false)).Said,
-                        bus.Clock.GetUtcNow, token, watch.RunWorkers).ConfigureAwait(false)).Count,
-                () => [.. GraphRuns.Of(home).Read().Where(run => run.Ended is null).Select(run => RunUnits.IdOf(run.Run))],
-                bus, (once, why) => bus.Warn("run-step:" + once, "run.step-unjudged", ("why", why))), home, ct);
+                        bus.Clock.GetUtcNow, token, watch.RunWorkers, session).ConfigureAwait(false)).Count,
+                bus, (once, why) => bus.Warn("run-step:" + once, "run.step-unjudged", ("why", why))), home, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException)
+        {
+            bus.Warn("run-step:start", "run.step-unstarted", ("why", error.Message));
+            return null;
+        }
+    }
 
     /// <summary>The run over <paramref name="consumer"/>: the settle boxes heard under <paramref name="home"/>.</summary>
     internal static async Task<RunStepRun?> StartAsync(BusLog bus, RunStepConsumer consumer, string home, CancellationToken ct)

@@ -77,6 +77,7 @@ internal sealed class WatchRun(
 
     private WatchNodes? _nodes;
     private TickReport? _looked;
+    private RunStepRun? _steps;
 
     private ServiceClient Service => watch.Service;
 
@@ -255,11 +256,10 @@ internal sealed class WatchRun(
             // look that reads the last graph's removal starts no plugin for it; link 8 then reads nothing.
             if (_nodes is { } nodes) await Stages.TimeAsync("withdraw", () => nodes.Runtime.WithdrawAsync(_config, token)).ConfigureAwait(false);
             _looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
+            if (_steps is null && _nodes is not null) _steps = await RunStepRun.StartAsync(watch.Bus, watch, Service, Home, ct).ConfigureAwait(false);
             return new ChainFired(_looked.Progressed ? 1 : 0, []);
         });
         _nodes?.Bind(chain, nodesDue, doors, ct);
-
-        await using var steps = _nodes is null ? null : await RunStepRun.StartAsync(watch.Bus, watch, Service, Home, ct).ConfigureAwait(false);
 
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure ends it, so no session outlives the
         // loop that watches it.
@@ -279,6 +279,7 @@ internal sealed class WatchRun(
         {
             // No wake of the runtime's fires link 8 once the loop closes; nor does a door's ask, and one asked is
             // answered as not passed, so no press waits on a loop that closed.
+            if (_steps is { } steps) await steps.DisposeAsync().ConfigureAwait(false);
             doors.Waking(null);
             if (doors.Unasked() is { } unasked) unasked.Take().Done(passed: false);
             if (watch.Hooks is { } hooks) hooks.StepArrived = null;

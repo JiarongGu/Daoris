@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class PassTaken
 {
-    private readonly IReadOnlyList<(string? Unit, TaskCompletionSource<bool> Answer)> _waiting;
+    private readonly IReadOnlyList<(string? Unit, TaskCompletionSource<bool> Answer, bool Whole)> _waiting;
 
-    internal PassTaken(bool asked, IReadOnlySet<string> units, IReadOnlyList<(string? Unit, TaskCompletionSource<bool> Answer)> waiting)
+    internal PassTaken(bool asked, IReadOnlySet<string> units, IReadOnlyList<(string? Unit, TaskCompletionSource<bool> Answer, bool Whole)> waiting)
     {
         Asked = asked;
         Units = units;
@@ -24,12 +24,12 @@ public sealed class PassTaken
     /// <summary>The pass kept <paramref name="unit"/>'s judgement: each door waiting on that unit is answered now, before the pass ends.</summary>
     public void Judged(string unit)
     {
-        foreach (var (_, answer) in _waiting.Where(each => string.Equals(each.Unit, unit, StringComparison.Ordinal))) answer.TrySetResult(true);
+        foreach (var (_, answer, _) in _waiting.Where(each => string.Equals(each.Unit, unit, StringComparison.Ordinal))) answer.TrySetResult(true);
     }
 
-    /// <summary>The pass ended: every door not answered yet is, <paramref name="passed"/> where it read and judged.</summary>
+    /// <summary>The pass ended: every door not answered yet is, <paramref name="passed"/> where it read and judged; a wait for one unit never judged is answered false.</summary>
     public void Done(bool passed)
     {
-        foreach (var (_, answer) in _waiting) answer.TrySetResult(passed);
+        foreach (var (_, answer, whole) in _waiting) answer.TrySetResult(passed && whole);
     }
 }

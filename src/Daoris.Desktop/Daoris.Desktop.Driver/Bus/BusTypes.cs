@@ -137,7 +137,7 @@ public static class BusTypes
         [new("nodes", BusShapes.Ids)]);
 
     private const string AtTheRun =
-        Unmeasured + "; the run's step consumer asks one pass for the run at the fact (BUS2e1), which reads the units afresh and judges that run first, so ten minutes covers a pass held behind another or a drain with room";
+        Unmeasured + "; the run's step consumer asks one pass for the run at the fact (BUS2e1), which judges that run first with no read of the units, so ten minutes covers a pass held behind another or a drain with room";
 
     private static readonly BusDeadline StepFact = BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheRun);
 

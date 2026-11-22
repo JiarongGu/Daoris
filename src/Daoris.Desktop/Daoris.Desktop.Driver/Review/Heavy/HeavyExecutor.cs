@@ -453,12 +453,12 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
         }
 
         lock (_gate) _answered.Add(send.Invocation);
-        _world.Bus?.Tee(() => CheckBusFacts.CheckSettled(send, result));
+        var told = _world.Bus?.Tee(() => CheckBusFacts.CheckSettled(send, result)) == true;
         // The result stands on disk: a writer or a callback that throws must not end the loop, which nothing starts again.
         try
         {
             _world.Said.WriteLine($"verify: {send.Repository} at {TextBounds.ShortCommit(send.Commit, 7)}: {result.Verdict}{(result.Why is { } why ? $" ({why})" : "")}.");
-            _world.Answered?.Invoke(send.Run, send.Invocation);
+            if (!told) _world.Answered?.Invoke(send.Run, send.Invocation);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

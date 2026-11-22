@@ -83,10 +83,11 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         return true;
     }
 
-    private RunStepConsumer Consumer(BusLog bus, NodeRuntime runtime, IReadOnlyList<string>? open = null) => new(
+    private RunStepConsumer Consumer(BusLog bus, NodeRuntime runtime) => new(
         (unit, ct) => OneAsync(runtime, unit, ct),
-        async ct => (await StepSettleAsks.TakeAsync(Files, _ => "claude", (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept")), () => _now, ct)).Count,
-        () => open ?? [], bus, (_, _) => { });
+        async (session, ct) => (await StepSettleAsks.TakeAsync(
+            Files, _ => "claude", (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept")), () => _now, ct, only: session)).Count,
+        bus, (_, _) => { });
 
     private BusLog Open() =>
         BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = Machine, Interval = TimeSpan.FromMilliseconds(20), Home = _home });
@@ -116,7 +117,7 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick);
 
         Answer(invocation);
-        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunId) { Commit = true });
 
         await Poll.Until(() => RunStatus("config").State == NodeStates.Active, () => $"config stayed {RunStatus("config").State}", Soon);
         Assert.Equal(NodeStates.Reached, RunStatus("release").State);
@@ -145,9 +146,8 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         Assert.NotNull(invocation);
     }
 
-    /// <summary>🔴 A session's <c>step_settle</c> is taken from its box at its fact and the run's next node begins, with no look to take it.</summary>
-    [Fact]
-    public async Task A_session_settle_is_taken_at_its_fact_and_begins_the_next_node()
+    /// <summary>The decision step waiting on the agent held by session <c>s-work</c>, whose <c>step_settle</c> box holds a settle of it.</summary>
+    private async Task<NodeRuntime> BoxedAsync()
     {
         new PlaceCastFiles(_home, () => true).Cast("machine", StepRoles.ReleaseManager, CastHolders.Agent, "the release path", _now);
         _sessions = [new SessionRecord(Work, RunHome.Repository, SessionStates.AwaitingStep) { NoteParts = new StepWait(RunId).Note().Parts }];
@@ -158,13 +158,39 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         Read();
         await RunPassAsync(runtime, whole: false);
         Assert.Equal(NodeStates.Active, RunStatus("config-needed").State);
-        var read = _unitsRead;
-
         var path = DaorisHome.Entry(_home, HomeEntry.Sessions, Work + StepSettleAsks.AskSuffix);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, $$"""
             {"id":"a1","session":"{{Work}}","run":"{{RunId}}","node":"config-needed","outcome":"needed","words":"a setting","epoch":1,"evidence":{},"at":"2026-11-18T10:00:00Z"}
             """);
+        return runtime;
+    }
+
+    /// <summary>🔴 Several takes of one box at once settle it once: none is refused, none tells its session, and its state stays kept.</summary>
+    [Fact]
+    public async Task Concurrent_takes_of_one_box_settle_it_once_and_refuse_nothing()
+    {
+        await BoxedAsync();
+        var told = 0;
+        var takes = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => StepSettleAsks.TakeAsync(
+            Files, _ => "claude", (_, _, _, _) =>
+            {
+                Interlocked.Increment(ref told);
+                return Task.FromResult(new SayAnswer(true, "kept"));
+            }, () => _now, CancellationToken.None)));
+
+        var settled = takes.SelectMany(each => each).ToList();
+        Assert.True(Assert.Single(settled).Done);
+        Assert.Equal(0, told);
+        Assert.Contains("\"state\":\"kept\"", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, Work + StepSettleAsks.StateSuffix)).Replace(" ", ""), StringComparison.Ordinal);
+    }
+
+    /// <summary>🔴 A session's <c>step_settle</c> is taken from its box at its fact and the run's next node begins, with no look to take it.</summary>
+    [Fact]
+    public async Task A_session_settle_is_taken_at_its_fact_and_begins_the_next_node()
+    {
+        var runtime = await BoxedAsync();
+        var read = _unitsRead;
         await using var bus = Open();
         await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick);
         bus.Append(StepBusFacts.StepSettled(Work, "#" + RunId, "config-needed"));
@@ -183,15 +209,15 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         await using var bus = Open();
         await (await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick)).DisposeAsync();
         Answer(invocation);
-        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunId) { Commit = true });
         await bus.FlushAsync();
 
-        await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime, [RunUnit])], Quick);
+        await using var queue = await BusQueue.StartAsync(bus, [Consumer(bus, runtime)], Quick);
         await Poll.Until(() => RunStatus("config").State == NodeStates.Active, () => $"config stayed {RunStatus("config").State}", Soon);
         var (before, sent) = (RunStatus("config"), _port.Sent.Count);
 
-        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
-        bus.Append(new BusDraft(BusTypes.CheckPassed, RunUnit) { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunId) { Commit = true });
+        bus.Append(new BusDraft(BusTypes.CheckPassed, RunId) { Commit = true });
         var passes = _passes;
         await Poll.Until(() => _passes > passes, () => "the redelivered fact asked no pass", Soon);
 

@@ -11,7 +11,7 @@ public sealed class PassAsks(Action wake)
 {
     private readonly Lock _gate = new();
 
-    private List<(string? Unit, TaskCompletionSource<bool> Answer)> _waiting = [];
+    private List<(string? Unit, TaskCompletionSource<bool> Answer, bool Whole)> _waiting = [];
 
     private HashSet<string> _units = new(StringComparer.Ordinal);
 
@@ -41,7 +41,7 @@ public sealed class PassAsks(Action wake)
         {
             _asked |= whole;
             if (unit is not null) _units.Add(unit);
-            if (answer is not null) _waiting.Add((unit, answer));
+            if (answer is not null) _waiting.Add((unit, answer, whole));
         }
 
         wake();
@@ -51,7 +51,7 @@ public sealed class PassAsks(Action wake)
         await using (timeout.Token.Register(() => answer.TrySetResult(false)))
         {
             var passed = await answer.Task.ConfigureAwait(false);
-            lock (_gate) _waiting.Remove((unit, answer));
+            lock (_gate) _waiting.Remove((unit, answer, whole));
             return passed;
         }
     }
