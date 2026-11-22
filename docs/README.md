@@ -146,6 +146,7 @@ Original dates, versions and measurement limits are kept.
 |`2026-09-21-dsh-evaluation.md`|Evidence: protocol evaluation
 |`2026-09-22-first-deployment-case-study.md`|Evidence: deployment defects
 |`2026-10-03-steer-evidence.md`|Evidence: steering
+|`2026-11-22-acp-upgrade-evidence.md`|Evidence: adapter and program releases against the pins
 
 ## Records and generated indexes
 
