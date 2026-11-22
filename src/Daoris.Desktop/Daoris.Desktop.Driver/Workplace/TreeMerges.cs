@@ -91,7 +91,13 @@ internal sealed class TreeMerges(TreeContext context)
 
         // Uncommitted work in the SESSION tree would silently not travel. Saying "merged" while
         // leaving it behind is the worst answer available: the person believes the work moved.
-        if ((uncommitted ?? await DirtyAsync(full, ct).ConfigureAwait(false)) is > 0 and var count)
+        var dirtied = uncommitted ?? await DirtyAsync(full, ct).ConfigureAwait(false);
+        if (dirtied is null)
+        {
+            return new(false, "git did not answer the session's tree's status, so nothing was merged: whether it holds uncommitted work is unknown.");
+        }
+
+        if (dirtied is > 0 and var count)
         {
             return new(false,
                 $"the session's tree has uncommitted work — {count} path(s) — which a merge would "
@@ -183,12 +189,8 @@ internal sealed class TreeMerges(TreeContext context)
     }
 
     /// <summary>
-    /// How many paths <c>git status</c> names in the session's tree: the dirty check's own read where the landing is told nothing. A
-    /// status git could not give names none, as the check always read it.
+    /// How many paths <c>git status</c> names in the session's tree: the dirty check's own read where the landing is told nothing. Null
+    /// where git did not answer: unknown, never clean, so the landing changes nothing.
     /// </summary>
-    internal static async Task<int> DirtyAsync(string full, CancellationToken ct)
-    {
-        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-        return string.IsNullOrWhiteSpace(dirty) ? 0 : dirty.Trim().Split('\n').Length;
-    }
+    internal static Task<int?> DirtyAsync(string full, CancellationToken ct) => MachinePorts.Repository.UncommittedAsync(full, ct);
 }

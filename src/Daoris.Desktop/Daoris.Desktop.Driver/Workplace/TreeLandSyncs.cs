@@ -216,9 +216,10 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         var (onCode, onOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var on = onOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (await TreeBinding.RefusalAsync(full, ct, onCode == 0 && on.Length == 2 ? on[0] : null).ConfigureAwait(false) is { } bound) return bound;
-        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
+        var dirty = await MachinePorts.Repository.UncommittedAsync(full, ct).ConfigureAwait(false);
         if ((on.Length == 2 ? on[1] : "") != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
-        if (!string.IsNullOrWhiteSpace(dirty)) return "it has uncommitted work";
+        if (dirty is null) return "git did not answer its status, so whether it holds uncommitted work is unknown";
+        if (dirty > 0) return "it has uncommitted work";
         if (await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false)) return $"`{sync.Branch}` is on its remote, which Daoris does not rewrite";
 
         var (detached, _, detachErr) = await WorkingTree.GitAsync(full, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);

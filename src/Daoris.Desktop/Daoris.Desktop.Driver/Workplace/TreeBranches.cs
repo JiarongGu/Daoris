@@ -79,7 +79,13 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         }
 
         // Uncommitted work would not travel with the branch — the same reason the merge door gives.
-        if ((uncommitted ?? await TreeMerges.DirtyAsync(full, ct).ConfigureAwait(false)) is > 0 and var dirty)
+        var dirtied = uncommitted ?? await TreeMerges.DirtyAsync(full, ct).ConfigureAwait(false);
+        if (dirtied is null)
+        {
+            return new TreeLanding(false, "git did not answer the session's tree's status, so nothing was landed: whether it holds uncommitted work is unknown.");
+        }
+
+        if (dirtied is > 0 and var dirty)
         {
             return new TreeLanding(false,
                 $"the session's tree has uncommitted work — {dirty} path(s) — which a "
@@ -312,6 +318,10 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         { Squashed = squashed, Replay = replayed };
     }
 
+    /// <summary>A read of git that failed says so and moves nothing: it is unknown, never a verdict.</summary>
+    private static TreeLanding Unread(string what) =>
+        new(false, $"git did not answer {what}, so nothing was moved: a read that failed is unknown, never a verdict.");
+
     /// <summary>
     /// Move a standing branch on to the session's work: the chain's branch, which an earlier done
     /// made, grows by this session's commits, so a ticket has one branch and one pull request.
@@ -347,8 +357,10 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         string? replayed = null, string? pinned = null, TreeDelivering? delivering = null)
     {
         var recorded = context.Recorded.Of(repository, name);
-        var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
+        var (headCode, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
+        // A branch git names none of is an answer (exit 1); a read that failed is no answer, and nothing is moved on it.
+        if (headCode is not (0 or 1)) return Unread($"where `{branch}` stands");
         var head = replayed ?? pinned ?? headOut.Trim();
         // What the session's work must grow from: the tip the record gives as squashed where it gives one, else the tip
         // the branch got when made or last moved, its commits the session's own; a replay onto that tip grows from it.
@@ -373,11 +385,13 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             {
                 var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", grewFrom!, head], ct)
                     .ConfigureAwait(false);
+                if (ancestor is not (0 or 1)) return Unread($"whether `{branch}` grows from `{name}`");
                 descends = ancestor == 0;
                 if (descends)
                 {
-                    var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{grewFrom}..{head}"], ct)
+                    var (countCode, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{grewFrom}..{head}"], ct)
                         .ConfigureAwait(false);
+                    if (countCode != 0) return Unread($"what `{branch}` adds to `{name}`");
                     newer = int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
                 }
             }

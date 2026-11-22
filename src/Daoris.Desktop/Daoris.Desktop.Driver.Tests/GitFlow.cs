@@ -58,6 +58,12 @@ internal static class GitFlow
                 : null)
             .Beyond(Beneath));
 
+    /// <summary>Fails each git <paramref name="when"/> names, with no exit as a timed-out read does; every other goes to the git beneath.</summary>
+    internal static IDisposable Failing(Func<GitAsk, bool> when) =>
+        FlowGit.Use(new ScriptedGit()
+            .On(ask => when(ask) ? new GitAnswer(null, "", "git did not answer within 30 seconds, and was stopped.") : null)
+            .Beyond(Beneath));
+
     /// <summary>A stand-in's answer, counted and timed as the launch it stands in for, so a count of the flow's starts holds it.</summary>
     private static Task<T> Launched<T>(IReadOnlyList<string> arguments, GitRunner runner, Func<Task<T>> answer) =>
         GitLaunch.LaunchAsync(GitLaunch.KindOf(arguments), arguments, GitLaunch.Budget, runner, answer);
