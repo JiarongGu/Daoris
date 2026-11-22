@@ -73,10 +73,10 @@ public sealed class GitLibraryStatusTests : LandedFixture
         var root = await RepositoryAsync("status-ignored");
         await File.WriteAllTextAsync(Path.Combine(root, ".gitignore"), "*.log\nbuild/\n!keep.log\n");
         Directory.CreateDirectory(Path.Combine(root, "build", "out"));
-        Directory.CreateDirectory(Path.Combine(root, "logs"));
+        Directory.CreateDirectory(Path.Combine(root, "traces"));
         Directory.CreateDirectory(Path.Combine(root, "sub"));
         await File.WriteAllTextAsync(Path.Combine(root, "build", "out", "x.bin"), "x\n");
-        await File.WriteAllTextAsync(Path.Combine(root, "logs", "a.log"), "a\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "traces", "a.log"), "a\n");
         await File.WriteAllTextAsync(Path.Combine(root, "keep.log"), "kept\n");
         await File.WriteAllTextAsync(Path.Combine(root, "sub", ".gitignore"), "local.txt\n");
         await File.WriteAllTextAsync(Path.Combine(root, "sub", "local.txt"), "local\n");
