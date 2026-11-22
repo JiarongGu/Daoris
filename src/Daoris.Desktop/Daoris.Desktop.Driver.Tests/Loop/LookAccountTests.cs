@@ -61,6 +61,10 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
             });
         }
 
+        var settled = Directory.GetFiles(NodeRecordFiles.FolderOf(_home), "*.json");
+        foreach (var file in settled) File.SetLastWriteTimeUtc(file, at.UtcDateTime);
+        Assert.True(settled.All(file => File.GetLastWriteTimeUtc(file) == at.UtcDateTime), "records younger than NodeRecordFiles.Settled are read again by every look");
+
         using (var log = new MachineLog(_home, "driver"))
         {
             var watch = new DriverWatch(_ledger.Client(), config, _home, new SessionProcesses(), sync: null,
@@ -98,6 +102,7 @@ public sealed class LookAccountTests(ITestOutputHelper output) : IDisposable
 
         // Each run's record is read once: once the home is read, a look is a fraction of the first, however loaded the machine.
         var (cold, warm) = (looks[0].GetProperty("ms").GetInt64(), looks[1].GetProperty("ms").GetInt64());
+        output.WriteLine($"{looks.Length} looks; the second: {warm} ms by {looks[1].GetProperty("by").GetString()} part {looks[1].GetProperty("part").GetString()}: {looks[1].GetProperty("stages").GetString()}");
         Assert.True(warm * 2 < cold, $"the second look over {Runs} runs took {warm} ms against the first's {cold} ms: {looks[1].GetProperty("stages").GetString()}");
     }
 
