@@ -233,7 +233,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     while the tree and its refs stand (`TreeReadMemo`);
     a look reads the open records and every record once each, and every graph run and its record once
     (`RunOutcomeNotices`, a workflow file decoded once a read); the overlaps read a running tree's changes only
-    where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`); the evaluation runtime passes at a whole
+    where its `HEAD` or index moved or its read is two minutes old (`TreeChangesKept`), counted from its own merge base with the line
+    (`WorkOverlaps.BaseAsync`: the later of its start and that merge base, so a line merged in or rebased onto is never its change),
+    and a pair's notice is said once while either session stays open, whether or not a look could read both trees; the evaluation runtime passes at a whole
     look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent
     closed is read within a pass, never another ledger change, reading tips from git's ref files (`NodeTips`) and a run's record
     once while its file stands. Each look pass is a stage of its part's name in `watch.looked` unless it times itself, so a look's

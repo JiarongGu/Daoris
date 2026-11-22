@@ -83,6 +83,25 @@ public sealed class WorkOverlapsTests : IDisposable
     }
 
     [Fact]
+    public async Task A_notice_said_is_not_said_again_after_a_look_that_could_not_read_one_of_the_trees()
+    {
+        var said = 0;
+        Task Say(string session, string text, string key, CancellationToken ct)
+        {
+            said++;
+            return Task.CompletedTask;
+        }
+
+        var both = Two(["src/b.cs"], ["src/b.cs"]);
+        var unread = both with { Changed = new Dictionary<string, IReadOnlyList<string>> { ["q2"] = ["src/b.cs"] } };
+        await WorkOverlaps.TellAsync(_home, both, Say);
+        await WorkOverlaps.TellAsync(_home, unread, Say);
+        await WorkOverlaps.TellAsync(_home, both, Say);
+
+        Assert.Equal(2, said);
+    }
+
+    [Fact]
     public async Task Units_changing_no_shared_path_are_told_nothing()
     {
         var said = 0;

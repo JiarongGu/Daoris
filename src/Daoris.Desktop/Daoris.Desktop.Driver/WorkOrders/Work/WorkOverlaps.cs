@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The look's half of rows that touch the same files: what each running unit of this machine has
-/// changed since it opened, for the planner's comparison at a start (<see cref="Snapshot.Changed"/>), and the observed overlap of two running
+/// changed since its own merge base (<see cref="BaseAsync"/>), for the planner's comparison at a start (<see cref="Snapshot.Changed"/>), and the observed overlap of two running
 /// units of one repository, each told once as an ordinary word.
 /// </summary>
 /// <remarks>
@@ -38,13 +38,40 @@ public static class WorkOverlaps
     public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, CancellationToken ct) =>
         !WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false) ? null : await NamesAsync(tree, before, ct).ConfigureAwait(false);
 
-    /// <summary>git's names of the paths <c>before</c> differs from <paramref name="tree"/> in, the tree known to be its checkout's top level.</summary>
+    /// <summary>git's names of the paths the tree changed since <see cref="BaseAsync"/>, the tree known to be its checkout's top level.</summary>
     internal static async Task<IReadOnlyList<string>?> NamesAsync(string tree, string before, CancellationToken ct)
     {
-        var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", before], ct).ConfigureAwait(false);
+        var from = await BaseAsync(tree, before, ct).ConfigureAwait(false);
+        var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", from], ct).ConfigureAwait(false);
         return code == 0
             ? [.. stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)]
             : null;
+    }
+
+    /// <summary>
+    /// The commit a tree's own changes are counted from: the later of <paramref name="before"/> and its merge base with the line, local
+    /// before remote; <paramref name="before"/> where the line cannot be read.
+    /// </summary>
+    internal static async Task<string> BaseAsync(string tree, string before, CancellationToken ct)
+    {
+        if (await LineGuesses.Shared.GuessAsync(tree, ct).ConfigureAwait(false) is not { Length: > 0 } line) return before;
+        var forks = new List<string>();
+        if (line.StartsWith("origin/", StringComparison.Ordinal)) forks.Add($"refs/heads/{line["origin/".Length..]}");
+        forks.Add(line);
+        foreach (var fork in forks)
+        {
+            var (code, shared, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "merge-base", "HEAD", fork], ct).ConfigureAwait(false);
+            var mergeBase = shared.Trim();
+            if (code != 0 || !WorkingTree.IsCommitId(mergeBase)) continue;
+
+            // The later of the two; both where neither leads back to the other.
+            var (later, names, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "merge-base", "--independent", before, mergeBase], ct)
+                .ConfigureAwait(false);
+            var latest = names.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return later == 0 && latest is [var only] ? only : mergeBase;
+        }
+
+        return before;
     }
 
     /// <summary>
@@ -53,9 +80,11 @@ public static class WorkOverlaps
     /// </summary>
     public static async Task TellAsync(string home, Snapshot snapshot, Say say, CancellationToken ct = default)
     {
-        var running = Own(snapshot).Where(s => snapshot.Changed.ContainsKey(s.Quest!)).ToList();
+        var own = Own(snapshot).ToList();
+        var running = own.Where(s => snapshot.Changed.ContainsKey(s.Quest!)).ToList();
         var told = Told(home);
-        var kept = told.Where(key => running.Any(s => key.StartsWith($"overlap/{s.Id}/", StringComparison.Ordinal))).ToHashSet(StringComparer.Ordinal);
+
+        var kept = told.Where(key => own.Any(s => key.StartsWith($"overlap/{s.Id}/", StringComparison.Ordinal))).ToHashSet(StringComparer.Ordinal);
         foreach (var one in running)
         {
             foreach (var other in running.Where(other => other.Quest != one.Quest
