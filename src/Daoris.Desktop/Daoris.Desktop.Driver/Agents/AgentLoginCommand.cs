@@ -30,7 +30,9 @@ internal static class AgentLoginCommand
 
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        var (name, toolchain, _, _) = AgentsCommand.Agent(args, "login", "<agent>", world, path);
+        var (given, door, _, roster) = AgentsCommand.Agent(args, "login", "<agent>", world, path);
+        var toolchain = roster.Adapters.Names.Contains(given, StringComparer.OrdinalIgnoreCase) ? roster.AccountAgentOf(given) ?? door : door;
+        var name = toolchain.Name;
         if (toolchain.Accounts.LoginArguments is not { Count: > 0 })
         {
             throw new AgentWords(
