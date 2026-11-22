@@ -222,6 +222,11 @@ A git's asker leaving ends it where it is a read (`GitScheduler`'s endable rule)
 token its connection's end cancels (`PipeReadStops`), so an abandoned `session list` stops walking trees and leaves no git queued
 behind a client that has gone; a press, journaled, runs on to its answer.
 
+A tree's content proof that found nothing holding its work is kept in the home (`memo/content-proofs.json`, `ContentProofMemo`, 400
+entries and 14 days) by its branch tip, the line, the branches that may not hold it and the repository's counted refs read from
+git's files, so a round or a restart over work nothing moved under asks git nothing; a hold, an unread proof and a lacking list are
+asked again, and an act (a removal, a tidy) judges afresh.
+
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
 memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the
 machine's process host. It runs each git as a process through the host, which joins it to the git job, and asks the driver's

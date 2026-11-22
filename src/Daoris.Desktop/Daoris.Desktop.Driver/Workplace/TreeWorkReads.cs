@@ -173,7 +173,10 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }
 
+            var memo = ContentProofMemo.KeyOf(here.CommonDir.Trim(), judged, line, notHolders);
+            if (memo is not null && ContentProofMemo.Knows(context.Home, memo)) return (null, null);
             var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
+            if (memo is not null && proof is { Hold: null, Unread: null, Lacks: null or { Count: 0 } }) ContentProofMemo.Keep(context.Home, memo, context.Clock());
             if (proof.Hold is not { } held) return (null, proof.Lacks);
 
             back.Declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
