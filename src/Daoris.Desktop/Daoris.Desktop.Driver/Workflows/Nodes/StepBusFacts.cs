@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The facts that end a run's step, teed into the bus's log where each happens (their types the registry's, <see cref="BusTypes"/>): a working
 /// session's settle taken from its box, the session that performs a plugin step ending its turn, the risk policy passing a second opinion at its
-/// gate (a landing's try ending is teed by <see cref="LandOutcomes"/>). Each is of the commit class and its subject is the unit it moves, so the run's progression
+/// gate (a landing's try ending is teed by <see cref="LandOutcomes"/>), and a start binding its run to a graph, which begins the run's first step. Each is of the commit class and its subject is the unit it moves, so the run's progression
 /// (<see cref="RunStepConsumer"/>) hears them in order with the check facts. Ids, codes and flags only.
 /// </summary>
 public static class StepBusFacts
@@ -27,6 +27,13 @@ public static class StepBusFacts
     {
         Commit = true,
         Payload = [("step", step), ("tip", tip)],
+    };
+
+    /// <summary>A start bound <paramref name="run"/> to <paramref name="version"/> of the graph <paramref name="workflow"/>: its first step begins from it.</summary>
+    public static BusDraft RunBound(string run, string workflow, int? version) => new(BusTypes.RunBound, RunUnits.IdOf(RunOf(run)))
+    {
+        Commit = true,
+        Payload = [("run", RunOf(run)), ("workflow", workflow), ("version", version)],
     };
 
     /// <summary>The run's id without the <c>#</c> a person's or a session's word puts before it.</summary>

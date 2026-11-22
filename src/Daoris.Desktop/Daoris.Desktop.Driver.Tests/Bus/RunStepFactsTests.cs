@@ -162,10 +162,39 @@ public sealed class RunStepFactsTests : IDisposable
         Assert.Equal(1, steps.GetValueOrDefault(BusMeasures.StepBegan));
     }
 
-    /// <summary>🔴 A fact whose pass did not judge its run is counted by why.</summary>
+    /// <summary>🔴 A run's binding asks the whole read only where its run's pass does not govern the run (BUS2e2).</summary>
+    [Fact]
+    public async Task A_runs_binding_asks_the_whole_read_only_where_its_pass_does_not_govern_the_run()
+    {
+        await using var bus = Open();
+        var consumer = new RunStepConsumer(
+            (unit, _) =>
+            {
+                _steps.Enqueue("pass " + unit);
+                return Task.FromResult(unit == "run:r-1" ? PassOutcome.NotGoverned : PassOutcome.Judged);
+            },
+            (_, _) => Task.FromResult(0), bus, (_, _) => { }, TimeSpan.Zero,
+            whole: (unit, _) =>
+            {
+                _steps.Enqueue("whole " + unit);
+                return Task.FromResult(PassOutcome.Judged);
+            });
+        await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+
+        bus.Append(StepBusFacts.RunBound("r-1", "docs", 1));
+        bus.Append(StepBusFacts.RunBound("r-2", "docs", 1));
+
+        await Poll.Until(() => _steps.Contains("whole run:r-1") && _steps.Contains("pass run:r-2"), () => string.Join(", ", _steps), Soon);
+        Assert.Equal(["pass run:r-1", "whole run:r-1"], _steps.Where(each => each.EndsWith("r-1", StringComparison.Ordinal)));
+        await Unarmed(bus);
+        Assert.DoesNotContain("whole run:r-2", _steps);
+    }
+
+    /// <summary>🔴 A fact whose pass did not judge its run is counted by why, and asks no whole read.</summary>
     [Fact]
     public async Task A_fact_whose_pass_did_not_judge_is_counted_by_why()
     {
+        var wholes = 0;
         await using (var bus = Open())
         {
             var outcomes = new Dictionary<string, PassOutcome> { ["run:r-1"] = PassOutcome.NotGoverned, ["run:r-2"] = PassOutcome.Bound };
@@ -176,7 +205,12 @@ public sealed class RunStepFactsTests : IDisposable
                     Interlocked.Increment(ref asked);
                     return Task.FromResult(outcomes[unit]);
                 },
-                (_, _) => Task.FromResult(0), bus, (_, _) => { }, TimeSpan.Zero);
+                (_, _) => Task.FromResult(0), bus, (_, _) => { }, TimeSpan.Zero,
+                whole: (_, _) =>
+                {
+                    Interlocked.Increment(ref wholes);
+                    return Task.FromResult(PassOutcome.Judged);
+                });
             await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
 
             bus.Append(new BusDraft(BusTypes.CheckPassed, "r-1") { Commit = true });
@@ -188,6 +222,7 @@ public sealed class RunStepFactsTests : IDisposable
         Assert.Equal(1, steps.GetValueOrDefault("not-governed"));
         Assert.Equal(1, steps.GetValueOrDefault("bound-passed"));
         Assert.Equal(0, steps.GetValueOrDefault("judged"));
+        Assert.Equal(0, Volatile.Read(ref wholes));
     }
 
     private Dictionary<string, long> Steps()

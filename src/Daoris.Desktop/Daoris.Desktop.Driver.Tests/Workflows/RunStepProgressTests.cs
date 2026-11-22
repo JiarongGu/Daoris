@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Daoris.Driver;
 using Daoris.Testing;
 using Xunit.Abstractions;
@@ -145,6 +146,53 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         Assert.True(one.Item2 <= whole.Item2);
         Assert.NotNull(invocation);
     }
+
+    private async Task<PassOutcome> AnsweredAsync(NodeRuntime runtime, string unit, bool whole, CancellationToken ct)
+    {
+        var said = PassOutcome.NotJudged;
+        Read();
+        await runtime.PassAsync(Counted(whole) with
+        {
+            Asked = new HashSet<string>([unit]),
+            Judged = judged => said = judged == unit ? PassOutcome.Judged : said,
+            Ungoverned = ungoverned => said = ungoverned == unit ? PassOutcome.NotGoverned : said,
+        }, ct);
+        return said;
+    }
+
+    /// <summary>🔴 A run bound after the last whole read begins its first step at its binding's fact, through the whole read, with no look (BUS2e2).</summary>
+    [Fact]
+    public async Task A_run_bound_after_the_last_read_begins_its_first_step_at_its_binding()
+    {
+        RunHome.Bind(_home, "q6", RunHome.SaveGraph(_home, Chain), _now);
+        Read();
+        var runtime = Telling();
+        await RunPassAsync(runtime);
+        Assert.False(Begun(), "q7's work began before its binding");
+
+        BoundTo(Chain);
+        var asked = new ConcurrentQueue<string>();
+        await using var bus = Open();
+        var consumer = new RunStepConsumer(
+            (unit, ct) =>
+            {
+                asked.Enqueue("pass " + unit);
+                return AnsweredAsync(runtime, unit, whole: false, ct);
+            },
+            (_, _) => Task.FromResult(0), bus, (_, _) => { },
+            whole: (unit, ct) =>
+            {
+                asked.Enqueue("whole " + unit);
+                return AnsweredAsync(runtime, unit, whole: true, ct);
+            });
+        await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+        bus.Append(StepBusFacts.RunBound(RunId, "chain", 1));
+
+        await Poll.Until(Begun, () => $"work stayed {Files.Read(RunUnit)?.Statuses.GetValueOrDefault("work")?.State ?? "unrecorded"}; asked {string.Join(", ", asked)}", Soon);
+        Assert.Equal(["pass " + RunUnit, "whole " + RunUnit], asked);
+    }
+
+    private bool Begun() => Files.Read(RunUnit)?.Statuses.GetValueOrDefault("work") is { State: not (NodeStates.Blocked or NodeStates.Ready) };
 
     /// <summary>The decision step waiting on the agent held by session <c>s-work</c>, whose <c>step_settle</c> box holds a settle of it.</summary>
     private async Task<NodeRuntime> BoxedAsync()

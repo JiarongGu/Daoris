@@ -33,12 +33,12 @@ public sealed class PassAsks(Action wake)
         }
     }
 
-    /// <summary>
-    /// Ask for a whole pass that judges <paramref name="unit"/> first and wait for it, within <paramref name="bound"/>: true where it judged the
-    /// unit or ended in time, false past the bound or where it failed. A bound of none asks and waits for nothing.
-    /// </summary>
+    /// <summary>The answer of <see cref="WaitWholeAsync"/>, true where it judged the unit or ended in time, false past the bound or where it failed.</summary>
     public async Task<bool> WaitAsync(string? unit, TimeSpan bound, CancellationToken ct) =>
-        (await AskAsync(unit, bound, whole: true, ct).ConfigureAwait(false)).IsAnswer();
+        (await WaitWholeAsync(unit, bound, ct).ConfigureAwait(false)).IsAnswer();
+
+    /// <summary>Ask for a whole pass that judges <paramref name="unit"/> first and wait within <paramref name="bound"/>: how it answered. A bound of none asks and waits for nothing.</summary>
+    public Task<PassOutcome> WaitWholeAsync(string? unit, TimeSpan bound, CancellationToken ct) => AskAsync(unit, bound, whole: true, ct);
 
     /// <summary>Ask a pass to judge <paramref name="unit"/> alone and wait within <paramref name="bound"/>: how it answered. A running pass takes it (<see cref="PassTaken.Late"/>).</summary>
     public Task<PassOutcome> WaitUnitAsync(string unit, TimeSpan bound, CancellationToken ct) => AskAsync(unit, bound, whole: false, ct);

@@ -344,6 +344,46 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Single(world.Said);
     }
 
+    /// <summary>🔴 A start that binds its run to a graph tees the binding as the run's fact (BUS2e2); one bound already, or under Current, tees none.</summary>
+    [Fact]
+    public async Task A_start_that_binds_a_graph_run_tees_its_binding_and_none_other_tees_one()
+    {
+        Save("docs-to-pr", Steps("automatic"));
+        var config = Config("""{"workflows":{"web-app":{"default":"docs-to-pr"}}}""");
+        var named = new QuestView("q1", "daoris", "web-app", "Docs", "", "Open");
+        var current = new QuestView("q2", "daoris", "api", "Code", "", "Open");
+        var world = new Answering([named, current]);
+        var held = StartHold.TryTake(_home, Path.Combine(_home, "web-app"), StartIn.Fresh)!;
+        using var holding = held.Lock;
+        Task<WorkflowBind> Start(QuestView quest) =>
+            WorkflowRunStart.AtStartAsync(new WorkflowStarted(quest, "work"), world, _home, config, [], () => At, held, CancellationToken.None);
+
+        await using (var bus = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = new MovedClock(), Home = _home }))
+        {
+            Assert.Equal(WorkflowBindCame.Bound, (await Start(named)).Came);
+            Assert.Equal(WorkflowBindCame.Already, (await Start(named)).Came);
+            Assert.True((await Start(current)).Binding!.IsCurrent);
+            await bus.FlushAsync();
+        }
+
+        using var store = new DesktopBusLogStore(_home);
+        var bound = Assert.Single(store.Read(0, 100), entry => entry.Kind == BusTypes.RunBound.Kind);
+        Assert.Equal(RunUnits.IdOf("q1"), bound.Subject);
+        Assert.Equal(["docs-to-pr", "q1"], bound.Payload.Where(pair => pair.Key is "run" or "workflow").Select(pair => (string)pair.Value!).Order());
+    }
+
+    /// <summary>A service that answers every read at once.</summary>
+    private sealed class Answering(IReadOnlyList<QuestView> quests) : IWorkflowStartWorld
+    {
+        public Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct) => Task.FromResult(quests);
+
+        public Task<AskView?> FindAskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
+
+        public void Chosen(LandingLine line)
+        {
+        }
+    }
+
     /// <summary>A service that answers each start's read of the chain only once both have asked, so the two binds meet.</summary>
     private sealed class Gated(IReadOnlyList<QuestView> quests) : IWorkflowStartWorld
     {
