@@ -57,9 +57,8 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> _groups = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _atOnce;
 
-    // Books of retry writes, by entry id: the entries whose retry the log kept, and each entry's count of refusals. Only while a row or retry is handed again.
+    // The entries whose first retry the log kept, by entry id, while their row is handed again.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _kept = new(StringComparer.Ordinal);
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> _refusals = new(StringComparer.Ordinal);
     private BusConsumerHost? _host;
 
     /// <param name="name">Its durable name in the queue.</param>
@@ -128,7 +127,6 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         foreach (var entry in row)
         {
             _kept.TryRemove(entry.Id, out _);
-            _refusals.TryRemove(entry.Id, out _);
         }
 
         return handled;
@@ -187,9 +185,12 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         }
 
         // A retry the log did not keep leaves the row unacknowledged, so the queue hands it again; the refusal names its own entry.
-        if (refused is not null) throw new BusEntryNotKeptException(refused, _refusals.GetValueOrDefault(refused, 1));
+        if (refused is not null) throw NotKept(refused);
         return BusHandled.Judged;
     }
+
+    /// <summary>The refusal of <paramref name="id"/>'s retry, counted with the tries the queue keeps for it, which survive a restart.</summary>
+    private BusEntryNotKeptException NotKept(string id) => new(id, (_host?.Tried(id) ?? 0) + 1);
 
     /// <summary>A row entry's first retry, written once however often its row is handed again; false where the log refused it.</summary>
     private async Task<bool> KeepRetryAsync(Cause cause, string scope, IReadOnlyList<string> keys, string why, bool settles)
@@ -238,14 +239,12 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
             ],
         }).ConfigureAwait(false))
         {
-            _refusals.TryRemove(cause.Id, out _);
             return true;
         }
 
         // Refused: counted by its entry, which is given up past its type's retries, its timer armed.
-        var refusals = _refusals.AddOrUpdate(cause.Id, 1, (_, was) => was + 1);
+        var refusals = host.Tried(cause.Id) + 1;
         if (refusals <= type.Retries) return false;
-        _refusals.TryRemove(cause.Id, out _);
         BusConsumerRun.GiveUp(host.Log, Name, Obliged, cause.Id, cause.Kind, cause.Subject, cause.At, type, refusals, cause.Correlation);
         return true;
     }
@@ -285,7 +284,6 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         var open = outcomes.Any(each => each.Outcome.Result == BusFlowResult.NotMoved);
         if (failed.Count == 0)
         {
-            _refusals.TryRemove(cause.Id, out _);
             if (!open && settles && host.Owned()) host.EndLate(cause.Id);
             return BusHandled.Judged;
         }
@@ -294,7 +292,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         var again = scope == BusFlowScope.Key && failed.All(each => each.Key.Length > 0) ? failed.Select(each => each.Key).ToList() : [];
         if (!await WriteRetryAsync(cause, again.Count > 0 ? BusFlowScope.Key : BusFlowScope.Entry, again, attempt + 1, failed[0].Outcome.Why, settles && !open).ConfigureAwait(false))
         {
-            throw new BusEntryNotKeptException(cause.Id, _refusals.GetValueOrDefault(cause.Id, 1));
+            throw NotKept(cause.Id);
         }
 
         return BusHandled.Judged;

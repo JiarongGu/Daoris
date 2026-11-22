@@ -527,6 +527,27 @@ public sealed class BusFlowTests : IDisposable
         Assert.Equal(BusTypes.NodeBegun.Kind, gaveUp[0].Payload.First(pair => pair.Key == "kind").Value);
     }
 
+    /// <summary>🔴 The refusals charged to an entry survive a restart: the new start has only the type's remaining budget before the give-up.</summary>
+    [Fact]
+    public async Task The_refusals_of_an_entrys_retry_are_kept_across_a_restart()
+    {
+        var refusals = 0;
+        Probe Refusing() => new(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")),
+            refuse: draft => draft.Kind == BusTypes.FlowRetry.Kind && Interlocked.Increment(ref refusals) > 0);
+        await using var bus = Open();
+        var slow = new BusQueueOptions { Clock = Clock, RetryFirst = TimeSpan.FromSeconds(30), RetryMost = TimeSpan.FromSeconds(30) };
+        var first = await BusQueue.StartAsync(bus, [Refusing()], slow);
+
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => Volatile.Read(ref refusals) == 1 && first.Store.Consumer("probe") is { Parked: 1 }, () => $"refusals {refusals}", Soon);
+        await first.DisposeAsync();
+
+        await using var second = await BusQueue.StartAsync(bus, [Refusing()], Quick);
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => $"no give-up after {refusals} refusals", Soon);
+        await second.QuietAsync(Soon, CancellationToken.None);
+        Assert.Equal(BusTypes.NodeBegun.Retries + 1, Volatile.Read(ref refusals));
+    }
+
     private async Task Unarmed(BusLog bus)
     {
         await bus.FlushAsync();

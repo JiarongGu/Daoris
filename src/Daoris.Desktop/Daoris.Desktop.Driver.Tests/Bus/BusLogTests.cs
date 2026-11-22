@@ -442,6 +442,22 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(1, lost.Tally.Missed.GetValueOrDefault(BusMisses.Store));
     }
 
+    /// <summary>🔴 A caller whose wait ran out withdraws its entry before any write takes it, so a store freed later never writes it.</summary>
+    [Fact]
+    public async Task A_write_waited_on_past_its_bound_is_withdrawn_and_never_written_later()
+    {
+        var clock = new MovedClock();
+        var store = new CountingStore { Busy = 1 };
+        await using var bus = BusLog.Over(store, new BusLogOptions { Clock = clock, KeptBound = TimeSpan.FromMilliseconds(50) });
+
+        Assert.False(await bus.AppendKeptAsync(Commit("run-1")));
+        Assert.Equal(1, store.Refused);
+
+        for (var pause = 0; pause < 3; pause++) clock.Advance(BusLog.RetryAfter);
+        await bus.FlushAsync();
+        Assert.Equal(0, store.Writes);
+    }
+
     /// <summary>The clock moved a pause at a time until <paramref name="waiting"/> is told.</summary>
     private static async Task<bool> Advancing(MovedClock clock, Task<bool> waiting)
     {

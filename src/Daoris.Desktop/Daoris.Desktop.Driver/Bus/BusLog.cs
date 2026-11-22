@@ -25,6 +25,9 @@ public sealed record BusLogOptions
 
     /// <summary>The home whose log this is, where writers that hold no log find it (<see cref="BusLog.Of"/>); null registers none.</summary>
     public string? Home { get; init; }
+
+    /// <summary>How long a caller waiting on its entry's write waits, in real time, before it withdraws the entry if no write holds it yet.</summary>
+    public TimeSpan KeptBound { get; init; } = BusLog.RetryAfter * (BusLog.MostRetries + 2);
 }
 
 /// <summary>What a log has done since it opened, in memory: what a test and the stats read.</summary>
@@ -266,14 +269,32 @@ public sealed class BusLog : IAsyncDisposable
         var fate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!AppendCore([draft], fate)) return false;
         await FlushAsync().ConfigureAwait(false);
-        try
+        while (true)
         {
-            return await fate.Task.WaitAsync(RetryAfter * (MostRetries + 2)).ConfigureAwait(false);
+            try
+            {
+                return await fate.Task.WaitAsync(_options.KeptBound).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                // Not told yet: refused only where the entry is withdrawn before any write takes it, else its write is in flight and still decides.
+                if (Withdraw(fate)) return false;
+            }
         }
-        catch (TimeoutException)
+    }
+
+    /// <summary>Takes a waiting caller's entry back out of what waits to be written and refuses it; false where a write holds it or it is told.</summary>
+    private bool Withdraw(TaskCompletionSource<bool> fate)
+    {
+        lock (_gate)
         {
-            return false;
+            var id = _fates.FirstOrDefault(pair => pair.Value == fate).Key;
+            if (id is null || _pending.RemoveAll(entry => entry.Id == id) == 0) return false;
+            _fates.Remove(id);
         }
+
+        fate.TrySetResult(false);
+        return true;
     }
 
     private bool AppendCore(IReadOnlyList<BusDraft> drafts, TaskCompletionSource<bool>? fate)
