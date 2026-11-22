@@ -201,10 +201,11 @@ internal sealed class WatchRun(
         // The ledger heard, not found at the pace: one wait on the service's change stream for the loop's life, each
         // family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
         using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var moves = new QuestMoveReader(Service.EveryQuestAsync);
         var ledger = LedgerChanges.RunAsync(Service, (topic, families) =>
         {
             watch.Nudge(topic, families);
-            OpinionGateRun.Heard(watch.Bus, families);
+            OpinionGateRun.Heard(watch.Bus, families, moves);
         }, Log, listening.Token);
 
         // The start's reconciliation: every pending tidy found from the persisted facts and tried once, beside the first looks.

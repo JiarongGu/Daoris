@@ -58,11 +58,11 @@ public static class OpinionBusFacts
         Payload = [("session", session), ("said", said), ("door", door)],
     };
 
-    /// <summary>The service's quests moved, the families its change stream named.</summary>
-    public static BusDraft QuestMoved(IReadOnlyList<string> families) => new(BusTypes.QuestMoved, "quests")
+    /// <summary>The service's quests moved, the families its change stream named, and what changed where the list could say (<see cref="QuestMoves"/>).</summary>
+    public static BusDraft QuestMoved(IReadOnlyList<string> families, QuestMoveNames? names = null) => new(BusTypes.QuestMoved, "quests")
     {
         Commit = true,
-        Payload = [("families", families)],
+        Payload = [("families", families), ("quests", names?.Quests), ("repositories", names?.Repositories)],
     };
 
     /// <summary>The unit keyed <paramref name="unit"/> began <paramref name="nodes"/>.</summary>

@@ -464,13 +464,19 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     again*, the same agent fresh, a named reviewer, *Ask another agent for help*) carries its own occasion, which no owed opinion has,
     so it reaches every owed opinion of its session. The judgments of one repository run one at a time (each runs git's content proof,
     and a round's nine at once queued behind one another and every other git, which held a restart's first look an hour); those of
-    several repositories go beside each other. Every other input its verdict reads is a fact too, and each judges every owed
-    opinion: the quests' move as the service's change stream names it (`quest.moved`: a hold lifted, a later step declined or
-    published), a node a run's record began (`node.begun`, written where the record is: a graph's opinion node holds the ask until it
-    begins, and one begun while a judgment read before it waits for that judgment, so the next reads it), and the standing choices this
-    process wrote (`choices.written`: a reviewer added to a rule, a workflow, the policy). A burst of moves folds: those waiting in a
-    row on one subject into the last, whose handling stands for them, and those of several subjects into one round of judgments, a
-    move heard before a round began being judged by it. What it found is the
+    several repositories go beside each other, and across them no more than `AtOnce` (4) at a time, so a round of hundreds queues in
+    the gate and not in git's places (a census, `BusConsumerSetsCensusTests`, holds that no consumer fans out over a growing set
+    unbounded). Every other input its verdict reads is a fact too: the quests' move as the service's change stream names it
+    (`quest.moved`: a hold lifted, a later step declined or published), a node a run's record began (`node.begun`, written where the
+    record is: a graph's opinion node holds the ask until it begins, and one begun while a judgment read before it waits for that
+    judgment, so the next reads it), and the standing choices this process wrote (`choices.written`: a reviewer added to a rule, a
+    workflow, the policy). A `quest.moved` fact names what changed, by diffing the quest list the listener reads against the last
+    read (`QuestMoves`): the quests whose records differ, every quest of their chains (parents and children, which a step opinion
+    reads) and their repositories (which a landing opinion reads whole: every open set-up step there). A move round judges only the
+    owed opinions those names reach; a move that names nothing (no earlier read, no difference found, more than a fact lists, a list
+    that could not be read) and each node begun and choices written judge every owed opinion. A burst of moves folds: those waiting in
+    a row on one subject into the last, whose handling stands for them (the queue tells the consumer each folded entry, so its names
+    are kept), and those of several subjects into one round of judgments, a move heard before a round began being judged by it. What it found is the
     gate's view (`LookFacts`), which the look's plan reads for the quests it sits and the attention band's gates and never judges;
     no look stage judges an opinion. Its acknowledgement ends what is owed it: an owed opinion, a word or a move judged, the answers
     judged, and a clean pass, which leaves nothing to deliver. A turn ahead (a cool-off's reset, a reading pass's end) judges it

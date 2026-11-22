@@ -26,6 +26,10 @@ public interface IBusConsumer
 
     /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject fold into the last: its handling stands for them all.</summary>
     bool Folds(string kind) => false;
+
+    void Folded(BusEnvelope away)
+    {
+    }
 }
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
@@ -496,6 +500,7 @@ internal sealed class BusConsumerRun
                 while (_consumer.Folds(entry.Kind) && lane.Count > 1 && lane.ElementAt(1).Entry.Kind == entry.Kind)
                 {
                     folded.Add(lane.Dequeue().Entry);
+                    _consumer.Folded(folded[^1]);
                     (entry, tries) = lane.Peek();
                 }
             }
