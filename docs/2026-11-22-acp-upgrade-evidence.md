@@ -98,6 +98,8 @@ no turn, a cancel mid-tool, a model switch. Both behave at the new pin as at the
 nothing else: the order of the config options and Fast's category on Claude's adapter; `auth.status` and `mcpCapabilities.acp` now
 offered by both; `sessionCapabilities.subagents` gone from `codex-acp`.
 
+Daoris's own door has driven real sessions at both new pins since the press (`docs/2026-10-03-steer-evidence.md` §9, last paragraph): turns, resumes, option sets and closes on `claude-code-acp` 0.109.1 and turns on `codex-acp` 2.9.0, none refused. Steering and a `codex-acp` resume are not in those records.
+
 What Daoris changed: `WordsAtNextStep` and `Steering` of `claude-code-acp` are measured at agent 2.1.330, adapter 0.109.1 (they were
 2.1.284, 0.84.0); `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0 (it was declared from the
 transport's default). The offers readings kept per account at 0.106.0 and 2.6.0 are read again by each account's next

@@ -195,7 +195,7 @@ into the native turn at its next step needs to know where it landed (the replay 
 **How it ran.** Keylessly, as §8: each adapter as the machine's toolchain pins it, a scratch home and folder, the stub model on
 loopback (`tools/fake-model.mjs`'s two wires) with a placeholder key; Claude Code's adapter against Messages, `codex-acp`
 against Responses with a custom provider. One session per adapter: `initialize`, `session/new`, the full-access posture, then in
-order a turn whose model call is a tool that sleeps eight seconds with `_session/steering` sent two seconds into the tool, a
+order (Claude's adapter under both the `default` and the `bypassPermissions` posture, with the same outcome in each; `codex-acp` under `agent-full-access`) a turn whose model call is a tool that sleeps eight seconds with `_session/steering` sent two seconds into the tool, a
 second `session/prompt` sent into a running tool, `_session/steering` with no turn, `session/cancel` mid-tool, and a model
 switch by `session/set_config_option`. Each ran at the version it replaced and at the new pin, in the same order.
 
@@ -210,3 +210,5 @@ options likewise put `model` first. Steering, words at the next step, the second
 earlier versions, so `WordsAtNextStep` and `Steering` of `claude-code-acp` are measured again at agent 2.1.330, adapter 0.109.1,
 and `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0 (it was declared from the transport's default).
 `Steering` of `codex-acp` stays unknown: Daoris still reads no `startedNewTurn` as a turn nobody asked for (MSG1h).
+
+**Daoris's own door at the new pins, from the session records on the install** (`data/sessions/*.frames.jsonl` since 2026-11-22 20:30 UTC, counted by frame): ten sessions of `claude-code-acp` 0.109.1 on real accounts, 66 `session/prompt`, 61 answered `end_turn`, 43 `session/resume`, 76 `session/set_config_option`, no error answer; four sessions of `codex-acp` 2.9.0 (Codex 0.171.0), four prompts, four `end_turn`, each closed, no error answer. No steering frame (`_session/steering`) and no `codex-acp` resume appears in them: those two are read from the probes above, not from Daoris's door.
