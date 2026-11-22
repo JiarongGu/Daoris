@@ -58,7 +58,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
-        if (send.Reached) return await HandbackAsync(declared, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
+        if (send.Reached) return await HandbackAsync(declared, text, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
         if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from, send.Heavy ? ReachedRunner.EveryTier : ReachedRunner.FastTier) is { } command)
         {
             return (await ReachedAsync(reached, command, declared, ct).ConfigureAwait(false), false);
@@ -123,8 +123,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     private static VerifyResult Told(VerifyResult result, string? words) =>
         words is null ? result : result with { Why = result.Why is { } why ? $"{why}\n{words}" : words };
 
-    /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) the change reaches, each printing the outcome line (<paramref name="marker"/>) saying what it ran, replayed and left owed (<see cref="ReachedVerdict.Told"/>). No line, or git unable to say, is unrun and never failed.</summary>
-    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, string marker, CancellationToken ct)
+    /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) and the line's admission (<see cref="AdmissionGates"/>, the gates the merge tool is held to) the change reaches, each printing the outcome line (<paramref name="marker"/>) saying what it ran, replayed and left owed (<see cref="ReachedVerdict.Told"/>). No line, or git unable to say, is unrun and never failed.</summary>
+    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, string? text, string marker, CancellationToken ct)
     {
         if (await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is not { } line)
         {
@@ -140,7 +140,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         if (seen.Faulty) return (Back(seen.Words()), false);
 
         var files = new CheckFiles(home);
-        var required = declared.Where(gate => gate.Handback && GateReach.Reaches(gate, seen.Touched)).ToList();
+        var admission = AdmissionGates.Of(declared, text, seen.Touched);
+        if (admission.Problem is { } unread) return (Unknown(unread) with { Code = VerifyResult.Unrun }, false);
+        if (admission.Missing.Count > 0)
+        {
+            return (Unknown($"the declaration's admission names {string.Join(", ", admission.Missing.Select(name => $"`{name}`"))}, which it does not declare as a gate, so the line's admission would run short") with { Code = VerifyResult.Unrun }, false);
+        }
+
+        var required = declared.Where(gate => (gate.Handback && GateReach.Reaches(gate, seen.Touched)) || admission.Gates.Any(admitted => admitted.Name == gate.Name)).ToList();
         var verified = required.Where(gate => HandbackGates.Verified(files, gate, _at)).ToList();
         var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
         var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
