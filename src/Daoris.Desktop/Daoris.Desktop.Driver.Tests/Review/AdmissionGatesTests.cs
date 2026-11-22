@@ -56,6 +56,30 @@ public sealed class AdmissionGatesTests
     }
 
     [Fact]
+    public void A_path_the_lanes_files_grammar_excludes_with_a_bang_reaches_no_check_by_that_glob()
+    {
+        const string text = """
+            {"admission":{"always":[],"suites":[],"byPaths":[{"gate":"a","paths":["web/**","!web/generated/**"],"why":"w"}]},
+             "gates":[{"name":"a","run":"a"}]}
+            """;
+
+        Assert.Equal(["a"], Admitted(text, "web/src/x.ts"));
+        Assert.Empty(Admitted(text, "web/generated/x.ts"));
+        Assert.Equal(["a"], Admitted(text, "web/generated/x.ts", "web/y.ts"));
+    }
+
+    [Fact]
+    public void An_admitted_gate_with_a_handback_command_runs_it_in_its_place_and_so_binds_the_base_its_own_run_leaves_open()
+    {
+        const string text = """
+            {"admission":{"always":["a"],"suites":[],"byPaths":[]},
+             "gates":[{"name":"a","run":"node a.mjs --base {base}","handback":"node a.mjs --base main"}]}
+            """;
+
+        Assert.Equal(["a"], Admitted(text, "src/x.cs"));
+    }
+
+    [Fact]
     public void The_gates_come_in_the_order_the_declaration_writes_them_whatever_the_admission_lists_first()
     {
         const string text = """
@@ -80,7 +104,6 @@ public sealed class AdmissionGatesTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("not json")]
     [InlineData("""{"gates":[{"name":"a","run":"x"}]}""")]
     public void A_declaration_with_no_admission_admits_nothing_beyond_what_it_requires(string? text)
     {
@@ -91,6 +114,9 @@ public sealed class AdmissionGatesTests
     [InlineData("""{"admission":{"always":"a","suites":[],"byPaths":[]},"gates":[{"name":"a","run":"x"}]}""")]
     [InlineData("""{"admission":{"always":[],"suites":[],"byPaths":[{"gate":"a","why":"w"}]},"gates":[{"name":"a","run":"x"}]}""")]
     [InlineData("""{"admission":"a","gates":[{"name":"a","run":"x"}]}""")]
+    [InlineData("not json")]
+    [InlineData("[1]")]
+    [InlineData("""{"admission":{"always":["a"],"suites":[],"byPaths":[]},"gates":[{"name":"a","run":"node a.mjs --base {base}"}]}""")]
     public void An_admission_that_does_not_read_is_a_problem_said_and_never_a_shorter_list(string text)
     {
         var admitted = AdmissionGates.Of(DeclaredGates.Read(text), text, ["src/a.cs"]);

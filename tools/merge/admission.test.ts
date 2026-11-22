@@ -1,9 +1,9 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { declaredAdmission, readAdmission } from './admission.ts';
-import { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS } from './reach.ts';
+import { declaredAdmission, readAdmission, readAdmissionOr } from './admission.ts';
+import { BASELINE, BLOCKING, MERGE_SUITES, PATH_CHECKS, selectGates } from './reach.ts';
 import { ALL, repoRoot } from './repo-gates.ts';
 
 // test-map: strings name paths as data — the cases name a gates file's keys and gates, which nothing reads as a path
@@ -54,4 +54,44 @@ test("the merge tool's lists are the declaration's: one list, which the driver's
   for (const gate of [...declared.always, ...declared.suites, ...declared.pathChecks.map((check) => check.gate)]) {
     assert.ok(names.has(gate), `the admission names ${gate}, which daoris.gates.json does not declare`);
   }
+});
+
+const PLAN = ['universal', 'comments', 'types'].map((name) => ({ name, run: name, kind: 'check' })) as unknown as Parameters<typeof selectGates>[0];
+
+const admissionOf = (always: string[], byPaths: object[] = []) => declaredAdmission(JSON.stringify({ admission: { always, suites: [], byPaths } }));
+
+test("a selection reads the admission of the tree it selects for, so two trees' policies are judged in one process", () => {
+  const before = admissionOf(['universal']);
+  const after = admissionOf(['universal', 'comments']);
+  const run = (admission: ReturnType<typeof admissionOf>) => selectGates(PLAN, ['a.txt'], { admission }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
+
+  assert.deepEqual(run(before), ['universal']);
+  assert.deepEqual(run(after), ['universal', 'comments']);
+  assert.deepEqual(run(before), ['universal'], 'the first policy is not kept by the second');
+});
+
+test('a tree that declares no admission is judged by the fallback, one that declares it badly is an error', () => {
+  const fallback = admissionOf(['universal']);
+  const folder = join(repoRoot, '_fixtures', `admission-${process.pid}`);
+  mkdirSync(folder, { recursive: true });
+  try {
+    assert.equal(readAdmissionOr(folder, fallback), fallback, 'no file');
+    writeFileSync(join(folder, 'daoris.gates.json'), JSON.stringify({ gates: [] }));
+    assert.equal(readAdmissionOr(folder, fallback), fallback, 'a file with no admission');
+    writeFileSync(join(folder, 'daoris.gates.json'), JSON.stringify({ admission: { always: ['comments'], suites: [], byPaths: [] } }));
+    assert.deepEqual([...readAdmissionOr(folder, fallback).always], ['comments']);
+    writeFileSync(join(folder, 'daoris.gates.json'), JSON.stringify({ admission: { always: 3 } }));
+    assert.throws(() => readAdmissionOr(folder, fallback), /admission/);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
+
+test('a byPaths glob with a bang excludes the path it names, as the lanes file reads it', () => {
+  const admission = admissionOf([], [{ gate: 'types', paths: ['web/**', '!web/generated/**'], why: 'w' }]);
+  const reaching = (...paths: string[]) => selectGates(PLAN, paths, { admission }).gates.find((entry) => entry.gate.name === 'types')!.run;
+
+  assert.equal(reaching('web/src/a.ts'), true);
+  assert.equal(reaching('web/generated/a.ts'), false);
+  assert.equal(reaching('web/generated/a.ts', 'web/b.ts'), true);
 });

@@ -723,9 +723,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The line's admission is the declaration's `admission`
     key: `always` and `suites` for every change, and `byPaths` checks, each reached by a changed path matching one of its globs or one
     of `verifyBudget`'s wide paths. The merge tool selects its blocking gates from it (`tools/merge/admission.ts`, `reach.ts`) and the
-    check reads it in the declaration it runs under, on the work as merged (`AdmissionGates`), so a gate the merge tool holds a change
+    check reads it in the declaration it runs under (under full access the merged tree's own, so a branch that predates an admission the line added is held to it), on the work as merged (`AdmissionGates`; a `!` glob excludes as the lanes file's does, an admitted gate with a `handback` command runs that command in its place, and one whose command holds an unbound `{base}` is unknown), so a gate the merge tool holds a change
     to holds a run's landing too, one list read twice, and a red one fails the step naming it with its red lines for the work; a name
-    the declaration does not declare, or an admission that does not read, is unknown, coded `unrun`, never a shorter list. (LANDGATES1) A failed gate's
+    the declaration does not declare, or an admission that does not read (a declaration that is not JSON included), is unknown, coded `unrun`, never a shorter list. The merge tool reads the admission of the tree it selects for (the merge in place, a candidate's tree; one that predates the key is judged by the tool's own). (LANDGATES1) A failed gate's
     why carries the failing step's own lines with its log's path, said relative to the home: the log's red blocks (an `== RED <step>`
     header line, matched as a step's header only, to the next `== `) and its last lines, within about 40 lines and 4 KB
     (`GateLogExcerpt`), so the work reads why without asking for the log. The log is a child's words and passes `GitWords.Redact` first:

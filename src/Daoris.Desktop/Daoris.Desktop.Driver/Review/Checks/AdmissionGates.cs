@@ -28,13 +28,14 @@ internal static class AdmissionGates
         try
         {
             using var document = JsonDocument.Parse(text);
-            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("admission", out var admission)) return new([], []);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return new([], [], "the declaration is not a JSON object, so its admission cannot be read");
+            if (!document.RootElement.TryGetProperty("admission", out var admission)) return new([], []);
             if (Read(admission, document.RootElement) is not { } reading) return new([], [], "the declaration's `admission` does not read: it needs `always` and `suites` (lists of gate names) and `byPaths` (a list of checks, each with its `gate` and `paths`)");
             read = reading;
         }
         catch (JsonException)
         {
-            return new([], []);
+            return new([], [], "the declaration is not JSON, so its admission cannot be read");
         }
 
         var names = new HashSet<string>(read.Always, StringComparer.Ordinal);
@@ -44,11 +45,18 @@ internal static class AdmissionGates
         }
 
         var admitted = declared.Where(gate => names.Contains(gate.Name)).ToList();
+        if (admitted.FirstOrDefault(gate => HandbackGates.ForHandback(gate).Run.Contains("{base}", StringComparison.Ordinal)) is { } unbound)
+        {
+            return new([], [], $"the admitted gate `{unbound.Name}` runs a command with a `{{base}}` the check does not bind: declare a `handback` command for it that names its base");
+        }
+
         return new(admitted, [.. names.Where(name => declared.All(gate => gate.Name != name)).Order(StringComparer.Ordinal)]);
     }
 
+    /// <summary>Whether a path matches the globs as the lanes file reads them: one of the positive globs and none of the `!` ones.</summary>
     private static bool Reached(IReadOnlyList<string> globs, IReadOnlyCollection<string> touched) =>
-        touched.Any(path => globs.Any(glob => KindPaths.Matches(glob, path)));
+        touched.Any(path => globs.Any(glob => !glob.StartsWith('!') && KindPaths.Matches(glob, path))
+            && !globs.Any(glob => glob.StartsWith('!') && KindPaths.Matches(glob[1..], path)));
 
     private static Reading? Read(JsonElement admission, JsonElement root)
     {

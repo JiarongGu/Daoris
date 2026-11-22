@@ -58,7 +58,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         IReadOnlyList<DeclaredGate> declared = text is null
             ? [.. (world.Mapping(send.Repository) ?? []).Select(gate => new DeclaredGate(gate.Name, gate.Run, gate.WorkingDirectory, true))]
             : DeclaredGates.Read(text);
-        if (send.Reached) return await HandbackAsync(declared, text, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
+        if (send.Reached) return await HandbackAsync(mode, declared, text, ReachedRunner.Of(text)?.Outcome ?? ReachedRunner.DefaultOutcome, ct).ConfigureAwait(false);
         if (send.Base is { } from && ReachedRunner.Of(text) is { } reached && reached.CommandFor(from, send.Heavy ? ReachedRunner.EveryTier : ReachedRunner.FastTier) is { } command)
         {
             return (await ReachedAsync(reached, command, declared, ct).ConfigureAwait(false), false);
@@ -124,7 +124,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         words is null ? result : result with { Why = result.Why is { } why ? $"{why}\n{words}" : words };
 
     /// <summary>The <c>reached</c> choice: the hand-back read from git, a fault there the verdict and no gate run; else the required commands (<see cref="HandbackGates"/>) and the line's admission (<see cref="AdmissionGates"/>, the gates the merge tool is held to) the change reaches, each printing the outcome line (<paramref name="marker"/>) saying what it ran, replayed and left owed (<see cref="ReachedVerdict.Told"/>). No line, or git unable to say, is unrun and never failed.</summary>
-    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(IReadOnlyList<DeclaredGate> declared, string? text, string marker, CancellationToken ct)
+    private async Task<(VerifyResult? Result, bool Busy)> HandbackAsync(string mode, IReadOnlyList<DeclaredGate> declared, string? text, string marker, CancellationToken ct)
     {
         if (await HandbackReading.LineAsync(send.Checkout, ct).ConfigureAwait(false) is not { } line)
         {
@@ -138,6 +138,14 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
         var seen = read with { Merge = await OntoAsync(line, ct).ConfigureAwait(false) };
         if (seen.Faulty) return (Back(seen.Words()), false);
+
+        if (mode == DeclarationMode.Full && _at != send.Commit
+            && await IntegrationAcceptance.BlobAtAsync(send.Checkout, _at, ct).ConfigureAwait(false) is { } merged && merged != IntegrationAcceptance.None
+            && await IntegrationAcceptance.TextAsync(send.Checkout, merged, ct).ConfigureAwait(false) is { } mergedText)
+        {
+            text = mergedText;
+            declared = DeclaredGates.Read(mergedText);
+        }
 
         var files = new CheckFiles(home);
         var admission = AdmissionGates.Of(declared, text, seen.Touched);

@@ -2,8 +2,9 @@
  * Which gates a change's paths can reach, by the lane table, and why each gate runs or is skipped.
  */
 import { fileURLToPath } from 'node:url';
-import { readAdmission } from './admission.ts';
-import type { PathCheck } from './admission.ts';
+import { readAdmission, readAdmissionOr } from './admission.ts';
+import type { Admission, PathCheck } from './admission.ts';
+import { readLanes } from './lanes.ts';
 import { laneMatcher } from './lanes-file.ts';
 import { REACH } from './reach-table.ts';
 import type { Rule } from './reach-table.ts';
@@ -16,7 +17,7 @@ import type { Reach } from './verification.ts';
 // test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
 // The line's admission is the declaration's one list: the driver's landing reads the same key, so the tool keeps none of its own.
-const ADMISSION = readAdmission(fileURLToPath(new URL('../..', import.meta.url)));
+export const ADMISSION = readAdmission(fileURLToPath(new URL('../..', import.meta.url)));
 
 export type { PathCheck };
 
@@ -39,6 +40,9 @@ export const PATH_CHECKS: readonly PathCheck[] = ADMISSION.pathChecks;
 
 /** The suites a merge runs whatever it changed (`admission.suites`): the CLI's verify holds the records, lists and documents, which no path places. */
 export const MERGE_SUITES: readonly string[] = ADMISSION.suites;
+
+/** What a scoped run reads of a candidate's tree: its lanes and its admission (the tool's own where it predates the key), selecting what its paths reach. */
+export const treeReading = (tree: string): { lanes: Lane[]; admission: Admission; gated: true } => ({ lanes: readLanes(tree)?.lanes ?? [], admission: readAdmissionOr(tree, ADMISSION), gated: true });
 
 /** The lanes the table places by: each lane's id and its paths. */
 type Placing = readonly Pick<Lane, 'id' | 'paths'>[];
@@ -74,14 +78,15 @@ const namedGates = (reach: readonly Rule[]): Set<string> => new Set(reach.flatMa
 export type Selection = { gate: Planned; run: boolean; reached: boolean; why: string };
 
 /** A change's reach at a merge: of the gates the lane table can skip, those reached; the rest reach every change, so are not counted. */
-export function gateReach(selection: readonly Selection[], reach: readonly Rule[] = REACH): Reach {
+export function gateReach(selection: readonly Selection[], reach: readonly Rule[] = REACH, admission: Admission = ADMISSION): Reach {
   const named = namedGates(reach);
-  const always = new Set([...BLOCKING, ...BASELINE, ...MERGE_SUITES]);
+  const always = new Set([...admission.always, ...admission.suites]);
   const skippable = selection.filter((entry) => named.has(entry.gate.name) && !always.has(entry.gate.name));
   return { reached: skippable.filter((entry) => entry.reached).length, of: skippable.length, what: 'gates the lane table can skip' };
 }
 
-type Reading = { lanes?: Placing; reach?: readonly Rule[]; pathChecks?: readonly PathCheck[] };
+/** What a selection reads: the lane table and the admission of the tree whose plan it selects (the tool's own where none is given). */
+type Reading = { lanes?: Placing; reach?: readonly Rule[]; pathChecks?: readonly PathCheck[]; admission?: Admission };
 
 /**
  * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order. A gate is
@@ -93,8 +98,10 @@ type Reading = { lanes?: Placing; reach?: readonly Rule[]; pathChecks?: readonly
 export function selectGates(
   plan: readonly Planned[],
   changed: readonly string[],
-  { lanes = [], full = false, gated = false, reach = REACH, pathChecks = PATH_CHECKS }: Reading & { full?: boolean; gated?: boolean } = {},
+  { lanes = [], full = false, gated = false, reach = REACH, admission = ADMISSION, pathChecks = admission.pathChecks }: Reading & { full?: boolean; gated?: boolean } = {},
 ): { gates: Selection[]; unplaced: string[] } {
+  const blocking = admission.always;
+  const baseline = [...admission.always, ...admission.suites];
   const names = new Set(plan.map((gate) => gate.name));
   const named = namedGates(reach);
   const reachedBy = new Map<string, { paths: string[]; rule: Rule }>();
@@ -121,17 +128,17 @@ export function selectGates(
     return { reached: false, why: 'no changed path reaches it' };
   };
   const gates = plan.map((gate): Selection => {
-    if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
-    if (!full && !gated && MERGE_SUITES.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge: the lists, records and documents it holds a branch cannot place by its paths' };
+    if (blocking.includes(gate.name) || (gated && baseline.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    if (!full && !gated && admission.suites.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge: the lists, records and documents it holds a branch cannot place by its paths' };
     const check = pathCheckOf(gate.name, pathChecks);
     if (check) {
       // A path check blocks the merges whose paths reach what it reads, and only those.
-      const by = reachingOf({ lanes, reach, pathChecks })(gate.name, changed);
+      const by = reachingOf({ lanes, reach, pathChecks, admission })(gate.name, changed);
       if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
       if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
       return { gate, run: true, reached: true, why: `blocks the merge: ${andMore(by)} (${check.why})` };
     }
-    const { reached, why } = BASELINE.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
+    const { reached, why } = baseline.includes(gate.name) ? { reached: true, why: 'the baseline' } : reachOf(gate);
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
     const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
     if (isLongGate(gate)) return { gate, run: false, reached, why: `in the full set before staging${detail}` };
@@ -153,7 +160,7 @@ export function pathsReaching(gate: string, paths: readonly string[], reading: R
 }
 
 /** `pathsReaching` asked many times, as a judgement of every stored verdict asks it: the rules compiled and each path placed once. */
-export function reachingOf({ lanes = [], reach = REACH, pathChecks = PATH_CHECKS }: Reading = {}): (gate: string, paths: readonly string[]) => string[] {
+export function reachingOf({ lanes = [], reach = REACH, admission = ADMISSION, pathChecks = admission.pathChecks }: Reading = {}): (gate: string, paths: readonly string[]) => string[] {
   const readRule = ruleReader(reach, lanes);
   const placed = new Map<string, Rule | null>();
   const ruleOf = (path: string): Rule | null => {
@@ -171,7 +178,7 @@ export function reachingOf({ lanes = [], reach = REACH, pathChecks = PATH_CHECKS
       const own = owns.get(check)!;
       return paths.filter((path) => own(path) || ruleOf(path)?.gates === '*');
     }
-    if (BASELINE.includes(gate) || !named.has(gate)) return [...paths];
+    if (admission.always.includes(gate) || admission.suites.includes(gate) || !named.has(gate)) return [...paths];
     return paths.filter((path) => {
       const rule = ruleOf(path);
       return !rule || rule.gates === '*' || rule.gates.includes(gate);

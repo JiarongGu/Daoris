@@ -61,3 +61,16 @@ export function readAdmission(root: string): Admission {
   const file = join(root, GATES_FILE);
   return existsSync(file) ? declaredAdmission(readFileSync(file, 'utf8')) : fail('is not declared: the file is missing');
 }
+
+/** The admission of the tree at `root` where it declares one, else `fallback`: a tree that predates the key is judged by the tool's own list; one that declares it badly is an error. */
+export function readAdmissionOr(root: string, fallback: Admission): Admission {
+  const file = join(root, GATES_FILE);
+  if (!existsSync(file)) return fallback;
+  const text = readFileSync(file, 'utf8');
+  try {
+    if (!Object.hasOwn(JSON.parse(text) as object, 'admission')) return fallback;
+  } catch {
+    // not JSON: the reader below says so
+  }
+  return declaredAdmission(text);
+}

@@ -242,6 +242,28 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_full_access_work_that_predates_an_admission_the_line_added_is_held_to_it_on_its_merge()
+    {
+        DriverConfig.Empty.WithAccess(new AccessEdit { Repository = "engine", Set = [new(AccessRules.Permissions, AccessRules.Unrestricted)] })
+            .Save(DriverConfig.ResolvePath(Home));
+        var blob = await RepositoryAsync();
+        await CommitAsync("web/a.ts", "work" + Trailer);
+        await GitAsync("switch", "-q", "main");
+        await File.WriteAllTextAsync(Path.Combine(Checkout, "daoris.gates.json"), JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["gates"] = new object[] { new { name = "types", run = "node -e \"process.exit(3)\"" } },
+            ["admission"] = new { always = new[] { "types" }, suites = Array.Empty<string>(), byPaths = Array.Empty<object>() },
+        }));
+        await GitAsync("add", "-A");
+        await GitAsync("commit", "-q", "-m", "the line adds an admission" + Trailer);
+        await GitAsync("switch", "-q", "work");
+
+        var result = await RunAsync(blob);
+
+        Assert.Equal((VerifyVerdicts.Failed, "types"), (result.Verdict, result.Failed));
+    }
+
+    [Fact]
     public async Task A_red_admission_gate_holds_the_work_on_the_check_naming_the_gate_though_no_required_command_reaches_it()
     {
         var blob = await RepositoryAsync(admission: true, redTypes: true);
