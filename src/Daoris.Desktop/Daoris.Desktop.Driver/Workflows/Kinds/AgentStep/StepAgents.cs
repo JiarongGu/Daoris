@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="askOf">The ask of an attempt, composed from its run's record; null where the run names nothing to work from.</param>
 /// <param name="program">The desktop's program the step's server runs as; null where none is found, and nothing is sent.</param>
-/// <param name="wake">Asks a pass once an answer is kept.</param>
+/// <param name="wake">Asks a pass once an answer is kept, where no bus log is held for the home to carry the turn's end as a fact (<see cref="StepBusFacts.StepTurnEnded"/>).</param>
 public sealed class StepAgents(
     string home, IStepSessions sessions, Func<string, NodeAttempt, NodeDeclaration, CancellationToken, Task<StepAgentAsk?>> askOf, string? program,
     Action? wake = null) : IStepAgents, IDoorRuns
@@ -44,7 +44,7 @@ public sealed class StepAgents(
             finally
             {
                 StepAnswer.Unanswered(home, invocation, SignInWords(ends));
-                wake?.Invoke();
+                if (!StepBusFacts.Teed(home, () => StepBusFacts.StepTurnEnded(unit, node.Id, invocation))) wake?.Invoke();
             }
         }, _ => true);
     }

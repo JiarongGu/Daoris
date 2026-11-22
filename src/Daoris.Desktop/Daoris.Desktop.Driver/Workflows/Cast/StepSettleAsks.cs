@@ -86,16 +86,36 @@ public static class StepSettleAsks
     /// </summary>
     public static async Task<IReadOnlyList<NodeWorded>> TakeAsync(
         NodeRecordFiles records, Func<string, string?> agentOf, Func<string, string, string, CancellationToken, Task<SayAnswer>>? say, Func<DateTimeOffset> clock,
-        CancellationToken ct, Func<string, IReadOnlyCollection<string>?>? makers = null)
+        CancellationToken ct, Func<string, IReadOnlyCollection<string>?>? makers = null, string? only = null)
     {
         var done = new List<NodeWorded>();
-        foreach (var kept in Waiting(records.Home))
+        await Taking.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await TakeEachAsync(records, agentOf, say, clock, ct, makers, only, done).ConfigureAwait(false);
+        }
+        finally
+        {
+            Taking.Release();
+        }
+
+        return done;
+    }
+
+    /// <summary>One take at a time: a box listed again under the lock is one an earlier take answered, so a second take of it is a no-op that says nothing.</summary>
+    private static readonly SemaphoreSlim Taking = new(1, 1);
+
+    private static async Task TakeEachAsync(
+        NodeRecordFiles records, Func<string, string?> agentOf, Func<string, string, string, CancellationToken, Task<SayAnswer>>? say, Func<DateTimeOffset> clock,
+        CancellationToken ct, Func<string, IReadOnlyCollection<string>?>? makers, string? only, List<NodeWorded> done)
+    {
+        foreach (var kept in Waiting(records.Home).Where(each => only is null || string.Equals(each.Session, only, StringComparison.OrdinalIgnoreCase)))
         {
             var by = SettleBy.OfChannel(TerminalTierBy.Session, appointed: false, kept.Epoch, agentOf(kept.Session), kept.Session)!;
             var worded = StepSettles.Settle(records, kept.Ask, by, clock, makers?.Invoke(kept.Ask.Run.Trim().TrimStart('#')));
             if (worded.Refused == SettleDoor.OwnWork && worded.Detail?.StartsWith(SettleDoor.NotYet, StringComparison.Ordinal) == true)
             {
-                // The makers are not read (a restart): the ask stays open, so the next look takes it, and the session is told once.
+                // The makers are not read (a restart): the ask stays open, so the settle box's sweep takes it again, and the session is told once.
                 if (say is not null) await say(kept.Session, StepSettles.Said(worded), $"step-settle:{kept.Id}:not-yet", ct).ConfigureAwait(false);
                 continue;
             }
@@ -113,7 +133,5 @@ public static class StepSettleAsks
             });
             if (!worded.Done && say is not null) await say(kept.Session, StepSettles.Said(worded), $"step-settle:{kept.Id}", ct).ConfigureAwait(false);
         }
-
-        return done;
     }
 }

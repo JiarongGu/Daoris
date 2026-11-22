@@ -49,6 +49,10 @@ internal sealed class BusMeasures
 
     public const string Middleware = "middleware";
 
+    public const string Sweep = "sweep", Found = "found", Retried = "retried", Overflow = "overflow";
+
+    public const string Began = "began", ByConsumer = "consumer", ByLook = "look", ByOther = "other";
+
     /// <summary>What each consumer threw, by its name.</summary>
     public const string Consumer = "consumer";
 
