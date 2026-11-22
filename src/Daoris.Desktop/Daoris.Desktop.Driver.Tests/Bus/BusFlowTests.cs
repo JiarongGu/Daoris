@@ -124,7 +124,7 @@ public sealed class BusFlowTests : IDisposable
         release.SetResult();
 
         await Poll.Until(() => passes.Count == 2, () => "passes: " + string.Join(" | ", passes), Soon);
-        await Wait(100);
+        await queue.QuietAsync(Soon, CancellationToken.None);
         Assert.Equal(0, Volatile.Read(ref overlap));
         // Three facts that waited cost one pass that reads them all, their names merged, none lost.
         Assert.Equal(["u-0", "u-1+u-2+u-3"], passes);
@@ -166,7 +166,7 @@ public sealed class BusFlowTests : IDisposable
         // A fact that names one key moves that key alone.
         bus.Append(Begun("u-1", "z-1"));
         await Poll.Until(() => probe.Moves.Count == 13, () => $"moved {probe.Moves.Count}", Soon);
-        await Wait(100);
+        await queue.QuietAsync(Soon, CancellationToken.None);
         Assert.Equal(13, probe.Moves.Count);
         Assert.Equal("z-1", probe.Moves.Last().Key);
     }
@@ -185,7 +185,7 @@ public sealed class BusFlowTests : IDisposable
         await Poll.Until(() => probe.Moves.Count(move => move.Key == "other") == 1, () => "the other fact was held by the failure", Soon);
         // The failed key is tried again on the entry's backoff, and the key that moved is not worked a second time.
         await Poll.Until(() => probe.Moves.Count(move => move.Key == "bad") == 2, () => "the failed key was not tried again", Soon);
-        await Wait(100);
+        await queue.QuietAsync(Soon, CancellationToken.None);
         Assert.Equal(1, probe.Moves.Count(move => move.Key == "good"));
         await Unarmed(bus);
     }
