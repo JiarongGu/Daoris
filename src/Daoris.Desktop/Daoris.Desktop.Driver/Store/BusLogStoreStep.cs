@@ -58,6 +58,13 @@ internal static class BusLogStoreStep
         CREATE INDEX bus_timers_effect ON bus_timers (kind, effect);
         """));
 
+    /// <summary>The correlation column, nullable and indexed: an older row holds null and reads as its own id.</summary>
+    public static StoreMigration Correlation { get; } = new(DesktopStore.BusCorrelationVersion, DesktopStore.PolicyWriter, write => write.Execute(
+        """
+        ALTER TABLE bus_log ADD COLUMN correlation TEXT;
+        CREATE INDEX bus_log_correlation ON bus_log (correlation);
+        """));
+
     /// <summary>
     /// The step that makes the queue's rows (<see cref="BusQueue"/>): each durable consumer's types, cursor and fenced epoch, the entries
     /// it parked with their tries, and the run-once keys of outside effects (<see cref="ActJournal.BeginEffect"/>), which join the act

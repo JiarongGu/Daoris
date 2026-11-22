@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// reason, the values dropped, each kind's handling time and each look stage's time: what the budget and the deadlines are set from.
 /// </summary>
 /// <remarks>The <c>bus</c> group's runner, <c>stalls</c> handed on. Exit codes: 0 read, or no log yet, said · 2 a word it does not answer.</remarks>
-[CommandGroup("bus", "stats", "stalls")]
+[CommandGroup("bus", "stats", "stalls", "chain")]
 public static class BusStatsCommand
 {
     public const string Usage =
@@ -26,6 +26,7 @@ public static class BusStatsCommand
     public static int Run(string[] args, string home, Func<DateTimeOffset> clock, out string said)
     {
         if (args is ["stalls", ..]) return BusStallsCommand.Run(args, home, clock, out said);
+        if (args is ["chain", ..]) return BusChainCommand.Run(args, home, out said);
         var output = new StringBuilder();
         var code = Run(args, home, clock, output);
         said = output.ToString();
@@ -36,9 +37,10 @@ public static class BusStatsCommand
     {
         if (DaysOf(args) is not { } days)
         {
-            output.AppendLine("bus: name what to read (stats, or stalls), and for stats at most --days <1-90>.");
+            output.AppendLine("bus: name what to read (stats, stalls, or chain), and for stats at most --days <1-90>.");
             output.AppendLine(Usage);
             output.AppendLine(BusStallsCommand.Usage);
+            output.AppendLine(BusChainCommand.Usage);
             return 2;
         }
 
