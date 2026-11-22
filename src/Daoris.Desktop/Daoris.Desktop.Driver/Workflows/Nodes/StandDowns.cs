@@ -19,12 +19,13 @@ public static class StandDowns
     public static bool InFlight(NodeAttempt attempt) => attempt.State != AttemptStates.Settled;
 
     /// <summary>
-    /// The record with <paramref name="node"/>'s attempt <paramref name="attempt"/> stood down by <paramref name="act"/>, and its node's gate
-    /// lifted, where it is a plugin's still in flight; else as it stands.
+    /// The record with <paramref name="node"/>'s attempt <paramref name="attempt"/> stood down by <paramref name="act"/>, its node's gate lifted,
+    /// where it is a plugin's still in flight, or a check's with <paramref name="checks"/>, for an end that reads no verdict (<see cref="QuestDoneRuns"/>).
     /// </summary>
-    public static NodeRecord Settle(NodeRecord record, string node, int attempt, string act)
+    public static NodeRecord Settle(NodeRecord record, string node, int attempt, string act, bool checks = false)
     {
-        if (record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt) is not { } flying || !InFlight(flying) || !Stands(flying))
+        if (record.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt) is not { } flying || !InFlight(flying)
+            || !(Stands(flying) || (checks && WorkPerformer.OnPort(flying))))
         {
             return record;
         }

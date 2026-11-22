@@ -28,6 +28,8 @@ public static class RunSessionEnds
     public static string NoteOf(string run, RunEnd ended) =>
         ended.Outcome == RunOutcomes.Completed
             ? $"Its workflow's run `{run}` came to its end, and the session with it."
+            : ended.Why == QuestDoneRuns.Why
+                ? $"Its quest was closed Done outside its workflow's run `{run}`, so Daoris stopped the run{(ended.Node is { } at ? $" at `{at}`" : "")}; the session ended with it, its tree and branch kept."
             : ended.By == NodeSource.Daoris
                 ? $"Daoris stopped its workflow's run `{run}`{(ended.Node is { } held ? $" at `{held}`" : "")}: its quest is closed, so what the step waits on can no longer come; the session ended with it."
             : $"Its workflow's run `{run}` ended {ended.Outcome}{(ended.Node is { } node ? $" at `{node}`" : "")}, so the session ended with it.";
