@@ -186,6 +186,28 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         lock (told) Assert.Single(told, each => each.GetProperty("held").GetString() == "q1");
     }
 
+    /// <summary>The helper's ask returns once the work its last ask began has landed.</summary>
+    [Fact]
+    public async Task The_helpers_ask_waits_for_the_work_its_last_ask_began()
+    {
+        var module = new DriverModule(Bus, Loop()) { Patience = TimeSpan.Zero };
+        // The third work is the helper's last, held; the ask before it answers from what the first held.
+        var last = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var begun = 0;
+        module.Held.BeforeWork = _ =>
+        {
+            module.Held.Forget();
+            return Interlocked.Increment(ref begun) == 3 ? last.Task : Task.CompletedTask;
+        };
+
+        var asking = AskAsync(module, "ROLES", new { });
+        await UntilAsync(() => Volatile.Read(ref begun) >= 3);
+
+        Assert.False(asking.IsCompleted);
+        last.SetResult();
+        await asking.WaitAsync(Poll.Patience);
+    }
+
     [Theory]
     [MemberData(nameof(HeldRoutes))]
     public async Task A_held_read_answers_within_the_windows_bound_while_its_slow_work_is_told_by_event(string route)

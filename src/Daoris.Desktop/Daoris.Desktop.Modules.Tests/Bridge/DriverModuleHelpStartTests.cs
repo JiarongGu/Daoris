@@ -370,7 +370,12 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         public int Opened { get; private set; }
 
         /// <summary>The workspace each open named in its body, in order: null where it named none.</summary>
-        public List<string?> Asked { get; } = [];
+        public IReadOnlyList<string?> Asked
+        {
+            get { lock (_gate) return [.. _asked]; }
+        }
+
+        private readonly List<string?> _asked = [];
 
         /// <summary>What <c>/api/registry</c> answers: none registered unless a test says otherwise.</summary>
         public string Registry { get; set; } = "[]";
@@ -437,7 +442,7 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
                     {
                         // Each open its own, as the ledger opens them; none named is `default`'s.
                         var named = JsonNode.Parse(body)!["workspace"]?.GetValue<string>();
-                        Asked.Add(named);
+                        _asked.Add(named);
                         var workspace = named ?? "default";
                         Opened++;
                         var session = new JsonObject
