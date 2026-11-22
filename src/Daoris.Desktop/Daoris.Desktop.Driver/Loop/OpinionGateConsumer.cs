@@ -58,7 +58,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     public OpinionGateConsumer(
         Func<OpinionDue, Action<string>, CancellationToken, Task<OpinionFact?>> judge, Func<string, CancellationToken, Task<OpinionView?>> read,
         Func<IReadOnlyList<OpinionDue>> open, TimeProvider clock, Action<string, string> warn)
-        : base(Bounds, clock)
+        : base(Name, Reads, Bounds, clock)
     {
         _judge = judge;
         _read = read;
@@ -75,19 +75,22 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             gate.BesideEnded = ended;
             return await gate.JudgeDueAsync(due, ct).ConfigureAwait(false);
         },
-        service.Opinions.ReadAsync, () => new OpinionDues(home).Open(), bus.Clock,
+        service.Opinions.ReadAsync, () => new OpinionDues(home).OpenStrict(), bus.Clock,
         (once, why) => bus.Warn("gate:" + once, "opinion.gate-unjudged", ("why", why)));
 
     /// <summary>The facts every owed opinion's judgment reads: its quests' holds and chains, its run's nodes, its rule and process.</summary>
     private static readonly HashSet<string> Everyone = new([BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind], StringComparer.Ordinal);
 
-    public override BusSubscription Subscription { get; } = BusTypes.Subscribe(
-        Name,
-        [
-            .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
-                .Select(type => type.Kind),
-            .. Everyone,
-        ]);
+    private static readonly string[] Reads =
+    [
+        .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
+            .Select(type => type.Kind),
+        .. Everyone,
+    ];
+
+    /// <summary>The owed opinion now owed under <paramref name="key"/>, judged again by a retry; none where it has closed.</summary>
+    protected override Task<BusFlowPiece<GateWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
+        Task.FromResult(_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), key)) is { } owed ? Piece(owed, byFact: true) : null);
 
     public override string Obliged => BusTypes.OpinionGate;
 

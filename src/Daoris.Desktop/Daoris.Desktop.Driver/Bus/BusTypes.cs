@@ -34,6 +34,9 @@ public static class BusTypes
     /// <summary>The working session the payload's <c>session</c> names.</summary>
     public const string Session = "session";
 
+    /// <summary>The dispatch's retry facts: a consumer's failed work, tried again when due.</summary>
+    public const string Flow = "driver/flow";
+
     /// <summary>The watchdog's stalls and give-ups, and the Stalls view that shows them.</summary>
     public const string Watchdog = "driver/watchdog", Stalls = "driver/stalls";
 
@@ -185,11 +188,20 @@ public static class BusTypes
             new("consumer", BusShapes.Code),
         ]);
 
+    /// <summary>A consumer's failed work as a fact the log keeps, due after the backoff; it arms no timer, the failed entry's own stays.</summary>
+    public static readonly BusType FlowRetry = new(
+        "flow.retry", 1, BusClasses.Fact, Flow, Flow, BusDeadline.Stated(TimeSpan.FromDays(1), Observed), 0, BusGiveUps.Dropped,
+        [
+            new("consumer", BusShapes.Code), new("kind", BusShapes.Code), new("scope", BusShapes.Code), new("seq", BusShapes.Count),
+            new("attempt", BusShapes.Count), new("due", BusShapes.Time), new("since", BusShapes.Time), new("settles", BusShapes.Flag),
+            new("subject", BusShapes.Id),
+        ]);
+
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
         OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, CheckStarted, CheckPassed,
-        CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp,
+        CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp, FlowRetry,
     ];
 
     /// <summary>What ends each obliged type's timer (<see cref="BusEnd"/>); until its handler subscribes, such a timer runs out in shadow. <c>BusTypesCensusTests</c> holds that every obliged type has its ends.</summary>

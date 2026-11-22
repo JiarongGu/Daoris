@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 internal static class OpinionGateFiles
 {
     /// <summary>Every entry <paramref name="path"/> keeps, in the order they became due; none where it is missing or does not read.</summary>
-    public static IReadOnlyList<OpinionDue> ReadDues(string path)
+    public static IReadOnlyList<OpinionDue> ReadDues(string path, bool strict = false)
     {
         try
         {
@@ -25,7 +25,7 @@ internal static class OpinionGateFiles
             if (!document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array) return [];
             return [.. due.EnumerateArray().Select(DueOf).OfType<OpinionDue>()];
         }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is JsonException || (!strict && error is IOException or UnauthorizedAccessException))
         {
             return [];
         }

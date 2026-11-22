@@ -37,7 +37,7 @@ public interface IBusConsumer
     int? SubjectsAtOnce => null;
 }
 
-public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<BusEnvelope> EndLate);
+public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, BusEnvelope?> Find);
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
 public sealed record BusHandled(bool Ends)
@@ -175,7 +175,7 @@ public sealed class BusQueue : IAsyncDisposable
                 var claim = store.Claim(name, [.. consumer.Subscription.Types.Select(type => type.Kind)], log.WriterRead, options.Clock.GetUtcNow());
                 var run = new BusConsumerRun(queue, consumer, claim);
                 queue._runs[name] = run;
-                consumer.Attached(new BusConsumerHost(log, options, queue._closing.Token, run.EndLate));
+                consumer.Attached(new BusConsumerHost(log, options, queue._closing.Token, run.EndLate, run.Holds, run.Find));
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
@@ -686,28 +686,33 @@ internal sealed class BusConsumerRun
     }
 
     /// <summary>The give-up past an entry's retries, its consequence its type's and what it hands to whom (<see cref="BusChains"/>).</summary>
-    private void GiveUp(BusEnvelope entry, BusType? type, int tries) => GiveUp(_queue.Log, Name, _consumer.Obliged, entry, type, tries);
+    private void GiveUp(BusEnvelope entry, BusType? type, int tries) => GiveUp(_queue.Log, Name, _consumer.Obliged, entry.Id, entry.Kind, entry.Subject, entry.At, type, tries);
 
-    public void EndLate(BusEnvelope entry)
+    public bool Holds() => !Fenced && Owned();
+
+    public void EndLate(string id)
     {
-        if (Fenced || BusTypes.Of(entry.Kind) is not { } type || !BusTypes.Ends(type).Contains(BusEnd.Acknowledged)) return;
+        if (!Holds()) return;
         long cursor;
         lock (_gate) cursor = _cursor;
-        Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, entry) { Ends = _consumer.Obliged, Writer = _queue.Log.WriterRead }), cursor);
+        var stub = new BusEnvelope(id, 0, "", "", "", null, null, null, [], [], DateTimeOffset.UnixEpoch);
+        Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, stub) { Ends = _consumer.Obliged, Writer = _queue.Log.WriterRead }), cursor);
     }
 
-    internal static void GiveUp(BusLog log, string name, string obliged, BusEnvelope entry, BusType? type, int tries)
+    public BusEnvelope? Find(long seq, string kind) => _queue.Store.Read(seq - 1, [kind], 1).FirstOrDefault(each => each.Seq == seq);
+
+    internal static void GiveUp(BusLog log, string name, string obliged, string id, string kind, string subject, DateTimeOffset since, BusType? type, int tries)
     {
         if (type is null) return;
         var (hands, to) = BusChains.Of(type, obliged);
-        log.Append(new BusDraft(BusTypes.GiveUp, entry.Subject)
+        log.Append(new BusDraft(BusTypes.GiveUp, subject)
         {
-            Effect = $"give-up:{name}:{entry.Id}",
-            Causes = [entry.Id],
+            Effect = $"give-up:{name}:{id}",
+            Causes = [id],
             Payload =
             [
-                ("entry", entry.Id), ("kind", entry.Kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands), ("to", to),
-                ("since", entry.At), ("tries", (long)tries), ("consumer", name),
+                ("entry", id), ("kind", kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands), ("to", to),
+                ("since", since), ("tries", (long)tries), ("consumer", name),
             ],
         });
     }

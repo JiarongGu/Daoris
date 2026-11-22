@@ -9,7 +9,7 @@ public enum BusFlowResult
     /// <summary>The job did not move (not ready, not governed, a bound passed): the entries are handled and their timers stay armed.</summary>
     NotMoved,
 
-    /// <summary>The job failed: that key's work alone is tried again with backoff.</summary>
+    /// <summary>The job failed: a retry fact on the bus tries that work alone again with backoff.</summary>
     Failed,
 }
 
@@ -30,7 +30,7 @@ public sealed record BusFlowBounds(int KeysAtOnce, int PerGroup = int.MaxValue);
 public sealed record BusFlowPiece<TWork>(string Key, TWork Work, string? Group = null);
 
 /// <summary>
-/// The dispatch and the stream's operators over the bus's queue: a consumer declares its kinds (its subscription), the pieces of
+/// The dispatch and the stream's operators over the bus's queue: a consumer declares its kinds, the pieces of
 /// work an entry names (<see cref="PiecesAsync"/>: each its <b>key</b> and its <b>group</b>), how entries waiting on one key coalesce
 /// (<see cref="Merge"/>), its bounds (keys at once, keys at once within a group) and its handler (<see cref="MoveAsync"/>), which gets one key's
 /// merged work and says <i>moved</i>, <i>not moved</i> or <i>failed</i>. The layer keeps the rest, so no consumer writes it again:
@@ -39,8 +39,11 @@ public sealed record BusFlowPiece<TWork>(string Key, TWork Work, string? Group =
 /// for the next (their merge), never a pass nested in another; an entry heard in the meantime is judged by the pass after, which reads it;</item>
 /// <item>the bounds, taken in one order (key, then its group, then the overall), so no two passes wait on each other;</item>
 /// <item>the acknowledgement from the outcome alone: <i>moved</i> ends the entries' obligations (where <see cref="Settles"/> allows), <i>not
-/// moved</i> acknowledges them as handled with their timers armed for the stall view, <i>failed</i> acknowledges them as handled too and the
-/// layer tries that key alone again with backoff and its give-up, ending what it held once it moves; no lane, other key or other fact waits;</item>
+/// moved</i> acknowledges them as handled with their timers armed for the stall view, <i>failed</i> acknowledges them as handled too and writes a
+/// retry fact (<see cref="BusTypes.FlowRetry"/>) for that work alone, due after the type's backoff;</item>
+/// <item>the retry fact, handed back through the same queue once due, runs the same pass under the same bounds, fence and lease; if it moves
+/// it ends the obligations of the entry that failed, if it fails it writes the next, and past the type's retries the give-up names the entry
+/// and its timer stays armed: nothing of a retry lives only in memory;</item>
 /// <item>entries of a kind it coalesces that wait in a row on one subject are handed together and acknowledged only after the one result.</item>
 /// </list>
 /// </summary>
@@ -51,30 +54,35 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     private readonly TimeProvider _clock;
     private readonly Dictionary<string, KeyState> _keys = new(StringComparer.OrdinalIgnoreCase);
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> _groups = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Retrying> _retrying = new(StringComparer.OrdinalIgnoreCase);
-    private BusConsumerHost? _host;
     private readonly SemaphoreSlim _atOnce;
+    private BusConsumerHost? _host;
 
+    /// <param name="name">Its durable name in the queue.</param>
+    /// <param name="kinds">The kinds it reads; the retry fact is added.</param>
     /// <param name="bounds">How much of its work runs at once.</param>
     /// <param name="clock">The clock a time batch waits on.</param>
     /// <param name="pause">Time batching: how long a pass waits, once it holds its key, for more entries of the key to arrive before it takes them (zero: none).</param>
-    protected BusFlowConsumer(BusFlowBounds bounds, TimeProvider clock, TimeSpan pause = default)
+    protected BusFlowConsumer(string name, IReadOnlyList<string> kinds, BusFlowBounds bounds, TimeProvider clock, TimeSpan pause = default)
     {
+        Subscription = BusTypes.Subscribe(name, [.. kinds, BusTypes.FlowRetry.Kind]);
         _bounds = bounds;
         _clock = clock;
         _pause = pause;
         _atOnce = new SemaphoreSlim(Math.Max(1, bounds.KeysAtOnce));
     }
 
-    public abstract BusSubscription Subscription { get; }
+    public BusSubscription Subscription { get; }
 
     public abstract string Obliged { get; }
 
     /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject are handed together.</summary>
     protected virtual bool Coalesces(string kind) => false;
 
-    /// <summary>The pieces of work <paramref name="entry"/> names; none where nothing is owed it, which moves it. A throw is the queue's: the entry is tried again.</summary>
+    /// <summary>The pieces of work <paramref name="entry"/> names; none where nothing is owed it, which moves it. A throw fails that entry's work alone.</summary>
     protected abstract Task<IReadOnlyList<BusFlowPiece<TWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct);
+
+    /// <summary>The work now owed <paramref name="key"/> when its retry is due; null where none is owed any more, which moves it.</summary>
+    protected abstract Task<BusFlowPiece<TWork>?> RetryWorkAsync(string key, CancellationToken ct);
 
     /// <summary>Two pieces of work on one key become one: what the entries waiting on it named, together.</summary>
     protected abstract TWork Merge(TWork earlier, TWork later);
@@ -93,21 +101,40 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     /// <summary>Told once the consumer resumed from its cursor: where it rebuilds its view.</summary>
     public virtual Task ResumedAsync(CancellationToken ct) => Task.CompletedTask;
 
+    public void Attached(BusConsumerHost host) => _host = host;
+
+    int? IBusConsumer.SubjectsAtOnce => 32;
+
     bool IBusConsumer.Folds(string kind) => Coalesces(kind);
 
     Task<BusHandled> IBusConsumer.HandleAsync(BusEnvelope entry, CancellationToken ct) => HandleRowAsync([entry], ct);
 
     Task<BusHandled> IBusConsumer.HandleAsync(IReadOnlyList<BusEnvelope> row, CancellationToken ct) => HandleRowAsync(row, ct);
 
+    private string Name => Subscription.Consumer;
+
     private async Task<BusHandled> HandleRowAsync(IReadOnlyList<BusEnvelope> row, CancellationToken ct)
     {
+        if (row[0].Kind == BusTypes.FlowRetry.Kind) return await RetryAsync(row[0], ct).ConfigureAwait(false);
         foreach (var entry in row) Observe(entry);
         var pieces = new Dictionary<string, BusFlowPiece<TWork>>(StringComparer.OrdinalIgnoreCase);
         var reached = new Dictionary<BusEnvelope, List<string>>();
+        var broken = new List<(BusEnvelope Entry, string Why)>();
         foreach (var entry in row)
         {
+            IReadOnlyList<BusFlowPiece<TWork>> named;
+            try
+            {
+                named = await PiecesAsync(entry, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException)
+            {
+                broken.Add((entry, error.Message));
+                continue;
+            }
+
             reached[entry] = [];
-            foreach (var piece in await PiecesAsync(entry, ct).ConfigureAwait(false))
+            foreach (var piece in named)
             {
                 pieces[piece.Key] = pieces.TryGetValue(piece.Key, out var before) ? piece with { Work = Merge(before.Work, piece.Work) } : piece;
                 reached[entry].Add(piece.Key);
@@ -117,146 +144,112 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         var outcomes = (await Task.WhenAll(pieces.Values.Select(async piece => (piece.Key, Outcome: await AskAsync(piece, ct).ConfigureAwait(false)))).ConfigureAwait(false))
             .ToDictionary(each => each.Key, each => each.Outcome, StringComparer.OrdinalIgnoreCase);
         // No piece named means nothing is owed, so nothing is left unmoved.
-        if (outcomes.Values.All(outcome => outcome.Result == BusFlowResult.Moved)) return row.All(Settles) ? BusHandled.Ended : BusHandled.Judged;
+        if (broken.Count == 0 && outcomes.Values.All(outcome => outcome.Result == BusFlowResult.Moved)) return row.All(Settles) ? BusHandled.Ended : BusHandled.Judged;
 
-        // A failed key costs its own entries their ending, never the row's other keys: it is tried again here, and what moved ends what it held.
-        foreach (var entry in row)
+        // A failure costs its own entry's work alone: a retry fact for it, and what moved ends what it held.
+        foreach (var (entry, why) in broken) WriteRetry(Cause.Of(entry), BusFlowScope.Entry, entry.Subject, 1, why, Settles(entry));
+        foreach (var (entry, keys) in reached)
         {
-            var failed = reached[entry].Where(key => outcomes[key].Result == BusFlowResult.Failed).ToList();
-            if (failed.Count + reached[entry].Count(key => outcomes[key].Result == BusFlowResult.NotMoved) == 0)
+            var failed = keys.Where(key => outcomes[key].Result == BusFlowResult.Failed).ToList();
+            var open = keys.Any(key => outcomes[key].Result == BusFlowResult.NotMoved);
+            var settles = Settles(entry) && !open;
+            if (failed.Count == 0)
             {
-                if (Settles(entry)) _host?.EndLate(entry);
+                if (settles && !open) _host?.EndLate(entry.Id);
+                continue;
             }
-            else if (failed.Count > 0 && reached[entry].All(key => outcomes[key].Result != BusFlowResult.NotMoved) && Settles(entry))
-            {
-                var hold = new Hold(entry, failed.Count);
-                foreach (var key in failed) Retry(pieces[key], entry, hold, outcomes[key].Why);
-            }
-        }
 
-        foreach (var (key, outcome) in outcomes)
-        {
-            if (outcome.Result == BusFlowResult.Moved) Retired(key);
+            foreach (var key in failed) WriteRetry(Cause.Of(entry), BusFlowScope.Key, key, 1, outcomes[key].Why, settles);
         }
 
         return BusHandled.Judged;
     }
 
-    /// <summary>The entries a key's retry stands for: each ends its obligation once every key it waits on has moved.</summary>
-    private sealed class Hold(BusEnvelope entry, int left)
+    /// <summary>An entry whose work failed, as a retry names it and its give-up reports it.</summary>
+    private sealed record Cause(string Id, string Kind, string Subject, DateTimeOffset At, long Seq)
     {
-        public BusEnvelope Entry { get; } = entry;
-
-        public int Left { get; set; } = left;
+        public static Cause Of(BusEnvelope entry) => new(entry.Id, entry.Kind, entry.Subject, entry.At, entry.Seq);
     }
 
-    private sealed class Retrying(BusFlowPiece<TWork> piece, BusEnvelope entry)
+    /// <summary>The retry fact for <paramref name="cause"/>'s work, due after its type's backoff for <paramref name="attempt"/>; the give-up where its type's retries are spent.</summary>
+    private void WriteRetry(Cause cause, string scope, string subject, int attempt, string why, bool settles)
     {
-        public BusFlowPiece<TWork> Piece { get; set; } = piece;
-
-        public BusEnvelope Entry { get; } = entry;
-
-        public List<Hold> Holds { get; } = [];
-
-        public CancellationTokenSource Stop { get; set; } = new();
-    }
-
-    /// <summary>Told once by the queue at its start.</summary>
-    public void Attached(BusConsumerHost host) => _host = host;
-
-    int? IBusConsumer.SubjectsAtOnce => int.MaxValue;
-
-    /// <summary>A failed key tried again alone with backoff; the work of a fact that failed meanwhile joins it. Past its type's retries it is given up.</summary>
-    private void Retry(BusFlowPiece<TWork> piece, BusEnvelope entry, Hold hold, string why)
-    {
-        if (_host is not { } host) return;
-        host.Log.Measured(BusMeasures.Consumer, $"{Subscription.Consumer}:threw", 1);
-        host.Log.Warn($"queue:threw:{Subscription.Consumer}:{entry.Kind}", "bus.consumer-threw", ("consumer", Subscription.Consumer), ("kind", entry.Kind), ("why", why));
-        Retrying state;
-        lock (_retrying)
+        if (_host is not { } host || !host.Owned()) return;
+        host.Log.Measured(BusMeasures.Consumer, $"{Name}:threw", 1);
+        host.Log.Warn($"queue:threw:{Name}:{cause.Kind}", "bus.consumer-threw", ("consumer", Name), ("kind", cause.Kind), ("why", why));
+        var type = BusTypes.Of(cause.Kind);
+        if (type is null || attempt > type.Retries)
         {
-            if (_retrying.TryGetValue(piece.Key, out var was))
-            {
-                was.Piece = was.Piece with { Work = Merge(was.Piece.Work, piece.Work) };
-                was.Holds.Add(hold);
-                return;
-            }
-
-            state = new Retrying(piece, entry);
-            state.Holds.Add(hold);
-            state.Stop = CancellationTokenSource.CreateLinkedTokenSource(host.Closing);
-            _retrying[piece.Key] = state;
+            BusConsumerRun.GiveUp(host.Log, Name, Obliged, cause.Id, cause.Kind, cause.Subject, cause.At, type, attempt);
+            return;
         }
 
-        _ = Task.Run(() => RetryAsync(host, state));
+        var wait = TimeSpan.FromTicks(Math.Min(host.Options.RetryMost.Ticks, host.Options.RetryFirst.Ticks << Math.Min(20, attempt - 1)));
+        host.Log.Append(new BusDraft(BusTypes.FlowRetry, subject)
+        {
+            Commit = true,
+            Causes = [cause.Id],
+            Payload =
+            [
+                ("consumer", Name), ("kind", cause.Kind), ("scope", scope), ("seq", cause.Seq), ("attempt", (long)attempt),
+                ("due", host.Options.Clock.GetUtcNow() + wait), ("since", cause.At), ("settles", settles), ("subject", cause.Subject),
+            ],
+        });
     }
 
-    private async Task RetryAsync(BusConsumerHost host, Retrying state)
+    /// <summary>
+    /// A retry fact handed back: it waits for its due time (a restart finds it unacknowledged and waits again), then runs the failed work
+    /// through the same pass as any fact. Moved ends the failed entry's obligation; failed writes the next retry.
+    /// </summary>
+    private async Task<BusHandled> RetryAsync(BusEnvelope retry, CancellationToken ct)
     {
-        var name = Subscription.Consumer;
-        var type = BusTypes.Of(state.Entry.Kind);
-        var tries = 1;
+        if (Text(retry, "consumer") != Name || _host is not { } host) return BusHandled.Judged;
+        var due = Moment(retry, "due");
+        var wait = due - host.Options.Clock.GetUtcNow();
+        if (wait > TimeSpan.Zero) await Task.Delay(wait, host.Options.Clock, ct).ConfigureAwait(false);
+        if (!host.Owned() || retry.Causes.Count == 0) return BusHandled.Judged;
+        var cause = new Cause(retry.Causes[0], Text(retry, "kind") ?? "", Text(retry, "subject") ?? retry.Subject, Moment(retry, "since"), Number(retry, "seq"));
+        var attempt = (int)Number(retry, "attempt");
+        var scope = Text(retry, "scope") ?? BusFlowScope.Key;
+        var settles = retry.Payload.FirstOrDefault(pair => pair.Key == "settles").Value is true;
+        BusFlowOutcome outcome;
         try
         {
-            while (true)
-            {
-                if (type is null || tries > type.Retries)
-                {
-                    BusConsumerRun.GiveUp(host.Log, name, Obliged, state.Entry, type, tries);
-                    return;
-                }
-
-                var wait = TimeSpan.FromTicks(Math.Min(host.Options.RetryMost.Ticks, host.Options.RetryFirst.Ticks << Math.Min(20, tries - 1)));
-                await Task.Delay(wait, host.Options.Clock, state.Stop.Token).ConfigureAwait(false);
-                BusFlowPiece<TWork> piece;
-                lock (_retrying) piece = state.Piece;
-                var outcome = await AskAsync(piece, state.Stop.Token).ConfigureAwait(false);
-                if (outcome.Result == BusFlowResult.Failed)
-                {
-                    tries++;
-                    continue;
-                }
-
-                if (outcome.Result == BusFlowResult.Moved)
-                {
-                    List<Hold> done;
-                    lock (_retrying) done = [.. state.Holds.Where(hold => --hold.Left == 0)];
-                    foreach (var hold in done) host.EndLate(hold.Entry);
-                }
-
-                return;
-            }
+            outcome = scope == BusFlowScope.Key ? await RetryKeyAsync(retry.Subject, ct).ConfigureAwait(false) : await RetryEntryAsync(host, cause, ct).ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (Exception error) when (error is not OperationCanceledException and not OutOfMemoryException)
         {
+            outcome = BusFlowOutcome.Failed(error.Message);
         }
-        finally
-        {
-            lock (_retrying)
-            {
-                if (_retrying.TryGetValue(state.Piece.Key, out var now) && now == state) _retrying.Remove(state.Piece.Key);
-            }
-        }
+
+        if (outcome.Result == BusFlowResult.Moved && settles && host.Owned()) host.EndLate(cause.Id);
+        else if (outcome.Result == BusFlowResult.Failed) WriteRetry(cause, scope, retry.Subject, attempt + 1, outcome.Why, settles);
+        return BusHandled.Judged;
     }
 
-    /// <summary>A key a fact moved needs no retry of an earlier failure: the pass that moved it read what the failed one named.</summary>
-    private void Retired(string key)
+    private async Task<BusFlowOutcome> RetryKeyAsync(string key, CancellationToken ct) =>
+        await RetryWorkAsync(key, ct).ConfigureAwait(false) is { } piece ? await AskAsync(piece, ct).ConfigureAwait(false) : BusFlowOutcome.Moved;
+
+    /// <summary>An entry whose pieces could not be named: named again from the entry as the log keeps it, each piece asked.</summary>
+    private async Task<BusFlowOutcome> RetryEntryAsync(BusConsumerHost host, Cause cause, CancellationToken ct)
     {
-        Retrying? state;
-        lock (_retrying)
-        {
-            if (!_retrying.Remove(key, out state)) return;
-        }
-
-        state.Stop.Cancel();
-        if (_host is { } host)
-        {
-            foreach (var hold in state.Holds)
-            {
-                if (--hold.Left == 0) host.EndLate(hold.Entry);
-            }
-        }
+        if (host.Find(cause.Seq, cause.Kind) is not { } entry) return BusFlowOutcome.NotMoved("the entry is gone from the log");
+        var named = await PiecesAsync(entry, ct).ConfigureAwait(false);
+        var outcomes = await Task.WhenAll(named.Select(piece => AskAsync(piece, ct))).ConfigureAwait(false);
+        return outcomes.FirstOrDefault(each => each.Result == BusFlowResult.Failed) is { Result: BusFlowResult.Failed } failed ? failed
+            : outcomes.Any(each => each.Result == BusFlowResult.NotMoved) ? BusFlowOutcome.NotMoved("not moved") : BusFlowOutcome.Moved;
     }
+
+    private static string? Text(BusEnvelope entry, string key) => entry.Payload.FirstOrDefault(pair => pair.Key == key).Value as string;
+
+    private static long Number(BusEnvelope entry, string key) => entry.Payload.FirstOrDefault(pair => pair.Key == key).Value switch { long number => number, int number => number, _ => 0 };
+
+    private static DateTimeOffset Moment(BusEnvelope entry, string key) => entry.Payload.FirstOrDefault(pair => pair.Key == key).Value switch
+    {
+        DateTimeOffset at => at,
+        long ms => DateTimeOffset.FromUnixTimeMilliseconds(ms),
+        _ => DateTimeOffset.UnixEpoch,
+    };
 
     /// <summary>
     /// One piece of work asked of its key's pass, from a fact or from a turn of the consumer's own: it waits behind the pass running on the
@@ -385,4 +378,12 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
             _done = true;
         }
     }
+}
+
+/// <summary>What a retry fact retries: one key's work, or an entry whose pieces could not be named.</summary>
+internal static class BusFlowScope
+{
+    public const string Key = "key";
+
+    public const string Entry = "entry";
 }

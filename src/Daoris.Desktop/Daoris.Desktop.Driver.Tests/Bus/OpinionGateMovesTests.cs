@@ -223,5 +223,39 @@ public sealed class OpinionGateMovesTests : IDisposable
             return new OpinionFact(new Dictionary<string, OpinionSit>(), null, null);
         },
         (_, _) => Task.FromResult<OpinionView?>(null),
-        () => new OpinionDues(_home).Open(), Machine, (_, _) => { });
+        () => new OpinionDues(_home).OpenStrict(), Machine, (_, _) => { });
+
+    /// <summary>🔴 A due file that cannot be read is a failure of the move that needed it, never "nothing owed": the move is retried and judged, its timer ending then.</summary>
+    [Fact]
+    public async Task A_due_file_that_cannot_be_read_fails_the_move_and_the_retry_judges_what_it_reached()
+    {
+        await using var bus = Open();
+        using var gate = Gate();
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick with { RetryFirst = TimeSpan.FromMilliseconds(400), RetryMost = TimeSpan.FromMilliseconds(400) });
+        await Started();
+        _judged.Clear();
+
+        var held =new FileStream(new OpinionDues(_home).FilePath, FileMode.Open, FileAccess.Read, FileShare.None);
+        try
+        {
+            bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["q-1"], ["engine"])));
+            await Poll.Until(() => Written().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "the failed move wrote no retry", Soon);
+            await bus.FlushAsync();
+            Assert.Equal(0, Judged("s-1"));
+            Assert.Contains(Armed(), timer => timer.Kind == BusTypes.QuestMoved.Kind);
+        }
+        finally
+        {
+            await held.DisposeAsync();
+        }
+
+        await Poll.Until(() => Judged("s-1") >= 1, () => "the retry did not judge the opinion the move reached", Soon);
+        await Unarmed(bus);
+    }
+
+    private IReadOnlyList<BusEnvelope> Written()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return store.Read(0, 100_000);
+    }
 }

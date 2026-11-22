@@ -367,10 +367,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     group) and its handler, which gets one key's merged work and answers moved, not moved (with why) or failed. The layer keeps one
     pass on a key at a time, in order, the facts that wait on it one piece of work for the next pass, the bounds in one lock order
     (key, group, overall), and turns the answer into the acknowledgement alone: moved ends the entries' obligations where their
-    fact settles, not moved acknowledges them as handled with their timers armed, failed acknowledges them as handled too and the
-    layer tries that key alone again with backoff and its give-up, ending what the key held once it moves, so no lane, other key or
-    other fact waits on it (a restart's resume and the armed timers remain the net). A fact waiting on a key holds no queue slot, so
-    the facts of one key merge into the pass after the one running and never stall another key's. The opinion's gate (keyed by the owed opinion,
+    fact settles, not moved acknowledges them as handled with their timers armed, failed acknowledges them as handled too and
+    writes a retry fact (`flow.retry/1`, no timer of its own) for that work alone: its subject the key (the entry's subject where its
+    pieces could not be named), its cause the entry that failed, its due time the failed entry's type's backoff for its attempt. The
+    retry is handled like any fact once due, through the same key pass, bounds, epoch fence and lease (it waits for its due time in
+    its own lane, and a restart finds it unacknowledged and waits again, so nothing of a retry lives only in memory); if it moves it
+    ends the obligation of the entry that failed, if it fails it writes the next attempt, and past the type's retries the give-up
+    names the entry. A fenced process writes no retry and ends nothing. A pass that moved the key before the failure ends only its own
+    entries, so no lane, other key or other fact waits on a failure. Facts waiting on a key hold at most the consumer's 32 subject
+    slots, merge into the pass after the one running and never stall another key's. A due file that cannot be read is a failure of
+    the move that needed it (`OpinionDues.OpenStrict`), never an empty set owed. The opinion's gate (keyed by the owed opinion,
     grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
     run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.
     What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer

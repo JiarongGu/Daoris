@@ -61,7 +61,7 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     public RunStepConsumer(
         Func<string, CancellationToken, Task<PassOutcome>> pass, Func<string?, CancellationToken, Task<int>> take, BusLog bus, Action<string, string> warn,
         TimeSpan? slack = null)
-        : base(Bounds, bus.Clock)
+        : base(Name, [.. Ending, BusTypes.NodeBegun.Kind], Bounds, bus.Clock)
     {
         _slack = slack ?? Slack;
         _pass = pass;
@@ -70,7 +70,8 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
         _warn = warn;
     }
 
-    public override BusSubscription Subscription { get; } = BusTypes.Subscribe(Name, [.. Ending, BusTypes.NodeBegun.Kind]);
+    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
+        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([])));
 
     public override string Obliged => BusTypes.Step;
 
