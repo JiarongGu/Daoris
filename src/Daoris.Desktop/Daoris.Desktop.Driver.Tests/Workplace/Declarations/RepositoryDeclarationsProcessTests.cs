@@ -30,7 +30,8 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
             var first = Assert.IsType<DeclarationAnswer.Present>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None));
             Assert.Equal(new BlobId(blob), first.Content!.Id);
             Assert.Equal("100644", first.Entry!.Value.Mode);
-            Assert.InRange(cold.Starts.Count, 0, 1);
+            Assert.Contains("cat-file --batch", Assert.Single(cold.Starts), StringComparison.Ordinal);
+            Assert.All(cold.Scopes, scope => Assert.Equal(DeclarationAsker.Store, scope));
         }
 
         using var warm = GitStartTally.Open(root);

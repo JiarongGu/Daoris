@@ -235,8 +235,8 @@ A read that only object ids decide is kept for good, beneath every flow's memo, 
 and `AddressedReads`' commit listing (`ls-tree` of one id, `-z` with plain paths after `--` too; `GitLsTreeMemoTests`) (`GitObjectArguments` says which shapes; `grep` and `--numstat` follow `.gitattributes` and
 configuration, so they are never kept). Every kept kind reads objects alone, so one key serves every tree of a repository: the common
 folder, read from the folder's own `.git` (a subfolder keeps nothing), and the read's words, every commit named by its full id. A
-`merge-base`, `rev-list`, `log` or `cherry` that names `HEAD` or a full ref name is asked by the ids git's files give them at the ask
-(`GitRefIds`, from `GitRefReads`; only where the read so written qualifies), so a ref that has not moved is a hit and a moved one is a
+`merge-base`, `rev-list`, `log`, `cherry` or `ls-tree` that names `HEAD` or a full ref name is asked by the ids git's files give them at the
+ask (`GitRefIds`, from `GitRefReads`, which read the files sharing them with git's own writes; only where the read so written qualifies), so a ref that has not moved is a hit and a moved one is a
 new key. A read naming the index or a working tree, or a name the files cannot say, never qualifies, and a repository where a replacement can stand or whose history is
 shallow or grafted keeps nothing, as does a process with no home named. Only an answer git gave whole is kept (exit 0 with an empty
 error stream, and exit 1 for `merge-base`). The answers have no age: a least-recently-used cap of 8 MB of estimate bounds them, in memory and
