@@ -39,9 +39,10 @@ internal sealed record GitPart(long Ask, int Number, string Text, bool Last, int
 /// scheduler's lock), because a git placed runs on to its end or its bound. A write or a git that waits outside Daoris has none.</para>
 /// <para><b>In memory</b>: <see cref="Open"/> is the asks not yet answered; an answer is the run's own and is kept by nobody here.</para>
 /// <para><b>Long answers in parts</b> (<see cref="PartsAsync"/>): a log walk or a tree's listing comes as numbered parts on its ask's id, cut at
-/// a line's end once a part's size is held, on the service's own lane (a bounded channel, never the bus's frames) at the asker's pace: the read
-/// waits while <see cref="PartsAhead"/> parts are unread, so git's pipe and git with it wait too. The asker stops the read by cancelling or by no
-/// longer reading, and the parts end only once the read has ended.</para>
+/// a line's end once a part's size is held, on the service's own lane (a bounded channel, never the bus's frames): the read waits while
+/// <see cref="PartsAhead"/> parts are unread. The machine's run still drains git's pipe into its own unbounded buffer, so git itself is not
+/// held back yet. The asker stops the read by cancelling or by no longer reading, and the parts end only once the read has ended,
+/// a git that outlived its kill thrown as <see cref="ProcessUnendedException"/>.</para>
 /// </remarks>
 internal sealed class GitService
 {
@@ -103,12 +104,12 @@ internal sealed class GitService
         // An act has no queue deadline: a step dropped mid-act would leave it half done.
         TimeSpan? allowance = ask.Writes || ask.Wait == GitWait.Outside ? null : Allowance(askClass);
         var deadline = allowance is { } left ? bound + left : Timeout.InfiniteTimeSpan;
-        // A parted read's git is told by the parts' id, which stays open while they are read.
+        // A parted read's git is told by the parts' id, which stays open while they are read, and says where it is placed and by when.
         var parted = s_parted.Value;
         var open = parted is not null
             ? parted with { Repository = ask.Repository, Kind = ask.Kind, Deadline = deadline }
             : new GitServiceAsk(Interlocked.Increment(ref _ids), ask.Repository, ask.Kind, asker, askClass, deadline);
-        if (parted is null) _open[open.Id] = open;
+        _open[open.Id] = open;
         if (asker == GitAskers.Other) _scheduler.Tally.RecordSite(GitAskers.TakeSite() ??GitSites.Here(skip: 1));
         try
         {
@@ -171,6 +172,7 @@ internal sealed class GitService
         }
 
         // Its own flow, never the asker's: a take that waits for room must not wait on the thread that would make it.
+        ProcessUnendedException? unended = null;
         var reading = Task.Run(async () =>
         {
             try
@@ -182,6 +184,8 @@ internal sealed class GitService
             }
             catch (Exception error)
             {
+                // A stop is no failure, but a git that outlived its kill is said however the read stopped.
+                unended = error as ProcessUnendedException;
                 lane.Writer.TryComplete(stop.IsCancellationRequested ? null : error);
             }
         }, CancellationToken.None);
@@ -203,6 +207,7 @@ internal sealed class GitService
             stop.Cancel();
             await reading.ConfigureAwait(false);
             _open.TryRemove(open.Id, out _);
+            if (unended is not null) throw unended;
         }
     }
 

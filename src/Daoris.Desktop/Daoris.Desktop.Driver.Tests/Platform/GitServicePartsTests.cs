@@ -1,6 +1,7 @@
 using System.Text;
 using Daoris.Driver;
 using Daoris.Ports.Git;
+using Daoris.Ports.Processes;
 using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -59,6 +60,34 @@ public sealed class GitServicePartsTests
         var open = Assert.Single(openWhileRunning!);
         Assert.All(parts, part => Assert.Equal(open.Id, part.Ask));
         Assert.Equal("log", open.Kind);
+        // While its git is placed, the ask says the repository it is placed in and its deadline, not the asker's folder and none.
+        Assert.Equal(Ask("a").Repository, open.Repository);
+        Assert.Equal(Soon + GitService.BackgroundAllowance, open.Deadline);
+        Assert.Empty(service.Open);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_walk_whose_git_outlived_its_kill_says_so_when_its_asker_cancels_or_stops_reading(bool cancels)
+    {
+        var service = Service();
+        using var cancel = new CancellationTokenSource();
+
+        var unended = await Assert.ThrowsAsync<ProcessUnendedException>(async () =>
+        {
+            await foreach (var part in service.PartsAsync("_parts/f", "log", async (take, token) =>
+            {
+                for (var at = 0; take(Lines(at * 4, 4).AsMemory()); at++) await Task.Yield();
+                throw new ProcessUnendedException(41, "kill refused", token);
+            }, cancel.Token))
+            {
+                if (!cancels) break;
+                cancel.Cancel();
+            }
+        }).WaitAsync(Soon);
+
+        Assert.Equal(41, unended.Pid);
         Assert.Empty(service.Open);
     }
 
