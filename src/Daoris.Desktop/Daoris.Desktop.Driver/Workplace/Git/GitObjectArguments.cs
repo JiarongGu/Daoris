@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// Which git reads are pure functions of object ids, and so may be kept for good (<see cref="GitObjectMemo"/>): <c>merge-base</c>,
 /// <c>rev-list</c>, <c>cherry</c>, a two-commit <c>diff</c> of names and a <c>cat-file</c> of one object, each naming every commit by its full id
-/// and reading no ref, <c>HEAD</c>, index, working tree or reflog; with <see cref="AddressedReads"/>' listings and searches of one commit.
+/// and reading no ref, <c>HEAD</c>, index, working tree, reflog, attribute or diff setting; with <see cref="AddressedReads"/>' listing of one commit.
 /// Anything not named here is not kept: a lost qualification is a read asked again, never a stale answer.
 /// </summary>
 internal static class GitObjectArguments
@@ -21,7 +21,7 @@ internal static class GitObjectArguments
     private static readonly string[] Walks =
         ["--count", "--not", "--left-right", "--cherry-mark", "--cherry-pick", "--right-only", "--left-only", "--no-merges", "--merges", "--first-parent", "--reverse", "--topo-order", "--date-order"];
 
-    private static readonly string[] Names = ["--name-only", "--name-status", "--numstat", "--shortstat", "-z", "--no-renames", "--no-ext-diff", "--no-color", "--ignore-submodules=none"];
+    private static readonly string[] Names = ["--name-only", "--name-status", "-z", "--no-renames", "--no-ext-diff", "--no-color", "--ignore-submodules=none"];
 
     private static readonly string[] Objects = ["-t", "-s", "-p"];
 
@@ -47,11 +47,12 @@ internal static class GitObjectArguments
             "merge-base" => ended < 0 && words.Count >= 2 && words.All(Id.IsMatch) && options.All(MergeBases.Contains),
             "cherry" => ended < 0 && words.Count == 2 && words.All(Id.IsMatch) && options.All(option => option == "-v"),
             "rev-list" => words.Count > 0 && words.All(Revision.IsMatch) && options.All(Walks.Contains),
-            "log" => ended < 0 && words.Count > 0 && words.All(Revision.IsMatch) && options.Any(IsFormat) && options.All(option => Walks.Contains(option) || IsFormat(option)),
+            "log" => ended < 0 && words.Count > 0 && words.All(Revision.IsMatch) && options.Any(IsFormat) && options.Contains("--no-show-signature")
+                     && options.All(option => Walks.Contains(option) || IsFormat(option) || option == "--no-show-signature"),
             "diff" => words.Count is 1 or 2 && words.All(Revision.IsMatch) && NamedPair(words) && options.All(Names.Contains)
-                      && options.Contains("--no-renames") && options.Any(option => option is "--name-only" or "--name-status" or "--numstat" or "--shortstat"),
+                      && options.Contains("--no-renames") && options.Contains("--ignore-submodules=none") && options.Any(option => option is "--name-only" or "--name-status"),
             "cat-file" => ended < 0 && words.Count == 1 && Id.IsMatch(words[0]) && options is [var one] && Objects.Contains(one),
-            "ls-tree" or "grep" => AddressedReads.Addressed(arguments),
+            "ls-tree" => AddressedReads.Addressed(arguments),
             _ => false,
         };
     }

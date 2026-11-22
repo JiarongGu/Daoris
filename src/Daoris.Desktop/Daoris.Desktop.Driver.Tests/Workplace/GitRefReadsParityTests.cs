@@ -31,7 +31,8 @@ public sealed class GitRefReadsParityTests : LandedFixture
         using var memo = GitObjectMemo.Within(Path.Combine(Path.GetDirectoryName(folder)!, "memo-home"));
         // Each git start is a second on a loaded machine and a class's tests must each finish within the run's inactivity window, so few names.
         // A directory where a ref is looked for is git's, which the library answers each time.
-        string[] names = ["HEAD", "refs/heads/main", "refs/heads/feature", "refs/heads/gone", "refs/tags/annotated", "main", .. directory ? (string[])["refs/heads"] : []];
+        // An annotated tag is the library's each time, since only a ref's own commit id is learned.
+        string[] names = ["HEAD", "refs/heads/main", "refs/heads/feature", "refs/heads/gone", "main", .. directory ? (string[])["refs/heads", "refs/tags/annotated"] : []];
         foreach (var name in names)
         {
             foreach (var form in new[] { name, name + "^{commit}" })

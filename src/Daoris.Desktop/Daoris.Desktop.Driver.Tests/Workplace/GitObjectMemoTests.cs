@@ -98,6 +98,76 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
     }
 
     [Fact]
+    public async Task A_ref_moved_between_the_file_read_and_the_librarys_answer_keeps_no_wrong_peel()
+    {
+        var (root, line, tip) = await BranchAsync();
+        using var home = GitObjectMemo.Within(Home);
+        var common = TreeLock.CommonDirOf(root);
+
+        // The files read the ref at `tip`; the library, asked by name, answered the commit it had moved to.
+        new GitRefReads.Read(null, common, tip).Learn(new GitLibraryAnswer(0, line + "\n"));
+        Assert.Null(GitObjectMemo.PeeledCommit(common, tip));
+        Assert.Null(GitObjectMemo.PeeledCommit(common, line));
+
+        new GitRefReads.Read(null, common, tip).Learn(new GitLibraryAnswer(0, tip + "\n"));
+        Assert.Equal(tip, GitObjectMemo.PeeledCommit(common, tip));
+    }
+
+    [Fact]
+    public async Task A_bad_row_or_another_version_is_dropped_at_load_and_never_stops_a_read()
+    {
+        var (root, line, tip) = await BranchAsync();
+        var file = Path.Combine(Home, "memo", "git-objects.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        await File.WriteAllTextAsync(file, "[{\"K\":\"k\",\"C\":0,\"O\":null}]");
+        using (GitObjectMemo.Within(Home))
+        {
+            Assert.True(await AsksAsync(root, Proof(tip, line)) > 0);
+            Assert.Equal(0, await AsksAsync(root, Proof(tip, line)));
+            GitObjectMemo.Restart(Home);
+        }
+
+        var kept = (await File.ReadAllLinesAsync(file))[0];
+        Assert.Equal("{\"V\":" + GitObjectMemo.Version + "}", kept);
+        await File.AppendAllTextAsync(file, "{\"K\":null,\"C\":0,\"O\":null}\nnot json\n");
+        using var again = GitObjectMemo.Within(Home);
+        Assert.Equal(0, await AsksAsync(root, Proof(tip, line)));
+    }
+
+    [Fact]
+    public async Task A_batch_appends_only_its_new_answers()
+    {
+        var (root, line, tip) = await BranchAsync();
+        var file = Path.Combine(Home, "memo", "git-objects.json");
+        using var home = GitObjectMemo.Within(Home);
+        await AsksAsync(root, Proof(tip, line));
+        GitObjectMemo.Restart(Home);
+        var before = new FileInfo(file).Length;
+
+        await GitAsync(root, "checkout", "-q", "feature");
+        await CommitFileAsync(root, "more.txt", "more\n");
+        var moved = (await GitAsync(root, "rev-parse", "feature")).Trim();
+        await AsksAsync(root, [["merge-base", "--is-ancestor", moved, line]]);
+        GitObjectMemo.Restart(Home);
+
+        var grown = new FileInfo(file).Length - before;
+        output.WriteLine($"one new answer appended {grown} bytes to a file of {before}");
+        Assert.InRange(grown, 1, 700);
+    }
+
+    [Fact]
+    public async Task A_subfolder_keeps_nothing()
+    {
+        var (root, line, tip) = await BranchAsync();
+        var sub = Path.Combine(root, "sub");
+        Directory.CreateDirectory(sub);
+        using var home = GitObjectMemo.Within(Home);
+
+        Assert.Null(GitObjectMemo.KeyOf(sub, ["merge-base", tip, line]));
+        Assert.NotNull(GitObjectMemo.KeyOf(root, ["merge-base", tip, line]));
+    }
+
+    [Fact]
     public async Task A_moved_tip_asks_only_the_new_pairs()
     {
         var (root, line, tip) = await BranchAsync();
@@ -148,8 +218,12 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
         Assert.True(GitObjectArguments.Qualifies(["merge-base", "--is-ancestor", one, two]));
         Assert.True(GitObjectArguments.Qualifies(["--no-optional-locks", "rev-list", "--count", $"{one}..{two}"]));
         Assert.True(GitObjectArguments.Qualifies(["cherry", one, two]));
-        Assert.True(GitObjectArguments.Qualifies(["diff", "--no-renames", "--name-only", one, two]));
-        Assert.True(GitObjectArguments.Qualifies(["log", "--reverse", "--no-merges", "--format=%H%x09%s", $"{one}..{two}"]));
+        Assert.True(GitObjectArguments.Qualifies(["diff", "--no-renames", "--ignore-submodules=none", "--name-only", one, two]));
+        Assert.False(GitObjectArguments.Qualifies(["diff", "--no-renames", "--name-only", one, two]));
+        Assert.False(GitObjectArguments.Qualifies(["diff", "--no-renames", "--ignore-submodules=none", "--numstat", one, two]));
+        Assert.False(GitObjectArguments.Qualifies(["grep", "-e", "x", one]));
+        Assert.False(GitObjectArguments.Qualifies(["log", "--reverse", "--no-merges", "--format=%H%x09%s", $"{one}..{two}"]));
+        Assert.True(GitObjectArguments.Qualifies(["log", "--reverse", "--no-merges", "--no-show-signature", "--format=%H%x09%s", $"{one}..{two}"]));
         Assert.False(GitObjectArguments.Qualifies(["log", "--format=%H %an", $"{one}..{two}"]));
         Assert.False(GitObjectArguments.Qualifies(["log", $"{one}..{two}"]));
         Assert.False(GitObjectArguments.Qualifies(["log", "--format=%H", "main..HEAD"]));

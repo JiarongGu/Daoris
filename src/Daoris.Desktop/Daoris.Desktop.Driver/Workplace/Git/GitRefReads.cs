@@ -13,9 +13,8 @@ namespace Daoris.Driver;
 /// <para><b>Only where the files say it whole.</b> A ref found names its id; a name that no rule's loose file or packed line has is absent
 /// (exit 1, nothing printed, as <c>--quiet</c> says it). A directory where a ref is looked for, a file that is empty or not an id, a dangling
 /// symbolic ref, an unborn head, a reftable, a replacement that can stand and a name with an operator are git's.</para>
-/// <para><b>A commit's peel is kept, never guessed.</b> <c>NAME^{commit}</c> is answered from the files only once a read said which commit
-/// that id peels to (<see cref="GitObjectMemo.PeeledCommit"/>): a tag or a non-commit is learned the same way, and asked of the library
-/// the first time.</para>
+/// <para><b>That an id is a commit is kept, never guessed.</b> <c>NAME^{commit}</c> is answered from the files only once a read named the
+/// ref's own id as the commit (<see cref="GitObjectMemo.PeeledCommit"/>); a tag or a non-commit is the library's every time.</para>
 /// <para><b>The listing</b> is the library's (<see cref="GitLibraryRefs"/>) kept in memory under a stamp of every loose ref under
 /// <c>refs/heads</c> and <c>refs/remotes/origin</c>, <c>packed-refs</c> and the repository's configuration, taken before and after the read:
 /// a listing is kept only if nothing moved across it, and a configuration that includes another file keeps nothing.</para>
@@ -29,10 +28,13 @@ internal static class GitRefReads
     /// <summary>One ref question: the files' answer where they gave one, else what to learn from the library's.</summary>
     internal sealed record Read(GitLibraryAnswer? Answer, string? Common, string? Id)
     {
-        /// <summary>Learns from the library's answer to <c>NAME^{commit}</c> which commit <see cref="Id"/> peels to.</summary>
+        /// <summary>
+        /// Learns that <see cref="Id"/> is a commit, and only from an answer naming <see cref="Id"/> itself: the library resolved the name again, so
+        /// a ref that moved between the two reads answers another commit, which says nothing of this id.
+        /// </summary>
         internal void Learn(GitLibraryAnswer library)
         {
-            if (Common is not null && Id is not null && library.Code == 0 && library.Stdout.Trim() is { Length: >= 40 } commit) GitObjectMemo.LearnPeeled(Common, Id, commit);
+            if (Common is not null && Id is not null && library.Code == 0 && library.Stdout.Trim() == Id) GitObjectMemo.LearnPeeled(Common, Id, Id);
         }
     }
 
