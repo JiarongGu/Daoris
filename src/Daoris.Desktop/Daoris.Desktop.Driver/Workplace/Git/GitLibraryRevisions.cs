@@ -24,6 +24,37 @@ internal static class GitLibraryRevisions
         _ => null,
     };
 
+    /// <summary>
+    /// What the object of a full id is, or what it peels to: its id (<paramref name="kind"/> empty), the commit's id (<c>commit</c>) or the tree's
+    /// (<c>tree</c>); empty where it has no such peel; null where the store holds no such object.
+    /// </summary>
+    internal static string? Peel(GitLibraryCall call, string id, string kind)
+    {
+        if (call.Repository.Lookup(new ObjectId(id)) is not { } found) return null;
+        if (kind.Length == 0) return found.Sha;
+        return (kind, Peeled(found)) switch
+        {
+            ("commit", Commit commit) => commit.Sha,
+            ("tree", Commit commit) => commit.Tree.Sha,
+            ("tree", Tree tree) => tree.Sha,
+            _ => "",
+        };
+    }
+
+    /// <summary>The id of what <paramref name="path"/> names in the tree of the object of a full id: empty where the tree lacks it or there is no tree; null where git must say (a missing object, a gitlink).</summary>
+    internal static string? EntryAt(GitLibraryCall call, string id, string path)
+    {
+        if (call.Repository.Lookup(new ObjectId(id)) is not { } found) return null;
+        var tree = Peeled(found) switch
+        {
+            Commit commit => commit.Tree,
+            Tree held => held,
+            _ => null,
+        };
+        if (tree is null || tree[path] is not { } entry) return "";
+        return entry.TargetType == TreeEntryTargetType.GitLink ? null : entry.Target.Sha;
+    }
+
     private static GitObject? Named(GitLibraryCall call, string name)
     {
         var repository = call.Repository;

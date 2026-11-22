@@ -252,6 +252,12 @@ reftable and a replacement that can stand are git's, and `NAME^{commit}` is answ
 configuration stands. `GitRefReadsParityTests` holds each against real git: loose, packed, a symbolic and a detached head, a linked
 tree's own head, a ref deleted while packed and one moved, and a reftable.
 
+The library answers the rest of `rev-parse` that no ref or working tree decides (`GitLibraryRevParseTests`, on real git, no start): `--abbrev-ref HEAD`
+and `--path-format=absolute --git-common-dir` alone (`GitLibraryLayout`, with the combined read's refusals: a subfolder, a branch another ref
+makes ambiguous, an included configuration), and `--verify --quiet` of an object by its full id (`GitLibraryIds`): the id, `ID^{commit}`,
+`ID^{tree}` and `ID:path`, an existing object that has no such peel or a path the tree lacks being git's quiet exit 1. A missing object, a
+path with `.`, `..` or an empty part and a gitlink are git's, as is a bare name (`main`), which an object's short id may also spell.
+
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
