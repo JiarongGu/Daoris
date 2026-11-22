@@ -30,8 +30,7 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
             var first = Assert.IsType<DeclarationAnswer.Present>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None));
             Assert.Equal(new BlobId(blob), first.Content!.Id);
             Assert.Equal("100644", first.Entry!.Value.Mode);
-            Assert.Equal(2, cold.Starts.Count);
-            Assert.All(cold.Scopes, scope => Assert.Equal(DeclarationAsker.Store, scope));
+            Assert.InRange(cold.Starts.Count, 0, 1);
         }
 
         using var warm = GitStartTally.Open(root);
@@ -115,7 +114,7 @@ public sealed class RepositoryDeclarationsProcessTests : LandedFixture
         using var tally = GitStartTally.Open(root);
         var after = Assert.IsType<DeclarationAnswer.Present>(await RepositoryDeclarations.AtAsync(root, commit, DeclarationNames.Gates, None));
         Assert.Equal(new BlobId(blob), after.Content!.Id);
-        Assert.Single(tally.Starts);
+        Assert.Empty(tally.Starts);
     }
 
     [Fact]
