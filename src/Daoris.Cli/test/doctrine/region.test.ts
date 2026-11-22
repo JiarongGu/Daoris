@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError } from '../_fixture.ts';
 import {
-  CLOSE, IMPORT, OPEN, ensureImport, findRegion, hasImport, removeRegion, writeRegion,
+  CLOSE, IMPORT, OPEN, findRegion, hasImport, removeRegion, retireImport, writeRegion,
 } from '../../src/doctrine/region.ts';
 
 /**
@@ -202,37 +202,46 @@ test('an indented or quoted marker is not a boundary', () => {
   assert.equal(findRegion(quoted, NAME).kind, 'absent');
 });
 
-// ── the import line ───────────────────────────────────────────────────────────────────────────────
+// ── the retired import line ──────────────────────────────────────────────────────────────────────
 
 /**
- * `CLAUDE.md` is the same mechanism, smaller: one line pointing at `AGENTS.md`, for the one harness
- * that looks for the other name. The measured reason it is an import rather than a copy is that dsh
- * and codex read `AGENTS.md` directly, so only Claude Code ever follows this line.
+ * `CLAUDE.md` held one import region so the one harness that looked for the other name found the tier. Every
+ * agent in use reads `AGENTS.md` itself (`docs/2026-11-22-instruction-file-evidence.md`), so a file holding nothing
+ * else goes, and a file with text of its own keeps the region: Claude Code reads that file and then not
+ * `AGENTS.md`.
  */
-test('a file already holding the import needs nothing', () => {
-  assert.equal(hasImport('@AGENTS.md\n', 'AGENTS.md'), true);
-  assert.equal(hasImport('# Theirs\n\nSee @AGENTS.md for the rules.\n', 'AGENTS.md'), true);
-  assert.equal(hasImport('# Theirs\n\nNothing points anywhere.\n', 'AGENTS.md'), false);
+const REGION = `${OPEN(IMPORT)}\n@AGENTS.md\n${CLOSE(IMPORT)}\n`;
+
+test('a file holding only the import region is retired', () => {
+  assert.equal(retireImport(REGION), 'remove');
+  assert.equal(retireImport(REGION.replace(/\n/g, '\r\n')), 'remove', 'a CRLF file too');
 });
 
-/** A file that mentions the NAME without importing it has not imported it. */
-test('a mention is not an import', () => {
+test("a byte-order mark before the region is the file's, not a damaged marker", () => {
+  assert.equal(retireImport(`﻿${REGION}`), 'remove');
+  assert.equal(retireImport(`﻿# Ours\n\n${REGION}`), 'kept');
+});
+
+test('a mention of the brief is not an import of it, and a hand-written import is one', () => {
   assert.equal(hasImport('We keep doctrine in AGENTS.md.\n', 'AGENTS.md'), false);
+  assert.equal(hasImport('@AGENTS.mdx\n', 'AGENTS.md'), false);
+  assert.equal(hasImport('Everything is in @AGENTS.md.\n', 'AGENTS.md'), true);
+  assert.equal(hasImport(REGION, 'AGENTS.md'), true);
 });
 
-/**
- * The boundary is about PATHS, not whitespace — three other files start with the same characters.
- * Requiring whitespace after the target failed the first sentence anybody would actually write:
- * `"Everything is in @AGENTS.md."`, where the full stop belongs to the sentence.
- */
-test('a longer path that merely starts the same way is a different file', () => {
-  for (const near of ['@AGENTS.mdx\n', '@AGENTS.md.backup\n', '@AGENTS.md/nested\n', '@AGENTS.md-old\n']) {
-    assert.equal(hasImport(near, 'AGENTS.md'), false, near);
-  }
+test('a file with text of its own beside the region is kept, every word', () => {
+  assert.equal(retireImport(`# Ours\n\nRules we wrote.\n\n${REGION}`), 'kept');
+  assert.equal(retireImport(`${REGION}\n# After\n`), 'kept');
+});
 
-  for (const real of ['@AGENTS.md.\n', '@AGENTS.md, and nothing else.\n', 'see @AGENTS.md)\n']) {
-    assert.equal(hasImport(real, 'AGENTS.md'), true, real);
-  }
+test('a file with no region is not a pointer of ours: a hand-written import is left alone', () => {
+  assert.equal(retireImport('@AGENTS.md\n'), 'none');
+  assert.equal(retireImport('# Ours\n\nEverything is in @AGENTS.md.\n'), 'none');
+  assert.equal(retireImport(''), 'none');
+});
+
+test('a damaged import region is refused, not guessed at', () => {
+  assert.match(captureError(() => retireImport(`# Ours\n${OPEN(IMPORT)}\n@AGENTS.md\n`)).message, /never closed/);
 });
 
 /**
@@ -253,42 +262,4 @@ test('an intact region in a CRLF file is found', () => {
   const written = writeRegion('# Theirs\r\n', NAME, 'the tier');
 
   assert.equal(findRegion(written, NAME).kind, 'present');
-});
-
-/**
- * Creating the pointer file, and the three states §4 gives it.
- *
- * 🔴 **Always a region, even when Daoris creates the whole file.** The adopter whose layout this
- * follows has a bare one-line `CLAUDE.md`, which is prettier — and a bare line is a line nothing
- * can later retire, because `daoris.lock` is the authority and a line is not a file. One mechanism
- * means `check`, `sync` and retirement read this file exactly as they read the other one.
- */
-test('a repository with no pointer file gets one holding the import', () => {
-  const made = ensureImport(null, 'AGENTS.md');
-
-  assert.ok(made !== null);
-  assert.equal(findRegion(made!, IMPORT).kind, 'present');
-  assert.equal(hasImport(made!, 'AGENTS.md'), true);
-});
-
-test('a pointer file that already imports it is left completely alone', () => {
-  // The exact shape of the style followed: one line, no region, nothing of ours.
-  assert.equal(ensureImport('@AGENTS.md\n', 'AGENTS.md'), null);
-  // And a repository that wrote its own sentence around the import is equally done.
-  assert.equal(ensureImport('# Ours\n\nEverything is in @AGENTS.md.\n', 'AGENTS.md'), null);
-});
-
-test('a pointer file with its own content keeps every word and gains the region', () => {
-  const theirs = '# Ours\n\nRules we wrote, and no pointer anywhere.\n';
-
-  const made = ensureImport(theirs, 'AGENTS.md');
-
-  assert.ok(made!.startsWith(theirs));
-  assert.equal(hasImport(made!, 'AGENTS.md'), true);
-});
-
-test('the pointer file is idempotent through the region, not just through the text', () => {
-  const once = ensureImport('# Ours\n', 'AGENTS.md')!;
-
-  assert.equal(ensureImport(once, 'AGENTS.md'), null);
 });

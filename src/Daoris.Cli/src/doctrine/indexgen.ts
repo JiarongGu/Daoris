@@ -131,7 +131,7 @@ export function rosterExtras(
   const rows = declaredPaths(documents);
   return {
     ...(mirror && dir ? { mirror: { source: `${target}/${dir}`, root: mirror.root } } : {}),
-    ...(rooms.length ? { rooms: roomRows(root, rooms, harness) } : {}),
+    ...(rooms.length ? { rooms: roomRows(root, rooms) } : {}),
     ...(rows.length ? { documents: rows } : {}),
   };
 }

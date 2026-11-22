@@ -41,7 +41,7 @@ function isMarker(line: string, marker: string): boolean {
 /** The region that holds the always-loaded tier, in the file every harness reads. */
 export const RULES = 'rules';
 
-/** The region that holds the pointer, in the file only one harness reads. */
+/** The region an earlier sync wrote into `CLAUDE.md`, which every agent in use reads past. */
 export const IMPORT = 'import';
 
 export type Region =
@@ -115,23 +115,6 @@ export function findRegion(text: string, name: string): Region {
 }
 
 /**
- * Whether a file already imports another by Claude Code's `@path` convention.
- *
- * @remarks
- * A MENTION is not an import — `"We keep doctrine in AGENTS.md"` points nothing at anything — so the
- * `@` is required and must not be part of a longer word (an email address, a handle).
- */
-export function hasImport(text: string, target: string): boolean {
-  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // The boundary is about PATHS, not whitespace. `"Everything is in @AGENTS.md."` imports it — the
-  // full stop is the sentence's, and Claude Code follows the import anyway — where `@AGENTS.mdx`,
-  // `@AGENTS.md.backup` and `@AGENTS.md/nested` are three other files. So: not followed by anything
-  // that extends a path segment, and not by a dot that begins one. Requiring whitespace after it
-  // failed the first sentence anybody would actually write.
-  return new RegExp(`(^|[^\\w@])@${escaped}(?![\\w/\\\\-])(?!\\.\\w)`, 'm').test(text);
-}
-
-/**
  * The file's own line ending, so a region written into somebody's CRLF file does not show up as a
  * whole-file diff on their next checkout.
  *
@@ -178,8 +161,7 @@ export function writeRegion(text: string, name: string, body: string): string {
 }
 
 /**
- * The file with the region taken out, or null when the region is all of it (a room taken
- * out of the manifest loses its pointer).
+ * The file with the region taken out, or null when the region is all of it.
  *
  * @remarks
  * The inverse of `writeRegion`'s append: the marker lines and the body go, and so does the blank line
@@ -202,25 +184,36 @@ export function removeRegion(text: string, name: string): string | null {
 }
 
 /**
- * The pointer file's content, or null when it already points where it should.
- *
- * @param text The file as it stands, or null when there is none.
+ * Whether a file imports another by Claude Code's `@path` convention: a mention is not an import, and `@AGENTS.mdx`,
+ * `@AGENTS.md.backup` and `@AGENTS.md/nested` are other files.
+ */
+export function hasImport(text: string, target: string): boolean {
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^\\w@])@${escaped}(?![\\w/\\\\-])(?!\\.\\w)`, 'm').test(text);
+}
+
+/** What retiring the import region from a pointer file does: nothing, delete the file, or leave it. */
+export type Retirement = 'none' | 'remove' | 'kept';
+
+/**
+ * What to do with the import region an earlier `sync` wrote into `CLAUDE.md`: the file goes when the region is
+ * all of it.
  *
  * @remarks
- * `CLAUDE.md` exists so the one harness that looks for the other name finds the tier — Claude Code
- * follows `@path` imports; dsh and codex read `AGENTS.md` directly and never follow one (measured,
- * evaluation §6.5). So this line is for exactly one reader, and every other reader ignores it.
+ * `CLAUDE.md` held `@AGENTS.md` because Claude Code read only that name. Every agent in use now reads
+ * `AGENTS.md` itself, and Claude Code reads it only where no `CLAUDE.md` exists, so a file holding nothing
+ * else is one file too many (`docs/2026-11-22-instruction-file-evidence.md`).
  *
- * 🔴 **Always a region, even when this creates the whole file.** A bare line is prettier and is a
- * line nothing can ever retire: `daoris.lock` is the authority and a lock entry describes a
- * file or a span, never a stray sentence. One mechanism means `check` and retirement read this file
- * exactly as they read the other one.
+ * 🔴 **A `CLAUDE.md` with text of its own keeps the region.** Claude Code reads that file and then not
+ * `AGENTS.md`; taking the import out would leave the repository's agents with no brief, silently. The region
+ * stays until the text moves to `AGENTS.md` and the file goes.
  *
- * A file that ALREADY imports the target — however it phrased it — is left completely alone. The
- * point is that the pointer exists, not that Daoris wrote it.
+ * This reads a shape the earlier build wrote, in a repository's own file that no purge reaches. It ends when no
+ * repository this family keeps holds a `daoris:import` region (`grep` for the marker finds each).
  */
-export function ensureImport(text: string | null, target: string): string | null {
-  const held = text ?? '';
-  if (hasImport(held, target)) return null;
-  return writeRegion(held, IMPORT, `@${target}`);
+export function retireImport(text: string): Retirement {
+  // The encoding mark is the file's, not a line's: left in, it hides the opening marker from the whole-line match.
+  const body = text.replace(/^﻿/, '');
+  if (findRegion(body, IMPORT).kind === 'absent') return 'none';
+  return removeRegion(body, IMPORT) === null ? 'remove' : 'kept';
 }

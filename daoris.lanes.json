@@ -263,7 +263,7 @@
     {
       "what": "The docs: read by every lane and written by the change that makes them stale. The steward's archive is carved out: it is the records lane's.",
       "room": "docs",
-      "paths": ["docs/**", "!docs/task-archive.md", "README.md", "CHANGELOG.md", "llms.txt", "context7.json", "CLAUDE.md", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
+      "paths": ["docs/**", "!docs/task-archive.md", "README.md", "CHANGELOG.md", "llms.txt", "context7.json", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
     },
     {
       "what": "The doctrine and what it is synced into: a canon change re-syncs this repository's own copy and the example family in the same commit, whichever lane asked for it.",

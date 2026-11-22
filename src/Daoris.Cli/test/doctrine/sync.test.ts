@@ -40,10 +40,10 @@ function run({ canonFx, repoFx }: Seeded, force = false) {
 
 /**
  * The always-loaded tier is a SPAN in the file every harness reads, so a fresh sync writes a
- * region rather than a directory — and the pointer that carries it to the one harness reading the
- * other name.
+ * region rather than a directory, and no pointer file: every agent in use reads `AGENTS.md` itself
+ * (`docs/2026-11-22-instruction-file-evidence.md`).
  */
-test('a fresh sync writes the region, the pointer, and the lock', () => {
+test('a fresh sync writes the region and the lock, and no CLAUDE.md', () => {
   const fx = seed(['win']);
   run(fx);
 
@@ -58,7 +58,7 @@ test('a fresh sync writes the region, the pointer, and the lock', () => {
   // The rules no longer land as files of their own.
   assert.equal(fx.repoFx.exists('.claude/rules/sensitive-info.md'), false);
 
-  assert.match(fx.repoFx.read('CLAUDE.md'), /@AGENTS\.md/);
+  assert.equal(fx.repoFx.exists('CLAUDE.md'), false);
   assert.deepEqual(
     readLock(fx.repoFx.root)!.entries.map((e) => e.target).sort(),
     ['knowledge/storage.md', 'rules/gotchas.md', 'rules/sensitive-info.md'],
@@ -272,17 +272,16 @@ test('retiring a span never deletes the repository\'s own file at the old path',
 test('an adopter\'s CRLF instruction files keep their line endings and BOM through a sync', () => {
   const fx = seed();
   const theirs = '﻿# Our agents\r\n\r\nHouse notes that are ours.\r\n';
-  const pointer = '﻿# Claude\r\n\r\nOur own notes.\r\n';
+  const claudeOwn = '﻿# Claude\r\n\r\nOur own notes.\r\n';
   writeFileSync(join(fx.repoFx.root, 'AGENTS.md'), theirs, 'utf8');
-  writeFileSync(join(fx.repoFx.root, 'CLAUDE.md'), pointer, 'utf8');
+  writeFileSync(join(fx.repoFx.root, 'CLAUDE.md'), claudeOwn, 'utf8');
 
   run(fx);
   const agents = readFileSync(join(fx.repoFx.root, 'AGENTS.md'), 'utf8');
   const claude = readFileSync(join(fx.repoFx.root, 'CLAUDE.md'), 'utf8');
   assert.ok(agents.startsWith(theirs.trimEnd()), 'their text is untouched, BOM and CRLF included');
   assert.equal(/(?<!\r)\n/.test(agents), false, 'no bare LF anywhere: the region takes the file\'s ending');
-  assert.ok(claude.startsWith(pointer.trimEnd()));
-  assert.match(claude, /@AGENTS\.md\r\n/);
+  assert.equal(claude, claudeOwn, 'a CLAUDE.md of its own is never written');
 
   // And a second sync is a no-op on the bytes.
   run(fx);
@@ -317,7 +316,8 @@ test('a lock entry cannot reach outside the target directory', () => {
     bothRoots: [],
     keptRules: [],
     mirrors: { writes: [], retire: [], drop: [], edited: [], collisions: [], editedGone: [] },
-    rooms: { pointers: [], unpoint: [], drop: [], missing: [], records: [] },
+    rooms: { missing: [] },
+    pointers: { retire: [], kept: [], hidden: [] },
     index: { path: '.claude/INDEX.md', old: null, content: '# Index\n', state: 'create' as const, collision: false },
     links: [],
     documents: { links: [], missing: [] },

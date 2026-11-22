@@ -99,18 +99,26 @@ export function linkProblems(
   return [...found.values()].sort((a, b) => compareOrdinal(a.path, b.path));
 }
 
+/** The pointer file an earlier sync wrote: a link there hides the brief from Claude Code, which reads it first. */
+const instructionFile = (path: string): boolean => posix.basename(path) === 'CLAUDE.md';
+
 /** What a person is told about one. */
 export function describeLink(problem: LinkProblem): string {
   switch (problem.kind) {
     case 'link':
       return `${problem.path} is a link. daoris never writes through one: writing beside and renaming would `
         + 'replace it with a copy of what it points at, and git would record the link turned into a file. '
-        + 'A real file (for CLAUDE.md, one holding @AGENTS.md) or a folder of mirrors works on every checkout; '
-        + "the choice is this repository's";
+        + (instructionFile(problem.path)
+          ? 'Take it out, or make it a real file: Claude Code reads AGENTS.md where there is no CLAUDE.md'
+          : 'A real file or a folder of mirrors works on every checkout')
+        + "; the choice is this repository's";
     case 'text':
       return `${problem.path} looks like a link checked out as text (core.symlinks=false); an agent that reads `
-        + 'it reads a path. A real file holding @AGENTS.md, or a folder of mirrors, works on every checkout — '
-        + "the choice is this repository's";
+        + (instructionFile(problem.path)
+          ? 'it reads a path, and a CLAUDE.md hides AGENTS.md from Claude Code. Take it out: Claude Code reads AGENTS.md '
+            + 'where there is no CLAUDE.md'
+          : 'it reads a path. A real file or a folder of mirrors works on every checkout')
+        + " — the choice is this repository's";
     case 'file':
       return `${problem.path} is a file where daoris writes a folder. Move it aside; what goes there is `
         + "this repository's choice";

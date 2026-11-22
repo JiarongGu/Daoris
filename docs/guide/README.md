@@ -226,8 +226,9 @@ repository-owned file colliding with a canonical path is refused unless force is
 ## Two things worth knowing
 
 **The tier is the location.** The always-loaded rules land in a region of `AGENTS.md` that Daoris owns —
-the one file every harness this family drives actually reads — with `CLAUDE.md` carrying a one-line
-`@AGENTS.md` import; files in `knowledge/` are read on demand; `skills/<name>/SKILL.md` is invoked by
+the one file every harness this family drives actually reads, so `sync` writes no `CLAUDE.md` (Claude Code
+reads `AGENTS.md` where there is none; a `CLAUDE.md` of a repository's own text hides it unless it imports
+`@AGENTS.md`, and `check` fails on one that does not, D359); files in `knowledge/` are read on demand; `skills/<name>/SKILL.md` is invoked by
 name. The agent harness decides that by location, so Daoris does not carry a redundant `tier` field — and
 because a region has a byte count exactly as a directory did, `check` still reports the
 always-loaded footprint against the budget the manifest declares. It reports and never fails on it

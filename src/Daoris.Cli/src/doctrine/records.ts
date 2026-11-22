@@ -68,7 +68,7 @@ export interface Canon {
  * @remarks
  * `.claude/rules/` is read by only one of the three harnesses this family drives, so the
  * always-loaded tier lives where all three look. That makes it the one tier whose location is not
- * harness-specific at all; what stays harness-specific is the POINTER, below.
+ * harness-specific at all.
  */
 export interface HarnessTier {
   /** Where this tier's files live under the target, for a tier that is a directory. */
@@ -95,11 +95,6 @@ export interface Harness {
   /** Files whose presence says a repository is set up for this harness. */
   detect: readonly string[];
   defaultTarget: string;
-  /**
-   * The file this harness reads that others do not, and what it must import so the tier reaches it
-   * anyway. Absent for a harness that reads the tier's own file directly.
-   */
-  pointer?: { file: string; imports: string };
   tiers: Record<string, HarnessTier>;
   /** Where the provenance line goes — under the frontmatter, because it is only frontmatter at byte 0. */
   headerPlacement: 'top' | 'below-frontmatter';
@@ -157,17 +152,23 @@ export interface MirrorPlan {
   editedGone: string[];
 }
 
-/** The pointer table, decided: each room's `CLAUDE.md`. */
+/** The declared rooms, decided: a room is its own `AGENTS.md`, which Daoris never writes. */
 export interface RoomPlan {
-  pointers: { room: string; path: string; state: 'create' | 'append' | 'unchanged'; content: string | null }[];
-  /** Undeclared rooms whose region comes out; `content` null when the region is all of the file. */
-  unpoint: { room: string; path: string; content: string | null }[];
-  /** Undeclared rooms with no region: only the lock forgets them. */
-  drop: string[];
   /** Declared with no instructions of their own: refused. */
   missing: string[];
-  /** What the lock records once the sync lands. */
-  records: string[];
+}
+
+/**
+ * The retired pointers, decided: an import region `sync` once wrote into `CLAUDE.md`, at the root and in each
+ * declared room, which every agent in use reads past (the instruction-file evidence).
+ */
+export interface PointerPlan {
+  /** Files holding nothing but the region: they go. */
+  retire: string[];
+  /** Files that hold text of their own beside the region: Claude Code reads them and not `AGENTS.md`, so the region stays. */
+  kept: string[];
+  /** Files with text of their own and no import of `AGENTS.md`, beside an `AGENTS.md`: Claude Code reads them and not the brief. A fact. */
+  hidden: string[];
 }
 
 /** A path Daoris would write that is a link, or a link checked out as text. */
@@ -225,8 +226,10 @@ export interface DriftReport {
   mirrorsBehind: string[];
   /** Declared rooms with no `AGENTS.md`. */
   roomsWithoutInstructions: string[];
-  /** Declared rooms whose `CLAUDE.md` does not import it. */
-  roomPointersMissing: string[];
+  /** Files holding only a retired pointer region: `sync` takes the file out. */
+  pointersRetired: string[];
+  /** A `CLAUDE.md` that hides `AGENTS.md` from Claude Code: it holds text of its own and no import of it. */
+  pointersHiding: string[];
   /** Paths Daoris writes that are a link, or a link held as text. */
   links: LinkProblem[];
   /** The root instruction file's whole size — reported against the smallest limit measured, never failed on. */
@@ -406,8 +409,6 @@ export interface Lock {
   index: string;
   /** Every mirror file `sync` wrote, and what it hashed to. Absent when there are none. */
   mirrors?: MirrorEntry[];
-  /** The rooms whose pointers `sync` keeps, so a room taken out of the manifest loses its pointer. */
-  rooms?: string[];
 }
 
 /**
@@ -517,6 +518,8 @@ export interface SyncPlan {
   keptRules: string[];
   mirrors: MirrorPlan;
   rooms: RoomPlan;
+  /** The retired `CLAUDE.md` pointers. */
+  pointers: PointerPlan;
   /** The index of the on-demand tiers. */
   index: IndexPlan;
   links: LinkProblem[];

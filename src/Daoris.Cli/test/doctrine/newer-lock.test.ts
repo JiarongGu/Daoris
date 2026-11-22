@@ -58,7 +58,7 @@ function syncedByNewer(newer = '0.2.0', older = '0.1.0') {
   return { newerCanon, olderCanon, repo, cleanup };
 }
 
-/** Every byte `sync` writes in this repository: the region, the pointer and the lock. */
+/** Every byte `sync` writes in this repository: the region and the lock. */
 const written = (repo: Fixture) => ['AGENTS.md', 'CLAUDE.md', 'daoris.lock'].map((file) => (repo.exists(file) ? repo.read(file) : null));
 
 test('sync refuses a lock a newer canon wrote, exit 1, naming both versions and the command at the lock’s', () => {

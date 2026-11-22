@@ -22,7 +22,6 @@ test('the agents descriptor keeps the tiers under .agents, the region in AGENTS.
   assert.equal(agents.tiers.knowledge!.dir, 'knowledge');
   assert.equal(agents.tiers.skills!.dir, 'skills');
   assert.equal(agents.tiers.skills!.entryFile, 'SKILL.md');
-  assert.deepEqual(agents.pointer, { file: 'CLAUDE.md', imports: 'AGENTS.md' });
   // Where the reference links `.claude/skills` to `.agents/skills`, Daoris writes a copy.
   assert.deepEqual(agents.mirror, { tier: 'skills', root: '.claude/skills', reader: 'Claude Code', skip: ['agents'] });
   assert.equal(agents.formerly, '.claude');
@@ -186,7 +185,6 @@ test('a claude-code lock carries no layout fields; an agents lock carries harnes
   const entry = lock.mirrors!.find((m) => m.path === '.claude/skills/finder/SKILL.md')!;
   assert.equal(entry.of, '.agents/skills/finder/SKILL.md');
   assert.match(entry.sha256, /^[0-9a-f]{64}$/);
-  assert.equal(lock.rooms, undefined, 'no rooms declared, so none recorded');
   fresh.cleanup();
 });
 

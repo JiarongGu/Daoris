@@ -18,7 +18,6 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../llms.txt`, `../context7.json`|For coding agents (D211)
 |`assets/`|Icon, logo
 |`../AGENTS.md`|Shared brief, doctrine
-|`../CLAUDE.md`|Generated import of AGENTS
 |`development.md`|Contributor setup, checks, upkeep
 |`../ROADMAP.md`|Forward sequence
 |`../src/Daoris.Desktop/README.md`|Desktop installation, bridge
@@ -117,6 +116,7 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-09-git-library-design.md`|Proposed design: GITLIB1, one managed git in .NET (round 4)
 |`2026-11-09-process-steps-design.md`|Proposed design, round 3: PROCSTEPS1, generic process steps; landing a composition
 |`2026-11-09-repo-config-design.md`|Proposed design: REPOCONFIG1, a repository's declarations read once and indexed
+|`2026-11-22-instruction-file-evidence.md`|Evidence: AGENTSMD1, which instructions file each agent reads, probed in a folder holding only that file
 |`2026-11-11-agent-free-session-evidence.md`|Evidence: AGENTFREE1, a real session's abilities checked from inside
 |`2026-11-11-ask-scope-ux-design.md`|Proposed design: ASKSCOPE2 (D253)
 |`2026-11-11-one-way-to-ask-design.md`|Proposed design: ASKFULL1g (D253)

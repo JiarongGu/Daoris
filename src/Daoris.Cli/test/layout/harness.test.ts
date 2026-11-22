@@ -110,11 +110,10 @@ test('the descriptor holds every fact that used to be a constant', () => {
   assert.equal(harness.headerPlacement, 'below-frontmatter');
 
   // 🔴 The tier is the LOCATION. The always-loaded one is a REGION in the
-  // file every harness reads, because `.claude/rules/` is read by exactly one of three; the pointer
-  // is what carries it to the harness that reads another name and follows imports.
+  // file every harness reads, because `.claude/rules/` is read by exactly one of three, and every agent in use reads that
+  // file itself, so a descriptor holds no pointer to it.
   assert.deepEqual(harness.tiers.rules!.region, { file: 'AGENTS.md', name: 'rules' });
   assert.equal(harness.tiers.rules!.dir, undefined);
-  assert.deepEqual(harness.pointer, { file: 'CLAUDE.md', imports: 'AGENTS.md' });
   assert.deepEqual(tierNames(harness), ['rules', 'knowledge', 'skills']);
   assert.deepEqual(alwaysLoadedTiers(harness), ['rules']);
   assert.equal(harness.tiers.skills!.entryFile, 'SKILL.md');
