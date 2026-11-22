@@ -216,17 +216,8 @@ public sealed class NodeRuntime(
         return true;
     }
 
-    /// <summary>
-    /// Whether a bound run arms the runtime: one not ended, one its chain asked a pass for, one failed at a step an observed fact may still
-    /// settle, and every one at the first look. A run whose version no longer reads arms nothing: it is held whole, and said.
-    /// </summary>
-    private bool ArmsRuns =>
-        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)
-                || FailedHeldRuns.Arms(run, records.Read))
-            // A conversation's run is owed a pass only once a press submitted a candidate, and again at the next one.
-            && (!ChatRuns.IsChatRun(run.Run) || (run.Candidate?.Newest is { } candidate
-                && !string.Equals(candidate.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal)))
-            || run.Version.Readable && run.Candidate?.Newest is { } next && !string.Equals(next.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal));
+    /// <inheritdoc cref="RunArming.Arms"/>
+    private bool ArmsRuns => RunArming.Arms(_graphRuns.Read(), _restarted, _returned.ContainsKey, records.Read);
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
@@ -283,18 +274,8 @@ public sealed class NodeRuntime(
         return true;
     }
 
-    /// <summary>
-    /// Whether a plugin is owed a cleanup of what a run created: an ended run's temporary resources stay owed until their plugin settles them,
-    /// so the runtime stays armed for the ask though no run is open.
-    /// </summary>
-    private bool OwesCleanup
-    {
-        get
-        {
-            var ended = _graphRuns.Read().Where(run => run.Ended is not null).Select(run => run.Unit).ToHashSet(StringComparer.Ordinal);
-            return _cleaner.Owed(unit => ended.Contains(unit) ? true : Ended(unit)).Count > 0;
-        }
-    }
+    /// <inheritdoc cref="RunArming.OwesCleanup"/>
+    private bool OwesCleanup => RunArming.OwesCleanup(_graphRuns.Read(), _cleaner, Ended);
 
     /// <summary>
     /// Whether this loop closes quests and its home keeps a closure graph a quest is bound to: it stays armed whatever the choices say, so a
@@ -464,8 +445,17 @@ public sealed class NodeRuntime(
             var named = done.Select(each => each.Unit).Concat(held).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
             var moved = new HashSet<string>(StringComparer.Ordinal);
+            var late = new LateUnits(look, governed);
+            Task LateAsync() => late.JudgeAsync(Keeping, tips, done, said, async each =>
+            {
+                if (each.Closes) Closing.Settle(each, done, said);
+                await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            }, ct);
+
+            await LateAsync().ConfigureAwait(false);
             foreach (var each in governed.Values)
             {
+                await LateAsync().ConfigureAwait(false);
                 var id = each.Unit.Id;
                 if (look.Asked.Contains(id) || named.Contains(id) || Owing.OwesStart(each) || await Owing.RebindsAsync(each, tips, ct).ConfigureAwait(false))
                 {
@@ -483,16 +473,21 @@ public sealed class NodeRuntime(
             var concerned = Owing.Turn(owing, [look.Asked, held, named], moved);
             foreach (var each in concerned)
             {
+                await LateAsync().ConfigureAwait(false);
+                if (late.Judged(each.Unit.Id)) continue;
                 if (each.Closes) Closing.Settle(each, done, said);
                 await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
                 look.Judged(each.Unit.Id);
             }
 
+            await LateAsync().ConfigureAwait(false);
+
             await HearAgainAsync(lagging, _byTold, concerned, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
             PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, _noticed, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
-            return _noticed.Onto(new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed }, HeldSteps());
+            var passed = new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
+            return _noticed.Onto(passed, HeldSteps());
         }
         finally
         {

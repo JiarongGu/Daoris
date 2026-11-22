@@ -262,9 +262,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending),
     its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks.WaitUnitAsync`: that run judged
     first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
-    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. The
+    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. A pass
+    already running (a whole one can work for minutes, its git reads waiting for the machine's places) takes the ask too, at its next
+    unit boundary (`PassTaken.Late`, `LateUnits`, at most `PassAsks.LateAtOnce` at one boundary), into its own turn and bounds, never a
+    second pass: the unit's checkout is read afresh in the pass's own tips, the words kept on its record applied, then it is judged
+    once (again where asked again after being judged), and a failure fails that door alone; the ask never waits for the next pass. The
     acknowledgement, written after the pass, ends the fact's obligation only where the pass judged the run; one it did not (a drain, a
-    closing loop, no lease) is acknowledged with the obligation armed, spending no retry, and the look's whole pass reaches it. A fact
+    closing loop, no lease) is acknowledged with the obligation armed, spending no retry, and the look's whole pass reaches it. Each
+    fact's pass is counted by what it came to (`PassOutcome`: judged, not governed, not judged, failed, bound passed), and a node the
+    consumer's pass began beside, in `daoris bus stats` as `run-step facts handled`, so what keeps a node from beginning at its fact
+    is read from the install. A fact
     takes only the box its session named, and one take runs at a time. The sessions' settle boxes are heard as they are written (a watch on the sessions folder); a sweep once a
     minute is only the watcher's overflow net, not a look: it tees a box no event told or one that stays open, and `daoris bus stats` counts
     each (`found`, `retried`, `overflow`). The look no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
@@ -348,6 +355,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     that throws reads failed, its key let go for the next try (`OnceWords`). A run that must return drains it (`QuietAsync`: the log
     written, each write framed, every consumer's entries acknowledged or parked, its start's rebuild ended, within a bound). Its first
     consumer is the opinion's gate (`workflows-review-landing` rule 26), started by the watch and the headless runs alike.
+    What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer
+    and every job moved off a look keeps, each review's first questions: (1) a look's step is deleted only once every input it
+    took wakes its job as a fact or is covered by a named net, or a wait stands with no wake; (2) a fact is acknowledged as ending its
+    obligation only when its job really moved, and as handled otherwise, so the stall view keeps it; (3) one pass works on one state at a
+    time, never a pass nested in another, and late asks join the running pass's own turn (`LateUnits`); (4) a consumer bounds its
+    work, never all of an open set at once, and a fact names what it reaches so a burst costs what it moved (`BusConsumerSetsCensusTests`);
+    (5) a failure costs the one entry it hit, never its lane, its pass or another fact. A path beside the bus (a direct call kept, a
+    second lane) is opened only with its reason stated, and built by the same rules (the owner, 2026-11-22).
     `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
     bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
     its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,

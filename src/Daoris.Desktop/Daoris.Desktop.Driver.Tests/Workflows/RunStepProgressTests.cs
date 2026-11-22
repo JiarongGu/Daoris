@@ -75,12 +75,12 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
     }
 
     /// <summary>The pass the consumer asks for one unit: no read of the units, that unit judged first.</summary>
-    private async Task<bool> OneAsync(NodeRuntime runtime, string unit, CancellationToken ct)
+    private async Task<PassOutcome> OneAsync(NodeRuntime runtime, string unit, CancellationToken ct)
     {
         Interlocked.Increment(ref _passes);
         Read();
         await runtime.PassAsync(Counted(whole: false) with { Asked = new HashSet<string>([unit]), Judged = _ => { } }, ct);
-        return true;
+        return PassOutcome.Judged;
     }
 
     private RunStepConsumer Consumer(BusLog bus, NodeRuntime runtime) => new(
@@ -199,6 +199,101 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         Assert.Equal(NodeStates.Reached, RunStatus("config-needed").State);
         Assert.Equal(read, _unitsRead);
         Assert.Equal("a1", StepSettleAsks.AnsweredId(_home, Work));
+    }
+
+    /// <summary>🔴 A unit asked while a whole pass works is judged by that pass at its next unit boundary; without it the ask waits out its bound.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_unit_asked_while_a_whole_pass_works_is_judged_by_that_pass_and_its_node_begins(bool late)
+    {
+        var (outcome, _) = await AskedWhileHeldAsync(late, Beyond.Nothing);
+        if (!late)
+        {
+            Assert.Equal(PassOutcome.Bound, outcome);
+            Assert.NotEqual(NodeStates.Active, RunStatus("config-change").State);
+            return;
+        }
+
+        Assert.Equal(PassOutcome.Judged, outcome);
+        Assert.Equal(NodeStates.Active, RunStatus("config-change").State);
+    }
+
+    /// <summary>🔴 The tip moves while the pass works: the late unit reads it afresh in the pass's own tips, so its node is bound at the new tip once.</summary>
+    [Fact]
+    public async Task A_late_unit_is_judged_on_the_tip_as_it_is_now_and_no_node_lapses_back()
+    {
+        var (outcome, pass) = await AskedWhileHeldAsync(late: true, Beyond.TipMoves);
+        Assert.Equal(PassOutcome.Judged, outcome);
+        Assert.Equal(NodeStates.Active, RunStatus("config-change").State);
+        Assert.Equal(2, _heldReads);
+        Assert.Equal(Tip2, _lastTip);
+        Assert.Equal(1, RunStatus("config-change").Attempt);
+        Assert.NotNull(pass);
+    }
+
+    /// <summary>🔴 A late unit that cannot be judged fails its own door alone; the pass goes on and ends.</summary>
+    [Fact]
+    public async Task A_late_units_failure_fails_its_door_and_the_pass_goes_on()
+    {
+        var (outcome, pass) = await AskedWhileHeldAsync(late: true, Beyond.ReadFails);
+        Assert.Equal(PassOutcome.Failed, outcome);
+        Assert.NotNull(pass);
+    }
+
+    private enum Beyond { Nothing, TipMoves, ReadFails }
+
+    private int _heldReads;
+
+    private string? _lastTip;
+
+    /// <summary>A whole pass held in a read; the settle lands and the unit is asked; the pass is let go.</summary>
+    private async Task<(PassOutcome Outcome, NodeRuntimePass Pass)> AskedWhileHeldAsync(bool late, Beyond beyond)
+    {
+        var runtime = await BoxedAsync();
+        var asks = new PassAsks(() => { });
+        var taken = asks.Take();
+        var (reached, release) = (new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously), new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        var (blocked, reads) = (0, 0);
+        Func<Task> hold = async () =>
+        {
+            if (Interlocked.Exchange(ref blocked, 1) == 1) return;
+            reached.TrySetResult();
+            await release.Task;
+        };
+        var look = RunLook(whole: true);
+        var (tips, remotes, gates) = (look.Tips, look.Remotes, look.Gates);
+        look = look with
+        {
+            Tips = async (root, branches, ct) =>
+            {
+                _heldReads = Interlocked.Increment(ref reads);
+                if (reads > 1 && beyond == Beyond.ReadFails) throw new IOException("the checkout cannot be read");
+                var read = await tips(root, branches, ct);
+                _lastTip = read.GetValueOrDefault("daoris/s1");
+                await hold();
+                return read;
+            },
+            Remotes = async (root, branches, ct) => { await hold(); return await remotes(root, branches, ct); },
+            Gates = async (unit, commit, ct) => { await hold(); return await gates(unit, commit, ct); },
+            Asked = taken.Units,
+            Judged = taken.Judged,
+            Late = late ? taken.Late : look.Late,
+            Ungoverned = taken.Ungoverned,
+            Failed = taken.Failed,
+        };
+        Read();
+        var whole = Task.Run(() => runtime.PassAsync(look, CancellationToken.None));
+        await Task.WhenAny(reached.Task, whole);
+        Assert.True(reached.Task.IsCompleted, "the whole pass read nothing, so nothing holds it where a unit's ask can reach it");
+
+        if (beyond == Beyond.TipMoves) _branchTips["daoris/s1"] = Tip2;
+        await StepSettleAsks.TakeAsync(Files, _ => "claude", (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept")), () => _now, CancellationToken.None, only: Work);
+        var wait = asks.WaitUnitAsync(RunUnit, TimeSpan.FromSeconds(3), CancellationToken.None);
+        release.SetResult();
+        var pass = await whole;
+        taken.Done(passed: true);
+        return (await wait, pass);
     }
 
     /// <summary>🔴 Facts queued while no queue ran begin the node at the next start, and a fact delivered again begins nothing twice.</summary>

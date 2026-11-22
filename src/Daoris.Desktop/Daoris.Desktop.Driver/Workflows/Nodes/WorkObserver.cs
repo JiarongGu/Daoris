@@ -325,6 +325,8 @@ public sealed class PassTips(
         return _read[root] = all.Count == 0 ? None : await read(root, all, ct).ConfigureAwait(false);
     }
 
+    public void Refresh(string root) => _read.Remove(root);
+
     /// <summary>One branch's tip read this pass, or null where it is not read.</summary>
     public async Task<string?> TipAsync(string root, string branch, CancellationToken ct) =>
         branch.Length == 0 ? null : (await ReadAsync(root, [branch], ct).ConfigureAwait(false)).GetValueOrDefault(branch);

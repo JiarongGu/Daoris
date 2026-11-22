@@ -156,6 +156,44 @@ public sealed class RunStepFactsTests : IDisposable
         Assert.Equal(1, began.GetValueOrDefault(BusMeasures.ByConsumer));
         Assert.Equal(1, began.GetValueOrDefault(BusMeasures.ByLook));
         Assert.Equal(1, began.GetValueOrDefault(BusMeasures.ByOther));
+
+        var steps = Steps();
+        Assert.Equal(2, steps.GetValueOrDefault("judged"));
+        Assert.Equal(1, steps.GetValueOrDefault(BusMeasures.StepBegan));
+    }
+
+    /// <summary>🔴 A fact whose pass did not judge its run is counted by why.</summary>
+    [Fact]
+    public async Task A_fact_whose_pass_did_not_judge_is_counted_by_why()
+    {
+        await using (var bus = Open())
+        {
+            var outcomes = new Dictionary<string, PassOutcome> { ["run:r-1"] = PassOutcome.NotGoverned, ["run:r-2"] = PassOutcome.Bound };
+            var asked = 0;
+            var consumer = new RunStepConsumer(
+                (unit, _) =>
+                {
+                    Interlocked.Increment(ref asked);
+                    return Task.FromResult(outcomes[unit]);
+                },
+                (_, _) => Task.FromResult(0), bus, (_, _) => { }, TimeSpan.Zero);
+            await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+
+            bus.Append(new BusDraft(BusTypes.CheckPassed, "r-1") { Commit = true });
+            bus.Append(new BusDraft(BusTypes.CheckPassed, "r-2") { Commit = true });
+            await Poll.Until(() => Volatile.Read(ref asked) >= 2, () => "the passes were not asked", Soon);
+        }
+
+        var steps = Steps();
+        Assert.Equal(1, steps.GetValueOrDefault("not-governed"));
+        Assert.Equal(1, steps.GetValueOrDefault("bound-passed"));
+        Assert.Equal(0, steps.GetValueOrDefault("judged"));
+    }
+
+    private Dictionary<string, long> Steps()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return store.Measures("2000-01-01").Where(row => row.Measure == BusMeasures.Step).ToDictionary(row => row.Name, row => (long)row.Count);
     }
 
     private IReadOnlyList<BusMeasureRow> Began()
@@ -182,10 +220,10 @@ public sealed class RunStepFactsTests : IDisposable
     }
 
     private RunStepConsumer Consumer(BusLog bus, Func<string, Task<bool>> pass) => new(
-        (unit, _) =>
+        async (unit, _) =>
         {
             _steps.Enqueue("pass " + unit);
-            return pass(unit);
+            return await pass(unit) ? PassOutcome.Judged : PassOutcome.NotGoverned;
         },
         (session, _) =>
         {
