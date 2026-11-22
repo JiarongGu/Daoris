@@ -47,7 +47,7 @@ internal sealed class RunStepConsumer : IBusConsumer
     private readonly TimeSpan _slack;
     private readonly ConcurrentDictionary<string, DateTimeOffset> _ending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, (DateTimeOffset Start, DateTimeOffset End)> _passed = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _asking = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<Guid, Asking> _asking = new();
 
     /// <param name="pass">Asks the evaluation runtime's pass for one unit and waits for it: how it answered, judged only where it kept the unit's judgement.</param>
     /// <param name="take">Takes the step settle waiting in the box of the session named, or every box where none is; how many it took.</param>
@@ -87,9 +87,12 @@ internal sealed class RunStepConsumer : IBusConsumer
         // A settle's box is taken at the fact, only the box its session named, so the settle is on the run's record before the pass reads it.
         if (entry.Kind == BusTypes.StepSettled.Kind) await _take(entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string, ct).ConfigureAwait(false);
         var start = _bus.Clock.GetUtcNow();
-        // The node's fact is handled beside this one (another subject) and can come before the pass returns: a pass in flight counts as the window.
-        _asking[unit] = start;
-        PassOutcome outcome;
+        // The node's fact is handled beside this one (another subject) and can come before the pass returns: it waits on this ask, credited to
+        // the consumer only where the ask came to be judged, else the look's.
+        var ask = new Asking(unit, start);
+        var key = Guid.NewGuid();
+        _asking[key] = ask;
+        var outcome = PassOutcome.Failed;
         try
         {
             outcome = await _pass(unit, ct).ConfigureAwait(false);
@@ -101,7 +104,8 @@ internal sealed class RunStepConsumer : IBusConsumer
         }
         finally
         {
-            _asking.TryRemove(unit, out _);
+            _asking.TryRemove(key, out _);
+            foreach (var lag in ask.Take()) Credit(outcome.IsAnswer() ? BusMeasures.ByConsumer : BusMeasures.ByLook, lag);
         }
 
         // One row a reason, in the log's next write with the other measures.
@@ -129,13 +133,48 @@ internal sealed class RunStepConsumer : IBusConsumer
     /// </summary>
     private void Compare(string unit, DateTimeOffset at)
     {
-        var inPass = _asking.TryGetValue(unit, out var asking) && at >= asking
-                     || _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack;
-        var by = inPass
-            ? BusMeasures.ByConsumer
-            : _ending.ContainsKey(unit) ? BusMeasures.ByLook : BusMeasures.ByOther;
+        var open = _asking.Values.FirstOrDefault(each => each.Unit == unit && at >= each.Start);
+        var inWindow = _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack;
+        var by = inWindow ? BusMeasures.ByConsumer : _ending.ContainsKey(unit) ? BusMeasures.ByLook : BusMeasures.ByOther;
         var lag = _ending.TryRemove(unit, out var since) ? Math.Max(0, (long)(at - since).TotalMilliseconds) : 0;
+        if (open is not null && !open.Add(lag)) open = null;
+        if (open is null) Credit(by, lag);
+    }
+
+    private void Credit(string by, long lag)
+    {
         _bus.Measured(BusMeasures.Began, by, lag);
         if (by == BusMeasures.ByConsumer) _bus.Measured(BusMeasures.Step, BusMeasures.StepBegan, 1);
+    }
+
+    /// <summary>One ask in flight: the nodes begun meanwhile, their lags kept until the ask's outcome says whose they are.</summary>
+    private sealed class Asking(string unit, DateTimeOffset start)
+    {
+        private List<long>? _lags = [];
+
+        public string Unit { get; } = unit;
+
+        public DateTimeOffset Start { get; } = start;
+
+        /// <summary>Keeps a lag; false where the ask has ended and its lags were taken.</summary>
+        public bool Add(long lag)
+        {
+            lock (this)
+            {
+                if (_lags is null) return false;
+                _lags.Add(lag);
+                return true;
+            }
+        }
+
+        public IReadOnlyList<long> Take()
+        {
+            lock (this)
+            {
+                var taken = _lags ?? [];
+                _lags = null;
+                return taken;
+            }
+        }
     }
 }

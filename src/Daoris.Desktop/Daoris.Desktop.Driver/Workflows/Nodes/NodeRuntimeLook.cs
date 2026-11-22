@@ -64,6 +64,9 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// <summary>The units asked for since the pass began, each handed once, judged at its next unit boundary (<see cref="LatePasses"/>).</summary>
     public Func<IReadOnlySet<string>> Late { get; init; } = () => new HashSet<string>(StringComparer.Ordinal);
 
+    /// <summary>Told each late unit whose judgement failed.</summary>
+    public Action<string> Failed { get; init; } = _ => { };
+
     /// <summary>Told each unit asked for that the pass does not govern.</summary>
     public Action<string> Ungoverned { get; init; } = _ => { };
 

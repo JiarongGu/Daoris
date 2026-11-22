@@ -303,19 +303,16 @@ public sealed class NodeRuntime(
     /// One pass, at a look (<see cref="NodeRuntimeLook.Whole"/>) or a wake: completions heard, attempts due asked after before any new start,
     /// retries due made ready, the concerned units evaluated and their starts made within <see cref="SendsPerPass"/>, the awaited set told.
     /// </summary>
-    public Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, CancellationToken ct) => PassAsync(look, nested: false, ct);
-
-    /// <param name="nested">Whether this is the unit pass a running pass makes for the units asked while it works (<see cref="NodeRuntimeLook.Late"/>), under the lock that pass holds.</param>
-    private async Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, bool nested, CancellationToken ct)
+    public async Task<NodeRuntimePass> PassAsync(NodeRuntimeLook look, CancellationToken ct)
     {
         // Disarmed: whatever is told or cached is withdrawn, a pending retry's timer included; nothing is read.
-        if (!nested && await WithdrawAsync(look.Config, ct).ConfigureAwait(false)) return NodeRuntimePass.Idle;
-        if (!nested) await _one.WaitAsync(ct).ConfigureAwait(false);
+        if (await WithdrawAsync(look.Config, ct).ConfigureAwait(false)) return NodeRuntimePass.Idle;
+        await _one.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             if (!_holdsLease()) return new NodeRuntimePass(true, [], [], []);
             _config = look.Config;
-            if (!nested) _noticed.Begin();
+            _noticed.Begin();
 
             // Governance is read afresh at the look's deadline, at the first pass, and at a wake under choices other than the ones it is judged
             // under, before any attempt is heard, asked after, retried or started; read afresh, every governed unit is judged. A word on a
@@ -448,15 +445,12 @@ public sealed class NodeRuntime(
             var named = done.Select(each => each.Unit).Concat(held).ToHashSet(StringComparer.Ordinal);
             var owing = new List<GovernedUnit>();
             var moved = new HashSet<string>(StringComparer.Ordinal);
-            // A unit asked for while this pass works is judged at its next unit boundary, never after the pass (LatePasses).
-            var late = new LatePasses(look, governed);
-            async Task LateAsync()
+            var late = new LateUnits(look, governed);
+            Task LateAsync() => late.JudgeAsync(Keeping, tips, done, said, async each =>
             {
-                if (late.Take() is not { } taken) return;
-                var readThis = _readThisPass;
-                late.Merge(taken, await PassAsync(taken, nested: true, ct).ConfigureAwait(false), done, said);
-                _readThisPass = readThis;
-            }
+                if (each.Closes) Closing.Settle(each, done, said);
+                await EvaluateAsync(each, sends, done, said, look.Units, tips, git, ct).ConfigureAwait(false);
+            }, ct);
 
             await LateAsync().ConfigureAwait(false);
             foreach (var each in governed.Values)
@@ -492,12 +486,12 @@ public sealed class NodeRuntime(
             PassHolds.Look(Risk, records, governed.Values, look.Config, clock(), _holdsLease(), said, _noticed, Serving);
             if (fresh || done.Count > 0) Closing.Prune();
             var changed = Telling.Tell(governed.Values, tips, said);
-            var passed = new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed || late.Told };
-            return nested ? passed : _noticed.Onto(passed, HeldSteps());
+            var passed = new NodeRuntimePass(true, done, [.. concerned.Select(each => each.Unit.Id)], said) { AwaitedChanged = changed };
+            return _noticed.Onto(passed, HeldSteps());
         }
         finally
         {
-            if (!nested) _one.Release();
+            _one.Release();
         }
     }
 

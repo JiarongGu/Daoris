@@ -9,6 +9,9 @@ namespace Daoris.Driver;
 /// <param name="wake">Asks the loop for the pass: the wake, with the whole look's read asked of it.</param>
 public sealed class PassAsks(Action wake)
 {
+    /// <summary>How many unit asks a running pass takes at one boundary; the rest wait for the next.</summary>
+    public const int LateAtOnce = 8;
+
     private readonly Lock _gate = new();
 
     private List<(string? Unit, TaskCompletionSource<PassOutcome> Answer, bool Whole)> _waiting = [];
@@ -82,7 +85,7 @@ public sealed class PassAsks(Action wake)
         lock (_gate)
         {
             var wholes = _waiting.Where(each => each.Whole && each.Unit is not null).Select(each => each.Unit!).ToHashSet(StringComparer.Ordinal);
-            var units = _alone.Where(unit => !wholes.Contains(unit)).ToHashSet(StringComparer.Ordinal);
+            var units = _alone.Where(unit => !wholes.Contains(unit)).Take(LateAtOnce).ToHashSet(StringComparer.Ordinal);
             _alone.ExceptWith(units);
             _units.ExceptWith(units);
             var taken = _waiting.Where(each => !each.Whole && each.Unit is not null && units.Contains(each.Unit)).ToList();

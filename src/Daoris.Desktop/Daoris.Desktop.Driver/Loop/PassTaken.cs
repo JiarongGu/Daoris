@@ -42,16 +42,19 @@ public sealed class PassTaken
     }
 
     /// <summary>The pass kept <paramref name="unit"/>'s judgement: each door waiting on that unit is answered now, before the pass ends.</summary>
-    public void Judged(string unit) => Answer(unit, PassOutcome.Judged);
+    public void Judged(string unit) => Answer(unit, PassOutcome.Judged, whole: true);
 
-    /// <summary>The pass found <paramref name="unit"/> not governed by the read it judges under: each door waiting on that unit is answered so now.</summary>
-    public void Ungoverned(string unit) => Answer(unit, PassOutcome.NotGoverned);
+    /// <summary>The pass found <paramref name="unit"/> not governed by the read it judges under: each unit door waiting on it is answered so now; a whole door waits for the pass's end.</summary>
+    public void Ungoverned(string unit) => Answer(unit, PassOutcome.NotGoverned, whole: false);
 
-    private void Answer(string unit, PassOutcome outcome)
+    /// <summary>The pass could not judge <paramref name="unit"/>, asked while it ran: each unit door waiting on it is answered so now, and the pass goes on.</summary>
+    public void Failed(string unit) => Answer(unit, PassOutcome.Failed, whole: false);
+
+    private void Answer(string unit, PassOutcome outcome, bool whole)
     {
         lock (_gate)
         {
-            foreach (var (_, answer, _) in _waiting.Where(each => string.Equals(each.Unit, unit, StringComparison.Ordinal))) answer.TrySetResult(outcome);
+            foreach (var (_, answer, _) in _waiting.Where(each => string.Equals(each.Unit, unit, StringComparison.Ordinal) && (whole || !each.Whole))) answer.TrySetResult(outcome);
         }
     }
 
