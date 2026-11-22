@@ -28,7 +28,7 @@ skill, and `co-working` as a pack.
 | Reconcile | `src/Daoris.Cli/src/doctrine/reconcile.ts` | The offline brief of every difference from the canon |
 | Upstream | `src/Daoris.Cli/src/doctrine/upstream.ts` | Writes into the canon in its own checkout; elsewhere composes a request's words |
 | Newer lock, notes | `src/Daoris.Cli/src/doctrine/lockversion.ts`, `notes.ts` | Refuses a lock a newer canon wrote; the canon changelog entries between two versions |
-| Region | `src/Daoris.Cli/src/doctrine/region.ts` | The marked region in `AGENTS.md`, and the retired import region in `CLAUDE.md`: find, write, remove, refuse damage |
+| Region | `src/Daoris.Cli/src/doctrine/region.ts` | The region in `AGENTS.md`, the retired import region in `CLAUDE.md`: find, write, remove, refuse damage |
 | Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The region's header, *Where things are* as a list ending at the index line, and `<target>/INDEX.md`; frontmatter and the provenance header |
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `pointers.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, the retired pointers, links |
@@ -78,8 +78,8 @@ skill, and `co-working` as a pack.
 10. Daoris reads and writes only paths the lock records. Anything else, even in the same folder, is the repository's.
     (from D5)
 11. Every write and delete resolves inside the repository. An escaping path aborts the whole apply before the first write,
-    and so does damaged markers in any file a region is written to: the rules region and a retired pointer file at the
-    root or in a room are read by the plan. (from D18, D359)
+    and so does damaged markers in any file a region is written to: the rules region and a retired pointer file
+    are read by the plan. (from D18, D359)
 12. Every file is a real copy. A link, or a link held as text, at a path `sync` writes is refused and never written
     through, `--force` included. (from D3, D117)
 13. What `sync` does is a function of canon × lock × disk. Disk against lock is the only drift. Disk against canon is an
@@ -102,7 +102,7 @@ skill, and `co-working` as a pack.
     manifest's. A lock of another `version`, or with no `entries` list, is refused where it is read, and its lists are in
     code-unit order, so it reads the same on every machine. The digest and the index are always written, and an absent
     `harness` and `target` mean `claude-code` under `.claude`. (from D2, D117)
-20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, a `CLAUDE.md` holding only the retired import region, and a switch the
+20. `check` is offline and reads no canon. Drift, a missing file, a stale pack, a stale index or region, a retired `CLAUDE.md` pointer, and a switch the
     manifest and lock disagree on fail with exit 1. A test deletes the canon and requires a clean exit. What `check`,
     `status` and a sync plan list is in code-unit order (`compareOrdinal`), never the machine's collation. (from D8, D71)
 21. The always-loaded budget (`coreBudget.words`, default 4500, 780 here) measures the region's words. The brief's
@@ -137,12 +137,11 @@ skill, and `co-working` as a pack.
 
 **The region and the agent layout**
 
-29. The always-loaded tier is the `daoris:rules` region of `AGENTS.md`, and `sync` writes no `CLAUDE.md`: every agent in use reads
-    `AGENTS.md` itself (`docs/2026-11-22-instruction-file-evidence.md`). It takes out the `daoris:import` region an earlier sync wrote, at
-    the root and in each declared room, and the file when the region was all of it; a `CLAUDE.md` with text of its own keeps the
-    region, because Claude Code reads that file and then not `AGENTS.md`, and `sync` says so. Daoris owns only the regions; a
-    damaged marker, a reordered pair, a second region or a root file that is a link is refused, never guessed. The reader of the old
-    region ends when no repository this family keeps holds the marker. (from D59, D117, D359)
+29. The always-loaded tier is the `daoris:rules` region of `AGENTS.md`; `sync` writes no `CLAUDE.md`: every agent in use reads
+    `AGENTS.md` itself (`docs/2026-11-22-instruction-file-evidence.md`). It takes out the `daoris:import` region an earlier sync wrote,
+    at the root and in rooms, and the file when that was all of it; a `CLAUDE.md` with text of its own keeps the
+    region, since Claude Code then reads it and not `AGENTS.md`. A damaged marker, a reordered pair, a second region or a root
+    file that is a link is refused, never guessed. (from D59, D117, D359)
 30. The region holds a header line, the switched-off rows, *Where things are* (the declared places as a list, the library
     roles on one line, then the line naming `<target>/INDEX.md`), the mirror line and rooms only when there are any; then
     each rules-tier body in full. `check` rebuilds everything from *Where things are* to the first rule offline. (from D59, D71, D128, CONSOLIDATE1)
@@ -154,8 +153,8 @@ skill, and `co-working` as a pack.
     reads a manifest that is there, and one it cannot read is refused, not taken for no adoption. Its budget projection
     (`budget.ts`) measures the region's body, as `inspect` does, beside the repository's own rule files, and a selected
     rule the region already holds adds only its change in size. (from D23, D117)
-33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` writes no pointer to it and never writes
-    its text; a declared room with no text fails. Asking one is a quest to the repository's own session (`place --room`, driving rule 53). (from D117, D276, D359)
+33. A room is a folder with its own `AGENTS.md`, declared in `rooms`. `sync` never writes
+    its text; a declared room with no text fails. Asking one is a quest to the repository's own session (`place --room`, driving rule 53). (from D117, D276)
 34. A repository binds roles to paths in `documents`. The brief and a room take only a word ceiling; a folder's ceiling measures
     each document directly in it. `check` fails on a fact (missing, escaping, a link, a stale table) and reports a judgement (a
     ceiling passed: the read path has grown). (from D122, D278)
@@ -305,8 +304,7 @@ skill, and `co-working` as a pack.
     canon reads right.
 14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.Node` (the tools' resolved node
     where a home exists, `PATH` only without one): the code reads right.
-15. D117 points 2 and 3 (`CLAUDE.md` holds `@AGENTS.md`, at the root and in each room) vs `Harness` (no pointer) and `planPointers` (the region comes
-    out): D359 and the code read right.
+15. D117 points 2 and 3 (a `CLAUDE.md` pointer) vs the code (none): D359 and the code read right.
 
 ## Open
 
