@@ -497,6 +497,10 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
+    "Workflows/WorkflowRunRecords.cs": {
+      "reads": "other",
+      "note": "the run view's read of a process's second-opinion rule (its occasions), not a record's mark"
+    },
     "Loop/Supervise/AskDaorisReadingQueue.cs": {
       "reads": "other",
       "note": "Ask Daoris's record's own help mode, said in the second check's packet; it tells no session's work by a mark"
