@@ -462,7 +462,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     once by the gate's rule (`OpinionGateJudge`), reading the opinion's record at the fact for its session and occasion: it delivers,
     rechecks, passes by the policy, or waits, named, one judgment of an owed opinion at a time. A person's ask (*Try again*, *Ask
     again*, the same agent fresh, a named reviewer, *Ask another agent for help*) carries its own occasion, which no owed opinion has,
-    so it reaches every owed opinion of its session. Every other input its verdict reads is a fact too, and each judges every owed
+    so it reaches every owed opinion of its session. The judgments of one repository run one at a time (each runs git's content proof,
+    and a round's nine at once queued behind one another and every other git, which held a restart's first look an hour); those of
+    several repositories go beside each other. Every other input its verdict reads is a fact too, and each judges every owed
     opinion: the quests' move as the service's change stream names it (`quest.moved`: a hold lifted, a later step declined or
     published), a node a run's record began (`node.begun`, written where the record is: a graph's opinion node holds the ask until it
     begins, and one begun while a judgment read before it waits for that judgment, so the next reads it), and the standing choices this

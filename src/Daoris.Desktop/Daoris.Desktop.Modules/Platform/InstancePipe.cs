@@ -199,6 +199,7 @@ public sealed class InstancePipe : IDisposable
         SessionPresses = new SessionPressAllows(this);
         Holding = new PipeHolding(this, bus);
         HeavyRuns = new PipeHeavyRuns(this);
+        ReadStops = new PipeReadStops(this);
         Delegate = new PipeDelegate(this);
         _admission = new PipeAdmission(this);
         _restore = new PipeRestore(this);
@@ -261,6 +262,12 @@ public sealed class InstancePipe : IDisposable
 
     /// <summary>The heavy runs terminals asked for, each held to its connection.</summary>
     internal PipeHeavyRuns HeavyRuns { get; }
+
+    /// <summary>The open reads terminals asked, each held to the connection that sent it last (<see cref="PipeReadStops"/>).</summary>
+    internal PipeReadStops ReadStops { get; }
+
+    /// <summary>How many open reads are under way for a connection now: the tests' window.</summary>
+    public int ReadsUnderWay => ReadStops.Open;
 
     internal IMessageDispatcher Dispatcher { get; }
 
@@ -530,6 +537,7 @@ public sealed class InstancePipe : IDisposable
         _listener?.Ended(connection);
         Holding.ConnectionEnded(connection);
         HeavyRuns.ConnectionEnded(connection);
+        ReadStops.ConnectionEnded(connection);
     }
 
     /// <summary>A request on a connection that said its hello: <see cref="PipeAdmission.Accept"/>.</summary>
@@ -629,8 +637,11 @@ public sealed class InstancePipe : IDisposable
     /// <param name="covered">The judgement of a press run with no card on the delegate's path, or allowed: run inside <see cref="PipeDoor.EnterCovered"/>.</param>
     internal async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
-        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, PipeDelegateJudgement? covered = null)
+        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null, PipeDelegateJudgement? covered = null,
+        bool read = false)
     {
+        // An open read is its asker's: it runs under a token its connection's end stops, never the instance's alone.
+        var token = read ? ReadStops.Begin(id) : Lifetime.Token;
         string text;
         try
         {
@@ -649,7 +660,7 @@ public sealed class InstancePipe : IDisposable
                     : PipeDoor.Enter(client))
                 using (PipeGitCaller.Enter(Processes, client, Environment.ProcessId))
                 {
-                    response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);
+                    response = await Dispatcher.DispatchAsync(request, token).ConfigureAwait(false);
                 }
 
                 text = IpcJson.Serialize(response);
@@ -662,6 +673,7 @@ public sealed class InstancePipe : IDisposable
             text = IpcJson.Serialize(IpcResponse.CreateError(id, IpcErrorCodes.UnknownError, null, error.GetType().Name));
         }
 
+        if (read) ReadStops.End(id);
         lock (State.Gate)
         {
             State.Running.Remove(id);

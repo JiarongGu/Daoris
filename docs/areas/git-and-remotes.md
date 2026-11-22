@@ -218,6 +218,10 @@ Every git the desktop starts runs in a place of `GitScheduler`'s; the start gate
 the machine (`GitStartAdmission`), which refuses a git's image holding no place (`git.start.outside`) and binds any start made in a
 place to it.
 
+A git's asker leaving ends it where it is a read (`GitScheduler`'s endable rule). A terminal's open read of the driver runs under a
+token its connection's end cancels (`PipeReadStops`), so an abandoned `session list` stops walking trees and leaves no git queued
+behind a client that has gone; a press, journaled, runs on to its answer.
+
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
 memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the
 machine's process host. It runs each git as a process through the host, which joins it to the git job, and asks the driver's
