@@ -25,7 +25,8 @@ export function waitSaid(t: TFunction, kind: string, wait: RunWait, language = '
     ...(wait.values ?? {}), since: clock(wait.since, language) ?? '', until: clock(wait.until, language) ?? '',  };
   // The stored code and value stay `actor`; the window's key says role, said alike for the person and an agent.
   if (wait.code === 'actor' || wait.code === 'progress') {
-    const held = values.holder === 'agent' ? t('workflow.wait.holder.agent', { name: values.holderName ?? '' }) : t('workflow.wait.holder.person');
+    const held = values.holder !== 'agent' ? t('workflow.wait.holder.person')
+      : values.holderName ? t('workflow.wait.holder.agent', { name: values.holderName }) : t('workflow.wait.holder.anyAgent');
     return t(`workflow.wait.${wait.code === 'actor' ? 'role' : wait.code}`, { ...values, role: values.actor ?? '', holder: held, words: values.words ?? '' }).trim();
   }
   const onRole = kind === 'opinion' ? OPINION_ROLE_WAITS[wait.code] : undefined;

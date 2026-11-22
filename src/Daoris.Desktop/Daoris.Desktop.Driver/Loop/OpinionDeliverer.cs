@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Daoris.Driver;
 
 /// <summary>
@@ -465,7 +463,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         // A pass of its own, said as a first pass is: asked as the host opens it, by the reviewer that took it, and given with the
         // seconds from its open once it ends.
         var took = choice;
-        Stopwatch? watch = null;
+        long? opened = null;
         var ask = asked with
         {
             Reask = Walk,
@@ -478,14 +476,14 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             // A recheck is no ask of the gate's: it is found through what the delivery keeps.
             Opened = (opinion, _) =>
             {
-                watch = Stopwatch.StartNew();
+                opened = _context.Clock.GetTimestamp();
                 Service.LandingSaid(OpinionLines.Asked(opinion, first.Working, first.Occasion, took.Label, took.Reviewer, OpinionViews.RecheckPass));
             },
         };
         var run = await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
         if (run.Opinion is { } recheck && await Service.Opinions.ReadAsync(recheck, ct).ConfigureAwait(false) is { } view)
         {
-            if (view.Given) Service.LandingSaid(OpinionLines.Given(view, watch is null ? null : (long)watch.Elapsed.TotalSeconds));
+            if (view.Given) Service.LandingSaid(OpinionLines.Given(view, opened is { } from ? (long)_context.Clock.GetElapsedTime(from).TotalSeconds : null));
             else if (view.State == OpinionViews.Failed) Service.LandingSaid(OpinionLines.Unavailable(first.Working, first.Occasion, view.Why ?? "ended"));
         }
 

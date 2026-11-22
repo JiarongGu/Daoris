@@ -6,7 +6,8 @@ import type { StepWaitRow } from './attentionPushed';
  * it waits, one way whoever holds it: on its role, by its holder (`you` for the person), at its node, with the act in its plugin's words.
  */
 export const stepHolder = (step: Pick<StepWaitRow, 'holder' | 'holderName'>) =>
-  step.holder === 'agent' ? i18n.t('workflow.wait.holder.agent', { name: step.holderName ?? '' }) : i18n.t('workflow.wait.holder.person');
+  step.holder !== 'agent' ? i18n.t('workflow.wait.holder.person')
+    : step.holderName ? i18n.t('workflow.wait.holder.agent', { name: step.holderName }) : i18n.t('workflow.wait.holder.anyAgent');
 
 export const stepRead = (step: StepWaitRow, title?: string) => ({
   title: title ?? `#${step.run}`,

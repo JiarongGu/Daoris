@@ -292,7 +292,7 @@ public sealed class Driver(
 
     internal TimeSpan? BrainstormMinute { get => Context.BrainstormMinute; init => Context.BrainstormMinute = value; }
 
-    internal TimeProvider BrainstormClock { get => Context.BrainstormClock; init => Context.BrainstormClock = value; }
+    internal TimeProvider Clock { get => Context.Clock; init => Context.Clock = value; }
 
     /// <summary>The environment this driver reads its variables from: this process's, unless a test hands in its own scratch.</summary>
     internal Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;

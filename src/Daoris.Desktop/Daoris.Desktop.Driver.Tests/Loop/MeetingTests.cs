@@ -126,7 +126,7 @@ public sealed class MeetingTests : IDisposable
         {
             MeetingTurns = scripted ? script.RunAsync : null,
             BrainstormMinute = minute,
-            BrainstormClock = clock ?? TimeProvider.System,
+            Clock = clock ?? TimeProvider.System,
             BrainstormSearches = (words, repository, _) => Task.FromResult(new BrainstormSearch(
                 [new BrainstormFound("decision", "docs/decisions/D7.md", 3, 9, $"The window of `{repository}` is exclusive of its end.", words)], "words")),
             BrainstormCheckouts = (_, _) => Task.FromResult<(string?, string?)>((null, "0123456789abcdef")),
