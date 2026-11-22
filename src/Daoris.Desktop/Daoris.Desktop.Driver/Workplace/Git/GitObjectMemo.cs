@@ -15,6 +15,7 @@ namespace Daoris.Driver;
 /// <see cref="Largest"/> characters are asked again.</para>
 /// <para><b>Nothing a ref, HEAD, the index or a working tree decides.</b> A read that names one never qualifies. A repository where a
 /// replacement can stand, or a shallow or grafted one (its history is another from one fetch to the next), keeps nothing.</para>
+/// <para><b>Only where a home is named</b> (<see cref="ProgramHome"/>): a unit's process with no home keeps nothing, so a scripted git stays the test's own.</para>
 /// <para><b>Written in batches.</b> A kept answer marks the memo dirty and one write follows <see cref="Batch"/> later, whatever came between;
 /// <see cref="Flush"/> and the process's end write what is left. Never a write for an ask. The file is <c>memo/git-objects.json</c>.</para>
 /// </remarks>
@@ -43,9 +44,8 @@ internal sealed class GitObjectMemo
         foreach (var memo in Homes.Values) memo.Flush();
     };
 
-    private GitObjectMemo(string? home)
+    private GitObjectMemo(string home)
     {
-        if (home is null) return;
         _path = Path.Combine(home, "memo", "git-objects.json");
         try
         {
@@ -58,8 +58,8 @@ internal sealed class GitObjectMemo
         }
     }
 
-    /// <summary>The memo of the home this flow acts for: the one <see cref="Within"/> names, else the program's.</summary>
-    internal static GitObjectMemo Current => Of(s_home.Value ?? ProgramHome.Named);
+    /// <summary>The memo of the home this flow acts for: the one <see cref="Within"/> names, else the program's; none where no home is named, which keeps nothing.</summary>
+    internal static GitObjectMemo? Current => (s_home.Value ?? ProgramHome.Named) is { } home ? Of(home) : null;
 
     /// <summary>Until disposed, this flow's reads are kept in <paramref name="home"/>'s memo: a test's own home.</summary>
     internal static IDisposable Within(string home)
@@ -82,16 +82,16 @@ internal sealed class GitObjectMemo
     internal static Task<(int Code, string Stdout, string Stderr)>? Asked(
         string root, IReadOnlyList<string> arguments, Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run, CancellationToken ct)
     {
-        if (!GitObjectArguments.Qualifies(arguments) || KeyOf(root, arguments) is not { } key) return null;
-        return Current.AskAsync(key, arguments, run, ct);
+        if (Current is not { } memo || !GitObjectArguments.Qualifies(arguments) || KeyOf(root, arguments) is not { } key) return null;
+        return memo.AskAsync(key, arguments, run, ct);
     }
 
     /// <summary>The commit <paramref name="id"/> peels to (itself where it is one), once a read said so; null where none did.</summary>
     internal static string? PeeledCommit(string common, string id) =>
-        Current._kept.TryGet<Kept>(PeelKey(common, id), out var kept) ? kept.Stdout : null;
+        Current?._kept.TryGet<Kept>(PeelKey(common, id), out var kept) == true ? kept!.Stdout : null;
 
     /// <summary>Keeps that <paramref name="id"/> peels to <paramref name="commit"/>: an id names the same object for good.</summary>
-    internal static void LearnPeeled(string common, string id, string commit) => Current.Keep(PeelKey(common, id), 0, commit);
+    internal static void LearnPeeled(string common, string id, string commit) => Current?.Keep(PeelKey(common, id), 0, commit);
 
     private static string PeelKey(string common, string id) => "peel\n" + common.ToLowerInvariant() + "\n" + id;
 
@@ -131,7 +131,6 @@ internal sealed class GitObjectMemo
     private void Keep(string key, int code, string stdout)
     {
         _kept.Keep(key, new Kept(code, stdout), Weight(key, stdout));
-        if (_path is null) return;
         lock (_gate)
         {
             _dirty = true;
@@ -142,7 +141,6 @@ internal sealed class GitObjectMemo
     /// <summary>Writes the kept answers, least recently used first, unless none is new since the last write.</summary>
     internal void Flush()
     {
-        if (_path is null) return;
         lock (_gate)
         {
             _timer?.Dispose();
@@ -163,8 +161,7 @@ internal sealed class GitObjectMemo
         }
     }
 
-    private static GitObjectMemo Of(string? home) =>
-        home is null ? Homes.GetOrAdd("", _ => new GitObjectMemo(null)) : Homes.GetOrAdd(Path.GetFullPath(home), full => new GitObjectMemo(full));
+    private static GitObjectMemo Of(string home) => Homes.GetOrAdd(Path.GetFullPath(home), full => new GitObjectMemo(full));
 
     private static long Weight(string key, string stdout) => 2L * (key.Length + stdout.Length) + 96;
 

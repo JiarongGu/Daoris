@@ -26,6 +26,8 @@ public sealed class GitKeepersCensusTests
         ["GitReadOnce.cs _asked"] = "a join of a running read within one read-only flow, keyed by the asker's context",
         ["AddressedReads.cs _text"] = "a join of a running read of a commit's files by id within one act, keyed by the asker's folder",
         ["AddressedReads.cs _bytes"] = "a join of a running read of objects by id within one act, keyed by the asker's folder and question",
+        ["GitObjectMemo.cs _kept"] = "its key: the repository's common folder and the read's words, every commit named by its full id, which an id's answer never "
+            + "outgrows; nothing is kept where a replacement can stand or the history is shallow or grafted, or where no home is named",
         ["RefSnapshot.cs Held"] = "the flow's listings, one landing's; dropped by any git that may move a ref",
         ["RefSnapshot.cs _facts"] = "a join of a running read within one flow, keyed by the asker's context",
     };

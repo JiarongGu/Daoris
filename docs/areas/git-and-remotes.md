@@ -234,7 +234,7 @@ A read that only object ids decide is kept for good, beneath every flow's memo, 
 names only ids, subject and side mark, a `cat-file` of one id, and `AddressedReads`' listings and searches (`GitObjectArguments` says which
 shapes). It is keyed by the repository's common folder and the read's words, every commit named by its full id: a read naming a ref, HEAD,
 the index or a working tree never qualifies, and a repository where a replacement can stand or whose history is shallow or grafted keeps
-nothing. Only an answer git gave whole is kept (exit 0 with an empty error stream, and exit 1 for `merge-base`'s no and a search that
+nothing, as does a process with no home named. Only an answer git gave whole is kept (exit 0 with an empty error stream, and exit 1 for `merge-base`'s no and a search that
 found nothing). The answers have no age: a least-recently-used cap of 32 MB of estimate bounds them, in memory and in the home
 (`memo/git-objects.json`), written once 20 seconds after the first unwritten answer, never one write for an ask, and at the process's
 end. A hit starts no git, takes no place and opens no library; the look's stage line says hits and misses by caller and kind as

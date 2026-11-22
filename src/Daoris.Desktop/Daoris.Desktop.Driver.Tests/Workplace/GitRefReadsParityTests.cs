@@ -28,6 +28,7 @@ public sealed class GitRefReadsParityTests : LandedFixture
     private static async Task<int> ParityAsync(string folder, bool directory = true)
     {
         var answered = 0;
+        using var memo = GitObjectMemo.Within(Path.Combine(Path.GetDirectoryName(folder)!, "memo-home"));
         // Each git start is a second on a loaded machine and a class's tests must each finish within the run's inactivity window, so few names.
         // A directory where a ref is looked for is git's, which the library answers each time.
         string[] names = ["HEAD", "refs/heads/main", "refs/heads/feature", "refs/heads/gone", "refs/tags/annotated", "main", .. directory ? (string[])["refs/heads"] : []];
