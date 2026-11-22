@@ -35,7 +35,12 @@ public static class GitAskers
         if (s_caller.Value is null) s_site.Value = GitSites.Here(skip: 2);
     }
 
-    internal static string? NotedSite => s_site.Value;
+    internal static string? TakeSite()
+    {
+        var site = s_site.Value;
+        s_site.Value = null;
+        return site;
+    }
 
     private sealed class Restore(Action restore) : IDisposable
     {

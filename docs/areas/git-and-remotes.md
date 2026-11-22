@@ -235,10 +235,13 @@ files name the library's package). An ask has an id, its repository, its read ki
 marks equivalent patches, `meta` for a start with no command), its asker, its class and its deadline, and is answered by the run or
 failed as git's failure naming why. The class is the person's where the flow is (`AsPerson`), a step's for `run-step`, `opinion-gate` and
 `check`, else the background's; it is told, and the scheduler's order is still its own. The deadline is the run's bound and an allowance
-for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's, an hour for a write or a git that waits outside Daoris.
-It runs while the ask is queued and stops at its place, so a git placed is never answered failed beside a run that goes on; a place not
-given in time is `deadline`. A library read not answered within its bound is handed to git. Asks and answers live in memory
-(`GitService.Open`) and are never entries of the bus's log.
+for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's; a write or a git that waits outside Daoris (an act's
+steps) has none, so an act is never dropped from its queue. The allowance is each asker's own and runs only while that asker's entry is
+queued, decided against placement under the scheduler's lock, so an ask is run or failed, never both; a joined asker leaves a shared
+read alone. A place not given in time is `deadline`. A library read not answered within its bound is handed to git; in-process reads
+get no id and no tally yet (GITBUS2). Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A read
+git did not answer is unknown, never a verdict: a partner piece's taken-in read and a branch's status before a replay change nothing
+on a failed read.
 
 What holds git's places is counted by its caller and read kind (`GitAskers`, `GitAskTally`): each ask the scheduler places is told under
 the caller its flow names (`look` for a look stage's work, `opinion-gate`, `door` for a person's read, `facts` for a machine-facts topic,

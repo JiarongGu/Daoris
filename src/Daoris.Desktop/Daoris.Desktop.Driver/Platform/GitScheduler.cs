@@ -167,14 +167,14 @@ public sealed class GitScheduler
     /// <paramref name="ct"/> leaves the ask: this caller is answered with its cancellation, and the git is dropped or ended as above.
     /// </summary>
     /// <exception cref="GitUnplacedException">Its tree is being removed, its repository is stalled, or it is a re-entry too deep.</exception>
-    internal async Task<T> RunAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct)
+    internal async Task<T> RunAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy = null)
     {
         ct.ThrowIfCancellationRequested();
         GitStartGate.Check(ask);
         IDisposable? removal = ask.Removes is { } removes ? await RemovingAsync(removes, ct).ConfigureAwait(false) : null;
         try
         {
-            return await AskAsync(ask, run, ct).ConfigureAwait(false);
+            return await AskAsync(ask, run, ct, placeBy).ConfigureAwait(false);
         }
         finally
         {
@@ -182,7 +182,7 @@ public sealed class GitScheduler
         }
     }
 
-    private async Task<T> AskAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct)
+    private async Task<T> AskAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy)
     {
         var parent = s_beneath.Value;
         if (parent is { Depth: >= LentDepth })
@@ -228,6 +228,7 @@ public sealed class GitScheduler
         var caller = GitAskers.Current;
         if (!joined) _ = DriveAsync(entry, run, s_timed.Value);
         Pump();
+        if (placeBy is { } allowance && await ExpiredAsync(entry, allowance, ct).ConfigureAwait(false)) throw new GitQueueExpiredException();
         await QueuedAsync(entry, ct).ConfigureAwait(false);
         try
         {
@@ -247,6 +248,50 @@ public sealed class GitScheduler
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// Whether this asker's own allowance for a place ran out while its entry stayed queued, in which case it has left the entry as an
+    /// asker that gave up (the last to leave drops it). Decided under the lock against placement, so an ask is either placed or expired,
+    /// never both; a placed entry is waited on as before.
+    /// </summary>
+    private async Task<bool> ExpiredAsync(Entry entry, TimeSpan allowance, CancellationToken ct)
+    {
+        using var timer = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timer.CancelAfter(allowance);
+        try
+        {
+            await entry.Go.Task.WaitAsync(timer.Token).ConfigureAwait(false);
+            return false;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested && timer.IsCancellationRequested)
+        {
+            if (!TryExpire(entry)) return false;
+            Pump();
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+    }
+
+    private bool TryExpire(Entry entry)
+    {
+        bool dropped;
+        lock (_gate)
+        {
+            if (entry.Placed || entry.Done) return false;
+            dropped = --entry.Askers <= 0 && (Dequeue(entry) || _lending.Remove(entry));
+        }
+
+        if (dropped)
+        {
+            entry.Go.TrySetCanceled();
+            entry.Result.TrySetCanceled();
+        }
+
+        return true;
     }
 
     /// <summary>An ask waiting for its place, said to its stage's queue as the start gate's wait is, until placed, dropped or left.</summary>

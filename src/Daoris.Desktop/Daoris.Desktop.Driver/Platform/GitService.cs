@@ -28,9 +28,8 @@ internal sealed record GitServiceAsk(long Id, string Repository, string Kind, st
 /// </summary>
 /// <remarks>
 /// <para><b>The deadline</b> is the ask's bound (what its run may take, as before) and an allowance for waiting for a place, by class: a
-/// person's is shortest. It runs while the ask is queued and stops at its place, because a git placed runs on to its end or its bound and
-/// a write is never answered failed while it runs. A write or an act that waits outside Daoris takes the longest allowance: it is not
-/// failed for a queue it would pass.</para>
+/// person's is shortest. It is each asker's own and runs only while that asker's entry is queued (decided against placement under the
+/// scheduler's lock), because a git placed runs on to its end or its bound. A write or a git that waits outside Daoris has none.</para>
 /// <para><b>In memory</b>: <see cref="Open"/> is the asks not yet answered; an answer is the run's own and is kept by nobody here.</para>
 /// </remarks>
 internal sealed class GitService
@@ -43,9 +42,6 @@ internal sealed class GitService
 
     /// <summary>The same for the background's ask: a look's sweeps run for minutes at a start, so this is the longest of the reads'.</summary>
     internal static readonly TimeSpan BackgroundAllowance = TimeSpan.FromMinutes(30);
-
-    /// <summary>The same for a write or a git that waits outside Daoris.</summary>
-    internal static readonly TimeSpan ActAllowance = TimeSpan.FromHours(1);
 
     /// <summary>The one service of the process, over the one scheduler.</summary>
     internal static GitService Shared { get; } = new(GitScheduler.Shared);
@@ -81,24 +77,18 @@ internal sealed class GitService
     {
         var asker = GitAskers.Current;
         var askClass = ClassOf(asker, GitScheduler.Whose == StartClass.Person);
-        var allowance = ask.Writes || ask.Wait == GitWait.Outside ? ActAllowance : Allowance(askClass);
-        var open = new GitServiceAsk(Interlocked.Increment(ref _ids), ask.Repository, ask.Kind, asker, askClass, bound + allowance);
+        // An act has no queue deadline: a step dropped mid-act would leave it half done.
+        TimeSpan? allowance = ask.Writes || ask.Wait == GitWait.Outside ? null : Allowance(askClass);
+        var open = new GitServiceAsk(Interlocked.Increment(ref _ids), ask.Repository, ask.Kind, asker, askClass, allowance is { } left ? bound + left : Timeout.InfiniteTimeSpan);
         _open[open.Id] = open;
-        if (asker == GitAskers.Other) _scheduler.Tally.RecordSite(GitAskers.NotedSite ?? GitSites.Here(skip: 1));
-        using var queued = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        queued.CancelAfter(allowance);
+        if (asker == GitAskers.Other) _scheduler.Tally.RecordSite(GitAskers.TakeSite() ??GitSites.Here(skip: 1));
         try
         {
-            return await _scheduler.RunAsync(ask, token =>
-            {
-                // Placed: the run has its bound from here, and is never answered failed beside a git that goes on.
-                queued.CancelAfter(Timeout.InfiniteTimeSpan);
-                return run(token);
-            }, queued.Token).ConfigureAwait(false);
+            return await _scheduler.RunAsync(ask, run, ct, allowance).ConfigureAwait(false);
         }
-        catch (OperationCanceledException error) when (error is not ProcessUnendedException && !ct.IsCancellationRequested && queued.IsCancellationRequested)
+        catch (GitQueueExpiredException)
         {
-            throw GitUnplacedException.Deadline(open, allowance);
+            throw GitUnplacedException.Deadline(open, allowance!.Value);
         }
         finally
         {

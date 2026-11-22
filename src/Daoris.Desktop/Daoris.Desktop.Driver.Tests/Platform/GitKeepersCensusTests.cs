@@ -33,7 +33,15 @@ public sealed class GitKeepersCensusTests
     // The door class: where git is asked of its scheduler or the library's reads, and where an ask is built.
     private const string Reaches = "reaches git's scheduler or the library's reads";
 
-    private static readonly Regex Door = new(@"\bGitScheduler\.Shared\b|\bnew\s+GitRunAsk\s*\(|\bGitLibraryReads\.AnswerAsync\s*\(");
+    // The only way to make an ask the scheduler takes is `new GitRunAsk(`, which `For` and `Plain` call, so it covers them. A raw
+    // helper process of a door program (GitDoors.cs) is a direct start the process-starts census names with its reason.
+    private static readonly Regex Door = new(@"\bGitScheduler\.Shared\b|\bnew\s+GitScheduler\s*\(|\bnew\s+GitRunAsk\s*\(|\bGitLibraryReads\.AnswerAsync\s*\(|\bGitLibrary\.AskAsync\s*\(");
+
+    private static readonly HashSet<string> Library = new(StringComparer.Ordinal)
+    {
+        "GitLibrary.cs", "GitLibraryCall.cs", "GitLibraryFaults.cs", "GitLibraryNames.cs", "GitLibraryReads.cs", "GitLibraryRefs.cs",
+        "GitLibraryRevisions.cs", "GitLibraryWalks.cs",
+    };
 
     private static readonly Dictionary<string, string> Doors = new(StringComparer.Ordinal)
     {
@@ -41,6 +49,8 @@ public sealed class GitKeepersCensusTests
         ["GitServiceReads.cs"] = "the service's in-process half (an extension of it): every read of the library is answered here",
         ["GitRunAsk.cs"] = "the ask's own record and its factory for a start no caller builds whole (a version's question)",
         ["GitCallers.cs"] = "which place a process's ancestor holds, told to a re-entry the service places: it asks no git",
+        ["GitLibraryReads.cs"] = "the library's own door: it opens a call for a read the service asked",
+        ["GitLibraryRefs.cs"] = "the library's own refs read, opening a call within a read the service asked",
         ["GitStartAsks.cs"] = "builds the ask a start places under (For, and Plain for a start not built whole): it asks no git",
     };
 
@@ -52,7 +62,7 @@ public sealed class GitKeepersCensusTests
     private const string Package = "LibGit2" + "Sharp";
 
     private static List<string> Packaged(IEnumerable<(string File, string Source)> sources) =>
-        [.. SourceCensus.Callers(sources, new Regex($@"\b{Package}\b")).Where(file => !file.StartsWith("GitLibrary", StringComparison.Ordinal)).Select(file => $"{file} names {Package} outside the library's own files")];
+        [.. SourceCensus.Callers(sources, new Regex($@"\b{Package}\b")).Where(file => !Library.Contains(file)).Select(file => $"{file} names {Package} outside the library's own files")];
 
     [Fact]
     public void No_caller_reaches_the_scheduler_or_the_librarys_reads_outside_the_service_and_the_files_listed()

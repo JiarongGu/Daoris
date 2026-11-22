@@ -73,7 +73,8 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
                 return new(item, false, $"`{item.Branch}` was left: {bound}.");
             }
 
-            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
+            var (statusCode, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
+            if (statusCode != 0) return new(item, false, $"`{item.Branch}` was left: git did not answer its status, so it is not replayed.");
             if ((on.Length == 2 ? on[1] : "") != item.Branch || await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) != tip || !string.IsNullOrWhiteSpace(dirty))
             {
                 return new(item, false, $"`{item.Branch}` {TreeSync.LeftSince}");

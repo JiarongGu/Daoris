@@ -52,6 +52,65 @@ public sealed class GitServiceTests
     }
 
     [Fact]
+    public async Task Two_askers_of_one_queued_read_share_it_and_the_first_leaving_gives_the_second_the_real_answer()
+    {
+        var (service, _, _) = Fixture(places: 1);
+        var hold = new TaskCompletionSource<int>();
+        var placed = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("a", "status"), Bound, _ => { placed.SetResult(); return hold.Task; }, CancellationToken.None);
+        await placed.Task.WaitAsync(Soon);
+        using var first = new CancellationTokenSource();
+        var shared = Ask("b", "diff") with { Start = "one-read" };
+        var left = service.PlaceAsync(shared, Bound, _ => Task.FromResult(7), first.Token);
+        var stayed = service.PlaceAsync(shared, Bound, _ => Task.FromResult(8), CancellationToken.None);
+
+        first.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => left).WaitAsync(Soon);
+        hold.SetResult(1);
+        await holding.WaitAsync(Soon);
+
+        Assert.Equal(7, await stayed.WaitAsync(Soon));
+    }
+
+    [Fact]
+    public async Task A_write_is_never_failed_for_its_queue_and_a_deadline_racing_a_place_runs_or_fails_never_both()
+    {
+        var (service, _, _) = Fixture(places: 1, allowance: TimeSpan.Zero);
+        var hold = new TaskCompletionSource<int>();
+        var placed = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("a", "status"), Bound, _ => { placed.SetResult(); return hold.Task; }, CancellationToken.None);
+        await placed.Task.WaitAsync(Soon);
+        var write = service.PlaceAsync(Ask("w", "update-ref") with { Writes = true }, Bound, _ => Task.FromResult(5), CancellationToken.None);
+        hold.SetResult(1);
+        await holding.WaitAsync(Soon);
+        Assert.Equal(5, await write.WaitAsync(Soon));
+
+        for (var round = 0; round < 40; round++)
+        {
+            var block = new TaskCompletionSource<int>();
+            var taken = new TaskCompletionSource();
+            var occupying = service.PlaceAsync(Ask("a", "status"), Bound, _ => { taken.SetResult(); return block.Task; }, CancellationToken.None);
+            await taken.Task.WaitAsync(Soon);
+            var ran = 0;
+            var racing = service.PlaceAsync(Ask($"r{round}", "diff"), Bound, _ => Task.FromResult(Interlocked.Increment(ref ran)), CancellationToken.None);
+            var release = Task.Run(() => block.SetResult(1));
+            var failed = false;
+            try
+            {
+                await racing.WaitAsync(Soon);
+            }
+            catch (GitUnplacedException)
+            {
+                failed = true;
+            }
+
+            await release;
+            await occupying.WaitAsync(Soon);
+            Assert.Equal(failed ? 0 : 1, Volatile.Read(ref ran));
+        }
+    }
+
+    [Fact]
     public async Task An_open_ask_carries_its_id_repository_kind_asker_class_and_a_deadline_no_shorter_than_its_bound()
     {
         var (service, _, _) = Fixture();

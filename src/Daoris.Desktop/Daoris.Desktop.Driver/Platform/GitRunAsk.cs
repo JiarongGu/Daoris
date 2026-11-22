@@ -45,6 +45,8 @@ internal sealed record GitRunAsk(string Folder, string Repository, GitWait Wait)
 /// repository holding a git that outlived its kill (<c>stalled</c>), a re-entry deeper than the places lent (<c>depth</c>), or a place not
 /// given within the ask's allowance (<c>deadline</c>, <see cref="GitService"/>).
 /// </summary>
+internal sealed class GitQueueExpiredException : Exception;
+
 internal sealed class GitUnplacedException(string word, string message) : Exception(message)
 {
     /// <summary>The word the failure is said by: <c>going</c>, <c>stalled</c> or <c>depth</c>.</summary>
