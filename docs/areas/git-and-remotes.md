@@ -244,14 +244,21 @@ read's person joined to a long read is never failed once the read is placed (`Gi
 
 *Failed reads.* A read git did not answer (no exit: a deadline, a stalled repository, a git that did not start) is unknown, never
 "clean", "not held" or "no change": every caller whose answer decides a tidy, a discard, a landing, a merge, a replay or a resolver's
-settle leaves the state unknown and changes nothing. A dirty check is `MachinePorts.Repository.UncommittedAsync`, null on a failure.
+settle leaves the state unknown and changes nothing. A dirty check is `MachinePorts.Repository.UncommittedAsync`, null on a failure;
+whether a branch is on its remote (`TreeRefs.OnRemoteAsync`) and whether one commit is an ancestor of another that a replay's range
+rests on (`TreeRefs.AncestryAsync`) say present, absent or unread, and an unread one refuses. A resolver's work the tree is put back
+from is kept on the edits ref whether the rebase ended or not (`ResolveTree.RestoreAsync`), so a refused read costs it nothing.
 Swept in the driver, each caller by its read:
-- Fixed, each held by a test that fails that read and finds nothing changed (`FailedReadsDecideNothingTests`, `ResolveFailedReadTests`): the
-  tree-land sync's status before it detaches and moves a tree (`TreeLandSyncs.MoveTreeAsync`); the merge's and the landing's dirty check
-  (`TreeMerges`, `TreeBranches`); the tree update's three status reads (`TreeUpdates`); a branch advance's head, ancestor and count
-  reads (`TreeBranches.AdvanceAsync`); the resolver's conflicted-files, other-changes and stop-commit reads (`ResolveTree.MarkedAsync`,
-  `OthersAsync`, `ProvedAsync`); the generated writers' staged-difference check before a commit (`GeneratedWriters`). Earlier: the partner's
-  taken-in read (`PartnerActRunner`), `BranchJudging` and `BranchReplays`' status.
+- Fixed, with a test that fails the read and finds nothing changed (`FailedReadsDecideNothingTests`, `ResolveFailedReadTests`): the
+  merge's dirty check and a tree's status in a landing, in the move onto what landed (failed from its own read on) and in an update's
+  detached re-read (`TreeMerges`, `TreeBranches`, `TreeLandSyncs.MoveTreeAsync`, `TreeUpdates`); a branch's remote ref
+  (`TreeLandSyncs`, `TreeBranches`); a step's recorded base in a submission update (`TreeUpdates`); the resolver's conflicted-files,
+  other-changes and stop-commit reads (`ResolveTree.MarkedAsync`, `OthersAsync`, `ProvedAsync`, the first of its two reads) and the
+  edits kept on a restore. Earlier: the partner's taken-in read (`PartnerActRunner`), `BranchJudging`'s and `BranchReplays`' status.
+- Fixed, read in the code and compiled but with no test of its own: a branch advance's head, ancestor, count and join reads
+  (`TreeBranches.AdvanceAsync` and the join before it), the tree update's other status reads and the `ProvedAsync` read of the stop
+  commit's tree, `BranchJudging`'s record-base and remote reads, `TreeLandPlans`' remote read (a plan, which treats unread as pushed), and
+  the generated writers' staged-difference check before a commit (`GeneratedWriters`).
 - Already safe, reading the exit before the output: `LandPerformer`'s tree and root status, `OnlyHereProof`, `TogetherPress`,
   `RebaseReplay`'s uncommitted read, `ResolveTree`'s hand check, `DependencyKeys.InputChangedAsync` (a failure counts as changed),
   `RelatedSessions`, the content proof and `LandedProofs` (a failure is unread), `TreeSweeps`' empty-branch count (only "0" removes),

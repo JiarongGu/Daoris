@@ -134,7 +134,9 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             // Where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
             // remote is never rewritten, and is refused as a conflict is. So is one whose line only moved, unless it is
             // on its remote, where it lands as it stands, its pull request the place it meets the line.
-            var pushed = sync is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+            var onRemote = sync is null ? false : await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+            if (onRemote is null) return Unread($"whether `{branch}` is on its remote");
+            var pushed = onRemote is true;
             if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
                 if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
@@ -219,7 +221,9 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             // the same replay as what the line partly holds; one grown from it still moves it by its own tip. A line that only
             // moved replays nothing onto a standing branch, which grows from its own tip and is never rewritten.
             var holding = sync is { Held.HoldsNone: false } ? sync : null;
-            var onto = holding ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
+            var growsFromJoin = join is null || holding is not null ? (bool?)true : await AncestryAsync(root, grown, join.Tip, ct).ConfigureAwait(false);
+            if (growsFromJoin is null) return Unread($"whether `{name}` holds what its part grew from");
+            var onto = holding ?? (growsFromJoin is false ? join : null);
             if (onto is null)
             {
                 return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned, delivering: delivering)
@@ -231,8 +235,16 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             var lacking = new List<LandingCommit>();
             foreach (var commit in onto.Held.Kept)
             {
-                if (await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) continue;
-                if (squashedTip is not null && await IsAncestorAsync(root, commit.Sha, squashedTip, ct).ConfigureAwait(false)) continue;
+                var onBranchNow = await AncestryAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false);
+                if (onBranchNow is null) return Unread($"whether `{name}` holds `{commit.Sha[..Math.Min(8, commit.Sha.Length)]}`");
+                if (onBranchNow is true) continue;
+                if (squashedTip is not null)
+                {
+                    var inSquash = await AncestryAsync(root, commit.Sha, squashedTip, ct).ConfigureAwait(false);
+                    if (inSquash is null) return Unread($"whether `{name}`'s squash holds `{commit.Sha[..Math.Min(8, commit.Sha.Length)]}`");
+                    if (inSquash is true) continue;
+                }
+
                 lacking.Add(commit);
             }
 

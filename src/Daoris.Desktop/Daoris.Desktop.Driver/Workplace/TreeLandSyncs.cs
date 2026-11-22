@@ -220,7 +220,9 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
         if ((on.Length == 2 ? on[1] : "") != sync.Branch || await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) != sync.Tip) return "it moved since it was judged";
         if (dirty is null) return "git did not answer its status, so whether it holds uncommitted work is unknown";
         if (dirty > 0) return "it has uncommitted work";
-        if (await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false)) return $"`{sync.Branch}` is on its remote, which Daoris does not rewrite";
+        var pushed = await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false);
+        if (pushed is null) return $"git did not answer whether `{sync.Branch}` is on its remote, so it is not rewritten";
+        if (pushed is true) return $"`{sync.Branch}` is on its remote, which Daoris does not rewrite";
 
         var (detached, _, detachErr) = await WorkingTree.GitAsync(full, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);
         if (detached != 0) return $"git would not detach it: {Failure(detachErr)}";

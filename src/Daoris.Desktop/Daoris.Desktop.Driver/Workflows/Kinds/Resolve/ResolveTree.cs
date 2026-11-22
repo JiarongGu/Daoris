@@ -143,7 +143,10 @@ internal sealed class ResolveTree(ReplaySettles settles)
     /// </summary>
     public static async Task<string?> RestoreAsync(ResolveHand hand, bool keepEdits, CancellationToken ct)
     {
-        if (keepEdits && await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await KeepEditsAsync(hand, ct).ConfigureAwait(false);
+        if (keepEdits && (await RebasingAsync(hand.Tree, ct).ConfigureAwait(false) || !SameCommit(await CommitOfAsync(hand.Tree, "HEAD", ct).ConfigureAwait(false), hand.Tip)))
+        {
+            await KeepEditsAsync(hand, ct).ConfigureAwait(false);
+        }
         if (await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await WorkingTree.GitAsync(hand.Tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
         await MachinePorts.Repository.ResetHardAsync(hand.Tree, "HEAD", ct).ConfigureAwait(false);
         await WorkingTree.GitAsync(hand.Tree, ["clean", "-fdq"], ct).ConfigureAwait(false);

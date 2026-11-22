@@ -128,10 +128,12 @@ internal sealed class TreeUpdates(
             return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, "the tree has no commit"));
         }
 
+        var onRemote = branch is null ? false : await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+        if (onRemote is null) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, "git did not answer whether its branch is on its remote"));
         facts = facts with
         {
             UpToDate = await IsAncestorAsync(root, onto, head, ct).ConfigureAwait(false),
-            OnRemote = branch is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false),
+            OnRemote = onRemote is true,
         };
         if (facts.First() is not null) return Refused(facts);
 
@@ -297,9 +299,16 @@ internal sealed class TreeUpdates(
         // new submission. Only those are replayed, so the source's old commits it grew on are never replayed as its own.
         var grown = branch is null ? null : context.Grown.Of(repository, branch);
         string cut;
-        if (grown is { From: { Length: > 0 } from } && await IsAncestorAsync(root, from, head, ct).ConfigureAwait(false))
+        bool? recordHeld = null;
+        if (grown is { From: { Length: > 0 } recorded })
         {
-            cut = from;
+            recordHeld = await AncestryAsync(root, recorded, head, ct).ConfigureAwait(false);
+            if (recordHeld is null) return Left("git did not answer whether the tree still holds where its record says it grew from");
+        }
+
+        if (recordHeld is true)
+        {
+            cut = grown!.From!;
         }
         else
         {
