@@ -267,12 +267,14 @@ lacks the path (`GitLibraryObjectsTests`). A tree, a commit, a tag, a missing ob
 
 A tree's `status --porcelain` (v1, with or without `-z`; `--untracked-files` all, normal or no; `--no-renames`; `--ignore-submodules=none`)
 is answered by `GitLibraryStatus` with no git started and never kept, since it reads the index and the working tree: the head against the
-index read from its own file (`GitIndexFile`), the index against the tree as git reads it (a size moved is changed, a stat matching and
-not racy is unchanged, any other entry hashed), then the untracked paths, walked with the library's ignore rules and the personal ignore
-file. Its settings are read from every configuration file git reads (`GitStamp.ConfigurationFilesOf`), and two files disagreeing on one
+index read from its own file (`GitIndexFile`), the index against the tree as git reads it (a size moved is changed; on Windows a size,
+write time and creation time, git's ctime there, matching and not racy are unchanged; any other entry hashed, every one off Windows,
+where git also holds an inode), then the untracked paths, walked with the library's ignore rules. The personal ignore file decides only
+a path the repository's rules leave, and where it alone ignores one a repository negation might re-include, git answers. Its settings are read from every configuration file git reads (`GitStamp.ConfigurationFilesOf`), and two files disagreeing on one
 that changes the answer send it to git; so does a status asked before any stamp learned the system file's path, since it starts nothing to learn it. Git's: a rename git may pair (a staged addition beside a deletion, or a change where copies are
 asked), a submodule, a sparse, intent-to-add, assume-unchanged or unmerged entry, a split index, a content holding a carriage return or
-one an attribute file may filter, a link, `core.excludesFile` or `core.attributesFile`, `--ignored`, a path given, the `--porcelain=v2`
+one an attribute file may filter, a link, `core.excludesFile`, `core.attributesFile`, `core.checkStat` or `core.trustCtime`, an index or
+object store the process names (`GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`), `--ignored`, a path given, the `--porcelain=v2`
 forms, and in the newline form a name git would quote (`GitLibraryStatusTests`, on real git).
 
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process

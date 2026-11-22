@@ -10,7 +10,9 @@ namespace Daoris.Driver;
 /// <param name="Size">The size git recorded, cut to 32 bits as git cuts it; zero where git smudged a racily clean entry.</param>
 /// <param name="Seconds">The write time's seconds git recorded.</param>
 /// <param name="Nanoseconds">The write time's nanoseconds git recorded.</param>
-internal sealed record GitIndexEntry(string Path, int Mode, string Id, uint Size, uint Seconds, uint Nanoseconds);
+/// <param name="ChangedSeconds">The ctime's seconds git recorded: on Windows, the file's creation time.</param>
+/// <param name="ChangedNanoseconds">The ctime's nanoseconds git recorded.</param>
+internal sealed record GitIndexEntry(string Path, int Mode, string Id, uint Size, uint Seconds, uint Nanoseconds, uint ChangedSeconds, uint ChangedNanoseconds);
 
 /// <summary>
 /// A tree's index read from its file as git writes it, nothing started and nothing written (versions 2 and 3, SHA-1 ids): the entries
@@ -108,7 +110,8 @@ internal static class GitIndexFile
 
             entries.Add(new GitIndexEntry(
                 name, mode, Convert.ToHexStringLower(span.Slice(40, 20)), BinaryPrimitives.ReadUInt32BigEndian(span[36..]),
-                BinaryPrimitives.ReadUInt32BigEndian(span[8..]), BinaryPrimitives.ReadUInt32BigEndian(span[12..])));
+                BinaryPrimitives.ReadUInt32BigEndian(span[8..]), BinaryPrimitives.ReadUInt32BigEndian(span[12..]),
+                BinaryPrimitives.ReadUInt32BigEndian(span), BinaryPrimitives.ReadUInt32BigEndian(span[4..])));
             // An entry is padded with one to eight NULs to a multiple of eight bytes.
             var length = Fixed + (extended ? 2 : 0) + (nul - named);
             at += (length + 8) & ~7;

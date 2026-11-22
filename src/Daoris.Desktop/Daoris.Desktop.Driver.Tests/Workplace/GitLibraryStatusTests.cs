@@ -165,6 +165,34 @@ public sealed class GitLibraryStatusTests : LandedFixture
         await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "*.txt filter=lfs\n");
         File.SetLastWriteTimeUtc(Path.Combine(root, "crlf.txt"), Earlier);
         await GitsAsync(root, Forms[0]);
+
+        // A size moved is a change to git whatever its conversion would make of the bytes: git compares no content then.
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "");
+        await File.WriteAllTextAsync(Path.Combine(root, "crlf.txt"), "one\r\ntwo\r\n");
+        await SameAsync(root, Forms[1]);
+    }
+
+    [GitLegFact]
+    public async Task A_stat_git_trusts_is_trusted_and_a_new_creation_time_is_read()
+    {
+        var root = await StampedAsync("status-stat");
+        var path = Path.Combine(root, "same.txt");
+        await File.WriteAllTextAsync(path, "abcd\n");
+        File.SetLastWriteTimeUtc(path, Earlier);
+        await GitAsync(root, "add", "same.txt");
+        await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-q", "-m", "same");
+
+        // Rewritten in place, its length and write time kept: git trusts the stat, so neither sees the edit.
+        await File.WriteAllTextAsync(path, "wxyz\n");
+        File.SetLastWriteTimeUtc(path, Earlier);
+        await SameAsync(root, Forms[1]);
+
+        // Replaced by a new file of that length and write time, as an editor saves: its creation time moved, so git reads the bytes.
+        var written = Path.Combine(root, "same.next");
+        await File.WriteAllTextAsync(written, "kept\n");
+        File.SetLastWriteTimeUtc(written, Earlier);
+        File.Move(written, path, overwrite: true);
+        await SameAsync(root, Forms[1]);
     }
 
     // The settings are read from every file git reads, the system's among them, whose path a stamp learns of the git in use.

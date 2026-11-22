@@ -26,6 +26,9 @@ namespace Daoris.Driver;
 internal static class GitLibraryStatus
 {
     private const string GitEntry = ".git";
+
+    // An index or an object store the process names elsewhere, which git reads and the library does not.
+    private static readonly string[] Moved = ["GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"];
     private static readonly string[] Converting = ["filter", "ident", "encoding"];
 
     private sealed record Shape(bool Nul, string? Untracked, bool Renames);
@@ -56,6 +59,7 @@ internal static class GitLibraryStatus
 
     private static GitLibraryAnswer? Answer(GitLibraryCall call, Shape shape)
     {
+        if (Moved.Any(name => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name)))) return null;
         if (GitLibraryLayout.Top(call) is null || call.Repository.Info.WorkingDirectory is not { } work) return null;
         var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(work));
         if (StatusSettings.Of(top, call) is not { } settings) return null;
@@ -161,6 +165,7 @@ internal static class GitLibraryStatus
         private readonly HashSet<string> _folders;
         private readonly Dictionary<string, string> _ids;
         private readonly Dictionary<string, bool> _converts = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, bool> _negates = new(StringComparer.Ordinal);
 
         public WorkingFiles(GitLibraryCall call, string top, IReadOnlyList<GitIndexEntry> entries, StatusSettings settings)
         {
@@ -173,8 +178,6 @@ internal static class GitLibraryStatus
             {
                 for (var slash = entry.Path.IndexOf('/'); slash > 0; slash = entry.Path.IndexOf('/', slash + 1)) _folders.Add(entry.Path[..slash]);
             }
-
-            if (settings.PersonalIgnore is { } rules) call.Repository.Ignore.AddTemporaryRules(rules);
         }
 
         /// <summary>The entry's second column where the tree changed it; null where it did not.</summary>
@@ -192,10 +195,15 @@ internal static class GitLibraryStatus
             if (_settings.FileMode && Executable(full) != (entry.Mode == GitIndexFile.Executable)) return 'M';
             var size = unchecked((uint)file.Length);
             if (size != entry.Size && entry.Size != 0) return 'M';
-            var (seconds, nanoseconds) = Unix(file.LastWriteTimeUtc);
-            var racy = entry.Seconds >= Unix(indexWritten).Seconds;
-            if (size == entry.Size && seconds == entry.Seconds && nanoseconds == entry.Nanoseconds && !racy) return null;
-            return Same(entry, full) ? null : 'M';
+            return Unchanged(entry, file, size, indexWritten) || Same(entry, full) ? null : 'M';
+        }
+
+        // Whether git trusts the entry's stat as it stands: on Windows its size, write time and creation time (git's ctime there) as
+        // recorded, and the index written after them. Elsewhere git also holds the inode and a ctime .NET cannot read, so the bytes decide.
+        private static bool Unchanged(GitIndexEntry entry, FileInfo file, uint size, DateTime indexWritten)
+        {
+            if (!OperatingSystem.IsWindows() || size != entry.Size || entry.Seconds >= Unix(indexWritten).Seconds) return false;
+            return Unix(file.LastWriteTimeUtc) == (entry.Seconds, entry.Nanoseconds) && Unix(file.CreationTimeUtc) == (entry.ChangedSeconds, entry.ChangedNanoseconds);
         }
 
         /// <summary>The untracked paths, each a file, or a folder git names whole (a nested repository; every untracked folder unless <paramref name="all"/>).</summary>
@@ -258,7 +266,45 @@ internal static class GitLibraryStatus
             return children;
         }
 
-        private bool Ignored(string path) => _call.Repository.Ignore.IsPathIgnored(path);
+        // The repository's rules first, as git ranks them; the personal file's decide only a path no repository rule matched. The
+        // library ranks a rule added to it above every file, so where it alone ignores a path a repository negation may re-include, git answers.
+        private bool Ignored(string path)
+        {
+            var ignore = _call.Repository.Ignore;
+            if (_settings.PersonalIgnore is not { } rules) return ignore.IsPathIgnored(path);
+            ignore.ResetAllTemporaryRules();
+            if (ignore.IsPathIgnored(path)) return true;
+            ignore.AddTemporaryRules(rules);
+            if (!ignore.IsPathIgnored(path)) return false;
+            return Negates(path) ? throw new StatusRefusal() : true;
+        }
+
+        // Whether a rule file git reads for the path above the personal one holds a negation: info/exclude and each folder's .gitignore to it.
+        private bool Negates(string path)
+        {
+            IEnumerable<string> folders = [.. path.Split('/')[..^1].Select((_, at) => string.Join('/', path.Split('/')[..(at + 1)]))];
+            foreach (var folder in folders.Prepend("").Prepend("/"))
+            {
+                if (!_negates.TryGetValue(folder, out var negates))
+                {
+                    var file = folder == "/" ? Path.Combine(_call.CommonDir, "info", "exclude") : Full(folder.Length == 0 ? ".gitignore" : $"{folder}/.gitignore");
+                    try
+                    {
+                        negates = File.Exists(file) && File.ReadLines(file).Any(line => line.TrimStart().StartsWith('!'));
+                    }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        throw new StatusRefusal();
+                    }
+
+                    _negates[folder] = negates;
+                }
+
+                if (negates) return true;
+            }
+
+            return false;
+        }
 
         private static bool Nested(string folder) => Path.Exists(Path.Combine(folder, GitEntry));
 
@@ -366,6 +412,7 @@ internal static class GitLibraryStatus
             if (Environment.GetEnvironmentVariable("GIT_CONFIG_PARAMETERS") is { Length: > 0 } parameters && Names.Any(name => parameters.Contains(name, StringComparison.OrdinalIgnoreCase))) return null;
             List<string> Of(string name) => [.. values.Where(each => each.Name == name).Select(each => each.Value)];
             if (Of("core.excludesFile").Count > 0 || Of("core.attributesFile").Count > 0 || Of("core.worktree").Count > 0) return null;
+            if (Of("core.checkStat").Count > 0 || Agreed(Of("core.trustCtime"), true) is not true) return null;
             if (Agreed(Of("core.fileMode"), true) is not { } fileMode || Agreed(Of("core.ignoreCase"), false) is not { } ignoreCase) return null;
             // The library reads the repository's own files alone: a case rule only another file holds would be read otherwise.
             if (ignoreCase != (GitLibraryLayout.IgnoreCase(call) ?? false)) return null;
@@ -397,7 +444,8 @@ internal static class GitLibraryStatus
 
         private static readonly string[] Names =
         [
-            "core.excludesFile", "core.attributesFile", "core.worktree", "core.fileMode", "core.ignoreCase", "status.showUntrackedFiles",
+            "core.excludesFile", "core.attributesFile", "core.worktree", "core.fileMode", "core.ignoreCase", "core.checkStat", "core.trustCtime",
+            "status.showUntrackedFiles",
             "status.renames", "diff.renames",
         ];
 
