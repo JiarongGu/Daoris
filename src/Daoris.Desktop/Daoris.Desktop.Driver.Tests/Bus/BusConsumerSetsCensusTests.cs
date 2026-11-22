@@ -18,9 +18,11 @@ public sealed class BusConsumerSetsCensusTests
 
     private const string Own = "keeps its own semaphore, fold or acknowledgement choice";
 
-    private static readonly Regex Consumer = new(@"(?s)\bclass\s+\w+[^{;]*(\bIBusConsumer\b|\bBusFlowConsumer<\w+>).*\bTask\.WhenAll\s*\(");
+    private const string Declares = @"(\bclass\s+\w+[^{;]*|\binterface\s+)(\bIBusConsumer\b|\bBusFlowConsumer<)";
 
-    private static readonly Regex Hand = new(@"(?s)(\bIBusConsumer\b|\bBusFlowConsumer<\w+>).*(\bSemaphoreSlim\b|\bFolds?\s*\(|\bFolded\s*\(|\bBusHandled\.(Ended|Judged)\b)");
+    private static readonly Regex Consumer = new(@"(?s)\bclass\s+\w+[^{;]*(\bIBusConsumer\b|\bBusFlowConsumer<).*\bTask\.WhenAll\s*\(");
+
+    private static readonly Regex Hand = new(@"(?s)" + Declares + @".*(\bSemaphoreSlim\b|\bFolds?\s*\(|\bFolded\s*\(|\bBusHandled\.(Ended|Judged)\b|\bnew\s+BusHandled\b|\block\s*\(|\bLock\b|\bChannel\.Create|\bTaskCompletionSource\b|\bHandleAsync\s*\(\s*IReadOnlyList<BusEnvelope>)");
 
     private static readonly Dictionary<string, string> FanOuts = new(StringComparer.Ordinal)
     {
@@ -70,13 +72,20 @@ public sealed class BusConsumerSetsCensusTests
     }
 
     [Theory]
-    [InlineData("private readonly SemaphoreSlim _round = new(1, 1);")]
-    [InlineData("public bool Folds(string kind) => true;")]
-    [InlineData("public void Folded(BusEnvelope away) { }")]
-    [InlineData("return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;")]
-    public void A_planted_consumer_with_its_own_handling_turns_the_census_red_naming_it(string own)
+    [InlineData("BusFlowConsumer<string>", "private readonly SemaphoreSlim _round = new(1, 1);")]
+    [InlineData("BusFlowConsumer<IReadOnlyList<string>>", "private readonly SemaphoreSlim _round = new(1, 1);")]
+    [InlineData("BusFlowConsumer<(string, int)>", "public bool Folds(string kind) => true;")]
+    [InlineData("BusFlowConsumer<string>", "public void Folded(BusEnvelope away) { }")]
+    [InlineData("BusFlowConsumer<string>", "return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;")]
+    [InlineData("IBusConsumer", "return new BusHandled(true);")]
+    [InlineData("BusFlowConsumer<string>", "private readonly object _gate = new(); void Go() { lock (_gate) { } }")]
+    [InlineData("BusFlowConsumer<string>", "private readonly Lock _gate = new();")]
+    [InlineData("IBusConsumer", "private readonly Channel<int> _in = Channel.CreateUnbounded<int>();")]
+    [InlineData("IBusConsumer", "private readonly TaskCompletionSource _gate = new();")]
+    [InlineData("BusFlowConsumer<string>", "Task<BusHandled> IBusConsumer.HandleAsync(IReadOnlyList<BusEnvelope> row, CancellationToken ct) => null!;")]
+    public void A_planted_consumer_with_its_own_handling_turns_the_census_red_naming_it(string basis, string own)
     {
-        var planted = SourceCensus.Driver(typeof(BusConsumerSetsCensusTests)).Append(("Planted.cs", $"internal sealed class PlantedConsumer : BusFlowConsumer<string>\n{{\n    {own}\n}}\n"));
+        var planted = SourceCensus.Driver(typeof(BusConsumerSetsCensusTests)).Append(("Planted.cs", $"internal sealed class PlantedConsumer : {basis}\n{{\n    {own}\n}}\n"));
 
         Assert.Equal(["Planted.cs keeps its own semaphore, fold or acknowledgement choice and is not listed"],
             SourceCensus.Problems(FoundOwn(planted), SourceCensus.Listed(typeof(BusConsumerSetsCensusTests), Owned.Keys), Own));

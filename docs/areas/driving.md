@@ -367,8 +367,10 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     group) and its handler, which gets one key's merged work and answers moved, not moved (with why) or failed. The layer keeps one
     pass on a key at a time, in order, the facts that wait on it one piece of work for the next pass, the bounds in one lock order
     (key, group, overall), and turns the answer into the acknowledgement alone: moved ends the entries' obligations where their
-    fact settles, not moved acknowledges them as handled with their timers armed, failed parks the entry that carried the work with
-    backoff and its give-up (the keys it moved are not worked again), no other key's. The opinion's gate (keyed by the owed opinion,
+    fact settles, not moved acknowledges them as handled with their timers armed, failed acknowledges them as handled too and the
+    layer tries that key alone again with backoff and its give-up, ending what the key held once it moves, so no lane, other key or
+    other fact waits on it (a restart's resume and the armed timers remain the net). A fact waiting on a key holds no queue slot, so
+    the facts of one key merge into the pass after the one running and never stall another key's. The opinion's gate (keyed by the owed opinion,
     grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
     run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.
     What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer

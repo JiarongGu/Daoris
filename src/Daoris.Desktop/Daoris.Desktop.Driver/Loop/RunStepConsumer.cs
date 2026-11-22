@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
-/// <summary>What a run's pass is asked at its facts: the settle boxes (by session, null for every box) to take before it.</summary>
 internal sealed record StepWork(IReadOnlyList<string?> Boxes);
 
 /// <summary>
@@ -31,7 +30,6 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     /// <summary>Its durable name in the queue.</summary>
     public const string Name = "run-step";
 
-    /// <summary>Its bounds: the queue's four runs at once, no group.</summary>
     public static readonly BusFlowBounds Bounds = new(KeysAtOnce: 4);
 
     /// <summary>The longest a pass is waited for at a fact; past it the fact is tried again after a backoff.</summary>
@@ -81,7 +79,6 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     /// <summary>A node begun is only compared; every ending fact's job moves when its run's pass judged the run.</summary>
     protected override bool Settles(BusEnvelope entry) => entry.Kind != BusTypes.NodeBegun.Kind;
 
-    /// <summary>A check's facts name their run by its bare id; every other fact names its unit.</summary>
     private static string UnitOf(BusEnvelope entry) => entry.Kind.StartsWith("check.", StringComparison.Ordinal) ? RunUnits.IdOf(entry.Subject) : entry.Subject;
 
     protected override void Observe(BusEnvelope entry)
@@ -171,7 +168,7 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
     /// <summary>One ask in flight: the nodes begun meanwhile, their lags kept until the ask's outcome says whose they are.</summary>
     private sealed class Asking(string unit, DateTimeOffset start)
     {
-        private List<long>? _lags = [];
+        private System.Collections.Immutable.ImmutableList<long>? _lags = System.Collections.Immutable.ImmutableList<long>.Empty;
 
         public string Unit { get; } = unit;
 
@@ -180,22 +177,14 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
         /// <summary>Keeps a lag; false where the ask has ended and its lags were taken.</summary>
         public bool Add(long lag)
         {
-            lock (this)
+            while (true)
             {
-                if (_lags is null) return false;
-                _lags.Add(lag);
-                return true;
+                var seen = Volatile.Read(ref _lags);
+                if (seen is null) return false;
+                if (ReferenceEquals(Interlocked.CompareExchange(ref _lags, seen.Add(lag), seen), seen)) return true;
             }
         }
 
-        public IReadOnlyList<long> Take()
-        {
-            lock (this)
-            {
-                var taken = _lags ?? [];
-                _lags = null;
-                return taken;
-            }
-        }
+        public IReadOnlyList<long> Take() => Interlocked.Exchange(ref _lags, null) ?? System.Collections.Immutable.ImmutableList<long>.Empty;
     }
 }

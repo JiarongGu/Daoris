@@ -18,6 +18,8 @@ public sealed class BusFlowTests : IDisposable
 
     private static TimeProvider Clock => OpinionGateMovesTests.Machine;
 
+    private static readonly BusQueueOptions Backoff = new() { Clock = Clock, RetryFirst = TimeSpan.FromMilliseconds(300), RetryMost = TimeSpan.FromMilliseconds(300) };
+
     private static Task Wait(int milliseconds) => Task.Delay(TimeSpan.FromMilliseconds(milliseconds), Clock);
 
     private static readonly BusQueueOptions Quick = new() { Clock = Clock, RetryFirst = TimeSpan.FromMilliseconds(20), RetryMost = TimeSpan.FromMilliseconds(60) };
@@ -117,8 +119,8 @@ public sealed class BusFlowTests : IDisposable
 
         bus.Append(Begun("u-0", "k"));
         await holding.Task.WaitAsync(Soon);
-        // The queue hands a consumer four entries at once, one of them held: the three others wait on the key together.
-        for (var each = 1; each <= 3; each++) bus.Append(Begun($"u-{each}", "k"));
+        // A fact waiting on a key holds no queue slot: every one that waits is merged into the next pass.
+        for (var each = 1; each <= 5; each++) bus.Append(Begun($"u-{each}", "k"));
         await bus.FlushAsync();
         await Wait(100);
         release.SetResult();
@@ -126,8 +128,8 @@ public sealed class BusFlowTests : IDisposable
         await Poll.Until(() => passes.Count == 2, () => "passes: " + string.Join(" | ", passes), Soon);
         await queue.QuietAsync(Soon, CancellationToken.None);
         Assert.Equal(0, Volatile.Read(ref overlap));
-        // Three facts that waited cost one pass that reads them all, their names merged, none lost.
-        Assert.Equal(["u-0", "u-1+u-2+u-3"], passes);
+        // Five facts that waited cost one pass that reads them all, their names merged, none lost.
+        Assert.Equal(["u-0", "u-1+u-2+u-3+u-4+u-5"], passes);
         await Unarmed(bus);
     }
 
@@ -172,22 +174,24 @@ public sealed class BusFlowTests : IDisposable
     }
 
     [Fact]
-    public async Task A_failure_parks_the_entry_that_carried_the_key_and_costs_no_other_key_its_entry_or_its_move()
+    public async Task A_failure_costs_its_key_alone_even_on_the_same_subject_and_a_later_fact_naming_a_moved_key_is_worked()
     {
         var fail = 1;
         var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(key == "bad" && Interlocked.Exchange(ref fail, 0) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved));
         await using var bus = Open();
-        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Backoff);
 
-        // One fact names a key that fails and one that moves; another fact, on its own subject, names another.
+        // One fact names a key that fails and one that moves.
         bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["bad", "good"], [])));
-        bus.Append(Begun("u-1", "other"));
-        await Poll.Until(() => probe.Moves.Count(move => move.Key == "other") == 1, () => "the other fact was held by the failure", Soon);
-        // The failed key is tried again on the entry's backoff, and the key that moved is not worked a second time.
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "good") == 1, () => "the healthy key did not move", Soon);
+        // Facts on the very subject, while the failed key waits its backoff, are worked at once: one names a moved key again, one another.
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["good", "next"], [])));
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "good") == 2 && probe.Moves.Any(move => move.Key == "next"), () => "the lane was held by the failure: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
+        Assert.Equal(1, probe.Moves.Count(move => move.Key == "bad"));
+        // The failed key is tried again alone, and what it held ends once it moves.
         await Poll.Until(() => probe.Moves.Count(move => move.Key == "bad") == 2, () => "the failed key was not tried again", Soon);
-        await queue.QuietAsync(Soon, CancellationToken.None);
-        Assert.Equal(1, probe.Moves.Count(move => move.Key == "good"));
         await Unarmed(bus);
+        Assert.Equal(2, probe.Moves.Count(move => move.Key == "good"));
     }
 
     [Fact]
