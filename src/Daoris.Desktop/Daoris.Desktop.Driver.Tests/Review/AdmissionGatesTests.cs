@@ -135,7 +135,7 @@ public sealed class AdmissionGatesTests
         var docs = AdmissionGates.Of(gates, text, ["docs/README.md"]);
 
         Assert.Empty(web.Missing);
-        Assert.Equal(["universal", "cli", "code-map", "test-map", "web-types", "reached"], web.Gates.Select(gate => gate.Name));
+        Assert.Equal(["universal", "cli", "code-map", "test-map", "web-types", "web-rules", "reached"], web.Gates.Select(gate => gate.Name));
         Assert.Equal(["universal", "cli", "code-map", "test-map"], docs.Gates.Select(gate => gate.Name));
     }
 }
