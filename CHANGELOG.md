@@ -8,6 +8,10 @@ with the version and date at release.
 - Marking a quest done yourself, or any session marking it, now ends its workflow's run as a stop does: no step starts after it, a
   check under way is told to stop, the sessions waiting on the run end with it, and its tree and branch are kept. The run's end says
   which commits its branch holds that the line does not, so what was left is named and never landed by a run nobody owns.
+- A run's check now holds its work to the gates a repository's merges are held to. A repository lists them once under `admission` in
+  `daoris.gates.json` (the gates every change passes, and the checks a change's paths reach); the merge tool and the check read that one
+  list, so a change the merge would have refused for its typecheck, its design checks or its census is held at the check, with the
+  failing lines, and not found after it lands.
 - The first step of the Daoris bus: the driver holding the home keeps a log of each second opinion asked, given, answered and
   delivered, and each check started and settled, with no reader yet, beside today's records and never failing them. `daoris bus
   stats` reads what it measures by the day: events by kind, how long each took, the log's writes, the rows' bytes beside the pages

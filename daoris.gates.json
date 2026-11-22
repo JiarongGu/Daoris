@@ -20,6 +20,34 @@
 
   "reached": { "run": "node tools/reached-checks.mjs --tier {tier} --base {base}", "clock": true, "outcome": "reached-classes: " },
 
+  "admission": {
+    "_why": "The line's admission (LANDGATES1): the gates every change passes before it moves the line, kept once. The merge tool selects its blocking gates from it (tools/merge/reach.ts) and the driver's check step, which judges a run's work as merged before its landing, runs the same gates (AdmissionGates); neither keeps a list of its own. always runs at every change; suites too, as the merge's one non-blocking suite; byPaths runs a gate where a changed path matches one of its globs (the lane table's grammar) or one of verifyBudget.fullRunReasons.widePaths, which change how every gate runs. Every name is a gate declared below.",
+    "always": ["universal", "code-map", "test-map"],
+    "suites": ["cli"],
+    "byPaths": [
+      {
+        "gate": "web-types",
+        "paths": ["src/Daoris.Web/src/**", "src/Daoris.Web/scripts/**", "src/Daoris.Web/.storybook/**", "src/Daoris.Web/tsconfig.json", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/package.json", "src/Daoris.Web/package-lock.json"],
+        "why": "the web's typecheck: the page's sources and the scripts its tests import (their typings declare what they export), what configures its compiler, or what changes how every gate runs (MERGETSC1, LANDGATES1)"
+      },
+      {
+        "gate": "web-rules",
+        "paths": ["src/Daoris.Web/src/**", "src/Daoris.Web/scripts/**", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/package.json", "src/Daoris.Web/package-lock.json"],
+        "why": "the web's design and structure checks: the page's sources, what configures its tests, or what changes how every gate runs (MERGEWEBRULES1)"
+      },
+      {
+        "gate": "censuses",
+        "paths": ["src/Daoris.Desktop/Daoris.Desktop.{Driver,Driver.Tests,Modules,Modules.Tests,App}/**/*.cs", "src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json"],
+        "why": "the desktop's censuses, every test class that reads the sources by text (`--filter Category=Census`, REVIEW2 T6): a source they walk, or a table they hold it to; the CI beside ran them hours after a merge"
+      },
+      {
+        "gate": "reached",
+        "paths": ["src/**", "tools/**", "examples/**", "canon/**", "daoris.gates.json", "daoris.lanes.json", "package.json", "package-lock.json"],
+        "why": "the test units the merge's paths reach in the suites a merge can run in minutes (the driver's, the modules', the service's, the page's unit tests and the tool-tests, by the census of test units, bounded per suite, DEVCYCLE1): a list or a text a test holds the change to, which the CI beside found hours after it landed"
+      }
+    ]
+  },
+
   "verifyBudget": {
     "_why": "This workspace's own rule (D349, VERIFY10), not a product rule and not canon: one task's verification (a builder's checks, a run's check, a merge's gates for one branch) takes under budgetMinutes of wall time, scoped to what its paths reach, the heavy tier after the landing. A full run needs a reason the tools check against the change: a path of widePaths (the gates and the test tools, the dependency files and lockfiles, the build files, the shared contracts, and what is tracked, its line endings and the file and git helpers every rehearsal imports: the lane table's every-gate rule reads this list, its one source, apart from the budget, and fails at load where it is missing), a reach of reachShare or more of what the run could leave out (the gates the lane table can skip at a merge, not those every merge runs or no rule names; the census's classes in the reached run), or a run whose kind is one (the run after a landing, a release). A verification past the budget is said in its summary with where its time went and filed in overruns, which the steward reads.",
     "budgetMinutes": 10,

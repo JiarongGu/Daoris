@@ -1,5 +1,7 @@
 /** The gates the merge in place runs, among those of the plan. */
 import { mergeChanges } from './changes.ts';
+import { ADMISSION } from './reach.ts';
+import { readAdmissionOr } from './admission.ts';
 import { readLanes } from './lanes.ts';
 import type { Planned } from './plan.ts';
 import { selectGates } from './reach.ts';
@@ -16,7 +18,7 @@ export type Batch = { branches: string[]; at: number; full?: boolean; gated?: bo
 export function chooseGates(root: string, state: Batch, plan: readonly Planned[]): { gates: Selection[]; chosen: Planned[]; skipped: number } {
   const branch = state.branches[state.at] as string;
   const last = state.at === state.branches.length - 1;
-  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], full: state.full === true, gated: state.gated === true });
+  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], admission: readAdmissionOr(root, ADMISSION), full: state.full === true, gated: state.gated === true });
   const reached = { ...(state.reached ?? {}), [branch]: selection.gates.filter((entry) => entry.run).map((entry) => entry.gate.name) };
   state.reached = reached;
   const waiting = new Set<string>();
