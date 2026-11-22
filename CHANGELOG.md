@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Marking a quest done yourself, or any session marking it, now ends its workflow's run as a stop does: no step starts after it, a
+  check under way is told to stop, the sessions waiting on the run end with it, and its tree and branch are kept. The run's end says
+  which commits its branch holds that the line does not, so what was left is named and never landed by a run nobody owns.
 - The first step of the Daoris bus: the driver holding the home keeps a log of each second opinion asked, given, answered and
   delivered, and each check started and settled, with no reader yet, beside today's records and never failing them. `daoris bus
   stats` reads what it measures by the day: events by kind, how long each took, the log's writes, the rows' bytes beside the pages

@@ -48,8 +48,9 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// </summary>
     public Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Content { get; init; } = (_, _, _) => Task.FromResult<HoldContent?>(null);
 
-    /// <summary>Whether a checkout's line (root, repository, workspace) holds a commit whole (<see cref="ClosedRunEnds"/>); null where it cannot say.</summary>
-    public Func<string, string, string, string, CancellationToken, Task<bool?>> OnLine { get; init; } = (_, _, _, _, _) => Task.FromResult<bool?>(null);
+    /// <summary>The commits of a tip a checkout's line (root, repository, workspace) lacks, none where it holds it whole (<see cref="ClosedRunEnds"/>); null where it cannot say.</summary>
+    public Func<string, string, string, string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> Lacks { get; init; } =
+        (_, _, _, _, _) => Task.FromResult<IReadOnlyList<LandingCommit>?>(null);
 
     /// <summary>
     /// The named workflow's version a quest unit's run is bound to (the decoder's read for a run, through <see cref="WorkflowRunNodes.VersionOf"/>),

@@ -17,7 +17,10 @@ public sealed class ClosedRunEndTests : NodeRunFixture
     private readonly HashSet<string> _onLine = new(StringComparer.Ordinal);
 
     private Task<NodeRuntimePass> PassAsync(NodeRuntime runtime) =>
-        runtime.PassAsync(RunLook() with { OnLine = (_, _, _, tip, _) => Task.FromResult<bool?>(_onLine.Contains(tip)) }, CancellationToken.None);
+        runtime.PassAsync(RunLook() with
+        {
+            Lacks = (_, _, _, tip, _) => Task.FromResult<IReadOnlyList<LandingCommit>?>(_onLine.Contains(tip) ? [] : [new LandingCommit(tip, "The work")]),
+        }, CancellationToken.None);
 
     /// <summary>The landing a run waits on, active at <paramref name="tip"/> on <paramref name="branch"/>'s unit: what an old landing left.</summary>
     private void LandingActiveAt(string tip, string branch = "unit-b1") => Files.Write(new NodeRecord(RunUnit)

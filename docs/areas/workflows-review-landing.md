@@ -231,7 +231,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     pressing `daoris workflow apply <id> drafts/<id>.json --base <version>`, which the person confirms on a card drawing the graph
     and its changes. It proposes no workflow and never chooses or runs one. (D223, D261)
 14. The shipped defaults hold no `quest.close`: a run's quest is bound to its run, its agent's done is a submission `claimed` and
-    `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). That end ends every session of this machine
+    `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). A Done anyone else writes on a quest bound to
+    its run (`run:<run>`), the person's `quest done` or any session's, while the run holds no end and its chain names no step still to come here,
+    ends the run as a stop does (`QuestDoneRuns`): at its next look, before its rounds, Daoris stops every live or failed step, the attempt in
+    flight on each stood down and its runner told to stop (a check's executor too), so no step starts after the done; the run ends `stopped`
+    by Daoris at the step it stood at (`quest-done`), its waiting sessions with it and a session still in its turn once it comes to wait; its
+    tree and branch are kept as the clean-up keeps work the line lacks, and the end's line names the commits its branch holds that the line does
+    not (the look's `Lacks`, read at the pass's tip), so what was left is said and never landed by a run nobody owns. A quest bound to no run
+    closes by its agent's done and its run goes on. That end ends every session of this machine
     awaiting a step whose note names the run (`RunWaiters`), found again at each write, the owed one asked again included; a run already at its end that a session of this machine still waits on is governed at each look while one waits, the first after a start included, for its end alone: nothing else on it is judged, and the same end ends that session again (`RunReEnds`), whatever answered its first. A submission held for a departure
     or its evidence takes the person's one accept while its quest stays Taken (`daoris quest accept`, *Accept the departure* in What needs
     you), and `quest.holds` reaches on it; `quest.holds` reads a departure as the yes's hold (its `yes` option), never its evidence's
@@ -374,7 +381,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`LandingSteps`), whose decision keeps the epoch it read and names it at its release; an attempt no tenure holds yet refuses nothing;
     and where the tenures do not read only the person's word is taken and every hold act is refused (`tenure-unread`, said in the driver's
     log). A marked approver is held by the owner role from its start (`marked`): no Take, Pass or Give back, no other word. A run ends when its graph's end settles or
-    no node can move, or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
+    no node can move, when its quest bound to it was closed Done outside it and Daoris stopped its steps (`quest-done`, rule 14), or when its quest closed and every standing step reads only the quest (its holds, on a done nothing reads any
     more: `quest-closed`, the run stopped by Daoris at that step and its waiting sessions ended `stopped` with it, none reopened), or watches a
     branch the line holds whole (`on-line`) or that is gone (`branch-gone`), never while a step after a reached landing stands
     (a monitor, a plugin's release), since that reads the landing, which a tidied branch and the line's holding the commit leave readable;

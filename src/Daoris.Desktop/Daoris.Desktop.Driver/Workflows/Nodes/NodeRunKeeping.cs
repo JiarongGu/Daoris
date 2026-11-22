@@ -122,15 +122,43 @@ internal sealed class NodeRunKeeping(
 
     private static bool HoldsEnd(NodeRecord record, QuestView newest) => record.Ended?.Quest == newest.Id;
 
+    /// <summary>Every standing step of a run another closed Done stopped before its rounds, and whoever runs each attempt told to stop (<see cref="QuestDoneRuns"/>).</summary>
+    public async Task StopDoneAsync(GovernedUnit governed, RunScope scope, List<WorkPerformed> done, List<string> said, CancellationToken ct)
+    {
+        var unit = governed.Unit.Id;
+        if (!holdsLease() || records.Read(unit) is not { } record || !QuestDoneRuns.Applies(governed, scope, record)) return;
+        var promoted = doors().Door<IIntegrationDoor>() is { } door && governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
+            ? await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false)
+            : null;
+        var now = clock();
+        var (refused, stopped) = records.Edit<IReadOnlyList<string>>(unit, current =>
+        {
+            if (!QuestDoneRuns.Applies(governed, scope, current)) return (null, []);
+            var (next, names) = QuestDoneRuns.Stopped(governed, current, now, promoted);
+            return (names.Count == 0 ? null : next, names);
+        });
+        if (refused is not null || stopped is not { Count: > 0 }) return;
+        performer.StandDown(unit, stopped);
+        done.AddRange(stopped.Select(node => new WorkPerformed(unit, node, PerformedWhat.Applied, NodeStates.Stopped)));
+        said.Add($"work  {unit}: #{scope.Quest?.Records.Quest?.Id} is Done though its run had not ended, so Daoris stopped its steps: {string.Join(", ", stopped)}.");
+    }
+
     /// <summary>
     /// A run's end, judged once its pass's rounds are kept: its newest quest here names no step still to come here, and no node of its graph
-    /// can move again, with no attempt unsettled; or its quest closed and none of the steps still standing can move again
-    /// (<see cref="ClosedRunEnds"/>), its steps kept as they stand. Kept on its record with how it came out (<see cref="RunOutcomes"/>), said
-    /// once; the run then arms nothing until its chain comes back here.
+    /// can move again, with no attempt unsettled; or its quest another closed Done, its steps stopped (<see cref="QuestDoneRuns"/>); or its quest
+    /// closed and none of its standing steps can move again (<see cref="ClosedRunEnds"/>), its steps kept as they stand. Kept on its record with
+    /// how it came out (<see cref="RunOutcomes"/>), said once; the run then arms nothing until its chain comes back here.
     /// </summary>
-    /// <param name="onLine">Whether the line holds a commit whole, asked only of a closed quest's run with steps standing.</param>
-    public async Task EndAsync(GovernedUnit governed, RunScope scope, List<string> said, Func<string, CancellationToken, Task<bool?>> onLine, CancellationToken ct)
+    /// <param name="lacks">The commits of a tip the line lacks (<see cref="NodeRuntimeLook.Lacks"/>), asked of a closed quest's run alone.</param>
+    /// <param name="tip">The run's branch's tip the pass read; null where it read none.</param>
+    public async Task EndAsync(
+        GovernedUnit governed, RunScope scope, List<string> said, Func<string, string, string, string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks,
+        string? tip, CancellationToken ct)
     {
+        Task<IReadOnlyList<LandingCommit>?> Lacks(string commit, CancellationToken token) =>
+            lacks(scope.Root, scope.Run.Binding.Repository, scope.Run.Binding.Workspace, commit, token);
+        async Task<bool?> OnLine(string commit, CancellationToken token) => await Lacks(commit, token).ConfigureAwait(false) is { } lacked ? lacked.Count == 0 : null;
+
         var unit = governed.Unit.Id;
         if (AskRunKey.Is(scope.Run.Binding))
         {
@@ -151,6 +179,12 @@ internal sealed class NodeRunKeeping(
 
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
+        if (QuestDoneRuns.Applies(governed, scope, record) && QuestDoneRuns.Ends(governed, record))
+        {
+            await EndDoneAsync(governed, scope, newest, record, said, Lacks, tip, ct).ConfigureAwait(false);
+            return;
+        }
+
         string? why = null;
         IReadOnlySet<string> held = new HashSet<string>();
         var stands = ClosedRunEnds.BranchStands(scope);
@@ -160,7 +194,7 @@ internal sealed class NodeRunKeeping(
         {
             if (ClosedRunEnds.Closed(newest.Status) && !Waits(governed.Graph, record))
             {
-                held = await ClosedRunEnds.OnLineAsync(ClosedRunEnds.Bound(governed.Graph, record), onLine, ct).ConfigureAwait(false);
+                held = await ClosedRunEnds.OnLineAsync(ClosedRunEnds.Bound(governed.Graph, record), OnLine, ct).ConfigureAwait(false);
                 why = ClosedRunEnds.Why(governed.Graph, record, false, stands, held);
             }
 
@@ -194,6 +228,28 @@ internal sealed class NodeRunKeeping(
                   _ => "no branch of it stands for its standing steps to read",
               })
               + ", so they stay as they are; it is judged again once its chain comes back here.");
+    }
+
+    /// <summary>The end of a run another closed Done, once no step stands: its sessions ended with it, its line naming what its branch leaves the line.</summary>
+    private async Task EndDoneAsync(
+        GovernedUnit governed, RunScope scope, QuestView newest, NodeRecord record, List<string> said,
+        Func<string, CancellationToken, Task<IReadOnlyList<LandingCommit>?>> lacks, string? tip, CancellationToken ct)
+    {
+        var unit = governed.Unit.Id;
+        var branch = scope.Branch?.Records.Branch?.Branch;
+        var left = branch is not null && tip is not null ? await lacks(tip, ct).ConfigureAwait(false) : null;
+        var at = clock();
+        RunEnd? ended = null;
+        var (refused, kept) = records.Edit<bool>(unit, current => QuestDoneRuns.Applies(governed, scope, current) && QuestDoneRuns.Ends(governed, current)
+            ? (current with { Ended = ended = QuestDoneRuns.End(current, newest.Id, at) }, true)
+            : (null, false));
+        if (refused is not null || kept != true || ended is null) return;
+        graphRuns.Ended(scope.Run.Run, ended);
+        await RunSessionEnds.FinishAsync(Ends, scope.Run.Run, ended, scope.Quests, RunEndQuests.Passed(governed.Graph, record), said, ct)
+            .ConfigureAwait(false);
+        said.Add($"work  {unit}: its run ended at #{newest.Id}, {ended.Outcome}{(ended.Node is { } step ? $" at `{step}`" : "")}: its quest was closed Done "
+                 + $"outside its run, so Daoris stopped the run and the sessions waiting on it; {QuestDoneRuns.Left(branch, left)}. Its tree and branch "
+                 + "are kept, and nothing of it lands by this run.");
     }
 
     /// <summary>The run named on the record of each branch its quests produced, so the tree has an owner that ends it (<see cref="TreeReleases"/>).</summary>
