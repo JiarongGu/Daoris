@@ -42,7 +42,7 @@ public sealed class AgentCapabilitiesTests
         Assert.Equal(SheetRow.Measured, steering.Source);
         Assert.Equal(SheetRow.Yes, steering.Value);
         Assert.Equal("docs/2026-10-03-steer-evidence.md", steering.Evidence);
-        Assert.Contains("adapter 0.84.0", steering.Applies, StringComparison.Ordinal);
+        Assert.Contains("adapter 0.109.1", steering.Applies, StringComparison.Ordinal);
 
         // The native door of the same agent measured nothing: silence is never support.
         var native = SheetOf("claude-code").Row(SheetCapability.Steering);
@@ -100,8 +100,19 @@ public sealed class AgentCapabilitiesTests
             Assert.Equal(KnownBy.Measured, measured.By);
             Assert.True(measured.Required);
             Assert.True(File.Exists(Path.Combine(GitSeed.RepoRoot(), measured.Evidence)), $"{measured.Evidence} is not in the repository");
-            Assert.Equal(new MeasuredAt("2.1.284", "0.84.0"), measured.At);
+            Assert.Equal(new MeasuredAt("2.1.330", "0.109.1"), measured.At);
         }
+    }
+
+    [Fact]
+    public void Codex_acp_s_words_at_the_next_step_are_measured_at_its_pinned_adapter_and_its_own_codex()
+    {
+        var words = Registry.Door("codex-acp").Abilities.WordsAtNextStep;
+        Assert.Equal(KnownBy.Measured, words.By);
+        Assert.True(words.Required);
+        Assert.True(File.Exists(Path.Combine(GitSeed.RepoRoot(), words.Evidence)), $"{words.Evidence} is not in the repository");
+        Assert.Equal(new MeasuredAt("0.171.0", "2.9.0"), words.At);
+        Assert.False(Registry.Door("codex-acp").Abilities.Steering.IsKnown);
     }
 
     [Fact]
@@ -129,14 +140,11 @@ public sealed class AgentCapabilitiesTests
     }
 
     [Fact]
-    public void Codex_and_dsh_state_the_next_step_words_as_unmeasured_where_the_transport_gives_them()
+    public void Dsh_states_the_next_step_words_as_unmeasured_where_the_transport_gives_them()
     {
-        foreach (var id in new[] { "codex-acp", "dsh" })
-        {
-            var stated = Registry.Door(id).Abilities.WordsAtNextStep;
-            Assert.Equal(KnownBy.Declared, stated.By);
-            Assert.Contains("not measured", stated.Evidence, StringComparison.Ordinal);
-        }
+        var stated = Registry.Door("dsh").Abilities.WordsAtNextStep;
+        Assert.Equal(KnownBy.Declared, stated.By);
+        Assert.Contains("not measured", stated.Evidence, StringComparison.Ordinal);
     }
 
     /// <summary>

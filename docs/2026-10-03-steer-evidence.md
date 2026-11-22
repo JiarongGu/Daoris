@@ -189,3 +189,26 @@ wire's `interrupt` control, `codex-acp`'s `session/cancel`) stops the turn and m
 (`TurnCutIn`): what a `now` line does on the native wire, through the turn accounting the door already has. Folding a word
 into the native turn at its next step needs to know where it landed (the replay echo), and steering Codex needs
 `startedNewTurn` read as a turn nobody asked for; both are MSG1i's and MSG1h's.
+
+## 9. ACPUPGRADE1: both adapters measured again at their new pins (2026-11-23)
+
+**How it ran.** Keylessly, as §8: each adapter as the machine's toolchain pins it, a scratch home and folder, the stub model on
+loopback (`tools/fake-model.mjs`'s two wires) with a placeholder key; Claude Code's adapter against Messages, `codex-acp`
+against Responses with a custom provider. One session per adapter: `initialize`, `session/new`, the full-access posture, then in
+order (Claude's adapter under both the `default` and the `bypassPermissions` posture, with the same outcome in each; `codex-acp` under `agent-full-access`) a turn whose model call is a tool that sleeps eight seconds with `_session/steering` sent two seconds into the tool, a
+second `session/prompt` sent into a running tool, `_session/steering` with no turn, `session/cancel` mid-tool, and a model
+switch by `session/set_config_option`. Each ran at the version it replaced and at the new pin, in the same order.
+
+| Adapter | Its program | What it does |
+|---|---|---|
+| `claude-agent-acp` **0.109.1** (was 0.106.0), SDK 0.3.330 | Claude Code **2.1.330** | `initialize`: `_meta.steering.supported: true`, `promptQueueing: true`, `auth.status`, and `mcpCapabilities.acp: true` (new). Steering mid-tool answered `injected`; the tool was aborted (`<error>Command was aborted before completion</error>`), and the next model call carried the word, in the turn's one `end_turn`. A second `session/prompt` into a running tool folded at the next step: both prompts answered `end_turn`, the second's word in a later model call. Steering with no turn answered `startedNewTurn`. `session/cancel` ended the turn `cancelled`. A model switch was accepted. |
+| `codex-acp` **2.9.0** (was 2.6.0) | Codex **0.171.0** (was 0.166.0) | `initialize`: `_meta.steering.supported: true`, no `promptQueueing`, `auth.status` and `mcpCapabilities.acp: true` (new), `sessionCapabilities.subagents` gone. Steering mid-tool answered `injected`; the tool ran to its end, and the next model call carried the word, in the turn's one `end_turn`. A second `session/prompt` into a running tool: both answered `end_turn`, the second's word in a later call. Steering with no turn answered `startedNewTurn`. `session/cancel` ended the turn `cancelled`. A model switch was accepted. |
+
+**What differs from the versions they replace.** For both, only what the notes said: the config options' order (Claude's: model,
+effort, fast, ultracode, mode, agent, where `mode` was first) and Fast's category (`speed`, was `model_config`); Codex's
+options likewise put `model` first. Steering, words at the next step, the second prompt's fold and the cancel behave as at the
+earlier versions, so `WordsAtNextStep` and `Steering` of `claude-code-acp` are measured again at agent 2.1.330, adapter 0.109.1,
+and `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0 (it was declared from the transport's default).
+`Steering` of `codex-acp` stays unknown: Daoris still reads no `startedNewTurn` as a turn nobody asked for (MSG1h).
+
+**Daoris's own door at the new pins, from the session records on the install** (`data/sessions/*.frames.jsonl` since 2026-11-22 20:30 UTC, counted by frame): ten sessions of `claude-code-acp` 0.109.1 on real accounts, 66 `session/prompt`, 61 answered `end_turn`, 43 `session/resume`, 76 `session/set_config_option`, no error answer; four sessions of `codex-acp` 2.9.0 (Codex 0.171.0), four prompts, four `end_turn`, each closed, no error answer. No steering frame (`_session/steering`) and no `codex-acp` resume appears in them: those two are read from the probes above, not from Daoris's door.
