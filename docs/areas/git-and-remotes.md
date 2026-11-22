@@ -265,6 +265,16 @@ id and a plain path, is answered from the object store by `GitLibraryObjects` th
 `ReadBytesAsync` asks it before any start): the stored raw bytes with git's header, cut at the asker's limit, `QUESTION missing` where the tree
 lacks the path (`GitLibraryObjectsTests`). A tree, a commit, a tag, a missing object and a name that is no full id are one git start.
 
+A tree's `status --porcelain` (v1, with or without `-z`; `--untracked-files` all, normal or no; `--no-renames`; `--ignore-submodules=none`)
+is answered by `GitLibraryStatus` with no git started and never kept, since it reads the index and the working tree: the head against the
+index read from its own file (`GitIndexFile`), the index against the tree as git reads it (a size moved is changed, a stat matching and
+not racy is unchanged, any other entry hashed), then the untracked paths, walked with the library's ignore rules and the personal ignore
+file. Its settings are read from every configuration file git reads (`GitStamp.ConfigurationFilesOf`), and two files disagreeing on one
+that changes the answer send it to git. Git's: a rename git may pair (a staged addition beside a deletion, or a change where copies are
+asked), a submodule, a sparse, intent-to-add, assume-unchanged or unmerged entry, a split index, a content holding a carriage return or
+one an attribute file may filter, a link, `core.excludesFile` or `core.attributesFile`, `--ignored`, a path given, the `--porcelain=v2`
+forms, and in the newline form a name git would quote (`GitLibraryStatusTests`, on real git).
+
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
@@ -379,7 +389,7 @@ none is ever stale. What stays git's: a subfolder, a bare repository, `core.work
 head unborn or ambiguous, an upstream whose ref is gone, a path through a link or a short name. Everything else is git's. The
 look (`Driver.LookAsync`) holds one `GitFacts` table for its whole run, so a folder's layout and a commit's id-keyed reads
 are asked once between two writes. A tick's git starts are held to a budget by `TickGitBudget`; what a resume tick still
-starts is its writes (`switch`, `update-ref`, the rebase, a tree's lock and unlock), `status`, the file reads
+starts is its writes (`switch`, `update-ref`, the rebase, a tree's lock and unlock), `status` where the library leaves it to git, the file reads
 (`ls-files`, `ls-tree`, `log`) and the declarations' object reads, each of a different commit and asked by a different store.
 
 - `GitLibrary` opens a `Repository` per call, eight at once, libgit2's search paths emptied. `GitLibraryAdmission` refuses, at each
