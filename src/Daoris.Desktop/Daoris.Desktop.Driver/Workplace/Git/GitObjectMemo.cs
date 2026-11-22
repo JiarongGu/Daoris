@@ -44,9 +44,9 @@ internal sealed class GitObjectMemo
         foreach (var memo in Homes.Values) memo.Flush();
     };
 
-    private GitObjectMemo(string home)
+    private GitObjectMemo(string folder)
     {
-        _path = Path.Combine(home, "memo", "git-objects.json");
+        _path = Path.Combine(folder, "memo", "git-objects.json");
         try
         {
             if (!File.Exists(_path) || JsonSerializer.Deserialize<List<Row>>(AtomicFile.ReadText(_path)) is not { } rows) return;
