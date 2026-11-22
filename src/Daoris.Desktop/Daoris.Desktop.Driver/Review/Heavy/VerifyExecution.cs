@@ -190,7 +190,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             var wall = Stopwatch.StartNew();
             var exit = await StepAsync(place.Hold, command, folder, [ReachedVerdict.Gate], new Dictionary<string, string>(), log, runner.Clock, ct).ConfigureAwait(false);
             if (exit is null) return Ended([new VerifyGate(ReachedVerdict.Gate, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }]);
-            return ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, ReadText(log) ?? "", log, runner.Outcome) with { Declaration = _ran, WallSeconds = wall.Elapsed.TotalSeconds };
+            return ReachedVerdict.Judge(send.Invocation, send.Commit, exit.Value, ReadText(log) ?? "", log, runner.Outcome, home) with { Declaration = _ran, WallSeconds = wall.Elapsed.TotalSeconds };
         }
         finally
         {
@@ -244,7 +244,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                     Failed = gate.Name, Declaration = _ran,
                 };
                 return Told(failed, ReadText(log) is not { } text ? null
-                    : marker is not null && ReachedVerdict.Told(text, marker, log) is { } classes ? classes
+                    : marker is not null && ReachedVerdict.Told(text, marker, log, home) is { } classes ? classes
                     : GateLogExcerpt.Told(text, log, home));
             }
 

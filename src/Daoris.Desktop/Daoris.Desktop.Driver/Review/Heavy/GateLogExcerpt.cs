@@ -58,9 +58,10 @@ internal static class GateLogExcerpt
 
     private static bool IsRed(string line) => line.StartsWith(Red, StringComparison.Ordinal) && (line.Length == Red.Length || line[Red.Length] == ' ');
 
-    private static string? Shown(string? log, string home)
+    internal static string? Shown(string? log, string? home)
     {
         if (string.IsNullOrEmpty(log)) return null;
+        if (home is null) return Path.GetFileName(log);
         var relative = Path.GetRelativePath(home, log).Replace('\\', '/');
         return relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative) ? Path.GetFileName(log) : relative;
     }

@@ -81,6 +81,45 @@ public sealed class CheckRoundsTests
             graph.Wires, declared));
     }
 
+    private static (NodeGraph Graph, string Check, Dictionary<string, NodeDeclaration> Declared) Shipped()
+    {
+        var graph = NodeGraphs.Read(WorkflowDefaults.Of("merge-after-accept")!.GraphJson, onSave: true).Graph!;
+        return (graph, Assert.Single(graph.Nodes, node => node.Kind == NodeKinds.Check).Id, graph.Nodes.ToDictionary(node => node.Id, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void A_telling_that_failed_for_want_of_a_session_is_owed_again_while_its_red_is_the_checks_newest_and_never_once_another_reason_or_a_session_took_it()
+    {
+        var (_, check, declared) = Shipped();
+        NodeAttempt Of(int attempt) => Red(attempt) with { Node = check };
+        NodeRecord With(params NodeTold[] told) => new("run:r") { Attempts = [Of(1), Of(2)], Told = told };
+
+        Assert.Equal([(check, 2, false)], CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.NoSession, Asked)), declared));
+        Assert.Equal([(check, 2, true)], CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.NoSession, Asked) { Spent = true }), declared));
+        Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 1, null, NodeTold.NoSession, Asked)), declared));
+        Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, null, "the say door refused", Asked)), declared));
+        Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, "s1", null, Asked)), declared));
+        Assert.Empty(CheckRounds.Untold(With(new NodeTold(check, 2, null, NodeTold.NoSession, Asked), new NodeTold(check, 2, "s1", null, Asked.AddMinutes(1))), declared));
+        Assert.Empty(CheckRounds.Untold(With(new NodeTold("review", 2, null, NodeTold.NoSession, Asked)), declared));
+    }
+
+    [Fact]
+    public void A_red_goes_to_the_session_that_made_the_claimed_step_it_checks_the_part_whose_commit_it_checked_else_the_newest_part_that_was_handed_back()
+    {
+        static QuestView Part(string id, string? session, string? commit) =>
+            new(id, "", "", "", "", "") { Submission = session is null ? null : new QuestSubmissionView("m", 1, null, null, Commit: commit, Session: session) };
+
+        QuestView[] quests = [Part("a", "s-a", "c1"), Part("b", "s-b", "c2"), Part("c", null, null)];
+
+        Assert.Equal("s-a", CheckRounds.MakerSession(quests, "c1"));
+        Assert.Equal("s-b", CheckRounds.MakerSession(quests, "c2"));
+        Assert.Equal("s-b", CheckRounds.MakerSession(quests, "a-later-fix"));
+        Assert.Equal("s-b", CheckRounds.MakerSession(quests, null));
+        Assert.Null(CheckRounds.MakerSession([Part("c", null, null)], "c1"));
+        Assert.Null(CheckRounds.MakerSession([], "c1"));
+    }
+
+
     [Theory]
     [InlineData("merge-after-accept")]
     [InlineData("merge-automatic")]
