@@ -260,10 +260,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     watch mode's too, after its first look (`RunStepRun`; `drive --once` and `--until-idle` run no node pass, start none and take no settle
     box, so a settle waits there for the next watching loop): each fact that ends a step of a run (`check.passed`,
     `check.failed`, `check.unknown`; `step.settled`, a working session's settle taken from its box; `step.turn-ended`, the session of a
-    plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending),
+    plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending;
+    `run.bound`, a start binding its run to a graph's version, which begins the run's first step, teed by the take's bind alone and never for a
+    run bound already or under Current),
     its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks.WaitUnitAsync`: that run judged
     first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
-    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. A pass
+    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look, but a
+    binding's run: where its pass answers not governed, the consumer asks the whole read (`PassAsks.WaitWholeAsync`, the one a landing door
+    asks), which reads the units afresh and judges that run first (BUS2e2). A pass
     already running (a whole one can work for minutes, its git reads waiting for the machine's places) takes the ask too, at its next
     unit boundary (`PassTaken.Late`, `LateUnits`), into its own turn and bounds, never a second pass: the unit's checkout is read afresh
     in the pass's own tips (every branch the first read held, former subjects' and frames' included), the words kept on its record
@@ -281,7 +285,7 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     is read from the install. A fact
     takes only the box its session named, and one take runs at a time. The sessions' settle boxes are heard as they are written (a watch on the sessions folder); a sweep once a
     minute is only the watcher's overflow net, not a look: it tees a box no event told or one that stays open, and `daoris bus stats` counts
-    each (`found`, `retried`, `overflow`). The look no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
+    each (`found`, `retried`, `overflow`). The look no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names (BUS2e2's list), and `daoris bus stats` counts
     each node begun as the consumer's (in a pass it asked) or the look's, with its lag from the ending fact.
     Every type is declared once, in one registry (`BusTypes`, D356 step 2): its name and version, whether it is a fact, a request
     or a response, its payload's fields and their shapes (id, code, count, number, time, flag, a list of at most 16 ids), its
