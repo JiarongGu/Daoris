@@ -67,6 +67,9 @@ public sealed class GitScheduler
     /// <summary>Whom a place apart, a stalled repository's refusal and a re-entry too deep are said to; the program's machine log by default.</summary>
     internal Action<string, (string Key, object? Value)[]> Said { get; init; } = SayToHome;
 
+    /// <summary>Where each ask's caller and wait are counted (<see cref="GitAskers"/>): the process's tally, unless a test hands its own.</summary>
+    internal GitAskTally Tally { get; init; } = GitAskTally.Shared;
+
     /// <summary>Whose this flow's gits are: a person's within <see cref="AsPerson"/>, else the background's.</summary>
     internal static StartClass Whose => s_person.Value ? StartClass.Person : StartClass.Background;
 
@@ -78,7 +81,12 @@ public sealed class GitScheduler
     {
         var before = s_person.Value;
         s_person.Value = true;
-        return new Restore(() => s_person.Value = before);
+        var named = GitAskers.Unless(GitAskers.Door);
+        return new Restore(() =>
+        {
+            s_person.Value = before;
+            named.Dispose();
+        });
     }
 
     /// <summary>
@@ -216,9 +224,12 @@ public sealed class GitScheduler
             throw GitUnplacedException.Stalled(ask.Repository);
         }
 
+        var asked = Stopwatch.GetTimestamp();
+        var caller = GitAskers.Current;
         if (!joined) _ = DriveAsync(entry, run, s_timed.Value);
         Pump();
         await QueuedAsync(entry, ct).ConfigureAwait(false);
+        Tally.Record(caller, (long)Stopwatch.GetElapsedTime(asked).TotalMilliseconds);
         try
         {
             return (T)(await entry.Result.Task.WaitAsync(ct).ConfigureAwait(false))!;

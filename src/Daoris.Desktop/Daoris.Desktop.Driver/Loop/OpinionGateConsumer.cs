@@ -94,6 +94,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
     public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
     {
+        using var asking = GitAskers.Is(GitAskers.Gate);
         if (Everyone.Contains(entry.Kind)) await RoundAsync(ct).ConfigureAwait(false);
         else await JudgeAllAsync(await DuesOfAsync(entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;
@@ -189,6 +190,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     /// <summary>One owed opinion judged, one judgment of it at a time, and its next turn set from what it found.</summary>
     private async Task JudgeAsync(OpinionDue due, CancellationToken ct)
     {
+        using var asking = GitAskers.Is(GitAskers.Gate);
         var subject = OpinionGateJudge.Subject(due);
         var gate = _dues.GetOrAdd(subject, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(ct).ConfigureAwait(false);
