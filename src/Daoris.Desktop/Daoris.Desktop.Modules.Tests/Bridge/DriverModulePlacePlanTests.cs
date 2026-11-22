@@ -37,7 +37,8 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service)));
         var loop = Loop();
         await loop.ComeUpAsync(client);
-        lock (service.Asked) service.Asked.Clear();
+        await loop.Settling;
+        service.Forget();
         return (new DriverModule(Bus, loop), service, client);
     }
 
@@ -53,7 +54,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         var plan = await AnswerAsync(module, "PLACE_PLAN", Ask);
 
         Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
-        lock (service.Asked) Assert.All(service.Asked, asked => Assert.Contains(asked, new[] { "GET /api/registry", "GET /api/quests" }));
+        Assert.All(service.Asked, asked => Assert.Contains(asked, new[] { "GET /api/registry", "GET /api/quests" }));
         Assert.True(plan.GetProperty("refusals").GetArrayLength() == 0, plan.GetProperty("refusals").ToString());
         var atlas = Repository(plan, "atlas");
         Assert.False(atlas.GetProperty("before").GetProperty("driven").GetBoolean());
@@ -125,7 +126,7 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         Assert.Contains(outside.GetProperty("refusals").EnumerateArray(), each => each.GetProperty("code").GetString() == PlaceRoomRefusals.Path);
         Assert.Equal("tools/web", plan.GetProperty("asked").GetProperty("room").GetString());
         Assert.Equal(written, File.ReadAllBytes(DriverConfigPath));
-        lock (service.Asked) Assert.All(service.Asked, asked => Assert.Contains(asked, new[] { "GET /api/registry", "GET /api/quests" }));
+        Assert.All(service.Asked, asked => Assert.Contains(asked, new[] { "GET /api/registry", "GET /api/quests" }));
 
         var said = (await AnswerAsync(module, "PLACE_PLAN", new { repositories = new[] { "atlas" }, room = "tools/web", purpose = "the web app needs its own conventions", said = true }))
             .GetProperty("said");
@@ -151,12 +152,22 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
     /// <summary>The registry: aurora's engine, driven, and atlas and tools, not, their checkouts elsewhere; one queued quest to atlas.</summary>
     private sealed class StandIn : HttpMessageHandler
     {
-        public List<string> Asked { get; } = [];
+        private readonly List<string> _asked = [];
+
+        public IReadOnlyList<string> Asked
+        {
+            get { lock (_asked) return [.. _asked]; }
+        }
+
+        public void Forget()
+        {
+            lock (_asked) _asked.Clear();
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
-            lock (Asked) Asked.Add($"{request.Method} {path}");
+            lock (_asked) _asked.Add($"{request.Method} {path}");
             var body = path switch
             {
                 "/api/registry" => """

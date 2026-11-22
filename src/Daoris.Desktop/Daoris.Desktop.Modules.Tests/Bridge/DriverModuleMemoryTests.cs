@@ -88,17 +88,26 @@ public sealed class DriverModuleMemoryTests : DriverModuleBridge
 
     private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)?> answer) : HttpMessageHandler
     {
-        public List<string> Requests { get; } = [];
+        private readonly List<string> _requests = [];
+        private readonly List<string> _sent = [];
 
-        public List<string> Sent { get; } = [];
+        public IReadOnlyList<string> Requests
+        {
+            get { lock (_requests) return [.. _requests]; }
+        }
+
+        public IReadOnlyList<string> Sent
+        {
+            get { lock (_requests) return [.. _sent]; }
+        }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var sent = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
-            lock (Requests)
+            lock (_requests)
             {
-                Requests.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
-                Sent.Add($"{request.Method} {request.RequestUri!.PathAndQuery} {sent}".TrimEnd());
+                _requests.Add($"{request.Method} {request.RequestUri!.PathAndQuery}");
+                _sent.Add($"{request.Method} {request.RequestUri!.PathAndQuery} {sent}".TrimEnd());
             }
 
             var (status, body) = answer(request) ?? (HttpStatusCode.NotFound, """{"error":"none"}""");

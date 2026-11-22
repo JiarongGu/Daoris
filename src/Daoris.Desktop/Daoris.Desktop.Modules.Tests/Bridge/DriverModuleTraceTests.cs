@@ -92,6 +92,8 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        await loop.Settling;
+        standIn.Forget();
         return (new DriverModule(Bus, loop), standIn);
     }
 
@@ -216,7 +218,6 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     {
         Machine();
         var (module, standIn) = await UpAsync(new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson : null));
-        standIn.Requests.Clear();
 
         await AnswerAsync(module, "TRACE", new { kind = "quest", id = "q1" });
 
@@ -245,12 +246,22 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     /// <summary>A service standing in: each request recorded with its method, then answered, or 404 where nothing is.</summary>
     private sealed class StandIn(JsonArray? sessions, JsonArray quests, Func<string, string?> asks) : HttpMessageHandler
     {
-        public List<string> Requests { get; } = [];
+        private readonly List<string> _requests = [];
+
+        public IReadOnlyList<string> Requests
+        {
+            get { lock (_requests) return [.. _requests]; }
+        }
+
+        public void Forget()
+        {
+            lock (_requests) _requests.Clear();
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var uri = request.RequestUri!;
-            lock (Requests) Requests.Add($"{request.Method} {uri.PathAndQuery}");
+            lock (_requests) _requests.Add($"{request.Method} {uri.PathAndQuery}");
             if (uri.AbsolutePath == "/api/sessions" && sessions is null) throw new HttpRequestException("refused at C:/machine/socket");
             var body = uri.AbsolutePath switch
             {

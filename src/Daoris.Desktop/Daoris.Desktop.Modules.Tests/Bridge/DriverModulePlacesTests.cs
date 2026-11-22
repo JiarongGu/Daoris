@@ -32,6 +32,8 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, Config);
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))));
+        await loop.Settling;
+        service.Forget();
         return new DriverModule(Bus, loop);
     }
 
@@ -244,12 +246,22 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
     /// <summary>The registry a driver reads: aurora's engine, game and tools; borealis' site, docs and forty more not driven.</summary>
     private sealed class StandIn(string? driven = null, string[]? quests = null) : HttpMessageHandler
     {
-        public List<string> Asked { get; } = [];
+        private readonly List<string> _asked = [];
+
+        public IReadOnlyList<string> Asked
+        {
+            get { lock (_asked) return [.. _asked]; }
+        }
+
+        public void Forget()
+        {
+            lock (_asked) _asked.Clear();
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
-            lock (Asked) Asked.Add(path);
+            lock (_asked) _asked.Add(path);
             var rows = new List<string>
             {
                 """{"repository":"engine","workspace":"aurora","adopted":true,"root":"checkout"}""",
