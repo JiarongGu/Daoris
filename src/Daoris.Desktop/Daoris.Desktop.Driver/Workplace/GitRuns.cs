@@ -69,6 +69,7 @@ internal static class GitRuns
     private static Ports.Git.GitAsk AskOf(
         string root, IReadOnlyList<string> arguments, TimeSpan bound, string? input = null, IReadOnlyDictionary<string, string>? environment = null)
     {
+        GitAskers.NoteSite();
         var writes = GitCommands.Writes(arguments);
         return new(root, arguments, GitStartAsks.WaitOf(arguments, writes), writes, input, bound, ProgramHome.Named) { Environment = environment };
     }

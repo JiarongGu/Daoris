@@ -32,6 +32,7 @@ internal sealed class TreeSync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         bool fetch = true, CancellationToken ct = default, SyncScope? scope = null)
     {
+        using var asking = GitAskers.Unless(GitAskers.Sync);
         // One look: git's guess at each checkout's line is asked once, not by each judgement.
         using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
@@ -73,8 +74,11 @@ internal sealed class TreeSync(
     /// by default, read on the machine and never over the network.
     /// </summary>
     internal async Task<IReadOnlyList<SyncRepository>> SyncScopeAsync(
-        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, CancellationToken ct = default) =>
-        [.. (await CheckoutsAsync(repositories, ct).ConfigureAwait(false)).Select(each => each.Known)];
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, CancellationToken ct = default)
+    {
+        using var asking = GitAskers.Unless(GitAskers.Sync);
+        return [.. (await CheckoutsAsync(repositories, ct).ConfigureAwait(false)).Select(each => each.Known)];
+    }
 
     /// <summary>A repository with a checkout here, as a look or a press takes it: its root, and whether it holds Daoris's branches.</summary>
     private sealed record Checkout(string Repository, string? Space, string Root, SyncRepository Known);
@@ -190,6 +194,7 @@ internal sealed class TreeSync(
         Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null,
         Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? beside = null)
     {
+        using var asking = GitAskers.Unless(GitAskers.Sync);
         // One look: only git's guess is kept; each judgement is still re-read right before it acts.
         using var look = context.OneLook();
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);

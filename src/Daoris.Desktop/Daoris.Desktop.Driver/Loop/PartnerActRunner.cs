@@ -139,11 +139,13 @@ internal sealed class PartnerActRunner(
         }
 
         var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["rev-parse", "--verify", "-q", "HEAD"], ct).ConfigureAwait(false);
+        if (headCode is not (0 or 1)) return null;
         var tip = headCode == 0 ? head.Trim() : null;
         var ancestor = false;
         if (tip is not null)
         {
             var (code, _, _) = await WorkingTree.GitAsync(tree, ["merge-base", "--is-ancestor", commit, tip], ct).ConfigureAwait(false);
+            if (code is not (0 or 1)) return null;
             ancestor = code == 0;
         }
 

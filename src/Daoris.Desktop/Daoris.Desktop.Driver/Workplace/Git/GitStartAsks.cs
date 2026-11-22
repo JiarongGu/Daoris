@@ -33,6 +33,7 @@ internal static class GitStartAsks
             Makes = Made(folder, arguments),
             Input = input,
             Command = read,
+            Kind = GitReadKinds.Of(arguments),
         };
     }
 

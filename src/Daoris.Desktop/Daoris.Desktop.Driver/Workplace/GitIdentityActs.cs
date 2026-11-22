@@ -439,8 +439,8 @@ public static partial class GitIdentityActs
         {
             try
             {
-                return await GitScheduler.Shared.RunAsync(
-                    new GitRunAsk(at, at, GitWait.Outside), _ => StartedAsync(info, file, input, drain), CancellationToken.None).ConfigureAwait(false);
+                return await GitService.Shared.PlaceAsync(
+                    GitRunAsk.Plain(at, GitWait.Outside, GitReadKinds.Of(info.ArgumentList)), TimeSpan.FromMinutes(2), _ => StartedAsync(info, file, input, drain), CancellationToken.None).ConfigureAwait(false);
             }
             catch (GitUnplacedException unplaced)
             {

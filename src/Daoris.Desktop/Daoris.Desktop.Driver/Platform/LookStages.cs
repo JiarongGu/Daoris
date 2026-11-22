@@ -51,11 +51,14 @@ public sealed class LookStages
 
     private static readonly long Origin = Stopwatch.GetTimestamp();
 
-    /// <summary>The git asks counted by caller (<see cref="GitAskers"/>), said in the line as <c>git=caller:count/waitedms</c>; null says none.</summary>
+    /// <summary>How many of a caller's read kinds the line names, the most asks first.</summary>
+    private const int TopKinds = 3;
+
+    /// <summary>The git asks counted by caller and kind, said as <c>git=caller:count/waitedms[kind:count,..]</c>; the sites of the unnamed go to the machine log as <c>git.other</c>.</summary>
     public GitAskTally? Asks { get; init; }
 
-    /// <summary>Told each caller's asks counted in a line taken, its count and waited milliseconds, once for the look: the bus's measures.</summary>
-    public Action<string, long, long>? Asked { get; init; }
+    /// <summary>Told each caller's and kind's count and waited milliseconds in a line taken, once for the look: the bus's measures.</summary>
+    public Action<string, string, long, long>? Asked { get; init; }
 
     /// <summary>Told each span that ends, its stage and held milliseconds (the bus log's measures); a throw never fails the span.</summary>
     public Action<string, long>? Timed { get; init; }
@@ -136,8 +139,16 @@ public sealed class LookStages
 
         if (Asks?.Take() is { Count: > 0 } asks)
         {
-            Append(line, "git=" + string.Join(",", asks.Select(row => $"{row.Caller}:{row.Count}/{row.Waited}ms")));
-            foreach (var (caller, count, waited) in asks) Tell(caller, count, waited);
+            Append(line, "git=" + string.Join(",", asks.GroupBy(row => row.Caller).OrderByDescending(caller => caller.Sum(row => row.Count)).ThenBy(caller => caller.Key, StringComparer.Ordinal).Select(caller =>
+            {
+                var kinds = string.Join(",", caller.OrderByDescending(row => row.Count).ThenBy(row => row.Kind, StringComparer.Ordinal).Take(TopKinds).Select(row => $"{row.Kind}:{row.Count}"));
+                return $"{caller.Key}:{caller.Sum(row => row.Count)}/{caller.Sum(row => row.Waited)}ms[{kinds}]";
+            })));
+            foreach (var (caller, kind, count, waited) in asks) Tell(caller, kind, count, waited);
+            if (Asks.TakeSites() is { Count: > 0 } sites)
+            {
+                _log?.Info("git.other", sites.Select(site => (Key: site.Site, Value: (object?)site.Count)).ToArray());
+            }
         }
 
         return line.Length == 0 ? null : line.ToString();
@@ -149,11 +160,11 @@ public sealed class LookStages
         }
     }
 
-    private void Tell(string caller, long count, long waited)
+    private void Tell(string caller, string kind, long count, long waited)
     {
         try
         {
-            Asked?.Invoke(caller, count, waited);
+            Asked?.Invoke(caller, kind, count, waited);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {

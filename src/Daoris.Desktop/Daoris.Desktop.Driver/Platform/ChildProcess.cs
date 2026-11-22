@@ -64,8 +64,8 @@ public static class ChildProcess
             var folder = Path.GetFullPath(string.IsNullOrEmpty(info.WorkingDirectory) ? "." : info.WorkingDirectory);
             try
             {
-                return await GitScheduler.Shared.RunAsync(
-                    new GitRunAsk(folder, folder, GitWait.Read), token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
+                return await GitService.Shared.PlaceAsync(
+                    GitRunAsk.Plain(folder, GitWait.Read), patience, token => RunAsync(info, patience, token, input, starts), ct).ConfigureAwait(false);
             }
             catch (GitUnplacedException unplaced)
             {

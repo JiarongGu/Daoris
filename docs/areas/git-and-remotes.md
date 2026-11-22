@@ -8,7 +8,7 @@ ssh door for SSH; the remote helper, through a `daoris::` rewrite, for HTTP and 
 applies the identity its remote points at, and asks one judge about the act's class. A remote that cannot authenticate is held,
 and said once in *What needs you*, until something changes it. The person's own git acts, and every branch delete Daoris's doors
 judge, run through one journal under one lock; Daoris's one push is its push act, and a landing plugin opens a pull request.
-Every git Daoris starts runs in a place of one scheduler. A workspace may also be wired to a shared deployment of the service:
+Every git Daoris starts is asked of one service and runs in a place of one scheduler. A workspace may also be wired to a shared deployment of the service:
 quests, session records, messages, registrations and code maps sync with it as fetch, rebase, push.
 
 ## Its parts
@@ -23,7 +23,7 @@ its name, and `docs/index/README.md` says where a route, verb or fixture is.
 | `GitFailures`, `GitHolds`, `GitOwnInput`, `GitMove`, `GitWords`, `GitLog` | Failures and holds, the move, redaction, the `git.*` log |
 | `GitAccess*`, `GitGrantRef`, `GitPush*`, `GitHelperPush`, `GitSession*`, `GitAsks`, `GitDoorAsks` | Access and its judge, grants, a push's updates, a session's record and holds, go-aheads |
 | `Act*`, `RefTransaction`, `Git*Acts`, `GitHistoryEdits`, `StageActs`, `StashDrops`, `JournaledDeletes`, `Recovery*`, `Git*Command` | The act engine; the person's acts and their terminal twins; every delete and keep |
-| `Platform/GitScheduler`, `Workplace/Git/`, `GitReads*`, `GitLaunch`, `GitReadCache`, `GitLibrary*` | The scheduler, object reads, the stamp, the page's reads, the library |
+| `Platform/GitService`, `Platform/GitScheduler`, `Workplace/Git/`, `GitReads*`, `GitLaunch`, `GitReadCache`, `GitLibrary*` | The scheduler, object reads, the stamp, the page's reads, the library |
 | `TreeRefs`, `TreeSync`, `Plugins/LandingPlugins`, `PullRequest*` | The line's fetch and bring up to date; the landing plugin's wire; a pull request's state |
 | `Modules/Bridge/Routes/GitRoutes`, `Modules/Platform/RemotesModule`, `src/Daoris.Web/src/settings/git/`, `src/Daoris.Web/src/projects/git/` | The window's doors and the page |
 | `Service/Remote*`, `src/Daoris.Service/Daoris.Service.Core/Remote/`, the service's `Quests/` | Remote wiring, the pass, the host's sync, quest conflicts |
@@ -229,11 +229,29 @@ asked again, and an act (a removal, a tidy) judges afresh. An owed opinion judge
 review's `TreeWorkReads`), so a second judgment over an unchanged tip, line and refs starts no git, and a moved tip, line or ref asks
 again (`OpinionClosesGitCountTests`).
 
-What holds git's places is counted by its caller (`GitAskers`, `GitAskTally`): each ask the scheduler places is told under the caller
-its flow names (`look` for a look stage's work, `opinion-gate`, `door` for a person's read, `facts` for a machine-facts topic, `check`,
-`run-step`, else `other`, the innermost name standing) with the milliseconds it waited for its place. Each look's stage line says them
-as `git=opinion-gate:12/340ms,door:3/10ms` (count, then waited), and the bus's measures carry them by the day, one write for each caller
-of a look, which `daoris bus stats` sums as `git asks by caller`.
+Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
+reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
+files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
+marks equivalent patches, `meta` for a start with no command), its asker, its class and its deadline, and is answered by the run or
+failed as git's failure naming why. The class is the person's where the flow is (`AsPerson`), a step's for `run-step`, `opinion-gate` and
+`check`, else the background's; it is told, and the scheduler's order is still its own. The deadline is the run's bound and an allowance
+for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's; a write or a git that waits outside Daoris (an act's
+steps) has none, so an act is never dropped from its queue. The allowance is each asker's own and runs only while that asker's entry is
+queued, decided against placement under the scheduler's lock, so an ask is run or failed, never both; a joined asker leaves a shared
+read alone. A place not given in time is `deadline`. A library read not answered within its bound is handed to git; in-process reads
+get no id and no tally yet (GITBUS2). Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A read
+git did not answer is unknown, never a verdict: a partner piece's taken-in read and a branch's status before a replay change nothing
+on a failed read.
+
+What holds git's places is counted by its caller and read kind (`GitAskers`, `GitAskTally`): each ask the scheduler places is told under
+the caller its flow names (`look` for a look stage's work, `opinion-gate`, `door` for a person's read, `facts` for a machine-facts topic,
+`check`, `run-step`, and the flows that ask outside a look: `pool`, `tidy`, `sync`, `pull-request`, `plugin`; else `other`, the innermost
+name standing) and its kind, with the milliseconds it waited for its place. Each look's stage line says them as
+`git=look:234/1925ms[status:90,diff:40,ls-tree:30],door:3/10ms[log:3]` (count, waited, then the caller's top three kinds), and the bus's
+measures carry them by the day as `caller/kind`, one write for each caller and kind of a look, which `daoris bus stats` sums as `git asks
+by caller` and lists as `git asks by caller and kind` (the top twelve). An ask no flow named is `other`; the entry of each is noted
+(`GitAskers.NoteSite`) and a look's machine-log line `git.other` names the sites and counts, so what remains is named by the next look
+and tagged at its entry.
 
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
 memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the

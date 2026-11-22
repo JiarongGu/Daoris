@@ -40,6 +40,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     internal async Task<int> KeepAsync(
         string root, string repository, string workspace, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
+        using var asking = GitAskers.Unless(GitAskers.Tidy);
         if (!HomeLease.HeldHere(context.Home)) return 0;
         var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
         LockWaits.Waits("the end's keeping of a repository");
@@ -227,6 +228,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     /// <returns>Whether its end is kept and the entry retired with it; false writes nothing, and the caller reads where it went.</returns>
     internal async Task<bool> KeepGoneAsync(string root, string repository, LandedBranch entry, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
+        using var asking = GitAskers.Unless(GitAskers.Tidy);
         if (entry.Held is not null || entry.RemovedAs is not null || !HomeLease.HeldHere(context.Home)) return false;
         var alone = Judging.GetOrAdd($"{Path.GetFullPath(context.Home)}|{repository}", _ => new SemaphoreSlim(1, 1));
         LockWaits.Waits("the end's keeping of a repository");
