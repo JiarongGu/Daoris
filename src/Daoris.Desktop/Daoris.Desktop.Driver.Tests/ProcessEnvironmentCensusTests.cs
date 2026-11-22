@@ -50,6 +50,7 @@ public sealed class ProcessEnvironmentCensusTests
         ["Workplace/GitMoveTests.cs"] = (OwnGitConfiguration, null),
         ["Workplace/GitRemoteRowsTests.cs"] = (OwnGitConfiguration, null),
         ["Workplace/GitLongPathsProcessTests.cs"] = (OwnGitConfiguration, null),
+        ["Workplace/GitLibraryStatusEnvironmentTests.cs"] = ("what a status reads from the process's environment (the personal ignore file under XDG_CONFIG_HOME, an index GIT_INDEX_FILE names) is planted where git reads it", null),
         ["Workplace/GitHistoryEditScopesTests.cs"] = ("each scope of git's configuration a history edit is read from (system, global, the environment's) is planted where git reads it", null),
         ["Workplace/GitHoldsProcessTests.cs"] = (OwnGitConfiguration + ", HOME too", null),
         ["Workplace/GitSshHoldsProcessTests.cs"] = (OwnGitConfiguration + ", HOME too; and GIT_SSH_COMMAND names the stand-in server's key", null),
