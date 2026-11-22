@@ -63,7 +63,7 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
     [Fact]
     public async Task Four_openings_at_once_beside_the_loops_reads_say_where_each_stage_waits()
     {
-        await MakeAsync();
+        await MakeAsync(tracked: 4_000, webFiles: 1_000);
         await OpenAsync("s-00000001", new LookStages());
         _ = GitAskTally.Shared.Take();
         using var stop = new CancellationTokenSource();
@@ -133,7 +133,7 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         return said;
     }
 
-    private async Task MakeAsync()
+    private async Task MakeAsync(int tracked = Tracked, int webFiles = WebFiles)
     {
         Directory.CreateDirectory(Home);
         Directory.CreateDirectory(Root);
@@ -142,7 +142,7 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         await GitAsync(Root, "config", "user.name", "Test");
         await GitAsync(Root, "config", "core.autocrlf", "false");
         var body = new string('x', 600);
-        for (var each = 0; each < Tracked; each++) Write($"src/unit{each / 50}/File{each % 50}.cs", $"// {each}\n{body}\n");
+        for (var each = 0; each < tracked; each++) Write($"src/unit{each / 50}/File{each % 50}.cs", $"// {each}\n{body}\n");
         Write(".gitignore", "node_modules/\ndocs/index/\nbin/\nobj/\n");
         Write("daoris.files.json", """
             { "form": 2, "rules": [
@@ -179,9 +179,9 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         Write("web/make-deps.cjs", $$"""
             const fs = require('fs');
             const body = 'y'.repeat(1000);
-            for (let folder = 0; folder < {{WebFiles}} / 100; folder++) fs.mkdirSync('node_modules/pkg' + folder, { recursive: true });
+            for (let folder = 0; folder < {{webFiles}} / 100; folder++) fs.mkdirSync('node_modules/pkg' + folder, { recursive: true });
             let next = 0;
-            const write = async () => { for (let each = next++; each < {{WebFiles}}; each = next++) await fs.promises.writeFile('node_modules/pkg' + Math.floor(each / 100) + '/f' + (each % 100) + '.js', body); };
+            const write = async () => { for (let each = next++; each < {{webFiles}}; each = next++) await fs.promises.writeFile('node_modules/pkg' + Math.floor(each / 100) + '/f' + (each % 100) + '.js', body); };
             Promise.all(Array.from({ length: 32 }, write)).then(() => fs.writeFileSync('node_modules/.package-lock.json', '{}'));
             """);
         await CommitAsync();
