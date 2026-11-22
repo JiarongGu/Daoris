@@ -4,7 +4,7 @@ using Daoris.Ports.Processes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one door every git of Daoris's passes: a bound on how many run at once (not only start), a queue per repository, an
+/// The one place every git of Daoris's waits, asked of through <see cref="GitService"/> (which gives each ask its id, class and deadline): a bound on how many run at once (not only start), a queue per repository, an
 /// identical queued start shared, and a read nobody waits on ended. The start gate and <see cref="HeldChild"/> refuse a git's image
 /// started in no place of its (<see cref="GitPlace.Admit"/>).
 /// </summary>
@@ -232,7 +232,7 @@ public sealed class GitScheduler
         try
         {
             await Task.WhenAny(entry.Go.Task, entry.Result.Task).WaitAsync(ct).ConfigureAwait(false);
-            if (entry.Go.Task.IsCompleted) Tally.Record(caller, (long)Stopwatch.GetElapsedTime(asked).TotalMilliseconds);
+            if (entry.Go.Task.IsCompleted) Tally.Record(caller, ask.Kind, (long)Stopwatch.GetElapsedTime(asked).TotalMilliseconds);
             return (T)(await entry.Result.Task.WaitAsync(ct).ConfigureAwait(false))!;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

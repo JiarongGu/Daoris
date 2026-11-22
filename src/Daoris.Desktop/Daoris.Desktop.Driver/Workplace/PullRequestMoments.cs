@@ -605,10 +605,18 @@ public sealed class PullRequestMoments : IAsyncDisposable
     {
         public IReadOnlyList<LandedBranch> Open() => HomeLease.HeldHere(home) ? [.. trees.Recorded.All().Where(Concerns)] : [];
 
-        public Task<IReadOnlyList<RefRepository>> RepositoriesAsync(CancellationToken ct) => RefWatch.RepositoriesAsync(home, registry, ct);
+        // Every git of a moment is the pull request's own, asked outside a look: named, where it would count as `other`.
+        public Task<IReadOnlyList<RefRepository>> RepositoriesAsync(CancellationToken ct)
+        {
+            using var asking = GitAskers.Unless(GitAskers.Moments);
+            return RefWatch.RepositoriesAsync(home, registry, ct);
+        }
 
-        public Task<string?> LineAsync(RefRepository repository, CancellationToken ct) =>
-            trees.LineOfAsync(repository.Root, repository.Repository, repository.Workspace, ct);
+        public Task<string?> LineAsync(RefRepository repository, CancellationToken ct)
+        {
+            using var asking = GitAskers.Unless(GitAskers.Moments);
+            return trees.LineOfAsync(repository.Root, repository.Repository, repository.Workspace, ct);
+        }
 
         public string? OriginTip(RefRepository repository, string line) => TreeTips.Named(repository.CommonDir, $"refs/remotes/origin/{line}");
 
@@ -622,11 +630,17 @@ public sealed class PullRequestMoments : IAsyncDisposable
 
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => RemoteFetches.Fetched(repository.Root, line, at);
 
-        public async Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct) =>
-            (await TreeRefs.FetchAsync(home, repository.Root, line, ct, repository.Repository, repository.Workspace).ConfigureAwait(false)).Failed;
+        public async Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct)
+        {
+            using var asking = GitAskers.Unless(GitAskers.Moments);
+            return (await TreeRefs.FetchAsync(home, repository.Root, line, ct, repository.Repository, repository.Workspace).ConfigureAwait(false)).Failed;
+        }
 
-        public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct) =>
-            trees.AskAtMomentAsync(repository.Root, repository.Repository, repository.Workspace, entries, ct);
+        public Task<int> AskAsync(RefRepository repository, IReadOnlyList<LandedBranch> entries, CancellationToken ct)
+        {
+            using var asking = GitAskers.Unless(GitAskers.Moments);
+            return trees.AskAtMomentAsync(repository.Root, repository.Repository, repository.Workspace, entries, ct);
+        }
 
         public void Judge(RefRepository repository) => RefMoves.Mine(home, repository.Repository);
     }

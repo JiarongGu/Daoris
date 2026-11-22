@@ -84,6 +84,7 @@ public sealed class LandingPlugins(
     /// <returns>One answer per ask, in the order asked.</returns>
     public async Task<IReadOnlyList<StateAnswer>> AskStatesAsync(IReadOnlyList<StateAsk> asks, CancellationToken ct = default)
     {
+        using var asking = GitAskers.Unless(GitAskers.Plugin);
         var results = new List<StateAnswer>();
         if (asks.Count == 0) return results;
         var catalog = Catalog();

@@ -114,8 +114,22 @@ public static class BusStatsCommand
         Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
         var asked = Of(BusMeasures.Git).ToList();
-        if (asked.Count > 0) output.AppendLine("  git asks by caller: " + string.Join("; ", asked.Select(row => Invariant($"{row.Name} n={row.Count} waited {row.Total} ms"))));
+        if (asked.Count > 0) Git(asked, output);
     }
+
+    /// <summary>The day's git asks by caller, then by caller and kind, most first; a name with no <c>/</c> is a measure of the days before kinds, ended by the measures' own days.</summary>
+    private static void Git(IReadOnlyList<BusMeasureRow> asked, StringBuilder output)
+    {
+        var rows = asked.Select(row => (Caller: row.Name.Split('/')[0], Kind: row.Name.Contains('/') ? row.Name[(row.Name.IndexOf('/') + 1)..] : "-", row.Count, row.Total)).ToList();
+        output.AppendLine("  git asks by caller: " + string.Join("; ", rows.GroupBy(row => row.Caller).OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => Invariant($"{group.Key} n={group.Sum(row => row.Count)} waited {group.Sum(row => row.Total)} ms"))));
+        output.AppendLine($"  git asks by caller and kind (top {TopKinds}): " + string.Join("; ", rows.GroupBy(row => (row.Caller, row.Kind))
+            .Select(group => (group.Key, Count: group.Sum(row => row.Count), Waited: group.Sum(row => row.Total)))
+            .OrderByDescending(row => row.Count).ThenBy(row => row.Key.Caller, StringComparer.Ordinal).ThenBy(row => row.Key.Kind, StringComparer.Ordinal).Take(TopKinds)
+            .Select(row => Invariant($"{row.Key.Caller}/{row.Key.Kind} n={row.Count} waited {row.Waited} ms"))));
+    }
+
+    private const int TopKinds = 12;
 
     private static void Timed(string named, IReadOnlyList<BusMeasureRow> rows, StringBuilder output)
     {

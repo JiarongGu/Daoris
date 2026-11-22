@@ -405,7 +405,7 @@ internal sealed class ActLaunch(ActJournal journal, ActClaim claim, ProcessJob j
             var ask = GitStartAsks.For(info, run.Arguments, GitRunner.Held, TimeSpan.Zero, shares: false, run.Input);
             try
             {
-                var ran = await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info, run.Ordinal, run.Arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
+                var ran = await GitService.Shared.PlaceAsync(ask, TimeSpan.Zero, _ => PlacedAsync(info, run.Ordinal, run.Arguments, ask.Input), CancellationToken.None).ConfigureAwait(false);
                 return new GitHeldAnswer(ran.Exit, ran.Stdout, ran.Stderr, ran.Unended, ran.Said);
             }
             catch (GitUnplacedException unplaced)

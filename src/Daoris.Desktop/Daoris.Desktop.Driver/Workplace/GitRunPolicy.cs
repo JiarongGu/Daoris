@@ -28,7 +28,7 @@ public sealed class GitRunPolicy : IGitPolicy
     {
         // A read with variables (an empty set is none), an input or a bound of its own is always git's.
         if (ask.Environment is not (null or { Count: 0 }) || ask.Input is not null || ask.Bound != GitBounds.Of(ask.Arguments)) return null;
-        return await GitLibraryReads.AnswerAsync(ask.Folder, ask.Arguments, ct).ConfigureAwait(false) is { } answered
+        return await GitService.Shared.ReadInProcessAsync(ask.Folder, ask.Arguments, ask.Bound ?? GitBounds.Of(ask.Arguments), ct).ConfigureAwait(false) is { } answered
             ? new GitAnswer(answered.Code, answered.Stdout, answered.Stderr)
             : null;
     }
@@ -54,7 +54,7 @@ public sealed class GitRunPolicy : IGitPolicy
         var runner = RunnerOf(kind);
         var placed = GitStartAsks.For(info, ask.Arguments, runner, start.Bound, shares: ask.Input is null && kind == GitRunKind.Whole, kind == GitRunKind.Streamed ? null : ask.Input);
         // An object read's question is its input: two of them start the same command, which a count tells apart by it.
-        return GitScheduler.Shared.RunAsync(placed, token =>
+        return GitService.Shared.PlaceAsync(placed, start.Bound, token =>
         {
             // The adapter's host takes the machine's place for the start, which the funnel the older runs went through said.
             LockWaits.Waits(LockWaits.Starts);

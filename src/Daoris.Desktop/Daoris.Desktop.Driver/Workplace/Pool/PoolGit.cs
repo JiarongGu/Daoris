@@ -61,9 +61,10 @@ internal sealed class PoolGit : IDisposable
         if (info is null) return (-1, "", $"git could not be started ({refusal})");
         // Placed as every git is; a claim's git runs to its bound once placed, whoever stops waiting.
         var ask = GitStartAsks.For(info, arguments, GitRunner.Held, Bound, shares: false);
+        using var asking = GitAskers.Unless(GitAskers.Pool);
         try
         {
-            return await GitScheduler.Shared.RunAsync(ask, _ => PlacedAsync(info), ct).ConfigureAwait(false);
+            return await GitService.Shared.PlaceAsync(ask, Bound, _ => PlacedAsync(info), ct).ConfigureAwait(false);
         }
         catch (GitUnplacedException unplaced)
         {

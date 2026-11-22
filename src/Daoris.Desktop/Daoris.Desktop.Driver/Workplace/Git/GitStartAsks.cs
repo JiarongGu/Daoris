@@ -33,8 +33,12 @@ internal static class GitStartAsks
             Makes = Made(folder, arguments),
             Input = input,
             Command = read,
+            Kind = GitReadKinds.Of(arguments),
         };
     }
+
+    internal static GitRunAsk Plain(string folder, GitWait wait, IReadOnlyList<string> arguments) =>
+        new(folder, folder, wait) { Kind = GitReadKinds.Of(arguments) };
 
     /// <summary>What a git's run waits on: a remote command, and every write that may run a hook, wait outside Daoris.</summary>
     internal static GitWait WaitOf(IReadOnlyList<string> arguments, bool writes)

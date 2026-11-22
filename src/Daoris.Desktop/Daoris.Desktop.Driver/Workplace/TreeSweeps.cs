@@ -36,7 +36,8 @@ internal sealed class TreeSweeps(
         CancellationToken ct = default, IReadOnlySet<string>? only = null, bool byItself = false, IReadOnlyList<LineLanding>? landings = null,
         bool slims = false)
     {
-        var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
+        using var asking = GitAskers.Unless(GitAskers.Tidy);
+        var busy =new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var items = new List<SweepItem>();
         foreach (var (repository, workspace, root) in repositories)
         {
@@ -119,6 +120,7 @@ internal sealed class TreeSweeps(
         IReadOnlySet<string>? only, bool byItself, CancellationToken ct, IReadOnlyList<LineLanding>? landings = null,
         IReadOnlyDictionary<string, IReadOnlyList<string>>? droppable = null)
     {
+        using var asking = GitAskers.Unless(GitAskers.Tidy);
         var known = repositories.ToList();
         // One look at each checkout's line for the list and every item after it, the look's own tidy's as the person's.
         using var look = context.OneLook();

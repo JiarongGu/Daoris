@@ -62,31 +62,18 @@ public sealed class GitAskersTests : IDisposable
     }
 
     [Fact]
-    public void A_look_line_names_each_callers_count_and_waited_milliseconds_and_the_bus_is_told_once_for_each_caller()
-    {
-        var tally = new GitAskTally();
-        var told = new List<(string Caller, long Count, long Waited)>();
-        var stages = new LookStages { Asks = tally, Asked = (caller, count, waited) => told.Add((caller, count, waited)) };
-        tally.Record(GitAskers.Gate, 300);
-        tally.Record(GitAskers.Gate, 40);
-        tally.Record(GitAskers.Door, 5);
-
-        Assert.Equal("git=opinion-gate:2/340ms,door:1/5ms", stages.Take());
-        Assert.Equal([(GitAskers.Gate, 2L, 340L), (GitAskers.Door, 1L, 5L)], told);
-        Assert.Null(stages.Take());
-    }
-
-    [Fact]
-    public async Task The_stats_verb_sums_each_callers_asks_over_the_looks_that_told_them()
+    public async Task The_stats_verb_sums_each_callers_asks_and_names_the_top_callers_and_kinds_over_the_looks_that_told_them()
     {
         await using (var bus = BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = new MovedClock() }))
         {
-            bus.GitAsked(GitAskers.Gate, 2, 340);
-            bus.GitAsked(GitAskers.Gate, 3, 60);
-            bus.GitAsked(GitAskers.Door, 1, 5);
+            bus.GitAsked(GitAskers.Gate, "status", 2, 340);
+            bus.GitAsked(GitAskers.Gate, "status", 3, 60);
+            bus.GitAsked(GitAskers.Gate, "diff", 1, 10);
+            bus.GitAsked(GitAskers.Door, "log", 1, 5);
         }
 
         Assert.Equal(0, BusStatsCommand.Run(["stats"], _home, () => new MovedClock().GetUtcNow(), out var said));
-        Assert.Contains("git asks by caller: door n=1 waited 5 ms; opinion-gate n=5 waited 400 ms", said, StringComparison.Ordinal);
+        Assert.Contains("git asks by caller: door n=1 waited 5 ms; opinion-gate n=6 waited 410 ms", said, StringComparison.Ordinal);
+        Assert.Contains("git asks by caller and kind (top 12): opinion-gate/status n=5 waited 400 ms; door/log n=1 waited 5 ms; opinion-gate/diff n=1 waited 10 ms", said, StringComparison.Ordinal);
     }
 }

@@ -332,8 +332,8 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
-    /// <summary>One caller's git asks since a look's last line (<see cref="GitAskers"/>), measured by the day: a write for each caller of a look.</summary>
-    public void GitAsked(string caller, long count, long waited)
+    /// <summary>One caller's asks of one read kind since a look's last line, measured by the day as <c>caller/kind</c>.</summary>
+    public void GitAsked(string caller, string kind, long count, long waited)
     {
         try
         {
@@ -342,7 +342,7 @@ public sealed class BusLog : IAsyncDisposable
             {
                 if (_closed) return;
                 var owed = _measures.Owed;
-                _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Git, Cut(caller)!, Math.Max(0, waited), count);
+                _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Git, Cut($"{caller}/{kind}")!, Math.Max(0, waited), count);
                 WakeLocked(owed);
             }
         }
