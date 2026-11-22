@@ -239,9 +239,27 @@ for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's;
 steps) has none, so an act is never dropped from its queue. The allowance is each asker's own and runs only while that asker's entry is
 queued, decided against placement under the scheduler's lock, so an ask is run or failed, never both; a joined asker leaves a shared
 read alone. A place not given in time is `deadline`. A library read not answered within its bound is handed to git; in-process reads
-get no id and no tally yet (GITBUS2). Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A read
-git did not answer is unknown, never a verdict: a partner piece's taken-in read and a branch's status before a replay change nothing
-on a failed read.
+get no id and no tally yet (GITBUS2). Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A shared
+read's person joined to a long read is never failed once the read is placed (`GitServiceTests`).
+
+*Failed reads.* A read git did not answer (no exit: a deadline, a stalled repository, a git that did not start) is unknown, never
+"clean", "not held" or "no change": every caller whose answer decides a tidy, a discard, a landing, a merge, a replay or a resolver's
+settle leaves the state unknown and changes nothing. A dirty check is `MachinePorts.Repository.UncommittedAsync`, null on a failure.
+Swept in the driver, each caller by its read:
+- Fixed, each held by a test that fails that read and finds nothing changed (`FailedReadsDecideNothingTests`, `ResolveFailedReadTests`): the
+  tree-land sync's status before it detaches and moves a tree (`TreeLandSyncs.MoveTreeAsync`); the merge's and the landing's dirty check
+  (`TreeMerges`, `TreeBranches`); the tree update's three status reads (`TreeUpdates`); a branch advance's head, ancestor and count
+  reads (`TreeBranches.AdvanceAsync`); the resolver's conflicted-files, other-changes and stop-commit reads (`ResolveTree.MarkedAsync`,
+  `OthersAsync`, `ProvedAsync`); the generated writers' staged-difference check before a commit (`GeneratedWriters`). Earlier: the partner's
+  taken-in read (`PartnerActRunner`), `BranchJudging` and `BranchReplays`' status.
+- Already safe, reading the exit before the output: `LandPerformer`'s tree and root status, `OnlyHereProof`, `TogetherPress`,
+  `RebaseReplay`'s uncommitted read, `ResolveTree`'s hand check, `DependencyKeys.InputChangedAsync` (a failure counts as changed),
+  `RelatedSessions`, the content proof and `LandedProofs` (a failure is unread), `TreeSweeps`' empty-branch count (only "0" removes),
+  `PieceKeeper.FreezeAsync` (a create-only ref, which git refuses on a ref that stands), `BranchReplays`' and `TreeUpdates`' put-back
+  reads (a failure reads as not back), `TreeSquashes.IdentityProblemAsync` (a failure refuses the landing).
+- Not deciding an act, left as they read: counts that only appear in words (`TreeRefs.CountAsync`), `SessionsSuperviseCommand`'s
+  branch line, `ReviewRanges`' branch name, the stash plan's unmerged line and collision listing (`StashActs`, where git itself refuses
+  an overwrite), and the partner piece's base (`PartnerPersonAsk.ReadTreeAsync`, which hands a piece the lead's tree and destroys none).
 
 What holds git's places is counted by its caller and read kind (`GitAskers`, `GitAskTally`): each ask the scheduler places is told under
 the caller its flow names (`look` for a look stage's work, `opinion-gate`, `door` for a person's read, `facts` for a machine-facts topic,

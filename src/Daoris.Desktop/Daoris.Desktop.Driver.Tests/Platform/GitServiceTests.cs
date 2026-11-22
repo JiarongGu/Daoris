@@ -73,6 +73,44 @@ public sealed class GitServiceTests
     }
 
     [Fact]
+    public async Task A_person_joined_to_a_long_shared_read_is_not_failed_once_the_read_is_placed()
+    {
+        var scheduler = new GitScheduler(1, 1, 1) { Said = (_, _) => { }, Tally = new GitAskTally() };
+        var service = new GitService(scheduler)
+        {
+            Allowance = askClass => askClass switch
+            {
+                GitAskClass.Person => TimeSpan.FromSeconds(1),
+                GitAskClass.Step => TimeSpan.FromSeconds(3),
+                _ => TimeSpan.FromMinutes(5),
+            },
+        };
+        var hold = new TaskCompletionSource<int>();
+        var occupied = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("a", "status"), Bound, _ => { occupied.SetResult(); return hold.Task; }, CancellationToken.None);
+        await occupied.Task.WaitAsync(Soon);
+        var shared = Ask("b", "log") with { Start = "one-read" };
+        var running = new TaskCompletionSource();
+        var finish = new TaskCompletionSource<int>();
+        var first = service.PlaceAsync(shared, Bound, _ => { running.SetResult(); return finish.Task; }, CancellationToken.None);
+        Task<int> joined;
+        using (GitScheduler.AsPerson()) joined = service.PlaceAsync(shared, Bound, _ => Task.FromResult(-1), CancellationToken.None);
+
+        hold.SetResult(1);
+        await holding.WaitAsync(Soon);
+        await running.Task.WaitAsync(Soon);
+        using (GitAskers.Is(GitAskers.Steps))
+        {
+            await Assert.ThrowsAsync<GitUnplacedException>(() => service.PlaceAsync(Ask("c", "diff"), Bound, _ => Task.FromResult(0), CancellationToken.None)).WaitAsync(Soon);
+        }
+
+        Assert.False(joined.IsCompleted, "the person's allowance is for a place, and the read has its place");
+        finish.SetResult(7);
+        Assert.Equal(7, await joined.WaitAsync(Soon));
+        Assert.Equal(7, await first.WaitAsync(Soon));
+    }
+
+    [Fact]
     public async Task A_write_is_never_failed_for_its_queue_and_a_deadline_racing_a_place_runs_or_fails_never_both()
     {
         var (service, _, _) = Fixture(places: 1, allowance: TimeSpan.Zero);
