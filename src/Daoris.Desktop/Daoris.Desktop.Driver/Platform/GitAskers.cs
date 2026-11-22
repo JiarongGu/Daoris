@@ -62,6 +62,7 @@ public sealed class GitAskTally
     private readonly object _gate = new();
     private readonly Dictionary<(string Caller, string Kind), (long Count, long Waited)> _rows = [];
     private readonly Dictionary<string, long> _sites = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Caller, string Kind), (long Hits, long Misses)> _memo = [];
 
     public void Record(string caller, string kind, long waitedMilliseconds)
     {
@@ -69,6 +70,28 @@ public sealed class GitAskTally
         {
             var (count, waited) = _rows.GetValueOrDefault((caller, kind));
             _rows[(caller, kind)] = (count + 1, waited + Math.Max(0, waitedMilliseconds));
+        }
+    }
+
+    /// <summary>One read put to the memo of object-id answers (<see cref="GitObjectMemo"/>): a hit starts nothing, a miss goes on to the library or git.</summary>
+    public void RecordMemo(string caller, string kind, bool hit)
+    {
+        lock (_gate)
+        {
+            var (hits, misses) = _memo.GetValueOrDefault((caller, kind));
+            _memo[(caller, kind)] = hit ? (hits + 1, misses) : (hits, misses + 1);
+        }
+    }
+
+    /// <summary>Every caller's and kind's memo hits and misses since the last take, the most reads first, and let go.</summary>
+    public IReadOnlyList<(string Caller, string Kind, long Hits, long Misses)> TakeMemo()
+    {
+        lock (_gate)
+        {
+            var taken = _memo.Select(pair => (pair.Key.Caller, pair.Key.Kind, pair.Value.Hits, pair.Value.Misses))
+                .OrderByDescending(row => row.Hits + row.Misses).ThenBy(row => row.Caller, StringComparer.Ordinal).ThenBy(row => row.Kind, StringComparer.Ordinal).ToList();
+            _memo.Clear();
+            return taken;
         }
     }
 

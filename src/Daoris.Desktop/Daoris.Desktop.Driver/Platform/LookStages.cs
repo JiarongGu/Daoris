@@ -151,6 +151,13 @@ public sealed class LookStages
             }
         }
 
+        if (Asks?.TakeMemo() is { Count: > 0 } memo)
+        {
+            // What the object-id memo spared: hits, then misses, by caller and the top kinds.
+            Append(line, "gitmemo=" + string.Join(",", memo.GroupBy(row => row.Caller).Select(caller =>
+                $"{caller.Key}:{caller.Sum(row => row.Hits)}/{caller.Sum(row => row.Misses)}[{string.Join(",", caller.OrderByDescending(row => row.Hits + row.Misses).Take(TopKinds).Select(row => $"{row.Kind}:{row.Hits}/{row.Misses}"))}]")));
+        }
+
         return line.Length == 0 ? null : line.ToString();
 
         static void Append(StringBuilder line, string entry)

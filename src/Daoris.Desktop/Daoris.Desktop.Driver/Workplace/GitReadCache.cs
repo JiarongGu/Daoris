@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 /// (<see cref="GitStamp"/>), least recently used first out, bounded by bytes. Which answers may be kept is <see cref="GitReads"/>'.
 /// </summary>
 /// <remarks>
-/// <para><b>Memory only.</b> git's object store is already the cache on disk, and a copy would be a second record; nothing
-/// here is written anywhere.</para>
+/// <para><b>Memory only here.</b> git's object store is already the cache on disk; this class writes nothing, and a holder
+/// that persists its answers (<see cref="GitObjectMemo"/>) writes a file of its own.</para>
 ///
 /// <para><b>The weight is an estimate</b> the reads make of each answer (its strings' characters, two bytes each, and a
 /// little for each object), so the bound holds the memory near where it is set rather than to the byte.</para>
@@ -50,6 +50,12 @@ public sealed class GitReadCache
         {
             lock (_gate) return _entries.Count;
         }
+    }
+
+    /// <summary>What is kept now, the least recently used first: kept again in this order, the cache stands as it stood.</summary>
+    internal IReadOnlyList<(string Key, object Value)> Entries()
+    {
+        lock (_gate) return [.. _order.Reverse().Select(entry => (entry.Key, entry.Value))];
     }
 
     /// <summary>The answer kept under <paramref name="key"/>, as the type it is kept as; asking for it makes it the most recent.</summary>

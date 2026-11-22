@@ -12,6 +12,10 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class GitReplacements
 {
+    /// <summary>Whether an id's answer can change in the repository whose common directory is <paramref name="common"/>: a replacement can stand, or its history is shallow or grafted.</summary>
+    internal static bool Unfixed(string common) =>
+        CanBeInForce(common) || File.Exists(Path.Combine(common, "shallow")) || File.Exists(Path.Combine(common, "info", "grafts"));
+
     /// <summary>Whether a replacement can be in force in the repository whose common directory is <paramref name="common"/>.</summary>
     internal static bool CanBeInForce(string common, Func<string, string?>? variable = null)
     {

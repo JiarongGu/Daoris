@@ -4,11 +4,40 @@ namespace Daoris.Driver;
 internal static class GitServiceReads
 {
     /// <summary>
-    /// The library's answer to a read, with no git started and no place taken; null where git must answer it, and where the
-    /// library did not answer within <paramref name="bound"/>, so git answers it under its own deadline.
+    /// The answer to a read with no git started and no place taken: a ref's id and the refs' listing from git's files (<see cref="GitRefReads"/>),
+    /// else the library's; null where git must answer it, and where the library did not answer within <paramref name="bound"/>, so git
+    /// answers it under its own deadline.
     /// </summary>
     internal static async Task<GitLibraryAnswer?> ReadInProcessAsync(
         this GitService service, string folder, IReadOnlyList<string> arguments, TimeSpan bound, CancellationToken ct)
+    {
+        if (GitRefReads.Asked(folder, arguments) is { } refs)
+        {
+            if (refs.Answer is { } direct)
+            {
+                GitAskTally.Shared.RecordMemo(GitAskers.Current, "rev-parse", hit: true);
+                return direct;
+            }
+
+            var peeled = await LibraryAsync(folder, arguments, bound, ct).ConfigureAwait(false);
+            if (peeled is not null) refs.Learn(peeled);
+            return peeled;
+        }
+
+        if (!GitRefReads.Listed(arguments)) return await LibraryAsync(folder, arguments, bound, ct).ConfigureAwait(false);
+        if (GitRefReads.Kept(folder) is { } kept)
+        {
+            GitAskTally.Shared.RecordMemo(GitAskers.Current, "for-each-ref", hit: true);
+            return kept;
+        }
+
+        var before = GitRefReads.Stamped(folder);
+        var listed = await LibraryAsync(folder, arguments, bound, ct).ConfigureAwait(false);
+        if (listed is not null) GitRefReads.Keep(folder, before, listed);
+        return listed;
+    }
+
+    private static async Task<GitLibraryAnswer?> LibraryAsync(string folder, IReadOnlyList<string> arguments, TimeSpan bound, CancellationToken ct)
     {
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         within.CancelAfter(bound);
