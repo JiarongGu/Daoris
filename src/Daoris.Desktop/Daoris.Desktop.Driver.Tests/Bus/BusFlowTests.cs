@@ -290,8 +290,8 @@ public sealed class BusFlowTests : IDisposable
     {
         var calls = 0;
         await using var bus = Open();
-        var first = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(Interlocked.Increment(ref calls) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved));
-        var queue = await BusQueue.StartAsync(bus, [first], Backoff);
+        var first = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(Interlocked.Increment(ref calls) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved), blockRetries: true);
+        var queue = await BusQueue.StartAsync(bus, [first], Quick);
         bus.Append(Begun("u-1", "A"));
         await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "no retry fact was written", Soon);
         await queue.DisposeAsync();
@@ -416,15 +416,19 @@ public sealed class BusFlowTests : IDisposable
 
     /// <summary>A consumer of the layer over the opinion's gate's node and quest facts: keyed by the node named first (a quest move, by each quest it names), its work the subjects that named it.</summary>
     private sealed class Probe(
-        BusFlowBounds bounds, Func<string, IReadOnlyList<string>, Task<BusFlowOutcome>> move, TimeSpan pause = default, Func<BusDraft, bool>? refuse = null, bool foldAll = false)
+        BusFlowBounds bounds, Func<string, IReadOnlyList<string>, Task<BusFlowOutcome>> move, TimeSpan pause = default, Func<BusDraft, bool>? refuse = null, bool foldAll = false, bool blockRetries = false)
         : BusFlowConsumer<IReadOnlyList<string>>("probe", [BusTypes.NodeBegun.Kind, BusTypes.QuestMoved.Kind], bounds, Clock, pause)
     {
         protected override Task<bool> AppendAsync(BusLog log, BusDraft draft) => refuse?.Invoke(draft) == true ? Task.FromResult(false) : base.AppendAsync(log, draft);
 
         public ConcurrentQueue<(string Key, DateTimeOffset At)> Moves { get; } = new();
 
-        protected override Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, CancellationToken ct) =>
-            Task.FromResult<BusFlowPiece<IReadOnlyList<string>>?>(new(key, [key], key[..1]));
+        protected override async Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, CancellationToken ct)
+        {
+            // A process that is stopped while it works a retry: held here until its queue closes.
+            if (blockRetries) await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            return new BusFlowPiece<IReadOnlyList<string>>(key, [key], key[..1]);
+        }
 
         public override string Obliged => BusTypes.OpinionGate;
 
