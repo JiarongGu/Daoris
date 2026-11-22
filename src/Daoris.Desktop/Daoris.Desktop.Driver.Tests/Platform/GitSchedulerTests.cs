@@ -103,6 +103,37 @@ public sealed class GitSchedulerTests
     }
 
     [Fact]
+    public async Task An_openings_reads_are_placed_ahead_of_the_backgrounds_queue_of_their_repository_and_counted_as_the_openings()
+    {
+        var tally = new GitAskTally();
+        var scheduler = new GitScheduler(4, 2, 2) { Said = (_, _) => { }, Tally = tally };
+        var hold = new TaskCompletionSource();
+        var order = new List<string>();
+        var fanOut = Enumerable.Range(0, 22).Select(at => scheduler.RunAsync(Read("one"), async _ =>
+        {
+            if (at >= 2) lock (order) order.Add("background");
+            await hold.Task;
+            return 0;
+        }, CancellationToken.None)).ToList();
+        await Poll.Until(() => scheduler.Running == 2);
+
+        Task<int> opening;
+        Task<int> write;
+        using (GitScheduler.AsOpening())
+        {
+            opening = scheduler.RunAsync(Read("one"), _ => Task.FromResult(7), CancellationToken.None);
+            write = scheduler.RunAsync(Write("one"), _ => Task.FromResult(8), CancellationToken.None);
+        }
+
+        Assert.Equal(new[] { 7, 8 }, await Task.WhenAll(opening, write).WaitAsync(Soon));
+        Assert.Equal(2, scheduler.Running);
+        Assert.Empty(order);
+        Assert.Contains(tally.Take(), row => row is { Caller: GitAskers.Opening, Count: 2 });
+        hold.SetResult();
+        await Task.WhenAll(fanOut).WaitAsync(Poll.Patience);
+    }
+
+    [Fact]
     public async Task Two_hook_running_acts_in_two_repositories_whose_hooks_each_ask_a_remote_start_both_complete()
     {
         var scheduler = Scheduler();

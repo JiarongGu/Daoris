@@ -27,6 +27,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private const string Zeros = "0000000000000000000000000000000000000000";
 
     private IDisposable? _step;
+    private IDisposable? _aimed;
 
     private readonly List<Noted> _said = [];
     private readonly List<string> _ready = [];
@@ -56,15 +57,19 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
         }
         finally
         {
+            _aimed?.Dispose();
             _step?.Dispose();
         }
     }
 
-    /// <summary>The step that begins now, by its name alone; the one before it ends here.</summary>
+    /// <summary>The step that begins now, by its name alone, saying its own queue; the one before it ends here.</summary>
     private void At(string step)
     {
+        _aimed?.Dispose();
         _step?.Dispose();
-        _step = steps?.Begin(step);
+        var span = steps?.Begin(step);
+        _step = span;
+        _aimed = span?.Aim();
     }
 
     internal static Noted Failed(Exception error)

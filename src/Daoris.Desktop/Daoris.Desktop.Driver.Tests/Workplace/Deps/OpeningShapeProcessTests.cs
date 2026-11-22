@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Daoris.Driver;
+using Daoris.Ports.Repositories;
 using Xunit.Abstractions;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 
@@ -56,6 +57,63 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         Assert.Equal(0, Count(said, StartNoteCodes.StartedDepsUnstored));
         Assert.Contains("files.deps=", line);
         Assert.True(watch.Elapsed < Budget, $"the opening took {watch.ElapsedMilliseconds} ms, over its {Budget.TotalSeconds} s: {line}");
+    }
+
+    /// <summary>Four openings of one repository at once, as after a restart, beside twelve loops of the looks' reads of it: each stage said with its queue, an opening's ask waiting less than a look's.</summary>
+    [Fact]
+    public async Task Four_openings_at_once_beside_the_loops_reads_say_where_each_stage_waits()
+    {
+        await MakeAsync();
+        await OpenAsync("s-00000001", new LookStages());
+        _ = GitAskTally.Shared.Take();
+        using var stop = new CancellationTokenSource();
+        var fanOut = Task.WhenAll(Enumerable.Range(0, FanOut).Select(_ => Task.Run(async () =>
+        {
+            using var asking = GitAskers.Is(GitAskers.Look);
+            while (!stop.IsCancellationRequested) await MachinePorts.Repository.StatusAsync(Root, false, CancellationToken.None);
+        })));
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        var all = Stopwatch.StartNew();
+        var openings = await Task.WhenAll(Enumerable.Range(2, 4).Select(number => Task.Run(async () =>
+        {
+            var steps = new LookStages();
+            var watch = Stopwatch.StartNew();
+            using (GitAskers.Is($"open{number}")) await OpenThroughGitAsync($"s-0000000{number}", steps);
+            return (Ms: watch.ElapsedMilliseconds, Line: steps.Take());
+        })));
+        all.Stop();
+        stop.Cancel();
+        await fanOut;
+        var asks = GitAskTally.Shared.Take();
+        foreach (var opening in openings) output.WriteLine($"opening {opening.Ms} ms: {opening.Line}");
+        double Mean(string caller) => asks.Where(row => row.Caller == caller).Sum(row => row.Waited) / (double)Math.Max(1, asks.Where(row => row.Caller == caller).Sum(row => row.Count));
+        output.WriteLine($"four at once {all.ElapsedMilliseconds} ms; a git ask waited on average {Mean(GitAskers.Opening):0} ms as the opening's, {Mean(GitAskers.Look):0} ms as the fan-out's: "
+            + string.Join(", ", asks.GroupBy(row => row.Caller).Select(group => $"{group.Key}:{group.Sum(row => row.Count)}/{group.Sum(row => row.Waited)}ms")));
+        Assert.True(all.Elapsed < FourBudget, $"four openings at once took {all.ElapsedMilliseconds} ms, over {FourBudget.TotalSeconds} s");
+        Assert.Contains(asks, row => row.Caller == GitAskers.Opening);
+        Assert.True(Mean(GitAskers.Opening) < Mean(GitAskers.Look), $"an opening's git ask waited {Mean(GitAskers.Opening):0} ms on average, no less than the fan-out's {Mean(GitAskers.Look):0} ms");
+    }
+
+    private const int FanOut = 12;
+
+    private static readonly TimeSpan FourBudget = TimeSpan.FromMinutes(5);
+
+    /// <summary><see cref="OpenAsync"/> with the tree made through the machine's git places and every git of it the opening's, as <c>Driver.RunAsync</c> asks it.</summary>
+    private async Task<IReadOnlyList<Noted>> OpenThroughGitAsync(string name, LookStages steps)
+    {
+        using var opening = GitScheduler.AsOpening();
+        var tree = Path.Combine(_scratch, "trees", name);
+        using (var span = steps.Begin("tree"))
+        using (span.Aim())
+        {
+            var added = await MachinePorts.Repository.AddWorktreeAsync(Root, new GitWorktreeAdd(tree, "main", $"daoris/{name}", TreeOpenings.LockReason(Environment.ProcessId), TreeOpenings.HooksPath(Home)), CancellationToken.None);
+            Assert.True(added.Ok, added.Error);
+            TreeFilesRecord.Mark(Home, tree);
+        }
+
+        var said = new List<Noted>();
+        using (steps.Begin("files")) await TreeFilesStep.RunAsync(Home, Root, tree, Repository, said.Add, CancellationToken.None, steps: steps);
+        return said;
     }
 
     private static int Count(IEnumerable<Noted> said, NoteCode code) => said.SelectMany(each => each.Parts).Count(part => part.Code == code.Code);

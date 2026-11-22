@@ -119,6 +119,30 @@ public sealed class LookStagesTests : IDisposable
         Assert.Equal("start=300@#q1 start.queue=3000", stages.Take());
     }
 
+    [Fact]
+    public async Task A_step_that_aims_says_its_own_queue_beside_its_stages_and_the_waits_after_it_are_the_stages_alone()
+    {
+        var stages = Stages();
+        using (var stage = stages.Begin("start"))
+        {
+            Pass(20);
+            await ProcessStarts.QueuedToAsync(stage.Waiting, () =>
+            {
+                using (var step = stages.Begin("files.read"))
+                using (step.Aim())
+                {
+                    using (ProcessStarts.Queued()) Pass(700);
+                    Pass(100);
+                }
+
+                using (ProcessStarts.Queued()) Pass(50);
+                return Task.CompletedTask;
+            });
+        }
+
+        Assert.Equal("start=120 start.queue=750 files.read=100 files.read.queue=700", stages.Take());
+    }
+
     /// <summary>A wait still open as its stage ends is no wait the stage's work made it wait on: said nowhere, never late.</summary>
     [Fact]
     public void A_wait_still_open_as_its_stage_ends_is_said_nowhere()

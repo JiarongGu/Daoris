@@ -157,4 +157,13 @@ public sealed class GitCommandsTests : IDisposable
         Assert.Equal(GitWait.Read, GitStartAsks.WaitOf(["commit-tree", "t", "-m", "x"], writes: true));
         Assert.Equal(GitWait.Outside, GitStartAsks.WaitOf(["commit", "-m", "x"], writes: true));
     }
+
+    [Fact]
+    public void An_add_that_holds_its_hooks_waits_on_nothing_outside_and_one_that_does_not_still_does()
+    {
+        Assert.Equal(GitWait.Read, GitStartAsks.WaitOf([.. TreeOpenings.HooksHeld(_root), "worktree", "add", "-b", "b", "t", "main"], writes: true));
+        Assert.Equal(GitWait.Outside, GitStartAsks.WaitOf(["worktree", "add", "-b", "b", "t", "main"], writes: true));
+        Assert.Equal(GitWait.Outside, GitStartAsks.WaitOf(["-c", "core.hooksPath=hooks", "worktree", "add", "t"], writes: true));
+        Assert.Equal(GitWait.Outside, GitStartAsks.WaitOf([.. TreeOpenings.HooksHeld(_root), "commit", "-m", "x"], writes: true));
+    }
 }

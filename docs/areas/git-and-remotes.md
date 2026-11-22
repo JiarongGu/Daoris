@@ -281,7 +281,7 @@ Every git ask of the desktop goes through one service (`Platform/GitService`, D3
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
 marks equivalent patches, `meta` for a start with no command), its asker, its class and its deadline, and is answered by the run or
-failed as git's failure naming why. The class is the person's where the flow is (`AsPerson`), a step's for `run-step`, `opinion-gate` and
+failed as git's failure naming why. The class is the person's where the flow is (`AsPerson`, and a driven session's opening, `AsOpening`, told as caller `opening`), a step's for `run-step`, `opinion-gate` and
 `check`, else the background's, and the scheduler places by it: a place that frees goes to the oldest ask that may go of the highest
 class that has one, a shared read taking its highest asker's class, while the places' rules still read a step's as the background's. The deadline is the run's bound and an allowance
 for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's; a write or a git that waits outside Daoris (an act's
@@ -349,7 +349,11 @@ which runs only in the adapter's own development (`node tools/merge/packages.ts 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
 - Asks queue per repository, the oldest that may go of the highest class first: a person's, a step's, the background's. A write passes nothing queued ahead of it, nothing passes it,
-  and it never shares; a read shares an identical queued start only with no write queued after it.
+  and it never shares; a read shares an identical queued start only with no write queued after it. An opening's asks
+  (`AsOpening`) alone queue ahead of the background's, a write included, behind only the openings' own queued before them, so the
+  loop's queue of tens never holds an opening's tree write (`GitSchedulerTests`). A `worktree add` that holds its hooks
+  (`TreeOpenings.HooksHeld`) runs none, so it waits on nothing outside Daoris and is not one of the two outside places that made
+  four trees opened at once two and two (`GitStartAsks.WaitOf`).
 - A lock-free read (`GitEndable`) is dropped or ended once its askers leave; every other git runs to its end or its bound. A git
   outliving its kill is counted apart (`git.place.apart`) and its repository's background asks answer `stalled`.
 - Each start is classed before it queues by one table of git's commands (`GitCommands`): a read, a write or a drop (a branch's tip

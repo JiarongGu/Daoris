@@ -173,6 +173,37 @@ public sealed class ProcessStarts
 
     internal static IDisposable? Queued() => s_queue.Value?.Invoke();
 
+    /// <summary>
+    /// From now in this flow, until disposed, each wait for a place is said to <paramref name="queue"/> as well as to the stage that stood
+    /// (<see cref="QueuedToAsync{T}(Func{IDisposable}?, Func{Task{T}})"/> says it to one): a run's step that follows another in one flow,
+    /// which no work of its own wraps, says its queue, and the stage it is in still says its own.
+    /// </summary>
+    internal static IDisposable AimedAt(Func<IDisposable> queue)
+    {
+        var before = s_queue.Value;
+        s_queue.Value = before is null ? queue : () => new Both(queue(), before());
+        return new Unaimed(before);
+    }
+
+    private sealed class Unaimed(Func<IDisposable>? before) : IDisposable
+    {
+        private int _done;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _done, 1) == 0) s_queue.Value = before;
+        }
+    }
+
+    private sealed class Both(IDisposable first, IDisposable second) : IDisposable
+    {
+        public void Dispose()
+        {
+            first.Dispose();
+            second.Dispose();
+        }
+    }
+
     /// <summary>A start made by the machine's host, told to this flow's timing as one the gate makes is.</summary>
     public static void Told(long waited, long created) => s_timed.Value?.Invoke(waited, created);
 

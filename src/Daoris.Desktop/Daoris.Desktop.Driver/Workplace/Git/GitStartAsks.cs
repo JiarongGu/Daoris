@@ -44,7 +44,8 @@ internal static class GitStartAsks
         if (command.Count == 0) return writes ? GitWait.Outside : GitWait.Read;
         if (command[0] == "ls-remote") return GitWait.Outside;
         if (!writes || GitCommands.IsLocal(command[0])) return GitWait.Read;
-        return command is ["worktree", "remove" or "prune" or "lock" or "unlock" or "move", ..] ? GitWait.Read : GitWait.Outside;
+        if (command is ["worktree", "remove" or "prune" or "lock" or "unlock" or "move", ..]) return GitWait.Read;
+        return command is ["worktree", "add", ..] && TreeOpenings.HoldsHooks(arguments) ? GitWait.Read : GitWait.Outside;
     }
 
     /// <summary>The working tree a <c>worktree remove</c> removes, as a full path; null for every other git.</summary>
