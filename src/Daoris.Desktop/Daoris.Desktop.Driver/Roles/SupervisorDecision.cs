@@ -120,6 +120,8 @@ public static class SupervisorWhy
     public const string OwnerAnswered = "owner-answered";
     public const string Form = "form";
 
+    public const string OwnWork = "own-work";
+
     /// <summary>The question carries an owner-class mark, never answered below the owner actor: refused at the keeping and the release.</summary>
     public const string OwnerClass = LinePasses.OwnerClass;
 

@@ -123,6 +123,9 @@ public static class RunNodeWords
     private static string? HoldOf(NodeDeclaration node, NodeStatus status) =>
         status.State == NodeStates.Active && NodeKit.Of(node.Kind) is IWaitsOnRole waits ? waits.Waits(node, status) : null;
 
+    private static string? AnswersHold(NodeDeclaration node, NodeStatus status, string act) =>
+        HoldOf(node, status) ?? (act == NodeWordActs.Accept && node.Kind == NodeKinds.Review && status.State is NodeStates.Blocked or NodeStates.Ready ? PersonWaits.Accept : null);
+
     /// <summary>
     /// Keep the person's <paramref name="act"/> on <paramref name="node"/> of <paramref name="run"/>, with their <paramref name="words"/>, on the
     /// run's record for the next pass: judged first on the run's graph and record by the one table, so a skip with no words, a node the person may
@@ -171,7 +174,7 @@ public static class RunNodeWords
             // A step not reached (an early Accept on the way to its review) has no attempt standing: the tenure at its last attempt is an ended one's.
             var holding = status.State is NodeStates.Blocked or NodeStates.Ready ? null : hold.Current(node, status.Attempt);
             var speaker = settle ?? SettleBy.Of(act, by, holder, epoch);
-            if (SettleDoor.Own(declared, HoldOf(declared, status), act, speaker, workers) is { } own) return (null, Refuse(own.Code) with { Detail = own.Detail, State = status.State });
+            if (SettleDoor.Own(declared, AnswersHold(declared, status, act), act, speaker, workers) is { } own) return (null, Refuse(own.Code) with { Detail = own.Detail, State = status.State });
             // The person's press on a step another holder holds takes it as the word is kept, and settles it: one press.
             var takes = StepHolding.TakesOnPress(holding, speaker);
             if (!takes && SettleDoor.Admit(holding, speaker, hold.Unread) is { } refusal)

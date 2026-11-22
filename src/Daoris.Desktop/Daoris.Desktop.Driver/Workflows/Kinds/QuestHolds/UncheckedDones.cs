@@ -14,14 +14,6 @@ internal static class UncheckedDones
 {
     private const string Lead = "its done is unchecked";
 
-    /// <summary>
-    /// The words an earlier build kept on an unchecked done's step when no cast named a reader, read as written; they end when no run record
-    /// holds them (history's 30-day clear), as <c>QuestHoldsReading.YesLifts</c>' older words do.
-    /// </summary>
-    public const string GoesOn = "no one is set to read this done against its ask, so it goes on";
-
-    public const string NoReader = "no-reader";
-
     /// <summary>Whether a hold's reason kept on its node (<see cref="NodeStatus.Holds"/>) is this one.</summary>
     public static bool Says(string? holds) => holds?.Contains(Lead, StringComparison.Ordinal) == true;
 
@@ -32,7 +24,4 @@ internal static class UncheckedDones
               + $"step's role (`{StepRoles.AskReader}` where it names none) reads its handback (quest #{quest.Id}'s done note) and passes this step "
               + "with their words where it does what was asked"
             : null;
-
-    public static string? CodeOf(NodeDeclaration node, NodeStatus status) =>
-        node.Kind == NodeKinds.QuestHolds && status.State == NodeStates.Reached && status.Words == GoesOn ? NoReader : null;
 }

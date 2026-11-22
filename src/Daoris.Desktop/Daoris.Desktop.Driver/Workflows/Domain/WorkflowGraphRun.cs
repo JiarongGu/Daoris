@@ -253,7 +253,7 @@ public static class WorkflowGraphRuns
                 Journal = StepActViews.Of(facts.Acts, node.Id, status.Attempt, facts.Cast),
                 Joint = facts.Parts.Joints.GetValueOrDefault(node.Id),
                 Code = held ? WorkRequests.DeclinedCode : status.State == NodeStates.Skipped || status is { State: NodeStates.Stopped, By: NodeSource.Daoris } ? status.By
-                    : status.Code ?? checkHeld?.Code ?? UncheckedDones.CodeOf(node, status),
+                    : status.Code ?? checkHeld?.Code,
                 Words = cannot ?? WordsOf(node, status) ?? needs?.Said ?? (vacant ? StepVacancies.RunSaid(waits!) : null),
                 Needs = needs?.Needs,
                 Acts = acts.Count > 0 && !toAgent ? acts : null,

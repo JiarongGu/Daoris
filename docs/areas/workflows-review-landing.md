@@ -215,8 +215,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
    attempt's tenure as the place casts the role and the line standing in where the person holds it; classed `owner`, or on a step naming
    `owner`, the owner role holds it from its start, and its *What needs you* row and session page offer the run's skip with words. A pass
    from one of the run's working sessions or their helpers (`NodeRuntime.Workers`), or from a working session while those are not read, is
-   refused `own-work` (rule 49); the role is never cast or handed to the bare `agent`. An older record's *no one is set to read this done*
-   (code `no-reader`) is read as written and ends when no run record holds it. The person's through
+   refused `own-work` (rule 49); the role is never cast or handed to the bare `agent`. The person's through
    words on its ask pass it (rule 23), or a version turns its `yes` off; it is never compared with the ask's words instead (D352); a
    set-up quest is Daoris's own ask, whose press reads the repository it set up, so it never waits so. It reads the run's branch first: where the line holds that branch's tip (any proof but
    *empty*), it reaches saying the branch was merged outside the run, and the steps after it reach on the branch's held fact, so the
@@ -931,7 +930,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the risk census (`RiskStepHolds.KindOf`) from a working session the run's makers hold (`NodeRuntime.Workers`: those serving its quests
     and those that worked its branch, with every helper session a maker started and theirs in turn, read from the home's helper asks, ids compared without case; handed to the look as `ILookWiring.RunWorkers`) is refused `own-work`, read from the word's channel
     and its proved session, never its words, whatever holder it speaks as; while the makers are not read such a yes from a working session
-    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the box's sweep, once a minute, takes it again; a task's own Done, which is work and not a hold, stays its worker's. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
+    is refused too (`not yet: try again after Daoris's next look`), and a `step_settle` so refused is not consumed: its ask stays open and the box's sweep, once a minute, takes it again; a task's own Done, which is work and not a hold, stays its worker's. An Accept kept early for a review not begun is the hold to come and is refused the same way (`RunNodeWords.AnswersHold`). An agent supervisor's landing or departure decision is refused `own-work` at the decision door (`SupervisorOwnWork`) where the session its turn ran in is a maker or a helper of the run, its quest for a departure; the service's own departure door reads no session yet. A review's or an approval's `step_settle` names its outcome (`accepted` or `changes`, `approved` or `rejected`), never taken as the yes by omission.
     The waits whose role the person holds are theirs: Sessions places the run's newest
     session in Needs you with its `waits`, opening its page, and *What needs you* has a row for each with at least one press or the
     page where its act is taken, which `StepWaitCensusTests` holds for every wait in every run state it stands in, and its card on the
