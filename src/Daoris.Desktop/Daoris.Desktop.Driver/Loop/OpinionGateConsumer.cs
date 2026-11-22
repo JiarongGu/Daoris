@@ -89,7 +89,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     ];
 
     /// <summary>The owed opinion now owed under <paramref name="key"/>, judged again by a retry; none where it has closed.</summary>
-    protected override Task<BusFlowPiece<GateWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
+    protected override Task<BusFlowPiece<GateWork>?> RetryWorkAsync(string key, string kind, CancellationToken ct) =>
         Task.FromResult(_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), key)) is { } owed ? Piece(owed, byFact: true) : null);
 
     public override string Obliged => BusTypes.OpinionGate;

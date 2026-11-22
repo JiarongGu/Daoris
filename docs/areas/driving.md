@@ -267,7 +267,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
     next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look, but a
     binding's run: where its pass answers not governed, the consumer asks the whole read (`PassAsks.WaitWholeAsync`, the one a landing door
-    asks), which reads the units afresh and judges that run first (BUS2e2). A pass
+    asks), which reads the units afresh and judges that run first (BUS2e2); only its judging the run moves the binding, a whole read that
+    ended without leaving its obligation armed. A pass
     already running (a whole one can work for minutes, its git reads waiting for the machine's places) takes the ask too, at its next
     unit boundary (`PassTaken.Late`, `LateUnits`), into its own turn and bounds, never a second pass: the unit's checkout is read afresh
     in the pass's own tips (every branch the first read held, former subjects' and frames' included), the words kept on its record
@@ -377,7 +378,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     (`retry:<consumer>:<entry id>`), its cause that entry, the keys still failing (all the entry's pieces where they could not be named
     or are too many to list), its due time the entry's type's backoff for its attempt. The queue does not hand an entry before its
     not-before time (`IBusConsumer.NotBefore`): it holds it off every lane and slot and offers it again then, a restart reading the time
-    from the entry again, and a drain does not wait for it. A retry runs through the same key pass, bounds, epoch fence and lease; the
+    from the entry again, and a drain does not wait for it. A retry runs through the same key pass, bounds, epoch fence and lease, its work rebuilt for its key and its failed entry's kind
+    (`RetryWorkAsync`), so a binding's retry still asks the whole read; the
     entry ends once every key has moved (a key that moved is not listed in the next attempt), a failure writes the next attempt and the
     log must keep it before this retry is acknowledged (else the queue hands this retry again), and past the type's retries the give-up
     names the entry. A retry's write waits on its own entry's fate (`BusLog.AppendKeptAsync`: kept, or refused, dropped or still unwritten

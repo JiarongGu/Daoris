@@ -73,8 +73,8 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
         _warn = warn;
     }
 
-    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
-        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([])));
+    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, string kind, CancellationToken ct) =>
+        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([], Bound: kind == BusTypes.RunBound.Kind)));
 
     public override string Obliged => BusTypes.Step;
 
@@ -119,7 +119,11 @@ internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
         try
         {
             outcome = await _pass(unit, ct).ConfigureAwait(false);
-            if (outcome == PassOutcome.NotGoverned && work.Bound && _whole is { } whole) outcome = await whole(unit, ct).ConfigureAwait(false);
+            // A whole read that ended without judging the run moved nothing of it.
+            if (outcome == PassOutcome.NotGoverned && work.Bound && _whole is { } whole)
+            {
+                outcome = await whole(unit, ct).ConfigureAwait(false) is var read && read == PassOutcome.Ended ? PassOutcome.NotJudged : read;
+            }
             if (outcome.IsAnswer())
             {
                 if (_passed.Count >= 1024) _passed.Clear();
