@@ -274,6 +274,21 @@ public sealed class OpinionGateMovesTests : IDisposable
         await Unarmed(bus);
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{ \"due\": 5 }")]
+    [InlineData("[]")]
+    public void A_due_file_with_no_array_is_a_failure_of_the_strict_read_and_nothing_to_the_lenient_one(string text)
+    {
+        var dues = new OpinionDues(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(dues.FilePath)!);
+        File.WriteAllText(dues.FilePath, text);
+
+        Assert.Throws<InvalidDataException>(() => dues.OpenStrict());
+        Assert.Empty(dues.All());
+        Assert.Empty(dues.Open());
+    }
+
     private IReadOnlyList<BusEnvelope> Written()
     {
         using var store = new DesktopBusLogStore(_home);

@@ -39,7 +39,7 @@ public interface IBusConsumer
     DateTimeOffset? NotBefore(BusEnvelope entry) => null;
 }
 
-public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, string, BusEnvelope?> Find);
+public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, string, BusEnvelope?> Find, Func<string, int> Tried);
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
 public sealed record BusHandled(bool Ends)
@@ -49,6 +49,14 @@ public sealed record BusHandled(bool Ends)
 
     /// <summary>Handled; the obligation stays for the later fact that ends it.</summary>
     public static readonly BusHandled Judged = new(false);
+}
+
+/// <summary>The log would not keep one entry's retry: the consumer counts and gives that entry up, so the queue hands the row again and charges the lane head no try.</summary>
+public sealed class BusEntryNotKeptException(string entry, int refusals) : IOException($"the log did not keep the retry of entry {entry}")
+{
+    public string Entry { get; } = entry;
+
+    public int Refusals { get; } = refusals;
 }
 
 /// <summary>One entry of a frame and the consumers it goes to.</summary>
@@ -177,7 +185,7 @@ public sealed class BusQueue : IAsyncDisposable
                 var claim = store.Claim(name, [.. consumer.Subscription.Types.Select(type => type.Kind)], log.WriterRead, options.Clock.GetUtcNow());
                 var run = new BusConsumerRun(queue, consumer, claim);
                 queue._runs[name] = run;
-                consumer.Attached(new BusConsumerHost(log, options, queue._closing.Token, run.EndLate, run.Holds, run.Find));
+                consumer.Attached(new BusConsumerHost(log, options, queue._closing.Token, run.EndLate, run.Holds, run.Find, run.Tried));
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
@@ -577,11 +585,13 @@ internal sealed class BusConsumerRun
                 continue;
             }
 
-            tries++;
+            var refused = thrown as BusEntryNotKeptException;
+            if (refused is null) tries++;
+            else tries = Charge(subject, refused);
             var type = BusTypes.Of(entry.Kind);
             _queue.Log.Measured(BusMeasures.Consumer, $"{Name}:threw", 1);
             _queue.Log.Warn($"queue:threw:{Name}:{entry.Kind}", "bus.consumer-threw", ("consumer", Name), ("kind", entry.Kind), ("why", thrown!.Message));
-            if (type is null || tries > type.Retries)
+            if (refused is null && (type is null || tries > type.Retries))
             {
                 // Past its budget: handed to its holder chain, said on the log and on Stalls, and its subject goes on.
                 GiveUp(entry, type, tries);
@@ -591,7 +601,7 @@ internal sealed class BusConsumerRun
             }
 
             if (!Park(subject, tries)) return;
-            var wait = TimeSpan.FromTicks(Math.Min(_queue.Options.RetryMost.Ticks, _queue.Options.RetryFirst.Ticks << Math.Min(20, tries - 1)));
+            var wait = TimeSpan.FromTicks(Math.Min(_queue.Options.RetryMost.Ticks, _queue.Options.RetryFirst.Ticks << Math.Min(20, Math.Max(0, (refused?.Refusals ?? tries) - 1))));
             try
             {
                 await Task.Delay(wait, _queue.Options.Clock, ct).ConfigureAwait(false);
@@ -618,6 +628,27 @@ internal sealed class BusConsumerRun
         Volatile.Write(ref _fenced, true);
         _queue.Log.Warn($"queue:fenced:{Name}", "bus.consumer-fenced", ("consumer", Name), ("why", "claimed again"));
         return false;
+    }
+
+    /// <summary>The refusals of one entry's retry kept as the tries of the lane entry that carries it (a retry fact carries its cause's), parked with the lane; the lane head's tries now.</summary>
+    private int Charge(string subject, BusEntryNotKeptException refused)
+    {
+        lock (_gate)
+        {
+            if (!_lanes.TryGetValue(subject, out var lane) || lane.Count == 0) return 0;
+            var items = lane.Select(each => Carries(each.Entry, refused.Entry) ? (each.Entry, Tries: Math.Max(each.Tries, refused.Refusals)) : each).ToList();
+            lane.Clear();
+            foreach (var each in items) lane.Enqueue(each);
+            return items[0].Tries;
+        }
+    }
+
+    private static bool Carries(BusEnvelope entry, string id) => entry.Id == id || (entry.Kind == BusTypes.FlowRetry.Kind && entry.Causes.Count > 0 && entry.Causes[0] == id);
+
+    /// <summary>The tries of the entry <paramref name="id"/> waiting in a lane, or of the retry that carries it; none where nothing waits.</summary>
+    public int Tried(string id)
+    {
+        lock (_gate) return _lanes.Values.SelectMany(lane => lane).Where(each => Carries(each.Entry, id)).Select(each => each.Tries).DefaultIfEmpty(0).Max();
     }
 
     private void Dequeue(string subject, int count = 1)

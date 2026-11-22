@@ -25,6 +25,9 @@ public sealed record BusLogOptions
 
     /// <summary>The home whose log this is, where writers that hold no log find it (<see cref="BusLog.Of"/>); null registers none.</summary>
     public string? Home { get; init; }
+
+    /// <summary>How long a caller waiting on its entry's write waits, in real time, before it withdraws the entry if no write holds it yet.</summary>
+    public TimeSpan KeptBound { get; init; } = BusLog.RetryAfter * (BusLog.MostRetries + 2);
 }
 
 /// <summary>What a log has done since it opened, in memory: what a test and the stats read.</summary>
@@ -101,6 +104,8 @@ public sealed class BusLog : IAsyncDisposable
     private readonly CancellationTokenSource _closing = new();
     private readonly SemaphoreSlim _flushing = new(1, 1);
     private List<BusEnvelope> _pending = [];
+
+    private readonly Dictionary<string, TaskCompletionSource<bool>> _fates = new(StringComparer.Ordinal);
     private TaskCompletionSource _pulse = Pulse();
     private bool _urgent;
     private bool _closed;
@@ -256,7 +261,43 @@ public sealed class BusLog : IAsyncDisposable
     /// Append <paramref name="drafts"/> as one: each given its order under one hold, so they ride one write and are kept or lost together
     /// (a last stall and its give-up). None is appended where any is refused; never throws and never waits on the store.
     /// </summary>
-    public bool AppendAll(IReadOnlyList<BusDraft> drafts)
+    public bool AppendAll(IReadOnlyList<BusDraft> drafts) => AppendCore(drafts, null);
+
+    /// <summary>Append <paramref name="draft"/>, write it now and wait for its own fate: true where the store kept it, a busy store's later try too.</summary>
+    public async Task<bool> AppendKeptAsync(BusDraft draft)
+    {
+        var fate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!AppendCore([draft], fate)) return false;
+        await FlushAsync().ConfigureAwait(false);
+        while (true)
+        {
+            try
+            {
+                return await fate.Task.WaitAsync(_options.KeptBound).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                // Not told yet: refused only where the entry is withdrawn before any write takes it, else its write is in flight and still decides.
+                if (Withdraw(fate)) return false;
+            }
+        }
+    }
+
+    /// <summary>Takes a waiting caller's entry back out of what waits to be written and refuses it; false where a write holds it or it is told.</summary>
+    private bool Withdraw(TaskCompletionSource<bool> fate)
+    {
+        lock (_gate)
+        {
+            var id = _fates.FirstOrDefault(pair => pair.Value == fate).Key;
+            if (id is null || _pending.RemoveAll(entry => entry.Id == id) == 0) return false;
+            _fates.Remove(id);
+        }
+
+        fate.TrySetResult(false);
+        return true;
+    }
+
+    private bool AppendCore(IReadOnlyList<BusDraft> drafts, TaskCompletionSource<bool>? fate)
     {
         if (drafts.Count == 0) return true;
         try
@@ -273,7 +314,7 @@ public sealed class BusLog : IAsyncDisposable
             {
                 if (_closed) return MissLocked(BusMisses.Closed, drafts[0].Kind);
                 if (_pending.Count + drafts.Count > MostPending) return MissLocked(BusMisses.Full, drafts[0].Kind);
-                foreach (var draft in drafts) pulse = AppendLocked(draft) ?? pulse;
+                foreach (var draft in drafts) pulse = AppendLocked(draft, fate) ?? pulse;
             }
 
             pulse?.TrySetResult();
@@ -286,7 +327,7 @@ public sealed class BusLog : IAsyncDisposable
     }
 
     /// <summary>One draft given its id, order and time and kept to be written; the pulse to give where it wakes the loop.</summary>
-    private TaskCompletionSource? AppendLocked(BusDraft draft)
+    private TaskCompletionSource? AppendLocked(BusDraft draft, TaskCompletionSource<bool>? fate = null)
     {
         var admitted = draft.Type.Admit(draft.Payload);
         var at = _clock.GetUtcNow();
@@ -312,6 +353,7 @@ public sealed class BusLog : IAsyncDisposable
         }
 
         _pending.Add(envelope);
+        if (fate is not null) _fates[envelope.Id] = fate;
         _appended++;
         var day = DesktopBusLogStore.Day(at);
         _measures.Add(day, BusMeasures.Kind, draft.Kind, 1);
@@ -517,6 +559,8 @@ public sealed class BusLog : IAsyncDisposable
             if (entries.Count > 0) _pending = [.. entries, .. _pending];
             _urgent |= commit;
             _retryAt = now + RetryAfter;
+            // The loop may be idle after a caller's own flush sent the batch back: it wakes to wait out the pause.
+            _pulse.TrySetResult();
             return true;
         }
     }
@@ -629,6 +673,7 @@ public sealed class BusLog : IAsyncDisposable
             }
 
             foreach (var entry in entries) Miss(BusMisses.NotHolder, entry.Kind);
+            Fated(entries, kept: false);
             return;
         }
         catch (Exception error) when (error is not OutOfMemoryException)
@@ -644,6 +689,7 @@ public sealed class BusLog : IAsyncDisposable
             if (kept) return;
             foreach (var entry in entries) Miss(BusMisses.Store, error.Message);
             if (entries.Count == 0) Miss(BusMisses.Store, error.Message, counted: false);
+            Fated(entries, kept: false);
             return;
         }
 
@@ -677,6 +723,22 @@ public sealed class BusLog : IAsyncDisposable
         }
 
         if (entries.Count > 0) Tell(written.Shift > 0 ? [.. entries.Select(entry => entry with { Seq = entry.Seq + written.Shift })] : entries);
+        Fated(entries, kept: true);
+    }
+
+    private void Fated(List<BusEnvelope> entries, bool kept)
+    {
+        List<TaskCompletionSource<bool>> waiting = [];
+        lock (_gate)
+        {
+            if (_fates.Count == 0) return;
+            foreach (var entry in entries)
+            {
+                if (_fates.Remove(entry.Id, out var fate)) waiting.Add(fate);
+            }
+        }
+
+        foreach (var fate in waiting) fate.TrySetResult(kept);
     }
 
     /// <summary>The kept entries told to each listener (<see cref="Written"/>), one that throws said once and passed.</summary>

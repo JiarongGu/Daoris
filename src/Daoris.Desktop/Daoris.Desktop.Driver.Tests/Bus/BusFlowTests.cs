@@ -425,6 +425,129 @@ public sealed class BusFlowTests : IDisposable
         Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind && entry.Payload.Any(pair => pair.Key == "attempt" && pair.Value is 2L));
     }
 
+    private static bool Names(BusDraft draft, string key) => Names(draft.Payload, key);
+
+    private static bool Names(BusEnvelope entry, string key) => Names(entry.Payload, key);
+
+    private static bool Names(IReadOnlyList<(string Key, object? Value)> payload, string key) =>
+        payload.FirstOrDefault(pair => pair.Key == "keys").Value is IReadOnlyList<string> keys && keys.Contains(key);
+
+    private static bool Named(BusEnvelope entry, string key) =>
+        entry.Payload.FirstOrDefault(pair => pair.Key == "quests").Value is IReadOnlyList<string> quests && quests.Contains(key);
+
+    /// <summary>🔴 A retry write the log refuses inside a folded row gives up that entry once, never the row's head, which moved.</summary>
+    [Fact]
+    public async Task A_refused_retry_write_inside_a_folded_row_gives_up_its_own_entry_once_and_never_the_head()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            if (key == "h")
+            {
+                holding.TrySetResult();
+                await release.Task;
+            }
+
+            return key == "c" ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved;
+        }, refuse: draft => Names(draft, "c"));
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["h"], [])));
+        await holding.Task.WaitAsync(Soon);
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["b"], [])));
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["c"], [])));
+        await bus.FlushAsync();
+        release.SetResult();
+
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => "no give-up: " + string.Join(", ", Logged().Select(entry => entry.Kind)), Soon);
+        await queue.QuietAsync(Soon, CancellationToken.None);
+        var moved = Logged().Where(entry => entry.Kind == BusTypes.QuestMoved.Kind).ToList();
+        var failed = moved.Single(entry => Named(entry, "c"));
+        var head = moved.Single(entry => Named(entry, "b"));
+        var gaveUp = Logged().Where(entry => entry.Kind == BusTypes.GiveUp.Kind).ToList();
+        Assert.Single(gaveUp);
+        Assert.Contains(failed.Id, gaveUp[0].Causes);
+        Assert.DoesNotContain(head.Id, gaveUp[0].Causes);
+        Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind);
+    }
+
+    /// <summary>🔴 A row handed again for one entry's refused retry writes no second retry for the entries whose retry the log kept.</summary>
+    [Fact]
+    public async Task A_row_handed_again_for_a_refused_retry_writes_no_second_retry_for_the_entries_already_kept()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var refused = 0;
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            if (key == "h")
+            {
+                holding.TrySetResult();
+                await release.Task;
+                return BusFlowOutcome.Moved;
+            }
+
+            return BusFlowOutcome.Failed("refused");
+        }, refuse: draft => Names(draft, "c") && Interlocked.Increment(ref refused) == 1, blockRetries: true);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["h"], [])));
+        await holding.Task.WaitAsync(Soon);
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["b"], [])));
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["c"], [])));
+        await bus.FlushAsync();
+        release.SetResult();
+
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind && Names(entry, "c")), () => "c's retry was never kept", Soon);
+        await bus.FlushAsync();
+        Assert.True(probe.Moves.Count(move => move.Key == "b") >= 2, "the row was not handed again");
+        Assert.Single(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind && Names(entry, "b"));
+        Assert.Single(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind && Names(entry, "c"));
+    }
+
+    /// <summary>🔴 A retry attempt the log never keeps ends in a give-up naming the failed entry, not the retry fact that carried it.</summary>
+    [Fact]
+    public async Task A_retry_attempt_the_log_never_keeps_ends_in_a_give_up_naming_the_failed_entry()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")),
+            refuse: draft => draft.Payload.FirstOrDefault(pair => pair.Key == "attempt").Value is long attempt && attempt >= 2);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => "no give-up: " + string.Join(", ", Logged().Select(entry => entry.Kind)), Soon);
+        await queue.QuietAsync(Soon, CancellationToken.None);
+        var failed = Logged().First(entry => entry.Kind == BusTypes.NodeBegun.Kind && entry.Subject == "u-1");
+        var gaveUp = Logged().Where(entry => entry.Kind == BusTypes.GiveUp.Kind).ToList();
+        Assert.Single(gaveUp);
+        Assert.Contains(failed.Id, gaveUp[0].Causes);
+        Assert.Equal(BusTypes.NodeBegun.Kind, gaveUp[0].Payload.First(pair => pair.Key == "kind").Value);
+    }
+
+    /// <summary>🔴 The refusals charged to an entry survive a restart: the new start has only the type's remaining budget before the give-up.</summary>
+    [Fact]
+    public async Task The_refusals_of_an_entrys_retry_are_kept_across_a_restart()
+    {
+        var refusals = 0;
+        Probe Refusing() => new(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")),
+            refuse: draft => draft.Kind == BusTypes.FlowRetry.Kind && Interlocked.Increment(ref refusals) > 0);
+        await using var bus = Open();
+        var slow = new BusQueueOptions { Clock = Clock, RetryFirst = TimeSpan.FromSeconds(30), RetryMost = TimeSpan.FromSeconds(30) };
+        var first = await BusQueue.StartAsync(bus, [Refusing()], slow);
+
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => Volatile.Read(ref refusals) == 1 && first.Store.Consumer("probe") is { Parked: 1 }, () => $"refusals {refusals}", Soon);
+        await first.DisposeAsync();
+
+        await using var second = await BusQueue.StartAsync(bus, [Refusing()], Quick);
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => $"no give-up after {refusals} refusals", Soon);
+        await second.QuietAsync(Soon, CancellationToken.None);
+        Assert.Equal(BusTypes.NodeBegun.Retries + 1, Volatile.Read(ref refusals));
+    }
+
     private async Task Unarmed(BusLog bus)
     {
         await bus.FlushAsync();
