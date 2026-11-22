@@ -28,7 +28,8 @@ internal static partial class GitLibraryIds
         return Plain(path) ? (GitLibraryQuestion.Revisions, call => Said(GitLibraryRevisions.EntryAt(call, id, path))) : null;
     }
 
-    private static bool Plain(string path) =>
+    /// <summary>Whether <paramref name="path"/> is one git reads the same wherever it is asked: no <c>.</c> or <c>..</c> part, no empty one, no backslash.</summary>
+    internal static bool Plain(string path) =>
         path.IndexOfAny(['\\', '\0', '\n']) < 0 && path.Split('/').All(part => part.Length > 0 && part is not ("." or ".."));
 
     private static GitLibraryAnswer? Said(string? id) => id is null ? null : id.Length == 0 ? Absent : new GitLibraryAnswer(0, id + "\n");

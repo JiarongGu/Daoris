@@ -33,6 +33,15 @@ public sealed class GitRunPolicy : IGitPolicy
             : null;
     }
 
+    public async Task<GitBytes?> AnswerBytesInProcessAsync(Ports.Git.GitAsk ask, int limit, CancellationToken ct)
+    {
+        // A read with variables (an empty set is none) or a bound of its own is always git's.
+        if (ask.Environment is not (null or { Count: 0 }) || ask.Bound != GitBounds.Of(ask.Arguments)) return null;
+        return await GitService.Shared.ReadBytesInProcessAsync(ask.Folder, ask.Arguments, ask.Input, limit, ask.Bound ?? GitBounds.Of(ask.Arguments), ct).ConfigureAwait(false) is { } read
+            ? new GitBytes(0, read.Bytes[..read.Count], "")
+            : null;
+    }
+
     public async Task<GitRunSpec> StartAsync(Ports.Git.GitAsk ask, GitRunKind kind, CancellationToken ct)
     {
         var bound = ask.Bound ?? GitBounds.Of(ask.Arguments);

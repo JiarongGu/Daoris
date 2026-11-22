@@ -37,6 +37,23 @@ internal static class GitServiceReads
         return listed;
     }
 
+    /// <summary>A <c>cat-file --batch</c> of blobs by full id from the library (<see cref="GitLibraryObjects"/>); null where git answers.</summary>
+    internal static async Task<(byte[] Bytes, int Count)?> ReadBytesInProcessAsync(
+        this GitService service, string folder, IReadOnlyList<string> arguments, string? input, int limit, TimeSpan bound, CancellationToken ct)
+    {
+        if (GitLibraryObjects.Asked(arguments, input, limit) is not { } asked) return null;
+        using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        within.CancelAfter(bound);
+        try
+        {
+            return await GitLibrary.AskAsync(folder, GitLibraryQuestion.Revisions, asked, within.Token).ConfigureAwait(false) is { } bytes ? (bytes, bytes.Length) : null;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested && within.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
     private static async Task<GitLibraryAnswer?> LibraryAsync(string folder, IReadOnlyList<string> arguments, TimeSpan bound, CancellationToken ct)
     {
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);

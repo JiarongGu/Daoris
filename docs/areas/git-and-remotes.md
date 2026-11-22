@@ -258,6 +258,11 @@ makes ambiguous, an included configuration), and `--verify --quiet` of an object
 `ID^{tree}` and `ID:path`, an existing object that has no such peel or a path the tree lacks being git's quiet exit 1. A missing object, a
 path with `.`, `..` or an empty part and a gitlink are git's, as is a bare name (`main`), which an object's short id may also spell.
 
+Every object Daoris reads is one `cat-file --batch` question (`GitObjectReads`), and a question whose every line is a blob's full id, or a full
+id and a plain path, is answered from the object store by `GitLibraryObjects` through the git policy's `AnswerBytesInProcessAsync` (the adapter's
+`ReadBytesAsync` asks it before any start): the stored raw bytes with git's header, cut at the asker's limit, `QUESTION missing` where the tree
+lacks the path (`GitLibraryObjectsTests`). A tree, a commit, a tag, a missing object and a name that is no full id are one git start.
+
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that

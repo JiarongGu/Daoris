@@ -60,6 +60,8 @@ public sealed class GitProcessRunsTests
 
         public Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct) => _plain.AnswerInProcessAsync(ask, ct);
 
+        public Task<GitBytes?> AnswerBytesInProcessAsync(GitAsk ask, int limit, CancellationToken ct) => _plain.AnswerBytesInProcessAsync(ask, limit, ct);
+
         public Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
             Task.FromResult(new GitRunSpec(null, [], new Dictionary<string, string?>(), TimeSpan.FromMinutes(1), "the git chosen cannot run"));
 
