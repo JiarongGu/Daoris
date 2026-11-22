@@ -106,14 +106,14 @@
     { "name": "web-types", "run": "npm run typecheck:web", "regenerate": "node tools/contracts.mjs --if-stale",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
-        "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/tsconfig.json",
-        "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/", "tools/fsx.mjs"
+        "src/Daoris.Cli/src/tools/", "src/Daoris.Web/.storybook/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json",
+        "src/Daoris.Web/scripts/", "src/Daoris.Web/tsconfig.json", "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
     { "name": "web-rules", "run": "npm run check:web-rules", "regenerate": "node tools/contracts.mjs --if-stale",
       "paths": [
         ".gitattributes", ".gitignore", "daoris.gates.json", "daoris.lanes.json", "package-lock.json", "package.json",
-        "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/vite.config.ts",
-        "src/Daoris.Web/src/", "tools/fsx.mjs"
+        "src/Daoris.Cli/src/tools/", "src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/scripts/",
+        "src/Daoris.Web/vite.config.ts", "src/Daoris.Web/src/", "tools/fsx.mjs"
       ] },
     { "name": "reached", "timeoutMinutes": 20, "timeoutWhy": "13.4 min p90 of the merges run with no budget (2026-11-14 to 20) x 1.5; under load it runs on past it (MERGENOKILL1)", "run": "node tools/reached-checks.mjs --tier fast --base {base}", "handback": "node tools/reached-checks.mjs --base main --tier fast", "memoryGb": 6, "reuse": "inputs+diff",
       "paths": [
