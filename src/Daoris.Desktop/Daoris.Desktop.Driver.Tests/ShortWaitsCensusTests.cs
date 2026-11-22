@@ -95,6 +95,7 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Loop/OpinionGateHeadlessTests.cs: WaitAsync(TimeSpan.FromMilliseconds(400))", "a claim of absence: the wait after a look, whose pace is a minute, has not ended at once; its own token then ends it"),
+        ($"{Driver}/Workflows/IntegrationTransportGitTests.cs: TimeSpan _poll", "an input: the transport's poll, after which a standing candidate's line is due again, which a case shortens to see that due time spent"),
         ($"{Driver}/Workplace/Deps/OpeningShapeProcessTests.cs: TimeSpan Budget", "an elapsed-time bound that states the claim: an opening of a repository of this one's shape within 30 seconds"),
         ($"{Driver}/Workplace/Pool/BenchHolder.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the bench's holder says it holds its file as it starts, and one that says nothing in a minute fails the bench rather than hang it"),
         ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),

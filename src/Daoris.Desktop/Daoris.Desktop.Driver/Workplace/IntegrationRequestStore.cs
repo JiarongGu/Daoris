@@ -42,4 +42,7 @@ public interface IIntegrationRequestStore
     /// return the one open.
     /// </summary>
     IntegrationRequest? Add(IntegrationRequest request);
+
+    /// <summary>What the open request waits on, in its candidate's own words where a step holds it, for the refusal of a second ask; empty where it only queues.</summary>
+    string WaitsOn(string request);
 }

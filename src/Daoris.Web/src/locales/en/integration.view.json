@@ -45,7 +45,7 @@
   "integration.view.member.settled": "integrated",
   "integration.view.member.held": "held",
   "integration.view.holds.conflict": "A member is held for its conflict; it waits for the steward’s act or yours.",
-  "integration.view.holds.promotion": "The line could not take the candidate just now; it is tried again at each look.",
+  "integration.view.holds.promotion": "The line could not take the candidate just now; it is tried again when what holds it lets go, and at its next due time at the latest.",
   "integration.view.holds.decide": "The line’s rule keeps this candidate held for your decide: {{why}} Split runs its members one at a time, Hand back returns them to their sessions, and Land promotes it on the confirm run’s pass.",
   "integration.view.holds.decided": "You decided {{decide}}; the line’s run acts on it at its next look.",
   "integration.view.decide.split": "Split",

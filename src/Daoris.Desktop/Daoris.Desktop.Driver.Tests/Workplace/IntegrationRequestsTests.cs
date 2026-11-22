@@ -308,6 +308,15 @@ public sealed class IntegrationRequestsTests : IDisposable
             "This revision waits for its outcome.");
         Assert.Single(store.Open());
 
+        var claim = store.Form(new IntegrationForming("engine", "aurora", "main", Line, [store.Open()[0].Id])).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Tip = Next, Members = [new IntegrationMemberChange(store.Open()[0].Id, IntegrationMemberStates.Replayed) { Replayed = Next }],
+        });
+        store.End(claim, store.Begin(claim, IntegrationStepNames.Promote).Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held) { Said = "the trees were being cleaned up." });
+        Refused(await AdmitAsync(Owner, new Records([advanced]), Card(), store), IntegrationRefusals.Open,
+            "which is held: the trees were being cleaned up.");
+
         _refs[$"refs/heads/{Branch}"] = Tip;
         _held.Add(Tip);
         Refused(await AdmitAsync(Owner, new Records([Landed()]), Card()), IntegrationRefusals.Held,

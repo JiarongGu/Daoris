@@ -363,10 +363,11 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     private IntegrationAdmission? OpenRefusal(string repository, string branch, string? tip) =>
         store.OpenFor(repository, branch) is { } open ? Opened(open, branch, tip) : null;
 
-    private static IntegrationAdmission Opened(IntegrationRequest open, string branch, string? tip) =>
+    private IntegrationAdmission Opened(IntegrationRequest open, string branch, string? tip) =>
         Refuse(IntegrationRefusals.Open,
             $"a request is already open for `{branch}` at {Short(open.Tip)}, made {By(open.Requester)}: nothing more was requested."
-            + (tip is not null && !SameCommit(open.Tip, tip) ? " This revision waits for its outcome." : ""));
+            + (tip is not null && !SameCommit(open.Tip, tip) ? " This revision waits for its outcome." : "")
+            + store.WaitsOn(open.Id));
 
     /// <summary>The branch at <paramref name="tip"/> in the checkout, or the refusal: moved, gone on git's own word, or unread.</summary>
     private static async Task<IntegrationAdmission?> StandsRefusalAsync(IntegrationAsk ask, string tip, Func<string, string> moved, CancellationToken ct)

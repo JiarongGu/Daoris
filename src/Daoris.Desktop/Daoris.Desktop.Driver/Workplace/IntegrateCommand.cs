@@ -119,7 +119,8 @@ public static class IntegrateCommand
                 { Holds: "decide" } =>
                     $"  held for a decide{(candidate.Why is { Length: > 0 } why ? $" ({why})" : "")}; `--decide {candidate.Candidate} split|hand-back|land` by the {candidate.By} releases it.",
                 { Holds: "conflict" } => "  held: a member's conflict, which waits for the steward's or the owner's act.",
-                { Holds: { } holds } => $"  held: {holds}; it is tried again at each look.",
+                { Holds: { } holds } =>
+                    $"  held: {holds}{(candidate.Why is { Length: > 0 } why ? $" — {why}" : "")}; it is tried again when what holds it lets go, and at its next due time at the latest.",
                 _ => "",
             });
             if (said[^1].Length == 0) said.RemoveAt(said.Count - 1);

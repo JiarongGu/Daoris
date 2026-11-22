@@ -174,6 +174,15 @@ public sealed class IntegrationStore(
                 $"SELECT {MemberColumns} FROM integration_members WHERE request = $request ORDER BY joined_at DESC, position DESC", MapMember, ("$request", request))
             .FirstOrDefault(), null);
 
+    /// <inheritdoc/>
+    public string WaitsOn(string request)
+    {
+        if (MemberOf(request) is not { Stands: true } member || Candidate(member.Candidate) is not { Stands: true } candidate) return "";
+        return Steps(candidate.Id).LastOrDefault() is { Outcome: IntegrationStepOutcomes.Held, Said: { Length: > 0 } said } step
+            ? $" It waits on candidate {candidate.Id}'s `{step.Step}` step, which is held: {said}"
+            : $" It waits in candidate {candidate.Id}.";
+    }
+
     /// <summary>A request by its id, open or closed; null where the store holds none.</summary>
     public IntegrationRequest? Request(string id) =>
         Reading(reader => reader.Query($"SELECT {Read(reader.Version)} FROM integration_requests WHERE id = $id", MapRequest, ("$id", id)).FirstOrDefault(), null);
