@@ -7,10 +7,11 @@ namespace Daoris.Knowledge;
 /// </summary>
 internal sealed class AskPublishGuard(QuestExchange exchange, SessionStore? sessions)
 {
-    /// <summary>Said of a quest an ask became that carries no requirement, so whoever published it knows its done is checked against nothing.</summary>
+    /// <summary>Said of a quest an ask became that carries no requirement: its done is checked against nothing, and the risk policy judges it as <c>work.done</c>.</summary>
     public const string Unrequired =
-        "\n\nPublished with no requirement: its run's holds step will wait on the person's word, since nothing checks its done against "
-        + "what was asked (`quest.holds` keeps that done waiting, unchecked, until the person reads its handback).";
+        "\n\nPublished with no requirement: nothing checks its done against what was asked, so its run's holds step judges that done as the act "
+        + "`work.done` at its place: it goes on by itself where no rule gates it, and waits on that role's holder where the place classes it `role`, "
+        + "or on the owner where it classes it `owner` (`quest.holds` reads the policy, never a cast or the person by default).";
 
     /// <summary>The states an intake answers its ask in: opened and neither parked nor ended.</summary>
     private static readonly SessionState[] Answering = [SessionState.Queued, SessionState.Starting, SessionState.Working];

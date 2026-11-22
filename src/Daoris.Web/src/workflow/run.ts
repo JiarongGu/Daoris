@@ -207,7 +207,7 @@ export interface NodeWordKept {
 
 /**
  * What a press of the person's word sends (`WORKFLOW_NODE`): the run, its node, the act, and their words. An Accept names the record drawn
- * (`attempt`, `revision`), the second opinion's token it answers (`answers`) and that it passes the unchecked dones it named (`unchecked`);
+ * (`attempt`, `revision`) and the second opinion's token it answers (`answers`);
  * a send-back names its `part`; `whole` makes a stop the review's Stop; a `decide` names its decision's `outcome`.
  */
 export interface NodeWordAsk {
@@ -219,7 +219,6 @@ export interface NodeWordAsk {
   attempt?: number | null;
   revision?: string | null;
   answers?: string | null;
-  unchecked?: boolean;
   part?: string | null;
   whole?: boolean;
   epoch?: number | null;

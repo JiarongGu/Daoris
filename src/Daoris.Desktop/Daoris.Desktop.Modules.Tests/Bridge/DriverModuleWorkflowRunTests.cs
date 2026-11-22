@@ -419,8 +419,6 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         var moved = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", attempt = 1, revision = "0badc0de" });
         Assert.Equal((false, "moved", "feedc0de0123456789"),
             (moved.GetProperty("done").GetBoolean(), moved.GetProperty("refused").GetString(), moved.GetProperty("revision").GetString()));
-        var named = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "review", act = "accept", revision = "feedc0de0123456789", @unchecked = true });
-        Assert.Equal(UncheckedAccepts.NoneUnchecked, named.GetProperty("refused").GetString());
         var notReview = await AnswerAsync(module, "WORKFLOW_NODE", new { run = "q1", node = "handed", act = "stop", whole = true });
         Assert.Equal((false, RunNodeWords.NotReview), (notReview.GetProperty("done").GetBoolean(), notReview.GetProperty("refused").GetString()));
         var graphed = new GraphRuns(files).Find("q1")!.Version.Graph!;

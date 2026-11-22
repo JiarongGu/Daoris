@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// not held for the person's yes or its evidence's verdict.
 /// </summary>
 [NodeKind(NodeKinds.QuestHolds, NodeGroup.Checks, NodeKinds.WorkRequests)]
-internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole, IReadsSteps
+internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole
 {
     /// <summary>
     /// Reached by what Daoris reads at the bound tip; a hold that does not let go keeps it active with its reason, as <c>work.requests</c> is kept,
@@ -36,15 +36,6 @@ internal sealed class QuestHoldsNode : BuiltInNode, IObserves, IWaitsOnRole, IRe
     public override string Role => StepRoles.AskReader;
 
     public NodeObservation Observe(NodeReading reading) => QuestHoldsReading.Observe(reading);
-
-    /// <summary>The place's cast as the home's files say it now: an unchecked done waits only where it names who reads it.</summary>
-    public Task<NodeGitReads> ReadAsync(GovernedUnit governed, string home, NodeGitReads reads, CancellationToken ct) =>
-        Task.FromResult(reads with { Cast = CastReading.Now(home, governed.Unit.Owner.Workspace, governed.Unit.Owner.Repository) });
-
-    /// <summary>Its door writes nothing of a run.</summary>
-    public void Release(string home, string run)
-    {
-    }
 
     string? IWaitsOnRole.Waits(NodeDeclaration node, NodeStatus status) => UncheckedDones.Says(status.Holds) ? PersonWaits.Pass : null;
 }

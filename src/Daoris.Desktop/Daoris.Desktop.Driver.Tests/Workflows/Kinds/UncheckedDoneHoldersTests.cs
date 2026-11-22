@@ -4,11 +4,11 @@ using static Daoris.Desktop.Driver.Tests.HoldFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A done nothing checked (its ask gave its quest no requirement) waits only where the actor configuration names who reads it: a role its
-/// <c>quest.holds</c> step names, or the place's cast of the <c>ask-reader</c> (a high-risk place's holder, the person, among them). With
-/// none named it goes on by itself, said in one line. Where it waits, the role's holder passes it, never the run's own working session,
-/// and the person's Accept naming it takes it from an agent holder in the same press. Seen failing first: it always waited on a role the
-/// person held by default, and any session speaking as an agent passed a bare <c>agent</c> holder's hold, the worker among them.
+/// A done nothing checked (its ask gave its quest no requirement) is the act <c>work.done</c>, judged at its run's place:
+/// with nothing configured the policy passes it, reached by the policy with its rule on its words and no card; classed <c>role</c> it waits
+/// on the step's role as the place casts it, classed <c>owner</c> on the owner, and a step whose role is the owner's is never passed by the
+/// seed. Where it waits, the role's holder passes it, never the run's own working session (<c>own-work</c>). Seen failing first: the cast
+/// decided it (a place with no cast reader let it go on by itself, said as no rule's pass), so a policy row neither gated nor passed it.
 /// </summary>
 public sealed class UncheckedDoneHoldersTests : IDisposable
 {
@@ -66,42 +66,45 @@ public sealed class UncheckedDoneHoldersTests : IDisposable
         return (graph.Nodes.Single(each => each.Id == "holds"), Records.Read(unit)!, new StepTenureFiles(_home, () => true).Current(unit, "holds", 1)!);
     }
 
-    /// <summary>An ask's quest with no requirement, its done in, observed by the hold with the place's cast as <paramref name="cast"/> reads it.</summary>
-    private static NodeObservation Observed(NodeDeclaration hold, Func<string, CastNow>? cast)
+    private const string Seeded = """{"risk":{}}""";
+
+    /// <summary>An ask's quest with no requirement, its done in, observed by the hold with the judge <paramref name="policy"/> gives at its place (none where null).</summary>
+    private static NodeObservation Observed(NodeDeclaration hold, string? policy)
     {
         var asked = QuestUnit(Quest("Done") with { From = "ask #a1b2c3" });
-        return NodeObserving.Observe(asked, hold, Bound(asked, hold, "q-rev"), new NodeGitReads { Content = (_, _) => null, Cast = cast });
-    }
-
-    private static Func<string, CastNow> CastOf(PlaceCastBook book, string risk = PlaceRisks.Low)
-    {
-        var place = PlaceRiskBook.Unwritten.Apply(new PlaceRiskEdit { Workspace = "default", Risk = risk }).At("default", "engine");
-        return role => book.At(role, "default", "engine", place);
+        var judge = policy is null ? null : RiskStepGates.At(DriverConfig.Parse(policy), "default", "engine");
+        return NodeObserving.Observe(asked, hold, Bound(asked, hold, "q-rev"), new NodeGitReads { Content = (_, _) => null, Risk = judge });
     }
 
     private static NodeDeclaration Named(string role) => Hold(NodeKinds.QuestHolds) with { Role = role };
 
     [Fact]
-    public void With_no_role_named_and_no_cast_an_unchecked_done_goes_on_by_itself_said_in_one_line()
+    public void With_nothing_configured_an_unchecked_done_passes_by_the_policy_with_its_rule_on_its_words_and_no_wait()
     {
-        var seen = Observed(Hold(NodeKinds.QuestHolds), CastOf(PlaceCastBook.Empty));
+        var seen = Observed(Hold(NodeKinds.QuestHolds), Seeded);
 
-        Assert.Equal((NodeStates.Reached, NodeSource.Holds), (seen.Outcome, seen.Source));
-        Assert.Equal(UncheckedDones.GoesOn, seen.Words);
-        Assert.Equal("no one is set to read this done against its ask, so it goes on", UncheckedDones.GoesOn);
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy), (seen.Outcome, seen.Source));
+        Assert.Contains("no risk is declared for it here", seen.Words, StringComparison.Ordinal);
         Assert.Null(seen.Holds);
     }
 
-    [Fact]
-    public void A_cast_a_named_role_or_a_high_risk_place_makes_it_wait()
+    [Theory]
+    [InlineData("role")]
+    [InlineData("owner")]
+    public void Where_its_place_classes_work_done_role_or_owner_the_unchecked_done_waits(string cls)
     {
-        var steward = PlaceCastBook.Empty.With(PlaceRiskBook.MachineKey, StepRoles.AskReader, new RoleCast("agent:steward", "it files the asks", DateTimeOffset.UnixEpoch));
+        var seen = Observed(Hold(NodeKinds.QuestHolds), $$$"""{"risk":{"machine":[{"kind":"work.done","class":"{{{cls}}}"}]}}""");
 
-        Assert.Null(Observed(Hold(NodeKinds.QuestHolds), CastOf(steward)).Outcome);
-        Assert.Null(Observed(Named(StepRoles.Owner), CastOf(PlaceCastBook.Empty)).Outcome);
-        Assert.Null(Observed(Named(StepRoles.Approver), CastOf(PlaceCastBook.Empty)).Outcome);
-        Assert.Null(Observed(Hold(NodeKinds.QuestHolds), CastOf(PlaceCastBook.Empty, PlaceRisks.High)).Outcome);
-        Assert.True(UncheckedDones.Says(Observed(Hold(NodeKinds.QuestHolds), CastOf(steward)).Holds));
+        Assert.Null(seen.Outcome);
+        Assert.True(UncheckedDones.Says(seen.Holds));
+    }
+
+    [Fact]
+    public void A_read_with_no_judge_waits_and_a_step_naming_the_owner_role_is_never_passed_by_the_seed()
+    {
+        Assert.Null(Observed(Hold(NodeKinds.QuestHolds), null).Outcome);
+        Assert.Null(Observed(Named(StepRoles.Owner), Seeded).Outcome);
+        Assert.Equal(NodeStates.Reached, Observed(Named(StepRoles.Approver), Seeded).Outcome);
     }
 
     [Fact]
@@ -175,22 +178,6 @@ public sealed class UncheckedDoneHoldersTests : IDisposable
 
         Assert.Equal(SettleDoor.NotHolder, RunNodeWords.Word(Records, Run, "holds", NodeWordActs.Skip, "Fine.", () => _now, settle: new SettleBy("agent:steward", 1)).Refused);
         Assert.True(RunNodeWords.Word(Records, Run, "holds", NodeWordActs.Skip, "It does what I asked.", () => _now, epoch: row.Epoch).Done);
-    }
-
-    [Fact]
-    public void The_persons_accept_naming_the_unchecked_done_takes_it_from_its_agent_holder_in_the_same_press()
-    {
-        Assert.Null(AgentSettles.CastAt(Casts, "machine", StepRoles.AskReader, "agent:steward", "it files the asks", _now));
-        Start();
-
-        var kept = UncheckedAccepts.Keep(Records, Run, "review", "rev-1", () => _now);
-
-        Assert.True(kept.Done, kept.Refused);
-        var now = new StepTenureFiles(_home, () => true).Current(RunUnits.IdOf(Run), "holds", 1)!;
-        Assert.Equal((CastHolders.Person, 2), (now.Holder, now.Epoch));
-        var pass = Records.Read(RunUnits.IdOf(Run))!.Pending.Single(word => word.Node == "holds");
-        Assert.Equal((NodeWordActs.Skip, new NodeWordEpoch(1, 2)), (pass.Act, pass.Epoch));
-        Assert.Contains(Casts.Journal(), entry => entry is { Act: CastActs.Take, Node: "holds", Holder: CastHolders.Person, Why: "pressed accept" });
     }
 
     [Fact]

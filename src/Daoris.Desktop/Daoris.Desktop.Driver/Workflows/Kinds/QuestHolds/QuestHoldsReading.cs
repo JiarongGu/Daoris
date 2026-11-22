@@ -47,10 +47,7 @@ internal static class QuestHoldsReading
         if (unit.Kind != WorkUnitKind.Quest) return HoldReading.Seen(reading, null, "its door judges the quest's holds where it lands");
         var risk = reading.Git?.Risk;
         var why = Held(unit.Records.Quest, HoldReading.On(node, Yes), HoldReading.On(node, Evidence), risk is null ? null : act => RiskStepGates.Verdict(risk, act.Kind, node));
-        if (UncheckedDones.Says(why) && UncheckedDones.Unread(node, reading.Git?.Cast))
-        {
-            return HoldReading.Reached(reading, WorkRecord.Quests, reading.Binding.SubjectRevision, UncheckedDones.GoesOn) with { Words = UncheckedDones.GoesOn };
-        }
+        if (UncheckedDones.Says(why) && RiskStepGates.Passed(reading, PersonWaits.Pass) is { } passed) return passed;
 
         return why is not null
             ? HoldReading.Seen(reading, null, why)

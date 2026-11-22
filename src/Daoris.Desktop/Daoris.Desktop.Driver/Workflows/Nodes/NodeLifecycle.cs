@@ -426,7 +426,8 @@ public static class NodeLifecycle
                 // A reach is answered again only where its kind's authority lets it: a decision's, which its door offers alone.
                 if (status.State == NodeStates.Reached && !authority.Reanswers) return Refuse(NodeRefusal.NotReanswered);
                 if (move.Source != authority.ReachBy && move.Source != authority.ObservedBy
-                    && !(move.Source is NodeSource.Supervisor or NodeSource.Policy && authority.ReachBy == NodeSource.Person)) return Refuse(NodeRefusal.NotAuthority);
+                    && !(move.Source is NodeSource.Supervisor or NodeSource.Policy && authority.ReachBy == NodeSource.Person)
+                    && !(move.Source == NodeSource.Policy && authority.ReachBy == NodeSource.Holds)) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } reachAttempt) return Refuse(reachAttempt);
                 if (move.Acceptance is not { } accepted) return Refuse(NodeRefusal.NoAcceptance);
                 if (status.Binding is not { } expected) return Refuse(NodeRefusal.NoBinding);

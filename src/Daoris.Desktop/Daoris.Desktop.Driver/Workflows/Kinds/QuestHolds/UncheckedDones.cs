@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A done checked against nothing: the quest an ask published carries no requirement, so nothing compared its done with its ask. Its
-/// <c>quest.holds</c> waits on it only where a role the step names, or the place's cast of the <c>ask-reader</c>, names who reads it, until
-/// that holder passes it with their words (never the run's own working session); a version with its <c>yes</c> off lets it go. With no
-/// reader named it goes on by itself (<see cref="GoesOn"/>).
+/// A done checked against nothing: the quest an ask published carries no requirement, so nothing compared its done with its ask. It is the act
+/// <c>work.done</c>: the judge at its run's place passes it, so with nothing configured its <c>quest.holds</c> reaches by the policy with its
+/// rule on its words (<see cref="RiskStepGates.Passed"/>), and where the place classes it <c>role</c> or <c>owner</c> the step waits on its role
+/// until that holder passes it with their words (never the run's own working session); a version with its <c>yes</c> off lets it go.
 /// </summary>
 /// <remarks>
 /// A quest one repository asks of another is asked on no ask, so it can carry no requirement, and its publisher reads its done at its own
@@ -14,7 +14,10 @@ internal static class UncheckedDones
 {
     private const string Lead = "its done is unchecked";
 
-    /// <summary>The words an unchecked done no one is set to read goes on with, kept on its step's reach.</summary>
+    /// <summary>
+    /// The words an earlier build kept on an unchecked done's step when no cast named a reader, read as written; they end when no run record
+    /// holds them (history's 30-day clear), as <c>QuestHoldsReading.YesLifts</c>' older words do.
+    /// </summary>
     public const string GoesOn = "no one is set to read this done against its ask, so it goes on";
 
     public const string NoReader = "no-reader";
@@ -29,14 +32,6 @@ internal static class UncheckedDones
               + $"step's role (`{StepRoles.AskReader}` where it names none) reads its handback (quest #{quest.Id}'s done note) and passes this step "
               + "with their words where it does what was asked"
             : null;
-
-    /// <summary>
-    /// Whether nothing names who reads <paramref name="node"/>'s unchecked done, so it goes on: the step names no role of its own, and the place's
-    /// cast of its role, read this pass (<paramref name="cast"/>), is the default (no cast, a place not at high risk). Where the cast is not read,
-    /// someone may be named, so it waits.
-    /// </summary>
-    public static bool Unread(NodeDeclaration node, Func<string, CastNow>? cast) =>
-        cast is not null && StepRoles.Named(node) is null or StepRoles.AskReader && cast(StepRoles.Of(node)).Why == CastWhy.Default;
 
     public static string? CodeOf(NodeDeclaration node, NodeStatus status) =>
         node.Kind == NodeKinds.QuestHolds && status.State == NodeStates.Reached && status.Words == GoesOn ? NoReader : null;

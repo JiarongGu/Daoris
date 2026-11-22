@@ -48,8 +48,15 @@ internal static class PolicyPasses
     internal static string? PassedKind(NodeDeclaration node, NodeStatus? status, bool gatePassed) => status switch
     {
         { State: NodeStates.Reached } when node.Kind == NodeKinds.Opinion => gatePassed ? RiskActs.WorkAccept : null,
-        { State: NodeStates.Reached, By: NodeSource.Policy } => RiskStepHolds.KindOf(node.Kind == NodeKinds.Review ? PersonWaits.Accept : PersonWaits.Approval, node),
+        { State: NodeStates.Reached, By: NodeSource.Policy } => RiskStepHolds.KindOf(PassWhy(node), node),
         _ => null,
+    };
+
+    private static string PassWhy(NodeDeclaration node) => node.Kind switch
+    {
+        NodeKinds.Review or NodeKinds.Opinion => PersonWaits.Accept,
+        NodeKinds.QuestHolds => PersonWaits.Pass,
+        _ => PersonWaits.Approval,
     };
 
     private static bool Once(string home, string key, Func<RiskJudged> line)
@@ -79,7 +86,7 @@ internal static class PolicyPasses
                 bool passed;
                 lock (OpinionPassed(records.Home)) passed = OpinionPassed(records.Home).Contains($"{each.Run}/{node.Id}");
                 // An opinion step its gate's pass let go is a step the policy passed too: its own line once, and its person told once with it.
-                var why = node.Kind is NodeKinds.Review or NodeKinds.Opinion ? PersonWaits.Accept : PersonWaits.Approval;
+                var why = PassWhy(node);
                 if (PassedKind(node, status, passed) is not { } kind || RiskStepGates.Verdict(judge, kind, node) is not { } verdict) continue;
                 var key = $"{RiskStepHolds.Domain}:{each.Run}/{node.Id}#{status.Attempt}:{why}";
                 if (!Once(records.Home, key, () => new RiskJudged(now, RiskJudged.Released, key, why, verdict.Kind, verdict.Qualifier, RiskPolicy.Key, place.Workspace,

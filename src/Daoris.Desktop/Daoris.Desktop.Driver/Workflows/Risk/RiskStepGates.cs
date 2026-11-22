@@ -23,7 +23,7 @@ public static class RiskStepGates
     /// <summary>The verdict on the hold <paramref name="node"/> stands at; the owner role's step and a marked place's approval are the owner's.</summary>
     public static RiskVerdict? Verdict(NodeDeclaration node, string? why, RiskStepJudge? judge)
     {
-        if (judge is null || why is not (PersonWaits.Accept or PersonWaits.Approval) || RiskStepHolds.KindOf(why, node) is not { } kind) return null;
+        if (judge is null || why is not (PersonWaits.Accept or PersonWaits.Approval or PersonWaits.Pass) || RiskStepHolds.KindOf(why, node) is not { } kind) return null;
         if (RiskStepHolds.BadAct(node) is { } bad) return Owners(judge.Act(RiskAct.Of(kind)), $"its `act` option {bad} names no act of the census, which no policy row can class");
         var verdict = Verdict(judge, kind, node)!;
         return verdict.Outcome != RiskVerdict.OwnerOutcome && judge.Marked && why == PersonWaits.Approval && StepRoles.Of(node) == StepRoles.Approver
