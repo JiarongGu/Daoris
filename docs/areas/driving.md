@@ -376,10 +376,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     from the entry again, and a drain does not wait for it. A retry runs through the same key pass, bounds, epoch fence and lease; the
     entry ends once every key has moved (a key that moved is not listed in the next attempt), a failure writes the next attempt and the
     log must keep it before this retry is acknowledged (else the queue hands this retry again), and past the type's retries the give-up
-    names the entry. A fenced process writes no retry and ends nothing, and a pass that moved a key before another entry's failure ends
+    names the entry. A retry's write waits on its own entry's fate (`BusLog.AppendKeptAsync`: kept, or refused, dropped or still unwritten
+    past a busy store's tries; whichever write carried it, the loop's or the caller's), never on a flush that reports nothing. A write the
+    log refuses is counted by the entry it belongs to (`BusEntryNotKeptException`, which tells the queue not to charge the lane head's
+    tries), the row or the retry is handed again after a backoff, and past the entry's type's retries the give-up names that entry
+    alone, never the row's head or the retry fact; a row handed again writes no second retry for an entry whose retry the log kept (by
+    entry id). A fenced process writes no retry and ends nothing, and a pass that moved a key before another entry's failure ends
     only its own entries. Facts waiting on a key hold at most the consumer's 32 subject slots, merge into the pass after the one
     running and never stall another key's. A due file that cannot be read or parsed is a failure of the move that needed it
-    (`OpinionDues.OpenStrict`), never an empty set owed. The gate's own turns (a cool-off's reset, a backoff after a pass ended beside)
+    (`OpinionDues.OpenStrict`), never an empty set owed: a file that keeps no `due` array reads as one that does not read. The gate's own turns (a cool-off's reset, a backoff after a pass ended beside)
     are memory only, and `ResumedAsync`, which judges every owed opinion at a start, is their net. The opinion's gate (keyed by the owed opinion,
     grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
     run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.

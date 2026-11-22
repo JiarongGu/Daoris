@@ -166,6 +166,26 @@ public sealed class BusQueueTests : IDisposable
         Assert.Equal(BusTypes.OpinionGiven.Kind, consumer.Of("op-bad")[^1]);
     }
 
+    /// <summary>🔴 A handling that throws <see cref="BusEntryNotKeptException"/> is handed again however often, and the queue gives up no entry for it.</summary>
+    [Fact]
+    public async Task A_row_handed_again_for_one_entrys_refused_retry_is_never_given_up_by_the_queue()
+    {
+        var tries = 0;
+        var consumer = new Recording("refusing", entry =>
+        {
+            if (entry.Subject != "op-bad" || entry.Kind != BusTypes.OpinionAsked.Kind) return Task.CompletedTask;
+            return Interlocked.Increment(ref tries) <= BusTypes.OpinionAsked.Retries + 3 ? throw new BusEntryNotKeptException("another", tries) : Task.CompletedTask;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [consumer], Quick);
+
+        bus.Append(Asked("op-bad"));
+        await Poll.Until(() => Volatile.Read(ref tries) == BusTypes.OpinionAsked.Retries + 4, () => $"op-bad tried {tries}", Soon);
+        await bus.FlushAsync();
+        await Poll.Until(() => queue.Store.Consumer("refusing") is { Parked: 0 }, () => "the entry was not handled at last: " + queue.Store.Consumer("refusing"), Soon);
+        Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.GiveUp.Kind);
+    }
+
     /// <summary>🔴 A second claim raises the epoch: the first run is fenced off and executes nothing more, so two never both execute it.</summary>
     [Fact]
     public async Task A_second_claim_fences_the_first_so_two_never_both_execute()

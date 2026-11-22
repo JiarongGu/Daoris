@@ -15,14 +15,19 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class OpinionGateFiles
 {
-    /// <summary>Every entry <paramref name="path"/> keeps, in the order they became due; none where it is missing or does not read.</summary>
+    /// <summary>Every entry <paramref name="path"/> keeps, in the order they became due; none where it is missing, or does not read or keeps no <c>due</c> array, which <paramref name="strict"/> throws on.</summary>
     public static IReadOnlyList<OpinionDue> ReadDues(string path, bool strict = false)
     {
         try
         {
             if (!File.Exists(path)) return [];
             using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
-            if (!document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array) return [];
+            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("due", out var due) || due.ValueKind != JsonValueKind.Array)
+            {
+                if (strict) throw new InvalidDataException("the due file keeps no list of what is owed");
+                return [];
+            }
+
             return [.. due.EnumerateArray().Select(DueOf).OfType<OpinionDue>()];
         }
         catch (Exception error) when (!strict && error is JsonException or IOException or UnauthorizedAccessException)

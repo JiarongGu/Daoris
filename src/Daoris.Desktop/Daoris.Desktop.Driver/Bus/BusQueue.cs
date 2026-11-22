@@ -51,6 +51,14 @@ public sealed record BusHandled(bool Ends)
     public static readonly BusHandled Judged = new(false);
 }
 
+/// <summary>The log would not keep one entry's retry: the consumer counts and gives that entry up, so the queue hands the row again and charges the lane head no try.</summary>
+public sealed class BusEntryNotKeptException(string entry, int refusals) : IOException($"the log did not keep the retry of entry {entry}")
+{
+    public string Entry { get; } = entry;
+
+    public int Refusals { get; } = refusals;
+}
+
 /// <summary>One entry of a frame and the consumers it goes to.</summary>
 public sealed record BusDelivery(BusEnvelope Entry, IReadOnlyList<string> To);
 
@@ -577,11 +585,12 @@ internal sealed class BusConsumerRun
                 continue;
             }
 
-            tries++;
+            var refused = thrown as BusEntryNotKeptException;
+            if (refused is null) tries++;
             var type = BusTypes.Of(entry.Kind);
             _queue.Log.Measured(BusMeasures.Consumer, $"{Name}:threw", 1);
             _queue.Log.Warn($"queue:threw:{Name}:{entry.Kind}", "bus.consumer-threw", ("consumer", Name), ("kind", entry.Kind), ("why", thrown!.Message));
-            if (type is null || tries > type.Retries)
+            if (refused is null && (type is null || tries > type.Retries))
             {
                 // Past its budget: handed to its holder chain, said on the log and on Stalls, and its subject goes on.
                 GiveUp(entry, type, tries);
@@ -591,7 +600,7 @@ internal sealed class BusConsumerRun
             }
 
             if (!Park(subject, tries)) return;
-            var wait = TimeSpan.FromTicks(Math.Min(_queue.Options.RetryMost.Ticks, _queue.Options.RetryFirst.Ticks << Math.Min(20, tries - 1)));
+            var wait = TimeSpan.FromTicks(Math.Min(_queue.Options.RetryMost.Ticks, _queue.Options.RetryFirst.Ticks << Math.Min(20, Math.Max(0, (refused?.Refusals ?? tries) - 1))));
             try
             {
                 await Task.Delay(wait, _queue.Options.Clock, ct).ConfigureAwait(false);

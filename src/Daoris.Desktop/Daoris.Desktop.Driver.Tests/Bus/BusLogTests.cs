@@ -398,6 +398,71 @@ public sealed class BusLogTests(ITestOutputHelper output) : IDisposable
         Assert.Equal((long)Daoris.Ports.Store.DesktopStoreEngineOptions.DefaultBusyWait.TotalMilliseconds, real.Setting("busy_timeout"));
     }
 
+    /// <summary>🔴 A write a caller waits on says whether the store kept it: kept where written, not kept where refused.</summary>
+    [Fact]
+    public async Task A_write_waited_on_says_whether_the_store_kept_it()
+    {
+        await using (var refused = BusLog.Over(new ThrowingStore(), Options()))
+        {
+            Assert.False(await refused.AppendKeptAsync(Plain("run-1")));
+        }
+
+        var counting = new CountingStore();
+        await using (var kept = BusLog.Over(counting, Options()))
+        {
+            Assert.True(await kept.AppendKeptAsync(Plain("run-1")));
+            Assert.Equal(1, counting.Writes);
+        }
+
+        await using var refusing = BusLog.Over(new CountingStore(), Options());
+        Assert.False(await refusing.AppendKeptAsync(Plain("")));
+    }
+
+    /// <summary>🔴 A busy store's batch is kept after a later try and not kept past the tries.</summary>
+    [Fact]
+    public async Task A_write_waited_on_that_a_busy_store_put_back_is_kept_after_a_later_try_and_not_kept_past_the_tries()
+    {
+        var clock = new MovedClock();
+        var store = new CountingStore { Busy = 1 };
+        await using (var bus = BusLog.Over(store, new BusLogOptions { Clock = clock }))
+        {
+            var waiting = bus.AppendKeptAsync(Commit("run-1"));
+            await Poll.Until(() => store.Refused == 1, () => $"{store.Refused} refusals");
+            Assert.False(waiting.IsCompleted);
+            Assert.True(await Advancing(clock, waiting));
+            Assert.Equal(1, store.Writes);
+            Assert.Equal(1, store.Refused);
+        }
+
+        var stuck = new CountingStore { Busy = int.MaxValue };
+        var later = new MovedClock();
+        await using var lost = BusLog.Over(stuck, new BusLogOptions { Clock = later });
+        Assert.False(await Advancing(later, lost.AppendKeptAsync(Commit("run-1"))));
+        Assert.Equal(BusLog.MostRetries + 1, stuck.Refused);
+        Assert.Equal(1, lost.Tally.Missed.GetValueOrDefault(BusMisses.Store));
+    }
+
+    /// <summary>The clock moved a pause at a time until <paramref name="waiting"/> is told.</summary>
+    private static async Task<bool> Advancing(MovedClock clock, Task<bool> waiting)
+    {
+        await Poll.Until(() =>
+        {
+            clock.Advance(BusLog.RetryAfter);
+            return waiting.IsCompleted;
+        }, () => "the write's fate was never told");
+        return await waiting;
+    }
+
+    /// <summary>🔴 A write the loop took before the caller's own flush is still told to the caller: the answer is the entry's own fate.</summary>
+    [Fact]
+    public async Task A_write_waited_on_is_told_its_own_fate_when_the_loop_wrote_it()
+    {
+        var store = new ThrowingStore();
+        await using var bus = BusLog.Over(store, Options());
+        var results = await Task.WhenAll(Enumerable.Range(0, 20).Select(each => bus.AppendKeptAsync(Commit("run-1", each))));
+        Assert.All(results, Assert.False);
+    }
+
     /// <summary>
     /// 🔴 A value its field's shape cannot carry is dropped at emit, the fact and the batch beside it written: a number that is not
     /// finite, text that is not well-formed UTF-16, whitespace, a path, an e-mail or a sentence where an id is declared; an envelope whose
