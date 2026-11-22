@@ -9,8 +9,9 @@ namespace Daoris.Driver;
 /// <param name="wake">Asks the loop for the pass: the wake, with the whole look's read asked of it.</param>
 public sealed class PassAsks(Action wake)
 {
-    /// <summary>How many unit asks a running pass takes at one boundary; the rest wait for the next.</summary>
+    /// <summary>How many unit asks a running pass takes at one boundary, and (<see cref="LatePerPass"/>) in all; the rest wait for the next pass.</summary>
     public const int LateAtOnce = 8;
+    public const int LatePerPass = 24;
 
     private readonly Lock _gate = new();
 
@@ -80,12 +81,12 @@ public sealed class PassAsks(Action wake)
     }
 
     /// <summary>The unit asks made since the last take, for a pass running: its units and the doors waiting on them. A whole ask stays for the next pass.</summary>
-    private (IReadOnlySet<string> Units, List<(string? Unit, TaskCompletionSource<PassOutcome> Answer, bool Whole)> Waiting) TakeLate()
+    private (IReadOnlySet<string> Units, List<(string? Unit, TaskCompletionSource<PassOutcome> Answer, bool Whole)> Waiting) TakeLate(int limit)
     {
         lock (_gate)
         {
             var wholes = _waiting.Where(each => each.Whole && each.Unit is not null).Select(each => each.Unit!).ToHashSet(StringComparer.Ordinal);
-            var units = _alone.Where(unit => !wholes.Contains(unit)).Take(LateAtOnce).ToHashSet(StringComparer.Ordinal);
+            var units = _alone.Where(unit => !wholes.Contains(unit)).Take(Math.Min(LateAtOnce, limit)).ToHashSet(StringComparer.Ordinal);
             _alone.ExceptWith(units);
             _units.ExceptWith(units);
             var taken = _waiting.Where(each => !each.Whole && each.Unit is not null && units.Contains(each.Unit)).ToList();

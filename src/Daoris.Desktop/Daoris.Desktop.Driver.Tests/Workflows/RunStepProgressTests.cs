@@ -241,6 +241,73 @@ public sealed class RunStepProgressTests(ITestOutputHelper output) : NodeRunFixt
         Assert.NotNull(pass);
     }
 
+    /// <summary>🔴 A late unit's judgement consumes what its fact brought: the plugin's answer to its sent attempt is read first, so the next node begins in that pass.</summary>
+    [Fact]
+    public async Task A_check_passed_taken_late_begins_its_next_node_in_that_pass()
+    {
+        var (outcome, _, sent) = await ChainAskedWhileHeldAsync(tipMoves: false);
+
+        Assert.Equal(PassOutcome.Judged, outcome);
+        Assert.Equal(NodeStates.Reached, RunStatus("release").State);
+        Assert.Equal(NodeStates.Active, RunStatus("config").State);
+        Assert.Equal(sent, _port.Sent.Count);
+    }
+
+    /// <summary>🔴 An observed node bound to the first tip, which moves while a pass is held: a late ask begins the next node once, at the new tip, and no node lapses back.</summary>
+    [Fact]
+    public async Task A_node_begun_by_a_late_ask_after_the_tip_moved_is_begun_once_at_the_new_tip()
+    {
+        var (outcome, _, sent) = await ChainAskedWhileHeldAsync(tipMoves: true);
+
+        Assert.Equal(PassOutcome.Judged, outcome);
+        var release = RunStatus("release");
+        Assert.Equal((NodeStates.Active, 2, Tip2, sent + 1), (release.State, release.Attempt, release.Binding?.SubjectRevision, _port.Sent.Count));
+        Assert.Equal(Tip2, Assert.Single(_port.Sent.Skip(sent)).SubjectRevision);
+    }
+
+    /// <summary>The release sent at the first tip, a whole pass held in a read, the replaced process answering reached, the run asked, the pass let go.</summary>
+    private async Task<(PassOutcome Outcome, NodeRuntimePass Pass, int Sent)> ChainAskedWhileHeldAsync(bool tipMoves)
+    {
+        var (runtime, _) = await SentAsync();
+        var sent = _port.Sent.Count;
+        var asks = new PassAsks(() => { });
+        var taken = asks.Take();
+        var (reached, release) = (new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously), new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        var blocked = 0;
+        var look = RunLook(whole: true);
+        var tips = look.Tips;
+        look = look with
+        {
+            Tips = async (root, branches, ct) =>
+            {
+                var read = await tips(root, branches, ct);
+                if (Interlocked.Exchange(ref blocked, 1) == 0)
+                {
+                    reached.TrySetResult();
+                    await release.Task;
+                }
+
+                return read;
+            },
+            Asked = taken.Units,
+            Judged = taken.Judged,
+            Late = taken.Late, Ungoverned = taken.Ungoverned, Failed = taken.Failed, NotJudged = taken.NotJudged,
+        };
+        Read();
+        var whole = Task.Run(() => runtime.PassAsync(look, CancellationToken.None));
+        await Task.WhenAny(reached.Task, whole);
+        Assert.True(reached.Task.IsCompleted, "the whole pass read no tip, so nothing holds it where a unit's ask can reach it");
+
+        if (tipMoves) _branchTips["daoris/s1"] = Tip2;
+        _port.Generation = 2;
+        _port.Answer = _ => new WorkReconcileAnswer(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached));
+        var wait = asks.WaitUnitAsync(RunUnit, TimeSpan.FromSeconds(3), CancellationToken.None);
+        release.SetResult();
+        var pass = await whole;
+        taken.Done(passed: true);
+        return (await wait, pass, sent);
+    }
+
     private enum Beyond { Nothing, TipMoves, ReadFails }
 
     private int _heldReads;

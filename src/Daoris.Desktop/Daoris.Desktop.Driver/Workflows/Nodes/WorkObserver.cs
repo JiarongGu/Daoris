@@ -315,13 +315,16 @@ public sealed class PassTips(
 
     private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _read = new(StringComparer.Ordinal);
 
+    private readonly Dictionary<string, HashSet<string>> _held = new(StringComparer.Ordinal);
+
     /// <summary>The tips of <paramref name="root"/>'s branches, read at the first ask; a branch not read is absent, and a later ask reads nothing again.</summary>
     public async Task<IReadOnlyDictionary<string, string>> ReadAsync(string root, IReadOnlyCollection<string> branches, CancellationToken ct)
     {
         if (root.Length == 0) return None;
         if (_read.TryGetValue(root, out var tips)) return tips;
-        var all = (governed.GetValueOrDefault(root) ?? []).Concat(branches).Where(branch => branch.Length > 0)
+        var all = (governed.GetValueOrDefault(root) ?? []).Concat(branches).Concat(_held.GetValueOrDefault(root) ?? []).Where(branch => branch.Length > 0)
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        _held[root] = [.. all];
         return _read[root] = all.Count == 0 ? None : await read(root, all, ct).ConfigureAwait(false);
     }
 

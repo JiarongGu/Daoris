@@ -134,10 +134,10 @@ internal sealed class RunStepConsumer : IBusConsumer
     private void Compare(string unit, DateTimeOffset at)
     {
         var open = _asking.Values.FirstOrDefault(each => each.Unit == unit && at >= each.Start);
-        var inWindow = _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack;
-        var by = inWindow ? BusMeasures.ByConsumer : _ending.ContainsKey(unit) ? BusMeasures.ByLook : BusMeasures.ByOther;
         var lag = _ending.TryRemove(unit, out var since) ? Math.Max(0, (long)(at - since).TotalMilliseconds) : 0;
         if (open is not null && !open.Add(lag)) open = null;
+        var inWindow = _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack;
+        var by = inWindow ? BusMeasures.ByConsumer : since != default ? BusMeasures.ByLook : BusMeasures.ByOther;
         if (open is null) Credit(by, lag);
     }
 

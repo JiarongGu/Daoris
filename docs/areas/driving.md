@@ -264,9 +264,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
     next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. A pass
     already running (a whole one can work for minutes, its git reads waiting for the machine's places) takes the ask too, at its next
-    unit boundary (`PassTaken.Late`, `LateUnits`, at most `PassAsks.LateAtOnce` at one boundary), into its own turn and bounds, never a
-    second pass: the unit's checkout is read afresh in the pass's own tips, the words kept on its record applied, then it is judged
-    once (again where asked again after being judged), and a failure fails that door alone; the ask never waits for the next pass. The
+    unit boundary (`PassTaken.Late`, `LateUnits`), into its own turn and bounds, never a second pass: the unit's checkout is read afresh
+    in the pass's own tips (every branch the first read held, former subjects' and frames' included), the words kept on its record
+    applied, its answered attempts reconciled (a check's or a plugin's answer is read only by a reconcile, so what the fact brought is
+    consumed first), then it is judged once (again where asked again after being judged). It is marked judged only on success: a
+    failure fails that door alone and leaves the unit to the turn's own entry for it. Where the reconcile cannot ask every attempt
+    (the pass's four calls spent, a process not answering) the unit is not evaluated and its door answers not judged, so the fact stays
+    open for the look. Bounds: a late start's sends are the pass's one shared count of four; a pass takes at most `PassAsks.LateAtOnce`
+    units at one boundary and `PassAsks.LatePerPass` in all, and the overflow stays asked, for the next pass. An ask made while a pass
+    runs is answered by that pass where it takes it, else it waits for the next. The
     acknowledgement, written after the pass, ends the fact's obligation only where the pass judged the run; one it did not (a drain, a
     closing loop, no lease) is acknowledged with the obligation armed, spending no retry, and the look's whole pass reaches it. Each
     fact's pass is counted by what it came to (`PassOutcome`: judged, not governed, not judged, failed, bound passed), and a node the
