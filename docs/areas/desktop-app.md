@@ -128,8 +128,10 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     The desktop says why it stops: the `app.stopped` line's `reason` is the door the stop came by, told before the stop goes on
     and the first told kept (`MachineLog.StopBecause`, `StopReasons`): `window-closed` (the person closed the only main
     window), `last-window-closed`, `update` (with `build` and `by`: `now` or `idle`), `system-shutdown`, `task-manager`,
-    `signal` (a terminal's interrupt, quit, hang-up or terminate), `unhandled-failure` (with its `type`, the stop said as the
-    exception leaves). A stop no door told is `unknown`. A process ended from outside leaves no `app.stopped` at all.
+    `terminal-ask` (the desktop tool's `kill` and `restart`, run by a terminal or a session, close the window from outside, which
+    the system reports as the person's: the tool leaves `run/stop-ask.json` first, and the stop says `by` and the asking
+    `session`; an ask for another process or older than two minutes is none), `signal` (a terminal's interrupt, quit, hang-up or
+    terminate), `unhandled-failure` (with its `type`, the stop said as the exception leaves). A stop no door told is `unknown`. A process ended from outside leaves no `app.stopped` at all.
 19. Each main window wears the count of what waits on the owner, every workspace's rows the census classes the owner's (rule 32), on
     its taskbar button (dark ink on the owner's amber in either theme, since what it counts waits on the owner and red is a
     failure's alone; *9+* past nine) and in its title, as its page tells it, and the install's identity Daoris chooses. A

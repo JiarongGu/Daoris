@@ -8,6 +8,7 @@ import { applicationsAt, running, stopAll } from '../processes.mjs';
 import { DESKTOP_PROJECT, DRIVER_HOST_PROJECT, HTTP_PROJECT, MCP_PROJECT, RUN_FILE, WEB, ago, readRun, takeInstall } from './session.mjs';
 import { fail, run } from './run.mjs';
 import { awaitSwap } from './swap-wait.mjs';
+import { askStop } from './stop-ask.mjs';
 import { PAGE_IDENTITY, isShell } from './page.mjs';
 import { assemblyExe, awaitDebugPort, closedPortReport, engineLogOf, installedExe } from './executables.mjs';
 import { CLEARED, debugEnvironment, installEnvironment, scratchEnvironment, scratchPlan } from './environment.mjs';
@@ -119,6 +120,7 @@ export async function start(command, args) {
 
   const live = applicationsAt(exe);
   if (live.length && command === 'restart') {
+    askStop(readRun()?.home, live);
     stopAll(exe);
     console.log(`stopped pid ${live.join(', ')}`);
   } else if (live.length) {
@@ -194,10 +196,10 @@ export async function start(command, args) {
 
   // Written before the wait, so `kill` and `restart` reach a window whose port never opens.
   mkdirSync(scratchRoot, { recursive: true });
-  const record = { pid: child.pid, exe, serviceUrl, cdpPort, real, started: new Date().toISOString() };
+  const home = install ? join(install, HOME) : real ? process.env.DAORIS_HOME : scratchPlan().home;
+  const record = { pid: child.pid, exe, serviceUrl, cdpPort, real, home, started: new Date().toISOString() };
   writeFileSync(RUN_FILE, `${JSON.stringify(record, null, 2)}\n`);
 
-  const home = install ? join(install, HOME) : real ? process.env.DAORIS_HOME : scratchPlan().home;
   console.log(`shell started (pid ${child.pid})`);
   console.log(`  platform   ${serviceUrl}`);
   console.log(`  debug port ${cdpPort}`);

@@ -40,6 +40,7 @@ import { isMain } from './fsx.mjs';
 import { applicationsAt, commandLinesAt, stopProcesses } from './processes.mjs';
 import { SHOTS, pruneShots, readRun, startedHere, takeWindow, targetExe } from './desktop/session.mjs';
 import { fail, run } from './desktop/run.mjs';
+import { askStop } from './desktop/stop-ask.mjs';
 import { attach, build, doctor, evalExpression, start } from './desktop/commands.mjs';
 import { shotTarget, withPageTheme } from './desktop/page.mjs';
 import { repoRoot } from './desktop/paths.mjs';
@@ -88,6 +89,7 @@ async function main(command, args) {
         break;
       }
 
+      askStop(readRun()?.home, live);
       stopProcesses(live);
       console.log(`stopped pid ${live.join(', ')}`);
       break;

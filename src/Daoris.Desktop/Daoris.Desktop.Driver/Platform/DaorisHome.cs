@@ -376,6 +376,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
     public static readonly HomeEntry SessionPids = new("session-pids", HomeCategory.Run, "run/sessions/*.pid");
     public static readonly HomeEntry Requests = new("requests", HomeCategory.Run, "run/requests");
     public static readonly HomeEntry EdgeRecord = new("edge-record", HomeCategory.Run, "run/edge.json");
+    public static readonly HomeEntry StopAsk = new("stop-ask", HomeCategory.Run, "run/stop-ask.json");
     public static readonly HomeEntry Pipe = new("pipe", HomeCategory.Run, "run/pipe");
     public static readonly HomeEntry GitHeld = new("git-held", HomeCategory.Run, "run/git/held.json");
     public static readonly HomeEntry GitGrants = new("git-grants", HomeCategory.Run, "run/git/grants");
@@ -403,7 +404,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, p
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Deps, TreeFiles, Places, Plans, Evidence,
         Toolchain, ToolVersions, Bin,
-        HomeLease, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe,
+        HomeLease, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, StopAsk, Pipe,
         GitHeld, GitGrants, GitUsed, GitAsks, GitCheckouts, GitLibrary, GitLibraryLeases, GitHome, GitSessions, ClockMark, Logs,
     ];
 

@@ -28,6 +28,9 @@ public static class StopReasons
     /// <summary>The task manager closed the window.</summary>
     public const string TaskManager = "task-manager";
 
+    /// <summary>A terminal or a session closed the window from outside (<see cref="StopAsk"/>): <c>by</c> what asked and, where known, its <c>session</c>.</summary>
+    public const string TerminalAsk = "terminal-ask";
+
     /// <summary>A terminal asked the process to end: the <c>signal</c> it sent (interrupt, quit, hang-up, terminate).</summary>
     public const string Signal = "signal";
 

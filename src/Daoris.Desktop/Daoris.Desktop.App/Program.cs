@@ -266,7 +266,8 @@ internal static class Program
         // The application ends with its last main window, not its first: the first, whose form the
         // kit's loop runs on and as which the pickers, the taskbar's count, the tray and the update are resolved, is put away
         // on the person's close while another main window is open, and closed for good when the last of them closes.
-        builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log));
+        builder.Services.AddSingleton(sp => new MainWindows(() => sp.GetRequiredService<MainForm>().CloseForGood(), log,
+            () => Daoris.Driver.StopAsk.Read(Daoris.Driver.ProgramHome.Named, Environment.ProcessId, DateTimeOffset.UtcNow)));
         // A terminal's press waiting unshown lights the taskbar button of the main window last in front:
         // the judgement's, told each window's focus and what the pipe says waits; the window is resolved as it is lit.
         builder.Services.AddSingleton(sp => new PressFlash((window, on) =>

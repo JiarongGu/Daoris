@@ -196,6 +196,42 @@ public sealed class MainWindowsTests : IDisposable
         if (how == "last") Assert.Contains("\"window\":\"main:2\"", stopped);
     }
 
+    /// <summary>
+    /// The close the desktop tool makes (`kill`, `restart`) reaches the window as the person's; the ask it left in the home, in the shape the
+    /// tool writes, is what names its door, for the only window and for the last of several. An ask for another process, or a stale one, names none.
+    /// </summary>
+    [Theory]
+    [InlineData("only", 4242, 0, StopReasons.TerminalAsk)]
+    [InlineData("last", 4242, 0, StopReasons.TerminalAsk)]
+    [InlineData("only", 99, 0, StopReasons.WindowClosed)]
+    [InlineData("only", 4242, 600, StopReasons.WindowClosed)]
+    public void A_close_the_desktop_tool_made_names_the_terminal_ask_in_the_stop(string how, int pid, int ageSeconds, string reason)
+    {
+        var now = new DateTimeOffset(2026, 11, 23, 9, 0, 0, TimeSpan.Zero);
+        var at = now.AddSeconds(-ageSeconds).ToString("o");
+        File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.StopAsk), $$"""{"pids":[4242],"by":"desktop-tool","at":"{{at}}","session":"76cdd5db"}""");
+        using (var log = new MachineLog(_home, "desktop"))
+        {
+            var windows = new MainWindows(() => _ended++, log, () => StopAsk.Read(_home, pid, now));
+            if (how == "last")
+            {
+                windows.Opened("main:2");
+                Assert.True(windows.FirstClosing(byPerson: true));
+                Assert.True(windows.Closed("main:2"));
+            }
+            else
+            {
+                Assert.False(windows.FirstClosing(byPerson: true));
+            }
+
+            log.Stopped();
+        }
+
+        var stopped = StoppedLine();
+        Assert.Contains($"\"reason\":\"{reason}\"", stopped);
+        if (reason == StopReasons.TerminalAsk) Assert.Contains("\"by\":\"desktop-tool\",\"session\":\"76cdd5db\"", stopped);
+    }
+
     /// <summary>The person's close that only puts the first window away stops nothing, and tells no reason.</summary>
     [Fact]
     public void A_window_put_away_is_no_stop_and_tells_no_reason()
