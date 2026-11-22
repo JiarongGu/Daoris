@@ -52,6 +52,12 @@ public sealed class GitReadCache
         }
     }
 
+    /// <summary>What is kept now, the least recently used first: kept again in this order, the cache stands as it stood.</summary>
+    internal IReadOnlyList<(string Key, object Value)> Entries()
+    {
+        lock (_gate) return [.. _order.Reverse().Select(entry => (entry.Key, entry.Value))];
+    }
+
     /// <summary>The answer kept under <paramref name="key"/>, as the type it is kept as; asking for it makes it the most recent.</summary>
     public bool TryGet<T>(string key, [MaybeNullWhen(false)] out T value) where T : class
     {
