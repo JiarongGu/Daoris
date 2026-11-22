@@ -27,7 +27,7 @@ internal static class ClaudeCodeProvider
     private const string SteerEvidence = "docs/2026-10-03-steer-evidence.md";
     private const string NativeBesideEvidence = "docs/archive/2026-09-30-console3-native-streams-evidence.md";
     private const string ProtocolBesideEvidence = "docs/archive/2026-09-28-console2-streams-evidence.md";
-    private static readonly MeasuredAt SteerMeasuredAt = new("2.1.284", "0.84.0");
+    private static readonly MeasuredAt SteerMeasuredAt = new("2.1.330", "0.109.1");
 
     private const string ConfigVariable = "CLAUDE_CONFIG_DIR";
 

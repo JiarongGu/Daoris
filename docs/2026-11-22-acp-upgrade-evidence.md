@@ -82,10 +82,23 @@ toolchain folder; the held ones were run from where they are pinned.
 - codex-acp 2.6.0 and 2.9.0: both answer `initialize` with the `api-key` and `chat-gpt` methods and refuse `session/new`
   with "Authentication required" (no sign-in in a scratch home). Differences: §3.
 
-## 7. What is not proved here
+## 7. The pins moved (2026-11-23)
 
-No session was driven on either adapter. A driven session spends an account's allowance and runs under a sign-in, and the pin
-moves that put the newer adapters in Daoris's own toolchain are a press the machine does not take from a session's terminal
-(`daoris agent pin` is refused there, `AgentLongCommand.RefusedHereAsync`). The proof is: the pin pressed, then a driven session
-on each adapter through Daoris's own door, one turn, a steer, a resume, and a refused model, compared with the corpus frames of the
-held versions.
+The owner pressed Update on each: `claude-code-acp` is pinned 0.109.1, `codex-acp` 2.9.0 and `codex` 0.171.0, each managed in the
+home's toolchain folder (`daoris agent list` reads them). `claude-code` stays unpinned: 2.1.330 changes no flag Daoris passes (§5),
+the program runs from `PATH`, and the adapter carries its own Claude Code (SDK 0.3.330, program 2.1.330). Each pin's why: the notes
+(§2 to §5) name no change to a word, flag or capability Daoris reads, and the measurement below shows the behaviour Daoris builds on
+unchanged.
+
+## 8. Measured again at the new pins
+
+Keylessly against the stub model, each adapter at the version it replaced and at the new pin, in one script's order
+(`docs/2026-10-03-steer-evidence.md` §9 holds the table): steering mid-tool, a second prompt into a running tool, steering with
+no turn, a cancel mid-tool, a model switch. Both behave at the new pin as at the old. What the notes said would differ did and
+nothing else: the order of the config options and Fast's category on Claude's adapter; `auth.status` and `mcpCapabilities.acp` now
+offered by both; `sessionCapabilities.subagents` gone from `codex-acp`.
+
+What Daoris changed: `WordsAtNextStep` and `Steering` of `claude-code-acp` are measured at agent 2.1.330, adapter 0.109.1 (they were
+2.1.284, 0.84.0); `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0 (it was declared from the
+transport's default). The offers readings kept per account at 0.106.0 and 2.6.0 are read again by each account's next
+`session/new`; until then `daoris agent list` names them as read at another version.
