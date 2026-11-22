@@ -193,8 +193,9 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         }
 
         var wait = TimeSpan.FromTicks(Math.Min(host.Options.RetryMost.Ticks, host.Options.RetryFirst.Ticks << Math.Min(20, attempt - 1)));
-        // More failed keys than a fact lists are retried as the whole entry, its pieces named again.
-        var listed = keys.Count <= BusShapes.MostListed;
+        // More failed keys than a fact lists, or a key the fact cannot carry (it would be dropped, leaving nothing to retry), are
+        // retried as the whole entry, its pieces named again.
+        var listed = keys.Count <= BusShapes.MostListed && keys.All(key => key.Length > 0 && BusShapes.Short(key));
         return await AppendAsync(host.Log, new BusDraft(BusTypes.FlowRetry, $"retry:{Name}:{cause.Id}")
         {
             Commit = true,

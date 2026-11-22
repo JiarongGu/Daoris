@@ -505,7 +505,9 @@ internal sealed class BusConsumerRun
     {
         try
         {
-            await Task.Delay(at - _queue.Options.Clock.GetUtcNow(), _queue.Options.Clock, _queue.Closing).ConfigureAwait(false);
+            // Reached late, the time already past: offered at once, never a negative wait (one of -1 ms waits forever, a lower one throws).
+            var wait = at - _queue.Options.Clock.GetUtcNow();
+            if (wait > TimeSpan.Zero) await Task.Delay(wait, _queue.Options.Clock, _queue.Closing).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
