@@ -31,7 +31,7 @@ public sealed partial class NodeDispatchCensusTests
     private static readonly Dictionary<string, string[]> Kept = new(StringComparer.Ordinal)
     {
         ["Workflows/Nodes/WireEvaluation.cs"] = [nameof(NodeKinds.All), nameof(NodeKinds.Stop)],
-        ["Workflows/Nodes/NodeRunKeeping.cs"] = [nameof(NodeKinds.Claimed), nameof(NodeKinds.Integrate), nameof(NodeKinds.Request), nameof(NodeKinds.Review)],
+        ["Workflows/Nodes/NodeRunKeeping.cs"] = [nameof(NodeKinds.Check), nameof(NodeKinds.Claimed), nameof(NodeKinds.Integrate), nameof(NodeKinds.Request), nameof(NodeKinds.Review)],
         ["Workflows/Nodes/NodeGoverning.cs"] = [nameof(NodeKinds.Integrate)],
     };
 
