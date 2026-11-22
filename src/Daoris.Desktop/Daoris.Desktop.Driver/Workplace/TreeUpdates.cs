@@ -61,7 +61,12 @@ internal sealed class TreeUpdates(
 
         facts = facts with { Running = await running(ct).ConfigureAwait(false) };
         if (facts.First() is not null) return Refused(facts);
-        facts = facts with { Uncommitted = await StatusPathsAsync(full, ct).ConfigureAwait(false) };
+        if (await StatusPathsAsync(full, ct).ConfigureAwait(false) is not { } uncommitted)
+        {
+            return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, "git did not answer its status"));
+        }
+
+        facts = facts with { Uncommitted = uncommitted };
         if (facts.First() is not null) return Refused(facts);
 
         // The repository's own checkout, whose line is the repository's (as the review reads it), and the tree's
@@ -123,10 +128,12 @@ internal sealed class TreeUpdates(
             return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, "the tree has no commit"));
         }
 
+        var onRemote = branch is null ? false : await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+        if (onRemote is null) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, "git did not answer whether its branch is on its remote"));
         facts = facts with
         {
             UpToDate = await IsAncestorAsync(root, onto, head, ct).ConfigureAwait(false),
-            OnRemote = branch is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false),
+            OnRemote = onRemote is true,
         };
         if (facts.First() is not null) return Refused(facts);
 
@@ -269,9 +276,10 @@ internal sealed class TreeUpdates(
 
         if (await CommitOfAsync(full, "HEAD", ct).ConfigureAwait(false) is not { } head) return Left("the tree has no commit");
         if (await IsAncestorAsync(root, onto, head, ct).ConfigureAwait(false)) return SubmissionOnto.Nothing;
-        if (await StatusPathsAsync(full, ct).ConfigureAwait(false) is > 0 and var dirty)
+        if (await StatusPathsAsync(full, ct).ConfigureAwait(false) is not { } uncommitted) return Left("git did not answer its tree's status");
+        if (uncommitted > 0)
         {
-            return Left($"its tree has uncommitted work ({dirty} path(s)), which a replay does not carry");
+            return Left($"its tree has uncommitted work ({uncommitted} path(s)), which a replay does not carry");
         }
 
         string? branch;
@@ -291,9 +299,16 @@ internal sealed class TreeUpdates(
         // new submission. Only those are replayed, so the source's old commits it grew on are never replayed as its own.
         var grown = branch is null ? null : context.Grown.Of(repository, branch);
         string cut;
-        if (grown is { From: { Length: > 0 } from } && await IsAncestorAsync(root, from, head, ct).ConfigureAwait(false))
+        bool? recordHeld = null;
+        if (grown is { From: { Length: > 0 } recorded })
         {
-            cut = from;
+            recordHeld = await AncestryAsync(root, recorded, head, ct).ConfigureAwait(false);
+            if (recordHeld is null) return Left("git did not answer whether the tree still holds where its record says it grew from");
+        }
+
+        if (recordHeld is true)
+        {
+            cut = grown!.From!;
         }
         else
         {
@@ -392,7 +407,7 @@ internal sealed class TreeUpdates(
                 RebaseKind.UpToDate => TreeUpdateWords.Refused(TreeRefusal.UpToDate, facts),
                 RebaseKind.Pushed => TreeUpdateWords.Refused(TreeRefusal.OnRemote, facts),
                 RebaseKind.Dirty => TreeUpdateWords.Refused(
-                    TreeRefusal.Dirty, facts with { Uncommitted = await StatusPathsAsync(tree, ct).ConfigureAwait(false) }),
+                    TreeRefusal.Dirty, facts with { Uncommitted = await StatusPathsAsync(tree, ct).ConfigureAwait(false) ?? 0 }),
                 _ => TreeUpdateWords.Left(facts, judged.Item.Kind, judged.Item.GrewFrom, judged.Item.Detail),
             });
         }
@@ -428,7 +443,7 @@ internal sealed class TreeUpdates(
         var had = held?.Kept ?? await CountAsync(root, $"{from}..{head}", ct).ConfigureAwait(false);
 
         // 🔴 Read again immediately before: still detached, at the commit judged, clean.
-        if (await DetachedAtAsync(tree, head, ct).ConfigureAwait(false) is not true || await StatusPathsAsync(tree, ct).ConfigureAwait(false) > 0)
+        if (await DetachedAtAsync(tree, head, ct).ConfigureAwait(false) is not true || await StatusPathsAsync(tree, ct).ConfigureAwait(false) is not 0)
         {
             return new(false, TreeUpdateWords.MovedSince);
         }
@@ -447,12 +462,8 @@ internal sealed class TreeUpdates(
         return new(true, TreeUpdateWords.Replayed(line, kept, had, held?.LeftOut ?? 0), new TreeMoved(line, head, now!, null, kept));
     }
 
-    /// <summary>The paths a tree's <c>git status --porcelain</c> lists: its uncommitted work, untracked files included.</summary>
-    private static async Task<int> StatusPathsAsync(string tree, CancellationToken ct)
-    {
-        var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "status", "--porcelain"], ct).ConfigureAwait(false);
-        return dirty.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
-    }
+    /// <summary>The paths a tree's <c>git status --porcelain</c> lists: its uncommitted work, untracked files included; null where git did not answer, which is unknown and never clean.</summary>
+    private static Task<int?> StatusPathsAsync(string tree, CancellationToken ct) => MachinePorts.Repository.UncommittedAsync(tree, ct);
 
     /// <summary>Whether the tree is detached at <paramref name="head"/>; null where git cannot say.</summary>
     private static async Task<bool?> DetachedAtAsync(string tree, string head, CancellationToken ct)

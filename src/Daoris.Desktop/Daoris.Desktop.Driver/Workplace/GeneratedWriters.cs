@@ -124,6 +124,7 @@ internal static class GeneratedWriters
         if (!commit) return new(changed, runs, null);
         var (same, _, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--cached", "--quiet", "HEAD"], ct).ConfigureAwait(false);
         if (same == 0) return new([], runs, null);
+        if (same != 1) return new([], runs, "git did not answer whether what it wrote differs, so nothing was committed");
 
         var (made, _, madeErr) = await WorkingTree.GitAsync(
             tree, ["commit", "--quiet", "-m", DaorisMaker.Of($"Write {string.Join(", ", folders)} again from the replayed tree")], environment: null, SyncBounds.Replay, ct)

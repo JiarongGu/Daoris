@@ -40,7 +40,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
         if (sync is null || !sync.Held.Replays) return plan;
         // Where the line only moved, a standing branch the press moves on grows from its own tip, never rewritten.
         if (sync.Held.HoldsNone && plan.Stands) return plan;
-        if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false))
+        if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false) is not false)
         {
             // A pushed branch of its own is never rewritten: where the line holds none of it, it lands as it stands, as before.
             if (sync.Held.HoldsNone) return plan;

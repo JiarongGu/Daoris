@@ -129,23 +129,38 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, onto], ct).ConfigureAwait(false);
         var leaves = baseOut.Trim();
         if (baseCode == 0 && leaves == onto) return Item(RebaseKind.UpToDate, tip);
-        if (pushedOnRecord || await OnRemoteAsync(root, branch, ct, refs).ConfigureAwait(false)) return Item(RebaseKind.Pushed, tip);
+        if (pushedOnRecord) return Item(RebaseKind.Pushed, tip);
+        var onRemote = await OnRemoteAsync(root, branch, ct, refs).ConfigureAwait(false);
+        if (onRemote is true) return Item(RebaseKind.Pushed, tip);
+        if (onRemote is null) return Item(RebaseKind.Unknown, tip, detail: "git did not answer whether it is on its remote, so it is not replayed");
         if (baseCode != 0) return Item(RebaseKind.Unknown, tip, detail: $"git found no point where it left the line: {FirstLine(baseErr)}");
 
         string cut;
         string cutBy;
         var walked = false;
-        if (grow is not null && await IsAncestorAsync(root, grow, tip, ct).ConfigureAwait(false))
+        bool? growsFromRecord = null;
+        bool? recordOnLine = null;
+        if (grow is not null)
         {
-            if (await IsAncestorAsync(root, grow, leaves, ct).ConfigureAwait(false))
+            growsFromRecord = await AncestryAsync(root, grow, tip, ct).ConfigureAwait(false);
+            if (growsFromRecord is true) recordOnLine = await AncestryAsync(root, grow, leaves, ct).ConfigureAwait(false);
+            if (growsFromRecord is null || (growsFromRecord is true && recordOnLine is null))
+            {
+                return Item(RebaseKind.Unknown, tip, detail: "git did not answer where its record says it grew from, so it is not replayed");
+            }
+        }
+
+        if (growsFromRecord is true)
+        {
+            if (recordOnLine is true)
             {
                 (cut, cutBy) = (leaves, CutBy.Line);
             }
             else
             {
-                var proof = await LandedProofs.ProveAsync(root, grow, line, [new LandedProofs.LineForm(onto, onto)], ct).ConfigureAwait(false);
+                var proof = await LandedProofs.ProveAsync(root, grow!, line, [new LandedProofs.LineForm(onto, onto)], ct).ConfigureAwait(false);
                 if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged)) return Item(RebaseKind.Waits, tip);
-                (cut, cutBy) = (grow, CutBy.Record);
+                (cut, cutBy) = (grow!, CutBy.Record);
             }
         }
         else

@@ -114,9 +114,10 @@ internal sealed class ResolveTree(ReplaySettles settles)
         }
 
         if (atItsStop && await MarkedAsync(hand.Tree, at, ct).ConfigureAwait(false) is { } marked) return new(ResolveSteps.Unresolved, marked) { At = at };
-        if ((atItsStop || !rebasing) && await OthersAsync(hand.Tree, at, ct).ConfigureAwait(false) is { Count: > 0 } others)
+        if (atItsStop || !rebasing)
         {
-            return new(ResolveSteps.Refused, Unnamed(others)) { At = at };
+            if (await OthersAsync(hand.Tree, at, ct).ConfigureAwait(false) is not { } others) return new(ResolveSteps.Refused, Unread) { At = at };
+            if (others.Count > 0) return new(ResolveSteps.Refused, Unnamed(others)) { At = at };
         }
 
         if (atItsStop && SameCommit(head, at.Head)) await WorkingTree.GitAsync(hand.Tree, ["add", "--", .. at.Paths], ct).ConfigureAwait(false);
@@ -124,8 +125,16 @@ internal sealed class ResolveTree(ReplaySettles settles)
             ? await GoneOnAsync(hand, atItsStop ? Continues : null, ct).ConfigureAwait(false)
             : new ResolveStep(ResolveSteps.Done, "") { Commit = head };
         if (step.Kind is not (ResolveSteps.Done or ResolveSteps.Stopped)) return step;
-        return await ProvedAsync(hand.Tree, at, ct).ConfigureAwait(false) is { Count: > 0 } changed ? new(ResolveSteps.Refused, Unnamed(changed)) { At = at } : step;
+        return await ProvedAsync(hand.Tree, at, ct).ConfigureAwait(false) switch
+        {
+            null => new(ResolveSteps.Refused, Unread) { At = at },
+            { Count: > 0 } changed => new(ResolveSteps.Refused, Unnamed(changed)) { At = at },
+            _ => step,
+        };
     }
+
+    /// <summary>What a refusal says where git did not answer a read of the tree: unknown is never "settled", so nothing is taken as the resolver's.</summary>
+    internal const string Unread = "git did not answer a read of the tree, so what the resolver changed is unknown and none of it is taken";
 
     /// <summary>
     /// The tree put back as handed: where <paramref name="keepEdits"/>, what the resolver made (HEAD's commits since the stop, then the
@@ -134,7 +143,10 @@ internal sealed class ResolveTree(ReplaySettles settles)
     /// </summary>
     public static async Task<string?> RestoreAsync(ResolveHand hand, bool keepEdits, CancellationToken ct)
     {
-        if (keepEdits && await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await KeepEditsAsync(hand, ct).ConfigureAwait(false);
+        if (keepEdits && (await RebasingAsync(hand.Tree, ct).ConfigureAwait(false) || !SameCommit(await CommitOfAsync(hand.Tree, "HEAD", ct).ConfigureAwait(false), hand.Tip)))
+        {
+            await KeepEditsAsync(hand, ct).ConfigureAwait(false);
+        }
         if (await RebasingAsync(hand.Tree, ct).ConfigureAwait(false)) await WorkingTree.GitAsync(hand.Tree, ["rebase", "--abort"], ct).ConfigureAwait(false);
         await MachinePorts.Repository.ResetHardAsync(hand.Tree, "HEAD", ct).ConfigureAwait(false);
         await WorkingTree.GitAsync(hand.Tree, ["clean", "-fdq"], ct).ConfigureAwait(false);
@@ -187,10 +199,11 @@ internal sealed class ResolveTree(ReplaySettles settles)
     }
 
     /// <summary>Why a named file is not settled yet: a conflict git still records, or markers left in it; null where every one is.</summary>
-    private static async Task<string?> MarkedAsync(string tree, ResolveStopAt at, CancellationToken ct)
+    internal static async Task<string?> MarkedAsync(string tree, ResolveStopAt at, CancellationToken ct)
     {
-        var (_, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
+        var (code, unmerged, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=U"], ct)
             .ConfigureAwait(false);
+        if (code != 0) return "git did not answer which files are still conflicted";
         foreach (var path in at.Paths)
         {
             var full = Path.Combine(tree, path);
@@ -203,20 +216,23 @@ internal sealed class ResolveTree(ReplaySettles settles)
     }
 
     /// <summary>The paths beside the named ones the resolver changed in the tree and has not committed.</summary>
-    private static async Task<IReadOnlyList<string>> OthersAsync(string tree, ResolveStopAt at, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>?> OthersAsync(string tree, ResolveStopAt at, CancellationToken ct)
     {
-        var (_, status, _) = await WorkingTree.GitAsync(
+        var (code, status, _) = await WorkingTree.GitAsync(
             tree, ["--no-optional-locks", "-c", "core.quotePath=false", "status", "--porcelain", "--untracked-files=all"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
         return [.. status.Split('\n', StringSplitOptions.RemoveEmptyEntries).Where(line => line.Length > 3).Select(line => line[3..].Trim())
             .Where(path => !at.Paths.Contains(path, StringComparer.Ordinal))];
     }
 
     /// <summary>The paths beside the named ones whose content the stop's commit, as made, holds otherwise than the rebase settled them.</summary>
-    private static async Task<IReadOnlyList<string>> ProvedAsync(string tree, ResolveStopAt at, CancellationToken ct)
+    internal static async Task<IReadOnlyList<string>?> ProvedAsync(string tree, ResolveStopAt at, CancellationToken ct)
     {
-        var (_, listed, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--reverse", "--ancestry-path", $"{at.Head}..HEAD"], ct).ConfigureAwait(false);
+        var (listedCode, listed, _) = await WorkingTree.GitAsync(tree, ["rev-list", "--reverse", "--ancestry-path", $"{at.Head}..HEAD"], ct).ConfigureAwait(false);
+        if (listedCode != 0) return null;
         if (listed.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() is not { } made) return [];
-        var (_, entries, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "ls-tree", "-r", "--full-tree", made], ct).ConfigureAwait(false);
+        var (entriesCode, entries, _) = await WorkingTree.GitAsync(tree, ["-c", "core.quotePath=false", "ls-tree", "-r", "--full-tree", made], ct).ConfigureAwait(false);
+        if (entriesCode != 0) return null;
         var holds = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var line in entries.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {

@@ -79,7 +79,13 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         }
 
         // Uncommitted work would not travel with the branch — the same reason the merge door gives.
-        if ((uncommitted ?? await TreeMerges.DirtyAsync(full, ct).ConfigureAwait(false)) is > 0 and var dirty)
+        var dirtied = uncommitted ?? await TreeMerges.DirtyAsync(full, ct).ConfigureAwait(false);
+        if (dirtied is null)
+        {
+            return new TreeLanding(false, "git did not answer the session's tree's status, so nothing was landed: whether it holds uncommitted work is unknown.");
+        }
+
+        if (dirtied is > 0 and var dirty)
         {
             return new TreeLanding(false,
                 $"the session's tree has uncommitted work — {dirty} path(s) — which a "
@@ -128,7 +134,9 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             // Where the line holds some of its commits, the branch is replayed in place and keeps its name; one on its
             // remote is never rewritten, and is refused as a conflict is. So is one whose line only moved, unless it is
             // on its remote, where it lands as it stands, its pull request the place it meets the line.
-            var pushed = sync is not null && await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+            var onRemote = sync is null ? false : await OnRemoteAsync(root, branch, ct).ConfigureAwait(false);
+            if (onRemote is null) return Unread($"whether `{branch}` is on its remote");
+            var pushed = onRemote is true;
             if (sync is not null && !(pushed && sync.Held.HoldsNone))
             {
                 if (pushed) return TreeLandSyncs.OwnOnRemote(sync);
@@ -213,7 +221,9 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             // the same replay as what the line partly holds; one grown from it still moves it by its own tip. A line that only
             // moved replays nothing onto a standing branch, which grows from its own tip and is never rewritten.
             var holding = sync is { Held.HoldsNone: false } ? sync : null;
-            var onto = holding ?? (join is not null && !await IsAncestorAsync(root, grown, join.Tip, ct).ConfigureAwait(false) ? join : null);
+            var growsFromJoin = join is null || holding is not null ? (bool?)true : await AncestryAsync(root, grown, join.Tip, ct).ConfigureAwait(false);
+            if (growsFromJoin is null) return Unread($"whether `{name}` holds what its part grew from");
+            var onto = holding ?? (growsFromJoin is false ? join : null);
             if (onto is null)
             {
                 return await AdvanceAsync(root, repository, name, standsAt, branch, line, commits, handedOn, ct, against, squash, pinned: pinned, delivering: delivering)
@@ -225,8 +235,16 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             var lacking = new List<LandingCommit>();
             foreach (var commit in onto.Held.Kept)
             {
-                if (await IsAncestorAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false)) continue;
-                if (squashedTip is not null && await IsAncestorAsync(root, commit.Sha, squashedTip, ct).ConfigureAwait(false)) continue;
+                var onBranchNow = await AncestryAsync(root, commit.Sha, standsAt, ct).ConfigureAwait(false);
+                if (onBranchNow is null) return Unread($"whether `{name}` holds `{commit.Sha[..Math.Min(8, commit.Sha.Length)]}`");
+                if (onBranchNow is true) continue;
+                if (squashedTip is not null)
+                {
+                    var inSquash = await AncestryAsync(root, commit.Sha, squashedTip, ct).ConfigureAwait(false);
+                    if (inSquash is null) return Unread($"whether `{name}`'s squash holds `{commit.Sha[..Math.Min(8, commit.Sha.Length)]}`");
+                    if (inSquash is true) continue;
+                }
+
                 lacking.Add(commit);
             }
 
@@ -312,6 +330,10 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         { Squashed = squashed, Replay = replayed };
     }
 
+    /// <summary>A read of git that failed says so and moves nothing: it is unknown, never a verdict.</summary>
+    private static TreeLanding Unread(string what) =>
+        new(false, $"git did not answer {what}, so nothing was moved: a read that failed is unknown, never a verdict.");
+
     /// <summary>
     /// Move a standing branch on to the session's work: the chain's branch, which an earlier done
     /// made, grows by this session's commits, so a ticket has one branch and one pull request.
@@ -347,8 +369,10 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
         string? replayed = null, string? pinned = null, TreeDelivering? delivering = null)
     {
         var recorded = context.Recorded.Of(repository, name);
-        var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
+        var (headCode, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
             .ConfigureAwait(false);
+        // A branch git names none of is an answer (exit 1); a read that failed is no answer, and nothing is moved on it.
+        if (headCode is not (0 or 1)) return Unread($"where `{branch}` stands");
         var head = replayed ?? pinned ?? headOut.Trim();
         // What the session's work must grow from: the tip the record gives as squashed where it gives one, else the tip
         // the branch got when made or last moved, its commits the session's own; a replay onto that tip grows from it.
@@ -373,11 +397,13 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             {
                 var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", grewFrom!, head], ct)
                     .ConfigureAwait(false);
+                if (ancestor is not (0 or 1)) return Unread($"whether `{branch}` grows from `{name}`");
                 descends = ancestor == 0;
                 if (descends)
                 {
-                    var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{grewFrom}..{head}"], ct)
+                    var (countCode, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{grewFrom}..{head}"], ct)
                         .ConfigureAwait(false);
+                    if (countCode != 0) return Unread($"what `{branch}` adds to `{name}`");
                     newer = int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
                 }
             }

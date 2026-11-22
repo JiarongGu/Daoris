@@ -165,15 +165,22 @@ internal static class TreeRefs
     }
 
     /// <summary>The commit <paramref name="revision"/> names, or null; from <paramref name="refs"/> where it holds the answer.</summary>
-    internal static async Task<string?> CommitOfAsync(string root, string revision, CancellationToken ct, RefSnapshot? refs = null)
+    internal static async Task<string?> CommitOfAsync(string root, string revision, CancellationToken ct, RefSnapshot? refs = null) =>
+        (await CommitReadAsync(root, revision, ct, refs).ConfigureAwait(false)).Commit;
+
+    /// <summary>The commit <paramref name="revision"/> names; not <c>Answered</c> where git did not answer, which is no "there is none".</summary>
+    internal static async Task<(bool Answered, string? Commit)> CommitReadAsync(string root, string revision, CancellationToken ct, RefSnapshot? refs = null)
     {
-        if (refs is not null && await refs.CommitAsync(revision, ct).ConfigureAwait(false) is { Known: true } read) return read.Commit;
+        if (refs is not null && await refs.CommitAsync(revision, ct).ConfigureAwait(false) is { Known: true } read) return (true, read.Commit);
         var (code, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{revision}^{{commit}}"], ct).ConfigureAwait(false);
-        return code == 0 ? sha.Trim() : null;
+        return code switch { 0 => (true, sha.Trim()), 1 => (true, null), _ => (false, null) };
     }
 
     internal static async Task<bool> IsAncestorAsync(string root, string ancestor, string of, CancellationToken ct) =>
         (await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", ancestor, of], ct).ConfigureAwait(false)).Code == 0;
+
+    internal static Task<bool?> AncestryAsync(string root, string ancestor, string of, CancellationToken ct) =>
+        MachinePorts.Repository.IsAncestorAsync(root, ancestor, of, ct);
 
     internal static async Task<int> CountAsync(string root, string range, CancellationToken ct)
     {
@@ -185,9 +192,11 @@ internal static class TreeRefs
     /// Whether a branch is on a remote: a remote-tracking branch of its own name, as its upstream or on
     /// <c>origin</c>. An upstream a new branch borrowed from its start point (the line's) is not its own.
     /// </summary>
-    internal static async Task<bool> OnRemoteAsync(string root, string branch, CancellationToken ct, RefSnapshot? refs = null)
+    internal static async Task<bool?> OnRemoteAsync(string root, string branch, CancellationToken ct, RefSnapshot? refs = null)
     {
-        if (await CommitOfAsync(root, $"refs/remotes/origin/{branch}", ct, refs).ConfigureAwait(false) is not null) return true;
+        var remote = await CommitReadAsync(root, $"refs/remotes/origin/{branch}", ct, refs).ConfigureAwait(false);
+        if (remote.Commit is not null) return true;
+        if (!remote.Answered) return null;
         // `--symbolic-full-name` answers only an upstream that is there: none configured, or one whose ref is gone, fails.
         if (refs is not null && await refs.UpstreamAsync(branch, ct).ConfigureAwait(false) is { Known: true } read)
         {
@@ -200,6 +209,7 @@ internal static class TreeRefs
 
         var (code, upstream, _) = await WorkingTree.GitAsync(
             root, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", $"{branch}@{{upstream}}"], ct).ConfigureAwait(false);
-        return code == 0 && upstream.Trim().EndsWith($"/{branch}", StringComparison.Ordinal);
+        if (code == 0) return upstream.Trim().EndsWith($"/{branch}", StringComparison.Ordinal);
+        return code is 1 or 128 ? false : null;
     }
 }
