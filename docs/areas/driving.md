@@ -355,6 +355,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     that throws reads failed, its key let go for the next try (`OnceWords`). A run that must return drains it (`QuietAsync`: the log
     written, each write framed, every consumer's entries acknowledged or parked, its start's rebuild ended, within a bound). Its first
     consumer is the opinion's gate (`workflows-review-landing` rule 26), started by the watch and the headless runs alike.
+    What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer
+    and every job moved off a look keeps, each review's first questions: (1) a look's step is deleted only once every input it
+    took wakes its job as a fact or is covered by a named net, or a wait stands with no wake; (2) a fact is acknowledged as ending its
+    obligation only when its job really moved, and as handled otherwise, so the stall view keeps it; (3) one pass works on one state at a
+    time, never a pass nested in another, and late asks join the running pass's own turn (`LateUnits`); (4) a consumer bounds its
+    work, never all of an open set at once, and a fact names what it reaches so a burst costs what it moved (`BusConsumerSetsCensusTests`);
+    (5) a failure costs the one entry it hit, never its lane, its pass or another fact. A path beside the bus (a direct call kept, a
+    second lane) is opened only with its reason stated, and built by the same rules (the owner, 2026-11-22).
     `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
     bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
     its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,
