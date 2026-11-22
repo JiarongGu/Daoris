@@ -14,7 +14,7 @@ public sealed class OpinionGateMovesTests : IDisposable
 {
     private static readonly TimeSpan Soon = Poll.Patience;
 
-    private static readonly TimeProvider Machine = TimeProvider.System;
+    internal static readonly TimeProvider Machine = TimeProvider.System;
 
     private static readonly DateTimeOffset At = new(2026, 11, 22, 9, 0, 0, TimeSpan.Zero);
 
@@ -191,7 +191,7 @@ public sealed class OpinionGateMovesTests : IDisposable
         bus.Append(OpinionBusFacts.ChoicesWritten());
         await Poll.Until(() => Judged("s-25") >= 2 && Judged("s-10") >= 2, () => "the round did not judge them all", Soon);
 
-        Assert.InRange(Volatile.Read(ref most), 1, OpinionGateConsumer.AtOnce);
+        Assert.InRange(Volatile.Read(ref most), 1, OpinionGateConsumer.Bounds.KeysAtOnce);
     }
 
     private int Judged(string session) => _judged.Count(subject => subject.StartsWith(session + "/", StringComparison.Ordinal));
@@ -223,5 +223,60 @@ public sealed class OpinionGateMovesTests : IDisposable
             return new OpinionFact(new Dictionary<string, OpinionSit>(), null, null);
         },
         (_, _) => Task.FromResult<OpinionView?>(null),
-        () => new OpinionDues(_home).Open(), Machine, (_, _) => { });
+        () => new OpinionDues(_home).OpenStrict(), Machine, (_, _) => { });
+
+    /// <summary>🔴 A due file that cannot be read is a failure of the move that needed it, never "nothing owed": the move is retried and judged, its timer ending then.</summary>
+    [Fact]
+    public async Task A_due_file_that_cannot_be_read_fails_the_move_and_the_retry_judges_what_it_reached()
+    {
+        await using var bus = Open();
+        using var gate = Gate();
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick with { RetryFirst = TimeSpan.FromMilliseconds(400), RetryMost = TimeSpan.FromMilliseconds(400) });
+        await Started();
+        _judged.Clear();
+
+        var held =new FileStream(new OpinionDues(_home).FilePath, FileMode.Open, FileAccess.Read, FileShare.None);
+        try
+        {
+            bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["q-1"], ["engine"])));
+            await Poll.Until(() => Written().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "the failed move wrote no retry", Soon);
+            await bus.FlushAsync();
+            Assert.Equal(0, Judged("s-1"));
+            Assert.Contains(Armed(), timer => timer.Kind == BusTypes.QuestMoved.Kind);
+        }
+        finally
+        {
+            await held.DisposeAsync();
+        }
+
+        await Poll.Until(() => Judged("s-1") >= 1, () => "the retry did not judge the opinion the move reached", Soon);
+        await Unarmed(bus);
+    }
+
+    /// <summary>🔴 A due file that does not parse is a failure too: it never reads as nothing owed and ends the move.</summary>
+    [Fact]
+    public async Task A_due_file_that_does_not_parse_fails_the_move_and_the_retry_judges_it_once_it_does()
+    {
+        await using var bus = Open();
+        using var gate = Gate();
+        await using var queue = await BusQueue.StartAsync(bus, [gate], Quick with { RetryFirst = TimeSpan.FromMilliseconds(400), RetryMost = TimeSpan.FromMilliseconds(400) });
+        await Started();
+        _judged.Clear();
+
+        var path = new OpinionDues(_home).FilePath;
+        var good = await File.ReadAllTextAsync(path);
+        await File.WriteAllTextAsync(path, "{ not json");
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["q-1"], ["engine"])));
+        await Poll.Until(() => Written().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "the failed move wrote no retry", Soon);
+        await File.WriteAllTextAsync(path, good);
+
+        await Poll.Until(() => Judged("s-1") >= 1, () => "the retry did not judge the opinion the move reached", Soon);
+        await Unarmed(bus);
+    }
+
+    private IReadOnlyList<BusEnvelope> Written()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return store.Read(0, 100_000);
+    }
 }

@@ -2,36 +2,36 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
+/// <summary>What the gate asks of one owed opinion: the opinion, and whether a fact (not one of its own turns) asked.</summary>
+internal sealed record GateWork(OpinionDue Due, bool ByFact);
+
 /// <summary>
-/// The opinion's gate as the bus's first consumer : each opinion fact it is handed (owed, asked, given, delivered,
-/// answered, the person's word) judges that owed opinion's gate at once by its rule (<see cref="OpinionGateJudge.JudgeDueAsync"/>): deliver,
-/// recheck, pass by the policy, or wait named. A move of the quests, of a run's nodes or of the standing choices judges every owed opinion,
-/// since its holds, its chain, its graph's opinion node, its rule and its process are read from them. Its acknowledgement ends what is owed
-/// it: an owed opinion judged, answers or a word judged, a move judged, and a clean pass, which leaves nothing to deliver. No look judges an
-/// opinion.
+/// The opinion's gate as a consumer of the dispatch (<see cref="BusFlowConsumer{TWork}"/>): each opinion fact it is handed (owed, asked, given,
+/// delivered, answered, the person's word) judges that owed opinion's gate at once by its rule (<see cref="OpinionGateJudge.JudgeDueAsync"/>):
+/// deliver, recheck, pass by the policy, or wait named. A move of the quests, of a run's nodes or of the standing choices judges the owed
+/// opinions it reaches, since their holds, chain, graph's opinion node, rule and process are read from them. Its key is the owed opinion; the
+/// layer gives it one judgment of an owed opinion at a time, one of a repository at a time (each runs git's content proof) and
+/// <see cref="Bounds"/> keys across repositories, coalesces the facts waiting on one opinion, and turns the judgment into the
+/// acknowledgement: no look judges an opinion.
 /// </summary>
 /// <remarks>
 /// <para><b>What it reads, it reads at the fact.</b> A fact names an opinion by its id; the opinion's record names its session and occasion,
 /// read as the fact is handled, so nothing waits on a look's read. The author's answers reach it as the go-on's <c>opinion.answered</c>;
 /// the service journals none of its own yet. A move judged after a judgment that read before it waits for that judgment, so the later
-/// one reads the move.</para>
+/// one reads the move; a move names the quests and repositories it changed, and judges only what they reach.</para>
 /// <para><b>Time as timer events.</b> A judgment that finds a turn ahead (a cool-off's reset, a reading pass's end), or a pass or a delivery
-/// a drain held, judges that opinion again then; a pass or a delivery begun beside that ends without a fact (a turn in flight, a busy
-/// conversation) is judged again after a backoff; a judgment that throws keeps the turn it found. These live in memory: a start judges
-/// every owed opinion once (<see cref="ResumedAsync"/>), which rebuilds the gate's view and its turns. The watchdog's timers are the net
-/// under all of it.</para>
-/// <para><b>One judgment of an owed opinion at a time.</b> Facts of one opinion arrive in order; facts of several that name one owed
-/// opinion are judged one after another, never two judgments of one at once. Each judgment runs git's content proof, so the owed opinions
-/// of one repository are judged one at a time (a round's nine at once queued behind one another and every other git, which held a
-/// restart's first look for an hour); those of several repositories go beside each other.</para>
+/// a drain held, judges that opinion again then, asked of the layer as a fact's work is; a pass or a delivery begun beside that ends without
+/// a fact (a turn in flight, a busy conversation) is judged again after a backoff; a judgment that throws keeps the turn it found. These live
+/// in memory: a start judges every owed opinion once (<see cref="ResumedAsync"/>), which rebuilds the gate's view and its turns. The
+/// watchdog's timers are the net under all of it.</para>
 /// </remarks>
-internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
+internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposable
 {
     /// <summary>Its durable name in the queue.</summary>
     public const string Name = "opinion-gate";
 
-    /// <summary>How many owed opinions are judged at once across every repository: the git bound's figure, so a round of hundreds queues here, not in git's places.</summary>
-    public const int AtOnce = 4;
+    /// <summary>Its bounds: the git bound's figure of owed opinions at once across every repository, one within a repository.</summary>
+    public static readonly BusFlowBounds Bounds = new(KeysAtOnce: 4, PerGroup: 1);
 
     /// <summary>The first wait before a pass or a delivery that ended without a fact is judged again, doubled at each until <see cref="AgainMost"/>.</summary>
     public static readonly TimeSpan AgainFirst = TimeSpan.FromSeconds(30);
@@ -46,19 +46,9 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     private readonly Func<IReadOnlyList<OpinionDue>> _open;
     private readonly TimeProvider _clock;
     private readonly Action<string, string> _warn;
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _dues = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _places = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _again = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, int> _quiet = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _closing = new();
-    private readonly SemaphoreSlim _round = new(1, 1);
-    private readonly SemaphoreSlim _atOnce = new(AtOnce, AtOnce);
-    private readonly object _movedGate = new();
-    private HashSet<string> _movedQuests = new(StringComparer.OrdinalIgnoreCase);
-    private HashSet<string> _movedRepositories = new(StringComparer.OrdinalIgnoreCase);
-    private bool _movedAll;
-    private long _heard;
-    private long _rounded;
 
     /// <param name="judge">One owed opinion judged by the gate's rule, told where a pass or a delivery it began beside ends.</param>
     /// <param name="read">An opinion's record by its id; null where none is.</param>
@@ -68,6 +58,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     public OpinionGateConsumer(
         Func<OpinionDue, Action<string>, CancellationToken, Task<OpinionFact?>> judge, Func<string, CancellationToken, Task<OpinionView?>> read,
         Func<IReadOnlyList<OpinionDue>> open, TimeProvider clock, Action<string, string> warn)
+        : base(Name, Reads, Bounds, clock)
     {
         _judge = judge;
         _read = read;
@@ -84,129 +75,86 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
             gate.BesideEnded = ended;
             return await gate.JudgeDueAsync(due, ct).ConfigureAwait(false);
         },
-        service.Opinions.ReadAsync, () => new OpinionDues(home).Open(), bus.Clock,
+        service.Opinions.ReadAsync, () => new OpinionDues(home).OpenStrict(), bus.Clock,
         (once, why) => bus.Warn("gate:" + once, "opinion.gate-unjudged", ("why", why)));
 
     /// <summary>The facts every owed opinion's judgment reads: its quests' holds and chains, its run's nodes, its rule and process.</summary>
     private static readonly HashSet<string> Everyone = new([BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind], StringComparer.Ordinal);
 
-    public BusSubscription Subscription { get; } = BusTypes.Subscribe(
-        Name,
-        [
-            .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
-                .Select(type => type.Kind),
-            .. Everyone,
-        ]);
+    private static readonly string[] Reads =
+    [
+        .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
+            .Select(type => type.Kind),
+        .. Everyone,
+    ];
 
-    public string Obliged => BusTypes.OpinionGate;
+    /// <summary>The owed opinion now owed under <paramref name="key"/>, judged again by a retry; none where it has closed.</summary>
+    protected override Task<BusFlowPiece<GateWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
+        Task.FromResult(_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), key)) is { } owed ? Piece(owed, byFact: true) : null);
 
-    public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
-    {
-        using var asking = GitAskers.Is(GitAskers.Gate);
-        if (Everyone.Contains(entry.Kind))
-        {
-            Noted(entry);
-            await RoundAsync(ct).ConfigureAwait(false);
-        }
-        else await JudgeAllAsync(await DuesOfAsync(entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
-        return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;
-    }
-
-    public bool Folds(string kind) => Everyone.Contains(kind);
-
-    /// <summary>A move folded into a later one is still reached: its names are kept for the round that stands for it.</summary>
-    public void Folded(BusEnvelope away) => Noted(away);
-
-    /// <summary>
-    /// What a round owes the facts heard: a move that names its quests and repositories reaches the owed opinions they reach
-    /// (<see cref="QuestMoves.Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
-    /// </summary>
-    private void Noted(BusEnvelope entry)
-    {
-        var quests = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "quests").Value as IReadOnlyList<string> : null;
-        var repositories = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "repositories").Value as IReadOnlyList<string> : null;
-        lock (_movedGate)
-        {
-            if (quests is null || repositories is null) _movedAll = true;
-            else
-            {
-                _movedQuests.UnionWith(quests);
-                _movedRepositories.UnionWith(repositories);
-            }
-        }
-    }
-
-    /// <summary>Each owed opinion judged beside the others: one whose judgment is slow holds none of the rest.</summary>
-    private Task JudgeAllAsync(IEnumerable<OpinionDue> dues, CancellationToken ct) => Task.WhenAll(dues.Select(due =>
-    {
-        _quiet.TryRemove(OpinionGateJudge.Subject(due), out _);
-        return JudgeAsync(due, ct);
-    }));
-
-    /// <summary>
-    /// A move's round: every owed opinion judged once, one round at a time; a move heard before a round began is judged by it, so a burst of
-    /// moves on several subjects costs one round for those that waited.
-    /// </summary>
-    private async Task RoundAsync(CancellationToken ct)
-    {
-        var heard = Interlocked.Increment(ref _heard);
-        await _round.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            if (Interlocked.Read(ref _rounded) >= heard) return;
-            var upto = Interlocked.Read(ref _heard);
-            // Taken now and given back where the round fails, so the entry tried again still reaches what a folded one named.
-            bool all;
-            HashSet<string> quests, repositories;
-            lock (_movedGate)
-            {
-                (all, quests, repositories) = (_movedAll, _movedQuests, _movedRepositories);
-                (_movedAll, _movedQuests, _movedRepositories) = (false, new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
-            }
-
-            try
-            {
-                await JudgeAllAsync(_open().Where(due => all || QuestMoves.Reaches(due, quests, repositories)), ct).ConfigureAwait(false);
-            }
-            catch
-            {
-                lock (_movedGate)
-                {
-                    _movedAll |= all;
-                    _movedQuests.UnionWith(quests);
-                    _movedRepositories.UnionWith(repositories);
-                }
-
-                throw;
-            }
-
-            Interlocked.Exchange(ref _rounded, upto);
-        }
-        finally
-        {
-            _round.Release();
-        }
-    }
-
-    /// <summary>Every owed opinion judged once at the start: the gate's view and its turns rebuilt, nothing owed left to a look.</summary>
-    public async Task ResumedAsync(CancellationToken ct)
-    {
-        foreach (var due in _open())
-        {
-            try
-            {
-                await JudgeAsync(due, ct).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is not OutOfMemoryException and not OperationCanceledException)
-            {
-                _warn("resumed:" + OpinionGateJudge.Subject(due), error.Message);
-                Again(due, _clock.GetUtcNow() + AgainFirst);
-            }
-        }
-    }
+    public override string Obliged => BusTypes.OpinionGate;
 
     /// <summary>Whether its acknowledgement of <paramref name="entry"/> ends the entry's obligation (<see cref="OpinionBusFacts.EndsAtTheGate"/>).</summary>
     public static Func<BusEnvelope, bool> Ends => OpinionBusFacts.EndsAtTheGate;
+
+    protected override bool Coalesces(string kind) => Everyone.Contains(kind);
+
+    protected override bool Settles(BusEnvelope entry) => Ends(entry);
+
+    protected override GateWork Merge(GateWork earlier, GateWork later) => new(later.Due, earlier.ByFact || later.ByFact);
+
+    /// <summary>The owed opinions a fact reaches, each a piece of work keyed by the opinion and grouped by its repository.</summary>
+    protected override async Task<IReadOnlyList<BusFlowPiece<GateWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
+    {
+        var dues = Everyone.Contains(entry.Kind) ? Reached(entry) : await DuesOfAsync(entry, ct).ConfigureAwait(false);
+        return [.. dues.Select(due => Piece(due, byFact: true))];
+    }
+
+    private static BusFlowPiece<GateWork> Piece(OpinionDue due, bool byFact) => new(OpinionGateJudge.Subject(due), new GateWork(due, byFact), due.Repository);
+
+    /// <summary>
+    /// The owed opinions a move reaches: one that names its quests and repositories reaches the opinions they reach
+    /// (<see cref="QuestMoves.Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
+    /// </summary>
+    private IEnumerable<OpinionDue> Reached(BusEnvelope entry)
+    {
+        var quests = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "quests").Value as IReadOnlyList<string> : null;
+        var repositories = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "repositories").Value as IReadOnlyList<string> : null;
+        if (quests is null || repositories is null) return _open();
+        HashSet<string> questSet = new(quests, Ids), repositorySet = new(repositories, Ids);
+        return _open().Where(due => QuestMoves.Reaches(due, questSet, repositorySet));
+    }
+
+    /// <summary>One owed opinion judged, and its next turn set from what it found; the layer has made it the only judgment of that opinion and of its repository now.</summary>
+    protected override async Task<BusFlowOutcome> MoveAsync(string subject, GateWork work, CancellationToken ct)
+    {
+        using var asking = GitAskers.Is(GitAskers.Gate);
+        var due = work.Due;
+        if (work.ByFact) _quiet.TryRemove(subject, out _);
+        // The turn set before stands until this judgment answers, so one that throws keeps it.
+        _again.TryGetValue(subject, out var pending);
+        var fact = await _judge(due, Ended, ct).ConfigureAwait(false);
+        if (pending is not null && _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, pending))) pending.Cancel();
+        if (fact is null) return BusFlowOutcome.Moved;
+        var now = _clock.GetUtcNow();
+        DateTimeOffset? next = fact.Turns.Where(turn => turn > now).Select(turn => (DateTimeOffset?)turn).Min();
+        // A pass or a delivery a drain held is judged again once a minute, so the drain's end reaches it.
+        if (((fact.Act is not null && !fact.Begun) || fact.Drained) && (next is null || next > now + Drained)) next = now + Drained;
+        if (next is { } at) Again(due, at);
+        return BusFlowOutcome.Moved;
+    }
+
+    /// <summary>Every owed opinion judged once at the start: the gate's view and its turns rebuilt, nothing owed left to a look.</summary>
+    public override async Task ResumedAsync(CancellationToken ct)
+    {
+        foreach (var due in _open())
+        {
+            var outcome = await AskAsync(Piece(due, byFact: false), ct).ConfigureAwait(false);
+            if (outcome.Result != BusFlowResult.Failed) continue;
+            _warn("resumed:" + OpinionGateJudge.Subject(due), outcome.Why);
+            Again(due, _clock.GetUtcNow() + AgainFirst);
+        }
+    }
 
     public void Dispose()
     {
@@ -245,49 +193,6 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         return exact.Count > 0 ? exact : mine;
     }
 
-    /// <summary>One owed opinion judged, one judgment of it at a time, and its next turn set from what it found.</summary>
-    private async Task JudgeAsync(OpinionDue due, CancellationToken ct)
-    {
-        using var asking = GitAskers.Is(GitAskers.Gate);
-        var subject = OpinionGateJudge.Subject(due);
-        var gate = _dues.GetOrAdd(subject, _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            // The turn set before stands until this judgment answers, so one that throws keeps it.
-            _again.TryGetValue(subject, out var pending);
-            // One judgment of a repository at a time: each runs git's content proof, so those begun together only queue behind one another.
-            var place = _places.GetOrAdd(due.Repository, _ => new SemaphoreSlim(1, 1));
-            await place.WaitAsync(ct).ConfigureAwait(false);
-            OpinionFact? fact;
-            var atOnce = false;
-            try
-            {
-                // Waited inside, so a wait cancelled here still gives the repository's place back.
-                await _atOnce.WaitAsync(ct).ConfigureAwait(false);
-                atOnce = true;
-                fact = await _judge(due, Ended, ct).ConfigureAwait(false);
-            }
-            finally
-            {
-                if (atOnce) _atOnce.Release();
-                place.Release();
-            }
-
-            if (pending is not null && _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, pending))) pending.Cancel();
-            if (fact is null) return;
-            var now = _clock.GetUtcNow();
-            DateTimeOffset? next = fact.Turns.Where(turn => turn > now).Select(turn => (DateTimeOffset?)turn).Min();
-            // A pass or a delivery a drain held is judged again once a minute, so the drain's end reaches it.
-            if (((fact.Act is not null && !fact.Begun) || fact.Drained) && (next is null || next > now + Drained)) next = now + Drained;
-            if (next is { } at) Again(due, at);
-        }
-        finally
-        {
-            gate.Release();
-        }
-    }
-
     /// <summary>A pass or a delivery begun beside ended: judged again after a backoff, unless a fact judges it first.</summary>
     private void Ended(string subject)
     {
@@ -315,7 +220,10 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
                 // Its turn came: no longer pending, so the judgment it runs does not cancel itself.
                 _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, source));
                 if (_open().FirstOrDefault(each => Ids.Equals(OpinionGateJudge.Subject(each), subject)) is not { } owed) return;
-                await JudgeAsync(owed, _closing.Token).ConfigureAwait(false);
+                var outcome = await AskAsync(Piece(owed, byFact: false), _closing.Token).ConfigureAwait(false);
+                if (outcome.Result != BusFlowResult.Failed) return;
+                _warn("again:" + subject, outcome.Why);
+                Ended(subject);
             }
             catch (OperationCanceledException)
             {

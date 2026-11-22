@@ -1,0 +1,454 @@
+using System.Collections.Concurrent;
+using Daoris.Driver;
+using Daoris.Testing;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// 🔴 The dispatch at the layer, each of the driving area's five rules held once: (1) no wait stands without a wake: a fact heard while its
+/// key runs is worked by the next pass at once, with no timer between; (2) an acknowledgement ends an obligation only when the job moved: a move
+/// ends the timer, a not-moved is handled with its timer armed; (3) one pass works one state at a time, never nested: the facts waiting on a key
+/// become one piece of work for the next pass; (4) work is bounded and a fact names its reach: keys at once, keys within a group, only the keys
+/// a fact names; (5) a failure costs one entry: the entry that carried the key's work is parked and tried again, no other key's. Homes under
+/// <c>_fixtures/</c>.
+/// </summary>
+public sealed class BusFlowTests : IDisposable
+{
+    private static readonly TimeSpan Soon = Poll.Patience;
+
+    private static TimeProvider Clock => OpinionGateMovesTests.Machine;
+
+    private static readonly BusQueueOptions Backoff = new() { Clock = Clock, RetryFirst = TimeSpan.FromMilliseconds(300), RetryMost = TimeSpan.FromMilliseconds(300) };
+
+    private static Task Wait(int milliseconds) => Task.Delay(TimeSpan.FromMilliseconds(milliseconds), Clock);
+
+    private static readonly BusQueueOptions Quick = new() { Clock = Clock, RetryFirst = TimeSpan.FromMilliseconds(20), RetryMost = TimeSpan.FromMilliseconds(60) };
+
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "bus-flow", Guid.NewGuid().ToString("N")[..8]);
+
+    public BusFlowTests() => Directory.CreateDirectory(_home);
+
+    public void Dispose() => GitSeed.Discard(_home);
+
+    private BusLog Open() =>
+        BusLog.Over(new DesktopBusLogStore(_home), new BusLogOptions { Clock = Clock, Interval = TimeSpan.FromMilliseconds(20), Home = _home });
+
+    private IReadOnlyList<BusTimer> Armed()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return [.. store.Timers(null, 1000).Where(timer => timer.Obliged == BusTypes.OpinionGate)];
+    }
+
+    /// <summary>A unit's node begun: keyed by <paramref name="key"/> (the node named first), grouped by the second where one is named.</summary>
+    private static BusDraft Begun(string unit, string key, string? group = null) => OpinionBusFacts.NodeBegun(unit, group is null ? [key] : [key, group]);
+
+    [Fact]
+    public async Task A_fact_heard_while_its_key_runs_is_worked_by_the_next_pass_at_once()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var passes = new ConcurrentQueue<string>();
+        var probe = new Probe(new BusFlowBounds(4), async (key, work) =>
+        {
+            passes.Enqueue(string.Join("+", work.Order()));
+            if (passes.Count == 1)
+            {
+                holding.SetResult();
+                await release.Task;
+            }
+
+            return BusFlowOutcome.Moved;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "k"));
+        await holding.Task.WaitAsync(Soon);
+        bus.Append(Begun("u-2", "k"));
+        await bus.FlushAsync();
+        release.SetResult();
+
+        // No timer stands between the pass and the fact it did not read: the next pass is the fact's own wake.
+        await Poll.Until(() => passes.Count == 2, () => "the fact heard during the pass was not worked: " + string.Join(", ", passes), Soon);
+        Assert.Equal(["u-1", "u-2"], passes);
+        await Unarmed(bus);
+    }
+
+    [Fact]
+    public async Task A_move_ends_the_timer_and_a_not_moved_is_handled_and_leaves_it_armed()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(key == "stays" ? BusFlowOutcome.NotMoved("not ready") : BusFlowOutcome.Moved));
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "ends"));
+        bus.Append(Begun("u-2", "stays"));
+        await bus.FlushAsync();
+        await Poll.Until(() => probe.Moves.Count == 2, () => $"moves {probe.Moves.Count}", Soon);
+        var last = queue.Store.Read(0, [BusTypes.NodeBegun.Kind], 100).Max(entry => entry.Seq);
+        await Poll.Until(() => queue.Store.Consumer("probe")?.Cursor == last, () => "the cursor did not pass both: " + queue.Store.Consumer("probe"), Soon);
+
+        // Handled both (the cursor passed them), ended one: the stall view keeps the other.
+        await Poll.Until(() => Armed().Count == 1, () => string.Join(", ", Armed().Select(timer => $"{timer.Kind} {timer.Subject}")), Soon);
+        Assert.Equal("u-2", Armed().Single().Subject);
+    }
+
+    [Fact]
+    public async Task The_facts_waiting_on_one_key_are_one_piece_of_work_for_one_pass_at_a_time()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var inside = 0;
+        var overlap = 0;
+        var passes = new ConcurrentQueue<string>();
+        var probe = new Probe(new BusFlowBounds(4), async (key, work) =>
+        {
+            if (Interlocked.Increment(ref inside) > 1) Interlocked.Increment(ref overlap);
+            passes.Enqueue(string.Join("+", work.Order()));
+            if (passes.Count == 1)
+            {
+                holding.SetResult();
+                await release.Task;
+            }
+
+            Interlocked.Decrement(ref inside);
+            return BusFlowOutcome.Moved;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-0", "k"));
+        await holding.Task.WaitAsync(Soon);
+        // A fact waiting on a key holds no queue slot: every one that waits is merged into the next pass.
+        for (var each = 1; each <= 5; each++) bus.Append(Begun($"u-{each}", "k"));
+        await bus.FlushAsync();
+        await Wait(100);
+        release.SetResult();
+
+        await Poll.Until(() => passes.Count == 2, () => "passes: " + string.Join(" | ", passes), Soon);
+        await queue.QuietAsync(Soon, CancellationToken.None);
+        Assert.Equal(0, Volatile.Read(ref overlap));
+        // Five facts that waited cost one pass that reads them all, their names merged, none lost.
+        Assert.Equal(["u-0", "u-1+u-2+u-3+u-4+u-5"], passes);
+        await Unarmed(bus);
+    }
+
+    [Fact]
+    public async Task Keys_at_once_and_keys_within_a_group_are_bounded_and_a_fact_moves_only_the_keys_it_names()
+    {
+        var inside = 0;
+        var most = 0;
+        var perGroup = new ConcurrentDictionary<string, int>();
+        var mostInGroup = new ConcurrentDictionary<string, int>();
+        var probe = new Probe(new BusFlowBounds(KeysAtOnce: 3, PerGroup: 1), async (key, _) =>
+        {
+            var group = key[..1];
+            var now = Interlocked.Increment(ref inside);
+            var here = perGroup.AddOrUpdate(group, 1, (_, was) => was + 1);
+            lock (mostInGroup)
+            {
+                most = Math.Max(most, now);
+                mostInGroup[group] = Math.Max(mostInGroup.GetValueOrDefault(group), here);
+            }
+
+            await Wait(15);
+            perGroup.AddOrUpdate(group, 0, (_, was) => was - 1);
+            Interlocked.Decrement(ref inside);
+            return BusFlowOutcome.Moved;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        // One fact naming twelve keys in three groups (a-, b-, c-): never more than three at once, never two of one group.
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames([.. Enumerable.Range(0, 12).Select(each => $"{(char)('a' + (each % 3))}-{each}")], [])));
+        await Poll.Until(() => probe.Moves.Count == 12, () => $"moved {probe.Moves.Count}", Soon);
+        Assert.InRange(most, 1, 3);
+        Assert.All(mostInGroup, pair => Assert.Equal(1, pair.Value));
+
+        // A fact that names one key moves that key alone.
+        bus.Append(Begun("u-1", "z-1"));
+        await Poll.Until(() => probe.Moves.Count == 13, () => $"moved {probe.Moves.Count}", Soon);
+        await queue.QuietAsync(Soon, CancellationToken.None);
+        Assert.Equal(13, probe.Moves.Count);
+        Assert.Equal("z-1", probe.Moves.Last().Key);
+    }
+
+    [Fact]
+    public async Task A_failure_costs_its_key_alone_even_on_the_same_subject_and_a_later_fact_naming_a_moved_key_is_worked()
+    {
+        var fail = 1;
+        var retryHeld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            if (key != "bad") return BusFlowOutcome.Moved;
+            if (Interlocked.Exchange(ref fail, 0) == 1) return BusFlowOutcome.Failed("refused");
+            // The retry is held in its pass while the facts behind it are worked.
+            await retryHeld.Task;
+            return BusFlowOutcome.Moved;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        // One fact names a key that fails and one that moves.
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["bad", "good"], [])));
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "good") == 1, () => "the healthy key did not move", Soon);
+        // Facts on the very subject, while the failed key waits its backoff, are worked at once: one names a moved key again, one another.
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["good", "next"], [])));
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "good") == 2 && probe.Moves.Any(move => move.Key == "next"), () => "the lane was held by the failure: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
+        // The failed key is tried again alone, and what it held ends once it moves.
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "bad") == 2, () => "the failed key was not tried again", Soon);
+        retryHeld.SetResult();
+        await Unarmed(bus);
+        Assert.Equal(2, probe.Moves.Count(move => move.Key == "good"));
+    }
+
+    [Fact]
+    public async Task A_row_folded_stays_open_until_its_result_so_a_failure_loses_no_name_a_move_named()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var fail = 1;
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            if (key == "a")
+            {
+                holding.TrySetResult();
+                await release.Task;
+            }
+
+            return key == "b" && Interlocked.Exchange(ref fail, 0) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved;
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["a"], [])));
+        await holding.Task.WaitAsync(Soon);
+        // Two moves wait in a row on the one subject while the first is held: handed together, open until the result.
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["b"], [])));
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["c"], [])));
+        await bus.FlushAsync();
+        release.SetResult();
+
+        await Poll.Until(() => probe.Moves.Count(move => move.Key == "b") == 2, () => "the failed name was lost: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
+        await Unarmed(bus);
+        Assert.Equal(1, probe.Moves.Count(move => move.Key == "c"));
+    }
+
+    [Fact]
+    public async Task A_pause_lets_the_facts_of_a_burst_become_one_pass()
+    {
+        var passes = new ConcurrentQueue<string>();
+        var probe = new Probe(new BusFlowBounds(4), (key, work) =>
+        {
+            passes.Enqueue(string.Join("+", work.Order()));
+            return Task.FromResult(BusFlowOutcome.Moved);
+        }, pause: TimeSpan.FromMilliseconds(300));
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "k"));
+        await Wait(100);
+        bus.Append(Begun("u-2", "k"));
+        await Poll.Until(() => !passes.IsEmpty, () => "no pass", Soon);
+        Assert.Equal(["u-1+u-2"], passes);
+    }
+
+    private IReadOnlyList<BusEnvelope> Logged()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return store.Read(0, 100_000);
+    }
+
+    [Fact]
+    public async Task A_pass_that_moved_a_key_before_a_failure_does_not_end_the_failed_entry_and_its_retry_judges_it()
+    {
+        var calls = 0;
+        IReadOnlyList<string>? armedAtRetry = null;
+        var probe = new Probe(new BusFlowBounds(4), (key, work) =>
+        {
+            Interlocked.Increment(ref calls);
+            // The retry's own work names the key alone: what is still armed when it runs is what earlier passes left.
+            if (work.Contains("A")) armedAtRetry = [.. Armed().Select(timer => timer.Subject)];
+            return Task.FromResult(work.Contains("u-1") ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved);
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Backoff);
+
+        bus.Append(Begun("u-0", "A"));
+        await Poll.Until(() => calls == 1, () => "the first fact was not worked", Soon);
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => calls == 2, () => "the second was not worked", Soon);
+        // A later fact moves the key while the failed one waits its backoff: the pass that began before the failure ends only its own entry.
+        bus.Append(Begun("u-2", "A"));
+        await Poll.Until(() => Volatile.Read(ref armedAtRetry) is not null, () => "the failed entry was not retried", Soon);
+        Assert.Contains("u-1", armedAtRetry!);
+        await Unarmed(bus);
+    }
+
+    [Fact]
+    public async Task A_retry_survives_a_restart_and_is_handled_when_due()
+    {
+        var calls = 0;
+        await using var bus = Open();
+        var first = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(Interlocked.Increment(ref calls) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved), blockRetries: true);
+        var queue = await BusQueue.StartAsync(bus, [first], Quick);
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.FlowRetry.Kind), () => "no retry fact was written", Soon);
+        await queue.DisposeAsync();
+        Assert.Equal(1, calls);
+
+        // The process is gone with the retry unhandled: its fact is the log's, so the next start finds it and handles it once due.
+        var second = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(Interlocked.Increment(ref calls) == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved));
+        await using var restarted = await BusQueue.StartAsync(bus, [second], Backoff);
+        await Poll.Until(() => calls == 2, () => "the retry was not handled after the restart", Soon);
+        await Unarmed(bus);
+    }
+
+    [Fact]
+    public async Task A_retry_that_keeps_failing_ends_in_a_give_up_naming_the_entry_with_its_timer_armed()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")));
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A"));
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => "no give-up: " + string.Join(", ", Logged().Select(entry => entry.Kind)), Soon);
+        await bus.FlushAsync();
+        // The first try and one retry for each of the type's retries, then the give-up.
+        Assert.Equal(1 + BusTypes.NodeBegun.Retries, probe.Moves.Count);
+        Assert.Equal(BusTypes.NodeBegun.Retries, Logged().Count(entry => entry.Kind == BusTypes.FlowRetry.Kind));
+        // The give-up names the failed entry; it is the stall view's record, as the queue's own give-ups are, and drops that entry's timer.
+        var failed = Logged().First(entry => entry.Kind == BusTypes.NodeBegun.Kind && entry.Subject == "u-1");
+        Assert.Contains(Logged(), entry => entry.Kind == BusTypes.GiveUp.Kind && entry.Causes.Contains(failed.Id));
+    }
+
+    [Fact]
+    public async Task A_consumer_claimed_again_writes_no_retry_and_ends_nothing()
+    {
+        var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new Probe(new BusFlowBounds(4), async (key, _) =>
+        {
+            holding.TrySetResult();
+            await release.Task;
+            return BusFlowOutcome.Failed("refused");
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A"));
+        await holding.Task.WaitAsync(Soon);
+        // Another process claims the consumer: its epoch is raised, this one is fenced off.
+        queue.Store.Claim("probe", [.. probe.Subscription.Types.Select(type => type.Kind)], bus.WriterRead, Clock.GetUtcNow());
+        release.SetResult();
+        await Wait(200);
+        await bus.FlushAsync();
+
+        Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind || entry.Kind == BusTypes.GiveUp.Kind);
+        Assert.Equal(["u-1"], Armed().Select(timer => timer.Subject));
+    }
+
+    private static BusDraft Retry(string subject, string key) => new(BusTypes.FlowRetry, subject)
+    {
+        Causes = ["c-1"],
+        Payload =
+        [
+            ("consumer", "probe"), ("kind", BusTypes.NodeBegun.Kind), ("scope", "key"), ("seq", 0L), ("keys", (IReadOnlyList<string>)[key]), ("attempt", 1L),
+            ("due", Clock.GetUtcNow()), ("since", Clock.GetUtcNow()), ("settles", false), ("subject", "u-1"),
+        ],
+    };
+
+    [Fact]
+    public async Task Retries_waiting_in_a_row_on_one_subject_are_never_folded_so_each_runs()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Moved), foldAll: true);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Retry("retry:probe:x", "A"));
+        bus.Append(Retry("retry:probe:x", "B"));
+        await Poll.Until(() => probe.Moves.Select(move => move.Key).Order().SequenceEqual(["A", "B"]), () => "moves: " + string.Join(", ", probe.Moves.Select(move => move.Key)), Soon);
+    }
+
+    [Fact]
+    public async Task An_entry_with_several_failed_keys_ends_only_when_every_key_has_moved_and_a_moved_key_is_not_run_again()
+    {
+        var calls = new ConcurrentDictionary<string, int>();
+        var armedAtLast = new List<string>();
+        var probe = new Probe(new BusFlowBounds(4), (key, _) =>
+        {
+            var n = calls.AddOrUpdate(key, 1, (_, was) => was + 1);
+            if (key == "a") return Task.FromResult(n == 1 ? BusFlowOutcome.Failed("refused") : BusFlowOutcome.Moved);
+            if (n < 3) return Task.FromResult(BusFlowOutcome.Failed("refused"));
+            // The key that moved first has had its retry; the entry still stands until this one moves.
+            armedAtLast.AddRange(Armed().Select(timer => timer.Kind));
+            return Task.FromResult(BusFlowOutcome.Moved);
+        });
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(OpinionBusFacts.QuestMoved(["quests"], new QuestMoveNames(["a", "b"], [])));
+        await Poll.Until(() => calls.GetValueOrDefault("b") == 3, () => "calls: " + string.Join(", ", calls), Soon);
+        await Unarmed(bus);
+        Assert.Contains(BusTypes.QuestMoved.Kind, armedAtLast);
+        Assert.Equal(2, calls["a"]);
+    }
+
+    [Fact]
+    public async Task A_retry_whose_next_attempt_the_log_did_not_keep_is_not_acknowledged_and_is_handed_again()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")),
+            refuse: draft => draft.Payload.FirstOrDefault(pair => pair.Key == "attempt").Value is 2L);
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A"));
+        // The first retry fails, cannot write the second, and is tried again by the queue (so the key is asked more than twice) instead of being lost.
+        await Poll.Until(() => probe.Moves.Count >= 3, () => $"moves {probe.Moves.Count}", Soon);
+        Assert.DoesNotContain(Logged(), entry => entry.Kind == BusTypes.FlowRetry.Kind && entry.Payload.Any(pair => pair.Key == "attempt" && pair.Value is 2L));
+    }
+
+    private async Task Unarmed(BusLog bus)
+    {
+        await bus.FlushAsync();
+        await Poll.Until(() => Armed().Count == 0, () => "armed: " + string.Join(", ", Armed().Select(timer => $"{timer.Kind} {timer.Subject}")), Soon);
+    }
+
+    /// <summary>A consumer of the layer over the opinion's gate's node and quest facts: keyed by the node named first (a quest move, by each quest it names), its work the subjects that named it.</summary>
+    private sealed class Probe(
+        BusFlowBounds bounds, Func<string, IReadOnlyList<string>, Task<BusFlowOutcome>> move, TimeSpan pause = default, Func<BusDraft, bool>? refuse = null, bool foldAll = false, bool blockRetries = false)
+        : BusFlowConsumer<IReadOnlyList<string>>("probe", [BusTypes.NodeBegun.Kind, BusTypes.QuestMoved.Kind], bounds, Clock, pause)
+    {
+        protected override Task<bool> AppendAsync(BusLog log, BusDraft draft) => refuse?.Invoke(draft) == true ? Task.FromResult(false) : base.AppendAsync(log, draft);
+
+        public ConcurrentQueue<(string Key, DateTimeOffset At)> Moves { get; } = new();
+
+        protected override async Task<BusFlowPiece<IReadOnlyList<string>>?> RetryWorkAsync(string key, CancellationToken ct)
+        {
+            // A process that is stopped while it works a retry: held here until its queue closes.
+            if (blockRetries) await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            return new BusFlowPiece<IReadOnlyList<string>>(key, [key], key[..1]);
+        }
+
+        public override string Obliged => BusTypes.OpinionGate;
+
+        protected override bool Coalesces(string kind) => foldAll || kind == BusTypes.QuestMoved.Kind;
+
+        protected override Task<IReadOnlyList<BusFlowPiece<IReadOnlyList<string>>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
+        {
+            IReadOnlyList<string> named = entry.Payload.FirstOrDefault(pair => pair.Key == (entry.Kind == BusTypes.NodeBegun.Kind ? "nodes" : "quests")).Value as IReadOnlyList<string> ?? [];
+            IReadOnlyList<BusFlowPiece<IReadOnlyList<string>>> pieces = entry.Kind == BusTypes.NodeBegun.Kind
+                ? [new(named[0], [entry.Subject], named.Count > 1 ? named[1] : null)]
+                : [.. named.Select(key => new BusFlowPiece<IReadOnlyList<string>>(key, [entry.Subject], key[..1]))];
+            return Task.FromResult(pieces);
+        }
+
+        protected override IReadOnlyList<string> Merge(IReadOnlyList<string> earlier, IReadOnlyList<string> later) => [.. earlier.Union(later)];
+
+        protected override async Task<BusFlowOutcome> MoveAsync(string key, IReadOnlyList<string> work, CancellationToken ct)
+        {
+            Moves.Enqueue((key, Clock.GetUtcNow()));
+            return await move(key, work).ConfigureAwait(false);
+        }
+    }
+}

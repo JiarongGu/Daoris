@@ -2,8 +2,10 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
+internal sealed record StepWork(IReadOnlyList<string?> Boxes);
+
 /// <summary>
-/// A run's progression as the bus's second consumer: each fact that ends a step of a run (a check passed, failed or unknown; a working session's
+/// A run's progression as the dispatch's second consumer (<see cref="BusFlowConsumer{TWork}"/>, keyed by the run): each fact that ends a step of a run (a check passed, failed or unknown; a working session's
 /// settle taken from its box; the session of a plugin step ending its turn; the policy passing a second opinion at its gate; a landing's try
 /// ending) asks the one pass of the evaluation runtime for that run at once, which judges that run first, so the next step begins at the fact
 /// and not at a look's rotation. The pass is the existing one (<see cref="PassAsks.WaitUnitAsync"/>); this consumer is its wake by fact, never
@@ -23,10 +25,12 @@ namespace Daoris.Driver;
 /// ending fact, so <c>daoris bus stats</c> shows how many steps still wait for a look. A start takes the settles waiting in their boxes
 /// (<see cref="ResumedAsync"/>) and asks no pass: it runs after the first look, whose whole pass judges every run, so a restart loses nothing.</para>
 /// </remarks>
-internal sealed class RunStepConsumer : IBusConsumer
+internal sealed class RunStepConsumer : BusFlowConsumer<StepWork>
 {
     /// <summary>Its durable name in the queue.</summary>
     public const string Name = "run-step";
+
+    public static readonly BusFlowBounds Bounds = new(KeysAtOnce: 4);
 
     /// <summary>The longest a pass is waited for at a fact; past it the fact is tried again after a backoff.</summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
@@ -57,6 +61,7 @@ internal sealed class RunStepConsumer : IBusConsumer
     public RunStepConsumer(
         Func<string, CancellationToken, Task<PassOutcome>> pass, Func<string?, CancellationToken, Task<int>> take, BusLog bus, Action<string, string> warn,
         TimeSpan? slack = null)
+        : base(Name, [.. Ending, BusTypes.NodeBegun.Kind], Bounds, bus.Clock)
     {
         _slack = slack ?? Slack;
         _pass = pass;
@@ -65,27 +70,41 @@ internal sealed class RunStepConsumer : IBusConsumer
         _warn = warn;
     }
 
-    public BusSubscription Subscription { get; } = BusTypes.Subscribe(Name, [.. Ending, BusTypes.NodeBegun.Kind]);
+    protected override Task<BusFlowPiece<StepWork>?> RetryWorkAsync(string key, CancellationToken ct) =>
+        Task.FromResult<BusFlowPiece<StepWork>?>(new BusFlowPiece<StepWork>(key, new StepWork([])));
 
-    public string Obliged => BusTypes.Step;
+    public override string Obliged => BusTypes.Step;
 
-    public bool Folds(string kind) => kind != BusTypes.NodeBegun.Kind;
+    protected override bool Coalesces(string kind) => kind != BusTypes.NodeBegun.Kind;
 
-    public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
+    /// <summary>A node begun is only compared; every ending fact's job moves when its run's pass judged the run.</summary>
+    protected override bool Settles(BusEnvelope entry) => entry.Kind != BusTypes.NodeBegun.Kind;
+
+    private static string UnitOf(BusEnvelope entry) => entry.Kind.StartsWith("check.", StringComparison.Ordinal) ? RunUnits.IdOf(entry.Subject) : entry.Subject;
+
+    protected override void Observe(BusEnvelope entry)
+    {
+        var unit = UnitOf(entry);
+        if (entry.Kind == BusTypes.NodeBegun.Kind) Compare(unit, entry.At);
+        // The earliest ending fact no node has begun after yet: the lag a node begun later is measured from.
+        else _ending.AddOrUpdate(unit, entry.At, (_, was) => was < entry.At ? was : entry.At);
+    }
+
+    /// <summary>An ending fact asks its run's pass, keyed by the run; a settle names the box its session wrote, taken before the pass. A node begun asks none.</summary>
+    protected override Task<IReadOnlyList<BusFlowPiece<StepWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
+    {
+        if (entry.Kind == BusTypes.NodeBegun.Kind) return Task.FromResult<IReadOnlyList<BusFlowPiece<StepWork>>>([]);
+        var boxes = entry.Kind == BusTypes.StepSettled.Kind ? new StepWork([entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string]) : new StepWork([]);
+        return Task.FromResult<IReadOnlyList<BusFlowPiece<StepWork>>>([new(UnitOf(entry), boxes)]);
+    }
+
+    protected override StepWork Merge(StepWork earlier, StepWork later) => new([.. earlier.Boxes.Union(later.Boxes)]);
+
+    protected override async Task<BusFlowOutcome> MoveAsync(string unit, StepWork work, CancellationToken ct)
     {
         using var asking = GitAskers.Is(GitAskers.Steps);
-        // A check's facts name their run by its bare id; every other fact names its unit.
-        var unit = entry.Kind.StartsWith("check.", StringComparison.Ordinal) ? RunUnits.IdOf(entry.Subject) : entry.Subject;
-        if (entry.Kind == BusTypes.NodeBegun.Kind)
-        {
-            Compare(unit, entry.At);
-            return BusHandled.Judged;
-        }
-
-        // The earliest ending fact no node has begun after yet: the lag a node begun later is measured from.
-        _ending.AddOrUpdate(unit, entry.At, (_, was) => was < entry.At ? was : entry.At);
         // A settle's box is taken at the fact, only the box its session named, so the settle is on the run's record before the pass reads it.
-        if (entry.Kind == BusTypes.StepSettled.Kind) await _take(entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string, ct).ConfigureAwait(false);
+        foreach (var box in work.Boxes) await _take(box, ct).ConfigureAwait(false);
         var start = _bus.Clock.GetUtcNow();
         // The node's fact is handled beside this one (another subject) and can come before the pass returns: it waits on this ask, credited to
         // the consumer only where the ask came to be judged, else the look's.
@@ -111,11 +130,11 @@ internal sealed class RunStepConsumer : IBusConsumer
         // One row a reason, in the log's next write with the other measures.
         _bus.Measured(BusMeasures.Step, outcome.Name(), 1);
         // A unit the pass did not judge (a drain, a closing loop, no lease, a run it does not govern yet) leaves the obligation armed for the look's whole pass.
-        return outcome.IsAnswer() ? BusHandled.Ended : BusHandled.Judged;
+        return outcome.IsAnswer() ? BusFlowOutcome.Moved : BusFlowOutcome.NotMoved(outcome.Name());
     }
 
     /// <summary>A start takes the settles waiting in their boxes; the first look's whole pass judges every run, so no pass is asked here.</summary>
-    public async Task ResumedAsync(CancellationToken ct)
+    public override async Task ResumedAsync(CancellationToken ct)
     {
         try
         {
@@ -150,7 +169,7 @@ internal sealed class RunStepConsumer : IBusConsumer
     /// <summary>One ask in flight: the nodes begun meanwhile, their lags kept until the ask's outcome says whose they are.</summary>
     private sealed class Asking(string unit, DateTimeOffset start)
     {
-        private List<long>? _lags = [];
+        private System.Collections.Immutable.ImmutableList<long>? _lags = System.Collections.Immutable.ImmutableList<long>.Empty;
 
         public string Unit { get; } = unit;
 
@@ -159,22 +178,14 @@ internal sealed class RunStepConsumer : IBusConsumer
         /// <summary>Keeps a lag; false where the ask has ended and its lags were taken.</summary>
         public bool Add(long lag)
         {
-            lock (this)
+            while (true)
             {
-                if (_lags is null) return false;
-                _lags.Add(lag);
-                return true;
+                var seen = Volatile.Read(ref _lags);
+                if (seen is null) return false;
+                if (ReferenceEquals(Interlocked.CompareExchange(ref _lags, seen.Add(lag), seen), seen)) return true;
             }
         }
 
-        public IReadOnlyList<long> Take()
-        {
-            lock (this)
-            {
-                var taken = _lags ?? [];
-                _lags = null;
-                return taken;
-            }
-        }
+        public IReadOnlyList<long> Take() => Interlocked.Exchange(ref _lags, null) ?? System.Collections.Immutable.ImmutableList<long>.Empty;
     }
 }
