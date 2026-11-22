@@ -14,7 +14,7 @@ public sealed class OpinionGateMovesTests : IDisposable
 {
     private static readonly TimeSpan Soon = Poll.Patience;
 
-    private static readonly TimeProvider Machine = TimeProvider.System;
+    internal static readonly TimeProvider Machine = TimeProvider.System;
 
     private static readonly DateTimeOffset At = new(2026, 11, 22, 9, 0, 0, TimeSpan.Zero);
 
@@ -191,7 +191,7 @@ public sealed class OpinionGateMovesTests : IDisposable
         bus.Append(OpinionBusFacts.ChoicesWritten());
         await Poll.Until(() => Judged("s-25") >= 2 && Judged("s-10") >= 2, () => "the round did not judge them all", Soon);
 
-        Assert.InRange(Volatile.Read(ref most), 1, OpinionGateConsumer.AtOnce);
+        Assert.InRange(Volatile.Read(ref most), 1, OpinionGateConsumer.Bounds.KeysAtOnce);
     }
 
     private int Judged(string session) => _judged.Count(subject => subject.StartsWith(session + "/", StringComparison.Ordinal));

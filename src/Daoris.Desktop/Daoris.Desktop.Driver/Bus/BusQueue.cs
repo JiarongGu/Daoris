@@ -24,13 +24,11 @@ public interface IBusConsumer
     /// <summary>Told once the consumer resumed from its cursor, its parked and missed entries handed back: where it rebuilds its view.</summary>
     Task ResumedAsync(CancellationToken ct) => Task.CompletedTask;
 
-    /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject fold into the last: its handling stands for them all.</summary>
+    /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject are handed together: one handling stands for them all.</summary>
     bool Folds(string kind) => false;
 
-    /// <summary>Told of an entry folded into a later one before either is acknowledged, under the queue's lock: it keeps what the entry named, and never throws or waits.</summary>
-    void Folded(BusEnvelope away)
-    {
-    }
+    /// <summary>Handle a row of folded entries, oldest first (one where it folds none): all stay open until the one result, so a throw loses none.</summary>
+    Task<BusHandled> HandleAsync(IReadOnlyList<BusEnvelope> row, CancellationToken ct) => HandleAsync(row[^1], ct);
 }
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
@@ -488,7 +486,7 @@ internal sealed class BusConsumerRun
         {
             BusEnvelope entry;
             int tries;
-            List<BusEnvelope> folded = [];
+            List<BusEnvelope> row;
             lock (_gate)
             {
                 if (_fenced || !_lanes.TryGetValue(subject, out var lane) || lane.Count == 0)
@@ -498,36 +496,20 @@ internal sealed class BusConsumerRun
                 }
 
                 (entry, tries) = lane.Peek();
-                while (_consumer.Folds(entry.Kind) && lane.Count > 1 && lane.ElementAt(1).Entry.Kind == entry.Kind)
-                {
-                    folded.Add(lane.Dequeue().Entry);
-                    try
-                    {
-                        _consumer.Folded(folded[^1]);
-                    }
-                    catch (Exception error) when (error is not OutOfMemoryException)
-                    {
-                        // A hook that throws costs its consumer what the entry named, never its subject's lane.
-                        _queue.Log.Warn($"queue:folded:{Name}", "bus.consumer-threw", ("consumer", Name), ("kind", "folded"), ("why", error.Message));
-                    }
-                    (entry, tries) = lane.Peek();
-                }
+                // A row of a kind it folds is handed together and stays in the lane until its result is known.
+                row = [entry];
+                if (_consumer.Folds(entry.Kind)) row.AddRange(lane.Skip(1).TakeWhile(next => next.Entry.Kind == entry.Kind).Select(next => next.Entry));
             }
 
             // Its ownership read before it acts: a later claim (another process's) fences this one off, so the two never both execute it.
             if (!Owned()) return;
-            // The last of a row stays open while it is handled, so a crash hands it again and it stands for those folded into it.
-            foreach (var each in folded)
-            {
-                if (!Acknowledge(each, ends: true)) return;
-            }
 
             BusHandled? handled = null;
             Exception? thrown = null;
             await _atOnce.WaitAsync(ct).ConfigureAwait(false);
             try
             {
-                handled = await _consumer.HandleAsync(entry, ct).ConfigureAwait(false);
+                handled = await _consumer.HandleAsync(row, ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -544,8 +526,12 @@ internal sealed class BusConsumerRun
 
             if (handled is not null)
             {
-                if (!Acknowledge(entry, handled.Ends)) return;
-                Dequeue(subject);
+                foreach (var each in row)
+                {
+                    if (!Acknowledge(each, handled.Ends)) return;
+                }
+
+                Dequeue(subject, row.Count);
                 continue;
             }
 
@@ -592,11 +578,12 @@ internal sealed class BusConsumerRun
         return false;
     }
 
-    private void Dequeue(string subject)
+    private void Dequeue(string subject, int count = 1)
     {
         lock (_gate)
         {
-            if (_lanes.TryGetValue(subject, out var lane) && lane.Count > 0) lane.Dequeue();
+            if (!_lanes.TryGetValue(subject, out var lane)) return;
+            for (var each = 0; each < count && lane.Count > 0; each++) lane.Dequeue();
         }
     }
 

@@ -348,9 +348,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     own transaction, and the chain runs only after it. A consumer (`IBusConsumer`) is a durable row (`bus_consumers`, made by the
     store's step 35): its types, its cursor (a new one's the log's newest, so it starts from now) and an epoch each claim raises.
     Its entries go one at a time per subject, in order, and a few subjects at once (entries of a kind it folds, waiting in a row on
-    one subject, are acknowledged into the last, which stays open while it is handled); each is acknowledged after it is handled, in one
-    transaction with the cursor, its parked row and, where its handler says the acknowledgement ends it, the timer obliged to that
-    consumer, so an acknowledgement means handled. A restart resumes each from its cursor, its parked entries first: at least once.
+    one subject, are handed together and stay open until the one result, then each is acknowledged); each is acknowledged after it is
+    handled, in one transaction with the cursor, its parked row and, where its handler says the acknowledgement ends it, the timer
+    obliged to that consumer, so an acknowledgement means handled. A restart resumes each from its cursor, its parked entries first: at least once.
     A handler that throws is said once and its entry parked (`bus_parked`) and tried again with backoff, its subject held alone;
     past its type's retries the queue appends the `bus.give-up` naming the consumer and what it hands to whom, and the subject
     goes on. A claim's epoch is read before each handling and inside each acknowledgement, so a later claim fences the earlier off
@@ -361,8 +361,18 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     that throws reads failed, its key let go for the next try (`OnceWords`). A run that must return drains it (`QuietAsync`: the log
     written, each write framed, every consumer's entries acknowledged or parked, its start's rebuild ended, within a bound). Its first
     consumer is the opinion's gate (`workflows-review-landing` rule 26), started by the watch and the headless runs alike.
+    A consumer of a job is declared on the dispatch (D358, `BusFlowConsumer`, `Bus/BusFlow.cs`), never written as an `IBusConsumer`
+    with its own handling: it declares its kinds, the pieces of work an entry names (each its key, such as an owed opinion or a run,
+    and its group, such as a repository), how the work waiting on one key merges, its bounds (keys at once, keys at once within a
+    group) and its handler, which gets one key's merged work and answers moved, not moved (with why) or failed. The layer keeps one
+    pass on a key at a time, in order, the facts that wait on it one piece of work for the next pass, the bounds in one lock order
+    (key, group, overall), and turns the answer into the acknowledgement alone: moved ends the entries' obligations where their
+    fact settles, not moved acknowledges them as handled with their timers armed, failed parks the entry that carried the work with
+    backoff and its give-up (the keys it moved are not worked again), no other key's. The opinion's gate (keyed by the owed opinion,
+    grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
+    run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.
     What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer
-    and every job moved off a look keeps, each review's first questions: (1) a look's step is deleted only once every input it
+    and every job moved off a look keeps, each review's first questions (`BusFlowTests` holds each at the layer): (1) a look's step is deleted only once every input it
     took wakes its job as a fact or is covered by a named net, or a wait stands with no wake; (2) a fact is acknowledged as ending its
     obligation only when its job really moved, and as handled otherwise, so the stall view keeps it; (3) one pass works on one state at a
     time, never a pass nested in another, and late asks join the running pass's own turn (`LateUnits`); (4) a consumer bounds its
