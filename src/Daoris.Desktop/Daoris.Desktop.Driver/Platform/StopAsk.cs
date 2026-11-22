@@ -28,7 +28,8 @@ public static class StopAsk
         {
             var path = DaorisHome.Entry(home, HomeEntry.StopAsk);
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var document = JsonDocument.Parse(stream);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("pids", out var pids) || pids.ValueKind != JsonValueKind.Array
