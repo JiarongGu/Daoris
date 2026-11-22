@@ -11,9 +11,9 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Places</b> are <see cref="GitPlaces"/>' rules. A git holds its place from before its creation until every process started
 /// in it exits; its creation inside the place still passes <see cref="ProcessStarts"/>.</para>
-/// <para><b>Whose</b> is the flow's (<see cref="AsPerson"/>); a shared ask takes the highest class among its askers.</para>
-/// <para><b>A queue per repository</b>, keyed by its common directory. A place that frees goes to a person's oldest ask that may go, else to
-/// the oldest that may go, so an ask held back by its class's cap never holds up a later local read. Within a repository a write passes nothing queued ahead of it, and nothing
+/// <para><b>Whose</b> is the flow's (<see cref="AsPerson"/>), read by the places' rules; its class (<see cref="GitAskClass"/>) orders it; a shared ask takes the highest of each.</para>
+/// <para><b>A queue per repository</b>, keyed by its common directory. A place that frees goes to the oldest ask that may go of the highest
+/// class that has one: a person's, then a step's, then the background's, so an ask held back by its class's cap never holds up a later local read. Within a repository a write passes nothing queued ahead of it, and nothing
 /// queued behind it passes it.</para>
 /// <para><b>A shared answer</b>: an ask takes another's only where its own start would have been that start (<see cref="GitRunAsk.Start"/>)
 /// and that start is still queued with no write of its repository queued after it, so its answer is as new as the ask's own would be.</para>
@@ -167,14 +167,15 @@ public sealed class GitScheduler
     /// <paramref name="ct"/> leaves the ask: this caller is answered with its cancellation, and the git is dropped or ended as above.
     /// </summary>
     /// <exception cref="GitUnplacedException">Its tree is being removed, its repository is stalled, or it is a re-entry too deep.</exception>
-    internal async Task<T> RunAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy = null)
+    internal async Task<T> RunAsync<T>(
+        GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy = null, GitAskClass? askClass = null)
     {
         ct.ThrowIfCancellationRequested();
         GitStartGate.Check(ask);
         IDisposable? removal = ask.Removes is { } removes ? await RemovingAsync(removes, ct).ConfigureAwait(false) : null;
         try
         {
-            return await AskAsync(ask, run, ct, placeBy).ConfigureAwait(false);
+            return await AskAsync(ask, run, ct, placeBy, askClass ?? (Whose == StartClass.Person ? GitAskClass.Person : GitAskClass.Background)).ConfigureAwait(false);
         }
         finally
         {
@@ -182,7 +183,7 @@ public sealed class GitScheduler
         }
     }
 
-    private async Task<T> AskAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy)
+    private async Task<T> AskAsync<T>(GitRunAsk ask, Func<CancellationToken, Task<T>> run, CancellationToken ct, TimeSpan? placeBy, GitAskClass askClass)
     {
         var parent = s_beneath.Value;
         if (parent is { Depth: >= LentDepth })
@@ -215,6 +216,7 @@ public sealed class GitScheduler
             {
                 entry.Askers++;
                 if (Whose == StartClass.Person) entry.Whose = StartClass.Person;
+                if (askClass < entry.Class) entry.Class = askClass;
             }
         }
 
@@ -492,23 +494,21 @@ public sealed class GitScheduler
     }
 
     /// <summary>
-    /// Under the lock: a person's oldest ask that may go, else the oldest that may go: an ask its class's cap or its repository's
-    /// order holds back never holds up a later one that may go.
+    /// Under the lock: the oldest ask that may go of the highest class that has one (a person's, a step's, the background's): an ask
+    /// its class's cap or its repository's order holds back never holds up a later one that may go.
     /// </summary>
     private Entry? Next()
     {
-        Entry? person = null;
-        Entry? oldest = null;
+        Entry? next = null;
         foreach (var queue in _queues.Values)
         {
             foreach (var entry in Eligible(queue))
             {
-                if (entry.Whose == StartClass.Person && (person is null || entry.Order < person.Order)) person = entry;
-                if (oldest is null || entry.Order < oldest.Order) oldest = entry;
+                if (next is null || entry.Class < next.Class || entry.Class == next.Class && entry.Order < next.Order) next = entry;
             }
         }
 
-        return person ?? oldest;
+        return next;
     }
 
     /// <summary>A repository's asks that may go now, in order: none past a write still queued, a write only with nothing queued ahead.</summary>
@@ -634,6 +634,8 @@ public sealed class GitScheduler
         public CancellationTokenSource Ending { get; } = new();
 
         public StartClass Whose { get; set; } = StartClass.Background;
+
+        public GitAskClass Class { get; set; } = GitAskClass.Background;
 
         public GitPlace? Parent { get; init; }
 

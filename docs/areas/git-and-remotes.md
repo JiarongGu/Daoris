@@ -270,13 +270,23 @@ reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCen
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
 marks equivalent patches, `meta` for a start with no command), its asker, its class and its deadline, and is answered by the run or
 failed as git's failure naming why. The class is the person's where the flow is (`AsPerson`), a step's for `run-step`, `opinion-gate` and
-`check`, else the background's; it is told, and the scheduler's order is still its own. The deadline is the run's bound and an allowance
+`check`, else the background's, and the scheduler places by it: a place that frees goes to the oldest ask that may go of the highest
+class that has one, a shared read taking its highest asker's class, while the places' rules still read a step's as the background's. The deadline is the run's bound and an allowance
 for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's; a write or a git that waits outside Daoris (an act's
 steps) has none, so an act is never dropped from its queue. The allowance is each asker's own and runs only while that asker's entry is
 queued, decided against placement under the scheduler's lock, so an ask is run or failed, never both; a joined asker leaves a shared
 read alone. A place not given in time is `deadline`. A library read not answered within its bound is handed to git; in-process reads
 get no id and no place; a read the object-id memo or the ref files answered is counted as a memo hit. Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A shared
 read's person joined to a long read is never failed once the read is placed (`GitServiceTests`).
+
+*Parts.* A log walk (`log`, `cherry`, `rev-list`) or a tree's listing (`ls-tree`) may be asked in parts (`GitServiceParts`, over
+`GitService.PartsAsync`): its answer comes as parts numbered from 1 on one ask's id, the ask open while they are read and its git placed
+under that id, each part cut at a line's end once 64 K characters are held (a longer line where it stands), the last marked with git's
+exit (0 where the read was stopped, -1 where git did not start). They ride the service's own lane, a channel four parts deep, never the
+bus's frames: while four wait unread the read waits on its own flow. Git itself does not wait yet: the machine's run (`MachineRun`) drains
+its pipe into an unbounded buffer, so a paused asker holds the rest of the answer in memory (GITBUS3c). Cancelling the ask or no longer
+reading stops the read, and the parts end only once it has ended, a git that outlived its kill said as `ProcessUnendedException`; while its
+git is placed the ask is shown with the repository it was placed in and its deadline (`GitServicePartsTests`). Any other kind is answered whole.
 
 *Failed reads.* A read git did not answer (no exit: a deadline, a stalled repository, a git that did not start) is unknown, never
 "clean", "not held" or "no change": every caller whose answer decides a tidy, a discard, a landing, a merge, a replay or a resolver's
@@ -326,7 +336,7 @@ which runs only in the adapter's own development (`node tools/merge/packages.ts 
 
 - Four run at once. The background and every git waiting outside Daoris (a remote act, a hook) hold three together, so a
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
-- Asks queue per repository, a person's oldest that may go first. A write passes nothing queued ahead of it, nothing passes it,
+- Asks queue per repository, the oldest that may go of the highest class first: a person's, a step's, the background's. A write passes nothing queued ahead of it, nothing passes it,
   and it never shares; a read shares an identical queued start only with no write queued after it.
 - A lock-free read (`GitEndable`) is dropped or ended once its askers leave; every other git runs to its end or its bound. A git
   outliving its kill is counted apart (`git.place.apart`) and its repository's background asks answer `stalled`.

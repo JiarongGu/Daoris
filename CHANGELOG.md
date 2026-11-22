@@ -12,6 +12,9 @@ with the version and date at release.
   where no `CLAUDE.md` exists (probed on Claude Code 2.1.329, codex 0.167.2 and dsh 0.2.1-rc.2). The next sync takes out the region it wrote and the
   file when that was all of it. A `CLAUDE.md` with text of its own keeps its region, since Claude Code reads that file and then not `AGENTS.md`;
   `sync` names it. `check` fails on a file holding only the old region until a sync removes it. Claude Code before 2.1.277 reads no `AGENTS.md`.
+- A step's git reads (a workflow's run step, the opinion gate, a check) now go ahead of the machine's background reads when places are
+  short, after the person's own; within each, the oldest goes first. Long git answers (a history walk, a tree's listing) can now be read
+  in parts as git writes them, and stopping the read stops git.
 - Marking a quest done yourself, or any session marking it, now ends its workflow's run as a stop does: no step starts after it, a
   check under way is told to stop, the sessions waiting on the run end with it, and its tree and branch are kept. The run's end says
   which commits its branch holds that the line does not, so what was left is named and never landed by a run nobody owns.

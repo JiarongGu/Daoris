@@ -111,6 +111,67 @@ public sealed class GitServiceTests
     }
 
     [Fact]
+    public async Task A_place_that_frees_goes_to_the_persons_then_a_steps_then_the_backgrounds_oldest_first_within_one()
+    {
+        var (service, _, _) = Fixture(places: 1);
+        var hold = new TaskCompletionSource<int>();
+        var placed = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("held", "status"), Bound, _ => { placed.SetResult(); return hold.Task; }, CancellationToken.None);
+        await placed.Task.WaitAsync(Soon);
+        var ran = new List<string>();
+        Task<int> Queue(string name, string asker, bool person = false)
+        {
+            using var named = GitAskers.Is(asker);
+            using var whose = person ? GitScheduler.AsPerson() : null;
+            return service.PlaceAsync(Ask(name, "log"), Bound, _ => { lock (ran) ran.Add(name); return Task.FromResult(0); }, CancellationToken.None);
+        }
+
+        List<Task<int>> queued =
+        [
+            Queue("look1", GitAskers.Look),
+            Queue("facts1", GitAskers.Facts),
+            Queue("step1", GitAskers.Steps),
+            Queue("look2", GitAskers.Look),
+            Queue("gate1", GitAskers.Gate),
+            Queue("door1", GitAskers.Door, person: true),
+        ];
+        await Poll.Until(() => service.Open.Count == 7);
+
+        hold.SetResult(1);
+        await holding.WaitAsync(Soon);
+        await Task.WhenAll(queued).WaitAsync(Soon);
+
+        Assert.Equal(["door1", "step1", "gate1", "look1", "facts1", "look2"], ran);
+    }
+
+    [Fact]
+    public async Task A_shared_read_a_step_joins_is_placed_as_a_steps_ahead_of_older_background_asks()
+    {
+        var (service, _, _) = Fixture(places: 1);
+        var hold = new TaskCompletionSource<int>();
+        var placed = new TaskCompletionSource();
+        var holding = service.PlaceAsync(Ask("held", "status"), Bound, _ => { placed.SetResult(); return hold.Task; }, CancellationToken.None);
+        await placed.Task.WaitAsync(Soon);
+        var ran = new List<string>();
+        Task<int> Queue(GitRunAsk ask, string name, string asker)
+        {
+            using var named = GitAskers.Is(asker);
+            return service.PlaceAsync(ask, Bound, _ => { lock (ran) ran.Add(name); return Task.FromResult(0); }, CancellationToken.None);
+        }
+
+        var older = Queue(Ask("older", "log"), "older", GitAskers.Look);
+        var shared = Ask("shared", "ls-tree") with { Start = "one-listing" };
+        var first = Queue(shared, "shared", GitAskers.Look);
+        var joined = Queue(shared, "joined", GitAskers.Steps);
+        await Poll.Until(() => service.Open.Count == 4);
+
+        hold.SetResult(1);
+        await Task.WhenAll(holding, older, first, joined).WaitAsync(Soon);
+
+        Assert.Equal(["shared", "older"], ran);
+    }
+
+    [Fact]
     public async Task A_write_is_never_failed_for_its_queue_and_a_deadline_racing_a_place_runs_or_fails_never_both()
     {
         var (service, _, _) = Fixture(places: 1, allowance: TimeSpan.Zero);
