@@ -56,21 +56,31 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
     }
 
     /// <summary>A line (<paramref name="line"/>) with a declaration of two required gates, one reached by <c>src/</c> and one of them required by a command of its own, and a slow one; then a branch <c>work</c> off it.</summary>
-    private async Task<string> RepositoryAsync(string line = "main")
+    private async Task<string> RepositoryAsync(string line = "main", bool admission = false, bool redTypes = false)
     {
         Directory.CreateDirectory(Checkout);
         await GitAsync("init", "-q", "-b", line);
         await GitAsync("config", "user.email", "test@example.com");
         await GitAsync("config", "user.name", "Test");
-        await File.WriteAllTextAsync(Path.Combine(Checkout, "daoris.gates.json"), JsonSerializer.Serialize(new
+        object[] gates =
+        [
+            new { name = "fast-src", run = Gate("fast-src", "plain"), handback = Gate("fast-src", "required"), paths = new[] { "src/" } },
+            new { name = "fast-docs", run = Gate("fast-docs"), handback = true, paths = new[] { "docs/" } },
+            new { name = "slow", run = Gate("slow"), heavy = true },
+            .. admission ? (object[])[new { name = "lint", run = Gate("lint") }, new { name = "types", run = redTypes ? "node -e \"process.exit(3)\"" : Gate("types") }] : [],
+        ];
+        var declaration = new Dictionary<string, object> { ["gates"] = gates };
+        if (admission)
         {
-            gates = new object[]
+            declaration["admission"] = new
             {
-                new { name = "fast-src", run = Gate("fast-src", "plain"), handback = Gate("fast-src", "required"), paths = new[] { "src/" } },
-                new { name = "fast-docs", run = Gate("fast-docs"), handback = true, paths = new[] { "docs/" } },
-                new { name = "slow", run = Gate("slow"), heavy = true },
-            },
-        }));
+                always = new[] { "lint" },
+                suites = Array.Empty<string>(),
+                byPaths = new[] { new { gate = "types", paths = new[] { "web/**" }, why = "the page's typecheck" } },
+            };
+        }
+
+        await File.WriteAllTextAsync(Path.Combine(Checkout, "daoris.gates.json"), JsonSerializer.Serialize(declaration));
         await GitAsync("add", "-A");
         await GitAsync("commit", "-q", "-m", "gates" + Trailer);
         await GitAsync("switch", "-q", "-c", "work");
@@ -208,6 +218,39 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
 
         Assert.Equal(["fast-docs"], result.Gates.Where(gate => gate.Verdict == RunnerVerdicts.Pass).Select(gate => gate.Name));
         Assert.Equal("fast-docs -", File.ReadAllText(Ran).Trim());
+    }
+
+    [Fact]
+    public async Task A_gate_the_admission_names_runs_on_work_no_required_command_reaches_and_one_it_does_not_reach_is_left_out()
+    {
+        var blob = await RepositoryAsync(admission: true);
+        await CommitAsync("web/a.ts", "work" + Trailer);
+
+        var result = await RunAsync(blob);
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal(["lint", "types"], result.Gates.Select(gate => gate.Name));
+        Assert.Equal(["lint -", "types -"], File.ReadAllLines(Ran).Select(line => line.Trim()).Where(line => line.Length > 0));
+
+        File.Delete(Ran);
+        await CommitAsync("docs/b.txt", "more work" + Trailer);
+
+        var docs = await RunAsync(blob, invocation: "i-b");
+
+        Assert.True(docs.Verdict == VerifyVerdicts.Reached, docs.Why);
+        Assert.Equal(["fast-docs", "lint", "types"], docs.Gates.Select(gate => gate.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_red_admission_gate_holds_the_work_on_the_check_naming_the_gate_though_no_required_command_reaches_it()
+    {
+        var blob = await RepositoryAsync(admission: true, redTypes: true);
+        await CommitAsync("web/a.ts", "work" + Trailer);
+
+        var result = await RunAsync(blob);
+
+        Assert.Equal((VerifyVerdicts.Failed, "types"), (result.Verdict, result.Failed));
+        Assert.Contains("types", result.Why);
     }
 
     [Fact]
