@@ -183,11 +183,13 @@ public class DaorisHost : IDisposable
 
     /// <summary>One request, from <paramref name="from"/>, with a bearer key, the person key and a JSON body when given.</summary>
     public async Task<Answer> SendAsync(
-        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null, int? port = null)
+        string method, string pathAndQuery, IPAddress from, string? key = null, string? json = null, string? person = null, int? port = null,
+        CancellationToken aborted = default)
     {
         var query = pathAndQuery.IndexOf('?');
         var context = await Server.SendAsync(http =>
         {
+            if (aborted.CanBeCanceled) http.RequestAborted = aborted;
             http.Request.Method = method;
             http.Request.Path = query < 0 ? pathAndQuery : pathAndQuery[..query];
             http.Request.QueryString = query < 0 ? QueryString.Empty : new QueryString(pathAndQuery[query..]);

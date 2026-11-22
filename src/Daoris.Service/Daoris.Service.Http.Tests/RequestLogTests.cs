@@ -55,6 +55,19 @@ public sealed class RequestLogTests : IDisposable
             && Parse(line).GetProperty("data").GetProperty("mode").GetString() == "local");
     }
 
+    /// <summary>A caller that hung up before the route answered is no failure: the window's rail aborts its opinions ask.</summary>
+    [Fact]
+    public async Task A_caller_that_hung_up_is_no_failed_request_and_writes_no_line()
+    {
+        using var hungUp = new CancellationTokenSource();
+        await hungUp.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _host.SendAsync("GET", "/api/opinions", DaorisHost.Loopback, aborted: hungUp.Token));
+
+        Assert.DoesNotContain(_host.LogLines(), line => Parse(line).GetProperty("event").GetString() is "request.failed" or "error");
+    }
+
     /// <summary>A request that answered — refusals included — is not a failure, and writes nothing.</summary>
     [Fact]
     public async Task A_request_that_answered_writes_no_line()

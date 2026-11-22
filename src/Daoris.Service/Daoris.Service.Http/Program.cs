@@ -304,7 +304,7 @@ app.Use(async (context, next) =>
     }
     catch
     {
-        status = StatusCodes.Status500InternalServerError;
+        status = StatusCodes.Status499ClientClosedRequest;
         throw;
     }
     finally
