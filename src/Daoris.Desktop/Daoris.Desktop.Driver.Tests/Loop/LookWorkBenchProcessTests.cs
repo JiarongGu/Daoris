@@ -88,7 +88,7 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Assert.Empty(still.Starts);
         Assert.True(stillMs <= StageBudget.TotalMilliseconds, $"the look's overlaps took {stillMs} ms where nothing moved");
         Assert.All(one.Starts, start => Assert.EndsWith(Path.GetFileName(moved), start, StringComparison.Ordinal));
-        Assert.Single(one.Starts);
+        Assert.Equal(2, one.Starts.Count);
         Assert.Contains("moved.txt", again.Changed["q3"]);
     }
 
@@ -214,19 +214,19 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         var at = DateTimeOffset.UtcNow;
         var kept = new TreeChangesKept(() => at);
         var (_, tree, baseCommit) = _trees[5];
-        Assert.Equal(["part-5.txt"], await kept.ReadAsync(tree, baseCommit, CancellationToken.None));
+        Assert.Equal(["part-5.txt"], await kept.ReadAsync(tree, baseCommit, null, CancellationToken.None));
 
         await File.WriteAllTextAsync(Path.Combine(tree, "staged.txt"), "staged\n");
         await GitAsync(tree, "add", "staged.txt");
-        Assert.Equal(["part-5.txt", "staged.txt"], await kept.ReadAsync(tree, baseCommit, CancellationToken.None));
+        Assert.Equal(["part-5.txt", "staged.txt"], await kept.ReadAsync(tree, baseCommit, null, CancellationToken.None));
 
         // The part's file gone from the working tree moves no file of git's: the kept read stands until it is Again old.
         File.Delete(Path.Combine(tree, "part-5.txt"));
-        Assert.Equal(["part-5.txt", "staged.txt"], await kept.ReadAsync(tree, baseCommit, CancellationToken.None));
+        Assert.Equal(["part-5.txt", "staged.txt"], await kept.ReadAsync(tree, baseCommit, null, CancellationToken.None));
         at += TreeChangesKept.Again;
         using var tally = GitStartTally.Open(_scratch);
-        Assert.Equal(["staged.txt"], await kept.ReadAsync(tree, baseCommit, CancellationToken.None));
-        Assert.Single(tally.Starts);
+        Assert.Equal(["staged.txt"], await kept.ReadAsync(tree, baseCommit, null, CancellationToken.None));
+        Assert.Equal(2, tally.Starts.Count);
     }
 
     /// <summary>A read through the process gate, its git starts said with their folders and its time.</summary>

@@ -13,7 +13,8 @@ internal sealed class OverlapsLook(ILookWiring wiring) : ILookPass
         var committedLook = round.State.Snapshot;
         var integrating = new IntegrationStore(wiring.Home).Open().Select(request => request.Quest).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
         var kept = TreeChangesKept.Of(wiring.Home);
-        var looked = await wiring.Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(committedLook, integrating, kept.ReadAsync, ct))
+        var looked = await wiring.Stages.TimeAsync("overlaps", () => WorkOverlaps.LookAsync(
+                committedLook, integrating, kept.ReadAsync, ct, session => CanonicalLine.Choose(wiring.Config, session.Repository, session.Workspace, guess: null).Branch))
             .ConfigureAwait(false);
         round.State.Snapshot = looked with
         {

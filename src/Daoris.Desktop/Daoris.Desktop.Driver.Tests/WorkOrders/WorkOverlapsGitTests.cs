@@ -43,7 +43,8 @@ public sealed class WorkOverlapsGitTests : IAsyncLifetime
         await GitAsync(tree, "commit", "--quiet", "-m", message);
     }
 
-    private static Task<IReadOnlyList<string>?> ChangedAsync(string tree, string before) => WorkOverlaps.DiffAsync(tree, before, CancellationToken.None);
+    private static Task<IReadOnlyList<string>?> ChangedAsync(string tree, string before, string? line = null) =>
+        WorkOverlaps.DiffAsync(tree, before, line, CancellationToken.None);
 
     private static SessionView Running(string id, string quest, string tree, string before) =>
         new(id, "Game", "running") { Quest = quest, Tree = tree, BaseCommit = before };
@@ -78,6 +79,49 @@ public sealed class WorkOverlapsGitTests : IAsyncLifetime
         await CommitAsync(_root, "line-one.txt", "line one");
 
         Assert.Equal(["own-stacked.txt"], await ChangedAsync(stacked, cut));
+    }
+
+    [Fact]
+    public async Task A_stacked_branch_that_merged_the_moved_line_in_is_charged_with_neither_the_parent_branch_nor_the_line()
+    {
+        var feature = await BranchAsync("feature");
+        await CommitAsync(feature, "feature.txt", "feature");
+        var cut = (await GitAsync(feature, "rev-parse", "HEAD")).Trim();
+        var stacked = await BranchAsync("stacked", "feature");
+        await CommitAsync(stacked, "own-stacked.txt", "stacked");
+        await CommitAsync(_root, "line-one.txt", "line one");
+        await GitAsync(stacked, "merge", "--quiet", "--no-edit", "main");
+
+        Assert.Equal(["own-stacked.txt"], await ChangedAsync(stacked, cut));
+    }
+
+    [Fact]
+    public async Task A_remote_line_ahead_of_a_stale_local_one_is_not_the_branchs_change()
+    {
+        var one = await BranchAsync("one");
+        await CommitAsync(one, "own-one.txt", "one");
+        var ahead = await BranchAsync("ahead");
+        await CommitAsync(ahead, "line-one.txt", "line one");
+        var tip = (await GitAsync(ahead, "rev-parse", "HEAD")).Trim();
+        await GitAsync(_root, "update-ref", "refs/remotes/origin/main", tip);
+        await GitAsync(one, "rebase", "--quiet", "refs/remotes/origin/main");
+
+        Assert.Equal(["own-one.txt"], await ChangedAsync(one, _base));
+    }
+
+    [Fact]
+    public async Task The_line_the_person_set_governs_where_git_guesses_another()
+    {
+        await GitAsync(_root, "branch", "develop");
+        var develop = await BranchAsync("work", "develop");
+        await CommitAsync(develop, "own-work.txt", "work");
+        var ahead = await BranchAsync("ahead", "develop");
+        await CommitAsync(ahead, "line-one.txt", "line one");
+        await GitAsync(_root, "update-ref", "refs/heads/develop", (await GitAsync(ahead, "rev-parse", "HEAD")).Trim());
+        await GitAsync(develop, "merge", "--quiet", "--no-edit", "develop");
+
+        Assert.Equal(["own-work.txt"], await ChangedAsync(develop, _base, "develop"));
+        Assert.Contains("line-one.txt", await ChangedAsync(develop, _base) ?? []);
     }
 
     [Fact]
