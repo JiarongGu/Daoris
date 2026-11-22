@@ -153,7 +153,9 @@ export function inspect(
 
   // Rooms: each declared one has instructions of its own. A pointer an earlier sync wrote is one file too many.
   const roomsWithoutInstructions = planRooms({ root, manifest }).missing;
-  const pointersRetired = planPointers({ root, manifest }).retire;
+  const pointerPlan = planPointers({ root, manifest, lock });
+  const pointersRetired = pointerPlan.retire;
+  const pointersHiding = pointerPlan.hidden;
 
   const links = linkProblems(root, {
     files: [
@@ -167,7 +169,7 @@ export function inspect(
     ],
     pairs: [
       ...new Set(Object.values(harness.tiers).flatMap((tier) => (tier.region ? [tier.region.file] : []))),
-      ...pointerPaths(manifest),
+      ...pointerPaths(manifest, lock),
       ...(manifest.rooms ?? []).map((room) => `${room}/${ROOM_FILE}`),
       indexPath(target),
     ],
@@ -300,14 +302,14 @@ export function inspect(
   const factsOk = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
     && !staleSwitches.length
     && !staleLayout && !mirrorsDrifted.length && !mirrorsMissing.length && !mirrorsBehind.length
-    && !roomsWithoutInstructions.length && !pointersRetired.length && !links.length
+    && !roomsWithoutInstructions.length && !pointersRetired.length && !pointersHiding.length && !links.length
     && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
   const sizeFails = documentsOver.some((over) => over.fails) || (overBudget && manifest.coreBudget.fails);
   const ok = factsOk && !sizeFails;
   return {
     factsOk, sizeFails,
     drifted, missing, stalePacks, coreWords, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
-    staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, pointersRetired,
+    staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, pointersRetired, pointersHiding,
     links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, recordsUndeclared,
     ok,
@@ -351,6 +353,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const path of report.roomsWithoutInstructions) {
     write(`  room      ${path} is absent — the room is declared in daoris.json, and its instructions are this repo's to write`);
   }
+  for (const path of report.pointersHiding) write(`  hidden    ${path} holds text of its own and does not import AGENTS.md, so Claude Code reads it and not the brief — move its text into AGENTS.md and delete it, or add @AGENTS.md`);
   for (const path of report.pointersRetired) write(`  pointer   ${path} holds only the retired import of AGENTS.md — run 'daoris sync' to take it out`);
   for (const problem of report.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
   // Reported, never failed on.

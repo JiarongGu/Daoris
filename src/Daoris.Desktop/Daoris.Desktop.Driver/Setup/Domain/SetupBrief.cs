@@ -330,7 +330,7 @@ public static class SetupBrief
         body.Append("**What this writes, and what it never does.** Write only in this tree, on this branch: `daoris.json` ")
             .Append("and `daoris.lock`; ")
             .Append(init ? "the `.gitattributes` that `daoris init` writes where there is none, holding `* text=auto eol=lf`; " : "")
-            .Append("`AGENTS.md` (the region and the brief), and the removal of a `CLAUDE.md` that holds only the retired import; `.agents/`, with the ")
+            .Append("`AGENTS.md` (the region and the brief); `CLAUDE.md`, only to delete it once every line of it is in `AGENTS.md` or its new home, or to add `@AGENTS.md` to one that must stay; `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
             .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; where it declares none, the lanes ")
             .Append("file's rooms; and a document that keeps a ")

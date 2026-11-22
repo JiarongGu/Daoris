@@ -167,6 +167,8 @@ export interface PointerPlan {
   retire: string[];
   /** Files that hold text of their own beside the region: Claude Code reads them and not `AGENTS.md`, so the region stays. */
   kept: string[];
+  /** Files with text of their own and no import of `AGENTS.md`, beside an `AGENTS.md`: Claude Code reads them and not the brief. A fact. */
+  hidden: string[];
 }
 
 /** A path Daoris would write that is a link, or a link checked out as text. */
@@ -226,6 +228,8 @@ export interface DriftReport {
   roomsWithoutInstructions: string[];
   /** Files holding only a retired pointer region: `sync` takes the file out. */
   pointersRetired: string[];
+  /** A `CLAUDE.md` that hides `AGENTS.md` from Claude Code: it holds text of its own and no import of it. */
+  pointersHiding: string[];
   /** Paths Daoris writes that are a link, or a link held as text. */
   links: LinkProblem[];
   /** The root instruction file's whole size — reported against the smallest limit measured, never failed on. */

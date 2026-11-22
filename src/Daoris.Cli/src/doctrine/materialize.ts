@@ -61,6 +61,9 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const move of plan.moves) write(`  moved     ${move.from} -> ${move.to}`);
     if (plan.index.old !== null) write(`  moved     ${plan.index.old} -> ${plan.index.path}`);
     for (const path of plan.pointers.retire) write(`  pointer   ${path} (removed: every agent reads AGENTS.md itself)`);
+    for (const path of plan.pointers.hidden) {
+      write(`  hidden    ${path} — holds text of its own and no import of AGENTS.md, so Claude Code reads it and not the brief; \`daoris check\` fails until its text moves into AGENTS.md and it goes, or it imports @AGENTS.md`);
+    }
     for (const path of plan.pointers.kept) {
       write(`  kept      ${path} — holds text of its own, so Claude Code reads it and not AGENTS.md; its import stays until that text moves`);
     }

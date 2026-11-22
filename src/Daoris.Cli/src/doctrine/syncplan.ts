@@ -287,7 +287,7 @@ export function planSync(
   });
 
   // Damaged markers in a retired pointer refuse here, and not once half the sync is on disk with the lock behind it.
-  const pointers = planPointers({ root, manifest });
+  const pointers = planPointers({ root, manifest, lock });
   const rooms = planRooms({ root, manifest });
   const index = planIndex({ root, harness, lock, from, to, moving, writes, deletes, locked });
   const behind = moving
@@ -311,7 +311,7 @@ export function planSync(
     pairs: [
       ...new Set(Object.values(harness.tiers).flatMap((tier) => (tier.region ? [tier.region.file] : []))),
       // A pointer a sync takes out, or a room's text it reads for the roster: a link refuses like any other.
-      ...pointerPaths(manifest),
+      ...pointerPaths(manifest, lock),
       ...(manifest.rooms ?? []).map((room) => `${room}/${ROOM_FILE}`),
       // The index: a link, or a link held as text, refuses like a pointer does.
       index.path,

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureError } from '../_fixture.ts';
 import {
-  CLOSE, IMPORT, OPEN, findRegion, removeRegion, retireImport, writeRegion,
+  CLOSE, IMPORT, OPEN, findRegion, hasImport, removeRegion, retireImport, writeRegion,
 } from '../../src/doctrine/region.ts';
 
 /**
@@ -215,6 +215,18 @@ const REGION = `${OPEN(IMPORT)}\n@AGENTS.md\n${CLOSE(IMPORT)}\n`;
 test('a file holding only the import region is retired', () => {
   assert.equal(retireImport(REGION), 'remove');
   assert.equal(retireImport(REGION.replace(/\n/g, '\r\n')), 'remove', 'a CRLF file too');
+});
+
+test("a byte-order mark before the region is the file's, not a damaged marker", () => {
+  assert.equal(retireImport(`﻿${REGION}`), 'remove');
+  assert.equal(retireImport(`﻿# Ours\n\n${REGION}`), 'kept');
+});
+
+test('a mention of the brief is not an import of it, and a hand-written import is one', () => {
+  assert.equal(hasImport('We keep doctrine in AGENTS.md.\n', 'AGENTS.md'), false);
+  assert.equal(hasImport('@AGENTS.mdx\n', 'AGENTS.md'), false);
+  assert.equal(hasImport('Everything is in @AGENTS.md.\n', 'AGENTS.md'), true);
+  assert.equal(hasImport(REGION, 'AGENTS.md'), true);
 });
 
 test('a file with text of its own beside the region is kept, every word', () => {

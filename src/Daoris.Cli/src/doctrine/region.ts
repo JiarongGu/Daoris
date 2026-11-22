@@ -183,6 +183,15 @@ export function removeRegion(text: string, name: string): string | null {
   return `${kept.join('\n')}${eol}`;
 }
 
+/**
+ * Whether a file imports another by Claude Code's `@path` convention: a mention is not an import, and `@AGENTS.mdx`,
+ * `@AGENTS.md.backup` and `@AGENTS.md/nested` are other files.
+ */
+export function hasImport(text: string, target: string): boolean {
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^\\w@])@${escaped}(?![\\w/\\\\-])(?!\\.\\w)`, 'm').test(text);
+}
+
 /** What retiring the import region from a pointer file does: nothing, delete the file, or leave it. */
 export type Retirement = 'none' | 'remove' | 'kept';
 
@@ -203,6 +212,8 @@ export type Retirement = 'none' | 'remove' | 'kept';
  * repository this family keeps holds a `daoris:import` region (`grep` for the marker finds each).
  */
 export function retireImport(text: string): Retirement {
-  if (findRegion(text, IMPORT).kind === 'absent') return 'none';
-  return removeRegion(text, IMPORT) === null ? 'remove' : 'kept';
+  // The encoding mark is the file's, not a line's: left in, it hides the opening marker from the whole-line match.
+  const body = text.replace(/^﻿/, '');
+  if (findRegion(body, IMPORT).kind === 'absent') return 'none';
+  return removeRegion(body, IMPORT) === null ? 'remove' : 'kept';
 }

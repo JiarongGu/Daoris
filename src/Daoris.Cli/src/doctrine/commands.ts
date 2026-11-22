@@ -279,6 +279,7 @@ export function commandStatus(
       mirrorsBehind: inspection?.mirrorsBehind ?? [],
       roomsWithoutInstructions: inspection?.roomsWithoutInstructions ?? [],
       pointersRetired: inspection?.pointersRetired ?? [],
+      pointersHiding: inspection?.pointersHiding ?? [],
       links: inspection?.links ?? [],
       // The declared documents and their facts.
       documents: manifest.documents,
@@ -330,7 +331,7 @@ export function commandStatus(
     if (inspection.staleLayout) write(`  layout        ${inspection.staleLayout} — run 'daoris sync'`);
     const mirrorFacts = [...inspection.mirrorsDrifted.map((m) => m.path), ...inspection.mirrorsMissing, ...inspection.mirrorsBehind];
     if (mirrorFacts.length) write(`  mirror        ${mirrorFacts.join(', ')} — 'daoris check' says which`);
-    const roomFacts = [...inspection.roomsWithoutInstructions, ...inspection.pointersRetired];
+    const roomFacts = [...inspection.roomsWithoutInstructions, ...inspection.pointersRetired, ...inspection.pointersHiding];
     if (roomFacts.length) write(`  room          ${roomFacts.join(', ')} — 'daoris check' says which`);
     for (const problem of inspection.links) write(`  link          ${problem.path} — 'daoris check' says what it is`);
     for (const doc of inspection.documentsMissing) write(`  document      ${doc.path} (${doc.role}) — 'daoris check' says which`);

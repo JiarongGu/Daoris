@@ -317,7 +317,7 @@ test('a lock entry cannot reach outside the target directory', () => {
     keptRules: [],
     mirrors: { writes: [], retire: [], drop: [], edited: [], collisions: [], editedGone: [] },
     rooms: { missing: [] },
-    pointers: { retire: [], kept: [] },
+    pointers: { retire: [], kept: [], hidden: [] },
     index: { path: '.claude/INDEX.md', old: null, content: '# Index\n', state: 'create' as const, collision: false },
     links: [],
     documents: { links: [], missing: [] },

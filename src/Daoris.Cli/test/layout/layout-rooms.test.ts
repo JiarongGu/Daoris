@@ -124,6 +124,67 @@ test('retired pointer: an undeclared folder is invisible (D5) — its CLAUDE.md 
   fx.cleanup();
 });
 
+test('hidden brief: an authored CLAUDE.md with no import, at the root or in a room, is named by sync and fails check', () => {
+  const fx = withRooms('rooms-hidden', [ROOM]);
+  fx.repoFx.write(ROOM_AGENTS, '# The CLI\n');
+  fx.repoFx.write(ROOM_CLAUDE, '# Claude\nOur notes.\n');
+  fx.repoFx.write('CLAUDE.md', '# Claude\nOur root notes.\n');
+
+  const out = fx.cli('sync');
+
+  assert.equal(out.code, 0, out.out);
+  assert.match(out.out, /hidden {4}CLAUDE\.md/);
+  assert.match(out.out, /hidden {4}src\/cli\/CLAUDE\.md/);
+  assert.equal(fx.repoFx.read('CLAUDE.md'), '# Claude\nOur root notes.\n', 'never a word of its text touched');
+  const check = fx.cli('check');
+  assert.equal(check.code, 1);
+  assert.match(check.out, /hidden {4}CLAUDE\.md holds text of its own and does not import AGENTS\.md/);
+
+  fx.repoFx.write('CLAUDE.md', '# Claude\nOur root notes.\n\n@AGENTS.md\n');
+  fx.repoFx.write(ROOM_CLAUDE, '@AGENTS.md\n');
+  assert.equal(fx.cli('check').code, 0, "a hand-written import is the repository's answer");
+  fx.cleanup();
+});
+
+test("hidden brief: an undeclared folder's CLAUDE.md is invisible (D5)", () => {
+  const fx = withRooms('rooms-hidden-undeclared', []);
+  fx.repoFx.write('pkg/AGENTS.md', '# A package\n');
+  fx.repoFx.write('pkg/CLAUDE.md', '# Mine\n');
+  fx.sync();
+  assert.equal(fx.cli('check').code, 0);
+  fx.cleanup();
+});
+
+test('retired pointer: a byte-order mark before the region does not make it a damaged one', () => {
+  const fx = withRooms('rooms-bom', [ROOM]);
+  fx.repoFx.write(ROOM_AGENTS, '# The CLI\n');
+  fx.repoFx.write(ROOM_CLAUDE, `﻿${POINTER}`);
+
+  const out = fx.cli('sync');
+
+  assert.equal(out.code, 0, out.out);
+  assert.equal(fx.repoFx.exists(ROOM_CLAUDE), false);
+  fx.cleanup();
+});
+
+test('retired pointer: a room an earlier lock recorded and the manifest no longer declares loses its pointer too', () => {
+  const fx = withRooms('rooms-lock-undeclared', [ROOM]);
+  fx.repoFx.write(ROOM_AGENTS, '# The CLI\n');
+  fx.sync();
+  // The lock an earlier build wrote: the room recorded, its pointer on disk.
+  fx.repoFx.write('daoris.lock', `${JSON.stringify({ ...JSON.parse(fx.repoFx.read('daoris.lock')), rooms: [ROOM] }, null, 2)}\n`);
+  fx.repoFx.write(ROOM_CLAUDE, POINTER);
+  fx.manifest({ harness: 'agents', target: '.agents', rooms: [] });
+  assert.equal(fx.cli('check').code, 1, 'check names it before a sync does');
+
+  const out = fx.cli('sync');
+
+  assert.equal(out.code, 0, out.out);
+  assert.equal(fx.repoFx.exists(ROOM_CLAUDE), false);
+  assert.equal(JSON.parse(fx.repoFx.read('daoris.lock')).rooms, undefined);
+  fx.cleanup();
+});
+
 /** §2.2: telling rather than loading — each room's path and its first heading, and one sentence. */
 test('the region lists every room with its first heading, and check fails when a heading moves on', () => {
   const fx = withRooms('rooms-roster', [ROOM, 'docs']);

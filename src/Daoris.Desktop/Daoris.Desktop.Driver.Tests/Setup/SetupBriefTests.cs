@@ -357,6 +357,16 @@ public sealed partial class SetupBriefTests
         Assert.Contains("the choice is this repository's", body);
     }
 
+    [Fact]
+    public void The_bounds_allow_what_the_steps_ask_of_an_authored_claude_md()
+    {
+        var (_, body) = SetupBrief.Compose(Input(SetupCase.Whole));
+
+        Assert.Contains("Then delete `CLAUDE.md`", body);
+        Assert.Contains("A file that must stay imports `@AGENTS.md` by hand", body);
+        Assert.Contains("`CLAUDE.md`, only to delete it once every line of it is in `AGENTS.md` or its new home, or to add `@AGENTS.md` to one that must stay", body);
+    }
+
     /// <summary>The knowledge step alone, for an adopter that declares nothing: no init, no move.</summary>
     [Fact]
     public void Declaring_carries_the_tool_the_knowledge_the_checks_and_the_commit_alone()
