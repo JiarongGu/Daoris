@@ -37,7 +37,6 @@ public sealed class DriverModulePlacePlanTests : DriverModuleBridge
         var client = new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service)));
         var loop = Loop();
         await loop.ComeUpAsync(client);
-        await loop.Settling;
         service.Forget();
         return (new DriverModule(Bus, loop), service, client);
     }

@@ -32,8 +32,6 @@ public sealed class DriverModulePlacesTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, Config);
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new SessionChanges(service))));
-        await loop.Settling;
-        service.Forget();
         return new DriverModule(Bus, loop);
     }
 

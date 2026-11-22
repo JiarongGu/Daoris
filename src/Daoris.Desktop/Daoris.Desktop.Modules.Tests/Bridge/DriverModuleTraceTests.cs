@@ -92,8 +92,6 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     {
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
-        await loop.Settling;
-        standIn.Forget();
         return (new DriverModule(Bus, loop), standIn);
     }
 
@@ -218,6 +216,7 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     {
         Machine();
         var (module, standIn) = await UpAsync(new StandIn(Sessions(), Quests(), id => id == "a1" ? AskJson : null));
+        standIn.Forget();
 
         await AnswerAsync(module, "TRACE", new { kind = "quest", id = "q1" });
 
