@@ -286,10 +286,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
     forgotten by `News.Forget` only for an exit this process saw stand and stop standing, never for a reading taken before the runtime loaded its steps). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
     the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
-    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A check's
+    red goes to the session that made the claimed step it checks (`CheckRounds.MakerSession`: the part whose handback commit it checked, else
+    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`), plain or spent, is
+    offered again, once, as a session serves the work (`CheckRounds.Untold`), while its red is still the check's newest. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
-    flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
-    blocks and last lines (`GateLogExcerpt`).
+    flakes and main's reds (`ReachedVerdict.Told`), each list cut at `ReachedVerdict.RedIds` ids with an *and N more* tail, the header and
+    the failure lines alike; a class is matched as a whole token in the log (never inside a longer name, never an empty one), a passing line
+    is never its failure, and the whole log is redacted by `GitWords.Redact` before it is split, a line it cut or one holding a home path is withheld whole before the display cut, and every id, heading, suite name and the log path (relative to the home) passes the same boundary (`WordsScan`). A failed
+    gate that prints the outcome line is told by them, any other by its log's red blocks and last lines (`GateLogExcerpt`).
 
 **Runs**
 

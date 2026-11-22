@@ -398,6 +398,29 @@ internal sealed class NodeRunKeeping(
             await SpentChecks.SettleAsync(records, governed.Unit.Id, scope.Run.Run, node, attempt, reds, code, found, config, workspace, repository, clock(),
                 text => SayWorkAsync(governed, scope, node, attempt, text, said, ct), said, noticed, governed.Declared.GetValueOrDefault(node)).ConfigureAwait(false);
         }
+
+        await UntoldAsync(governed, scope, config, said, ct).ConfigureAwait(false);
+    }
+
+    private async Task UntoldAsync(GovernedUnit governed, RunScope scope, DriverConfig? config, List<string> said, CancellationToken ct)
+    {
+        if (records.Read(governed.Unit.Id) is not { } record) return;
+        var (workspace, repository) = (governed.Unit.Owner.Workspace, governed.Unit.Owner.Repository);
+        foreach (var (node, attempt, _) in CheckRounds.Untold(record, governed.Declared))
+        {
+            if (SessionFor(governed, scope, node, attempt) is null) continue;
+            var told = record.ToldOf(node, attempt)!;
+            var code = record.Newest(node)?.Code;
+            var found = CheckResults.Newest(records.Home, scope.Run.Run, record, node)?.Why;
+            var text = told.Spent
+                ? SpentChecks.Words(node, code, found, CheckRounds.Reds(record).GetValueOrDefault(node), told.Decided ?? NodeTold.OwnerHeld,
+                    told.Decided == NodeTold.RoleHeld ? CastReading.Now(records.Home, workspace, repository)(SpentChecks.HeldOn) : null)
+                : FailedWords(node, code, found);
+            var (session, why) = await SayWorkAsync(governed, scope, node, attempt, text, said, ct).ConfigureAwait(false);
+            if (session is null && why == told.Why) continue;
+            var again = told with { Session = session, Why = why, At = clock() };
+            records.Edit(governed.Unit.Id, kept => (kept with { Told = [.. kept.Told.Where(each => each != told).TakeLast(NodeRecord.ToldKept - 1), again] }, true));
+        }
     }
 
     /// <summary>What a run's work is told of the person's changes: Daoris's own sentence, then their words quoted, as a reopen's are.</summary>
@@ -427,9 +450,7 @@ internal sealed class NodeRunKeeping(
         GovernedUnit governed, RunScope scope, string node, int attempt, string text, List<string> said, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
-        // The part the person's changes name is told, by the session that made it; else the newest part's.
-        var session = ChangesParts.SessionOf(scope, ChangesParts.Of(records.Read(unit), node, attempt))
-                      ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();
+        var session = SessionFor(governed, scope, node, attempt);
         var (told, why) = await SayAsync(session, scope, node, attempt, text, ct).ConfigureAwait(false);
         said.Add(told
             ? $"work  {unit}: session {session} is told what `{node}` sent back, as its next turn."
@@ -438,9 +459,20 @@ internal sealed class NodeRunKeeping(
         return told ? (session, null) : (null, why);
     }
 
+    /// <summary>The part the person's changes name is told, by the session that made it; a check's red, the session that made the work it checks; else the newest part's.</summary>
+    private string? SessionFor(GovernedUnit governed, RunScope scope, string node, int attempt)
+    {
+        var record = records.Read(governed.Unit.Id);
+        var maker = governed.Declared.GetValueOrDefault(node)?.Kind == NodeKinds.Check
+            ? CheckRounds.MakerSession(scope.Quests, record?.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt)?.Call.SubjectRevision)
+            : null;
+        return ChangesParts.SessionOf(scope, ChangesParts.Of(record, node, attempt)) ?? maker
+               ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();
+    }
+
     private async Task<(bool Told, string? Why)> SayAsync(string? session, RunScope scope, string node, int attempt, string text, CancellationToken ct)
     {
-        if (session is null) return (false, "no session of its work is known here");
+        if (session is null) return (false, NodeTold.NoSession);
         if (say() is not { } door) return (false, "this Daoris holds no say door");
         try
         {
