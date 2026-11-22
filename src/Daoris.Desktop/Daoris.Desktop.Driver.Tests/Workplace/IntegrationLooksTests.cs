@@ -70,6 +70,28 @@ public sealed class IntegrationLooksTests : IDisposable
         return claim;
     }
 
+    [Fact]
+    public void A_held_promotion_says_its_own_words()
+    {
+        var store = Store();
+        Assert.Null(store.Add(Request("r1", "feature/a", "unit-a")));
+        var claim = store.Form(new IntegrationForming("engine", "aurora", "main", Line, ["r1"])).Claim!;
+        store.End(claim, store.OpenStep(claim.Candidate)!.Id, new IntegrationStepEnd(IntegrationStepOutcomes.Done)
+        {
+            Tip = Tip, Members = [new IntegrationMemberChange("r1", IntegrationMemberStates.Replayed) { Replayed = Tip }],
+        });
+        store.End(claim, store.Begin(claim, IntegrationStepNames.Promote).Id, new IntegrationStepEnd(IntegrationStepOutcomes.Held)
+        {
+            Said = "`engine`'s session trees were being cleaned up: nothing was moved.",
+        });
+
+        var look = IntegrationLooks.Of(store, "engine");
+
+        var held = Assert.Single(look.Candidates);
+        Assert.Equal(("promotion", "`engine`'s session trees were being cleaned up: nothing was moved."), (held.Holds, held.Why));
+        Assert.Contains(IntegrateCommand.Said(look), line => line.Contains("held: promotion — `engine`'s session trees were being cleaned up", StringComparison.Ordinal));
+    }
+
     /// <summary>A candidate the policy held says it waits for the owner's decide with the judge's words; a decide recorded is said until its run acts.</summary>
     [Fact]
     public void A_candidate_held_for_a_decide_names_the_act_and_who_presses_it_and_a_recorded_decide_until_its_run_acts()

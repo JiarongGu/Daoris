@@ -45,7 +45,7 @@
   "integration.view.member.settled": "已集成",
   "integration.view.member.held": "已暂停",
   "integration.view.holds.conflict": "有成员因冲突被暂停；它在等管家或你的处理。",
-  "integration.view.holds.promotion": "主线暂时无法接收这个候选；每次查看时会再试一次。",
+  "integration.view.holds.promotion": "主线暂时无法接收这个候选；占用它的写入一结束就会再试，最迟到下一个到期时间也会再试。",
   "integration.view.holds.decide": "主线的规则把这个候选留待你决定：{{why}} 拆分让成员逐个运行，打回把它们交还各自的会话，落地则以确认运行的通过提升它。",
   "integration.view.holds.decided": "你已决定{{decide}}；主线的运行会在下一次查看时执行。",
   "integration.view.decide.split": "拆分",

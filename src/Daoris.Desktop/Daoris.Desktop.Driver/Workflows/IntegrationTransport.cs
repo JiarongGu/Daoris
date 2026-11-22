@@ -114,8 +114,22 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         lock (_gate) _loop ??= Task.Run(LoopAsync);
     }
 
+    /// <summary>A writer's hold ended: every waiting line is due now. A promotion's own release is no wake; its run ends it.</summary>
+    private void Released(string by)
+    {
+        if (by == TreeLock.Promoting) return;
+        lock (_gate)
+        {
+            if (_notBefore.Count == 0) return;
+            _notBefore.Clear();
+        }
+
+        Interlocked.Exchange(ref _wake, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+    }
+
     public async ValueTask DisposeAsync()
     {
+        TreeLock.Released -= Released;
         await _ends.CancelAsync().ConfigureAwait(false);
         _wake.TrySetResult();
         if (_loop is { } loop)
@@ -134,6 +148,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
 
     private async Task LoopAsync()
     {
+        TreeLock.Released += Released;
         ComeUp();
         while (!_ends.IsCancellationRequested)
         {
@@ -256,11 +271,15 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             held?.Dispose();
         }
 
-        // A candidate left standing is held or waits for its verdict: tried again once the wait is over, never at every pass.
+        // A standing candidate's line keeps its queue place, due after Poll or at a hold's release.
         var waits = store.StandingFor(send.Repository, send.Line) is not null;
         lock (_gate)
         {
-            if (waits) _notBefore[send] = _world.Clock.GetUtcNow() + _world.Poll;
+            if (waits)
+            {
+                _notBefore[send] = _world.Clock.GetUtcNow() + _world.Poll;
+                if (!_queue.Contains(send)) _queue.Add(send);
+            }
             else _notBefore.Remove(send);
         }
 

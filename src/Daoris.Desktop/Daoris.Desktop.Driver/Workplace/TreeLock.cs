@@ -338,5 +338,9 @@ public sealed class TreeLock : IDisposable
 
         _file.Dispose();
         _held?.Dispose();
+        if (_by is { } by) Released?.Invoke(by);
     }
+
+    /// <summary>A writer's alone-hold let go, told with its holder; raised after the lock is free, so a handler only wakes.</summary>
+    internal static event Action<string>? Released;
 }

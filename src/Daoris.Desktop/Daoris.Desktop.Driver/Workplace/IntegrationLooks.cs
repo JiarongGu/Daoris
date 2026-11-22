@@ -180,7 +180,7 @@ public static class IntegrationLooks
             // A member held for its conflict waits for an act no row has built yet: none is named that would refuse it.
             Release = waiting && decided is null ? "decide" : null,
             By = waiting || held ? "owner" : null,
-            Why = waiting ? decide!.Said : null,
+            Why = waiting ? decide!.Said : stuck ? steps[^1].Said : null,
             Decided = decided,
         };
     }

@@ -673,6 +673,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     version's, or outside a run the newest of the place's default workflow, else the owner's). A failure is confirmed once before
     it is blamed; a gate that would not start is an unknown run. A `request` under `start: you` waits for the person's *Send*.
     (D215, D227, D232)
+39b. A line whose candidate stands (held, or waiting for its verdict) keeps its place in the integration transport's queue, due after
+    `Poll` (a minute) and due at once when a writer's hold on the repository lets go (`TreeLock.Released`: the tree cleanup, an update,
+    a landing; a promotion's own release is no wake). No landing's ask or look's pass is what retries it: a request waiting behind a
+    held promotion is tried again at the hold's release or its due time. A held promotion's own words (`integration_steps`) are
+    the candidate's `Why`, which `daoris integrate <repository>` prints beside *held: promotion* and the window's repository view
+    reads. (PROMOTEWAKE1)
 39a. An ask's parts land through that same queue, never a queue of the team's own. A part's landing is an integration request tagged with
     its ask and part (`integration_parts`, `TrainParts`; the `integrate` door carries `IntegrationAsk.Train`) whose line is the ask's
     branch `daoris/ask-<id>` (`TrainBranch`). Before a candidate forms, `TrainSelection` reads the ask's own plan from the service

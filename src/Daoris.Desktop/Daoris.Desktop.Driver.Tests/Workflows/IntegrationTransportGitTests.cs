@@ -50,8 +50,11 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 
     private IntegrationStore Store() => new(Home, () => StoreSettled.Yes);
 
+    private TimeSpan _poll = TimeSpan.FromMinutes(1);
+
     private IntegrationTransport Transport(string root) => _transport ??= new IntegrationTransport(Home, new IntegrationTransportWorld
     {
+        Poll = _poll,
         Config = () => Config,
         Root = (_, _, _) => Task.FromResult<string?>(root),
         Settled = () => StoreSettled.Yes,
@@ -293,6 +296,67 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         Assert.Equal((false, 0), (run1!.Closed, run1.Events.Count));
         Assert.Empty(Store().Open());
         Assert.False(await HoldsAsync(root, head), "nothing reached the line");
+    }
+
+    /// <summary>A request queued at the line through the door, its branch landed by a session.</summary>
+    private async Task<(string Root, string Tip)> RequestedAsync()
+    {
+        var root = await RepositoryAsync("engine");
+        await DeclaredGatesAsync(root);
+        var trees = new SessionTrees(Home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(opened.Path, "q1.txt", "the work of q1\n", "the work of q1");
+        var landed = await trees.LandAsync(opened.Path, new LandingSubject("s-q1", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto, gate: Following(Preset(PresetGraph)));
+        Assert.True(landed.Landed, landed.Message);
+        var tip = (await GitAsync(root, "rev-parse", landed.Branch!)).Trim();
+        var asked = await NodeRuntime.HomeDoor(Home).AskAsync(
+            new IntegrationAsk("engine", "aurora", root, landed.Branch!, IntegrationRoutes.Node, IntegrationRequester.NodeStart)
+            {
+                Unit = RunUnit, Tip = tip, Request = LandingIntegrate.Done, Conflicts = LandingIntegrate.Session,
+            }, Config, CancellationToken.None);
+        Assert.True(asked.Admitted, asked.Message);
+        return (root, tip);
+    }
+
+    private bool WasHeld() => Told().Contains(IntegrationEventCodes.Held);
+
+    /// <summary>
+    /// A held promotion is woken by the tree cleanup's release. The hold is an unclean checkout, lifted with no wake; the due time is an hour.
+    /// </summary>
+    [Fact]
+    public async Task A_promotion_held_is_tried_again_when_the_tree_cleanup_lets_go()
+    {
+        _poll = TimeSpan.FromHours(1);
+        var (root, tip) = await RequestedAsync();
+        var stray = Path.Combine(root, "stray.txt");
+        await File.WriteAllTextAsync(stray, "not committed\n");
+        Transport(root).Send(new IntegrationLineSend("engine", "aurora", "main"));
+        await Poll.Until(WasHeld, () => string.Join("\n", _said));
+        Assert.False(await HoldsAsync(root, tip), "nothing moved under the hold");
+
+        File.Delete(stray);
+        Assert.False(await HoldsAsync(root, tip), "nothing woke it yet");
+        using (TreeLock.TryWriting(Home, root, "engine", TreeLock.Tidying) ?? throw new InvalidOperationException("the cleanup's lock was not free")) { }
+
+        await SettledAsync();
+        Assert.True(await HoldsAsync(root, tip), "the line holds the tip once the cleanup let go");
+    }
+
+    /// <summary>A held promotion no release announces the end of is tried again at its due time.</summary>
+    [Fact]
+    public async Task A_promotion_held_with_no_release_told_is_tried_again_at_its_due_time()
+    {
+        _poll = TimeSpan.FromMilliseconds(300);
+        var (root, tip) = await RequestedAsync();
+        var stray = Path.Combine(root, "stray.txt");
+        await File.WriteAllTextAsync(stray, "not committed\n");
+        Transport(root).Send(new IntegrationLineSend("engine", "aurora", "main"));
+        await Poll.Until(WasHeld, () => string.Join("\n", _said));
+
+        File.Delete(stray);
+
+        await SettledAsync();
+        Assert.True(await HoldsAsync(root, tip), "the due time tried the promotion again");
     }
 
     /// <summary>
