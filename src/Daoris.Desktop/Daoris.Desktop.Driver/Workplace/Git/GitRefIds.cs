@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class GitRefIds
 {
-    private static readonly string[] Verbs = ["merge-base", "rev-list", "log", "cherry"];
+    private static readonly string[] Verbs = ["merge-base", "rev-list", "log", "cherry", "ls-tree"];
 
     /// <summary><paramref name="arguments"/> with each <c>HEAD</c> and full ref name in a revision word as its id; the same list where nothing can be.</summary>
     internal static IReadOnlyList<string> Resolved(string folder, IReadOnlyList<string> arguments)

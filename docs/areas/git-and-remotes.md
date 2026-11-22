@@ -232,7 +232,7 @@ again (`OpinionClosesGitCountTests`).
 A read that only object ids decide is kept for good, beneath every flow's memo, by `GitObjectMemo` (D357 point 6): `merge-base` (with
 `--is-ancestor` or `--independent`), `rev-list` over ids, `cherry`, a two-commit `diff` of names with `--no-renames` and
 `--ignore-submodules=none`, a `log` with `--no-show-signature` whose format names only ids, subject and side mark, a `cat-file` of one id,
-and `AddressedReads`' commit listing (`GitObjectArguments` says which shapes; `grep` and `--numstat` follow `.gitattributes` and
+and `AddressedReads`' commit listing (`ls-tree` of one id, `-z` with plain paths after `--` too; `GitLsTreeMemoTests`) (`GitObjectArguments` says which shapes; `grep` and `--numstat` follow `.gitattributes` and
 configuration, so they are never kept). Every kept kind reads objects alone, so one key serves every tree of a repository: the common
 folder, read from the folder's own `.git` (a subfolder keeps nothing), and the read's words, every commit named by its full id. A
 `merge-base`, `rev-list`, `log` or `cherry` that names `HEAD` or a full ref name is asked by the ids git's files give them at the ask
