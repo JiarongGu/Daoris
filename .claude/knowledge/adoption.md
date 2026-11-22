@@ -54,8 +54,8 @@ then the same `git mv` and the steps below.
 
 Read every `COLLIDES`, `DRIFTED`, `LEFT BEHIND` and `LINK` line. A `LINK` line is a `CLAUDE.md` or a
 `.claude/skills` that is a link, or a link checked out as text (`core.symlinks=false`): `sync` never
-writes through one. A real file holding `@AGENTS.md` works on every checkout; the choice is the
-repository's, and the hand-over says what was chosen. A `COLLIDES` line means the repository wrote that
+writes through one. For `CLAUDE.md`, take it out: Claude Code reads `AGENTS.md` where there is none, and a
+`CLAUDE.md` held as text hides it. The choice is the repository's, and the hand-over says what was chosen. A `COLLIDES` line means the repository wrote that
 file itself, before it ever heard of Daoris. Nothing is overwritten. For each one, open both versions and
 separate:
 
@@ -143,17 +143,17 @@ The sync just installed the core skill `set-up-documents` and the knowledge behi
 `development-documents` (D122). Follow the skill from here to step 9; its templates are beside it.
 
 Write the repository's own part of `AGENTS.md`, above the region, from `templates/brief.md`. Move into
-it what every agent needs from an existing `CLAUDE.md`: codex reads only `AGENTS.md`, and only up to
-32,768 bytes (LAYOUT2), so a rule left in `CLAUDE.md` never reaches it. Leave `CLAUDE.md` holding the
-import and what only Claude Code needs. A line goes in the brief only if nearly every task needs it and
+it all of an existing `CLAUDE.md`: codex reads only `AGENTS.md`, and only up to 32,768 bytes (LAYOUT2),
+and Claude Code reads `AGENTS.md` only where no `CLAUDE.md` exists (D359), so a rule left in `CLAUDE.md` reaches
+only Claude Code, and the file's presence hides the brief from it. Delete `CLAUDE.md`; where it must stay, it
+imports `@AGENTS.md` by hand, and `sync` leaves a region it once wrote there. A line goes in the brief only if nearly every task needs it and
 nothing in the code would tell a reader; the rest goes to the tier that holds it. Moving is not
 trimming: every line that leaves the brief has a new home, and the hand-over names it (step 12).
 
 ### 8. Declare the documents and the rooms
 
 - **Rooms**: a folder whose conventions, traps or checks differ gets its own `AGENTS.md`, from
-  `templates/room.md`, and is listed in `daoris.json`'s `rooms` (D117 §2.2). `sync` writes its pointer
-  and lists it in the region, and `check` fails on a declared room with no `AGENTS.md`.
+  `templates/room.md`, and is listed in `daoris.json`'s `rooms` (D117 §2.2). `sync` lists it in the region, and `check` fails on a declared room with no `AGENTS.md`.
 - **Records**: each record the repository keeps, by role (router, decisions, backlog, archive, fixes,
   changelog, glossary, gates), with its path, in `daoris.json`'s `documents` (D122 §2.7). A path is a
   file or a folder (a folder of decision records is the decisions); `{ "path": ..., "words": ... }`

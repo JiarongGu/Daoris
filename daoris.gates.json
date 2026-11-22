@@ -85,7 +85,7 @@
       ] },
     { "name": "service", "run": "dotnet test src/Daoris.Service --filter Category!=Process --results-directory _fixtures/test-timing --logger \"trx;LogFileName=service.trx\"",
       "paths": [
-        ".gitattributes", ".gitignore", "AGENTS.md", "CHANGELOG.md", "CLAUDE.md", "LICENSE", "README.md", "ROADMAP.md", "TASKS.md",
+        ".gitattributes", ".gitignore", "AGENTS.md", "CHANGELOG.md", "LICENSE", "README.md", "ROADMAP.md", "TASKS.md",
         "daoris.gates.json", "daoris.json", "daoris.lanes.json", "daoris.lock", "package-lock.json", "package.json", ".claude/",
         ".codex/", "canon/", "docs/", "examples/", "src/Daoris.Cli/src/layout/", "src/Daoris.Cli/src/tools/",
         "src/Daoris.Cli/test/fixtures/", "src/Daoris.Contracts/", "src/Daoris.Desktop/README.md",

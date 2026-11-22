@@ -60,13 +60,11 @@ test('the lock is ordered ordinally, so its order is the same on every machine',
     entries: [entry('rules/a.md'), entry('rules/B.md')],
     switchedOff: [{ target: 'rules/a.md', by: 'p' }, { target: 'rules/B.md', by: 'p' }],
     mirrors: [{ path: 'm/a', of: 'x', sha256: 'aa' }, { path: 'm/B', of: 'x', sha256: 'aa' }],
-    rooms: ['a', 'B'],
   });
   const lock = readLock(fx.root)!;
   assert.deepEqual(lock.entries.map((e) => e.target), ['rules/B.md', 'rules/a.md']);
   assert.deepEqual(lock.switchedOff!.map((e) => e.target), ['rules/B.md', 'rules/a.md']);
   assert.deepEqual(lock.mirrors!.map((e) => e.path), ['m/B', 'm/a']);
-  assert.deepEqual(lock.rooms, ['B', 'a']);
   fx.cleanup();
 });
 

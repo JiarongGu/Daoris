@@ -17,9 +17,8 @@ namespace Daoris.Knowledge;
 /// first, and nothing says which.</para>
 ///
 /// <para><b>The rooms</b> are the manifest's <c>rooms</c>: declared, never found, since a walk of the
-/// tree meets build output and worktrees (§2.2). The lock's <c>rooms</c> record the pointers
-/// <c>sync</c> wrote, a <c>CLAUDE.md</c> holding one import line, and are not read here: a room's
-/// <c>AGENTS.md</c> is the repository's own file, and its declaration is where it is.</para>
+/// tree meets build output and worktrees (§2.2). A room's <c>AGENTS.md</c> is the repository's own
+/// file, and its declaration is where it is; <c>sync</c> writes no pointer beside it.</para>
 ///
 /// <para><b>The documents</b> are the manifest's <c>documents</c>, checked against the same target
 /// and mirror root as the rooms, by <see cref="RepositoryDocuments"/>, a twin of the CLI's

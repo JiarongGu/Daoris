@@ -196,7 +196,6 @@ export function writeLock(root: string, lock: Lock): void {
     ...(lock.mirrors?.length
       ? { mirrors: [...lock.mirrors].sort((a, b) => compareOrdinal(a.path, b.path)) }
       : {}),
-    ...(lock.rooms?.length ? { rooms: [...lock.rooms].sort(compareOrdinal) } : {}),
   };
   writeTextAtomic(join(root, LOCK_FILE), `${JSON.stringify(sorted, null, 2)}\n`);
 }

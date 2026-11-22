@@ -221,7 +221,8 @@ public static class SetupBrief
             links.Add($" On this line {string.Join(" and ", named)} {(named.Count == 1 ? "is" : "are")} not what the tool "
                 + "writes: it never writes through a link or a link checked out as text. A real file holding `@AGENTS.md`, "
                 + "and a folder of the copies the tool writes, work on every checkout; the choice is this repository's, and "
-                + "your close says what you chose.");
+                + "your close says what you chose." + (facts.Claude.IsLinkLike
+                    ? " For `CLAUDE.md`, taking it out is simplest: Claude Code reads `AGENTS.md` where there is none." : ""));
         }
 
         return "**Read the collisions.** Run `daoris sync --dry-run`, and read every `COLLIDES`, `DRIFTED`, `LEFT BEHIND` "
@@ -284,9 +285,10 @@ public static class SetupBrief
             : " `.claude/rules/` holds rules one agent alone reads: moving their text into `AGENTS.md`'s own part is "
               + "this repository's call, and your close says what was done.";
         return "**Write the brief**, this repository's own part of `AGENTS.md`, above the region, from the brief template "
-            + "beside the `set-up-documents` skill. Move into it what every agent needs from `CLAUDE.md`'s own lines: some "
-            + "agents read only `AGENTS.md`, and only so many bytes of it, so a rule left in `CLAUDE.md` never reaches "
-            + "them. Leave `CLAUDE.md` holding the import and what only the agent that reads it needs." + claude + rules
+            + "beside the `set-up-documents` skill. Move into it every line of `CLAUDE.md`: some agents "
+            + "read only `AGENTS.md`, and only so many bytes of it, and Claude Code reads `AGENTS.md` only where no "
+            + "`CLAUDE.md` exists. Then delete `CLAUDE.md`; `daoris sync` writes none. A file that must stay imports "
+            + "`@AGENTS.md` by hand." + claude + rules
             + " A line goes in the brief only if nearly every task here needs it and nothing in the code would tell a "
             + "reader. Moving is not trimming: every line that leaves the brief has a new home, and your close names it.";
     }
@@ -328,7 +330,7 @@ public static class SetupBrief
         body.Append("**What this writes, and what it never does.** Write only in this tree, on this branch: `daoris.json` ")
             .Append("and `daoris.lock`; ")
             .Append(init ? "the `.gitattributes` that `daoris init` writes where there is none, holding `* text=auto eol=lf`; " : "")
-            .Append("`AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
+            .Append("`AGENTS.md` (the region and the brief), and the removal of a `CLAUDE.md` that holds only the retired import; `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
             .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; where it declares none, the lanes ")
             .Append("file's rooms; and a document that keeps a ")

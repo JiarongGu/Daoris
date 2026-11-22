@@ -60,10 +60,10 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   const sayTheLayout = (dry: boolean) => {
     for (const move of plan.moves) write(`  moved     ${move.from} -> ${move.to}`);
     if (plan.index.old !== null) write(`  moved     ${plan.index.old} -> ${plan.index.path}`);
-    for (const pointer of plan.rooms.pointers) {
-      if (pointer.state !== 'unchanged') write(`  pointer   ${pointer.path}`);
+    for (const path of plan.pointers.retire) write(`  pointer   ${path} (removed: every agent reads AGENTS.md itself)`);
+    for (const path of plan.pointers.kept) {
+      write(`  kept      ${path} — holds text of its own, so Claude Code reads it and not AGENTS.md; its import stays until that text moves`);
     }
-    for (const pointer of plan.rooms.unpoint) write(`  pointer   ${pointer.path} (removed: no longer a room)`);
     for (const path of plan.keptRules) {
       write(`  kept      ${path} — read by Claude Code alone; its text could go in AGENTS.md, above the region`);
     }

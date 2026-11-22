@@ -6,7 +6,7 @@ import { writeLock } from './config.ts';
 import { canonDigest } from './canon.ts';
 import { rosterExtras } from './indexgen.ts';
 import { renderTier } from './tierrender.ts';
-import { ensureImport, writeRegion } from './region.ts';
+import { writeRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import { contained, layoutFields, pruneEmpty } from '../layout/layout.ts';
 import { describeLink } from '../layout/links.ts';
@@ -277,27 +277,19 @@ export function applySync(
     ...(plan.mirrors.writes.length
       ? { mirrors: plan.mirrors.writes.map(({ path, of, sha256: digest }) => ({ path, of, sha256: digest })) }
       : {}),
-    ...(plan.rooms.records.length ? { rooms: plan.rooms.records } : {}),
   };
 
-  // The region LAST: its rooms' rows read each room as it stands, and its pointer names the index
+  // The region LAST: its rooms' rows read each room as it stands, and its pointer to the index names the index
   // this sync just wrote.
   writeSpans({ root, manifest, writes: plan.writes, canonVersion, off: plan.switchedOff ?? [] });
-  writePointers(root, plan);
+  retirePointers(root, plan);
   writeLock(root, lock);
   return lock;
 }
 
-/** Each room's pointer, and each undeclared room's region taken back out. */
-function writePointers(root: string, plan: SyncPlan): void {
-  for (const pointer of plan.rooms.pointers) {
-    if (pointer.content !== null) writeTextAtomic(contained(root, '', pointer.path), pointer.content);
-  }
-  for (const pointer of plan.rooms.unpoint) {
-    const abs = contained(root, '', pointer.path);
-    if (pointer.content === null) rmSync(abs, { force: true });
-    else writeTextAtomic(abs, pointer.content);
-  }
+/** Each retired pointer file that held nothing else goes. */
+function retirePointers(root: string, plan: SyncPlan): void {
+  for (const path of plan.pointers.retire) rmSync(contained(root, '', path), { force: true });
 }
 
 /**
@@ -341,12 +333,5 @@ function writeSpans(
     const held = existsSync(abs) ? readFileSync(abs, 'utf8') : '';
     const body = renderTier(input);
     writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
-
-    // The pointer, for the one harness that reads another file and follows imports.
-    if (harness.pointer) {
-      const pointer = join(root, harness.pointer.file);
-      const made = ensureImport(existsSync(pointer) ? readFileSync(pointer, 'utf8') : null, harness.pointer.imports);
-      if (made !== null) writeTextAtomic(pointer, made);
-    }
   }
 }

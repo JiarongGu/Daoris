@@ -43,9 +43,10 @@ test('the README\'s quickstart runs as written in a fresh repository, and leaves
       const run = spawnSync(process.execPath, [entry, ...args], { cwd: fx.root, encoding: 'utf8', env, windowsHide: true });
       assert.equal(run.status, 0, `daoris ${args.join(' ')} exited ${run.status}\n${run.stdout}${run.stderr}`);
     }
-    for (const rel of ['daoris.json', 'daoris.lock', 'AGENTS.md', 'CLAUDE.md', '.gitattributes', '.claude/INDEX.md']) {
+    for (const rel of ['daoris.json', 'daoris.lock', 'AGENTS.md', '.gitattributes', '.claude/INDEX.md']) {
       assert.ok(fx.exists(rel), `the quickstart left no ${rel}`);
     }
+    assert.equal(fx.exists('CLAUDE.md'), false, 'every agent reads AGENTS.md itself');
     assert.match(fx.read('AGENTS.md'), /<!-- daoris:rules/);
     assert.deepEqual(JSON.parse(fx.read('daoris.json')).packs, [], 'init writes the core doctrine only, as the README says');
   } finally {

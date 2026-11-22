@@ -40,7 +40,7 @@ npx daoris@0.0.1 check    # the gate: offline, exit 1 on drift
 
 `init` writes the manifest with the core doctrine only: add a pack to its `packs` deliberately, fill in
 `domain` (what the repository is, owns and accepts), and run `sync` again. Commit `daoris.json`,
-`daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together, and put `daoris check` in your gates.
+`daoris.lock`, `AGENTS.md` and `.claude/` together, and put `daoris check` in your gates.
 Nothing is published until the first release (D105); from a checkout of this repository, run
 `node src/Daoris.Cli/bin/daoris.mjs` in place of `npx daoris@0.0.1`.
 
@@ -84,9 +84,9 @@ What an agent working in a repository that adopted Daoris most often gets wrong:
 
 <!-- agent-rules:begin — llms.txt and context7.json repeat this block; tools/doc-links.mjs holds the three equal (D211) -->
 - Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; `daoris reconcile` says how to keep or propose it.
-- Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `CLAUDE.md` loads it through its `@AGENTS.md` import.
+- Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `sync` writes no `CLAUDE.md`: every agent reads `AGENTS.md`, which a `CLAUDE.md` of your text hides from Claude Code unless it imports it.
 - `daoris check` compares the disk with `daoris.lock`, never with the newest canon, and needs no network. A pack added to `daoris.json` fails it until `daoris sync` runs.
-- After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.
+- After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.
 - Never hand-edit `.claude/INDEX.md`: `sync` regenerates it from the files, and `check` fails while it is behind.
 - Put the repository's own knowledge and skills under `.claude/knowledge/` and `.claude/skills/` at names the canon does not use; `sync` never touches them and indexes them as `(local)`.
 - Never pass `sync --force` to get past a refusal: it overwrites a file you edited, one written before adopting, or one you improved that the canon retires. Read the files it names.

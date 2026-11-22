@@ -33,7 +33,7 @@ test('link cell: CLAUDE.md held as text — refused, saying what was seen and bo
   assert.match(error.message, /CLAUDE\.md/);
   assert.match(error.message, TEXT);
   assert.match(error.message, /core\.symlinks=false/);
-  assert.match(error.message, /@AGENTS\.md/);
+  assert.match(error.message, /Take it out/);
   assert.match(error.message, /the choice is this repository's/);
   // Never written through: on a checkout without links, git would read an edit as the link's new target.
   assert.ok(captureError(() => fx.sync(true)) instanceof DaorisError);

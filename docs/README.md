@@ -18,7 +18,6 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`../llms.txt`, `../context7.json`|For coding agents (D211)
 |`assets/`|Icon, logo
 |`../AGENTS.md`|Shared brief, doctrine
-|`../CLAUDE.md`|Generated import of AGENTS
 |`development.md`|Contributor setup, checks, upkeep
 |`../ROADMAP.md`|Forward sequence
 |`../src/Daoris.Desktop/README.md`|Desktop installation, bridge

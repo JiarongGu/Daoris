@@ -19,7 +19,7 @@ import { DaorisError } from '../platform/errors.ts';
  * **Two implementations ship.** `claude-code` is the older layout, kept for every
  * repository that has not moved. `agents` is the first descriptor to serve several harnesses at once:
  * one target every agent that reads a skill root reads, plus what the one harness that looks elsewhere
- * needs — a pointer for its instruction file and a mirror of its skills. The others are detected and
+ * needs: a mirror of its skills. The others are detected and
  * reported so the gap is loud: a tree installed for the wrong harness is present, correct, and never
  * loaded — a failure with nothing to notice.
  */
@@ -58,14 +58,6 @@ export const HARNESSES: Record<string, Harness> = {
     },
 
     /**
-     * This harness reads `CLAUDE.md` and not `AGENTS.md`, and it follows `@path` imports — which the
-     * other two do not (measured; §6.5). So one line here is what carries the tier to it, and every
-     * other reader ignores that line. The roster is no longer a file of its own: it is the first
-     * thing in the region, where it is loaded rather than merely present.
-     */
-    pointer: { file: 'CLAUDE.md', imports: 'AGENTS.md' },
-
-    /**
      * Frontmatter must start at byte 0 or this harness does not see it, so the provenance line goes
      * beneath the closing fence rather than above the opening one.
      */
@@ -80,8 +72,8 @@ export const HARNESSES: Record<string, Harness> = {
    *
    * Measured before relied on (`docs/archive/2026-10-01-entry-point-evidence.md`): codex reads
    * `.agents/skills/` from the project root down, dsh reads it at the root, and Claude Code reads only
-   * `.claude/skills/`, and `AGENTS.md` only through `CLAUDE.md`'s import. So the two things the
-   * reference links, Daoris writes: the pointer, and the mirror.
+   * `.claude/skills/`. It reads `AGENTS.md` itself where the repository has no `CLAUDE.md`
+   * (`docs/2026-11-22-instruction-file-evidence.md`), so what the reference links, Daoris writes as a mirror.
    */
   agents: {
     id: 'agents',
@@ -94,7 +86,6 @@ export const HARNESSES: Record<string, Harness> = {
       knowledge: { dir: 'knowledge', alwaysLoaded: false },
       skills: { dir: 'skills', alwaysLoaded: false, entryFile: 'SKILL.md', frontmatter: SKILL_FIELDS },
     },
-    pointer: { file: 'CLAUDE.md', imports: 'AGENTS.md' },
     // A copy, not a link: on a checkout with `core.symlinks=false` a link is a text file holding
     // its target, and the harness reading it gets a path and no skills. Each skill's `agents/` folder
     // is left out: per-agent metadata another agent writes there belongs to that agent.

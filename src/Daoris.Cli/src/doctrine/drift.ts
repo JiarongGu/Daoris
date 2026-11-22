@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { compareOrdinal, digestBytes, listMarkdown, readText, sha256 } from '../platform/fsx.ts';
 import { readLock, readManifest } from './config.ts';
 import { indexInput, rosterFromDisk } from './indexgen.ts';
-import { findRegion, hasImport, removeRegion } from './region.ts';
+import { findRegion, removeRegion } from './region.ts';
 import { DECLARED_LINE, INDEX_ITEM, indexPath, renderIndex, spanBody, WHERE_HEADING, withoutFrontmatter as bare } from './tierrender.ts';
 import { overCeilings } from './ceilings.ts';
 import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from '../layout/documents.ts';
@@ -14,6 +14,8 @@ import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from '../layout/harness
 import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from '../layout/layout.ts';
 import { canonicalOnDisk, mirrorDigest, mirrorSources } from '../layout/mirror.ts';
 import { linkProblems, shortLink } from '../layout/links.ts';
+import { planPointers, pointerPaths } from '../layout/pointers.ts';
+import { planRooms, ROOM_FILE } from '../layout/rooms.ts';
 
 /**
  * The roster's half `check` rebuilds: everything from the places heading to the first rule.
@@ -149,20 +151,9 @@ export function inspect(
     }
   }
 
-  // Rooms: each declared one has instructions of its own, and its pointer imports them.
-  const roomsWithoutInstructions: string[] = [];
-  const roomPointersMissing: string[] = [];
-  const pointer = manifestHarness.pointer;
-  const instructions = pointer?.imports ?? 'AGENTS.md';
-  for (const room of manifest.rooms ?? []) {
-    if (!isFile(join(root, room, instructions))) {
-      roomsWithoutInstructions.push(`${room}/${instructions}`);
-      continue;
-    }
-    if (!pointer) continue;
-    const at = join(root, room, pointer.file);
-    if (!isFile(at) || !hasImport(readText(at), pointer.imports)) roomPointersMissing.push(`${room}/${pointer.file}`);
-  }
+  // Rooms: each declared one has instructions of its own. A pointer an earlier sync wrote is one file too many.
+  const roomsWithoutInstructions = planRooms({ root, manifest }).missing;
+  const pointersRetired = planPointers({ root, manifest }).retire;
 
   const links = linkProblems(root, {
     files: [
@@ -176,8 +167,8 @@ export function inspect(
     ],
     pairs: [
       ...new Set(Object.values(harness.tiers).flatMap((tier) => (tier.region ? [tier.region.file] : []))),
-      ...(pointer ? [pointer.file] : []),
-      ...(manifest.rooms ?? []).flatMap((room) => [`${room}/${instructions}`, ...(pointer ? [`${room}/${pointer.file}`] : [])]),
+      ...pointerPaths(manifest),
+      ...(manifest.rooms ?? []).map((room) => `${room}/${ROOM_FILE}`),
       indexPath(target),
     ],
   });
@@ -287,7 +278,7 @@ export function inspect(
         : [];
     }
     if (each.role === 'room') {
-      return (manifest.rooms ?? []).map((room) => `${room}/${instructions}`)
+      return (manifest.rooms ?? []).map((room) => `${room}/${ROOM_FILE}`)
         .filter((path) => isFile(join(root, path)) && !links.some((problem) => problem.path === path))
         .map((path) => ({ label: `${path} (room)`, text: readText(join(root, path)) }));
     }
@@ -309,14 +300,14 @@ export function inspect(
   const factsOk = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
     && !staleSwitches.length
     && !staleLayout && !mirrorsDrifted.length && !mirrorsMissing.length && !mirrorsBehind.length
-    && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length
+    && !roomsWithoutInstructions.length && !pointersRetired.length && !links.length
     && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
   const sizeFails = documentsOver.some((over) => over.fails) || (overBudget && manifest.coreBudget.fails);
   const ok = factsOk && !sizeFails;
   return {
     factsOk, sizeFails,
     drifted, missing, stalePacks, coreWords, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches, kept,
-    staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
+    staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, pointersRetired,
     links, agentsBytes, agentsOwnBytes, agentsRegionBytes, agentsLargestRules, unlisted, readAlone, withoutFrontmatter,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, recordsUndeclared,
     ok,
@@ -360,7 +351,7 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   for (const path of report.roomsWithoutInstructions) {
     write(`  room      ${path} is absent — the room is declared in daoris.json, and its instructions are this repo's to write`);
   }
-  for (const path of report.roomPointersMissing) write(`  pointer   ${path} does not import AGENTS.md — run 'daoris sync'`);
+  for (const path of report.pointersRetired) write(`  pointer   ${path} holds only the retired import of AGENTS.md — run 'daoris sync' to take it out`);
   for (const problem of report.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
   // Reported, never failed on.
   if (report.agentsBytes > INSTRUCTION_LIMIT) {

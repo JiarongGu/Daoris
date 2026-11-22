@@ -11,7 +11,6 @@ import { makeFixture } from '../_fixture.ts';
 import { doc, layoutFixture, skill } from '../_layout.ts';
 import { indexFromDisk } from '../../src/doctrine/indexgen.ts';
 import { roomHeading } from '../../src/layout/rooms.ts';
-import { HARNESSES } from '../../src/layout/harness.ts';
 
 const INDEX = '.claude/INDEX.md';
 const WITHOUT = '## Knowledge without frontmatter';
@@ -147,7 +146,7 @@ test('a room\'s row reads the same first heading, below any frontmatter', () => 
   const fx = makeFixture('headings-room');
   fx.write('area/AGENTS.md', '---\ntitle: x\n# a comment among the fields\n---\n\n# The area, in C#\n');
   try {
-    assert.equal(roomHeading(fx.root, 'area', HARNESSES['claude-code']!), 'The area, in C#');
+    assert.equal(roomHeading(fx.root, 'area'), 'The area, in C#');
   } finally {
     fx.cleanup();
   }

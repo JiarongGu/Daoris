@@ -1,5 +1,5 @@
 import type { Canon, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, SyncPlan } from './records.ts';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText, sha256 } from '../platform/fsx.ts';
 import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from './document.ts';
@@ -8,11 +8,12 @@ import { holds, keepStates } from './keep.ts';
 import { lockIndex } from './config.ts';
 import { indexInput } from './indexgen.ts';
 import { indexPath, renderIndex, spanBody, structureLine, tierRuleBody } from './tierrender.ts';
-import { ensureImport, findRegion } from './region.ts';
+import { findRegion } from './region.ts';
 import { resolveHarness } from '../layout/harness.ts';
 import { folderTiers, isFile, lockLayout, planLeftBehind } from '../layout/layout.ts';
 import { mirrorSources, planMirrors } from '../layout/mirror.ts';
-import { planRooms } from '../layout/rooms.ts';
+import { planPointers, pointerPaths } from '../layout/pointers.ts';
+import { planRooms, ROOM_FILE } from '../layout/rooms.ts';
 import { linkProblems } from '../layout/links.ts';
 import { declaredPaths, documentLinks, present } from '../layout/documents.ts';
 import { DaorisError } from '../platform/errors.ts';
@@ -285,19 +286,9 @@ export function planSync(
     editedSources: new Set(drifted.map((target) => `${to}/${target}`)),
   });
 
-  // The root pointer is written after the files and the region, so damaged markers in it refuse here, as a room's do,
-  // and not once half the sync is on disk with the lock behind it.
-  if (harness.pointer && writes.some((write) => write.in)) {
-    const pointerAt = join(root, harness.pointer.file);
-    try {
-      ensureImport(isFile(pointerAt) ? readFileSync(pointerAt, 'utf8') : null, harness.pointer.imports);
-    } catch (error) {
-      if (error instanceof DaorisError) throw new DaorisError(`${harness.pointer.file}: ${error.message}`, error.exitCode);
-      throw error;
-    }
-  }
-
-  const rooms = planRooms({ root, manifest, lock, harness });
+  // Damaged markers in a retired pointer refuse here, and not once half the sync is on disk with the lock behind it.
+  const pointers = planPointers({ root, manifest });
+  const rooms = planRooms({ root, manifest });
   const index = planIndex({ root, harness, lock, from, to, moving, writes, deletes, locked });
   const behind = moving
     ? planLeftBehind({
@@ -307,12 +298,10 @@ export function planSync(
     : { leftBehind: [], bothRoots: [], keptRules: [] };
 
   // Every path this sync would write, checked for a link before anything is.
-  const pointerFile = harness.pointer?.file;
   const links = linkProblems(root, {
     files: [
       ...writes.filter((write) => !write.in).map((write) => `${to}/${write.target}`),
       ...mirrors.writes.map((write) => write.path),
-      ...rooms.pointers.map((pointer) => pointer.path),
     ],
     folders: [
       to,
@@ -321,9 +310,9 @@ export function planSync(
     ],
     pairs: [
       ...new Set(Object.values(harness.tiers).flatMap((tier) => (tier.region ? [tier.region.file] : []))),
-      ...(pointerFile ? [pointerFile] : []),
-      ...rooms.pointers.flatMap((pointer) => [`${pointer.room}/${harness.pointer!.imports}`, pointer.path]),
-      ...rooms.unpoint.map((pointer) => pointer.path),
+      // A pointer a sync takes out, or a room's text it reads for the roster: a link refuses like any other.
+      ...pointerPaths(manifest),
+      ...(manifest.rooms ?? []).map((room) => `${room}/${ROOM_FILE}`),
       // The index: a link, or a link held as text, refuses like a pointer does.
       index.path,
     ],
@@ -349,7 +338,7 @@ export function planSync(
     switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
     kept: keepsRead.kept, keepsDropped: keepsRead.dropped,
     layout: { from: { harness: was.harness.id, target: from }, to: { harness: harness.id, target: to } },
-    moves, moveCollisions, ...behind, mirrors, rooms, index, links, documents,
+    moves, moveCollisions, ...behind, mirrors, rooms, pointers, index, links, documents,
   };
 }
 

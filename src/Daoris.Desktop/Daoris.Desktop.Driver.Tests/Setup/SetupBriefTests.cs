@@ -353,6 +353,7 @@ public sealed partial class SetupBriefTests
         Assert.Contains("`CLAUDE.md`: a link to `AGENTS.md`", body);
         Assert.Contains("this checkout holds links as text (`core.symlinks=false`)", body);
         Assert.Contains("a real file holding `@AGENTS.md`", body);
+        Assert.Contains("taking it out is simplest: Claude Code reads `AGENTS.md` where there is none", body);
         Assert.Contains("the choice is this repository's", body);
     }
 

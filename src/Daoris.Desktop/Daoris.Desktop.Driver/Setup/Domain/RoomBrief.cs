@@ -89,7 +89,7 @@ public static class RoomBrief
             + "that lane's `room`, and its `builds` where its builds are its own, by the convention above; leave every other lane, and a "
             + "repository that has no lanes file, as they are. If the line already holds a room there by the time you read this, close `done` "
             + "saying so, and write no second.",
-            "**Verify.** Run `daoris sync`, which keeps the room's `CLAUDE.md` pointer and never writes its text, then `daoris check`, which fails a "
+            "**Verify.** Run `daoris sync`, which never writes its text, then `daoris check`, which fails a "
             + "declared room that holds no text, then this repository's own checks: green where they were green before. One green before and red "
             + "after means this does not close `done`.",
             SetupBrief.Commit(),
@@ -98,8 +98,8 @@ public static class RoomBrief
         for (var i = 0; i < steps.Length; i++) body.Append(i + 1).Append(". ").Append(steps[i]).Append('\n');
         body.Append('\n');
 
-        body.Append("**What this writes, and what it never does.** Write only in this tree, on this branch: `").Append(path).Append("/AGENTS.md` and ")
-            .Append("`").Append(path).Append("/CLAUDE.md` (the pointer `daoris sync` writes), `daoris.json`'s `rooms`, the lanes file's declaration ")
+        body.Append("**What this writes, and what it never does.** Write only in this tree, on this branch: `").Append(path).Append("/AGENTS.md`, ")
+            .Append("`daoris.json`'s `rooms`, the lanes file's declaration ")
             .Append("for the lane that owns the folder, and `daoris.lock` with what `daoris sync` writes. Never push, merge or open a pull request; ")
             .Append("never write outside this tree (another repository's checkout you may read is read only); never publish a request to another ")
             .Append("repository; never run `daoris connect` or `daoris upstream`; never set `remote.join` or `remote.knowledge` in `daoris.json`; never ")
