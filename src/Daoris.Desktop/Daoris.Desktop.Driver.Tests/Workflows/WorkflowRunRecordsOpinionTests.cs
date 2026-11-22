@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// real folders, so this is a real-process suite.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
+[Trait(Category.Needs, Needed.Git)]
 public sealed class WorkflowRunRecordsOpinionTests : IDisposable
 {
     private const string Chat = "chat-f1a2b3c4";

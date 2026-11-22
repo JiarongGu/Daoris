@@ -7,8 +7,10 @@ namespace Daoris.Driver;
 /// place, and never skipped by its kind, since a skip would read as a verdict a stage and the line rest on.
 /// </summary>
 [NodeKind(NodeKinds.Check, NodeGroup.Checks)]
-internal sealed class CheckNode : BuiltInNode, IJournalled
+internal sealed class CheckNode : BuiltInNode, IJournalled, ITellsMaker
 {
+    public string? MakerOf(IReadOnlyList<QuestView> quests, string? revision) => CheckRounds.MakerSession(quests, revision);
+
     /// <summary>Reconciled: its answer is the executor's, read from the attempt's folder; never retried by itself.</summary>
     private static readonly NodePerform Perform = new(Idempotent: false, Reconcile: true, Transient: []);
 
