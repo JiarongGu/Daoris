@@ -33,7 +33,7 @@ namespace Daoris.Driver;
 /// its performed nodes started, since its landing doors read its record; its end is kept there (<see cref="NodeRunKeeping"/>), and its chain
 /// coming back here arms it again (<see cref="Return"/>).</para>
 /// </remarks>
-public sealed partial class NodeRuntime(
+public sealed class NodeRuntime(
     NodeRecordFiles records, IWorkRuntimePort port, Func<DateTimeOffset> clock, Func<bool>? holdsLease = null, IQuestClosePort? closes = null)
 {
     /// <summary>The units one pass evaluates at most, in id order; the rest are judged at the next.</summary>
@@ -216,17 +216,8 @@ public sealed partial class NodeRuntime(
         return true;
     }
 
-    /// <summary>
-    /// Whether a bound run arms the runtime: one not ended, one its chain asked a pass for, one failed at a step an observed fact may still
-    /// settle, and every one at the first look. A run whose version no longer reads arms nothing: it is held whole, and said.
-    /// </summary>
-    private bool ArmsRuns =>
-        _graphRuns.Read().Any(run => run.Version.Readable && (run.Ended is null || _restarted || _returned.ContainsKey(run.Run)
-                || FailedHeldRuns.Arms(run, records.Read))
-            // A conversation's run is owed a pass only once a press submitted a candidate, and again at the next one.
-            && (!ChatRuns.IsChatRun(run.Run) || (run.Candidate?.Newest is { } candidate
-                && !string.Equals(candidate.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal)))
-            || run.Version.Readable && run.Candidate?.Newest is { } next && !string.Equals(next.IdIn(run.Run), run.Ended?.Quest, StringComparison.Ordinal));
+    /// <inheritdoc cref="RunArming.Arms"/>
+    private bool ArmsRuns => RunArming.Arms(_graphRuns.Read(), _restarted, _returned.ContainsKey, records.Read);
 
     /// <summary>The governed units the last look read, by id: what a wake judges with.</summary>
     private Dictionary<string, GovernedUnit>? _governed;
@@ -260,6 +251,53 @@ public sealed partial class NodeRuntime(
 
     /// <summary>The door over this home's records and integration store, built from the home the node records live in.</summary>
     public static IIntegrationDoor HomeDoor(string home) => new HomeIntegrationDoor(home);
+
+    /// <summary>
+    /// Withdraws what the runtime holds once the choices no longer arm it: the awaited set told nothing, the timers and the governed units
+    /// cleared. Called before the plan's supervision, so a plugin the last graph awaited is not started again by the look that reads that
+    /// graph's removal. Returns whether the choices disarm the runtime.
+    /// </summary>
+    public async Task<bool> WithdrawAsync(DriverConfig config, CancellationToken ct)
+    {
+        if (KeepsClosures || ArmsRuns || OwesCleanup || new OwedRunEnds(records.Home).Any) return false;
+        if (!Telling.Holding && _governed is null) return true;
+        await _one.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            Withdraw();
+        }
+        finally
+        {
+            _one.Release();
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc cref="RunArming.OwesCleanup"/>
+    private bool OwesCleanup => RunArming.OwesCleanup(_graphRuns.Read(), _cleaner, Ended);
+
+    /// <summary>
+    /// Whether this loop closes quests and its home keeps a closure graph a quest is bound to: it stays armed whatever the choices say, so a
+    /// close in flight is reconciled and a bound quest closed by its graph. One stat; a home that never bound a quest keeps none, and is
+    /// judged by its choices alone.
+    /// </summary>
+    private bool KeepsClosures => _closer is not null && ClosureGraphs.Any(records.Home);
+
+    /// <summary>
+    /// Disarmed: the plugins are told nothing is awaited where something is, so their processes stop, and everything cached is cleared
+    /// whatever is told, a pending retry's timer included, so nothing wakes the loop and a later arming reads the units afresh. Nothing is
+    /// read. Called holding <see cref="_one"/>.
+    /// </summary>
+    private void Withdraw()
+    {
+        Telling.Withdraw();
+        Owing.Forget();
+        (_governed, _lastRead, _choices) = (null, null, null);
+        _byTold = new Dictionary<string, GovernedUnit>(StringComparer.Ordinal);
+        LastQuests = null;
+        QuestReads.Delete(records.Home);
+    }
 
     /// <summary>
     /// One pass, at a look (<see cref="NodeRuntimeLook.Whole"/>) or a wake: completions heard, attempts due asked after before any new start,

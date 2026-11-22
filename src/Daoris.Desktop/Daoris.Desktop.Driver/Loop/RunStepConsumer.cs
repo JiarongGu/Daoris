@@ -47,6 +47,7 @@ internal sealed class RunStepConsumer : IBusConsumer
     private readonly TimeSpan _slack;
     private readonly ConcurrentDictionary<string, DateTimeOffset> _ending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, (DateTimeOffset Start, DateTimeOffset End)> _passed = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _asking = new(StringComparer.Ordinal);
 
     /// <param name="pass">Asks the evaluation runtime's pass for one unit and waits for it: how it answered, judged only where it kept the unit's judgement.</param>
     /// <param name="take">Takes the step settle waiting in the box of the session named, or every box where none is; how many it took.</param>
@@ -85,14 +86,27 @@ internal sealed class RunStepConsumer : IBusConsumer
         // A settle's box is taken at the fact, only the box its session named, so the settle is on the run's record before the pass reads it.
         if (entry.Kind == BusTypes.StepSettled.Kind) await _take(entry.Payload.FirstOrDefault(pair => pair.Key == "session").Value as string, ct).ConfigureAwait(false);
         var start = _bus.Clock.GetUtcNow();
-        // A unit the pass did not judge (a drain, a closing loop, no lease, a run it does not govern yet) leaves the obligation armed for the look's whole pass.
-        var outcome = await _pass(unit, ct).ConfigureAwait(false);
+        // The node's fact is handled beside this one (another subject) and can come before the pass returns: a pass in flight counts as the window.
+        _asking[unit] = start;
+        PassOutcome outcome;
+        try
+        {
+            outcome = await _pass(unit, ct).ConfigureAwait(false);
+            if (outcome.IsAnswer())
+            {
+                if (_passed.Count >= 1024) _passed.Clear();
+                _passed[unit] = (start, _bus.Clock.GetUtcNow());
+            }
+        }
+        finally
+        {
+            _asking.TryRemove(unit, out _);
+        }
+
         // One row a reason, in the log's next write with the other measures.
         _bus.Measured(BusMeasures.Step, outcome.Name(), 1);
-        if (!outcome.IsAnswer()) return BusHandled.Judged;
-        if (_passed.Count >= 1024) _passed.Clear();
-        _passed[unit] = (start, _bus.Clock.GetUtcNow());
-        return BusHandled.Ended;
+        // A unit the pass did not judge (a drain, a closing loop, no lease, a run it does not govern yet) leaves the obligation armed for the look's whole pass.
+        return outcome.IsAnswer() ? BusHandled.Ended : BusHandled.Judged;
     }
 
     /// <summary>A start takes the settles waiting in their boxes; the first look's whole pass judges every run, so no pass is asked here.</summary>
@@ -114,7 +128,9 @@ internal sealed class RunStepConsumer : IBusConsumer
     /// </summary>
     private void Compare(string unit, DateTimeOffset at)
     {
-        var by = _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack
+        var inPass = _asking.TryGetValue(unit, out var asking) && at >= asking
+                     || _passed.TryGetValue(unit, out var window) && at >= window.Start && at <= window.End + _slack;
+        var by = inPass
             ? BusMeasures.ByConsumer
             : _ending.ContainsKey(unit) ? BusMeasures.ByLook : BusMeasures.ByOther;
         var lag = _ending.TryRemove(unit, out var since) ? Math.Max(0, (long)(at - since).TotalMilliseconds) : 0;

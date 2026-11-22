@@ -261,9 +261,16 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     plugin step ending its turn; `policy.passed`, the policy passing a second opinion at its gate; `land.outcome`, a landing's try ending),
     its subject the run's unit, asks the one pass of the evaluation runtime for that run (`PassAsks.WaitUnitAsync`: that run judged
     first, no read of the units, its record, tips and gates read at the pass as a plugin step's wake reads them) and waits for it, so the
-    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. The
+    next step begins at the fact and not at a look's rotation; a run the last whole read did not govern yet is left to the look. A pass
+    already running (a whole one can work for minutes, its git reads waiting for the machine's places) takes the ask too, at its next
+    unit boundary (`PassTaken.Late`, `LatePasses`): a unit pass of its own, within its lock, so a step's answer, a settle or a word the
+    fact left is taken again and the run is judged on what it then reads, also where the pass judged that run already; the ask never
+    waits for the next pass. The
     acknowledgement, written after the pass, ends the fact's obligation only where the pass judged the run; one it did not (a drain, a
-    closing loop, no lease) is acknowledged with the obligation armed, spending no retry, and the look's whole pass reaches it. A fact
+    closing loop, no lease) is acknowledged with the obligation armed, spending no retry, and the look's whole pass reaches it. Each
+    fact's pass is counted by what it came to (`PassOutcome`: judged, not governed, not judged, failed, bound passed), and a node the
+    consumer's pass began beside, in `daoris bus stats` as `run-step facts handled`, so what keeps a node from beginning at its fact
+    is read from the install. A fact
     takes only the box its session named, and one take runs at a time. The sessions' settle boxes are heard as they are written (a watch on the sessions folder); a sweep once a
     minute is only the watcher's overflow net, not a look: it tees a box no event told or one that stays open, and `daoris bus stats` counts
     each (`found`, `retried`, `overflow`). The look no longer takes them. The whole pass the look's timer makes stays the net for every input no fact names, and `daoris bus stats` counts
