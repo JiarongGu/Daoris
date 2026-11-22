@@ -225,7 +225,15 @@ behind a client that has gone; a press, journaled, runs on to its answer.
 A tree's content proof that found nothing holding its work is kept in the home (`memo/content-proofs.json`, `ContentProofMemo`, 400
 entries and 14 days) by its branch tip, the line, the branches that may not hold it and the repository's counted refs read from
 git's files, so a round or a restart over work nothing moved under asks git nothing; a hold, an unread proof and a lacking list are
-asked again, and an act (a removal, a tidy) judges afresh.
+asked again, and an act (a removal, a tidy) judges afresh. An owed opinion judged again reads its tree's work through that memo (the
+review's `TreeWorkReads`), so a second judgment over an unchanged tip, line and refs starts no git, and a moved tip, line or ref asks
+again (`OpinionClosesGitCountTests`).
+
+What holds git's places is counted by its caller (`GitAskers`, `GitAskTally`): each ask the scheduler places is told under the caller
+its flow names (`look` for a look stage's work, `opinion-gate`, `door` for a person's read, `facts` for a machine-facts topic, `check`,
+`run-step`, else `other`, the innermost name standing) with the milliseconds it waited for its place. Each look's stage line says them
+as `git=opinion-gate:12/340ms,door:3/10ms` (count, then waited), and the bus's measures carry them by the day, one write for each caller
+of a look, which `daoris bus stats` sums as `git asks by caller`.
 
 The driver asks every whole, byte and streamed git through the git port (`IGit`) its root hands: `GitRuns` answers from its flow's
 memos first and asks the port for the rest, and the roots hand `GitProcessRuns` (the git adapter, `Daoris.Adapters.Git`) over the

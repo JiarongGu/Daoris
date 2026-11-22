@@ -126,10 +126,10 @@ public static class BusTypes
         "opinion.said", 1, BusClasses.Fact, Opinions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("session", BusShapes.Id), new("said", BusShapes.Code), new("door", BusShapes.Code)]);
 
-    /// <summary>The service's quests moved, as its change stream named them (a hold lifted, a step declined): the opinion's gate must judge every owed opinion.</summary>
+    /// <summary>The service's quests moved (a hold lifted, a step declined): the opinion's gate must judge the owed opinions its named quests and repositories reach, every one where none is named.</summary>
     public static readonly BusType QuestMoved = new(
         "quest.moved", 1, BusClasses.Fact, Ledger, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
-        [new("families", BusShapes.Ids)]);
+        [new("families", BusShapes.Ids), new("quests", BusShapes.Ids), new("repositories", BusShapes.Ids)]);
 
     /// <summary>A run's node record began nodes (left blocked or ready): the opinion's gate must judge every owed opinion, which a graph's opinion node holds until begun. Its subject is the unit.</summary>
     public static readonly BusType NodeBegun = new(

@@ -51,6 +51,12 @@ public sealed class LookStages
 
     private static readonly long Origin = Stopwatch.GetTimestamp();
 
+    /// <summary>The git asks counted by caller (<see cref="GitAskers"/>), said in the line as <c>git=caller:count/waitedms</c>; null says none.</summary>
+    public GitAskTally? Asks { get; init; }
+
+    /// <summary>Told each caller's asks counted in a line taken, its count and waited milliseconds, once for the look: the bus's measures.</summary>
+    public Action<string, long, long>? Asked { get; init; }
+
     /// <summary>Told each span that ends, its stage and held milliseconds (the bus log's measures); a throw never fails the span.</summary>
     public Action<string, long>? Timed { get; init; }
 
@@ -128,12 +134,30 @@ public sealed class LookStages
             if (queued >= Floor) Append(line, $"{name}.queue={queued}");
         }
 
+        if (Asks?.Take() is { Count: > 0 } asks)
+        {
+            Append(line, "git=" + string.Join(",", asks.Select(row => $"{row.Caller}:{row.Count}/{row.Waited}ms")));
+            foreach (var (caller, count, waited) in asks) Tell(caller, count, waited);
+        }
+
         return line.Length == 0 ? null : line.ToString();
 
         static void Append(StringBuilder line, string entry)
         {
             if (line.Length > 0) line.Append(' ');
             line.Append(entry);
+        }
+    }
+
+    private void Tell(string caller, long count, long waited)
+    {
+        try
+        {
+            Asked?.Invoke(caller, count, waited);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Debug.WriteLine($"look stages: git asks were not told ({error.Message})");
         }
     }
 
@@ -205,10 +229,17 @@ public sealed class LookStages
         /// (<see cref="ProcessStarts"/>) is said as the span's queue, apart from its hold. Only within the work, never in the flow
         /// that began the span, so a span held in a variable while other work goes on takes none of that work's waits.
         /// </summary>
-        public Task<T> RunAsync<T>(Func<Task<T>> work) => ProcessStarts.QueuedToAsync(Waiting, work);
+        public Task<T> RunAsync<T>(Func<Task<T>> work) => ProcessStarts.QueuedToAsync(Waiting, () =>
+        {
+            // The git asks its work makes are the look's, unless a caller within it names itself.
+            using (GitAskers.Unless(GitAskers.Look)) return work();
+        });
 
         /// <inheritdoc cref="RunAsync{T}(Func{Task{T}})"/>
-        public Task RunAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(Waiting, work);
+        public Task RunAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(Waiting, () =>
+        {
+            using (GitAskers.Unless(GitAskers.Look)) return work();
+        });
 
         /// <summary>
         /// A start of its work waits for a place, until what this returns is disposed. A wait still open as the span ends is said

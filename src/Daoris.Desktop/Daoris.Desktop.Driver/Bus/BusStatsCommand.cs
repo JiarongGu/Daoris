@@ -115,6 +115,8 @@ public static class BusStatsCommand
         var steps = Of(BusMeasures.Step).ToList();
         if (steps.Count > 0) output.AppendLine($"  run-step facts handled, by what their pass came to: {string.Join(", ", steps.Select(row => Invariant($"{row.Name} {row.Count}")))}");
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
+        var asked = Of(BusMeasures.Git).ToList();
+        if (asked.Count > 0) output.AppendLine("  git asks by caller: " + string.Join("; ", asked.Select(row => Invariant($"{row.Name} n={row.Count} waited {row.Total} ms"))));
     }
 
     private static void Timed(string named, IReadOnlyList<BusMeasureRow> rows, StringBuilder output)

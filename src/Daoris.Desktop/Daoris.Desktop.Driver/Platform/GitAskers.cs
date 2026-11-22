@@ -1,0 +1,66 @@
+namespace Daoris.Driver;
+
+/// <summary>
+/// Whose ask a git is, told by the flow that makes it: the look's stage, the opinion gate, a door's read, a machine-facts topic, a
+/// check, the run-step consumer. The scheduler counts each ask under it with the time it waited for a place (<see cref="GitAskTally"/>),
+/// so what holds git's places is measured by cause, not guessed.
+/// </summary>
+public static class GitAskers
+{
+    public const string Look = "look", Gate = "opinion-gate", Door = "door", Facts = "facts", Check = "check", Steps = "run-step", Other = "other";
+
+    private static readonly AsyncLocal<string?> s_caller = new();
+
+    /// <summary>The caller this flow's asks are counted under; <see cref="Other"/> where none is named.</summary>
+    internal static string Current => s_caller.Value ?? Other;
+
+    /// <summary>Until disposed, the asks this flow makes are <paramref name="caller"/>'s, the innermost name standing.</summary>
+    public static IDisposable Is(string caller)
+    {
+        var before = s_caller.Value;
+        s_caller.Value = caller;
+        return new Restore(() => s_caller.Value = before);
+    }
+
+    /// <summary>Like <see cref="Is"/>, unless a caller within this flow already named itself, which is the more exact name.</summary>
+    internal static IDisposable Unless(string caller) => s_caller.Value is null ? Is(caller) : new Restore(() => { });
+
+    private sealed class Restore(Action restore) : IDisposable
+    {
+        public void Dispose() => restore();
+    }
+}
+
+/// <summary>
+/// The git asks since the last take, by caller: how many and the milliseconds they waited for a place. Told at the scheduler as each is
+/// placed, taken by the look's stage line, which tells the bus's measures once for each caller.
+/// </summary>
+public sealed class GitAskTally
+{
+    /// <summary>The one tally of the process, as the scheduler is one.</summary>
+    public static GitAskTally Shared { get; } = new();
+
+    private readonly object _gate = new();
+    private readonly Dictionary<string, (long Count, long Waited)> _rows = new(StringComparer.Ordinal);
+
+    public void Record(string caller, long waitedMilliseconds)
+    {
+        lock (_gate)
+        {
+            var (count, waited) = _rows.GetValueOrDefault(caller);
+            _rows[caller] = (count + 1, waited + Math.Max(0, waitedMilliseconds));
+        }
+    }
+
+    /// <summary>Every caller's count and waited milliseconds since the last take, the most asks first, and let go.</summary>
+    public IReadOnlyList<(string Caller, long Count, long Waited)> Take()
+    {
+        lock (_gate)
+        {
+            var taken = _rows.Select(pair => (Caller: pair.Key, pair.Value.Count, pair.Value.Waited))
+                .OrderByDescending(row => row.Count).ThenBy(row => row.Caller, StringComparer.Ordinal).ToList();
+            _rows.Clear();
+            return taken;
+        }
+    }
+}

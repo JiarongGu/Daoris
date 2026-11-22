@@ -30,6 +30,9 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     /// <summary>Its durable name in the queue.</summary>
     public const string Name = "opinion-gate";
 
+    /// <summary>How many owed opinions are judged at once across every repository: the git bound's figure, so a round of hundreds queues here, not in git's places.</summary>
+    public const int AtOnce = 4;
+
     /// <summary>The first wait before a pass or a delivery that ended without a fact is judged again, doubled at each until <see cref="AgainMost"/>.</summary>
     public static readonly TimeSpan AgainFirst = TimeSpan.FromSeconds(30);
 
@@ -49,6 +52,11 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     private readonly ConcurrentDictionary<string, int> _quiet = new(StringComparer.OrdinalIgnoreCase);
     private readonly CancellationTokenSource _closing = new();
     private readonly SemaphoreSlim _round = new(1, 1);
+    private readonly SemaphoreSlim _atOnce = new(AtOnce, AtOnce);
+    private readonly object _movedGate = new();
+    private HashSet<string> _movedQuests = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> _movedRepositories = new(StringComparer.OrdinalIgnoreCase);
+    private bool _movedAll;
     private long _heard;
     private long _rounded;
 
@@ -94,12 +102,39 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
     public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
     {
-        if (Everyone.Contains(entry.Kind)) await RoundAsync(ct).ConfigureAwait(false);
+        using var asking = GitAskers.Is(GitAskers.Gate);
+        if (Everyone.Contains(entry.Kind))
+        {
+            Noted(entry);
+            await RoundAsync(ct).ConfigureAwait(false);
+        }
         else await JudgeAllAsync(await DuesOfAsync(entry, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
         return Ends(entry) ? BusHandled.Ended : BusHandled.Judged;
     }
 
     public bool Folds(string kind) => Everyone.Contains(kind);
+
+    /// <summary>A move folded into a later one is still reached: its names are kept for the round that stands for it.</summary>
+    public void Folded(BusEnvelope away) => Noted(away);
+
+    /// <summary>
+    /// What a round owes the facts heard: a move that names its quests and repositories reaches the owed opinions they reach
+    /// (<see cref="QuestMoves.Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
+    /// </summary>
+    private void Noted(BusEnvelope entry)
+    {
+        var quests = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "quests").Value as IReadOnlyList<string> : null;
+        var repositories = entry.Kind == BusTypes.QuestMoved.Kind ? entry.Payload.FirstOrDefault(pair => pair.Key == "repositories").Value as IReadOnlyList<string> : null;
+        lock (_movedGate)
+        {
+            if (quests is null || repositories is null) _movedAll = true;
+            else
+            {
+                _movedQuests.UnionWith(quests);
+                _movedRepositories.UnionWith(repositories);
+            }
+        }
+    }
 
     /// <summary>Each owed opinion judged beside the others: one whose judgment is slow holds none of the rest.</summary>
     private Task JudgeAllAsync(IEnumerable<OpinionDue> dues, CancellationToken ct) => Task.WhenAll(dues.Select(due =>
@@ -120,7 +155,31 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
         {
             if (Interlocked.Read(ref _rounded) >= heard) return;
             var upto = Interlocked.Read(ref _heard);
-            await JudgeAllAsync(_open(), ct).ConfigureAwait(false);
+            // Taken now and given back where the round fails, so the entry tried again still reaches what a folded one named.
+            bool all;
+            HashSet<string> quests, repositories;
+            lock (_movedGate)
+            {
+                (all, quests, repositories) = (_movedAll, _movedQuests, _movedRepositories);
+                (_movedAll, _movedQuests, _movedRepositories) = (false, new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
+            }
+
+            try
+            {
+                await JudgeAllAsync(_open().Where(due => all || QuestMoves.Reaches(due, quests, repositories)), ct).ConfigureAwait(false);
+            }
+            catch
+            {
+                lock (_movedGate)
+                {
+                    _movedAll |= all;
+                    _movedQuests.UnionWith(quests);
+                    _movedRepositories.UnionWith(repositories);
+                }
+
+                throw;
+            }
+
             Interlocked.Exchange(ref _rounded, upto);
         }
         finally
@@ -189,6 +248,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
     /// <summary>One owed opinion judged, one judgment of it at a time, and its next turn set from what it found.</summary>
     private async Task JudgeAsync(OpinionDue due, CancellationToken ct)
     {
+        using var asking = GitAskers.Is(GitAskers.Gate);
         var subject = OpinionGateJudge.Subject(due);
         var gate = _dues.GetOrAdd(subject, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(ct).ConfigureAwait(false);
@@ -200,12 +260,17 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
             var place = _places.GetOrAdd(due.Repository, _ => new SemaphoreSlim(1, 1));
             await place.WaitAsync(ct).ConfigureAwait(false);
             OpinionFact? fact;
+            var atOnce = false;
             try
             {
+                // Waited inside, so a wait cancelled here still gives the repository's place back.
+                await _atOnce.WaitAsync(ct).ConfigureAwait(false);
+                atOnce = true;
                 fact = await _judge(due, Ended, ct).ConfigureAwait(false);
             }
             finally
             {
+                if (atOnce) _atOnce.Release();
                 place.Release();
             }
 

@@ -215,7 +215,10 @@ public sealed class DriverWatch(
     /// </summary>
     internal LookStages Stages
     {
-        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log) { Timed = Bus is null ? null : Bus.Staged });
+        get => LazyInitializer.EnsureInitialized(ref _stages, () => new LookStages(Log)
+        {
+            Timed = Bus is null ? null : Bus.Staged, Asks = GitAskTally.Shared, Asked = Bus is null ? null : Bus.GitAsked,
+        });
         init => _stages = value;
     }
 

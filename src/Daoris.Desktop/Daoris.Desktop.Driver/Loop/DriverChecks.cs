@@ -61,6 +61,7 @@ internal sealed class DriverChecks
     {
         try
         {
+            using var asking = GitAskers.Is(GitAskers.Check);
             while (await _broker.RunNextAsync(_closing.Token).ConfigureAwait(false) is { } state)
             {
                 if (state.State == CheckStates.Errored)

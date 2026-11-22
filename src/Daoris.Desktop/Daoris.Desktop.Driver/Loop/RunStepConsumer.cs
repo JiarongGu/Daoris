@@ -73,6 +73,7 @@ internal sealed class RunStepConsumer : IBusConsumer
 
     public async Task<BusHandled> HandleAsync(BusEnvelope entry, CancellationToken ct)
     {
+        using var asking = GitAskers.Is(GitAskers.Steps);
         // A check's facts name their run by its bare id; every other fact names its unit.
         var unit = entry.Kind.StartsWith("check.", StringComparison.Ordinal) ? RunUnits.IdOf(entry.Subject) : entry.Subject;
         if (entry.Kind == BusTypes.NodeBegun.Kind)
