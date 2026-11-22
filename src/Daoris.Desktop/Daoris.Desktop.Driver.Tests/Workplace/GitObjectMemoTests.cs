@@ -72,6 +72,32 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
     }
 
     [Fact]
+    public async Task The_landed_proof_of_a_branch_asks_git_once_for_its_ids_and_the_next_look_starts_none()
+    {
+        var (root, _, tip) = await BranchAsync();
+        using var home = GitObjectMemo.Within(Home);
+        var tally = GitAskTally.Shared;
+        tally.TakeMemo();
+
+        async Task<(int Starts, int Reads, string Kind)> LookAsync()
+        {
+            using var count = GitLaunch.Count();
+            var forms = await LandedProofs.LineFormsAsync(root, "main", CancellationToken.None);
+            var proof = await LandedProofs.ProveAsync(root, tip, "main", forms, CancellationToken.None);
+            output.WriteLine($"{proof.Kind}: starts [{string.Join(" | ", count.Starts.Select(start => string.Join(' ', start.Arguments)))}] library [{string.Join(", ", count.Reads.Select(read => read.Question))}]");
+            return (count.Starts.Count, count.Reads.Count, proof.Kind);
+        }
+
+        var cold = await LookAsync();
+        var warm = await LookAsync();
+
+        output.WriteLine($"cold {cold.Starts} starts and {cold.Reads} library reads; warm {warm.Starts} and {warm.Reads}; memo {string.Join(" ", tally.TakeMemo().Select(row => $"{row.Kind}:{row.Hits}/{row.Misses}"))}");
+        Assert.Equal(cold.Kind, warm.Kind);
+        Assert.True(cold.Starts + cold.Reads > 0);
+        Assert.Equal(0, warm.Starts + warm.Reads);
+    }
+
+    [Fact]
     public async Task A_moved_tip_asks_only_the_new_pairs()
     {
         var (root, line, tip) = await BranchAsync();
@@ -123,6 +149,10 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
         Assert.True(GitObjectArguments.Qualifies(["--no-optional-locks", "rev-list", "--count", $"{one}..{two}"]));
         Assert.True(GitObjectArguments.Qualifies(["cherry", one, two]));
         Assert.True(GitObjectArguments.Qualifies(["diff", "--no-renames", "--name-only", one, two]));
+        Assert.True(GitObjectArguments.Qualifies(["log", "--reverse", "--no-merges", "--format=%H%x09%s", $"{one}..{two}"]));
+        Assert.False(GitObjectArguments.Qualifies(["log", "--format=%H %an", $"{one}..{two}"]));
+        Assert.False(GitObjectArguments.Qualifies(["log", $"{one}..{two}"]));
+        Assert.False(GitObjectArguments.Qualifies(["log", "--format=%H", "main..HEAD"]));
         Assert.False(GitObjectArguments.Qualifies(["merge-base", "main", two]));
         Assert.False(GitObjectArguments.Qualifies(["rev-list", "--all", "--count", one]));
         Assert.False(GitObjectArguments.Qualifies(["rev-list", "--count", one, "--stdin"]));

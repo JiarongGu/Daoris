@@ -229,6 +229,25 @@ asked again, and an act (a removal, a tidy) judges afresh. An owed opinion judge
 review's `TreeWorkReads`), so a second judgment over an unchanged tip, line and refs starts no git, and a moved tip, line or ref asks
 again (`OpinionClosesGitCountTests`).
 
+A read that only object ids decide is kept for good, beneath every flow's memo, by `GitObjectMemo` (D357 point 6): `merge-base` (with
+`--is-ancestor` or `--independent`), `rev-list` over ids, `cherry`, a two-commit `diff` of names with `--no-renames`, a `log` whose format
+names only ids, subject and side mark, a `cat-file` of one id, and `AddressedReads`' listings and searches (`GitObjectArguments` says which
+shapes). It is keyed by the repository's common folder and the read's words, every commit named by its full id: a read naming a ref, HEAD,
+the index or a working tree never qualifies, and a repository where a replacement can stand or whose history is shallow or grafted keeps
+nothing. Only an answer git gave whole is kept (exit 0 with an empty error stream, and exit 1 for `merge-base`'s no and a search that
+found nothing). The answers have no age: a least-recently-used cap of 32 MB of estimate bounds them, in memory and in the home
+(`memo/git-objects.json`), written once 20 seconds after the first unwritten answer, never one write for an ask, and at the process's
+end. A hit starts no git, takes no place and opens no library; the look's stage line says hits and misses by caller and kind as
+`gitmemo=caller:hits/misses[kind:hits/misses]` (`GitAskTally.RecordMemo`).
+
+A ref's id is read from git's files, not git or the library: `rev-parse HEAD` and `rev-parse --verify --quiet NAME[^{commit}]` of `HEAD`
+or a full ref name come from the loose file and `packed-refs`, a linked tree's own `HEAD` from its own directory (`GitRefReads`). A
+name no rule has is absent. A directory where a ref is looked for, an empty or odd file, a dangling symbolic ref, an unborn head, a
+reftable and a replacement that can stand are git's, and `NAME^{commit}` is answered from the files once a read said which commit that
+id peels to. The refs' one listing is the library's, kept in memory while a stamp of every loose branch, `packed-refs` and the
+configuration stands. `GitRefReadsParityTests` holds each against real git: loose, packed, a symbolic and a detached head, a linked
+tree's own head, a ref deleted while packed and one moved, and a reftable.
+
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`
 files name the library's package). An ask has an id, its repository, its read kind (`GitReadKinds`: the git verb, `cherry` for a walk that
@@ -239,7 +258,7 @@ for a place: 5 minutes for a person's, 15 for a step's, 30 for the background's;
 steps) has none, so an act is never dropped from its queue. The allowance is each asker's own and runs only while that asker's entry is
 queued, decided against placement under the scheduler's lock, so an ask is run or failed, never both; a joined asker leaves a shared
 read alone. A place not given in time is `deadline`. A library read not answered within its bound is handed to git; in-process reads
-get no id and no tally yet (GITBUS2). Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A read
+get no id and no place; a read the object-id memo or the ref files answered is counted as a memo hit. Asks and answers live in memory (`GitService.Open`), never entries of the bus's log. A read
 git did not answer is unknown, never a verdict: a partner piece's taken-in read and a branch's status before a replay change nothing
 on a failed read.
 

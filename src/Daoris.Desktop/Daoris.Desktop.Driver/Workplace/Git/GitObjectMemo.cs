@@ -86,6 +86,15 @@ internal sealed class GitObjectMemo
         return Current.AskAsync(key, arguments, run, ct);
     }
 
+    /// <summary>The commit <paramref name="id"/> peels to (itself where it is one), once a read said so; null where none did.</summary>
+    internal static string? PeeledCommit(string common, string id) =>
+        Current._kept.TryGet<Kept>(PeelKey(common, id), out var kept) ? kept.Stdout : null;
+
+    /// <summary>Keeps that <paramref name="id"/> peels to <paramref name="commit"/>: an id names the same object for good.</summary>
+    internal static void LearnPeeled(string common, string id, string commit) => Current.Keep(PeelKey(common, id), 0, commit);
+
+    private static string PeelKey(string common, string id) => "peel\n" + common.ToLowerInvariant() + "\n" + id;
+
     /// <summary>The repository's common folder and the read's words; null where the repository keeps nothing.</summary>
     internal static string? KeyOf(string root, IReadOnlyList<string> arguments)
     {

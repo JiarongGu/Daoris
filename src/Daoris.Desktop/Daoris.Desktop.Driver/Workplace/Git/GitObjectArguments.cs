@@ -14,6 +14,8 @@ internal static class GitObjectArguments
 
     private static readonly Regex Revision = new(@"^\^?([0-9a-f]{40}|[0-9a-f]{64})(\.\.\.?([0-9a-f]{40}|[0-9a-f]{64}))?$", RegexOptions.CultureInvariant);
 
+    private static readonly Regex Placeholder = new(@"%(H|T|P|s|m|x09|x00|n|%)", RegexOptions.CultureInvariant);
+
     private static readonly string[] MergeBases = ["--is-ancestor", "--independent", "--octopus", "--all"];
 
     private static readonly string[] Walks =
@@ -45,6 +47,7 @@ internal static class GitObjectArguments
             "merge-base" => ended < 0 && words.Count >= 2 && words.All(Id.IsMatch) && options.All(MergeBases.Contains),
             "cherry" => ended < 0 && words.Count == 2 && words.All(Id.IsMatch) && options.All(option => option == "-v"),
             "rev-list" => words.Count > 0 && words.All(Revision.IsMatch) && options.All(Walks.Contains),
+            "log" => ended < 0 && words.Count > 0 && words.All(Revision.IsMatch) && options.Any(IsFormat) && options.All(option => Walks.Contains(option) || IsFormat(option)),
             "diff" => words.Count is 1 or 2 && words.All(Revision.IsMatch) && NamedPair(words) && options.All(Names.Contains)
                       && options.Contains("--no-renames") && options.Any(option => option is "--name-only" or "--name-status" or "--numstat" or "--shortstat"),
             "cat-file" => ended < 0 && words.Count == 1 && Id.IsMatch(words[0]) && options is [var one] && Objects.Contains(one),
@@ -52,6 +55,10 @@ internal static class GitObjectArguments
             _ => false,
         };
     }
+
+    // A log's format names only what a commit's own bytes say: its ids, subject and side mark, with no author a mailmap could change.
+    private static bool IsFormat(string option) =>
+        option.StartsWith("--format=", StringComparison.Ordinal) && !Placeholder.Replace(option["--format=".Length..], "").Contains('%');
 
     // A diff of one id alone compares it with the working tree.
     private static bool NamedPair(List<string> words) => words.Count == 2 || words[0].Contains("..", StringComparison.Ordinal);

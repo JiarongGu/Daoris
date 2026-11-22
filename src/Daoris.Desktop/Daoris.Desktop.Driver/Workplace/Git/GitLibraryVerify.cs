@@ -9,7 +9,7 @@ internal static class GitLibraryVerify
 {
     private const string CommitSuffix = "^{commit}";
 
-    private static readonly string[] Rules = ["{0}", "refs/{0}", "refs/tags/{0}", "refs/heads/{0}", "refs/remotes/{0}", "refs/remotes/{0}/HEAD"];
+    internal static readonly string[] Rules = ["{0}", "refs/{0}", "refs/tags/{0}", "refs/heads/{0}", "refs/remotes/{0}", "refs/remotes/{0}/HEAD"];
 
     private static readonly GitLibraryAnswer Absent = new(1, "");
 
@@ -28,7 +28,7 @@ internal static class GitLibraryVerify
         return (GitLibraryQuestion.Revisions, call => Verified(call, name, peel));
     }
 
-    private static bool Plain(string name) =>
+    internal static bool Plain(string name) =>
         (name == "HEAD" || name.StartsWith("refs/", StringComparison.Ordinal))
         && !name.Contains("..", StringComparison.Ordinal)
         && name.IndexOfAny(['^', '~', ':', '@', '*', '?', '[', '\\', ' ', '{']) < 0;
