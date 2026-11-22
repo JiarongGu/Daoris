@@ -35,6 +35,9 @@ public interface IGitPolicy
     /// <summary>The answer of a read the git library gives without starting git, or null where git must run.</summary>
     Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct);
 
+    /// <summary>The first <paramref name="limit"/> bytes of an object read the git library gives without starting git, or null where git must run.</summary>
+    Task<GitBytes?> AnswerBytesInProcessAsync(GitAsk ask, int limit, CancellationToken ct);
+
     /// <summary>How <paramref name="ask"/> starts: its program, its arguments, its variables and its bound, or why no git runs.</summary>
     Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct);
 

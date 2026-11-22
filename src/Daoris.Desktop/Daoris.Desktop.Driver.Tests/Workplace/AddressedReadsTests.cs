@@ -54,7 +54,8 @@ public sealed class AddressedReadsTests : IDisposable
     [Theory]
     [InlineData("ls-tree", "-r", "-z", "HEAD")]
     [InlineData("ls-tree", "-r", "-z", "main")]
-    [InlineData("ls-tree", "-r", "-z", Commit, "--", "src")]
+    [InlineData("ls-tree", "-r", "-z", Commit, "--", "src/*")]
+    [InlineData("ls-tree", "-r", Commit, "--", "src")]
     [InlineData("status", "--porcelain", "-z")]
     [InlineData("rev-parse", "HEAD")]
     [InlineData("grep", "-e", "obj", "HEAD")]
@@ -68,6 +69,7 @@ public sealed class AddressedReadsTests : IDisposable
     [Theory]
     [InlineData("ls-tree", "-r", "-z", Commit)]
     [InlineData("--no-optional-locks", "ls-tree", "-r", "-z", "--full-tree", Commit)]
+    [InlineData("ls-tree", "-r", "-z", Commit, "--", "src")]
     [InlineData("--no-optional-locks", "grep", "-I", "-F", "-z", "--no-color", "-e", "obj", Commit, "--", "*.json", "*.ts")]
     public void A_read_that_names_one_commit_by_its_id_alone_is_kept(params string[] arguments)
     {

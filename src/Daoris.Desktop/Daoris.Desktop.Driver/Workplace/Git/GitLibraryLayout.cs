@@ -18,6 +18,12 @@ internal static class GitLibraryLayout
     internal static (GitLibraryQuestion, Func<GitLibraryCall, GitLibraryAnswer?>)? RevParse(List<string> rest)
     {
         if (rest.SequenceEqual(["--show-toplevel"])) return (GitLibraryQuestion.Layout, call => Top(call) is { } top ? new GitLibraryAnswer(0, top + "\n") : null);
+        if (rest.SequenceEqual(["--abbrev-ref", "HEAD"])) return (GitLibraryQuestion.Layout, call => Plain(call) && Branch(call) is { } named ? new GitLibraryAnswer(0, named + "\n") : null);
+        if (rest.SequenceEqual(GitReadOnce.Layout.Skip(1).Take(2)))
+        {
+            return (GitLibraryQuestion.Layout, call => Plain(call) && GitLibrarySpelling.Real(call.CommonDir) is { } common ? new GitLibraryAnswer(0, common + "\n") : null);
+        }
+
         if (rest.SequenceEqual(["--show-toplevel", "--abbrev-ref", "HEAD"]))
         {
             return (GitLibraryQuestion.Layout, call => Top(call) is { } top && Branch(call) is { } branch ? new GitLibraryAnswer(0, top + "\n" + branch + "\n") : null);
