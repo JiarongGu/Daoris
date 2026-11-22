@@ -182,7 +182,7 @@ public sealed class SecondLaunchTests
         Assert.Contains("showFirst: () => sp.GetRequiredService<MainForm>().TakeBack()", program);
         Assert.DoesNotContain("form.BeginInvoke(form.Close)", program);
 
-        Assert.Contains("_mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood) == true", form);
+        Assert.Contains("_mains?.FirstClosing(byPerson: e.CloseReason == CloseReason.UserClosing && !_forGood, door) == true", form);
         Assert.Contains("_mains?.Shown()", form);
         Assert.Contains("mains?.Opened(name)", host);
         Assert.Contains("mains?.Closed(name)", host);
