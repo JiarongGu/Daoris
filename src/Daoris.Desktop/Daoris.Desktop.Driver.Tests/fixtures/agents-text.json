@@ -6836,7 +6836,7 @@
       "after": {}
     },
     {
-      "name": "login, a door with no login flow of its own",
+      "name": "login, a protocol door signs in as its account agent",
       "argv": [
         "login",
         "claude-code-acp"
@@ -6846,7 +6846,7 @@
       "exit": 2,
       "out": [],
       "err": [
-        "daoris: `claude-code-acp` declares no login flow — log in with its own tooling, pointing CLAUDE_CONFIG_DIR at the profile directory."
+        "daoris: `claude-code` has no account of Daoris's to sign in to, and a sign-in into an account never makes one — `daoris agent login claude-code --new` signs in to a new account."
       ],
       "after": {}
     },
