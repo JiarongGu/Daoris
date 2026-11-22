@@ -199,11 +199,11 @@ public sealed class GitObjectMemoTests(ITestOutputHelper output) : LandedFixture
     }
 
     [Fact]
-    public async Task A_read_naming_a_ref_or_head_is_never_kept()
+    public async Task A_read_naming_a_bare_name_or_the_working_tree_is_never_kept()
     {
         var (root, line, _) = await BranchAsync();
         using var home = GitObjectMemo.Within(Home);
-        string[][] reads = [["merge-base", "--is-ancestor", "feature", "main"], ["rev-list", "--count", "HEAD"], ["diff", "--name-only", line, "HEAD"], ["diff", "--name-only", line]];
+        string[][] reads = [["merge-base", "--is-ancestor", "feature", "main"], ["diff", "--name-only", line, "HEAD"], ["diff", "--name-only", line]];
 
         await AsksAsync(root, reads);
 

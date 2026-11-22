@@ -463,8 +463,8 @@ internal sealed class NodeRunKeeping(
     private string? SessionFor(GovernedUnit governed, RunScope scope, string node, int attempt)
     {
         var record = records.Read(governed.Unit.Id);
-        var maker = governed.Declared.GetValueOrDefault(node)?.Kind == NodeKinds.Check
-            ? CheckRounds.MakerSession(scope.Quests, record?.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt)?.Call.SubjectRevision)
+        var maker = governed.Declared.GetValueOrDefault(node) is { } declared && NodeKit.Of(declared.Kind) is ITellsMaker teller
+            ? teller.MakerOf(scope.Quests, record?.Attempts.LastOrDefault(each => each.Node == node && each.Attempt == attempt)?.Call.SubjectRevision)
             : null;
         return ChangesParts.SessionOf(scope, ChangesParts.Of(record, node, attempt)) ?? maker
                ?? scope.Quest?.Executors.LastOrDefault() ?? scope.Branch?.Executors.LastOrDefault();

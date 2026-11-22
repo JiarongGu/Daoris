@@ -65,12 +65,14 @@ public sealed class BusWatchdog : IAsyncDisposable
                 if (_made.ContainsKey((timer.Entry, retry))) continue;
                 var reading = await ReadAsync(timer, ct).ConfigureAwait(false);
                 var last = timer.Retry >= type.Retries;
+                var chain = _bus.CorrelationOf(timer.Entry);
                 var drafts = new List<BusDraft>
                 {
                     new(BusTypes.Stalled, timer.Subject)
                     {
                         Effect = $"stall:{timer.Entry}:{retry}",
                         Causes = [timer.Entry],
+                        Correlation = chain,
                         Payload =
                         [
                             ("entry", timer.Entry), ("kind", timer.Kind), ("obliged", timer.Obliged), ("since", timer.Armed), ("due", timer.Due),
@@ -86,6 +88,7 @@ public sealed class BusWatchdog : IAsyncDisposable
                     {
                         Effect = $"give-up:{timer.Entry}",
                         Causes = [timer.Entry],
+                        Correlation = chain,
                         Payload =
                         [
                             ("entry", timer.Entry), ("kind", timer.Kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands),

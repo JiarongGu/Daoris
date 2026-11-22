@@ -37,7 +37,7 @@ internal static class GitLibraryReads
         {
             "merge-base" => MergeBase(rest),
             "rev-list" => Counted(rest),
-            "rev-parse" => GitLibraryVerify.Asked(rest) ?? GitLibraryUpstream.Asked(rest) ?? GitLibraryLayout.RevParse(rest),
+            "rev-parse" => GitLibraryVerify.Asked(rest) ?? GitLibraryIds.Asked(rest) ?? GitLibraryUpstream.Asked(rest) ?? GitLibraryLayout.RevParse(rest),
             "config" => GitLibraryLayout.Config(rest),
             "worktree" => GitLibraryWorktrees.Asked(rest),
             "diff" => Changed(rest),

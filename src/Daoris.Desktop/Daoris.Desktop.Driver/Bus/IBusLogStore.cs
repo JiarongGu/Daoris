@@ -22,6 +22,9 @@ public interface IBusLogStore : IDisposable
     /// <summary>Every measure row from <paramref name="fromDay"/> (UTC, <c>yyyy-MM-dd</c>) on, by day.</summary>
     IReadOnlyList<BusMeasureRow> Measures(string fromDay);
 
+    /// <summary>The correlation of the entry <paramref name="id"/> where the store keeps it (an older row reads as its own id); null where it keeps no such entry.</summary>
+    string? CorrelationOf(string id) => null;
+
     /// <summary>The armed timers due by <paramref name="by"/> (null: all), earliest first; each write moves them (<see cref="BusTimers.Of"/>).</summary>
     IReadOnlyList<BusTimer> Timers(DateTimeOffset? by, int limit);
 

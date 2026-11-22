@@ -10,6 +10,8 @@ internal sealed class PlainGitPolicy : IGitPolicy
 {
     public Task<GitAnswer?> AnswerInProcessAsync(GitAsk ask, CancellationToken ct) => Task.FromResult<GitAnswer?>(null);
 
+    public Task<GitBytes?> AnswerBytesInProcessAsync(GitAsk ask, int limit, CancellationToken ct) => Task.FromResult<GitBytes?>(null);
+
     public Task<GitRunSpec> StartAsync(GitAsk ask, GitRunKind kind, CancellationToken ct) =>
         Task.FromResult(new GitRunSpec("git", ask.Arguments, new Dictionary<string, string?>(ask.Environment?.Select(each => KeyValuePair.Create(each.Key, (string?)each.Value)) ?? []),
             ask.Bound ?? TimeSpan.FromMinutes(2)));

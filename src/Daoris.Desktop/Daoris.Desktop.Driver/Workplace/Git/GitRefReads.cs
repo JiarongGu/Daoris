@@ -87,7 +87,7 @@ internal static class GitRefReads
                 if (Directory.Exists(file)) return (Reading.Unknown, null);
                 if (File.Exists(file))
                 {
-                    var text = File.ReadAllText(file).Trim();
+                    var text = AtomicFile.ReadText(file).Trim();
                     if (text.StartsWith("ref:", StringComparison.Ordinal))
                     {
                         name = text["ref:".Length..].Trim();
@@ -152,13 +152,13 @@ internal static class GitRefReads
             foreach (var settings in (string[])[Path.Combine(common, "config"), Path.Combine(gitDir, "config.worktree")])
             {
                 if (!File.Exists(settings)) continue;
-                var read = File.ReadAllText(settings);
+                var read = AtomicFile.ReadText(settings);
                 if (read.Contains("[include", StringComparison.OrdinalIgnoreCase)) return null;
                 text.Append(read).Append('\0');
             }
 
             var packed = Path.Combine(common, "packed-refs");
-            text.Append(File.Exists(packed) ? Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(packed))) : "").Append('\0');
+            text.Append(File.Exists(packed) ? Convert.ToHexStringLower(SHA256.HashData(AtomicFile.ReadBytes(packed))) : "").Append('\0');
             foreach (var kind in (string[])[Path.Combine("refs", "heads"), Path.Combine("refs", "remotes", "origin")])
             {
                 var folderOf = Path.Combine(common, kind);
@@ -166,7 +166,7 @@ internal static class GitRefReads
                 foreach (var file in Directory.EnumerateFiles(folderOf, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
                 {
                     if (file.EndsWith(".lock", StringComparison.Ordinal)) continue;
-                    text.Append(file).Append('=').Append(File.ReadAllText(file)).Append('\0');
+                    text.Append(file).Append('=').Append(AtomicFile.ReadText(file)).Append('\0');
                 }
             }
 

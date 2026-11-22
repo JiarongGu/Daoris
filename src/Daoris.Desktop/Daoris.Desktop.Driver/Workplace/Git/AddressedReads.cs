@@ -47,10 +47,21 @@ internal sealed class AddressedReads
         var rest = arguments.Skip(at + 1).ToList();
         return arguments[at] switch
         {
-            "ls-tree" => rest.Count(each => !each.StartsWith('-')) == 1 && rest.All(each => each is "-r" or "-z" or "--full-tree" || Whole.IsMatch(each)),
+            "ls-tree" => Listed(rest),
             "grep" => SearchOf(rest),
             _ => false,
         };
+    }
+
+    /// <summary>A listing's words: its options, the one commit or tree by its full id and, as <c>-z</c> output that git never quotes, plain paths after <c>--</c>.</summary>
+    private static bool Listed(List<string> rest)
+    {
+        var ended = rest.IndexOf("--");
+        var before = ended < 0 ? rest : rest[..ended];
+        if (before.Count(each => !each.StartsWith('-')) != 1 || !before.All(each => each is "-r" or "-z" or "--full-tree" or "--name-only" || Whole.IsMatch(each))) return false;
+        if (ended < 0) return true;
+        var paths = rest[(ended + 1)..];
+        return before.Contains("-z") && paths.Count > 0 && paths.All(each => GitLibraryIds.Plain(each) && each.IndexOfAny(['*', '?', '[', ':']) < 0);
     }
 
     /// <summary>A search's words: its options, its patterns, the one commit by its full id, and the paths after <c>--</c>.</summary>

@@ -232,10 +232,12 @@ again (`OpinionClosesGitCountTests`).
 A read that only object ids decide is kept for good, beneath every flow's memo, by `GitObjectMemo` (D357 point 6): `merge-base` (with
 `--is-ancestor` or `--independent`), `rev-list` over ids, `cherry`, a two-commit `diff` of names with `--no-renames` and
 `--ignore-submodules=none`, a `log` with `--no-show-signature` whose format names only ids, subject and side mark, a `cat-file` of one id,
-and `AddressedReads`' commit listing (`GitObjectArguments` says which shapes; `grep` and `--numstat` follow `.gitattributes` and
+and `AddressedReads`' commit listing (`ls-tree` of one id, `-z` with plain paths after `--` too; `GitLsTreeMemoTests`) (`GitObjectArguments` says which shapes; `grep` and `--numstat` follow `.gitattributes` and
 configuration, so they are never kept). Every kept kind reads objects alone, so one key serves every tree of a repository: the common
-folder, read from the folder's own `.git` (a subfolder keeps nothing), and the read's words, every commit named by its full id. A read
-naming a ref, HEAD, the index or a working tree never qualifies, and a repository where a replacement can stand or whose history is
+folder, read from the folder's own `.git` (a subfolder keeps nothing), and the read's words, every commit named by its full id. A
+`merge-base`, `rev-list`, `log`, `cherry` or `ls-tree` that names `HEAD` or a full ref name is asked by the ids git's files give them at the
+ask (`GitRefIds`, from `GitRefReads`, which read the files sharing them with git's own writes; only where the read so written qualifies), so a ref that has not moved is a hit and a moved one is a
+new key. A read naming the index or a working tree, or a name the files cannot say, never qualifies, and a repository where a replacement can stand or whose history is
 shallow or grafted keeps nothing, as does a process with no home named. Only an answer git gave whole is kept (exit 0 with an empty
 error stream, and exit 1 for `merge-base`). The answers have no age: a least-recently-used cap of 8 MB of estimate bounds them, in memory and
 in the home (`memo/git-objects.json`, one row a line under a first line naming the format version; another version, a row that does
@@ -251,6 +253,17 @@ name no rule has is absent. A directory where a ref is looked for, an empty or o
 reftable and a replacement that can stand are git's, and `NAME^{commit}` is answered from the files once a read of the library named the ref's own id as the commit (a tag, or a ref moved between the two reads, is learned nothing from). The refs' one listing is the library's, kept in memory while a stamp of every loose branch, `packed-refs` and the
 configuration stands. `GitRefReadsParityTests` holds each against real git: loose, packed, a symbolic and a detached head, a linked
 tree's own head, a ref deleted while packed and one moved, and a reftable.
+
+The library answers the rest of `rev-parse` that no ref or working tree decides (`GitLibraryRevParseTests`, on real git, no start): `--abbrev-ref HEAD`
+and `--path-format=absolute --git-common-dir` alone (`GitLibraryLayout`, with the combined read's refusals: a subfolder, a branch another ref
+makes ambiguous, an included configuration), and `--verify --quiet` of an object by its full id (`GitLibraryIds`): the id, `ID^{commit}`,
+`ID^{tree}` and `ID:path`, an existing object that has no such peel or a path the tree lacks being git's quiet exit 1. A missing object, a
+path with `.`, `..` or an empty part and a gitlink are git's, as is a bare name (`main`), which an object's short id may also spell.
+
+Every object Daoris reads is one `cat-file --batch` question (`GitObjectReads`), and a question whose every line is a blob's full id, or a full
+id and a plain path, is answered from the object store by `GitLibraryObjects` through the git policy's `AnswerBytesInProcessAsync` (the adapter's
+`ReadBytesAsync` asks it before any start): the stored raw bytes with git's header, cut at the asker's limit, `QUESTION missing` where the tree
+lacks the path (`GitLibraryObjectsTests`). A tree, a commit, a tag, a missing object and a name that is no full id are one git start.
 
 Every git ask of the desktop goes through one service (`Platform/GitService`, D357): the scheduler's runs, the library's in-process
 reads and nothing else reach `GitScheduler` or `GitLibraryReads` (`GitKeepersCensusTests` holds it, and holds that only `GitLibrary*`

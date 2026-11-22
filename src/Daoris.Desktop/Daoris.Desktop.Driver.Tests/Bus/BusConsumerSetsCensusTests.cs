@@ -8,8 +8,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// (1) no file that declares a consumer (<c>IBusConsumer</c> or <c>BusFlowConsumer</c>) fans out over what it holds open with a
 /// <c>Task.WhenAll</c> unbounded (a restart's first round of nine owed opinions queued behind one another and every other git for an hour);
 /// (2) none keeps its own <c>SemaphoreSlim</c>, its own fold (<c>Folds</c>, <c>Folded</c>) or its own acknowledgement choice
-/// (<c>BusHandled.Ended</c>, <c>BusHandled.Judged</c>). Each allowance is listed with what bounds or owns it. Shown red on one left out of
-/// the list and on a planted one.
+/// (<c>BusHandled.Ended</c>, <c>BusHandled.Judged</c>); (3) none keeps a book by a row's position (<c>row[0].Seq</c>). Each allowance
+/// is listed with what bounds or owns it. Shown red on one left out of the list and on a planted one.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class BusConsumerSetsCensusTests
@@ -35,6 +35,41 @@ public sealed class BusConsumerSetsCensusTests
         ["BusQueue.cs"] = "the bus layer: its lane bound, its folded rows and its acknowledgement are the queue's, which the dispatch stands on",
         ["BusFlow.cs"] = "the dispatch: the one place a key's pass, the bounds, the coalescing and the acknowledgement from an outcome are written",
     };
+
+    private const string Position = "keeps a book by a row's position";
+
+    private static readonly Regex Positioned = new(@"(?s)" + Declares + @".*(\b\w*(?:row|rows|entries|batch|facts)\w*\s*\[\s*[\w^]+\s*\]\s*\.\s*(Seq|Id)\b|\b\w*(?:row|rows|entries|batch|facts)\w*\s*\.\s*(First|Last|ElementAt)(OrDefault)?\s*\([^)]*\)\s*\??\.\s*(Seq|Id)\b)");
+
+    // Empty: every book is by entry id; a file indexing a row for no book is listed with its reason.
+    private static readonly Dictionary<string, string> Positioning = new(StringComparer.Ordinal);
+
+    private static SortedSet<string> FoundPosition(IEnumerable<(string File, string Source)> sources) => SourceCensus.Callers(sources, Positioned);
+
+    [Fact]
+    public void No_consumer_or_layer_keeps_its_books_by_a_rows_position()
+    {
+        var problems = SourceCensus.Problems(FoundPosition(SourceCensus.Driver(typeof(BusConsumerSetsCensusTests))), SourceCensus.Listed(typeof(BusConsumerSetsCensusTests), Positioning.Keys), Position);
+        Assert.True(problems.Count == 0, string.Join('\n', problems));
+    }
+
+    [Fact]
+    public void Each_book_by_position_left_out_of_the_list_turns_the_census_red_naming_it()
+    {
+        Assert.Empty(SourceCensus.Unproved(FoundPosition(SourceCensus.Driver(typeof(BusConsumerSetsCensusTests))), SourceCensus.Listed(typeof(BusConsumerSetsCensusTests), Positioning.Keys), Position));
+    }
+
+    [Theory]
+    [InlineData("BusFlowConsumer<string>", "private long Book(IReadOnlyList<BusEnvelope> row) => row[0].Seq;")]
+    [InlineData("IBusConsumer", "private string Book(IReadOnlyList<BusEnvelope> row) => row[i].Id;")]
+    [InlineData("BusFlowConsumer<string>", "private long Book(IReadOnlyList<BusEnvelope> row) => row.First().Seq;")]
+    [InlineData("IBusConsumer", "private long Book(IReadOnlyList<BusEnvelope> entries) => entries.Last().Seq;")]
+    public void A_planted_book_by_a_rows_position_turns_the_census_red_naming_it(string basis, string own)
+    {
+        var planted = SourceCensus.Driver(typeof(BusConsumerSetsCensusTests)).Append(("Planted.cs", $"internal sealed class PlantedConsumer : {basis}\n{{\n    {own}\n}}\n"));
+
+        Assert.Equal(["Planted.cs keeps a book by a row's position and is not listed"],
+            SourceCensus.Problems(FoundPosition(planted), SourceCensus.Listed(typeof(BusConsumerSetsCensusTests), Positioning.Keys), Position));
+    }
 
     private static SortedSet<string> FoundFanOut(IEnumerable<(string File, string Source)> sources) => SourceCensus.Callers(sources, Consumer);
 

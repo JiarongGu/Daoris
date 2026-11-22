@@ -19,7 +19,7 @@ public static class BusStallsCommand
     public const string Usage =
         "usage: daoris bus stalls [--compare]   the watchdog's stalls, in shadow: each obliged entry past due, since when, who is obliged,\n"
         + "                                       which retry and the give-up it would apply; --compare sets the look's reading beside each;\n"
-        + "                                       changes nothing";
+        + "                                       changes nothing; each stall names its chain, which `daoris bus chain <correlation>` lists";
 
     /// <summary>The stalled entries listed, newest first.</summary>
     public const int Listed = 50;
@@ -108,7 +108,7 @@ public static class BusStallsCommand
     {
         var fact = stall.Newest;
         var obliged = Text(fact, "obliged") ?? "unknown";
-        var said = Invariant($"{Text(fact, "kind")} {fact.Subject} since {When(Moment(fact, "since"))}: obliged {obliged}, ")
+        var said = Invariant($"{Text(fact, "kind")} {fact.Subject} (chain {fact.Correlation}) since {When(Moment(fact, "since"))}: obliged {obliged}, ")
                    + Invariant($"{Missed(fact)}, past due since {When(Moment(fact, "due"))}; ");
         if (stall.GaveUp is { } gave)
         {

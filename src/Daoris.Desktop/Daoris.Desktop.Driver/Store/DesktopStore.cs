@@ -54,6 +54,8 @@ public sealed class DesktopStore : IDisposable
 
     public const int BusQueueVersion = BusTimersVersion + 1;
 
+    public const int BusCorrelationVersion = BusQueueVersion + 1;
+
     /// <summary>The wake file's suffix: it sits beside the store and holds nothing.</summary>
     public const string WakeSuffix = ".wake";
 

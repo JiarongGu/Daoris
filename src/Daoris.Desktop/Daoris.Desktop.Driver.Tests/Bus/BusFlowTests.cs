@@ -323,6 +323,23 @@ public sealed class BusFlowTests : IDisposable
     }
 
     [Fact]
+    public async Task A_retry_and_its_attempts_carry_the_failed_entrys_correlation()
+    {
+        var probe = new Probe(new BusFlowBounds(4), (key, _) => Task.FromResult(BusFlowOutcome.Failed("refused")));
+        await using var bus = Open();
+        await using var queue = await BusQueue.StartAsync(bus, [probe], Quick);
+
+        bus.Append(Begun("u-1", "A") with { Correlation = "chain-x" });
+        await Poll.Until(() => Logged().Any(entry => entry.Kind == BusTypes.GiveUp.Kind), () => "no give-up", Soon);
+        await bus.FlushAsync();
+        var failed = Logged().First(entry => entry.Kind == BusTypes.NodeBegun.Kind && entry.Subject == "u-1");
+        Assert.Equal("chain-x", failed.Correlation);
+        var after = Logged().Where(entry => entry.Kind is var kind && (kind == BusTypes.FlowRetry.Kind || kind == BusTypes.GiveUp.Kind)).ToList();
+        Assert.True(after.Count > BusTypes.NodeBegun.Retries);
+        Assert.All(after, entry => Assert.Equal("chain-x", entry.Correlation));
+    }
+
+    [Fact]
     public async Task A_consumer_claimed_again_writes_no_retry_and_ends_nothing()
     {
         var holding = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

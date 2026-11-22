@@ -115,6 +115,8 @@ internal static class DriveUsageRecords
               the watchdog's stalls, in shadow: each obliged entry past due, since when, who is obliged, which retry
               and the give-up it would apply (what it would hand to whom); --compare sets the look's reading beside
               each, agreements and disagreements by type; changes nothing.
+          bus chain <correlation>
+              one chain of the bus log, every entry carrying that correlation, oldest first; changes nothing.
           notices [--json] [--show <subject> | --set-aside <kind>]
               what came to you, changing nothing: what waits for your confirmation (by act and session), what needs
               you by group, unread messages by ask, and Done and failed (never the rows you set aside), as the running

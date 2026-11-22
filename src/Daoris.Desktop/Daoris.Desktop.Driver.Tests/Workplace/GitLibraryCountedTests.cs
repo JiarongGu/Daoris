@@ -52,7 +52,7 @@ public sealed class GitLibraryCountedTests : LandedFixture
         var root = await BuildRepositoryAsync("counted-line");
         using var count = GitLaunch.Count();
         await WorkingTree.GitAsync(root, ["rev-list", "--count", "HEAD"], CancellationToken.None);
-        await WorkingTree.GitAsync(root, ["rev-parse", "--abbrev-ref", "HEAD"], CancellationToken.None);
+        await WorkingTree.GitAsync(root, ["rev-parse", "--symbolic-full-name", "HEAD"], CancellationToken.None);
 
         var line = SessionReviews.Line("s-1", null, count).ToDictionary(each => each.Key, each => each.Value);
 

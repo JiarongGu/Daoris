@@ -99,8 +99,9 @@ internal static class GitRuns
         string? input, CancellationToken ct)
     {
         // Within a landing or a judgement a read is asked of git once; a call with a variable, a bound or an input of its own never is.
+        if (environment is not null || timeout is not null || input is not null) return RunGitAsync(root, arguments, environment, timeout, input, ct);
+        arguments = GitRefIds.Resolved(root, arguments);
         Func<CancellationToken, Task<(int Code, string Stdout, string Stderr)>> run = token => RunGitAsync(root, arguments, environment, timeout, input, token);
-        if (environment is not null || timeout is not null || input is not null) return run(ct);
         return GitObjectMemo.Asked(root, arguments, Flows, ct) ?? Flows(ct);
 
         Task<(int Code, string Stdout, string Stderr)> Flows(CancellationToken token) =>

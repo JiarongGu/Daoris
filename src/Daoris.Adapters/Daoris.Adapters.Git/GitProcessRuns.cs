@@ -72,10 +72,11 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    public Task<GitBytes> ReadBytesAsync(GitAsk ask, int limit, CancellationToken ct)
+    public async Task<GitBytes> ReadBytesAsync(GitAsk ask, int limit, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        return policy.LaunchAsync(ask, GitRunKind.Bytes, () => BytesLaunchedAsync(ask, limit, ct));
+        if (await policy.AnswerBytesInProcessAsync(ask, limit, ct).ConfigureAwait(false) is { } answered) return answered;
+        return await policy.LaunchAsync(ask, GitRunKind.Bytes, () => BytesLaunchedAsync(ask, limit, ct)).ConfigureAwait(false);
     }
 
     private async Task<GitBytes> BytesLaunchedAsync(GitAsk ask, int limit, CancellationToken ct)

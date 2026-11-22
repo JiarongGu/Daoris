@@ -243,7 +243,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 30a. The bus's log (D356 step 1) is the lease holder's: the desktop's loop and `daoris drive` open it once they hold the home's lease
     and close it before they let it go; a loop beside an instance keeps none. It is two tables of the desktop store (`bus_log`,
     `bus_measures`, made by the store's step 33), each entry one envelope (id, seq, kind as `name/version`, subject, emitter,
-    answerer, deadline, effect key, causes, and a payload of ids, codes, counts and times), on a connection of its own, write-ahead
+    answerer, deadline, effect key, causes, correlation, and a payload of ids, codes, counts and times; the correlation is the column
+    the store's step 36 added, indexed, and an older row reads as its own id), on a connection of its own, write-ahead
     logged with `synchronous = NORMAL` and its log file bounded as the store engine bounds it. An append is taken in memory, given
     its id, order and time at once, and written behind: plain entries a second after the first of them, a commit-class entry at
     once, grouped with whatever waits; nothing is written while nothing is appended, and a look stage timed or a miss counted while
@@ -382,18 +383,26 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     are memory only, and `ResumedAsync`, which judges every owed opinion at a start, is their net. The opinion's gate (keyed by the owed opinion,
     grouped by its repository, one judgment at a time within a repository and four across) and the run's progression (keyed by the
     run) stand on it, and `BusConsumerSetsCensusTests` holds that no consumer keeps its own semaphore, fold or acknowledgement choice.
-    What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught five rules every consumer
+    What was a direct call is now asynchronous, and moving the first jobs (BUS2d, BUS2e1, STARTLOAD1) taught six rules every consumer
     and every job moved off a look keeps, each review's first questions (`BusFlowTests` holds each at the layer): (1) a look's step is deleted only once every input it
     took wakes its job as a fact or is covered by a named net, or a wait stands with no wake; (2) a fact is acknowledged as ending its
     obligation only when its job really moved, and as handled otherwise, so the stall view keeps it; (3) one pass works on one state at a
     time, never a pass nested in another, and late asks join the running pass's own turn (`LateUnits`); (4) a consumer bounds its
     work, never all of an open set at once, and a fact names what it reaches so a burst costs what it moved (`BusConsumerSetsCensusTests`);
-    (5) a failure costs the one entry it hit, never its lane, its pass or another fact. A path beside the bus (a direct call kept, a
-    second lane) is opened only with its reason stated, and built by the same rules (the owner, 2026-11-22).
+    (5) a failure costs the one entry it hit, never its lane, its pass or another fact; (6) a consumer's books (what moved, what is
+    pending, what was folded) are kept by entry id, never by a position, a row's first entry or an order guessed from seq, so an entry
+    that joins a row while another waits is never skipped (`BusConsumerSetsCensusTests` flags a row indexed by position for a book). A
+    path beside the bus (a direct call kept, a second lane) is opened only with its reason stated, and built by the same rules (the
+    owner, 2026-11-22).
+    Every entry carries its chain's `correlation`, given by the log's append: the first entry of a chain its own id, each entry after it
+    the correlation of its first cause (a check's start, its verdict and the node it began share the start's id; `flow.retry`, its
+    attempts and the give-up carry their failed entry's, and the watchdog's stall and give-up their entry's, named by their emitters
+    since their cause may predate the process). `daoris bus chain <correlation>` lists one chain in one read, in order, with each
+    entry's type, subject, id and causes, for example the id a stall prints.
     `daoris bus stalls` (the Stalls view, the terminal's alone: the window has no diagnostics place, and its first reader of the
     bus's views is BUS2f's, which brings the page's types list) lists the armed timers and each stalled entry, newest first, with
-    its type, subject, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds agreements,
-    disagreements and unknowns by type and the newest twenty disagreements with both sides.
+    its type, subject, chain, since, obliged one, which stall, and the next try or the give-up it would apply; `--compare` adds
+    agreements, disagreements and unknowns by type and the newest twenty disagreements with both sides.
 31. A working session has no time limit: a driven run, a resumed run, a go-on and an intake wait for their exit. Only a pass with
     minutes of its own is bounded (a helper 15, a partner 45, a second opinion 20 within 5 to 120). `timeoutMinutes` is read by
     nothing. (D200)

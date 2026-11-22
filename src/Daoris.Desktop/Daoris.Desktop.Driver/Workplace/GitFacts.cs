@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 /// One landing's planning asks git once per fact: within it, a read whose answer an id or the layout
 /// decides (a commit's `merge-base` or `log` by full ids, `--show-toplevel`, `--git-common-dir`, origin's HEAD) is asked of git once,
 /// and every later asker in the flow is handed the answer.
-/// <b>Nothing another process moves is kept</b>: a read naming `HEAD` or a ref is always git's, so a judgement, a replay's source
-/// and the tidy's re-reads see what is there. The landing closes the table (<see cref="Close"/>) before the end keeping and the tidy.
+/// <b>Nothing another process moves is kept</b>: a read naming `HEAD` or a ref is asked by the id the ref names now (read from git's
+/// files, `GitRefIds`), never kept under the name, so a judgement, a replay's source and the tidy's re-reads see what is there. The landing closes the table (<see cref="Close"/>) before the end keeping and the tidy.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>Never kept across a write.</b> Every git this flow starts that may move a ref or an upstream
