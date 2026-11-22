@@ -183,7 +183,7 @@ internal sealed class GitObjectMemo
         try
         {
             if (!File.Exists(_path)) return;
-            var lines = File.ReadAllLines(_path);
+            var lines = AtomicFile.ReadText(_path).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (lines.Length == 0 || !Versioned(lines[0]))
             {
                 File.Delete(_path);
