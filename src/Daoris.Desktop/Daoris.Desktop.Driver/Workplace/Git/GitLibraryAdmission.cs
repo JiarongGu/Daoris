@@ -29,7 +29,8 @@ internal static class GitLibraryAdmission
     /// <summary>Why <paramref name="question"/> in <paramref name="folder"/> is git's; null where the library may answer it.</summary>
     internal static string? RefusalOf(string folder, GitLibraryQuestion question)
     {
-        if (RefFiles.CommonDirOf(folder) is not { } common || RefFiles.GitDirOf(folder) is not { } gitDir) return NoRepository;
+        if (DirsOf(folder) is not { } dirs) return NoRepository;
+        var (gitDir, common) = dirs;
         try
         {
             if (FormatRefusal(GitLibraryFormats.Of(common)) is { } format) return format;
@@ -47,6 +48,9 @@ internal static class GitLibraryAdmission
             return Configuration;
         }
     }
+
+    internal static (string GitDir, string Common)? DirsOf(string folder) =>
+        RefFiles.CommonDirOf(folder) is { } common && RefFiles.GitDirOf(folder) is { } gitDir ? (gitDir, common) : null;
 
     /// <summary>Why a repository's formats are git's (<see cref="GitLibraryFormats"/>): the library is not opened on them.</summary>
     private static string? FormatRefusal(GitLibraryFormat format) => format switch

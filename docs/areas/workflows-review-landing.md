@@ -286,10 +286,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     announcement and the notice is the home's (`News.ClaimStanding`, the `standing:` keys of `news_said`, outliving the one-week horizon and
     forgotten by `News.Forget` only for an exit this process saw stand and stop standing, never for a reading taken before the runtime loaded its steps). A step at the exit is one row: its wait says so (`PersonWait.Exit`), so
     the session's `left` row is not made beside the step's own (the flags `exit` and `ended` pass the groups route and `GroupsStateSlice`'s allow-list). Each telling of the work what a step sent back is kept on the run's record (`NodeTold`: the session told, or why none was), and a
-    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A reached
+    failed check's step says where its words went from it (`WorkflowRunTold`), never that they went where none was told. A check's
+    red goes to the session that made the claimed step it checks (`CheckRounds.MakerSession`: the part whose handback commit it checked, else
+    the newest part's), before the newest quest's last executor; a telling that found no session (`NodeTold.NoSession`), plain or spent, is
+    offered again, once, as a session serves the work (`CheckRounds.Untold`), while its red is still the check's newest. A reached
     command's words name each red class first, with the lines its log failed it on within the excerpt's bounds, then the classes run, the
-    flakes and main's reds (`ReachedVerdict.Told`); a failed gate that prints the outcome line is told by them, any other by its log's red
-    blocks and last lines (`GateLogExcerpt`).
+    flakes and main's reds (`ReachedVerdict.Told`), each list cut at `ReachedVerdict.RedIds` ids with an *and N more* tail, the header and
+    the failure lines alike; a class is matched as a whole token in the log (never inside a longer name, never an empty one), a passing line
+    is never its failure, and the whole log is redacted by `GitWords.Redact` before it is split, a line it cut or one holding a home path is withheld whole before the display cut, and every id, heading, suite name and the log path (relative to the home) passes the same boundary (`WordsScan`). A failed
+    gate that prints the outcome line is told by them, any other by its log's red blocks and last lines (`GateLogExcerpt`).
 
 **Runs**
 
@@ -517,8 +522,16 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     holds it as a row of their own; the window says each by its holder, never as the owner's; classed `owner`, or where no policy is read (`OpinionGateState.OwnerHolds`), the owner's rule stands: a dispute is answered by
     the person's *Reviewed* or *Accept…* given after the answers, findings and any recheck reached them, never before; until then the step
     waits on the person's answer (`disputed`, as commits since that no other agent read wait under `commits-since`, each with its count, held
-    by the person), never *working*: the run's view reads the gate in the work's tree here wherever its step stands on it
-    (`IWorkflowRunRecords.OpinionAsync`), as every landing door does, so the wait carries the gate's count and session. The one recheck is
+    by the person; a dispute says whose musts it holds, the first pass's the session did not fix and the recheck's own), never *working*: so
+    is every other hold, each a wait of its own saying who holds it and why: a pass still reading (`reading`, `rechecking`, its reviewer's,
+    and `reading-until`, `rechecking-until` where its minutes name an end), one nothing has asked (`not-asked` for the driver's next look,
+    `not-asked-held` and `not-asked-press` the person's, `not-asked-recheck`), a gate git could not read (`unread`), the chain's later step
+    (`waits-chain`), a required one nobody is free to read (`vacant`, `vacant-until` where a cool-off names its reset) and a required one no
+    pass could settle for another reason, a provider that kept failing among them (`unavailable`, the person's). The run's view reads the
+    gate in the work's tree here wherever its step stands on it (`IWorkflowRunRecords.OpinionAsync`), at the occasion its rule reads at, so
+    the wait carries the gate's count and session; a read that failed for any cause but a cancel, or a folder with no git of its own (git
+    would answer with the repository around it), is a gate *unread* saying why, and a gate already unread keeps its own reason, never a
+    failed view. A pass's seconds are counted on the driver's clock (`LoopContext.Clock`). The one recheck is
     a pass of its own: `opinion.asked` said as the host opens it, `opinion.given` with the seconds from its open, and its consultation kept
     beside it once given (`OpinionDeliveries.RecheckConsulted`); one kept with its diff alone gets it at the next look, read as given and
     never asked again. Its findings never go back to the working session: the gate holds them as disputes, and `opinion show` lists the
@@ -717,10 +730,15 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `reach: paths` runs the gates the batch's paths reach and every gate not last passed, naming the rest *kept*. A person's
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
-    the change reaches (driving rule 7), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
+    the change reaches (driving rule 7), and with them the line's admission the change reaches (below), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
     and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
-    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. A failed gate's
+    verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The line's admission is the declaration's `admission`
+    key: `always` and `suites` for every change, and `byPaths` checks, each reached by a changed path matching one of its globs or one
+    of `verifyBudget`'s wide paths. The merge tool selects its blocking gates from it (`tools/merge/admission.ts`, `reach.ts`) and the
+    check reads it in the declaration it runs under (under full access the merged tree's own, so a branch that predates an admission the line added is held to it), on the work as merged (`AdmissionGates`; a `!` glob excludes as the lanes file's does, an admitted gate with a `handback` command runs that command in its place, and one whose command holds an unbound `{base}` is unknown), so a gate the merge tool holds a change
+    to holds a run's landing too, one list read twice, and a red one fails the step naming it with its red lines for the work; a name
+    the declaration does not declare, or an admission that does not read (a declaration that is not JSON included), is unknown, coded `unrun`, never a shorter list. The merge tool reads the admission of the tree it selects for (the merge in place, a candidate's tree; one that predates the key is judged by the tool's own). (LANDGATES1) A failed gate's
     why carries the failing step's own lines with its log's path, said relative to the home: the log's red blocks (an `== RED <step>`
     header line, matched as a step's header only, to the next `== `) and its last lines, within about 40 lines and 4 KB
     (`GateLogExcerpt`), so the work reads why without asking for the log. The log is a child's words and passes `GitWords.Redact` first:

@@ -406,6 +406,9 @@ public sealed record NodeRepair(string Node, string Tip, string Turn, int Carrie
 /// </summary>
 public sealed record NodeTold(string Node, int Attempt, string? Session, string? Why, DateTimeOffset At)
 {
+    /// <summary>Why a telling that had no session to go to is kept as; the one reason a later session offers it again.</summary>
+    public const string NoSession = "no session of its work is known here";
+
     /// <summary>Whether it is a check's red past its rounds' bound, which takes no way back.</summary>
     public bool Spent { get; init; }
 

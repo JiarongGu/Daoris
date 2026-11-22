@@ -373,7 +373,7 @@ import { laneReport } from './merge/lane-report.ts';
 import { branchChanges } from './merge/changes.ts';
 import { FULL_COMMAND, checkoutScope, fullRefused, mergeVerifying, owedLine, planReaches, previewScope, requireContinueReason, requireFullReason } from './merge/merge-verification.ts';
 import { chooseGates } from './merge/choose-gates.ts';
-import { pathsReaching, reachingOf, selectGates, selectionLines, BLOCKING, ruleFor } from './merge/reach.ts';
+import { pathsReaching, reachingOf, selectGates, selectionLines, treeReading, ruleFor } from './merge/reach.ts';
 import { driftsAt } from './merge/tree-drift.ts';
 import { VERDICTS_KEPT_PER_GATE, inUse, keptVerdicts } from './merge/verdict-keep.ts';
 import {
@@ -5487,9 +5487,8 @@ function knownFor(home, failure) {
 export function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
   const treeId = contentTree(tree);
   const standing = standingFor(tree, treeId);
-  const lanes = readLanes(tree)?.lanes ?? [];
   const changed = diffPaths(git, tree, [base, tip]);
-  const selection = selectGates(plan, changed, { lanes, gated: true });
+  const selection = selectGates(plan, changed, treeReading(tree));
   const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
   const verdicts = readVerdicts(home).verdicts;
   const judged = ciPlan({ ...standing, plan: plan.map((gate) => gate.name), verdicts });

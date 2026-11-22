@@ -144,8 +144,8 @@ internal sealed class LoopContext(
     /// </summary>
     public TimeSpan? BrainstormMinute { get; set; }
 
-    /// <summary>The clock for brainstorm deadlines and cancellation timers, held by timing tests.</summary>
-    public TimeProvider BrainstormClock { get; set; } = TimeProvider.System;
+    /// <summary>The clock for brainstorm deadlines and cancellation timers and a second opinion's seconds, held by timing tests.</summary>
+    public TimeProvider Clock { get; set; } = TimeProvider.System;
 
     /// <summary>
     /// How a meeting's turn is run, where a test hands in a stand-in that writes its message. With none, a meeting's turn

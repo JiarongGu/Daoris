@@ -1252,7 +1252,7 @@ not, as its driven sessions do (`daoris chat` writes none, as it writes no sessi
 
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
-Brainstorm deadline tests hand the runner a `TimeProvider` through its internal `BrainstormClock` seam (BRAINBOUNDCLOCK1). Deadlines and cancellation timers share that clock, a meeting round's deadline among them (MEETCLOCK1); production uses `TimeProvider.System`. The pass-timeout regression moves its clock only after the hanging turn starts, preserving the synthesis reserve without relaxing its assertions.
+Brainstorm deadline tests hand the runner a `TimeProvider` through its internal `Clock` seam (BRAINBOUNDCLOCK1), which a second opinion's seconds count on too. Deadlines and cancellation timers share that clock, a meeting round's deadline among them (MEETCLOCK1); production uses `TimeProvider.System`. The pass-timeout regression moves its clock only after the hanging turn starts, preserving the synthesis reserve without relaxing its assertions.
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the
 bridge is absent in a browser, by construction) and the vitest suite drives a *mock* of this machine,

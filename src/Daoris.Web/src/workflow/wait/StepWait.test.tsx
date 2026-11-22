@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { NODE_KINDS } from '../../data/generated/service';
 import i18n from '../../locales/i18n';
+import { stepHolder } from '../../work/attention/taskRead';
 import type { RunStep } from '../run';
 import { StepWait, waitSaid } from './StepWait';
 
@@ -40,6 +41,55 @@ describe('a step\'s wait', () => {
     expect(waitSaid(t, 'check', memory, 'zh')).toContain('4.1 GB');
     expect(waitSaid(t, 'check', repository, 'zh')).toContain('`Daoris`');
     for (const wait of [full, memory]) expect(waitSaid(t, 'check', wait, 'zh')).not.toMatch(/[A-Za-z]{4}/);
+  });
+
+  it('says every hold of the second opinion\'s gate as a wait of its own, who holds it and why, in both languages', async () => {
+    const waits: Array<[string, Record<string, string>, string]> = [
+      ['reading', { agent: 'Codex (OpenAI)' }, 'Waits on Codex (OpenAI)\'s reading of the work'],
+      ['rechecking', { agent: 'Codex (OpenAI)' }, 'Waits on Codex (OpenAI)\'s recheck of the commits made in answer'],
+      ['not-asked', {}, 'Waits for the driver\'s next look to ask the second opinion'],
+      ['not-asked-recheck', {}, 'Waits for the driver\'s next look to ask the recheck'],
+      ['not-asked-held', {}, 'Waits on the lift of the hold on its quest'],
+      ['not-asked-press', {}, 'Waits for you to press Accept'],
+      ['unread', { why: 'git could not say' }, 'could not be read: git could not say'],
+      ['waits-chain', { quest: 'q2' }, 'later step here, quest #q2'],
+      ['vacant', { why: 'no-reviewer' }, 'no second opinion can be had, no listed reviewer of another maker is installed'],
+      ['vacant-until', { why: 'cooling' }, 'every listed reviewer of another maker is cooling; the driver asks again at'],
+      ['disputed', { count: '3', first: '2', raised: '1' }, '(3: 2 the working session left unfixed, 1 the recheck\'s own)'],
+    ];
+    for (const [code, values, said] of waits) expect(waitSaid(t, 'opinion', { code, values })).toContain(said);
+    await i18n.changeLanguage('zh');
+    for (const [code, values] of waits) {
+      const words = waitSaid(t, 'opinion', { code, values: { ...values, until: '07:02' } });
+      expect(words, code).not.toContain('workflow.');
+      expect(words, code).not.toContain('{{');
+    }
+    expect(waitSaid(t, 'opinion', { code: 'vacant', values: { why: 'signed-out' } })).toContain('没有登录账户');
+  });
+
+  it('says when a pass\'s minutes run out, in the reader\'s clock and both languages, and why a required gate no pass settled waits on you', async () => {
+    const until = '2026-11-22T07:02:00Z';
+    const at = (language: string) => new Date(until).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' });
+    for (const language of ['en', 'zh']) {
+      await i18n.changeLanguage(language);
+      for (const code of ['reading-until', 'rechecking-until']) {
+        const words = waitSaid(t, 'opinion', { code, values: { agent: 'Codex (OpenAI)' }, until }, language);
+        expect(words, `${language} ${code}`).toContain(at(language));
+        expect(words).toContain('Codex (OpenAI)');
+      }
+
+      const unavailable = waitSaid(t, 'opinion', { code: 'unavailable', values: { why: 'transient' } }, language);
+      expect(unavailable, language).not.toMatch(/\{\{|workflow\.run/);
+    }
+
+    await i18n.changeLanguage('en');
+    expect(waitSaid(t, 'opinion', { code: 'unavailable', values: { why: 'transient' } })).toContain('provider kept failing');
+  });
+
+  it('says a step held by an agent no role names as an agent, never as an empty name', () => {
+    expect(stepHolder({ holder: 'agent' })).toBe('an agent');
+    expect(stepHolder({ holder: 'agent', holderName: 'Codex (OpenAI)' })).toBe('`Codex (OpenAI)`');
+    expect(stepHolder({ holder: 'person' })).toBe('you');
   });
 
   it('says a wait this page has no words for as recorded', () => {

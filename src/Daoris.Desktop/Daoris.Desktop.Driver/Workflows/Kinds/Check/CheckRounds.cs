@@ -71,4 +71,17 @@ public static class CheckRounds
         return owed;
     }
 
+    /// <summary>The tellings that failed for want of a session (<see cref="NodeTold.NoSession"/>) on a check whose newest attempt is that red: owed again.</summary>
+    public static IReadOnlyList<(string Node, int Attempt, bool Spent)> Untold(NodeRecord record, IReadOnlyDictionary<string, NodeDeclaration> declared) =>
+        [.. record.Told
+            .Where(told => told is { Session: null, Why: NodeTold.NoSession } && declared.GetValueOrDefault(told.Node)?.Kind == NodeKinds.Check
+                && record.ToldOf(told.Node, told.Attempt) == told
+                && record.Newest(told.Node) is { State: AttemptStates.Settled, Outcome: WorkStates.Failed } newest && newest.Attempt == told.Attempt)
+            .Select(told => (told.Node, told.Attempt, told.Spent))];
+
+    /// <summary>The session that made the claimed step a check checks: the part whose handback commit is the one checked, else the newest part's.</summary>
+    public static string? MakerSession(IReadOnlyList<QuestView> quests, string? revision) =>
+        (string.IsNullOrEmpty(revision) ? null : quests.LastOrDefault(quest => quest.Submission is { Session.Length: > 0, Commit: { } commit }
+            && string.Equals(commit, revision, StringComparison.OrdinalIgnoreCase)))?.Submission!.Session
+        ?? quests.LastOrDefault(quest => quest.Submission?.Session is { Length: > 0 })?.Submission!.Session;
 }

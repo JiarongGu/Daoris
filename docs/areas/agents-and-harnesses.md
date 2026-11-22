@@ -191,7 +191,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     walks on. (D197)
 28. The person's own sign-in is outside the set: Daoris never signs it in or out, asks it anything or starts work in it. On the
     agent's page it is the list's last row; *Ways in* says each way in by what it gives, and one not installed says what to do.
-    (D197, D175)
+    A protocol door has no sign-in of its own: the window's *Sign in*, a step's sign-in words and `daoris agent login` all sign in as the agent
+    whose accounts the door runs as (`codex-acp` as `codex`, `claude-code-acp` as `claude-code`), one flow into one folder. (D197, D175)
 29. An account's sign-in state is read once, by one unit (`SignInStates`) from its last reading: signed in, signed out since a
     time (a sign-out after a signed-in reading is one nobody at Daoris made: it raises one notice in *Done and failed*), its check
     not answered (asked, and timed out or said nothing readable), or never read. The walk ranks by it and the account page shows

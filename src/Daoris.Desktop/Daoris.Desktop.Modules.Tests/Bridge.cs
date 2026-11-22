@@ -110,19 +110,26 @@ public abstract class Bridge : IDisposable
         // that work begins one of its own.
         for (var again = 0; again < 2 || (response.Success && HeldAnswers.IsPending(response.Data) && again < 4); again++)
         {
-            try
-            {
-                await driver.Held.LandedAsync(DriverModule.HeldKey(request));
-            }
-            catch
-            {
-                // The work's failure is the next ask's refusal.
-            }
-
+            await LandedAsync(driver, request);
             response = await module.HandleMessageAsync(request, CancellationToken.None);
         }
 
+        // The last ask began a work of its own and may have answered Pending: wait for it too, so nothing it asks the service is
+        // still under way when the test reads what the service has been asked or tears its fixture down.
+        await LandedAsync(driver, request);
         return response;
+    }
+
+    private static async Task LandedAsync(DriverModule driver, IpcRequest request)
+    {
+        try
+        {
+            await driver.Held.LandedAsync(DriverModule.HeldKey(request));
+        }
+        catch
+        {
+            // The work's failure is the next ask's refusal.
+        }
     }
 
     /// <summary>

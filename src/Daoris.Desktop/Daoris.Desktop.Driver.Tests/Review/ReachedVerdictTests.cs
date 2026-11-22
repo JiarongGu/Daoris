@@ -180,6 +180,168 @@ public sealed class ReachedVerdictTests
 
         Assert.True(System.Text.Encoding.UTF8.GetByteCount(failures) <= GateLogExcerpt.Bytes + 512, $"{System.Text.Encoding.UTF8.GetByteCount(failures)} bytes");
         Assert.EndsWith("…", told);
-        Assert.Contains(reds[29], told[..told.IndexOf('\n')]);
+        Assert.Contains(reds[0], told[..told.IndexOf('\n')]);
+    }
+
+    private static string Outcome(IEnumerable<string> red, IEnumerable<string>? flaked = null, IEnumerable<string>? mainRed = null) =>
+        "reached-classes: " + System.Text.Json.JsonSerializer.Serialize(new { ran = 9, replayed = 0, flaked = flaked ?? [], mainRed = mainRed ?? [], red });
+
+    [Fact]
+    public void The_red_ids_told_are_capped_with_an_and_N_more_tail_in_the_header_the_failures_and_the_verdict_s_why()
+    {
+        var reds = Enumerable.Range(0, 30).Select(at => $"web-unit|src/f{at}.test.ts").ToList();
+        var log = string.Join("\n", reds.Select(id => $" FAIL  {id[9..]} > fails\nError: x\n")) + "\n" + Outcome(reds, reds.Take(25).Select(id => id + ".flake"), reds.Take(40));
+        var cap = ReachedVerdict.RedIds;
+
+        var told = ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!;
+        var header = told[..told.IndexOf('\n')];
+        var failures = told[told.IndexOf("its log,", StringComparison.Ordinal)..];
+
+        Assert.Contains(reds[cap - 1], header);
+        Assert.DoesNotContain(reds[cap], header);
+        Assert.Contains($"and {30 - cap} more", header);
+        Assert.Contains($"and {25 - cap} more", header);
+        Assert.Contains(reds[cap - 1][9..], failures);
+        Assert.DoesNotContain(reds[cap][9..], failures);
+        Assert.Contains($"and {30 - cap} more red classes", failures);
+        var why = Judge(1, log).Why.Split('\n')[0];
+        Assert.DoesNotContain(reds[cap], why);
+        Assert.Contains($"and {30 - cap} more", why);
+    }
+
+    [Fact]
+    public void A_class_the_log_names_only_inside_another_class_s_name_names_no_failure_of_it_and_an_empty_name_matches_nothing()
+    {
+        const string log = """
+              Failed Ns.FooTestsExtra.It_breaks [3 ms]
+              Error Message: boom
+             FAIL  src/app/foo.test.tsx > breaks
+            Error: tsx boom
+             FAIL  src/app/Other.test.tsx > breaks
+            Error: other
+            """;
+        var told = ReachedVerdict.Told(log + "\n" + Outcome(["driver|Ns.FooTests", "web-unit|src/app/foo.test.ts", "web-unit|", "web-unit|src/app/Other.test.tsx"]), "reached-classes: ", "reached.log")!;
+
+        Assert.Contains("driver|Ns.FooTests: its log names no failure of it", told);
+        Assert.Contains("web-unit|src/app/foo.test.ts: its log names no failure of it", told);
+        Assert.Contains("web-unit|: its log names no failure of it", told);
+        Assert.DoesNotContain("boom", told);
+        Assert.Contains("Error: other", told);
+    }
+
+    [Fact]
+    public void A_passing_line_that_holds_the_word_Error_is_never_the_failure_it_tells()
+    {
+        const string log = """
+             FAIL  src/app/a.test.tsx > breaks
+            AssertionError: expected 1 to be 2
+             ✓ src/app/a.test.tsx > surfaces an Error as a toast 12ms
+             ✓ src/app/b.test.tsx > shows Error text 3ms
+            """;
+        var told = ReachedVerdict.Told(log + "\n" + Outcome(["web-unit|src/app/a.test.tsx", "web-unit|src/app/b.test.tsx"]), "reached-classes: ", "reached.log")!;
+
+        Assert.Contains("AssertionError: expected 1 to be 2", told);
+        Assert.DoesNotContain("surfaces an Error as a toast", told);
+        Assert.DoesNotContain("shows Error text", told);
+        Assert.Contains("web-unit|src/app/b.test.tsx: its log names no failure of it", told);
+    }
+
+    [Fact]
+    public void A_log_line_holding_a_token_or_a_home_path_is_withheld_from_the_words_and_the_verdict_s_why()
+    {
+        var token = "ghp_" + new string('a', 24);
+        const string Drive = "C", Slash = "\\", Folder = "Us" + "ers";
+        var log = $" FAIL  src/app/a.test.tsx > breaks\nError: sent {token} to the host\n    at {Drive}:{Slash}{Folder}{Slash}someone{Slash}work{Slash}a.test.tsx:1\n  at src/app/a.test.tsx:2\n"
+            + Outcome(["web-unit|src/app/a.test.tsx"]);
+
+        var told = ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!;
+        var why = Judge(1, log).Why;
+
+        foreach (var words in new[] { told, why })
+        {
+            Assert.DoesNotContain(token, words);
+            Assert.DoesNotContain("someone", words);
+            Assert.Contains("withheld", words);
+            Assert.Contains("at src/app/a.test.tsx:2", words);
+        }
+    }
+
+    private static readonly string Unix = "/" + "home" + "/someone";
+
+    [Theory]
+    [InlineData("Authorization: Basic dXNlcjpwYXNz", "dXNlcjpwYXNz")]
+    [InlineData("curl -H 'Cookie: session=abc123secret'", "abc123secret")]
+    [InlineData("fetch https://user:pw0rdvalue@host.example/x failed", "pw0rdvalue")]
+    [InlineData("key sk-proj-AbCdEfGhIjKlMnOpQrStUv_wxyz", "AbCdEfGhIjKlMnOpQrStUv")]
+    public void A_credential_the_git_boundary_cuts_never_reaches_the_reached_words_or_the_verdict_s_why(string line, string secret)
+    {
+        var log = $" FAIL  src/app/a.test.tsx > breaks\n{line}\n" + Outcome(["web-unit|src/app/a.test.tsx"]);
+
+        foreach (var words in new[] { ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!, Judge(1, log).Why })
+        {
+            Assert.DoesNotContain(secret, words);
+        }
+    }
+
+    [Fact]
+    public void A_private_key_block_is_cut_whole_before_the_log_is_split_into_lines()
+    {
+        var (begin, end) = ("-----BEGIN RSA PRIVATE" + " KEY-----", "-----END RSA PRIVATE" + " KEY-----");
+        var log = $" FAIL  src/app/a.test.tsx > breaks\n{begin}\nMIIEowIBAAKCAQEAbodyline1\nbodyline2xyz\n{end}\nafter the block\n"
+            + Outcome(["web-unit|src/app/a.test.tsx"]);
+
+        foreach (var words in new[] { ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!, Judge(1, log).Why })
+        {
+            Assert.DoesNotContain("bodyline", words);
+            Assert.DoesNotContain("MIIEow", words);
+        }
+    }
+
+    [Theory]
+    [InlineData(390)]
+    [InlineData(395)]
+    [InlineData(399)]
+    [InlineData(450)]
+    public void A_token_or_a_home_path_that_starts_near_the_display_cut_withholds_the_whole_line(int before)
+    {
+        var secret = "ghp_" + new string('a', 24);
+        foreach (var hidden in new[] { secret, Unix + "/work/a.test.tsx" })
+        {
+            var log = $" FAIL  src/app/a.test.tsx > breaks\n{new string('x', before)} {hidden}\n" + Outcome(["web-unit|src/app/a.test.tsx"]);
+
+            foreach (var words in new[] { ReachedVerdict.Told(log, "reached-classes: ", "reached.log")!, Judge(1, log).Why })
+            {
+                Assert.DoesNotContain("ghp_", words);
+                Assert.DoesNotContain("someone", words);
+                Assert.Contains(WordsScan.Withheld, words);
+            }
+        }
+    }
+
+    [Fact]
+    public void An_id_a_heading_a_deferred_suite_and_the_log_path_pass_the_same_boundary()
+    {
+        var token = "ghp_" + new string('b', 24);
+        var log = " FAIL  src/app/other.test.tsx > breaks\nError: x\n"
+            + "reached-classes: " + System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ran = 1, replayed = 0, flaked = new[] { "web-unit|" + Unix + "/f.test.ts" }, mainRed = Array.Empty<string>(),
+                red = new[] { "web-unit|" + Unix + "/a.test.ts", "web-unit|" + token }, deferred = new[] { Unix + "|C" },
+            });
+        const string Base = "D:/fixture-folder";
+
+        var told = ReachedVerdict.Told(log, "reached-classes: ", Unix + "/reached.log", Base)!;
+        var why = Judge(1, log).Why;
+        var inside = ReachedVerdict.Told(log, "reached-classes: ", Base + "/checks/reached.log", Base)!;
+
+        foreach (var words in new[] { told, why })
+        {
+            Assert.DoesNotContain("someone", words);
+            Assert.DoesNotContain(token, words);
+            Assert.Contains(WordsScan.Withheld, words);
+        }
+
+        Assert.Contains("its log, reached.log, fails them on:", told);
+        Assert.Contains("its log, checks/reached.log, fails them on:", inside);
     }
 }

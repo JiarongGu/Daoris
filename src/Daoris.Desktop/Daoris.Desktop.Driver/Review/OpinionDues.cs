@@ -23,6 +23,8 @@ public sealed class OpinionDues(string home)
     /// <summary>Every entry, in the order they became due.</summary>
     public IReadOnlyList<OpinionDue> All() => OpinionGateFiles.ReadDues(FilePath);
 
+    public IReadOnlyList<OpinionDue> OpenStrict() => [.. OpinionGateFiles.ReadDues(FilePath, strict: true).Where(entry => entry.Closed is null)];
+
     /// <summary>The entries still owed.</summary>
     public IReadOnlyList<OpinionDue> Open() => [.. All().Where(entry => entry.Closed is null)];
 

@@ -63,7 +63,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>A brainstorm's minute, and a meeting's: a minute, unless a test shortens it.</summary>
     internal TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
 
-    internal TimeProvider Clock => _context.BrainstormClock;
+    internal TimeProvider Clock => _context.Clock;
 
     /// <summary>How often a waiting pass asks for a slot again, and a running brainstorm looks for the person's stop.</summary>
     internal TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));

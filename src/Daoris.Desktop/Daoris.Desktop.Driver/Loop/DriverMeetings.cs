@@ -250,7 +250,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
         {
             var minute = _brainstorms.Minute;
             // On the clock each turn's cut is read on, as the brainstorm's deadline is.
-            var deadline = _context.BrainstormClock.GetUtcNow() + rule.Minutes.Request * minute;
+            var deadline = _context.Clock.GetUtcNow() + rule.Minutes.Request * minute;
             var kept = files.ReadTranscript(id);
             var messages = new List<MeetingMessage>(kept.Messages);
             var refused = new List<MeetingRefused>(kept.Refused);

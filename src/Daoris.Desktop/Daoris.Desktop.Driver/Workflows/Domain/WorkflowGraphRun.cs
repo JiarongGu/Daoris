@@ -244,10 +244,8 @@ public static class WorkflowGraphRuns
             var step = new WorkflowRunStep(cell, state, detail)
             {
                 Node = node.Kind,
-                Role = waits?.Role ?? (answers is null || OpinionStepWaits.OnPerson(answers) ? StepRoles.Of(node) : StepRoles.Design),
-                Holder = waits?.Holder ?? (answers is null ? null
-                    : OpinionStepWaits.OnPerson(answers) ? new StepHolder(StepHolders.Person)
-                    : new StepHolder(StepHolders.Agent, answers.Values.GetValueOrDefault("session"))),
+                Role = waits?.Role ?? (answers is { Code: OpinionStepWaits.Answer } ? StepRoles.Design : StepRoles.Of(node)),
+                Holder = waits?.Holder ?? (answers is null ? null : OpinionStepWaits.HolderOf(answers)),
                 HeldBy = tenure?.Holder, Vacant = vacant,
                 Epoch = tenure?.Epoch,
                 Holds = !standing || waits?.Why == PersonWaits.GoAhead ? null : toAgent ? StepHoldActs.Handed(tenure) : StepHoldActs.Of(tenure),
@@ -376,7 +374,7 @@ public static class WorkflowGraphRuns
         status.State is NodeStates.Skipped or NodeStates.Rejected or NodeStates.Stopped ? status.Words
         : node.Kind is NodeKinds.Land or NodeKinds.Opinion && status.State == NodeStates.Reached ? status.Words
         : node.Kind == NodeKinds.GoAhead ? NodeOptions.Text(node, "act")
-        : node.Kind == NodeKinds.Opinion && status.Holds == OpinionGateStates.WithSession ? null
+        : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Active ? null
         : node.Kind == NodeKinds.Opinion && status.State == NodeStates.Failed ? OpinionStepWaits.EndedSaid(status.Code)
         : status.State == NodeStates.Active ? status.Holds
         : null;

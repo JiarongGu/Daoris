@@ -141,7 +141,7 @@ public abstract class BrainstormBench : IDisposable
         {
             BrainstormTurns = script.RunAsync,
             BrainstormMinute = Minute,
-            BrainstormClock = clock ?? TimeProvider.System,
+            Clock = clock ?? TimeProvider.System,
         };
         return (driver, script);
     }

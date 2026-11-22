@@ -24,14 +24,22 @@ public interface IBusConsumer
     /// <summary>Told once the consumer resumed from its cursor, its parked and missed entries handed back: where it rebuilds its view.</summary>
     Task ResumedAsync(CancellationToken ct) => Task.CompletedTask;
 
-    /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject fold into the last: its handling stands for them all.</summary>
+    /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject are handed together: one handling stands for them all.</summary>
     bool Folds(string kind) => false;
 
-    /// <summary>Told of an entry folded into a later one before either is acknowledged, under the queue's lock: it keeps what the entry named, and never throws or waits.</summary>
-    void Folded(BusEnvelope away)
+    /// <summary>Handle a row of folded entries, oldest first (one where it folds none): all stay open until the one result, so a throw loses none.</summary>
+    Task<BusHandled> HandleAsync(IReadOnlyList<BusEnvelope> row, CancellationToken ct) => HandleAsync(row[^1], ct);
+
+    void Attached(BusConsumerHost host)
     {
     }
+
+    int? SubjectsAtOnce => null;
+
+    DateTimeOffset? NotBefore(BusEnvelope entry) => null;
 }
+
+public sealed record BusConsumerHost(BusLog Log, BusQueueOptions Options, CancellationToken Closing, Action<string> EndLate, Func<bool> Owned, Func<long, string, string, BusEnvelope?> Find);
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
 public sealed record BusHandled(bool Ends)
@@ -167,7 +175,9 @@ public sealed class BusQueue : IAsyncDisposable
             try
             {
                 var claim = store.Claim(name, [.. consumer.Subscription.Types.Select(type => type.Kind)], log.WriterRead, options.Clock.GetUtcNow());
-                queue._runs[name] = new BusConsumerRun(queue, consumer, claim);
+                var run = new BusConsumerRun(queue, consumer, claim);
+                queue._runs[name] = run;
+                consumer.Attached(new BusConsumerHost(log, options, queue._closing.Token, run.EndLate, run.Holds, run.Find));
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
@@ -332,6 +342,7 @@ internal sealed class BusConsumerRun
     private readonly SortedSet<long> _open = [];
     private readonly Dictionary<string, Queue<(BusEnvelope Entry, int Tries)>> _lanes = new(StringComparer.Ordinal);
     private readonly HashSet<long> _parked = [];
+    private readonly HashSet<long> _deferred = [];
     private readonly List<BusEnvelope> _waiting = [];
     private readonly SemaphoreSlim _atOnce;
     private readonly List<Task> _running = [];
@@ -348,7 +359,7 @@ internal sealed class BusConsumerRun
         _queue = queue;
         _consumer = consumer;
         _kinds = [.. consumer.Subscription.Types.Select(type => type.Kind)];
-        _atOnce = new SemaphoreSlim(Math.Max(1, queue.Options.SubjectsAtOnce));
+        _atOnce = new SemaphoreSlim(Math.Max(1, consumer.SubjectsAtOnce ?? queue.Options.SubjectsAtOnce));
         _epoch = claim.Epoch;
         _cursor = claim.Cursor;
         _highest = claim.Cursor;
@@ -374,7 +385,7 @@ internal sealed class BusConsumerRun
     {
         get
         {
-            lock (_gate) return Fenced || (_open.Count == 0 && _waiting.Count == 0 && _resumed is { IsCompleted: true });
+            lock (_gate) return Fenced || (_open.Count == _deferred.Count && _waiting.Count == 0 && _resumed is { IsCompleted: true });
         }
     }
 
@@ -469,6 +480,15 @@ internal sealed class BusConsumerRun
     /// <summary>Into its subject's lane; a lane not running starts. Under the gate.</summary>
     private void Enqueue(BusEnvelope entry, int tries)
     {
+        if (_consumer.NotBefore(entry) is { } at && at > _queue.Options.Clock.GetUtcNow() && !_fenced)
+        {
+            // Not handed before its time: held here, off every lane, and offered again then; a restart reads its time from the entry again.
+            _deferred.Add(entry.Seq);
+            _running.Add(Task.Run(() => OfferAtAsync(entry, tries, at)));
+            _running.RemoveAll(each => each.IsCompleted);
+            return;
+        }
+
         if (_lanes.TryGetValue(entry.Subject, out var lane))
         {
             lane.Enqueue((entry, tries));
@@ -481,6 +501,26 @@ internal sealed class BusConsumerRun
         _running.RemoveAll(each => each.IsCompleted);
     }
 
+    private async Task OfferAtAsync(BusEnvelope entry, int tries, DateTimeOffset at)
+    {
+        try
+        {
+            // Reached late, the time already past: offered at once, never a negative wait (one of -1 ms waits forever, a lower one throws).
+            var wait = at - _queue.Options.Clock.GetUtcNow();
+            if (wait > TimeSpan.Zero) await Task.Delay(wait, _queue.Options.Clock, _queue.Closing).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            _deferred.Remove(entry.Seq);
+            if (!_fenced) Enqueue(entry, tries);
+        }
+    }
+
     /// <summary>One subject's entries, one at a time in order, until its lane is empty.</summary>
     private async Task LaneAsync(string subject, CancellationToken ct)
     {
@@ -488,7 +528,7 @@ internal sealed class BusConsumerRun
         {
             BusEnvelope entry;
             int tries;
-            List<BusEnvelope> folded = [];
+            List<BusEnvelope> row;
             lock (_gate)
             {
                 if (_fenced || !_lanes.TryGetValue(subject, out var lane) || lane.Count == 0)
@@ -498,36 +538,20 @@ internal sealed class BusConsumerRun
                 }
 
                 (entry, tries) = lane.Peek();
-                while (_consumer.Folds(entry.Kind) && lane.Count > 1 && lane.ElementAt(1).Entry.Kind == entry.Kind)
-                {
-                    folded.Add(lane.Dequeue().Entry);
-                    try
-                    {
-                        _consumer.Folded(folded[^1]);
-                    }
-                    catch (Exception error) when (error is not OutOfMemoryException)
-                    {
-                        // A hook that throws costs its consumer what the entry named, never its subject's lane.
-                        _queue.Log.Warn($"queue:folded:{Name}", "bus.consumer-threw", ("consumer", Name), ("kind", "folded"), ("why", error.Message));
-                    }
-                    (entry, tries) = lane.Peek();
-                }
+                // A row of a kind it folds is handed together and stays in the lane until its result is known.
+                row = [entry];
+                if (_consumer.Folds(entry.Kind)) row.AddRange(lane.Skip(1).TakeWhile(next => next.Entry.Kind == entry.Kind).Select(next => next.Entry));
             }
 
             // Its ownership read before it acts: a later claim (another process's) fences this one off, so the two never both execute it.
             if (!Owned()) return;
-            // The last of a row stays open while it is handled, so a crash hands it again and it stands for those folded into it.
-            foreach (var each in folded)
-            {
-                if (!Acknowledge(each, ends: true)) return;
-            }
 
             BusHandled? handled = null;
             Exception? thrown = null;
             await _atOnce.WaitAsync(ct).ConfigureAwait(false);
             try
             {
-                handled = await _consumer.HandleAsync(entry, ct).ConfigureAwait(false);
+                handled = await _consumer.HandleAsync(row, ct).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -544,8 +568,12 @@ internal sealed class BusConsumerRun
 
             if (handled is not null)
             {
-                if (!Acknowledge(entry, handled.Ends)) return;
-                Dequeue(subject);
+                foreach (var each in row)
+                {
+                    if (!Acknowledge(each, handled.Ends)) return;
+                }
+
+                Dequeue(subject, row.Count);
                 continue;
             }
 
@@ -592,11 +620,12 @@ internal sealed class BusConsumerRun
         return false;
     }
 
-    private void Dequeue(string subject)
+    private void Dequeue(string subject, int count = 1)
     {
         lock (_gate)
         {
-            if (_lanes.TryGetValue(subject, out var lane) && lane.Count > 0) lane.Dequeue();
+            if (!_lanes.TryGetValue(subject, out var lane)) return;
+            for (var each = 0; each < count && lane.Count > 0; each++) lane.Dequeue();
         }
     }
 
@@ -689,18 +718,33 @@ internal sealed class BusConsumerRun
     }
 
     /// <summary>The give-up past an entry's retries, its consequence its type's and what it hands to whom (<see cref="BusChains"/>).</summary>
-    private void GiveUp(BusEnvelope entry, BusType? type, int tries)
+    private void GiveUp(BusEnvelope entry, BusType? type, int tries) => GiveUp(_queue.Log, Name, _consumer.Obliged, entry.Id, entry.Kind, entry.Subject, entry.At, type, tries);
+
+    public bool Holds() => !Fenced && Owned();
+
+    public void EndLate(string id)
+    {
+        if (!Holds()) return;
+        long cursor;
+        lock (_gate) cursor = _cursor;
+        var stub = new BusEnvelope(id, 0, "", "", "", null, null, null, [], [], DateTimeOffset.UnixEpoch);
+        Written(() => _queue.Store.Acknowledge(new BusAck(Name, _epoch, cursor, stub) { Ends = _consumer.Obliged, Writer = _queue.Log.WriterRead }), cursor);
+    }
+
+    public BusEnvelope? Find(long seq, string kind, string id) => _queue.Store.Read(seq - 1, [kind], 1).FirstOrDefault(each => each.Seq == seq && each.Id == id);
+
+    internal static void GiveUp(BusLog log, string name, string obliged, string id, string kind, string subject, DateTimeOffset since, BusType? type, int tries)
     {
         if (type is null) return;
-        var (hands, to) = BusChains.Of(type, _consumer.Obliged);
-        _queue.Log.Append(new BusDraft(BusTypes.GiveUp, entry.Subject)
+        var (hands, to) = BusChains.Of(type, obliged);
+        log.Append(new BusDraft(BusTypes.GiveUp, subject)
         {
-            Effect = $"give-up:{Name}:{entry.Id}",
-            Causes = [entry.Id],
+            Effect = $"give-up:{name}:{id}",
+            Causes = [id],
             Payload =
             [
-                ("entry", entry.Id), ("kind", entry.Kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands), ("to", to),
-                ("since", entry.At), ("tries", (long)tries), ("consumer", Name),
+                ("entry", id), ("kind", kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands), ("to", to),
+                ("since", since), ("tries", (long)tries), ("consumer", name),
             ],
         });
     }

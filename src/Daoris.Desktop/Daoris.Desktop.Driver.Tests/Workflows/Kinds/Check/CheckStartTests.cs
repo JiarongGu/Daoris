@@ -17,6 +17,7 @@ public sealed class CheckStartTests : NodeRunFixture
     private readonly List<(string Code, string Said)> _said = [];
     private readonly Checks _checks = new();
     private List<SessionRecord> _sessions = [];
+    private readonly List<(string Session, string Text)> _told = [];
 
     private static string Graph() => DriverWorkflowsCommand.GraphIn(
         JsonNode.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "tools", "workflows", "daoris-dev.json"))), out var graph)
@@ -52,7 +53,11 @@ public sealed class CheckStartTests : NodeRunFixture
     {
         var runtime = Runtime();
         runtime.Doors = (door ? NodeDoors.None.With(NodeKinds.Check, _checks) : NodeDoors.None).Saying((code, said) => _said.Add((code, said)));
-        runtime.Say = (_, _, _, _) => Task.FromResult(new SayAnswer(true, "kept"));
+        runtime.Say = (session, text, _, _) =>
+        {
+            _told.Add((session, text));
+            return Task.FromResult(new SayAnswer(true, "kept"));
+        };
         runtime.SessionsRead = _ => Task.FromResult<IReadOnlyList<SessionRecord>?>(_sessions);
         return runtime;
     }
@@ -62,15 +67,15 @@ public sealed class CheckStartTests : NodeRunFixture
         for (var pass = 0; pass < count; pass++) await runtime.PassAsync(RunsLook(), CancellationToken.None);
     }
 
-    private void Submitted(string tip)
+    private void Submitted(string tip, IReadOnlyList<string>? executors = null, string? maker = null)
     {
         _branchTips[Branch] = tip;
         _units =
         [
             RunHome.QuestUnit(RunHome.Quest(RunId) with
             {
-                Closure = "run:" + RunId, Submission = new QuestSubmissionView("m1", 1, _now, "Built.", Commit: tip),
-            }) with { Executors = [Session] },
+                Closure = "run:" + RunId, Submission = new QuestSubmissionView("m1", 1, _now, "Built.", Commit: tip, Session: maker),
+            }) with { Executors = executors ?? [Session] },
             RunHome.Branch("unit-b1", Branch, Opened, [RunId], []),
         ];
     }
@@ -159,6 +164,40 @@ public sealed class CheckStartTests : NodeRunFixture
         Assert.Equal(NodeStates.Ready, State("check"));
         var wait = Assert.Single(Waits());
         Assert.StartsWith($"run {RunId}: `check` waits ({CheckStartWaits.NoDoor})", wait, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_telling_that_failed_for_want_of_a_session_is_offered_again_once_one_starts()
+    {
+        BoundTo(Graph());
+        var runtime = Started();
+        _sessions = [AwaitingStep()];
+        Submitted(Tip1, executors: []);
+        await PassesAsync(runtime);
+        var first = Assert.Single(_checks.Sent);
+        _now = _now.AddMinutes(1);
+        _checks.Answers.Add(first.Call.Invocation);
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Verify(VerifyVerdicts.Failed, attempt));
+        await PassesAsync(runtime);
+
+        var none = Assert.Single(Files.Read(RunUnit)!.Told);
+        Assert.Equal((null, NodeTold.NoSession), (none.Session, none.Why));
+        Assert.Empty(_told);
+
+        // Nobody is told again on each pass while no session serves its work.
+        await PassesAsync(runtime);
+        Assert.Single(Files.Read(RunUnit)!.Told);
+
+        Submitted(Tip1, executors: ["s-late"]);
+        await PassesAsync(runtime);
+
+        var told = Assert.Single(_told);
+        Assert.Equal("s-late", told.Session);
+        Assert.Contains("`check` failed", told.Text);
+        var kept = Files.Read(RunUnit)!.ToldOf("check", 1)!;
+        Assert.Equal(("s-late", null), (kept.Session, kept.Why));
+        await PassesAsync(runtime);
+        Assert.Single(_told);
     }
 
     private static VerifyResult Verify(string verdict, NodeAttempt attempt) =>
