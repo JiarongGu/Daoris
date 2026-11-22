@@ -229,9 +229,10 @@ public sealed class GitScheduler
         if (!joined) _ = DriveAsync(entry, run, s_timed.Value);
         Pump();
         await QueuedAsync(entry, ct).ConfigureAwait(false);
-        Tally.Record(caller, (long)Stopwatch.GetElapsedTime(asked).TotalMilliseconds);
         try
         {
+            await Task.WhenAny(entry.Go.Task, entry.Result.Task).WaitAsync(ct).ConfigureAwait(false);
+            if (entry.Go.Task.IsCompleted) Tally.Record(caller, (long)Stopwatch.GetElapsedTime(asked).TotalMilliseconds);
             return (T)(await entry.Result.Task.WaitAsync(ct).ConfigureAwait(false))!;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

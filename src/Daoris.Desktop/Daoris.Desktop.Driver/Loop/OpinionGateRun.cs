@@ -62,13 +62,12 @@ internal sealed class OpinionGateRun : IAsyncDisposable
         }
     }
 
-    /// <summary>A change stream's wake teed as the gate's fact where it names the quests, naming what changed where <paramref name="moves"/> reads the list.</summary>
-    internal static void Heard(BusLog? bus, string families, QuestMoveReader? moves = null)
+    /// <summary>A change stream's wake teed as the gate's fact where it names the quests, naming what changed as <paramref name="moves"/> reads the list.</summary>
+    internal static void Heard(BusLog? bus, string families, QuestMoveReader moves)
     {
         if (bus is null || !LedgerChanges.Names(families, LedgerChanges.Quests)) return;
         var named = families.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (moves is null) bus.Tee(() => OpinionBusFacts.QuestMoved(named));
-        else _ = moves.TeeAsync(bus, named, CancellationToken.None);
+        _ = moves.TeeAsync(bus, named, CancellationToken.None);
     }
 
     /// <summary>A write of the standing choices under this run's home, teed as the gate's fact.</summary>

@@ -119,7 +119,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
     /// <summary>
     /// What a round owes the facts heard: a move that names its quests and repositories reaches the owed opinions they reach
-    /// (<see cref="Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
+    /// (<see cref="QuestMoves.Reaches"/>); a node begun, the standing choices written, and a move that names nothing reach every one.
     /// </summary>
     private void Noted(BusEnvelope entry)
     {
@@ -135,10 +135,6 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
             }
         }
     }
-
-    /// <summary>Whether a move that named <paramref name="quests"/> and <paramref name="repositories"/> reaches <paramref name="due"/>: a chat run's opinion reads no quest.</summary>
-    private static bool Reaches(OpinionDue due, ISet<string> quests, ISet<string> repositories) =>
-        !due.OnRun && (quests.Contains(due.Quest) || (due.Occasion == OpinionRules.Landing && repositories.Contains(due.Repository)));
 
     /// <summary>Each owed opinion judged beside the others: one whose judgment is slow holds none of the rest.</summary>
     private Task JudgeAllAsync(IEnumerable<OpinionDue> dues, CancellationToken ct) => Task.WhenAll(dues.Select(due =>
@@ -170,7 +166,7 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
 
             try
             {
-                await JudgeAllAsync(_open().Where(due => all || Reaches(due, quests, repositories)), ct).ConfigureAwait(false);
+                await JudgeAllAsync(_open().Where(due => all || QuestMoves.Reaches(due, quests, repositories)), ct).ConfigureAwait(false);
             }
             catch
             {
@@ -264,14 +260,17 @@ internal sealed class OpinionGateConsumer : IBusConsumer, IDisposable
             var place = _places.GetOrAdd(due.Repository, _ => new SemaphoreSlim(1, 1));
             await place.WaitAsync(ct).ConfigureAwait(false);
             OpinionFact? fact;
-            await _atOnce.WaitAsync(ct).ConfigureAwait(false);
+            var atOnce = false;
             try
             {
+                // Waited inside, so a wait cancelled here still gives the repository's place back.
+                await _atOnce.WaitAsync(ct).ConfigureAwait(false);
+                atOnce = true;
                 fact = await _judge(due, Ended, ct).ConfigureAwait(false);
             }
             finally
             {
-                _atOnce.Release();
+                if (atOnce) _atOnce.Release();
                 place.Release();
             }
 
