@@ -120,6 +120,7 @@ internal sealed class AcpWire(TextWriter outgoing, Action<string> say, Func<bool
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _ = waiting.Task.ContinueWith(static task => task.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         // 🔴 The answer can be read before the write's return runs `sent` (a carry-on's turn can be kept before its note): whichever
         // comes first tells it, once, and the other waits for it to finish.
         var told = false;

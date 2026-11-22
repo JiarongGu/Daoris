@@ -421,7 +421,8 @@ executable, started with a browser argument, is Daoris's own browser, which sess
     usual names first, any file), each kind's title and filters written once in `PickDialogs`; a census holds that no source shows one itself. A window
     thread's exception reaches the machine log and the pump goes on. The executable is built with its context validation relaxed, since a shell extension's handled exception under a
     picker's right-click menu otherwise fail-fasts it (`0xc0000409`). Every caller posts to a window's thread through one
-    guarded `WindowPost`.
+    guarded `WindowPost`. A failure is written once, where it is observed, with its cause: a request a caller hung up on is no
+    failure (status 499, written only when slow), and an ACP request's task is observed where the request is made.
 
 ### The processes Daoris starts
 
