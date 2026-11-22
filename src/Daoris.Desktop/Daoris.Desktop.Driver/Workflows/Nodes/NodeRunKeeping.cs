@@ -122,11 +122,15 @@ internal sealed class NodeRunKeeping(
 
     private static bool HoldsEnd(NodeRecord record, QuestView newest) => record.Ended?.Quest == newest.Id;
 
-    /// <summary>Every standing step of a run another closed Done stopped before its rounds, and whoever runs each attempt told to stop (<see cref="QuestDoneRuns"/>).</summary>
-    public async Task StopDoneAsync(GovernedUnit governed, RunScope scope, List<WorkPerformed> done, List<string> said, CancellationToken ct)
+    /// <summary>
+    /// Every standing step of a run another closed Done stopped before its rounds, and whoever runs each attempt told to stop
+    /// (<see cref="QuestDoneRuns"/>); true where the done applies, so the pass runs no round of it, its reached steps never bound again.
+    /// </summary>
+    public async Task<bool> StopDoneAsync(GovernedUnit governed, RunScope scope, List<WorkPerformed> done, List<string> said, CancellationToken ct)
     {
         var unit = governed.Unit.Id;
-        if (!holdsLease() || records.Read(unit) is not { } record || !QuestDoneRuns.Applies(governed, scope, record)) return;
+        if (records.Read(unit) is not { } record || !QuestDoneRuns.Applies(governed, scope, record)) return false;
+        if (!holdsLease()) return true;
         var promoted = doors().Door<IIntegrationDoor>() is { } door && governed.Graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
             ? await IntegrateNodes.PromotedAsync(door, record, ct).ConfigureAwait(false)
             : null;
@@ -137,10 +141,11 @@ internal sealed class NodeRunKeeping(
             var (next, names) = QuestDoneRuns.Stopped(governed, current, now, promoted);
             return (names.Count == 0 ? null : next, names);
         });
-        if (refused is not null || stopped is not { Count: > 0 }) return;
+        if (refused is not null || stopped is not { Count: > 0 }) return true;
         performer.StandDown(unit, stopped);
         done.AddRange(stopped.Select(node => new WorkPerformed(unit, node, PerformedWhat.Applied, NodeStates.Stopped)));
         said.Add($"work  {unit}: #{scope.Quest?.Records.Quest?.Id} is Done though its run had not ended, so Daoris stopped its steps: {string.Join(", ", stopped)}.");
+        return true;
     }
 
     /// <summary>
@@ -179,9 +184,9 @@ internal sealed class NodeRunKeeping(
 
         var repository = scope.Run.Binding.Repository;
         if (newest.Then.Any(step => step.SetUpIn is null && string.Equals(step.To, repository, StringComparison.OrdinalIgnoreCase))) return;
-        if (QuestDoneRuns.Applies(governed, scope, record) && QuestDoneRuns.Ends(governed, record))
+        if (QuestDoneRuns.Applies(governed, scope, record))
         {
-            await EndDoneAsync(governed, scope, newest, record, said, Lacks, tip, ct).ConfigureAwait(false);
+            if (QuestDoneRuns.Ends(governed, record)) await EndDoneAsync(governed, scope, newest, record, said, Lacks, tip, ct).ConfigureAwait(false);
             return;
         }
 

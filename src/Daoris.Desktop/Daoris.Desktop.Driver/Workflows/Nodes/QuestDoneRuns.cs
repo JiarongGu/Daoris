@@ -62,9 +62,12 @@ public static class QuestDoneRuns
         return (next, stopped);
     }
 
-    /// <summary>Whether no step of the run is left standing for the end: every one it stops is stopped, a promoted <c>integrate</c> aside.</summary>
+    /// <summary>
+    /// Whether no step of the run is left standing for the end. An <c>integrate</c> is not counted: one not promoted is stopped, and a promoted
+    /// one is the line's integration's to land, which reads no run.
+    /// </summary>
     public static bool Ends(GovernedUnit governed, NodeRecord record) =>
-        !governed.Graph.Nodes.Any(node => Stands(WorkPerformer.StatusOf(record, node.Id).State));
+        !governed.Graph.Nodes.Any(node => node.Kind != NodeKinds.Integrate && Stands(WorkPerformer.StatusOf(record, node.Id).State));
 
     /// <summary>The run's end: stopped by Daoris at the step it stood at, the first it stopped with an attempt under way, else the first it stopped.</summary>
     public static RunEnd End(NodeRecord record, string quest, DateTimeOffset at)

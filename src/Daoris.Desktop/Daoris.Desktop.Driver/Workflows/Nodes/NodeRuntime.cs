@@ -523,7 +523,7 @@ public sealed class NodeRuntime(
             ChangesAnswered.Restart(records, governed, scope, tip, clock(), said);
             // Each attempt standing from before this pass is cast its holder before the rounds, so no word in them finds it held by nobody.
             AttemptTenures.KeepAt(records, unit, governed.Graph.Nodes, scope.Run.Binding.Workspace, scope.Run.Binding.Repository, _config, clock());
-            if (!atEnd) await Keeping.StopDoneAsync(governed, scope, done, said, ct).ConfigureAwait(false);
+            if (!atEnd) atEnd = await Keeping.StopDoneAsync(governed, scope, done, said, ct).ConfigureAwait(false);
         }
 
         for (var round = 0; !atEnd && round <= governed.Graph.Nodes.Count; round++)

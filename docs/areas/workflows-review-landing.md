@@ -234,7 +234,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     `quest.holds` read as its done, and the run's end writes its Done (driving rule 2; D293). A Done anyone else writes on a quest bound to
     its run (`run:<run>`), the person's `quest done` or any session's, while the run holds no end and its chain names no step still to come here,
     ends the run as a stop does (`QuestDoneRuns`): at its next look, before its rounds, Daoris stops every live or failed step, the attempt in
-    flight on each stood down and its runner told to stop (a check's executor too), so no step starts after the done; the run ends `stopped`
+    flight on each stood down and its runner told to stop (a check's executor too), and runs none of its rounds, so no step, a reached one
+    whose branch moved included, is bound or started after the done; a promoted `integrate` stays the line's integration's; the run ends `stopped`
     by Daoris at the step it stood at (`quest-done`), its waiting sessions with it and a session still in its turn once it comes to wait; its
     tree and branch are kept as the clean-up keeps work the line lacks, and the end's line names the commits its branch holds that the line does
     not (the look's `Lacks`, read at the pass's tip), so what was left is said and never landed by a run nobody owns. A quest bound to no run

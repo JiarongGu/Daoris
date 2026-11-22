@@ -36,9 +36,13 @@ public sealed class QuestDoneRunEndTests : NodeRunFixture
             return Task.CompletedTask;
         }
 
-        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(new WorkReconcileAnswer(ReconcileStates.Running));
+        public bool Green { get; set; }
 
-        public bool Answered(string invocation) => false;
+        public Task<WorkReconcileAnswer> ReconcileAsync(string unit, NodeAttempt attempt, CancellationToken ct) => Task.FromResult(Green
+            ? new WorkReconcileAnswer(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached))
+            : new WorkReconcileAnswer(ReconcileStates.Running));
+
+        public bool Answered(string invocation) => Green;
 
         public void Stop(string invocation) => Stopped.Add(invocation);
     }
@@ -75,14 +79,14 @@ public sealed class QuestDoneRunEndTests : NodeRunFixture
         return said;
     }
 
-    private void QuestAt(string status, string? closure = "run:" + RunId, params QuestStepView[] then)
+    private void QuestAt(string status, string? closure = "run:" + RunId, string tip = Tip1, params QuestStepView[] then)
     {
-        _branchTips[Branch] = Tip1;
+        _branchTips[Branch] = tip;
         _units =
         [
             RunHome.QuestUnit(RunHome.Quest(RunId, status, then: then) with
             {
-                Closure = closure, Submission = new QuestSubmissionView("m1", 1, _now, "Built.", Commit: Tip1),
+                Closure = closure, Submission = new QuestSubmissionView("m1", 1, _now, "Built.", Commit: tip),
             }) with { Executors = [Session] },
             RunHome.Branch("unit-b1", Branch, Opened, [RunId]),
         ];
@@ -127,6 +131,28 @@ public sealed class QuestDoneRunEndTests : NodeRunFixture
         Assert.Contains("aaaaaaaa Mend the parser", line, StringComparison.Ordinal);
         Assert.Contains("bbbbbbbb Test it", line, StringComparison.Ordinal);
         Assert.Contains(Branch, line, StringComparison.Ordinal);
+    }
+
+    /// <summary>A green check and a moved tip with the done in one pass: the reached steps are never bound again, so nothing starts and the run ends there.</summary>
+    [Fact]
+    public async Task A_quest_done_with_its_branch_moved_past_a_green_check_starts_no_new_check_and_ends_in_that_pass()
+    {
+        BoundTo(Graph());
+        var runtime = Driving();
+        QuestAt("Taken");
+        await PassesAsync(runtime);
+        _checks.Green = true;
+        await PassesAsync(runtime);
+        Assert.Equal((NodeStates.Reached, NodeStates.Active), (State("check"), State("opinion")));
+        var sent = _checks.Sent.Count;
+
+        QuestAt("Done", tip: Tip2);
+        await PassesAsync(runtime, count: 1);
+
+        Assert.Equal(sent, _checks.Sent.Count);
+        Assert.Equal(NodeStates.Reached, State("check"));
+        Assert.Equal(QuestDoneRuns.Why, Files.Read(RunUnit)!.Ended?.Why);
+        Assert.Equal([Session], Assert.Single(_finished).Sessions);
     }
 
     [Fact]
