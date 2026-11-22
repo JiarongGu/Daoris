@@ -80,6 +80,8 @@ public sealed class BusLog : IAsyncDisposable
     public const int MostRetries = 6;
 
     private readonly Dictionary<string, string> _keys = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _chains = new(StringComparer.Ordinal);
+    private readonly Queue<string> _chainOrder = new();
     private readonly Lock _leaseGate = new();
     private bool _holder = true;
     private DateTimeOffset _askedAt = DateTimeOffset.MinValue;
@@ -193,6 +195,25 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
+    /// <summary>The correlation of the entry <paramref name="id"/>, from memory or the store; null where unknown or unreadable now.</summary>
+    public string? CorrelationOf(string id)
+    {
+        try
+        {
+            lock (_gate)
+            {
+                if (_chains.TryGetValue(id, out var known)) return known;
+            }
+
+            return _store.CorrelationOf(id);
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Store, error.Message, counted: false);
+            return null;
+        }
+    }
+
     /// <summary>The clock its entries are stamped by, which its watchdog reads due times on.</summary>
     public TimeProvider Clock => _clock;
 
@@ -271,10 +292,17 @@ public sealed class BusLog : IAsyncDisposable
         var at = _clock.GetUtcNow();
         var cause = draft.After.Select(key => _keys.GetValueOrDefault(key)).FirstOrDefault(id => id is not null);
         var deadline = BusTypes.Obliges(draft.Type) ? at + draft.Type.Deadline.Within : (DateTimeOffset?)null;
+        var id = Guid.CreateVersion7(at).ToString("N");
+        var causes = cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause];
+        var correlation = draft.Correlation ?? (causes.Count > 0 ? _chains.GetValueOrDefault(causes[0]) : null) ?? id;
         var envelope = new BusEnvelope(
-            Guid.CreateVersion7(at).ToString("N"), ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, deadline,
-            draft.Effect, cause is null || draft.Causes.Contains(cause) || draft.Causes.Count >= BusShapes.MostListed ? draft.Causes : [.. draft.Causes, cause],
-            admitted.Kept, at);
+            id, ++_next, draft.Kind, draft.Subject, draft.Emitter, draft.Answerer, deadline, draft.Effect, causes, admitted.Kept, at)
+        {
+            Correlation = correlation,
+        };
+        _chains[id] = correlation;
+        _chainOrder.Enqueue(id);
+        if (_chainOrder.Count > MostKeys) _chains.Remove(_chainOrder.Dequeue());
         foreach (var (field, reason) in admitted.Dropped) DropLocked(draft.Kind, field, reason, at);
         if (draft.Key is { } key)
         {
@@ -680,7 +708,8 @@ public sealed class BusLog : IAsyncDisposable
 
     private static bool Fits(BusDraft draft) =>
         draft.Subject is { Length: > 0 } && BusShapes.Short(draft.Subject) && BusShapes.Short(draft.Answerer) && BusShapes.Short(draft.Effect)
-        && draft.Causes.Count <= BusShapes.MostListed && draft.Causes.All(cause => BusShapes.Short(cause));
+        && draft.Causes.Count <= BusShapes.MostListed && draft.Causes.All(cause => BusShapes.Short(cause))
+        && (draft.Correlation is null || BusShapes.Short(draft.Correlation));
 
     /// <summary>A payload's field or value dropped at emit: counted by reason, and by the day as reason, type and field; said once for each.</summary>
     private void DropLocked(string kind, string field, string reason, DateTimeOffset at)

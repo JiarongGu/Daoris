@@ -17,7 +17,18 @@ namespace Daoris.Driver;
 /// <param name="At">The moment of its append.</param>
 public sealed record BusEnvelope(
     string Id, long Seq, string Kind, string Subject, string Emitter, string? Answerer, DateTimeOffset? Deadline, string? Effect,
-    IReadOnlyList<string> Causes, IReadOnlyList<(string Key, object? Value)> Payload, DateTimeOffset At);
+    IReadOnlyList<string> Causes, IReadOnlyList<(string Key, object? Value)> Payload, DateTimeOffset At)
+{
+    /// <summary>
+    /// The chain it belongs to: its first entry's own id, inherited from its first cause by each entry after it (given at the append, so no
+    /// emitter forgets). An older row, or one whose chain is not known, reads as its own id.
+    /// </summary>
+    public string Correlation
+    {
+        get => field ?? Id;
+        init;
+    }
+}
 
 /// <summary>What a writer hands the log to append (<see cref="BusLog.Append"/>): an envelope without the id, order and time the log gives it.</summary>
 /// <param name="Type">Its type, as the registry declares it (<see cref="BusTypes"/>), whose kind and emitter it carries: one made elsewhere is refused.</param>
@@ -33,6 +44,12 @@ public sealed record BusDraft(BusType Type, string Subject)
     public string? Effect { get; init; }
 
     public IReadOnlyList<string> Causes { get; init; } = [];
+
+    /// <summary>
+    /// The chain it belongs to, where its emitter knows it already (a retry of a failed entry carries that entry's); null lets the log's append
+    /// give it the correlation of its first cause, or its own id where it follows none the log knows.
+    /// </summary>
+    public string? Correlation { get; init; }
 
     public IReadOnlyList<(string Key, object? Value)> Payload { get; init; } = [];
 

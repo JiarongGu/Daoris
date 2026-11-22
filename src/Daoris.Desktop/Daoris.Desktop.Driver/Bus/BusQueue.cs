@@ -718,7 +718,7 @@ internal sealed class BusConsumerRun
     }
 
     /// <summary>The give-up past an entry's retries, its consequence its type's and what it hands to whom (<see cref="BusChains"/>).</summary>
-    private void GiveUp(BusEnvelope entry, BusType? type, int tries) => GiveUp(_queue.Log, Name, _consumer.Obliged, entry.Id, entry.Kind, entry.Subject, entry.At, type, tries);
+    private void GiveUp(BusEnvelope entry, BusType? type, int tries) => GiveUp(_queue.Log, Name, _consumer.Obliged, entry.Id, entry.Kind, entry.Subject, entry.At, type, tries, entry.Correlation);
 
     public bool Holds() => !Fenced && Owned();
 
@@ -733,7 +733,7 @@ internal sealed class BusConsumerRun
 
     public BusEnvelope? Find(long seq, string kind, string id) => _queue.Store.Read(seq - 1, [kind], 1).FirstOrDefault(each => each.Seq == seq && each.Id == id);
 
-    internal static void GiveUp(BusLog log, string name, string obliged, string id, string kind, string subject, DateTimeOffset since, BusType? type, int tries)
+    internal static void GiveUp(BusLog log, string name, string obliged, string id, string kind, string subject, DateTimeOffset since, BusType? type, int tries, string? correlation = null)
     {
         if (type is null) return;
         var (hands, to) = BusChains.Of(type, obliged);
@@ -741,6 +741,7 @@ internal sealed class BusConsumerRun
         {
             Effect = $"give-up:{name}:{id}",
             Causes = [id],
+            Correlation = correlation,
             Payload =
             [
                 ("entry", id), ("kind", kind), ("consequence", type.GiveUp), ("applied", false), ("hands", hands), ("to", to),

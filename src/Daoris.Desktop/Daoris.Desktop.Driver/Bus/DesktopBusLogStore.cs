@@ -55,6 +55,11 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
     private bool _timers = true;
     private bool _queued = true;
 
+    private bool _correlated = true;
+
+    /// <summary>The columns a read selects, the correlation last.</summary>
+    private string Columns => "seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at, " + (_correlated ? "COALESCE(correlation, id)" : "id");
+
     /// <param name="home">The home whose store holds the log.</param>
     /// <param name="cap">The rows kept; <see cref="Cap"/> unless a test bounds it lower.</param>
     /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
@@ -77,15 +82,16 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
     /// </summary>
     public static DesktopBusLogStore? Reading(string home)
     {
-        bool timers, queued;
+        bool timers, queued, correlated;
         using (var reader = DesktopStoreReader.Open(DesktopStore.LocationIn(home)))
         {
             if (reader is not { Version: >= DesktopStore.BusLogVersion }) return null;
             timers = reader.Version >= DesktopStore.BusTimersVersion;
             queued = reader.Version >= DesktopStore.BusQueueVersion;
+            correlated = reader.Version >= DesktopStore.BusCorrelationVersion;
         }
 
-        return new DesktopBusLogStore(home, Cap, null, reading: true) { _timers = timers, _queued = queued };
+        return new DesktopBusLogStore(home, Cap, null, reading: true) { _timers = timers, _queued = queued, _correlated = correlated };
     }
 
     /// <inheritdoc />
@@ -153,9 +159,40 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             return Guarded(connection =>
             {
                 using var command = connection.CreateCommand();
-                command.CommandText =
-                    "SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE seq > $after ORDER BY seq LIMIT $limit";
+                command.CommandText = $"SELECT {Columns} FROM bus_log WHERE seq > $after ORDER BY seq LIMIT $limit";
                 command.Bind(("$after", after), ("$limit", Math.Max(0, limit)));
+                return Entries(command);
+            });
+        }
+    }
+
+    /// <inheritdoc />
+    public string? CorrelationOf(string id)
+    {
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = $"SELECT {(_correlated ? "COALESCE(correlation, id)" : "id")} FROM bus_log WHERE id = $id LIMIT 1";
+                command.Bind("$id", id);
+                return command.ExecuteScalar() as string;
+            });
+        }
+    }
+
+    /// <summary>The entries of one chain in order, at most <paramref name="limit"/>, an older row by its own id.</summary>
+    public IReadOnlyList<BusEnvelope> Chain(string correlation, int limit)
+    {
+        lock (_gate)
+        {
+            return Guarded(connection =>
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = _correlated
+                    ? $"SELECT {Columns} FROM bus_log WHERE correlation = $c OR (correlation IS NULL AND id = $c) ORDER BY seq LIMIT $limit"
+                    : $"SELECT {Columns} FROM bus_log WHERE id = $c ORDER BY seq LIMIT $limit";
+                command.Bind(("$c", correlation), ("$limit", Math.Max(0, limit)));
                 return Entries(command);
             });
         }
@@ -164,7 +201,7 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
     /// <summary>The envelopes a select of the log's columns, in their order, reads.</summary>
     private static List<BusEnvelope> Entries(DbCommand command) => Entries(command, out _);
 
-    /// <summary>The envelopes, and a twelfth column's count beside each where the select carries one (a parked entry's tries).</summary>
+    /// <summary>The envelopes, and a thirteenth column's count beside each where the select carries one (a parked entry's tries).</summary>
     private static List<BusEnvelope> Entries(DbCommand command, out List<int> extra)
     {
         using var reader = command.ExecuteReader();
@@ -175,8 +212,11 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             entries.Add(new BusEnvelope(
                 reader.GetString(1), reader.GetInt64(0), reader.GetString(2), reader.GetString(3), reader.GetString(4),
                 Text(reader, 5), reader.IsDBNull(6) ? null : DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)), Text(reader, 7),
-                Ids(Text(reader, 8)), PayloadOf(Text(reader, 9)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(10))));
-            if (reader.FieldCount > 11) extra.Add(reader.GetInt32(11));
+                Ids(Text(reader, 8)), PayloadOf(Text(reader, 9)), DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(10)))
+            {
+                Correlation = reader.GetString(11),
+            });
+            if (reader.FieldCount > 12) extra.Add(reader.GetInt32(12));
         }
 
         return entries;
@@ -299,8 +339,8 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText =
-            """
-            SELECT b.seq, b.id, b.kind, b.subject, b.emitter, b.answerer, b.deadline, b.effect, b.causes, b.payload, b.at, p.tries
+            $"""
+            SELECT b.seq, b.id, b.kind, b.subject, b.emitter, b.answerer, b.deadline, b.effect, b.causes, b.payload, b.at, {(_correlated ? "COALESCE(b.correlation, b.id)" : "b.id")}, p.tries
             FROM bus_parked p JOIN bus_log b ON b.seq = p.seq WHERE p.consumer = $consumer ORDER BY p.seq
             """;
         command.Bind("$consumer", consumer);
@@ -352,7 +392,7 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             {
                 using var command = connection.CreateCommand();
                 command.CommandText =
-                    $"SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE seq > $after AND kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq LIMIT $limit";
+                    $"SELECT {Columns} FROM bus_log WHERE seq > $after AND kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq LIMIT $limit";
                 command.Bind([("$after", after), .. kinds.Select((kind, n) => ($"$k{n}", (object?)kind)), ("$limit", Math.Max(0, limit))]);
                 return Entries(command);
             });
@@ -414,7 +454,7 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             {
                 using var command = connection.CreateCommand();
                 command.CommandText =
-                    $"SELECT seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at FROM bus_log WHERE kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq DESC LIMIT $limit";
+                    $"SELECT {Columns} FROM bus_log WHERE kind IN ({string.Join(", ", kinds.Select((_, n) => $"$k{n}"))}) ORDER BY seq DESC LIMIT $limit";
                 command.Bind([.. kinds.Select((kind, n) => ($"$k{n}", (object?)kind)), ("$limit", Math.Max(0, limit))]);
                 return Entries(command);
             });
@@ -492,7 +532,7 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             // Made and migrated by the store's own steps, as every family's tables are, once for this store: a connection let go after a
             // failure connects again without them.
             using var store = DesktopStore.Open(location, StoreProcess.Options(_settled ?? StartConfirmation.Read));
-            if (store.Stamp.Version < DesktopStore.BusQueueVersion)
+            if (store.Stamp.Version < DesktopStore.BusCorrelationVersion)
             {
                 throw new DesktopStoreException($"the desktop's store keeps no bus log yet: {store.Held ?? "its step has not run"}.");
             }
@@ -536,7 +576,7 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             if (!reader.Read()) throw new DesktopStoreException("the desktop's store has no schema yet.");
             var (version, writer) = (reader.GetInt32(0), reader.GetInt32(1));
             if (writer > DesktopStore.WriterStamp) throw new DesktopStoreNewerException(writer, DesktopStore.WriterStamp);
-            if (version < DesktopStore.BusQueueVersion) throw new DesktopStoreException("the desktop's store keeps no bus log, timers or queue yet.");
+            if (version < DesktopStore.BusCorrelationVersion) throw new DesktopStoreException("the desktop's store keeps no bus log, timers or queue yet.");
         }
 
         return Scalar(connection, transaction, "SELECT COALESCE(MAX(seq), 0) FROM bus_log");
@@ -550,8 +590,8 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
         command.Transaction = transaction;
         command.CommandText =
             """
-            INSERT INTO bus_log (seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at)
-            VALUES ($seq, $id, $kind, $subject, $emitter, $answerer, $deadline, $effect, $causes, $payload, $at)
+            INSERT INTO bus_log (seq, id, kind, subject, emitter, answerer, deadline, effect, causes, payload, at, correlation)
+            VALUES ($seq, $id, $kind, $subject, $emitter, $answerer, $deadline, $effect, $causes, $payload, $at, $correlation)
             """;
         long bytes = 0, most = 0;
         foreach (var entry in entries)
@@ -562,11 +602,11 @@ public sealed class DesktopBusLogStore : IBusLogStore, IBusQueueStore
             command.Bind(
                 ("$seq", entry.Seq + shift), ("$id", entry.Id), ("$kind", entry.Kind), ("$subject", entry.Subject), ("$emitter", entry.Emitter),
                 ("$answerer", entry.Answerer), ("$deadline", entry.Deadline?.ToUnixTimeMilliseconds()), ("$effect", entry.Effect),
-                ("$causes", causes), ("$payload", payload), ("$at", entry.At.ToUnixTimeMilliseconds()));
+                ("$causes", causes), ("$payload", payload), ("$at", entry.At.ToUnixTimeMilliseconds()), ("$correlation", entry.Correlation));
             command.ExecuteNonQuery();
             var row = 8 + 8 + (entry.Deadline is null ? 0 : 8)
                       + Utf8(entry.Id) + Utf8(entry.Kind) + Utf8(entry.Subject) + Utf8(entry.Emitter) + Utf8(entry.Answerer) + Utf8(entry.Effect)
-                      + Utf8(causes) + Utf8(payload);
+                      + Utf8(causes) + Utf8(payload) + Utf8(entry.Correlation);
             bytes += row;
             most = Math.Max(most, row);
         }

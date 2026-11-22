@@ -150,7 +150,7 @@ public sealed class BusWatchdogTests(ITestOutputHelper output) : IDisposable
         // The last stall's due time is now: its second, one deadline after the first.
         var since = clock.GetUtcNow().UtcDateTime.ToString("yyyy-MM-dd HH:mm'Z'", CultureInfo.InvariantCulture);
         Assert.Contains(
-            $"opinion.asked/1 op-1 since 2026-10-20 09:00Z: obliged codex, stall 2 of 2, past due since {since}; gave up (would): refused, hand the refusal to requester:driver/opinions, then vacancy, then owner-exit",
+            $"opinion.asked/1 op-1 (chain {logged.Single(entry => entry.Kind == BusTypes.OpinionAsked.Kind).Id}) since 2026-10-20 09:00Z: obliged codex, stall 2 of 2, past due since {since}; gave up (would): refused, hand the refusal to requester:driver/opinions, then vacancy, then owner-exit",
             said, StringComparison.Ordinal);
         Assert.Equal(2, BusStallsCommand.Run(["stalls", "--all"], _home, clock.GetUtcNow, out var usage));
         Assert.Contains(BusStallsCommand.Usage, usage, StringComparison.Ordinal);

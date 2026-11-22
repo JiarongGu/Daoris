@@ -171,9 +171,9 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     }
 
     /// <summary>An entry whose work failed, as a retry names it and its give-up reports it.</summary>
-    private sealed record Cause(string Id, string Kind, string Subject, DateTimeOffset At, long Seq)
+    private sealed record Cause(string Id, string Kind, string Subject, DateTimeOffset At, long Seq, string Correlation)
     {
-        public static Cause Of(BusEnvelope entry) => new(entry.Id, entry.Kind, entry.Subject, entry.At, entry.Seq);
+        public static Cause Of(BusEnvelope entry) => new(entry.Id, entry.Kind, entry.Subject, entry.At, entry.Seq, entry.Correlation);
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         var type = BusTypes.Of(cause.Kind);
         if (type is null || attempt > type.Retries)
         {
-            BusConsumerRun.GiveUp(host.Log, Name, Obliged, cause.Id, cause.Kind, cause.Subject, cause.At, type, attempt);
+            BusConsumerRun.GiveUp(host.Log, Name, Obliged, cause.Id, cause.Kind, cause.Subject, cause.At, type, attempt, cause.Correlation);
             return true;
         }
 
@@ -200,6 +200,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
         {
             Commit = true,
             Causes = [cause.Id],
+            Correlation = cause.Correlation,
             Payload =
             [
                 ("consumer", Name), ("kind", cause.Kind), ("scope", listed ? scope : BusFlowScope.Entry), ("seq", cause.Seq), ("keys", listed ? keys : (IReadOnlyList<string>)[]),
@@ -225,7 +226,7 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
     {
         if (Text(retry, "consumer") != Name || _host is not { } host) return BusHandled.Judged;
         if (!host.Owned() || retry.Causes.Count == 0) return BusHandled.Judged;
-        var cause = new Cause(retry.Causes[0], Text(retry, "kind") ?? "", Text(retry, "subject") ?? retry.Subject, Moment(retry, "since"), Number(retry, "seq"));
+        var cause = new Cause(retry.Causes[0], Text(retry, "kind") ?? "", Text(retry, "subject") ?? retry.Subject, Moment(retry, "since"), Number(retry, "seq"), retry.Correlation);
         var attempt = (int)Number(retry, "attempt");
         var scope = Text(retry, "scope") ?? BusFlowScope.Key;
         var settles = retry.Payload.FirstOrDefault(pair => pair.Key == "settles").Value is true;
