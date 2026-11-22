@@ -395,7 +395,7 @@ public sealed class MachineFacts : IDisposable
             Task<object?> judging;
             try
             {
-                judging = judge(state.Name, bounded.Token);
+                using (GitAskers.Is(GitAskers.Facts)) judging = judge(state.Name, bounded.Token);
             }
             catch (Exception error)
             {

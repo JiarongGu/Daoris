@@ -237,7 +237,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     look, at its own wakes and at a ledger change naming the quests, beside whatever look runs, so a step a person or an agent
     closed is read within a pass, never another ledger change, reading tips from git's ref files (`NodeTips`) and a run's record
     once while its file stands. Each look pass is a stage of its part's name in `watch.looked` unless it times itself, so a look's
-    own stages add up to its milliseconds, and each stage's time is measured by the day into the bus log's measures (rule 30a). The
+    own stages add up to its milliseconds, and each stage's time is measured by the day into the bus log's measures (rule 30a); the
+    line also says the git asks since the last line by their caller and place wait (`git=caller:count/waitedms`, the git area). The
     budgets are the bench tests' (below) and the git area's *Git's starts, counted*. (D68, D181)
 30a. The bus's log (D356 step 1) is the lease holder's: the desktop's loop and `daoris drive` open it once they hold the home's lease
     and close it before they let it go; a loop beside an instance keeps none. It is two tables of the desktop store (`bus_log`,

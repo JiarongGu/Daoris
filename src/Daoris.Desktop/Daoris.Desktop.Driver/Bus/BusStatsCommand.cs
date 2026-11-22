@@ -113,6 +113,8 @@ public static class BusStatsCommand
         if (swept.Count > 0) output.AppendLine($"  settle boxes found by the sweep, not the watcher: {string.Join(", ", swept.Select(row => Invariant($"{row.Name} {row.Count}")))}");
         Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
+        var asked = Of(BusMeasures.Git).ToList();
+        if (asked.Count > 0) output.AppendLine("  git asks by caller: " + string.Join("; ", asked.Select(row => Invariant($"{row.Name} n={row.Count} waited {row.Total} ms"))));
     }
 
     private static void Timed(string named, IReadOnlyList<BusMeasureRow> rows, StringBuilder output)

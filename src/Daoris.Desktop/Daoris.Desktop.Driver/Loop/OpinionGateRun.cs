@@ -47,7 +47,12 @@ internal sealed class OpinionGateRun : IAsyncDisposable
         {
             var queue = await BusQueue.StartAsync(bus, [gate], new BusQueueOptions { Clock = bus.Clock }, ct: ct).ConfigureAwait(false);
             var run = new OpinionGateRun(bus, gate, queue, home);
-            if (ledger is not null) run._ledger = LedgerChanges.RunAsync(ledger, (_, families) => Heard(bus, families), null, run._listening.Token);
+            if (ledger is not null)
+            {
+                var moves = new QuestMoveReader(ledger.EveryQuestAsync);
+                run._ledger = LedgerChanges.RunAsync(ledger, (_, families) => Heard(bus, families, moves), null, run._listening.Token);
+            }
+
             return run;
         }
         catch
@@ -57,11 +62,12 @@ internal sealed class OpinionGateRun : IAsyncDisposable
         }
     }
 
-    /// <summary>A change stream's wake teed as the gate's fact where it names the quests (a hold lifted, a step declined or published).</summary>
-    public static void Heard(BusLog? bus, string families)
+    /// <summary>A change stream's wake teed as the gate's fact where it names the quests, naming what changed as <paramref name="moves"/> reads the list.</summary>
+    internal static void Heard(BusLog? bus, string families, QuestMoveReader moves)
     {
         if (bus is null || !LedgerChanges.Names(families, LedgerChanges.Quests)) return;
-        bus.Tee(() => OpinionBusFacts.QuestMoved(families.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)));
+        var named = families.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        _ = moves.TeeAsync(bus, named, CancellationToken.None);
     }
 
     /// <summary>A write of the standing choices under this run's home, teed as the gate's fact.</summary>

@@ -40,6 +40,8 @@ internal sealed class BusMeasures
     /// <summary>A look stage's time, in milliseconds, by the stage.</summary>
     public const string Stage = "stage";
 
+    public const string Git = "git";
+
     /// <summary>What the queue handed on: its frames, its replays and each kind's hand-ons (<see cref="BusDeliveryMeasures"/>).</summary>
     public const string Delivered = "delivered";
 

@@ -9,7 +9,7 @@ internal static class CensusMarks
     /// <summary>The censuses whose rule holds of each file alone and that read their files through the scope: at a merge, the merge's files.</summary>
     internal static readonly string[] Diff =
     [
-        "CheckoutWritersCensusTests", "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",
+        "BusConsumerSetsCensusTests", "CheckoutWritersCensusTests", "DeclarationBoundaryTests", "DeclarationKeepersCensusTests", "DeclarationLiteralsCensusTests", "GitCommandsCensusTests", "GitEndingsCensusTests",
         "GitKeepersCensusTests", "GitLifetimesTests", "GitObjectFormsCensusTests", "GitStartsCensusTests", "HeldFactsTests", "LandedByIdsCensusTests",
         "LineAccountCallersCensusTests", "LoopbackListensTests", "NoConsoleWindowTests", "OrderReadersCensusTests", "PermissionWritersCensusTests",
         "ProcessHomeCensusTests", "ShellStructureTests", "StepAuthorityCensusTests", "StewardNotesTests", "StructureTests",

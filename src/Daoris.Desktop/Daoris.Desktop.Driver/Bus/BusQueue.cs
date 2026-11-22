@@ -26,6 +26,11 @@ public interface IBusConsumer
 
     /// <summary>Whether entries of <paramref name="kind"/> waiting in a row on one subject fold into the last: its handling stands for them all.</summary>
     bool Folds(string kind) => false;
+
+    /// <summary>Told of an entry folded into a later one before either is acknowledged, under the queue's lock: it keeps what the entry named, and never throws or waits.</summary>
+    void Folded(BusEnvelope away)
+    {
+    }
 }
 
 /// <summary>What a handled entry's acknowledgement says: whether it also ends the entry's obligation (<see cref="BusEnd.Acknowledged"/>).</summary>
@@ -496,6 +501,15 @@ internal sealed class BusConsumerRun
                 while (_consumer.Folds(entry.Kind) && lane.Count > 1 && lane.ElementAt(1).Entry.Kind == entry.Kind)
                 {
                     folded.Add(lane.Dequeue().Entry);
+                    try
+                    {
+                        _consumer.Folded(folded[^1]);
+                    }
+                    catch (Exception error) when (error is not OutOfMemoryException)
+                    {
+                        // A hook that throws costs its consumer what the entry named, never its subject's lane.
+                        _queue.Log.Warn($"queue:folded:{Name}", "bus.consumer-threw", ("consumer", Name), ("kind", "folded"), ("why", error.Message));
+                    }
                     (entry, tries) = lane.Peek();
                 }
             }

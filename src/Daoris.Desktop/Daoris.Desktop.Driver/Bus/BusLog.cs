@@ -332,6 +332,26 @@ public sealed class BusLog : IAsyncDisposable
         }
     }
 
+    /// <summary>One caller's git asks since a look's last line (<see cref="GitAskers"/>), measured by the day: a write for each caller of a look.</summary>
+    public void GitAsked(string caller, long count, long waited)
+    {
+        try
+        {
+            if (!Holder()) return;
+            lock (_gate)
+            {
+                if (_closed) return;
+                var owed = _measures.Owed;
+                _measures.Add(DesktopBusLogStore.Day(_clock.GetUtcNow()), BusMeasures.Git, Cut(caller)!, Math.Max(0, waited), count);
+                WakeLocked(owed);
+            }
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Miss(BusMisses.Append, error.GetType().Name);
+        }
+    }
+
     /// <summary>Write whatever waits now, entries and measures, and wait for it: a test's, and the close's.</summary>
     public async Task FlushAsync()
     {
