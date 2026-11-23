@@ -51,6 +51,6 @@ internal sealed record FileWalk(FileSize Size, bool Repository, int Nested)
         return new(new FileSize(files, bytes, More: false), false, nested);
     }
 
-    private static bool Repo(string folder) =>
+    internal static bool Repo(string folder) =>
         File.Exists(Path.Combine(folder, ".git")) || Directory.Exists(Path.Combine(folder, ".git")) || FileFloor.LooksBare(folder);
 }

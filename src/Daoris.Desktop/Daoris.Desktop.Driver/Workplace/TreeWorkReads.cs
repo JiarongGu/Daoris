@@ -173,9 +173,11 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }
 
+            var ended = KeptEnd.Of(root, follows.BranchOfTree(full) is { } followed ? context.Grown.Of(repository, followed.Branch) : null);
             var memo = ContentProofMemo.KeyOf(here.CommonDir.Trim(), judged, line, notHolders);
-            if (memo is not null && ContentProofMemo.Knows(context.Home, memo)) return (null, null);
-            var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
+            // A negative answer is kept against the refs alone, so a record's kept end, which no ref says, is asked again.
+            if (memo is not null && ended is null && ContentProofMemo.Knows(context.Home, memo)) return (null, null);
+            var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct, ended: ended).ConfigureAwait(false);
             if (memo is not null && proof is { Hold: null, Unread: null, Lacks: null or { Count: 0 } }) ContentProofMemo.Keep(context.Home, memo, context.Clock());
             if (proof.Hold is not { } held) return (null, proof.Lacks);
 
@@ -201,7 +203,9 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     private async Task<(string? Stays, int? Paths)> StaysOfAsync(
         string full, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct)
     {
-        var holds = await ContentHolds.HoldsAsync(full, root, declared, ct, files: TreeFilesRecord.Read(context.Home, full)).ConfigureAwait(false);
+        var holds = await ContentHolds.HoldsAsync(
+            full, root, declared, ct, files: TreeFilesRecord.Read(context.Home, full),
+            remade: await FileRemade.OfAsync(context.Home, context.OwnerOf(full).Repository, full, ct).ConfigureAwait(false)).ConfigureAwait(false);
         return holds is null ? ("Daoris cannot tell what it holds beyond its commits", null)
             : holds.Uncommitted.Count > 0 ? ($"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy", holds.Uncommitted.Count)
             : holds.OwnSaid is { } own ? ($"it holds {own}, which a discard would destroy", 0)
