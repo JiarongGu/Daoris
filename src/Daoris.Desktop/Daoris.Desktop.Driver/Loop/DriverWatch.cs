@@ -102,6 +102,11 @@ public sealed class DriverWatch(
             {
                 if (await DeclarationAcceptance.AcceptKeptAsync(home, configPath, kept, ct).ConfigureAwait(false) is { } line) said.Add(line);
             }
+
+            foreach (var pending in _owed.Unconverted(DriverConfig.Load(configPath)))
+            {
+                await DeclarationAcceptance.ConvertAsync(configPath, pending, ct).ConfigureAwait(false);
+            }
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {

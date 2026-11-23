@@ -298,4 +298,95 @@ public sealed class IntegrationOwedGitTests : IAsyncLifetime
         Assert.Empty(owed.Owed);
         Assert.Equal(0, owed.GitReads);
     }
+
+    private const string TwoGates = """{ "gates": [ { "name": "build", "run": "dotnet build", "paths": ["src/"] }, { "name": "tools", "run": "npm test" } ], "integration": { "by": "daoris" } }""";
+
+    private string ConfigPath => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+
+    /// <summary>An acceptance by blob is converted at the first look, owing no press before or after, and not converted again.</summary>
+    [Fact]
+    public async Task An_acceptance_by_blob_is_converted_to_its_units_at_the_first_look_and_owes_no_press()
+    {
+        var blob = await CommitAsync(TwoGates);
+        Choices(blob).Save(ConfigPath);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(Choices(blob), Registry, _now, CancellationToken.None);
+        Assert.Empty(owed.Under(Choices(blob)));
+        var unconverted = Assert.Single(owed.Unconverted(Choices(blob)));
+        Assert.Equal(("engine", blob), (unconverted.Repository, unconverted.Blob));
+
+        Assert.True(await DeclarationAcceptance.ConvertAsync(ConfigPath, unconverted, CancellationToken.None));
+
+        var converted = DriverConfig.Load(ConfigPath);
+        Assert.Equal(blob, converted.IntegrationUnits["engine"].Blob);
+        Assert.Equal(["gate:build", "gate:tools", "order", "part:integration"], converted.IntegrationUnits["engine"].Units.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(blob, IntegrationAcceptance.Of(converted, "engine"));
+        Assert.Empty(owed.Unconverted(converted));
+        Assert.Empty(owed.Under(converted));
+        Assert.False(await DeclarationAcceptance.ConvertAsync(ConfigPath, unconverted, CancellationToken.None));
+    }
+
+    /// <summary>Nothing accepted, or an acceptance of none, converts nothing.</summary>
+    [Fact]
+    public async Task Nothing_accepted_or_an_acceptance_of_none_converts_nothing()
+    {
+        await CommitAsync(TwoGates);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(Choices(), Registry, _now, CancellationToken.None);
+        Assert.Empty(owed.Unconverted(Choices()));
+        await owed.LookAsync(Choices("none"), Registry, _now.AddMinutes(1), CancellationToken.None);
+        Assert.Empty(owed.Unconverted(Choices("none")));
+    }
+
+    /// <summary>A change to one gate is owed for that unit alone, a path edit keeps the acceptance, and the home's units are what is judged against.</summary>
+    [Fact]
+    public async Task A_change_to_one_gate_is_owed_for_that_unit_alone_judged_against_the_units_the_home_holds()
+    {
+        var first = await CommitAsync(TwoGates);
+        var config = Choices(first).WithIntegrationUnits("engine", new AcceptedUnits(first, DeclarationUnits.Of(TwoGates)!));
+        var commandText = TwoGates.Replace("npm test", "npm run test", StringComparison.Ordinal);
+        var second = await CommitAsync(commandText);
+        var owed = new IntegrationOwed();
+
+        await owed.LookAsync(config, Registry, _now, CancellationToken.None);
+
+        var row = Assert.Single(owed.Under(config));
+        Assert.Equal((IntegrationAcceptance.Changed, second), (row.State, row.Blob));
+        Assert.Equal(["gate:tools"], row.ChangedUnits);
+        Assert.Equal([new DeclaredCheck("tools", "npm run test", "npm test")], row.Change!.Changed);
+
+        var accepting = config.WithIntegrationUnits("engine", new AcceptedUnits(first, DeclarationUnits.Of(commandText)!));
+        var holding = new IntegrationOwed();
+        await holding.LookAsync(accepting, Registry, _now, CancellationToken.None);
+        Assert.Empty(holding.Under(accepting));
+        Assert.Empty(Assert.Single(holding.Kept(accepting)).ChangedUnits);
+
+        var third = await CommitAsync(TwoGates.Replace("[\"src/\"]", "[\"src/\", \"lib/\"]", StringComparison.Ordinal));
+        await owed.LookAsync(config, Registry, _now.AddMinutes(1), CancellationToken.None);
+        var pathEdit = Assert.Single(owed.Kept(config));
+        Assert.Equal((third, 0), (pathEdit.Blob, pathEdit.ChangedUnits.Count));
+        Assert.Empty(owed.Under(config));
+    }
+
+    /// <summary>A dropped path keeps the acceptance and is said in the keep's one line.</summary>
+    [Fact]
+    public async Task A_dropped_path_keeps_the_acceptance_and_is_said_in_one_line()
+    {
+        var first = await CommitAsync(TwoGates);
+        var second = await CommitAsync(TwoGates.Replace("[\"src/\"]", "[\"lib/\"]", StringComparison.Ordinal));
+        Choices(first).Save(ConfigPath);
+        var owed = new IntegrationOwed();
+        await owed.LookAsync(Choices(first), Registry, _now, CancellationToken.None);
+
+        var kept = Assert.Single(owed.Kept(Choices(first)));
+        var said = await DeclarationAcceptance.AcceptKeptAsync(_home, ConfigPath, kept, CancellationToken.None);
+
+        Assert.Equal([new DeclaredNarrowing("the paths of `build`", ["src/"])], kept.Narrowed);
+        Assert.Equal(
+            "engine's daoris.gates.json on main changed no command, only the paths of `build` (narrowed: the paths of `build` lost `src/`), so it stays accepted as it landed.",
+            said);
+        Assert.Equal(second, IntegrationAcceptance.Of(DriverConfig.Load(ConfigPath), "engine"));
+    }
 }
