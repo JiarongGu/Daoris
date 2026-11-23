@@ -507,7 +507,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     judged, and a clean pass, which leaves nothing to deliver. A turn ahead (a cool-off's reset, a reading pass's end) judges it
     again then, a pass or a delivery a drain held a minute on until the drain ends, and a pass or delivery begun beside that ends with
     no fact (a turn in flight, a busy conversation) after a backoff from half a minute to ten; a judgment that throws keeps the turn it
-    found set. These live in memory, and a start judges every owed opinion once, which rebuilds the view and its turns, the watchdog's
+    found set; a pass the drain held waits for the drain as a delivery it held does. Each judgment is counted by what woke it (a fact
+    by its kind; else its own turn: `resumed`, `turn`, `drained`, `held` by another pass of the loop, `beside`, `retry`), which
+    `daoris bus stats` reads apart, so the install says which wakes are still not facts (BUS2d2).
+    The turns live in memory, and a start judges every owed opinion once, which rebuilds the view and its turns, the watchdog's
     timers the net under all of it. The watch, `drive --once` and `drive --until-idle` each start it beside their looks
     (`OpinionGateRun`); a run that must return also hears the change stream for it and drains it before it ends, its queue quiet and
     what the gate began beside ended, within the gate's ten minutes, the watcher looking at the pace meanwhile so `--quiet-end` ends a

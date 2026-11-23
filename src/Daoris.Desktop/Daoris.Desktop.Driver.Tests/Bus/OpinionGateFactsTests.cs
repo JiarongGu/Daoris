@@ -274,6 +274,43 @@ public sealed class OpinionGateFactsTests : IDisposable
         Assert.Equal(1, Judged("s-2"));
     }
 
+    /// <summary>🔴 Each judgment is measured by what woke it, a fact or the gate's own turn, and <c>daoris bus stats</c> reads them apart.</summary>
+    [Fact]
+    public async Task Each_judgment_is_measured_by_what_woke_it()
+    {
+        var clock = new MovedClock();
+        await using (var bus = Open())
+        {
+            using var gate = Gate(due => Waits() with { Drained = due.Session == "s-1" && Judged("s-1") == 1 }, clock);
+            await using var queue = await BusQueue.StartAsync(bus, [gate], Quick);
+            await Started();
+            await Poll.Until(() => clock.Pending.Count == 1, () => "no turn was set for the held delivery", Soon);
+            clock.Advance(OpinionGateConsumer.Drained);
+            await Poll.Until(() => Judged("s-1") == 2, () => "the held delivery was not judged again", Soon);
+
+            bus.Append(OpinionBusFacts.OpinionSaid("s-2", "go-on", "window"));
+            await Poll.Until(() => Judged("s-2") == 2, () => "the person's word was not judged", Soon);
+            await bus.FlushAsync();
+            await Poll.Until(() => Woke().GetValueOrDefault(BusTypes.OpinionSaid.Kind) == 1, () => "woke: " + string.Join(", ", Woke()), Soon);
+        }
+
+        var woke = Woke();
+        Assert.Equal(2, woke.GetValueOrDefault(OpinionGateConsumer.WokeResumed));
+        Assert.Equal(1, woke.GetValueOrDefault(OpinionGateConsumer.WokeDrained));
+        Assert.Equal(1, woke.GetValueOrDefault(BusTypes.OpinionSaid.Kind));
+
+        Assert.Equal(0, BusStatsCommand.Run(["stats"], _home, Machine.GetUtcNow, out var said));
+        Assert.Contains($"opinion-gate judgments by what woke them: facts {BusTypes.OpinionSaid.Kind} 1; its own turns, no fact: drained 1, resumed 2", said, StringComparison.Ordinal);
+        Assert.Contains($"handed on {BusTypes.OpinionSaid.Kind} 1", said, StringComparison.Ordinal);
+    }
+
+    private Dictionary<string, long> Woke()
+    {
+        using var store = new DesktopBusLogStore(_home);
+        return store.Measures(DesktopBusLogStore.Day(Machine.GetUtcNow())).Where(row => row.Measure == BusMeasures.Gate)
+            .ToDictionary(row => row.Name, row => (long)row.Count);
+    }
+
     private static OpinionFact Waits() => new(new Dictionary<string, OpinionSit>(), null, null);
 
     private int Judged(string session) => _judged.Count(subject => subject.StartsWith(session + "/", StringComparison.Ordinal));

@@ -40,10 +40,11 @@ internal sealed class OpinionGateJudge(LoopContext context, DriverOpinions opini
         var world = new ServiceReviewWorld(Service);
         var subject = Subject(due);
         var fact = await JudgeAsync(due, dues, world, await world.QuestsAsync(ct).ConfigureAwait(false), keep: true, beside: true, ct).ConfigureAwait(false);
-        var begun = fact?.Act is { } act && !HeldByDrain(act, events) && Begin(act, ct);
+        var held = fact?.Act is { } act && HeldByDrain(act, events);
+        var begun = !held && fact?.Act is { } owed && Begin(owed, ct);
         facts.KeepOpinionsOf(dues.Open().Select(Subject));
         if (fact is not null && facts.KeepOpinion(subject, ((IOpinionFact)fact).WithoutAct())) _context.Runs.FactsMoved();
-        return fact is null ? null : fact with { Begun = begun };
+        return fact is null ? null : fact with { Begun = begun, Drained = fact.Drained || held };
     }
 
     /// <summary>

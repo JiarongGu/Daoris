@@ -116,6 +116,8 @@ public static class BusStatsCommand
         Timed("began (a run's nodes: by the consumer at the ending fact, or by a look; lag from that fact)", Of(BusMeasures.Began).ToList(), output);
         var steps = Of(BusMeasures.Step).ToList();
         if (steps.Count > 0) output.AppendLine($"  run-step facts handled, by what their pass came to: {string.Join(", ", steps.Select(row => Invariant($"{row.Name} {row.Count}")))}");
+        Woke(Of(BusMeasures.Gate).ToList(), output);
+        Queue(Of(BusMeasures.Delivered).ToList(), Of(BusMeasures.Consumer).ToList(), Of(BusMeasures.Middleware).ToList(), output);
         Timed("stages", Of(BusMeasures.Stage).ToList(), output);
         var asked = Of(BusMeasures.Git).ToList();
         if (asked.Count > 0) Git(asked, output);
@@ -134,6 +136,26 @@ public static class BusStatsCommand
     }
 
     private const int TopKinds = 12;
+
+    /// <summary>The opinion gate's judgments by what woke them: the facts (a kind, <c>name/version</c>) apart from its own turns, which no fact carries.</summary>
+    private static void Woke(IReadOnlyList<BusMeasureRow> rows, StringBuilder output)
+    {
+        if (rows.Count == 0) return;
+        static string Listed(IEnumerable<BusMeasureRow> each) => string.Join(", ", each.Select(row => Invariant($"{row.Name} {row.Total}"))) is { Length: > 0 } text ? text : "none";
+        var facts = rows.Where(row => row.Name.Contains('/', StringComparison.Ordinal));
+        var turns = rows.Where(row => !row.Name.Contains('/', StringComparison.Ordinal));
+        output.AppendLine($"  opinion-gate judgments by what woke them: facts {Listed(facts)}; its own turns, no fact: {Listed(turns)}");
+    }
+
+    private static void Queue(IReadOnlyList<BusMeasureRow> delivered, IReadOnlyList<BusMeasureRow> consumers, IReadOnlyList<BusMeasureRow> middlewares, StringBuilder output)
+    {
+        if (delivered.Count == 0 && consumers.Count == 0 && middlewares.Count == 0) return;
+        long Total(string name) => delivered.FirstOrDefault(row => row.Name == name)?.Total ?? 0;
+        var kinds = string.Join(", ", delivered.Where(row => row.Name is not BusMeasures.Frames and not BusMeasures.Replayed).Select(row => Invariant($"{row.Name} {row.Total}")));
+        output.AppendLine(Invariant($"  queue: frames {Total(BusMeasures.Frames)}, replays {Total(BusMeasures.Replayed)}; handed on {(kinds.Length > 0 ? kinds : "none")}")
+                          + (consumers.Count == 0 ? "" : "; consumers " + string.Join(", ", consumers.Select(row => Invariant($"{row.Name} {row.Total}"))))
+                          + (middlewares.Count == 0 ? "" : "; middlewares " + string.Join(", ", middlewares.Select(row => Invariant($"{row.Name} {row.Total}")))));
+    }
 
     private static void Timed(string named, IReadOnlyList<BusMeasureRow> rows, StringBuilder output)
     {

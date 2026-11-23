@@ -107,6 +107,11 @@ public abstract class BusFlowConsumer<TWork> : IBusConsumer
 
     public void Attached(BusConsumerHost host) => _host = host;
 
+    protected void Measured(string measure, string name, long total = 1)
+    {
+        if (_host is { } host && host.Owned()) host.Log.Measured(measure, name, total);
+    }
+
     int? IBusConsumer.SubjectsAtOnce => 32;
 
     // A retry is never folded: each stands for one entry's work, so a row would run the first and acknowledge them all.

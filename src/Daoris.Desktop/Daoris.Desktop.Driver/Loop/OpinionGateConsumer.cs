@@ -2,8 +2,11 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
-/// <summary>What the gate asks of one owed opinion: the opinion, and whether a fact (not one of its own turns) asked.</summary>
-internal sealed record GateWork(OpinionDue Due, bool ByFact);
+/// <summary>What the gate asks of one owed opinion: the opinion, and what woke it, a fact by its kind or one of the gate's own turns.</summary>
+internal sealed record GateWork(OpinionDue Due, string Woke)
+{
+    public bool ByFact => Woke.Contains('/', StringComparison.Ordinal);
+}
 
 /// <summary>
 /// The opinion's gate as a consumer of the dispatch (<see cref="BusFlowConsumer{TWork}"/>): each opinion fact it is handed (owed, asked, given,
@@ -40,6 +43,9 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
 
     /// <summary>The wait before a pass a draining update held is judged again.</summary>
     public static readonly TimeSpan Drained = TimeSpan.FromMinutes(1);
+
+    /// <summary>The gate's own wakes, which no fact carries, measured beside the facts' kinds (<see cref="BusMeasures.Gate"/>).</summary>
+    public const string WokeResumed = "resumed", WokeTurn = "turn", WokeDrained = "drained", WokeHeld = "held", WokeBeside = "beside", WokeRetry = "retry";
 
     private readonly Func<OpinionDue, Action<string>, CancellationToken, Task<OpinionFact?>> _judge;
     private readonly Func<string, CancellationToken, Task<OpinionView?>> _read;
@@ -90,7 +96,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
 
     /// <summary>The owed opinion now owed under <paramref name="key"/>, judged again by a retry; none where it has closed.</summary>
     protected override Task<BusFlowPiece<GateWork>?> RetryWorkAsync(string key, string kind, CancellationToken ct) =>
-        Task.FromResult(_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), key)) is { } owed ? Piece(owed, byFact: true) : null);
+        Task.FromResult(_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), key)) is { } owed ? Piece(owed, BusTypes.FlowRetry.Kind) : null);
 
     public override string Obliged => BusTypes.OpinionGate;
 
@@ -101,16 +107,16 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
 
     protected override bool Settles(BusEnvelope entry) => Ends(entry);
 
-    protected override GateWork Merge(GateWork earlier, GateWork later) => new(later.Due, earlier.ByFact || later.ByFact);
+    protected override GateWork Merge(GateWork earlier, GateWork later) => new(later.Due, later.ByFact || !earlier.ByFact ? later.Woke : earlier.Woke);
 
     /// <summary>The owed opinions a fact reaches, each a piece of work keyed by the opinion and grouped by its repository.</summary>
     protected override async Task<IReadOnlyList<BusFlowPiece<GateWork>>> PiecesAsync(BusEnvelope entry, CancellationToken ct)
     {
         var dues = Everyone.Contains(entry.Kind) ? Reached(entry) : await DuesOfAsync(entry, ct).ConfigureAwait(false);
-        return [.. dues.Select(due => Piece(due, byFact: true))];
+        return [.. dues.Select(due => Piece(due, entry.Kind))];
     }
 
-    private static BusFlowPiece<GateWork> Piece(OpinionDue due, bool byFact) => new(OpinionGateJudge.Subject(due), new GateWork(due, byFact), due.Repository);
+    private static BusFlowPiece<GateWork> Piece(OpinionDue due, string woke) => new(OpinionGateJudge.Subject(due), new GateWork(due, woke), due.Repository);
 
     /// <summary>
     /// The owed opinions a move reaches: one that names its quests and repositories reaches the opinions they reach
@@ -130,6 +136,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     {
         using var asking = GitAskers.Is(GitAskers.Gate);
         var due = work.Due;
+        Measured(BusMeasures.Gate, work.Woke);
         if (work.ByFact) _quiet.TryRemove(subject, out _);
         // The turn set before stands until this judgment answers, so one that throws keeps it.
         _again.TryGetValue(subject, out var pending);
@@ -138,9 +145,15 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
         if (fact is null) return BusFlowOutcome.Moved;
         var now = _clock.GetUtcNow();
         DateTimeOffset? next = fact.Turns.Where(turn => turn > now).Select(turn => (DateTimeOffset?)turn).Min();
+        var woke = WokeTurn;
         // A pass or a delivery a drain held is judged again once a minute, so the drain's end reaches it.
-        if (((fact.Act is not null && !fact.Begun) || fact.Drained) && (next is null || next > now + Drained)) next = now + Drained;
-        if (next is { } at) Again(due, at);
+        if (((fact.Act is not null && !fact.Begun) || fact.Drained) && (next is null || next > now + Drained))
+        {
+            next = now + Drained;
+            woke = fact.Drained ? WokeDrained : WokeHeld;
+        }
+
+        if (next is { } at) Again(due, at, woke);
         return BusFlowOutcome.Moved;
     }
 
@@ -149,10 +162,10 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     {
         foreach (var due in _open())
         {
-            var outcome = await AskAsync(Piece(due, byFact: false), ct).ConfigureAwait(false);
+            var outcome = await AskAsync(Piece(due, WokeResumed), ct).ConfigureAwait(false);
             if (outcome.Result != BusFlowResult.Failed) continue;
             _warn("resumed:" + OpinionGateJudge.Subject(due), outcome.Why);
-            Again(due, _clock.GetUtcNow() + AgainFirst);
+            Again(due, _clock.GetUtcNow() + AgainFirst, WokeRetry);
         }
     }
 
@@ -194,16 +207,18 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
     }
 
     /// <summary>A pass or a delivery begun beside ended: judged again after a backoff, unless a fact judges it first.</summary>
-    private void Ended(string subject)
+    private void Ended(string subject) => Ended(subject, WokeBeside);
+
+    private void Ended(string subject, string woke)
     {
         if (_open().FirstOrDefault(due => Ids.Equals(OpinionGateJudge.Subject(due), subject)) is not { } due) return;
         var quiet = _quiet.AddOrUpdate(subject, 1, (_, was) => Math.Min(was + 1, 16));
         var wait = TimeSpan.FromTicks(Math.Min(AgainMost.Ticks, AgainFirst.Ticks << Math.Min(10, quiet - 1)));
-        Again(due, _clock.GetUtcNow() + wait);
+        Again(due, _clock.GetUtcNow() + wait, woke);
     }
 
     /// <summary>The owed opinion judged again at <paramref name="at"/>, replacing any turn set before; a failure is said once and tried after a backoff.</summary>
-    private void Again(OpinionDue due, DateTimeOffset at)
+    private void Again(OpinionDue due, DateTimeOffset at, string woke)
     {
         if (_closing.IsCancellationRequested) return;
         var subject = OpinionGateJudge.Subject(due);
@@ -220,10 +235,10 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
                 // Its turn came: no longer pending, so the judgment it runs does not cancel itself.
                 _again.TryRemove(new KeyValuePair<string, CancellationTokenSource>(subject, source));
                 if (_open().FirstOrDefault(each => Ids.Equals(OpinionGateJudge.Subject(each), subject)) is not { } owed) return;
-                var outcome = await AskAsync(Piece(owed, byFact: false), _closing.Token).ConfigureAwait(false);
+                var outcome = await AskAsync(Piece(owed, woke), _closing.Token).ConfigureAwait(false);
                 if (outcome.Result != BusFlowResult.Failed) return;
                 _warn("again:" + subject, outcome.Why);
-                Ended(subject);
+                Ended(subject, WokeRetry);
             }
             catch (OperationCanceledException)
             {
@@ -231,7 +246,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             catch (Exception error) when (error is not OutOfMemoryException)
             {
                 _warn("again:" + subject, error.Message);
-                Ended(subject);
+                Ended(subject, WokeRetry);
             }
         }, CancellationToken.None);
     }

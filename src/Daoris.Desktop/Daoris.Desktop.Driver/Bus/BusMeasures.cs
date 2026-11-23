@@ -57,6 +57,8 @@ internal sealed class BusMeasures
 
     public const string Step = "step", StepBegan = "began";
 
+    public const string Gate = "gate";
+
     /// <summary>What each consumer threw, by its name.</summary>
     public const string Consumer = "consumer";
 
