@@ -200,9 +200,10 @@ internal static class TreeScratch
         if (files.Count > 0 && FileRemade.InAnotherRepository(treeRoot, folder)) return ([], [.. files]);
         List<string> scratch = [];
         List<string> kept = [];
+        var copies = new HashSet<string>(record?.Copies.Keys ?? [], StringComparer.OrdinalIgnoreCase);
         foreach (var file in files)
         {
-            var edited = record?.Copies.ContainsKey(file) == true || persons?.Invoke(file) == false
+            var edited = copies.Contains(file) || persons?.Invoke(file) == false
                 || (record is null && File.Exists(Path.Combine(checkoutRoot, file.Replace('/', Path.DirectorySeparatorChar))));
             var later = !dated || File.GetLastWriteTimeUtc(Path.Combine(treeRoot, file.Replace('/', Path.DirectorySeparatorChar))) > opened;
             (!edited && later ? scratch : kept).Add(file);

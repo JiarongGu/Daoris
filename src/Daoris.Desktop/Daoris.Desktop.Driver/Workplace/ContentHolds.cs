@@ -455,6 +455,7 @@ internal sealed class ContentHolds(TreeContext context)
         var written = new List<string>();
         var tooLarge = new List<string>();
         var scratch = new List<string>();
+        var folders = new Dictionary<string, string?>(StringComparer.Ordinal);
         var opened = OpenedAt(tree, slot);
         foreach (var (path, state) in status)
         {
@@ -491,6 +492,13 @@ internal sealed class ContentHolds(TreeContext context)
                             ignored.AddRange(other);
                         }
                         else shared.Add(path);
+                    }
+                    else if (await ScratchSaid.IgnoredFolderAboveAsync(tree, path, folders, ct).ConfigureAwait(false) is { } folder)
+                    {
+                        // Git lists a file alone where its ignored folder also holds a tracked path: it is still under an ignored folder.
+                        var (made, other) = TreeScratch.SessionWrote(tree, root, folder, [path], opened, files, dated: true, remade);
+                        scratch.AddRange(made);
+                        ignored.AddRange(other);
                     }
                     else
                     {

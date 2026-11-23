@@ -295,6 +295,19 @@ public sealed class TreeScratchTests : IDisposable
     }
 
     [Fact]
+    public void An_edited_copy_renamed_in_case_alone_is_still_that_copy()
+    {
+        var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        Write(Tree, "local/NOTE.md", opened.AddHours(1));
+        var record = new TreeFilesState(false, false, []) { Copies = new Dictionary<string, string> { ["local/note.md"] = "hash" } };
+
+        var (scratch, kept) = TreeScratch.SessionWrote(Tree, Checkout, "local/", ["local/NOTE.md"], opened, record, dated: true);
+
+        Assert.Empty(scratch);
+        Assert.Equal(["local/NOTE.md"], kept);
+    }
+
+    [Fact]
     public void A_file_written_no_later_than_the_opening_or_a_name_the_checkout_holds_in_a_tree_with_no_record_is_not_scratch()
     {
         var opened = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);

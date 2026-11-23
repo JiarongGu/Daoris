@@ -63,6 +63,39 @@ public sealed class TreeSessionScratchGitTests : LandedFixture
     }
 
     [Fact]
+    public async Task Scratch_in_an_ignored_folder_that_also_holds_a_tracked_placeholder_goes_with_the_tree()
+    {
+        var root = await RepositoryWithLocalAsync();
+        File.WriteAllText(Path.Combine(root, "local", ".gitkeep"), "");
+        await GitAsync(root, "add", "-f", "local/.gitkeep");
+        await GitAsync(root, "commit", "--quiet", "-m", "keep local");
+        var (trees, tree) = await LandedAsync(root);
+        WriteLater(tree.Path, "local/reached-1.log");
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.Contains("1 scratch file(s)", removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+    }
+
+    [Fact]
+    public async Task The_clean_up_press_names_the_scratch_that_went_with_the_tree()
+    {
+        var root = await RepositoryWithLocalAsync();
+        var (trees, tree) = await LandedAsync(root);
+        WriteLater(tree.Path, "local/reached-1.log");
+
+        var swept = await trees.SweepAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        var result = Assert.Single(swept);
+        Assert.True(result.Removed, result.Message);
+        Assert.Contains("1 scratch file(s)", result.Message);
+        Assert.Contains("local/reached-1.log", result.Message);
+        Assert.False(Directory.Exists(tree.Path));
+    }
+
+    [Fact]
     public async Task A_tree_with_an_uncommitted_tracked_change_beside_its_scratch_is_kept()
     {
         var (trees, tree) = await LandedAsync(await RepositoryWithLocalAsync());
