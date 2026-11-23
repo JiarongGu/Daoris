@@ -19,6 +19,7 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
             snapshot = snapshot with
             {
                 Starting = [.. state.ReservedBefore.Union(wiring.Runs.Reserved)], HeldStarts = wiring.Runs.HeldStarts.Quests, Opinions = wiring.Gate.Sits(snapshot),
+                GoingOn = wiring.Runs.GoingOnNow,
             };
             state.JudgedOpinions = wiring.Gate.Judged();
             // Whether this loop carries Daoris's browser decides whether a local set-up step can be shown here.
@@ -29,8 +30,16 @@ internal sealed class PlanLook(ILookStagesWiring wiring) : ILookPass
 
         state.Snapshot = snapshot;
         state.Plan = plan;
+        SayQueue(plan);
         state.Starts = [.. plan.Where(c => c.Verdict == StartVerdict.Start).Select(c => c with { Channel = ChannelEntry.ForQuest(c.Quest, snapshot) })];
         return Task.CompletedTask;
+    }
+
+    private void SayQueue(IReadOnlyList<Consideration> plan)
+    {
+        var waits = StartQueueLog.Waits(plan);
+        var changed = wiring.Runs.QueueWaits(waits.ToDictionary(each => each.Key, each => each.Value.Key, StringComparer.OrdinalIgnoreCase));
+        foreach (var quest in changed) wiring.Log?.Info(StartQueueLog.Event, waits[quest].Fields);
     }
 
     // A door nobody knows in Build's order (a typo in driver.json) may not drive; the start that resolves it holds its quest on the

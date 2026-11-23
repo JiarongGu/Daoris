@@ -73,6 +73,25 @@ public sealed class RunningSessions
         lock (_gate) _goingOn.Remove(session);
     }
 
+    /// <summary>The records a run of this loop goes on in now (<see cref="TryGoOn"/>).</summary>
+    internal IReadOnlySet<string> GoingOnNow
+    {
+        get { lock (_gate) return new HashSet<string>(_goingOn, StringComparer.OrdinalIgnoreCase); }
+    }
+
+    private Dictionary<string, string> _queueWaits = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Keep <paramref name="now"/> as the start queue's waits (quest to what it waits on); the quests whose wait the last look did not keep.</summary>
+    internal IReadOnlyList<string> QueueWaits(IReadOnlyDictionary<string, string> now)
+    {
+        lock (_gate)
+        {
+            var changed = now.Where(wait => !_queueWaits.TryGetValue(wait.Key, out var said) || said != wait.Value).Select(wait => wait.Key).ToList();
+            _queueWaits = new Dictionary<string, string>(now, StringComparer.OrdinalIgnoreCase);
+            return changed;
+        }
+    }
+
     // The chains' work whose second opinion a run of this loop asks or delivers, from the look that began it until it ends.
     private readonly HashSet<string> _opinions = new(StringComparer.OrdinalIgnoreCase);
 

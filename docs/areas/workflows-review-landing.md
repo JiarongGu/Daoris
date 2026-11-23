@@ -571,7 +571,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     each `landing.auto` line names the run whose `land` tried it. A live session on the tree holds the `land` back, but never the run's
     own part waiting on its step (`awaiting-step`, `LandTreeUse`), which waits on that landing; a look at which the `land` starts or says
     nothing writes a coded `landing.waits` line naming why, once per change of reason (`LandWaits`). Where the line holds every commit by content or as the same change, `content.holds` and `land` reach it
-    without replay, saying the proof (`LineHolds`). Where the tip no longer reads, an unbound step takes the commit its session
+    without replay, saying the proof (`LineHolds`); where the line moved and a replay settled a file as it stood (the backlog's archive), so no patch
+    of the branch is the line's, the line's own content proof (`ContentHolds.HeldByContentAsync`, the line's forms only) reads that merging the branch in adds
+    nothing and the commits are left out as the replay finds them (`LeftOutWhy.Empty`), so `land` and a run's end read it landed (`LineHolding`, STARTQUEUE1). Where the tip no longer reads, an unbound step takes the commit its session
     branch records the line holding, so work merged outside the run ends it. `claimed` reaches at the first whole look reading its
     quest done, by any session. A merge whose tree is gone plans to the settings' line, else the one its branch grew from. (D227)
 29. A `land`'s open options are resolved at the bind and kept: the pattern `feature/{quest}-{slug}` and the default key where it
