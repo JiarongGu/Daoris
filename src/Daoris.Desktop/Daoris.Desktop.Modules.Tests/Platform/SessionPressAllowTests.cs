@@ -90,24 +90,74 @@ public sealed class SessionPressAllowTests : Bridge
 
         var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log, standing: judge)
         {
-            Grounds = new StubGrounds().Session(Archived, "completed"),
+            Grounds = new StubGrounds { Reads = { ["HARNESSES"] = _ => new { harnesses = new[] { new { door = "codex", present = true, updates = "pin", pinned = "0.156.0" } } } } }
+                .Session(Archived, "completed"),
         };
-        pipe.Delegates = session => new PipeDelegateSession(_delegates.Of(session), _modes.GetValueOrDefault(session)) { Repository = "engine", Agent = "codex" };
+        pipe.Delegates = session => new PipeDelegateSession(_delegates.Of(session), _modes.GetValueOrDefault(session))
+        {
+            Repository = "engine", Agent = "codex", Risk = request => DelegateRisk.Of(Home, session, request),
+        };
         var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         var hello = await client.HelloAsync(HomeIdentity.Read(Home)!);
         return new Stand(pipe, client, hello.GetProperty("data").GetProperty("nonce").GetString()!, driver, provider, log);
     }
 
-    private async Task<string> PressAsync(Stand stand, string key)
+    private Task<string> PressAsync(Stand stand, string key) =>
+        PressAsync(stand, key, "SESSION_ARCHIVE", new { ids = new[] { Archived }, archived = true });
+
+    private static async Task<string> PressAsync(Stand stand, string key, string route, object payload)
     {
         var id = Guid.NewGuid().ToString();
         var requestKey = Guid.NewGuid().ToString("N");
-        var text = JsonSerializer.Serialize(new { ids = new[] { Archived }, archived = true }, Wire);
-        var proof = DelegateProof.Prove(key, stand.Nonce, DriverModule.Name, "SESSION_ARCHIVE", text, requestKey);
+        var text = JsonSerializer.Serialize(payload, Wire);
+        var proof = DelegateProof.Prove(key, stand.Nonce, DriverModule.Name, route, text, requestKey);
         var said = JsonSerializer.Serialize(new { session = Session, proof }, Wire);
         await stand.Client.SendLineAsync(
-            $$"""{"id":"{{id}}","module":"{{DriverModule.Name}}","type":"SESSION_ARCHIVE","payload":{{text}},"key":"{{requestKey}}","{{DelegateProof.Field}}":{{said}}}""");
+            $$"""{"id":"{{id}}","module":"{{DriverModule.Name}}","type":"{{route}}","payload":{{text}},"key":"{{requestKey}}","{{DelegateProof.Field}}":{{said}}}""");
         return id;
+    }
+
+    private void Classed(string riskClass)
+    {
+        var path = DriverConfig.ResolvePath(Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{\"risk\":{\"machine\":[{\"kind\":\"agent.version\",\"class\":\"" + riskClass + "\"}]}}");
+    }
+
+    [Fact]
+    public async Task A_version_move_classed_role_is_the_supervisors_to_allow_and_its_hold_is_journaled_open_then_released_by_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Classed(RiskClasses.Role);
+        using var stand = await OpenAsync();
+        var id = await PressAsync(stand, _delegates.Draw(Session), "HARNESS_ACTION", new { action = "update", door = "codex" });
+        await UntilAsync(() => stand.Pipe.SessionPresses.Waiting().Count == 1, "the move was not offered to the supervisor");
+
+        Assert.Null(stand.Pipe.SessionPresses.Allow(Assert.Single(stand.Pipe.SessionPresses.Waiting()).Id));
+        Assert.True((await stand.Client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+
+        await UntilAsync(() => RiskJournal.Read(Home).Count == 2, "the hold's release was not journaled");
+        var (opened, released) = (RiskJournal.Read(Home)[0], RiskJournal.Read(Home)[1]);
+        Assert.Equal((RiskJudged.Opened, RiskVerdict.Gate, true), (opened.Stage, opened.Outcome, opened.TodayHeld));
+        Assert.Equal((RiskJudged.Released, opened.Key, "released: ran on the allow supervisor's yes"), (released.Stage, released.Key, released.Today));
+        Assert.EndsWith($"/{id}", opened.Key);
+    }
+
+    [Fact]
+    public async Task A_version_move_raised_to_the_owner_while_it_waits_is_refused_to_the_supervisor_and_falls_to_the_owners_card()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Classed(RiskClasses.Role);
+        using var stand = await OpenAsync();
+        await PressAsync(stand, _delegates.Draw(Session), "HARNESS_ACTION", new { action = "update", door = "codex" });
+        await UntilAsync(() => stand.Pipe.SessionPresses.Waiting().Count == 1, "the move was not offered to the supervisor");
+
+        Classed(RiskClasses.Owner);
+
+        Assert.Equal(SupervisorWhy.HighRisk, stand.Pipe.SessionPresses.Allow(Assert.Single(stand.Pipe.SessionPresses.Waiting()).Id));
+        await UntilAsync(() => stand.Pipe.Confirmations.Now().Waiting.Count == 1, "the owner's card did not follow");
+        Assert.Equal(0, stand.Driver.Ran);
+        Assert.Empty(stand.Pipe.SessionPresses.Waiting());
     }
 
     private static async Task UntilAsync(Func<bool> condition, string because)

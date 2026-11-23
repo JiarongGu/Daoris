@@ -316,7 +316,7 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     ends the vacancy and its acts, so the walk after it reads the rule's order again; the person's own ask is theirs. (D304)
 49b. One judge (`RiskGate.Judge`, `Workflows/Risk/`) reads one risk policy and decides nothing yet: it runs in shadow. The policy is `risk` in
     the home's `driver.json` (`RiskPolicy`), rows keyed by place (`machine`, `workspace/<name>`, `repository/<name>`), each a list of
-    `{ kind[/qualifier], class none|role|owner, by?, mode? full|restricted }` over a closed census of sixteen act kinds (`RiskActs`;
+    `{ kind[/qualifier], class none|role|owner, by?, mode? full|restricted }` over a closed census of seventeen act kinds (`RiskActs`;
     a door naming another is refused). The census, its classes and the verdict's shape (`RiskVerdict`) are the settings' vocabulary
     (`Settings/`), so the review's second opinion speaks them and reaches the judge through a port Workflows installs (`IOpinionRisk`). For an act the narrowest place with a row decides, a qualified row over its kind's and a row keyed
     by the place's access mode over one keyed by none; then `placeRisk` read through (a place whose level stands at `high` reads every
@@ -386,7 +386,13 @@ in a file of its name; `docs/index/README.md` says where a seam, route, verb or 
     conversation; a press that opened a place answers a `PressReceipt`, which the press record keeps in either mode and the windows draw
     once as a line with go links, *Opened `<name>` in `<workspace>`* (a room's the quest's line alone), under the turn and in *Notifications*.
     A working session's tier is its repository's access setup, read at the press: unrestricted runs its proved press as its own
-    (rule 52), the rest go on a card naming the session. Ask Daoris has no proposal tool; the room's *What you may do* names the verbs.
+    (rule 52), the rest go on a card naming the session. A press the risk policy classes is read by its verdict instead: the Agents
+    place's `pin` and `update` (`HARNESS_ACTION`) are `agent.version` at the machine, judged at the press (`DelegateRisk.Of`) and
+    journaled once it is admitted under its request id: a pass runs as the session's own, logged `session.pressed` with its act and
+    rule; a gate is a hold opened under that id, its terminal told the verdict whole (class, holder, rule and revision), and goes on the
+    owner's card (`risk-owner`) or, for a role, to the session's allow supervisor first, whose allow reads the policy again and falls to
+    the owner's card where it is now the owner's (`risk-role` on a card it falls to). Its release is journaled as it ends, the policy read
+    again then, naming who said yes. Ask Daoris has no proposal tool; the room's *What you may do* names the verbs.
     `sessions archive --ended` stays the terminal's.
     Which place a request calls for is the room's one table (`HelpRoomGrowth`), asked of the registry's `domain` and the knowledge
     search and said in the turn: the department that owns the work, by an ask; a room in it, where the part needs instructions or checks

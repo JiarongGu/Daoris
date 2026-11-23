@@ -15,4 +15,8 @@ namespace Daoris.Driver;
 /// <param name="Words">The verb's words from those fields, both paths', returning its exit code.</param>
 public sealed record AgentPress(
     string Verb, InstanceRoute? Route, bool Isolated, JsonObject? Payload, Func<CancellationToken, Task<object?>> Act,
-    Func<JsonElement, object?> Fields, Func<object?, int> Words);
+    Func<JsonElement, object?> Fields, Func<object?, int> Words)
+{
+    /// <summary>Whether the operation judges a session's terminal itself (a version move, <see cref="AgentVersionAct"/>), so acting alone there is not refused before it.</summary>
+    public bool JudgesItself { get; init; }
+}

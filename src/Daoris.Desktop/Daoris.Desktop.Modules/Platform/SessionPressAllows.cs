@@ -70,6 +70,11 @@ public sealed class SessionPressAllows(InstancePipe pipe)
     /// <summary>The supervisor's allow: settled once, then the press run as the session's own. Null where kept, else why not.</summary>
     public string? Allow(string press, Action<PendingPress>? kept = null)
     {
+        if (Find(press) is { Reserved.Risk: { } risk } && risk.Again().Outcome == RiskVerdict.OwnerOutcome)
+        {
+            return Fall(press) ? SupervisorWhy.HighRisk : SupervisorWhy.Answered;
+        }
+
         PendingPress entry;
         lock (State.Gate)
         {
@@ -80,6 +85,7 @@ public sealed class SessionPressAllows(InstancePipe pipe)
 
         entry.Clock.Cancel();
         kept?.Invoke(entry);
+        entry.Reserved.AllowedBy = "the allow supervisor";
         var request = entry.Reserved.Request;
         var own = new PipeDelegateJudgement(PipeDelegateTier.Covered, Session: entry.Session, Own: true, Agent: entry.Agent);
         pipe.Delegate.Pressed(own, request, entry.Reserved.Line.Task);

@@ -32,6 +32,7 @@ public sealed class RiskGateTests
     [InlineData(RiskActs.CheckNarrow, RiskClasses.None, RiskClasses.None)]
     [InlineData(RiskActs.ReachWiden, RiskClasses.Role, RiskClasses.None)]
     [InlineData(RiskActs.CommandChange, RiskClasses.Owner, RiskClasses.None)]
+    [InlineData(RiskActs.AgentVersion, RiskClasses.None, RiskClasses.None)]
     [InlineData(RiskActs.HistoryRewrite, RiskClasses.Owner, RiskClasses.Owner)]
     [InlineData(RiskActs.DataDelete, RiskClasses.Owner, RiskClasses.Owner)]
     [InlineData(RiskActs.PolicyChange, RiskClasses.Owner, RiskClasses.Owner)]
@@ -49,9 +50,9 @@ public sealed class RiskGateTests
     }
 
     [Fact]
-    public void The_census_is_closed_sixteen_kinds_and_a_kind_outside_it_is_refused()
+    public void The_census_is_closed_seventeen_kinds_and_a_kind_outside_it_is_refused()
     {
-        Assert.Equal(16, RiskActs.All.Count);
+        Assert.Equal(17, RiskActs.All.Count);
         Assert.Throws<ArgumentException>(() => RiskAct.Of("work.vanish"));
         Assert.Equal(("release.start", "production"), (RiskAct.Of("release.start/production").Kind, RiskAct.Of("release.start/production").Qualifier));
     }

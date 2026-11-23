@@ -517,5 +517,7 @@
   "person.route.REMOTES.SET": "wire a workspace to a remote",
   "person.route.REMOTES.REMOVE": "unwire a workspace from the remote it is wired to",
   "person.route.PIPE.HOLD": "hold a conversation",
-  "person.standing.untold": "Daoris could not tell whether this terminal runs inside an agent it runs. Confirm only if you started this agent yourself."
+  "person.standing.untold": "Daoris could not tell whether this terminal runs inside an agent it runs. Confirm only if you started this agent yourself.",
+  "person.standing.risk-owner": "The risk policy classes this act `owner` here, so it waits on your yes; `daoris settings risk` names the rule.",
+  "person.standing.risk-role": "The risk policy classes this act for a role here, and no holder of it answered, so it asks you; `daoris settings risk` names the rule."
 }

@@ -55,6 +55,13 @@ public sealed class AgentPinCommandTests : IDisposable
 
     private string Where(string version) => HarnessSettings.ManagedHome(Home, "codex", version);
 
+    private void Configure(string json)
+    {
+        var path = DriverConfig.ResolvePath(Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, json);
+    }
+
     /// <summary>A version laid where Daoris keeps it, as a verified install leaves it.</summary>
     private void Installed(string version)
     {
@@ -193,19 +200,70 @@ public sealed class AgentPinCommandTests : IDisposable
         Assert.Equal("0.156.0", HarnessSettings.Load(Wiring).Versions["codex"]);
     }
 
-    [Theory]
-    [InlineData("pin codex 0.156.1")]
-    [InlineData("update codex")]
-    public async Task A_marked_terminal_s_pin_or_update_is_refused_before_anything_is_fetched(string words)
+    [Fact]
+    public async Task A_session_terminal_s_pin_with_nothing_configured_moves_the_pin_and_the_journal_names_the_act()
     {
+        var transport = new Served(CodexRelease("0.156.1"));
+
+        var exit = await AgentsCommand.RunAsync(["pin", "codex", "0.156.1"], World(transport, marker: "s1a2b3c4"), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("", _error.ToString());
+        Assert.Equal("0.156.1", HarnessSettings.Load(Wiring).Versions["codex"]);
+        var said = Lines(_out);
+        Assert.Equal(
+            "daoris: this terminal is a session's, and the risk policy passes `agent.version` at this machine: no risk is declared for it here, so it "
+            + "passes: no risk declared: it passes, recorded (the seed) (rule seed at seed).", said[0]);
+        Assert.Equal("daoris: `codex` runs at 0.156.1 on this machine.", said[^3]);
+        var line = Assert.Single(RiskJournal.Read(Home));
+        Assert.Equal((RiskActs.AgentVersion, RiskVerdict.Pass, RiskVerdict.Seed, "session s1a2b3c4", RiskJudged.Released),
+            (line.Kind, line.Outcome, line.Source, line.Actor, line.Stage));
+        Assert.Equal("pin codex 0.156.1", line.Subject);
+        Assert.Equal(AgentVersionAct.Passed, line.Today);
+    }
+
+    [Theory]
+    [InlineData("pin codex 0.156.1", "machine", "this machine")]
+    [InlineData("update codex", "machine", "this machine")]
+    [InlineData("pin codex 0.156.1 --workspace aurora", "workspace/aurora", "the `aurora` workspace")]
+    public async Task A_session_terminal_s_move_classed_owner_waits_on_the_owner_with_the_verdict_said(string words, string place, string where)
+    {
+        Installed("0.156.0");
+        HarnessSettings.Pin(Wiring, Home, "codex", "0.156.0");
+        Configure("{\"risk\":{\"" + place + "\":[{\"kind\":\"agent.version\",\"class\":\"owner\"}]}}");
         var transport = new Served(CodexRelease("0.156.1"));
 
         var exit = await AgentsCommand.RunAsync(words.Split(' '), World(transport, marker: "s1a2b3c4"), CancellationToken.None);
 
         Assert.Equal(1, exit);
-        Assert.Equal($"daoris: {DriverChoicesCommand.SessionsTerminal}", _error.ToString().Trim());
+        Assert.Equal(
+            $"daoris: this terminal is a session's, and the risk policy classes `agent.version` `owner` at {where}: it waits on the owner's yes — "
+            + $"`{place}` classes `agent.version` `owner` (rule {place} at {RiskPolicy.Of(DriverConfig.Load(DriverConfig.ResolvePath(Home))).Revision}). "
+            + "Nothing was done here: make it in Daoris's window, or from the owner's own terminal.", _error.ToString().Trim());
         Assert.Empty(transport.Asked);
-        Assert.False(File.Exists(Wiring));
+        Assert.Equal("0.156.0", HarnessSettings.Load(Wiring).Versions["codex"]);
+        var line = Assert.Single(RiskJournal.Read(Home));
+        Assert.Equal((RiskActs.AgentVersion, RiskVerdict.OwnerOutcome, place, RiskJudged.Released, true), (line.Kind, line.Outcome, line.Source, line.Stage, line.TodayHeld));
+    }
+
+    [Fact]
+    public async Task A_workspace_s_owner_row_leaves_the_machine_s_pin_to_the_seed()
+    {
+        Configure("""{"risk":{"workspace/aurora":[{"kind":"agent.version","class":"owner"}]}}""");
+
+        var exit = await AgentsCommand.RunAsync(["pin", "codex", "0.156.1"], World(new Served(CodexRelease("0.156.1")), marker: "s1a2b3c4"), CancellationToken.None);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("0.156.1", HarnessSettings.Load(Wiring).Versions["codex"]);
+        Assert.Equal(RiskVerdict.Pass, Assert.Single(RiskJournal.Read(Home)).Outcome);
+    }
+
+    [Fact]
+    public async Task A_person_s_terminal_s_pin_writes_no_verdict()
+    {
+        Assert.Equal(0, await AgentsCommand.RunAsync(["pin", "codex", "0.156.1"], World(new Served(CodexRelease("0.156.1"))), CancellationToken.None));
+
+        Assert.Empty(RiskJournal.Read(Home));
     }
 
     /// <summary>

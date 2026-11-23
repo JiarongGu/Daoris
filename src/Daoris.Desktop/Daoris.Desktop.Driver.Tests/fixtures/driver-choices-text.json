@@ -928,6 +928,7 @@
         "    check.narrow     none, said in one line",
         "    reach.widen      role, by `approver`",
         "    command.change   owner",
+        "    agent.version    none",
         "    history.rewrite  owner",
         "    data.delete      owner",
         "    policy.change    owner, fixed"
