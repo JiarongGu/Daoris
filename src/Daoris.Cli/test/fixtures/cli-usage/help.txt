@@ -17,6 +17,10 @@ daoris <command> [options]
                        repository's session to adopt, keep or propose upstream
   doctor               report local documents that look like canonical ones
                        under a different name (advisory; never fails)
+  declaration split --dry-run
+                       convert daoris.gates.json to the daoris/ folder and the home's
+                       values in scratch, and prove they resolve to the old file;
+                       names each difference and each set held twice
 
   These are the doctrine commands, and every one is offline. Every other command
   (`daoris help` names them) is the desktop's program's: this daoris hands it the
@@ -29,4 +33,5 @@ Options:
                        knowledge and skills under .agents/, mirrored for Claude Code (init only)
   --force              overwrite locally-drifted files (sync only)
   --all                every drifted file (upstream only)
+  --out <folder>       where a dry run writes its scratch (declaration only; default _fixtures/declaration-split)
   --help, --version

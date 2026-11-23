@@ -11,6 +11,7 @@ import { command as index } from './cli/index.ts';
 import { command as status } from './cli/status.ts';
 import { command as reconcile } from './cli/reconcile.ts';
 import { command as doctor } from './cli/doctor.ts';
+import { command as declaration } from './cli/declaration.ts';
 import { HANDED_VARIABLE, runDriverProgram, type DriverProgramSeam } from './platform/driverprogram.ts';
 
 export { HANDED_VARIABLE };
@@ -36,6 +37,7 @@ export const COMMANDS: readonly CliCommand[] = [
   status,
   reconcile,
   doctor,
+  declaration,
 ];
 
 const USAGE = [
