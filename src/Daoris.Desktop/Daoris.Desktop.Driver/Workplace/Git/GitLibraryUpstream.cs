@@ -24,6 +24,9 @@ internal static class GitLibraryUpstream
         return null;
     }
 
+    internal static bool NoneConfigured(GitLibraryCall call, string branch) =>
+        GitLibraryRefs.Branching(call) is { } config && !config.ContainsKey($"branch.{branch}.merge") && !config.ContainsKey($"branch.{branch}.remote");
+
     private static string? Branch(string asked, string tail)
     {
         if (!asked.EndsWith(Suffix + tail, StringComparison.Ordinal)) return null;

@@ -52,6 +52,37 @@ public sealed class GitLibraryStatusEnvironmentTests : LandedFixture
         await WithAsync("GIT_INDEX_FILE", other, () => GitsAsync(root, Status));
     }
 
+    [GitLegFact]
+    public async Task An_upstream_only_the_environment_or_a_global_file_names_is_git_s_under_branch()
+    {
+        string[] branch = ["--no-optional-locks", "status", "--porcelain=v2", "--branch"];
+        var root = await RepositoryAsync("statusv2-upstream");
+        await GitAsync(root, "branch", "other");
+        await GitStamp.OfAsync(root, CancellationToken.None);
+        await SameAsync(root, branch);
+
+        // The variables a process hands git: its configuration count, and a global file it names.
+        await WithAsync("GIT_CONFIG_COUNT", "2", async () =>
+        {
+            await WithAsync("GIT_CONFIG_KEY_0", "branch.main.remote", async () =>
+            {
+                await WithAsync("GIT_CONFIG_VALUE_0", ".", async () =>
+                {
+                    await WithAsync("GIT_CONFIG_KEY_1", "branch.main.merge", () =>
+                        WithAsync("GIT_CONFIG_VALUE_1", "refs/heads/other", () => GitsAsync(root, branch)));
+                });
+            });
+        });
+
+        var global = Path.Combine(Scratch, "statusv2-upstream-global");
+        await File.WriteAllTextAsync(global, "[branch \"main\"]\n\tremote = .\n\tmerge = refs/heads/other\n");
+        await WithAsync("GIT_CONFIG_GLOBAL", global, async () =>
+        {
+            await GitStamp.OfAsync(root, CancellationToken.None);
+            await GitsAsync(root, branch);
+        });
+    }
+
     private static async Task WithAsync(string name, string value, Func<Task> work)
     {
         var was = Environment.GetEnvironmentVariable(name);
