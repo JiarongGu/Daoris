@@ -79,13 +79,16 @@ public sealed record PolicyProposal(
 }
 
 /// <summary>Who pressed a door of the policy: the conversation its key proves, or none; <paramref name="Worker"/> where it is a working session's own press.</summary>
-public sealed record PolicyChannel(string? Session, bool Worker = false)
+public sealed record PolicyChannel(string? Session, bool Worker = false, bool Pressed = false)
 {
     /// <summary>A process that proves no session's key.</summary>
     public static PolicyChannel Keyless { get; } = new((string?)null);
 
     /// <summary>The conversation whose key a press proves: Ask Daoris's.</summary>
     public static PolicyChannel Of(string? session) => string.IsNullOrWhiteSpace(session) ? Keyless : new(session);
+
+    /// <summary>The owner's own press confirmed on their card in the window: their word as itself, with <paramref name="session"/> the conversation named in a proposal.</summary>
+    public static PolicyChannel OwnerPress(string? session) => new(string.IsNullOrWhiteSpace(session) ? null : session, false, true);
 
     /// <summary>A working session's own press: an agent's channel, which never changes the policy.</summary>
     public static PolicyChannel Agent(string session) => new(session, true);

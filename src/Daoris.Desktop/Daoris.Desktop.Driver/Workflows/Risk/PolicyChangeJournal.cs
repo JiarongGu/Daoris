@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// One <c>policy.changed</c> line: a change to the policy applied, with who proposed it, the digest it is bound to, the turn of the owner's that
 /// applied it, the edits, the waits they opened or released, and the policy's revision before and after.
 /// </summary>
-/// <param name="Door">The owner's channel it is applied through: <c>assistant</c>.</param>
+/// <param name="Door">The owner's channel it is applied through: <c>assistant</c> or <c>card</c>.</param>
 /// <param name="Turn">The owner's turn that confirmed it, as <see cref="OwnerTurn.Id"/> names it.</param>
 public sealed record PolicyChangeLine(
     DateTimeOffset At, string Door, string Proposal, string Digest, string Session, string Turn, DateTimeOffset TurnAt, string TurnText,
@@ -15,6 +15,9 @@ public sealed record PolicyChangeLine(
 {
     public const string Event = "policy.changed";
     public const string Assistant = "assistant";
+
+    /// <summary>The door and the turn of a change the owner confirmed on their own card in the window.</summary>
+    public const string Pressed = "card";
 }
 
 /// <summary>

@@ -141,6 +141,7 @@ public sealed class PolicyChangeTests : IDisposable
         Say(Conversation, $"apply {proposal.Id} {proposal.Digest}");
 
         var proposes = door.Propose(PolicyChannel.Keyless, [RaiseRelease]);
+        Assert.Equal(PolicyRefusals.Keyless, door.Propose(PolicyChannel.OwnerPress(null), [RaiseRelease]).Code);
         var applies = door.Apply(PolicyChannel.Keyless, proposal.Id, proposal.Digest);
 
         Assert.Equal((PolicyRefusals.Keyless, PolicyRefusals.Keyless), (proposes.Code, applies.Code));
@@ -188,6 +189,20 @@ public sealed class PolicyChangeTests : IDisposable
         Assert.True(door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Done);
         Assert.Equal(PolicyRefusals.Taken, door.Apply(PolicyChannel.Of(Conversation), proposal.Id, proposal.Digest).Code);
         Assert.Single(PolicyChangeJournal.Read(_home));
+    }
+
+    [Fact]
+    public void The_owners_own_card_press_applies_a_proposal_with_no_turn_and_the_journal_says_the_card()
+    {
+        var door = Open();
+        var proposal = door.Propose(PolicyChannel.OwnerPress(Conversation), [RaiseRelease]).Proposal!;
+
+        Assert.Equal(PolicyRefusals.Digest, door.Apply(PolicyChannel.OwnerPress(null), proposal.Id, "000000000000").Code);
+        var applied = door.Apply(PolicyChannel.OwnerPress(null), proposal.Id, proposal.Digest);
+
+        Assert.True(applied.Done, applied.Said);
+        var line = Assert.Single(PolicyChangeJournal.Read(_home));
+        Assert.Equal((PolicyChangeLine.Pressed, PolicyChangeLine.Pressed, Conversation), (line.Door, line.Turn, line.Session));
     }
 
     [Fact]

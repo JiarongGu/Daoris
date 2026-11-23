@@ -63,7 +63,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     public PolicyOutcome Apply(PolicyChannel channel, string proposalId, string digest)
     {
         if (channel.Worker) return Refuse(PolicyRefusals.Agent, AgentSentence);
-        if (channel.Session is not { } session) return Refuse(PolicyRefusals.Keyless, "a change to the policy is applied from the conversation its owner's turn is in, by a press that proves its session; this process proves none, so nothing was changed");
+        if (channel.Session is null && !channel.Pressed) return Refuse(PolicyRefusals.Keyless, "a change to the policy is applied from the conversation its owner's turn is in, by a press that proves its session; this process proves none, so nothing was changed");
         lock (Gate)
         {
             var all = Read();
@@ -72,16 +72,14 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
             var proposal = all[index];
             if (proposal.State == PolicyProposal.Applied) return Refuse(PolicyRefusals.Taken, $"`{proposal.Id}` was applied already, so nothing was changed again");
             if (!string.Equals(proposal.Digest, digest, StringComparison.OrdinalIgnoreCase)) return Refuse(PolicyRefusals.Digest, $"`{digest}` is not the digest of `{proposal.Id}`, so nothing was changed");
-            if (!string.Equals(proposal.Session, session, StringComparison.OrdinalIgnoreCase))
-            {
-                return Refuse(PolicyRefusals.Conversation, $"`{proposal.Id}` is the owner's to confirm in the conversation that proposed it; a press from another session changes nothing");
-            }
-
-            if (turns.Binding(proposal.Session, proposal.At, proposal.Id, proposal.Digest) is not { } turn)
+            var turn = channel.Pressed ? new OwnerTurn(PolicyChangeLine.Pressed, proposal.Session, clock(), "") : Confirmed(channel.Session!, proposal);
+            if (turn is null)
             {
                 return Refuse(
-                    PolicyRefusals.NoOwnerTurn,
-                    $"no turn of the owner's own in this conversation, after the proposal, names `{proposal.Id}` and `{proposal.Digest}`: an agent's words, a quote it relays, a commit or a file never apply a change to the policy. Nothing was changed.");
+                    string.Equals(proposal.Session, channel.Session, StringComparison.OrdinalIgnoreCase) ? PolicyRefusals.NoOwnerTurn : PolicyRefusals.Conversation,
+                    string.Equals(proposal.Session, channel.Session, StringComparison.OrdinalIgnoreCase)
+                        ? $"no turn of the owner's own in this conversation, after the proposal, names `{proposal.Id}` and `{proposal.Digest}`: an agent's words, a quote it relays, a commit or a file never apply a change to the policy. Nothing was changed."
+                        : $"`{proposal.Id}` is the owner's to confirm in the conversation that proposed it; a press from another session changes nothing");
             }
 
             var config = DriverConfig.Load(ConfigPath);
@@ -107,13 +105,16 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
             // Read back as written: the revision is of the file's own text, which the writer lays out.
             var revisionAfter = RiskPolicy.Of(DriverConfig.Load(ConfigPath)).Revision;
             PolicyChangeJournal.Append(home, new PolicyChangeLine(
-                clock(), PolicyChangeLine.Assistant, proposal.Id, proposal.Digest, proposal.Session, turn.Id, turn.At, turn.Text, proposal.Edits, proposal.Shifts,
+                clock(), channel.Pressed ? PolicyChangeLine.Pressed : PolicyChangeLine.Assistant, proposal.Id, proposal.Digest, proposal.Session, turn.Id, turn.At, turn.Text, proposal.Edits, proposal.Shifts,
                 before.Revision, revisionAfter));
             all[index] = proposal with { State = PolicyProposal.Applied };
             Write(all);
             return new(true, null, $"daoris: `{proposal.Id}` applied on the owner's turn {turn.Id}; the policy is at revision {revisionAfter}.", proposal);
         }
     }
+
+    private OwnerTurn? Confirmed(string session, PolicyProposal proposal) =>
+        string.Equals(proposal.Session, session, StringComparison.OrdinalIgnoreCase) ? turns.Binding(proposal.Session, proposal.At, proposal.Id, proposal.Digest) : null;
 
     private string ConfigPath => DaorisHome.Entry(home, HomeEntry.DriverConfig);
 
