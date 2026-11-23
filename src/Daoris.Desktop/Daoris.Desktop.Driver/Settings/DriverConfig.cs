@@ -361,6 +361,10 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">No repository, or a value that is no blob id and not <c>none</c>.</exception>
     public DriverConfig WithIntegrationGates(string repository, string? blob) => DriverConfigEdits.IntegrationGates(this, repository, blob);
 
+    /// <summary>The digest of each unit the owner accepted per repository, computed from the blob <see cref="IntegrationGates"/> names (<see cref="IntegrationUnitsKey"/>).</summary>
+    public IReadOnlyDictionary<string, AcceptedUnits> IntegrationUnits { get; init; } =
+        new Dictionary<string, AcceptedUnits>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Each repository's session access setup: full access, or the pauses it names, each resolved on its own (<see cref="AccessRules.Resolve"/>)
     /// and edited by <see cref="AccessRules.Apply"/>; absent everywhere is today's behaviour.

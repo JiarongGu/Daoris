@@ -89,6 +89,7 @@ internal static class DriverConfigWriter
             LinePolicyKey.WritePolicies(writer, "workspaceLinePolicies", config.WorkspaceLinePolicies);
             // Written only when set, beside the landed route's acceptance: absent is nothing accepted for integration.
             IntegrationGatesKey.WriteMap(writer, config.IntegrationGates);
+            IntegrationUnitsKey.WriteMap(writer, config.IntegrationUnits);
             // Written only when set, as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
             AccessKey.WriteMap(writer, "access", config.Access);
             AccessKey.WriteMap(writer, "workspaceAccess", config.WorkspaceAccess);

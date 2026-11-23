@@ -49,7 +49,30 @@ public static class DeclarationAcceptance
         });
         if (!accepted) return Task.FromResult<string?>(null);
         var kept = DeclarationSetAside.Said(owed.SetAside) is { Length: > 0 } parts ? $", only {parts}" : "";
-        return Task.FromResult<string?>($"{owed.Repository}'s daoris.gates.json on {owed.Line} changed no command{kept}, so it stays accepted as it landed.");
+        var narrowed = DeclaredNarrowing.Said(owed.Narrowed) is { Length: > 0 } said ? $" ({said})" : "";
+        return Task.FromResult<string?>($"{owed.Repository}'s daoris.gates.json on {owed.Line} changed no command{kept}{narrowed}, so it stays accepted as it landed.");
+    }
+
+    /// <summary>
+    /// <paramref name="pending"/>'s acceptance converted: each unit's digest computed from the accepted blob's text and kept beside it; false
+    /// where the text does not read, or the file as its writer reads it under its lock moved or converted it already.
+    /// </summary>
+    internal static async Task<bool> ConvertAsync(string configPath, DeclarationUnconverted pending, CancellationToken ct)
+    {
+        if (DeclarationUnits.Of(await IntegrationAcceptance.TextAsync(pending.Root, pending.Blob, ct).ConfigureAwait(false)) is not { } units) return false;
+        var converted = false;
+        DriverConfigDisk.Edit(configPath, current =>
+        {
+            if (IntegrationAcceptance.Of(current, pending.Repository) != pending.Blob
+                || (current.IntegrationUnits.TryGetValue(pending.Repository, out var held) && held.Blob == pending.Blob))
+            {
+                return current;
+            }
+
+            converted = true;
+            return current.WithIntegrationUnits(pending.Repository, new AcceptedUnits(pending.Blob, units));
+        });
+        return converted;
     }
 
     /// <summary>The blob <paramref name="owed"/> is judged against under <paramref name="config"/>: the integration's acceptance, else the landed route's gates.</summary>

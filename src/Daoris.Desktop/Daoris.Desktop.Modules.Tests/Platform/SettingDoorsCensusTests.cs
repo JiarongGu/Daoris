@@ -96,6 +96,7 @@ public sealed class SettingDoorsCensusTests
     {
         [HeavyKey.Key] = "SET_HEAVY_GATES",
         [IntegrationGatesKey.Key] = "INTEGRATION_GATES",
+        [IntegrationUnitsKey.Key] = "INTEGRATION_GATES",
         [KeepChoices.Key] = "SET_KEEP",
         [SessionChecksKey.Key] = "SET_SESSION_CHECKS",
         [WorkflowValuesKey.Key] = "SET_WORKFLOW_VALUES",

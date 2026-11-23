@@ -51,7 +51,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     {
         var under = await CheckDeclaration.OfAsync(
             send.Checkout, send.Commit, send.Accepted ?? IntegrationAcceptance.None, mode,
-            each => CheckDeclaration.LineAsync(home, send.Repository, send.Checkout, send.Workspace, each), ct).ConfigureAwait(false);
+            each => CheckDeclaration.LineAsync(home, send.Repository, send.Checkout, send.Workspace, each),
+            DeclarationUnits.Run(send.Gates, send.Reached || send.Base is not null), ct).ConfigureAwait(false);
         if (under.Problem is { } problem) return (Unknown(problem), false);
         if (under.Held is { } held) return (Unknown(held) with { Code = VerifyResult.Changed, Declaration = under.Work, Accepted = send.Accepted }, false);
         _ran = under.Blob ?? send.Accepted;

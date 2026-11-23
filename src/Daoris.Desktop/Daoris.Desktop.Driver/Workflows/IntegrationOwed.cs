@@ -24,10 +24,21 @@ public sealed record DeclarationOwed(string Repository, string Workspace, string
 
     /// <summary>What a change that alters no command set aside against the blob accepted (<see cref="DeclarationCommands.SetAside"/>); none where the look judged none.</summary>
     public IReadOnlyList<DeclarationSetAside> SetAside { get; init; } = [];
+
+    /// <summary>The units that differ from the accepted ones.</summary>
+    public IReadOnlyList<string> ChangedUnits { get; init; } = [];
+
+    /// <summary>What the change drops from a reach: said, owing nothing.</summary>
+    public IReadOnlyList<DeclaredNarrowing> Narrowed { get; init; } = [];
 }
 
+/// <summary>An acceptance by a whole file's blob that holds no accepted units yet.</summary>
+public sealed record DeclarationUnconverted(string Repository, string Root, string Blob);
+
 /// <summary>One pair of accepted and line blobs judged: its change, whether it keeps the acceptance, what it set aside, or why it could not be judged.</summary>
-internal sealed record DeclarationJudged(DeclarationChange? Change, bool Keeps, IReadOnlyList<DeclarationSetAside> SetAside, string? Problem = null);
+internal sealed record DeclarationJudged(
+    DeclarationChange? Change, bool Keeps, IReadOnlyList<DeclarationSetAside> SetAside, string? Problem = null,
+    IReadOnlyList<string>? ChangedUnits = null, IReadOnlyList<DeclaredNarrowing>? Narrowed = null);
 
 /// <summary>
 /// Which repositories' committed declaration their owner has not accepted: the look's own read, since the attention judge may start no
@@ -82,6 +93,7 @@ public sealed class IntegrationOwed
             var row = new DeclarationOwed(read.Repository, read.Workspace, read.Line, read.Blob, state, read.Since)
             {
                 Root = read.Root, Change = judged?.Change, Against = against, SetAside = judged?.SetAside ?? [],
+                ChangedUnits = judged?.ChangedUnits ?? [], Narrowed = judged?.Narrowed ?? [],
             };
             (!DeclarationMode.Waits(config, read.Repository, read.Workspace) ? byMode
                 : state == IntegrationAcceptance.Changed && judged is { Keeps: true } ? kept
@@ -121,9 +133,8 @@ public sealed class IntegrationOwed
             if (now is null || (was is null && against != IntegrationAcceptance.None)) continue;
             try
             {
-                next[(against, read.Blob)] = DeclarationCommands.Keeps(was, now)
-                    ? new DeclarationJudged(DeclarationChange.Between(was, now), true, DeclarationCommands.SetAside(was, now))
-                    : new DeclarationJudged(DeclarationChange.Between(was, now), false, []);
+                var recorded = config.IntegrationUnits.TryGetValue(read.Repository.Trim(), out var accepted) && accepted.Blob == against ? accepted.Units : null;
+                next[(against, read.Blob)] = Judged(recorded, was, now);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
@@ -136,6 +147,26 @@ public sealed class IntegrationOwed
         _judged = next;
         Unjudged = unjudged;
     }
+
+    /// <summary>One pair judged by units, the accepted ones the home's record where it holds the accepted blob's, else those of its text.</summary>
+    private static DeclarationJudged Judged(IReadOnlyDictionary<string, string>? recorded, string? accepted, string? now)
+    {
+        var before = recorded ?? DeclarationUnits.Of(accepted);
+        var after = DeclarationUnits.Of(now);
+        var changed = before is not null && after is not null ? DeclarationUnits.Differing(before, after) : null;
+        var keeps = changed is not null ? changed.Count == 0 : DeclarationCommands.Keeps(accepted, now);
+        return new DeclarationJudged(
+            DeclarationChange.Between(accepted, now), keeps, keeps ? DeclarationCommands.SetAside(accepted, now) : [], null, changed ?? [], DeclarationUnits.Narrowed(accepted, now));
+    }
+
+    /// <summary>The acceptances of <paramref name="config"/> by blob that hold no units of that blob yet; converted by reading their text, so no press is owed.</summary>
+    public IReadOnlyList<DeclarationUnconverted> Unconverted(DriverConfig config) =>
+        [.. _reads.Values
+            .Select(read => (Read: read, Blob: IntegrationAcceptance.Of(config, read.Repository)))
+            .Where(each => each.Blob is { } blob && blob != IntegrationAcceptance.None
+                && !(config.IntegrationUnits.TryGetValue(each.Read.Repository, out var held) && held.Blob == blob))
+            .Select(each => new DeclarationUnconverted(each.Read.Repository, each.Read.Root, each.Blob!))
+            .OrderBy(each => each.Repository, StringComparer.Ordinal)];
 
     /// <summary>The state of the one acceptance of <paramref name="blob"/>: the integration's where the line declares one, else the landed route's where it verifies.</summary>
     internal static string StandingOf(DriverConfig config, string repository, string workspace, string line, string blob, bool declares)

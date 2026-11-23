@@ -18,25 +18,26 @@ public sealed record DeclarationChange(
     /// <summary>Nothing differs that runs: the same checks and the same parts.</summary>
     public bool IsEmpty => !Unread && Added.Count == 0 && Removed.Count == 0 && Changed.Count == 0 && Other.Count == 0;
 
-    private const string ChecksKey = "gates";
-
     /// <summary>The change from the accepted text <paramref name="accepted"/> (null where none is accepted or it holds none) to the line's <paramref name="tip"/>.</summary>
     public static DeclarationChange Between(string? accepted, string? tip)
     {
-        var was = DeclarationCommands.Runs(accepted);
-        var now = DeclarationCommands.Runs(tip);
+        var was = DeclarationUnits.Of(accepted);
+        var now = DeclarationUnits.Of(tip);
         if ((was is null && !string.IsNullOrWhiteSpace(accepted)) || (now is null && !string.IsNullOrWhiteSpace(tip)))
         {
             return new DeclarationChange([], [], [], []) { Unread = true };
         }
 
-        var before = Checks(was);
-        var after = Checks(now);
+        var before = Checks(DeclarationCommands.Read(accepted));
+        var after = Checks(DeclarationCommands.Read(tip));
+        IReadOnlyDictionary<string, string> none = new Dictionary<string, string>();
+        var wasUnits = was ?? none;
+        var nowUnits = now ?? none;
 
         var added = after.Where(each => !before.ContainsKey(each.Key)).Select(each => Check(each.Key, each.Value)).ToList();
         var removed = before.Where(each => !after.ContainsKey(each.Key)).Select(each => Check(each.Key, each.Value)).ToList();
         var changed = after
-            .Where(each => before.TryGetValue(each.Key, out var old) && !JsonNode.DeepEquals(old, each.Value))
+            .Where(each => before.ContainsKey(each.Key) && wasUnits.GetValueOrDefault(DeclarationUnits.Gate(each.Key)) != nowUnits.GetValueOrDefault(DeclarationUnits.Gate(each.Key)))
             .Select(each =>
             {
                 var run = Check(each.Key, each.Value);
@@ -45,10 +46,9 @@ public sealed record DeclarationChange(
             })
             .ToList();
 
-        var keys = (was?.Select(each => each.Key) ?? []).Concat(now?.Select(each => each.Key) ?? []).Distinct(StringComparer.Ordinal)
-            .Where(key => key != ChecksKey && !JsonNode.DeepEquals(was?[key], now?[key]))
-            .Order(StringComparer.Ordinal)
-            .ToList();
+        var named = before.Keys.Concat(after.Keys).Select(DeclarationUnits.Gate).ToHashSet(StringComparer.Ordinal);
+        var keys = DeclarationUnits.Differing(wasUnits, nowUnits).Where(unit => !named.Contains(unit)).Select(DeclarationUnits.PartOf)
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         return new DeclarationChange(added, removed, changed, keys);
     }
 

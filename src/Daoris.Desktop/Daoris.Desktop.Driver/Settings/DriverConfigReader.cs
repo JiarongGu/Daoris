@@ -93,6 +93,7 @@ internal static class DriverConfigReader
             WorkspaceLinePolicies = LinePolicyKey.PolicyMap(root, "workspaceLinePolicies"),
             // Read as a stored shape: a value that is no blob id and not `none` is not read, and shadows none.
             IntegrationGates = IntegrationGatesKey.Map(root),
+            IntegrationUnits = IntegrationUnitsKey.Map(root),
             // Read as a stored shape: a pause this build does not know passed over, a value it does not know read as today's.
             Access = AccessKey.Map(root, "access"),
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
