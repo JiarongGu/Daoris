@@ -230,6 +230,16 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     is read without decoding a token: presence is judged on the file's bytes, which are cleared after. Each look reads the stores,
     and one its agent cleared reads signed out at once (`StoredSignIns`); a sign-out read after an unanswered reading that followed a
     sign-in still reads as one nobody at Daoris made (`AccountReads` carries the word before through the unanswered run). (CREDRACE1)
+    Sessions reopened together hold one token and each refreshes it as it starts, whatever the status question did, so a counted start
+    whose account's stored token is still expiring within those ten minutes after any renewal goes in its turn (`RefreshPace`): the
+    first at once, each next ten seconds after the one before (`HarnessRoster.RefreshStagger`) or as soon as the store is no longer
+    expiring, and none while a fresh temp file of the store's write is there (`StoredLeftovers.InFlight`). The provider declares the
+    store's file, its write's temp-file pattern and how long a write takes (`IStoredSignIn`); a temp file older than that is a leftover,
+    which each look removes. Each look also watches each such account's home (`CredentialWrites`, one non-recursive watcher per
+    home), and every write to the store or a temp file is a `credentials.written` line in the machine log: the account, the file
+    (`store` or `temp`), the change, whether the file is empty and whether each token is there (never a value), the sessions running
+    on the account and the starts chosen on it not yet running. The file system names no writer, so the sessions beside the write are
+    the attribution; `credentials.watching` and `app.started` mark a restart beside them. (SIGNOUTRACE1)
 
 **Usage, limits and errors**
 

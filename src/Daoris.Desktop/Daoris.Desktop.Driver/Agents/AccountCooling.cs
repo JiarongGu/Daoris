@@ -614,6 +614,23 @@ public static class AccountLines
                 ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
             ]);
 
+        /// <summary>
+        /// A write to an account's stored sign-in or its temp file: the file, the change, whether it is empty and each token present (null
+        /// where it did not read), the sessions running on the account and the starts not yet running. Never a value.
+        /// </summary>
+        public static AccountLine CredentialsWritten(
+            string adapter, string account, string file, string change, bool? empty, bool? access, bool? refresh,
+            IReadOnlyList<string> running, int starting) =>
+            new("credentials.written",
+            [
+                ("door", adapter), ("account", Profile(account)), ("file", file), ("change", change), ("empty", empty),
+                ("access", access), ("refresh", refresh), ("running", running.Count),
+                ("sessions", running.Count > 0 ? string.Join(",", running.Take(8)) : null), ("starting", starting),
+            ]);
+
+        /// <summary>The first account homes watched by this process: the writes after it are read beside it.</summary>
+        public static AccountLine CredentialsWatching(int accounts) => new("credentials.watching", [("accounts", accounts)]);
+
         /// <summary>The marker's own word, kept short: a window's name, never a clause.</summary>
         internal static string? Bounded(string? word) => word is { Length: > 0 and <= 40 } ? word : null;
     }

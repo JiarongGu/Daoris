@@ -44,13 +44,70 @@ internal static class SignInRefresh
     }
 
     /// <summary>Whether a session of Daoris's runs on the account now, by the last look: a start chosen and not yet running is none.</summary>
-    private static bool Running(HarnessRoster roster, string owner, string account)
+    private static bool Running(HarnessRoster roster, string owner, string account) => SessionsOn(roster, owner, account).Running.Count > 0;
+
+    /// <summary>
+    /// The sessions of Daoris's running on the account by the last look (their ids), and how many starts were chosen on it that the look
+    /// has not read yet: whose processes may refresh its token now.
+    /// </summary>
+    internal static (IReadOnlyList<string> Running, int Starting) SessionsOn(HarnessRoster roster, string owner, string account)
     {
         lock (roster._load)
         {
-            return roster._looked.Any(each => each.Session.Running
-                                       && string.Equals(each.Owner, owner, StringComparison.OrdinalIgnoreCase)
-                                       && string.Equals(each.Session.Profile, account, StringComparison.OrdinalIgnoreCase));
+            var running = roster._looked
+                .Where(each => each.Session.Running
+                               && string.Equals(each.Owner, owner, StringComparison.OrdinalIgnoreCase)
+                               && string.Equals(each.Session.Profile, account, StringComparison.OrdinalIgnoreCase))
+                .Select(each => each.Session.Id ?? "?")
+                .ToList();
+            var starting = roster._chosen.Count(each => string.Equals(each.Owner, owner, StringComparison.OrdinalIgnoreCase)
+                                                        && string.Equals(each.Account, account, StringComparison.OrdinalIgnoreCase));
+            return (running, starting);
+        }
+    }
+}
+
+/// <summary>
+/// Starts on one account whose stored access token is still about to expire, after any renewal, paced one at a time: a session of
+/// such a start reads the store as it starts and refreshes the token it read, so sessions reopened together after a restart, all
+/// holding the one token, spend one single-use refresh token several times. The first start goes at once; each next
+/// goes <see cref="HarnessRoster.RefreshStagger"/> after the one before, or as soon as the store is no longer expiring (the earlier
+/// session refreshed it), and none goes while a write of the store is in flight.
+/// </summary>
+internal sealed class RefreshPace
+{
+    private readonly object _gate = new();
+    private readonly Dictionary<string, long> _next = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Wait this start's turn on the account.</summary>
+    public async Task WaitAsync(HarnessRoster roster, AccountAgent asker, string owner, string account, CancellationToken ct)
+    {
+        if (asker.Accounts.StoredSignIn is not { } store) return;
+        var home = HarnessSettings.ProfileHome(roster.Home, owner, account);
+        bool Risky() => store.Read(home) is { Cleared: false } shape && shape.Expiring(roster.Clock(), SignInRefresh.Margin);
+
+        if (roster.RefreshStagger > TimeSpan.Zero && Risky())
+        {
+            long slot;
+            lock (_gate)
+            {
+                var key = HarnessRoster.AccountKey(owner, account);
+                slot = Math.Max(Environment.TickCount64, _next.GetValueOrDefault(key));
+                _next[key] = slot + (long)roster.RefreshStagger.TotalMilliseconds;
+            }
+
+            while (Environment.TickCount64 < slot && Risky())
+            {
+                await roster.Delay(TimeSpan.FromMilliseconds(Math.Min(slot - Environment.TickCount64, roster.RefreshPoll.TotalMilliseconds)), ct)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        // A write of the store in flight is waited out, within the walk's patience: its rename is the moment the token changes.
+        var until = Environment.TickCount64 + (long)roster.LockPatience.TotalMilliseconds;
+        while (StoredLeftovers.InFlight(store, home, roster.Clock().UtcDateTime) && Environment.TickCount64 < until)
+        {
+            await roster.Delay(roster.RefreshPoll, ct).ConfigureAwait(false);
         }
     }
 }

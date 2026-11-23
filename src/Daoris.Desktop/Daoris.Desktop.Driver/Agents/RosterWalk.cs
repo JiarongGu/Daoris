@@ -470,6 +470,17 @@ internal sealed class RosterWalk(HarnessRoster roster)
             await held.DisposeAsync().ConfigureAwait(false);
         }
 
+        // Outside the lock, so no question waits on it: a start whose account's token is still about to expire goes in its turn.
+        try
+        {
+            await roster.Pace.WaitAsync(roster, asker, owner, account, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            roster.Unchose(number);
+            throw;
+        }
+
         return true;
     }
 

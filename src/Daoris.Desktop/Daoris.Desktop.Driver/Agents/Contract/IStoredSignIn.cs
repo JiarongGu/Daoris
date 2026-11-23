@@ -27,4 +27,16 @@ public interface IStoredSignIn
 {
     /// <summary>The store's shape in <paramref name="profileHome"/>; null where there is none or it does not read.</summary>
     StoredSignInShape? Read(string profileHome);
+
+    /// <summary>The store's file name in an account's home, which Daoris watches; null where none is declared.</summary>
+    string? FileName => null;
+
+    /// <summary>The shape of one file the agent wrote as or beside the store (a temp file); null where it does not read.</summary>
+    StoredSignInShape? ReadFile(string path) => null;
+
+    /// <summary>The agent's file-name pattern (<c>*</c> for the rest) for a write's temp files, or null where its writes leave none.</summary>
+    string? LeftoverPattern => null;
+
+    /// <summary>How long a write takes: a temp file younger than this may be in flight, an older one is a leftover.</summary>
+    TimeSpan WriteLife => TimeSpan.FromMinutes(5);
 }

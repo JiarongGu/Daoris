@@ -8,6 +8,11 @@ internal sealed class StoredSignInsLook(ILookWiring wiring) : ILookPass
     {
         var kept = StoredSignIns.Read(wiring.Harnesses);
         if (kept > 0) round.Events.Add($"{kept} account(s) read signed out: their agent cleared the stored sign-in.");
+
+        wiring.Harnesses.Writes ??= new CredentialWrites(wiring.Harnesses, wiring.Service.AccountSaid);
+        wiring.Harnesses.Writes.Follow();
+        var removed = StoredLeftovers.Sweep(wiring.Harnesses);
+        if (removed > 0) round.Events.Add($"{removed} leftover file(s) of unfinished sign-in writes removed.");
         return Task.CompletedTask;
     }
 }
