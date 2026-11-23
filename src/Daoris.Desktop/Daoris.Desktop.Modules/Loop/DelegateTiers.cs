@@ -19,6 +19,7 @@ internal static class DelegateTiers
             Repository = mode is null ? loop.Processes.Delegates.PlaceOf(session)?.Repository : null,
             Agent = mode is null ? loop.Processes.Delegates.AgentOf(session) : null,
             PlaceOf = mode is null ? null : (request, ct) => HelpPlaceAsync(loop, session, request, ct),
+            Risk = mode is null ? request => DelegateRisk.Of(loop.Home, session, request, DateTimeOffset.UtcNow) : null,
         };
     }
 

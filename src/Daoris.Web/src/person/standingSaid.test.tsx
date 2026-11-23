@@ -21,9 +21,10 @@ const draw = (waiting: Confirmation) => render(
 );
 
 describe('the card’s standing words', () => {
-  it('says where the terminal stands only for the one place the system would not tell', () => {
+  it('says where the terminal stands for the one place the system would not tell, and why the risk policy holds a press', () => {
     const t = i18n.t.bind(i18n);
     expect(standingSaid(t, 'untold')).toMatch(/could not tell whether this terminal runs inside an agent/);
+    expect(standingSaid(t, 'risk')).toMatch(/risk policy classes this act at the owner or a role here/);
     expect(standingSaid(t, 'running-here')).toBeNull();
     expect(standingSaid(t, null)).toBeNull();
     expect(standingSaid(t, undefined)).toBeNull();

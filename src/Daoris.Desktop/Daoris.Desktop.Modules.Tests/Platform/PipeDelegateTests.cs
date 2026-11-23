@@ -384,6 +384,61 @@ public sealed class PipeDelegateTests : PipeDelegateHarness
         Assert.Empty(Logged(PipeDelegate.PressedEvent));
     }
 
+    [Theory]
+    [InlineData(AccessRules.Asking)]
+    [InlineData(AccessRules.Unrestricted)]
+    public async Task A_working_session_s_pin_with_nothing_configured_runs_at_once_whatever_its_access_and_the_log_names_the_act(string permissions)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var key = _delegates.Draw("s-quest");
+        _access["s-quest"] = permissions;
+
+        var answer = await client.AnswerAsync(await SendProvedAsync(client, "HARNESS_ACTION", new { action = "pin", door = "codex", version = "0.156.1" }, "s-quest", key, nonce));
+
+        Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+        Assert.Equal(1, driver.Ran("HARNESS_ACTION"));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Contains(
+            $$"""{"session":"s-quest","route":"{{DriverModule.Name}}.HARNESS_ACTION","by":"session s-quest","act":"agent.version","rule":"seed at seed","door":"terminal"}""",
+            Logged(PipeDelegate.SessionPressedEvent));
+        var line = Assert.Single(RiskJournal.Read(Home));
+        Assert.Equal((RiskActs.AgentVersion, RiskVerdict.Pass, "session s-quest", "pin codex 0.156.1"), (line.Kind, line.Outcome, line.Actor, line.Subject));
+    }
+
+    [Fact]
+    public async Task A_working_session_s_pin_classed_owner_waits_on_the_owner_s_card_saying_the_risk_policy_holds_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, nonce, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        ((StubGrounds)pipe.Grounds!).Reads["HARNESSES"] = _ => new { harnesses = new[] { new { door = "codex", present = true, updates = "pin", pinned = "0.156.0", pinnable = true } } };
+        var path = DriverConfig.ResolvePath(Home);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, """{"risk":{"machine":[{"kind":"agent.version","class":"owner"}]}}""");
+        var key = _delegates.Draw("s-quest");
+        _access["s-quest"] = AccessRules.Unrestricted;
+
+        var id = await SendProvedAsync(client, "HARNESS_ACTION", new { action = "update", door = "codex" }, "s-quest", key, nonce);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+
+        Assert.Equal((StandingWhy.Risk, "s-quest"), (card.Standing, card.Asker.Session));
+        Assert.Equal(0, driver.Ran("HARNESS_ACTION"));
+        var line = Assert.Single(RiskJournal.Read(Home));
+        Assert.Equal((RiskVerdict.OwnerOutcome, "machine", RiskJudged.Opened), (line.Outcome, line.Source, line.Stage));
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+        Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran("HARNESS_ACTION"));
+    }
+
     /// <summary>Under asking or the judged default, a working session's press is put on a card naming it, and runs on the person's yes.</summary>
     [Theory]
     [InlineData(AccessRules.Asking)]

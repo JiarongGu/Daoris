@@ -214,7 +214,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             return (null, answer);
         }
 
-        var why = placeSaid;
+        var gated = delegated is { Tier: PipeDelegateTier.Asked, Risk: { Outcome: not RiskVerdict.Pass } };
+        var why = placeSaid ?? (gated ? StandingWhy.Risk : null);
 
         // A person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
         // window yet, so one past them is refused before any read. The grounds are read in the press's own task, outside every lock.
@@ -244,7 +245,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         Task Card() => pipe.Asking.AskThenRunAsync(reserved, row, fields, why);
 
         _ = stewardsAsk is not null ? pipe.StewardAllows.RaiseAsync(reserved, Card, stewardsAct!, stewardsAsk, connection.Client)
-            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session }
+            : delegated is { Tier: PipeDelegateTier.Asked, Repository: { } repository, Session: { } session } && delegated.Risk?.Outcome is not RiskVerdict.OwnerOutcome
                 ? pipe.SessionPresses.RaiseAsync(reserved, Card, session, repository, delegated.Agent)
             : Card();
         return (null, Held(answer));

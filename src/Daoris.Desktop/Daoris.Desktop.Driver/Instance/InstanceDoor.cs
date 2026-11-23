@@ -358,6 +358,7 @@ public static class InstanceDoor
     public static string? StandingWhy(string? code) => code switch
     {
         "untold" => "Daoris could not tell this terminal is outside every agent it runs",
+        "risk" => "the risk policy classes this act at the owner or a role here, so it waits on that yes (`daoris settings risk` names the rule)",
         _ => null,
     };
 

@@ -306,6 +306,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
 42. Agents install from their makers' channels into the home's toolchain folder. An ACP adapter is its own package and pin; the
     managed `claude` it runs reads `claude-code`'s pin. On Windows an npm-installed agent starts as the node and script its `.cmd`
     shim would run (`PackageStarts`). A pin names an exact version (`PinInstall.Plan` refuses a tag or a range). (D57, D121)
+    A version move (`daoris agent pin` and `update`, the window's *Pin* and *Update*) is the risk policy's act `agent.version` at the
+    pin's place, the workspace it names or else the machine, `none` by the seed (`AgentVersionAct`). A session's terminal acting alone
+    takes the move where the verdict passes, saying the verdict and journaling one `risk.judged` line naming the act; where a row
+    classes it `role` or `owner` it says whom it waits on and the rule, and fetches and pins nothing. The person's own terminal is not
+    judged. A proved session's press to the running Daoris reads the same verdict (roles-and-supervision rule 56's working tier). (D354)
 43. A start's model and effort come from the role's choices, in the tool's own words: on the protocol door by
     `session/set_config_option` before the posture and the first prompt, on the pipe by `--model` and `--effort`. An absent value
     is the account default. (D205)

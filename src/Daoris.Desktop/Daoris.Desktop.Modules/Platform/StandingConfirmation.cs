@@ -11,6 +11,7 @@ public static class StandingWhy
 
     /// <summary>The judge cannot tell where the terminal's process stands, or an agent of some Daoris here runs uncontained.</summary>
     public const string Untold = "untold";
+    public const string Risk = "risk";
 }
 
 /// <summary>What the window reads of the roles' judge (<c>STATE</c>'s <c>standingConfirmation</c>): the terminals that hold a role, the steward's acts and its desk.</summary>
