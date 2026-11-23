@@ -5,12 +5,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Whether a <c>daoris.gates.json</c> runs nothing the one accepted does not: the rule that keeps an acceptance across a change, and lets a
-/// check run under the accepted declaration where a work's own change alters no command. Two declarations run the same where they are
-/// equal once their inert parts are set aside: every member whose name begins with <c>_</c> at the top and directly inside a check
-/// (words); each check's <c>paths</c> (patterns), <c>timeoutMinutes</c>, <c>timeoutWhy</c> and <c>memoryGb</c> (budgets); and the top-level
-/// <c>tests</c> (test sets, read by the repository's own tools inside an accepted command), <c>tiers</c> and <c>docs</c> (patterns).
-/// Everything else is what runs or what grants: a check's name, command, folder, hand-back and flags, a check added, removed or moved, a
-/// member of any name deeper inside a part, and every other part, one the rule does not know included, waits for the person.
+/// check run under the accepted declaration where a work's own change alters no command. Two declarations run the same where no unit
+/// differs (<see cref="DeclarationUnits"/>): every gate, <c>generated</c>, <c>reached</c>, <c>doctrine</c> and every other part is a unit
+/// with its inert members (words, a gate's reach and its machine's budget) set aside, and the top-level
+/// <c>tests</c>, <c>tiers</c>, <c>docs</c> and <c>verifyBudget</c> are none (patterns read by the repository's own tools inside an
+/// accepted command). Everything else is what runs or what grants: a gate's name, command, folder, hand-back and flags, a gate added,
+/// removed or moved, a member of any name deeper inside a part, and every other part, one the rule does not know included, waits for the person.
 /// </summary>
 /// <remarks>
 /// Every read of a declaration is strict (<see cref="Strict"/>): a member written twice, a comment or a trailing comma makes the text no
@@ -21,41 +21,16 @@ public static class DeclarationCommands
     /// <summary>The one way a declaration's text is read, by every reader of it: no member written twice, no comment, no trailing comma.</summary>
     internal static readonly JsonDocumentOptions Strict = new() { AllowDuplicateProperties = false };
 
-    private static readonly HashSet<string> InertParts = new(StringComparer.Ordinal) { "tests", "tiers", "docs", "verifyBudget" };
-
-    private static readonly HashSet<string> InertCheckParts = new(StringComparer.Ordinal) { "paths", "timeoutMinutes", "timeoutWhy", "memoryGb" };
-
     private const string ChecksKey = "gates";
 
     /// <summary>
-    /// Whether <paramref name="now"/> runs only what <paramref name="accepted"/> runs: equal once both are read as JSON and their inert parts
-    /// set aside. A text that does not read as a JSON object keeps only an identical text; nothing accepted keeps only nothing.
+    /// Whether <paramref name="now"/> runs only what <paramref name="accepted"/> runs: no unit differs between them. A text that does not
+    /// read as a JSON object keeps only an identical text; nothing accepted keeps only nothing.
     /// </summary>
     public static bool Keeps(string? accepted, string? now)
     {
         if (string.IsNullOrWhiteSpace(accepted) || string.IsNullOrWhiteSpace(now)) return string.IsNullOrWhiteSpace(accepted) && string.IsNullOrWhiteSpace(now);
-        if (Runs(accepted) is not { } was || Runs(now) is not { } then) return string.Equals(accepted, now, StringComparison.Ordinal);
-        return JsonNode.DeepEquals(was, then);
-    }
-
-    /// <summary>The parts of the declaration <paramref name="text"/> that run or grant something, its inert parts taken out; null where it does not read.</summary>
-    internal static JsonObject? Runs(string? text)
-    {
-        if (Read(text) is not { } declaration) return null;
-        foreach (var name in declaration.Select(member => member.Key).Where(name => InertParts.Contains(name) || name.StartsWith('_')).ToList())
-        {
-            declaration.Remove(name);
-        }
-
-        foreach (var check in Checks(declaration))
-        {
-            foreach (var name in check.Select(member => member.Key).Where(name => InertCheckParts.Contains(name) || name.StartsWith('_')).ToList())
-            {
-                check.Remove(name);
-            }
-        }
-
-        return declaration;
+        return DeclarationUnits.Changed(accepted, now) is { } changed ? changed.Count == 0 : string.Equals(accepted, now, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -71,7 +46,7 @@ public static class DeclarationCommands
             if (!found.Contains(part)) found.Add(part);
         }
 
-        foreach (var name in Names(was, then).Where(name => (InertParts.Contains(name) || name.StartsWith('_')) && !JsonNode.DeepEquals(was[name], then[name])))
+        foreach (var name in Names(was, then).Where(name => DeclarationUnits.IsInertPart(name) && !JsonNode.DeepEquals(was[name], then[name])))
         {
             Add(new DeclarationSetAside(null, DeclarationSetAside.Of(name)));
         }
@@ -80,7 +55,7 @@ public static class DeclarationCommands
         foreach (var check in Checks(then))
         {
             if (NameOf(check) is not { } name || !before.TryGetValue(name, out var old)) continue;
-            foreach (var part in Names(old, check).Where(part => (InertCheckParts.Contains(part) || part.StartsWith('_')) && !JsonNode.DeepEquals(old[part], check[part])))
+            foreach (var part in Names(old, check).Where(part => DeclarationUnits.IsInertGatePart(part) && !JsonNode.DeepEquals(old[part], check[part])))
             {
                 Add(new DeclarationSetAside(name, DeclarationSetAside.Of(part)));
             }
