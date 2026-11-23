@@ -9,7 +9,7 @@ namespace Daoris.Adapters.Machine;
 /// <summary>
 /// One process the host started: its streams read from its start into channels, so neither pipe fills while the application reads the
 /// other, and its end awaited after its streams close or a moment after its exit where a process it started holds one open. A run
-/// disposed before its end is stopped, its tree with it.
+/// disposed before its end is stopped, its tree with it. Where the specification bounds the output waiting unread, the process waits on its pipe at its reader's pace.
 /// </summary>
 internal sealed class MachineRun : IChildRun
 {
@@ -25,11 +25,15 @@ internal sealed class MachineRun : IChildRun
     private readonly Task _read;
     private int _stopped;
 
+    private readonly SemaphoreSlim? _room;
+    private readonly CancellationTokenSource _released = new();
+
     private readonly Func<Process, string?> _end;
 
-    internal MachineRun(Process process, bool input, bool raw, Func<Process, string?>? end = null)
+    internal MachineRun(Process process, bool input, bool raw, Func<Process, string?>? end = null, int? outputAhead = null)
     {
         _process = process;
+        if (outputAhead is { } ahead && !raw) _room = new SemaphoreSlim(Math.Max(1, ahead));
         _end = end ?? Kill;
         Id = process.Id;
         Created = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
@@ -44,15 +48,37 @@ internal sealed class MachineRun : IChildRun
 
     private void Complete()
     {
+        Release();
         _output.Writer.TryComplete();
         _bytes.Writer.TryComplete();
+    }
+
+    /// <summary>Ends the wait for room: a stopped or ended process leaves a finite pipe, and its end must not wait on a reader.</summary>
+    private void Release()
+    {
+        _released.Cancel();
+    }
+
+    private async ValueTask<bool> RoomAsync()
+    {
+        if (_room is null || _released.IsCancellationRequested) return true;
+        try
+        {
+            await _room.WaitAsync(_released.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Released: the rest is read as it comes.
+        }
+
+        return true;
     }
 
     private async Task ReadAsync(StreamReader reader, ProcessStream stream)
     {
         var buffer = new char[4096];
         int read;
-        while ((read = await reader.ReadAsync(buffer).ConfigureAwait(false)) > 0)
+        while ((stream != ProcessStream.Output || await RoomAsync().ConfigureAwait(false)) && (read = await reader.ReadAsync(buffer).ConfigureAwait(false)) > 0)
         {
             _output.Writer.TryWrite(new ProcessOutput(stream, new string(buffer, 0, read)));
         }
@@ -70,12 +96,22 @@ internal sealed class MachineRun : IChildRun
 
     public async IAsyncEnumerable<ProcessOutput> Output([EnumeratorCancellation] CancellationToken ct)
     {
-        await foreach (var piece in _output.Reader.ReadAllAsync(ct).ConfigureAwait(false)) yield return piece;
+        await foreach (var piece in _output.Reader.ReadAllAsync(ct).ConfigureAwait(false))
+        {
+            if (piece.Stream == ProcessStream.Output) GiveBack();
+            yield return piece;
+        }
     }
 
     public async IAsyncEnumerable<ReadOnlyMemory<byte>> Bytes([EnumeratorCancellation] CancellationToken ct)
     {
         await foreach (var piece in _bytes.Reader.ReadAllAsync(ct).ConfigureAwait(false)) yield return piece;
+    }
+
+    private void GiveBack()
+    {
+        if (_room is null || _released.IsCancellationRequested) return;
+        _room.Release();
     }
 
     public async ValueTask WriteAsync(ReadOnlyMemory<byte> input, CancellationToken ct)
@@ -110,6 +146,7 @@ internal sealed class MachineRun : IChildRun
     {
         var refused = _end(_process);
         if (refused is null) Volatile.Write(ref _stopped, 1);
+        Release();
 
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(ExitBound);

@@ -17,15 +17,16 @@ public sealed record ProcessSpec(string Program, IReadOnlyList<string> Arguments
     public bool Input { get; init; }
 
     public bool RawOutput { get; init; }
+
+    /// <summary>How many pieces of text output (4096 characters each) may wait unread before the process waits on its pipe; null for no bound. Standard error, the end and the stop never wait.</summary>
+    public int? OutputAhead { get; init; }
 }
 
 /// <summary>Which of a process's two output streams a piece came from.</summary>
 public enum ProcessStream
 {
-    /// <summary>The standard output.</summary>
     Output,
 
-    /// <summary>The standard error.</summary>
     Error,
 }
 

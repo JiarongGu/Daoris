@@ -17,6 +17,8 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
     // The purpose the machine's log and the processes' owner know a git's start by.
     private const string Purpose = "Git";
 
+    private const int StreamedAhead = 16;
+
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     public string? InUse(string? home) => policy.InUse(home);
@@ -163,7 +165,7 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
 
     private async Task<int?> StreamPlacedAsync(GitAsk ask, GitRunSpec start, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
     {
-        await using var run = await host.StartAsync(SpecOf(ask, start, raw: false), ct).ConfigureAwait(false);
+        await using var run = await host.StartAsync(SpecOf(ask, start, raw: false, ahead: StreamedAhead), ct).ConfigureAwait(false);
         using var within = CancellationTokenSource.CreateLinkedTokenSource(ct);
         within.CancelAfter(start.Bound);
         try
@@ -196,13 +198,14 @@ public sealed class GitProcessRuns(IProcessHost host, IGitPolicy policy) : IGit
         }
     }
 
-    private static ProcessSpec SpecOf(GitAsk ask, GitRunSpec start, bool raw) =>
+    private static ProcessSpec SpecOf(GitAsk ask, GitRunSpec start, bool raw, int? ahead = null) =>
         new(start.Program ?? "git", start.Arguments, Purpose, AdmissionClasses.Background)
         {
             WorkingFolder = ask.Folder,
             Environment = start.Environment,
             Input = ask.Input is not null,
             RawOutput = raw,
+            OutputAhead = ahead,
         };
 
     /// <summary>The run's text read to its end, each piece handed to <paramref name="keep"/>; the task ends with the run's streams.</summary>
