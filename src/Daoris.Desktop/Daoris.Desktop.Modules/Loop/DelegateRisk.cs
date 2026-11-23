@@ -18,8 +18,6 @@ public static class DelegateRisk
         if (!AgentVersionAct.Moves(Text("action"))) return null;
         var actor = AgentVersionAct.PipeSessionActor(session);
         var subject = $"{Text("action")} {Text("door")}{(Text("version") is { } version ? $" {version}" : "")}";
-        var (verdict, place) = AgentVersionAct.JudgeAt(home, null, actor, subject);
-        AgentVersionAct.Journal(home, verdict, place, actor, subject, now);
-        return verdict;
+        return AgentVersionAct.Judged(home, null, actor, subject, now);
     }
 }
