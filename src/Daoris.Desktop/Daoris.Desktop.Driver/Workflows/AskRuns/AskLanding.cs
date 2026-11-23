@@ -26,7 +26,7 @@ public sealed class AskLanding(string home, Func<DateTimeOffset> clock)
             return Kept(start, LandingCode.Moved, $"`{name}` moved since it was judged; press Accept again.");
         }
 
-        var (merged, refused, refusal) = await IntegrationPresses.MergeAsync(
+        var (merged, refused, refusal, _) = await IntegrationPresses.MergeAsync(
             home, config, root, binding.Repository, binding.Workspace, line, name, start.Tip, ct, delivered: true, automatic: !start.Reviewed).ConfigureAwait(false);
         if (!merged) return Kept(start, refusal ?? LandingCode.Refused, refused!);
         RegistryFollowing.Moved(home, binding.Repository, clock());

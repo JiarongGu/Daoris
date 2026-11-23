@@ -240,7 +240,7 @@ internal sealed class LandingPress(
             }
 
             var merged = await merges.MergeAsync(path, ct, replayed, uncommitted, here, pinned: pinned, beside: beside, delivering: delivering).ConfigureAwait(false);
-            landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null, Refusal = merged.Refusal, RootStatus = merged.RootStatus };
+            landed = new(merged.Merged, merged.Message) { LeftOut = merged.Merged ? replayed?.LeftOut : null, Refusal = merged.Refusal, RootStatus = merged.RootStatus, Conflict = merged.Conflict };
             landed = Fetched(landed, notFetched);
         }
         else

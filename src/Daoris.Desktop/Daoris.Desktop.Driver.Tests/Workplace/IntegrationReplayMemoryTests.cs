@@ -1,4 +1,5 @@
 using Daoris.Driver;
+using Daoris.Testing;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -130,5 +131,34 @@ public sealed class IntegrationReplayMemoryTests : IDisposable
         Assert.Equal(clean, await _fixture.Repo.CommitOfAsync(run.Tree!, "HEAD^2", Ct));
         Assert.Equal(line, await _fixture.Repo.CommitOfAsync(run.Tree!, "HEAD^1", Ct));
         Assert.Equal("# the line's\n", _fixture.Repo.Read(run.Tree!, "README.md"));
+    }
+
+    /// <summary>A press that conflicts is said to whoever asked, with the files and the rebase words, for its own request alone.</summary>
+    [Fact]
+    public async Task A_press_that_conflicts_says_its_conflict_with_the_rebase_words_for_its_own_request_only()
+    {
+        using var _ = _fixture.Use();
+        var @base = _fixture.Head;
+        _fixture.Switch("main");
+        _fixture.Commit("the line's readme", "README.md", "# the line's\n");
+        _fixture.Switch(null, _fixture.Head);
+        var line = _fixture.Head;
+        var clash = _fixture.Branch("feature/clash", @base, "README.md", "# the branch's\n");
+        var clean = _fixture.Branch("feature/clean", @base, "clean.txt", "clean\n");
+        _fixture.Switch("main");
+        _fixture.Switch(null, line);
+        var store = _fixture.Store();
+        Assert.Null(store.Add(Request("rclash", "feature/clash", clash, Arrived, new LandingIntegrate(Batch: 8))));
+        Assert.Null(store.Add(Request("rclean", "feature/clean", clean, Arrived.AddSeconds(1), new LandingIntegrate(Batch: 8))));
+        using var unanswered = FlowGit.Use(new ScriptedGit().On(_ => new Daoris.Ports.Git.GitAnswer(1, "", "")));
+        var said = new List<(string Request, LandingConflict Conflict)>();
+
+        await Replays(store).RunAsync(Ask with { Conflicted = (request, conflict) => said.Add((request, conflict)) }, Ct);
+
+        var (request, found) = Assert.Single(said);
+        Assert.Equal("rclash", request);
+        Assert.StartsWith("`README.md`", found.Says);
+        Assert.StartsWith("Rebase your work onto `main`: the line moved since your work began, and landing it conflicts with what the line changed: `README.md`", found.Words);
+        Assert.EndsWith("It can land again once your tree has changed.", found.Words);
     }
 }

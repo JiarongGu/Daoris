@@ -12,5 +12,8 @@ public sealed record TreeMerge(bool Merged, string Message)
 
     /// <summary>The checkout's status (<see cref="LandTries.Fingerprint"/>) a <see cref="LandingCode.RootDirty"/> refusal read.</summary>
     public string? RootStatus { get; init; }
+
+    /// <summary>Where git would not merge the work into the line: the session's to settle, so the landing asks it to rebase.</summary>
+    public LandingConflict? Conflict { get; init; }
 }
 

@@ -669,7 +669,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     tried again only when a tip moves or the person presses, and work landed at its bound tip is done with its landing. A refusal
     for the repository's own checkout's uncommitted work (`root-dirty`) waits on that checkout and lands with no press once its
     status changes. A line holding every commit closes the entry `line-holds`; a merge waiting in integration is `queued`, made
-    again each look; neither says a review waits. (D145, D227)
+    again each look; neither says a review waits. A merge rule's press whose merge into the line conflicts (the line moved after the
+    replay was judged) is the session's to settle as a replay's own conflict is: the integration's replay says it with the files and the
+    rebase words (`IntegrationReplayAsk.Conflicted`), the press answers it (`TreeMerge.Conflict`), and the landing asks the session to rebase
+    in its own tree (`landing.rebase`, or the carry-on under a kept Accept) and lands at the first look after its tree changes, never
+    as a wait on the person; a hook's refusal carries no conflict, since a rebase would not change it. (D145, D227, D354, REPLAYCONFLICT1)
 35. In a session tree the agent commits on the tree's branch as it goes, and never switches or pushes. The commit rule (`commits`)
     may say `ask` or `at-end`. Daoris follows a tree an agent moved anyway. (D164)
 36. A chain's next step in the same repository starts on the step before's branch, and the chain lands on one branch, which
