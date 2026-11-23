@@ -18,7 +18,7 @@ let kits = 0;
 
 /** A kit under `scratch`: `copy(key, build)` is a folder holding what `build(seedFolder)` made, built once for each key. */
 export function seeds(scratch) {
-  const home = join(scratch, `kit${kits += 1}`);
+  const folder = join(scratch, `kit${kits += 1}`);
   const built = new Map();
   let count = 0;
   return {
@@ -29,12 +29,12 @@ export function seeds(scratch) {
     copy(key, build) {
       let seed = built.get(key);
       if (seed === undefined) {
-        seed = join(home, `seed${built.size + 1}`);
+        seed = join(folder, `seed${built.size + 1}`);
         mkdirSync(seed, { recursive: true });
         build(seed);
         built.set(key, seed);
       }
-      const dir = join(home, `r${count += 1}`);
+      const dir = join(folder, `r${count += 1}`);
       copyTree(seed, dir);
       return dir;
     },
