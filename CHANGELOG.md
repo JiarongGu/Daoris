@@ -15,6 +15,10 @@ with the version and date at release.
 - A step's git reads (a workflow's run step, the opinion gate, a check) now go ahead of the machine's background reads when places are
   short, after the person's own; within each, the oldest goes first. Long git answers (a history walk, a tree's listing) can now be read
   in parts as git writes them, and stopping the read stops git.
+- A session opens sooner when several open at once: its git reads and its tree's write are placed ahead of the loop's own reads
+  (four openings together took 86 s in a fixture beside the loop's reads and now 52 s, an opening's git ask waiting 0.4 s where it
+  waited 4.5 s), and the tree's write no longer shares the two places a hook-running git has. Each step of an opening says in
+  `session.opening` how long it waited for a place, as `<step>.queue`.
 - Marking a quest done yourself, or any session marking it, now ends its workflow's run as a stop does: no step starts after it, a
   check under way is told to stop, the sessions waiting on the run end with it, and its tree and branch are kept. The run's end says
   which commits its branch holds that the line does not, so what was left is named and never landed by a run nobody owns.

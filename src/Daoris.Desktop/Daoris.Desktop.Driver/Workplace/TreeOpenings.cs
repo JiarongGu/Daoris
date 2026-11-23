@@ -28,6 +28,10 @@ internal static class TreeOpenings
 
     internal static string[] HooksHeld(string home) => ["-c", $"core.hooksPath={HooksPath(home)}"];
 
+    /// <summary>Whether a git's words hold the hooks as <see cref="HooksHeld"/> does: a hooks path at a home's <c>no-hooks</c> entry, which no hook is in.</summary>
+    internal static bool HoldsHooks(IReadOnlyList<string> arguments) =>
+        arguments.Any(word => word.StartsWith("core.hooksPath=", StringComparison.Ordinal) && word.EndsWith("/no-hooks", StringComparison.Ordinal));
+
     internal static string[] CheckoutSpread => ["-c", "checkout.workers=0"];
 
     /// <summary>The process an opening's lock names; null where the reason is no opening's.</summary>

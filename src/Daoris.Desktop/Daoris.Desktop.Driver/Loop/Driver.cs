@@ -482,11 +482,13 @@ public sealed class Driver(
 
         try
         {
+            using var opening = GitScheduler.AsOpening();
             foreach (var phase in new[] { RunPhase.Choose, RunPhase.Grown, RunPhase.Placed, RunPhase.Cleared, RunPhase.Opened })
             {
                 foreach (var (name, stage) in RunStages.NamedIn(phase))
                 {
-                    using (state.Steps.Begin(name))
+                    using (var span = state.Steps.Begin(name))
+                    using (span.Aim())
                     {
                         if (await stage.RunAsync(run, ct).ConfigureAwait(false) is { } held) return held;
                     }

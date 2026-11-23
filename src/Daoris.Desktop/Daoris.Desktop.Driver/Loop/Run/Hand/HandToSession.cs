@@ -18,7 +18,17 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var home = context.Home;
         var config = context.Config;
         var state = run.State;
-        using var hand = state.Steps.Begin("hand");
+        using var handing = state.Steps.Begin("hand");
+        using var aimed = handing.Aim();
+        // The hand's gits are the opening's too, until the opening is said: the session's own life after it asks as any other flow does.
+        using var opening = GitScheduler.AsOpening();
+        // The step, its aim and its place in git's queue end together where the opening is said, before the hold starts the agent, and again, harmlessly, as this method does.
+        using var hand = new Disposer(() =>
+        {
+            opening.Dispose();
+            aimed.Dispose();
+            handing.Dispose();
+        });
         var quest = run.Quest;
         var registry = run.Registry;
         var (start, fellBack, answerKept, written, switched) = (state.GoneOn.Start, state.GoneOn.FellBack, state.GoneOn.AnswerKept, state.GoneOn.Written, state.GoneOn.Switched);

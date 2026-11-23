@@ -46,6 +46,7 @@ public sealed class GitScheduler
     public static GitScheduler Shared { get; } = new(Bound, OutsideBound, RepositoryBound);
 
     private static readonly AsyncLocal<bool> s_person = new();
+    private static readonly AsyncLocal<bool> s_opening = new();
     private static readonly AsyncLocal<GitPlace?> s_beneath = new();
     private static readonly AsyncLocal<Action<long>?> s_timed = new();
 
@@ -86,6 +87,21 @@ public sealed class GitScheduler
         {
             s_person.Value = before;
             named.Dispose();
+        });
+    }
+
+    /// <summary>Until disposed, this flow's gits are a driven session's opening's: a person's places, queued ahead of the background's in their repository, a write too.</summary>
+    public static IDisposable AsOpening()
+    {
+        var before = s_opening.Value;
+        s_opening.Value = true;
+        var named = GitAskers.Is(GitAskers.Opening);
+        var person = AsPerson();
+        return new Restore(() =>
+        {
+            person.Dispose();
+            named.Dispose();
+            s_opening.Value = before;
         });
     }
 
@@ -207,7 +223,7 @@ public sealed class GitScheduler
             }
             else
             {
-                entry = new Entry(ask, ++_order) { Parent = parent };
+                entry = new Entry(ask, ++_order) { Parent = parent, Opening = s_opening.Value };
                 if (parent is not null) _lending.Add(entry);
                 else Enqueue(entry);
             }
@@ -217,6 +233,7 @@ public sealed class GitScheduler
                 entry.Askers++;
                 if (Whose == StartClass.Person) entry.Whose = StartClass.Person;
                 if (askClass < entry.Class) entry.Class = askClass;
+                if (s_opening.Value) entry.Opening = true;
             }
         }
 
@@ -230,8 +247,12 @@ public sealed class GitScheduler
         var caller = GitAskers.Current;
         if (!joined) _ = DriveAsync(entry, run, s_timed.Value);
         Pump();
-        if (placeBy is { } allowance && await ExpiredAsync(entry, allowance, ct).ConfigureAwait(false)) throw new GitQueueExpiredException();
-        await QueuedAsync(entry, ct).ConfigureAwait(false);
+        using (ProcessStarts.Queued())
+        {
+            if (placeBy is { } allowance && await ExpiredAsync(entry, allowance, ct).ConfigureAwait(false)) throw new GitQueueExpiredException();
+            await QueuedAsync(entry, ct).ConfigureAwait(false);
+        }
+
         try
         {
             await Task.WhenAny(entry.Go.Task, entry.Result.Task).WaitAsync(ct).ConfigureAwait(false);
@@ -304,8 +325,6 @@ public sealed class GitScheduler
             if (entry.Placed) return;
         }
 
-        using var waiting = ProcessStarts.Queued();
-        if (waiting is null) return;
         try
         {
             await entry.Go.Task.WaitAsync(ct).ConfigureAwait(false);
@@ -331,7 +350,10 @@ public sealed class GitScheduler
             }
         }
 
-        entry.Node = queue.AddLast(entry);
+        // An opening's ask passes the background's queued reads only: a queued write, another class's ask or an earlier opening's stays ahead.
+        var after = entry.Opening ? queue.Last : null;
+        while (after is not null && !(after.Value.Opening || after.Value.Ask.Writes || after.Value.Class < GitAskClass.Background)) after = after.Previous;
+        entry.Node = !entry.Opening ? queue.AddLast(entry) : after is null ? queue.AddFirst(entry) : queue.AddAfter(after, entry);
         if (StartOf(entry) is { } start) _queuedByStart[start] = entry;
     }
 
@@ -427,7 +449,7 @@ public sealed class GitScheduler
             }
             else
             {
-                _places.Free(entry.Ask, entry.Whose);
+                _places.Free(entry.Ask, entry.Whose, entry.Opening);
             }
 
             if (!exited)
@@ -477,7 +499,7 @@ public sealed class GitScheduler
             while (Next() is { } entry)
             {
                 Dequeue(entry);
-                _places.Take(entry.Ask, entry.Whose);
+                _places.Take(entry.Ask, entry.Whose, entry.Opening);
                 Place(entry, 0);
                 go.Add(entry);
             }
@@ -520,7 +542,7 @@ public sealed class GitScheduler
             if (Held(entry)) continue;
             if (entry.Ask.Writes && !first) yield break;
             first = false;
-            if (_places.Opens(entry.Ask, entry.Whose)) yield return entry;
+            if (_places.Opens(entry.Ask, entry.Whose, entry.Opening)) yield return entry;
             if (entry.Ask.Writes) yield break;
         }
     }
@@ -636,6 +658,8 @@ public sealed class GitScheduler
         public StartClass Whose { get; set; } = StartClass.Background;
 
         public GitAskClass Class { get; set; } = GitAskClass.Background;
+
+        public bool Opening { get; set; }
 
         public GitPlace? Parent { get; init; }
 
