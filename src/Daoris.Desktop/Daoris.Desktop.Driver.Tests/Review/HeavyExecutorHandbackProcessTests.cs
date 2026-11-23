@@ -272,6 +272,22 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_pass_of_a_gates_own_run_keeps_nothing_for_the_handback_command_it_is_required_by()
+    {
+        var blob = await RepositoryAsync();
+        await CommitAsync("src/a.txt", "work" + Trailer);
+        var named = await RunAsync(blob, ["fast-src"]);
+        Assert.True(named.Verdict == VerifyVerdicts.Reached, named.Why);
+        File.Delete(Ran);
+
+        var handedBack = await RunAsync(blob, invocation: "i-b");
+
+        Assert.True(handedBack.Verdict == VerifyVerdicts.Reached, handedBack.Why);
+        Assert.DoesNotContain(handedBack.Gates, gate => gate.Verdict == VerifyGate.Kept);
+        Assert.Equal("fast-src required", File.ReadAllText(Ran).Trim());
+    }
+
+    [Fact]
     public async Task A_check_after_a_fix_keeps_nothing_once_the_line_moved_under_the_work()
     {
         var blob = await RepositoryAsync(admission: true);

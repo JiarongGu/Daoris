@@ -412,7 +412,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
     that closed, is sent again each time and counts for nothing, and goes on at the gate it reached: each gate that passes is kept in the
-    attempt's folder as it ends (`progress.json`, `GateProgress`), and the same attempt sent again for the same work, base and declaration
+    attempt's folder as it ends with its command (`progress.json`, `GateProgress`), and the same attempt sent again for the same work, base and declaration
     runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark is held for the
     person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
     the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
@@ -755,7 +755,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
     the change reaches (driving rule 7), and with them the line's admission the change reaches (below), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
     and Process tiers, which the run after the landing owes. Asked again after a fix, such a check keeps each of those gates whose newest
-    word among the run's attempts before is a pass at the same base (the line's commit the work holds, is merged onto, or branched from) and
+    word among the run's attempts before is a pass of the same command in the same folder (each gate's `command`, so a pass of a gate's
+    own run never stands for the hand-back command it is required by) at the same base (the line's commit the work holds, is merged onto, or branched from) and
     under the same declaration, where no path changed between the tree that attempt judged and the one judged now reaches it by the same
     reach (a required command's `paths`, the admission's lists, so `always` and `suites` run again after any change), as the merge tool's
     `--rerun` keeps its verdicts: each is named `kept` and the why says from which commit; a newest failure keeps nothing, and a kept or

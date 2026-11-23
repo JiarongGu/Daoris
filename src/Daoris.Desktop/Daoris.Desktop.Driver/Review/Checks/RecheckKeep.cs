@@ -39,7 +39,7 @@ internal static class RecheckKeep
         var kept = new List<Kept>();
         foreach (var gate in gates)
         {
-            if (Passed(earlier, gate.Name) is not { Judged: { } from } attempt || attempt.Onto != onto || attempt.Declaration != declaration) continue;
+            if (Passed(earlier, gate.Name, VerifyGate.CommandOf(gate)) is not { Judged: { } from } attempt || attempt.Onto != onto || attempt.Declaration != declaration) continue;
             if (!compared.TryGetValue(from, out var changed)) compared[from] = changed = await changedSince(from).ConfigureAwait(false);
             if (changed is not null && (changed.Count == 0 || !reaches(changed, gate))) kept.Add(new Kept(gate.Name, from));
         }
@@ -55,14 +55,14 @@ internal static class RecheckKeep
                   .Select(group => $"{string.Join(", ", group.Select(each => each.Gate))} (passed at {TextBounds.ShortCommit(group.Key, 7)})"))
               + ".";
 
-    /// <summary>The newest attempt whose word on <paramref name="gate"/> is a pass, null where its newest word is a failure or none says.</summary>
-    private static VerifyResult? Passed(IReadOnlyList<VerifyResult> earlier, string gate)
+    /// <summary>The newest attempt whose word on <paramref name="gate"/> is a pass of <paramref name="command"/>, null where its newest word is a failure or none says; a pass of another command says nothing.</summary>
+    private static VerifyResult? Passed(IReadOnlyList<VerifyResult> earlier, string gate, string command)
     {
         foreach (var attempt in earlier)
         {
-            var word = attempt.Gates.FirstOrDefault(each => each.Name == gate)?.Verdict;
-            if (word == RunnerVerdicts.Pass) return attempt;
-            if (word == RunnerVerdicts.Fail) return null;
+            var word = attempt.Gates.FirstOrDefault(each => each.Name == gate);
+            if (word?.Verdict == RunnerVerdicts.Pass && word.Command == command) return attempt;
+            if (word?.Verdict == RunnerVerdicts.Fail) return null;
         }
 
         return null;

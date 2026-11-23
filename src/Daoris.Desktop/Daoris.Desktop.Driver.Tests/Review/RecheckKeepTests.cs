@@ -24,7 +24,10 @@ public sealed class RecheckKeepTests : IDisposable
     private static bool Reaches(IReadOnlyCollection<string> paths, DeclaredGate gate) => GateReach.Reaches(gate, paths);
 
     private static VerifyResult Attempt(string invocation, string judged, params (string Gate, string Verdict)[] gates) =>
-        new(invocation, judged, VerifyVerdicts.Failed, null, [.. gates.Select(each => new VerifyGate(each.Gate, each.Verdict))])
+        new(invocation, judged, VerifyVerdicts.Failed, null, [.. gates.Select(each => new VerifyGate(each.Gate, each.Verdict)
+        {
+            Command = VerifyGate.CommandOf(new[] { Lint, Web, Driver }.First(gate => gate.Name == each.Gate)),
+        })])
         {
             Judged = judged, Onto = Onto, Declaration = Declaration,
         };
@@ -89,6 +92,32 @@ public sealed class RecheckKeepTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pass_of_another_command_under_the_gates_name_keeps_nothing_and_one_with_no_command_neither()
+    {
+        var other = Attempt("i-a", "aaaa", ("web-types", RunnerVerdicts.Pass));
+        var plain = other with { Gates = [new VerifyGate("web-types", RunnerVerdicts.Pass) { Command = "npm run typecheck:web --plain" }] };
+        var unnamed = other with { Gates = [new VerifyGate("web-types", RunnerVerdicts.Pass)] };
+
+        Assert.Empty(await KeptAsync([plain], ["docs/a.md"]));
+        Assert.Empty(await KeptAsync([unnamed], ["docs/a.md"]));
+        Assert.Equal(["web-types"], (await KeptAsync([plain, other], ["docs/a.md"])).Select(each => each.Gate));
+    }
+
+    [Fact]
+    public void A_check_step_reads_a_result_with_kept_gates_as_it_reads_one_that_ran_every_gate_so_its_landing_goes_on_the_same()
+    {
+        var ranAll = new VerifyResult("i-b", "work", VerifyVerdicts.Reached, null,
+            [new VerifyGate("lint", RunnerVerdicts.Pass, 0), new VerifyGate("web-types", RunnerVerdicts.Pass, 0)]);
+        var keptOne = ranAll with { Gates = [new VerifyGate("lint", RunnerVerdicts.Pass, 0), new VerifyGate("web-types", VerifyGate.Kept)] };
+
+        var all = CheckExecution.AnswerOf(ranAll);
+        var kept = CheckExecution.AnswerOf(keptOne);
+
+        Assert.Equal((ReconcileStates.Done, WorkStates.Reached), (kept.State, kept.Outcome!.State));
+        Assert.Equal((all.State, all.Outcome!.State, all.Outcome.Code, all.Outcome.Evidence), (kept.State, kept.Outcome.State, kept.Outcome.Code, kept.Outcome.Evidence));
+    }
+
+    [Fact]
     public void The_words_name_each_kept_gate_and_the_earlier_tree_it_stands_on()
     {
         var words = RecheckKeep.Words([new("web-types", "aaaa111"), new("censuses", "aaaa111"), new("lint", "bbbb222")], Onto, "main");
@@ -115,12 +144,13 @@ public sealed class RecheckKeepTests : IDisposable
     public void An_attempts_progress_carries_its_passed_gates_only_for_the_same_work_base_and_declaration()
     {
         GateProgress.Write(_folder, "work", Onto, Declaration,
-            [new VerifyGate("lint", RunnerVerdicts.Pass, 0) { WallSeconds = 12.5, Log = "gate-01-lint.log" }, new VerifyGate("web-types", RunnerVerdicts.Fail, 2)]);
+            [new VerifyGate("lint", RunnerVerdicts.Pass, 0) { WallSeconds = 12.5, Log = "gate-01-lint.log", Command = "node lint.mjs" }, new VerifyGate("web-types", RunnerVerdicts.Fail, 2)]);
 
         var carried = GateProgress.Read(_folder, "work", Onto, Declaration);
 
         Assert.Equal(["lint"], carried.Keys);
-        Assert.Equal((RunnerVerdicts.Pass, 12.5, "gate-01-lint.log"), (carried["lint"].Verdict, carried["lint"].WallSeconds, carried["lint"].Log));
+        Assert.Equal((RunnerVerdicts.Pass, 12.5, "gate-01-lint.log", "node lint.mjs"),
+            (carried["lint"].Verdict, carried["lint"].WallSeconds, carried["lint"].Log, carried["lint"].Command));
         Assert.Empty(GateProgress.Read(_folder, "other work", Onto, Declaration));
         Assert.Empty(GateProgress.Read(_folder, "work", "2222222222222222222222222222222222222222", Declaration));
         Assert.Empty(GateProgress.Read(_folder, "work", Onto, "eeee"));

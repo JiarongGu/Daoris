@@ -163,7 +163,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         var required = declared.Where(gate => (gate.Handback && GateReach.Reaches(gate, seen.Touched)) || admission.Gates.Any(admitted => admitted.Name == gate.Name)).ToList();
         var verified = required.Where(gate => HandbackGates.Verified(files, gate, _at)).ToList();
         var earlier = await RecheckKeep.OfAsync(
-            RecheckKeep.Before(home, send.Run, send.Invocation), _onto, _ran, [.. required.Except(verified)],
+            RecheckKeep.Before(home, send.Run, send.Invocation), _onto, _ran, [.. required.Except(verified).Select(HandbackGates.ForHandback)],
             async from => await MachinePorts.Repository.ChangedAsync(send.Checkout, from, _at, ct).ConfigureAwait(false),
             (paths, gate) => (gate.Handback && GateReach.Reaches(gate, paths)) || AdmissionGates.Of(declared, text, paths).Gates.Any(admitted => admitted.Name == gate.Name)).ConfigureAwait(false);
         var kept = verified.Select(gate => gate.Name).Concat(earlier.Select(each => each.Gate)).Select(name => new VerifyGate(name, VerifyGate.Kept)).ToList();
@@ -242,7 +242,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             for (var at = 0; at < gates.Count; at++)
             {
                 var gate = gates[at];
-                if (progress.TryGetValue(gate.Name, out var passed))
+                if (progress.TryGetValue(gate.Name, out var passed) && passed.Command == VerifyGate.CommandOf(gate))
                 {
                     ran.Add(passed);
                     carried.Add(gate.Name);
@@ -270,7 +270,10 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
                 }
 
                 if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept]);
-                ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds });
+                ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit)
+                {
+                    Log = log, WallSeconds = wall.Elapsed.TotalSeconds, Command = VerifyGate.CommandOf(gate),
+                });
                 if (exit == 0)
                 {
                     GateProgress.Write(_folder, send.Commit, _onto, _ran, ran);

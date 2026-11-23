@@ -34,6 +34,7 @@ internal static class GateProgress
                 gates[name] = new VerifyGate(name, RunnerVerdicts.Pass, 0)
                 {
                     WallSeconds = each.TryGetProperty("wallSeconds", out var wall) && wall.TryGetDouble(out var seconds) ? seconds : null, Log = Text(each, "log"),
+                    Command = Text(each, "command"),
                 };
             }
 
@@ -62,6 +63,7 @@ internal static class GateProgress
                 writer.WriteString("name", gate.Name);
                 if (gate.WallSeconds is { } seconds) writer.WriteNumber("wallSeconds", Math.Round(seconds, 1));
                 if (gate.Log is { } log) writer.WriteString("log", log);
+                if (gate.Command is { } command) writer.WriteString("command", command);
                 writer.WriteEndObject();
             }
 
