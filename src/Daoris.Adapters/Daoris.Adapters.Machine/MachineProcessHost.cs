@@ -31,7 +31,7 @@ public sealed class MachineProcessHost(
                 ?? throw new InvalidOperationException($"{specification.Program} did not start");
             owner?.Take(process, specification.Purpose);
             placed?.Bind(process.Id);
-            return new MachineRun(process, specification.Input, specification.RawOutput, owner?.End);
+            return new MachineRun(process, specification.Input, specification.RawOutput, owner?.End, specification.OutputAhead);
         }
         finally
         {

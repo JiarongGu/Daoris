@@ -295,8 +295,11 @@ read's person joined to a long read is never failed once the read is placed (`Gi
 `GitService.PartsAsync`): its answer comes as parts numbered from 1 on one ask's id, the ask open while they are read and its git placed
 under that id, each part cut at a line's end once 64 K characters are held (a longer line where it stands), the last marked with git's
 exit (0 where the read was stopped, -1 where git did not start). They ride the service's own lane, a channel four parts deep, never the
-bus's frames: while four wait unread the read waits on its own flow. Git itself does not wait yet: the machine's run (`MachineRun`) drains
-its pipe into an unbounded buffer, so a paused asker holds the rest of the answer in memory (GITBUS3c). Cancelling the ask or no longer
+bus's frames: while four wait unread the read waits on its own flow, and so does git: a streamed read's process specification asks the machine
+for `OutputAhead` (16 pieces of the machine's 4096 characters, a part's size), and the machine's run (`MachineRun`) takes room for a piece of standard
+output before it reads the pipe on, giving it back as the piece is handed out, so a paused asker's git writes no more than the pipe and that bound past
+what was read, and its standard error is drained meanwhile; a run's end and its stop (which releases the wait) never wait on its reader
+(`MachineOutputAheadTests`, `GitProcessRunsPacedReadTests` on real git). Cancelling the ask or no longer
 reading stops the read, and the parts end only once it has ended, a git that outlived its kill said as `ProcessUnendedException`; while its
 git is placed the ask is shown with the repository it was placed in and its deadline (`GitServicePartsTests`). Any other kind is answered whole.
 

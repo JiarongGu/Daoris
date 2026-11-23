@@ -14,7 +14,8 @@ with the version and date at release.
   `sync` names it. `check` fails on a file holding only the old region until a sync removes it. Claude Code before 2.1.277 reads no `AGENTS.md`.
 - A step's git reads (a workflow's run step, the opinion gate, a check) now go ahead of the machine's background reads when places are
   short, after the person's own; within each, the oldest goes first. Long git answers (a history walk, a tree's listing) can now be read
-  in parts as git writes them, and stopping the read stops git.
+  in parts as git writes them, and stopping the read stops git; a read whose asker has paused now holds git back instead of
+  buffering the rest of the answer in memory.
 - A session opens sooner when several open at once: its git reads and its tree's write are placed ahead of the loop's own reads
   (four openings together took 86 s in a fixture beside the loop's reads and now 52 s, an opening's git ask waiting 0.4 s where it
   waited 4.5 s), and the tree's write no longer shares the two places a hook-running git has. Each step of an opening says in
