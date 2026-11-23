@@ -331,6 +331,7 @@ internal sealed class ChatRun(
             if (CurveMove.TurnJustEnded(queue, judged))
             {
                 judged = queue.LastTurnEnded;
+                BusLog.Of(home)?.Tee(() => OpinionBusFacts.TurnEndedOwed(home, sessionId, workTree));
                 // A chat whose run is not bound yet (its tree grew before this build, or its bind failed) binds now.
                 if (bindsRun) _ = Context.ChatRuns.TurnEndedAsync(sessionId, workTree, config);
                 if (Interlocked.Exchange(ref limitedTurn, 0) == 1) wiring.Of<LimitMove>().Due(sessionId, config, onEnded);

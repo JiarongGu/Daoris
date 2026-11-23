@@ -41,7 +41,7 @@ public static class BusTypes
     public const string Watchdog = "driver/watchdog", Stalls = "driver/stalls";
 
     /// <summary>Where the service's ledger is heard (its change stream), the node runtime's records, and this process's standing choices.</summary>
-    public const string Ledger = "driver/ledger", Nodes = "driver/nodes", Choices = "driver/choices";
+    public const string Ledger = "driver/ledger", Nodes = "driver/nodes", Choices = "driver/choices", Sessions = "driver/sessions";
 
     private const string Unmeasured = "no handling time measured yet: the install's `daoris bus stats` at cddcdac313 (2026-11-21) holds one check start, no settle and no pass, its quests paused";
 
@@ -139,6 +139,11 @@ public static class BusTypes
         "node.begun", 1, BusClasses.Fact, Nodes, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
         [new("nodes", BusShapes.Ids)]);
 
+    /// <summary>A turn of a session whose work is owed a second opinion ended: the opinion's gate must judge that session's owed opinions, a delivery that waited on the turn among them. Its subject is the session.</summary>
+    public static readonly BusType SessionTurnEnded = new(
+        "session.turn-ended", 1, BusClasses.Fact, Sessions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
+        [new("session", BusShapes.Id), new("owed", BusShapes.Ids)]);
+
     private const string AtTheRun =
         Unmeasured + "; the run's step consumer asks one pass for the run at the fact (BUS2e1), which judges that run first with no read of the units, so ten minutes covers a pass held behind another or a drain with room";
 
@@ -205,7 +210,7 @@ public static class BusTypes
     /// <summary>Every type, each once.</summary>
     public static readonly IReadOnlyList<BusType> All =
     [
-        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, RunBound, CheckStarted, CheckPassed,
+        OpinionOwed, OpinionAsked, OpinionGiven, OpinionDelivered, OpinionAnswered, OpinionSaid, QuestMoved, NodeBegun, ChoicesWritten, SessionTurnEnded, StepSettled, StepTurnEnded, PolicyPassed, LandOutcome, RunBound, CheckStarted, CheckPassed,
         CheckFailed, CheckUnknown, CheckRequeued, CheckEnded, Stalled, GiveUp, FlowRetry,
     ];
 
@@ -233,6 +238,7 @@ public static class BusTypes
         [QuestMoved.Kind] = [BusEnd.Acknowledged],
         [NodeBegun.Kind] = [BusEnd.Acknowledged],
         [ChoicesWritten.Kind] = [BusEnd.Acknowledged],
+        [SessionTurnEnded.Kind] = [BusEnd.Acknowledged],
 
         // The run's step goes on at the fact: the consumer's acknowledgement, written once its pass judged the run, is what ends each.
         [StepSettled.Kind] = [BusEnd.Acknowledged],

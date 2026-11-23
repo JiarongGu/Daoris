@@ -265,7 +265,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     appended as one (`AppendAll`) ride one write, kept or lost together. A writer holding no log tees through the home's open one
     (`BusLog.Of`). Teed in beside today's writes: an opinion owed (a due kept, a person's ask of its gate), asked, given and
     answered (the landing line's channel), its findings delivered, the person's word at its gate, and what else its gate's verdict
-    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote),
+    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote, a chat
+    run's turn ending while its session's work is owed an opinion),
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.
@@ -361,7 +362,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     The queue (D356 points 5 and 6, BUS2d) is the log's delivery, in the lease holder's process on .NET channels, with no broker:
     each write of the log wakes it with the entries it kept, at their kept orders, and it hands them in frames at most 60 a
     second through an ordered middleware chain (`IBusMiddleware`, registered once in `BusMiddlewares`: today the delivery measures,
-    each frame and each kind's hand-ons by the day) into each consumer subscribed to their types. A middleware passes, transforms,
+    each frame and each kind's hand-ons by the day, which `daoris bus stats` reads as the `queue` line with each consumer's throws and
+    each middleware's drops) into each consumer subscribed to their types. A middleware passes, transforms,
     drops (counted against its name) or observes a frame; one that throws is counted and said once, and the frame goes on as it was
     handed to it. The registry's check at emit, the emit measures and the timers' arming stay in the write: they ride the entry's
     own transaction, and the chain runs only after it. A consumer (`IBusConsumer`) is a durable row (`bus_consumers`, made by the
