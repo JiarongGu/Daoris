@@ -461,6 +461,10 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
+    "Workflows/Risk/OwnerTurns.cs": {
+      "reads": "other",
+      "note": "the person's own turn by its origin and the marks that make an event another's claim, to refuse one as the owner's; no record's mark tells a work"
+    },
     "Workflows/ChatRuns.cs": {
       "reads": "tells",
       "note": "tells an ordinary conversation from every other kind by its marks; no row of this design moves it"

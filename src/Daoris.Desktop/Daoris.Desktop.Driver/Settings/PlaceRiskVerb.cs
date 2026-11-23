@@ -112,11 +112,26 @@ public sealed class PlaceRiskVerb : ChoiceVerb
         if (words.Count != 3) throw new ChoiceWords($"`settings risk propose` takes a place, an act and a class — {ProposeUsage}");
         var riskClass = words[2] == "remove" ? null : words[2];
         if (riskClass is not null && !RiskClasses.Is(riskClass)) throw new ChoiceWords($"`{riskClass}` is no class (none, role, owner or remove) — {ProposeUsage}");
-        var edit = new PolicyEdit(words[0], words[1], riskClass, FlagValue(args, "--by"), FlagValue(args, "--mode"));
-        if (edit.Fault() is { } fault) throw new ChoiceWords($"{fault} — {ProposeUsage}");
+        var (place, act, by, mode) = (words[0], words[1], FlagValue(args, "--by"), FlagValue(args, "--mode"));
+        if (place != PlaceRiskBook.MachineKey && !place.StartsWith("workspace/", StringComparison.Ordinal) && !place.StartsWith("repository/", StringComparison.Ordinal))
+        {
+            throw new ChoiceWords($"`{place}` is no place (machine, workspace/<name> or repository/<name>) — {ProposeUsage}");
+        }
+
+        try
+        {
+            if (RiskAct.Of(act).Kind == RiskActs.PolicyChange) throw new ChoiceWords($"policy.change is fixed at the owner: no row changes it — {ProposeUsage}");
+        }
+        catch (ArgumentException)
+        {
+            throw new ChoiceWords($"`{act}` names no act kind of the census — {ProposeUsage}");
+        }
+
+        if (by is not null && riskClass != RiskClasses.Role) throw new ChoiceWords($"--by names the role of a role row — {ProposeUsage}");
+        if (mode is not (null or "full" or "restricted")) throw new ChoiceWords($"--mode is full or restricted — {ProposeUsage}");
         var payload = new JsonObject
         {
-            ["edits"] = new JsonArray(new JsonObject { ["place"] = edit.Place, ["act"] = edit.Act, ["class"] = edit.Class, ["by"] = edit.By, ["mode"] = edit.Mode }),
+            ["edits"] = new JsonArray(new JsonObject { ["place"] = place, ["act"] = act, ["class"] = riskClass, ["by"] = by, ["mode"] = mode }),
         };
         if (FlagValue(args, "--conversation") is { } conversation) payload["conversation"] = conversation;
         return Pressed("risk propose", ChoiceRoutes.PolicyPropose, payload, world);
