@@ -626,7 +626,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `local/quick-base.json` and `local/quick-verdicts.json`, which `npm run quick` writes, outputs. A file under an ignored
     folder that the session wrote after the tree opened, never one copied in from the checkout, is that session's scratch and keeps
     no tree: it goes with it once its work is on the line, and the removal's record names it (`TreeHolds.Scratch`,
-    `TreeScratch.SessionWrote`; the move aside's `FinishedLeft` lists it too). What keeps a tree is anything else: an uncommitted
+    `TreeScratch.SessionWrote`; the clean-up press's result says it, `ScratchSaid.Went`, and the move aside's `FinishedLeft` lists it). A file git lists alone because its ignored
+    folder holds a tracked path is judged by that folder (`ScratchSaid.IgnoredFolderAboveAsync`), and a copy of Daoris's matches whatever the case. What keeps a tree is anything else: an uncommitted
     or untracked path, an ignored file outside any ignored folder that the checkout lacks, a copy Daoris made that the session edited
     (the files record's `Copies`), a file the person's rules call `local` or `dependency`, a file of a tree with no files record where
     the checkout holds that name, and every file of a folder holding another repository. The copied-in files are made again from the
