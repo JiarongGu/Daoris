@@ -1,5 +1,5 @@
 {
-  "modules": ["cli","platform","doctrine","layout","tools"],
+  "modules": ["cli","platform","doctrine","layout","tools","declaration"],
   "entry": ["cli.ts"],
   "root": {
   },
@@ -43,6 +43,9 @@
     "layout-rooms.test.ts": "layout",
     "documents-candidates.test.ts": "layout",
     "documents-check.test.ts": "layout",
-    "documents-manifest.test.ts": "layout"
+    "documents-manifest.test.ts": "layout",
+    "split.test.ts": "declaration",
+    "proof.test.ts": "declaration",
+    "dryrun.test.ts": "declaration"
   }
 }

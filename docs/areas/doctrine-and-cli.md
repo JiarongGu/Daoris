@@ -3,8 +3,8 @@
 ## What it does
 
 The canon is a set of rules, knowledge and skills that every repository takes up. `daoris` is the one command a person
-types. The npm package `daoris` (the CLI) owns nine offline doctrine commands: `analyze`, `init`, `sync`, `check`,
-`upstream`, `index`, `status`, `reconcile` and `doctor`. `sync` writes the canon into a repository and records each file's
+types. The npm package `daoris` (the CLI) owns ten offline doctrine commands: `analyze`, `init`, `sync`, `check`,
+`upstream`, `index`, `status`, `reconcile`, `doctor` and `declaration`. `sync` writes the canon into a repository and records each file's
 hash in `daoris.lock`. `check` fails a build when a copy drifted from the lock. `status` and `reconcile` say what a newer
 canon would change, and the repository's own session adopts, keeps or proposes each item. Every other `daoris` word is
 handed to the desktop's program. Set-up of a repository is a quest that the driver's set-up press publishes to that
@@ -33,6 +33,7 @@ skill, and `co-working` as a pack.
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `pointers.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, the retired pointers, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `budget.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do, its budget projection in `budget.ts`), `doctor` (look-alike documents), the LF pin |
+| Declaration split | `src/Daoris.Cli/src/declaration/` (`members.ts`, `split.ts`, `folder.ts`, `reading.ts`, `proof.ts`, `dryrun.ts`), `cli/declaration.ts` | `declaration split --dry-run`: the member table as data, the gates file split into a folder and the home's values in scratch, read back and proved equal to the old file |
 | The canon | `canon/core/`, `canon/packs/*/`, `canon/canon.json`, `canon/CHANGELOG.md` | The doctrine itself, its version and why each version changed |
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
@@ -185,6 +186,19 @@ skill, and `co-working` as a pack.
     command. `repository deployables <repository>` reaches the host's read; its group help lists the read in English and Chinese.
     (from D194, D228, D232)
 
+40a. `declaration split --dry-run` converts `daoris.gates.json` in scratch (`_fixtures/declaration-split`, or `--out` inside the repository) and
+    writes nowhere else: the folder of one file per gate (its commands, `clock`, `reuse`, `paths`, `after` and the test sets
+    it runs) and a small file per other concern, and `home.json` for the machine's values. The member table (`members.ts`) sorts each member;
+    one it does not name stops the conversion by name (`admission` is the repository's, `tests._why` the product's). The files are read back
+    from the disk, with nothing from the old file, and compared member for member, over the files git tracks (read from its index, the
+    disk walked only where there is none): each gate's members, its expanded reach, the set
+    holding each test file and the gates' order, which the folder keeps without an index: gates are read in name order, each after the
+    gates it names in `after`, and the converter writes an `after` only where name order would move the gate. A difference is named, exit 1.
+    A test file held by two sets neither of which names the other by `of` is named for the repository to resolve, exit 1, since the folder's
+    format refuses it. With no `daoris.gates.json` it says so, exit 0. A run without `--dry-run` is refused until the home has its door. `--out` must be inside the repository by its real path (a link
+    leading out is refused); it replaces only the `daoris/` and `home.json` an earlier dry run left there (its `.declaration-split` marker
+    says so), and refuses an existing one that has none. Gate names that differ only by case are refused, a filesystem folding them to one file.
+
 **The devkit's universal gates**
 
 41. `daoris-devkit verify` runs five universal gates (`sensitive`, `version`, `docs`, `links`, `doctrine`), then the
@@ -256,7 +270,8 @@ skill, and `co-working` as a pack.
 
 - CLI: `test/doctrine/` (`sync`, `check`, `switchoff`, `keep`, `reconcile`, `update-check`, `newer-lock`, `upstream`,
   `upstream-request`, `region`, `tierrender`, `indexgen`, `packapi`); `test/layout/` (`layout-move`, `layout-mirror`,
-  `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`);
+  `layout-rooms`, `layout-links`, `documents-*`); `test/cli/` (`cli`, `cli-usage`, `cli-tree`, `containment`); `test/declaration/` (`split`, `proof`, `dryrun`: this
+  repository's own file converts with no difference);
   `test/platform/driverprogram.test.ts`.
 - `test/dogfood.test.ts`: canon frontmatter, no private names in the canon, this repository checks clean, no CLI module on
   the network, one spawn, `check` with no canon. `test/structure.test.ts` holds the CLI's module structure.
