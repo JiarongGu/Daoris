@@ -109,7 +109,7 @@ public sealed class SignOutRaceTests : IDisposable
         _agent.SignedIn(expires: Ten + TimeSpan.FromHours(6));
         var roster = Roster(TimeSpan.FromMinutes(5));
 
-        var starts = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => roster.SelectAsync("agent", Config, null, null))).WaitAsync(TimeSpan.FromSeconds(30));
+        var starts = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => roster.SelectAsync("agent", Config, null, null))).WaitAsync(Poll.Patience);
 
         Assert.All(starts, start => Assert.Equal("account-1", start.Profile));
     }
