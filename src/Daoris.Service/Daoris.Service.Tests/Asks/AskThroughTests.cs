@@ -65,7 +65,9 @@ public sealed class AskThroughTests : IAsyncLifetime
         Assert.DoesNotContain(Unrequired, asked.Message, StringComparison.Ordinal);
     }
 
-    private const string Unrequired = "Published with no requirement: its run's holds step will wait on the person's word";
+    private const string Unrequired = "Published with no requirement: nothing checks its done against what was asked, so its run's holds step judges that done as the act `work.done` at its place";
+
+    private const string Person = "wait on the person's word";
 
     [Fact]
     public async Task A_new_asks_requirements_with_no_receiver_are_kept_on_it_and_travel_on_each_quest_its_intake_publishes()
@@ -91,13 +93,17 @@ public sealed class AskThroughTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task An_ask_published_with_no_requirement_says_its_holds_step_waits_on_the_persons_word()
+    public async Task An_ask_published_with_no_requirement_says_the_risk_policy_judges_its_done_and_never_that_it_waits_on_the_person()
     {
         var asked = await _desk.AskAsync(new AskRequest("work", Sentence) { To = "reports" }, Now);
 
         Assert.Equal(AskRefusal.None, asked.Refusal);
         Assert.Empty(asked.Quest!.Requirements);
         Assert.Contains(Unrequired, asked.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(Person, asked.Message, StringComparison.Ordinal);
+        Assert.Contains("goes on by itself where no rule gates it", asked.Message, StringComparison.Ordinal);
+        Assert.Contains("waits on that role's holder where the place classes it `role`", asked.Message, StringComparison.Ordinal);
+        Assert.Contains("the owner where it classes it `owner`", asked.Message, StringComparison.Ordinal);
     }
 
     [Fact]

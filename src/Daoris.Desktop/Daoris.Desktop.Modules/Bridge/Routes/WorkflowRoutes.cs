@@ -616,14 +616,12 @@ public sealed class WorkflowRoutes(DriverContext context)
         if (press.Act == NodeWordActs.Accept) await AcceptAnswers.KeepAsync(_loop, run, node, press.Answers, cancellationToken).ConfigureAwait(false);
 
         // a stop reads the integration record first, so one whose member promoted is refused here, as at the terminal.
-        var done = press is { Act: NodeWordActs.Accept, Unchecked: true, Revision: { } drawn }
-            ? UncheckedAccepts.Keep(records, run, node, drawn)
-            : await Task.Run(() => RunNodeWords.WordAsync(
+        var done = await Task.Run(() => RunNodeWords.WordAsync(
                 records, NodeRuntime.HomeDoor(_loop.Home), run, node, act, words, ct: cancellationToken, attempt: press.Attempt is { } named ? (int)Math.Clamp(named, 0, int.MaxValue) : null, revision: press.Revision,
-                    part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch),
-                    workers: _loop.RunWorkers(run)),
-                cancellationToken)
-                .ConfigureAwait(false);
+                part: press.Part, outcome: press.Outcome, epoch: CastRoutes.EpochOf(press.Epoch), settle: CastRoutes.SpeakerOf(press.Epoch),
+                workers: _loop.RunWorkers(run)),
+            cancellationToken)
+            .ConfigureAwait(false);
         if (done.Done) _loop.Nudge();
         var revision = done.Done || done.Refused == ReviewMoved.Word ? done.Detail : null;
         var landing = await AcceptWaits.AwaitAsync(_loop, done, cancellationToken).ConfigureAwait(false);

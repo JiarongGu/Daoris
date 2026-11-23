@@ -565,7 +565,6 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Return/ReturnDoor.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Review/RunOutcomesLook.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Review/ThroughNoticesLook.cs": 1,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Review/UncheckedAccepts.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Tidy/TidyDoor.cs": 2,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/EarlyAccepts.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Nodes/HeldAttempts.cs": 1,

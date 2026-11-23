@@ -24,7 +24,7 @@ public sealed class OwnWorkTests : IDisposable
     private NodeRecordFiles Records => new(_home, () => true);
 
     /// <summary>A run standing at <paramref name="node"/> (a <paramref name="kind"/> step) under way at its first attempt, its role cast to <c>agent:claude</c>.</summary>
-    private void Start(string node, string kind, string role, string extra = "", string holder = "agent:claude")
+    private void Start(string node, string kind, string role, string extra = "", string holder = "agent:claude", string state = NodeStates.Active)
     {
         new PlaceCastFiles(_home, () => true).Cast("machine", role, holder, "the agents answer it", _now);
         var digest = RunHome.SaveGraph(_home, $$"""
@@ -43,7 +43,7 @@ public sealed class OwnWorkTests : IDisposable
                 ["claimed"] = NodeLifecycle.Start(unit, "claimed") with { State = NodeStates.Reached, Attempt = 1, Since = _now },
                 [node] = NodeLifecycle.Start(unit, node) with
                 {
-                    State = NodeStates.Active, Attempt = 1, Tries = 1, Since = _now, Binding = new NodeAcceptance(unit, "c1", digest, node, 1, 1),
+                    State = state, Attempt = 1, Tries = 1, Since = _now, Binding = new NodeAcceptance(unit, "c1", digest, node, 1, 1),
                 },
             },
         });
@@ -66,6 +66,23 @@ public sealed class OwnWorkTests : IDisposable
         Assert.Equal(SettleDoor.OwnWork, own.Refused);
         Assert.Contains("one of the work's makers", own.Detail, StringComparison.Ordinal);
         Assert.Equal(SettleDoor.OwnWork, unread.Refused);
+        Assert.True(other.Done, other.Refused);
+    }
+
+    [Theory]
+    [InlineData(NodeStates.Blocked)]
+    [InlineData(NodeStates.Ready)]
+    public void An_early_accept_on_a_review_not_begun_is_refused_from_the_works_own_session_and_kept_from_another(string state)
+    {
+        Start("review", NodeKinds.Review, StepRoles.Acceptor, state: state);
+
+        var own = Word("review", NodeWordActs.Accept, "s-worker", ["s-worker"]);
+        var unread = Word("review", NodeWordActs.Accept, "s-worker", null);
+        var other = Word("review", NodeWordActs.Accept, "s-reviewer", ["s-worker"]);
+
+        Assert.Equal(SettleDoor.OwnWork, own.Refused);
+        Assert.Equal(SettleDoor.OwnWork, unread.Refused);
+        Assert.Empty(Records.Read(RunUnits.IdOf(Run))!.Pending.Where(word => word.Node == "review" && word.Act == NodeWordActs.Accept && own.Done));
         Assert.True(other.Done, other.Refused);
     }
 

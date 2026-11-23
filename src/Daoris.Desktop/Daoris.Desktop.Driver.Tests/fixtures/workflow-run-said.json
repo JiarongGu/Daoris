@@ -139,7 +139,6 @@
     { "node": "work.requests", "kind": "work.requests", "state": "waiting", "detail": "active", "code": "declined", "said": "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on." },
     { "node": "content.holds", "kind": "content.holds", "detail": "active", "words": "it holds no commit the line lacks: nothing to land", "said": "Holds the work: it holds no commit the line lacks: nothing to land." },
     { "node": "quest.holds", "kind": "quest.holds", "detail": "active", "words": "its quest's done waits for your yes.", "said": "Holds the work: its quest's done waits for your yes." },
-    { "node": "quest.holds", "kind": "quest.holds", "state": "done", "detail": "reached", "code": "no-reader", "said": "No one is set to read this done against its ask, so it goes on." },
     { "node": "request", "kind": "request", "state": "failed", "detail": "failed", "code": "declined", "said": "The repository it asked declined the quest: ask again, or go on without it with your words." },
     { "node": "apply", "kind": "apply", "state": "failed", "detail": "failed", "code": "changed-while-applying", "said": "Changed while applying: something else wrote to the system as it applied, so the work plans again from the system as it stands." },
     { "node": "claimed", "kind": "work", "detail": "active", "on": "quest", "quest": "q2", "said": "Observed on quest #q2." },

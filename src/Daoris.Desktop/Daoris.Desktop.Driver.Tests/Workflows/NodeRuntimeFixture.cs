@@ -139,7 +139,7 @@ public abstract class NodeRuntimeFixture : IDisposable
     {
         var root = System.Text.Json.Nodes.JsonNode.Parse(config)!.AsObject();
         root[RiskPolicy.Key] ??= System.Text.Json.Nodes.JsonNode.Parse(
-            """{"machine":[{"kind":"work.accept","class":"role"},{"kind":"task.approve","class":"role"}]}""");
+            """{"machine":[{"kind":"work.accept","class":"role"},{"kind":"task.approve","class":"role"},{"kind":"work.done","class":"role"}]}""");
         return root.ToJsonString();
     }
 

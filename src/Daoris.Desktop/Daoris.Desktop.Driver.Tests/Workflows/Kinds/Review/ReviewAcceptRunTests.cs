@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// The person's Accept bound to the review record it names, through the node runtime: checked when it is kept against the record the review
 /// stands on, and when the pass applies it against the work read afresh, so a page drawn before the work moved never accepts newer work; an
-/// early Accept kept by record; and an unchecked done passed in the same edit as the Accept that named it.
+/// early Accept kept by record; and an unchecked done (the act `work.done`) passed by the risk policy, or gated at its place.
 /// </summary>
 public sealed class ReviewAcceptRunTests : NodeRunFixture
 {
@@ -69,9 +69,6 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
     /// <summary>The revision the branch's record holds at <see cref="NodeRunFixture.Tip1"/> with the handback numbered <paramref name="sequence"/>, as a page draws it.</summary>
     private static string BranchRevision(long sequence) =>
         ReviewWork.RevisionOf(ReviewKinds.Branch, new ReviewReference { Branch = "daoris/s1", Tip = Tip1 }, [new ReviewPart(RunId, "The work") { Machine = "m1", Sequence = sequence }]);
-
-    private void ReadByThePerson() =>
-        Assert.Null(new PlaceCastFiles(_home, () => true).Cast(PlaceRiskBook.MachineKey, StepRoles.AskReader, CastHolders.Person, "the owner reads the dones", _now));
 
     private ReviewRecord RecordOf(NodeStatus review) => ReviewRecords.Read(_home, RunId, "review", review.Attempt)!;
 
@@ -191,49 +188,6 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
     }
 
     [Fact]
-    public async Task An_unchecked_done_is_passed_in_the_same_edit_as_the_accept_that_named_it_and_a_replay_is_refused_worded()
-    {
-        ReadByThePerson();
-        BoundTo(HeldGraph);
-        OnBranch(1, from: "ask #a1b2c3");
-        await RunPassAsync(Runtime());
-        Assert.Equal(NodeStates.Active, RunStatus("holds").State);
-        Assert.Equal(NodeStates.Blocked, RunStatus("review").State);
-
-        var kept = UncheckedAccepts.Keep(Files, RunId, "review", BranchRevision(1), () => _now);
-        var replayed = UncheckedAccepts.Keep(Files, RunId, "review", BranchRevision(1), () => _now);
-
-        Assert.True(kept.Done);
-        Assert.Equal(RunNodeWords.Worded, replayed.Refused);
-        var words = Files.Read(RunUnit)!.Pending;
-        Assert.Equal([("holds", NodeWordActs.Skip), ("review", NodeWordActs.Accept)], words.Select(word => (word.Node, word.Act)));
-        Assert.All(words, word => Assert.Equal(("review", BranchRevision(1)), (word.Review, word.Revision)));
-        Assert.Contains("unchecked", words[0].Words);
-
-        await RunPassAsync(Runtime());
-        await RunPassAsync(Runtime());
-
-        Assert.Equal(NodeStates.Skipped, RunStatus("holds").State);
-        Assert.Equal((NodeStates.Reached, NodeSource.Person), (RunStatus("review").State, RunStatus("review").By));
-    }
-
-    [Fact]
-    public async Task An_unchecked_done_and_its_accept_are_dropped_together_where_the_work_moved_before_the_pass()
-    {
-        ReadByThePerson();
-        BoundTo(HeldGraph);
-        OnBranch(1, from: "ask #a1b2c3");
-        await RunPassAsync(Runtime());
-        Assert.True(UncheckedAccepts.Keep(Files, RunId, "review", BranchRevision(1), () => _now).Done);
-
-        OnBranch(2, from: "ask #a1b2c3");
-        await RunPassAsync(Runtime());
-
-        Assert.Equal(NodeStates.Active, RunStatus("holds").State);
-        Assert.Empty(Files.Read(RunUnit)!.Pending);
-    }
-
-    [Fact]
     public async Task Changes_answered_by_a_corrected_handback_at_the_same_commit_ask_the_review_again_on_its_new_record()
     {
         BoundTo(HeldGraph);
@@ -307,14 +261,43 @@ public sealed class ReviewAcceptRunTests : NodeRunFixture
         Assert.Equal(revision, Files.Read(RunUnit)!.Pending.Single().Revision);
     }
 
+    private const string Seeded = """{"risk":{}}""";
+
+    private const string DoneByRole = """{"risk":{"machine":[{"kind":"work.done","class":"role"}]}}""";
+
     [Fact]
-    public async Task An_unchecked_accept_is_refused_where_no_unchecked_done_holds_the_review()
+    public async Task With_nothing_configured_an_unchecked_done_passes_with_its_line_and_no_card()
     {
         BoundTo(HeldGraph);
-        OnBranch(1);
-        var review = await ActiveAsync();
+        OnBranch(1, from: "ask #a1b2c3");
+        var runtime = Runtime();
 
-        Assert.Equal(UncheckedAccepts.NoneUnchecked, UncheckedAccepts.Keep(Files, RunId, "review", RecordOf(review).Revision, () => _now).Refused);
-        Assert.Empty(Files.Read(RunUnit)!.Pending);
+        var pass = await RunPassAsync(runtime, Seeded);
+
+        Assert.Equal((NodeStates.Reached, NodeSource.Policy), (RunStatus("holds").State, RunStatus("holds").By));
+        Assert.DoesNotContain(runtime.HeldSteps(), step => step.Node == "holds");
+        var line = Assert.Single(RiskJournal.Read(_home), each => each.Today == PolicyPasses.Today && each.Step == "holds");
+        Assert.Equal((RiskActs.WorkDone, RiskVerdict.Pass, "holds"), (line.Kind, line.Outcome, line.Step));
+        Assert.DoesNotContain(pass.Said, said => said.Contains("ends", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Where_the_place_classes_work_done_role_the_unchecked_done_waits_on_its_role_and_refuses_the_runs_own_session()
+    {
+        Assert.Null(AgentSettles.CastAt(new PlaceCastFiles(_home, () => true), "machine", StepRoles.AskReader, "agent:reviewer", "the reviewer reads the dones", _now));
+        BoundTo(HeldGraph);
+        OnBranch(1, from: "ask #a1b2c3");
+
+        await RunPassAsync(Runtime(), DoneByRole);
+
+        Assert.Equal(NodeStates.Active, RunStatus("holds").State);
+        Assert.Empty(RiskJournal.Read(_home).Where(each => each.Today == PolicyPasses.Today));
+        var own = RunNodeWords.Word(Files, RunId, "holds", NodeWordActs.Skip, "Done as asked.", () => _now,
+            settle: new SettleBy("agent:reviewer", 1) { Session = "s-worker" }, workers: ["s-worker"]);
+        var other = RunNodeWords.Word(Files, RunId, "holds", NodeWordActs.Skip, "Read against the ask: done.", () => _now,
+            settle: new SettleBy("agent:reviewer", 1) { Session = "s-reviewer" }, workers: ["s-worker"]);
+
+        Assert.Equal(SettleDoor.OwnWork, own.Refused);
+        Assert.True(other.Done, other.Refused);
     }
 }

@@ -35,9 +35,9 @@ public sealed record WorkflowSavePress(
     bool WithOpinion = false, bool WithLook = false, bool Plan = false);
 
 /// <summary>
-/// A word on a run's node; an <c>accept</c> names the record drawn, the unchecked dones it passes and the second opinion's token it answers,
+/// A word on a run's node; an <c>accept</c> names the record drawn and the second opinion's token it answers,
 /// <c>changes</c> their part, <c>whole</c> the review's Stop, <c>decide</c> its decision's outcome.
 /// </summary>
 public sealed record WorkflowNodePress(
-    string Run, string Node, string Act, string? Words, bool Said = false, long? Attempt = null, string? Revision = null, bool Unchecked = false,
+    string Run, string Node, string Act, string? Words, bool Said = false, long? Attempt = null, string? Revision = null,
     string? Part = null, bool Whole = false, string? Answers = null, string? Outcome = null, long? Epoch = null);

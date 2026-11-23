@@ -81,6 +81,7 @@ public static class SupervisorDecisionDoor
         var admitted = new PipeDecisionAdmission(loop).Admit(subject, place, act);
         if (admitted.Why is { } why) return SupervisorDecided.Refused(why);
         if (admitted.Generation != generation) return SupervisorDecided.Refused(SupervisorWhy.RoleChanged);
+        if (SupervisorOwnWork.RunOf(subject) is { } run && SupervisorOwnWork.Refused(holder, loop.RunWorkers(run)) is { } own) return SupervisorDecided.Refused(own);
         return Nudged(loop, await keep(row).ConfigureAwait(false));
     }
 
