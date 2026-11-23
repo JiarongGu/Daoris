@@ -167,7 +167,30 @@ internal static class DriverConfigEdits
         var next = new Dictionary<string, string>(config.IntegrationGates, StringComparer.OrdinalIgnoreCase);
         if (blob is null) next.Remove(named);
         else next[named] = blob;
-        return config with { IntegrationGates = next };
+        var units = config.IntegrationUnits.TryGetValue(named, out var held) && held.Blob == blob
+            ? config.IntegrationUnits
+            : config.IntegrationUnits.Where(pair => !string.Equals(pair.Key, named, StringComparison.OrdinalIgnoreCase)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        return config with { IntegrationGates = next, IntegrationUnits = units };
+    }
+
+    public static DriverConfig IntegrationUnits(DriverConfig config, string repository, AcceptedUnits? record)
+    {
+        var named = repository.Trim();
+        if (named.Length == 0) throw new DriverException("an integration's accepted units name their repository.");
+        var next = new Dictionary<string, AcceptedUnits>(config.IntegrationUnits, StringComparer.OrdinalIgnoreCase);
+        if (record is null)
+        {
+            next.Remove(named);
+            return config with { IntegrationUnits = next };
+        }
+
+        if (!IntegrationGatesKey.IsAcceptance(record.Blob) || record.Blob == IntegrationAcceptance.None || !config.IntegrationGates.TryGetValue(named, out var accepted) || accepted != record.Blob)
+        {
+            throw new DriverException("an integration's accepted units are those of the blob its acceptance names.");
+        }
+
+        next[named] = record;
+        return config with { IntegrationUnits = next };
     }
 
     public static DriverConfig WriteAcross(DriverConfig config, string repository, string to, bool allow)

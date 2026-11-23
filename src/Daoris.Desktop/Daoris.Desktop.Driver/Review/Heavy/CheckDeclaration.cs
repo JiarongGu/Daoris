@@ -21,6 +21,7 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
     /// reads (<paramref name="runs"/>, <see cref="DeclarationUnits.Run"/>), so a branch that predates a declaration change on the line, or
     /// merged it since, is checked as accepted, and a change to one gate holds only the runs of that gate. Only a work whose own change
     /// alters a unit its run reads holds: Daoris starts only the commands the person accepted. A line git cannot name counts as its own change.
+    /// </summary>
     internal static async Task<CheckDeclaration> OfAsync(
         string checkout, string commit, string accepted, string mode, Func<CancellationToken, Task<string?>> lineOf, Func<string, bool> runs, CancellationToken ct)
     {
