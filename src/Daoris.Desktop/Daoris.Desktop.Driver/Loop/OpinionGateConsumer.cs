@@ -193,7 +193,14 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             return [.. open.Where(due => Ids.Equals(due.Session, session) && (pressed || occasion is null || due.Occasion == occasion))];
         }
 
-        if (entry.Kind == BusTypes.OpinionSaid.Kind || entry.Kind == BusTypes.SessionTurnEnded.Kind)
+        if (entry.Kind == BusTypes.SessionTurnEnded.Kind)
+        {
+            // Its owed opinions by session, a chat's line's first among them; none named where the due list did not read: every one.
+            if (entry.Payload.FirstOrDefault(pair => pair.Key == "owed").Value is not IReadOnlyList<string> owed) return open;
+            return [.. open.Where(due => owed.Contains(due.Session, Ids))];
+        }
+
+        if (entry.Kind == BusTypes.OpinionSaid.Kind)
         {
             var session = Text(entry, "session") ?? entry.Subject;
             return [.. open.Where(due => Ids.Equals(due.Session, session))];

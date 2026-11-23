@@ -59,14 +59,37 @@ public static class OpinionBusFacts
     };
 
     /// <summary>A turn of <paramref name="session"/>, whose work is owed a second opinion, ended: the gate judges what waited on it.</summary>
-    public static BusDraft TurnEnded(string session) => new(BusTypes.SessionTurnEnded, session)
+    public static BusDraft TurnEnded(string session, IReadOnlyList<string>? owed) => new(BusTypes.SessionTurnEnded, session)
     {
         Commit = true,
-        Payload = [("session", session)],
+        Payload = [("session", session), ("owed", owed)],
     };
 
-    public static BusDraft? TurnEndedOwed(string home, string session) =>
-        new OpinionDues(home).Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase)) ? TurnEnded(session) : null;
+    /// <summary>
+    /// The turn's end of <paramref name="session"/>, naming the owed opinions it reaches: its own, and a chat run's kept in its
+    /// <paramref name="tree"/> by its line's first session; none where none is owed, and every one, unnamed, where the due list does not read.
+    /// </summary>
+    public static BusDraft? TurnEndedOwed(string home, string session, string tree)
+    {
+        IReadOnlyList<OpinionDue> open;
+        try
+        {
+            open = new OpinionDues(home).OpenStrict();
+        }
+        catch (Exception error) when (error is System.Text.Json.JsonException or IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return TurnEnded(session, null);
+        }
+
+        List<string> owed = [.. open.Where(due => Same(due.Session, session) || (due.OnRun && SameTree(due.Tree, tree))).Select(due => due.Session)
+            .Distinct(StringComparer.OrdinalIgnoreCase)];
+        return owed.Count == 0 ? null : TurnEnded(session, owed);
+    }
+
+    private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+
+    private static bool SameTree(string left, string right) =>
+        left.Length > 0 && right.Length > 0 && Same(Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)));
 
     /// <summary>The service's quests moved, the families its change stream named, and what changed where the list could say (<see cref="QuestMoves"/>).</summary>
     public static BusDraft QuestMoved(IReadOnlyList<string> families, QuestMoveNames? names = null) => new(BusTypes.QuestMoved, "quests")

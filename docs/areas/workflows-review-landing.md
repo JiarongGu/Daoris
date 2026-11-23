@@ -496,7 +496,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     record is: a graph's opinion node holds the ask until it begins, and one begun while a judgment read before it waits for that
     judgment, so the next reads it), and the standing choices this process wrote (`choices.written`: a reviewer added to a rule, a
     workflow, the policy), and a conversation's turn ending while its work is owed an opinion (`session.turn-ended`, teed where a
-    chat run's turn ends, judging that session's owed opinions, so a delivery that waited on the turn goes at its end). A `quest.moved` fact names what changed, by diffing the quest list the listener reads against the last
+    chat run's turn ends, naming the owed opinions it reaches: its session's and its tree's chat run's, which a hand-over's newer
+    session answers for its line's first; a due list that does not read names none, and every owed opinion is judged by the gate's
+    strict read, which fails and retries; so a delivery that waited on the turn goes at its end). A `quest.moved` fact names what changed, by diffing the quest list the listener reads against the last
     read (`QuestMoves`): the quests whose records differ, every quest of their chains (parents and children, which a step opinion
     reads) and their repositories (which a landing opinion reads whole: every open set-up step there). A move round judges only the
     owed opinions those names reach; a move that names nothing (no earlier read, no difference found, more than a fact lists, a list

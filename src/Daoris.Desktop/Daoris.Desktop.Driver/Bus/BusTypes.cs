@@ -142,7 +142,7 @@ public static class BusTypes
     /// <summary>A turn of a session whose work is owed a second opinion ended: the opinion's gate must judge that session's owed opinions, a delivery that waited on the turn among them. Its subject is the session.</summary>
     public static readonly BusType SessionTurnEnded = new(
         "session.turn-ended", 1, BusClasses.Fact, Sessions, OpinionGate, BusDeadline.Stated(TimeSpan.FromMinutes(10), AtTheGate), 2, BusGiveUps.Held,
-        [new("session", BusShapes.Id)]);
+        [new("session", BusShapes.Id), new("owed", BusShapes.Ids)]);
 
     private const string AtTheRun =
         Unmeasured + "; the run's step consumer asks one pass for the run at the fact (BUS2e1), which judges that run first with no read of the units, so ten minutes covers a pass held behind another or a drain with room";

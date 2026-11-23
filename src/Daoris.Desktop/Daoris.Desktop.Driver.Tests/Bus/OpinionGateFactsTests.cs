@@ -282,11 +282,43 @@ public sealed class OpinionGateFactsTests : IDisposable
         await using var run = await OpinionGateRun.StartAsync(bus, Gate(_ => Waits()), _home, CancellationToken.None);
         await Started();
 
-        bus.Append(OpinionBusFacts.TurnEnded("s-1"));
+        bus.Append(OpinionBusFacts.TurnEnded("s-1", ["s-1"]));
 
         await Poll.Until(() => Judged("s-1") == 2, () => $"the turn's end was not judged: {string.Join(", ", _judged)}", Soon);
         Assert.Equal(1, Judged("s-2"));
         await Unarmed(bus);
+    }
+
+    /// <summary>🔴 A turn of the newer session a hand-over goes on in names the run's owed opinion its first session keeps, by their tree, and the gate judges it.</summary>
+    [Fact]
+    public async Task A_handed_over_conversations_turn_reaches_its_lines_owed_opinion()
+    {
+        new OpinionDues(_home).Due(new OpinionDue("c-1", "", "engine", "", "tree-c", OpinionRules.Landing, At) { Run = "chat-c-1" });
+        var draft = OpinionBusFacts.TurnEndedOwed(_home, "c-2", "tree-c");
+        Assert.NotNull(draft);
+
+        await using var bus = Open();
+        await using var run = await OpinionGateRun.StartAsync(bus, Gate(_ => Waits()), _home, CancellationToken.None);
+        await Started();
+        await Poll.Until(() => Judged("c-1") == 1, () => "the start did not judge the chat's owed opinion", Soon);
+
+        bus.Append(draft!);
+
+        await Poll.Until(() => Judged("c-1") == 2, () => $"the handed-over turn was not judged: {string.Join(", ", _judged)}", Soon);
+        Assert.Equal(1, Judged("s-1"));
+        await Unarmed(bus);
+    }
+
+    /// <summary>🔴 A due list that cannot be read still tees the turn's end, its reach unknown, so the gate's strict read fails and retries it.</summary>
+    [Fact]
+    public void An_unreadable_due_list_still_tees_the_turns_end()
+    {
+        File.WriteAllText(new OpinionDues(_home).FilePath, "{ not json");
+
+        var draft = OpinionBusFacts.TurnEndedOwed(_home, "s-9", "tree-9");
+
+        Assert.NotNull(draft);
+        Assert.Contains(draft!.Payload, pair => pair is { Key: "owed", Value: null });
     }
 
     /// <summary>🔴 Each judgment is measured by what woke it, a fact or the gate's own turn, and <c>daoris bus stats</c> reads them apart.</summary>
