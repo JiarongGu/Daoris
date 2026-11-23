@@ -149,6 +149,9 @@ public sealed class TreeMergeTests : IDisposable
 
         Assert.False(merged.Merged);
         Assert.Contains("aborted", merged.Message);
+        Assert.Contains("`README.md`", merged.Conflict!.Says);
+        Assert.StartsWith("Rebase your work onto `", merged.Conflict.Words);
+        Assert.Contains("`README.md`", merged.Conflict.Words);
         Assert.Equal(head, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
         // Not left mid-merge: a half-merged checkout is worse than an honest refusal.
         var readme = await File.ReadAllTextAsync(Path.Combine(root, "README.md"));
@@ -182,6 +185,7 @@ public sealed class TreeMergeTests : IDisposable
         Assert.Contains("hook", merged.Message);
         Assert.Contains("check-sensitive: blocked, private ban pattern aurora", merged.Message);
         Assert.Contains("nothing conflicted", merged.Message);
+        Assert.Null(merged.Conflict);
         Assert.Equal(head, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
         // Not left mid-merge: the abort took the staged merge away.
         Assert.Equal("", (await GitAsync(root, "status", "--porcelain")).Trim());

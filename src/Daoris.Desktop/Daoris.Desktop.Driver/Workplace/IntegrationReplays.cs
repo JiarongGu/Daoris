@@ -22,6 +22,9 @@ internal sealed record IntegrationReplayAsk(string Repository, string Workspace,
     /// </summary>
     public RebaseTelling.Say? Say { get; init; }
 
+    /// <summary>Told a merge rule's press's conflict (never a hook's refusal) with its request's id, so its landing can ask the session to rebase.</summary>
+    public Action<string, LandingConflict>? Conflicted { get; init; }
+
     /// <summary>
     /// The person's choices the acceptances of the generated folders' writers and the line rules are read from (as <c>BranchReplays</c> reads them);
     /// null where they could not be read, and a resolve then writes nothing again and settles by no line rule, as with none accepted.
@@ -370,7 +373,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
         }
 
         // 3. The rest merged `--no-ff` onto the candidate so far, the second parent the frozen tip. A merge rule's press is merged the same way.
-        if (request.Route == IntegrationRoutes.Merge) return await PressedAsync(tree, onto, member, request, ask, ct).ConfigureAwait(false);
+        if (request.Route == IntegrationRoutes.Merge) return await PressedAsync(tree, onto, candidate.Base, member, request, ask, ct).ConfigureAwait(false);
         var merged = await MachinePorts.Repository.MergeAsync(tree, new GitMergeAsk(request.Tip, GitMergeKind.Stage), ct).ConfigureAwait(false);
         IReadOnlyList<string> paths = [];
         if (!merged.Ok)
@@ -418,7 +421,7 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
     /// as the checkout's merge ran them, nothing resolved; a conflict, or a merge its own hook refused, is the press's refusal.
     /// </summary>
     private async Task<IntegrationStepEnd> PressedAsync(
-        string tree, string onto, IntegrationMember member, IntegrationRequest request, IntegrationReplayAsk ask, CancellationToken ct)
+        string tree, string onto, string lineBase, IntegrationMember member, IntegrationRequest request, IntegrationReplayAsk ask, CancellationToken ct)
     {
         var message = ask.Messages?.Invoke(request) ?? $"Merge branch '{request.Branch}'";
         var merged = await MachinePorts.Repository.MergeAsync(tree, new GitMergeAsk(request.Tip, GitMergeKind.Commit, message), ct).ConfigureAwait(false);
@@ -429,6 +432,14 @@ internal sealed class IntegrationReplays(IntegrationStore store, string treesRoo
             var why = hooked
                 ? LandingSayings.HookRefused(request.Branch, ask.Line, merged.Error, "")
                 : $"git would not merge `{request.Branch}` into `{ask.Line}`: {first} The merge was aborted and the checkout is as it was.";
+            if (!hooked && ask.Conflicted is { } conflicted)
+            {
+                var conflicts = merged.Unmerged.Count > 0
+                    ? await IntegrationConflicts.DescribeAsync(tree, lineBase, request.Tip, merged.Unmerged, [], ct).ConfigureAwait(false)
+                    : $"{first.TrimEnd('.')}.";
+                conflicted(request.Id, new LandingConflict(conflicts, LandingSyncWords.Rebase(ask.Line, [], conflicts)));
+            }
+
             return await ConflictAsync(tree, onto, member.Request, why, ct).ConfigureAwait(false);
         }
 
