@@ -17,7 +17,13 @@ public static class OpinionAgain
     public const string GaveUp = "unsaid";
 
     /// <summary>Whether <paramref name="code"/> is a pass that ended with no opinion given, which the look asks again.</summary>
-    public static bool Is(string? code) => code is OpinionStepWaits.Ended or OpinionStepWaits.OutOfTime or OpinionViews.Transient;
+    public static bool Is(string? code) => code is Ended or OutOfTime or OpinionViews.Transient;
+
+    /// <summary>A failed pass's code: its reviewer's session ended without giving an opinion.</summary>
+    public const string Ended = "ended";
+
+    /// <summary>A failed pass's code: its reviewer's minutes ran out before it gave one.</summary>
+    public const string OutOfTime = "out-of-time";
 
     /// <summary>Whether the gate stands on such a pass with asks left: its look asks again.</summary>
     public static bool Pending(OpinionGateState gate) =>

@@ -86,10 +86,10 @@ public static class OpinionStepWaits
         [Answer, Disputed, CommitsSince, Reading, Rechecking, NotAsked, NotAskedRecheck, NotAskedHeld, NotAskedPress, Unread, WaitsChain, Vacant, VacantUntil, ReadingUntil, RecheckingUntil, Again, Unavailable];
 
     /// <summary>A failed pass's code (the gate's <see cref="OpinionGateState.Code"/>): its reviewer's session ended without giving one.</summary>
-    public const string Ended = "ended";
+    public const string Ended = OpinionAgain.Ended;
 
     /// <summary>A failed pass's code: its reviewer's minutes ran out before it gave one.</summary>
-    public const string OutOfTime = "out-of-time";
+    public const string OutOfTime = OpinionAgain.OutOfTime;
 
     /// <summary>The words a step a pass left with no opinion fails with; null for every other code, a wait for a reviewer among them.</summary>
     public static string? EndedSaid(string? code) => code switch
