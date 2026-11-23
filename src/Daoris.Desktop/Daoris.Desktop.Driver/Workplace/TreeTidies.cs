@@ -123,7 +123,8 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
             else
             {
                 // The same proof by content as a tree's removal, against the line of the workspace it grew in.
-                var proof = await ContentHolds.HeldByContentAsync(root, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false);
+                var proof = await ContentHolds.HeldByContentAsync(
+                    root, judged, line, content.LandedHere(repository), ct, ended: KeptEnd.Of(root, context.Grown.Of(repository, branch))).ConfigureAwait(false);
                 held = proof.Hold;
                 rests = proof.Rests;
                 if (proof.Unread is { } unread)

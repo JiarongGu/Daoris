@@ -412,7 +412,7 @@ internal sealed class TreeSweeps(
             var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
                 tree, root, declared, ct, new LinePlaces(context.Home).SlotAt(workspace, repository, tree),
-                TreeFilesRecord.Read(context.Home, tree)).ConfigureAwait(false);
+                TreeFilesRecord.Read(context.Home, tree), await FileRemade.OfAsync(context.Home, repository, tree, ct).ConfigureAwait(false)).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             seen?.Add(holds);
             shared = holds.Shared.Count;
@@ -485,7 +485,8 @@ internal sealed class TreeSweeps(
             // work is where the row says, and the row is landed. Not a branch checked out outside the trees home, as above.
             if (tree is null || context.Holds(tree))
             {
-                var proof = await ContentHolds.HeldByContentAsync(root, tip, line, content.LandedHere(repository), ct, refs).ConfigureAwait(false);
+                var proof = await ContentHolds.HeldByContentAsync(
+                    root, tip, line, content.LandedHere(repository), ct, refs, KeptEnd.Of(root, context.Grown.Of(repository, branch))).ConfigureAwait(false);
                 if (proof.Hold is { } held)
                 {
                     // The ref it found the work on, at the commit it compared.

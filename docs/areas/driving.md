@@ -611,7 +611,15 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `integration.scratch` and the index `daoris.json`'s `documents.index` names at the line's tip, which every checkout writes again:
     its folder where the line commits nothing there, else the file alone (`GeneratedIndex`); and every path the repository's own
     `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
-    the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
+    the checkout holds there; and every file the person's own rules (`daoris files <repository> set output|intermediate|cache|scratch`)
+    call so, with the floor judged in the tree being cleaned, never in the checkout whose `local/` holds another repository: a path
+    that is or lies inside a repository or tree the session's tree holds is never covered (`FileRemade`). The person's layer is read
+    last, so a path they call `local` or `dependency` is kept though the repository calls it output, and the tree's own
+    `core.ignorecase` decides how their paths match. `daoris.files.json` calls
+    `local/quick-base.json` and `local/quick-verdicts.json`, which `npm run quick` writes, outputs. A branch whose landing replayed
+    its commits under ids of their own, and whose files the line has changed since, is held by the end its record kept while the
+    form of the line it held on still descends from where it held (`KeptEnd`, a form of the content proof). Uncommitted or
+    untracked work keeps it, and so does an ignored folder of more than 5,000 files,
     counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
     a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). The look's tidy judges and last looks at every tree with
     the repository free, and holds it alone only around the git writes that remove one tree or one landed branch, reading that tree
