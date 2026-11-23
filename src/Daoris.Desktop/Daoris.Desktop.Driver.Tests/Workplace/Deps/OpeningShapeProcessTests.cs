@@ -67,23 +67,39 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
         await OpenAsync("s-00000001", new LookStages());
         _ = GitAskTally.Shared.Take();
         using var stop = new CancellationTokenSource();
+        using var deadline = new CancellationTokenSource(FourBudget);
         var fanOut = Task.WhenAll(Enumerable.Range(0, FanOut).Select(_ => Task.Run(async () =>
         {
             using var asking = GitAskers.Is(GitAskers.Look);
-            while (!stop.IsCancellationRequested) await MachinePorts.Repository.StatusAsync(Root, false, CancellationToken.None);
+            try
+            {
+                while (!stop.IsCancellationRequested) await MachinePorts.Repository.StatusAsync(Root, false, stop.Token);
+            }
+            catch (OperationCanceledException) when (stop.IsCancellationRequested)
+            {
+            }
         })));
-        await Task.Delay(TimeSpan.FromSeconds(3));
         var all = Stopwatch.StartNew();
-        var openings = await Task.WhenAll(Enumerable.Range(2, 4).Select(number => Task.Run(async () =>
+        (long Ms, string? Line)[] openings;
+        try
         {
-            var steps = new LookStages();
-            var watch = Stopwatch.StartNew();
-            using (GitAskers.Is($"open{number}")) await OpenThroughGitAsync($"s-0000000{number}", steps);
-            return (Ms: watch.ElapsedMilliseconds, Line: steps.Take());
-        })));
+            await Task.Delay(TimeSpan.FromSeconds(3), deadline.Token);
+            all.Restart();
+            openings = await Task.WhenAll(Enumerable.Range(2, 4).Select(number => Task.Run(async () =>
+            {
+                var steps = new LookStages();
+                var watch = Stopwatch.StartNew();
+                using (GitAskers.Is($"open{number}")) await OpenThroughGitAsync($"s-0000000{number}", steps, deadline.Token);
+                return (Ms: watch.ElapsedMilliseconds, Line: steps.Take());
+            })));
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            await fanOut;
+        }
+
         all.Stop();
-        stop.Cancel();
-        await fanOut;
         var asks = GitAskTally.Shared.Take();
         foreach (var opening in openings) output.WriteLine($"opening {opening.Ms} ms: {opening.Line}");
         double Mean(string caller) => asks.Where(row => row.Caller == caller).Sum(row => row.Waited) / (double)Math.Max(1, asks.Where(row => row.Caller == caller).Sum(row => row.Count));
@@ -96,23 +112,23 @@ public sealed class OpeningShapeProcessTests(ITestOutputHelper output) : IDispos
 
     private const int FanOut = 12;
 
-    private static readonly TimeSpan FourBudget = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan FourBudget = TimeSpan.FromMinutes(3);
 
     /// <summary><see cref="OpenAsync"/> with the tree made through the machine's git places and every git of it the opening's, as <c>Driver.RunAsync</c> asks it.</summary>
-    private async Task<IReadOnlyList<Noted>> OpenThroughGitAsync(string name, LookStages steps)
+    private async Task<IReadOnlyList<Noted>> OpenThroughGitAsync(string name, LookStages steps, CancellationToken ct)
     {
         using var opening = GitScheduler.AsOpening();
         var tree = Path.Combine(_scratch, "trees", name);
         using (var span = steps.Begin("tree"))
         using (span.Aim())
         {
-            var added = await MachinePorts.Repository.AddWorktreeAsync(Root, new GitWorktreeAdd(tree, "main", $"daoris/{name}", TreeOpenings.LockReason(Environment.ProcessId), TreeOpenings.HooksPath(Home)), CancellationToken.None);
+            var added = await MachinePorts.Repository.AddWorktreeAsync(Root, new GitWorktreeAdd(tree, "main", $"daoris/{name}", TreeOpenings.LockReason(Environment.ProcessId), TreeOpenings.HooksPath(Home)), ct);
             Assert.True(added.Ok, added.Error);
             TreeFilesRecord.Mark(Home, tree);
         }
 
         var said = new List<Noted>();
-        using (steps.Begin("files")) await TreeFilesStep.RunAsync(Home, Root, tree, Repository, said.Add, CancellationToken.None, steps: steps);
+        using (steps.Begin("files")) await TreeFilesStep.RunAsync(Home, Root, tree, Repository, said.Add, ct, steps: steps);
         return said;
     }
 

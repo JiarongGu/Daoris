@@ -350,10 +350,11 @@ which runs only in the adapter's own development (`node tools/merge/packages.ts 
   person's read always finds the fourth; one repository runs at most two background reads. A bridge route's gits are a person's.
 - Asks queue per repository, the oldest that may go of the highest class first: a person's, a step's, the background's. A write passes nothing queued ahead of it, nothing passes it,
   and it never shares; a read shares an identical queued start only with no write queued after it. An opening's asks
-  (`AsOpening`) alone queue ahead of the background's, a write included, behind only the openings' own queued before them, so the
-  loop's queue of tens never holds an opening's tree write (`GitSchedulerTests`). A `worktree add` that holds its hooks
-  (`TreeOpenings.HooksHeld`) runs none, so it waits on nothing outside Daoris and is not one of the two outside places that made
-  four trees opened at once two and two (`GitStartAsks.WaitOf`).
+  (`AsOpening`) pass the background's queued reads, a write included, and nothing else: a queued write, a person's or a step's ask
+  and an earlier opening's stay ahead of them, so the loop's queue of tens never holds an opening's tree write
+  (`GitSchedulerTests`). A `worktree add` that holds its hooks runs none, so it is not one of the two outside places that made four
+  trees opened at once two and two (`GitStartAsks.WaitOf`); a filter may still wait outside in its checkout, so at most three
+  openings' writes run at once and a place stays for a person's read (`GitPlaces`).
 - A lock-free read (`GitEndable`) is dropped or ended once its askers leave; every other git runs to its end or its bound. A git
   outliving its kill is counted apart (`git.place.apart`) and its repository's background asks answer `stalled`.
 - Each start is classed before it queues by one table of git's commands (`GitCommands`): a read, a write or a drop (a branch's tip
