@@ -112,7 +112,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
                 full, root, declared, ct, new LinePlaces(context.Home).SlotAt(owner.Workspace, owner.Repository, full),
-                TreeFilesRecord.Read(context.Home, full)).ConfigureAwait(false);
+                TreeFilesRecord.Read(context.Home, full), FileRemade.Of(context.Home, owner.Repository, full)).ConfigureAwait(false);
             seen = holds;
             if (holds is null)
             {
@@ -189,7 +189,9 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
                     squashedOn = squashed.Entry;
                     rests = [($"refs/heads/{squashed.Entry.Branch}", squashed.At)];
                 }
-                else if ((held = (proof = await ContentHolds.HeldByContentAsync(full, judged, line, content.LandedHere(repository), ct).ConfigureAwait(false)).Hold) is null)
+                else if ((held = (proof = await ContentHolds.HeldByContentAsync(
+                             full, judged, line, content.LandedHere(repository), ct, ended: KeptEnd.Of(root, context.Grown.Of(repository, named)))
+                             .ConfigureAwait(false)).Hold) is null)
                 {
                     // A proof git could not read is not "held nowhere"; the refusal says it could not tell.
                     if (proof!.Unread is { } unread)

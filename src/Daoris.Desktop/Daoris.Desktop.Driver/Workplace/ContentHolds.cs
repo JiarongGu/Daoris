@@ -59,8 +59,9 @@ internal sealed class ContentHolds(TreeContext context)
     /// <param name="line">The repository's line, or null where none is set and git names none.</param>
     /// <param name="notHolders">The branches that may not hold its work: those a landing made and recorded here.</param>
     /// <param name="refs">The judgement's refs, the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
+    /// <param name="ended">The branch's kept end, which holds a replayed landing the line changed files of since.</param>
     internal static async Task<ContentProof> HeldByContentAsync(
-        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null)
+        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null, KeptEnd? ended = null)
     {
         // A read git could not make is remembered, so no failure ends as "not held"; a hold found by other
         // reads still stands, since it is found, not assumed.
@@ -84,6 +85,11 @@ internal sealed class ContentHolds(TreeContext context)
         IReadOnlyList<LandingCommit>? lacks = null;
         foreach (var (form, formRef, formId) in forms)
         {
+            if (ended is not null && await ended.HoldsOnAsync(cwd, form, formId, tip, line, ct).ConfigureAwait(false))
+            {
+                return ContentProof.Of(new ContentHold(form, Squash: false) { Replayed = true, OnLine = true }, formRef, formId);
+            }
+
             var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
             if (baseCode != 0)
             {
@@ -419,12 +425,14 @@ internal sealed class ContentHolds(TreeContext context)
     /// </param>
     /// <param name="slot">The kept slot <paramref name="tree"/> is, where it is one: it opened when its present line took it.</param>
     /// <param name="files">The tree's files record: a copy of Daoris's own in it, as written, is never the session's work, however the checkout's file moved since.</param>
+    /// <param name="remade">The files the person's rules say a tool writes again, the floor judged in this tree; null where none.</param>
     internal static async Task<TreeHolds?> HoldsAsync(
         string tree, string root, IReadOnlyList<System.Text.RegularExpressions.Regex> declared, CancellationToken ct, KeptTree? slot = null,
-        TreeFilesState? files = null)
+        TreeFilesState? files = null, Func<string, bool>? remade = null)
     {
         bool DaorisOwn(string relative) =>
-            TreeCopies.IsOwn(files, tree, relative) || Path.GetFileName(relative.TrimEnd('/')).StartsWith(DependencyStore.MakingPrefix, StringComparison.Ordinal);
+            TreeCopies.IsOwn(files, tree, relative) || Path.GetFileName(relative.TrimEnd('/')).StartsWith(DependencyStore.MakingPrefix, StringComparison.Ordinal)
+            || remade?.Invoke(relative) == true;
 
         IReadOnlyDictionary<string, string> status;
         try
