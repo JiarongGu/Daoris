@@ -365,7 +365,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         using var writing = TreeLock.TryWriting(ask.Home, ask.Root, ask.Repository, TreeLock.Promoting);
         if (writing is null)
         {
-            return Held($"{TreeLock.Held(ask.Repository, TreeLock.HolderOf(ask.Home, ask.Root))}: nothing was moved, and it is tried again at the next look.");
+            return Held($"{TreeLock.HeldNow(ask.Home, ask.Root, ask.Repository)}: nothing was moved, and it is tried again at the next look.");
         }
 
         // The checkout's open acts reconciled under the hold, before the line's first read; one that still runs holds the promotion.

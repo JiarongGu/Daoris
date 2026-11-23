@@ -143,8 +143,10 @@ internal sealed class LandedCleanups(
     /// half alone, after its rebases.
     /// </summary>
     internal async Task<List<LandedResult>> CleanLandedAsync(
-        IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlySet<string>? only, CancellationToken ct)
+        IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlySet<string>? only, CancellationToken ct,
+        Func<TidyHold>? alone = null)
     {
+        TidyHold? refused = null;
         var results = new List<LandedResult>();
         foreach (var (repository, space, root) in known)
         {
@@ -175,6 +177,15 @@ internal sealed class LandedCleanups(
                 if (!item.Removable)
                 {
                     results.Add(new(item, false, named ? ChangedSince : "kept") { Session = session });
+                    continue;
+                }
+
+                // The look's tidy holds the repository for this branch's judgement again and its delete alone, and lets go at its end.
+                using var hold = alone is null || refused is not null ? null : alone();
+                if (hold is not null && (!hold.Held || !await hold.AskAsync().ConfigureAwait(false))) refused = hold;
+                if (refused is not null)
+                {
+                    results.Add(new(item, false, refused.Said) { Session = session });
                     continue;
                 }
 

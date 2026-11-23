@@ -282,7 +282,7 @@ internal sealed class TreeDelivering
         if (held is null)
         {
             Held = true;
-            return (1, "", $"{TreeLock.Held(_repository, TreeLock.HolderOf(_home, root))}, so the branch was not written; it is tried again once that is done");
+            return (1, "", $"{TreeLock.HeldNow(_home, root, _repository)}, so the branch was not written; it is tried again once that is done");
         }
 
         var (transaction, intended) = old is null ? (new RefTransaction().Create(reference, value), $"`{reference}` made at {value}")
