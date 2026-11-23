@@ -110,6 +110,7 @@ public static class PressViews
         new PlaceApplyView(),
         new RegistryCreateView(),
         new WorkflowSaveView(),
+        new PolicyApplyView(),
     ];
 
     /// <summary>The view of <paramref name="module"/>'s <paramref name="route"/>; null where the route has none.</summary>
