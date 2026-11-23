@@ -27,7 +27,7 @@ function declaration(): Declaration {
     tests: {
       sets: [
         { name: 'tool-tests', gate: 'tool-tests', runner: 'node', files: ['src/Cli/tool-test/**/*.test.ts'] },
-        { name: 'merge-unit', gate: 'cli-tests', runner: 'vitest', timeoutMs: 10000, files: ['tools/merge/**/*.test.ts'] },
+        { name: 'merge-unit', gate: 'cli-tests', runner: 'vitest', timeoutMs: 120000, files: ['tools/merge/**/*.test.ts'] },
         { name: 'merge-e2e', gate: 'cli-tests', runner: 'vitest', files: ['tools/merge/**/*.e2e.ts'] },
         { name: 'tools', gate: 'cli-tests', runner: 'node', files: ['tools/*.test.mjs'] },
       ],

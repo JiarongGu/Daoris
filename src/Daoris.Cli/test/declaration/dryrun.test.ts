@@ -22,7 +22,7 @@ const GATES = {
     { name: 'universal', run: 'node tools/universal.mjs' },
     { name: 'tool-tests', timeoutMinutes: 8, timeoutWhy: 'ran 1.8 min', run: 'npm run tooltests', paths: ['tools/'] },
   ],
-  tests: { _why: 'the format', sets: [{ name: 'tools', gate: 'tool-tests', runner: 'node', timeoutMs: 5000, files: ['tools/*.test.mjs'] }] },
+  tests: { _why: 'the format', sets: [{ name: 'tools', gate: 'tool-tests', runner: 'node', timeoutMs: 120000, files: ['tools/*.test.mjs'] }] },
   unasked: { may: ['merge'] },
 };
 
@@ -50,7 +50,7 @@ test('a dry run writes the folder and the home\'s values to scratch, proves them
   assert.deepEqual(filesUnder(join(fixture.root, scratch)), ['daoris/gates/tool-tests.json', 'daoris/gates/universal.json', 'home.json']);
   const home = JSON.parse(fixture.read(`${scratch}/home.json`));
   assert.deepEqual(home.gates, { 'tool-tests': { timeoutMinutes: 8, timeoutWhy: 'ran 1.8 min' } });
-  assert.deepEqual(home.sets, { tools: { timeoutMs: 5000 } });
+  assert.deepEqual(home.sets, { tools: { timeoutMs: 120000 } });
   assert.ok(fixture.exists('daoris.gates.json'), 'the old file is still there: a dry run deletes nothing');
   assert.ok(!fixture.exists('daoris/gates/universal.json'), 'the folder is written to scratch, never to the repository');
   fixture.cleanup();
