@@ -188,6 +188,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
         {
             Brief = extras.Brief, Preface = ChatMessage.Bound(preface), Briefing = extras.Browser, Draft = extras.Draft, Untaken = extras.Restore,
         };
+        context.OwnerTurns.Note(sessionId, composed);
         if (!held) return (composed, extras);
 
         composed = told.With(sessionId, composed, out var give);

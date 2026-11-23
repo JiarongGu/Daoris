@@ -21,6 +21,9 @@ internal sealed class ChatContext(
 
     public string Home { get; } = home;
 
+    /// <summary>The person's own words as this door took them, by conversation: what a proposed change to the policy is bound to.</summary>
+    public OwnerTurns OwnerTurns { get; init; } = new(() => default);
+
     public SessionProcesses Processes { get; } = processes;
 
     public SessionOutput? Output { get; } = output;

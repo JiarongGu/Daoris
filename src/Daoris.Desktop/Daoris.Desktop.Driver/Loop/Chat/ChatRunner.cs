@@ -93,7 +93,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         harnesses ??= new HarnessRoster(adapters, HarnessSettings.ResolvePath(home));
         // Its turns kept in the usage history, watched once however many runners share the record.
         events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
-        _context = new ChatContext(service, home, processes, output, harnesses, events);
+        _context = new ChatContext(service, home, processes, output, harnesses, events) { OwnerTurns = new OwnerTurns(() => RetryClock.GetUtcNow()) };
         _options = new ChatOptions(_context);
         _accounts = new ChatAccountReads(_context);
 
@@ -455,6 +455,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     /// <summary>The runner's shared state, for tests that stand a conversation up without a spawn.</summary>
     internal ChatContext Context => _context;
+
+    public OwnerTurns OwnerTurns => _context.OwnerTurns;
 
     /// <inheritdoc cref="ChatRun.RunAsync"/>
     internal Task<ChatStart> RunAsync(
