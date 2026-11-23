@@ -118,9 +118,10 @@ internal sealed class TreeSweeps(
     internal async Task<IReadOnlyList<SweepResult>> SweepAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         IReadOnlySet<string>? only, bool byItself, CancellationToken ct, IReadOnlyList<LineLanding>? landings = null,
-        IReadOnlyDictionary<string, IReadOnlyList<string>>? droppable = null)
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? droppable = null, Func<TidyHold>? alone = null)
     {
         using var asking = GitAskers.Unless(GitAskers.Tidy);
+        TidyHold? refused = null;
         var known = repositories.ToList();
         // One look at each checkout's line for the list and every item after it, the look's own tidy's as the person's.
         using var look = context.OneLook();
@@ -140,45 +141,50 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
-            var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
-            // Judged again from the refs and the working trees as they are now: never the list's, since a
-            // removal before it wrote.
-            var fresh = RefSnapshot.Take(root);
-            if (await context.Worktrees.ListAsync(root, ct, fresh).ConfigureAwait(false) is not { } listed)
+            // Once the lock is refused the rest are kept for another look, unread.
+            if (refused is not null)
             {
-                results.Add(new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
+                results.Add(new(item, false, refused.Said) { Kept = refused.Code });
                 continue;
             }
 
-            var worktrees = ByBranch(listed);
-            var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
-            // The commit of its judgement: the one its delete must still find, and the one a pull request's answer
-            // removed, for the record of it. And what that judgement's proof rested on, each ref at the commit it read: the delete verifies exactly these, and nothing looks for them again.
-            var rests = new List<(string Ref, string Commit)>();
-            // The moment before the judgement reads what the tree holds, the finished
-            // folder's threshold, and what it held that no commit holds, which its record names.
-            var read = DateTimeOffset.UtcNow;
-            var seen = new List<ContentHolds.TreeHolds>();
-            var (now, judged) = await JudgeAsync(
-                    root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh, rests, seen)
-                .ConfigureAwait(false);
-            if (!goes(now) || judged is null)
+            // Judged and last looked at with no hold, so a slow read of a large tree never keeps the repository's writers out.
+            var (first, said) = await LookAsync(item, busy).ConfigureAwait(false);
+            if (first is null)
             {
-                results.Add(new(now, false, judged is null && now.Unread && !string.IsNullOrWhiteSpace(now.Detail)
-                    ? $"{now.Detail}, so it is kept"
-                    : "it changed since the list, and is kept"));
+                results.Add(said!);
                 continue;
             }
 
-            // The package folders judged before the hold, checked again by the last look's own reads.
-            var slim = new List<string>();
-            if (byItself && await setAside.LastLookAsync(root, now, ct, droppable?.GetValueOrDefault(now.Branch), slim).ConfigureAwait(false) is { } last)
+            // Held for this tree's writes alone, the tree read again under it, and let go at the end of its turn.
+            if (SetAsideFaults.Current?.WhileJudging is { } slow && first.Now.Tree is { } judging) await slow(judging).ConfigureAwait(false);
+            using var hold = alone?.Invoke();
+            var look1 = first;
+            if (hold is not null)
             {
-                results.Add(new(now, false, last.Sentence) { Kept = last.Code, Cause = last.Cause });
-                continue;
+                if (!hold.Held || !await hold.AskAsync().ConfigureAwait(false))
+                {
+                    refused = hold;
+                    results.Add(new(first.Now, false, hold.Said) { Kept = hold.Code });
+                    continue;
+                }
+
+                (look1, said) = await LookAsync(item, hold.Busy!).ConfigureAwait(false);
+                if (look1 is null)
+                {
+                    results.Add(said!);
+                    continue;
+                }
+
+                // The tree stands as judged, or it is kept.
+                if (look1.Judged != first.Judged)
+                {
+                    results.Add(new(look1.Now, false, "it changed since the list, and is kept"));
+                    continue;
+                }
             }
+
+            var (root, now, judged, line, rests, read, seen, slim) = look1;
 
             // The delete refuses a judgement that rested on nothing, but the tip's holder appended below would
             // hide that, so the branch is kept here, said, before any ref is written or anything moves.
@@ -319,6 +325,50 @@ internal sealed class TreeSweeps(
         }
 
         return results;
+
+        // The branch judged as the refs and trees stand now, then its last look; the result that keeps it where either does.
+        async Task<(SweepLook? Look, SweepResult? Said)> LookAsync(SweepItem item, IReadOnlySet<string> asked)
+        {
+            var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
+            // Judged again from the refs and the working trees as they are now: never the list's, since a
+            // removal before it wrote.
+            var fresh = RefSnapshot.Take(root);
+            if (await context.Worktrees.ListAsync(root, ct, fresh).ConfigureAwait(false) is not { } listed)
+            {
+                return (null, new(item with { Unread = true, Detail = ListUnread }, false, $"{ListUnread}, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.List });
+            }
+
+            var worktrees = ByBranch(listed);
+            var line = (await context.LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
+            var carriers = item.Kind == SweepKind.Carried ? await asks.CarriersAsync(root, item.Repository, line, ct, fresh).ConfigureAwait(false) : [];
+            // The commit of its judgement: the one its delete must still find, and the one a pull request's answer
+            // removed, for the record of it. And what that judgement's proof rested on, each ref at the commit it read: the delete verifies exactly these, and nothing looks for them again.
+            var rests = new List<(string Ref, string Commit)>();
+            // The moment before the judgement reads what the tree holds, the finished
+            // folder's threshold, and what it held that no commit holds, which its record names.
+            var read = DateTimeOffset.UtcNow;
+            var seen = new List<ContentHolds.TreeHolds>();
+            var (now, judged) = await JudgeAsync(
+                    root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line,
+                    new HashSet<string>(asked.Select(Normal), StringComparer.OrdinalIgnoreCase), carriers, ct,
+                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh, rests, seen)
+                .ConfigureAwait(false);
+            if (!goes(now) || judged is null)
+            {
+                return (null, new(now, false, judged is null && now.Unread && !string.IsNullOrWhiteSpace(now.Detail)
+                    ? $"{now.Detail}, so it is kept"
+                    : "it changed since the list, and is kept"));
+            }
+
+            // The package folders judged before the hold, checked again by the last look's own reads.
+            var slim = new List<string>();
+            if (byItself && await setAside.LastLookAsync(root, now, ct, droppable?.GetValueOrDefault(now.Branch), slim).ConfigureAwait(false) is { } last)
+            {
+                return (null, new(now, false, last.Sentence) { Kept = last.Code, Cause = last.Cause });
+            }
+
+            return (new SweepLook(root, now, judged, line, rests, read, seen, slim), null);
+        }
     }
 
     /// <summary>

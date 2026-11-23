@@ -148,10 +148,9 @@ public sealed class ActRuns(ActJournal journal)
     public async Task<ActRun> RunAsync(ActPlan plan, CancellationToken ct)
     {
         // A flow already holding the checkout (a tidy, a removal) runs its act under that hold: a second open in one process is refused.
-        var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);
-        using var taken = outer is null ? await HoldWaitingAsync(journal.Home, plan, ct).ConfigureAwait(false) : null;
+        var outer = TreeLock.HeldHere(journal.Home, plan.Checkout);        using var taken = outer is null ? await HoldWaitingAsync(journal.Home, plan, ct).ConfigureAwait(false) : null;
         var held = outer ?? taken;
-        if (held is null) return Refused($"{TreeLock.Held(plan.Repository, TreeLock.HolderOf(journal.Home, plan.Checkout))}: nothing was changed.") with { Busy = true };
+        if (held is null) return Refused($"{TreeLock.HeldNow(journal.Home, plan.Checkout, plan.Repository)}: nothing was changed.") with { Busy = true };
 
         var reconciler = new ActReconciler(journal) { ExitBound = ExitBound, Ending = Ending };
         if (await reconciler.UnderLockAsync(plan.Checkout, ct).ConfigureAwait(false) is { } open) return Refused($"{open.Said}: nothing was changed.");

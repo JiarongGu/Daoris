@@ -34,6 +34,8 @@ internal sealed class SetAsideFault
     /// <summary>Run right after the tip is held (its ref written, or the line read holding it) and before the branch's delete.</summary>
     public Func<string, Task>? AfterTipHeld { get; init; }
 
+    public Func<string, Task>? WhileJudging { get; init; }
+
     /// <summary>Run right before the tree's folder is renamed aside, with the tree's path.</summary>
     public Action<string>? BeforeMove { get; init; }
 

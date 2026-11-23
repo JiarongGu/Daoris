@@ -23,7 +23,7 @@ internal static class TreeReserving
         using var landing = await LandingHolds.TakeAsync(home, row.Tree, ct, TimeSpan.Zero).ConfigureAwait(false);
         if (landing is null) return new(null, null, $"a landing of `{Path.GetFileName(row.Tree)}` is under way");
         using var alone = TreeLock.TryWriting(home, row.Tree, row.Repository, HeldBy.Reserving);
-        if (alone is null) return new(null, null, TreeLock.Held(row.Repository, TreeLock.HolderOf(home, row.Tree)));
+        if (alone is null) return new(null, null, TreeLock.HeldNow(home, row.Tree, row.Repository));
         var holders = await TidyHolders.HoldersAsync(home, service, ct).ConfigureAwait(false);
         var key = TreeHandOffs.KeyOf(row.Tree);
         if (holders.FirstOrDefault(each => TreeHandOffs.KeyOf(each.Tree) == key) is { } holder) return new(null, holder, null);

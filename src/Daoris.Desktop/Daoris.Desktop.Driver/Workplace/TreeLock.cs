@@ -174,7 +174,7 @@ public sealed class TreeLock : IDisposable
         alone._held = RepositoryHolds.Hold(home, repository);
         try
         {
-            AtomicFile.WriteText(ByOf(path), $"{by}\n{Environment.ProcessId}\n{SelfStarted()}\n");
+            AtomicFile.WriteText(ByOf(path), $"{by}\n{Environment.ProcessId}\n{SelfStarted()}\n{Environment.TickCount64}\n");
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -244,15 +244,51 @@ public sealed class TreeLock : IDisposable
     /// What a replay says of each branch it left because the repository is held: a session starting in it, or, where <paramref name="by"/>
     /// names the writer that held it alone (<see cref="HolderOf"/>), that writer.
     /// </summary>
-    public static string Starting(string repository, string? by = null) => by is null
+    public static string Starting(string repository, string? by = null, string? age = null) => by is null
         ? $"a session was starting in one of `{repository}`'s trees, so its branches were left as they were for another look"
-        : $"{Held(repository, by)}, so its branches were left as they were for another look";
+        : $"{Held(repository, by, age)}, so its branches were left as they were for another look";
+
+    /// <summary>
+    /// What a hold older than a minute is said to be, for the words of whoever it refuses: "held for 41 minutes". Null for a younger one.
+    /// </summary>
+    public static string? Age(TimeSpan held)
+    {
+        var minutes = (int)held.TotalMinutes;
+        if (minutes < 1) return null;
+        string Units(int count, string unit) => count == 1 ? $"1 {unit}" : $"{count} {unit}s";
+        return minutes < 60 ? $"held for {Units(minutes, "minute")}" : $"held for {Units(minutes / 60, "hour")} {Units(minutes % 60, "minute")}";
+    }
+
+    /// <summary>
+    /// How long the holder alone has held the checkout's repository, by the time it wrote (<see cref="Age"/>); null where it is younger than a
+    /// minute, or nothing says.
+    /// </summary>
+    public static string? HeldFor(string home, string checkout, long? tickNow = null)
+    {
+        try
+        {
+            if (HolderOf(home, checkout) is null) return null;
+            var lines = AtomicFile.ReadText(ByOf(PathOf(home, checkout))).Split('\n', StringSplitOptions.TrimEntries);
+            return lines.Length > 3 && long.TryParse(lines[3], out var since)
+                ? Age(TimeSpan.FromMilliseconds((tickNow ?? Environment.TickCount64) - since)) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>What a writer says when its checkout's repository is held: <see cref="Held"/> of its holder, with how long it has held.</summary>
+    public static string HeldNow(string home, string checkout, string repository, long? tickNow = null) =>
+        Held(repository, HolderOf(home, checkout), HeldFor(home, checkout, tickNow));
 
     /// <summary>
     /// What a writer of the checkout says of what held the repository when it is refused: its holder alone, by what it said, or else a
-    /// start, which says nothing.
+    /// start, which says nothing. A hold older than a minute names its age (<paramref name="age"/>, from <see cref="HeldFor"/>).
     /// </summary>
-    public static string Held(string repository, string? by) => by switch
+    public static string Held(string repository, string? by, string? age = null) => HeldAt(repository, by) + (age is null ? "" : $" ({age})");
+
+    private static string HeldAt(string repository, string? by) => by switch
     {
         Updating => $"`{repository}`'s branches were being brought up to date",
         Tidying => $"`{repository}`'s session trees were being cleaned up",

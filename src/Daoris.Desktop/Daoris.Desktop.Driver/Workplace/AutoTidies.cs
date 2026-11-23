@@ -307,13 +307,8 @@ internal sealed class AutoTidies(
 
         if (candidates.Count == 0 && landings.Count == 0) return Pass(stays);
 
-        using var hold = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
-        if (hold is null) return Pass([], TidyKept.Starting, TreeLock.RefusedBy(context.Home, root));
-        var (busy, unsaidNow) = await BusyAsync().ConfigureAwait(false);
-        if (busy is null) return Pass([], TidyKept.Sessions, unsaidNow);
-
         var results = candidates.Count == 0 ? []
-            : await sweeps.SweepAsync([(repository, space, root)], busy, candidates, byItself: true, ct, onLine, droppable).ConfigureAwait(false);
+            : await sweeps.SweepAsync([(repository, space, root)], before, candidates, byItself: true, ct, onLine, droppable, Alone).ConfigureAwait(false);
         // The record of where session branches grew from drops what is gone, as the press's does: after a removal, so not
         // cancelled either.
         if (results.Any(result => result.Removed))
@@ -325,8 +320,17 @@ internal sealed class AutoTidies(
         // The landings' branches after the session branches, by the press's own half: each judged again against the
         // session branches still standing, and again right before it goes, deleted only at the commit judged.
         var gone = landings.Count == 0 ? []
-            : await cleanups.CleanLandedAsync([(repository, space, root)], landings, ct).ConfigureAwait(false);
+            : await cleanups.CleanLandedAsync([(repository, space, root)], landings, ct, Alone).ConfigureAwait(false);
         return Pass([.. stays, .. results]) with { Landed = gone };
+
+        // Held alone for one removal, never across the walk; not async, since the flow that takes it carries it to the writes under it.
+        TidyHold Alone()
+        {
+            var held = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Tidying);
+            return held is null
+                ? new(null, TidyKept.Starting, TreeLock.Starting(repository, TreeLock.RefusedBy(context.Home, root), TreeLock.HeldFor(context.Home, root)))
+                : new(held, "", "", BusyAsync);
+        }
 
         // Whether the kept fact holds at the branch's tip now, by the line the cycle names: read from the refs already taken, so no
         // git starts for it. Where it is cleared or never written, the line is not known to hold it, and nothing goes.

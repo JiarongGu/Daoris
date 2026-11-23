@@ -218,7 +218,7 @@ internal sealed class TreeSync(
             // still runs holds the pull and the replays for the next look, named.
             var acting = taken is null ? null : await ActReconciler.ForWriterAsync(context.Home, root, ct).ConfigureAwait(false);
             var held = acting is null ? taken : null;
-            var holder = taken is null ? TreeLock.Held(repository, TreeLock.HolderOf(context.Home, root)) : acting?.Said;
+            var holder = taken is null ? TreeLock.HeldNow(context.Home, root, repository) : acting?.Said;
 
             // (a) Pull the line.
             var (asJudged, inRoot) = await LinePulls.JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);

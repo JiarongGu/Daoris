@@ -609,7 +609,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
     the checkout holds there. Uncommitted or untracked work keeps it, and so does an ignored folder of more than 5,000 files,
     counted by name before any file is read. A tidy or removal the repository's lock refuses says a session was starting only where
-    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). A copy of a machine-local file
+    a start holds it; a writer that has not said what it is reads as a write (`TreeLock.RefusedBy`). The look's tidy judges and last looks at every tree with
+    the repository free, and holds it alone only around the git writes that remove one tree or one landed branch, reading that tree
+    again under the hold and keeping it where it changed (`TidyHold`, `TreeSweeps.SweepAsync`, `LandedCleanups.CleanLandedAsync`), so a
+    promotion or a person's removal takes the lock between trees; one refused stops the walk's later removals and says so. A refusal
+    names the holder and, past a minute, how long it has held (`TreeLock.HeldFor`, `TreeLock.HeldNow`). A copy of a machine-local file
     Daoris made into the tree (the files record's `Copies`, by the hash it wrote) and the half-made copy a cut-off open left
     (`.daoris-making-`) are never the session's work, whatever the checkout's file holds now: a stale copy keeps no tree, an edited one
     does (`TreeCopies.IsOwn`, passed to `ContentHolds.HoldsAsync`). (D195, D218)
