@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The git reads the library answers in git's words, told by their arguments: <c>merge-base</c> of two commits, with
 /// <c>--is-ancestor</c> or <c>--independent</c>; <c>rev-list --count</c> over tips, exclusions and ranges, and
-/// <c>--left-right --count A...B</c>; two commits' <c>diff --name-only --no-renames</c>; and the folder's layout, worktrees and upstreams
-/// (<see cref="GitLibraryLayout"/>). Every other read, and each of these the admission or the call refuses, is git's.
+/// <c>--left-right --count A...B</c>; two commits' <c>diff --name-only --no-renames</c>; the folder's layout, worktrees and upstreams
+/// (<see cref="GitLibraryLayout"/>); and a tree's <c>status --porcelain</c> (<see cref="GitLibraryStatus"/>). Every other read, and each of these the admission or the call refuses, is git's.
 /// </summary>
 /// <remarks>
 /// <para><b>One door.</b> <see cref="GitRuns"/> asks <see cref="Before"/> for every plain read beneath its flow memos, so a caller
@@ -41,6 +41,7 @@ internal static class GitLibraryReads
             "config" => GitLibraryLayout.Config(rest),
             "worktree" => GitLibraryWorktrees.Asked(rest),
             "diff" => Changed(rest),
+            "status" => GitLibraryStatus.Asked(rest),
             "for-each-ref" when rest.SequenceEqual(GitLibraryRefs.Listed) =>
                 (GitLibraryQuestion.Refs, call => GitLibraryRefs.Listing(call) is { } listed ? new GitLibraryAnswer(0, listed) : null),
             _ => null,

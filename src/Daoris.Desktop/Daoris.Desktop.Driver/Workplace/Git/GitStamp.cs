@@ -80,6 +80,15 @@ internal sealed class GitStamp
             ? null
             : Read(folder, Environment.GetEnvironmentVariable, GitRuns.GitInUse(ProgramHome.Named) ?? "", hashShared: false)?.Context;
 
+    /// <summary>Every configuration file git reads in <paramref name="folder"/>, includes followed; null where the system file is not learned yet. Nothing is started.</summary>
+    internal static IReadOnlyList<string>? ConfigurationFilesOf(string folder)
+    {
+        var git = GitRuns.GitInUse(ProgramHome.Named) ?? "";
+        Func<string, string?> variable = Environment.GetEnvironmentVariable;
+        if (!Nosystem(variable) && variable("GIT_CONFIG_SYSTEM") is not { Length: > 0 } && GitSystemFiles.Shared.Of(git) is null) return null;
+        return Read(folder, variable, git, hashShared: false)?.Files;
+    }
+
     /// <summary>Whether a git asked in <paramref name="one"/> and one asked in <paramref name="other"/> read the same configuration.</summary>
     internal static bool SameContext(string one, string other) => ContextOf(one) is { } context && string.Equals(context, ContextOf(other), StringComparison.Ordinal);
 
