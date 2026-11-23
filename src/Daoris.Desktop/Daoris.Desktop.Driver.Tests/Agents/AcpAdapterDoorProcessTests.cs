@@ -60,7 +60,7 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
             process.Dispose();
         }
 
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
         return ValueTask.CompletedTask;
     }
 
