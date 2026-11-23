@@ -5,15 +5,15 @@ namespace Daoris.Driver;
 /// <summary>
 /// <c>daoris agent pin</c> and <c>update</c>: the managed toolchain from a
 /// terminal, the words <c>daoris agent pin|update …</c> hands this program. The machine's own press is <c>HARNESS_ACTION</c>'s; a
-/// workspace's pin, and a run with no Daoris, act on the terminal's word,
-/// refused from a session's terminal, and hold no lease at its top. A pin from a maker's channel is staged under
+/// workspace's pin, and a run with no Daoris, act on the terminal's word, judged from a session's terminal as the act
+/// <c>agent.version</c> (<see cref="AgentVersionAct"/>), and hold no lease at their top. A pin from a maker's channel is staged under
 /// its process's name while it downloads and published under the home's lease, the one folder move and the pin's write; a pin
 /// through npm installs in place under the version's folder at this terminal, which nothing resolves until the pin, published the same
 /// way, names it. A pinned <c>update</c> moves the pin to the newest release, published as a pin; an unpinned one runs the
 /// agent's own updater at this terminal, which writes the machine and not the home. Its text is kept (<c>fixtures/agents-text.json</c>).
 /// </summary>
 /// <remarks>
-/// Exit codes are the CLI's: 0 done, or nothing to move · 1 a session's terminal · 2 a refusal of the words, the channel or npm, an
+/// Exit codes are the CLI's: 0 done, or nothing to move · 1 a session's terminal whose move the risk policy gates · 2 a refusal of the words, the channel or npm, an
 /// updater or an install that did not end well, and the person's Ctrl+C.
 /// </remarks>
 internal static class AgentPinCommand
@@ -47,7 +47,10 @@ internal static class AgentPinCommand
                 if (done is int exit) return exit;
                 world.Instance.Out.WriteLine($"{Prefix}: the {verb} of `{name}` started on this machine; its progress and its end are shown under Agents.");
                 return 0;
-            });
+            })
+        {
+            JudgesItself = true,
+        };
     }
 
     /// <summary>
@@ -57,7 +60,6 @@ internal static class AgentPinCommand
     /// </summary>
     internal static async Task<int> PinAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
     {
-        if (await AgentLongCommand.RefusedHereAsync(world).ConfigureAwait(false)) return 1;
         var path = AgentsCommand.WiringPath(world);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "pin", "<agent>", world, path);
         if (toolchain.Program.Package is not { Length: > 0 } && toolchain.Program.Channel is not { Length: > 0 })
@@ -70,6 +72,7 @@ internal static class AgentPinCommand
         var version = AgentsCommand.Operand(args, 2)
             ?? throw new AgentWords("`agent pin` needs <agent> <version> — e.g. `daoris agent pin claude-code`");
         var workspace = AgentsCommand.FlagValue(args, "--workspace");
+        if (await AgentVersionAct.WaitsHereAsync(world, "pin", name, workspace, version).ConfigureAwait(false)) return 1;
         if (toolchain.Program.Channel is { Length: > 0 } channel)
         {
             try
@@ -220,11 +223,11 @@ internal static class AgentPinCommand
     /// </summary>
     internal static async Task<int> UpdateAsync(IReadOnlyList<string> args, AgentsWorld world, CancellationToken ct)
     {
-        if (await AgentLongCommand.RefusedHereAsync(world).ConfigureAwait(false)) return 1;
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var (name, toolchain, _, _) = AgentsCommand.Agent(args, "update", "<agent>", world, path);
         var workspace = AgentsCommand.FlagValue(args, "--workspace");
+        if (await AgentVersionAct.WaitsHereAsync(world, "update", name, workspace, null).ConfigureAwait(false)) return 1;
         var named = workspace?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
         var settings = HarnessSettings.Load(path);
         if (settings.Problem is { } problem) throw new AgentWords(problem);

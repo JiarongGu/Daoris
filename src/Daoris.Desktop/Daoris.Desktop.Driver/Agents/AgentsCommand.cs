@@ -452,7 +452,7 @@ public static class AgentsCommand
         var error = world.Instance.Error;
         async Task<int> Alone()
         {
-            if ((press.Route is null || press.Route.Class == RouteClass.Person)
+            if ((press.Route is null || press.Route.Class == RouteClass.Person) && !press.JudgesItself
                 && world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
             {
                 await error.WriteLineAsync($"{Prefix}: {DriverChoicesCommand.SessionsTerminal}").ConfigureAwait(false);
