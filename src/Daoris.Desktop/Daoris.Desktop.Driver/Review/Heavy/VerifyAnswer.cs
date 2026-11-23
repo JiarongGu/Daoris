@@ -20,4 +20,6 @@ public static class VerifyAnswers
 public sealed record VerifyAnswer(string State, VerifyResult? Result = null)
 {
     public string? Why { get; init; }
+
+    public bool Unaccounted { get; init; }
 }

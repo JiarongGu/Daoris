@@ -378,7 +378,9 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         HeavyStep step;
         try
         {
-            step = HeavyStep.Start(job.Job, run, folder, new Dictionary<string, string>(), new StepOptions(environment, log) { BelowNormal = !clock });
+            step = await HeavyStep.RetriedAsync(
+                () => HeavyStep.Start(job.Job, run, folder, new Dictionary<string, string>(), new StepOptions(environment, log) { BelowNormal = !clock }),
+                TimeSpan.FromMilliseconds(100), world.Clock, ct).ConfigureAwait(false);
         }
         catch (DriverException error)
         {

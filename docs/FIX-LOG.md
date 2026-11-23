@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-23 - A check whose executor could not say was held for the person, and a person's word ran it again (CHECKUNKNOWN2)
+
+- **Sighting:** four checks of 2026-11-22 and 23 (LOOKACCOUNTFLAKE1 check 5, SESSIONOPEN4 check 1, TREEFLOOR1 check 2, one more) were held "its
+  plugin was asked and cannot say what became of it", each until the steward answered `daoris work held <run> check <attempt> again`, which ran
+  it again and it passed. On the install, five checks' results read unknown with no code in three days: two "the verification could not be kept
+  (the process cannot access the file …gate-05-reached.log because it is being used by another process)" (the log a 0-byte file, the gate
+  never run), three "git could not read <commit>'s daoris.gates.json here".
+- **Root cause:** `HeavyStep.StartHeld` opened the gate's log `FileMode.Create` once, so a handle another process held on the new file for
+  that instant (`IOException`, sharing violation) escaped to `HeavyExecutor.RunAsync`'s `could not be kept` and became the check's unknown
+  with no code. The performer then held every such unknown for the person (`WorkPerformer.ReconcileOneAsync`'s default case): only an `unrun`
+  unknown was asked again by itself (UnrunChecks, since the unrun work), and its spent asks held the step for the person too. Neither a restart
+  nor a lost process was the cause here: the attempts' folders hold one `began` mark and no `closed` one. The git read failures are
+  transient too and are covered by the same retry; their cause was not found.
+- **Fix:** the step's start is tried again for a sharing or lock violation on its log (six tries, 100 ms apart, `HeavyStep.RetriedAsync`). A check unknown with the code
+  `unrun` or with none is asked again by itself as a new attempt, up to three on one binding, the attempt's own reason in the pass's line;
+  past them it is given up as said: its node is stopped by Daoris with the executor's reason, which ends its run and holds no row (`UnrunChecks`;
+  a kept failure or a spent red would wait on the person as the owner's final exit). The executor's reason rides its answer (`CheckExecution`),
+  so a retry's line and the give-up say why even where no result reads. A check whose old job could not be opened is asked again at each look,
+  never run beside it (`VerifyResult.Unaccounted`). An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is held as before.
+- **Verify:** `CheckPerformTests` (an executor that cannot say is run again by itself and passes; one that stays unknown is stopped with
+  its reason and no wait on anyone; an unopened old job is asked again, never run beside), `HeavyStepRetryTests`.
+
 ## 2026-11-22 - LookAccountTests failed beside other runs and passed alone (LOOKACCOUNTFLAKE1)
 
 - **Sighting:** the `reached` gates of STARTLOAD2's, the late units' and GITBUS1's merges failed `A_look_over_many_runs_is_said_whole_by_its_stages_and_reads_each_run_once`, each passing alone; FLAKE1 (2026-11-18) and LOOKFLAKE1 had seen it before.

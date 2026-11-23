@@ -150,6 +150,26 @@ internal sealed class HeavyStep : IDisposable
         return block.Append('\0').ToString();
     }
 
+    internal const int Tries = 6;
+
+    internal static bool Held(IOException error) => OperatingSystem.IsWindows() && (error.HResult & 0xFFFF) is 32 or 33;
+
+    /// <summary><paramref name="start"/> taken again where it met a file held for an instant, up to <see cref="Tries"/>.</summary>
+    internal static async Task<T> RetriedAsync<T>(Func<T> start, TimeSpan wait, TimeProvider clock, CancellationToken ct)
+    {
+        for (var tried = 1; ; tried++)
+        {
+            try
+            {
+                return start();
+            }
+            catch (IOException held) when (tried < Tries && Held(held))
+            {
+                await Task.Delay(wait, clock, ct).ConfigureAwait(false);
+            }
+        }
+    }
+
     private static HeavyStep StartHeld(ProcessJob? job, string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options)
     {
         if (job is null) throw new DriverException("there is no job to hold the gate's processes in, so it was not run.");

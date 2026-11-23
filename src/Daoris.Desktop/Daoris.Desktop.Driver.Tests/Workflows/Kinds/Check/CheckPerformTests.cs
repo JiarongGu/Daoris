@@ -234,7 +234,7 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_held_for_the_person_once_its_asks_are_spent()
+    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_given_up_as_said_once_its_asks_are_spent()
     {
         var performer = Performer();
         _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Unrun });
@@ -252,9 +252,95 @@ public sealed class CheckPerformTests : IDisposable
             }
         }
 
-        Assert.Equal(AttemptStates.Held, Record().Attempts.Last().State);
-        Assert.Equal(UnrunChecks.Bound, Record().Attempts.Count);
-        Assert.Empty(CheckRounds.Reds(Record()));
+        AssertGivenUp();
+    }
+
+    [Fact]
+    public async Task A_check_whose_executor_cannot_say_is_run_again_by_itself_and_passes_with_its_reason_logged_and_no_row_for_the_person()
+    {
+        const string Why = "its result does not read";
+        var performer = Performer();
+        _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.Unknown) { Why = Why });
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Retry, WorkStates.Unknown, Why), (asked.What, asked.Code, asked.Detail));
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Record().Attempts.Last().State));
+        Assert.Empty(HeldAttempts.Read(Files));
+
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Reached, attempt.Call.Invocation));
+        await StartAsync(performer);
+        _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, Status().State);
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_check_that_stays_unknown_past_its_bound_is_given_up_with_its_reason_and_no_row_waits_on_the_person()
+    {
+        var performer = Performer();
+        _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.Unknown) { Why = "its result does not read" });
+        for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
+        {
+            await StartAsync(performer);
+            _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+            await performer.ReconcileAsync(Declared, CancellationToken.None);
+        }
+
+        Assert.Contains("its result does not read", Status().Words, StringComparison.Ordinal);
+        AssertGivenUp();
+    }
+
+    private void AssertGivenUp()
+    {
+        var record = Record();
+        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (Status().State, Status().By));
+        Assert.Equal(UnrunChecks.Bound, record.Attempts.Count);
+        Assert.All(record.Attempts, attempt => Assert.Equal(AttemptStates.Settled, attempt.State));
+        Assert.Empty(HeldAttempts.Read(Files));
+        Assert.Null(StepWaiting.Read(record, Check, Status()));
+        Assert.Empty(CheckRounds.Reds(record));
+    }
+
+    [Fact]
+    public async Task A_check_whose_old_job_could_not_be_opened_is_asked_again_and_never_run_beside_it_nor_held_for_the_person()
+    {
+        var performer = Performer();
+        _checks.Answer = _ => CheckExecution.AnswerOf(new VerifyAnswer(VerifyAnswers.Unknown) { Why = "the job it left could not be opened (access denied)", Unaccounted = true });
+        await StartAsync(performer);
+        var invocation = Attempt().Call.Invocation;
+        _checks.Answers.Add(invocation);
+
+        for (var look = 1; look <= UnrunChecks.Bound + 1; look++)
+        {
+            var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+            Assert.Equal((PerformedWhat.Unknown, VerifyResult.Unaccounted), (asked.What, asked.Code));
+            Assert.Contains("access denied", asked.Detail, StringComparison.Ordinal);
+        }
+
+        Assert.Equal((invocation, AttemptStates.Unknown, 1), (Attempt().Call.Invocation, Attempt().State, Record().Attempts.Count));
+        Assert.Single(_checks.Sent);
+
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Reached, attempt.Call.Invocation));
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        Assert.Equal(NodeStates.Reached, Status().State);
+    }
+
+    [Fact]
+    public async Task An_unknown_check_with_a_cause_of_its_own_is_still_held_for_the_person()
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Busy });
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal((AttemptStates.Held, VerifyResult.Busy), (Attempt().State, Attempt().Code));
     }
 
     [Fact]
