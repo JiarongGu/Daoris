@@ -11,10 +11,7 @@ public sealed class RecheckKeepTests : IDisposable
 {
     private readonly string _folder = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "recheck-keep", Guid.NewGuid().ToString("N")[..8]);
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_folder)) Directory.Delete(_folder, recursive: true);
-    }
+    public void Dispose() => GitSeed.Discard(_folder);
 
     private const string Onto = "1111111111111111111111111111111111111111";
     private const string Declaration = "dddddddddddddddddddddddddddddddddddddddd";
