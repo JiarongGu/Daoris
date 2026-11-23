@@ -685,7 +685,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     a landing; a promotion's own release is no wake). No landing's ask or look's pass is what retries it: a request waiting behind a
     held promotion is tried again at the hold's release or its due time. A held promotion's own words (`integration_steps`) are
     the candidate's `Why`, which `daoris integrate <repository>` prints beside *held: promotion* and the window's repository view
-    reads. (PROMOTEWAKE1)
+    reads. No path drops a line that has a standing candidate or an open request: a line's run that throws, or whose repository has no
+    checkout here, keeps its queue place due after `Poll` (said once while it lasts), and an idle transport looks at the store every
+    `Poll` and queues each such line it does not hold, so a press's or a landing's line, run on its caller's task and left held, is
+    retried by the transport and not only at the next come-up. (PROMOTEWAKE1, PROMOTEWAKE2)
 39a. An ask's parts land through that same queue, never a queue of the team's own. A part's landing is an integration request tagged with
     its ask and part (`integration_parts`, `TrainParts`; the `integrate` door carries `IntegrationAsk.Train`) whose line is the ask's
     branch `daoris/ask-<id>` (`TrainBranch`). Before a candidate forms, `TrainSelection` reads the ask's own plan from the service

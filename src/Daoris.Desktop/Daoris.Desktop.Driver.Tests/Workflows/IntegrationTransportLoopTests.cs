@@ -34,6 +34,30 @@ public sealed class IntegrationTransportLoopTests : IDisposable
         Assert.Contains(said.ToArray(), line => line.Contains("service is down", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_line_whose_run_failed_or_whose_root_was_missing_once_is_tried_again_by_its_due_time(bool throws)
+    {
+        var said = new List<string>();
+        var asked = 0;
+        await using var transport = new IntegrationTransport(_home, new IntegrationTransportWorld
+        {
+            Settled = () => StoreSettled.Yes,
+            Poll = TimeSpan.FromMilliseconds(200),
+            Root = (_, _, _) => Interlocked.Increment(ref asked) == 1 && throws ? throw new HttpRequestException("the service is down") : Task.FromResult<string?>(null),
+            Said = line =>
+            {
+                lock (said) said.Add(line);
+            },
+        });
+
+        transport.Send(new IntegrationLineSend("engine", "aurora", "main"));
+
+        await Poll.Until(() => Volatile.Read(ref asked) >= 3, () => $"asked {asked} times: the line was dropped", within: Poll.Patience);
+        Assert.Contains(said.ToArray(), line => line.Contains(throws ? "service is down" : "has no checkout here", StringComparison.Ordinal));
+    }
+
     private static async Task<bool> WaitAsync(Func<bool> done)
     {
         for (var tries = 0; tries < 100 && !done(); tries++) await Task.Delay(50);

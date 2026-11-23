@@ -80,6 +80,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
     private readonly List<IntegrationLineSend> _queue = [];
     private readonly Dictionary<IntegrationLineSend, DateTimeOffset> _notBefore = [];
     private readonly HashSet<string> _queued = new(StringComparer.Ordinal);
+    private readonly HashSet<IntegrationLineSend> _unrooted = [];
     private readonly CancellationTokenSource _ends = new();
 
     /// <summary>This process's start, in UTC ticks, which a check slot's holder names so a reused process id is not read as it.</summary>
@@ -149,7 +150,8 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
     private async Task LoopAsync()
     {
         TreeLock.Released += Released;
-        ComeUp();
+        ComeUp(said: true);
+        var looksAt = _world.Clock.GetUtcNow() + _world.Poll;
         while (!_ends.IsCancellationRequested)
         {
             var woken = Volatile.Read(ref _wake).Task;
@@ -165,8 +167,16 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
 
             if (next is null)
             {
-                List<Task> waits = [woken];
-                if (soonest is { } at && at - now is var until && until > TimeSpan.Zero) waits.Add(Task.Delay(until, _ends.Token));
+                var until = looksAt - now;
+                if (until <= TimeSpan.Zero)
+                {
+                    ComeUp(said: false);
+                    looksAt = now + _world.Poll;
+                    continue;
+                }
+
+                List<Task> waits = [woken, Task.Delay(until, _world.Clock, _ends.Token)];
+                if (soonest is { } at && at - now is var due && due > TimeSpan.Zero) waits.Add(Task.Delay(due, _world.Clock, _ends.Token));
                 await Task.WhenAny(waits).ConfigureAwait(false);
                 continue;
             }
@@ -181,13 +191,13 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             }
             catch (Exception error)
             {
-                _world.Said?.Invoke($"integration: `{next.Repository}`'s line `{next.Line}` was not run ({error.Message}); it is tried again at the next send.");
+                Later(next, $"integration: `{next.Repository}`'s line `{next.Line}` was not run ({error.Message}); it is tried again after the next wait.");
             }
         }
     }
 
-    /// <summary>The come-up: every line a standing candidate or an open request is in, sent once.</summary>
-    private void ComeUp()
+    /// <summary>The come-up and each idle look after Poll: every line a standing candidate or an open request is in, queued where it is not (a press's line, never sent).</summary>
+    private void ComeUp(bool said)
     {
         try
         {
@@ -201,7 +211,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException)
         {
-            _world.Said?.Invoke($"integration: the standing candidates were not read at the come-up ({error.Message}); each line runs at its next send.");
+            if (said) _world.Said?.Invoke($"integration: the standing candidates were not read at the come-up ({error.Message}); each line is looked for again after Poll.");
         }
     }
 
@@ -221,9 +231,13 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
 
         if (await _world.Root(send.Repository, send.Workspace, ct).ConfigureAwait(false) is not { } root)
         {
-            _world.Said?.Invoke($"integration: `{send.Repository}` has no checkout here, so its line `{send.Line}` is not run.");
+            bool first;
+            lock (_gate) first = _unrooted.Add(send);
+            Later(send, first ? $"integration: `{send.Repository}` has no checkout here, so its line `{send.Line}` is not run; it is looked for again after each wait." : null);
             return null;
         }
+
+        lock (_gate) _unrooted.Remove(send);
 
         var store = Store();
         Tell(store, send);
@@ -311,7 +325,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         return first?.Policy.Gates == LandingIntegrate.Declared;
     }
 
-    private void Later(IntegrationLineSend send, string why)
+    private void Later(IntegrationLineSend send, string? why)
     {
         lock (_gate)
         {
@@ -319,6 +333,6 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             if (!_queue.Contains(send)) _queue.Add(send);
         }
 
-        _world.Said?.Invoke(why);
+        if (why is not null) _world.Said?.Invoke(why);
     }
 }
