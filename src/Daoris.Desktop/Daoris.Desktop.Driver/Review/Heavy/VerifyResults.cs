@@ -48,6 +48,11 @@ public sealed record VerifyGate(string Name, string Verdict, int? Exit = null)
 
     /// <summary>Where its log stays: the runner's own place, or the attempt's folder for a gate the executor ran.</summary>
     public string? Log { get; init; }
+
+    /// <summary>The command it ran and its folder (<see cref="CommandOf"/>): a pass is evidence only for that command, never for another run of the gate's name.</summary>
+    public string? Command { get; init; }
+
+    internal static string CommandOf(DeclaredGate gate) => gate.Cwd is { } cwd ? $"({cwd}) {gate.Run}" : gate.Run;
 }
 
 /// <summary>
@@ -87,6 +92,10 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public double? WallSeconds { get; init; }
 
+    public string? Judged { get; init; }
+
+    public string? Onto { get; init; }
+
     /// <summary>The red classes a reached run's outcome named, for the bus's settle and never written to the file; null where no gate named them, which is unknown.</summary>
     public IReadOnlyList<string>? Red { get; init; }
 
@@ -112,6 +121,8 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
             if (Declaration is { } declaration) writer.WriteString("declaration", declaration);
             if (Accepted is { } accepted) writer.WriteString("accepted", accepted);
             if (WallSeconds is { } wall) writer.WriteNumber("wallSeconds", Math.Round(wall, 1));
+            if (Judged is { } judged) writer.WriteString("judged", judged);
+            if (Onto is { } onto) writer.WriteString("onto", onto);
             writer.WriteStartArray("gates");
             foreach (var gate in Gates)
             {
@@ -121,6 +132,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
                 if (gate.Exit is { } exit) writer.WriteNumber("exit", exit);
                 if (gate.WallSeconds is { } seconds) writer.WriteNumber("wallSeconds", Math.Round(seconds, 1));
                 if (gate.Log is { } log) writer.WriteString("log", log);
+                if (gate.Command is { } command) writer.WriteString("command", command);
                 writer.WriteEndObject();
             }
 
@@ -160,12 +172,13 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
             foreach (var each in list.EnumerateArray())
             {
                 if (each.ValueKind != JsonValueKind.Object || Text(each, "name") is not { } name || Text(each, "verdict") is not { } said) return null;
-                gates.Add(new VerifyGate(name, said, Number(each, "exit")) { WallSeconds = Seconds(each), Log = Text(each, "log") });
+                gates.Add(new VerifyGate(name, said, Number(each, "exit")) { WallSeconds = Seconds(each), Log = Text(each, "log"), Command = Text(each, "command") });
             }
 
             return new VerifyResult(invocation, commit, verdict, Text(root, "why"), gates)
             {
                 Code = Text(root, "code"), Failed = Text(root, "failed"), Declaration = Text(root, "declaration"), Accepted = Text(root, "accepted"), WallSeconds = Seconds(root),
+                Judged = Text(root, "judged"), Onto = Text(root, "onto"),
             };
         }
         catch (JsonException)

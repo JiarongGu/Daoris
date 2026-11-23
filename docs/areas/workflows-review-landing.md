@@ -411,7 +411,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
     same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one
-    that closed, is sent again each time and counts for nothing; the second send lost with a start mark and no close mark is held for the
+    that closed, is sent again each time and counts for nothing, and goes on at the gate it reached: each gate that passes is kept in the
+    attempt's folder as it ends with its command (`progress.json`, `GateProgress`), and the same attempt sent again for the same work, base and declaration
+    runs only the gates after them, its why naming those carried (RECHECKKEEP1); the second send lost with a start mark and no close mark is held for the
     person (`lost`, `LostChecks`) with the last 20 lines of its newest log on the attempt's own `tail` (whole lines, never a broken character;
     the person's note stays theirs), shown on its held row and under its line in `daoris workflow run`, never run a third time by itself and
     never a red round. The held check's *Run again*, applied, also tells the executor to stop the old invocation. A held check holds no slot: the machine's verification and heavy-run
@@ -752,7 +754,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     verification (`daoris gate verify`) is a run the batching never counts. A session's own heavy check is the broker's
     (`check_run`, driving rule 40a), the same heavy run under the same admission; a check whose `gates` is `reached` reads the hand-back and runs the declaration's required `handback` commands
     the change reaches (driving rule 7), and with them the line's admission the change reaches (below), the builder's own fast tier: here `reached-checks --tier fast`, the reached classes less the heavy
-    and Process tiers, which the run after the landing owes. A command whose log ends with the declaration's outcome line has its classes
+    and Process tiers, which the run after the landing owes. Asked again after a fix, such a check keeps each of those gates whose newest
+    word among the run's attempts before is a pass of the same command in the same folder (each gate's `command`, so a pass of a gate's
+    own run never stands for the hand-back command it is required by) at the same base (the line's commit the work holds, is merged onto, or branched from) and
+    under the same declaration, where no path changed between the tree that attempt judged and the one judged now reaches it by the same
+    reach (a required command's `paths`, the admission's lists, so `always` and `suites` run again after any change), as the merge tool's
+    `--rerun` keeps its verdicts: each is named `kept` and the why says from which commit; a newest failure keeps nothing, and a kept or
+    unrun gate says nothing, so the word before is read (`RecheckKeep`, RECHECKKEEP1). Every result keeps the tree it judged and its base
+    (`judged`, `onto`); an older one with neither keeps nothing. A command whose log ends with the declaration's outcome line has its classes
     run, replayed from passes of the same inputs, red, flaked (passed alone, which is no red) and owed after the landing said in the
     verdict's why (`ReachedVerdict.Told`), and a failed check's step names the gate that failed, never only its code. The line's admission is the declaration's `admission`
     key: `always` and `suites` for every change, and `byPaths` checks, each reached by a changed path matching one of its globs or one
