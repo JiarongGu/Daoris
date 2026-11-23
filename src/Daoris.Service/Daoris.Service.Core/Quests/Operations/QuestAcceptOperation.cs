@@ -1,3 +1,4 @@
+using Daoris.Contracts.Quests;
 using System.Text.Json;
 
 namespace Daoris.Knowledge;
@@ -53,13 +54,17 @@ internal sealed class QuestAcceptOperation : IQuestOperation
         // A departure or its evidence takes a yes, and a review's hold does not. A role's yes takes a departure alone: the hold reads
         // departed first while another requirement's evidence is awaited, and the one yes would lift that evidence with it.
         var judged = new QuestOperation(id, QuestOperationKind.Accepted, tx.Machine, 0, now, By: by);
-        if (!QuestLog.Applies(quest, judged) || (by is not null && !RolesToAccept(quest))) return new QuestMove(quest, Moved: false);
+        if (!QuestLog.Applies(quest, judged) || (by is not null && !YesTakes(quest, by))) return new QuestMove(quest, Moved: false);
 
         var accepted = QuestLog.Step(quest, await tx.AppendAsync(judged).ConfigureAwait(false))!;
         await tx.WriteCacheAsync(accepted).ConfigureAwait(false);
         // A set-up step accepted for its departure still waits for its review, and what follows it waits with it.
         return new QuestMove(accepted, Moved: true, accepted.Held ? null : await tx.PublishNextAsync(accepted, now).ConfigureAwait(false));
     }
+
+    /// <summary>Whether the yes of <paramref name="by"/> lifts <paramref name="quest"/>'s hold: a role's takes a departure alone, the policy's also missing evidence.</summary>
+    internal static bool YesTakes(Quest quest, string by) =>
+        RolesToAccept(quest) || (by.StartsWith(RiskPassWire.Prefix, StringComparison.Ordinal) && quest.Hold == QuestHold.EvidenceMissing);
 
     /// <summary>Whether an appointed role's or the risk policy's yes may accept <paramref name="quest"/>: a done held by its departure alone, no evidence awaited beside it.</summary>
     internal static bool RolesToAccept(Quest quest) => quest.Hold == QuestHold.Departed && !quest.AwaitsEvidence;

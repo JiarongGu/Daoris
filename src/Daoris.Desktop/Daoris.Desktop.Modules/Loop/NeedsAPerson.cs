@@ -120,7 +120,8 @@ public static class NeedsAPerson
         // A done its departure holds for the person's yes, until they accept it. A set-up step its review holds waits for
         // their review instead, which no yes lifts, so it is the set-up's row and never this one.
         foreach (var quest in facts.Quests.Where(quest => quest["held"] is JsonValue held && held.TryGetValue<bool>(out var yes) && yes
-                     && Truthy(quest, "accepted") is null && Text(quest, "hold") != "unreviewed"))
+                     && Truthy(quest, "accepted") is null && Text(quest, "hold") != "unreviewed"
+                     && !facts.RoleHeld.Contains(Text(quest, "id") ?? "")))
         {
             var row = Row("departure", Text(quest, "id"), Text(quest, "updated"), Scope(quest));
             row["where"] = Text(quest, "to");

@@ -20,16 +20,16 @@ internal static class QuestHoldsReading
     public static bool YesLifts(string? holds) =>
         holds is not null && (new[] { Yours, Roles, Policy }.Any(lead => holds.Contains(lead, StringComparison.Ordinal)) || UncheckedDones.Says(holds));
 
-    /// <summary>Why the quest's own holds hold the work, or null where they let it go; a departure waits for the yes <paramref name="judge"/> names.</summary>
+    /// <summary>Why the quest's own holds hold the work, or null where they let it go; a departure, or evidence read and not found, waits for the yes <paramref name="judge"/> names.</summary>
     public static string? Held(QuestView? quest, bool yes = true, bool evidence = true, Func<RiskAct, RiskVerdict?>? judge = null) => quest switch
     {
         null => "its quest was not read",
         { Status: "Declined" } => "its quest was declined",
         _ when !QuestResults.Judged(quest) => "its quest's done is not in, or was taken back",
-        { Held: true, Hold: null or EvidenceCodes.Departed } when yes => QuestDepartures.Verdict(quest, judge) switch
+        { Held: true, Hold: null or EvidenceCodes.Departed or EvidenceCodes.MissingHold } when yes && (quest.Hold is not EvidenceCodes.MissingHold || judge is not null) => QuestDepartures.Verdict(quest, judge) switch
         {
             { Outcome: RiskVerdict.Pass } verdict => $"{Policy}, which Daoris gives at its next look: {verdict.Why}",
-            { Outcome: RiskVerdict.Gate } verdict => $"{Roles} `{verdict.By}`, not yours: {verdict.Why}",
+            { Outcome: RiskVerdict.Gate } verdict when quest.Hold is not EvidenceCodes.MissingHold => $"{Roles} `{verdict.By}`, not yours: {verdict.Why}",
             { } verdict => $"{Yours}: {verdict.Why}",
             null => Yours,
         },

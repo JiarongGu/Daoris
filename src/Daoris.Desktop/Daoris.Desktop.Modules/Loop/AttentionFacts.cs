@@ -18,6 +18,9 @@ public sealed record AttentionFacts
     /// <summary>Every quest, as the quests slice holds them.</summary>
     public IReadOnlyList<JsonObject> Quests { get; init; } = [];
 
+    /// <summary>The quests whose held done the risk policy classes <c>role</c>: the role's to answer, never a row offered the person.</summary>
+    public IReadOnlySet<string> RoleHeld { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>The registry, each row's <c>repository</c>, <c>adopted</c>, <c>addressable</c> and <c>workspace</c>.</summary>
     public IReadOnlyList<JsonObject> Registry { get; init; } = [];
 
