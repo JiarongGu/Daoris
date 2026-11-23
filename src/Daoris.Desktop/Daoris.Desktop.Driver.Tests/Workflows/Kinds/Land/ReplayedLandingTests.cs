@@ -52,6 +52,33 @@ public sealed class ReplayedLandingTests : GraphRunFixture
     }
 
     [Fact]
+    public async Task A_replay_only_the_remote_line_holds_is_not_read_as_landed_at_the_local_line()
+    {
+        var root = await RepositoryAsync("engine");
+        await CommitAsync(root, "log.txt", Lines("l2", "l10"), "the log");
+        var tree = await DoneSessionAsync(root, "s1", "q1");
+        await CommitAsync(tree, "log.txt", Lines("l2 of the work", "l10"), "the second part");
+        var first = (await GitAsync(tree, "rev-parse", "HEAD~1")).Trim();
+        RunHome.Bind(_home, "q1", RunHome.SaveGraph(_home, ClaimedThenLand("""{"method":"merge"}""")), Bound);
+        var branch = Assert.Single(new SessionBranches(_home).All());
+
+        await CommitAsync(root, "line.txt", "the line moves", "the line moves");
+        var local = await HeadAsync(root);
+        await GitAsync(root, "checkout", "-b", "replayed");
+        await GitAsync(root, "cherry-pick", first);
+        await CommitAsync(root, "log.txt", Lines("l2 of the work", "l10 as the line settled it"), "the second part");
+        await GitAsync(root, "checkout", "main");
+        await GitAsync(root, "merge", "--no-ff", "replayed", "-m", "merge replayed work");
+        await GitAsync(root, "update-ref", "refs/remotes/origin/main", await HeadAsync(root));
+        await GitAsync(root, "reset", "--hard", local);
+
+        for (var pass = 0; pass < 3; pass++) await PassAsync(root, branch, tree);
+
+        var status = new NodeRecordFiles(_home, () => false).Read(RunUnits.IdOf("q1"))!.Statuses["landing"];
+        Assert.NotEqual(NodeStates.Reached, status.State);
+    }
+
+    [Fact]
     public async Task A_landing_whose_work_the_line_lacks_is_not_read_as_landed()
     {
         var root = await RepositoryAsync("engine");

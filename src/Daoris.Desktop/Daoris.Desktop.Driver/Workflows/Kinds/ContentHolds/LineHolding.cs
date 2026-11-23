@@ -31,7 +31,7 @@ internal sealed record LineHolding(string Name, LineHeld Held)
 
         if (held.Behind && held.Kept.Count > 0
             && await ContentHolds.HeldByContentAsync(root, tip, line, new ContentHolds(context).LandedHere(repository), ct, lineOnly: true).ConfigureAwait(false)
-                is { Hold.OnLine: true })
+                is { Hold.OnLine: true, At: { } at } && at == ($"refs/heads/{line}", onto))
         {
             var leftOut = held.LeftOut.ToDictionary(each => each.Sha, StringComparer.Ordinal);
             return new(line, held with
