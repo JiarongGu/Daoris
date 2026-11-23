@@ -1,10 +1,12 @@
 /**
  * The machine's free memory as the merge tool reads it before a heavy gate (`readMemory`), and whether a gate that failed died
  * of memory (`memoryDeath`). `tools/merge-branch.mjs` exports each again under its own name and holds the wait itself
- * (`memoryGate`), its *A heavy gate waits for memory* says why.
+ * (`memoryGate`), its *A heavy gate waits for memory* says why. The wait also keeps the person's reserve (`reserveGb`): a gate starts only
+ * while the free memory stays at or above its need and the reserve together, and its wait says the reserve.
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
 
 /**
@@ -41,6 +43,47 @@ export function memoryDeath(log, ...codes) {
 const MEMORY_QUERY = 'ConvertTo-Json -Compress -InputObject (Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,FreeVirtualMemory)';
 
 const kilobytes = (value) => (typeof value === 'number' && Number.isFinite(value) ? value * 1024 : null);
+
+const GB = 2 ** 30;
+
+export const gbOf = (bytes) => (bytes / GB).toFixed(1);
+export const needOf = (gb) => (Number.isInteger(gb) ? String(gb) : gb.toFixed(1));
+
+/** A reading's free commit and free physical memory, said, each that is read; `need` keeps those below it, in GB. */
+export function memoryShown(reading, need = Infinity) {
+  return [[reading.commit, 'free commit'], [reading.physical, 'free physical memory']]
+    .filter(([bytes]) => bytes !== null && bytes < need * GB)
+    .map(([bytes, what]) => `${gbOf(bytes)} GB ${what}`);
+}
+
+/** The GB `reserve` keeps at a machine with `total` bytes, none where it throws or answers no positive number. */
+export function keptFree(reserve, total) {
+  try {
+    const gb = Number(reserve(total));
+    return Number.isFinite(gb) && gb > 0 ? gb : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * The GB the machine keeps free for the person's own work: `reserveGb` of the Daoris home's `driver.json` (the file the driver's
+ * `ReserveSetting` reads, at its new place `data/` or its old), else a third of `total`, the machine's physical memory in bytes, to
+ * the whole GB; 0 where the file says none, or where neither is known.
+ */
+export function reserveGb({ total = null, home = null, read = (path) => readFileSync(path, 'utf8') } = {}) {
+  for (const path of home ? [join(home, 'data', 'driver.json'), join(home, 'driver.json')] : []) {
+    let stored;
+    try {
+      stored = JSON.parse(read(path).replace(/^﻿/, '')).reserveGb;
+    } catch {
+      continue;
+    }
+    if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) return stored;
+    break;
+  }
+  return typeof total === 'number' && total > 0 ? Math.floor(total / 3 / GB) : 0;
+}
 
 /** What a failed command said: its first `error:` or `fatal:` line, else its first line. */
 const firstSaid = (text) => {

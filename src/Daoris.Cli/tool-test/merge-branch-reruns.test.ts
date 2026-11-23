@@ -117,6 +117,37 @@ test('MEMGATE1: past its bound a heavy gate runs anyway, saying so; a commit tha
 });
 
 
+test('a heavy gate starts only while the free memory stays above the reserve kept for the person after its need, and its wait says the reserve', async () => {
+  const deploy = planned('deployment', 'npm run rehearse:deploy');
+  const machine = standIn([28, 28, 31]);
+  const said: string[] = [];
+  await tool.memoryGate({ ...machine, reserve: () => 20, say: (line) => said.push(line) })(deploy);
+  assert.deepEqual(machine.reads, [28, 28, 31]);
+  assert.match(said[0]!, /waiting for memory before deployment: 28.0 GB free commit, the gate needs 10 GB and 20 GB stays free for your own work/);
+  assert.match(said.at(-1)!, /memory for deployment: .* after 10 s; it starts/);
+
+  const none = standIn([12]);
+  const quiet: string[] = [];
+  await tool.memoryGate({ ...none, reserve: () => 0, say: (line) => quiet.push(line) })(deploy);
+  assert.deepEqual(quiet, []);
+});
+
+
+test('the reserve is the setting in the home driver.json, else a third of the machine memory to the whole GB', () => {
+  const files = (text: string | null) => (path: string) => {
+    if (text === null || !path.includes('data')) throw new Error('no file');
+    return text;
+  };
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":24}') }), 24);
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":0}') }), 0, 'none is a choice');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{}') }), 21);
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":"lots"}') }), 21, 'a value that does not read is auto');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: 'h', read: files('{"reserveGb":99999}') }), 21, 'out of its bounds is auto');
+  assert.equal(tool.reserveGb({ total: 64 * GiB, home: null }), 21, 'no home names the default');
+  assert.equal(tool.reserveGb({ total: null, home: null }), 0, 'nothing known keeps nothing');
+});
+
+
 test('MEMGATE1: a light gate never waits: its memory is not even read, in two lanes or one at a time', async () => {
   for (const oneAtATime of [false, true]) {
     const lanes = laneRun(['a', 'b']);

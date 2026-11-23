@@ -48,10 +48,10 @@ public static class MachineSettings
         new("terminal", "terminal", Card: Driver),
         // How many checks run at once, or auto by memory; more than sixteen suites at once is no machine's.
         new("checks", ChecksSetting.File, Driver, Least: 1, Most: 16),
-        // The GB the machine keeps free for the person's own work, or auto, a third of its memory; 0 keeps none, and no machine has more than a terabyte.
-        new(ReserveSetting.Key, ReserveSetting.File, Driver, Least: 0, Most: 1024),
         // How long a step nobody's session answers stands before Daoris gives it up; a month is the longest a run should wait unseen.
         new(VacancySetting.Key, VacancySetting.File, Driver, Least: 1, Most: 720),
+        // The GB the machine keeps free for the person's own work, or auto, a third of its memory; 0 keeps none, and no machine has more than a terabyte.
+        new(ReserveSetting.Key, ReserveSetting.File, Driver, Least: 0, Most: 1024),
     ];
 
     /// <summary>The setting of a key, or null where none is.</summary>

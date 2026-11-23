@@ -20,6 +20,7 @@ public static class ChoiceRoutes
     public static InstanceRoute Vacancy { get; } = Person("SET_VACANCY");
     public static InstanceRoute PolicyPropose { get; } = Person("POLICY_PROPOSE");
     public static InstanceRoute PolicyApply { get; } = Person("POLICY_APPLY");
+    public static InstanceRoute Reserve { get; } = Person("SET_RESERVE");
     public static InstanceRoute Manifest { get; } = Person("SET_MANIFEST");
     public static InstanceRoute Retry { get; } = Person("RETRY_QUEST");
     public static InstanceRoute Line { get; } = Person("SET_LINE");
@@ -54,6 +55,7 @@ public static class ChoiceRoutes
         ("driver terminal ask|act", Terminal, "the window's tier of a terminal's presses"),
         ("driver checks <n>|auto", Checks, "the window's checks the machine runs at once"),
         ("driver vacancy <hours>", Vacancy, "the window's bound on a vacant step"),
+        ("driver reserve <gb>|auto", Reserve, "the window's memory kept free for the person's own work"),
         ("driver manifest files|minutes <n>", Manifest, "the window's bounds on a folder's manifest read"),
         ("driver retry <quest>", Retry, "the quest's *Try again*, which judges from the planner's verdict whether to mark or release it"),
         ("driver line", Line, "the repository's or the workspace's line"),

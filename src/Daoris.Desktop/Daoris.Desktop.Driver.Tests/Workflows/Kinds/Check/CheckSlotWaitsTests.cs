@@ -56,6 +56,18 @@ public sealed class CheckSlotWaitsTests
     }
 
     [Fact]
+    public void A_check_waiting_for_the_reserve_reads_the_memory_free_needed_and_kept_for_the_person()
+    {
+        var reserve = new CheckWait(CheckWait.Reserve, new Dictionary<string, string> { ["free"] = "24.0", ["need"] = "8", ["reserve"] = "21" });
+        var look = new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, reserve)]);
+
+        var wait = CheckSlotWaits.Of(Graph, Sent("i-mine"), look)["check"];
+
+        Assert.Equal(CheckSlotWaits.Reserve, wait.Code);
+        Assert.Equal("Waits for the reserve kept for your own work: 24.0 GB free, the next check needs 8 GB and 21 GB stays free; 1 of 1 in its queue.", CheckSlotWaits.Said(wait));
+    }
+
+    [Fact]
     public void A_check_waiting_for_its_repository_s_heavy_run_names_the_repository()
     {
         var look = new VerifyLook([Theirs], [Waiter("mine", "i-mine", 1, CheckWait.OfRepository("Daoris", "the verification run theirs"))]);

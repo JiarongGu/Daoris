@@ -347,7 +347,8 @@ the other, and every other Process-lane gate alone (REHLANE1, REHLANE2, REHLANE2
 service suite (WEBSPLIT1), and the measured-box check (`web-measured`: the specs under `src/Daoris.Web/measured/`, the page's stories laid out and measured in Chromium) is another that builds none (FLOWCHART1e). The driver's Process half runs eight classes at once (PROCPAR1), and its
 slowest classes print by their own times beside the half's wall. Before a heavy gate (a suite that builds .NET or the
 page, a Process half, a rehearsal) the tool reads the machine's free commit and free physical memory, and waits, up to
-ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`); a gate
+ten minutes, while either is below the gate's need (its class's, or `"memoryGb"` on the gate in `daoris.gates.json`) plus the
+reserve the person keeps free for their own work (`daoris settings reserve`, a third of the machine's memory by default); a gate
 that died of memory reads MEMORY, not a failed check, and runs again once, alone, at the run's end (MEMGATE1), as does one
 whose hang bound killed a test under load, once the machine is free; one past its budget under load runs on instead (D346,
 *Choose the checks*). Add

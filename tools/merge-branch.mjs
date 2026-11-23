@@ -399,7 +399,7 @@ import { fastPlan, scopedKind } from './merge/fast-plan.ts';
 import {
   flakeDecision, nodeTestDecision, nodeTestDirs, nodeTestRerunCommand, ownOutput, rerunCommand, short, testClass, testSummary, timedDecision, timedRerunCommand,
 } from './merge-branch/test-output.mjs';
-import { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory } from './merge-branch/memory.mjs';
+import { gbOf, keptFree, memoryDeath, memoryShown, needOf, parseMeminfo, parseWindowsMemory, readMemory, reserveGb } from './merge-branch/memory.mjs';
 import { MAIN_WATCH_LOCK, MAIN_WATCH_TREE, WATCH_PREFIX, appendWatch, lastRed, readWatch, sightingsOf, startWatch, watchGates, watchHold } from './merge/main-watch.ts';
 import { inFolders, readFolders, regenerate, regenerations, writeFolders } from './merge/generated.ts';
 import { MERGE_RECORD, appendRecord, readRecords } from './merge/merge-record.ts';
@@ -1221,19 +1221,10 @@ export function memoryNeed(gate) {
 }
 
 // The memory read and the death of it: `merge-branch/memory.mjs`.
-export { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory };
+export { memoryDeath, parseMeminfo, parseWindowsMemory, readMemory, reserveGb };
 
-const gbOf = (bytes) => (bytes / GB).toFixed(1);
-const needOf = (gb) => (Number.isInteger(gb) ? String(gb) : gb.toFixed(1));
 const span = (ms) => (ms >= 60_000 && ms % 60_000 === 0 ? `${ms / 60_000} m` : duration(ms));
 const finite = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
-
-/** A reading's free commit and free physical memory, said, each that is read; `need` keeps those below it, in GB. */
-function memoryShown(reading, need = Infinity) {
-  return [[reading.commit, 'free commit'], [reading.physical, 'free physical memory']]
-    .filter(([bytes]) => bytes !== null && bytes < need * GB)
-    .map(([bytes, what]) => `${gbOf(bytes)} GB ${what}`);
-}
 
 /**
  * A run's wait for memory. Handed a gate, it reads the machine (`read`, the seam a test replaces), and while its free
@@ -1245,7 +1236,7 @@ function memoryShown(reading, need = Infinity) {
  * leaves the gates to run without waiting. `halted` ends a wait the run no longer needs.
  */
 export function memoryGate({
-  read = readMemory, say = console.log, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), now = Date.now,
+  read = readMemory, reserve = () => 0, say = console.log, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), now = Date.now,
   pollMs = MEMORY_POLL_MS, boundMs = MEMORY_WAIT_MS,
 } = {}) {
   let told = false;
@@ -1270,21 +1261,23 @@ export function memoryGate({
     if (!(wanted > 0)) return;
     let current = reading();
     const need = current.total ? Math.min(wanted, current.total / GB / 4) : wanted;
-    let lacking = memoryShown(current, need);
+    let kept = keptFree(reserve, current.total);
+    let lacking = memoryShown(current, need + kept);
     if (!lacking.length) return;
     const from = now();
-    const needs = `the gate needs ${needOf(need)} GB${again ? ' to run again' : ''}`;
-    say(`  waiting for memory before ${gate.name}: ${lacking.join(' and ')}, ${needs}; read again every ${span(pollMs)}, for up to ${span(boundMs)}`);
+    const needs = () => `the gate needs ${needOf(need)} GB${again ? ' to run again' : ''}${kept > 0 ? ` and ${needOf(kept)} GB stays free for your own work` : ''}`;
+    say(`  waiting for memory before ${gate.name}: ${lacking.join(' and ')}, ${needs()}; read again every ${span(pollMs)}, for up to ${span(boundMs)}`);
     for (;;) {
       if (halted()) return;
       const waited = now() - from;
       if (waited >= boundMs) {
-        say(`  memory for ${gate.name}: still ${lacking.join(' and ')} after ${span(waited)}, ${needs}; it runs anyway, past the bound`);
+        say(`  memory for ${gate.name}: still ${lacking.join(' and ')} after ${span(waited)}, ${needs()}; it runs anyway, past the bound`);
         return;
       }
       await sleep(Math.min(pollMs, boundMs - waited));
       current = reading();
-      lacking = memoryShown(current, need);
+      kept = keptFree(reserve, current.total);
+      lacking = memoryShown(current, need + kept);
       if (!lacking.length) {
         say(`  memory for ${gate.name}: ${memoryShown(current).join(' and ')} after ${span(now() - from)}; it ${again ? 'runs again' : 'starts'}`);
         return;
@@ -2509,7 +2502,7 @@ function runRecorded(root, gates, dir, {
     byMemory,
     // The machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
     // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
-    memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
+    memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory, reserve: (total) => reserveGb({ total, home: START_HOME }) },
     admission,
     run: async (where, gate, logs, beside) => {
       onStart(gate);
@@ -5979,7 +5972,7 @@ async function judged(home, candidate, outcome) {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'memory', why: outcome.why } } } })).obsolete) return obsolete();
     console.log(`${at} held as memory: ${outcome.why}`);
     // Run again once the machine's memory admits the gates that died (the memory wait), on the next step.
-    const wait = memoryGate();
+    const wait = memoryGate({ reserve: (total) => reserveGb({ total, home: START_HOME }) });
     for (const name of outcome.gates) await wait({ name, run: '', kind: 'suite' }, { again: true });
     return 'next';
   }

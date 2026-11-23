@@ -131,6 +131,25 @@ public sealed class OwnerReserveTests : IDisposable
         }
     }
 
+    [Fact]
+    public void Daoris_s_share_sums_each_process_under_its_roots_once()
+    {
+        // 1 starts 2 and 3; 3 starts 4; 9 is the person's own and is never counted. Roots 1 and 3 overlap.
+        var parents = new Dictionary<int, int> { [1] = 0, [2] = 1, [3] = 1, [4] = 3, [9] = 0 };
+        var commit = new Dictionary<int, long> { [1] = 1 * Gb, [2] = 2 * Gb, [3] = 4 * Gb, [4] = 8 * Gb, [9] = 100 * Gb };
+
+        Assert.Equal(15 * Gb, DaorisShare.Of([1, 3], parents, pid => commit[pid]));
+        Assert.Null(DaorisShare.Of([1], null, pid => commit[pid]));
+    }
+
+    [Fact]
+    public void Daoris_s_share_of_this_machine_reads_this_process_at_least()
+    {
+        var share = DaorisShare.Read(_fixture.Home);
+
+        Assert.True(share > 0, "this process holds some commit, and it is its own root");
+    }
+
     [Theory]
     [InlineData(1, 0)]
     [InlineData(64, 21)]

@@ -826,7 +826,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     lines' check slots (`locks/verify/`), every repository's heavy-run slots, and the sessions' `run-heavy`, a run holding both counted
     once. The judgement, the take of each slot and the write of each record happen under one lock (`locks/heavy/admitting.lock`), so two
     starts never both see no holder. The machine setting `checks` (`daoris settings checks <n>|auto`, the window's `SET_CHECKS`) pins a
-    number, never more than the machine's heavy-run admission holds; `auto`, the default, runs the first always and another while free
+    number, never more than the machine's heavy-run admission holds. The machine keeps a reserve free for the person's own work (the
+    setting `reserve`, `reserveGb` in `driver.json`, `daoris settings reserve <gb>|auto`, the window's `SET_RESERVE`, `ReserveSetting`; `auto`,
+    the default, a third of the machine's physical memory to the whole GB, 0 none): whatever `checks` says, a heavy run, a check or a
+    build is admitted only while the free memory stays at or above the reserve after the run's own need (counted for the runs still
+    starting as below), the first run included, and a new admission waits while it is under, saying the reserve (`CheckWait.Reserve`,
+    `slot-reserve` on a check's step); the merge tool's memory wait reads the same field from the home's `driver.json`. The setting's row
+    and `daoris settings reserve` show the machine's memory, its free commit and what Daoris's own processes hold (`DaorisShare`: this
+    process and each slot holder, with their children). `auto`, the default, runs the first always (the reserve apart) and another while free
     physical memory and free commit both hold a run's need (the merge tool's 8 GB for a Process suite, since a check runs the Process
     classes its change reaches), counted again for each run whose first gate has not ended (its record says so; a Daoris check's one
     `reached` gate holds its build and its suites, so it counts twice for its whole run), up to a quarter of the processors within the

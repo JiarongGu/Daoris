@@ -40,6 +40,8 @@ public sealed record SetChecks(long? Checks);
 
 public sealed record SetVacancy(long? Hours);
 
+public sealed record SetReserve(long? Gb);
+
 /// <summary>No count, or none whole, is the driver's refusal, as less than one is.</summary>
 public sealed record SetCap(long? Cap);
 

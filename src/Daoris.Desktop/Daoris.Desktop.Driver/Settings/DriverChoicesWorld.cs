@@ -17,6 +17,9 @@ public sealed record DriverChoicesWorld
     public Func<CancellationToken, Task<ChoicesRegistry>> Registry { get; init; } =
         _ => Task.FromResult(new ChoicesRegistry(null, "this command was handed no way to read it"));
 
+    /// <summary>How this machine's memory stands beside the reserve (<see cref="MachineUse.Read"/>); a test hands a fixed one.</summary>
+    public Func<string, int?, MachineUse> Use { get; init; } = MachineUse.Read;
+
     /// <summary>The moment a standing answer is set, and a workflow's version saved.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 

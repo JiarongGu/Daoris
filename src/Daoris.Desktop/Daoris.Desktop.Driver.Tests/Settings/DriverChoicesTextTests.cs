@@ -80,6 +80,7 @@ public sealed partial class DriverChoicesTextTests
                     Verb = "daoris",
                 },
                 ConfigPath = config,
+                Use = (_, gb) => new MachineUse(64L << 30, 20L << 30, 3L << 30, ReserveSetting.Bytes(gb, 64L << 30)),
                 Registry = _ => Task.FromResult(registry is null ? new ChoicesRegistry(null, "the service did not answer") : new ChoicesRegistry(registry, null)),
             };
 
