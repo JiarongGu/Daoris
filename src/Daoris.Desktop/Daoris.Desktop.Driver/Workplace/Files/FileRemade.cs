@@ -11,25 +11,27 @@ namespace Daoris.Driver;
 /// removal asks of each path the rule covers whether, there, it is or lies inside another repository or tree (a <c>.git</c> at or above
 /// it, below the tree's top, or a bare repository's shape). Where it does, nothing covers it: the rule never reaches another repository's
 /// files.</para>
-/// <para>A rule of another kind (<c>local</c>, <c>dependency</c>, <c>repository</c>) covers nothing here: it is the person's or has its
-/// own door. The person's file that does not read covers nothing, which keeps the tree.</para>
+/// <para>The person's layer is the last the removal reads, so its rule for a path decides over the repository's: a path it calls
+/// <c>local</c> or <c>dependency</c> is kept though the repository's file calls it output. The person's file that does not read says
+/// nothing, which leaves the repository's declaration standing. The tree's own <c>core.ignorecase</c> decides how a path is matched.</para>
 /// </remarks>
 internal static class FileRemade
 {
     private static readonly FileKind[] Remade = [FileKind.Output, FileKind.Intermediate, FileKind.Cache, FileKind.Scratch];
 
     /// <summary>
-    /// Whether a file of <paramref name="tree"/> is one the person's rules say is regenerated, or null where they say none is (so the
-    /// removal asks nothing more). The path is relative to the tree, <c>/</c>-separated.
+    /// What the person's rules say of a file of <paramref name="tree"/>: true where they call it regenerated, false where they call it
+    /// something else or the floor holds it, null where they say nothing (the repository's declaration stands). The path is relative to
+    /// the tree, <c>/</c>-separated. The function itself is null where the person's layer holds no rule.
     /// </summary>
-    internal static Func<string, bool>? Of(string home, string repository, string tree)
+    internal static async Task<Func<string, bool?>?> OfAsync(string home, string repository, string tree, CancellationToken ct = default)
     {
         var person = PersonFiles.Read(home);
         if (person.Unread is not null) return null;
         var rules = FileRules.Of([], [], person, repository);
-        if (!rules.Rules.Any(each => Remade.Contains(each.Rule.Kind))) return null;
-        var none = new FileFloorFacts([], []);
-        return path => rules.For(path, none) is { Kind: { } kind, Floor: null } && Remade.Contains(kind) && !InAnotherRepository(tree, path);
+        if (rules.Rules.Count == 0) return null;
+        var none = new FileFloorFacts([], []) { IgnoreCase = await FileGit.IgnoresCaseAsync(tree, ct).ConfigureAwait(false) };
+        return path => rules.For(path, none) is not { Layer: not null, Kind: { } kind } ? null : Remade.Contains(kind) && !InAnotherRepository(tree, path);
     }
 
     /// <summary>

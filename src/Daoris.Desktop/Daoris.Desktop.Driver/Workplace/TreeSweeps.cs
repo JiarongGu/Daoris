@@ -412,7 +412,7 @@ internal sealed class TreeSweeps(
             var declared = await context.ScratchAsync(root, repository, workspace, ct, line).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
                 tree, root, declared, ct, new LinePlaces(context.Home).SlotAt(workspace, repository, tree),
-                TreeFilesRecord.Read(context.Home, tree), FileRemade.Of(context.Home, repository, tree)).ConfigureAwait(false);
+                TreeFilesRecord.Read(context.Home, tree), await FileRemade.OfAsync(context.Home, repository, tree, ct).ConfigureAwait(false)).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
             seen?.Add(holds);
             shared = holds.Shared.Count;

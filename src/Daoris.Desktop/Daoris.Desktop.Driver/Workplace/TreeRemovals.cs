@@ -112,7 +112,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
             var declared = await context.ScratchAsync(root, owner.Repository, owner.Workspace, ct).ConfigureAwait(false);
             var holds = await ContentHolds.HoldsAsync(
                 full, root, declared, ct, new LinePlaces(context.Home).SlotAt(owner.Workspace, owner.Repository, full),
-                TreeFilesRecord.Read(context.Home, full), FileRemade.Of(context.Home, owner.Repository, full)).ConfigureAwait(false);
+                TreeFilesRecord.Read(context.Home, full), await FileRemade.OfAsync(context.Home, owner.Repository, full, ct).ConfigureAwait(false)).ConfigureAwait(false);
             seen = holds;
             if (holds is null)
             {

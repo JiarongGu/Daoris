@@ -609,7 +609,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     `daoris.files.json`, read at the line's tip, calls an output, an intermediate, a cache or scratch (`FileOutputs`), whatever bytes
     the checkout holds there; and every file the person's own rules (`daoris files <repository> set output|intermediate|cache|scratch`)
     call so, with the floor judged in the tree being cleaned, never in the checkout whose `local/` holds another repository: a path
-    that is or lies inside a repository or tree the session's tree holds is never covered (`FileRemade`). `daoris.files.json` calls
+    that is or lies inside a repository or tree the session's tree holds is never covered (`FileRemade`). The person's layer is read
+    last, so a path they call `local` or `dependency` is kept though the repository calls it output, and the tree's own
+    `core.ignorecase` decides how their paths match. `daoris.files.json` calls
     `local/quick-base.json` and `local/quick-verdicts.json`, which `npm run quick` writes, outputs. A branch whose landing replayed
     its commits under ids of their own, and whose files the line has changed since, is held by the end its record kept while the
     form of the line it held on still descends from where it held (`KeptEnd`, a form of the content proof). Uncommitted or

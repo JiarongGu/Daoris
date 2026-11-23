@@ -86,6 +86,35 @@ public sealed class TreeFloorGitTests : LandedFixture
         Assert.True(Directory.Exists(tree.Path));
     }
 
+    [Fact]
+    public async Task A_file_the_persons_rule_calls_local_is_kept_though_the_repository_calls_it_output()
+    {
+        var root = await RepositoryWithLocalAsync();
+        await CommitAsync(root, "daoris.files.json", """{ "form": 2, "rules": [ { "kind": "output", "paths": ["/local/quick-base.json"] } ] }""", "declare it");
+        var (trees, tree) = await LandedAsync(root);
+        WriteLater(tree.Path, "local/quick-base.json");
+        FilesEdits.Set(Home, "engine", machine: false, "local", ["local/quick-base.json"], copy: null);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.False(removal.Removed, removal.Message);
+        Assert.Contains("local/quick-base.json", removal.Message);
+    }
+
+    [Fact]
+    public async Task A_rule_spelled_in_another_case_covers_the_file_where_the_tree_ignores_case()
+    {
+        var root = await RepositoryWithLocalAsync();
+        await GitAsync(root, "config", "core.ignorecase", "true");
+        var (trees, tree) = await LandedAsync(root);
+        WriteLater(tree.Path, "local/quick-base.json");
+        FilesEdits.Set(Home, "engine", machine: false, "output", ["LOCAL/Quick-Base.json"], copy: null);
+
+        var removal = await trees.RemoveAsync(tree.Path);
+
+        Assert.True(removal.Removed, removal.Message);
+    }
+
     /// <summary>
     /// A landing that replayed the session's commit onto a line that had moved leaves it under an id of its own; the line then changes the
     /// file again, so a reading of the files finds it different, and only the end the record kept when the line held it says it is landed.
