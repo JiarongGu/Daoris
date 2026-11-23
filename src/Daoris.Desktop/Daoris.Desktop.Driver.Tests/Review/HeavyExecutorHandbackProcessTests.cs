@@ -32,6 +32,10 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(_folder, "gate.mjs"),
             "import { appendFileSync } from 'node:fs'; import { join } from 'node:path';"
             + " appendFileSync(join(process.argv[2], 'ran.log'), `${process.argv[3]} ${process.argv[4] ?? '-'}\n`);");
+        File.WriteAllText(Path.Combine(_folder, "hold.mjs"),
+            "import { appendFileSync, existsSync } from 'node:fs'; import { join } from 'node:path';"
+            + " appendFileSync(join(process.argv[2], 'ran.log'), `${process.argv[3]} -\n`);"
+            + " const wait = () => existsSync(join(process.argv[2], 'go')) ? process.exit(0) : setTimeout(wait, 50); wait();");
         return Task.CompletedTask;
     }
 
@@ -56,13 +60,13 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
     }
 
     /// <summary>A line (<paramref name="line"/>) with a declaration of two required gates, one reached by <c>src/</c> and one of them required by a command of its own, and a slow one; then a branch <c>work</c> off it.</summary>
-    private async Task<string> RepositoryAsync(string line = "main", bool admission = false, bool redTypes = false)
+    private async Task<string> RepositoryAsync(string line = "main", bool admission = false, bool redTypes = false, object[]? own = null)
     {
         Directory.CreateDirectory(Checkout);
         await GitAsync("init", "-q", "-b", line);
         await GitAsync("config", "user.email", "test@example.com");
         await GitAsync("config", "user.name", "Test");
-        object[] gates =
+        object[] gates = own ??
         [
             new { name = "fast-src", run = Gate("fast-src", "plain"), handback = Gate("fast-src", "required"), paths = new[] { "src/" } },
             new { name = "fast-docs", run = Gate("fast-docs"), handback = true, paths = new[] { "docs/" } },
@@ -93,13 +97,19 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
 
     private async Task<VerifyResult> RunAsync(string blob, IReadOnlyList<string>? gates = null, string invocation = "i-a")
     {
+        await SendAsync(blob, gates, invocation);
+        var path = VerifyFiles.ResultOf(Home, "q7", invocation);
+        await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
+        return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
+    }
+
+    private async Task<HeavyExecutor> SendAsync(string blob, IReadOnlyList<string>? gates = null, string invocation = "i-a")
+    {
         var commit = await TipAsync("HEAD");
         var executor = new HeavyExecutor(Home, new VerifyWorld() with { Poll = TimeSpan.FromMilliseconds(50) });
         _executors.Add(executor);
         await executor.SendAsync(new VerifySend("q7", invocation, "engine", Checkout, commit, blob) { Tree = Tree, Reached = gates is null, Gates = gates, AsMerged = true });
-        var path = VerifyFiles.ResultOf(Home, "q7", invocation);
-        await Poll.Until(() => File.Exists(path), () => $"no result at {path}");
-        return VerifyResult.Read(path) ?? throw new InvalidOperationException($"the result at {path} does not read");
+        return executor;
     }
 
     private async Task<(string Work, string Line)> BehindAsync(string path, string moved)
@@ -239,6 +249,69 @@ public sealed class HeavyExecutorHandbackProcessTests : IAsyncLifetime
 
         Assert.True(docs.Verdict == VerifyVerdicts.Reached, docs.Why);
         Assert.Equal(["fast-docs", "lint", "types"], docs.Gates.Select(gate => gate.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_check_after_a_fix_touching_one_lane_runs_only_the_gates_that_lane_reaches_and_keeps_the_rest_from_the_check_before_at_the_same_base()
+    {
+        var blob = await RepositoryAsync(admission: true);
+        await CommitAsync("web/a.ts", "work" + Trailer);
+        var first = await RunAsync(blob);
+        Assert.True(first.Verdict == VerifyVerdicts.Reached, first.Why);
+        File.Delete(Ran);
+
+        await CommitAsync("docs/b.txt", "the fix" + Trailer);
+        var fixedUp = await RunAsync(blob, invocation: "i-b");
+
+        Assert.True(fixedUp.Verdict == VerifyVerdicts.Reached, fixedUp.Why);
+        Assert.Equal([("fast-docs", RunnerVerdicts.Pass), ("lint", RunnerVerdicts.Pass), ("types", VerifyGate.Kept)],
+            fixedUp.Gates.Select(gate => (gate.Name, gate.Verdict)).OrderBy(gate => gate.Name, StringComparer.Ordinal));
+        Assert.Equal(["fast-docs -", "lint -"], File.ReadAllLines(Ran).Select(line => line.Trim()).Where(line => line.Length > 0).Order(StringComparer.Ordinal));
+        Assert.Contains($"Kept from this run's checks before, on the same base (`main` at {(await TipAsync("main"))[..7]}), as no path changed since reaches them: types (passed at {first.Commit[..7]})", fixedUp.Why);
+        Assert.Equal((fixedUp.Commit, await TipAsync("main")), (fixedUp.Judged, fixedUp.Onto));
+    }
+
+    [Fact]
+    public async Task A_check_after_a_fix_keeps_nothing_once_the_line_moved_under_the_work()
+    {
+        var blob = await RepositoryAsync(admission: true);
+        await CommitAsync("web/a.ts", "work" + Trailer);
+        var first = await RunAsync(blob);
+        Assert.True(first.Verdict == VerifyVerdicts.Reached, first.Why);
+        File.Delete(Ran);
+
+        await GitAsync("switch", "-q", "main");
+        await CommitAsync("later.txt", "the line moves" + Trailer);
+        await GitAsync("switch", "-q", "work");
+        await CommitAsync("docs/c.txt", "the fix" + Trailer);
+        var moved = await RunAsync(blob, invocation: "i-b");
+
+        Assert.True(moved.Verdict == VerifyVerdicts.Reached, moved.Why);
+        Assert.DoesNotContain(moved.Gates, gate => gate.Verdict == VerifyGate.Kept);
+        Assert.Contains("types -", File.ReadAllText(Ran));
+    }
+
+    [Fact]
+    public async Task A_check_cut_off_by_daoris_closing_goes_on_at_the_gate_it_reached_when_its_attempt_is_sent_again()
+    {
+        var blob = await RepositoryAsync(own:
+        [
+            new { name = "first", run = Gate("first"), handback = true },
+            new { name = "second", run = $"node \"{Path.Combine(_folder, "hold.mjs")}\" \"{_folder}\" second", handback = true },
+        ]);
+        await CommitAsync("src/a.txt", "work" + Trailer);
+        var closing = await SendAsync(blob);
+        await Poll.Until(() => File.Exists(Ran) && File.ReadAllText(Ran).Contains("second"), () => "the second gate never began");
+
+        await closing.DisposeAsync();
+        Assert.False(File.Exists(VerifyFiles.ResultOf(Home, "q7", "i-a")), "a close leaves no result, so the restart sends the attempt again");
+        await File.WriteAllTextAsync(Path.Combine(_folder, "go"), "");
+        var result = await RunAsync(blob);
+
+        Assert.True(result.Verdict == VerifyVerdicts.Reached, result.Why);
+        Assert.Equal([("first", RunnerVerdicts.Pass), ("second", RunnerVerdicts.Pass)], result.Gates.Select(gate => (gate.Name, gate.Verdict)));
+        Assert.Equal(["first -", "second -", "second -"], File.ReadAllLines(Ran).Select(line => line.Trim()).Where(line => line.Length > 0));
+        Assert.Contains("It went on at the gate it had reached when Daoris closed: first had passed in this attempt and did not run again.", result.Why);
     }
 
     [Fact]

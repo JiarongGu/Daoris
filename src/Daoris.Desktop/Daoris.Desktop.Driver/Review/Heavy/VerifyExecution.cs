@@ -26,6 +26,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
     private string? _ran = send.Accepted;
 
+    private string? _onto;
+
     private IReadOnlyList<string> _regenerate = [];
 
     public async Task<(VerifyResult? Result, bool Busy)> ExecuteAsync(CancellationToken ct)
@@ -38,7 +40,8 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
         }
 
-        var (result, busy) = await RunAsync(mode, ct).ConfigureAwait(false);
+        var (ran, busy) = await RunAsync(mode, ct).ConfigureAwait(false);
+        var result = ran is null ? null : ran with { Judged = _at, Onto = _onto };
         return send.Accepted is null && result is not null
             ? (Told(result, $"nothing was accepted yet, so the work's own declaration ran ({DeclarationMode.Said(DeclarationMode.Full)})"), busy)
             : (result, busy);
@@ -114,6 +117,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         if (!send.AsMerged) return null;
         var merge = await LineMerge.ReadAsync(send.Checkout, line, send.Commit, ct).ConfigureAwait(false);
         _at = merge.At ?? send.Commit;
+        _onto = merge.Onto;
         return merge;
     }
 
@@ -137,6 +141,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         }
 
         var seen = read with { Merge = await OntoAsync(line, ct).ConfigureAwait(false) };
+        _onto ??= seen.Base;
         if (seen.Faulty) return (Back(seen.Words()), false);
 
         if (mode == DeclarationMode.Full && _at != send.Commit
@@ -157,10 +162,15 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
         var required = declared.Where(gate => (gate.Handback && GateReach.Reaches(gate, seen.Touched)) || admission.Gates.Any(admitted => admitted.Name == gate.Name)).ToList();
         var verified = required.Where(gate => HandbackGates.Verified(files, gate, _at)).ToList();
-        var kept = verified.Select(gate => new VerifyGate(gate.Name, VerifyGate.Kept)).ToList();
-        var chosen = required.Except(verified).Select(HandbackGates.ForHandback).ToList();
-        if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, seen.Words(), kept) { Declaration = _ran }, false);
-        var result = Told(await GatesAsync(chosen, kept, ct, marker).ConfigureAwait(false), seen.Words());
+        var earlier = await RecheckKeep.OfAsync(
+            RecheckKeep.Before(home, send.Run, send.Invocation), _onto, _ran, [.. required.Except(verified)],
+            async from => await MachinePorts.Repository.ChangedAsync(send.Checkout, from, _at, ct).ConfigureAwait(false),
+            (paths, gate) => (gate.Handback && GateReach.Reaches(gate, paths)) || AdmissionGates.Of(declared, text, paths).Gates.Any(admitted => admitted.Name == gate.Name)).ConfigureAwait(false);
+        var kept = verified.Select(gate => gate.Name).Concat(earlier.Select(each => each.Gate)).Select(name => new VerifyGate(name, VerifyGate.Kept)).ToList();
+        var chosen = required.Where(gate => kept.All(each => each.Name != gate.Name)).Select(HandbackGates.ForHandback).ToList();
+        var words = _onto is { } onto && RecheckKeep.Words(earlier, onto, line) is { } keptWords ? $"{seen.Words()}\n{keptWords}" : seen.Words();
+        if (chosen.Count == 0) return (new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, words, kept) { Declaration = _ran }, false);
+        var result = Told(await GatesAsync(chosen, kept, ct, marker).ConfigureAwait(false), words);
         var classes = result.Gates.Where(gate => gate is { Log: not null, Verdict: RunnerVerdicts.Pass })
             .Select(gate => ReadText(gate.Log!) is { } log ? ReachedVerdict.Told(log, marker) : null).OfType<string>().ToList();
         return (classes.Count == 0 ? result : Told(result, string.Join("\n", classes)), false);
@@ -227,9 +237,18 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
             if (place is null) return Ended(unrun);
             if (await UnregeneratedAsync(tree, place, unrun, ct).ConfigureAwait(false) is { } regenerated) return regenerated;
 
+            var progress = GateProgress.Read(_folder, send.Commit, _onto, _ran);
+            var carried = new List<string>();
             for (var at = 0; at < gates.Count; at++)
             {
                 var gate = gates[at];
+                if (progress.TryGetValue(gate.Name, out var passed))
+                {
+                    ran.Add(passed);
+                    carried.Add(gate.Name);
+                    continue;
+                }
+
                 var log = Path.Combine(_folder, $"gate-{at + 1:D2}-{Slug(gate.Name)}.log");
                 var folder = gate.Cwd is { } cwd ? Path.GetFullPath(Path.Combine(tree, cwd)) : tree;
                 var index = at;
@@ -252,18 +271,23 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
                 if (exit is null) return Ended([.. ran, new VerifyGate(gate.Name, RunnerVerdicts.Ended) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds }, .. rest, .. kept]);
                 ran.Add(new VerifyGate(gate.Name, exit == 0 ? RunnerVerdicts.Pass : RunnerVerdicts.Fail, exit) { Log = log, WallSeconds = wall.Elapsed.TotalSeconds });
-                if (exit == 0) continue;
+                if (exit == 0)
+                {
+                    GateProgress.Write(_folder, send.Commit, _onto, _ran, ran);
+                    continue;
+                }
+
                 keep(holder => holder with { Failed = new HeavyGateFailed(gate.Name, exit.Value) });
                 var failed = new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Failed, $"the gate '{gate.Name}' failed with exit {exit}", [.. ran, .. rest, .. kept])
                 {
                     Failed = gate.Name, Declaration = _ran,
                 };
-                return Told(failed, ReadText(log) is not { } text ? null
+                return Told(Told(failed, GateProgress.Words(carried)), ReadText(log) is not { } text ? null
                     : marker is not null && ReachedVerdict.Told(text, marker, log, home) is { } classes ? classes
                     : GateLogExcerpt.Told(text, log, home));
             }
 
-            return new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran };
+            return Told(new VerifyResult(send.Invocation, send.Commit, VerifyVerdicts.Reached, null, [.. ran, .. kept]) { Declaration = _ran }, GateProgress.Words(carried));
         }
         finally
         {

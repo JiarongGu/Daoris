@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A run's check asked again after a fix runs only the gates the fix's paths reach. Each gate that passed in the run's check before, on the
+  same base and declaration, and that no path changed since reaches, is kept, and the check's words name it with the commit it passed at.
+  A check that Daoris closing cut off goes on at the gate it reached when it is sent again, never starting over.
 - The desktop's machine log now says why it stopped: `app.stopped` names the door (the person closing its window, an update's close
   with its build, the system shutting down, a terminal's signal, an unhandled failure) or says `unknown`, so a stop is no longer a
   line with a time and nothing else.

@@ -87,6 +87,10 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
 
     public double? WallSeconds { get; init; }
 
+    public string? Judged { get; init; }
+
+    public string? Onto { get; init; }
+
     /// <summary>The red classes a reached run's outcome named, for the bus's settle and never written to the file; null where no gate named them, which is unknown.</summary>
     public IReadOnlyList<string>? Red { get; init; }
 
@@ -112,6 +116,8 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
             if (Declaration is { } declaration) writer.WriteString("declaration", declaration);
             if (Accepted is { } accepted) writer.WriteString("accepted", accepted);
             if (WallSeconds is { } wall) writer.WriteNumber("wallSeconds", Math.Round(wall, 1));
+            if (Judged is { } judged) writer.WriteString("judged", judged);
+            if (Onto is { } onto) writer.WriteString("onto", onto);
             writer.WriteStartArray("gates");
             foreach (var gate in Gates)
             {
@@ -166,6 +172,7 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
             return new VerifyResult(invocation, commit, verdict, Text(root, "why"), gates)
             {
                 Code = Text(root, "code"), Failed = Text(root, "failed"), Declaration = Text(root, "declaration"), Accepted = Text(root, "accepted"), WallSeconds = Seconds(root),
+                Judged = Text(root, "judged"), Onto = Text(root, "onto"),
             };
         }
         catch (JsonException)
