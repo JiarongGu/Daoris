@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -129,6 +130,25 @@ public sealed class SignOutRaceTests : IDisposable
 
         File.Delete(temp);
         Assert.Equal("account-1", (await start.WaitAsync(Poll.Patience)).Profile);
+    }
+
+    /// <summary>A slot reached between two reads of the clock is no wait at all: never a zero, negative or infinite delay.</summary>
+    [Theory]
+    [InlineData(1000L, 990L, 10L, 10L)]
+    [InlineData(1000L, 995L, 10L, 5L)]
+    [InlineData(1000L, 1000L, 10L, null)]
+    [InlineData(1000L, 1001L, 10L, null)]
+    [InlineData(1000L, 1002L, 10L, null)]
+    public void A_slot_that_has_come_is_not_waited_for(long slot, long now, long poll, long? expected) =>
+        Assert.Equal(
+            expected is { } ms ? TimeSpan.FromMilliseconds(ms) : null,
+            RefreshPace.Pause(slot, now, TimeSpan.FromMilliseconds(poll)));
+
+    /// <summary>The watch is armed in the look's first phase, before any start is planned or begun, so a start's first refresh is said.</summary>
+    [Fact]
+    public void The_watch_is_armed_before_the_look_plans_a_start()
+    {
+        Assert.Equal(LookPhase.Before, typeof(CredentialWritesLook).GetCustomAttribute<LookPassAttribute>()!.Phase);
     }
 
     private HarnessRoster Claude(out string account)

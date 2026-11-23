@@ -79,6 +79,10 @@ internal sealed class RefreshPace
     private readonly object _gate = new();
     private readonly Dictionary<string, long> _next = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>How long to wait before looking again at <paramref name="slot"/>, never more than <paramref name="poll"/>; null once it has come.</summary>
+    internal static TimeSpan? Pause(long slot, long now, TimeSpan poll) =>
+        slot - now is > 0 and var left ? TimeSpan.FromMilliseconds(Math.Min(left, poll.TotalMilliseconds)) : null;
+
     /// <summary>Wait this start's turn on the account.</summary>
     public async Task WaitAsync(HarnessRoster roster, AccountAgent asker, string owner, string account, CancellationToken ct)
     {
@@ -96,10 +100,9 @@ internal sealed class RefreshPace
                 _next[key] = slot + (long)roster.RefreshStagger.TotalMilliseconds;
             }
 
-            while (Environment.TickCount64 < slot && Risky())
+            while (Pause(slot, Environment.TickCount64, roster.RefreshPoll) is { } pause && Risky())
             {
-                await roster.Delay(TimeSpan.FromMilliseconds(Math.Min(slot - Environment.TickCount64, roster.RefreshPoll.TotalMilliseconds)), ct)
-                    .ConfigureAwait(false);
+                await roster.Delay(pause, ct).ConfigureAwait(false);
             }
         }
 

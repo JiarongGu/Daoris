@@ -235,10 +235,11 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     first at once, each next ten seconds after the one before (`HarnessRoster.RefreshStagger`) or as soon as the store is no longer
     expiring, and none while a fresh temp file of the store's write is there (`StoredLeftovers.InFlight`). The provider declares the
     store's file, its write's temp-file pattern and how long a write takes (`IStoredSignIn`); a temp file older than that is a leftover,
-    which each look removes. Each look also watches each such account's home (`CredentialWrites`, one non-recursive watcher per
-    home), and every write to the store or a temp file is a `credentials.written` line in the machine log: the account, the file
+    which each look removes. The look's first phase also watches each such account's home (`CredentialWrites`, one non-recursive
+    watcher per home), before any start of that look is planned, and every write to the store or a temp file is a `credentials.written` line in the machine log: the account, the file
     (`store` or `temp`), the change, whether the file is empty and whether each token is there (never a value), the sessions running
-    on the account and the starts chosen on it not yet running. The file system names no writer, so the sessions beside the write are
+    on the account and the starts chosen on it not yet running. The pace is a time, not an acknowledgement: a refresh that takes
+    longer than the gap, with no temp file until its response, can still overlap the next session's. The file system names no writer, so the sessions beside the write are
     the attribution; `credentials.watching` and `app.started` mark a restart beside them. (SIGNOUTRACE1)
 
 **Usage, limits and errors**
