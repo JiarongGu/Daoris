@@ -224,6 +224,11 @@ internal static class PipeReads
     public static PipeGround PlaceRisk() => Setting("STATE", ["repository", "workspace"], _ => null,
         (a, p) => Fp(Raw(Named(At(a, "placeRisk"), "place", Daoris.Driver.PlaceRiskBook.KeyOf(Text(p, "workspace"), Text(p, "repository"))))));
 
+    public static PipeGround PolicyRevision() => Setting("POLICY_PROPOSALS", ["edits", "conversation"], _ => null, (a, _) => Text(a, "revision") ?? "");
+
+    public static PipeGround PolicyProposal() => Setting("POLICY_PROPOSALS", ["proposal", "digest"], _ => null,
+        (a, p) => Fp(Raw(Named(At(a, "proposals"), "id", Text(p, "proposal")))));
+
     public static PipeGround PlaceCast() => Setting("PLACE_CAST", ["repository", "workspace", "role"], p => new { workspace = Text(p, "workspace"), repository = Text(p, "repository") },
         (a, p) => Fp(Raw(Named(At(a, "roles"), "role", Text(p, "role")))));
 

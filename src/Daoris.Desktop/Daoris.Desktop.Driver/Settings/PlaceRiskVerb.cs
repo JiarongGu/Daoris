@@ -26,7 +26,8 @@ public sealed class PlaceRiskVerb : ChoiceVerb
 
     /// <summary>Whether the words set anything: a risk, a mark or an unmark.</summary>
     public static bool Changes(IReadOnlyList<string> args) =>
-        args.Any(arg => arg is "--mark" or "--unmark") || Operands(args, Valued).Skip(1).Any(PlaceRisks.Is);
+        args.Any(arg => arg is "--mark" or "--unmark") || Operands(args, Valued).Skip(1).Any(PlaceRisks.Is)
+        || Operands(args, ProposeValued).Skip(1).FirstOrDefault() is Propose or Apply;
 
     public override int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
@@ -45,6 +46,14 @@ public sealed class PlaceRiskVerb : ChoiceVerb
     public Func<string, string, string?, IReadOnlyList<string>>? Verdicts { get; init; }
 
     private const string Why = "why";
+    private const string Propose = "propose";
+    private const string Apply = "apply";
+
+    private const string ProposeUsage = "usage: daoris settings risk propose <place> <act> none|role|owner|remove [--by <role>] [--mode full|restricted] [--conversation <session>] — "
+        + "<place> is machine, workspace/<name> or repository/<name>; <act> is a kind of the census (policy.change is fixed at the owner); it proposes and changes nothing; "
+        + "daoris settings risk apply <proposal> <digest> applies it on the owner's own turn naming both.";
+
+    private static readonly string[] ProposeValued = ["--by", "--mode", "--conversation"];
 
     private int SaidWhy(IReadOnlyList<string> args, DriverChoicesWorld world)
     {
@@ -57,6 +66,12 @@ public sealed class PlaceRiskVerb : ChoiceVerb
 
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
+        switch (Operands(args, ProposeValued).Skip(1).FirstOrDefault())
+        {
+            case Propose: return Proposing(args, world);
+            case Apply: return Applying(args, world);
+        }
+
         var path = world.ConfigPath;
         var edit = Read(args);
         var agent = world.Instance.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 } || world.InAgentJob() == true;
@@ -89,6 +104,43 @@ public sealed class PlaceRiskVerb : ChoiceVerb
             return 0;
         });
     }
+
+    private static ChoicePress Proposing(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        Flags(args, ProposeValued, [], "settings risk propose", ProposeUsage);
+        var words = Operands(args, ProposeValued).Skip(2).ToList();
+        if (words.Count != 3) throw new ChoiceWords($"`settings risk propose` takes a place, an act and a class — {ProposeUsage}");
+        var riskClass = words[2] == "remove" ? null : words[2];
+        if (riskClass is not null && !RiskClasses.Is(riskClass)) throw new ChoiceWords($"`{riskClass}` is no class (none, role, owner or remove) — {ProposeUsage}");
+        var edit = new PolicyEdit(words[0], words[1], riskClass, FlagValue(args, "--by"), FlagValue(args, "--mode"));
+        if (edit.Fault() is { } fault) throw new ChoiceWords($"{fault} — {ProposeUsage}");
+        var payload = new JsonObject
+        {
+            ["edits"] = new JsonArray(new JsonObject { ["place"] = edit.Place, ["act"] = edit.Act, ["class"] = edit.Class, ["by"] = edit.By, ["mode"] = edit.Mode }),
+        };
+        if (FlagValue(args, "--conversation") is { } conversation) payload["conversation"] = conversation;
+        return Pressed("risk propose", ChoiceRoutes.PolicyPropose, payload, world);
+    }
+
+    private static ChoicePress Applying(IReadOnlyList<string> args, DriverChoicesWorld world)
+    {
+        var words = Operands(args, ProposeValued).Skip(2).ToList();
+        if (words.Count != 2) throw new ChoiceWords($"`settings risk apply` takes a proposal and its digest — {ProposeUsage}");
+        return Pressed("risk apply", ChoiceRoutes.PolicyApply, new JsonObject { ["proposal"] = words[0], ["digest"] = words[1] }, world);
+    }
+
+    private static ChoicePress Pressed(string verb, InstanceRoute route, JsonObject payload, DriverChoicesWorld world) => new(
+        verb, route, payload,
+        _ => throw new ChoiceWords("a change to the risk policy is proposed by Ask Daoris and confirmed in its conversation, so it needs Daoris running; nothing was changed.", 1),
+        answer => answer.Clone(),
+        fields =>
+        {
+            var said = (JsonElement)fields!;
+            var done = said.TryGetProperty("done", out var ok) && ok.ValueKind == JsonValueKind.True;
+            var message = said.TryGetProperty("message", out var text) && text.ValueKind == JsonValueKind.String ? text.GetString() : "";
+            world.Instance.Out.WriteLine(done ? message : $"daoris: {message}");
+            return done ? 0 : 1;
+        });
 
     public override void Listed(DriverConfig choices, DriverChoicesWorld world)
     {
