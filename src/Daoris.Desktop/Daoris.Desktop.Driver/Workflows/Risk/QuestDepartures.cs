@@ -14,9 +14,10 @@ internal static class QuestDepartures
     /// <summary>The hold a departure's verdict is journaled under.</summary>
     public const string Hold = EvidenceCodes.Departed;
 
-    /// <summary>The act <paramref name="quest"/>'s departure is, or null where nothing but a departure's yes holds its done.</summary>
+    /// <summary>The act <paramref name="quest"/>'s hold is: a departure's, or missing evidence's <c>work.done</c>; null for evidence unread, which waits on its check.</summary>
     public static RiskAct? ActOf(QuestView quest)
     {
+        if (quest is { Held: true, Hold: EvidenceCodes.MissingHold } && QuestResults.Judged(quest)) return RiskAct.Of(RiskActs.WorkDone);
         if (quest is not { Held: true, Hold: EvidenceCodes.Departed, AwaitsEvidence: false } || !QuestResults.Judged(quest)) return null;
         // Counted among the quest's requirements as they stand: an answer naming one the brief no longer holds departs from nothing.
         var left = quest.Answers.Where(answer => string.IsNullOrWhiteSpace(answer.Met) && !string.IsNullOrWhiteSpace(answer.Departed)
@@ -31,7 +32,12 @@ internal static class QuestDepartures
         return act => RiskStepGates.Verdict(judge, act.Kind, null);
     }
 
-    /// <summary>The verdict on <paramref name="quest"/>'s departure, or null where none holds it or no judge is read.</summary>
+    /// <summary>The quests of <paramref name="quests"/> whose hold the policy gates on a role: theirs to answer by the role's tool, never the person's row.</summary>
+    public static IReadOnlySet<string> RoleHeld(DriverConfig config, IEnumerable<QuestView> quests) =>
+        quests.Where(quest => ActOf(quest) is not null && Verdict(quest, JudgeAt(config, quest)) is { Outcome: RiskVerdict.Gate })
+            .Select(quest => quest.Id).ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>The verdict on <paramref name="quest"/>'s hold, or null where none holds it or no judge is read.</summary>
     public static RiskVerdict? Verdict(QuestView quest, Func<RiskAct, RiskVerdict?>? judge) => judge is not null && ActOf(quest) is { } act ? judge(act) : null;
 
     /// <summary>
@@ -58,8 +64,8 @@ internal static class QuestDepartures
             var place = RiskPlace.Of(config, quest.Workspace, quest.To);
             try
             {
-                RiskJournal.Append(home, new RiskJudged(now, RiskJudged.Released, $"{Hold}:{quest.Id}", Hold, verdict.Kind, verdict.Qualifier, RiskPolicy.Key,
-                    place.Workspace, place.Repository, place.Mode, null, null, $"quest {quest.Id}'s departure", verdict.Outcome, verdict.Class, verdict.By,
+                RiskJournal.Append(home, new RiskJudged(now, RiskJudged.Released, $"{quest.Hold}:{quest.Id}", quest.Hold ?? Hold, verdict.Kind, verdict.Qualifier, RiskPolicy.Key,
+                    place.Workspace, place.Repository, place.Mode, null, null, quest.Hold == EvidenceCodes.MissingHold ? $"quest {quest.Id}'s missing evidence" : $"quest {quest.Id}'s departure", verdict.Outcome, verdict.Class, verdict.By,
                     verdict.Source, verdict.Revision, verdict.Reason, PolicyPasses.Today, false));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -67,7 +73,7 @@ internal static class QuestDepartures
                 // The journal is a record of the pass, never a reason to keep the done held: the service kept the yes.
             }
 
-            said.Add($"quest #{quest.Id}: its departure is answered by the risk policy, so its done goes on: {verdict.Why}.");
+            said.Add($"quest #{quest.Id}: its hold is answered by the risk policy, so its done goes on: {verdict.Why}.");
         }
 
         return said;

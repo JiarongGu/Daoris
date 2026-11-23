@@ -129,6 +129,48 @@ public sealed class QuestClosureRoleTests : IAsyncLifetime
         Assert.Null((await _quests.FindAsync(beside))!.Accepted);
     }
 
+    /// <summary>The policy's yes accepts a done whose evidence is read and not found, and never one unread; a role's yes takes neither.</summary>
+    [Fact]
+    public async Task The_risk_policys_yes_accepts_a_done_whose_evidence_was_read_and_not_found_and_never_one_unread()
+    {
+        const string policy = "policy:work.done · rule seed at r1";
+        var read = await EvidencedAsync("missing");
+        var unread = await EvidencedAsync(null);
+        Assert.Equal(QuestHold.EvidenceMissing, (await _quests.FindAsync(read))!.Hold);
+
+        var role = await _exchange.AcceptAsync(read, Now, by: "role:daoris-landing · codex-acp");
+        Assert.Equal(QuestRespondRefusal.NotHeld, role.Refusal);
+
+        var passed = await _exchange.AcceptAsync(read, Now, by: policy);
+        Assert.Equal(QuestRespondRefusal.None, passed.Refusal);
+        Assert.Null((await _quests.FindAsync(read))!.Hold);
+        Assert.Equal(policy, (await _quests.HistoryAsync(read)).Last(each => each.Kind == QuestOperationKind.Accepted).By);
+
+        var waits = await _exchange.AcceptAsync(unread, Now, by: policy);
+        Assert.Equal(QuestRespondRefusal.NotHeld, waits.Refusal);
+        Assert.Contains("waits on its check", waits.Message, StringComparison.Ordinal);
+        Assert.Equal(QuestHold.EvidenceUnread, (await _quests.FindAsync(unread))!.Hold);
+    }
+
+    private async Task<string> EvidencedAsync(string? result)
+    {
+        var ask = (await _desk.AskAsync(new AskRequest("work", "write the bridge report into docs/report-bridge.md"), Now)).Ask!;
+        var published = await _desk.PublishAsync(ask.Id, "reports", Now, draft: new AskDraft("Write the bridge report", "Through the bridge.")
+        {
+            Requirements = [Report],
+        });
+        var id = published.Quest!.Id;
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(id, "take", null, Now)).Refusal);
+        await _exchange.RespondAsync(id, "done", "Built.", Now, answers: [new QuestAnswer(1, Met: "Done as the check says.")]);
+        if (result is not null)
+        {
+            var verdict = new QuestEvidenceVerdict(new string('a', 40), "session-end", [new QuestEvidenceRead(1, "docs/report-bridge.md", null, result)]);
+            Assert.Equal(QuestRespondRefusal.None, (await _exchange.EvidenceAsync(id, verdict, Now.AddMinutes(1))).Refusal);
+        }
+
+        return id;
+    }
+
     private async Task<string> DoneAsync(QuestRequirement[] requirements, QuestAnswer[] answers)
     {
         var ask = (await _desk.AskAsync(new AskRequest("work", "write the bridge report into docs/report-bridge.md through the v3 bridge"), Now)).Ask!;

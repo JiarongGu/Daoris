@@ -104,6 +104,56 @@ public sealed class QuestDeparturesTests : TestHome
         Assert.Equal(RiskActs.WorkDone, Assert.Single(_posted).Pass.Act);
     }
 
+    private static QuestView Missing() => Departed() with
+    {
+        Hold = EvidenceCodes.MissingHold, AwaitsEvidence = true, Answers = [new QuestAnswerView(1, "Done as the check says.", null, null), new QuestAnswerView(2, "Opens in place.", null, null)],
+    };
+
+    [Fact]
+    public async Task A_done_whose_evidence_was_read_and_not_found_is_work_done_passed_with_nothing_configured_and_one_unread_waits_on_its_check()
+    {
+        Assert.Equal(RiskActs.WorkDone, QuestDepartures.ActOf(Missing())!.Kind);
+        Assert.Null(QuestDepartures.ActOf(Missing() with { Hold = EvidenceCodes.Unread }));
+
+        var said = await AnswerAsync("""{"risk":{}}""", Missing(), Missing() with { Id = "q2", Hold = EvidenceCodes.Unread });
+
+        var (quest, pass) = Assert.Single(_posted);
+        Assert.Equal(("q1", RiskActs.WorkDone, RiskVerdict.Seed), (quest, pass.Act, pass.Rule));
+        var line = Assert.Single(RiskJournal.Read(Home));
+        Assert.Equal((RiskActs.WorkDone, RiskVerdict.Pass, "engine"), (line.Kind, line.Outcome, line.Repository));
+        Assert.Contains(said, each => each.Contains("#q1", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_missing_evidence_hold_a_row_classes_role_or_owner_waits_for_that_holder_and_is_never_posted()
+    {
+        const string role = """{"risk":{"machine":[{"kind":"work.done","class":"role","by":"supervisor"}]}}""";
+        const string owner = """{"risk":{"machine":[{"kind":"work.done","class":"owner"}]}}""";
+
+        Assert.Empty(await AnswerAsync(role, Missing()));
+        Assert.Empty(await AnswerAsync(owner, Missing()));
+        Assert.Empty(_posted);
+        Assert.Contains("role `supervisor`", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse(role), Missing())), StringComparison.Ordinal);
+        Assert.Contains("held for your yes", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse(owner), Missing())), StringComparison.Ordinal);
+        Assert.Contains("risk policy's yes", QuestHoldsReading.Held(Missing(), judge: QuestDepartures.JudgeAt(DriverConfig.Parse("""{"risk":{}}"""), Missing())), StringComparison.Ordinal);
+        // No policy read: the evidence's verdict holds it as it did.
+        Assert.Contains("evidence's verdict", QuestHoldsReading.Held(Missing()), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_departure_or_missing_evidence_the_policy_classes_role_is_its_holders_and_no_other_quest_is()
+    {
+        const string role = """{"risk":{"machine":[{"kind":"work.done","class":"role","by":"supervisor"}]}}""";
+        var quests = new[]
+        {
+            Departed(), Missing() with { Id = "q2" }, Missing() with { Id = "q3", Hold = EvidenceCodes.Unread }, Departed() with { Id = "q4", Hold = null, Held = false },
+        };
+
+        Assert.Equal(["q1", "q2"], QuestDepartures.RoleHeld(DriverConfig.Parse(role), quests).Order().ToArray());
+        Assert.Empty(QuestDepartures.RoleHeld(DriverConfig.Parse("""{"risk":{}}"""), quests));
+        Assert.Empty(QuestDepartures.RoleHeld(DriverConfig.Parse("""{"risk":{"machine":[{"kind":"work.done","class":"owner"}]}}"""), quests));
+    }
+
     [Fact]
     public async Task A_role_row_names_the_role_the_departure_waits_on_and_evidence_still_awaited_waits_on_its_check()
     {

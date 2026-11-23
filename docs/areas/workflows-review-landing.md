@@ -245,13 +245,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     you), and `quest.holds` reaches on it; `quest.holds` reads a departure as the yes's hold (its `yes` option), never its evidence's
     verdict, and a refused yes names what waits (DEPARTLOCK1). Whose yes a departure waits for is the risk policy's at the quest's place
     (`QuestDepartures`, D354): a quest held as `Departed` has the act `work.done`, or `direction.set` where its done departs from every requirement
-    (distinct requirement ids, never answer rows; a quest with no requirements is `work.done`), so its target moved.
+    (distinct requirement ids, never answer rows; a quest with no requirements is `work.done`), so its target moved; a done whose evidence was read
+    and not found (`evidence-missing`) is `work.done` too, accepted as it stands, while one whose evidence is unread waits on its check and is never judged.
     Where the judge passes it the look (`departures`, after `through-notices`) posts the policy's yes to the service's accept door, its author
     `policy:<act> · rule <rule> at <revision>` (`RiskPassWire`, whose act is one of those two and whose rule and revision are one line each, refused
     otherwise by the door), journals one `risk.judged` line and says it, a refusal of the service said once per quest and revision and asked again at each look, so with nothing configured a
     departure goes on with nobody asked; where it gates, `quest.holds` names the role whose yes it waits for, and where it classes the act
-    `owner`, or no policy is read, the person's yes and press as before. The service keeps the yes and judges nothing; like a role's, the
-    policy's yes takes a departure alone, so evidence still awaited beside it waits on its check. A held quest is
+    `owner`, or no policy is read, the person's yes and press as before. A hold the policy gates on a role is the role's alone: *What needs you* and
+    the attention band offer the person no row for it (`QuestRoleHolds`, `AttentionFacts.RoleHeld`), and the role answers it with its tool
+    (the `departure` kind, rule 49) or the policy's lowering passes it. The service keeps the yes and judges nothing; a role's yes takes a
+    departure alone, and the policy's takes a departure or evidence read and not found (`QuestAcceptOperation.YesTakes`), so evidence still
+    awaited, unread or beside a departure, waits on its check. A held quest is
     closed only where the person passed over the run's `quest.holds` with words, which is their yes to a departure or its evidence, kept on
     the quest through the one accept before the close (`RunEndQuests`); any other held quest is left as the person left it, and the
     sessions still end. An end that closes and ends nothing, a run a session waits on that a look skips anyway, and session records that do not read each say why once in the machine log (`run.end.empty`). Every shipped development graph that holds

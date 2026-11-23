@@ -31,6 +31,13 @@ public sealed class AttentionRunDepartureTests
     }
 
     [Fact]
+    public void A_departure_the_policy_classes_role_is_its_holders_and_shows_the_person_no_row_while_another_stays() =>
+        Assert.Equal(["a1b2c3"], Rows(new()
+        {
+            Quests = [Submitted(), Submitted("""{"id":"a1b2c3"}""")], Registry = [Registration("engine")], RoleHeld = new HashSet<string> { "52b3f6" },
+        }).Select(row => row["id"]!.GetValue<string>()).ToArray());
+
+    [Fact]
     public void The_persons_accept_takes_the_row_off_while_the_quest_stays_taken() =>
         Assert.Empty(Rows(new()
         {

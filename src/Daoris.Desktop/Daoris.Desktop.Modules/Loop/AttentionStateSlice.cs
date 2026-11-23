@@ -291,14 +291,17 @@ public static class AttentionStateSlice
     /// </summary>
     public static async Task<AttentionFacts?> FactsAsync(DriverLoop loop, CancellationToken ct)
     {
-        if (Gather(loop.Slices, loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole)?.Snapshot.Repositories) is not { } facts)
+        var whole = loop.Facts.Current.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole);
+        if (Gather(loop.Slices, whole?.Snapshot.Repositories) is not { } facts)
         {
             return null;
         }
 
-        var roster = await loop.Harnesses.RosterAsync(DriverConfig.Load(loop.ConfigPath), refresh: false, ct).ConfigureAwait(false);
+        var config = DriverConfig.Load(loop.ConfigPath);
+        var roster = await loop.Harnesses.RosterAsync(config, refresh: false, ct).ConfigureAwait(false);
         return facts with
         {
+            RoleHeld = whole is null ? facts.RoleHeld : QuestRoleHolds.Of(config, whole.Snapshot.Quests),
             Untrusted = Written(loop.Trust.Latest),
             Considered = Written(loop.Considered ?? []),
             Proposals = Written(RulesRoutes.Proposals(loop.Home)),
