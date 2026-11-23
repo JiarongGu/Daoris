@@ -429,6 +429,8 @@
   "person.route.SET_HAND_OVER": "更改会话何时可以转交",
   "person.route.SET_PLACE_RISK": "更改某个地方的风险或你在其上的标记",
   "person.route.SET_PLACE_CAST": "选择某个地方的角色由谁担任",
+  "person.route.POLICY_PROPOSE": "提出对风险策略的更改",
+  "person.route.POLICY_APPLY": "应用对风险策略的更改",
   "person.route.WORKFLOW_HOLD": "接下运行中的步骤、交给另一位担任者或交还",
   "person.route.SET_HELPERS": "更改会话可以请求哪些助手",
   "person.route.SET_HELP_MODE": "更改问道衍的访问权限",
