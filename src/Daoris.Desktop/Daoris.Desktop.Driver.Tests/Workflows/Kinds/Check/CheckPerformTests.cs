@@ -234,7 +234,7 @@ public sealed class CheckPerformTests : IDisposable
     }
 
     [Fact]
-    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_held_for_the_person_once_its_asks_are_spent()
+    public async Task A_check_that_came_back_unrun_is_asked_again_as_neither_a_red_round_nor_a_pass_and_given_up_as_said_once_its_asks_are_spent()
     {
         var performer = Performer();
         _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Unrun });
@@ -252,9 +252,78 @@ public sealed class CheckPerformTests : IDisposable
             }
         }
 
-        Assert.Equal(AttemptStates.Held, Record().Attempts.Last().State);
         Assert.Equal(UnrunChecks.Bound, Record().Attempts.Count);
-        Assert.Empty(CheckRounds.Reds(Record()));
+        Assert.DoesNotContain(Record().Attempts, attempt => attempt.State == AttemptStates.Held);
+        Assert.Equal((NodeStates.Failed, UnrunChecks.GaveUp), (Status().State, Status().Code));
+        AssertGivenUp();
+    }
+
+    [Fact]
+    public async Task A_check_whose_executor_cannot_say_is_run_again_by_itself_and_passes_with_its_reason_logged_and_no_row_for_the_person()
+    {
+        const string Why = "the verification could not be kept (the log is in use)";
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = null, Why = Why });
+        await StartAsync(performer);
+        var first = Attempt().Call.Invocation;
+        (Result(VerifyVerdicts.Unknown, first) with { Code = null, Why = Why }).Write(VerifyFiles.ResultOf(_home, CheckExecution.RunOf(Unit), first));
+        _checks.Answers.Add(first);
+
+        var asked = Assert.Single(await performer.ReconcileAsync(Declared, CancellationToken.None));
+
+        Assert.Equal((PerformedWhat.Retry, WorkStates.Unknown), (asked.What, asked.Code));
+        Assert.Contains("the log is in use", asked.Detail);
+        Assert.Equal((NodeStates.Ready, AttemptStates.Settled), (Status().State, Record().Attempts.Last().State));
+        Assert.Empty(HeldAttempts.Read(Files));
+
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Reached, attempt.Call.Invocation));
+        await StartAsync(performer);
+        _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal(NodeStates.Reached, Status().State);
+        Assert.Empty(HeldAttempts.Read(Files));
+    }
+
+    [Fact]
+    public async Task A_check_that_stays_unknown_past_its_bound_is_given_up_with_its_reason_and_never_held_for_the_person()
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = null });
+        for (var ask = 1; ask <= UnrunChecks.Bound; ask++)
+        {
+            await StartAsync(performer);
+            _checks.Answers.Add(Record().Attempts.Last().Call.Invocation);
+            await performer.ReconcileAsync(Declared, CancellationToken.None);
+        }
+
+        var last = Record().Attempts.Last();
+        Assert.Equal((NodeStates.Failed, UnrunChecks.GaveUp), (Status().State, Status().Code));
+        Assert.Equal((AttemptStates.Settled, WorkStates.Failed, UnrunChecks.GaveUp), (last.State, last.Outcome, last.Code));
+        Assert.DoesNotContain(Record().Attempts, attempt => attempt.State == AttemptStates.Held);
+        Assert.DoesNotContain(HeldAttempts.Read(Files), held => held.Why == ReconcileStates.Unknown);
+        AssertGivenUp();
+    }
+
+    /// <summary>A check given up as said judged nothing: no red round of the work's, its rounds standing as spent so it is no way back to the work but the risk policy's.</summary>
+    private void AssertGivenUp()
+    {
+        Assert.Equal(CheckRounds.Bound, CheckRounds.Reds(Record())[Check.Id]);
+        Assert.DoesNotContain(Record().Attempts, attempt => attempt.Code == HeavyExecutor.GateFailed);
+        Assert.False(CheckRounds.SendsBack(Check, CheckRounds.Reds(Record())));
+    }
+
+    [Fact]
+    public async Task An_unknown_check_with_a_cause_of_its_own_is_still_held_for_the_person()
+    {
+        var performer = Performer();
+        _checks.Answer = attempt => CheckExecution.AnswerOf(Result(VerifyVerdicts.Unknown, attempt.Call.Invocation) with { Code = VerifyResult.Busy });
+        await StartAsync(performer);
+        _checks.Answers.Add(Attempt().Call.Invocation);
+
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal((AttemptStates.Held, VerifyResult.Busy), (Attempt().State, Attempt().Code));
     }
 
     [Fact]

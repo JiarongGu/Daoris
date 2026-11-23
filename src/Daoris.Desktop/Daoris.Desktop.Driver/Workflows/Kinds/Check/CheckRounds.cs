@@ -10,12 +10,27 @@ public static class CheckRounds
     /// <summary>The red rounds a check takes before the person hears of it.</summary>
     public const int Bound = 3;
 
-    /// <summary>The failed verdicts each check node of <paramref name="record"/> has settled, by node id.</summary>
-    public static IReadOnlyDictionary<string, int> Reds(NodeRecord record) =>
-        record.Attempts
-            .Where(attempt => attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed })
+    /// <summary>
+    /// The failed verdicts each check node of <paramref name="record"/> has settled, by node id. A check Daoris gave up as said
+    /// (<see cref="UnrunChecks.GaveUp"/>) judged nothing and is no red round, but standing as its node's newest attempt it takes the rounds as
+    /// spent (<see cref="Bound"/>), so it is not sent back to the work to mend and the risk policy decides it as a spent red (<see cref="SpentChecks"/>).
+    /// </summary>
+    public static IReadOnlyDictionary<string, int> Reds(NodeRecord record)
+    {
+        var reds = record.Attempts
+            .Where(attempt => attempt is { Plugin: NodeKinds.Check, State: AttemptStates.Settled, Outcome: WorkStates.Failed } && attempt.Code != UnrunChecks.GaveUp)
             .GroupBy(attempt => attempt.Node, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        foreach (var node in record.Attempts.Where(attempt => attempt.Plugin == NodeKinds.Check).Select(attempt => attempt.Node).Distinct(StringComparer.Ordinal))
+        {
+            if (record.Attempts.Last(attempt => attempt.Plugin == NodeKinds.Check && attempt.Node == node) is { State: AttemptStates.Settled, Outcome: WorkStates.Failed, Code: UnrunChecks.GaveUp })
+            {
+                reds[node] = Math.Max(reds.GetValueOrDefault(node), Bound);
+            }
+        }
+
+        return reds;
+    }
 
     /// <summary>The newest attempt failing <paramref name="node"/> at <paramref name="tip"/>: asked again there before the work answers (<see cref="Answered"/>), it spends a round the work never had.</summary>
     public static NodeAttempt? RedAt(NodeRecord? record, string node, string? tip) =>

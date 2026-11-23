@@ -440,7 +440,8 @@ public sealed class WorkPerformer(NodeRecordFiles records, IWorkPerformPort port
                     var stopped = With(record, current, current with { State = AttemptStates.Settled, Outcome = WorkStates.Unknown, Code = answer.Outcome?.Code, Generation = generation });
                     return (stopped with { Statuses = With(stopped.Statuses, NodeLifecycle.Reconciled(status, current.Attempt)) }, new WorkPerformed(unit, node.Id, PerformedWhat.Stale));
                 case ReconcileStates.Unknown when check && isCurrent && UnrunChecks.Is(answer.Outcome?.Code):
-                    return UnrunChecks.Again(record, current, node, generation, now);
+                    return UnrunChecks.Again(record, current, node, generation, now, answer.Outcome?.Code, CheckResults.WhyOf(records.Home, unit, current))
+                        ?? Outcomes.Outcome(record, current, node, new WorkOutcome(WorkStates.Failed, UnrunChecks.GaveUp), generation);
                 default:
                     // Unknown stops the step, and the person sees it; no new attempt is made by itself. A check's says why.
                     return Hold(record, current with { Generation = generation }, check ? answer.Outcome?.Code ?? ReconcileStates.Unknown : ReconcileStates.Unknown);

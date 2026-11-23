@@ -20,6 +20,19 @@ public static class CheckResults
         }
     }
 
+    /// <summary>Why <paramref name="attempt"/>'s check could not say, as its result gives it; null where none reads.</summary>
+    public static string? WhyOf(string home, string unit, NodeAttempt attempt)
+    {
+        try
+        {
+            return VerifyResult.Read(VerifyFiles.ResultOf(home, CheckExecution.RunOf(unit), attempt.Call.Invocation))?.Why;
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The gate each failed check named, by node, from its newest attempt's result.</summary>
     public static Dictionary<string, string> Failures(string home, string run, NodeGraph graph, NodeRecord? record)
     {

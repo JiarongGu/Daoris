@@ -33,7 +33,8 @@ internal static class SpentChecks
 
     /// <summary>The words the work's session is told: the red, then who holds it now.</summary>
     public static string Words(string node, string? code, string? found, int reds, string decided, CastNow? holder) =>
-        NodeRunKeeping.FailedWords(node, code, found) + $"\n\nThis is its red round {reds}, past the {CheckRounds.Bound} Daoris sends back on its own, so " + decided switch
+        NodeRunKeeping.FailedWords(node, code, found) + "\n\n"
+        + (code == UnrunChecks.GaveUp ? "Its asks are spent, so " : $"This is its red round {reds}, past the {CheckRounds.Bound} Daoris sends back on its own, so ") + decided switch
         {
             NodeTold.RoleHeld when holder is { Why: CastWhy.Default } =>
                 $"the role `{HeldOn}` holds it now, its agent's as no cast names a holder; if no session of it answers it, it is listed under Vacant and goes to the owner as Daoris's final exit past its bound",
@@ -45,14 +46,19 @@ internal static class SpentChecks
     /// <summary>The final exit's story: the rounds, the red classes, what the session tried, and that the policy asks nobody else.</summary>
     public static string Notice(string run, string node, int reds, string? code, string? found, RiskVerdict? verdict, DateTimeOffset? first, DateTimeOffset now)
     {
-        var last = found?.Trim().ReplaceLineEndings("\n").Split('\n')[0] is { Length: > 0 } line ? $"; the last red: {line}" : "";
+        var unsaid = code == UnrunChecks.GaveUp;
+        var last = found?.Trim().ReplaceLineEndings("\n").Split('\n')[0] is { Length: > 0 } line ? $"; the last {(unsaid ? "reason" : "red")}: {line}" : "";
         var held = new List<FinalExits.ExitHolder>
         {
             new("the work's session", first,
-                $"each of its {reds} red rounds{(code is { } failed ? $" (`{failed}`)" : "")} went back to it as its next turn, and the check is still red{last}"),
+                unsaid
+                    ? $"it was told the check could not say after {UnrunChecks.Bound} asks, and nothing is judged{last}"
+                    : $"each of its {reds} red rounds{(code is { } failed ? $" (`{failed}`)" : "")} went back to it as its next turn, and the check is still red{last}"),
             new("the risk policy", null, $"it asks nobody to recover it here ({verdict?.Why ?? "no rule"}), so no role holds it"),
         };
-        return FinalExits.Notice($"run #{run}: step `{node}` is red past its {CheckRounds.Bound} rounds", held, "mend it and run the check again, or end this work", now);
+        return FinalExits.Notice(
+            unsaid ? $"run #{run}: step `{node}` could not say whether the work passes, past its {UnrunChecks.Bound} asks" : $"run #{run}: step `{node}` is red past its {CheckRounds.Bound} rounds",
+            held, unsaid ? "run the check again, or end this work" : "mend it and run the check again, or end this work", now);
     }
 
     /// <summary>

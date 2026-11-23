@@ -206,6 +206,18 @@ public sealed class SpentChecksTests : NodeRunFixture
         Assert.Empty(noticed);
     }
 
+    [Fact]
+    public void A_check_given_up_as_said_is_told_as_one_that_could_not_say_and_never_as_a_red_round()
+    {
+        var words = SpentChecks.Words("check", UnrunChecks.GaveUp, "the verification could not be kept (the log is in use)", CheckRounds.Bound, NodeTold.RoleHeld,
+            new CastNow(SpentChecks.HeldOn, CastHolders.AgentPrefix + "claude", "cast", "machine"));
+
+        Assert.Contains("could not say whether your work passes", words, StringComparison.Ordinal);
+        Assert.Contains("the log is in use", words, StringComparison.Ordinal);
+        Assert.DoesNotContain("red round", words, StringComparison.Ordinal);
+        Assert.Contains("could not say whether the work passes", SpentChecks.Notice("1", "check", CheckRounds.Bound, UnrunChecks.GaveUp, "why", null, null, DateTimeOffset.UnixEpoch), StringComparison.Ordinal);
+    }
+
     /// <summary>A role's holder no live session serves makes the spent red a vacancy: listed and announced once, then at the final exit past its bound.</summary>
     [Fact]
     public async Task A_role_held_spent_red_no_live_session_serves_is_a_vacancy_then_past_its_bound_the_final_exit()
