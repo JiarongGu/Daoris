@@ -18,6 +18,7 @@ internal sealed class TreeStamp
     /// <summary>The stamps of the tree's top, its index and its <c>HEAD</c>; null where its folder cannot be read, which keeps the tree.</summary>
     internal static TreeStamp? Take(string tree)
     {
+        if (SetAsideFaults.Current?.NoStamp == true) return null;
         try
         {
             var top = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));

@@ -182,6 +182,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 manifest = Judged(named, repository, branch, slim);
             }
 
+            if (finished is not null && stamped is null) return (false, null, TidyKept.Unread, "its tree's top was not stamped before its judgement, so it is kept");
             SetAsideFaults.Current?.BeforeMove?.Invoke(tree);
             var moved = MoveFolderAside(tree, workspace, repository, "its tree", "its folder", named);
             if (moved.Code is { } kept)

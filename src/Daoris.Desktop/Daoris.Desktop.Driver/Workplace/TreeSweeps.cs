@@ -148,6 +148,15 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
+            // The tree watched and its top stamped before anything of it is read: the hold reads both again, and a change since keeps the tree.
+            using var watch = item.Tree is { } top && Directory.Exists(top) ? TreeWatch.Start(top) : null;
+            var stamp = item.Tree is { } stamped && Directory.Exists(stamped) ? TreeStamp.Take(stamped) : null;
+            if (stamp is null && item.Tree is { } unread && Directory.Exists(unread))
+            {
+                results.Add(new(item, false, "its tree's top could not be read before its judgement, so it is kept") { Kept = TidyKept.Unread, Cause = TidyCause.Folders });
+                continue;
+            }
+
             // Judged and last looked at with no hold, so a slow read of a large tree never keeps the repository's writers out.
             var (first, said) = await LookAsync(item, busy).ConfigureAwait(false);
             if (first is null)
@@ -156,7 +165,7 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
-            var (root, now, judged, line, rests, read, seen, slim, stamp) = first;
+            var (root, now, judged, line, rests, read, seen, slim) = first;
 
             // The delete refuses a judgement that rested on nothing, but the tip's holder appended below would
             // hide that, so the branch is kept here, said, before any ref is written or anything moves.
@@ -195,7 +204,7 @@ internal sealed class TreeSweeps(
                 // A branch with no tree has only its folder's absence to read again, which the last look's own first guard reads.
                 var changed = now.Tree is null
                     ? await setAside.LastLookAsync(root, now, ct).ConfigureAwait(false)
-                    : await HoldLooks.AskAsync(context, root, now, judged, stamp, hold.Busy!, ct).ConfigureAwait(false);
+                    : await HoldLooks.AskAsync(context, root, now, judged, stamp, watch, hold.Busy!, ct).ConfigureAwait(false);
                 if (changed is { } why)
                 {
                     results.Add(new(now, false, why.Sentence) { Kept = why.Code, Cause = why.Cause });
@@ -330,8 +339,6 @@ internal sealed class TreeSweeps(
             // The moment before the judgement reads what the tree holds, the finished
             // folder's threshold, and what it held that no commit holds, which its record names.
             var read = DateTimeOffset.UtcNow;
-            // The tree's top stamped before anything of it is read: the hold reads it again, and a change since keeps the tree.
-            var stamp = item.Tree is { } stamped && Directory.Exists(stamped) ? TreeStamp.Take(stamped) : null;
             if (SetAsideFaults.Current?.WhileLooking is { } looking && item.Tree is { } looked) await looking(looked).ConfigureAwait(false);
             var seen = new List<ContentHolds.TreeHolds>();
             var (now, judged) = await JudgeAsync(
@@ -353,7 +360,7 @@ internal sealed class TreeSweeps(
                 return (null, new(now, false, last.Sentence) { Kept = last.Code, Cause = last.Cause });
             }
 
-            return (new SweepLook(root, now, judged, line, rests, read, seen, slim, stamp), null);
+            return (new SweepLook(root, now, judged, line, rests, read, seen, slim), null);
         }
     }
 

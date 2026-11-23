@@ -631,8 +631,9 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     read again by what can have changed since its judgement and walks nothing: the branch's tip, the worktree list, the sessions asked
     again, and the tree's stamps, one listing of its top and its index and `HEAD` (`TreeStamp`, `HoldLooks`); the folder is moved aside,
     its stamps read once more in the moved folder, and a change keeps the tree, put back (`TreeSetAside.MoveAsideAsync`). A file written
-    in place deeper down is read by no hold: the judgement's walk saw it before, and the folder moved aside is deleted only where nothing
-    in it is written after the judgement's moment (`SetAsideKeeps`). The reads that need no hold (what holds the tip, the recovery ref's
+    in place deeper down is caught by a file-system watch kept from before the judgement until the move (`TreeWatch`: any event, or an
+    overflow, keeps the tree), a tree whose top could not be stamped before its judgement is kept unread, and the folder moved aside is
+    deleted only where nothing in it is written after the judgement's moment (`SetAsideKeeps`). The reads that need no hold (what holds the tip, the recovery ref's
     name) are made before it (`TidyHold`, `TreeSweeps.SweepAsync`, `LandedCleanups.CleanLandedAsync`), so a
     promotion or a person's removal takes the lock between trees; one refused stops the walk's later removals and says so. A refusal
     names the holder and, past a minute, how long it has held (`TreeLock.HeldFor`, `TreeLock.HeldNow`). A copy of a machine-local file

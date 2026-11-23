@@ -41,5 +41,10 @@ internal sealed class TidyHold(
 
     public void ReadsDone() => SetAsideFaults.Current?.HoldRead?.Invoke(_since.Elapsed);
 
-    public void Dispose() => held?.Dispose();
+    public void Dispose()
+    {
+        if (held is null) return;
+        held.Dispose();
+        SetAsideFaults.Current?.HoldEnded?.Invoke(_since.Elapsed);
+    }
 }

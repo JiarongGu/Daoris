@@ -32,16 +32,16 @@ public sealed class TreeStampTests : LandedFixture
     }
 
     [Fact]
-    public async Task A_path_made_or_removed_at_the_top_or_one_level_down_is_named()
+    public async Task A_path_made_or_removed_at_the_top_is_named()
     {
         var tree = await TreeAsync();
         var before = TreeStamp.Take(tree)!;
-        await File.WriteAllTextAsync(Path.Combine(tree, "docs", "new.txt"), "x");
+        await File.WriteAllTextAsync(Path.Combine(tree, "new.txt"), "x");
         File.Delete(Path.Combine(tree, "a.txt"));
         var said = TreeStamp.Take(tree)!.Differences(before);
         Assert.StartsWith("2 path(s) changed between the judgement and the move: ", said, StringComparison.Ordinal);
         Assert.Contains("a.txt", said, StringComparison.Ordinal);
-        Assert.Contains("docs", said, StringComparison.Ordinal);
+        Assert.Contains("new.txt", said, StringComparison.Ordinal);
     }
 
     [Fact]

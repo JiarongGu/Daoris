@@ -20,7 +20,7 @@ internal static class HoldLooks
     /// <param name="stamp">The tree's stamps taken before that judgement began; null where its folder is not here.</param>
     /// <param name="busy">The trees sessions running or waiting name, asked under the hold.</param>
     internal static async Task<(string Code, string Sentence, string? Cause)?> AskAsync(
-        TreeContext context, string root, SweepItem judged, string tip, TreeStamp? stamp, IReadOnlySet<string> busy, CancellationToken ct)
+        TreeContext context, string root, SweepItem judged, string tip, TreeStamp? stamp, TreeWatch? watch, IReadOnlySet<string> busy, CancellationToken ct)
     {
         const string changed = "it changed since the list, and is kept";
         var tree = judged.Tree;
@@ -42,7 +42,9 @@ internal static class HoldLooks
 
         if (tree is null) return null;
         if (context.Worktrees.LinkBelowTreesRoot(tree) is not null) return (TidyKept.Linked, "its tree is reached through a link under the trees home", null);
-        if (stamp is null || !Directory.Exists(tree)) return null;
+        if (!Directory.Exists(tree)) return stamp is null ? null : (TidyKept.Refused, changed, null);
+        if (stamp is null) return (TidyKept.Unread, "its tree's top could not be read before its judgement, so it is kept", TidyCause.Folders);
+        if (watch?.Said is { } seen) return (TidyKept.Refused, seen, null);
         if (TreeStamp.Take(tree) is not { } now) return (TidyKept.Unread, "its tree's folder could not be read again", TidyCause.Folders);
         return now.Differences(stamp) is { } difference ? (TidyKept.Refused, difference, null) : null;
     }
