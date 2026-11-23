@@ -212,3 +212,29 @@ and `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0
 `Steering` of `codex-acp` stays unknown: Daoris still reads no `startedNewTurn` as a turn nobody asked for (MSG1h).
 
 **Daoris's own door at the new pins, from the session records on the install** (`data/sessions/*.frames.jsonl` since 2026-11-22 20:30 UTC, counted by frame): ten sessions of `claude-code-acp` 0.109.1 on real accounts, 66 `session/prompt`, 61 answered `end_turn`, 43 `session/resume`, 76 `session/set_config_option`, no error answer; four sessions of `codex-acp` 2.9.0 (Codex 0.171.0), four prompts, four `end_turn`, each closed, no error answer. No steering frame (`_session/steering`) and no `codex-acp` resume appears in them: those two are read from the probes above, not from Daoris's door.
+
+## 10. ACPUPGRADE2: *Send now* and a `codex-acp` resume through Daoris's own session at the pins (2026-11-24)
+
+**How it ran.** Keylessly, as §9, but through Daoris's own protocol session (`AcpSession`, the door's reader and steering) over each
+adapter's real pipes, not a scratch script: `AcpAdapterDoorProcessTests` starts the adapter at the install's pin (`claude-code-acp`
+0.109.1 on Claude Code 2.1.330, `codex-acp` 2.9.0 on Codex 0.171.0) under a scratch home (the inherited sign-in and backend variables removed) with the stub model of `tools/fake-model.mjs`
+on loopback, and keeps every frame in the sitting's frame tape (`FrameTape`). One turn whose model call is a tool that sleeps eight
+seconds, a steer two seconds into it, and on `codex-acp` a second sitting that resumes the first's conversation.
+
+| Adapter | What the tape shows |
+|---|---|
+| `claude-code-acp` 0.109.1 | `_session/steering` answered `{"outcome":"injected"}`; the turn's one `session/prompt` answered `end_turn`; a model call made after the steer carries the word. The tool's `tool_call` (`pending`, `Bash`) reads as the corpus's frame of that pin does. |
+| `codex-acp` 2.9.0 | The same: `injected`, one `end_turn`, the word in a later model call; `tool_call` (`in_progress`, `exec_command`) reads as the corpus's. |
+| `codex-acp` 2.9.0, resume | A new adapter process, `session/resume` of the first sitting's conversation in the same home: answered, and a prompt in it answered `end_turn`. |
+
+**What the run found about the stub, fixed in it.** Claude Code sends the person's words and then a `system` message of its own (the
+environment), and a first call that writes the conversation's title from the same words, so the stub reads the user messages a call
+ends on after setting `system` ones aside. Codex 0.171.0 offers `exec_command` (one `cmd` line), not `shell`, and answers an unknown
+call `unsupported call`; the stub answers with the tool the request offers.
+
+**Frames now in the corpus** (`fixtures/providers/claude-code` and `codex`, each at its pin): one frame for each kind and status of
+update the run emits (tool calls and their updates, message chunks, usage, command and option lists, `codex-acp`'s session info), the
+command and option lists cut to a few entries and no path kept. The case requires every update the adapter sends to have a recorded
+frame of its kind and status at the pin and to read as it does, and each recorded frame's kind to appear in a steer's run. The resume
+run holds the first half. The resumed prompt's model request carries a code word said only in the first sitting. Left as in §9: `Steering`
+of `codex-acp` stays unknown (`startedNewTurn`, MSG1h).

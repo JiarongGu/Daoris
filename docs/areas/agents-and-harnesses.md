@@ -356,7 +356,8 @@ where a seam, route, verb or fixture is. Which folder owns which job:
     absent. `DoorAbilities` and the provider sheet both read it, and `agent list` names each measurement and offers reading taken at
     a version other than the pinned one (`VersionCurrency`). A start records the pinned install's version where that install runs,
     never the machine's own look. A held-pending case of the conformance suite names an open backlog row (`TASKS.md`), and each real
-    door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`.
+    door's recorded frames, with their program and adapter versions, are `fixtures/providers/<id>/corpus.jsonl`. `AcpAdapterDoorProcessTests` drives each protocol door's pinned adapter through `AcpSession` against the stub model
+    (`tools/fake-model.mjs`): a steer mid-tool answered `injected`, a `codex-acp` resume that carries the first sitting's words, and each update read as that pin's corpus frames read (`docs/2026-10-03-steer-evidence.md` §10).
 
 ## Where a change goes
 

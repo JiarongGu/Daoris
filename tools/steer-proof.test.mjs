@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { askedFor } from './fake-model.mjs';
+import { askedFor, shellCall } from './fake-model.mjs';
 import { frame, landing } from './steer-proof.mjs';
 
 test('a word echoed before the turn result joined it; after it, it is the next turn; unechoed, never', () => {
@@ -23,4 +23,25 @@ test('the stub reads what a call asks for from its last user words, never from a
   assert.equal(askedFor([{ role: 'user', content: [{ type: 'tool_result', content: 'TOOL' }] }]), 'reply');
   assert.equal(askedFor([{ type: 'function_call_output', output: 'TOOL' }]), 'reply');
   assert.equal(askedFor([]), 'reply');
+});
+
+test('the stub reads the words of the whole run of user messages a call ends on, for a harness that appends its own after the person\'s', () => {
+  const asked = [{ role: 'user', content: 'run the TOOL step' }, { role: 'user', content: 'Environment: today\'s date' }];
+  assert.equal(askedFor(asked), 'tool');
+  assert.equal(askedFor([{ role: 'user', content: 'run the TOOL step' }, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'thanks' }]), 'reply');
+  assert.equal(askedFor([{ role: 'user', content: 'TOOL' }, { role: 'user', content: [{ type: 'tool_result', content: 'done' }] }]), 'reply');
+});
+
+test('the stub calls the shell tool a Responses request offers: Codex\'s `exec_command` with a `cmd` line, else the older `shell` with an argument list', () => {
+  const modern = shellCall(['exec_command', 'write_stdin']);
+  assert.equal(modern.name, 'exec_command');
+  assert.equal(typeof JSON.parse(modern.arguments).cmd, 'string');
+  const older = shellCall(['shell']);
+  assert.equal(older.name, 'shell');
+  assert.ok(Array.isArray(JSON.parse(older.arguments).command));
+  assert.equal(shellCall([]).name, 'shell');
+});
+
+test('the stub sets a harness\'s own system messages after the person\'s aside', () => {
+  assert.equal(askedFor([{ role: 'user', content: 'run the TOOL step' }, { role: 'system', content: 'Environment' }]), 'tool');
 });
