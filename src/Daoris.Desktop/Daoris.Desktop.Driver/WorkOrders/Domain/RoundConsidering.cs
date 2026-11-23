@@ -126,6 +126,16 @@ internal sealed class RoundConsidering(PlanRound round)
             };
         }
 
+        // A record a run of this machine's already goes on in begins nothing, so it heads no queue.
+        if (into is not null && snapshot.GoingOn.Contains(into.Session))
+        {
+            return new(quest, StartVerdict.RepositoryBusy,
+                $"session `{into.Session}` already goes on in its record: a run of this machine's holds it, so nothing waits for it to begin.")
+            {
+                Said = new(SittingFact.Serving) { Session = into.Session },
+            };
+        }
+
         // A start of this machine's that has not yet opened its record holds the quest as its session will: the look that began it
         // does not wait for it, so a wake meanwhile plans the quest again, and would start it twice.
         if (round.Opening.Any(start => string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase)))

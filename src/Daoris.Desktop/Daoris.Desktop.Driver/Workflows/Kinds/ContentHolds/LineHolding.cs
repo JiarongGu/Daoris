@@ -29,6 +29,18 @@ internal sealed record LineHolding(string Name, LineHeld Held)
             return null;
         }
 
+        if (held.Behind && held.Kept.Count > 0
+            && await ContentHolds.HeldByContentAsync(root, tip, line, new ContentHolds(context).LandedHere(repository), ct, lineOnly: true).ConfigureAwait(false)
+                is { Hold.OnLine: true, At: { } at } && at == ($"refs/heads/{line}", onto))
+        {
+            var leftOut = held.LeftOut.ToDictionary(each => each.Sha, StringComparer.Ordinal);
+            return new(line, held with
+            {
+                Kept = [],
+                LeftOut = [.. held.Commits.Select(commit => leftOut.GetValueOrDefault(commit.Sha) ?? new LeftOutCommit(commit.Sha, commit.Subject, LeftOutWhy.Empty))],
+            });
+        }
+
         return new(line, held);
     }
 }

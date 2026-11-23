@@ -114,7 +114,11 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
 13. A quest held by a session in flight, working or still opening, does not start again. Each start is reserved (quest, tree,
     place under the cap) before it begins. (D181) A start that came to a hold or a cooling account (`HeldStarts`, kept from look
     to look) is weighed after every quest that can start, so it never holds a repository's turn or a place under the cap from
-    one; it is tried again at each look it is the only one left, and goes the moment it can.
+    one; it is tried again at each look it is the only one left, and goes the moment it can. A go-on, carry-on or resume into a
+    record a run of this machine's already goes on in (`RunningSessions.TryGoOn`, held for the run's life) begins nothing, so the
+    plan reads it busy (`Snapshot.GoingOn`) and it never heads a repository's queue. Each quest queued behind another's start is said
+    once per change in the machine log as `start.queued` (its quest, repository, code, the head, the head's verdict and session:
+    `StartQueueLog`), so a queue that stands reads apart from one that moves. (STARTQUEUE1)
 14. Under `overlap: wait`, a first start whose declared paths meet earlier unintegrated work in the repository, a done unit's open
     integration request included, waits until that work is integrated. A quest that goes back into a tree is no first start.
     (D215)

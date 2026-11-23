@@ -42,7 +42,7 @@ internal sealed class ContentHolds(TreeContext context)
     /// <item><b>A squash that carried it with other work</b>: merging it into the line's tip adds nothing, generated
     /// files and the backlog's rows aside (<see cref="SquashCarries"/>).</item>
     /// </list>
-    /// <para>Failing both, its files read the same on one branch of the person's: a local branch outside <c>daoris/</c>, where a
+    /// <para>Failing both (`lineOnly` stops here), its files read the same on one branch of the person's: a local branch outside <c>daoris/</c>, where a
     /// cherry-pick put them. One holder holds all of them, so the sentence can name it; work split over two is not proven.</para>
     ///
     /// <para>🔴 <b>Nothing held keeps the refusal</b>: commits that change no file leave nothing to find, and a comparison git
@@ -61,7 +61,8 @@ internal sealed class ContentHolds(TreeContext context)
     /// <param name="refs">The judgement's refs, the repository's whichever tree <paramref name="cwd"/> is; null asks git.</param>
     /// <param name="ended">The branch's kept end, which holds a replayed landing the line changed files of since.</param>
     internal static async Task<ContentProof> HeldByContentAsync(
-        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null, KeptEnd? ended = null)
+        string cwd, string tip, string? line, IReadOnlySet<string> notHolders, CancellationToken ct, RefSnapshot? refs = null, KeptEnd? ended = null,
+        bool lineOnly = false)
     {
         // A read git could not make is remembered, so no failure ends as "not held"; a hold found by other
         // reads still stands, since it is found, not assumed.
@@ -146,7 +147,7 @@ internal sealed class ContentHolds(TreeContext context)
         }
 
         var notHeld = unread is null ? ContentProof.NotHeld with { Lacks = lacks } : ContentProof.UnreadBy(unread);
-        if (changed is null) return notHeld;
+        if (changed is null || lineOnly) return notHeld;
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
         var (refsCode, byDate, refsErr) = await BranchesByDate.ReadAsync(cwd, ct).ConfigureAwait(false);
         if (refsCode != 0) return ContentProof.UnreadBy(unread ?? $"git could not list the branches: {Said(refsErr)}");
