@@ -124,7 +124,8 @@ public static class RunNodeWords
         status.State == NodeStates.Active && NodeKit.Of(node.Kind) is IWaitsOnRole waits ? waits.Waits(node, status) : null;
 
     private static string? AnswersHold(NodeDeclaration node, NodeStatus status, string act) =>
-        HoldOf(node, status) ?? (act == NodeWordActs.Accept && node.Kind == NodeKinds.Review && status.State is NodeStates.Blocked or NodeStates.Ready ? PersonWaits.Accept : null);
+        HoldOf(node, status) ?? (act == NodeWordActs.Accept && status.State is NodeStates.Blocked or NodeStates.Ready
+            && HoldOf(node, status with { State = NodeStates.Active }) is PersonWaits.Accept and var coming ? coming : null);
 
     /// <summary>
     /// Keep the person's <paramref name="act"/> on <paramref name="node"/> of <paramref name="run"/>, with their <paramref name="words"/>, on the
