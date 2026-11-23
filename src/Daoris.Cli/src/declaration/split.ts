@@ -97,6 +97,11 @@ export function splitDeclaration(declaration: Declaration): Split {
       problems.push(`gate ${gate.name} is declared twice`);
       continue;
     }
+    const folded = names.find((each) => each.toLowerCase() === (gate.name as string).toLowerCase());
+    if (folded !== undefined) {
+      problems.push(`gates ${folded} and ${gate.name} would be one file on a filesystem that folds case: rename one`);
+      continue;
+    }
     names.push(gate.name);
     const repository: Obj = {};
     const tuned: Obj = {};

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from '../_fixture.ts';
@@ -8,6 +9,8 @@ import { runCli } from '../../src/cli.ts';
 import { splitDeclaration } from '../../src/declaration/split.ts';
 import { proveSame } from '../../src/declaration/proof.ts';
 import { repositoryFiles } from '../../src/declaration/tree.ts';
+import { readScratch } from '../../src/declaration/dryrun.ts';
+import { formatJson } from '../../src/declaration/json.ts';
 
 /**
  * `daoris declaration split --dry-run`: the folder and the home's values written to scratch, the proof that they resolve to the
@@ -47,7 +50,7 @@ test('a dry run writes the folder and the home\'s values to scratch, proves them
   assert.match(out, /resolves to the old declaration member for member/);
   assert.match(out, /2 gates, 1 test file/);
   const scratch = '_fixtures/declaration-split';
-  assert.deepEqual(filesUnder(join(fixture.root, scratch)), ['daoris/gates/tool-tests.json', 'daoris/gates/universal.json', 'home.json']);
+  assert.deepEqual(filesUnder(join(fixture.root, scratch)), ['.declaration-split', 'daoris/gates/tool-tests.json', 'daoris/gates/universal.json', 'home.json']);
   const home = JSON.parse(fixture.read(`${scratch}/home.json`));
   assert.deepEqual(home.gates, { 'tool-tests': { timeoutMinutes: 8, timeoutWhy: 'ran 1.8 min' } });
   assert.deepEqual(home.sets, { tools: { timeoutMs: 120000 } });
@@ -137,4 +140,92 @@ test('the examples hold no gates file, so there is nothing for them to convert',
     assert.match(out, /no daoris\.gates\.json: nothing to convert/);
     assert.ok(!existsSync(join(root, '_fixtures')), 'nothing is written where nothing converts');
   }
+});
+
+test('a folder the command did not make is never cleared: an existing daoris folder or home.json under --out is refused and kept', () => {
+  const fixture = makeFixture('declaration-unowned');
+  fixture.write('daoris.gates.json', JSON.stringify(GATES));
+  fixture.write('samples/daoris/keep.txt', 'mine');
+
+  const folder = run(fixture.root, ['split', '--dry-run', '--out', 'samples']);
+  assert.equal(folder.code, 2);
+  assert.match(folder.out, /did not make/);
+  assert.equal(fixture.read('samples/daoris/keep.txt'), 'mine');
+  assert.ok(!fixture.exists('samples/home.json'));
+
+  fixture.write('other/home.json', 'mine');
+  assert.equal(run(fixture.root, ['split', '--dry-run', '--out', 'other']).code, 2);
+  assert.equal(fixture.read('other/home.json'), 'mine');
+  fixture.cleanup();
+});
+
+test('a link under --out or above it that leads outside the repository is refused, and nothing outside is touched', () => {
+  const fixture = makeFixture('declaration-link');
+  const outside = makeFixture('declaration-link-outside');
+  fixture.write('daoris.gates.json', JSON.stringify(GATES));
+  outside.write('daoris/theirs.txt', 'theirs');
+  symlinkSync(outside.root, join(fixture.root, 'scratch-link'), 'junction');
+  mkdirSync(join(fixture.root, 'scratch'));
+  symlinkSync(join(outside.root, 'daoris'), join(fixture.root, 'scratch', 'daoris'), 'junction');
+
+  for (const refused of ['scratch-link', 'scratch-link/deeper', 'scratch']) {
+    const result = run(fixture.root, ['split', '--dry-run', '--out', refused]);
+    assert.equal(result.code, 2, refused);
+    assert.match(result.out, /outside it|link|did not make/, refused);
+  }
+  assert.equal(outside.read('daoris/theirs.txt'), 'theirs');
+  assert.ok(!outside.exists('home.json'));
+  fixture.cleanup();
+  outside.cleanup();
+});
+
+test('gate names that differ only by case are refused before anything is written: one filesystem folds them into one file', () => {
+  const fixture = makeFixture('declaration-case');
+  fixture.write('daoris.gates.json', JSON.stringify({ gates: [{ name: 'check', run: 'one' }, { name: 'Check', run: 'two' }] }));
+
+  const result = run(fixture.root, ['split', '--dry-run']);
+
+  assert.equal(result.code, 1);
+  assert.match(result.out, /check and Check would be one file/);
+  assert.ok(!fixture.exists('_fixtures'));
+  fixture.cleanup();
+});
+
+test('the proof reads the files the dry run wrote: the folder and home read back from scratch equal what was split', () => {
+  const fixture = makeFixture('declaration-readback');
+  fixture.write('daoris.gates.json', JSON.stringify(GATES));
+  assert.equal(run(fixture.root, ['split', '--dry-run']).code, 0);
+  const split = splitDeclaration(GATES);
+
+  const back = readScratch(join(fixture.root, '_fixtures', 'declaration-split'));
+
+  assert.deepEqual(back.folder, split.folder);
+  assert.deepEqual(back.home, split.home);
+  writeFileSync(join(fixture.root, '_fixtures', 'declaration-split', 'daoris', 'gates', 'universal.json'), formatJson({ name: 'universal', run: 'changed' }));
+  assert.equal((readScratch(join(fixture.root, '_fixtures', 'declaration-split')).folder['gates/universal.json'] as { run: string }).run, 'changed');
+  fixture.cleanup();
+});
+
+test('a tracked file under a folder named bin is a tracked file: held by two sets it is named, and the walk lists it', () => {
+  const fixture = makeFixture('declaration-tracked-bin');
+  const overlapping = { gates: [{ name: 'g', run: 'x' }], tests: { sets: [
+    { name: 'one', gate: 'g', runner: 'node', files: ['pkg/bin/*.test.ts'] },
+    { name: 'two', gate: 'g', runner: 'node', files: ['pkg/**/x.test.ts'] },
+  ] } };
+  fixture.write('daoris.gates.json', JSON.stringify(overlapping));
+  fixture.write('pkg/bin/x.test.ts', '');
+  fixture.write('pkg/obj/ignored.txt', '');
+  for (const git of [['init', '-q'], ['add', 'daoris.gates.json', 'pkg/bin/x.test.ts']]) {
+    assert.equal(spawnSync('git', git, { cwd: fixture.root, windowsHide: true }).status, 0, git.join(' '));
+  }
+
+  assert.deepEqual(repositoryFiles(fixture.root), ['daoris.gates.json', 'pkg/bin/x.test.ts']);
+  const result = run(fixture.root, ['split', '--dry-run']);
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /pkg\/bin\/x\.test\.ts is held by the sets one and two/);
+  fixture.cleanup();
+});
+
+test('the tracked files of this repository include what a folder named bin holds', () => {
+  assert.ok(repositoryFiles(REPOSITORY).includes('src/Daoris.Cli/bin/daoris.mjs'));
 });

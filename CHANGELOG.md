@@ -8,7 +8,7 @@ with the version and date at release.
 - `daoris declaration split --dry-run` converts a repository's `daoris.gates.json` in scratch to the folder of small files the declaration is moving to (one file per gate
   with the test sets it runs, a small file per other concern) and the values that belong to one machine, then proves the folder resolves to the old file: each gate's
   commands, its expanded reach, the set holding each test file and the gates' order. A difference, a member nobody sorted and a test file held by two sets are named, exit 1.
-  It deletes nothing and writes only under `--out`, `_fixtures/declaration-split` by default.
+  It writes only under `--out` (inside the repository, `_fixtures/declaration-split` by default), replacing only what an earlier dry run left there.
 - A run's check asked again after a fix runs only the gates the fix's paths reach. Each gate that passed in the run's check before, on the
   same base and declaration, and that no path changed since reaches, is kept, and the check's words name it with the commit it passed at.
   A check that Daoris closing cut off goes on at the gate it reached when it is sent again, never starting over.
