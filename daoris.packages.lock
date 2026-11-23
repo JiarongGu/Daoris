@@ -27,31 +27,31 @@
       "passed": "2026-11-18T23:35:43.302Z"
     },
     "Daoris.Adapters.Git": {
-      "fingerprint": "b3fb90b8d933df084c178f25affffa8545fa5e11bc626baf79af67baa6d443b6",
-      "tree": "f232a169d43aa64417d6073d093d0ff91d9265e6",
+      "fingerprint": "a62fb0745171559a55d480c517facce318b83d0e52340c1fc5e432af2d11d702",
+      "tree": "5459019d3bf57a6ec07c814e37dc7c5c4e0050f7",
       "ports": {
-        "Git": "66b6e35a16b7e767c7220b4556776bd6cc063557",
-        "Processes": "02109a6c612fa4cb0892fb9dee044f6e782b30c2"
+        "Git": "d371fb2daa8f21b53216deb7bb32854d96253868",
+        "Processes": "9ef1e43d1006d8226eb7b02ed1dee3665f9c505e"
       },
       "outside": {
         "tool:git": "2.56.0"
       },
       "suite": "adapters-git",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-18T15:13:22.368Z"
+      "passed": "2026-11-23T12:15:20.144Z"
     },
     "Daoris.Adapters.Machine": {
-      "fingerprint": "6a5cb284f23ddde413651966dc61de9227690beb631494f18913194478928eb5",
-      "tree": "fe745a74015cab3875f340fff5e476abe0c5f540",
+      "fingerprint": "58ad80c75d93e9e66b0abef5bf8a84a38c906c5fadfdc44ed1f0dc849781dab8",
+      "tree": "ff6d18e3c8b4b656fcfe7190d396d5625a850605",
       "ports": {
-        "Processes": "02109a6c612fa4cb0892fb9dee044f6e782b30c2"
+        "Processes": "9ef1e43d1006d8226eb7b02ed1dee3665f9c505e"
       },
       "outside": {
         "nuget:System.Security.Cryptography.ProtectedData": "10.0.14"
       },
       "suite": "adapters-machine",
       "toolchain": "0f133803fa145e4e9dd9d91d281b47548b0f8bc886afd843b954a71566c9c379",
-      "passed": "2026-11-18T15:12:05.530Z"
+      "passed": "2026-11-23T12:13:34.015Z"
     },
     "Daoris.Adapters.Memory.Lyntai": {
       "fingerprint": "fc8fddbed1d66fb03d417347a65836e5d54643218aa864a562caaa38ae59d16d",
