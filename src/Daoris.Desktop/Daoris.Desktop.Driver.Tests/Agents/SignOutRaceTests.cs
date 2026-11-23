@@ -180,6 +180,22 @@ public sealed class SignOutRaceTests : IDisposable
         }
     }
 
+    /// <summary>Reading a store never shuts it: one the agent still has open for writing reads, and renames over while read.</summary>
+    [Fact]
+    public void Reading_a_store_does_not_hold_it_shut_against_its_writer()
+    {
+        Claude(out var account);
+        var reader = ProviderRegistry.Built().AgentNamed("claude-code")!.Accounts.StoredSignIn!;
+        var temp = Path.Combine(account, ".credentials.json.tmp.9");
+        using var writer = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+        writer.Write("""{"claudeAiOauth":{"accessToken":"a","refreshToken":"r","expiresAt":1}}"""u8);
+        writer.Flush();
+
+        Assert.True(reader.ReadFile(temp)!.Access);
+        File.Move(temp, Path.Combine(account, ".credentials.json"));
+        Assert.True(reader.Read(account)!.Refresh);
+    }
+
     private static IEnumerable<AccountLine> Written(ConcurrentQueue<AccountLine> lines) => lines.Where(line => line.Event == "credentials.written");
 
     private static object? Value(AccountLine line, string key) => line.Data.First(each => each.Key == key).Value;
@@ -226,12 +242,18 @@ public sealed class SignOutRaceTests : IDisposable
 
         public string? LeftoverPattern => "store.json.tmp.*";
 
-        public void SignedIn(DateTimeOffset expires) => Write("access-0", "refresh-0", expires.ToUnixTimeMilliseconds());
+        public void SignedIn(DateTimeOffset expires)
+        {
+            lock (_gate) Write("access-0", "refresh-0", expires.ToUnixTimeMilliseconds());
+        }
 
         public (string Refresh, DateTimeOffset Expires) Held()
         {
-            var node = JsonNode.Parse(File.ReadAllText(Store))!;
-            return ((string)node["refresh"]!, DateTimeOffset.FromUnixTimeMilliseconds((long)node["expiresAt"]!));
+            lock (_gate)
+            {
+                var node = JsonNode.Parse(File.ReadAllText(Store))!;
+                return ((string)node["refresh"]!, DateTimeOffset.FromUnixTimeMilliseconds((long)node["expiresAt"]!));
+            }
         }
 
         /// <summary>A session starting: it renews the token it read where it finds it expiring.</summary>
@@ -258,8 +280,13 @@ public sealed class SignOutRaceTests : IDisposable
 
         public StoredSignInShape? Read(string profileHome)
         {
-            if (!File.Exists(Store)) return null;
-            var node = JsonNode.Parse(File.ReadAllText(Store))!;
+            JsonNode node;
+            lock (_gate)
+            {
+                if (!File.Exists(Store)) return null;
+                node = JsonNode.Parse(File.ReadAllText(Store))!;
+            }
+
             var expires = (long)node["expiresAt"]!;
             return new StoredSignInShape(
                 ((string?)node["access"])?.Length > 0, ((string?)node["refresh"])?.Length > 0,

@@ -110,7 +110,7 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
         return store.LeftoverPattern is { } pattern && FileSystemName.MatchesSimpleExpression(pattern, name, ignoreCase: true) ? "temp" : null;
     }
 
-    private void Said(string home, string agent, string account, IStoredSignIn store, string? name, string change)
+    private void Said(string folder, string agent, string account, IStoredSignIn store, string? name, string change)
     {
         if (Kind(store, name) is not { } file) return;
         bool? empty = null, access = null, refresh = null;
@@ -118,7 +118,7 @@ internal sealed class CredentialWrites(HarnessRoster roster, Action<AccountLine>
         {
             try
             {
-                var path = Path.Combine(home, name!);
+                var path = Path.Combine(folder, name!);
                 empty = new FileInfo(path).Length == 0;
                 if (empty == false && store.ReadFile(path) is { } shape) (access, refresh) = (shape.Access, shape.Refresh);
             }
