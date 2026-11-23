@@ -9,9 +9,12 @@ namespace Daoris.Driver;
 /// <param name="Setting">A pinned number of checks at once, or null for <c>auto</c>.</param>
 /// <param name="Processors">The machine's processors.</param>
 /// <param name="Machine">How many heavy runs the machine's admission holds at once.</param>
-/// <param name="Memory">The machine's free memory, read where <c>auto</c> asks it; null where it cannot be read.</param>
-public sealed record CheckRules(int? Setting, int Processors, int Machine, Func<MemoryReading?> Memory)
+/// <param name="Memory">The machine's free memory, read where <c>auto</c> asks it and for the reserve; null where it cannot be read.</param>
+/// <param name="ReserveGb">The GB kept free for the person's own work (<see cref="ReserveSetting"/>); null is <c>auto</c>.</param>
+public sealed record CheckRules(int? Setting, int Processors, int Machine, Func<MemoryReading?> Memory, int? ReserveGb = null)
 {
+    public long ReserveOf(MemoryReading reading) => ReserveSetting.Bytes(ReserveGb, reading.Total);
+
     /// <summary>
     /// The most checks <c>auto</c> runs at once: a quarter of the processors, a check's build and suites keeping about four busy, within
     /// the machine's admission, whose places each check's steps take as well, and one at least.
@@ -28,12 +31,12 @@ public sealed record CheckRules(int? Setting, int Processors, int Machine, Func<
     /// The rules as every heavy run reads them, built here alone: the setting it is handed, and the machine's capacity (<paramref name="capacity"/>
     /// where a test holds it, else <see cref="MachineAdmission.CapacityOf"/> over <paramref name="variable"/> and the processors).
     /// </summary>
-    public static CheckRules Of(int? setting, int processors, int? capacity, Func<string, string?> variable, Func<MemoryReading?> memory) =>
-        new(setting, processors, capacity ?? MachineAdmission.CapacityOf(variable, processors), memory);
+    public static CheckRules Of(int? setting, int processors, int? capacity, Func<string, string?> variable, Func<MemoryReading?> memory, int? reserveGb = null) =>
+        new(setting, processors, capacity ?? MachineAdmission.CapacityOf(variable, processors), memory, reserveGb);
 }
 
 /// <summary>What a run waits for before it takes a slot, by code, with the values its words name.</summary>
-/// <param name="Code"><see cref="Slots"/>, <see cref="Memory"/>, <see cref="Repository"/> or <see cref="Admitting"/>.</param>
+/// <param name="Code"><see cref="Slots"/>, <see cref="Memory"/>, <see cref="Reserve"/>, <see cref="Repository"/> or <see cref="Admitting"/>.</param>
 public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> Values)
 {
     /// <summary>Every slot runs a heavy run: <c>running</c> of <c>of</c>.</summary>
@@ -41,6 +44,9 @@ public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> 
 
     /// <summary>Another run would leave too little memory: <c>free</c> and <c>need</c> in GB, and <c>starting</c> where some still start.</summary>
     public const string Memory = "memory";
+
+    /// <summary>Another run would leave less free than the person's reserve: <c>free</c>, <c>need</c> and <c>reserve</c> in GB, and <c>starting</c>.</summary>
+    public const string Reserve = "reserve";
 
     /// <summary>Heavy runs of its own repository hold every slot the repository has: <c>what</c> names them.</summary>
     public const string Repository = "repository";
@@ -53,10 +59,12 @@ public sealed record CheckWait(string Code, IReadOnlyDictionary<string, string> 
     {
         Slots => $"a slot: {Values["running"]} of {Values["of"]} run",
         Admitting => "the admission's lock, which another start holds",
-        Memory => $"memory: {Values["free"]} GB free, a check needs {Values["need"]} GB"
-                  + (Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : ""),
+        Memory => $"memory: {Values["free"]} GB free, a check needs {Values["need"]} GB" + Starting,
+        Reserve => $"the reserve for your own work: {Values["free"]} GB free, a check needs {Values["need"]} GB and {Values["reserve"]} GB stays free" + Starting,
         _ => Values.GetValueOrDefault("what") ?? "a heavy run of its repository",
     };
+
+    private string Starting => Values.TryGetValue("starting", out var starting) ? $" with {starting} still starting" : "";
 
     public static CheckWait Held { get; } = new(Admitting, new Dictionary<string, string>(StringComparer.Ordinal));
 
@@ -170,25 +178,27 @@ public static class CheckAdmission
     public static string Who(HeavyHolder holder) =>
         holder.Run is { } run ? $"the verification run {run}" : holder.Session is { } session ? $"session {session}'s heavy run" : "a heavy run from a terminal";
 
-    /// <summary>Why a run waits beside the runs holding a slot on the machine now, or null where it may take one.</summary>
+    /// <summary>Why a run waits beside the runs holding a slot on the machine now, or null where it may take one; the reserve is kept whatever <c>checks</c> says.</summary>
     public static CheckWait? Judge(IReadOnlyList<HeavyHeld> held, CheckRules rules)
     {
         var slots = rules.Slots;
-        if (held.Count == 0) return null;
-        if (held.Count >= slots) return CheckWait.OfSlots(held.Count, slots);
-        if (rules.Setting is not null) return null;
-        if (rules.Memory()?.Least is not { } free) return CheckWait.OfSlots(held.Count, Math.Max(held.Count, 1));
+        if (held.Count >= slots && held.Count > 0) return CheckWait.OfSlots(held.Count, slots);
+        var reading = rules.Memory();
+        var reserve = reading is null ? 0 : rules.ReserveOf(reading);
+        if (reserve == 0 && (held.Count == 0 || rules.Setting is not null)) return null;
+        if (reading?.Least is not { } free) return held.Count == 0 ? null : CheckWait.OfSlots(held.Count, Math.Max(held.Count, 1));
         var starting = held.Count(one => one.Starting);
         var need = Need * (1 + starting);
-        if (free >= need) return null;
+        if (free >= need + reserve) return null;
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             // Floored, so a reading just short of the need never reads as the need itself.
             ["free"] = (Math.Floor(free * 10.0 / (1L << 30)) / 10).ToString("F1", CultureInfo.InvariantCulture),
             ["need"] = (need / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture),
         };
+        if (reserve > 0) values["reserve"] = (reserve / (double)(1L << 30)).ToString("0.#", CultureInfo.InvariantCulture);
         if (starting > 0) values["starting"] = starting.ToString(CultureInfo.InvariantCulture);
-        return new CheckWait(CheckWait.Memory, values);
+        return new CheckWait(reserve > 0 ? CheckWait.Reserve : CheckWait.Memory, values);
     }
 
     /// <summary>The slots a repository has: the machine's, or fewer where its accepted declaration says so.</summary>

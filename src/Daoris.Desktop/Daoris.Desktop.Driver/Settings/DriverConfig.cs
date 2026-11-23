@@ -41,6 +41,9 @@ public sealed record DriverConfig(
     /// <summary>How many checks the machine runs at once (<see cref="ChecksSetting"/>); null is <c>auto</c>, by its memory.</summary>
     public int? Checks { get; init; }
 
+    /// <summary>The GB the machine keeps free for the person's own work (<see cref="ReserveSetting"/>); null is <c>auto</c>, a third of its memory.</summary>
+    public int? ReserveGb { get; init; }
+
     public ManifestSetting Manifest { get; init; } = ManifestSetting.Unset;
 
     public bool Draining { get; init; }

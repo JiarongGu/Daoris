@@ -99,6 +99,7 @@ internal sealed class WatchNodes
             Answered = (run, _) => watch.NodesWoken(RunUnits.IdOf(run)),
             Mapping = repository => HeavyMapping.For(DriverConfig.Load(DriverConfig.ResolvePath(home)), repository),
             Checks = () => ChecksSetting.At(DriverConfig.ResolvePath(home)),
+            Reserve = () => ReserveSetting.At(DriverConfig.ResolvePath(home)),
             Bus = watch.Bus,
         });
 

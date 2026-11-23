@@ -19,11 +19,13 @@ public sealed record VerifyWorld
     /// <summary>What admits a check (<see cref="CheckAdmission"/>), read at each look: <c>checks</c> pinned or null for <c>auto</c>, the memory, the processors.</summary>
     public Func<int?> Checks { get; init; } = () => null;
 
+    public Func<int?> Reserve { get; init; } = () => null;
+
     public Func<MemoryReading?> Memory { get; init; } = MachineMemory.Read;
 
     public int Processors { get; init; } = Environment.ProcessorCount;
 
-    internal CheckRules Rules() => CheckRules.Of(Checks(), Processors, Capacity, Variable, Memory);
+    internal CheckRules Rules() => CheckRules.Of(Checks(), Processors, Capacity, Variable, Memory, Reserve());
 
     /// <summary>A variable of the driver's own environment, which the admission reads for a hold this process is already inside.</summary>
     public Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;
