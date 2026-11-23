@@ -149,6 +149,16 @@ public static class DeclarationUnits
         : unit == Doctrine ? false
         : true;
 
+    /// <summary>
+    /// Whether the change from <paramref name="accepted"/> to <paramref name="now"/> alters a unit <paramref name="runs"/> names: what a run
+    /// holds for. A text that does not read holds every run unless it is the other's own text; both blank hold none, one blank holds all.
+    /// </summary>
+    public static bool Holds(string? accepted, string? now, Func<string, bool> runs)
+    {
+        if (string.IsNullOrWhiteSpace(accepted) || string.IsNullOrWhiteSpace(now)) return !(string.IsNullOrWhiteSpace(accepted) && string.IsNullOrWhiteSpace(now));
+        return Changed(accepted, now) is { } changed ? changed.Any(runs) : !string.Equals(accepted, now, StringComparison.Ordinal);
+    }
+
     /// <summary>The key of the top-level part a unit belongs to: the gates' own units and their order are <c>gates</c>, a part its key.</summary>
     internal static string PartOf(string unit) =>
         unit.StartsWith(PartPrefix, StringComparison.Ordinal) ? unit[PartPrefix.Length..]

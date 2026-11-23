@@ -17,13 +17,12 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
     /// own, read at its commit, whatever it changed: its agents run any command in their own sessions, so a command change of its own runs.
     /// Under restricted access the work's declaration is read at its commit and where it left its line (the merge base with the local
     /// branch of the line <paramref name="lineOf"/> names, the line the acceptance look reads): the check runs under the accepted one where the work's
-    /// runs nothing the accepted does not, or where the work's own change (its declaration against the one it left) alters no command
-    /// (<see cref="DeclarationCommands.Keeps"/>), so a branch that predates a declaration change on the line, or merged it since, is checked
-    /// as accepted. Only a work whose own change alters a command holds: Daoris starts only the commands the person accepted (they run the
-    /// work's own code). A line git cannot name, or no merge base, counts as its own change and is said apart.
-    /// </summary>
+    /// runs nothing the accepted does not, or where the work's own change (its declaration against the one it left) alters no unit the run
+    /// reads (<paramref name="runs"/>, <see cref="DeclarationUnits.Run"/>), so a branch that predates a declaration change on the line, or
+    /// merged it since, is checked as accepted, and a change to one gate holds only the runs of that gate. Only a work whose own change
+    /// alters a unit its run reads holds: Daoris starts only the commands the person accepted. A line git cannot name counts as its own change.
     internal static async Task<CheckDeclaration> OfAsync(
-        string checkout, string commit, string accepted, string mode, Func<CancellationToken, Task<string?>> lineOf, CancellationToken ct)
+        string checkout, string commit, string accepted, string mode, Func<CancellationToken, Task<string?>> lineOf, Func<string, bool> runs, CancellationToken ct)
     {
         if (await IntegrationAcceptance.BlobAtAsync(checkout, commit, ct).ConfigureAwait(false) is not { } work)
         {
@@ -46,7 +45,7 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
 
         if (work == accepted) return new(text, accepted);
         var mine = await IntegrationAcceptance.TextAsync(checkout, work, ct).ConfigureAwait(false);
-        if (DeclarationCommands.Keeps(text, mine)) return new(text, accepted);
+        if (!DeclarationUnits.Holds(text, mine, runs)) return new(text, accepted);
 
         // The line is asked only here, where the work's own change is what decides.
         var line = await lineOf(ct).ConfigureAwait(false);
@@ -61,7 +60,7 @@ internal sealed record CheckDeclaration(string? Text, string? Blob = null, strin
         }
 
         var was = await IntegrationAcceptance.TextAsync(checkout, before, ct).ConfigureAwait(false);
-        if (before == work || DeclarationCommands.Keeps(was, mine)) return new(text, accepted);
+        if (before == work || !DeclarationUnits.Holds(was, mine, runs)) return new(text, accepted);
 
         var said = DeclarationChange.Between(was, mine).Said();
         return new(text, accepted, Work: work, Held:
