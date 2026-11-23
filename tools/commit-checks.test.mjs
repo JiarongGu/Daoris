@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import './commit-checks.mjs';
 import { code, commitKit, plain } from './commit-checks-kit.mjs';
 import { BUDGET } from './size-ratchet.mjs';
 
@@ -85,4 +86,3 @@ test('a stale contract is regenerated where a contract source is staged, and not
   assert.equal(readFileSync(join(dir, 'contracts-ran'), 'utf8'), '--if-stale');
   assert.match(`${done.stdout}${done.stderr}`, /contracts regenerated if stale/);
 });
-
