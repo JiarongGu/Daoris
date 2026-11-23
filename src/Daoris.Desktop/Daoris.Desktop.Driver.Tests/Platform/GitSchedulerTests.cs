@@ -103,6 +103,129 @@ public sealed class GitSchedulerTests
     }
 
     [Fact]
+    public async Task An_openings_reads_are_placed_ahead_of_the_backgrounds_queue_of_their_repository_and_counted_as_the_openings()
+    {
+        var tally = new GitAskTally();
+        var scheduler = new GitScheduler(4, 2, 2) { Said = (_, _) => { }, Tally = tally };
+        var hold = new TaskCompletionSource();
+        var order = new List<string>();
+        var fanOut = Enumerable.Range(0, 22).Select(at => scheduler.RunAsync(Read("one"), async _ =>
+        {
+            if (at >= 2) lock (order) order.Add("background");
+            await hold.Task;
+            return 0;
+        }, CancellationToken.None)).ToList();
+        await Poll.Until(() => scheduler.Running == 2);
+
+        Task<int> opening;
+        Task<int> write;
+        using (GitScheduler.AsOpening())
+        {
+            opening = scheduler.RunAsync(Read("one"), _ => Task.FromResult(7), CancellationToken.None);
+            write = scheduler.RunAsync(Write("one"), _ => Task.FromResult(8), CancellationToken.None);
+        }
+
+        Assert.Equal(new[] { 7, 8 }, await Task.WhenAll(opening, write).WaitAsync(Soon));
+        Assert.Equal(2, scheduler.Running);
+        Assert.Empty(order);
+        Assert.Contains(tally.Take(), row => row is { Caller: GitAskers.Opening, Count: 2 });
+        hold.SetResult();
+        await Task.WhenAll(fanOut).WaitAsync(Poll.Patience);
+    }
+
+    [Fact]
+    public async Task An_openings_ask_passes_only_the_backgrounds_reads_never_a_write_or_a_persons_ask_queued_before_it()
+    {
+        var scheduler = Scheduler(bound: 1);
+        var hold = new TaskCompletionSource();
+        var held = scheduler.RunAsync(Read("one"), async _ => { await hold.Task; return 0; }, CancellationToken.None);
+        await Poll.Until(() => scheduler.Running == 1);
+        var order = new List<string>();
+        Task<int> Ask(GitRunAsk ask, string name) => scheduler.RunAsync(ask, _ =>
+        {
+            lock (order) order.Add(name);
+            return Task.FromResult(0);
+        }, CancellationToken.None);
+        var background = Ask(Read("one"), "background");
+        var write = Ask(Write("one"), "write");
+        var person = Person(() => Ask(Read("one"), "person"));
+        Task<int> opening;
+        using (GitScheduler.AsOpening()) opening = Ask(Read("one"), "opening");
+        var later = Ask(Read("one"), "later");
+
+        hold.SetResult();
+        await Task.WhenAll(held, background, write, person, opening, later).WaitAsync(Soon);
+
+        Assert.Equal(["background", "write", "person", "opening", "later"], order);
+    }
+
+    [Fact]
+    public async Task An_openings_write_passes_the_backgrounds_queued_reads()
+    {
+        var scheduler = Scheduler(bound: 1);
+        var hold = new TaskCompletionSource();
+        var held = scheduler.RunAsync(Read("one"), async _ => { await hold.Task; return 0; }, CancellationToken.None);
+        await Poll.Until(() => scheduler.Running == 1);
+        var order = new List<string>();
+        Task<int> Ask(GitRunAsk ask, string name) => scheduler.RunAsync(ask, _ =>
+        {
+            lock (order) order.Add(name);
+            return Task.FromResult(0);
+        }, CancellationToken.None);
+        var read = Ask(Read("one"), "read");
+        Task<int> opening;
+        using (GitScheduler.AsOpening()) opening = Ask(Write("one"), "opening");
+
+        hold.SetResult();
+        await Task.WhenAll(held, read, opening).WaitAsync(Soon);
+
+        Assert.Equal(["opening", "read"], order);
+    }
+
+    [Fact]
+    public async Task Openings_writes_leave_a_place_for_a_persons_read_beside_four_of_them_held()
+    {
+        var scheduler = Scheduler();
+        var hold = new TaskCompletionSource();
+        List<Task<int>> adds;
+        using (GitScheduler.AsOpening())
+        {
+            adds = Enumerable.Range(0, 4).Select(at => scheduler.RunAsync(Write($"tree{at}"), async _ => { await hold.Task; return 0; }, CancellationToken.None)).ToList();
+        }
+
+        await Poll.Until(() => scheduler.Running == 3);
+        var mine = await Person(() => scheduler.RunAsync(Read("mine"), _ => Task.FromResult(7), CancellationToken.None)).WaitAsync(Soon);
+
+        Assert.Equal(7, mine);
+        Assert.Equal(3, scheduler.Running);
+        hold.SetResult();
+        await Task.WhenAll(adds).WaitAsync(Soon);
+    }
+
+    [Fact]
+    public async Task An_asks_wait_for_its_place_under_an_allowance_is_its_stages_queue()
+    {
+        var scheduler = Scheduler(bound: 1);
+        long now = 0;
+        var stages = new LookStages(null, null, () => Volatile.Read(ref now));
+        var hold = new TaskCompletionSource();
+        var held = scheduler.RunAsync(Read("one"), async _ => { await hold.Task; return 0; }, CancellationToken.None);
+        await Poll.Until(() => scheduler.Running == 1);
+
+        using (var span = stages.Begin("files.read"))
+        using (span.Aim())
+        {
+            var asked = scheduler.RunAsync(Read("one"), _ => Task.FromResult(1), CancellationToken.None, TimeSpan.FromMinutes(1));
+            Interlocked.Add(ref now, 700);
+            hold.SetResult();
+            await asked.WaitAsync(Soon);
+        }
+
+        await held;
+        Assert.Equal("files.read.queue=700", stages.Take());
+    }
+
+    [Fact]
     public async Task Two_hook_running_acts_in_two_repositories_whose_hooks_each_ask_a_remote_start_both_complete()
     {
         var scheduler = Scheduler();

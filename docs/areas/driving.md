@@ -139,7 +139,12 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     failed (stopped where the driver is closing), and lets its tree lock go. Each run stage, each step of the files stage
     (`files.read`, `files.deps` with its installs' wait `files.admit`, `files.hook`, `files.setup`, `files.shares`, `files.local`, the
     run's `files` stage handing its steps to the stage) and the hand's own preparation, its plugins' servers apart as `hand.servers`, are
-    timed and written once as the agent is spawned, `session.opening` (`OpeningLine`). (D47, D49, D184, D205)
+    timed and written once as the agent is spawned, `session.opening` (`OpeningLine`), each step saying the time its gits and starts
+    waited for a place apart from its hold, as `<step>.queue=<ms>` (`StageSpan.Aim`). The stages from the choice to the hand's own
+    preparation ask git as an opening (`GitScheduler.AsOpening`, caller `opening`): placed as a person's are, ahead of the looks' reads
+    and in no repository's background bound, since the looks keep every place queued and an opening's dozens of reads, one after the
+    other, each waited behind them (220 to 500 s for one opening on the install, 2026-11-22, SESSIONOPEN4); the session's own life after
+    the hand asks as any flow does. (D47, D49, D184, D205)
 20. A fresh tree is a linked git worktree, its files written by git's parallel checkout on every core (`TreeOpenings.CheckoutSpread`, about half the `tree` stage of one worker, SESSIONOPEN3), at `<home>/work/trees/<workspace>/<repository>/s-<8 hex>`, on a new branch
     `daoris/s-<8 hex>`, grown from the repository's line or the branch a chain's step before landed on. A root that is not the top
     of its own repository is refused. (D51, D82, D86)

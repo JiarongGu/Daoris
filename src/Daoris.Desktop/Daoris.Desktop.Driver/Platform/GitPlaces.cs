@@ -20,26 +20,31 @@ internal sealed class GitPlaces(int bound, int outside, int repository)
     private readonly Dictionary<string, int> _background = new(StringComparer.OrdinalIgnoreCase);
     private int _running;
     private int _personReads;
+    private int _openingWrites;
     private int _outside;
 
     /// <summary>The run places held.</summary>
     internal int Running => _running;
 
     /// <summary>Whether <paramref name="ask"/> may take a run place now for <paramref name="whose"/>.</summary>
-    internal bool Opens(GitRunAsk ask, StartClass whose) =>
+    internal bool Opens(GitRunAsk ask, StartClass whose, bool opening = false) =>
         _running < bound
         && (whose == StartClass.Person && ask.Wait == GitWait.Read || _running - _personReads < Math.Max(1, bound - 1))
         && (ask.Wait == GitWait.Read || _outside < outside)
-        && (ask.Wait == GitWait.Outside || whose == StartClass.Person || _background.GetValueOrDefault(ask.Repository) < repository);
+        && (ask.Wait == GitWait.Outside || whose == StartClass.Person || _background.GetValueOrDefault(ask.Repository) < repository)
+        && (!Writing(ask, opening) || _openingWrites < Math.Max(1, bound - 1));
 
     /// <summary>Take a run place for <paramref name="ask"/>.</summary>
-    internal void Take(GitRunAsk ask, StartClass whose) => Move(ask, whose, 1);
+    internal void Take(GitRunAsk ask, StartClass whose, bool opening = false) => Move(ask, whose, 1, opening);
 
     /// <summary>Free the run place <paramref name="ask"/> held.</summary>
-    internal void Free(GitRunAsk ask, StartClass whose) => Move(ask, whose, -1);
+    internal void Free(GitRunAsk ask, StartClass whose, bool opening = false) => Move(ask, whose, -1, opening);
 
-    private void Move(GitRunAsk ask, StartClass whose, int by)
+    private static bool Writing(GitRunAsk ask, bool opening) => opening && ask.Writes && ask.Wait != GitWait.Outside;
+
+    private void Move(GitRunAsk ask, StartClass whose, int by, bool opening)
     {
+        if (Writing(ask, opening)) _openingWrites += by;
         _running += by;
         if (ask.Wait == GitWait.Outside)
         {

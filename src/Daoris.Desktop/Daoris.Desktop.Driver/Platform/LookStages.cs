@@ -253,6 +253,8 @@ public sealed class LookStages
             using (GitAskers.Unless(GitAskers.Look)) return work();
         });
 
+        public IDisposable Aim() => ProcessStarts.AimedAt(Waiting);
+
         /// <inheritdoc cref="RunAsync{T}(Func{Task{T}})"/>
         public Task RunAsync(Func<Task> work) => ProcessStarts.QueuedToAsync(Waiting, () =>
         {

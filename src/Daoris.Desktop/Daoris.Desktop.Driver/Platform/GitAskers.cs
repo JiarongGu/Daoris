@@ -9,8 +9,8 @@ public static class GitAskers
 {
     public const string Look = "look", Gate = "opinion-gate", Door = "door", Facts = "facts", Check = "check", Steps = "run-step", Other = "other";
 
-    /// <summary>The flows that ask git outside a look or a step: the tree pool, a tidy or keep, the line's sync, a pull request's moment, a landing plugin.</summary>
-    public const string Pool = "pool", Tidy = "tidy", Sync = "sync", Moments = "pull-request", Plugin = "plugin";
+    /// <summary>The flows that ask git outside a look or a step: the tree pool, a tidy or keep, the line's sync, a pull request's moment, a landing plugin, a session's opening.</summary>
+    public const string Pool = "pool", Tidy = "tidy", Sync = "sync", Moments = "pull-request", Plugin = "plugin", Opening = "opening";
 
     private static readonly AsyncLocal<string?> s_caller = new();
     private static readonly AsyncLocal<string?> s_site = new();
