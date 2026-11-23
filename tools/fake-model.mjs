@@ -22,14 +22,17 @@ function textOf(content) {
     .join('\n');
 }
 
-/** What a call asks for: `tool`, `stream` or `reply`, read from its last user message, never from a tool's result. */
-export function askedFor(items) {
+/** What a call asks for, read from the user messages it ends on (a harness's own `system` ones set aside), never from a tool's result. */
+export function askedFor(all) {
+  const items = all.filter((item) => item.role !== 'system');
   const last = items.at(-1);
   if (!last) return 'reply';
-  const blocks = Array.isArray(last.content) ? last.content : [];
-  const fromTool = last.type === 'function_call_output' || blocks.some((block) => block?.type === 'tool_result');
-  if (fromTool) return 'reply';
-  const text = textOf(last.content);
+  const isUser = (item) => item.type === 'function_call_output' || item.role === 'user' || item.role === undefined;
+  const fromTool = (item) => item.type === 'function_call_output' || (Array.isArray(item.content) ? item.content : []).some((block) => block?.type === 'tool_result');
+  if (fromTool(last)) return 'reply';
+  let start = items.length;
+  while (start > 0 && isUser(items[start - 1]) && !fromTool(items[start - 1])) start -= 1;
+  const text = items.slice(start).map((item) => textOf(item.content)).join('\n');
   if (/\bTOOL\b/.test(text)) return 'tool';
   if (/\bSTREAM\b/.test(text)) return 'stream';
   return 'reply';
@@ -64,17 +67,26 @@ async function anthropic(res, kind, n) {
   res.end();
 }
 
-async function responses(res, kind, n) {
+/** The sleeping shell call a Responses request is answered with: Codex's `exec_command` where offered, else the older `shell`. */
+export function shellCall(tools) {
+  const windows = process.platform === 'win32';
+  if (tools.includes('exec_command')) {
+    const cmd = windows ? `powershell.exe -NoProfile -Command Start-Sleep -Seconds ${SLEEP_SECONDS}` : `sleep ${SLEEP_SECONDS}`;
+    return { name: 'exec_command', arguments: JSON.stringify({ cmd }) };
+  }
+  const command = windows ? ['powershell.exe', '-NoProfile', '-Command', `Start-Sleep -Seconds ${SLEEP_SECONDS}`] : ['sleep', String(SLEEP_SECONDS)];
+  return { name: 'shell', arguments: JSON.stringify({ command }) };
+}
+
+async function responses(res, kind, n, tools) {
   res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
   const id = `resp_fake_${n}`;
   const response = { id, object: 'response', status: 'in_progress', model: 'fake-model', output: [] };
   sse(res, 'response.created', { type: 'response.created', response });
   let item;
   if (kind === 'tool') {
-    const command = process.platform === 'win32'
-      ? ['powershell.exe', '-NoProfile', '-Command', `Start-Sleep -Seconds ${SLEEP_SECONDS}`]
-      : ['sleep', String(SLEEP_SECONDS)];
-    item = { type: 'function_call', id: `fc_fake_${n}`, call_id: `call_fake_${n}`, name: 'shell', arguments: JSON.stringify({ command }), status: 'completed' };
+    const shell = shellCall(tools);
+    item = { type: 'function_call', id: `fc_fake_${n}`, call_id: `call_fake_${n}`, name: shell.name, arguments: shell.arguments, status: 'completed' };
     sse(res, 'response.output_item.added', { type: 'response.output_item.added', output_index: 0, item: { ...item, arguments: '' } });
   } else {
     const chunks = kind === 'stream' ? STREAM_CHUNKS : 1;
@@ -125,7 +137,7 @@ export async function startFakeModel() {
         const wire = path.endsWith('/messages') ? 'messages' : 'responses';
         const items = wire === 'messages' ? body.messages ?? [] : Array.isArray(body.input) ? body.input : [];
         const kind = askedFor(items);
-        calls.push({ at: Date.now(), wire, kind, input: items.map((item) => textOf(item.content ?? item.output)).filter(Boolean) });
+        calls.push({ at: Date.now(), wire, kind, roles: items.map((item) => item.role ?? item.type), tools: (body.tools ?? []).map((tool) => tool.name ?? tool.function?.name ?? tool.type), input: items.map((item) => textOf(item.content ?? item.output)).filter(Boolean) });
         if (body.stream === false) {
           res.writeHead(200, { 'content-type': 'application/json' });
           res.end(JSON.stringify(wire === 'messages'
@@ -133,7 +145,7 @@ export async function startFakeModel() {
             : { id: `resp_fake_${n}`, object: 'response', status: 'completed', output: [] }));
           return;
         }
-        (wire === 'messages' ? anthropic : responses)(res, kind, n).catch(() => res.destroy());
+        (wire === 'messages' ? anthropic : responses)(res, kind, n, calls.at(-1).tools).catch(() => res.destroy());
         return;
       }
       res.writeHead(200, { 'content-type': 'application/json' });
