@@ -58,6 +58,7 @@
   "workflow.wait.opinion.rechecking": "Waits on {{agent}}'s recheck of the commits made in answer to the second opinion; its findings go to you alone.",
   "workflow.wait.opinion.reading-until": "Waits on {{agent}}'s reading of the work, the first pass of the second opinion; its minutes run out at {{until}}.",
   "workflow.wait.opinion.rechecking-until": "Waits on {{agent}}'s recheck of the commits made in answer to the second opinion, whose minutes run out at {{until}}; its findings go to you alone.",
+  "workflow.wait.opinion.asking-again": "Waits for the driver's next look to ask the second opinion again: $t(workflow.run.opinionWhy.{{why}}), ask {{count}} of {{bound}}. Nothing waits for you; past the last ask Daoris gives it up as the rule says.",
   "workflow.wait.opinion.unavailable": "Waits on your answer: no second opinion could be had, $t(workflow.run.opinionWhy.{{why}}). The rule requires one: ask again, record your own reading, or go on anyway.",
   "workflow.wait.opinion.not-asked": "Waits for the driver's next look to ask the second opinion: nothing holds it but that look.",
   "workflow.wait.opinion.not-asked-recheck": "Waits for the driver's next look to ask the recheck of the commits made in answer.",

@@ -310,6 +310,77 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(["op1", "op2"], new OpinionGates(_home).Read("q1", "reports").Asks.Select(ask => ask.Opinion));
     }
 
+    /// <summary>A reviewer that ended without an opinion is asked again by the next look itself, and the second pass settles the gate with nobody pressed.</summary>
+    [Fact]
+    public async Task A_reviewer_that_ended_without_an_opinion_is_asked_again_by_the_look_itself_and_the_second_pass_settles_the_gate()
+    {
+        var (host, _, _) = await DoneAsync(required: true);
+        var passes = 0;
+        var driver = Driver(host, ask =>
+        {
+            var id = $"op{++passes}";
+            ask.Opened?.Invoke(id, "r-" + id);
+            if (passes == 1)
+            {
+                host.Opinion(id, "s1", state: "failed", why: "ended", tip: ask.Tip, @base: ask.Base);
+                return new OpinionPassRun($"failed  second opinion {id}", true) { Opinion = id, Session = "r-" + id, State = "failed" };
+            }
+
+            host.Opinion(id, "s1", weights: [], tip: ask.Tip, @base: ask.Base);
+            return new OpinionPassRun($"completed  second opinion {id}", true) { Opinion = id, Session = "r-" + id, State = "completed" };
+        });
+
+        await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+        var judged = new List<OpinionJudged>();
+        var (_, asked) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+        await driver.Running.SettledAsync();
+
+        // The look read the ended pass and asked again, naming it; no request of the person's stands.
+        Assert.Equal(1, asked);
+        var ended = Assert.Single(judged).Gate;
+        Assert.Equal((OpinionGateStates.Unavailable, "ended", 1), (ended.State, ended.Code, ended.Ended));
+        Assert.Equal(["op1", "op2"], new OpinionGates(_home).Read("q1", "reports").Asks.Select(ask => ask.Opinion));
+        Assert.All(new OpinionGates(_home).Read("q1", "reports").Asks, ask => Assert.Equal(OpinionAskers.Look, ask.By));
+        Assert.Empty(new OpinionGates(_home).Read("q1", "reports").Requests);
+
+        // The second pass read it and the gate is settled: nothing more is asked, and nothing waits on the person.
+        var settled = new List<OpinionJudged>();
+        var (_, again) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, settled);
+        await driver.Running.SettledAsync();
+        Assert.Equal(0, again);
+        Assert.Equal(OpinionGateStates.Settled, Assert.Single(settled).Gate.State);
+        Assert.Equal(2, _passes.Count);
+    }
+
+    /// <summary>Reviewers that keep ending without an opinion are asked the bound's times and no more; the gate then stands spent, no request waiting.</summary>
+    [Fact]
+    public async Task Reviewers_that_stay_unanswered_past_the_bound_are_asked_no_more_and_the_gate_stands_spent()
+    {
+        var (host, _, _) = await DoneAsync(required: true);
+        var passes = 0;
+        var driver = Driver(host, ask =>
+        {
+            var id = $"op{++passes}";
+            ask.Opened?.Invoke(id, "r-" + id);
+            host.Opinion(id, "s1", state: "failed", why: "ended", tip: ask.Tip, @base: ask.Base);
+            return new OpinionPassRun($"failed  second opinion {id}", true) { Opinion = id, Session = "r-" + id, State = "failed" };
+        });
+
+        var judged = new List<OpinionJudged>();
+        for (var look = 0; look < OpinionAgain.Bound + 3; look++)
+        {
+            judged.Clear();
+            await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None, judged);
+            await driver.Running.SettledAsync();
+        }
+
+        Assert.Equal(OpinionAgain.Bound, _passes.Count);
+        var gate = Assert.Single(judged).Gate;
+        Assert.Equal((OpinionGateStates.Unavailable, OpinionAgain.Bound, true), (gate.State, gate.Ended, OpinionAgain.Spent(gate)));
+        Assert.Empty(new OpinionGates(_home).Read("q1", "reports").Requests);
+    }
+
     /// <summary>A vacancy a level answered is filled once a reviewer holds the step, so its act shapes no later walk.</summary>
     [Fact]
     public async Task A_pass_that_opens_on_a_vacancy_fills_it_and_its_act_shapes_no_later_walk()

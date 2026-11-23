@@ -43,6 +43,8 @@ public sealed class StepAgentPerformTests : IDisposable
 
         public string? Answer { get; set; }
 
+        public Queue<string?> Answers { get; } = new();
+
         public List<string> Stopped { get; } = [];
 
         public Task<StepSessionEnd> RunAsync(StepAgentAsk ask, Func<string, ServerEntry> tools, string? movedOff, CancellationToken ct)
@@ -50,7 +52,8 @@ public sealed class StepAgentPerformTests : IDisposable
             Ran.Add((ask, tools("s-step")));
             MovedOff.Add(movedOff);
             var end = Ends.Count > 0 ? Ends.Dequeue() : StepSessionEnd.None;
-            if (end == StepSessionEnd.None && Answer is { } answer) Assert.Null(StepAnswer.Answer(home, ask, JsonDocument.Parse(answer).RootElement.Clone()));
+            var answer = Answers.Count > 0 ? Answers.Dequeue() : Answer;
+            if (end == StepSessionEnd.None && answer is not null) Assert.Null(StepAnswer.Answer(home, ask, JsonDocument.Parse(answer).RootElement.Clone()));
             return Task.FromResult(end);
         }
 
@@ -151,6 +154,53 @@ public sealed class StepAgentPerformTests : IDisposable
         await performer.ReconcileAsync(Declared, CancellationToken.None);
 
         Assert.Equal((NodeStates.Failed, StepAnswer.NoAnswer), (Status().State, Status().Code));
+    }
+
+    [Fact]
+    public async Task A_session_that_ends_unanswered_is_asked_again_by_itself_and_the_next_session_s_answer_reaches_the_step()
+    {
+        _sessions.Answers.Enqueue(null);
+        _sessions.Answers.Enqueue("""{ "state": "reached", "decision": "opened", "message": "opened ticket 7" }""");
+        var agents = Agents();
+        var performer = Performer(agents);
+
+        await StartAsync(performer);
+        await agents.IdleAsync();
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+        Assert.Equal((NodeStates.Failed, StepAnswer.NoAnswer, true), (Status().State, Status().Code, Status().Transient));
+
+        var retried = Assert.Single(performer.Due(Declared));
+        Assert.Equal(PerformedWhat.Retry, retried.What);
+        Assert.Equal(NodeStates.Ready, Status().State);
+
+        await StartAsync(performer);
+        await agents.IdleAsync();
+        await performer.ReconcileAsync(Declared, CancellationToken.None);
+
+        Assert.Equal(2, _sessions.Ran.Count);
+        Assert.Equal(NodeStates.Reached, Status().State);
+    }
+
+    [Fact]
+    public async Task A_step_whose_sessions_stay_unanswered_past_the_bound_is_stopped_by_daoris_with_its_reason_and_waits_on_nobody()
+    {
+        var agents = Agents();
+        var performer = Performer(agents);
+
+        for (var ask = 1; ask <= UnansweredSteps.Bound; ask++)
+        {
+            await StartAsync(performer);
+            await agents.IdleAsync();
+            await performer.ReconcileAsync(Declared, CancellationToken.None);
+            if (ask < UnansweredSteps.Bound) Assert.Single(performer.Due(Declared));
+        }
+
+        var status = Status();
+        Assert.Equal(UnansweredSteps.Bound, _sessions.Ran.Count);
+        Assert.Equal((NodeStates.Stopped, NodeSource.Daoris), (status.State, status.By));
+        Assert.Contains($"{UnansweredSteps.Bound} asks", status.Words);
+        Assert.Contains("ended without calling step_answer", status.Words);
+        Assert.Empty(performer.Due(Declared));
     }
 
     // ——— Refused for its sign-in: once more on the walk's next account, else `sign-in` naming the accounts and the sign-in to make.

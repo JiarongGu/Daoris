@@ -327,6 +327,7 @@ public static class NodeLifecycle
         // A record's skip is its judgement of its binding, so a changed binding lapses it too.
         // A declined request is gone on without, a move of that kind alone (judged in Apply).
         rows.Add(new(NodeStates.Failed, NodeStates.Skipped, person, "the person goes on without a failed request, with their words, for this graph and run: a request node alone"));
+        rows.Add(new(NodeStates.Failed, NodeStates.Skipped, authority, "an opinion its rule does not require, failed by a build before it was passed over: its record passes it over (NodeAuthority.SkipBy)"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris,
             "its graph or run is another: a skip holds for its own alone; or a record's skip, its binding changed"));
@@ -518,7 +519,7 @@ public static class NodeLifecycle
 
             case NodeStates.Ready when status.State == NodeStates.Failed && move.By == NodeCause.Daoris:
                 if (!status.Transient) return Refuse(NodeRefusal.NotTransient);
-                if (status.Tries >= (node.Retry?.MaxAttempts ?? 1)) return Refuse(NodeRefusal.NoAttemptsLeft);
+                if (status.Tries >= UnansweredSteps.Attempts(node, status.Code)) return Refuse(NodeRefusal.NoAttemptsLeft);
                 return To(Reset(next));
 
             case NodeStates.Ready when status.State == NodeStates.Unknown && move.By == NodeCause.Daoris:

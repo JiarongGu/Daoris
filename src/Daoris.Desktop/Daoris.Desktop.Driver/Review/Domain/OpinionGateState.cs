@@ -57,6 +57,9 @@ public sealed record OpinionGateState(string State, string Repository)
     /// <summary>Why no opinion could be had, a code: the choice's, or a failed pass's (<c>ended</c>, <c>out-of-time</c>).</summary>
     public string? Code { get; init; }
 
+    /// <summary>How many of the newest passes in a row ended with no opinion given, back to the person's own ask (<see cref="OpinionAgain"/>).</summary>
+    public int Ended { get; init; }
+
     /// <summary>The cool-off's reset, where that is why none could be had.</summary>
     public DateTimeOffset? Until { get; init; }
 

@@ -115,7 +115,11 @@ public static class OpinionGate
             return state with { State = OpinionGateStates.Unavailable, Code = ReviewerUnavailable.Cooling, Until = ready(first.Session) };
         }
 
-        if (first.State == OpinionViews.Failed) return state with { State = OpinionGateStates.Unavailable, Code = first.Why ?? "ended" };
+        if (first.State == OpinionViews.Failed)
+        {
+            return state with { State = OpinionGateStates.Unavailable, Code = first.Why ?? "ended", Ended = await EndedRunAsync(facts, reads).ConfigureAwait(false) };
+        }
+
         if (!first.Given) return state;
 
         // What is read, and what waits for the person once it goes where it goes.
@@ -180,6 +184,24 @@ public static class OpinionGate
         return disputes.Count > 0 ? state with { State = OpinionGateStates.Disputed }
             : since > 0 ? state with { State = OpinionGateStates.CommitsSince }
             : state with { State = OpinionGateStates.Settled };
+    }
+
+    /// <summary>
+    /// How many of the newest first passes in a row ended with no opinion given (not a cap's cool-off), counting back through the asks and stopping at
+    /// the person's own, which counts afresh; each pass is read as the host answers it (<see cref="OpinionAgain"/>).
+    /// </summary>
+    private static async Task<int> EndedRunAsync(OpinionGateFacts facts, OpinionReads reads)
+    {
+        var ended = 0;
+        foreach (var ask in facts.Asks.OrderByDescending(ask => ask.At))
+        {
+            if (ask.Opinion is not { } id) break;
+            if (await reads.Opinion(id).ConfigureAwait(false) is not { State: OpinionViews.Failed } view || view.Why == OpinionViews.Limited) break;
+            ended++;
+            if (ask.By == OpinionAskers.Person) break;
+        }
+
+        return ended;
     }
 
     /// <summary>What the gate says: <see cref="OpinionGateWords.Says"/>.</summary>

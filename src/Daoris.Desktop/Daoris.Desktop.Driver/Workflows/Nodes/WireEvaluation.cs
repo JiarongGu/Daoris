@@ -161,7 +161,7 @@ public static class WireEvaluation
             }
 
             if (status.State == NodeStates.Unknown && move.To == NodeStates.Unknown) continue;
-            if (status.State == NodeStates.Failed && move.To != NodeStates.Reached) continue;
+            if (status.State == NodeStates.Failed && move.To != NodeStates.Reached && !(move.To == NodeStates.Skipped && node.Kind == NodeKinds.Opinion)) continue;
 
             // A record's skip holds for the attempt's graph and run, as the person's does for theirs. An attempt with no scope kept
             // takes its node's place, so the lifecycle compares like with like.

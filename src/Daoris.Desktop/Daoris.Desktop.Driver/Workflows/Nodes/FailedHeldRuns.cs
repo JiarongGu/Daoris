@@ -38,7 +38,7 @@ public static class FailedHeldRuns
     {
         if (records.Read(governed.Unit.Id) is not { } record || !Observed(governed.Graph, record) || Step(record) is not { } step) return false;
         var reads = await NodeEvaluations.GitReadsAsync(governed, record, git, ct).ConfigureAwait(false);
-        if (NodeEvaluations.EvaluateRun(governed, record, tip, reads, (null, null), clock).Evaluated.Statuses.GetValueOrDefault(step)?.State != NodeStates.Reached) return false;
+        if (NodeEvaluations.EvaluateRun(governed, record, tip, reads, (null, null), clock).Evaluated.Statuses.GetValueOrDefault(step)?.State is not (NodeStates.Reached or NodeStates.Skipped)) return false;
         var (refused, lifted) = records.Edit<bool>(governed.Unit.Id, current => Step(current) == step ? (current with { Ended = null }, true) : (null, false));
         if (refused is not null || lifted != true) return false;
         runs.Ended(governed.Run, null);

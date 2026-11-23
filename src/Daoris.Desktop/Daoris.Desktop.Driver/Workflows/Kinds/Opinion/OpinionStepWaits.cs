@@ -67,6 +67,12 @@ public static class OpinionStepWaits
     public const string RecheckingUntil = "rechecking-until";
 
     /// <summary>
+    /// The opinion's wait where its pass ended with no opinion given and its asks are not spent: the driver's next look asks again, the next ready
+    /// reviewer first, and nobody's answer is waited on (<c>agent</c>: the reviewer that ended, <c>count</c> of <c>bound</c> asks, <c>why</c> the code).
+    /// </summary>
+    public const string Again = "asking-again";
+
+    /// <summary>
     /// The opinion's wait where its rule requires one and no pass could settle it for a reason no vacancy names (<c>why</c>: a provider that
     /// kept failing, or another cause): the person's doors answer it.
     /// </summary>
@@ -77,7 +83,7 @@ public static class OpinionStepWaits
 
     /// <summary>Every wait the opinion kind declares.</summary>
     public static IReadOnlyList<string> Codes { get; } =
-        [Answer, Disputed, CommitsSince, Reading, Rechecking, NotAsked, NotAskedRecheck, NotAskedHeld, NotAskedPress, Unread, WaitsChain, Vacant, VacantUntil, ReadingUntil, RecheckingUntil, Unavailable];
+        [Answer, Disputed, CommitsSince, Reading, Rechecking, NotAsked, NotAskedRecheck, NotAskedHeld, NotAskedPress, Unread, WaitsChain, Vacant, VacantUntil, ReadingUntil, RecheckingUntil, Again, Unavailable];
 
     /// <summary>A failed pass's code (the gate's <see cref="OpinionGateState.Code"/>): its reviewer's session ended without giving one.</summary>
     public const string Ended = "ended";
@@ -168,6 +174,13 @@ public static class OpinionStepWaits
                 values["quest"] = gate.Later?.TrimStart('#') ?? "";
                 Put("session", gate.Session);
                 return Wait(WaitsChain);
+            case OpinionGateStates.Unavailable when gate is not null && OpinionAgain.Pending(gate):
+                Put("agent", gate.Opinion?.Who);
+                Put("count", Number(gate.Ended));
+                Put("bound", Number(OpinionAgain.Bound));
+                Put("why", gate.Code);
+                Put("session", gate.Session);
+                return Wait(Again);
             case OpinionGateStates.Unavailable when gate is { Required: true } && OpinionVacancy.Of(gate) is { } vacancy:
                 // The reason's words are the page's, by the code it has them for; a choice refused is the general one.
                 values["why"] = vacancy.Code is ReviewerUnavailable.NoReviewer or ReviewerUnavailable.Cooling or ReviewerUnavailable.SignedOut
@@ -234,6 +247,9 @@ public static class OpinionStepWaits
             WaitsChain => wait.Values.GetValueOrDefault("quest") is { Length: > 0 } quest
                 ? $"Waits for the chain's later step here, quest #{quest}: one opinion reads the whole work."
                 : "Waits for the chain's later step here: one opinion reads the whole work.",
+            Again =>
+                $"Waits for the driver's next look to ask the second opinion again: {OpinionGateWords.UnavailableWhy(wait.Values.GetValueOrDefault("why"), null, null)}, "
+                + $"ask {Read(wait, "count")} of {Read(wait, "bound")}. Nothing waits for you; past the last ask Daoris gives it up as the rule says.",
             Unavailable =>
                 $"Waits on your answer: no second opinion could be had, {OpinionGateWords.UnavailableWhy(wait.Values.GetValueOrDefault("why"), null, null)}. The rule requires one: "
                 + $"`daoris session opinion ask {session}` tries again, `daoris session opinion myself {session} \"…\"` records your own reading, or "

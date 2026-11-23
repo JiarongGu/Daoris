@@ -18,7 +18,7 @@ internal static class WireLapsing
     }
 
     /// <summary>Whether Daoris still retries this failure: a transient code with attempts left, so its <c>failed</c> path is not taken yet.</summary>
-    internal static bool Retries(NodeDeclaration node, NodeStatus status) => status.Transient && status.Tries < (node.Retry?.MaxAttempts ?? 1);
+    internal static bool Retries(NodeDeclaration node, NodeStatus status) => status.Transient && status.Tries < UnansweredSteps.Attempts(node, status.Code);
 
     /// <summary>
     /// Why a node is invalidated now, or null: a skip of another graph or run; a bound node whose binding's subject, revision, graph or version
