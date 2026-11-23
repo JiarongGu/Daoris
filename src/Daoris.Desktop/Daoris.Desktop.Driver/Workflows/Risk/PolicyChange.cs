@@ -78,13 +78,17 @@ public sealed record PolicyProposal(
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{session}\n{revision}\n{string.Join("\n", edits.Select(edit => edit.Said()))}")))[..12];
 }
 
-/// <summary>Who pressed a door of the policy: the session its key proves, or none.</summary>
-public sealed record PolicyChannel(string? Session)
+/// <summary>Who pressed a door of the policy: the conversation its key proves, or none; <paramref name="Worker"/> where it is a working session's own press.</summary>
+public sealed record PolicyChannel(string? Session, bool Worker = false)
 {
     /// <summary>A process that proves no session's key.</summary>
     public static PolicyChannel Keyless { get; } = new((string?)null);
 
+    /// <summary>The conversation whose key a press proves: Ask Daoris's.</summary>
     public static PolicyChannel Of(string? session) => string.IsNullOrWhiteSpace(session) ? Keyless : new(session);
+
+    /// <summary>A working session's own press: an agent's channel, which never changes the policy.</summary>
+    public static PolicyChannel Agent(string session) => new(session, true);
 }
 
 /// <summary>What a door of the policy did: <see cref="Done"/>, or the <see cref="Code"/> that refused it, said in a sentence.</summary>
@@ -95,6 +99,9 @@ public static class PolicyRefusals
 {
     /// <summary>The press proves no session's key.</summary>
     public const string Keyless = "keyless";
+
+    /// <summary>The press is a working session's own: an agent's channel.</summary>
+    public const string Agent = "agent";
 
     /// <summary>The proposal is none this home holds.</summary>
     public const string Unknown = "unknown";

@@ -16,6 +16,8 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web);
     private static readonly object Gate = new();
 
+    private const string AgentSentence = "the policy is the owner's: a working session's press neither proposes nor applies a change to it, so nothing was changed";
+
     private string ProposalsPath => Path.Combine(DaorisHome.Entry(home, HomeEntry.Workflows, RiskJournal.Folder), "proposals.json");
 
     /// <summary>The proposals this home holds, pending and applied, oldest first.</summary>
@@ -27,6 +29,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     /// <summary>The assistant's proposal of <paramref name="edits"/>: kept pending, with the waits it would open or release, and nothing changed.</summary>
     public PolicyOutcome Propose(PolicyChannel channel, IReadOnlyList<PolicyEdit> edits)
     {
+        if (channel.Worker) return Refuse(PolicyRefusals.Agent, AgentSentence);
         if (channel.Session is not { } session) return Refuse(PolicyRefusals.Keyless, "a proposal comes from a conversation whose session key the press proves; this process proves none, so nothing was proposed");
         if (edits.Count == 0) return Refuse(PolicyRefusals.Shape, "a proposal names at least one edit");
         foreach (var edit in edits)
@@ -59,6 +62,7 @@ public sealed class PolicyChanges(string home, Func<DateTimeOffset> clock, Owner
     /// <summary>The proposal applied: the rows written under the file's lock, journaled naming the owner's turn that confirmed it.</summary>
     public PolicyOutcome Apply(PolicyChannel channel, string proposalId, string digest)
     {
+        if (channel.Worker) return Refuse(PolicyRefusals.Agent, AgentSentence);
         if (channel.Session is not { } session) return Refuse(PolicyRefusals.Keyless, "a change to the policy is applied from the conversation its owner's turn is in, by a press that proves its session; this process proves none, so nothing was changed");
         lock (Gate)
         {
