@@ -137,6 +137,7 @@ internal sealed class MachineRun : IChildRun
     public async ValueTask<ProcessEnd> EndAsync(CancellationToken ct)
     {
         await _process.WaitForExitAsync(ct).ConfigureAwait(false);
+        Release();
         await Task.WhenAny(_read, Task.Delay(PipeGrace, ct)).ConfigureAwait(false);
         Complete();
         return new ProcessEnd(_process.ExitCode, Volatile.Read(ref _stopped) == 1);

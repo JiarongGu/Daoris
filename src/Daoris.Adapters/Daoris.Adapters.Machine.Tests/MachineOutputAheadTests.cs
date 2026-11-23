@@ -121,4 +121,26 @@ public sealed class MachineOutputAheadTests : IDisposable
         Assert.Equal(6000, output.ToString().Split("\r\n", StringSplitOptions.RemoveEmptyEntries).Length);
         Assert.Equal(6000, error.ToString().Split("\r\n", StringSplitOptions.RemoveEmptyEntries).Length);
     }
+
+    [Fact]
+    public async Task A_run_that_ends_while_its_reader_is_paused_loses_no_output_to_its_end()
+    {
+        // The first piece takes the only room; the tail is written and the process exits while nothing reads.
+        var spec = new ProcessSpec("cmd.exe", ["/d", "/q", "/c", "echo first& ping -n 3 127.0.0.1 >nul& echo tail"], "Git", AdmissionClasses.Background)
+        {
+            OutputAhead = 1,
+        };
+        await using var run = await Host().StartAsync(spec, CancellationToken.None);
+
+        var clock = Stopwatch.StartNew();
+        var end = await run.EndAsync(CancellationToken.None).AsTask().WaitAsync(Patience);
+        var ended = clock.Elapsed;
+        var text = new System.Text.StringBuilder();
+        using var bound = new CancellationTokenSource(Patience);
+        await foreach (var piece in run.Output(bound.Token)) text.Append(piece.Text);
+
+        Assert.Equal(0, end.Exit);
+        Assert.Contains("tail", text.ToString());
+        Assert.True(ended < TimeSpan.FromSeconds(2) + TimeSpan.FromSeconds(3), $"the end waited {ended}");
+    }
 }
