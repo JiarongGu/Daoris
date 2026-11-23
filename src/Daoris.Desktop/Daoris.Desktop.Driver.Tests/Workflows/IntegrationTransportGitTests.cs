@@ -299,9 +299,9 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     }
 
     /// <summary>A request queued at the line through the door, its branch landed by a session.</summary>
-    private async Task<(string Root, string Tip)> RequestedAsync()
+    private async Task<(string Root, string Tip)> RequestedAsync(string? repository = null)
     {
-        var root = await RepositoryAsync("engine");
+        var root = repository ?? await RepositoryAsync("engine");
         await DeclaredGatesAsync(root);
         var trees = new SessionTrees(Home);
         var opened = await trees.OpenAsync(root, "engine", "aurora");
@@ -357,6 +357,19 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
 
         await SettledAsync();
         Assert.True(await HoldsAsync(root, tip), "the due time tried the promotion again");
+    }
+
+    /// <summary>A press's line no send named is found in the store within <c>Poll</c> by a long-lived transport.</summary>
+    [Fact]
+    public async Task A_line_no_send_named_is_found_in_the_store_within_the_due_time_of_a_long_lived_transport()
+    {
+        _poll = TimeSpan.FromMilliseconds(300);
+        var root = await RepositoryAsync("engine");
+        Transport(root).Start();
+        var (_, tip) = await RequestedAsync(root);
+
+        await SettledAsync();
+        Assert.True(await HoldsAsync(root, tip), "the transport's look found the line and promoted the tip");
     }
 
     /// <summary>

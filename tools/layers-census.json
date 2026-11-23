@@ -556,7 +556,7 @@
     "src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/AloneLook.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/TreeChangesKept.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Work/WorkPausing.cs": 2,
-    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/IntegrationTransport.cs": 2,
+    "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/IntegrationTransport.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Apply/ApplyDoor.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Push/PushDoor.cs": 1,
     "src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Kinds/Release/ReleaseDoor.cs": 1,
