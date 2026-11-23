@@ -37,7 +37,7 @@ public sealed class RoomsDeclaredCensusTests(ITestOutputHelper output)
 
         Assert.Empty(read.Problems);
         Assert.Equal(
-            [FileKind.Local, FileKind.Local, FileKind.Local, FileKind.Scratch, FileKind.Dependency, FileKind.Dependency, FileKind.Intermediate, FileKind.Output, FileKind.Output, FileKind.Output],
+            [FileKind.Local, FileKind.Local, FileKind.Local, FileKind.Scratch, FileKind.Dependency, FileKind.Dependency, FileKind.Intermediate, FileKind.Output, FileKind.Output, FileKind.Output, FileKind.Output],
             read.Rules.Select(rule => rule.Kind));
         Assert.Equal<string>(["/local/lyntai-local.props", "!/local/lyntai-local.props/"], read.Rules[1].Paths);
         Assert.Equal("copy", read.Rules[1].Reach);
