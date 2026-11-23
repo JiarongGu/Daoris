@@ -217,7 +217,7 @@ and `WordsAtNextStep` of `codex-acp` is measured at agent 0.171.0, adapter 2.9.0
 
 **How it ran.** Keylessly, as §9, but through Daoris's own protocol session (`AcpSession`, the door's reader and steering) over each
 adapter's real pipes, not a scratch script: `AcpAdapterDoorProcessTests` starts the adapter at the install's pin (`claude-code-acp`
-0.109.1 on Claude Code 2.1.330, `codex-acp` 2.9.0 on Codex 0.171.0) under a scratch home with the stub model of `tools/fake-model.mjs`
+0.109.1 on Claude Code 2.1.330, `codex-acp` 2.9.0 on Codex 0.171.0) under a scratch home (the inherited sign-in and backend variables removed) with the stub model of `tools/fake-model.mjs`
 on loopback, and keeps every frame in the sitting's frame tape (`FrameTape`). One turn whose model call is a tool that sleeps eight
 seconds, a steer two seconds into it, and on `codex-acp` a second sitting that resumes the first's conversation.
 
@@ -232,6 +232,9 @@ environment), and a first call that writes the conversation's title from the sam
 ends on after setting `system` ones aside. Codex 0.171.0 offers `exec_command` (one `cmd` line), not `shell`, and answers an unknown
 call `unsupported call`; the stub answers with the tool the request offers.
 
-**Frames now in the corpus** (`fixtures/providers/claude-code` and `codex`, each at its pin): one `tool_call` each, the case's
-reading of every update of its kind held against them. Left as in §9: `Steering` of `codex-acp` stays unknown (`startedNewTurn`,
-MSG1h).
+**Frames now in the corpus** (`fixtures/providers/claude-code` and `codex`, each at its pin): one frame for each kind and status of
+update the run emits (tool calls and their updates, message chunks, usage, command and option lists, `codex-acp`'s session info), the
+command and option lists cut to a few entries and no path kept. The case requires every update the adapter sends to have a recorded
+frame of its kind and status at the pin and to read as it does, and each recorded frame's kind to appear in a steer's run. The resume
+run holds the first half. The resumed prompt's model request carries a code word said only in the first sitting. Left as in §9: `Steering`
+of `codex-acp` stays unknown (`startedNewTurn`, MSG1h).

@@ -21,6 +21,8 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
 {
     private const string Word = "put MANGO in your reply";
 
+    private const string Marker = "PERIWINKLE-4721";
+
     private static readonly TimeSpan Bound = TimeSpan.FromMinutes(2);
 
     /// <summary>The stub model's host: it serves on loopback, says where, and gives the calls it received when a line says <c>calls</c>.</summary>
@@ -105,15 +107,17 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
     {
         var first = await StartAsync("codex-acp");
         var opened = await first.OpenAsync();
-        Assert.Equal("end_turn", await opened.PromptAsync("say hello", CancellationToken.None).WaitAsync(Bound));
+        Assert.Equal("end_turn", await opened.PromptAsync($"Remember this: the code word is {Marker}.", CancellationToken.None).WaitAsync(Bound));
         var conversation = first.Conversation!;
         opened.Release();
         first.Stop();
 
         var second = await StartAsync("codex-acp", again: first);
+        await second.NoteCallsAsync();
         var resumed = await second.ResumeAsync(conversation);
 
-        Assert.Equal("end_turn", await resumed.PromptAsync("say hello again", CancellationToken.None).WaitAsync(Bound));
+        Assert.Equal("end_turn", await resumed.PromptAsync("What is the code word?", CancellationToken.None).WaitAsync(Bound));
+        Assert.True(await second.CarriedAsync(Marker), "the resumed prompt's model request did not carry the first sitting's words");
         second.AssertAnswered("session/resume", null);
         second.AssertUpdatesAreTheCorpus(every: false);
         resumed.Release();
@@ -199,6 +203,9 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
             throw new TimeoutException("the adapter never announced a tool");
         }
 
+        /// <summary>The model calls so far are before what this sitting is about.</summary>
+        public async Task NoteCallsAsync() => _seen = (await Model.CallsAsync()).Count;
+
         /// <summary>Whether a model call made after the steer carries the word.</summary>
         public async Task<bool> CarriedAsync(string word)
         {
@@ -218,7 +225,7 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
             if (outcome is not null) Assert.Contains(answered, entry => (string?)entry.Frame["result"]?["outcome"] == outcome);
         }
 
-        /// <summary>Each session update the adapter sent is read as a frame of its door's corpus of the same kind is, and, where <paramref name="every"/>, each recorded frame of the pin has its kind among them.</summary>
+        /// <summary>Each session update the adapter sent has a recorded frame of its kind at the pin and is read as that frame is, and, where <paramref name="every"/>, each recorded frame of the pin has its kind among them.</summary>
         public void AssertUpdatesAreTheCorpus(bool every = true)
         {
             var door = BuiltDoors.Of(_door);
@@ -230,17 +237,15 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
             Assert.NotEmpty(updates);
             foreach (var update in updates)
             {
-                var kind = (string)update["sessionUpdate"]!;
                 var read = ProviderCorpus.Read(door, new CorpusFrame(_door, "live", null, "live", JsonSerializer.SerializeToElement(update), []));
-                var same = recorded.Where(frame => frame.Frame.GetProperty("sessionUpdate").GetString() == kind).ToList();
-                if (same.Count == 0) continue;
+                var same = recorded.Where(frame => Said(frame.Frame) == Said(update)).ToList();
+                Assert.True(same.Count > 0, $"{_door} {PinnedAdapterFactAttribute.VersionOf(_door)}: an update of kind {Said(update)} has no recorded frame in the corpus");
                 Assert.Contains(same, frame => frame.Events.SequenceEqual(read));
             }
 
             foreach (var frame in recorded.Where(_ => every))
             {
-                var kind = frame.Frame.GetProperty("sessionUpdate").GetString();
-                Assert.Contains(updates, update => (string?)update["sessionUpdate"] == kind);
+                Assert.Contains(updates, update => Said(update) == Said(frame.Frame));
             }
         }
 
@@ -259,13 +264,17 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
 
         private ProcessStartInfo Spawn()
         {
-            var package = _door == "codex-acp" ? "codex-acp" : "claude-agent-acp";
             var info = new ProcessStartInfo("node")
             {
                 WorkingDirectory = Path.Combine(_folder, "work"), RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = System.Text.Encoding.UTF8,
                 UseShellExecute = false, CreateNoWindow = true,
             };
             info.ArgumentList.Add(PinnedAdapterFactAttribute.Script(_door));
+            foreach (var name in new[] { "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "OPENAI_API_KEY" })
+            {
+                info.Environment.Remove(name);
+            }
+
             info.Environment["ANTHROPIC_API_KEY"] = "placeholder-not-a-key";
             info.Environment["ANTHROPIC_BASE_URL"] = Model.Url;
             info.Environment["CLAUDE_CONFIG_DIR"] = Path.Combine(_folder, "home");
@@ -282,9 +291,13 @@ public sealed class AcpAdapterDoorProcessTests : IAsyncDisposable
                     ["stub"] = new JsonObject { ["name"] = "stub", ["base_url"] = Model.Url + "/v1", ["env_key"] = "STUB_KEY", ["wire_api"] = "responses" },
                 },
             }.ToJsonString();
-            _ = package;
             return info;
         }
+
+        private static string Said(JsonElement frame) =>
+            frame.GetProperty("sessionUpdate").GetString() + "/" + (frame.TryGetProperty("status", out var status) ? status.GetString() : "");
+
+        private static string Said(JsonObject update) => (string)update["sessionUpdate"]! + "/" + (string?)update["status"];
 
         private string[] ReadTape()
         {
