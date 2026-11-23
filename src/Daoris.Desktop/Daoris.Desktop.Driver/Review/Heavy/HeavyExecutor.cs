@@ -150,7 +150,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
             catch (System.ComponentModel.Win32Exception error)
             {
                 // A job of its name that cannot be opened may still run: not known, never a second run beside it.
-                return new VerifyAnswer(VerifyAnswers.Unknown) { Why = $"the job it left could not be opened ({error.Message})" };
+                return new VerifyAnswer(VerifyAnswers.Unknown) { Why = $"the job it left could not be opened ({error.Message})", Unaccounted = true };
             }
         }
 

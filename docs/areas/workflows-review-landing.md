@@ -396,13 +396,13 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     it is not governed again until its chain comes back. A `line` is reached by the kept end fact, or where the pass's read of the line
     holds every commit of the branch at its tip (a landing that found its work already there made no landing record).
     A check whose executor could not say what became of it (unknown with the code `unrun`, or with no cause of its own: a result that does
-    not read, a gate log another process held for the instant its step opened it, a git read that failed) is no question for the person: it
-    settles with no verdict and is asked again as a new attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a
-    pass, each retry logged with the attempt's own reason. Past the three it is given up as said: its node fails with the code `unsaid` and its
-    newest reason, it stands as its rounds spent (never a red of the work's), the work is told it could not say, and the risk policy decides it as
-    any spent check (`work.recover`: the role's holder, else the owner's final exit), so no attempt is held for the person. An unknown with a
-    cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is tried again for a
-    moment's sharing violation on its log (`HeavyStep.RetriedAsync`), the cause of the check's "could not be kept" unknown on 2026-11-22 and 23.
+    not read, a gate log another process held for the instant its step opened it) is no question for the person: it settles with no verdict
+    and is asked again as a new attempt, up to three on one binding (`UnrunChecks`), counting as neither a red round nor a pass, each retry's
+    line carrying the executor's own reason from its answer. Past the three Daoris gives it up as said: its node is stopped by Daoris with
+    that reason, which ends its run and holds no row for anyone (no held attempt, no kept failure, no final exit). A check whose old job could
+    not be opened (`unaccounted`) may still run, so it is never sent beside it: it is asked again at each look until the job is accounted for.
+    An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is a held attempt as ever. A step's start is
+    tried again for a moment's sharing violation on its log (`HeavyStep.RetriedAsync`), the cause of the check's "could not be kept" unknown on 2026-11-22 and 23.
     A check whose executor finds neither its result nor its job (its process gone: a restart, an update, a crash) is sent once more as the
     same attempt under its key. A send writes a start mark in the attempt's folder (`began-<send>`) when it holds its slots, and an executor
     that ends the job because it is closing itself (an update, a stop of driving) writes `closed-<send>`: a send that never began, or one

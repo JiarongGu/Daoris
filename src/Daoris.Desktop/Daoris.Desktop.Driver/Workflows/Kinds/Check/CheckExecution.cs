@@ -32,7 +32,7 @@ public sealed class CheckExecution(
         VerifyAnswers.Result when answer.Result is { } result => AnswerOf(result),
         VerifyAnswers.Running => new(ReconcileStates.Running),
         VerifyAnswers.NotStarted => new(ReconcileStates.NotStarted),
-        _ => new(ReconcileStates.Unknown, new WorkOutcome(WorkStates.Unknown, WorkStates.Unknown)),
+        _ => new(ReconcileStates.Unknown, new WorkOutcome(WorkStates.Unknown, answer.Unaccounted ? VerifyResult.Unaccounted : WorkStates.Unknown, Said(answer.Why))),
     };
 
     /// <summary>
@@ -43,8 +43,10 @@ public sealed class CheckExecution(
     {
         VerifyVerdicts.Reached => new(ReconcileStates.Done, new WorkOutcome(WorkStates.Reached, Evidence: Evidence(result, "verified"))),
         VerifyVerdicts.Failed => new(ReconcileStates.Done, new WorkOutcome(WorkStates.Failed, HeavyExecutor.GateFailed, Evidence(result, $"failed: {result.Failed}"))),
-        _ => new(ReconcileStates.Unknown, new WorkOutcome(WorkStates.Unknown, result.Code ?? WorkStates.Unknown)),
+        _ => new(ReconcileStates.Unknown, new WorkOutcome(WorkStates.Unknown, result.Code ?? WorkStates.Unknown, Said(result.Why))),
     };
+
+    private static WorkEvidence? Said(string? why) => string.IsNullOrWhiteSpace(why) ? null : new(null, null, null, why);
 
     private static WorkEvidence Evidence(VerifyResult result, string said) => new($"{NodeSource.Gates}:{result.Invocation}", null, null, said);
 }

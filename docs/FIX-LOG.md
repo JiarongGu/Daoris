@@ -20,11 +20,12 @@ repository.
   transient too and are covered by the same retry; their cause was not found.
 - **Fix:** the step's start is tried again for a sharing or lock violation on its log (six tries, 100 ms apart, `HeavyStep.RetriedAsync`). A check unknown with the code
   `unrun` or with none is asked again by itself as a new attempt, up to three on one binding, the attempt's own reason in the pass's line;
-  past them it is given up as said: its node fails `unsaid`, it stands as rounds spent and is no red of the work's (`CheckRounds.Reds`), the
-  work is told it could not say, and the risk policy decides it as any spent check, so no attempt is held for the person (`UnrunChecks`,
-  `SpentChecks`). An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is held as before.
-- **Verify:** `CheckPerformTests` (an executor that cannot say is run again by itself and passes; one that stays unknown is given up with
-  its reason and no attempt is held), `HeavyStepRetryTests`, `SpentChecksTests`.
+  past them it is given up as said: its node is stopped by Daoris with the executor's reason, which ends its run and holds no row (`UnrunChecks`;
+  a kept failure or a spent red would wait on the person as the owner's final exit). The executor's reason rides its answer (`CheckExecution`),
+  so a retry's line and the give-up say why even where no result reads. A check whose old job could not be opened is asked again at each look,
+  never run beside it (`VerifyResult.Unaccounted`). An unknown with a cause of its own (`changed`, `bound`, `stopped`, `busy`, `unprepared`) is held as before.
+- **Verify:** `CheckPerformTests` (an executor that cannot say is run again by itself and passes; one that stays unknown is stopped with
+  its reason and no wait on anyone; an unopened old job is asked again, never run beside), `HeavyStepRetryTests`.
 
 ## 2026-11-22 - LookAccountTests failed beside other runs and passed alone (LOOKACCOUNTFLAKE1)
 

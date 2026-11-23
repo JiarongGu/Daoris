@@ -381,10 +381,8 @@ internal sealed class NodeRunKeeping(
         }
     }
 
-    internal static string FailedWords(string node, string? code, string? found) => code == UnrunChecks.GaveUp
-        ? $"Daoris: `{node}` could not say whether your work passes, and Daoris gave it up as said after {UnrunChecks.Bound} asks, so nothing was judged"
-            + (string.IsNullOrWhiteSpace(found) ? "" : $" ({found.Trim().ReplaceLineEndings(" ")})") + ": commit again and what you commit goes through the workflow again."
-        : $"Daoris: `{node}` failed{(code is { } named ? $" (`{named}`)" : "")}, so your work goes back to you: "
+    internal static string FailedWords(string node, string? code, string? found) =>
+        $"Daoris: `{node}` failed{(code is { } named ? $" (`{named}`)" : "")}, so your work goes back to you: "
         + (string.IsNullOrWhiteSpace(found) ? "mend what it found" : "\n\n" + found.Trim() + "\n\nMend what it found")
         + " and commit, and what you commit goes through the workflow again.";
 
