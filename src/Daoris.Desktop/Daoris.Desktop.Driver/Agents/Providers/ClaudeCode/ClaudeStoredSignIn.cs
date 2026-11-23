@@ -16,15 +16,23 @@ internal sealed class ClaudeStoredSignIn : IStoredSignIn
     /// <summary>The store's name in an account's home.</summary>
     public const string FileName = ".credentials.json";
 
-    public StoredSignInShape? Read(string profileHome)
+    /// <summary>The agent writes the store through a temp file beside it, <c>.credentials.json.tmp.*</c>, and renames it over the store.</summary>
+    public const string TempPattern = FileName + ".tmp.*";
+
+    string? IStoredSignIn.FileName => FileName;
+
+    string? IStoredSignIn.LeftoverPattern => TempPattern;
+
+    public StoredSignInShape? Read(string profileHome) => ReadFile(Path.Combine(profileHome, FileName));
+
+    public StoredSignInShape? ReadFile(string path)
     {
-        var path = Path.Combine(profileHome, FileName);
         byte[]? bytes = null;
         try
         {
             if (!File.Exists(path)) return null;
             var written = new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
-            bytes = File.ReadAllBytes(path);
+            bytes = ReadShared(path);
             // Parsed over the bytes read, never copied out of them, and those bytes cleared once the shape is read.
             using var document = JsonDocument.Parse(bytes.AsMemory());
             if (document.RootElement.ValueKind != JsonValueKind.Object
@@ -48,6 +56,15 @@ internal sealed class ClaudeStoredSignIn : IStoredSignIn
         {
             if (bytes is not null) System.Security.Cryptography.CryptographicOperations.ZeroMemory(bytes);
         }
+    }
+
+    /// <summary>The bytes, opened sharing delete too, so a read never fails the agent's rename over the store.</summary>
+    private static byte[] ReadShared(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var bytes = new byte[stream.Length];
+        stream.ReadExactly(bytes);
+        return bytes;
     }
 
     /// <summary>

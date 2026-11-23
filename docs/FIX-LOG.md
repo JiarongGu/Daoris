@@ -14728,3 +14728,31 @@ installed window is not yet seen.
 - **Verify:** the census failed 152 story renders before the fix and none after; `ChromePaletteTests` (new test red, then
   green); the window built from the branch, shot before and after in both themes (overview, Settings, the notifications panel)
   and the taskbar's count captured.
+
+## Accounts signed out again after an update's restart reopened four sessions at once (2026-11-23)
+
+**Symptom.** Claude Code accounts read signed out on the install: two notices on 2026-11-20, and one about 18:10 to 18:20Z on
+2026-11-22, right after an update's restart at 18:08Z reopened four or more sessions together. The account profiles held leftover
+`.credentials.json.tmp.*` files, one empty.
+
+**Root cause (a reading from the code; the install's own lines are what confirm it).** Sessions of one account reopened together
+hold the one stored token and each refreshes it as it starts; a refresh with a token already rotated is refused and the agent
+clears the store. The 2026-10-04 fix (above) and CREDRACE1's renewal reach Daoris's own status question and a start that finds the
+token expiring, and only where no session of Daoris's runs on the account; they assume the status question refreshes, which was
+never proved on the install, and no lock of Daoris's reaches the sessions' own processes. Separately, the status reader opened the
+store with a share mode that forbids a concurrent rename, so a read at the agent's rename could fail the agent's write and leave a
+temp file; that reading is unmeasured.
+
+**Fix.** A counted start on an account whose stored token is still expiring after any renewal goes in its turn (`RefreshPace`,
+ten seconds apart, or as soon as the store reads fresh), and waits out a fresh temp file of the store's write. Every write to the
+store or a temp file is a `credentials.written` machine-log line (account, file, change, empty or tokens present, the sessions
+running on the account; never a value). The store reader shares read, write and delete. Each look removes temp files older than
+the provider's declared write life. Left (SIGNOUTRACE1): read the install's `credentials.written` lines beside `app.started`
+at the next restart to say which sessions spent the token, then set the pace from it.
+
+**Verification.** `SignOutRaceTests` (7): four sessions of one stand-in account, whose provider rotates a single-use refresh token,
+reopened together make one refresh and stay signed in; the control with no pace is signed out; a fresh store holds no start; a
+write in flight holds a start until it is gone; each write to a real Claude store is a line carrying no value; leftovers go by
+the rule; a store open for writing still reads. Run filtered with `SignInRefreshTests` and `LookAccountTests`: 12 passed.
+`LookAccountTests.A_look_over_many_runs_is_said_whole_by_its_stages_and_reads_each_run_once` failed once in the reached-checks
+run on parsing a stage word (`other:3/9837ms[...]`), not touched by this change, and passed alone.

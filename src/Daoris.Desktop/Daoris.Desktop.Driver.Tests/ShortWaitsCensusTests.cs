@@ -73,6 +73,7 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Look", "an input: how often the session reads its quest again while it waits on background work"),
         ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Minute", "an input: the background look's pace at the product's default, spent on the case's own moved clock"),
         ($"{Driver}/Agents/AcpBackgroundTests.cs: TimeSpan Soon", "an input: the session's quiet wait before it goes on, which a case also states as its claim"),
+        ($"{Driver}/Agents/SignOutRaceTests.cs: WaitAsync(TimeSpan.FromMilliseconds(400))", "a claim of absence: a start does not go on while a write of the store is in flight; deleting the temp file then ends the wait"),
         ($"{Driver}/Agents/OutputTailTests.cs: TimeSpan Fast", "an input: the tail's own polling interval"),
         ($"{Driver}/CensusWarm.cs: TimeSpan Patience", "a bound under the run's hang bound, not a wait on a signal: past it the census run's warm-up goes on beside the cases, which wait for what they read"),
         ($"{Driver}/Course/LiveLimitHarness.cs: TimeSpan Wire", "an input: a killed shell's wait for a door it stopped mid-write to say it wrote, which it never does"),

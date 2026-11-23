@@ -29,7 +29,7 @@ public sealed class DriverPartsTests : IDisposable
 
         var order = driver.LookPasses.Order;
         Assert.Equal(
-            ["kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
+            ["credential-writes", "kept", "sync", "claims", "plugins", "rules", "watch", "lines", "together", "setup", "snapshot", "paused", "supervisor",
                 "alone", "unable", "pieces", "handovers", "policy", "committed", "overlaps", "overlaps-told", "roster", "channel", "reopens",
                 "reviews", "helpers", "checks", "partners", "brainstorms", "meetings", "plan",
                 "answered", "intakes", "start", "rule-acts", "course-release", "landing-release", "door-release", "supervise", "bind", "endings", "landing", "members", "run-outcomes", "plugin-commands",
@@ -37,13 +37,14 @@ public sealed class DriverPartsTests : IDisposable
                 "through-notices", "departures"],
             order.Select(part => part.Name));
         Assert.Equal(
-            [.. Enumerable.Repeat(LookPhase.Before, 3), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
+            [.. Enumerable.Repeat(LookPhase.Before, 4), .. Enumerable.Repeat(LookPhase.Local, 6), .. Enumerable.Repeat(LookPhase.Read, 21),
                 .. Enumerable.Repeat(LookPhase.Planned, 8), LookPhase.Begun, LookPhase.Begun, .. Enumerable.Repeat(LookPhase.After, 9)],
             order.Select(part => (LookPhase)part.Phase));
 
         // What each anchor runs, in the order it runs them.
         Assert.Collection(
             driver.LookPasses.In(LookPhase.Before),
+            pass => Assert.IsType<CredentialWritesLook>(pass),
             pass => Assert.IsType<LookKept>(pass),
             pass => Assert.IsType<LookSync>(pass),
             pass => Assert.IsType<LostClaimStop>(pass));

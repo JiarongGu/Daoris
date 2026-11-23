@@ -87,6 +87,18 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
     /// </summary>
     internal TimeSpan LockPatience { get; init; } = ProbeLock.Patience;
 
+    /// <summary>The gap between starts on one account whose stored token is still expiring (<see cref="RefreshPace"/>); zero for none.</summary>
+    internal TimeSpan RefreshStagger { get; init; } = TimeSpan.FromSeconds(10);
+
+    internal TimeSpan RefreshPoll { get; init; } = TimeSpan.FromMilliseconds(100);
+
+    internal Func<TimeSpan, CancellationToken, Task> Delay { get; init; } = Task.Delay;
+
+    /// <summary>The writes to the stored sign-ins, said by the first look that follows them.</summary>
+    internal CredentialWrites? Writes { get; set; }
+
+    internal RefreshPace Pace { get; } = new();
+
     /// <summary>
     /// This machine's zone: it stands in for a zone a limit's sentence names that is not an IANA name, and
     /// every cool-off is said in it, with the zone named.
