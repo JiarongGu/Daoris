@@ -78,6 +78,10 @@ a C# test roots at `TestHomes`. `src/Daoris.Cli/tool-test/temp-folder-census.tes
 `tmpdir()` or `env.TEMP` in any node source of the repository (`inNodeScope`: all but `node_modules` and `_fixtures`) or a `GetTempPath()` in the C# test projects unless the file is declared with why (the node
 list is `KEPT` there; the C# list is `TestHomesCensusTests`'s, read by it), and a declared file removes what it makes.
 
+A node test that starts real git with the commit and checkout hooks installed copies its repository from a seed built once for each
+shape (`tools/hook-seeds.mjs`, as the C# tests do with `GitSeed`) and turns git's maintenance off in it (`maintenance.auto`), since on
+this machine a case's `git init`, base commit and install, and the maintenance a commit starts, were most of its time (REACHCOST1).
+
 A checkout's `_fixtures/` keeps by one rule, `node tools/fixtures-keep.mjs`, which every prune applies to the main checkout
 (`sweepFixtures`) and which run alone is a plan (`--apply` removes, `--root <checkout>`
 names another tree, `--hours <n>` the window): an entry it or anything directly in it was written in the last 24 hours stays, as

@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { seeds } from './hook-seeds.mjs';
 import { install, main, separateNotes } from './index-hook.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -33,17 +34,24 @@ const show = (cwd, spec) => git(cwd, 'show', spec).stdout;
 const indexOf = (dir) => join(dir, 'docs', 'index', 'README.md');
 const drop = (dir) => rmSync(join(dir, 'docs', 'index'), { recursive: true, force: true });
 
-let serial = 0;
-function repository(hook = true) {
-  const dir = join(scratch, `r${serial += 1}`);
+const kit = seeds(scratch);
+const optedOut = () => git.env?.DAORIS_INDEX_HOOK === '0';
+function populate(dir, hook = true) {
   mkdirSync(join(dir, 'src'), { recursive: true });
   writeFileSync(join(dir, 'daoris.json'), '{}\n');
   writeFileSync(join(dir, '.gitignore'), 'docs/index/\n');
   writeFileSync(join(dir, 'src', 'a.ts'), 'export function a() {}\n');
   git(dir, 'init', '-q');
+  git(dir, 'config', '--local', 'maintenance.auto', 'false');
   if (hook) assert.equal(install({ out() {}, err() {}, cwd: dir, env: { ...clean(), ...(git.env ?? {}) }, script }), 0);
+}
+let solo = 0;
+function repository(hook = true) {
+  const dir = join(scratch, `s${solo += 1}`);
+  populate(dir, hook);
   return dir;
 }
+const seeded = (shape, make) => kit.copy(`${shape}|${optedOut()}`, make);
 
 const notesOnly = (body) => () => {
   git.env = { DAORIS_INDEX_HOOK: '0' };
@@ -53,13 +61,12 @@ const notesOnly = (body) => () => {
     git.env = undefined;
   }
 };
-const committed = () => {
-  const dir = repository();
+const committed = () => seeded('committed', (dir) => {
+  populate(dir);
   git(dir, 'add', '-A');
   assert.equal(git(dir, 'commit', '-q', '-m', 'first').status, 0);
   git(dir, 'branch', '-M', 'main');
-  return dir;
-};
+});
 
 test('install writes the checkout hooks and leaves a hook that is not its own', () => {
   const dir = repository(false);
@@ -114,7 +121,7 @@ test("a branch's checkout and a new worktree write the index; a detached or a fi
   assert.equal(git(dir, 'checkout', '-q', '--detach').status, 0);
   assert.ok(!existsSync(indexOf(dir)), "a detached checkout is a tool's tree, and writes none");
 
-  const tree = join(scratch, `w${serial}`);
+  const tree = join(scratch, `w${solo}`);
   const added = git(dir, 'worktree', 'add', '-q', '-b', 'tree', tree);
   assert.equal(added.status, 0, added.stderr);
   assert.ok(existsSync(indexOf(tree)), 'a new worktree starts with its index');
@@ -142,16 +149,15 @@ test('a merge into a branch writes the index', () => {
 });
 
 // A union merge coalesces the blank line two branches each add before their note.
-const noteRepository = () => {
-  const dir = repository();
+const noteRepository = () => seeded('notes', (dir) => {
+  populate(dir);
   mkdirSync(join(dir, 'docs', 'decisions'), { recursive: true });
   writeFileSync(join(dir, '.gitattributes'), 'docs/decisions/*.md merge=notes\n');
   writeFileSync(join(dir, 'docs', 'decisions', 'D1.md'), '# D1\n\nBody.\n');
   git(dir, 'add', '-A');
   assert.equal(git(dir, 'commit', '-q', '-m', 'first').status, 0);
   git(dir, 'branch', '-M', 'main');
-  return dir;
-};
+});
 const addNote = (dir, branch, label) => {
   git(dir, 'checkout', '-q', '-b', branch, 'main');
   const file = join(dir, 'docs', 'decisions', 'D1.md');
