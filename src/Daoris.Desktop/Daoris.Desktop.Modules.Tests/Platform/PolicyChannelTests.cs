@@ -25,4 +25,10 @@ public sealed class PolicyChannelTests
         Assert.Null(PolicyRoutes.ChannelOf(TerminalTierBy.Terminal, null, "s-ask").Session);
         Assert.Null(PolicyRoutes.ChannelOf(TerminalTierBy.Session, null, "s-ask").Session);
     }
+
+    [Theory]
+    [InlineData("POLICY_PROPOSE")]
+    [InlineData("POLICY_APPLY")]
+    [InlineData("POLICY_PROPOSALS")]
+    public void The_policys_doors_are_answered_by_the_driver_module(string route) => Assert.Contains(route, DriverModule.Routes);
 }
