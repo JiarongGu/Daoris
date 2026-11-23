@@ -275,6 +275,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         }
 
         TreeFilesRecord.Forget(context.Home, full);
+        var tail = (left is null ? "" : $" {left}") + (seen?.ScratchWent is { } went ? $" {went}" : "");
 
         // The line has finished: the ignored tops its tree held, read before it went, are what the found layer's finish looks at.
         if (seen is not null) NoteFinished(owner.Repository, seen);
@@ -287,7 +288,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         {
             // Never a branch the session's agent made, which is the pull request's and the only copy of its commits.
             return new(true, $"removed the session tree at {path}, and kept its branch `{madeBy}`, which "
-                + (treeOnly ? "holds its commits, the tree being unused for its days;" : "the session made and which holds its commits;") + " delete it with git where you no longer want it." + (left is null ? "" : $" {left}"), freed);
+                + (treeOnly ? "holds its commits, the tree being unused for its days;" : "the session made and which holds its commits;") + " delete it with git where you no longer want it." + tail, freed);
         }
 
         if (!detached)
@@ -309,20 +310,20 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         {
             // Not cancelled, as a judged delete is not: the ref goes only where the transaction showed the holder standing.
             return new(true, $"removed the session tree at {path}. The commit it had out stays at `{recovery}` until you delete that ref: git "
-                + "would not show what its proof rested on standing where the proof read it, once the tree went." + (left is null ? "" : $" {left}"), freed);
+                + "would not show what its proof rested on standing where the proof read it, once the tree went." + tail, freed);
         }
 
         if (stays is not null)
         {
             return new(true, $"removed the session tree at {path}, and kept its branch `{branch}`: {stays}"
-                + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + (left is null ? "" : $" {left}"), freed);
+                + (stays == ContentHolds.MovedSince ? ", so it holds work this removal did not judge." : ".") + tail, freed);
         }
 
         // How the work is found held, where ancestry could not say, and where its commits stay: the
         // sentence the review's Discard shows as it is.
         return new(true, $"removed the session tree at {path} (branch `{branch}`)"
             + (held is not null ? $": {held.Said}." : squashedOn is not null ? $": {TreeSquashes.SquashedSaid(squashedOn)}." : ".")
-            + (left is null ? "" : $" {left}") + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"), freed);
+            + tail + (kept is null ? "" : $" {ContentHold.KeptAt(named, kept)}"), freed);
     }
 
     /// <summary>The found layer's finish for one removed tree; a layer that cannot be written is written again by the next reading.</summary>
@@ -330,7 +331,7 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     {
         try
         {
-            FoundReads.Finished(context.Home, repository, [.. seen.Shared, .. seen.Written, .. seen.Ignored]);
+            FoundReads.Finished(context.Home, repository, [.. seen.Shared, .. seen.Written, .. seen.Ignored, .. seen.Scratch]);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

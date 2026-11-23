@@ -74,7 +74,7 @@ public sealed class GeneratedIndexGitTests : LandedFixture
     }
 
     [Fact]
-    public async Task A_file_written_in_an_index_folder_the_line_commits_is_still_the_trees_own()
+    public async Task A_file_written_in_an_index_folder_the_line_commits_is_not_the_index_but_the_sessions_scratch_and_goes_named()
     {
         var root = await IndexedRepositoryAsync();
         // The index is committed now (the add takes it once its folder is no longer ignored); only its notes folder is ignored.
@@ -92,8 +92,8 @@ public sealed class GeneratedIndexGitTests : LandedFixture
 
         var removal = await trees.RemoveAsync(tree.Path);
 
-        Assert.False(removal.Removed, removal.Message);
+        Assert.True(removal.Removed, removal.Message);
         Assert.Contains("docs/index/notes/session.md", removal.Message);
-        Assert.True(File.Exists(note));
+        Assert.False(Directory.Exists(tree.Path));
     }
 }

@@ -623,7 +623,14 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     that is or lies inside a repository or tree the session's tree holds is never covered (`FileRemade`). The person's layer is read
     last, so a path they call `local` or `dependency` is kept though the repository calls it output, and the tree's own
     `core.ignorecase` decides how their paths match. `daoris.files.json` calls
-    `local/quick-base.json` and `local/quick-verdicts.json`, which `npm run quick` writes, outputs. A branch whose landing replayed
+    `local/quick-base.json` and `local/quick-verdicts.json`, which `npm run quick` writes, outputs. A file under an ignored
+    folder that the session wrote after the tree opened, never one copied in from the checkout, is that session's scratch and keeps
+    no tree: it goes with it once its work is on the line, and the removal's record names it (`TreeHolds.Scratch`,
+    `TreeScratch.SessionWrote`; the move aside's `FinishedLeft` lists it too). What keeps a tree is anything else: an uncommitted
+    or untracked path, an ignored file outside any ignored folder that the checkout lacks, a copy Daoris made that the session edited
+    (the files record's `Copies`), a file the person's rules call `local` or `dependency`, a file of a tree with no files record where
+    the checkout holds that name, and every file of a folder holding another repository. The copied-in files are made again from the
+    checkout at the next open. A branch whose landing replayed
     its commits under ids of their own, and whose files the line has changed since, is held by the end its record kept while the
     form of the line it held on still descends from where it held (`KeptEnd`, a form of the content proof). Uncommitted or
     untracked work keeps it, and so does an ignored folder of more than 5,000 files,

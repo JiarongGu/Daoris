@@ -187,6 +187,31 @@ internal static class TreeScratch
     }
 
     /// <summary>
+    /// The files a session left in an ignored folder that are its scratch (written after the tree opened), which go with its finished
+    /// tree, and the rest, which keep it: a copy of Daoris's the session edited, a file the person's rules keep, a file of a tree with no
+    /// files record where the checkout holds that name, and every file of a folder holding another repository.
+    /// </summary>
+    /// <param name="dated">Whether each file's write time is asked against <paramref name="opened"/>; false where the walk asked it.</param>
+    /// <param name="persons">What the person's rules say of a file (<see cref="FileRemade"/>): false keeps it.</param>
+    internal static (List<string> Scratch, List<string> Kept) SessionWrote(
+        string treeRoot, string checkoutRoot, string folder, IReadOnlyList<string> files, DateTime opened, TreeFilesState? record, bool dated,
+        Func<string, bool?>? persons = null)
+    {
+        if (files.Count > 0 && FileRemade.InAnotherRepository(treeRoot, folder)) return ([], [.. files]);
+        List<string> scratch = [];
+        List<string> kept = [];
+        foreach (var file in files)
+        {
+            var edited = record?.Copies.ContainsKey(file) == true || persons?.Invoke(file) == false
+                || (record is null && File.Exists(Path.Combine(checkoutRoot, file.Replace('/', Path.DirectorySeparatorChar))));
+            var later = !dated || File.GetLastWriteTimeUtc(Path.Combine(treeRoot, file.Replace('/', Path.DirectorySeparatorChar))) > opened;
+            (!edited && later ? scratch : kept).Add(file);
+        }
+
+        return (scratch, kept);
+    }
+
+    /// <summary>
     /// Whether the checkout holds a file at the path with the same length and the same bytes: only then is the tree's file
     /// no work lost. Lengths are compared first and bytes only where they match, streamed through a small buffer.
     /// </summary>
