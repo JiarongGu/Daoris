@@ -173,7 +173,7 @@ public sealed class OwnerReserveTests : IDisposable
     [Fact]
     public void The_file_keeps_the_reserve_it_was_given_and_only_when_set()
     {
-        var path = Path.Combine(_fixture.Home, "driver.json");
+        var path = DriverConfig.ResolvePath(_fixture.Home);
         Assert.DoesNotContain("reserveGb", DriverConfig.Empty.WithNotify(true).ToJson());
         File.WriteAllText(path, DriverConfig.Empty.WithReserve(24).ToJson());
 

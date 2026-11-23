@@ -6,7 +6,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { homeEntry } from '../../src/Daoris.Cli/src/platform/home.ts';
 import { freemem as osFreemem, totalmem as osTotalmem } from 'node:os';
 
 /**
@@ -68,19 +68,17 @@ export function keptFree(reserve, total) {
 
 /**
  * The GB the machine keeps free for the person's own work: `reserveGb` of the Daoris home's `driver.json` (the file the driver's
- * `ReserveSetting` reads, at its new place `data/` or its old), else a third of `total`, the machine's physical memory in bytes, to
+ * `ReserveSetting` reads, at the place the home's table gives it), else a third of `total`, the machine's physical memory in bytes, to
  * the whole GB; 0 where the file says none, or where neither is known.
  */
 export function reserveGb({ total = null, home = null, read = (path) => readFileSync(path, 'utf8') } = {}) {
-  for (const path of home ? [join(home, 'data', 'driver.json'), join(home, 'driver.json')] : []) {
-    let stored;
+  if (home) {
     try {
-      stored = JSON.parse(read(path).replace(/^﻿/, '')).reserveGb;
+      const stored = JSON.parse(read(homeEntry(home, 'driver')).replace(/^﻿/, '')).reserveGb;
+      if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) return stored;
     } catch {
-      continue;
+      // A file that does not read keeps the default, as the driver's reader does.
     }
-    if (Number.isInteger(stored) && stored >= 0 && stored <= 1024) return stored;
-    break;
   }
   return typeof total === 'number' && total > 0 ? Math.floor(total / 3 / GB) : 0;
 }

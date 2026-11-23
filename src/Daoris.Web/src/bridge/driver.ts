@@ -377,6 +377,9 @@ export const useSetTerminal = () => useDriverChange('SET_TERMINAL');
 /** How many checks the machine runs at once, a number or null for auto: the same `checks` `daoris settings checks <n>|auto` edits. */
 export const useSetChecks = () => useDriverChange('SET_CHECKS');
 
+/** What the machine keeps free for the person's own work, whole GB or null for auto: the same `reserveGb` `daoris settings reserve <gb>|auto` edits. */
+export const useSetReserve = () => useDriverChange('SET_RESERVE');
+
 /**
  * One kind's keep rule: the same `keep` `daoris settings keep` edits. A value out of its
  * kind's bounds is the driver's `KEEP_OUT_OF_RANGE`, said under the row's editor. It declares the wiring with the state, so the card

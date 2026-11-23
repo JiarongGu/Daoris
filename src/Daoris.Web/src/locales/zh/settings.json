@@ -67,7 +67,7 @@
   "settings.vacancy.set_other": "空缺的步骤现在在 {{count}} 小时后放弃。",
   "settings.reserve.label": "为你自己的工作保留",
   "settings.reserve.terminal": "也可用 `daoris settings reserve <gb>|auto`，0 到 1024 GB——同一个文件，任一入口。",
-  "settings.reserve.body": "你也在这台机器上做自己的工作。只有在本机的空闲内存扣除自身所需后仍不低于此值时，重型运行、检查或构建才会启动；低于时新的会等待，等待的说明里会写明这项保留。自动为本机内存的三分之一；0 表示不保留。",
+  "settings.reserve.body": "你也在本机上做自己的事。只有在本机的空闲内存扣除自身所需后仍不低于此值时，重型运行、检查或构建才会启动；低于时新的会等待，等待的说明里会写明这项保留。自动为本机内存的三分之一；0 表示不保留。",
   "settings.reserve.auto": "本机内存的三分之一",
   "settings.reserve.gb": "GB",
   "settings.reserve.state": "保留 {{kept}} GB 空闲。本机：内存 {{total}} GB，空闲提交量 {{free}} GB；Daoris 自己的进程占用 {{daoris}} GB。",

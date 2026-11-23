@@ -19,7 +19,7 @@ public sealed record VerifyWorld
     /// <summary>What admits a check (<see cref="CheckAdmission"/>), read at each look: <c>checks</c> pinned or null for <c>auto</c>, the memory, the processors.</summary>
     public Func<int?> Checks { get; init; } = () => null;
 
-    public Func<int?> Reserve { get; init; } = () => null;
+    public Func<int?> Reserve { get; init; } = () => 0;
 
     public Func<MemoryReading?> Memory { get; init; } = MachineMemory.Read;
 
