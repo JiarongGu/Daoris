@@ -274,6 +274,21 @@ public sealed class OpinionGateFactsTests : IDisposable
         Assert.Equal(1, Judged("s-2"));
     }
 
+    /// <summary>🔴 A session's turn ending judges its own owed opinions at the fact, a delivery that waited on the turn among them, and no other session's.</summary>
+    [Fact]
+    public async Task A_sessions_turn_ending_judges_its_owed_opinions_at_once()
+    {
+        await using var bus = Open();
+        await using var run = await OpinionGateRun.StartAsync(bus, Gate(_ => Waits()), _home, CancellationToken.None);
+        await Started();
+
+        bus.Append(OpinionBusFacts.TurnEnded("s-1"));
+
+        await Poll.Until(() => Judged("s-1") == 2, () => $"the turn's end was not judged: {string.Join(", ", _judged)}", Soon);
+        Assert.Equal(1, Judged("s-2"));
+        await Unarmed(bus);
+    }
+
     /// <summary>🔴 Each judgment is measured by what woke it, a fact or the gate's own turn, and <c>daoris bus stats</c> reads them apart.</summary>
     [Fact]
     public async Task Each_judgment_is_measured_by_what_woke_it()

@@ -89,7 +89,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
 
     private static readonly string[] Reads =
     [
-        .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid }
+        .. new[] { BusTypes.OpinionOwed, BusTypes.OpinionAsked, BusTypes.OpinionGiven, BusTypes.OpinionDelivered, BusTypes.OpinionAnswered, BusTypes.OpinionSaid, BusTypes.SessionTurnEnded }
             .Select(type => type.Kind),
         .. Everyone,
     ];
@@ -193,7 +193,7 @@ internal sealed class OpinionGateConsumer : BusFlowConsumer<GateWork>, IDisposab
             return [.. open.Where(due => Ids.Equals(due.Session, session) && (pressed || occasion is null || due.Occasion == occasion))];
         }
 
-        if (entry.Kind == BusTypes.OpinionSaid.Kind)
+        if (entry.Kind == BusTypes.OpinionSaid.Kind || entry.Kind == BusTypes.SessionTurnEnded.Kind)
         {
             var session = Text(entry, "session") ?? entry.Subject;
             return [.. open.Where(due => Ids.Equals(due.Session, session))];

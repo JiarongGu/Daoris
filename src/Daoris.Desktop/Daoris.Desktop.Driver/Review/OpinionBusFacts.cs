@@ -21,7 +21,7 @@ public static class OpinionBusFacts
 
     /// <summary>The kinds the gate's acknowledgement always ends: an owed opinion, answers, the person's word, and a move it judged.</summary>
     private static readonly HashSet<string> Judged = new(
-        [BusTypes.OpinionOwed.Kind, BusTypes.OpinionAnswered.Kind, BusTypes.OpinionSaid.Kind, BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind],
+        [BusTypes.OpinionOwed.Kind, BusTypes.OpinionAnswered.Kind, BusTypes.OpinionSaid.Kind, BusTypes.QuestMoved.Kind, BusTypes.NodeBegun.Kind, BusTypes.ChoicesWritten.Kind, BusTypes.SessionTurnEnded.Kind],
         StringComparer.Ordinal);
 
     /// <summary>Whether the gate's acknowledgement of <paramref name="entry"/> ends its obligation: one of <see cref="Judged"/>, a given pass only when clean.</summary>
@@ -57,6 +57,16 @@ public static class OpinionBusFacts
         Commit = true,
         Payload = [("session", session), ("said", said), ("door", door)],
     };
+
+    /// <summary>A turn of <paramref name="session"/>, whose work is owed a second opinion, ended: the gate judges what waited on it.</summary>
+    public static BusDraft TurnEnded(string session) => new(BusTypes.SessionTurnEnded, session)
+    {
+        Commit = true,
+        Payload = [("session", session)],
+    };
+
+    public static BusDraft? TurnEndedOwed(string home, string session) =>
+        new OpinionDues(home).Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase)) ? TurnEnded(session) : null;
 
     /// <summary>The service's quests moved, the families its change stream named, and what changed where the list could say (<see cref="QuestMoves"/>).</summary>
     public static BusDraft QuestMoved(IReadOnlyList<string> families, QuestMoveNames? names = null) => new(BusTypes.QuestMoved, "quests")

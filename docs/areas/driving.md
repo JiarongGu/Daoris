@@ -265,7 +265,8 @@ built, but nothing outside tests makes, takes or ends one; `LinePlaces` answers 
     appended as one (`AppendAll`) ride one write, kept or lost together. A writer holding no log tees through the home's open one
     (`BusLog.Of`). Teed in beside today's writes: an opinion owed (a due kept, a person's ask of its gate), asked, given and
     answered (the landing line's channel), its findings delivered, the person's word at its gate, and what else its gate's verdict
-    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote),
+    reads (the quests' move the change stream names, a node a run's record began, the standing choices this process wrote, a chat
+    run's turn ending while its session's work is owed an opinion),
     and a check started and settled (passed, failed with its red classes, unknown with its code, requeued by its busy runner, or
     ended with no result by the driver's close or an unkept result), a settle caused by its start and every start settled before
     its effect starts again. Red classes no gate named stay unknown, never a count of zero.

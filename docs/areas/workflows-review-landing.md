@@ -495,7 +495,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     (`quest.moved`: a hold lifted, a later step declined or published), a node a run's record began (`node.begun`, written where the
     record is: a graph's opinion node holds the ask until it begins, and one begun while a judgment read before it waits for that
     judgment, so the next reads it), and the standing choices this process wrote (`choices.written`: a reviewer added to a rule, a
-    workflow, the policy). A `quest.moved` fact names what changed, by diffing the quest list the listener reads against the last
+    workflow, the policy), and a conversation's turn ending while its work is owed an opinion (`session.turn-ended`, teed where a
+    chat run's turn ends, judging that session's owed opinions, so a delivery that waited on the turn goes at its end). A `quest.moved` fact names what changed, by diffing the quest list the listener reads against the last
     read (`QuestMoves`): the quests whose records differ, every quest of their chains (parents and children, which a step opinion
     reads) and their repositories (which a landing opinion reads whole: every open set-up step there). A move round judges only the
     owed opinions those names reach; a move that names nothing (no earlier read, no difference found, more than a fact lists, a list
@@ -506,7 +507,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     no look stage judges an opinion. Its acknowledgement ends what is owed it: an owed opinion, a word or a move judged, the answers
     judged, and a clean pass, which leaves nothing to deliver. A turn ahead (a cool-off's reset, a reading pass's end) judges it
     again then, a pass or a delivery a drain held a minute on until the drain ends, and a pass or delivery begun beside that ends with
-    no fact (a turn in flight, a busy conversation) after a backoff from half a minute to ten; a judgment that throws keeps the turn it
+    no fact (a turn in flight, a busy conversation) after a backoff from half a minute to ten, the net under the turn's fact; a judgment that throws keeps the turn it
     found set; a pass the drain held waits for the drain as a delivery it held does. Each judgment is counted by what woke it (a fact
     by its kind; else its own turn: `resumed`, `turn`, `drained`, `held` by another pass of the loop, `beside`, `retry`), which
     `daoris bus stats` reads apart, so the install says which wakes are still not facts (BUS2d2).
